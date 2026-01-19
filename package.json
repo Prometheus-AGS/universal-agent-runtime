@@ -1,0 +1,66 @@
+{
+  "name": "axum-leptos-htmx-wc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun run build:ts && bun run build:css && bun run copy:wasm",
+    "build:ts": "bun build web/main.ts web/sw.ts --outdir static --minify --target browser",
+    "build:css": "tailwindcss -i static/styles.css -o static/app.css --minify",
+    "copy:wasm": "cp node_modules/@electric-sql/pglite/dist/pglite.wasm static/ && cp node_modules/@electric-sql/pglite/dist/pglite.data static/",
+    "dev": "cargo run --bin axum-leptos-htmx-wc & bun run dev:ts & bun run dev:css",
+    "dev:assets": "bun run dev:ts & bun run dev:css",
+    "dev:ts": "bun build web/main.ts --outdir static --target browser --watch",
+    "dev:css": "tailwindcss -i static/styles.css -o static/app.css --watch",
+    "test": "bun test web/tests",
+    "check": "bun x tsc --noEmit",
+    "lint": "bun x eslint web/",
+    "format": "bun x prettier --write web/",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.3.14",
+    "dompurify": "^3.3.1",
+    "highlight.js": "^11.11.1",
+    "marked": "^17.0.1",
+    "marked-highlight": "^2.2.3",
+    "mermaid": "^11.12.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@playwright/test": "^1.57.0",
+    "@tailwindcss/cli": "^4.1.18",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tauri-apps/cli": "^2.9.6",
+    "@types/dompurify": "^3.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.1",
+    "@typescript-eslint/parser": "^8.50.1",
+    "c8": "^10.1.2",
+    "eslint": "^9.17.0",
+    "monocart-coverage-reports": "^2.11.0",
+    "playwright": "^1.57.0",
+    "prettier": "^3.7.4",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.51.0"
+  },
+  "description": "This repository is a reference implementation and living architecture example for building agentic AI applications that: *   support tool-first LLM interaction *   stream rich, typed model output *   remain HTML-first and inspectable *   avoid heavyweight SPA frameworks *   run identically as:     *   a web app     *   a desktop app (via Tauri)     *   a mobile app (via Tauri)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prometheus-AGS/axum-leptos-htmx-wc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Prometheus-AGS/axum-leptos-htmx-wc/issues"
+  },
+  "homepage": "https://github.com/Prometheus-AGS/axum-leptos-htmx-wc#readme"
+}
