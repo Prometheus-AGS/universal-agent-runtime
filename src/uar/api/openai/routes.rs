@@ -72,7 +72,7 @@ pub async fn chat_completions(
         match run_manager.persistence.as_ref() {
             Some(p) => {
                 // Try to load dynamic agent
-                match futures::executor::block_on(p.load_agent_by_name(&req.model)) {
+                match p.load_agent_by_name(&req.model).await {
                     Ok(Some(a)) => a,
                     _ => defaults::default_agent(),
                 }

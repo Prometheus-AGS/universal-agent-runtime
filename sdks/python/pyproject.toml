@@ -1,7 +1,7 @@
 [project]
-name = "axum-leptos-htmx-wc-sdk"
+name = "universal-agent-runtime-sdk"
 version = "0.1.0"
-description = "Python SDK for axum-leptos-htmx-wc - HTTP client for the agentic AI application"
+description = "Python SDK for universal-agent-runtime - HTTP client for the agentic AI application"
 authors = [{ name = "Developer", email = "dev@example.com" }]
 readme = "README.md"
 license = { text = "MIT" }
@@ -30,16 +30,16 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Prometheus-AGS/axum-leptos-htmx-wc"
-Repository = "https://github.com/Prometheus-AGS/axum-leptos-htmx-wc"
-Documentation = "https://github.com/Prometheus-AGS/axum-leptos-htmx-wc#readme"
+Homepage = "https://github.com/Prometheus-AGS/universal-agent-runtime"
+Repository = "https://github.com/Prometheus-AGS/universal-agent-runtime"
+Documentation = "https://github.com/Prometheus-AGS/universal-agent-runtime#readme"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/axum_leptos_htmx_wc_sdk"]
+packages = ["src/universal_agent_runtime_sdk"]
 
 [tool.ruff]
 line-length = 100

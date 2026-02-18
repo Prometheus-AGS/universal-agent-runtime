@@ -2,7 +2,7 @@ use crate::mcp::config::{McpServerEntry, expand_env_map, load_mcp_config};
 use anyhow::{Context, anyhow};
 use async_trait::async_trait;
 use rmcp::{
-    model::{CallToolRequestParam, Tool},
+    model::{CallToolRequestParams, Tool},
     service::ServiceExt,
     transport::{StreamableHttpClientTransport, TokioChildProcess},
 };
@@ -170,6 +170,7 @@ impl McpRegistry {
             title: None,
             output_schema: None,
             annotations: None,
+            execution: None,
             icons: None,
             meta: None,
         };
@@ -246,6 +247,7 @@ impl McpRegistry {
             title: None,
             output_schema: None,
             annotations: None,
+            execution: None,
             icons: None,
             meta: None,
         };
@@ -317,12 +319,16 @@ impl McpRegistry {
 
         // 3. Call tool
         let args_obj = arguments.as_object().cloned();
-        let input_size = serde_json::to_string(&arguments).map(|s| s.len()).unwrap_or(0);
+        let input_size = serde_json::to_string(&arguments)
+            .map(|s| s.len())
+            .unwrap_or(0);
         let start = std::time::Instant::now();
         let res = service
-            .call_tool(CallToolRequestParam {
+            .call_tool(CallToolRequestParams {
+                meta: None,
                 name: raw_tool_name.clone().into(),
                 arguments: args_obj,
+                task: None,
             })
             .await;
         let duration = start.elapsed();
@@ -347,9 +353,11 @@ impl McpRegistry {
         // Optional: Emit metrics if the metrics crate is used
         metrics::counter!("mcp_tool_calls_total", "tool" => namespaced_tool.to_string(), "success" => success.to_string()).increment(1);
         #[allow(clippy::cast_precision_loss)]
-        metrics::histogram!("mcp_tool_duration_ms", "tool" => namespaced_tool.to_string()).record(duration.as_millis() as f64);
+        metrics::histogram!("mcp_tool_duration_ms", "tool" => namespaced_tool.to_string())
+            .record(duration.as_millis() as f64);
 
-        let res = res.with_context(|| format!("tools/call failed for {server_name}::{raw_tool_name}"))?;
+        let res =
+            res.with_context(|| format!("tools/call failed for {server_name}::{raw_tool_name}"))?;
 
         // 4. Return content (simplified)
         Ok(serde_json::to_value(res)?)
@@ -365,7 +373,9 @@ fn resolve_mcp_config_path(path: &str) -> PathBuf {
     }
 
     let path_buf = PathBuf::from(path);
-    if path_buf.is_relative() && let Ok(dir) = std::env::var("MCP_CONFIG_DIR") {
+    if path_buf.is_relative()
+        && let Ok(dir) = std::env::var("MCP_CONFIG_DIR")
+    {
         let candidate = PathBuf::from(dir).join(&path_buf);
         if candidate.exists() {
             return candidate;

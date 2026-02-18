@@ -9,9 +9,8 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::RwLock;
 
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 
 use tracing::info;
@@ -31,7 +30,14 @@ use crate::uar::{
     rag::{
         chunking::ChunkingStrategy, ingest::IngestService, ingestion_worker::IngestionWorkerPool,
     },
-    runtime::{manager::RunManager, matching::vector::VectorMatcher, skills::SkillRegistry},
+    runtime::{
+        manager::RunManager,
+        matching::vector::VectorMatcher,
+        skills::{
+            SkillService,
+            storage::{FilesystemStorageProvider, SkillStorageProvider},
+        },
+    },
 };
 
 /// Start the Axum server with the provided configuration.
@@ -53,18 +59,20 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     }
 
     // Initialize persistence based on config
-    let persistence: Arc<dyn PersistenceLayer> =
-        if config.persistence.provider.as_str() == "surrealdb" {
-            let provider = SurrealDbProvider::new(&config.persistence.database_url)
-                .await
-                .expect("Failed to initialize SurrealDB");
-            Arc::new(provider)
-        } else {
-            let provider = PostgresProvider::new(&config.persistence.database_url)
-                .await
-                .expect("Failed to initialize Postgres");
-            Arc::new(provider)
-        };
+    let persistence: Arc<dyn PersistenceLayer> = if matches!(
+        config.persistence.provider.as_str(),
+        "surreal" | "surrealdb"
+    ) {
+        let provider = SurrealDbProvider::new(&config.persistence.database_url)
+            .await
+            .expect("Failed to initialize SurrealDB");
+        Arc::new(provider)
+    } else {
+        let provider = PostgresProvider::new(&config.persistence.database_url)
+            .await
+            .expect("Failed to initialize Postgres");
+        Arc::new(provider)
+    };
     let persistence = Some(Arc::clone(&persistence));
 
     // Initialize Ingest Service if persistence is available
@@ -135,12 +143,29 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     // Session store
     let sessions = SessionStore::new();
 
-    // Skills initialization
-    let mut skills_registry = SkillRegistry::new(None, None);
-    if let Err(e) = skills_registry.load_from_dir("skills").await {
-        eprintln!("Warning: Failed to load skills: {e:?}");
+    // Skills initialization — use SkillService with filesystem provider
+    let mut skill_service =
+        SkillService::new(persistence.clone(), Some(Arc::clone(&vector_matcher)));
+    let fs_provider: Arc<dyn SkillStorageProvider> = Arc::new(FilesystemStorageProvider::new(
+        "fs-skills",
+        "Local Skills",
+        "skills",
+    ));
+    skill_service.add_provider(fs_provider);
+    if let Err(e) = skill_service.initialize().await {
+        eprintln!("Warning: Failed to initialize skills: {e:?}");
     }
-    let skills = Arc::new(RwLock::new(skills_registry));
+    let skills = skill_service.registry().clone();
+    let skill_service = Arc::new(skill_service);
+
+    // Initialize Provider Registry
+    let provider_registry = Arc::new(crate::llm::ProviderRegistry::new());
+    provider_registry.seed_from_settings(&settings).await;
+    if !config.providers.is_empty() {
+        provider_registry
+            .seed_from_configs(config.providers.clone())
+            .await;
+    }
 
     let run_manager = Arc::new(
         RunManager::new(
@@ -151,7 +176,9 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
             Arc::clone(&vector_matcher), // Passed explicitly
             persistence.clone(),         // Passed explicitly
         )
-        .await,
+        .await
+        .with_skill_service(Arc::clone(&skill_service))
+        .with_provider_registry(Arc::clone(&provider_registry)),
     );
 
     // Initialize Global Rate Limiter
@@ -172,12 +199,12 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         persistence: persistence.clone(),
         rate_limiter,
         config: Arc::clone(&config),
+        skill_service: Arc::clone(&skill_service),
+        provider_registry: Arc::clone(&provider_registry),
     };
 
     // Build router
     let app = Router::new()
-        .route("/", get(index_handler))
-        .route("/about", get(about_handler))
         .route("/health", get(health_handler))
         .route("/healthz", get(health_handler))
         .route("/readyz", get(health_handler))
@@ -186,6 +213,22 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .nest(
             "/api/uar",
             uar::api::router().with_state(Arc::clone(&state.run_manager)),
+        )
+        // Skills API
+        .nest(
+            "/api/uar/skills",
+            uar::api::skills::build_router().with_state(Arc::clone(&state.skill_service)),
+        )
+        // Agent-Skills Bindings API
+        .nest(
+            "/api/uar/agents",
+            uar::api::skills::build_agent_skills_router()
+                .with_state(Arc::clone(&state.skill_service)),
+        )
+        // Providers API
+        .nest(
+            "/api/uar/providers",
+            uar::api::providers::build_router().with_state(Arc::clone(&state.provider_registry)),
         )
         // Knowledge Base API
         .nest("/api/uar/knowledge-bases", {
@@ -234,7 +277,11 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
             "/v1/chat/completions",
             post(uar::api::openai::routes::chat_completions),
         )
-        .fallback_service(ServeDir::new("static")) // Serve all static files (js, css, etc)
+        // Note: Static files are now served via the root nest_service above
+        // Serve static files with fallback to index.html for SPA routing
+        .fallback_service(
+            ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")),
+        )
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             uar::security::middleware::auth_middleware,
@@ -327,13 +374,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
 // API Handlers
 // ─────────────────────────────────────────────────────────────────────────────
 
-async fn index_handler() -> Html<String> {
-    Html(crate::ui::shell::render_index())
-}
-
-async fn about_handler() -> Html<String> {
-    Html(crate::ui::shell::render_about())
-}
+// Removed index_handler and about_handler - now serving static HTML files
 
 async fn health_handler() -> StatusCode {
     StatusCode::OK

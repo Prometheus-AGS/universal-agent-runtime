@@ -6,6 +6,8 @@
 //! - TF-IDF (pure Rust, no external dependencies)
 //! - WASM (for non-Rust classifiers like spaCy/BERT)
 
+pub mod llm;
+pub mod local_embedding;
 pub mod rules;
 pub mod tfidf;
 pub mod wasm;
@@ -107,6 +109,10 @@ pub enum ClassifierBackend {
     Wasm,
     /// Hybrid: rules first, then TF-IDF for remaining
     Hybrid,
+    /// On-device embedding using VectorMatcher (no API calls)
+    LocalEmbedding,
+    /// LLM-based intent classification (structured prompt)
+    Llm,
 }
 
 /// Configuration for the intent classifier.
@@ -186,14 +192,57 @@ pub trait IntentClassifier: Send + Sync + std::fmt::Debug {
 }
 
 /// Factory for creating intent classifiers based on config.
+///
+/// Note: `LocalEmbedding` and `Llm` backends require additional resources
+/// (VectorMatcher, LlmSettings) that cannot be provided through this factory alone.
+/// Use the dedicated constructors for those classifiers, or call
+/// `create_classifier_with_resources` instead.
 pub fn create_classifier(config: &ClassifierConfig) -> Box<dyn IntentClassifier> {
     match config.backend {
         ClassifierBackend::Rules => Box::new(rules::RulesClassifier::new()),
         ClassifierBackend::Tfidf => Box::new(tfidf::TfIdfClassifier::new(config.topk)),
-        ClassifierBackend::Wasm => {
-            Box::new(wasm::WasmClassifier::new(config.wasm_component_path.clone()))
-        }
+        ClassifierBackend::Wasm => Box::new(wasm::WasmClassifier::new(
+            config.wasm_component_path.clone(),
+        )),
         ClassifierBackend::Hybrid => Box::new(HybridClassifier::new(config.topk)),
+        ClassifierBackend::LocalEmbedding | ClassifierBackend::Llm => {
+            // These require external resources — fall back to Hybrid
+            tracing::warn!(
+                "Classifier backend {:?} requires resources; falling back to Hybrid",
+                config.backend
+            );
+            Box::new(HybridClassifier::new(config.topk))
+        }
+    }
+}
+
+/// Factory that can create resource-dependent classifiers.
+pub fn create_classifier_with_resources(
+    config: &ClassifierConfig,
+    vector_matcher: Option<std::sync::Arc<crate::uar::runtime::matching::vector::VectorMatcher>>,
+    llm_settings: Option<crate::llm::LlmSettings>,
+) -> Box<dyn IntentClassifier> {
+    match config.backend {
+        ClassifierBackend::LocalEmbedding => {
+            if let Some(vm) = vector_matcher {
+                Box::new(local_embedding::LocalEmbeddingClassifier::new(
+                    vm,
+                    config.topk,
+                ))
+            } else {
+                tracing::warn!("LocalEmbedding requires VectorMatcher; falling back to TF-IDF");
+                Box::new(tfidf::TfIdfClassifier::new(config.topk))
+            }
+        }
+        ClassifierBackend::Llm => {
+            if let Some(settings) = llm_settings {
+                Box::new(llm::LlmClassifier::new(settings, config.topk))
+            } else {
+                tracing::warn!("LLM classifier requires LlmSettings; falling back to TF-IDF");
+                Box::new(tfidf::TfIdfClassifier::new(config.topk))
+            }
+        }
+        _ => create_classifier(config),
     }
 }
 
@@ -229,11 +278,7 @@ impl IntentClassifier for HybridClassifier {
         let rules_result = self.rules.classify(query, context, registry).await?;
 
         // If rules found high-confidence matches, return them
-        if !rules_result.out_of_scope
-            && rules_result
-                .scores
-                .first()
-                .is_some_and(|s| s.score >= 0.9)
+        if !rules_result.out_of_scope && rules_result.scores.first().is_some_and(|s| s.score >= 0.9)
         {
             return Ok(rules_result);
         }
@@ -255,7 +300,11 @@ impl IntentClassifier for HybridClassifier {
         }
 
         // Sort by score descending
-        merged.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        merged.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         Ok(ClassificationResult::new(merged))
     }

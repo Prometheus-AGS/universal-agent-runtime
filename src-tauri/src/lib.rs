@@ -1,4 +1,4 @@
-use axum_leptos_htmx_wc::{config, server};
+use universal_agent_runtime::{config, server};
 use std::net::TcpListener;
 use std::sync::Arc;
 use std::time::{Duration, Instant};

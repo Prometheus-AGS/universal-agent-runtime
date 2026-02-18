@@ -1,21 +1,24 @@
-use axum_leptos_htmx_wc::llm::{LlmProtocol, LlmSettings, Provider};
-use axum_leptos_htmx_wc::mcp::registry::McpRegistry;
-use axum_leptos_htmx_wc::session::SessionStore;
-use axum_leptos_htmx_wc::uar;
-use axum_leptos_htmx_wc::uar::runtime::skills::SkillRegistry;
-use axum_leptos_htmx_wc::uar::{
+use dotenvy::dotenv;
+use serde_json::json;
+use serial_test::serial;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use universal_agent_runtime::llm::{LlmProtocol, LlmSettings, Provider};
+use universal_agent_runtime::mcp::registry::McpRegistry;
+use universal_agent_runtime::session::SessionStore;
+use universal_agent_runtime::uar;
+use universal_agent_runtime::uar::domain::skills::{Skill, SkillConstraints, SkillTriggers};
+use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
+use universal_agent_runtime::uar::runtime::skills::{
+    SkillService, storage::FilesystemStorageProvider,
+};
+use universal_agent_runtime::uar::{
     domain::{
         artifact::AgentArtifact,
         events::{ArtifactPayload, CitationSource, NormalizedEvent},
     },
     runtime::manager::RunManager,
 };
-use axum_leptos_htmx_wc::uar::domain::skills::{Skill, SkillConstraints, SkillTriggers};
-use dotenvy::dotenv;
-use serde_json::json;
-use serial_test::serial;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 fn llm_tests_enabled() -> bool {
     matches!(
@@ -58,7 +61,7 @@ async fn setup_real_env() -> (Arc<RunManager>, Arc<SessionStore>) {
     let sessions = SessionStore::new();
     let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
     let vector_matcher =
-        Arc::new(axum_leptos_htmx_wc::uar::runtime::matching::VectorMatcher::new(0.75));
+        Arc::new(universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(0.75));
     let run_manager = Arc::new(
         RunManager::new(
             settings,
@@ -110,7 +113,7 @@ async fn setup_real_env_with_tools() -> (
     let sessions = SessionStore::new();
     let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
     let vector_matcher =
-        Arc::new(axum_leptos_htmx_wc::uar::runtime::matching::VectorMatcher::new(0.75));
+        Arc::new(universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(0.75));
     let run_manager = Arc::new(
         RunManager::new(
             settings,
@@ -445,6 +448,8 @@ async fn test_m6_skills_execution() {
                 preferred_tools: vec!["mirror".to_string()],
                 mcp_config: None,
                 constraints: SkillConstraints::default(),
+                enabled: true,
+                provider_id: String::new(),
             })
             .await;
     }
@@ -488,7 +493,7 @@ async fn test_m6_skills_execution() {
             "artifacts": { "enabled": false }
         }
     });
-    let artifact: axum_leptos_htmx_wc::uar::domain::artifact::AgentArtifact =
+    let artifact: universal_agent_runtime::uar::domain::artifact::AgentArtifact =
         serde_json::from_value(artifact_json).unwrap();
 
     // 4. Start Run with Trigger Input
@@ -634,13 +639,22 @@ async fn test_verify_filesystem_skills() {
     let _ = dotenv();
     let (_, _, skills) = setup_real_env_with_tools().await;
 
-    // 1. Load from the 'skills' directory we just created
+    // 1. Load from the 'skills' directory using SkillService
     {
-        let mut registry = skills.write().await;
-        registry
-            .load_from_dir("skills")
+        let mut skill_service = SkillService::new(None, None);
+        skill_service.add_provider(Arc::new(FilesystemStorageProvider::new(
+            "fs-skills",
+            "Local Skills",
+            "skills",
+        )));
+        skill_service
+            .initialize()
             .await
             .expect("Failed to load skills from disk");
+        let loaded = skill_service.get_skills().await;
+        // Copy loaded skills into the existing registry
+        let mut registry = skills.write().await;
+        registry.register_all(loaded).await;
     }
 
     // 2. Verify we can find the sample skill
@@ -661,7 +675,7 @@ async fn test_vector_skill_matching() {
 
     // Create a dummy skill registry
     let registry = std::sync::Arc::new(tokio::sync::RwLock::new(
-        crate::uar::runtime::skills::SkillRegistry::new(None, None),
+        universal_agent_runtime::uar::runtime::skills::SkillRegistry::new(None, None),
     ));
 
     // Create DB Skill
@@ -685,14 +699,22 @@ You are a database expert.
         .await
         .unwrap();
 
-    // Reload registry
+    // Reload registry using SkillService
     {
+        let mut skill_service = SkillService::new(None, None);
+        skill_service.add_provider(std::sync::Arc::new(FilesystemStorageProvider::new(
+            "fs-skills",
+            "Local Skills",
+            "skills",
+        )));
+        skill_service.initialize().await.unwrap();
+        let loaded = skill_service.get_skills().await;
         let mut reg = registry.write().await;
-        reg.load_from_dir("skills").await.unwrap();
+        reg.register_all(loaded).await;
     }
 
     // Initialize Vector Matcher
-    let matcher = crate::uar::runtime::matching::VectorMatcher::new(0.6); // Lower threshold for test
+    let matcher = universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(0.6); // Lower threshold for test
     matcher
         .initialize()
         .await
@@ -705,7 +727,7 @@ You are a database expert.
     // Test Semantic Query: "I need to fetch user data from the relational records system"
     // This doesn't contain "postgres", "sql", or "migration", but implies DB.
     let query = "I need to fetch user data from the relational records system";
-    let matches = crate::uar::domain::matching::SkillMatcher::match_skills(
+    let matches = universal_agent_runtime::uar::domain::matching::SkillMatcher::match_skills(
         &matcher,
         query,
         &*registry.read().await,
@@ -718,8 +740,8 @@ You are a database expert.
     // Depending on the embedding quality (bg-small), this should match.
     // We differentiate from Tag match which would fail.
 
-    let tag_matcher = crate::uar::runtime::matching::TagMatcher::new();
-    let tag_matches = crate::uar::domain::matching::SkillMatcher::match_skills(
+    let tag_matcher = universal_agent_runtime::uar::runtime::matching::TagMatcher::new();
+    let tag_matches = universal_agent_runtime::uar::domain::matching::SkillMatcher::match_skills(
         &tag_matcher,
         "I need to save some user records to the permanent storage",
         &*registry.read().await,

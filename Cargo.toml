@@ -1,5 +1,5 @@
 [package]
-name = "axum-leptos-htmx-wc"
+name = "universal-agent-runtime"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,7 +7,7 @@ edition = "2024"
 path = "src/lib.rs"
 
 [[bin]]
-name = "axum-leptos-htmx-wc"
+name = "universal-agent-runtime"
 path = "src/main.rs"
 
 [dev-dependencies]
@@ -25,8 +25,8 @@ mockall = "0.13"
 tokio-test = "0.4"
 
 [build-dependencies]
-burn-import = { version = "0.16.0", optional = true }
-ureq = "3.0.0"
+burn-import = { version = "0.20.1", optional = true }
+ureq = "3.2.0"
 
 [features]
 default = []
@@ -38,8 +38,12 @@ tauri = []
 [dependencies]
 # Web framework
 axum = { version = "0.8", features = ["multipart"] }
-tower-http = { version = "0.6.8", features = ["fs", "cors", "trace", "timeout"] }
-
+tower-http = { version = "0.6.8", features = [
+  "fs",
+  "cors",
+  "trace",
+  "timeout",
+] }
 
 
 # Async runtime
@@ -51,26 +55,31 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.147"
 
 # Async utilities
-futures = "0.3"
+futures = "0.3.32"
 async-stream = "0.3"
 async-trait = "0.1"
 
 # HTTP client
-reqwest = { version = "0.12", features = ["json", "stream", "rustls-tls", "multipart"] }
+reqwest = { version = "0.12", features = [
+  "json",
+  "stream",
+  "rustls-tls-native-roots",
+  "multipart",
+] }
 
 # MCP client
-rmcp = { version = "0.12.0", features = [
+rmcp = { version = "0.16.0", features = [
   "client",
   "reqwest",
   "transport-child-process",
-  "transport-streamable-http-client-reqwest"
+  "transport-streamable-http-client-reqwest",
 ] }
 
 # Utilities
 url = "2.5.7"
-uuid = { version = "1", features = ["v4", "serde"] }
+uuid = { version = "1.21.0", features = ["v4", "serde"] }
 dotenvy = "0.15.7"
-clap = { version = "4.0", features = ["derive", "env"] }
+clap = { version = "4.5.59", features = ["derive", "env"] }
 
 # Performance (M-MIMALLOC-APPS)
 mimalloc = "0.1"
@@ -79,16 +88,33 @@ mimalloc = "0.1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 anyhow = "1.0.100"
-axum-extra = { version = "0.12.3", features = ["typed-routing", "typed-header"] }
+axum-extra = { version = "0.12.3", features = [
+  "typed-routing",
+  "typed-header",
+] }
 tower = "0.5.2"
 tokio-stream = { version = "0.1.17", features = ["net", "sync"] }
 serde_yml = "0.0.12"
-burn = { version = "0.16.0", features = ["wgpu", "train", "ndarray"] }
-tokenizers = { version = "0.20.0", default-features = false, features = ["onig", "esaxx_fast"] }
+burn = { version = "0.20.1", default-features = false, features = [
+  "wgpu",
+  "train",
+  "ndarray",
+] }
+tokenizers = { version = "0.22.2", default-features = false, features = [
+  "onig",
+  "esaxx_fast",
+] }
 tiktoken-rs = "0.9.1"
-sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "json", "migrate"] }
+sqlx = { version = "0.8.6", features = [
+  "runtime-tokio-native-tls",
+  "postgres",
+  "uuid",
+  "chrono",
+  "json",
+  "migrate",
+] }
 pgvector = { version = "0.4.1", features = ["sqlx"] }
-text-splitter = "0.28.0"
+text-splitter = "0.29.3"
 chrono = { version = "0.4", features = ["serde"] }
 walkdir = "2.5.0"
 jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
@@ -99,7 +125,7 @@ opentelemetry_sdk = { version = "0.31.0", features = ["rt-tokio"] }
 metrics = "0.24.3"
 metrics-exporter-prometheus = "0.18.1"
 config = "0.15.19"
-surrealdb = { version = "2.4.0", features = ["kv-surrealkv", "protocol-ws"] }
+surrealdb = { version = "3.0.0", features = ["kv-rocksdb"] }
 governor = { version = "0.10.4", features = ["std", "jitter", "quanta"] }
 nonzero_ext = "0.3.0"
 
@@ -112,15 +138,15 @@ base64 = "0.22"
 kreuzberg = { git = "https://github.com/kreuzberg-dev/kreuzberg.git", tag = "v4.0.0-rc.17" }
 
 # Worker pool for scalable document ingestion
-prometheus_parking_lot = { git = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs", features = ["tokio-runtime"] }
+prometheus_parking_lot = { git = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs", features = [
+  "tokio-runtime",
+] }
 num_cpus = "1.16"
 
 # Graph algorithms for community detection (Leiden)
 petgraph = "0.8"
 
 # Leptos SSR (minimal templating)
-leptos = { version = "0.6.15", features = ["ssr"] }
-
 
 
 # Lints (M-STATIC-VERIFICATION)

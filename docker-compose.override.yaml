@@ -1,0 +1,5 @@
+# Override for local dev — remap Postgres to avoid port conflict
+services:
+  postgres:
+    ports:
+      - "5433:5432"

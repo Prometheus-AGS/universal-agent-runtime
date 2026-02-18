@@ -1,4 +1,4 @@
-use axum_leptos_htmx_wc::config::AppConfig;
+use universal_agent_runtime::config::AppConfig;
 use serial_test::serial;
 use std::env;
 use std::fs;

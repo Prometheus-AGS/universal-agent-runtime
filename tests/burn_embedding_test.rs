@@ -1,4 +1,4 @@
-use axum_leptos_htmx_wc::uar::runtime::matching::vector::VectorMatcher;
+use universal_agent_runtime::uar::runtime::matching::vector::VectorMatcher;
 
 #[tokio::test]
 async fn test_burn_embedding_initialization() {

@@ -1,10 +1,10 @@
-"""axum-leptos-htmx-wc Python SDK.
+"""universal-agent-runtime Python SDK.
 
 Provides a typed async HTTP client for interacting with the server.
 
 Example:
     >>> import asyncio
-    >>> from axum_leptos_htmx_wc_sdk import Client
+    >>> from universal_agent_runtime_sdk import Client
     >>>
     >>> async def main():
     ...     client = Client("http://localhost:3000")

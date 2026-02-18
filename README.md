@@ -27,12 +27,12 @@ Click **"Use this template"** → The cleanup workflow runs automatically on fir
 
 ### Option 2: cargo-generate
 ```bash
-cargo generate --git https://github.com/Prometheus-AGS/axum-leptos-htmx-wc
+cargo generate --git https://github.com/Prometheus-AGS/universal-agent-runtime
 ```
 
 ### Option 3: Bootstrap Script
 ```bash
-git clone https://github.com/Prometheus-AGS/axum-leptos-htmx-wc my-project
+git clone https://github.com/Prometheus-AGS/universal-agent-runtime my-project
 cd my-project && ./bootstrap.sh
 ```
 
@@ -542,8 +542,8 @@ See [docs/configuration.md](docs/configuration.md) for details.
 #### 1. Clone and Setup
 ```bash
 # Clone the repository
-git clone https://github.com/Prometheus-AGS/axum-leptos-htmx-wc.git
-cd axum-leptos-htmx-wc
+git clone https://github.com/Prometheus-AGS/universal-agent-runtime.git
+cd universal-agent-runtime
 
 # Copy configuration file
 cp example.config.yaml config.yaml

@@ -1,19 +1,80 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Agentic Streaming LLM Application">
-    <title>Prometheus</title>
-    <link rel="stylesheet" href="/static/app.css">
-</head>
-<body class="min-h-screen bg-background text-textPrimary antialiased">
-    <div id="app-shell" class="min-h-screen flex items-center justify-center bg-surface">
-        <div class="flex flex-col items-center gap-2 px-6 py-8 rounded-3xl bg-surfaceContainer">
-            <div class="h-2 w-24 rounded-full bg-primaryMuted animate-pulse"></div>
-            <p class="text-sm text-textSecondary">Starting local server...</p>
-            <p class="text-xs text-textMuted">This screen will refresh automatically.</p>
-        </div>
-    </div>
-</body>
-</html>
+\u003c!DOCTYPE html\u003e
+\u003chtml lang="en"\u003e
+\u003chead\u003e
+    \u003cmeta charset="utf-8"\u003e
+    \u003cmeta name="viewport" content="width=device-width, initial-scale=1"\u003e
+    \u003cmeta name="description" content="Agentic Streaming LLM Application"\u003e
+    \u003ctitle\u003eAbout - Prometheus\u003c/title\u003e
+    \u003cscript src="/static/vendor/htmx-2.0.8.min.js"\u003e\u003c/script\u003e
+    \u003cscript src="/static/vendor/htmx-json-enc.js"\u003e\u003c/script\u003e
+    \u003cscript src="/static/vendor/htmx-sse.js"\u003e\u003c/script\u003e
+    \u003cscript defer src="/static/vendor/alpine.min.js"\u003e\u003c/script\u003e
+    \u003cscript type="module" src="/static/main.js"\u003e\u003c/script\u003e
+    \u003clink rel="stylesheet" href="/static/app.css"\u003e
+\u003c/head\u003e
+\u003cbody class="min-h-screen bg-background text-textPrimary antialiased"\u003e
+    \u003cdiv id="app-shell" class="flex flex-col h-screen overflow-hidden"\u003e
+        \u003cheader class="sticky top-0 z-50 w-full bg-surfaceContainer backdrop-blur shadow-sm shrink-0"\u003e
+            \u003cdiv class="container mx-auto flex h-14 md:h-16 items-center justify-between px-4 md:px-6 max-w-5xl"\u003e
+                \u003ca href="/" class="flex items-center gap-2 md:gap-3 font-semibold hover:opacity-80 transition-opacity"\u003e
+                    \u003csvg class="h-5 w-5 md:h-6 md:w-6 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"\u003e
+                        \u003cpath d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/\u003e
+                    \u003c/svg\u003e
+                    \u003cspan class="text-base md:text-lg"\u003ePrometheus\u003c/span\u003e
+                \u003c/a\u003e
+                \u003cdiv class="flex items-center gap-1 md:gap-2"\u003e
+                    \u003cnav class="flex items-center gap-1" hx-boost="true" hx-target="#app-shell" hx-select="#app-shell" hx-swap="outerHTML"\u003e
+                        \u003ca href="/about" class="px-3 py-2 rounded-xl text-sm text-textSecondary hover:text-textPrimary hover:bg-surface transition-all"\u003eAbout\u003c/a\u003e
+                    \u003c/nav\u003e
+                    \u003ctheme-switcher\u003e\u003c/theme-switcher\u003e
+                \u003c/div\u003e
+            \u003c/div\u003e
+        \u003c/header\u003e
+        
+        \u003cmain id="app" class="flex-1 overflow-y-auto container mx-auto px-4 md:px-6 py-4 md:py-8 max-w-5xl"\u003e
+            \u003cdiv class="space-y-6"\u003e
+                \u003cdiv class="rounded-3xl bg-surface p-8 shadow-lg"\u003e
+                    \u003ch1 class="text-2xl font-bold mb-4"\u003eAbout Prometheus\u003c/h1\u003e
+                    \u003cp class="text-textMuted mb-8"\u003e
+                        Prometheus is an agentic streaming LLM application that demonstrates
+                        a modern architecture for building AI-powered applications.
+                    \u003c/p\u003e
+                    
+                    \u003cdiv class="grid gap-4 md:grid-cols-2"\u003e
+                        \u003cdiv class="p-5 rounded-2xl bg-surfaceVariant hover:bg-surfaceContainer transition-colors"\u003e
+                            \u003ch3 class="font-semibold mb-2"\u003e🔧 Tool-First Design\u003c/h3\u003e
+                            \u003cp class="text-sm text-textMuted"\u003eAlways-on tool use with MCP integration for dynamic tool discovery and execution.\u003c/p\u003e
+                        \u003c/div\u003e
+                        \u003cdiv class="p-5 rounded-2xl bg-surfaceVariant hover:bg-surfaceContainer transition-colors"\u003e
+                            \u003ch3 class="font-semibold mb-2"\u003e⚡ Streaming Native\u003c/h3\u003e
+                            \u003cp class="text-sm text-textMuted"\u003eFirst-class streaming for tokens, tool calls, and results with AG-UI events.\u003c/p\u003e
+                        \u003c/div\u003e
+                        \u003cdiv class="p-5 rounded-2xl bg-surfaceVariant hover:bg-surfaceContainer transition-colors"\u003e
+                            \u003ch3 class="font-semibold mb-2"\u003e🌐 HTML-Centric\u003c/h3\u003e
+                            \u003cp class="text-sm text-textMuted"\u003eHTMX + Web Components + Alpine.js for a lightweight, inspectable UI.\u003c/p\u003e
+                        \u003c/div\u003e
+                        \u003cdiv class="p-5 rounded-2xl bg-surfaceVariant hover:bg-surfaceContainer transition-colors"\u003e
+                            \u003ch3 class="font-semibold mb-2"\u003e📦 Tauri Ready\u003c/h3\u003e
+                            \u003cp class="text-sm text-textMuted"\u003eNo CDN scripts, local assets only - runs as web, desktop, or mobile.\u003c/p\u003e
+                        \u003c/div\u003e
+                    \u003c/div\u003e
+                    
+                    \u003cdiv class="mt-8"\u003e
+                        \u003ca href="/" class="inline-flex items-center justify-center h-12 px-6 rounded-2xl bg-primary text-white hover:bg-primaryMuted active:scale-95 font-medium transition-all shadow-md hover:shadow-lg"\u003e
+                            Start Chatting
+                        \u003c/a\u003e
+                    \u003c/div\u003e
+                \u003c/div\u003e
+            \u003c/div\u003e
+        \u003c/main\u003e
+        
+        \u003cfooter class="bg-surfaceContainer py-3 md:py-6 shrink-0 hidden md:block"\u003e
+            \u003cdiv class="container mx-auto px-4 md:px-6 max-w-5xl"\u003e
+                \u003cp class="text-xs text-textMuted text-center"\u003e
+                    Powered by Axum + HTMX + Web Components
+                \u003c/p\u003e
+            \u003c/div\u003e
+        \u003c/footer\u003e
+    \u003c/div\u003e
+\u003c/body\u003e
+\u003c/html\u003e

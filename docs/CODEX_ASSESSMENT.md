@@ -1,6 +1,6 @@
 # Codex Architectural Assessment (S‑Tier UI/UX + HTMX + AG‑UI Streaming + Rust/MCP)
 
-**Repo**: `axum-leptos-htmx-wc`  
+**Repo**: `universal-agent-runtime`  
 **Assessment History**:  
 - 2025-12-24 — Initial assessment  
 - 2025-12-31 10:50 a.m. — Update with testing architecture analysis and spec completion status  

@@ -23,7 +23,7 @@ on:
 jobs:
   cleanup:
     # Only run if this is NOT the original template repository
-    if: github.repository != 'Prometheus-AGS/axum-leptos-htmx-wc'
+    if: github.repository != 'Prometheus-AGS/universal-agent-runtime'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -90,8 +90,8 @@ jobs:
             if [ -f "$file" ]; then
               echo "  Processing: $file"
               # Replace all template patterns
-              sed -i "s/axum-leptos-htmx-wc/${PROJECT}/g" "$file"
-              sed -i "s/axum_leptos_htmx_wc/${CRATE}/g" "$file"
+              sed -i "s/universal-agent-runtime/${PROJECT}/g" "$file"
+              sed -i "s/universal_agent_runtime/${CRATE}/g" "$file"
               sed -i "s/Prometheus-AGS/${ORG}/g" "$file"
               sed -i "s/{{project-name}}/${PROJECT}/g" "$file"
               sed -i "s/{{crate_name}}/${CRATE}/g" "$file"
@@ -102,7 +102,7 @@ jobs:
           
           # Rename SDK directories if they contain template patterns
           if [ -d "sdks/rust/src" ]; then
-            find sdks -name "*.rs" -exec sed -i "s/axum_leptos_htmx_wc/${CRATE}/g" {} \;
+            find sdks -name "*.rs" -exec sed -i "s/universal_agent_runtime/${CRATE}/g" {} \;
           fi
           
           echo "✅ Replacements complete"

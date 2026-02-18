@@ -1,7 +1,7 @@
 # Tauri Integration Strategy
 
 ## 1. Overview
-This document outlines the strategy for productizing the `axum-leptos-htmx-wc` application for Tauri, specifically addressing Server-Sent Events (SSE) compatibility and MCP server packaging.
+This document outlines the strategy for productizing the `universal-agent-runtime` application for Tauri, specifically addressing Server-Sent Events (SSE) compatibility and MCP server packaging.
 
 ## 2. Server Architecture: Localhost vs Custom Protocol
 The application currently uses `EventSource` for critical streaming capabilities. Tauri's custom protocol (`tauri://`) does not strictly support `EventSource` in all WebViews due to origin policies.

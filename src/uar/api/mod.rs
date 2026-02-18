@@ -3,8 +3,10 @@ pub mod ingest;
 pub mod knowledge;
 pub mod memory;
 pub mod openai;
+pub mod providers;
 pub mod routes;
 pub mod settings;
+pub mod skills;
 pub mod sse;
 pub mod upload;
 

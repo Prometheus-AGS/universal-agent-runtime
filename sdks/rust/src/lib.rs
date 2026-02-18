@@ -1,4 +1,4 @@
-//! Rust SDK for axum-leptos-htmx-wc
+//! Rust SDK for universal-agent-runtime
 //!
 //! This SDK provides two usage modes:
 //!
@@ -7,7 +7,7 @@
 //! Use this mode to interact with a remote server via REST API:
 //!
 //! ```rust,no_run
-//! use axum_leptos_htmx_wc_sdk::Client;
+//! use universal_agent_runtime_sdk::Client;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -32,7 +32,7 @@
 //! Use this mode to embed the full runtime in your Rust application:
 //!
 //! ```rust,ignore
-//! use axum_leptos_htmx_wc_sdk::Runtime;
+//! use universal_agent_runtime_sdk::Runtime;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {

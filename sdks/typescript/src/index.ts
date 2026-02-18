@@ -1,9 +1,9 @@
 /**
- * TypeScript SDK for axum-leptos-htmx-wc
+ * TypeScript SDK for universal-agent-runtime
  *
  * @example
  * ```typescript
- * import { Client } from '@prometheus-ags/axum-leptos-htmx-wc-sdk';
+ * import { Client } from '@prometheus-ags/universal-agent-runtime-sdk';
  *
  * const client = new Client('http://localhost:3000');
  *

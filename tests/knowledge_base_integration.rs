@@ -8,7 +8,7 @@
 //!
 //! Requires: `DATABASE_URL` environment variable pointing to a Postgres instance with pgvector.
 
-use axum_leptos_htmx_wc::uar::{
+use universal_agent_runtime::uar::{
     defaults::ensure_default_knowledge_base,
     domain::knowledge::{
         DocumentStatus, KbConfig, KnowledgeBase, KnowledgeChunk, KnowledgeDocument,

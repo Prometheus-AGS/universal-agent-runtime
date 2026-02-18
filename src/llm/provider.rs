@@ -100,7 +100,7 @@ impl Provider {
     /// # Example
     ///
     /// ```rust
-    /// use axum_leptos_htmx_wc::llm::Provider;
+    /// use universal_agent_runtime::llm::Provider;
     ///
     /// assert!(Provider::supports_vision("gpt-4o"));
     /// assert!(Provider::supports_vision("claude-3-5-sonnet"));

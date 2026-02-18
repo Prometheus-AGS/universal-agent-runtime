@@ -544,7 +544,7 @@ curl http://localhost:8080/api/v2/analytics/summary
 RUST_LOG=debug cargo run
 
 # Analytics-specific logging
-RUST_LOG=axum_leptos_htmx_wc::testing::analytics=trace cargo run
+RUST_LOG=universal_agent_runtime::testing::analytics=trace cargo run
 ```
 
 ## Future Enhancements

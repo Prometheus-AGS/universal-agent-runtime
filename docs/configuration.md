@@ -19,7 +19,7 @@ Quickly override active settings when running the binary.
 
 Example:
 ```bash
-./axum-leptos-htmx-wc --port 8080 --config ./my-config.yaml
+./universal-agent-runtime --port 8080 --config ./my-config.yaml
 ```
 
 ## 2. Environment Variables
@@ -43,6 +43,60 @@ LLM configuration currently resides outside the main config structure and **must
 - `LLM_MODEL` (Required): Model name (e.g., `gpt-4o`).
 - `LLM_API_KEY`: API Key for the provider.
 - `LLM_PROTOCOL`: Client behavior (`auto`, `chat`, `responses`).
+
+These env vars are automatically imported as the **default** provider in the Provider Registry at startup.
+
+### Multi-Provider Configuration
+
+You can configure additional LLM providers via the `providers` section in your config file. Each provider supports per-agent selection and fallback chains.
+
+```yaml
+providers:
+  - id: "openai"
+    display_name: "OpenAI"
+    base_url: "https://api.openai.com"
+    api_key: "sk-..."
+    protocol: auto
+    default_model: "gpt-4o"
+    enabled: true
+    models:
+      - id: "gpt-4o"
+        context_window: 128000
+        supports_vision: true
+        supports_tools: true
+
+  - id: "groq"
+    display_name: "Groq"
+    base_url: "https://api.groq.com/openai"
+    api_key: "gsk_..."
+    protocol: chat
+    default_model: "llama-3.3-70b-versatile"
+    enabled: true
+```
+
+Agents reference providers by ID in their artifact YAML:
+
+```yaml
+policy:
+  provider:
+    default: { provider: "groq", model: "llama-3.3-70b-versatile" }
+    fallbacks:
+      - { provider: "openai", model: "gpt-4o-mini" }
+```
+
+### Providers REST API
+
+Providers can also be managed at runtime via the REST API:
+
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/uar/providers` | List all providers + default ID |
+| `GET` | `/api/uar/providers/{id}` | Get a single provider |
+| `POST` | `/api/uar/providers` | Register a new provider |
+| `PUT` | `/api/uar/providers/{id}` | Update a provider |
+| `DELETE` | `/api/uar/providers/{id}` | Remove a provider |
+| `GET` | `/api/uar/providers/{id}/models` | List models for a provider |
+| `POST` | `/api/uar/providers/{id}/default` | Set a provider as default |
 
 
 You can also place a `.env` file in the current directory to set environment variables. Default `.env` loading is supported.

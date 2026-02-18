@@ -14,7 +14,7 @@
 //! # Example
 //!
 //! ```rust
-//! use axum_leptos_htmx_wc::session::{Session, SessionStore};
+//! use universal_agent_runtime::session::{Session, SessionStore};
 //!
 //! let store = SessionStore::new();
 //! let session = store.create();

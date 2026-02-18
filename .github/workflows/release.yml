@@ -142,7 +142,7 @@ jobs:
           bun run build
 
           # Verify all artifacts
-          test -f target/release/axum-leptos-htmx-wc
+          test -f target/release/universal-agent-runtime
           test -f static/main.js
           test -f static/app.css
 
@@ -205,16 +205,16 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: axum-leptos-htmx-wc-linux-x64
+            artifact_name: universal-agent-runtime-linux-x64
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: axum-leptos-htmx-wc-macos-x64
+            artifact_name: universal-agent-runtime-macos-x64
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: axum-leptos-htmx-wc-macos-arm64
+            artifact_name: universal-agent-runtime-macos-arm64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: axum-leptos-htmx-wc-windows-x64.exe
+            artifact_name: universal-agent-runtime-windows-x64.exe
 
     steps:
       - name: Checkout code
@@ -275,9 +275,9 @@ jobs:
 
           # Copy binary
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp target/${{ matrix.target }}/release/axum-leptos-htmx-wc.exe release-artifacts/${{ matrix.artifact_name }}/
+            cp target/${{ matrix.target }}/release/universal-agent-runtime.exe release-artifacts/${{ matrix.artifact_name }}/
           else
-            cp target/${{ matrix.target }}/release/axum-leptos-htmx-wc release-artifacts/${{ matrix.artifact_name }}/
+            cp target/${{ matrix.target }}/release/universal-agent-runtime release-artifacts/${{ matrix.artifact_name }}/
           fi
 
           # Copy static assets
@@ -332,24 +332,24 @@ jobs:
       - name: Build and test Docker image
         run: |
           # Build production image
-          docker build -t axum-leptos-htmx-wc:${{ steps.version.outputs.version }} .
+          docker build -t universal-agent-runtime:${{ steps.version.outputs.version }} .
 
           # Build test image
-          docker build -f Dockerfile.test -t axum-leptos-htmx-wc:test .
+          docker build -f Dockerfile.test -t universal-agent-runtime:test .
 
           # Quick smoke test
-          docker run --rm axum-leptos-htmx-wc:${{ steps.version.outputs.version }} --version || echo "Version check not available"
+          docker run --rm universal-agent-runtime:${{ steps.version.outputs.version }} --version || echo "Version check not available"
 
       - name: Push to Docker Hub
         if: github.event_name == 'release'
         run: |
           # Tag and push versioned image
-          docker tag axum-leptos-htmx-wc:${{ steps.version.outputs.version }} ${{ secrets.DOCKER_USERNAME }}/axum-leptos-htmx-wc:${{ steps.version.outputs.version }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/axum-leptos-htmx-wc:${{ steps.version.outputs.version }}
+          docker tag universal-agent-runtime:${{ steps.version.outputs.version }} ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:${{ steps.version.outputs.version }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:${{ steps.version.outputs.version }}
 
           # Tag and push latest
-          docker tag axum-leptos-htmx-wc:${{ steps.version.outputs.version }} ${{ secrets.DOCKER_USERNAME }}/axum-leptos-htmx-wc:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/axum-leptos-htmx-wc:latest
+          docker tag universal-agent-runtime:${{ steps.version.outputs.version }} ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:latest
 
   # Update GitHub release
   update-release:
@@ -421,8 +421,8 @@ jobs:
       - name: Validate Docker image
         run: |
           # Pull and test the published image
-          docker pull ${{ secrets.DOCKER_USERNAME }}/axum-leptos-htmx-wc:latest
-          docker run --rm ${{ secrets.DOCKER_USERNAME }}/axum-leptos-htmx-wc:latest --version || echo "Version check not available"
+          docker pull ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:latest
+          docker run --rm ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:latest --version || echo "Version check not available"
 
       - name: Create release notification
         run: |

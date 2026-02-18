@@ -10,6 +10,7 @@ use crate::uar::domain::{
 use crate::uar::runtime::context::manager::ContextManager;
 use crate::uar::runtime::matching::{ClassifierConfig, IntentClassifier, create_classifier};
 use crate::uar::runtime::skills::SkillRegistry;
+use crate::uar::runtime::skills::service::SkillService;
 use futures::StreamExt;
 use std::{
     collections::{HashMap, VecDeque},
@@ -82,6 +83,10 @@ pub struct RunManager {
     classifier_config: ClassifierConfig,
     // Persistence layer (optional)
     pub persistence: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
+    /// Skill service for coordinated skill management
+    skill_service: Option<Arc<SkillService>>,
+    /// Provider registry for per-agent LLM provider resolution
+    provider_registry: Option<Arc<crate::llm::ProviderRegistry>>,
 }
 
 impl std::fmt::Debug for RunManager {
@@ -164,7 +169,21 @@ impl RunManager {
             intent_classifier,
             classifier_config,
             persistence,
+            skill_service: None,
+            provider_registry: None,
         }
+    }
+
+    /// Set the skill service for coordinated skill management.
+    pub fn with_skill_service(mut self, service: Arc<SkillService>) -> Self {
+        self.skill_service = Some(service);
+        self
+    }
+
+    /// Set the provider registry for per-agent LLM provider resolution.
+    pub fn with_provider_registry(mut self, registry: Arc<crate::llm::ProviderRegistry>) -> Self {
+        self.provider_registry = Some(registry);
+        self
     }
 
     #[instrument(
@@ -282,83 +301,83 @@ impl RunManager {
             }
         }
 
-        // SKILL INJECTION: Intent Classification Pipeline
-        let skills_registry = self.skills.read().await;
+        // SKILL INJECTION: Use SkillService if available, otherwise intent classifier
+        let matched_skills: Vec<_> = if let Some(ref skill_service) = self.skill_service {
+            // Delegate to SkillService for coordinated matching
+            let agent_id = artifact.id.clone();
+            skill_service.match_skills(&input, Some(&agent_id)).await
+        } else {
+            // Legacy path: use intent classifier directly
+            let skills_registry = self.skills.read().await;
 
-        // Use the configured intent classifier
-        let classification_result = self
-            .intent_classifier
-            .classify(&input, &[], &skills_registry)
-            .await;
+            let classification_result = self
+                .intent_classifier
+                .classify(&input, &[], &skills_registry)
+                .await;
 
-        let matched_skills: Vec<_> = match classification_result {
-            Ok(result) => {
-                // Log classification scores for debugging/tuning
-                tracing::debug!(
-                    scores = ?result.scores.iter().map(|s| (&s.label, s.score)).collect::<Vec<_>>(),
-                    out_of_scope = result.out_of_scope,
-                    "Intent classification complete"
-                );
-
-                // Apply thresholds from config
-                if result.should_accept(
-                    self.classifier_config.accept_threshold,
-                    self.classifier_config.margin_threshold,
-                ) {
-                    // Return skills that have associated skill data
-                    result
-                        .scores
-                        .into_iter()
-                        .filter_map(|score| score.skill)
-                        .collect()
-                } else if result.out_of_scope {
-                    tracing::debug!("Query appears out-of-scope, no skills matched");
-                    Vec::new()
-                } else {
-                    // Below threshold but not out-of-scope - still include top matches
-                    // but log a warning for potential tuning
+            match classification_result {
+                Ok(result) => {
                     tracing::debug!(
-                        top_score = ?result.scores.first().map(|s| s.score),
-                        threshold = self.classifier_config.accept_threshold,
-                        "Classification below threshold, including top matches anyway"
+                        scores = ?result.scores.iter().map(|s| (&s.label, s.score)).collect::<Vec<_>>(),
+                        out_of_scope = result.out_of_scope,
+                        "Intent classification complete"
                     );
-                    result
-                        .scores
-                        .into_iter()
-                        .filter_map(|score| score.skill)
-                        .collect()
-                }
-            }
-            Err(e) => {
-                tracing::error!("Intent classification failed: {:?}", e);
-                // Fallback to legacy tag+vector matching
-                let mut fallback_skills = HashMap::new();
 
-                if let Ok(matches) = crate::uar::domain::matching::SkillMatcher::match_skills(
-                    self.tag_matcher.as_ref(),
-                    &input,
-                    &skills_registry,
-                )
-                .await
-                {
-                    for m in matches {
-                        fallback_skills.insert(m.skill_id.clone(), m.skill);
+                    if result.should_accept(
+                        self.classifier_config.accept_threshold,
+                        self.classifier_config.margin_threshold,
+                    ) {
+                        result
+                            .scores
+                            .into_iter()
+                            .filter_map(|score| score.skill)
+                            .collect()
+                    } else if result.out_of_scope {
+                        tracing::debug!("Query appears out-of-scope, no skills matched");
+                        Vec::new()
+                    } else {
+                        tracing::debug!(
+                            top_score = ?result.scores.first().map(|s| s.score),
+                            threshold = self.classifier_config.accept_threshold,
+                            "Classification below threshold, including top matches anyway"
+                        );
+                        result
+                            .scores
+                            .into_iter()
+                            .filter_map(|score| score.skill)
+                            .collect()
                     }
                 }
+                Err(e) => {
+                    tracing::error!("Intent classification failed: {:?}", e);
+                    let mut fallback_skills = HashMap::new();
 
-                if let Ok(matches) = crate::uar::domain::matching::SkillMatcher::match_skills(
-                    self.vector_matcher.as_ref(),
-                    &input,
-                    &skills_registry,
-                )
-                .await
-                {
-                    for m in matches {
-                        fallback_skills.entry(m.skill_id.clone()).or_insert(m.skill);
+                    if let Ok(matches) = crate::uar::domain::matching::SkillMatcher::match_skills(
+                        self.tag_matcher.as_ref(),
+                        &input,
+                        &skills_registry,
+                    )
+                    .await
+                    {
+                        for m in matches {
+                            fallback_skills.insert(m.skill_id.clone(), m.skill);
+                        }
                     }
-                }
 
-                fallback_skills.into_values().collect()
+                    if let Ok(matches) = crate::uar::domain::matching::SkillMatcher::match_skills(
+                        self.vector_matcher.as_ref(),
+                        &input,
+                        &skills_registry,
+                    )
+                    .await
+                    {
+                        for m in matches {
+                            fallback_skills.entry(m.skill_id.clone()).or_insert(m.skill);
+                        }
+                    }
+
+                    fallback_skills.into_values().collect()
+                }
             }
         };
 
@@ -410,7 +429,25 @@ impl RunManager {
         }
         let mcp = Arc::new(final_mcp);
 
-        let settings = self.settings.clone();
+        // Resolve per-agent LLM settings via provider registry, falling back to global
+        let settings = if let Some(ref registry) = self.provider_registry {
+            match registry.resolve_from_policy(&artifact.policy.provider).await {
+                Some(resolved) => {
+                    tracing::info!(
+                        provider = %artifact.policy.provider.default.provider,
+                        model = %artifact.policy.provider.default.model,
+                        "Using per-agent provider settings"
+                    );
+                    resolved
+                }
+                None => {
+                    tracing::debug!("No provider match for agent policy, using global settings");
+                    self.settings.clone()
+                }
+            }
+        } else {
+            self.settings.clone()
+        };
 
         let orchestrator = Arc::new(Orchestrator::new(settings, mcp));
 

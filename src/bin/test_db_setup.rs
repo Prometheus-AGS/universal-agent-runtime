@@ -1,11 +1,11 @@
-use axum_leptos_htmx_wc::config::AppConfig;
-use axum_leptos_htmx_wc::uar::defaults::ensure_default_knowledge_base;
-use axum_leptos_htmx_wc::uar::persistence::providers::{
-    postgres::PostgresProvider, surreal::SurrealDbProvider,
-};
-use axum_leptos_htmx_wc::uar::persistence::PersistenceLayer;
 use anyhow::{Context, Result};
 use std::sync::Arc;
+use universal_agent_runtime::config::AppConfig;
+use universal_agent_runtime::uar::defaults::ensure_default_knowledge_base;
+use universal_agent_runtime::uar::persistence::PersistenceLayer;
+use universal_agent_runtime::uar::persistence::providers::{
+    postgres::PostgresProvider, surreal::SurrealDbProvider,
+};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -17,20 +17,22 @@ async fn main() -> Result<()> {
             .context("failed to create upload directory")?;
     }
 
-    let persistence: Arc<dyn PersistenceLayer> =
-        if config.persistence.provider.as_str() == "surrealdb" {
-            Arc::new(
-                SurrealDbProvider::new(&config.persistence.database_url)
-                    .await
-                    .context("failed to initialize SurrealDB")?,
-            )
-        } else {
-            Arc::new(
-                PostgresProvider::new(&config.persistence.database_url)
-                    .await
-                    .context("failed to initialize Postgres")?,
-            )
-        };
+    let persistence: Arc<dyn PersistenceLayer> = if matches!(
+        config.persistence.provider.as_str(),
+        "surreal" | "surrealdb"
+    ) {
+        Arc::new(
+            SurrealDbProvider::new(&config.persistence.database_url)
+                .await
+                .context("failed to initialize SurrealDB")?,
+        )
+    } else {
+        Arc::new(
+            PostgresProvider::new(&config.persistence.database_url)
+                .await
+                .context("failed to initialize Postgres")?,
+        )
+    };
 
     ensure_default_knowledge_base(&*persistence, config.knowledge_bases.default.as_ref())
         .await

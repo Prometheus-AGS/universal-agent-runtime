@@ -69,7 +69,11 @@ impl IntentClassifier for RulesClassifier {
         }
 
         // Sort by score descending
-        scores.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        scores.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         Ok(ClassificationResult::new(scores))
     }
@@ -94,6 +98,8 @@ mod tests {
             preferred_tools: Vec::new(),
             mcp_config: None,
             constraints: SkillConstraints::default(),
+            enabled: true,
+            provider_id: String::new(),
         }
     }
 

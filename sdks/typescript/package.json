@@ -1,7 +1,7 @@
 {
-  "name": "@prometheus-ags/axum-leptos-htmx-wc-sdk",
+  "name": "@prometheus-ags/universal-agent-runtime-sdk",
   "version": "0.1.0",
-  "description": "TypeScript SDK for axum-leptos-htmx-wc - HTTP client for the agentic AI application",
+  "description": "TypeScript SDK for universal-agent-runtime - HTTP client for the agentic AI application",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Prometheus-AGS/axum-leptos-htmx-wc.git",
+    "url": "https://github.com/Prometheus-AGS/universal-agent-runtime.git",
     "directory": "sdks/typescript"
   },
   "keywords": ["sdk", "api", "client", "llm", "agent", "rag"],

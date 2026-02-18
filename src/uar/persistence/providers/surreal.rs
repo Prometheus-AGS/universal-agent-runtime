@@ -4,11 +4,11 @@ use crate::uar::domain::knowledge::{
 };
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::persistence::PersistenceLayer;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use surrealdb::Surreal;
-use surrealdb::engine::any::{Any, connect};
+use surrealdb::engine::any::{self, Any};
 
 #[derive(Debug)]
 pub struct SurrealDbProvider {
@@ -17,35 +17,75 @@ pub struct SurrealDbProvider {
 
 impl SurrealDbProvider {
     pub async fn new(connection_string: &str) -> Result<Self> {
-        let db = connect(connection_string).await?;
+        let endpoint = normalize_endpoint(connection_string);
+        tracing::info!("Connecting to SurrealDB: {}", endpoint);
 
-        // Use default namespace and database for now
+        // The any::connect function will automatically determine the engine type
+        // from the connection string (e.g., "rocksdb://./data/uar.db" or "ws://localhost:8000")
+        let db = any::connect(endpoint).await?;
+
+        // Use default namespace and database
         db.use_ns("uar").use_db("uar").await?;
+
+        tracing::info!("SurrealDB connected successfully");
 
         Ok(Self { db })
     }
 }
 
-// Helper structs for table records if needed, or use serde_json::Value
-// Using generic structs or the domain objects directly if they serialize well.
+fn normalize_endpoint(connection_string: &str) -> String {
+    let trimmed = connection_string.trim();
+    let lower = trimmed.to_ascii_lowercase();
+    if trimmed.contains("://")
+        || lower == "memory"
+        || lower == "mem"
+        || lower == "surrealkv"
+        || lower == "rocksdb"
+    {
+        if lower == "memory" || lower == "mem" {
+            "mem://".to_string()
+        } else if lower == "surrealkv" {
+            "surrealkv://".to_string()
+        } else if lower == "rocksdb" {
+            "rocksdb://./data/uar.db".to_string()
+        } else {
+            trimmed.to_string()
+        }
+    } else {
+        format!("rocksdb://{trimmed}")
+    }
+}
+
+fn to_db_value<T: Serialize>(value: &T) -> Result<serde_json::Value> {
+    serde_json::to_value(value).context("failed to serialize value for SurrealDB")
+}
+
+fn from_db_value<T: DeserializeOwned>(value: serde_json::Value) -> Result<T> {
+    serde_json::from_value(value).context("failed to deserialize value from SurrealDB")
+}
+
+fn from_db_opt<T: DeserializeOwned>(value: Option<serde_json::Value>) -> Result<Option<T>> {
+    value.map(from_db_value).transpose()
+}
+
+fn from_db_vec<T: DeserializeOwned>(values: Vec<serde_json::Value>) -> Result<Vec<T>> {
+    values.into_iter().map(from_db_value).collect()
+}
 
 #[async_trait]
 impl PersistenceLayer for SurrealDbProvider {
     // Session Management
     async fn save_session(&self, session: &Session) -> Result<()> {
         let id = session.id().to_string();
-        // Create or update
-        let _: Option<Session> = self
-            .db
-            .upsert(("sessions", id))
-            .content(session.clone())
-            .await?;
+        let payload = to_db_value(session)?;
+        let _: Option<serde_json::Value> =
+            self.db.upsert(("sessions", id)).content(payload).await?;
         Ok(())
     }
 
     async fn load_session(&self, id: &str) -> Result<Option<Session>> {
-        let session: Option<Session> = self.db.select(("sessions", id)).await?;
-        Ok(session)
+        let session: Option<serde_json::Value> = self.db.select(("sessions", id)).await?;
+        from_db_opt(session)
     }
 
     // Skill Management
@@ -63,11 +103,12 @@ impl PersistenceLayer for SurrealDbProvider {
             skill: skill.clone(),
             embedding: embedding.to_vec(),
         };
+        let payload = to_db_value(&record)?;
 
-        let _: Option<SkillRecord> = self
+        let _: Option<serde_json::Value> = self
             .db
-            .upsert(("skills", &skill.skill_id))
-            .content(record)
+            .upsert(("skills", skill.skill_id.clone()))
+            .content(payload)
             .await?;
         Ok(())
     }
@@ -82,7 +123,8 @@ impl PersistenceLayer for SurrealDbProvider {
             embedding: Vec<f32>,
         }
 
-        let skills: Vec<SkillRecord> = self.db.select("skills").await?;
+        let skills_raw: Vec<serde_json::Value> = self.db.select("skills").await?;
+        let skills: Vec<SkillRecord> = from_db_vec(skills_raw)?;
 
         let mut matches: Vec<SkillMatch> = skills
             .into_iter()
@@ -106,28 +148,42 @@ impl PersistenceLayer for SurrealDbProvider {
         Ok(matches)
     }
 
+    async fn list_skills(&self) -> Result<Vec<Skill>> {
+        #[derive(Deserialize)]
+        struct SkillRecord {
+            #[serde(flatten)]
+            skill: Skill,
+            #[allow(dead_code)]
+            embedding: Vec<f32>,
+        }
+
+        let records_raw: Vec<serde_json::Value> = self.db.select("skills").await?;
+        let records: Vec<SkillRecord> = from_db_vec(records_raw)?;
+        Ok(records.into_iter().map(|r| r.skill).collect())
+    }
+
+    async fn delete_skill(&self, id: &str) -> Result<()> {
+        let _: Option<serde_json::Value> = self.db.delete(("skills", id)).await?;
+        Ok(())
+    }
+
     // Knowledge Base Management
     async fn save_knowledge_base(&self, kb: &KnowledgeBase) -> Result<()> {
-        let _: Option<KnowledgeBase> = self
+        let payload = to_db_value(kb)?;
+        let _: Option<serde_json::Value> = self
             .db
             .upsert(("knowledge_bases", kb.id.clone()))
-            .content(kb.clone())
+            .content(payload)
             .await?;
         Ok(())
     }
 
     async fn save_chunk(&self, chunk: &KnowledgeChunk) -> Result<()> {
-        #[derive(Serialize, Deserialize)]
-        struct ChunkRecord {
-            #[serde(flatten)]
-            chunk: KnowledgeChunk,
-            // chunk already has embedding field
-        }
-
-        let _: Option<ChunkRecord> = self
+        let payload = to_db_value(chunk)?;
+        let _: Option<serde_json::Value> = self
             .db
-            .upsert(("knowledge_chunks", chunk.id))
-            .content(chunk.clone())
+            .upsert(("knowledge_chunks", chunk.id.to_string()))
+            .content(payload)
             .await?;
         Ok(())
     }
@@ -138,7 +194,8 @@ impl PersistenceLayer for SurrealDbProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
-        let chunks: Vec<KnowledgeChunk> = self.db.select("knowledge_chunks").await?;
+        let chunks_raw: Vec<serde_json::Value> = self.db.select("knowledge_chunks").await?;
+        let chunks: Vec<KnowledgeChunk> = from_db_vec(chunks_raw)?;
 
         let mut matches: Vec<KnowledgeMatch> = chunks
             .into_iter()
@@ -161,10 +218,11 @@ impl PersistenceLayer for SurrealDbProvider {
 
     // Agent Persistence
     async fn save_agent(&self, agent: &crate::uar::domain::artifact::AgentArtifact) -> Result<()> {
-        let _: Option<crate::uar::domain::artifact::AgentArtifact> = self
+        let payload = to_db_value(agent)?;
+        let _: Option<serde_json::Value> = self
             .db
             .upsert(("agents", agent.id.clone()))
-            .content(agent.clone())
+            .content(payload)
             .await?;
         Ok(())
     }
@@ -173,9 +231,8 @@ impl PersistenceLayer for SurrealDbProvider {
         &self,
         id: &str,
     ) -> Result<Option<crate::uar::domain::artifact::AgentArtifact>> {
-        let agent: Option<crate::uar::domain::artifact::AgentArtifact> =
-            self.db.select(("agents", id)).await?;
-        Ok(agent)
+        let agent: Option<serde_json::Value> = self.db.select(("agents", id)).await?;
+        from_db_opt(agent)
     }
 
     async fn load_agent_by_name(
@@ -187,23 +244,23 @@ impl PersistenceLayer for SurrealDbProvider {
         // This is inefficient without index but fine for now.
         let sql = "SELECT * FROM agents WHERE metadata.title = $name LIMIT 1";
         let mut response = self.db.query(sql).bind(("name", name.to_string())).await?;
-        let agent: Option<crate::uar::domain::artifact::AgentArtifact> = response.take(0)?;
-        Ok(agent)
+        let agent: Option<serde_json::Value> = response.take(0)?;
+        from_db_opt(agent)
     }
 
     async fn list_agents(&self) -> Result<Vec<crate::uar::domain::artifact::AgentArtifact>> {
-        let agents: Vec<crate::uar::domain::artifact::AgentArtifact> =
-            self.db.select("agents").await?;
-        Ok(agents)
+        let agents_raw: Vec<serde_json::Value> = self.db.select("agents").await?;
+        from_db_vec(agents_raw)
     }
 
     // Memory System
     async fn save_memory(&self, memory: &crate::uar::domain::memory::Memory) -> Result<()> {
         // memory has embedding field
-        let _: Option<crate::uar::domain::memory::Memory> = self
+        let payload = to_db_value(memory)?;
+        let _: Option<serde_json::Value> = self
             .db
             .upsert(("memories", memory.id.clone()))
-            .content(memory.clone())
+            .content(payload)
             .await?;
         Ok(())
     }
@@ -218,7 +275,7 @@ impl PersistenceLayer for SurrealDbProvider {
         // Fetch all (or filter by agent_id first if indexed)
         // Then cosine similarity
 
-        let memories: Vec<crate::uar::domain::memory::Memory> = if let Some(aid) = agent_id {
+        let memories_raw: Vec<serde_json::Value> = if let Some(aid) = agent_id {
             let sql = "SELECT * FROM memories WHERE agent_id = $aid OR agent_id IS NULL";
             let mut res = self.db.query(sql).bind(("aid", aid.to_string())).await?;
             res.take(0)?
@@ -232,6 +289,7 @@ impl PersistenceLayer for SurrealDbProvider {
             let mut res = self.db.query(sql).await?;
             res.take(0)?
         };
+        let memories: Vec<crate::uar::domain::memory::Memory> = from_db_vec(memories_raw)?;
 
         let mut matches: Vec<crate::uar::domain::memory::MemoryMatch> = memories
             .into_iter()
@@ -257,25 +315,25 @@ impl PersistenceLayer for SurrealDbProvider {
     // =========================================================================
 
     async fn get_knowledge_base(&self, id: &str) -> Result<Option<KnowledgeBase>> {
-        let kb: Option<KnowledgeBase> = self.db.select(("knowledge_bases", id)).await?;
-        Ok(kb)
+        let kb: Option<serde_json::Value> = self.db.select(("knowledge_bases", id)).await?;
+        from_db_opt(kb)
     }
 
     async fn get_knowledge_base_by_name(&self, name: &str) -> Result<Option<KnowledgeBase>> {
         let sql = "SELECT * FROM knowledge_bases WHERE name = $name LIMIT 1";
         let mut response = self.db.query(sql).bind(("name", name.to_string())).await?;
-        let kb: Option<KnowledgeBase> = response.take(0)?;
-        Ok(kb)
+        let kb: Option<serde_json::Value> = response.take(0)?;
+        from_db_opt(kb)
     }
 
     async fn list_knowledge_bases(&self) -> Result<Vec<KnowledgeBase>> {
-        let kbs: Vec<KnowledgeBase> = self.db.select("knowledge_bases").await?;
-        Ok(kbs)
+        let kbs_raw: Vec<serde_json::Value> = self.db.select("knowledge_bases").await?;
+        from_db_vec(kbs_raw)
     }
 
     async fn delete_knowledge_base(&self, id: &str) -> Result<()> {
         // Delete the KB - SurrealDB doesn't have FK CASCADE, so we delete related records first
-        let _: Option<KnowledgeBase> = self.db.delete(("knowledge_bases", id)).await?;
+        let _: Option<serde_json::Value> = self.db.delete(("knowledge_bases", id)).await?;
         // Also delete related chunks and documents
         let sql = "DELETE FROM knowledge_chunks WHERE kb_id = $id";
         self.db.query(sql).bind(("id", id.to_string())).await?;
@@ -303,7 +361,8 @@ impl PersistenceLayer for SurrealDbProvider {
         let kb_ids_vec: Vec<String> = kb_ids.iter().copied().map(str::to_string).collect();
         let sql = "SELECT * FROM knowledge_chunks WHERE kb_id IN $kb_ids";
         let mut res = self.db.query(sql).bind(("kb_ids", kb_ids_vec)).await?;
-        let chunks: Vec<KnowledgeChunk> = res.take(0)?;
+        let chunks_raw: Vec<serde_json::Value> = res.take(0)?;
+        let chunks: Vec<KnowledgeChunk> = from_db_vec(chunks_raw)?;
 
         // In-memory cosine similarity
         let mut matches: Vec<KnowledgeMatch> = chunks
@@ -330,17 +389,18 @@ impl PersistenceLayer for SurrealDbProvider {
     // =========================================================================
 
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()> {
-        let _: Option<KnowledgeDocument> = self
+        let payload = to_db_value(doc)?;
+        let _: Option<serde_json::Value> = self
             .db
             .upsert(("knowledge_documents", doc.id.clone()))
-            .content(doc.clone())
+            .content(payload)
             .await?;
         Ok(())
     }
 
     async fn get_document(&self, id: &str) -> Result<Option<KnowledgeDocument>> {
-        let doc: Option<KnowledgeDocument> = self.db.select(("knowledge_documents", id)).await?;
-        Ok(doc)
+        let doc: Option<serde_json::Value> = self.db.select(("knowledge_documents", id)).await?;
+        from_db_opt(doc)
     }
 
     async fn list_documents(&self, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
@@ -350,8 +410,8 @@ impl PersistenceLayer for SurrealDbProvider {
             .query(sql)
             .bind(("kb_id", kb_id.to_string()))
             .await?;
-        let docs: Vec<KnowledgeDocument> = res.take(0)?;
-        Ok(docs)
+        let docs_raw: Vec<serde_json::Value> = res.take(0)?;
+        from_db_vec(docs_raw)
     }
 
     async fn update_document_status(&self, doc_id: &str, status: &DocumentStatus) -> Result<()> {
@@ -373,7 +433,7 @@ impl PersistenceLayer for SurrealDbProvider {
             .await?;
 
         // Delete the document
-        let _: Option<KnowledgeDocument> = self.db.delete(("knowledge_documents", doc_id)).await?;
+        let _: Option<serde_json::Value> = self.db.delete(("knowledge_documents", doc_id)).await?;
 
         Ok(())
     }

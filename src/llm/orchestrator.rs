@@ -10,8 +10,8 @@
 //! # Example
 //!
 //! ```rust,ignore
-//! use axum_leptos_htmx_wc::llm::{Orchestrator, LlmSettings, LlmProtocol};
-//! use axum_leptos_htmx_wc::mcp::registry::McpRegistry;
+//! use universal_agent_runtime::llm::{Orchestrator, LlmSettings, LlmProtocol};
+//! use universal_agent_runtime::mcp::registry::McpRegistry;
 //!
 //! let settings = LlmSettings { /* ... */ };
 //! let mcp = McpRegistry::load_from_file("mcp.json").await?;

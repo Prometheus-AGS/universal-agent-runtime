@@ -1,5 +1,5 @@
 {
-  "name": "axum-leptos-htmx-wc",
+  "name": "universal-agent-runtime",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -8,7 +8,7 @@
     "build:ts": "bun build web/main.ts web/sw.ts --outdir static --minify --target browser",
     "build:css": "tailwindcss -i static/styles.css -o static/app.css --minify",
     "copy:wasm": "cp node_modules/@electric-sql/pglite/dist/pglite.wasm static/ && cp node_modules/@electric-sql/pglite/dist/pglite.data static/",
-    "dev": "cargo run --bin axum-leptos-htmx-wc & bun run dev:ts & bun run dev:css",
+    "dev": "cargo run --bin universal-agent-runtime & bun run dev:ts & bun run dev:css",
     "dev:assets": "bun run dev:ts & bun run dev:css",
     "dev:ts": "bun build web/main.ts --outdir static --target browser --watch",
     "dev:css": "tailwindcss -i static/styles.css -o static/app.css --watch",
@@ -54,13 +54,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Prometheus-AGS/axum-leptos-htmx-wc.git"
+    "url": "git+https://github.com/Prometheus-AGS/universal-agent-runtime.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Prometheus-AGS/axum-leptos-htmx-wc/issues"
+    "url": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues"
   },
-  "homepage": "https://github.com/Prometheus-AGS/axum-leptos-htmx-wc#readme"
+  "homepage": "https://github.com/Prometheus-AGS/universal-agent-runtime#readme"
 }

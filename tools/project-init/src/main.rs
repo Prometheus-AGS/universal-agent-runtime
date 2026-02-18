@@ -65,8 +65,8 @@ const FILES_TO_PROCESS: &[&str] = &[
     "sdks/typescript/README.md",
     "sdks/python/pyproject.toml",
     "sdks/python/README.md",
-    "sdks/python/src/axum_leptos_htmx_wc_sdk/__init__.py",
-    "sdks/python/src/axum_leptos_htmx_wc_sdk/client.py",
+    "sdks/python/src/universal_agent_runtime_sdk/__init__.py",
+    "sdks/python/src/universal_agent_runtime_sdk/client.py",
     "TEMPLATE_USAGE.md",
 ];
 
@@ -251,9 +251,9 @@ fn apply_replacements(config: &ProjectConfig) -> Result<()> {
 
             let updated = content
                 // Project name (kebab-case)
-                .replace("axum-leptos-htmx-wc", &config.project_name)
+                .replace("universal-agent-runtime", &config.project_name)
                 // Crate name (snake_case)
-                .replace("axum_leptos_htmx_wc", &crate_name)
+                .replace("universal_agent_runtime", &crate_name)
                 // GitHub organization
                 .replace("Prometheus-AGS", &config.github_org)
                 // Author info
@@ -292,7 +292,7 @@ fn process_rust_sdk_files(config: &ProjectConfig) -> Result<()> {
     {
         let path = entry.path();
         let content = fs::read_to_string(path)?;
-        let updated = content.replace("axum_leptos_htmx_wc", &crate_name);
+        let updated = content.replace("universal_agent_runtime", &crate_name);
 
         if updated != content {
             fs::write(path, updated)?;

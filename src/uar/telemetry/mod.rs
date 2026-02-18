@@ -17,7 +17,7 @@ pub fn init() {
         .compact();
 
     let filter_layer = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,axum_leptos_htmx_wc=debug"));
+        .unwrap_or_else(|_| EnvFilter::new("info,universal_agent_runtime=debug"));
 
     tracing_subscriber::registry()
         .with(filter_layer)

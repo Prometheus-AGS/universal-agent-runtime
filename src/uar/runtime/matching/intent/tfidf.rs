@@ -211,7 +211,11 @@ impl IntentClassifier for TfIdfClassifier {
             .collect();
 
         // Sort by score descending and take top-k
-        scores.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        scores.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         scores.truncate(self.topk);
 
         Ok(ClassificationResult::new(scores))
@@ -242,6 +246,8 @@ mod tests {
             preferred_tools: Vec::new(),
             mcp_config: None,
             constraints: SkillConstraints::default(),
+            enabled: true,
+            provider_id: String::new(),
         }
     }
 

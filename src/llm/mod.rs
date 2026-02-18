@@ -18,7 +18,7 @@
 //! # Example
 //!
 //! ```rust,ignore
-//! use axum_leptos_htmx_wc::llm::{LlmSettings, LlmProtocol, Orchestrator};
+//! use universal_agent_runtime::llm::{LlmSettings, LlmProtocol, Orchestrator};
 //!
 //! let settings = LlmSettings {
 //!     base_url: "https://api.openai.com".to_string(),
@@ -31,11 +31,13 @@
 pub mod chat_completions;
 pub mod orchestrator;
 pub mod provider;
+pub mod registry;
 pub mod responses;
 
 pub use chat_completions::ChatCompletionsDriver;
 pub use orchestrator::Orchestrator;
 pub use provider::Provider;
+pub use registry::{ProviderConfig, ProviderRegistry};
 pub use responses::ResponsesDriver;
 
 use crate::normalized::NormalizedEvent;

@@ -4,7 +4,7 @@
 //! Enable with `features = ["embedded"]`.
 
 #[cfg(feature = "embedded")]
-use axum_leptos_htmx_wc::{AppState, config::AppConfig, server};
+use universal_agent_runtime::{AppState, config::AppConfig, server};
 use std::sync::Arc;
 
 use crate::error::{Error, Result};
@@ -14,7 +14,7 @@ use crate::error::{Error, Result};
 /// # Example
 ///
 /// ```rust,ignore
-/// use axum_leptos_htmx_wc_sdk::Runtime;
+/// use universal_agent_runtime_sdk::Runtime;
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -75,7 +75,7 @@ impl Runtime {
     #[cfg(feature = "embedded")]
     pub fn orchestrator(
         &self,
-    ) -> Option<Arc<axum_leptos_htmx_wc::llm::orchestrator::Orchestrator>> {
+    ) -> Option<Arc<universal_agent_runtime::llm::orchestrator::Orchestrator>> {
         self.state.as_ref().map(|s| s.orchestrator.clone())
     }
 
@@ -83,7 +83,7 @@ impl Runtime {
     #[cfg(feature = "embedded")]
     pub fn run_manager(
         &self,
-    ) -> Option<Arc<axum_leptos_htmx_wc::uar::runtime::manager::RunManager>> {
+    ) -> Option<Arc<universal_agent_runtime::uar::runtime::manager::RunManager>> {
         self.state.as_ref().map(|s| s.run_manager.clone())
     }
 
@@ -91,7 +91,7 @@ impl Runtime {
     #[cfg(feature = "embedded")]
     pub fn vector_matcher(
         &self,
-    ) -> Option<Arc<axum_leptos_htmx_wc::uar::runtime::matching::VectorMatcher>> {
+    ) -> Option<Arc<universal_agent_runtime::uar::runtime::matching::VectorMatcher>> {
         self.state.as_ref().map(|s| s.vector_matcher.clone())
     }
 
@@ -99,7 +99,7 @@ impl Runtime {
     #[cfg(feature = "embedded")]
     pub fn persistence(
         &self,
-    ) -> Option<Arc<dyn axum_leptos_htmx_wc::uar::persistence::PersistenceLayer>> {
+    ) -> Option<Arc<dyn universal_agent_runtime::uar::persistence::PersistenceLayer>> {
         self.state.as_ref().and_then(|s| s.persistence.clone())
     }
 }

@@ -75,6 +75,67 @@ persistence:
 # LLM_PROTOCOL: (Optional) "auto", "chat", or "responses"
 
 # =============================================================================
+# PROVIDERS (Multi-Provider LLM Support)
+# =============================================================================
+# Configure multiple LLM providers for per-agent provider selection.
+# The global LLM_BASE_URL / LLM_MODEL env vars are always seeded as the
+# "default" provider. Additional providers defined here are available for
+# agent-level ProviderPolicy selection and fallback chains.
+#
+# Agents reference providers by ID in their artifact YAML:
+#   policy:
+#     provider:
+#       default: { provider: "groq", model: "llama-3.3-70b-versatile" }
+#       fallbacks:
+#         - { provider: "openai", model: "gpt-4o-mini" }
+
+providers: []
+  # Example: uncomment and configure as needed
+  # - id: "openai"
+  #   display_name: "OpenAI"
+  #   base_url: "https://api.openai.com"
+  #   api_key: "sk-..."            # Or use env: OPENAI_API_KEY
+  #   protocol: auto               # auto | chat | responses
+  #   default_model: "gpt-4o"
+  #   enabled: true
+  #   models:
+  #     - id: "gpt-4o"
+  #       context_window: 128000
+  #       supports_vision: true
+  #       supports_tools: true
+  #       max_output_tokens: 16384
+  #     - id: "gpt-4o-mini"
+  #       context_window: 128000
+  #       supports_vision: true
+  #       supports_tools: true
+  #       max_output_tokens: 16384
+  #
+  # - id: "groq"
+  #   display_name: "Groq"
+  #   base_url: "https://api.groq.com/openai"
+  #   api_key: "gsk_..."           # Or use env: GROQ_API_KEY
+  #   protocol: chat
+  #   default_model: "llama-3.3-70b-versatile"
+  #   enabled: true
+  #   models:
+  #     - id: "llama-3.3-70b-versatile"
+  #       context_window: 131072
+  #       supports_vision: false
+  #       supports_tools: true
+  #     - id: "deepseek-r1-distill-llama-70b"
+  #       context_window: 131072
+  #       supports_vision: false
+  #       supports_tools: false
+  #
+  # - id: "openrouter"
+  #   display_name: "OpenRouter"
+  #   base_url: "https://openrouter.ai/api"
+  #   api_key: "sk-or-..."
+  #   protocol: chat
+  #   default_model: "anthropic/claude-3.5-sonnet"
+  #   enabled: true
+
+# =============================================================================
 # MULTIMODAL SUPPORT
 # =============================================================================
 
@@ -257,6 +318,8 @@ intent_classifier:
   #   - "rules": Keyword/tag matching only (fast, high precision, low recall)
   #   - "tfidf": TF-IDF based matching (pure Rust, no external deps, good balance)
   #   - "hybrid": Rules first, then TF-IDF for remaining (recommended)
+  #   - "localembedding": On-device embedding similarity via VectorMatcher
+  #   - "llm": LLM-powered skill ranking with TF-IDF fallback
   #   - "wasm": WASM component for custom classifiers (future)
   # Default: "tfidf"
   # Env: UAR_INTENT_CLASSIFIER__BACKEND

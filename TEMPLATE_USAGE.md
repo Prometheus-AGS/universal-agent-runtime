@@ -13,13 +13,13 @@ This project is a GitHub template for creating agentic AI applications with Rust
 ### Option 2: cargo-generate
 
 ```bash
-cargo generate --git https://github.com/Prometheus-AGS/axum-leptos-htmx-wc
+cargo generate --git https://github.com/Prometheus-AGS/universal-agent-runtime
 ```
 
 ### Option 3: Bootstrap Script
 
 ```bash
-git clone https://github.com/Prometheus-AGS/axum-leptos-htmx-wc my-project
+git clone https://github.com/Prometheus-AGS/universal-agent-runtime my-project
 cd my-project
 ./bootstrap.sh
 ```
@@ -30,8 +30,8 @@ cd my-project
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `project-name` | `axum-leptos-htmx-wc` | Project name (kebab-case) |
-| `crate_name` | `axum_leptos_htmx_wc` | Rust crate name (auto-derived) |
+| `project-name` | `universal-agent-runtime` | Project name (kebab-case) |
+| `crate_name` | `universal_agent_runtime` | Rust crate name (auto-derived) |
 | `github_org` | `Prometheus-AGS` | GitHub organization or username |
 | `author_name` | `Developer` | Author name for package metadata |
 | `enable_tauri` | `true` | Include Tauri desktop support |

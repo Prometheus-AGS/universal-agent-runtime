@@ -100,8 +100,8 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn search_skills(&self, query_vec: &[f32], limit: usize) -> Result<Vec<SkillMatch>> {
         let embedding_vector = Vector::from(query_vec.to_vec());
-        let limit_i64 = i64::try_from(limit)
-            .map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
+        let limit_i64 =
+            i64::try_from(limit).map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
 
         let rows = sqlx::query(
             r"
@@ -131,6 +131,28 @@ impl PersistenceLayer for PostgresProvider {
             });
         }
         Ok(matches)
+    }
+
+    async fn list_skills(&self) -> Result<Vec<Skill>> {
+        let rows = sqlx::query("SELECT definition FROM skills ORDER BY created_at")
+            .fetch_all(&self.pool)
+            .await?;
+
+        let mut skills = Vec::new();
+        for row in rows {
+            let val: serde_json::Value = row.try_get("definition")?;
+            let skill: Skill = serde_json::from_value(val)?;
+            skills.push(skill);
+        }
+        Ok(skills)
+    }
+
+    async fn delete_skill(&self, id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM skills WHERE skill_id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 
     async fn save_knowledge_base(&self, kb: &KnowledgeBase) -> Result<()> {
@@ -187,8 +209,8 @@ impl PersistenceLayer for PostgresProvider {
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
         let embedding_vector = Vector::from(query_vec.to_vec());
-        let limit_i64 = i64::try_from(limit)
-            .map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
+        let limit_i64 =
+            i64::try_from(limit).map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
         let min_score_f64 = f64::from(min_score);
 
         let rows = sqlx::query(
@@ -357,8 +379,8 @@ impl PersistenceLayer for PostgresProvider {
         min_score: f32,
     ) -> Result<Vec<crate::uar::domain::memory::MemoryMatch>> {
         let embedding_vector = Vector::from(query_vec.to_vec());
-        let limit_i64 = i64::try_from(limit)
-            .map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
+        let limit_i64 =
+            i64::try_from(limit).map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
         let min_score_f64 = f64::from(min_score);
 
         // Condition: (agent_id = $1 OR agent_id IS NULL)
@@ -528,8 +550,8 @@ impl PersistenceLayer for PostgresProvider {
         }
 
         let embedding_vector = Vector::from(query_vec.to_vec());
-        let limit_i64 = i64::try_from(limit)
-            .map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
+        let limit_i64 =
+            i64::try_from(limit).map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
         let min_score_f64 = f64::from(min_score);
         let kb_ids_vec: Vec<String> = kb_ids.iter().copied().map(str::to_string).collect();
 
@@ -659,9 +681,8 @@ impl PersistenceLayer for PostgresProvider {
                 filename,
                 file_path,
                 mime_type: Some(mime_type),
-                chunk_count: usize::try_from(chunk_count).map_err(|err| {
-                    anyhow::anyhow!("chunk_count must be non-negative: {err}")
-                })?,
+                chunk_count: usize::try_from(chunk_count)
+                    .map_err(|err| anyhow::anyhow!("chunk_count must be non-negative: {err}"))?,
                 status,
                 created_at: created_at.map(|d| d.to_rfc3339()).unwrap_or_default(),
                 updated_at: updated_at.map(|d| d.to_rfc3339()).unwrap_or_default(),
@@ -707,9 +728,8 @@ impl PersistenceLayer for PostgresProvider {
                 filename,
                 file_path,
                 mime_type: Some(mime_type),
-                chunk_count: usize::try_from(chunk_count).map_err(|err| {
-                    anyhow::anyhow!("chunk_count must be non-negative: {err}")
-                })?,
+                chunk_count: usize::try_from(chunk_count)
+                    .map_err(|err| anyhow::anyhow!("chunk_count must be non-negative: {err}"))?,
                 status,
                 created_at: created_at.map(|d| d.to_rfc3339()).unwrap_or_default(),
                 updated_at: updated_at.map(|d| d.to_rfc3339()).unwrap_or_default(),

@@ -1,6 +1,6 @@
-# axum-leptos-htmx-wc Rust SDK
+# universal-agent-runtime Rust SDK
 
-Rust SDK for axum-leptos-htmx-wc - HTTP client and embeddable runtime.
+Rust SDK for universal-agent-runtime - HTTP client and embeddable runtime.
 
 ## Features
 
@@ -14,20 +14,20 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-axum-leptos-htmx-wc-sdk = "0.1"
+universal-agent-runtime-sdk = "0.1"
 ```
 
 For embedded runtime:
 
 ```toml
 [dependencies]
-axum-leptos-htmx-wc-sdk = { version = "0.1", features = ["embedded"] }
+universal-agent-runtime-sdk = { version = "0.1", features = ["embedded"] }
 ```
 
 ## HTTP Client Usage
 
 ```rust
-use axum_leptos_htmx_wc_sdk::Client;
+use universal_agent_runtime_sdk::Client;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## Embedded Runtime Usage
 
 ```rust
-use axum_leptos_htmx_wc_sdk::Runtime;
+use universal_agent_runtime_sdk::Runtime;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

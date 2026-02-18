@@ -102,14 +102,14 @@ Our implementation uses the Chat Completions API by default for maximum compatib
 With the comprehensive logging added, you can see the parameter handling in the logs:
 
 ```
-INFO  axum_leptos_htmx_wc::llm::chat_completions: Chat Completions: Starting stream request 
+INFO  universal_agent_runtime::llm::chat_completions: Chat Completions: Starting stream request 
       url=https://api.openai.com/v1/chat/completions 
       model=gpt-5.2 
       provider=OpenAI 
       message_count=1 
       tool_count=10
 
-DEBUG axum_leptos_htmx_wc::llm::chat_completions: Skipping parallel_tool_calls for GPT-5.x model (not supported) 
+DEBUG universal_agent_runtime::llm::chat_completions: Skipping parallel_tool_calls for GPT-5.x model (not supported) 
       model=gpt-5.2
 ```
 

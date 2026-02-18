@@ -1,20 +1,20 @@
-# axum-leptos-htmx-wc Python SDK
+# universal-agent-runtime Python SDK
 
-Python SDK for axum-leptos-htmx-wc.
+Python SDK for universal-agent-runtime.
 
 ## Installation
 
 ```bash
-pip install axum-leptos-htmx-wc-sdk
+pip install universal-agent-runtime-sdk
 # or
-uv add axum-leptos-htmx-wc-sdk
+uv add universal-agent-runtime-sdk
 ```
 
 ## Usage
 
 ```python
 import asyncio
-from axum_leptos_htmx_wc_sdk import Client
+from universal_agent_runtime_sdk import Client
 
 async def main():
     client = Client("http://localhost:3000")

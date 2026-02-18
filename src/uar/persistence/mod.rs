@@ -21,6 +21,16 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()>;
     async fn search_skills(&self, query_vec: &[f32], limit: usize) -> Result<Vec<SkillMatch>>;
 
+    /// List all persisted skills.
+    async fn list_skills(&self) -> Result<Vec<Skill>> {
+        Ok(Vec::new())
+    }
+
+    /// Delete a skill by ID.
+    async fn delete_skill(&self, _id: &str) -> Result<()> {
+        Ok(())
+    }
+
     // =========================================================================
     // Knowledge Base Management
     // =========================================================================

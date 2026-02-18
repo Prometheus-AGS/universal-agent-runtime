@@ -1,4 +1,4 @@
-//! Axum + Leptos + HTMX + Web Components
+//! Axum + HTMX + Web Components
 //!
 //! An agentic streaming LLM application that supports tool-first interaction,
 //! streams rich typed model output, and remains HTML-first and inspectable.
@@ -8,7 +8,7 @@
 //! - **Server**: Axum-based HTTP server with SSE streaming
 //! - **LLM Orchestration**: Protocol-agnostic driver for Chat Completions and Responses APIs
 //! - **MCP Client**: Dynamic tool discovery and execution via Model Context Protocol
-//! - **UI**: Leptos SSR + HTMX + Web Components + Alpine.js
+//! - **UI**: Static HTML + HTMX + Web Components + Alpine.js
 //!
 //! # Modules
 //!
@@ -34,7 +34,6 @@ pub mod mcp;
 pub mod normalized;
 pub mod server;
 pub mod session;
-pub mod ui;
 pub mod uar;
 
 use crate::config::AppConfig;
@@ -48,6 +47,7 @@ use uar::persistence::PersistenceLayer;
 use uar::rag::ingest::IngestService;
 use uar::runtime::manager::RunManager;
 use uar::runtime::matching::VectorMatcher;
+use uar::runtime::skills::service::SkillService;
 
 /// Application state shared across all handlers.
 #[derive(Clone, Debug)]
@@ -66,10 +66,13 @@ pub struct AppState {
     /// Vector Matcher (for embeddings)
     pub vector_matcher: Arc<VectorMatcher>,
     /// Persistence Layer
-    /// Persistence Layer
     pub persistence: Option<Arc<dyn PersistenceLayer>>,
     /// Global Rate Limiter
     pub rate_limiter: Arc<AppRateLimiter>,
     /// Global Configuration
     pub config: Arc<AppConfig>,
+    /// Skill Service
+    pub skill_service: Arc<SkillService>,
+    /// Provider Registry for multi-provider LLM management
+    pub provider_registry: Arc<llm::ProviderRegistry>,
 }

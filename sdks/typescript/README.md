@@ -1,19 +1,19 @@
-# axum-leptos-htmx-wc TypeScript SDK
+# universal-agent-runtime TypeScript SDK
 
-TypeScript SDK for axum-leptos-htmx-wc.
+TypeScript SDK for universal-agent-runtime.
 
 ## Installation
 
 ```bash
-npm install @prometheus-ags/axum-leptos-htmx-wc-sdk
+npm install @prometheus-ags/universal-agent-runtime-sdk
 # or
-bun add @prometheus-ags/axum-leptos-htmx-wc-sdk
+bun add @prometheus-ags/universal-agent-runtime-sdk
 ```
 
 ## Usage
 
 ```typescript
-import { Client } from '@prometheus-ags/axum-leptos-htmx-wc-sdk';
+import { Client } from '@prometheus-ags/universal-agent-runtime-sdk';
 
 const client = new Client('http://localhost:3000');
 

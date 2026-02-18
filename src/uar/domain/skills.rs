@@ -15,6 +15,12 @@ pub struct Skill {
     pub mcp_config: Option<crate::mcp::config::McpConfig>,
     #[serde(default)]
     pub constraints: SkillConstraints,
+    /// Whether this skill is globally enabled.
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
+    /// ID of the storage provider that loaded this skill.
+    #[serde(default)]
+    pub provider_id: String,
 }
 
 /// Represents the YAML frontmatter of a SKILL.md file
@@ -49,4 +55,8 @@ pub struct SkillConstraints {
 pub struct SkillMatch {
     pub skill: Skill,
     pub score: f32,
+}
+
+fn default_enabled() -> bool {
+    true
 }

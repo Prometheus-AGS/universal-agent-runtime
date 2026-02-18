@@ -1,4 +1,4 @@
-# Clippy configuration for axum-leptos-htmx-wc
+# Clippy configuration for universal-agent-runtime
 # This file configures which clippy lints to allow/deny
 
 # Allow longer functions for complex LLM orchestration logic

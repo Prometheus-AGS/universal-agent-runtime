@@ -55,6 +55,9 @@ pub struct AppConfig {
     /// Intent classifier configuration for skill matching
     #[serde(default)]
     pub intent_classifier: ClassifierConfig,
+    /// LLM provider configurations (multi-provider support)
+    #[serde(default)]
+    pub providers: Vec<crate::llm::registry::ProviderConfig>,
 }
 
 #[derive(Debug, Deserialize, Clone)]

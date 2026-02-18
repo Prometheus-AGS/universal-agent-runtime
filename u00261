@@ -1,0 +1,40 @@
+warning: unused import: `Html`
+ --> src/server.rs:6:16
+  |
+6 |     response::{Html, IntoResponse},
+  |                ^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `conversations` is never read
+  --> src/session/encrypted.rs:52:5
+   |
+51 | pub struct ConversationManager {
+   |            ------------------- field in this struct
+52 |     conversations: Arc<RwLock<HashMap<ConversationId, Vec<UserId>>>>,
+   |     ^^^^^^^^^^^^^
+   |
+   = note: `ConversationManager` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `user_id` is never read
+  --> src/session/encrypted.rs:86:5
+   |
+84 | pub struct EncryptedSession {
+   |            ---------------- field in this struct
+85 |     id: String,
+86 |     user_id: Option<UserId>,
+   |     ^^^^^^^
+   |
+   = note: `EncryptedSession` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: `universal-agent-runtime` (lib) generated 3 warnings (run `cargo fix --lib -p universal-agent-runtime` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.20s
+     Running `target/debug/universal-agent-runtime`
+
+thread 'main' (1515167) panicked at src/server.rs:68:18:
+Failed to initialize Postgres: error returned from database: role "postgres" does not exist
+
+Caused by:
+    role "postgres" does not exist
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

@@ -1,19 +1,191 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Agentic Streaming LLM Application">
-    <title>Prometheus</title>
-    <link rel="stylesheet" href="/static/app.css">
-</head>
-<body class="min-h-screen bg-background text-textPrimary antialiased">
-    <div id="app-shell" class="min-h-screen flex items-center justify-center bg-surface">
-        <div class="flex flex-col items-center gap-2 px-6 py-8 rounded-3xl bg-surfaceContainer">
-            <div class="h-2 w-24 rounded-full bg-primaryMuted animate-pulse"></div>
-            <p class="text-sm text-textSecondary">Starting local server...</p>
-            <p class="text-xs text-textMuted">This screen will refresh automatically.</p>
-        </div>
-    </div>
-</body>
-</html>
+\u003c!DOCTYPE html\u003e
+\u003chtml lang="en"\u003e
+\u003chead\u003e
+    \u003cmeta charset="utf-8"\u003e
+    \u003cmeta name="viewport" content="width=device-width, initial-scale=1"\u003e
+    \u003cmeta name="description" content="Agentic Streaming LLM Application"\u003e
+    \u003ctitle\u003eChat - Prometheus\u003c/title\u003e
+    \u003cscript src="/static/vendor/htmx-2.0.8.min.js"\u003e\u003c/script\u003e
+    \u003cscript src="/static/vendor/htmx-json-enc.js"\u003e\u003c/script\u003e
+    \u003cscript src="/static/vendor/htmx-sse.js"\u003e\u003c/script\u003e
+    \u003cscript defer src="/static/vendor/alpine.min.js"\u003e\u003c/script\u003e
+    \u003cscript type="module" src="/static/main.js"\u003e\u003c/script\u003e
+    \u003clink rel="stylesheet" href="/static/app.css"\u003e
+\u003c/head\u003e
+\u003cbody class="min-h-screen bg-background text-textPrimary antialiased"\u003e
+    \u003cdiv id="app-shell" class="flex flex-col h-screen overflow-hidden"\u003e
+        \u003cheader class="sticky top-0 z-50 w-full bg-surfaceContainer backdrop-blur shadow-sm shrink-0"\u003e
+            \u003cdiv class="container mx-auto flex h-14 md:h-16 items-center justify-between px-4 md:px-6 max-w-5xl"\u003e
+                \u003ca href="/" class="flex items-center gap-2 md:gap-3 font-semibold hover:opacity-80 transition-opacity"\u003e
+                    \u003csvg class="h-5 w-5 md:h-6 md:w-6 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"\u003e
+                        \u003cpath d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/\u003e
+                    \u003c/svg\u003e
+                    \u003cspan class="text-base md:text-lg"\u003ePrometheus\u003c/span\u003e
+                \u003c/a\u003e
+                \u003cdiv class="flex items-center gap-1 md:gap-2"\u003e
+                    \u003cnav class="flex items-center gap-1" hx-boost="true" hx-target="#app-shell" hx-select="#app-shell" hx-swap="outerHTML"\u003e
+                        \u003ca href="/about" class="px-3 py-2 rounded-xl text-sm text-textSecondary hover:text-textPrimary hover:bg-surface transition-all"\u003eAbout\u003c/a\u003e
+                    \u003c/nav\u003e
+                    \u003ctheme-switcher\u003e\u003c/theme-switcher\u003e
+                \u003c/div\u003e
+            \u003c/div\u003e
+        \u003c/header\u003e
+        
+        \u003cmain id="app" class="flex-1 overflow-y-auto container mx-auto px-4 md:px-6 py-4 md:py-8 max-w-5xl"\u003e
+            \u003cdiv class="flex h-full md:h-[calc(100vh-12rem)]"\u003e
+                \u003c!-- Conversation Sidebar --\u003e
+                \u003cerror-boundary\u003e
+                    \u003cconversation-sidebar\u003e\u003c/conversation-sidebar\u003e
+                \u003c/error-boundary\u003e
+                
+                \u003c!-- Main Chat Area --\u003e
+                \u003cdiv class="chat-shell flex flex-col flex-1 bg-surface md:rounded-3xl overflow-hidden md:shadow-lg" style="margin-left: 288px;"\u003e
+                    \u003cheader class="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 bg-surfaceContainer shrink-0"\u003e
+                        \u003cdiv class="flex items-center gap-2 md:gap-3"\u003e
+                            \u003csvg class="h-5 w-5 md:h-6 md:w-6 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"\u003e
+                                \u003cpath d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/\u003e
+                            \u003c/svg\u003e
+                            \u003ch2 class="font-semibold text-base md:text-lg"\u003eAI Assistant\u003c/h2\u003e
+                        \u003c/div\u003e
+                        \u003cdiv class="flex items-center gap-3"\u003e
+                            \u003ctoken-counter
+                                x-bind:input-tokens="$store.chat.tokenUsage.input"
+                                x-bind:output-tokens="$store.chat.tokenUsage.output"
+                                x-bind:context-limit="$store.chat.tokenUsage.limit"
+                                x-bind:cost="$store.chat.tokenUsage.cost"
+                                x-bind:is-estimate="$store.chat.tokenUsage.isEstimate"
+                                model-id="gpt-4o"\u003e
+                            \u003c/token-counter\u003e
+                            \u003cstorage-health\u003e\u003c/storage-health\u003e
+                            \u003cbutton
+                                type="button"
+                                class="p-2 rounded-xl hover:bg-surface transition-colors"
+                                aria-label="Start new chat"
+                                title="Start new chat"
+                                x-on:click="
+                                    $store.chat.sessionId = null;
+                                    $store.chat.tokenUsage = {
+                                        input: 0,
+                                        output: 0,
+                                        total: 0,
+                                        limit: 128000,
+                                        isEstimate: true,
+                                        cost: 0
+                                    };
+                                    
+                                    const chatStream = document.querySelector('chat-stream');
+                                    if (chatStream) {
+                                        chatStream.createNewConversation();
+                                    }
+                                "
+                            \u003e
+                                \u003csvg class="h-5 w-5 text-textPrimary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"\u003e
+                                    \u003cpath d="M12 5v14"/\u003e
+                                    \u003cpath d="M5 12h14"/\u003e
+                                \u003c/svg\u003e
+                            \u003c/button\u003e
+                        \u003c/div\u003e
+                    \u003c/header\u003e
+                    
+                    \u003cdiv class="flex-1 overflow-y-auto overflow-x-hidden"\u003e
+                        \u003cerror-boundary\u003e
+                            \u003cchat-stream class="block" stream-url="/stream"\u003e\u003c/chat-stream\u003e
+                        \u003c/error-boundary\u003e
+                    \u003c/div\u003e
+                
+                \u003cdiv class="p-3 md:p-5 bg-surfaceContainer shrink-0"\u003e
+                    \u003cform 
+                        class="flex gap-2 md:gap-3"
+                        hx-post="/api/chat"
+                        hx-trigger="submit"
+                        hx-swap="none"
+                        hx-ext="json-enc"
+                        hx-on::before-request="
+                            const msg = this.querySelector('[name=message]').value;
+                            const chatStream = document.querySelector('chat-stream');
+                            const fileUpload = document.querySelector('file-upload');
+                            
+                            const attachedFiles = fileUpload ? fileUpload.getAttachedFiles() : [];
+                            
+                            if (chatStream \u0026\u0026 (msg.trim() || attachedFiles.length \u003e 0)) {
+                                chatStream.addUserMessage(msg, attachedFiles);
+                            }
+                            
+                            if (fileUpload) {
+                                fileUpload.clearFiles();
+                            }
+                            
+                            const Alpine = window.Alpine;
+                            const sessionInput = this.querySelector('[name=session_id]');
+                            if (Alpine) {
+                                const chatStore = Alpine.store('chat');
+                                if (chatStore \u0026\u0026 chatStore.sessionId) {
+                                    sessionInput.value = chatStore.sessionId;
+                                } else {
+                                    sessionInput.value = '';
+                                }
+                            }
+                        "
+                        hx-on::after-request="
+                            const response = JSON.parse(event.detail.xhr.response);
+                            const chatStream = document.querySelector('chat-stream');
+                            
+                            const Alpine = window.Alpine;
+                            if (Alpine \u0026\u0026 response.session_id) {
+                                const chatStore = Alpine.store('chat');
+                                if (chatStore) {
+                                    chatStore.sessionId = response.session_id;
+                                }
+                            }
+                            
+                            if (chatStream) {
+                                chatStream.startStream(event.detail.xhr.response);
+                            }
+                            
+                            this.reset();
+                        "
+                        x-data="{ message: '' }"
+                    \u003e
+                        \u003cinput type="hidden" name="session_id" x-bind:value="$store.chat?.sessionId || ''"\u003e
+                        
+                        \u003cfile-upload class="relative"\u003e\u003c/file-upload\u003e
+                        
+                        \u003cdiv class="flex-1"\u003e
+                            \u003ctextarea
+                                name="message"
+                                placeholder="Type your message..."
+                                class="w-full min-h-[44px] md:min-h-[48px] max-h-[120px] md:max-h-[200px] px-4 md:px-5 py-3 md:py-3.5 rounded-xl md:rounded-2xl bg-surface text-textPrimary placeholder:text-textMuted resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surfaceContainer transition-shadow text-sm md:text-base"
+                                rows="1"
+                                x-model="message"
+                                x-on:keydown.enter.prevent="if (!$event.shiftKey \u0026\u0026 message.trim()) { $el.form.requestSubmit() }"
+                                x-on:input="$el.style.height = 'auto'; $el.style.height = Math.min($el.scrollHeight, window.innerWidth \u003c 768 ? 120 : 200) + 'px'"
+                                required
+                            \u003e\u003c/textarea\u003e
+                        \u003c/div\u003e
+                        \u003cbutton 
+                            type="submit"
+                            class="shrink-0 h-11 w-11 md:h-12 md:w-12 rounded-xl md:rounded-2xl bg-primary text-white hover:bg-primaryMuted active:scale-95 flex items-center justify-center transition-all shadow-md hover:shadow-lg"
+                            aria-label="Send message"
+                        \u003e
+                            \u003csvg class="h-5 w-5 md:h-6 md:w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"\u003e
+                                \u003cline x1="22" y1="2" x2="11" y2="13"\u003e\u003c/line\u003e
+                                \u003cpolygon points="22 2 15 22 11 13 2 9 22 2"\u003e\u003c/polygon\u003e
+                            \u003c/svg\u003e
+                        \u003c/button\u003e
+                    \u003c/form\u003e
+                    \u003cp class="text-xs text-textMuted mt-2 md:mt-3 text-center hidden md:block"\u003ePress Enter to send, Shift+Enter for new line\u003c/p\u003e
+                \u003c/div\u003e
+            \u003c/div\u003e
+            \u003c/div\u003e
+        \u003c/main\u003e
+        
+        \u003cfooter class="bg-surfaceContainer py-3 md:py-6 shrink-0 hidden md:block"\u003e
+            \u003cdiv class="container mx-auto px-4 md:px-6 max-w-5xl"\u003e
+                \u003cp class="text-xs text-textMuted text-center"\u003e
+                    Powered by Axum + HTMX + Web Components
+                \u003c/p\u003e
+            \u003c/div\u003e
+        \u003c/footer\u003e
+    \u003c/div\u003e
+\u003c/body\u003e
+\u003c/html\u003e

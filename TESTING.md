@@ -1,6 +1,6 @@
 # Comprehensive Testing Infrastructure
 
-This document describes the complete testing infrastructure for the axum-leptos-htmx-wc project, designed to achieve and maintain 100% code coverage across all components.
+This document describes the complete testing infrastructure for the universal-agent-runtime project, designed to achieve and maintain 100% code coverage across all components.
 
 ## Overview
 

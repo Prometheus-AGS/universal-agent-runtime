@@ -11,7 +11,7 @@ use url::Url;
 /// # Example
 ///
 /// ```rust,no_run
-/// use axum_leptos_htmx_wc_sdk::Client;
+/// use universal_agent_runtime_sdk::Client;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let client = Client::new("http://localhost:3000")?;

@@ -163,14 +163,14 @@ RUST_LOG=debug cargo run
 RUST_LOG=trace cargo run
 
 # Filter to specific modules
-RUST_LOG=axum_leptos_htmx_wc::llm=debug cargo run
+RUST_LOG=universal_agent_runtime::llm=debug cargo run
 ```
 
 ### Production
 Configure the log level in your deployment environment:
 
 ```bash
-RUST_LOG=info ./axum-leptos-htmx-wc
+RUST_LOG=info ./universal-agent-runtime
 ```
 
 ## Log Format
@@ -184,7 +184,7 @@ Logs use the `tracing` crate and include:
 
 Example:
 ```
-2025-12-23T22:30:45.123456Z  INFO axum_leptos_htmx_wc: Received chat request message="Hello" session_id=None
+2025-12-23T22:30:45.123456Z  INFO universal_agent_runtime: Received chat request message="Hello" session_id=None
 ```
 
 ## Debugging Tips
@@ -214,7 +214,7 @@ When the LLM API returns an error (4xx or 5xx status), the system now automatica
 
 **Example Error Log:**
 ```
-ERROR axum_leptos_htmx_wc::llm::chat_completions: LLM API returned error with details 
+ERROR universal_agent_runtime::llm::chat_completions: LLM API returned error with details 
       status=400 Bad Request 
       error_type=invalid_request_error 
       error_message="Unsupported parameter: 'parallel_tool_calls' is not supported with this model." 
@@ -246,7 +246,7 @@ ERROR axum_leptos_htmx_wc::llm::chat_completions: LLM API returned error with de
 
 #### Too many logs
 - Use `RUST_LOG=info` to reduce verbosity
-- Filter by module: `RUST_LOG=axum_leptos_htmx_wc::llm=info`
+- Filter by module: `RUST_LOG=universal_agent_runtime::llm=info`
 
 #### Missing tool execution logs
 - Check if tool calls are being detected (look for "Tool call delta")

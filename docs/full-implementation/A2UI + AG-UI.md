@@ -8577,7 +8577,7 @@ If you want, paste your current normalized.rs (especially dual_sse_event and sse
 //! # Example
 //!
 //! ```rust
-//! use axum_leptos_htmx_wc::normalized::{NormalizedEvent, sse_event};
+//! use universal_agent_runtime::normalized::{NormalizedEvent, sse_event};
 //!
 //! let event = NormalizedEvent::MessageDelta {
 //!     text: "Hello".to_string(),
@@ -8755,7 +8755,7 @@ fn default_true() -> bool {
 /// # Example
 ///
 /// ```rust
-/// use axum_leptos_htmx_wc::normalized::{NormalizedEvent, sse_event};
+/// use universal_agent_runtime::normalized::{NormalizedEvent, sse_event};
 ///
 /// let event = NormalizedEvent::Done;
 /// let sse = sse_event(&event);

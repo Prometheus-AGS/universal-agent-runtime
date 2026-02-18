@@ -218,7 +218,7 @@ jobs:
 
       - name: Verify build artifacts
         run: |
-          test -f target/release/axum-leptos-htmx-wc || { echo "Rust binary not found"; exit 1; }
+          test -f target/release/universal-agent-runtime || { echo "Rust binary not found"; exit 1; }
           test -f static/main.js || { echo "Frontend JS bundle not found"; exit 1; }
           test -f static/app.css || { echo "Frontend CSS bundle not found"; exit 1; }
 

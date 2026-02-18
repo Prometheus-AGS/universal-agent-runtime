@@ -1,4 +1,4 @@
-# Architectural Assessment: axum-leptos-htmx-wc
+# Architectural Assessment: universal-agent-runtime
 
 **Date**: December 24, 2025
 
