@@ -43,6 +43,7 @@ use llm::orchestrator::Orchestrator;
 use mcp::registry::McpRegistry;
 use session::SessionStore;
 use std::sync::Arc;
+use uar::api::a2a::AgentRegistry;
 use uar::compiler::CompilerService;
 use uar::governance::engine::GovernanceEngine;
 use uar::persistence::PersistenceLayer;
@@ -82,6 +83,8 @@ pub struct AppState {
     pub provider_registry: Arc<llm::ProviderRegistry>,
     /// Native Skill Registry for in-process high-performance tools
     pub native_skill_registry: Arc<NativeSkillRegistry>,
+    /// Federated A2A registry (if enabled)
+    pub federated_agent_registry: Arc<dyn AgentRegistry>,
     /// Actor collaboration system for multi-agent coordination
     pub actor_system: Arc<ActorCollaboration>,
     /// Governance policy engine for declarative authorization

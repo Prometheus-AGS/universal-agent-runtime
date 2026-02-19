@@ -206,6 +206,21 @@ impl McpRegistry {
         &self.tools
     }
 
+    /// Return configured MCP server names.
+    pub fn server_names(&self) -> Vec<String> {
+        self.services.keys().cloned().collect()
+    }
+
+    /// Return whether the namespaced tool is backed by an in-process native tool.
+    pub fn is_native_tool(&self, namespaced_name: &str) -> bool {
+        self.native_tools.contains_key(namespaced_name)
+    }
+
+    /// Resolve the backing MCP server and raw tool name for a namespaced tool.
+    pub fn resolve_mcp_tool(&self, namespaced_name: &str) -> Option<(String, String)> {
+        self.tool_index.get(namespaced_name).cloned()
+    }
+
     /// Merge another registry into this one, returning a new registry.
     /// This is used to combine global tools with skill-specific tools.
     #[must_use]

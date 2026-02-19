@@ -71,6 +71,8 @@ type ActiveRunMap = HashMap<String, RunStreamState>;
 pub struct RunManager {
     // Map run_id -> (Run metadata, broadcast sender)
     active_runs: Arc<RwLock<ActiveRunMap>>,
+    // Map session_id -> most recent run_id for deterministic session lookup.
+    session_current_run: Arc<RwLock<HashMap<String, String>>>,
     settings: LlmSettings,
     global_mcp: Arc<McpRegistry>,
     sessions: SessionStore,
@@ -164,6 +166,7 @@ impl RunManager {
 
         Self {
             active_runs: Arc::new(RwLock::new(HashMap::new())),
+            session_current_run: Arc::new(RwLock::new(HashMap::new())),
             settings,
             global_mcp,
             sessions,
@@ -256,6 +259,10 @@ impl RunManager {
                     history: Arc::clone(&history),
                 },
             );
+        }
+        {
+            let mut session_runs = self.session_current_run.write().await;
+            session_runs.insert(session.id().to_string(), run_id.clone());
         }
 
         // 3. Prepare Messages
@@ -764,5 +771,13 @@ impl RunManager {
     pub async fn get_run(&self, run_id: &str) -> Option<Run> {
         let runs = self.active_runs.read().await;
         runs.get(run_id).map(|state| state.run.clone())
+    }
+
+    pub async fn get_run_by_session_id(&self, session_id: &str) -> Option<Run> {
+        let run_id = {
+            let session_runs = self.session_current_run.read().await;
+            session_runs.get(session_id).cloned()
+        }?;
+        self.get_run(&run_id).await
     }
 }

@@ -11,7 +11,7 @@ use axum::{
 };
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -287,6 +287,8 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         base_url: format!("http://{}:{}", config.server.host, config.server.port),
     });
     info!("A2A state initialized");
+    let federated_agent_registry: Arc<dyn uar::api::a2a::AgentRegistry> = agent_registry
+        .unwrap_or_else(|| Arc::new(crate::uar::api::a2a::registry::InMemoryAgentRegistry::new()));
 
     let state = AppState {
         mcp,
@@ -301,6 +303,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         skill_service: Arc::clone(&skill_service),
         provider_registry: Arc::clone(&provider_registry),
         native_skill_registry: Arc::clone(&native_skill_registry),
+        federated_agent_registry: Arc::clone(&federated_agent_registry),
         actor_system: Arc::clone(&actor_system),
         governance_engine: Arc::clone(&governance_engine),
         api_key_service: Some(Arc::clone(&api_key_service)),
@@ -326,11 +329,18 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .route("/health", get(health_handler))
         .route("/healthz", get(health_handler))
         .route("/readyz", get(health_handler))
+        .route_service("/", ServeFile::new("static/index.html"))
+        .route_service("/about", ServeFile::new("static/about.html"))
+        .route("/api/models", get(api_models))
+        .route("/api/generate-title", post(api_generate_title))
         .route("/api/chat/completion", post(api_chat_completion))
         .route("/api/chat", any(legacy_chat_route_disabled))
         .route("/api/chat/{*path}", any(legacy_chat_route_disabled))
         .route("/api/sessions", any(legacy_sessions_route_disabled))
         .route("/api/sessions/{*path}", any(legacy_sessions_route_disabled))
+        .route_service("/htmx", ServeFile::new("static/index.html"))
+        .route_service("/htmx/", ServeFile::new("static/index.html"))
+        .route_service("/htmx/about", ServeFile::new("static/about.html"))
         .nest(
             "/api/uar",
             uar::api::router().with_state(Arc::clone(&state.run_manager)),
@@ -350,6 +360,11 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .nest(
             "/api/uar/providers",
             uar::api::providers::build_router().with_state(Arc::clone(&state.provider_registry)),
+        )
+        // Discovery API (agents, sessions, skills, tools catalogs)
+        .nest(
+            "/api/uar/discovery",
+            uar::api::discovery::build_router().with_state(state.clone()),
         )
         // Auth API (API key management)
         .nest(
@@ -387,10 +402,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
             "/a2a/registry",
             uar::api::a2a::build_discovery_router().with_state(Arc::new(
                 uar::api::a2a::DiscoveryApiState {
-                    registry: agent_registry.unwrap_or_else(|| {
-                        // Fallback: in-memory stub (no-op) — real use requires SurrealDB
-                        Arc::new(crate::uar::api::a2a::registry::InMemoryAgentRegistry::new())
-                    }),
+                    registry: Arc::clone(&federated_agent_registry),
                 },
             )),
         )
@@ -539,6 +551,133 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
 
 async fn health_handler() -> StatusCode {
     StatusCode::OK
+}
+
+#[derive(Debug, Deserialize)]
+struct GenerateTitleRequest {
+    #[serde(default)]
+    message: Option<String>,
+    #[serde(default)]
+    assistant_message: Option<String>,
+}
+
+fn collapse_whitespace(input: &str) -> String {
+    input.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn title_from_text(input: &str) -> String {
+    let normalized = collapse_whitespace(input);
+    if normalized.is_empty() {
+        return "New Conversation".to_string();
+    }
+
+    let mut words = normalized.split(' ').take(8).collect::<Vec<_>>().join(" ");
+    if words.len() > 64 {
+        words.truncate(64);
+        words = words.trim_end().to_string();
+    }
+    words
+}
+
+async fn api_generate_title(Json(req): Json<GenerateTitleRequest>) -> Response {
+    let seed = req
+        .message
+        .as_deref()
+        .filter(|m| !m.trim().is_empty())
+        .or_else(|| {
+            req.assistant_message
+                .as_deref()
+                .filter(|m| !m.trim().is_empty())
+        })
+        .unwrap_or("New Conversation");
+
+    let title = title_from_text(seed);
+    Json(json!({ "title": title })).into_response()
+}
+
+async fn api_models(State(state): State<AppState>) -> Response {
+    let providers = state.provider_registry.list().await;
+    let mut root = serde_json::Map::new();
+
+    for provider in providers.into_iter().filter(|p| p.enabled) {
+        let mut models = serde_json::Map::new();
+
+        let model_entries = if provider.models.is_empty() {
+            provider
+                .default_model
+                .iter()
+                .map(|id| {
+                    (
+                        id.clone(),
+                        None,
+                        Some(128_000_u32),
+                        Some(4_096_u32),
+                        false,
+                        true,
+                    )
+                })
+                .collect::<Vec<_>>()
+        } else {
+            provider
+                .models
+                .iter()
+                .map(|model| {
+                    (
+                        model.id.clone(),
+                        model.display_name.clone(),
+                        model.context_window,
+                        model.max_output_tokens,
+                        model.supports_vision,
+                        model.supports_tools,
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+
+        for (
+            model_id,
+            display_name,
+            context_window,
+            max_output_tokens,
+            supports_vision,
+            supports_tools,
+        ) in model_entries
+        {
+            let context = context_window.unwrap_or(128_000);
+            let output = max_output_tokens.unwrap_or(4_096);
+            let input_modalities: Value = if supports_vision {
+                json!(["text", "image"])
+            } else {
+                json!(["text"])
+            };
+
+            models.insert(
+                model_id.clone(),
+                json!({
+                    "name": display_name.unwrap_or(model_id),
+                    "limit": {
+                        "context": context,
+                        "input": context,
+                        "output": output
+                    },
+                    "cost": {
+                        "input": 0.0,
+                        "output": 0.0
+                    },
+                    "modalities": {
+                        "input": input_modalities,
+                        "output": ["text"]
+                    },
+                    "tool_call": supports_tools,
+                    "reasoning": true
+                }),
+            );
+        }
+
+        root.insert(provider.id, json!({ "models": models }));
+    }
+
+    Json(Value::Object(root)).into_response()
 }
 
 async fn legacy_chat_route_disabled() -> Response {

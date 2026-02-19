@@ -3,6 +3,7 @@ pub mod actors;
 pub mod adapters;
 pub mod auth;
 pub mod compiler;
+pub mod discovery;
 pub mod ingest;
 pub mod knowledge;
 pub mod memory;

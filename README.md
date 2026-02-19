@@ -441,6 +441,34 @@ Full protocol reference:
 
 - [Chat Completion Protocol](docs/API_CHAT_COMPLETION.md)
 
+Discovery endpoints:
+
+- `GET /api/uar/discovery/agents`
+  - Returns:
+    - `runtime_agents` (full `AgentArtifact` objects, including built-in defaults)
+    - `federated_agents` (A2A registry `AgentInfo` objects)
+- `GET /api/uar/discovery/sessions/{session_id}/agent`
+  - Returns the current run/agent bound to that session (`run_id`, `agent_id`, `status`, and resolved `agent` when available)
+- `GET /api/uar/discovery/skills`
+  - Returns full skill parameters (version, triggers, prompt overlay, preferred tools, constraints, provider, enabled, MCP server IDs)
+- `GET /api/uar/discovery/tools`
+  - Returns:
+    - `mcp_servers`
+    - `tools` (MCP + native tools, each with source classification and schema)
+    - `built_in_tools` (native skill tool definitions)
+
+Built-in HTMX UI endpoints:
+
+- `GET /` - primary chat UI shell (`static/index.html`)
+- `GET /about` - HTMX about page (`static/about.html`)
+- `GET /htmx` - explicit alias to the chat UI shell
+- `GET /htmx/about` - explicit alias to the HTMX about page
+
+UI support endpoints:
+
+- `GET /api/models` - model catalog used by the web client token/model metadata cache
+- `POST /api/generate-title` - generates a conversation title for sidebar auto-naming
+
 ---
 
 ### 1. Tools Are Non-Optional
