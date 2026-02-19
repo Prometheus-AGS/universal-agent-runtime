@@ -12,6 +12,7 @@ use axum::{
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::timeout;
@@ -686,6 +687,57 @@ struct OpenAiDelta {
     role: Option<&'static str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     content: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tool_calls: Option<Vec<OpenAiDeltaToolCall>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tool_results: Option<Vec<OpenAiDeltaToolResult>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    skills: Option<Vec<OpenAiDeltaSkill>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    context_updates: Option<Vec<OpenAiDeltaContextUpdate>>,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiDeltaToolCall {
+    index: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    id: Option<String>,
+    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
+    call_type: Option<&'static str>,
+    function: OpenAiDeltaToolCallFunction,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiDeltaToolCallFunction {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    arguments: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiDeltaToolResult {
+    index: usize,
+    id: String,
+    name: String,
+    content: String,
+    success: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiDeltaSkill {
+    id: String,
+    title: String,
+    selection_method: String,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiDeltaContextUpdate {
+    strategy: crate::uar::domain::context::ContextStrategy,
+    messages_removed: usize,
+    tokens_saved: usize,
+    was_applied: bool,
+    summary_generated: bool,
 }
 
 #[derive(Debug)]
@@ -987,6 +1039,12 @@ async fn api_chat_completion(
         let stream_session_id = session_id.clone();
         let stream_model_name = model_name.clone();
         let stream_completion_id = completion_id.clone();
+        let replay = state
+            .run_manager
+            .history_since(&run_id, None)
+            .await
+            .unwrap_or_default();
+        let replay_max_id = replay.last().map_or(0, |event| event.id);
 
         let stream = async_stream::stream! {
             if emit_openai_chunks {
@@ -997,7 +1055,14 @@ async fn api_chat_completion(
                     model: stream_model_name.clone(),
                     choices: vec![OpenAiChunkChoice {
                         index: 0,
-                        delta: OpenAiDelta { role: Some("assistant"), content: None },
+                        delta: OpenAiDelta {
+                            role: Some("assistant"),
+                            content: None,
+                            tool_calls: None,
+                            tool_results: None,
+                            skills: None,
+                            context_updates: None,
+                        },
                         finish_reason: None,
                     }],
                 };
@@ -1005,77 +1070,296 @@ async fn api_chat_completion(
                 yield Ok::<Event, std::convert::Infallible>(Event::default().data(first_json));
             }
 
-            while let Ok(event) = rx.recv().await {
-                let event_id = event.id.to_string();
-                let normalized_event = event.event;
+            let mut tool_name_by_id: HashMap<String, String> = HashMap::new();
 
-                if emit_agui_chunks
-                    && let Some((event_name, payload)) = to_agui_event(&normalized_event)
-                {
-                    let payload_json =
-                        serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
-                    let agui_event = Event::default()
-                        .event(event_name)
-                        .id(event_id.clone())
-                        .data(payload_json);
-                    yield Ok(agui_event);
+            macro_rules! process_stream_event {
+                ($stream_event:expr) => {{
+                    let stream_event = $stream_event;
+                    let event_id = stream_event.id.to_string();
+                    let normalized_event = stream_event.event;
+
+                    if emit_agui_chunks
+                        && let Some((event_name, payload)) = to_agui_event(&normalized_event)
+                    {
+                        let payload_json =
+                            serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
+                        let agui_event = Event::default()
+                            .event(event_name)
+                            .id(event_id.clone())
+                            .data(payload_json);
+                        yield Ok(agui_event);
+                    }
+
+                    let mut should_stop = false;
+                    match normalized_event {
+                        uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
+                            if emit_openai_chunks {
+                                let chunk = OpenAiChunk {
+                                    id: stream_completion_id.clone(),
+                                    object: "chat.completion.chunk",
+                                    created,
+                                    model: stream_model_name.clone(),
+                                    choices: vec![OpenAiChunkChoice {
+                                        index: 0,
+                                        delta: OpenAiDelta {
+                                            role: None,
+                                            content: Some(text_delta),
+                                            tool_calls: None,
+                                            tool_results: None,
+                                            skills: None,
+                                            context_updates: None,
+                                        },
+                                        finish_reason: None,
+                                    }],
+                                };
+                                let json =
+                                    serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
+                                yield Ok(Event::default().data(json));
+                            }
+                        }
+                        uar::domain::events::NormalizedEvent::SkillActivated {
+                            skill_id,
+                            title,
+                            selection_method,
+                            ..
+                        } => {
+                            if emit_openai_chunks {
+                                let chunk = OpenAiChunk {
+                                    id: stream_completion_id.clone(),
+                                    object: "chat.completion.chunk",
+                                    created,
+                                    model: stream_model_name.clone(),
+                                    choices: vec![OpenAiChunkChoice {
+                                        index: 0,
+                                        delta: OpenAiDelta {
+                                            role: None,
+                                            content: None,
+                                            tool_calls: None,
+                                            tool_results: None,
+                                            skills: Some(vec![OpenAiDeltaSkill {
+                                                id: skill_id,
+                                                title,
+                                                selection_method,
+                                            }]),
+                                            context_updates: None,
+                                        },
+                                        finish_reason: None,
+                                    }],
+                                };
+                                let json =
+                                    serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
+                                yield Ok(Event::default().data(json));
+                            }
+                        }
+                        uar::domain::events::NormalizedEvent::ContextAction(action) => {
+                            if emit_openai_chunks {
+                                let chunk = OpenAiChunk {
+                                    id: stream_completion_id.clone(),
+                                    object: "chat.completion.chunk",
+                                    created,
+                                    model: stream_model_name.clone(),
+                                    choices: vec![OpenAiChunkChoice {
+                                        index: 0,
+                                        delta: OpenAiDelta {
+                                            role: None,
+                                            content: None,
+                                            tool_calls: None,
+                                            tool_results: None,
+                                            skills: None,
+                                            context_updates: Some(vec![OpenAiDeltaContextUpdate {
+                                                strategy: action.strategy,
+                                                messages_removed: action.messages_removed,
+                                                tokens_saved: action.tokens_saved,
+                                                was_applied: action.was_applied,
+                                                summary_generated: action.summary_generated,
+                                            }]),
+                                        },
+                                        finish_reason: None,
+                                    }],
+                                };
+                                let json =
+                                    serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
+                                yield Ok(Event::default().data(json));
+                            }
+                        }
+                        uar::domain::events::NormalizedEvent::ToolDelta {
+                            call_index,
+                            tool_call_id,
+                            delta,
+                            ..
+                        } => {
+                            if emit_openai_chunks {
+                                let arguments_delta = match delta {
+                                    serde_json::Value::String(s) => s,
+                                    other => other.to_string(),
+                                };
+                                let tool_name = tool_name_by_id.get(&tool_call_id).cloned();
+                                let chunk = OpenAiChunk {
+                                    id: stream_completion_id.clone(),
+                                    object: "chat.completion.chunk",
+                                    created,
+                                    model: stream_model_name.clone(),
+                                    choices: vec![OpenAiChunkChoice {
+                                        index: 0,
+                                        delta: OpenAiDelta {
+                                            role: None,
+                                            content: None,
+                                            tool_calls: Some(vec![OpenAiDeltaToolCall {
+                                                index: call_index,
+                                                id: Some(tool_call_id),
+                                                call_type: Some("function"),
+                                                function: OpenAiDeltaToolCallFunction {
+                                                    name: tool_name,
+                                                    arguments: Some(arguments_delta),
+                                                },
+                                            }]),
+                                            tool_results: None,
+                                            skills: None,
+                                            context_updates: None,
+                                        },
+                                        finish_reason: None,
+                                    }],
+                                };
+                                let json =
+                                    serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
+                                yield Ok(Event::default().data(json));
+                            }
+                        }
+                        uar::domain::events::NormalizedEvent::ToolStart {
+                            call_index,
+                            tool_call_id,
+                            tool,
+                            input,
+                            ..
+                        } => {
+                            tool_name_by_id.insert(tool_call_id.clone(), tool.clone());
+                            if emit_openai_chunks {
+                                let chunk = OpenAiChunk {
+                                    id: stream_completion_id.clone(),
+                                    object: "chat.completion.chunk",
+                                    created,
+                                    model: stream_model_name.clone(),
+                                    choices: vec![OpenAiChunkChoice {
+                                        index: 0,
+                                        delta: OpenAiDelta {
+                                            role: None,
+                                            content: None,
+                                            tool_calls: Some(vec![OpenAiDeltaToolCall {
+                                                index: call_index,
+                                                id: Some(tool_call_id),
+                                                call_type: Some("function"),
+                                                function: OpenAiDeltaToolCallFunction {
+                                                    name: Some(tool),
+                                                    arguments: Some(input.to_string()),
+                                                },
+                                            }]),
+                                            tool_results: None,
+                                            skills: None,
+                                            context_updates: None,
+                                        },
+                                        finish_reason: None,
+                                    }],
+                                };
+                                let json =
+                                    serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
+                                yield Ok(Event::default().data(json));
+                            }
+                        }
+                        uar::domain::events::NormalizedEvent::ToolEnd {
+                            call_index,
+                            tool_call_id,
+                            tool,
+                            output,
+                            ok,
+                            ..
+                        } => {
+                            if emit_openai_chunks {
+                                let chunk = OpenAiChunk {
+                                    id: stream_completion_id.clone(),
+                                    object: "chat.completion.chunk",
+                                    created,
+                                    model: stream_model_name.clone(),
+                                    choices: vec![OpenAiChunkChoice {
+                                        index: 0,
+                                        delta: OpenAiDelta {
+                                            role: None,
+                                            content: None,
+                                            tool_calls: None,
+                                            tool_results: Some(vec![OpenAiDeltaToolResult {
+                                                index: call_index,
+                                                id: tool_call_id,
+                                                name: tool,
+                                                content: output.to_string(),
+                                                success: ok,
+                                            }]),
+                                            skills: None,
+                                            context_updates: None,
+                                        },
+                                        finish_reason: None,
+                                    }],
+                                };
+                                let json =
+                                    serde_json::to_string(&chunk).unwrap_or_else(|_| "{}".to_string());
+                                yield Ok(Event::default().data(json));
+                            }
+                        }
+                        uar::domain::events::NormalizedEvent::RunDone { .. } => {
+                            if emit_openai_chunks {
+                                let final_chunk = OpenAiChunk {
+                                    id: stream_completion_id.clone(),
+                                    object: "chat.completion.chunk",
+                                    created,
+                                    model: stream_model_name.clone(),
+                                    choices: vec![OpenAiChunkChoice {
+                                        index: 0,
+                                        delta: OpenAiDelta::default(),
+                                        finish_reason: Some("stop"),
+                                    }],
+                                };
+                                let json = serde_json::to_string(&final_chunk)
+                                    .unwrap_or_else(|_| "{}".to_string());
+                                yield Ok(Event::default().data(json));
+                                yield Ok(Event::default().data("[DONE]"));
+                            }
+                            should_stop = true;
+                        }
+                        uar::domain::events::NormalizedEvent::Error { message, .. } => {
+                            if emit_openai_chunks {
+                                let payload = json!({
+                                    "error": {
+                                        "message": message,
+                                        "type": "server_error"
+                                    }
+                                });
+                                let json = serde_json::to_string(&payload)
+                                    .unwrap_or_else(|_| "{}".to_string());
+                                yield Ok(Event::default().data(json));
+                                yield Ok(Event::default().data("[DONE]"));
+                            }
+                            should_stop = true;
+                        }
+                        _ => {}
+                    }
+                    should_stop
+                }};
+            }
+
+            let mut stop_stream = false;
+            for replay_event in replay {
+                if process_stream_event!(replay_event) {
+                    stop_stream = true;
+                    break;
                 }
+            }
 
-                match normalized_event {
-                    uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
-                        if emit_openai_chunks {
-                            let chunk = OpenAiChunk {
-                                id: stream_completion_id.clone(),
-                                object: "chat.completion.chunk",
-                                created,
-                                model: stream_model_name.clone(),
-                                choices: vec![OpenAiChunkChoice {
-                                    index: 0,
-                                    delta: OpenAiDelta { role: None, content: Some(text_delta) },
-                                    finish_reason: None,
-                                }],
-                            };
-                            let json = serde_json::to_string(&chunk)
-                                .unwrap_or_else(|_| "{}".to_string());
-                            yield Ok(Event::default().data(json));
-                        }
+            if !stop_stream {
+                while let Ok(event) = rx.recv().await {
+                    if event.id <= replay_max_id {
+                        continue;
                     }
-                    uar::domain::events::NormalizedEvent::RunDone { .. } => {
-                        if emit_openai_chunks {
-                            let final_chunk = OpenAiChunk {
-                                id: stream_completion_id.clone(),
-                                object: "chat.completion.chunk",
-                                created,
-                                model: stream_model_name.clone(),
-                                choices: vec![OpenAiChunkChoice {
-                                    index: 0,
-                                    delta: OpenAiDelta::default(),
-                                    finish_reason: Some("stop"),
-                                }],
-                            };
-                            let json = serde_json::to_string(&final_chunk)
-                                .unwrap_or_else(|_| "{}".to_string());
-                            yield Ok(Event::default().data(json));
-                            yield Ok(Event::default().data("[DONE]"));
-                        }
+                    if process_stream_event!(event) {
                         break;
                     }
-                    uar::domain::events::NormalizedEvent::Error { message, .. } => {
-                        if emit_openai_chunks {
-                            let payload = json!({
-                                "error": {
-                                    "message": message,
-                                    "type": "server_error"
-                                }
-                            });
-                            let json =
-                                serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
-                            yield Ok(Event::default().data(json));
-                            yield Ok(Event::default().data("[DONE]"));
-                        }
-                        break;
-                    }
-                    _ => {}
                 }
             }
         };

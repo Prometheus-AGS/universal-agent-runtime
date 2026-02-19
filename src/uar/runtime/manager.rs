@@ -319,13 +319,54 @@ impl RunManager {
         }
 
         // SKILL INJECTION: Use SkillService if available, otherwise intent classifier
-        let matched_skills: Vec<_> = if let Some(ref skill_service) = self.skill_service {
-            // Delegate to SkillService for coordinated matching
+        let (matched_skills, skill_selection_method): (Vec<_>, String) = if let Some(
+            ref skill_service,
+        ) = self.skill_service
+        {
+            // Delegate to SkillService for coordinated matching.
             let agent_id = artifact.id.clone();
-            skill_service.match_skills(&input, Some(&agent_id)).await
+            let config = skill_service.get_matching_config().await;
+            let selection_method = match config.algorithm {
+                crate::uar::runtime::skills::service::SkillMatchingAlgorithm::Keyword => {
+                    "skill_service.keyword"
+                }
+                crate::uar::runtime::skills::service::SkillMatchingAlgorithm::Embedding => {
+                    "skill_service.embedding"
+                }
+                crate::uar::runtime::skills::service::SkillMatchingAlgorithm::Llm => {
+                    "skill_service.llm"
+                }
+                crate::uar::runtime::skills::service::SkillMatchingAlgorithm::Hybrid => {
+                    "skill_service.hybrid"
+                }
+                crate::uar::runtime::skills::service::SkillMatchingAlgorithm::LocalEmbedding => {
+                    "skill_service.local_embedding"
+                }
+            }
+            .to_string();
+            (
+                skill_service.match_skills(&input, Some(&agent_id)).await,
+                selection_method,
+            )
         } else {
-            // Legacy path: use intent classifier directly
+            // Legacy path: use intent classifier directly.
             let skills_registry = self.skills.read().await;
+            let backend_method = match self.classifier_config.backend {
+                crate::uar::runtime::matching::ClassifierBackend::Rules => {
+                    "legacy_classifier.rules"
+                }
+                crate::uar::runtime::matching::ClassifierBackend::Tfidf => {
+                    "legacy_classifier.tfidf"
+                }
+                crate::uar::runtime::matching::ClassifierBackend::Wasm => "legacy_classifier.wasm",
+                crate::uar::runtime::matching::ClassifierBackend::Hybrid => {
+                    "legacy_classifier.hybrid"
+                }
+                crate::uar::runtime::matching::ClassifierBackend::LocalEmbedding => {
+                    "legacy_classifier.local_embedding"
+                }
+                crate::uar::runtime::matching::ClassifierBackend::Llm => "legacy_classifier.llm",
+            };
 
             let classification_result = self
                 .intent_classifier
@@ -340,7 +381,7 @@ impl RunManager {
                         "Intent classification complete"
                     );
 
-                    if result.should_accept(
+                    let selected = if result.should_accept(
                         self.classifier_config.accept_threshold,
                         self.classifier_config.margin_threshold,
                     ) {
@@ -363,7 +404,9 @@ impl RunManager {
                             .into_iter()
                             .filter_map(|score| score.skill)
                             .collect()
-                    }
+                    };
+
+                    (selected, backend_method.to_string())
                 }
                 Err(e) => {
                     tracing::error!("Intent classification failed: {:?}", e);
@@ -393,16 +436,18 @@ impl RunManager {
                         }
                     }
 
-                    fallback_skills.into_values().collect()
+                    (
+                        fallback_skills.into_values().collect(),
+                        "legacy_fallback.tag_vector_hybrid".to_string(),
+                    )
                 }
             }
         };
 
-        let sorted_skills: Vec<_> = matched_skills.iter().collect();
         // Collect registries to merge (starting with global)
         let mut registries_to_merge = Vec::new();
 
-        for skill in sorted_skills {
+        for skill in &matched_skills {
             // Append skill prompt overlay
             system_prompt.push_str("\n\n[SKILL: ");
             system_prompt.push_str(&skill.title);
@@ -434,6 +479,16 @@ impl RunManager {
         let messages = optimized_messages;
         if let Some(act) = context_action {
             emitter.emit(NormalizedEvent::ContextAction(act)).await;
+        }
+        for skill in &matched_skills {
+            emitter
+                .emit(NormalizedEvent::SkillActivated {
+                    run_id: run_id.clone(),
+                    skill_id: skill.skill_id.clone(),
+                    title: skill.title.clone(),
+                    selection_method: skill_selection_method.clone(),
+                })
+                .await;
         }
 
         // Spawn async execution task

@@ -225,7 +225,6 @@ pub type SharedSpecStorage = Arc<dyn SpecStorage>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::uar::compiler::pipeline::CompileOutput;
     use crate::uar::compiler::report::{CompileOutcome, CompileReport};
 
     fn make_storage() -> InMemorySpecStorage {

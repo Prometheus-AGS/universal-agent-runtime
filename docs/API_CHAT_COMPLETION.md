@@ -132,6 +132,124 @@ Streaming modes:
 - `stream_mode: "agui"`: AG-UI named SSE events (`agui.*`) only.
 - `stream_mode: "dual"`: emits both AG-UI events and OpenAI chunks.
 
+Tool chunk behavior:
+
+- In `openai`/`dual` mode, tool calls are emitted as OpenAI `choices[].delta.tool_calls` chunks.
+- In `openai`/`dual` mode, tool execution replies are emitted as UAR extension chunks at `choices[].delta.tool_results`.
+- In `openai`/`dual` mode, activated skills are emitted as UAR extension chunks at `choices[].delta.skills` with `selection_method`.
+- In `openai`/`dual` mode, context actions are emitted as UAR extension chunks at `choices[].delta.context_updates` with `strategy`.
+- In `agui`/`dual` mode, tool lifecycle is emitted as `agui.tool_call.delta`, `agui.tool_call.complete`, and `agui.tool_result`.
+- In `agui`/`dual` mode, skills/context lifecycle is emitted as `agui.skill.activated` and `agui.context.update`.
+
+### OpenAI Stream Delta Extensions
+
+When `stream_mode` is `openai` or `dual`, UAR may include the following delta extensions:
+
+#### `choices[].delta.skills`
+
+```json
+{
+  "skills": [
+    {
+      "id": "skills.weather",
+      "title": "Weather Skill",
+      "selection_method": "skill_service.keyword"
+    }
+  ]
+}
+```
+
+Field definitions:
+
+- `id`: Skill ID (`skill.skill_id`).
+- `title`: Human-readable skill title.
+- `selection_method`: How selection was made. Current values include:
+  - `skill_service.keyword`
+  - `skill_service.embedding`
+  - `skill_service.local_embedding`
+  - `skill_service.llm`
+  - `skill_service.hybrid`
+  - `legacy_classifier.rules`
+  - `legacy_classifier.tfidf`
+  - `legacy_classifier.wasm`
+  - `legacy_classifier.local_embedding`
+  - `legacy_classifier.llm`
+  - `legacy_classifier.hybrid`
+  - `legacy_fallback.tag_vector_hybrid`
+
+#### `choices[].delta.context_updates`
+
+```json
+{
+  "context_updates": [
+    {
+      "strategy": "sliding_window",
+      "messages_removed": 4,
+      "tokens_saved": 1800,
+      "was_applied": true,
+      "summary_generated": false
+    }
+  ]
+}
+```
+
+Field definitions:
+
+- `strategy`: Context strategy. Current values:
+  - `sliding_window`
+  - `progressive_summarization`
+  - `hierarchical_memory`
+  - `keep_first_last`
+  - `none`
+- `messages_removed`: Number of messages removed/truncated.
+- `tokens_saved`: Estimated tokens saved by context management.
+- `was_applied`: Whether a strategy was actually applied.
+- `summary_generated`: Whether summarization was generated as part of the action.
+
+### AG-UI Skill/Context Events
+
+When `stream_mode` is `agui` or `dual`, equivalent events are emitted as named SSE events:
+
+- `event: agui.skill.activated`
+
+```json
+{
+  "kind": "skill",
+  "phase": "activated",
+  "request_id": "run-id",
+  "skill": {
+    "id": "skills.weather",
+    "title": "Weather Skill"
+  },
+  "selection_method": "skill_service.keyword"
+}
+```
+
+- `event: agui.context.update`
+
+```json
+{
+  "kind": "context",
+  "phase": "update",
+  "strategy": "sliding_window",
+  "messages_removed": 4,
+  "tokens_saved": 1800,
+  "was_applied": true,
+  "summary_generated": false
+}
+```
+
+### Client Parsing Guidance
+
+- Treat `choices[].delta.skills` and `choices[].delta.context_updates` as optional extension arrays.
+- Parse extension deltas incrementally like `content` and `tool_calls`.
+- Do not assume one skill/context chunk per response; multiple can appear.
+- Treat `selection_method` and `strategy` as enums that may grow in future versions.
+
+Event delivery guarantee:
+
+- `/api/chat/completion` replays buffered run history before live events, so early skill/context events are not dropped.
+
 Example stream:
 
 ```text

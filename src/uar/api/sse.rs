@@ -104,6 +104,24 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 }),
             ))
         }
+        NormalizedEvent::SkillActivated {
+            run_id,
+            skill_id,
+            title,
+            selection_method,
+        } => Some((
+            "agui.skill.activated",
+            serde_json::json!({
+                "kind": "skill",
+                "phase": "activated",
+                "request_id": run_id,
+                "skill": {
+                    "id": skill_id,
+                    "title": title
+                },
+                "selection_method": selection_method
+            }),
+        )),
         NormalizedEvent::ToolDelta {
             run_id,
             call_index,
@@ -199,5 +217,54 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "summary_generated": action.summary_generated
             }),
         )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::to_agui_event;
+    use crate::uar::domain::{
+        context::{ContextAction, ContextStrategy},
+        events::NormalizedEvent,
+    };
+
+    #[test]
+    fn maps_skill_activation_event_with_selection_method() {
+        let event = NormalizedEvent::SkillActivated {
+            run_id: "run-1".to_string(),
+            skill_id: "skills.weather".to_string(),
+            title: "Weather Skill".to_string(),
+            selection_method: "skill_service.keyword".to_string(),
+        };
+
+        let (name, payload) = to_agui_event(&event).expect("skill activation should map");
+        assert_eq!(name, "agui.skill.activated");
+        assert_eq!(payload["kind"], "skill");
+        assert_eq!(payload["phase"], "activated");
+        assert_eq!(payload["request_id"], "run-1");
+        assert_eq!(payload["skill"]["id"], "skills.weather");
+        assert_eq!(payload["skill"]["title"], "Weather Skill");
+        assert_eq!(payload["selection_method"], "skill_service.keyword");
+    }
+
+    #[test]
+    fn maps_context_action_event_with_strategy() {
+        let event = NormalizedEvent::ContextAction(ContextAction {
+            strategy: ContextStrategy::SlidingWindow,
+            messages_removed: 5,
+            tokens_saved: 2000,
+            was_applied: true,
+            summary_generated: false,
+        });
+
+        let (name, payload) = to_agui_event(&event).expect("context action should map");
+        assert_eq!(name, "agui.context.update");
+        assert_eq!(payload["kind"], "context");
+        assert_eq!(payload["phase"], "update");
+        assert_eq!(payload["strategy"], "sliding_window");
+        assert_eq!(payload["messages_removed"], 5);
+        assert_eq!(payload["tokens_saved"], 2000);
+        assert_eq!(payload["was_applied"], true);
+        assert_eq!(payload["summary_generated"], false);
     }
 }

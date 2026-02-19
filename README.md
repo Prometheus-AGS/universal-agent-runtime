@@ -425,6 +425,11 @@ Streaming behavior:
 - `stream_mode: "openai"` (default) emits OpenAI chunks.
 - `stream_mode: "agui"` emits AG-UI named events (`agui.*`).
 - `stream_mode: "dual"` emits both formats.
+- `openai`/`dual` streaming includes UAR extension deltas for:
+  - `choices[].delta.tool_results` (tool replies)
+  - `choices[].delta.skills` (activated skills + `selection_method`)
+  - `choices[].delta.context_updates` (context actions + `strategy`)
+- `/api/chat/completion` replays buffered run events before live streaming so early skill/context chunks are not lost.
 
 Model resolution:
 
@@ -473,6 +478,8 @@ The client never has to care which protocol is used.
 
 Internally, everything becomes typed events:
 *   `message.delta`
+*   `skill.activated`
+*   `context.update`
 *   `tool_call.delta`
 *   `tool_call.complete`
 *   `tool_result`
@@ -481,6 +488,8 @@ Internally, everything becomes typed events:
 
 In parallel, the server mirrors these events into AG-UI-style events:
 *   `agui.message.delta`
+*   `agui.skill.activated`
+*   `agui.context.update`
 *   `agui.tool_call.delta`
 *   `agui.tool_call.complete`
 *   `agui.tool_result`

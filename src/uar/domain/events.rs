@@ -28,6 +28,12 @@ pub enum NormalizedEvent {
         run_id: String,
         items: Vec<MemoryItem>,
     },
+    SkillActivated {
+        run_id: String,
+        skill_id: String,
+        title: String,
+        selection_method: String,
+    },
 
     ToolStart {
         run_id: String,
