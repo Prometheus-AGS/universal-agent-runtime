@@ -1,0 +1,1175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UAR-AGENT-MD Specification — travisjames.ai</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;family=Roboto:wght@300;400;500;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet" type="text/css" />
+  <style type="text/css">
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #F7F7F8;
+      --fg: #0B0F14;
+      --card: #FFFFFF;
+      --muted: #EEF0F3;
+      --muted-fg: #4B5563;
+      --border: #D8DEE6;
+      --primary: #E04E28;
+      --primary-alt: #FF6A3D;
+      --secondary: #111827;
+      --secondary-2: #1C2634;
+      --accent-soft: #F2D6CF;
+      --text-on-dark: #E8EDF3;
+      --text-dim: #A7B0BC;
+      --text-dimmer: #4B5563;
+      --grid-line: #233041;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.7;
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAV */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(17,24,39,.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--grid-line);
+      padding: .75rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700; font-size: .9rem; letter-spacing: -.02em;
+      color: var(--text-on-dark);
+      text-decoration: none;
+    }
+    .nav-brand span { color: var(--primary); }
+    .nav-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem; font-weight: 500;
+      color: var(--text-dimmer); letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .nav-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .62rem; font-weight: 600;
+      color: var(--primary); letter-spacing: .1em;
+      text-transform: uppercase;
+      border: 1px solid rgba(224,78,40,.35);
+      border-radius: 4px;
+      padding: .2rem .55rem;
+    }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      position: relative; overflow: hidden;
+      background: var(--secondary);
+      padding: 6rem 2rem 4rem;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 40%, rgba(224,78,40,.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 60%, rgba(255,106,61,.07) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23233041' stroke-width='.5'%3E%3Cpath d='M0 30h60M30 0v60'/%3E%3C/g%3E%3C/svg%3E");
+      opacity: .35; pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 2; max-width: 760px; }
+    .hero-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem; font-weight: 600;
+      color: var(--primary); letter-spacing: .18em;
+      text-transform: uppercase; margin-bottom: 1.25rem;
+      animation: fadeUp .8s .2s both;
+    }
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700; letter-spacing: -.04em;
+      color: var(--text-on-dark); line-height: 1.06;
+      margin-bottom: .75rem;
+      animation: fadeUp .8s .35s both;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #E04E28, #FF6A3D);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem; font-weight: 400;
+      color: var(--text-dim); max-width: 560px; margin: 1rem auto 2rem;
+      line-height: 1.65;
+      animation: fadeUp .8s .5s both;
+    }
+    .hero-badges {
+      display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap;
+      animation: fadeUp .8s .65s both;
+    }
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .62rem; font-weight: 500;
+      color: var(--text-dimmer); letter-spacing: .08em;
+      border: 1px solid var(--grid-line); border-radius: 999px;
+      padding: .3rem .85rem;
+    }
+    .badge-primary {
+      color: var(--primary);
+      border-color: rgba(224,78,40,.4);
+      background: rgba(224,78,40,.06);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* TOC */
+    .toc-section {
+      background: var(--secondary-2);
+      border-top: 1px solid var(--grid-line);
+      border-bottom: 1px solid var(--grid-line);
+      padding: 3rem 2rem;
+    }
+    .toc-inner { max-width: 1100px; margin: 0 auto; }
+    .toc-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem; font-weight: 600;
+      color: var(--primary-alt); letter-spacing: .15em;
+      text-transform: uppercase; margin-bottom: 1.25rem;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: .5rem;
+    }
+    .toc-item {
+      display: flex; align-items: center; gap: .6rem;
+      font-family: 'Inter', sans-serif;
+      font-size: .8rem; font-weight: 500;
+      color: var(--text-dim);
+      text-decoration: none;
+      padding: .5rem .75rem;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      transition: all .2s;
+    }
+    .toc-item:hover {
+      color: var(--text-on-dark);
+      border-color: var(--grid-line);
+      background: rgba(255,255,255,.04);
+    }
+    .toc-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .6rem; color: var(--primary);
+      min-width: 22px;
+    }
+
+    /* MAIN CONTENT */
+    .content-section {
+      padding: 5rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .content-section-dark {
+      background: var(--secondary);
+      padding: 5rem 2rem;
+    }
+    .content-section-dark .inner { max-width: 1100px; margin: 0 auto; }
+    .content-section-muted {
+      background: var(--muted);
+      padding: 5rem 2rem;
+    }
+    .content-section-muted .inner { max-width: 1100px; margin: 0 auto; }
+
+    .section-eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .63rem; font-weight: 600;
+      color: var(--primary); letter-spacing: .14em;
+      text-transform: uppercase; margin-bottom: .5rem;
+    }
+    .section-eyebrow-light { color: var(--primary-alt); }
+
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.85rem; font-weight: 700;
+      letter-spacing: -.03em; margin-bottom: .5rem;
+      line-height: 1.15; color: var(--fg);
+    }
+    .section-title-light { color: var(--text-on-dark); }
+
+    .divider {
+      width: 40px; height: 3px;
+      background: var(--primary);
+      border-radius: 2px;
+      margin: 1rem 0 1.75rem;
+    }
+    .divider-light { background: var(--primary-alt); }
+
+    .lead {
+      font-family: 'Inter', sans-serif;
+      font-size: .95rem; color: var(--muted-fg);
+      max-width: 640px; line-height: 1.75;
+      margin-bottom: 2rem;
+    }
+    .lead-light { color: var(--text-dim); }
+
+    p.prose {
+      font-family: 'Roboto', sans-serif;
+      font-size: .93rem; color: var(--fg);
+      line-height: 1.75; margin-bottom: 1rem;
+    }
+    p.prose-light { color: var(--text-dim); }
+
+    /* PRINCIPLE CARDS */
+    .principle-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .principle-card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--grid-line);
+      border-radius: 10px;
+      padding: 1.25rem 1.25rem 1rem;
+      position: relative; overflow: hidden;
+    }
+    .principle-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #E04E28, transparent);
+    }
+    .principle-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .6rem; color: var(--primary-alt);
+      letter-spacing: .1em; margin-bottom: .5rem;
+    }
+    .principle-card h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: .85rem; font-weight: 600;
+      color: var(--text-on-dark); letter-spacing: -.01em;
+    }
+
+    /* SPEC SECTION BLOCKS */
+    .spec-block {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .spec-block-header {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+    .spec-block-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .62rem; font-weight: 600;
+      color: var(--primary); letter-spacing: .1em;
+      background: rgba(224,78,40,.08);
+      border: 1px solid rgba(224,78,40,.2);
+      border-radius: 4px;
+      padding: .2rem .5rem;
+      white-space: nowrap;
+    }
+    .spec-block-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem; font-weight: 600;
+      color: var(--fg); letter-spacing: -.02em;
+    }
+    .spec-block-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: .78rem; color: var(--muted-fg);
+      margin-left: auto;
+    }
+    .spec-block-body {
+      padding: 1.25rem;
+      background: #FAFAFA;
+    }
+    .spec-block-body p {
+      font-size: .88rem; color: var(--fg);
+      line-height: 1.7; margin-bottom: .75rem;
+    }
+    .spec-block-body p:last-child { margin-bottom: 0; }
+
+    /* CODE BLOCKS */
+    .code-wrap {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--grid-line);
+      margin: .75rem 0;
+    }
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #1C2634;
+      padding: .55rem 1rem;
+      border-bottom: 1px solid var(--grid-line);
+    }
+    .code-lang {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .58rem; font-weight: 600;
+      color: var(--primary-alt); letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .code-file {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .58rem; color: var(--text-dimmer);
+      letter-spacing: .04em;
+    }
+    pre {
+      background: #0D1520;
+      padding: 1.25rem 1.25rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .78rem;
+      line-height: 1.75;
+      color: #B8C7D9;
+    }
+    .t-key    { color: #A7BECC; }
+    .t-val    { color: #E8D5A0; }
+    .t-str    { color: #98C99A; }
+    .t-num    { color: #CF9CDA; }
+    .t-op     { color: #E04E28; }
+    .t-comment{ color: #445566; font-style: italic; }
+    .t-cedar  { color: #FF9F7A; }
+    .t-cedar-kw { color: #E04E28; font-weight: 600; }
+    .t-bracket { color: #607080; }
+
+    /* RULES / REQUIREMENTS */
+    .rules-list {
+      list-style: none;
+      margin-top: .75rem;
+    }
+    .rules-list li {
+      display: flex; align-items: flex-start; gap: .65rem;
+      font-family: 'Inter', sans-serif;
+      font-size: .85rem; color: var(--fg);
+      padding: .5rem 0;
+      border-bottom: 1px solid var(--border);
+      line-height: 1.55;
+    }
+    .rules-list li:last-child { border-bottom: none; }
+    .rules-list li::before {
+      content: '';
+      display: inline-block;
+      width: 6px; height: 6px;
+      min-width: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+      margin-top: .45rem;
+    }
+
+    /* COMPILATION FLOW */
+    .flow-steps {
+      display: flex; flex-direction: column; gap: 0;
+      margin-top: 1.5rem;
+    }
+    .flow-step {
+      display: flex; align-items: flex-start; gap: 1.25rem;
+      position: relative;
+    }
+    .flow-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 17px; top: 36px;
+      width: 1px; height: calc(100% - 12px);
+      background: var(--grid-line);
+    }
+    .flow-step-num {
+      display: flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; min-width: 34px;
+      border-radius: 50%;
+      border: 2px solid var(--grid-line);
+      background: var(--secondary-2);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem; font-weight: 700;
+      color: var(--primary);
+      z-index: 1;
+    }
+    .flow-step-content {
+      padding: .35rem 0 1.75rem;
+    }
+    .flow-step-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: .9rem; font-weight: 600;
+      color: var(--text-on-dark); letter-spacing: -.01em;
+      margin-bottom: .2rem;
+    }
+    .flow-step-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: .8rem; color: var(--text-dim);
+      line-height: 1.55;
+    }
+
+    /* SUMMARY FEATURE GRID */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      position: relative; overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--primary), transparent);
+    }
+    .feature-icon {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .72rem; color: var(--primary);
+      margin-bottom: .6rem; letter-spacing: .06em;
+    }
+    .feature-card h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: .9rem; font-weight: 600;
+      color: var(--fg); letter-spacing: -.01em;
+      margin-bottom: .35rem;
+    }
+    .feature-card p {
+      font-family: 'Inter', sans-serif;
+      font-size: .78rem; color: var(--muted-fg);
+      line-height: 1.55;
+    }
+
+    /* FOOTER */
+    .footer {
+      background: var(--secondary);
+      border-top: 1px solid var(--grid-line);
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .footer-brand {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700; font-size: 1rem;
+      color: var(--text-on-dark); margin-bottom: .5rem;
+    }
+    .footer-brand span { color: var(--primary); }
+    .footer-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .62rem; color: var(--text-dimmer);
+      letter-spacing: .1em; text-transform: uppercase;
+    }
+
+    /* UTILS */
+    .mb-0 { margin-bottom: 0; }
+    .mt-1 { margin-top: .5rem; }
+    .mt-2 { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-brand" href="#top">travisjames<span>.ai</span></a>
+  <span class="nav-meta">Universal Agent Runtime</span>
+  <span class="nav-tag">SPEC v1.1</span>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="hero-content">
+    <div class="hero-eyebrow">UAR-AGENT-MD — Specification Document</div>
+    <h1>Universal Agent<br /><em>Runtime</em></h1>
+    <p class="hero-sub">
+      A deterministic, machine-readable Markdown template for describing AI agents
+      that can be parsed, validated, and executed by the Universal Agent Runtime.
+    </p>
+    <div class="hero-badges">
+      <span class="badge badge-primary">Draft v1.1</span>
+      <span class="badge">Cedar Governance</span>
+      <span class="badge">A2UI Contracts</span>
+      <span class="badge">MCP Infrastructure</span>
+      <span class="badge">A2A Schemas</span>
+    </div>
+  </div>
+</header>
+
+<!-- TABLE OF CONTENTS -->
+<section class="toc-section">
+  <div class="toc-inner">
+    <div class="toc-label">// Table of Contents</div>
+    <div class="toc-grid">
+      <a class="toc-item" href="#s-overview"><span class="toc-num">01</span> Overview</a>
+      <a class="toc-item" href="#s-principles"><span class="toc-num">02</span> Design Principles</a>
+      <a class="toc-item" href="#s-structure"><span class="toc-num">03</span> Section Structure</a>
+      <a class="toc-item" href="#s-metadata"><span class="toc-num">04</span> Metadata</a>
+      <a class="toc-item" href="#s-identity"><span class="toc-num">05</span> Identity</a>
+      <a class="toc-item" href="#s-ui"><span class="toc-num">06</span> UI (A2UI)</a>
+      <a class="toc-item" href="#s-capabilities"><span class="toc-num">07</span> Capabilities</a>
+      <a class="toc-item" href="#s-skills"><span class="toc-num">08</span> Skills</a>
+      <a class="toc-item" href="#s-tools"><span class="toc-num">09</span> Tools</a>
+      <a class="toc-item" href="#s-mcp"><span class="toc-num">10</span> MCP Servers</a>
+      <a class="toc-item" href="#s-knowledge"><span class="toc-num">11</span> Knowledge Base</a>
+      <a class="toc-item" href="#s-memory"><span class="toc-num">12</span> Memory Model</a>
+      <a class="toc-item" href="#s-a2a"><span class="toc-num">13</span> A2A Contracts</a>
+      <a class="toc-item" href="#s-governance"><span class="toc-num">14</span> Governance</a>
+      <a class="toc-item" href="#s-budgets"><span class="toc-num">15</span> Budgets &amp; Constraints</a>
+      <a class="toc-item" href="#s-execution"><span class="toc-num">16</span> Execution Model</a>
+      <a class="toc-item" href="#s-observability"><span class="toc-num">17</span> Observability</a>
+      <a class="toc-item" href="#s-deployment"><span class="toc-num">18</span> Deployment Profiles</a>
+      <a class="toc-item" href="#s-compilation"><span class="toc-num">19</span> Compilation Flow</a>
+      <a class="toc-item" href="#s-summary"><span class="toc-num">20</span> Summary</a>
+    </div>
+  </div>
+</section>
+
+<!-- 1. OVERVIEW -->
+<section class="content-section" id="s-overview">
+  <div class="section-eyebrow">§ 01 — Overview</div>
+  <h2 class="section-title">What is UAR-AGENT-MD?</h2>
+  <div class="divider"></div>
+  <p class="lead">
+    UAR-AGENT-MD is a structured Markdown-based specification that describes a fully executable agent artifact.
+    It is the canonical definition format for agents within the Universal Agent Runtime.
+  </p>
+  <p class="prose">
+    Designed to sit at the intersection of human legibility and machine precision, UAR-AGENT-MD produces a
+    portable, governed, UI-aware, and network-capable agent artifact from a single structured document.
+    Every section has a defined parsing contract; nothing is inferred from convention alone.
+  </p>
+  <p class="prose">
+    The specification is designed to be: <strong>human-readable</strong>, statically validated,
+    compilable into a runtime-ready agent descriptor, capable of embedding Cedar governance policies,
+    and expressive enough to declare skills, tools, UI contracts (A2UI), MCP dependencies,
+    and Agent-to-Agent schemas in one coherent artifact.
+  </p>
+</section>
+
+<!-- 2. DESIGN PRINCIPLES -->
+<div class="content-section-dark" id="s-principles">
+  <div class="inner">
+    <div class="section-eyebrow section-eyebrow-light">§ 02 — Design Principles</div>
+    <h2 class="section-title section-title-light">Architectural Foundations</h2>
+    <div class="divider divider-light"></div>
+    <p class="lead lead-light">
+      Six invariants that govern every decision in the specification.
+      These are not aspirational — they are enforced at compile time.
+    </p>
+    <div class="principle-grid">
+      <div class="principle-card">
+        <div class="principle-num">// 01</div>
+        <h4>Deterministic Parsing</h4>
+      </div>
+      <div class="principle-card">
+        <div class="principle-num">// 02</div>
+        <h4>Explicit Capability Declaration</h4>
+      </div>
+      <div class="principle-card">
+        <div class="principle-num">// 03</div>
+        <h4>Policy-First Execution</h4>
+      </div>
+      <div class="principle-card">
+        <div class="principle-num">// 04</div>
+        <h4>UI as Schema, Not Hardcoded Frontend</h4>
+      </div>
+      <div class="principle-card">
+        <div class="principle-num">// 05</div>
+        <h4>MCP Servers as Declared Infrastructure</h4>
+      </div>
+      <div class="principle-card">
+        <div class="principle-num">// 06</div>
+        <h4>Strong Typing for A2A Interactions</h4>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. SECTION STRUCTURE -->
+<section class="content-section-muted" id="s-structure">
+  <div class="inner">
+    <div class="section-eyebrow">§ 03 — Required Section Structure</div>
+    <h2 class="section-title">Document Skeleton</h2>
+    <div class="divider"></div>
+    <p class="lead">
+      All sections are required. Omitting any section will cause the UAR compiler to reject the descriptor.
+    </p>
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Markdown</span>
+        <span class="code-file">agent.md — required top-level structure</span>
+      </div>
+      <pre><span class="t-comment"># Agent: &lt;name&gt;</span>
+
+<span class="t-op">##</span> <span class="t-key">Metadata</span>
+<span class="t-op">##</span> <span class="t-key">Identity</span>
+<span class="t-op">##</span> <span class="t-key">UI (A2UI)</span>
+<span class="t-op">##</span> <span class="t-key">Capabilities</span>
+<span class="t-op">##</span> <span class="t-key">Skills</span>
+<span class="t-op">##</span> <span class="t-key">Tools</span>
+<span class="t-op">##</span> <span class="t-key">MCP Servers</span>
+<span class="t-op">##</span> <span class="t-key">Knowledge Base</span>
+<span class="t-op">##</span> <span class="t-key">Memory Model</span>
+<span class="t-op">##</span> <span class="t-key">A2A Contracts</span>
+<span class="t-op">##</span> <span class="t-key">Governance</span>
+<span class="t-op">##</span> <span class="t-key">Budgets &amp; Constraints</span>
+<span class="t-op">##</span> <span class="t-key">Execution Model</span>
+<span class="t-op">##</span> <span class="t-key">Observability</span>
+<span class="t-op">##</span> <span class="t-key">Deployment Profiles</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- SPEC SECTIONS 4–18 -->
+<section class="content-section" id="s-metadata">
+  <div class="section-eyebrow">§ 04 — Metadata</div>
+  <h2 class="section-title">Agent Metadata</h2>
+  <div class="divider"></div>
+  <p class="prose">
+    Top-level identifiers and runtime compatibility declarations. The <code>id</code>, <code>version</code>,
+    and <code>runtime</code> fields are required for descriptor compilation.
+  </p>
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-file">## Metadata</span>
+    </div>
+    <pre><span class="t-key">id</span><span class="t-op">:</span>              <span class="t-str">agent.research.assistant</span>
+<span class="t-key">version</span><span class="t-op">:</span>        <span class="t-str">1.1.0</span>
+<span class="t-key">runtime</span><span class="t-op">:</span>        <span class="t-str">uar&gt;=1.0</span>
+<span class="t-key">schema</span><span class="t-op">:</span>         <span class="t-str">uar-agent-md@1.1</span>
+<span class="t-key">owner</span><span class="t-op">:</span>          <span class="t-str">prometheus</span>
+<span class="t-key">license</span><span class="t-op">:</span>        <span class="t-str">AGPL-3.0</span>
+<span class="t-key">ui_schema_version</span><span class="t-op">:</span> <span class="t-str">a2ui@1</span></pre>
+  </div>
+</section>
+
+<div class="content-section-dark" id="s-identity">
+  <div class="inner">
+    <div class="section-eyebrow section-eyebrow-light">§ 05 — Identity</div>
+    <h2 class="section-title section-title-light">Principal Identity</h2>
+    <div class="divider divider-light"></div>
+    <p class="lead lead-light">
+      Maps directly to Cedar principal attributes. Trust level and classification are enforced
+      at policy evaluation time — they cannot be overridden at runtime.
+    </p>
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">YAML</span>
+        <span class="code-file">## Identity</span>
+      </div>
+      <pre><span class="t-key">principal</span><span class="t-op">:</span>
+  <span class="t-key">type</span><span class="t-op">:</span>           <span class="t-str">agent</span>
+  <span class="t-key">namespace</span><span class="t-op">:</span>      <span class="t-str">tenant.default</span>
+  <span class="t-key">trust_level</span><span class="t-op">:</span>    <span class="t-str">medium</span>
+  <span class="t-key">classification</span><span class="t-op">:</span> <span class="t-str">internal</span></pre>
+    </div>
+  </div>
+</div>
+
+<section class="content-section" id="s-ui">
+  <div class="section-eyebrow">§ 06 — UI (A2UI)</div>
+  <h2 class="section-title">User Interface Contracts</h2>
+  <div class="divider"></div>
+  <p class="lead">
+    Defines the interactive interface surface available to users or other agents.
+    UI is declared as schema — not implemented as a hardcoded frontend.
+    The runtime resolves artifacts against registered A2UI schemas at boot.
+  </p>
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-file">## UI (A2UI)</span>
+    </div>
+    <pre><span class="t-key">ui</span><span class="t-op">:</span>
+  <span class="t-key">artifacts</span><span class="t-op">:</span>
+    <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>     <span class="t-str">research.panel</span>
+      <span class="t-key">schema</span><span class="t-op">:</span> <span class="t-str">a2ui.panel@1</span>
+      <span class="t-key">props</span><span class="t-op">:</span>
+        <span class="t-key">title</span><span class="t-op">:</span>  <span class="t-str">"Research Assistant"</span>
+        <span class="t-key">layout</span><span class="t-op">:</span> <span class="t-str">two_column</span>
+    <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>     <span class="t-str">research.results</span>
+      <span class="t-key">schema</span><span class="t-op">:</span> <span class="t-str">a2ui.list@1</span>
+      <span class="t-key">props</span><span class="t-op">:</span>
+        <span class="t-key">sortable</span><span class="t-op">:</span>   <span class="t-val">true</span>
+        <span class="t-key">paginated</span><span class="t-op">:</span>  <span class="t-val">true</span>
+
+  <span class="t-key">actions</span><span class="t-op">:</span>
+    <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>            <span class="t-str">submit_query</span>
+      <span class="t-key">input_schema</span><span class="t-op">:</span>  <span class="t-str">schemas/query_input.json</span>
+      <span class="t-key">output_schema</span><span class="t-op">:</span> <span class="t-str">schemas/query_output.json</span>
+      <span class="t-key">triggers</span><span class="t-op">:</span>
+        <span class="t-bracket">-</span> <span class="t-key">skill</span><span class="t-op">:</span> <span class="t-str">web_research</span></pre>
+  </div>
+  <ul class="rules-list mt-2">
+    <li>Each artifact must reference a valid A2UI schema</li>
+    <li>Input and output schemas must be JSON Schema compliant</li>
+    <li>UI actions must map to declared skills or A2A endpoints</li>
+    <li>UAR validates all A2UI references against registered schemas at compile time</li>
+  </ul>
+</section>
+
+<div class="content-section-dark" id="s-capabilities">
+  <div class="inner">
+    <div class="section-eyebrow section-eyebrow-light">§ 07 — Capabilities</div>
+    <h2 class="section-title section-title-light">Declared Capabilities</h2>
+    <div class="divider divider-light"></div>
+    <p class="lead lead-light">
+      Capabilities are the permitted runtime surfaces. Only declared capabilities
+      may be invoked — the execution engine enforces this strictly.
+    </p>
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">YAML</span>
+        <span class="code-file">## Capabilities</span>
+      </div>
+      <pre><span class="t-key">capabilities</span><span class="t-op">:</span>
+  <span class="t-bracket">-</span> <span class="t-str">llm.invoke</span>
+  <span class="t-bracket">-</span> <span class="t-str">tool.run</span>
+  <span class="t-bracket">-</span> <span class="t-str">vector.search</span>
+  <span class="t-bracket">-</span> <span class="t-str">net.http.request</span></pre>
+    </div>
+  </div>
+</div>
+
+<section class="content-section" id="s-skills">
+  <div class="section-eyebrow">§ 08 — Skills</div>
+  <h2 class="section-title">Skill Definitions</h2>
+  <div class="divider"></div>
+  <p class="prose">
+    Skills are the named, executable units of agent behavior. Each skill declares its entrypoint
+    and required tool dependencies. UAR resolves tool bindings before skill execution begins.
+  </p>
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-file">## Skills</span>
+    </div>
+    <pre><span class="t-key">skills</span><span class="t-op">:</span>
+  <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>             <span class="t-str">summarization</span>
+    <span class="t-key">entrypoint</span><span class="t-op">:</span>    <span class="t-str">skills/summarize.rs</span>
+    <span class="t-key">required_tools</span><span class="t-op">:</span> <span class="t-bracket">[</span><span class="t-str">llm.primary</span><span class="t-bracket">]</span>
+
+  <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>             <span class="t-str">web_research</span>
+    <span class="t-key">entrypoint</span><span class="t-op">:</span>    <span class="t-str">skills/web_research.rs</span>
+    <span class="t-key">required_tools</span><span class="t-op">:</span> <span class="t-bracket">[</span><span class="t-str">web.search</span><span class="t-bracket">]</span></pre>
+  </div>
+</section>
+
+<div class="content-section-muted" id="s-tools">
+  <div class="inner">
+    <div class="section-eyebrow">§ 09 — Tools</div>
+    <h2 class="section-title">Tool Declarations</h2>
+    <div class="divider"></div>
+    <p class="prose">
+      Tools are typed runtime bindings. LLM tools enforce model allowlists and token budgets.
+      HTTP tools enforce domain allowlists. All tool constraints are evaluated before any invocation.
+    </p>
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">YAML</span>
+        <span class="code-file">## Tools</span>
+      </div>
+      <pre><span class="t-key">tools</span><span class="t-op">:</span>
+  <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>                  <span class="t-str">llm.primary</span>
+    <span class="t-key">type</span><span class="t-op">:</span>                <span class="t-str">llm</span>
+    <span class="t-key">allowed_models</span><span class="t-op">:</span>      <span class="t-bracket">[</span><span class="t-str">gpt-4o</span><span class="t-bracket">,</span> <span class="t-str">claude-sonnet</span><span class="t-bracket">]</span>
+    <span class="t-key">max_tokens_per_call</span><span class="t-op">:</span> <span class="t-num">4000</span>
+
+  <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>                  <span class="t-str">web.search</span>
+    <span class="t-key">type</span><span class="t-op">:</span>                <span class="t-str">http</span>
+    <span class="t-key">allow_domains</span><span class="t-op">:</span>       <span class="t-bracket">[</span><span class="t-str">api.tavily.com</span><span class="t-bracket">,</span> <span class="t-str">wikipedia.org</span><span class="t-bracket">]</span></pre>
+    </div>
+  </div>
+</div>
+
+<section class="content-section" id="s-mcp">
+  <div class="section-eyebrow">§ 10 — MCP Servers</div>
+  <h2 class="section-title">MCP Infrastructure Dependencies</h2>
+  <div class="divider"></div>
+  <p class="lead">
+    MCP servers are treated as first-class infrastructure. They must be explicitly declared,
+    authenticated, and capability-matched before the agent descriptor is considered valid.
+  </p>
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-file">## MCP Servers</span>
+    </div>
+    <pre><span class="t-key">mcp_servers</span><span class="t-op">:</span>
+  <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>       <span class="t-str">tavily</span>
+    <span class="t-key">endpoint</span><span class="t-op">:</span> <span class="t-str">https://api.tavily.com/mcp</span>
+    <span class="t-key">auth</span><span class="t-op">:</span>
+      <span class="t-key">type</span><span class="t-op">:</span> <span class="t-str">bearer</span>
+      <span class="t-key">env</span><span class="t-op">:</span>  <span class="t-val">TAVILY_API_KEY</span>
+    <span class="t-key">capabilities</span><span class="t-op">:</span>
+      <span class="t-bracket">-</span> <span class="t-str">web.search</span>
+    <span class="t-key">timeout_seconds</span><span class="t-op">:</span> <span class="t-num">10</span>
+
+  <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>       <span class="t-str">supabase</span>
+    <span class="t-key">endpoint</span><span class="t-op">:</span> <span class="t-str">https://project.supabase.co/mcp</span>
+    <span class="t-key">auth</span><span class="t-op">:</span>
+      <span class="t-key">type</span><span class="t-op">:</span> <span class="t-str">service_key</span>
+      <span class="t-key">env</span><span class="t-op">:</span>  <span class="t-val">SUPABASE_SERVICE_ROLE</span>
+    <span class="t-key">capabilities</span><span class="t-op">:</span>
+      <span class="t-bracket">-</span> <span class="t-str">db.query</span>
+      <span class="t-bracket">-</span> <span class="t-str">vector.search</span></pre>
+  </div>
+  <ul class="rules-list mt-2">
+    <li>MCP servers must be explicitly declared — implicit resolution is not supported</li>
+    <li>Tools referencing MCP capabilities must match a declared server's capability list</li>
+    <li>Authentication types are validated against the UAR auth registry at compile time</li>
+  </ul>
+</section>
+
+<div class="content-section-dark" id="s-knowledge">
+  <div class="inner">
+    <div class="section-eyebrow section-eyebrow-light">§ 11 — Knowledge Base</div>
+    <h2 class="section-title section-title-light">Knowledge Indexes</h2>
+    <div class="divider divider-light"></div>
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">YAML</span>
+        <span class="code-file">## Knowledge Base</span>
+      </div>
+      <pre><span class="t-key">knowledge</span><span class="t-op">:</span>
+  <span class="t-key">vector_indexes</span><span class="t-op">:</span> <span class="t-bracket">[</span><span class="t-str">tenant.default.docs</span><span class="t-bracket">]</span>
+  <span class="t-key">graph_indexes</span><span class="t-op">:</span>  <span class="t-bracket">[</span><span class="t-str">tenant.default.graph</span><span class="t-bracket">]</span></pre>
+    </div>
+  </div>
+</div>
+
+<section class="content-section" id="s-memory">
+  <div class="section-eyebrow">§ 12 — Memory Model</div>
+  <h2 class="section-title">Memory Configuration</h2>
+  <div class="divider"></div>
+  <p class="prose">
+    Session memory is ephemeral by default and scoped to a single invocation context.
+    Long-term memory is vector-backed and namespaced to the agent identity.
+  </p>
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-file">## Memory Model</span>
+    </div>
+    <pre><span class="t-key">memory</span><span class="t-op">:</span>
+  <span class="t-key">session</span><span class="t-op">:</span>
+    <span class="t-key">type</span><span class="t-op">:</span> <span class="t-str">ephemeral</span>
+  <span class="t-key">long_term</span><span class="t-op">:</span>
+    <span class="t-key">type</span><span class="t-op">:</span>      <span class="t-str">vector</span>
+    <span class="t-key">namespace</span><span class="t-op">:</span> <span class="t-str">agent.research.assistant</span></pre>
+  </div>
+</section>
+
+<div class="content-section-muted" id="s-a2a">
+  <div class="inner">
+    <div class="section-eyebrow">§ 13 — A2A Contracts</div>
+    <h2 class="section-title">Agent-to-Agent Interaction Contracts</h2>
+    <div class="divider"></div>
+    <p class="lead">
+      Defines structured endpoints for agent interoperability. All A2A endpoints are
+      auto-registered in the UAR actor routing layer upon successful compilation.
+    </p>
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">YAML</span>
+        <span class="code-file">## A2A Contracts</span>
+      </div>
+      <pre><span class="t-key">a2a</span><span class="t-op">:</span>
+  <span class="t-key">endpoints</span><span class="t-op">:</span>
+    <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>             <span class="t-str">research.query</span>
+      <span class="t-key">description</span><span class="t-op">:</span>   <span class="t-str">Accepts research query tasks</span>
+      <span class="t-key">input_schema</span><span class="t-op">:</span>  <span class="t-str">schemas/query_input.json</span>
+      <span class="t-key">output_schema</span><span class="t-op">:</span> <span class="t-str">schemas/query_output.json</span>
+      <span class="t-key">allowed_callers</span><span class="t-op">:</span>
+        <span class="t-bracket">-</span> <span class="t-str">agent.supervisor</span>
+      <span class="t-key">timeout_seconds</span><span class="t-op">:</span> <span class="t-num">60</span>
+
+    <span class="t-bracket">-</span> <span class="t-key">id</span><span class="t-op">:</span>             <span class="t-str">research.summary</span>
+      <span class="t-key">description</span><span class="t-op">:</span>   <span class="t-str">Produces structured summary</span>
+      <span class="t-key">input_schema</span><span class="t-op">:</span>  <span class="t-str">schemas/summary_input.json</span>
+      <span class="t-key">output_schema</span><span class="t-op">:</span> <span class="t-str">schemas/summary_output.json</span></pre>
+    </div>
+    <ul class="rules-list mt-2">
+      <li>All schemas must be valid JSON Schema documents</li>
+      <li>Allowed callers are enforced via Cedar principal rules at request time</li>
+      <li>UAR auto-registers all endpoints in the actor routing layer on descriptor load</li>
+    </ul>
+  </div>
+</div>
+
+<section class="content-section" id="s-governance">
+  <div class="section-eyebrow">§ 14 — Governance</div>
+  <h2 class="section-title">Cedar Policy Embedding</h2>
+  <div class="divider"></div>
+  <p class="lead">
+    Governance policies are embedded directly in the agent descriptor using Cedar policy syntax.
+    Policies are compiled and installed as a Policy Enforcement Point (PEP) at agent boot.
+    No capability may bypass this layer.
+  </p>
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="code-lang">Cedar</span>
+      <span class="code-file">## Governance — embedded policy</span>
+    </div>
+    <pre><span class="t-comment">// Permit LLM invocation within daily spend budget</span>
+<span class="t-cedar-kw">permit</span>(
+  <span class="t-key">principal</span>,
+  <span class="t-key">action</span> == <span class="t-str">"llm.invoke"</span>,
+  <span class="t-key">resource</span>
+)
+<span class="t-cedar-kw">when</span> {
+  context.daily_spend <span class="t-op">&lt;</span> <span class="t-num">5</span>
+};
+
+<span class="t-comment">// Permit A2A calls from same namespace</span>
+<span class="t-cedar-kw">permit</span>(
+  <span class="t-key">principal</span>,
+  <span class="t-key">action</span> == <span class="t-str">"a2a.call"</span>,
+  <span class="t-key">resource</span>
+)
+<span class="t-cedar-kw">when</span> {
+  principal.namespace == <span class="t-str">"tenant.default"</span>
+};
+
+<span class="t-comment">// Forbid HTTP requests outside approved domains</span>
+<span class="t-cedar-kw">forbid</span>(
+  <span class="t-key">principal</span>,
+  <span class="t-key">action</span> == <span class="t-str">"net.http.request"</span>,
+  <span class="t-key">resource</span> <span class="t-op">not in</span> ApprovedDomains
+);</pre>
+  </div>
+</section>
+
+<div class="content-section-dark" id="s-budgets">
+  <div class="inner">
+    <div class="section-eyebrow section-eyebrow-light">§ 15 — Budgets &amp; Constraints</div>
+    <h2 class="section-title section-title-light">Resource Constraints</h2>
+    <div class="divider divider-light"></div>
+    <p class="lead lead-light">
+      Budget declarations are enforced at the Cedar policy layer. Exceeding any budget
+      causes the governing policy to deny the offending action rather than allow overage.
+    </p>
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">YAML</span>
+        <span class="code-file">## Budgets &amp; Constraints</span>
+      </div>
+      <pre><span class="t-key">budgets</span><span class="t-op">:</span>
+  <span class="t-key">daily_cost_usd</span><span class="t-op">:</span>          <span class="t-num">5</span>
+  <span class="t-key">max_tokens_per_session</span><span class="t-op">:</span>  <span class="t-num">20000</span>
+  <span class="t-key">max_tool_calls_per_hour</span><span class="t-op">:</span> <span class="t-num">50</span></pre>
+    </div>
+  </div>
+</div>
+
+<section class="content-section" id="s-execution">
+  <div class="section-eyebrow">§ 16 — Execution Model</div>
+  <h2 class="section-title">Runtime Execution Configuration</h2>
+  <div class="divider"></div>
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-file">## Execution Model</span>
+    </div>
+    <pre><span class="t-key">execution</span><span class="t-op">:</span>
+  <span class="t-key">model</span><span class="t-op">:</span>           <span class="t-str">actor</span>
+  <span class="t-key">concurrency</span><span class="t-op">:</span>    <span class="t-num">2</span>
+  <span class="t-key">timeout_seconds</span><span class="t-op">:</span> <span class="t-num">120</span>
+  <span class="t-key">spawn_children</span><span class="t-op">:</span>  <span class="t-val">false</span></pre>
+  </div>
+</section>
+
+<div class="content-section-muted" id="s-observability">
+  <div class="inner">
+    <div class="section-eyebrow">§ 17 — Observability</div>
+    <h2 class="section-title">Observability Configuration</h2>
+    <div class="divider"></div>
+    <p class="prose">
+      Audit logging is required and cannot be disabled. PII redaction is applied to all
+      emitted traces before they leave the agent boundary.
+    </p>
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">YAML</span>
+        <span class="code-file">## Observability</span>
+      </div>
+      <pre><span class="t-key">observability</span><span class="t-op">:</span>
+  <span class="t-key">audit</span><span class="t-op">:</span>      <span class="t-str">required</span>
+  <span class="t-key">emit_trace</span><span class="t-op">:</span> <span class="t-val">true</span>
+  <span class="t-key">redact</span><span class="t-op">:</span>     <span class="t-bracket">[</span><span class="t-str">pii</span><span class="t-bracket">]</span></pre>
+    </div>
+  </div>
+</div>
+
+<section class="content-section" id="s-deployment">
+  <div class="section-eyebrow">§ 18 — Deployment Profiles</div>
+  <h2 class="section-title">Environment Profiles</h2>
+  <div class="divider"></div>
+  <p class="prose">
+    Deployment profiles allow environment-specific budget and constraint overrides.
+    All profile values are merged with the base configuration at compile time.
+    The active profile is selected by the UAR host environment at agent instantiation.
+  </p>
+  <div class="code-wrap">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-file">## Deployment Profiles</span>
+    </div>
+    <pre><span class="t-key">profiles</span><span class="t-op">:</span>
+  <span class="t-key">local</span><span class="t-op">:</span>
+    <span class="t-key">budgets</span><span class="t-op">:</span>
+      <span class="t-key">daily_cost_usd</span><span class="t-op">:</span> <span class="t-num">1</span>
+
+  <span class="t-key">enterprise</span><span class="t-op">:</span>
+    <span class="t-key">budgets</span><span class="t-op">:</span>
+      <span class="t-key">daily_cost_usd</span><span class="t-op">:</span> <span class="t-num">50</span></pre>
+  </div>
+</section>
+
+<!-- 19. COMPILATION FLOW -->
+<div class="content-section-dark" id="s-compilation">
+  <div class="inner">
+    <div class="section-eyebrow section-eyebrow-light">§ 19 — Compilation Flow</div>
+    <h2 class="section-title section-title-light">UAR Compilation Pipeline</h2>
+    <div class="divider divider-light"></div>
+    <p class="lead lead-light">
+      The UAR compiler processes an agent descriptor in strict sequential phases.
+      Any phase failure halts compilation and emits a structured diagnostic.
+    </p>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-step-num">01</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Validate Frontmatter</div>
+          <div class="flow-step-desc">Confirm required metadata fields, version compatibility, and schema version alignment.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">02</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Validate A2UI Schemas</div>
+          <div class="flow-step-desc">Resolve artifact and action schemas against the UAR A2UI schema registry.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">03</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Validate MCP Server Configuration</div>
+          <div class="flow-step-desc">Check endpoint reachability declarations, auth types, and capability-to-tool cross-references.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">04</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Validate A2A JSON Schemas</div>
+          <div class="flow-step-desc">Parse and validate all referenced input and output schemas for structural compliance.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">05</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Compile Cedar Policy</div>
+          <div class="flow-step-desc">Parse, type-check, and compile embedded Cedar policy into the enforcement bytecode.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">06</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Register Actor Endpoints</div>
+          <div class="flow-step-desc">Bind all A2A endpoints into the UAR actor routing table.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">07</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Install PEP Enforcement</div>
+          <div class="flow-step-desc">Attach the compiled Cedar PEP to every capability surface declared in the descriptor.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-num">08</div>
+        <div class="flow-step-content">
+          <div class="flow-step-title">Emit Signed Agent Descriptor</div>
+          <div class="flow-step-desc">Produce and cryptographically sign the final runtime-ready descriptor artifact.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 20. SUMMARY -->
+<section class="content-section" id="s-summary">
+  <div class="section-eyebrow">§ 20 — Summary</div>
+  <h2 class="section-title">Specification Capabilities</h2>
+  <div class="divider"></div>
+  <p class="lead">
+    UAR-AGENT-MD defines a fully governed, interoperable, UI-aware agent artifact
+    compatible with the Universal Agent Runtime. The following capabilities are now
+    formally specified in v1.1.
+  </p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon">// A2UI</div>
+      <h4>Declarative UI</h4>
+      <p>UI surfaces defined as schema contracts, not hardcoded frontend implementations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">// MCP</div>
+      <h4>Infrastructure Dependencies</h4>
+      <p>Explicit MCP server declarations with typed auth and capability matching.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">// A2A</div>
+      <h4>Typed Agent Contracts</h4>
+      <p>Strongly typed Agent-to-Agent interaction endpoints with caller enforcement.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">// Cedar</div>
+      <h4>Embedded Governance</h4>
+      <p>Policy-first execution with Cedar compiled into a PEP at agent boot.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">// UAR</div>
+      <h4>Deterministic Validation</h4>
+      <p>Eight-stage compilation pipeline with structured diagnostics on failure.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">// Portable</div>
+      <h4>Signed Artifact Output</h4>
+      <p>Cryptographically signed descriptor enabling verified cross-environment deployment.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-brand">travisjames<span>.ai</span></div>
+  <div class="footer-meta">UAR-AGENT-MD — Draft v1.1 · Universal Agent Runtime · Prometheus AGS</div>
+</footer>
+
+</body>
+</html>

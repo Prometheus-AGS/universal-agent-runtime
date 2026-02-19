@@ -1,7 +1,9 @@
 pub mod api;
+pub mod compiler;
 pub mod defaults;
 pub mod domain;
 pub mod file_processing;
+pub mod governance;
 pub mod llm;
 pub mod persistence;
 pub mod rag;

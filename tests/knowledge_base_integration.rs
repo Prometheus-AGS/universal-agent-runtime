@@ -8,6 +8,8 @@
 //!
 //! Requires: `DATABASE_URL` environment variable pointing to a Postgres instance with pgvector.
 
+use serial_test::serial;
+use std::sync::Arc;
 use universal_agent_runtime::uar::{
     defaults::ensure_default_knowledge_base,
     domain::knowledge::{
@@ -15,8 +17,6 @@ use universal_agent_runtime::uar::{
     },
     persistence::{PersistenceLayer, providers::postgres::PostgresProvider},
 };
-use serial_test::serial;
-use std::sync::Arc;
 use uuid::Uuid;
 
 // =============================================================================

@@ -96,7 +96,7 @@
                 \u003cdiv class="p-3 md:p-5 bg-surfaceContainer shrink-0"\u003e
                     \u003cform 
                         class="flex gap-2 md:gap-3"
-                        hx-post="/api/chat"
+                        hx-post="/api/chat/completion"
                         hx-trigger="submit"
                         hx-swap="none"
                         hx-ext="json-enc"
@@ -138,7 +138,7 @@
                                 }
                             }
                             
-                            if (chatStream) {
+                            if (chatStream && response.stream_url) {
                                 chatStream.startStream(event.detail.xhr.response);
                             }
                             

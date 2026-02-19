@@ -138,17 +138,17 @@ for (idx, msg) in messages.iter().enumerate() {
 ```
 User: "Hello"
   ↓
-[Frontend] POST /api/chat { message: "Hello" }
+[Frontend] POST /api/chat/completion { model: "gpt-5.2", message: "Hello", stream: false }
   ↓
 [Backend] Create new session
   ↓
 [Backend] session.add_user_message("Hello")
   ↓
-[Backend] Return { session_id: "abc123", stream_url: "/stream?session_id=abc123" }
+[Backend] Return chat.completion + header X-UAR-Session-ID: "abc123"
   ↓
 [Frontend] Store sessionId = "abc123"
   ↓
-[Frontend] Connect to SSE stream
+[Frontend] Store X-UAR-Session-ID for next turn
   ↓
 [Backend] Send messages to LLM: [{ role: "user", content: "Hello" }]
   ↓
@@ -166,7 +166,7 @@ Session now contains:
 ```
 User: "What's the weather?"
   ↓
-[Frontend] POST /api/chat { message: "What's the weather?", session_id: "abc123" }
+[Frontend] POST /api/chat/completion { model: "gpt-5.2", message: "What's the weather?", stream: false } + header X-UAR-Session-ID: abc123
   ↓
 [Backend] Get existing session "abc123"
   ↓

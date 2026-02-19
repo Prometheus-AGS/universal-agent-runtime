@@ -31,6 +31,10 @@ impl SurrealDbProvider {
 
         Ok(Self { db })
     }
+
+    pub fn client(&self) -> Surreal<Any> {
+        self.db.clone()
+    }
 }
 
 fn normalize_endpoint(connection_string: &str) -> String {

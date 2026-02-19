@@ -4,11 +4,12 @@ use crate::session::SessionStore;
 use crate::uar::domain::{
     artifact::AgentArtifact,
     context::ContextConfig,
-    events::{NormalizedEvent, StatePatchOp},
+    events::{CitationSource, MemoryItem, NormalizedEvent, StatePatchOp},
     runs::{Run, RunStatus},
 };
 use crate::uar::runtime::context::manager::ContextManager;
 use crate::uar::runtime::matching::{ClassifierConfig, IntentClassifier, create_classifier};
+use crate::uar::runtime::native_skill::NativeSkillRegistry;
 use crate::uar::runtime::skills::SkillRegistry;
 use crate::uar::runtime::skills::service::SkillService;
 use futures::StreamExt;
@@ -87,6 +88,8 @@ pub struct RunManager {
     skill_service: Option<Arc<SkillService>>,
     /// Provider registry for per-agent LLM provider resolution
     provider_registry: Option<Arc<crate::llm::ProviderRegistry>>,
+    /// Native skill registry for in-process tool execution
+    native_skills: Arc<NativeSkillRegistry>,
 }
 
 impl std::fmt::Debug for RunManager {
@@ -116,6 +119,7 @@ impl RunManager {
             vector_matcher,
             persistence,
             ClassifierConfig::default(),
+            Arc::new(NativeSkillRegistry::new()),
         )
         .await
     }
@@ -129,6 +133,7 @@ impl RunManager {
         vector_matcher: Arc<crate::uar::runtime::matching::VectorMatcher>,
         persistence: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
         classifier_config: ClassifierConfig,
+        native_skills: Arc<NativeSkillRegistry>,
     ) -> Self {
         // Initialize vector matcher if not already (caller should ideally do this)
         if let Err(e) = vector_matcher.initialize().await {
@@ -171,6 +176,7 @@ impl RunManager {
             persistence,
             skill_service: None,
             provider_registry: None,
+            native_skills,
         }
     }
 
@@ -186,11 +192,17 @@ impl RunManager {
         self
     }
 
+    /// Set a shared native skill registry for in-process tool execution.
+    pub fn with_native_skills(mut self, registry: Arc<NativeSkillRegistry>) -> Self {
+        self.native_skills = registry;
+        self
+    }
+
     #[instrument(
         skip(self, artifact, input),
         fields(
-            agent_id = %artifact.id, 
-            session_id = ?session_id, 
+            agent_id = %artifact.id,
+            session_id = ?session_id,
             user_id = ?user_id,
             run_id = tracing::field::Empty
         )
@@ -252,7 +264,9 @@ impl RunManager {
         let mut system_prompt = artifact.prompt.system.clone();
 
         // RAG Retrieval - scoped to agent's configured knowledge bases
-        if artifact.memory.kb.enabled && let Some(db) = &self.persistence {
+        if artifact.memory.kb.enabled
+            && let Some(db) = &self.persistence
+        {
             match self.vector_matcher.embed_batch(vec![input.clone()]).await {
                 Ok(embeddings) => {
                     if let Some(query_vec) = embeddings.first() {
@@ -275,12 +289,15 @@ impl RunManager {
 
                             if kb_ids.is_empty() {
                                 // All configured KBs were not found - fallback to all
-                                tracing::warn!("No configured knowledge bases found, searching all");
+                                tracing::warn!(
+                                    "No configured knowledge bases found, searching all"
+                                );
                                 db.search_knowledge(query_vec, 3, 0.7).await
                             } else {
                                 let kb_id_refs: Vec<&str> =
                                     kb_ids.iter().map(String::as_str).collect();
-                                db.search_knowledge_scoped(&kb_id_refs, query_vec, 3, 0.7).await
+                                db.search_knowledge_scoped(&kb_id_refs, query_vec, 3, 0.7)
+                                    .await
                             }
                         };
 
@@ -431,7 +448,10 @@ impl RunManager {
 
         // Resolve per-agent LLM settings via provider registry, falling back to global
         let settings = if let Some(ref registry) = self.provider_registry {
-            match registry.resolve_from_policy(&artifact.policy.provider).await {
+            match registry
+                .resolve_from_policy(&artifact.policy.provider)
+                .await
+            {
                 Some(resolved) => {
                     tracing::info!(
                         provider = %artifact.policy.provider.default.provider,
@@ -449,7 +469,11 @@ impl RunManager {
             self.settings.clone()
         };
 
-        let orchestrator = Arc::new(Orchestrator::new(settings, mcp));
+        let orchestrator = Arc::new(Orchestrator::new(
+            settings,
+            mcp,
+            Arc::clone(&self.native_skills),
+        ));
 
         let execute_run_id = run_id.clone();
         let execute_agent_id = artifact.id.clone();
@@ -460,10 +484,10 @@ impl RunManager {
             // 1. Run Start
             emitter
                 .emit(NormalizedEvent::RunStart {
-                run_id: execute_run_id.clone(),
-                agent_id: execute_agent_id,
-            })
-            .await;
+                    run_id: execute_run_id.clone(),
+                    agent_id: execute_agent_id,
+                })
+                .await;
 
             emitter
                 .emit(NormalizedEvent::StatePatch {
@@ -500,7 +524,7 @@ impl RunManager {
                                 })
                             }
                             crate::normalized::NormalizedEvent::ThinkingDelta { text } => {
-                                Some(NormalizedEvent::ReasoningDelta {
+                                Some(NormalizedEvent::ThinkingDelta {
                                     run_id: execute_run_id.clone(),
                                     text_delta: text,
                                 })
@@ -511,6 +535,30 @@ impl RunManager {
                                     text_delta: text,
                                 })
                             }
+                            crate::normalized::NormalizedEvent::CitationAdded(citation) => {
+                                Some(NormalizedEvent::Citation {
+                                    run_id: execute_run_id.clone(),
+                                    sources: vec![CitationSource {
+                                        title: citation
+                                            .title
+                                            .unwrap_or_else(|| citation.url.clone()),
+                                        url: citation.url,
+                                        snippet: citation.snippet,
+                                    }],
+                                })
+                            }
+                            crate::normalized::NormalizedEvent::MemoryUpdate {
+                                key,
+                                value,
+                                operation,
+                            } => Some(NormalizedEvent::MemoryRecall {
+                                run_id: execute_run_id.clone(),
+                                items: vec![MemoryItem {
+                                    key,
+                                    value,
+                                    source: operation,
+                                }],
+                            }),
                             crate::normalized::NormalizedEvent::ToolCallDelta {
                                 call_index,
                                 id,
@@ -614,11 +662,11 @@ impl RunManager {
                 Err(e) => {
                     emitter
                         .emit(NormalizedEvent::Error {
-                        run_id: execute_run_id.clone(),
-                        message: e.to_string(),
-                        code: String::new(),
-                    })
-                    .await;
+                            run_id: execute_run_id.clone(),
+                            message: e.to_string(),
+                            code: String::new(),
+                        })
+                        .await;
                 }
             }
 
@@ -628,9 +676,9 @@ impl RunManager {
 
             emitter
                 .emit(NormalizedEvent::RunDone {
-                run_id: execute_run_id,
-            })
-            .await;
+                    run_id: execute_run_id,
+                })
+                .await;
         });
 
         run_id

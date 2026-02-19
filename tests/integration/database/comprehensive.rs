@@ -1,11 +1,11 @@
 #![allow(dead_code, clippy::pedantic)]
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
-use uuid::Uuid;
-use serde::{Deserialize, Serialize};
 use tracing::info;
+use uuid::Uuid;
 
 /// Comprehensive database certification suite
 #[derive(Debug, Clone)]
@@ -243,7 +243,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Execute comprehensive database certification tests
-    pub async fn execute_comprehensive_tests(&mut self) -> Result<DatabaseCertificationReport, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute_comprehensive_tests(
+        &mut self,
+    ) -> Result<DatabaseCertificationReport, Box<dyn std::error::Error + Send + Sync>> {
         info!("Starting comprehensive database certification tests");
 
         let start_time = chrono::Utc::now();
@@ -264,19 +266,26 @@ impl DatabaseCertificationSuite {
         redis_results.extend(self.test_redis_operations().await?);
 
         // Generate comprehensive report
-        let report = self.generate_certification_report(
-            start_time,
-            postgres_results,
-            surreal_results,
-            redis_results,
-        ).await;
+        let report = self
+            .generate_certification_report(
+                start_time,
+                postgres_results,
+                surreal_results,
+                redis_results,
+            )
+            .await;
 
-        info!("Database certification tests completed: {:?}", report.certification_status);
+        info!(
+            "Database certification tests completed: {:?}",
+            report.certification_status
+        );
         Ok(report)
     }
 
     /// Test PostgreSQL database operations
-    pub async fn test_postgres_operations(&self) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_postgres_operations(
+        &self,
+    ) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         // Connection test
@@ -304,7 +313,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL connection
-    pub async fn test_postgres_connection(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_postgres_connection(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
         let connection_start = Instant::now();
 
@@ -351,7 +362,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL schema validation
-    async fn test_postgres_schema(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_postgres_schema(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate schema validation queries
@@ -381,7 +394,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL CRUD operations
-    async fn test_postgres_crud_operations(&self) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_postgres_crud_operations(
+        &self,
+    ) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         // Test CREATE operations
@@ -403,7 +418,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL CREATE operations
-    async fn test_postgres_create(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_postgres_create(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate INSERT operations for test data
@@ -433,7 +450,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL READ operations
-    async fn test_postgres_read(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_postgres_read(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate SELECT operations
@@ -461,7 +480,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL UPDATE operations
-    async fn test_postgres_update(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_postgres_update(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate UPDATE operations
@@ -489,7 +510,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL DELETE operations
-    async fn test_postgres_delete(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_postgres_delete(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate DELETE operations
@@ -517,7 +540,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL bulk operations
-    async fn test_postgres_bulk_operations(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_postgres_bulk_operations(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate bulk INSERT/UPDATE operations
@@ -545,7 +570,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL transactions
-    async fn test_postgres_transactions(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_postgres_transactions(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate transaction operations (BEGIN, multiple queries, COMMIT/ROLLBACK)
@@ -573,7 +600,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL performance operations
-    pub async fn test_postgres_performance(&self) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_postgres_performance(
+        &self,
+    ) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         // Index performance test
@@ -622,7 +651,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL vector operations (pgvector extension)
-    async fn test_postgres_vector_operations(&self) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_postgres_vector_operations(
+        &self,
+    ) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         // Vector similarity search
@@ -671,7 +702,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test PostgreSQL connection pooling
-    async fn test_postgres_connection_pool(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_postgres_connection_pool(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate concurrent connections from pool
@@ -699,7 +732,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test SurrealDB database operations
-    pub async fn test_surreal_operations(&self) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_surreal_operations(
+        &self,
+    ) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         // Connection test
@@ -721,7 +756,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test SurrealDB connection
-    pub async fn test_surreal_connection(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_surreal_connection(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate SurrealDB connection
@@ -749,7 +786,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test SurrealDB document operations
-    async fn test_surreal_document_operations(&self) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_surreal_document_operations(
+        &self,
+    ) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         // Create documents
@@ -798,7 +837,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test SurrealDB queries
-    async fn test_surreal_queries(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_surreal_queries(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate complex SurrealQL queries
@@ -826,7 +867,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test SurrealDB real-time subscriptions
-    async fn test_surreal_realtime(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_surreal_realtime(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate real-time subscription setup and data changes
@@ -854,7 +897,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test SurrealDB graph operations
-    async fn test_surreal_graph_operations(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_surreal_graph_operations(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate graph traversal and relationship queries
@@ -882,7 +927,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test Redis database operations
-    pub async fn test_redis_operations(&self) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_redis_operations(
+        &self,
+    ) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         // Connection test
@@ -907,7 +954,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test Redis connection
-    pub async fn test_redis_connection(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_redis_connection(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate Redis connection and PING
@@ -935,7 +984,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test Redis basic operations
-    async fn test_redis_basic_operations(&self) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_redis_basic_operations(
+        &self,
+    ) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         // SET/GET operations
@@ -984,7 +1035,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test Redis data structures
-    async fn test_redis_data_structures(&self) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_redis_data_structures(
+        &self,
+    ) -> Result<Vec<DatabaseTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         // List operations
@@ -1054,7 +1107,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test Redis cache operations
-    async fn test_redis_cache_operations(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_redis_cache_operations(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate cache operations with TTL
@@ -1082,7 +1137,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test Redis session storage
-    async fn test_redis_session_storage(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_redis_session_storage(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate session storage operations
@@ -1110,7 +1167,9 @@ impl DatabaseCertificationSuite {
     }
 
     /// Test Redis performance
-    pub async fn test_redis_performance(&self) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_redis_performance(
+        &self,
+    ) -> Result<DatabaseTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate high-throughput operations
@@ -1203,10 +1262,14 @@ impl DatabaseCertificationSuite {
         // Check performance threshold violations
         let mut threshold_violations = Vec::new();
         for result in &all_results {
-            if result.performance_metrics.connection_time > Duration::from_millis(self.performance_thresholds.connection_time_ms) {
+            if result.performance_metrics.connection_time
+                > Duration::from_millis(self.performance_thresholds.connection_time_ms)
+            {
                 threshold_violations.push(format!("{}: Connection time exceeded", result.test_id));
             }
-            if result.performance_metrics.query_time > Duration::from_millis(self.performance_thresholds.query_time_ms) {
+            if result.performance_metrics.query_time
+                > Duration::from_millis(self.performance_thresholds.query_time_ms)
+            {
                 threshold_violations.push(format!("{}: Query time exceeded", result.test_id));
             }
         }
@@ -1275,14 +1338,18 @@ impl DatabaseCertificationSuite {
                 description: "Connection time should be under threshold".to_string(),
                 category: ValidationCategory::Performance,
                 severity: ValidationSeverity::High,
-                validator: |result| result.performance_metrics.connection_time < Duration::from_millis(100),
+                validator: |result| {
+                    result.performance_metrics.connection_time < Duration::from_millis(100)
+                },
             },
             ValidationRule {
                 id: "query_time".to_string(),
                 description: "Query time should be under threshold".to_string(),
                 category: ValidationCategory::Performance,
                 severity: ValidationSeverity::High,
-                validator: |result| result.performance_metrics.query_time < Duration::from_millis(1000),
+                validator: |result| {
+                    result.performance_metrics.query_time < Duration::from_millis(1000)
+                },
             },
             ValidationRule {
                 id: "operation_success".to_string(),
@@ -1376,7 +1443,10 @@ impl TestDataSets {
                 metadata: {
                     let mut metadata = HashMap::new();
                     metadata.insert("role".to_string(), serde_json::json!("user"));
-                    metadata.insert("preferences".to_string(), serde_json::json!({"theme": "dark"}));
+                    metadata.insert(
+                        "preferences".to_string(),
+                        serde_json::json!({"theme": "dark"}),
+                    );
                     metadata
                 },
             });
@@ -1401,7 +1471,11 @@ impl TestDataSets {
                 chat_messages.push(TestMessage {
                     id: Uuid::new_v4(),
                     session_id,
-                    role: if j % 2 == 0 { "user".to_string() } else { "assistant".to_string() },
+                    role: if j % 2 == 0 {
+                        "user".to_string()
+                    } else {
+                        "assistant".to_string()
+                    },
                     content: format!("Test message {} for user {}", j, i),
                     created_at: chrono::Utc::now(),
                     metadata: Some(serde_json::json!({"tokens": 15, "model": "test"})),
@@ -1490,25 +1564,31 @@ impl DatabaseCertificationReport {
 
         for result in &self.postgres_results {
             if !result.success {
-                failures.push(format!("PostgreSQL - {}: {}",
+                failures.push(format!(
+                    "PostgreSQL - {}: {}",
                     result.test_id,
-                    result.error_message.as_deref().unwrap_or("Unknown error")));
+                    result.error_message.as_deref().unwrap_or("Unknown error")
+                ));
             }
         }
 
         for result in &self.surreal_results {
             if !result.success {
-                failures.push(format!("SurrealDB - {}: {}",
+                failures.push(format!(
+                    "SurrealDB - {}: {}",
                     result.test_id,
-                    result.error_message.as_deref().unwrap_or("Unknown error")));
+                    result.error_message.as_deref().unwrap_or("Unknown error")
+                ));
             }
         }
 
         for result in &self.redis_results {
             if !result.success {
-                failures.push(format!("Redis - {}: {}",
+                failures.push(format!(
+                    "Redis - {}: {}",
                     result.test_id,
-                    result.error_message.as_deref().unwrap_or("Unknown error")));
+                    result.error_message.as_deref().unwrap_or("Unknown error")
+                ));
             }
         }
 
@@ -1622,6 +1702,9 @@ mod tests {
         };
 
         assert!(passed_report.is_certified());
-        assert_eq!(passed_report.certification_status, DatabaseCertificationStatus::Passed);
+        assert_eq!(
+            passed_report.certification_status,
+            DatabaseCertificationStatus::Passed
+        );
     }
 }

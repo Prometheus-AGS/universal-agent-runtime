@@ -11,6 +11,10 @@ pub enum NormalizedEvent {
         run_id: String,
         text_delta: String,
     },
+    ThinkingDelta {
+        run_id: String,
+        text_delta: String,
+    },
     ReasoningDelta {
         run_id: String,
         text_delta: String,

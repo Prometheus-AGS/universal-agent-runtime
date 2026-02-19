@@ -89,7 +89,10 @@ impl VectorMatcher {
             let tokenizer = if path.exists() {
                 Tokenizer::from_file(path).map_err(|e| anyhow::anyhow!(e))?
             } else {
-                return Err(anyhow::anyhow!("Tokenizer file not found at {}", path.display()));
+                return Err(anyhow::anyhow!(
+                    "Tokenizer file not found at {}",
+                    path.display()
+                ));
             };
 
             *tok_guard = Some(tokenizer);
@@ -229,7 +232,9 @@ impl SkillMatcher for VectorMatcher {
 
         for (skill_id, emb) in cache.iter() {
             let score = Self::cosine_similarity(&q_emb, emb);
-            if score >= self.threshold && let Some(skill) = registry.get(skill_id) {
+            if score >= self.threshold
+                && let Some(skill) = registry.get(skill_id)
+            {
                 matches.push(SkillMatch {
                     skill_id: skill_id.clone(),
                     score,

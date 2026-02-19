@@ -23,25 +23,23 @@ The application uses the following log levels:
 
 ## Logging by Component
 
-### 1. API Handlers (`src/main.rs`)
+### 1. API Handlers (`src/server.rs`)
 
-#### `api_chat` - POST /api/chat
-Logs when a chat request is received and processed:
+#### `api_chat_completion` - POST `/api/chat/completion` (and `/v1/chat/completions`)
+Logs when a chat-completion request is received and processed:
 
 ```rust
-INFO  - Received chat request (message, session_id)
-DEBUG - Using existing session or Created new session
-DEBUG - Added user message to session (message_count)
-INFO  - Chat request processed, returning stream URL
+INFO  - Received chat-completion request
+DEBUG - Model resolution result (provider/model)
+DEBUG - Using existing session or creating anonymous session
+INFO  - Chat-completion request processed
 ```
 
-#### `api_chat_stream` - GET /api/chat/stream
-Logs the SSE stream lifecycle and all events:
+#### `api_chat_completion` with `stream=true`
+Logs the SSE lifecycle and streamed completion chunks:
 
 ```rust
-INFO  - Starting SSE stream (session_id, has_message)
-ERROR - Session not found (if applicable)
-DEBUG - Added message from query parameter (if applicable)
+INFO  - Starting SSE stream for completion request
 INFO  - Starting LLM orchestration (request_id, message_count)
 DEBUG - Message in history (for each message: role, content_length, has_tool_calls)
 TRACE - Full message content (for each message)

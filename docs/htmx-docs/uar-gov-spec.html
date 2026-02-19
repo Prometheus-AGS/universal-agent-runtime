@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UAR-GOV — Universal Agent Runtime Governance Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:           #0B0F14;
+    --fg:           #E8EDF3;
+    --card:         #0F1620;
+    --muted:        #141C26;
+    --muted-fg:     #A7B0BC;
+    --border:       #233041;
+    --primary:      #FF6A3D;
+    --primary-fg:   #0B0F14;
+    --accent:       #2A1B17;
+    --accent-fg:    #FFB199;
+    --secondary:    #1A2432;
+    --secondary-fg: #E8EDF3;
+    --success:      #22C55E;
+    --info:         #60A5FA;
+    --warning:      #F59E0B;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    line-height: 1.72;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NAV ── */
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .875rem 2.5rem;
+    background: rgba(11,15,20,.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--fg);
+  }
+  .nav-brand span { color: var(--primary); }
+  .nav-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .08em;
+    color: var(--muted-fg); text-transform: uppercase;
+  }
+  .nav-status {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .06em;
+    color: var(--warning);
+    background: rgba(245,158,11,.1);
+    border: 1px solid rgba(245,158,11,.25);
+    border-radius: 999px;
+    padding: .25rem .65rem;
+  }
+  .nav-status::before {
+    content: ''; display: block;
+    width: 6px; height: 6px;
+    background: var(--warning);
+    border-radius: 50%;
+  }
+
+  /* ── LAYOUT ── */
+  .page-wrap {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3.5rem 2rem 6rem;
+  }
+
+  /* ── HERO ── */
+  .doc-hero {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2.5rem;
+    margin-bottom: 3rem;
+  }
+  .doc-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem; letter-spacing: .12em;
+    color: var(--primary); text-transform: uppercase;
+    margin-bottom: .75rem;
+  }
+  .doc-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    line-height: 1.06;
+    color: var(--fg);
+    margin-bottom: .5rem;
+  }
+  .doc-title em { color: var(--primary); font-style: normal; }
+  .doc-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem; letter-spacing: .05em;
+    color: var(--muted-fg);
+    margin-top: .75rem;
+    margin-bottom: 1.25rem;
+  }
+  .doc-meta-row {
+    display: flex; flex-wrap: wrap; gap: .5rem;
+    margin-top: 1.25rem;
+  }
+  .badge {
+    font-family: 'Inter', sans-serif;
+    font-size: .68rem; font-weight: 600;
+    letter-spacing: .04em; text-transform: uppercase;
+    padding: .2rem .65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted-fg);
+    background: var(--muted);
+  }
+  .badge.primary {
+    color: var(--primary);
+    background: var(--accent);
+    border-color: rgba(255,106,61,.3);
+  }
+
+  /* ── SECTION HEADINGS ── */
+  .section-block {
+    margin-bottom: 3rem;
+  }
+
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .1em;
+    color: var(--primary); text-transform: uppercase;
+    margin-bottom: .4rem;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    letter-spacing: -.02em; line-height: 1.1;
+    color: var(--fg);
+    margin-bottom: .75rem;
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem; font-weight: 700;
+    letter-spacing: -.015em; line-height: 1.2;
+    color: var(--fg);
+    margin: 1.75rem 0 .6rem;
+  }
+
+  h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: .9rem; font-weight: 600;
+    letter-spacing: -.01em; line-height: 1.2;
+    color: var(--fg);
+    margin: 1.25rem 0 .4rem;
+  }
+
+  p {
+    font-family: 'Roboto', sans-serif;
+    font-size: .94rem;
+    line-height: 1.72;
+    color: var(--fg);
+    margin-bottom: .85rem;
+    max-width: 65ch;
+  }
+
+  /* ── PRINCIPLES / NUMBERED LISTS ── */
+  .principle-list {
+    list-style: none;
+    display: flex; flex-direction: column; gap: .5rem;
+    margin: 1rem 0;
+  }
+  .principle-list li {
+    display: flex; gap: .85rem; align-items: flex-start;
+    padding: .7rem 1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Roboto', sans-serif;
+    font-size: .9rem;
+    line-height: 1.55;
+    color: var(--fg);
+  }
+  .principle-list li .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem; font-weight: 700;
+    color: var(--primary);
+    min-width: 1.4rem;
+    margin-top: .15rem;
+  }
+
+  /* ── BULLET LISTS ── */
+  ul.doc-list {
+    list-style: none;
+    margin: .75rem 0 1rem;
+    display: flex; flex-direction: column; gap: .3rem;
+  }
+  ul.doc-list li {
+    font-family: 'Roboto', sans-serif;
+    font-size: .9rem; line-height: 1.55;
+    color: var(--fg);
+    padding-left: 1.25rem;
+    position: relative;
+  }
+  ul.doc-list li::before {
+    content: '—';
+    position: absolute; left: 0;
+    color: var(--primary);
+    font-size: .75rem;
+  }
+  ul.doc-list li strong {
+    font-weight: 600; color: var(--fg);
+  }
+
+  /* Nested lists */
+  ul.doc-list ul.doc-list {
+    margin-top: .3rem; margin-left: 1.25rem;
+  }
+  ul.doc-list ul.doc-list li::before {
+    color: var(--muted-fg);
+  }
+
+  /* ── DEFINITION CARDS ── */
+  .def-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .def-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+  }
+  .def-card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .1em;
+    color: var(--primary); text-transform: uppercase;
+    margin-bottom: .4rem;
+  }
+  .def-card-term {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: .95rem; font-weight: 700;
+    letter-spacing: -.01em;
+    color: var(--fg);
+    margin-bottom: .35rem;
+  }
+  .def-card-body {
+    font-family: 'Roboto', sans-serif;
+    font-size: .82rem; line-height: 1.55;
+    color: var(--muted-fg);
+  }
+
+  /* ── CAPABILITY TOKEN BLOCK ── */
+  .capability-block {
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem; line-height: 1.7;
+    color: var(--muted-fg);
+  }
+  .capability-block .key { color: var(--info); }
+  .capability-block .val { color: var(--fg); }
+
+  /* ── COMPONENTS TABLE ── */
+  .comp-list {
+    list-style: none;
+    display: flex; flex-direction: column; gap: .6rem;
+    margin: 1rem 0;
+  }
+  .comp-item {
+    display: flex; gap: 1rem; align-items: flex-start;
+    padding: .85rem 1.1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .comp-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem; font-weight: 700;
+    color: var(--primary);
+    background: var(--accent);
+    border: 1px solid rgba(255,106,61,.3);
+    border-radius: 6px;
+    padding: .2rem .4rem;
+    min-width: 2rem; text-align: center;
+    margin-top: .1rem;
+  }
+  .comp-content h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: .9rem; font-weight: 700;
+    letter-spacing: -.01em;
+    margin: 0 0 .25rem;
+    color: var(--fg);
+  }
+  .comp-content p {
+    font-size: .82rem; line-height: 1.5;
+    color: var(--muted-fg);
+    margin: 0; max-width: none;
+  }
+
+  /* ── POLICY TYPE TABLE ── */
+  .policy-table {
+    width: 100%; border-collapse: collapse;
+    margin: 1rem 0;
+    font-family: 'Roboto', sans-serif;
+    font-size: .85rem;
+  }
+  .policy-table th {
+    font-family: 'Inter', sans-serif;
+    font-size: .65rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted-fg);
+    text-align: left; padding: .5rem .85rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--muted);
+  }
+  .policy-table td {
+    padding: .6rem .85rem;
+    border-bottom: 1px solid rgba(35,48,65,.6);
+    color: var(--fg);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .policy-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem; color: var(--accent-fg);
+    white-space: nowrap;
+  }
+  .policy-table tr:hover td { background: rgba(255,106,61,.04); }
+
+  /* ── CONTROL FLOW STEPS ── */
+  .flow-steps {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 0;
+    margin: 1rem 0;
+    position: relative;
+  }
+  .flow-steps::before {
+    content: '';
+    position: absolute; left: 1.1rem; top: 1.5rem; bottom: 1.5rem;
+    width: 1px; background: var(--border);
+  }
+  .flow-step {
+    display: flex; gap: 1rem; align-items: flex-start;
+    padding: .6rem 0;
+    position: relative;
+  }
+  .flow-dot {
+    width: 2.2rem; height: 2.2rem; min-width: 2.2rem;
+    border-radius: 50%;
+    background: var(--card);
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem; font-weight: 700;
+    color: var(--primary);
+    position: relative; z-index: 1;
+  }
+  .flow-step:first-child .flow-dot,
+  .flow-step:last-child .flow-dot {
+    border-color: rgba(255,106,61,.4);
+    background: var(--accent);
+  }
+  .flow-text {
+    padding-top: .3rem;
+    font-family: 'Roboto', sans-serif;
+    font-size: .88rem; line-height: 1.55;
+    color: var(--fg);
+  }
+  .flow-text strong {
+    display: block;
+    font-weight: 600; color: var(--fg);
+    margin-bottom: .15rem;
+  }
+
+  /* ── PEP SECTION CARD ── */
+  .pep-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.4rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .pep-trigger {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem; letter-spacing: .08em;
+    color: var(--muted-fg); text-transform: uppercase;
+    margin-bottom: .25rem;
+  }
+  .pep-trigger span {
+    color: var(--info);
+  }
+  .pep-card h3 {
+    margin: 0 0 .85rem;
+    font-size: 1rem;
+  }
+  .pep-pills {
+    display: flex; flex-wrap: wrap; gap: .4rem;
+    margin-bottom: .75rem;
+  }
+  .pep-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .67rem; font-weight: 600;
+    color: var(--accent-fg);
+    background: var(--accent);
+    border: 1px solid rgba(255,106,61,.2);
+    border-radius: 6px;
+    padding: .18rem .55rem;
+  }
+  .pep-note {
+    font-family: 'Roboto', sans-serif;
+    font-size: .82rem; line-height: 1.55;
+    color: var(--muted-fg);
+  }
+
+  /* ── DIVIDER ── */
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  /* ── FOOTER ── */
+  .doc-footer {
+    margin-top: 4rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: .75rem;
+  }
+  .footer-brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: .85rem; font-weight: 700;
+    letter-spacing: -.01em;
+  }
+  .footer-brand span { color: var(--primary); }
+  .footer-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .6rem; letter-spacing: .06em;
+    color: var(--muted-fg);
+    text-align: right;
+  }
+
+  @media (max-width: 640px) {
+    .page-wrap { padding: 2rem 1.25rem 4rem; }
+    .def-grid { grid-template-columns: 1fr; }
+    .nav { padding: .875rem 1.25rem; }
+    .nav-meta { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">travisjames<span>.ai</span></div>
+  <div class="nav-meta">// Internal Spec</div>
+  <div class="nav-status">Draft v1.0</div>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- HERO -->
+  <header class="doc-hero">
+    <div class="doc-eyebrow">// UAR-GOV · Architecture Specification</div>
+    <h1 class="doc-title">Universal Agent Runtime<br><em>Governance Architecture</em></h1>
+    <div class="doc-subtitle">UAR-GOV — Governance, authorization, safety &amp; compliance controls across local-first, embedded, and cloud deployments.</div>
+    <div class="doc-meta-row">
+      <span class="badge primary">Draft v1.0</span>
+      <span class="badge">Governance</span>
+      <span class="badge">Authorization</span>
+      <span class="badge">Safety</span>
+      <span class="badge">Compliance</span>
+    </div>
+  </header>
+
+  <!-- SECTION 1: Goals -->
+  <section class="section-block" id="goals">
+    <div class="section-num">// 01</div>
+    <h2>Goals</h2>
+
+    <h3>1.1 Primary Objectives</h3>
+    <ol class="principle-list">
+      <li><span class="num">01</span>Deterministic enforcement of who/what may do what, when, and within what limits.</li>
+      <li><span class="num">02</span>Defense-in-depth across orchestration, tool execution, storage, networking, and model invocation.</li>
+      <li><span class="num">03</span>Local-first viability — run fully embedded (single binary) with minimal overhead.</li>
+      <li><span class="num">04</span>Auditability &amp; reproducibility — every decision is explainable and re-playable from logs.</li>
+      <li><span class="num">05</span>Policy portability — the same governance model works on desktop, mobile, edge, and cloud.</li>
+    </ol>
+
+    <h3>1.2 Non-Goals</h3>
+    <ul class="doc-list">
+      <li>Content moderation as the primary control plane (LLM-only guardrails are insufficient).</li>
+      <li>A full IAM replacement for enterprise IdPs — we integrate, not replace.</li>
+    </ul>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- SECTION 2: Core Principles -->
+  <section class="section-block" id="principles">
+    <div class="section-num">// 02</div>
+    <h2>Core Principles</h2>
+    <ol class="principle-list">
+      <li><span class="num">01</span><strong>Policies decide; runtimes enforce.</strong> LLMs do not grant privileges.</li>
+      <li><span class="num">02</span><strong>Least privilege by default.</strong> All capabilities must be explicitly granted.</li>
+      <li><span class="num">03</span><strong>No hidden bypass paths.</strong> Every sensitive operation routes through a governance gate.</li>
+      <li><span class="num">04</span><strong>Separation of duties.</strong> Policy authorship, deployment, and runtime operation can be separated.</li>
+      <li><span class="num">05</span><strong>Fail closed.</strong> If governance cannot evaluate, execution is denied — with safe degradation modes where configured.</li>
+    </ol>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- SECTION 3: Definitions -->
+  <section class="section-block" id="definitions">
+    <div class="section-num">// 03</div>
+    <h2>Definitions</h2>
+
+    <h3>3.1 Entities</h3>
+    <div class="def-grid">
+      <div class="def-card">
+        <div class="def-card-label">Entity</div>
+        <div class="def-card-term">Principal</div>
+        <div class="def-card-body">The requesting identity — agent, user, system actor, or integration.</div>
+      </div>
+      <div class="def-card">
+        <div class="def-card-label">Entity</div>
+        <div class="def-card-term">Action</div>
+        <div class="def-card-body">An operation being requested — e.g. <code>llm.invoke</code>, <code>tool.run</code>, <code>file.read</code>.</div>
+      </div>
+      <div class="def-card">
+        <div class="def-card-label">Entity</div>
+        <div class="def-card-term">Resource</div>
+        <div class="def-card-body">The object acted upon — model, tool, file path, database table, network target.</div>
+      </div>
+      <div class="def-card">
+        <div class="def-card-label">Entity</div>
+        <div class="def-card-term">Context</div>
+        <div class="def-card-body">Runtime facts used in evaluation — budgets, time, environment, risk score.</div>
+      </div>
+    </div>
+
+    <h3>3.2 Capabilities</h3>
+    <p>A capability is a structured permission token derived from policy decisions and bound to:</p>
+    <div class="capability-block">
+      <span class="key">principal</span>    — <span class="val">the requesting identity</span><br>
+      <span class="key">action(s)</span>    — <span class="val">permitted operations</span><br>
+      <span class="key">resource(s)</span>  — <span class="val">objects the action may target</span><br>
+      <span class="key">constraints</span>  — <span class="val">limits / quotas / time bounds</span><br>
+      <span class="key">provenance</span>   — <span class="val">policy version + decision ID</span>
+    </div>
+
+    <h3>3.3 Enforcement Points (PEPs)</h3>
+    <p>Policy Enforcement Points are choke points in UAR where policy decisions are required before any execution may proceed.</p>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- SECTION 4: Architecture -->
+  <section class="section-block" id="architecture">
+    <div class="section-num">// 04</div>
+    <h2>High-Level Architecture</h2>
+
+    <h3>4.1 Components</h3>
+    <ol class="comp-list">
+      <li class="comp-item"><span class="comp-num">01</span><div class="comp-content"><h4>Policy Decision Point (PDP)</h4><p>Evaluates requests against policies. Produces Permit/Deny plus obligations.</p></div></li>
+      <li class="comp-item"><span class="comp-num">02</span><div class="comp-content"><h4>Policy Enforcement Points (PEPs)</h4><p>Implemented at all sensitive boundaries — orchestrator/actor mailbox, tool execution, model invocation, filesystem, database, network egress, and plugin loading.</p></div></li>
+      <li class="comp-item"><span class="comp-num">03</span><div class="comp-content"><h4>Policy Store</h4><p>Versioned, signed policy bundles. Supports local embedded storage and optional remote fetch.</p></div></li>
+      <li class="comp-item"><span class="comp-num">04</span><div class="comp-content"><h4>Context Providers</h4><p>Provide dynamic context — budgets, rate limits, device posture, tenant settings.</p></div></li>
+      <li class="comp-item"><span class="comp-num">05</span><div class="comp-content"><h4>Audit &amp; Evidence Pipeline</h4><p>Append-only event stream. Optional DSSE signing of decisions and actions.</p></div></li>
+      <li class="comp-item"><span class="comp-num">06</span><div class="comp-content"><h4>Governance Admin Surface</h4><p>CLI/API to validate, publish, and roll back policies. Policy simulation and explain tooling.</p></div></li>
+    </ol>
+
+    <h3>4.2 Control Flow — Canonical</h3>
+    <ol class="flow-steps">
+      <li class="flow-step"><div class="flow-dot">01</div><div class="flow-text"><strong>Initiation</strong>Actor or agent attempts an operation.</div></li>
+      <li class="flow-step"><div class="flow-dot">02</div><div class="flow-text"><strong>Request Construction</strong>PEP constructs request tuple: (principal, action, resource, context).</div></li>
+      <li class="flow-step"><div class="flow-dot">03</div><div class="flow-text"><strong>Policy Evaluation</strong>PDP evaluates against the active policy bundle.</div></li>
+      <li class="flow-step"><div class="flow-dot">04</div><div class="flow-text"><strong>Decision Return</strong>PDP returns a decision (Permit | Deny), obligations, and reason codes for audit.</div></li>
+      <li class="flow-step"><div class="flow-dot">05</div><div class="flow-text"><strong>Enforcement</strong>PEP enforces obligations, issues capability (optional), proceeds or aborts.</div></li>
+      <li class="flow-step"><div class="flow-dot">06</div><div class="flow-text"><strong>Audit Record</strong>Pipeline records decision event, execution event, and resulting spend/usage deltas.</div></li>
+    </ol>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- SECTION 5: Policy Model -->
+  <section class="section-block" id="policy-model">
+    <div class="section-num">// 05</div>
+    <h2>Policy Model</h2>
+
+    <h3>5.1 Policy Language</h3>
+    <p>UAR governance supports one or both policy backends:</p>
+    <ul class="doc-list">
+      <li><strong>Cedar (recommended default)</strong> — Fine-grained authorization model with deterministic evaluation. Strong fit for embedded Rust runtimes.</li>
+      <li><strong>Rust DSL (optional adjunct)</strong> — Used for ultra-low-latency hot-path constraints (e.g. micro-quotas). Must compile down to deterministic checks.</li>
+    </ul>
+
+    <h3>5.2 Policy Bundle</h3>
+    <p>A policy bundle is a signed artifact containing:</p>
+    <ul class="doc-list">
+      <li>Policy source</li>
+      <li>Schema (entities / actions / resources)</li>
+      <li>Version metadata</li>
+      <li>Signatures &amp; trust roots</li>
+    </ul>
+
+    <h3>5.3 Policy Types</h3>
+    <table class="policy-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>Authorization policies</td><td>Permit or forbid access operations.</td></tr>
+        <tr><td>02</td><td>Economic policies</td><td>Budgets, spend caps, token caps.</td></tr>
+        <tr><td>03</td><td>Operational policies</td><td>Timeouts, concurrency, rate limits.</td></tr>
+        <tr><td>04</td><td>Data policies</td><td>PII access constraints, data residency rules.</td></tr>
+        <tr><td>05</td><td>Network policies</td><td>Allowlists and denylists for egress targets.</td></tr>
+        <tr><td>06</td><td>Plugin policies</td><td>What native plugins may load and execute.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- SECTION 6: Enforcement Surfaces -->
+  <section class="section-block" id="enforcement">
+    <div class="section-num">// 06</div>
+    <h2>Enforcement Surfaces (PEPs)</h2>
+
+    <div class="pep-card">
+      <div class="pep-trigger">Trigger — <span>agent-to-agent messaging, task dispatch, spawning sub-agents</span></div>
+      <h3>6.1 Orchestrator / Actor Model PEP</h3>
+      <div class="pep-pills">
+        <span class="pep-pill">actor.spawn</span>
+        <span class="pep-pill">actor.send</span>
+        <span class="pep-pill">actor.subscribe</span>
+      </div>
+      <div class="pep-note">Prevents Agent A from spawning more than N children. Restricts certain message types to supervisory agents.</div>
+    </div>
+
+    <div class="pep-card">
+      <div class="pep-trigger">Trigger — <span>any request to a model provider (local or remote)</span></div>
+      <h3>6.2 LLM Invocation PEP</h3>
+      <div class="pep-pills">
+        <span class="pep-pill">llm.invoke</span>
+        <span class="pep-pill">llm.stream</span>
+      </div>
+      <div class="pep-note">Enforces: max tokens per call · max cost per call · max calls per hour · allowed model list.</div>
+    </div>
+
+    <div class="pep-card">
+      <div class="pep-trigger">Trigger — <span>any tool execution invocation</span></div>
+      <h3>6.3 Tool Execution PEP</h3>
+      <div class="pep-pills">
+        <span class="pep-pill">tool.run</span>
+        <span class="pep-pill">tool.list</span>
+      </div>
+      <div class="pep-note">Controls which tools are accessible to which principals. Enforces sandboxing constraints and execution budgets per-tool.</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="doc-footer">
+    <div class="footer-brand">travisjames<span>.ai</span></div>
+    <div class="footer-meta">UAR-GOV Spec v1.0 · Draft · Internal Use Only</div>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -33,8 +33,16 @@ pub use thread::SessionStore;
 
 // Encrypted session types (optional feature)
 pub use encrypted::{
-    EncryptedSession, EncryptedSessionStore, WebRTCEncryptedSession,
     // Re-export encryption types for convenience
-    ConversationId, ConversationManager, DeviceId, EncryptionConfig, EncryptionType,
-    StrongholdKeyManager, StreamingSession, UserId,
+    ConversationId,
+    ConversationManager,
+    DeviceId,
+    EncryptedSession,
+    EncryptedSessionStore,
+    EncryptionConfig,
+    EncryptionType,
+    StreamingSession,
+    StrongholdKeyManager,
+    UserId,
+    WebRTCEncryptedSession,
 };

@@ -99,9 +99,10 @@ pub async fn upload_handler(
             break;
         }
 
-        let filename = field
-            .file_name()
-            .map_or_else(|| format!("file_{}", uuid::Uuid::new_v4()), ToString::to_string);
+        let filename = field.file_name().map_or_else(
+            || format!("file_{}", uuid::Uuid::new_v4()),
+            ToString::to_string,
+        );
 
         let content_type = field.content_type().map_or_else(
             || "application/octet-stream".to_string(),

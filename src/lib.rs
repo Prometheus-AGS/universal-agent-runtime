@@ -43,11 +43,16 @@ use llm::orchestrator::Orchestrator;
 use mcp::registry::McpRegistry;
 use session::SessionStore;
 use std::sync::Arc;
+use uar::compiler::CompilerService;
+use uar::governance::engine::GovernanceEngine;
 use uar::persistence::PersistenceLayer;
 use uar::rag::ingest::IngestService;
+use uar::runtime::actor::system::ActorCollaboration;
 use uar::runtime::manager::RunManager;
 use uar::runtime::matching::VectorMatcher;
+use uar::runtime::native_skill::NativeSkillRegistry;
 use uar::runtime::skills::service::SkillService;
+use uar::security::api_keys::ApiKeyService;
 
 /// Application state shared across all handlers.
 #[derive(Clone, Debug)]
@@ -75,4 +80,17 @@ pub struct AppState {
     pub skill_service: Arc<SkillService>,
     /// Provider Registry for multi-provider LLM management
     pub provider_registry: Arc<llm::ProviderRegistry>,
+    /// Native Skill Registry for in-process high-performance tools
+    pub native_skill_registry: Arc<NativeSkillRegistry>,
+    /// Actor collaboration system for multi-agent coordination
+    pub actor_system: Arc<ActorCollaboration>,
+    /// Governance policy engine for declarative authorization
+    pub governance_engine: Arc<GovernanceEngine>,
+    /// API key service for PAT-based authentication
+    pub api_key_service: Option<Arc<ApiKeyService>>,
+    /// Compiler service for spec management and pipeline execution
+    pub compiler_service: Option<Arc<CompilerService>>,
+    /// Wasm sandbox runtime for executing Wasm agents (feature-gated)
+    #[cfg(feature = "wasm-runtime")]
+    pub wasm_sandbox: Option<Arc<uar::runtime::wasm::sandbox::WasmSandbox>>,
 }

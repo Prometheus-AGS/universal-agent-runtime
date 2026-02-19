@@ -189,7 +189,10 @@ async fn create_knowledge_base(
     {
         return Err((
             StatusCode::CONFLICT,
-            format!("Knowledge base with name '{name}' already exists", name = req.name),
+            format!(
+                "Knowledge base with name '{name}' already exists",
+                name = req.name
+            ),
         ));
     }
 

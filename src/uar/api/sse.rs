@@ -25,7 +25,7 @@ where
         .keep_alive(axum::response::sse::KeepAlive::new().interval(Duration::from_secs(15)))
 }
 
-fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::Value)> {
+pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::Value)> {
     match event {
         NormalizedEvent::RunStart { run_id, .. } => Some((
             "agui.stream.start",
@@ -39,6 +39,15 @@ fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::V
             "agui.message.delta",
             serde_json::json!({
                 "kind": "message",
+                "phase": "delta",
+                "request_id": run_id,
+                "delta": { "text": text_delta }
+            }),
+        )),
+        NormalizedEvent::ThinkingDelta { run_id, text_delta } => Some((
+            "agui.thinking.delta",
+            serde_json::json!({
+                "kind": "thinking",
                 "phase": "delta",
                 "request_id": run_id,
                 "delta": { "text": text_delta }
@@ -178,6 +187,17 @@ fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::V
                 "patch": patch
             }),
         )),
-        NormalizedEvent::ContextAction(_) => None,
+        NormalizedEvent::ContextAction(action) => Some((
+            "agui.context.update",
+            serde_json::json!({
+                "kind": "context",
+                "phase": "update",
+                "strategy": action.strategy,
+                "messages_removed": action.messages_removed,
+                "tokens_saved": action.tokens_saved,
+                "was_applied": action.was_applied,
+                "summary_generated": action.summary_generated
+            }),
+        )),
     }
 }

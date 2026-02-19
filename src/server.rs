@@ -1,28 +1,37 @@
 use axum::{
     Json, Router,
-    extract::{DefaultBodyLimit, Path, Request, State},
-    http::StatusCode,
+    extract::{DefaultBodyLimit, Request, State},
+    http::{HeaderMap, HeaderName, HeaderValue, StatusCode, header},
     middleware::Next,
-    response::{Html, IntoResponse},
-    routing::{get, post},
+    response::{
+        IntoResponse, Response,
+        sse::{Event, KeepAlive, Sse},
+    },
+    routing::{any, get, post},
 };
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::time::timeout;
+use uuid::Uuid;
 
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::AppState;
 use crate::config::AppConfig;
 use crate::llm::{LlmSettings, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::session::SessionStore;
+use crate::uar::api::sse::to_agui_event;
 use crate::uar::{
     self,
     defaults::ensure_default_knowledge_base,
+    governance::engine::GovernanceEngine,
     persistence::{
         PersistenceLayer,
         providers::{postgres::PostgresProvider, surreal::SurrealDbProvider},
@@ -31,13 +40,16 @@ use crate::uar::{
         chunking::ChunkingStrategy, ingest::IngestService, ingestion_worker::IngestionWorkerPool,
     },
     runtime::{
+        actor::system::ActorCollaboration,
         manager::RunManager,
         matching::vector::VectorMatcher,
+        native_skill::NativeSkillRegistry,
         skills::{
             SkillService,
             storage::{FilesystemStorageProvider, SkillStorageProvider},
         },
     },
+    security::api_keys::{ApiKeyService, InMemoryApiKeyStorage},
 };
 
 /// Start the Axum server with the provided configuration.
@@ -59,21 +71,34 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     }
 
     // Initialize persistence based on config
-    let persistence: Arc<dyn PersistenceLayer> = if matches!(
+    let (persistence_layer, compiler_storage, agent_registry) = if matches!(
         config.persistence.provider.as_str(),
         "surreal" | "surrealdb"
     ) {
         let provider = SurrealDbProvider::new(&config.persistence.database_url)
             .await
             .expect("Failed to initialize SurrealDB");
-        Arc::new(provider)
+
+        // Create compiler storage sharing the same DB connection
+        let db = provider.client();
+        let compiler_store = Arc::new(
+            crate::uar::compiler::storage::surreal::SurrealCompilerStorage::new(db.clone()),
+        );
+        let registry = Arc::new(crate::uar::api::a2a::SurrealAgentRegistry::new(db))
+            as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
+
+        (
+            Arc::new(provider) as Arc<dyn PersistenceLayer>,
+            Some(compiler_store),
+            Some(registry),
+        )
     } else {
         let provider = PostgresProvider::new(&config.persistence.database_url)
             .await
             .expect("Failed to initialize Postgres");
-        Arc::new(provider)
+        (Arc::new(provider) as Arc<dyn PersistenceLayer>, None, None)
     };
-    let persistence = Some(Arc::clone(&persistence));
+    let persistence = Some(persistence_layer);
 
     // Initialize Ingest Service if persistence is available
     if let Some(p) = &persistence {
@@ -137,8 +162,20 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         info!(name: "mcp.tool.discovered", tool = %name, "MCP tool discovered");
     }
 
+    // Initialize Native Skill Registry and register built-in skills
+    let native_skill_registry = Arc::new(NativeSkillRegistry::new());
+    uar::runtime::native_skills::register_builtins(&native_skill_registry).await;
+    info!(
+        "Native skill registry initialized with {} skills",
+        native_skill_registry.len().await
+    );
+
     // Create orchestrator
-    let orchestrator = Arc::new(Orchestrator::new(settings.clone(), Arc::clone(&mcp)));
+    let orchestrator = Arc::new(Orchestrator::new(
+        settings.clone(),
+        Arc::clone(&mcp),
+        Arc::clone(&native_skill_registry),
+    ));
 
     // Session store
     let sessions = SessionStore::new();
@@ -178,7 +215,8 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         )
         .await
         .with_skill_service(Arc::clone(&skill_service))
-        .with_provider_registry(Arc::clone(&provider_registry)),
+        .with_provider_registry(Arc::clone(&provider_registry))
+        .with_native_skills(Arc::clone(&native_skill_registry)),
     );
 
     // Initialize Global Rate Limiter
@@ -188,6 +226,66 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         config.resilience.requests_per_second,
         burst_size,
     ));
+
+    // Initialize Actor Collaboration System
+    let actor_system = Arc::new(ActorCollaboration::new(
+        settings.clone(),
+        Arc::clone(&mcp),
+        Arc::clone(&native_skill_registry),
+    ));
+    info!("Actor collaboration system initialized");
+
+    // Initialize Governance Policy Engine
+    let governance_engine = match GovernanceEngine::load_from_dir("policies").await {
+        Ok(engine) => {
+            info!(
+                policy_count = engine.policy_count().await,
+                "Governance policy engine loaded"
+            );
+            Arc::new(engine)
+        }
+        Err(e) => {
+            warn!(
+                error = %e,
+                "Failed to load policies from directory — using permissive default"
+            );
+            Arc::new(
+                GovernanceEngine::with_default_permit()
+                    .expect("default permit policy should parse"),
+            )
+        }
+    };
+
+    // Initialize API Key Service
+    let api_key_storage: Arc<dyn uar::security::api_keys::ApiKeyStorage> =
+        Arc::new(InMemoryApiKeyStorage::new());
+    let api_key_service = Arc::new(ApiKeyService::new(
+        Arc::clone(&api_key_storage),
+        &config.security.jwt_secret,
+    ));
+    info!("API key service initialized");
+
+    // Initialize Compiler Service
+    let compiler_service = if let Some(storage) = compiler_storage {
+        info!("Initializing Compiler Service with SurrealDB storage");
+        Arc::new(uar::compiler::CompilerService::new(
+            storage.clone(),
+            storage,
+        ))
+    } else {
+        info!("Initializing Compiler Service with in-memory storage");
+        Arc::new(uar::compiler::CompilerService::in_memory())
+    };
+    info!("Compiler service initialized");
+
+    // Initialize A2A state (shared task store + compiler service)
+    let a2a_task_store = uar::api::a2a::TaskStore::new();
+    let a2a_state = Arc::new(uar::api::a2a::A2AState {
+        compiler_service: Arc::clone(&compiler_service),
+        task_store: a2a_task_store,
+        base_url: format!("http://{}:{}", config.server.host, config.server.port),
+    });
+    info!("A2A state initialized");
 
     let state = AppState {
         mcp,
@@ -201,6 +299,25 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         config: Arc::clone(&config),
         skill_service: Arc::clone(&skill_service),
         provider_registry: Arc::clone(&provider_registry),
+        native_skill_registry: Arc::clone(&native_skill_registry),
+        actor_system: Arc::clone(&actor_system),
+        governance_engine: Arc::clone(&governance_engine),
+        api_key_service: Some(Arc::clone(&api_key_service)),
+        compiler_service: Some(Arc::clone(&compiler_service)),
+        #[cfg(feature = "wasm-runtime")]
+        wasm_sandbox: {
+            use crate::uar::runtime::wasm::{config::WasmConfig, sandbox::WasmSandbox};
+            match WasmSandbox::new(WasmConfig::default()) {
+                Ok(sb) => {
+                    info!("Wasm sandbox runtime initialized");
+                    Some(Arc::new(sb))
+                }
+                Err(e) => {
+                    warn!(error = %e, "Failed to initialize Wasm sandbox — disabled");
+                    None
+                }
+            }
+        },
     };
 
     // Build router
@@ -208,8 +325,11 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .route("/health", get(health_handler))
         .route("/healthz", get(health_handler))
         .route("/readyz", get(health_handler))
-        .route("/api/chat", post(api_chat))
-        .route("/api/sessions/{id}/messages", get(api_get_messages))
+        .route("/api/chat/completion", post(api_chat_completion))
+        .route("/api/chat", any(legacy_chat_route_disabled))
+        .route("/api/chat/{*path}", any(legacy_chat_route_disabled))
+        .route("/api/sessions", any(legacy_sessions_route_disabled))
+        .route("/api/sessions/{*path}", any(legacy_sessions_route_disabled))
         .nest(
             "/api/uar",
             uar::api::router().with_state(Arc::clone(&state.run_manager)),
@@ -229,6 +349,49 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .nest(
             "/api/uar/providers",
             uar::api::providers::build_router().with_state(Arc::clone(&state.provider_registry)),
+        )
+        // Auth API (API key management)
+        .nest(
+            "/api/uar/auth",
+            uar::api::auth::build_router().with_state(Arc::new(uar::api::auth::AuthApiState {
+                api_key_service: Arc::clone(&api_key_service),
+            })),
+        )
+        // Compiler API (spec management + compilation)
+        .nest(
+            "/api/uar/compiler",
+            uar::api::compiler::build_router().with_state(Arc::new(
+                uar::api::compiler::CompilerApiState {
+                    compiler_service: Arc::clone(&compiler_service),
+                },
+            )),
+        )
+        // Actors API
+        .nest(
+            "/api/uar/actors",
+            uar::api::actors::build_router().with_state(Arc::clone(&state.actor_system)),
+        )
+        // A2A Compiler Agent — JSON-RPC endpoint
+        .nest(
+            "/a2a/compiler",
+            uar::api::a2a::build_rpc_router().with_state(Arc::clone(&a2a_state)),
+        )
+        // A2A well-known AgentCard
+        .nest(
+            "/.well-known",
+            uar::api::a2a::build_well_known_router().with_state(Arc::clone(&a2a_state)),
+        )
+        // A2A Registry & Discovery
+        .nest(
+            "/a2a/registry",
+            uar::api::a2a::build_discovery_router().with_state(Arc::new(
+                uar::api::a2a::DiscoveryApiState {
+                    registry: agent_registry.unwrap_or_else(|| {
+                        // Fallback: in-memory stub (no-op) — real use requires SurrealDB
+                        Arc::new(crate::uar::api::a2a::registry::InMemoryAgentRegistry::new())
+                    }),
+                },
+            )),
         )
         // Knowledge Base API
         .nest("/api/uar/knowledge-bases", {
@@ -273,10 +436,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
             post(uar::api::memory::save_memory_handler)
                 .get(uar::api::memory::search_memory_handler),
         )
-        .route(
-            "/v1/chat/completions",
-            post(uar::api::openai::routes::chat_completions),
-        )
+        .route("/v1/chat/completions", post(api_chat_completion))
         // Note: Static files are now served via the root nest_service above
         // Serve static files with fallback to index.html for SPA routing
         .fallback_service(
@@ -380,90 +540,651 @@ async fn health_handler() -> StatusCode {
     StatusCode::OK
 }
 
-/// Request body for chat API.
+async fn legacy_chat_route_disabled() -> Response {
+    (
+        StatusCode::NOT_FOUND,
+        Json(json!({
+            "error": {
+                "message": "Legacy route disabled. Use POST /api/chat/completion",
+                "type": "invalid_request_error",
+                "code": "legacy_route_disabled"
+            }
+        })),
+    )
+        .into_response()
+}
+
+async fn legacy_sessions_route_disabled() -> Response {
+    (
+        StatusCode::NOT_FOUND,
+        Json(json!({
+            "error": {
+                "message": "Session history route disabled. Reuse X-UAR-Session-ID with POST /api/chat/completion",
+                "type": "invalid_request_error",
+                "code": "legacy_route_disabled"
+            }
+        })),
+    )
+        .into_response()
+}
+
+/// OpenAI-style message payload.
 #[derive(Debug, Deserialize)]
-struct ChatRequest {
-    /// User message content.
-    message: String,
-    /// Optional session ID (creates new if not provided).
+struct OpenAiMessageInput {
+    role: String,
+    #[serde(default)]
+    content: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum StreamMode {
+    #[default]
+    Openai,
+    Agui,
+    Dual,
+}
+
+impl StreamMode {
+    fn emits_openai_chunks(&self) -> bool {
+        matches!(self, Self::Openai | Self::Dual)
+    }
+
+    fn emits_agui_chunks(&self) -> bool {
+        matches!(self, Self::Agui | Self::Dual)
+    }
+}
+
+/// OpenAI-compatible completion request with UAR extensions.
+#[derive(Debug, Deserialize)]
+struct ChatCompletionRequest {
+    /// Model name (`gpt-5.2`) or provider-scoped (`openai/gpt-5.2`).
+    #[serde(default)]
+    model: Option<String>,
+    /// OpenAI standard messages array.
+    #[serde(default)]
+    messages: Vec<OpenAiMessageInput>,
+    /// Convenience single-message field.
+    #[serde(default)]
+    message: Option<String>,
+    /// Optional temperature (accepted for compatibility).
+    #[serde(default)]
+    temperature: Option<f32>,
+    /// Optional tools (accepted for compatibility).
+    #[serde(default)]
+    tools: Option<Vec<serde_json::Value>>,
+    /// Stream response chunks if true.
+    #[serde(default)]
+    stream: bool,
+    /// Streaming payload mode: `openai` (default), `agui`, or `dual`.
+    #[serde(default, alias = "stream_format")]
+    stream_mode: StreamMode,
+    /// Optional UAR extension; header is preferred.
     #[serde(default)]
     session_id: Option<String>,
 }
 
-/// Response from chat API.
 #[derive(Debug, Serialize)]
-struct ChatResponse {
-    /// Session ID for this conversation.
+struct OpenAiErrorBody {
+    error: OpenAiErrorPayload,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiErrorPayload {
+    message: String,
+    #[serde(rename = "type")]
+    error_type: String,
+    param: Option<String>,
+    code: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiChatCompletionResponse {
+    id: String,
+    object: &'static str,
+    created: i64,
+    model: String,
+    choices: Vec<OpenAiChatChoice>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    usage: Option<serde_json::Value>,
     session_id: String,
-    /// URL for the SSE stream.
-    stream_url: String,
 }
 
-/// POST /api/chat - Start a chat and get stream URL.
-async fn api_chat(
-    State(state): State<AppState>,
-    Json(req): Json<ChatRequest>,
-) -> Result<Json<ChatResponse>, (StatusCode, String)> {
-    tracing::info!(
-        message = %req.message,
-        session_id = ?req.session_id,
-        "Received chat request"
-    );
-
-    let session_id = if let Some(id) = &req.session_id {
-        if id.is_empty() {
-            state.sessions.create().id().to_string()
-        } else {
-            // We just pass it through, RunManager will validate/create
-            id.clone()
-        }
-    } else {
-        state.sessions.create().id().to_string()
-    };
-
-    // Start Run via UAR
-    let run_id = state
-        .run_manager
-        .start_run(
-            uar::defaults::default_agent(),
-            req.message,
-            Some(session_id.clone()),
-            None,
-        )
-        .await;
-
-    let stream_url = format!("/api/uar/runs/{run_id}/stream");
-
-    Ok(Json(ChatResponse {
-        session_id,
-        stream_url,
-    }))
-}
-
-/// Message DTO for API responses.
 #[derive(Debug, Serialize)]
-struct MessageDto {
-    role: String,
+struct OpenAiChatChoice {
+    index: usize,
+    message: OpenAiAssistantMessage,
+    finish_reason: String,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiAssistantMessage {
+    role: &'static str,
     content: String,
 }
 
-/// GET /api/sessions/:id/messages - Get session messages.
-async fn api_get_messages(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> Result<Json<Vec<MessageDto>>, StatusCode> {
-    match state.sessions.get(&id) {
-        Some(session) => {
-            let messages: Vec<MessageDto> = session
-                .messages()
-                .iter()
-                .map(|m| MessageDto {
-                    role: format!("{:?}", m.role).to_lowercase(),
-                    content: m.content.to_string(),
-                })
-                .collect();
-            Ok(Json(messages))
+#[derive(Debug, Serialize)]
+struct OpenAiChunk {
+    id: String,
+    object: &'static str,
+    created: i64,
+    model: String,
+    choices: Vec<OpenAiChunkChoice>,
+}
+
+#[derive(Debug, Serialize)]
+struct OpenAiChunkChoice {
+    index: usize,
+    delta: OpenAiDelta,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    finish_reason: Option<&'static str>,
+}
+
+#[derive(Debug, Serialize, Default)]
+struct OpenAiDelta {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    role: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    content: Option<String>,
+}
+
+#[derive(Debug)]
+struct ResolvedModel {
+    provider_id: String,
+    model_id: String,
+}
+
+fn openai_error_response(status: StatusCode, message: &str, code: Option<&str>) -> Response {
+    (
+        status,
+        Json(OpenAiErrorBody {
+            error: OpenAiErrorPayload {
+                message: message.to_string(),
+                error_type: "invalid_request_error".to_string(),
+                param: Some("model".to_string()),
+                code: code.map(ToString::to_string),
+            },
+        }),
+    )
+        .into_response()
+}
+
+fn extract_text_content(value: &serde_json::Value) -> Option<String> {
+    match value {
+        serde_json::Value::String(s) => Some(s.clone()),
+        serde_json::Value::Array(parts) => {
+            let mut text = String::new();
+            for part in parts {
+                if let Some(part_type) = part.get("type").and_then(serde_json::Value::as_str)
+                    && part_type == "text"
+                    && let Some(t) = part.get("text").and_then(serde_json::Value::as_str)
+                {
+                    if !text.is_empty() {
+                        text.push('\n');
+                    }
+                    text.push_str(t);
+                }
+            }
+            if text.is_empty() { None } else { Some(text) }
         }
-        None => Err(StatusCode::NOT_FOUND),
+        _ => None,
     }
+}
+
+fn extract_input_message(req: &ChatCompletionRequest) -> Option<String> {
+    if let Some(message) = &req.message
+        && !message.trim().is_empty()
+    {
+        return Some(message.clone());
+    }
+
+    req.messages
+        .iter()
+        .rev()
+        .find(|m| m.role.eq_ignore_ascii_case("user"))
+        .and_then(|m| extract_text_content(&m.content))
+        .filter(|s| !s.trim().is_empty())
+}
+
+fn extract_cookie_session_id(headers: &HeaderMap) -> Option<String> {
+    let cookie_header = headers.get(header::COOKIE)?.to_str().ok()?;
+    cookie_header.split(';').map(str::trim).find_map(|pair| {
+        let (name, value) = pair.split_once('=')?;
+        if name == "uar_session_id" {
+            Some(value.to_string())
+        } else {
+            None
+        }
+    })
+}
+
+fn invalid_session_id_response() -> Response {
+    (
+        StatusCode::BAD_REQUEST,
+        Json(json!({
+            "error": {
+                "message": "session_id must be a valid UUID",
+                "type": "invalid_request_error",
+                "param": "session_id",
+                "code": "invalid_session_id"
+            }
+        })),
+    )
+        .into_response()
+}
+
+fn validate_uuid_session_id(value: &str) -> Result<String, Response> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Ok(String::new());
+    }
+    Uuid::parse_str(trimmed)
+        .map(|id| id.to_string())
+        .map_err(|_| invalid_session_id_response())
+}
+
+fn resolve_session_id(
+    req: &ChatCompletionRequest,
+    headers: &HeaderMap,
+) -> Result<Option<String>, Response> {
+    if let Some(value) = headers
+        .get("x-uar-session-id")
+        .and_then(|v| v.to_str().ok())
+        .filter(|v| !v.trim().is_empty())
+    {
+        return validate_uuid_session_id(value).map(Some);
+    }
+
+    if let Some(value) = &req.session_id
+        && !value.trim().is_empty()
+    {
+        return validate_uuid_session_id(value).map(Some);
+    }
+
+    if let Some(value) = extract_cookie_session_id(headers)
+        && !value.trim().is_empty()
+    {
+        return validate_uuid_session_id(&value).map(Some);
+    }
+
+    Ok(None)
+}
+
+fn model_known(provider: &crate::llm::ProviderConfig, model_id: &str) -> bool {
+    provider.default_model.as_deref() == Some(model_id)
+        || provider.models.iter().any(|m| m.id == model_id)
+}
+
+async fn resolve_requested_model(
+    state: &AppState,
+    requested_model: Option<&str>,
+) -> Result<ResolvedModel, Response> {
+    let default_provider_id = match state.provider_registry.default_id().await {
+        Some(id) => id,
+        None => {
+            let providers = state.provider_registry.list().await;
+            if let Some(first) = providers.first() {
+                first.id.clone()
+            } else {
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error":{"message":"No configured providers"}})),
+                )
+                    .into_response());
+            }
+        }
+    };
+
+    let default_provider = match state.provider_registry.get(&default_provider_id).await {
+        Some(p) => p,
+        None => {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error":{"message":"Default provider unavailable"}})),
+            )
+                .into_response());
+        }
+    };
+
+    let requested_model = requested_model.unwrap_or("").trim();
+
+    if requested_model.is_empty() {
+        if let Some(model_id) = default_provider.default_model.clone() {
+            return Ok(ResolvedModel {
+                provider_id: default_provider_id,
+                model_id,
+            });
+        }
+        if let Some(model) = default_provider.models.first() {
+            return Ok(ResolvedModel {
+                provider_id: default_provider_id,
+                model_id: model.id.clone(),
+            });
+        }
+        return Err(openai_error_response(
+            StatusCode::NOT_FOUND,
+            "Unknown model",
+            Some("model_not_found"),
+        ));
+    }
+
+    if let Some((provider_id, model_id)) = requested_model.split_once('/') {
+        let provider_id = provider_id.trim();
+        let model_id = model_id.trim();
+        if provider_id.is_empty() || model_id.is_empty() {
+            return Err(openai_error_response(
+                StatusCode::NOT_FOUND,
+                "Unknown model",
+                Some("model_not_found"),
+            ));
+        }
+
+        let Some(provider) = state.provider_registry.get(provider_id).await else {
+            return Err(openai_error_response(
+                StatusCode::NOT_FOUND,
+                "Unknown model",
+                Some("model_not_found"),
+            ));
+        };
+
+        if !model_known(&provider, model_id) {
+            return Err(openai_error_response(
+                StatusCode::NOT_FOUND,
+                "Unknown model",
+                Some("model_not_found"),
+            ));
+        }
+
+        return Ok(ResolvedModel {
+            provider_id: provider_id.to_string(),
+            model_id: model_id.to_string(),
+        });
+    }
+
+    if !model_known(&default_provider, requested_model) {
+        return Err(openai_error_response(
+            StatusCode::NOT_FOUND,
+            "Unknown model",
+            Some("model_not_found"),
+        ));
+    }
+
+    Ok(ResolvedModel {
+        provider_id: default_provider_id,
+        model_id: requested_model.to_string(),
+    })
+}
+
+/// OpenAI-compatible completion endpoint with optional UAR session continuity.
+async fn api_chat_completion(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<ChatCompletionRequest>,
+) -> Response {
+    if let Some(temp) = req.temperature {
+        tracing::debug!(temperature = temp, "temperature received");
+    }
+    if let Some(tools) = &req.tools {
+        tracing::debug!(tool_count = tools.len(), "tools payload received");
+    }
+
+    let Some(input_message) = extract_input_message(&req) else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error": {
+                    "message": "Request must include `message` or a user message in `messages`",
+                    "type": "invalid_request_error",
+                    "param": "messages",
+                    "code": "invalid_request"
+                }
+            })),
+        )
+            .into_response();
+    };
+
+    let resolved_model = match resolve_requested_model(&state, req.model.as_deref()).await {
+        Ok(m) => m,
+        Err(resp) => return resp,
+    };
+
+    let session_id = match resolve_session_id(&req, &headers) {
+        Ok(Some(value)) => value,
+        Ok(None) => Uuid::new_v4().to_string(),
+        Err(resp) => return resp,
+    };
+
+    // Prepare agent with provider/model policy resolved for this request.
+    let mut agent = uar::defaults::default_agent();
+    agent.policy.provider.default.provider = resolved_model.provider_id.clone();
+    agent.policy.provider.default.model = resolved_model.model_id.clone();
+
+    let run_id = state
+        .run_manager
+        .start_run(agent, input_message, Some(session_id.clone()), None)
+        .await;
+
+    let Some(mut rx) = state.run_manager.subscribe(&run_id).await else {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error": {
+                    "message": "Failed to subscribe to run stream",
+                    "type": "server_error"
+                }
+            })),
+        )
+            .into_response();
+    };
+
+    let completion_id = format!("chatcmpl-{}", Uuid::new_v4().simple());
+    let created = Utc::now().timestamp();
+    let model_name = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
+
+    if req.stream {
+        let emit_openai_chunks = req.stream_mode.emits_openai_chunks();
+        let emit_agui_chunks = req.stream_mode.emits_agui_chunks();
+        let stream_session_id = session_id.clone();
+        let stream_model_name = model_name.clone();
+        let stream_completion_id = completion_id.clone();
+
+        let stream = async_stream::stream! {
+            if emit_openai_chunks {
+                let first = OpenAiChunk {
+                    id: stream_completion_id.clone(),
+                    object: "chat.completion.chunk",
+                    created,
+                    model: stream_model_name.clone(),
+                    choices: vec![OpenAiChunkChoice {
+                        index: 0,
+                        delta: OpenAiDelta { role: Some("assistant"), content: None },
+                        finish_reason: None,
+                    }],
+                };
+                let first_json = serde_json::to_string(&first).unwrap_or_else(|_| "{}".to_string());
+                yield Ok::<Event, std::convert::Infallible>(Event::default().data(first_json));
+            }
+
+            while let Ok(event) = rx.recv().await {
+                let event_id = event.id.to_string();
+                let normalized_event = event.event;
+
+                if emit_agui_chunks
+                    && let Some((event_name, payload)) = to_agui_event(&normalized_event)
+                {
+                    let payload_json =
+                        serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
+                    let agui_event = Event::default()
+                        .event(event_name)
+                        .id(event_id.clone())
+                        .data(payload_json);
+                    yield Ok(agui_event);
+                }
+
+                match normalized_event {
+                    uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
+                        if emit_openai_chunks {
+                            let chunk = OpenAiChunk {
+                                id: stream_completion_id.clone(),
+                                object: "chat.completion.chunk",
+                                created,
+                                model: stream_model_name.clone(),
+                                choices: vec![OpenAiChunkChoice {
+                                    index: 0,
+                                    delta: OpenAiDelta { role: None, content: Some(text_delta) },
+                                    finish_reason: None,
+                                }],
+                            };
+                            let json = serde_json::to_string(&chunk)
+                                .unwrap_or_else(|_| "{}".to_string());
+                            yield Ok(Event::default().data(json));
+                        }
+                    }
+                    uar::domain::events::NormalizedEvent::RunDone { .. } => {
+                        if emit_openai_chunks {
+                            let final_chunk = OpenAiChunk {
+                                id: stream_completion_id.clone(),
+                                object: "chat.completion.chunk",
+                                created,
+                                model: stream_model_name.clone(),
+                                choices: vec![OpenAiChunkChoice {
+                                    index: 0,
+                                    delta: OpenAiDelta::default(),
+                                    finish_reason: Some("stop"),
+                                }],
+                            };
+                            let json = serde_json::to_string(&final_chunk)
+                                .unwrap_or_else(|_| "{}".to_string());
+                            yield Ok(Event::default().data(json));
+                            yield Ok(Event::default().data("[DONE]"));
+                        }
+                        break;
+                    }
+                    uar::domain::events::NormalizedEvent::Error { message, .. } => {
+                        if emit_openai_chunks {
+                            let payload = json!({
+                                "error": {
+                                    "message": message,
+                                    "type": "server_error"
+                                }
+                            });
+                            let json =
+                                serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
+                            yield Ok(Event::default().data(json));
+                            yield Ok(Event::default().data("[DONE]"));
+                        }
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+        };
+
+        let mut response = Sse::new(stream)
+            .keep_alive(KeepAlive::new().interval(Duration::from_secs(15)))
+            .into_response();
+        response.headers_mut().insert(
+            HeaderName::from_static("x-uar-session-id"),
+            HeaderValue::from_str(&stream_session_id)
+                .unwrap_or_else(|_| HeaderValue::from_static("invalid")),
+        );
+        if let Ok(cookie) = HeaderValue::from_str(&format!(
+            "uar_session_id={stream_session_id}; Path=/; HttpOnly; SameSite=Lax"
+        )) {
+            response.headers_mut().append(header::SET_COOKIE, cookie);
+        }
+        return response;
+    }
+
+    let mut assistant_text = String::new();
+    let wait_result = timeout(Duration::from_secs(120), async {
+        loop {
+            match rx.recv().await {
+                Ok(event) => match event.event {
+                    uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
+                        assistant_text.push_str(&text_delta);
+                    }
+                    uar::domain::events::NormalizedEvent::RunDone { .. } => {
+                        break Ok::<(), String>(());
+                    }
+                    uar::domain::events::NormalizedEvent::Error { message, .. } => {
+                        break Err(message);
+                    }
+                    _ => {}
+                },
+                Err(e) => break Err(format!("Stream closed: {e}")),
+            }
+        }
+    })
+    .await;
+
+    match wait_result {
+        Ok(Ok(())) => {}
+        Ok(Err(msg)) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": {
+                        "message": msg,
+                        "type": "server_error"
+                    }
+                })),
+            )
+                .into_response();
+        }
+        Err(_) => {
+            return (
+                StatusCode::GATEWAY_TIMEOUT,
+                Json(json!({
+                    "error": {
+                        "message": "Timed out waiting for model response",
+                        "type": "timeout_error"
+                    }
+                })),
+            )
+                .into_response();
+        }
+    }
+
+    if assistant_text.trim().is_empty()
+        && let Some(session) = state.sessions.get(&session_id)
+    {
+        let messages = session.messages();
+        if let Some(last_assistant) = messages
+            .iter()
+            .rev()
+            .find(|m| matches!(m.role, crate::llm::MessageRole::Assistant))
+        {
+            assistant_text = last_assistant.content.to_string();
+        }
+    }
+
+    let body = OpenAiChatCompletionResponse {
+        id: completion_id,
+        object: "chat.completion",
+        created,
+        model: model_name,
+        choices: vec![OpenAiChatChoice {
+            index: 0,
+            message: OpenAiAssistantMessage {
+                role: "assistant",
+                content: assistant_text,
+            },
+            finish_reason: "stop".to_string(),
+        }],
+        usage: None,
+        session_id: session_id.clone(),
+    };
+
+    let mut response = Json(body).into_response();
+    response.headers_mut().insert(
+        HeaderName::from_static("x-uar-session-id"),
+        HeaderValue::from_str(&session_id).unwrap_or_else(|_| HeaderValue::from_static("invalid")),
+    );
+    if let Ok(cookie) = HeaderValue::from_str(&format!(
+        "uar_session_id={session_id}; Path=/; HttpOnly; SameSite=Lax"
+    )) {
+        response.headers_mut().append(header::SET_COOKIE, cookie);
+    }
+    response
 }

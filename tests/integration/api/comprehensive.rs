@@ -1,11 +1,10 @@
 #![allow(dead_code, clippy::pedantic)]
 
 use axum::http::StatusCode;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::time::Duration;
 use tokio::time::sleep;
-
 
 /// Comprehensive API endpoint testing for certification
 pub struct ApiCertificationSuite {
@@ -66,7 +65,9 @@ impl ApiCertificationSuite {
     }
 
     /// Execute complete API certification suite
-    pub async fn execute_comprehensive_tests(&mut self) -> Result<Vec<ApiTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute_comprehensive_tests(
+        &mut self,
+    ) -> Result<Vec<ApiTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         // Get all test definitions
@@ -90,37 +91,30 @@ impl ApiCertificationSuite {
             self.health_check_test(),
             self.metrics_endpoint_test(),
             self.readiness_test(),
-
             // Authentication Tests
             self.login_test(),
             self.logout_test(),
             self.token_refresh_test(),
             self.unauthorized_access_test(),
-
             // Chat API Tests
             self.create_chat_session_test(),
             self.send_message_test(),
             self.get_chat_history_test(),
             self.delete_chat_session_test(),
-
             // Streaming Tests
             self.chat_stream_test(),
             self.sse_connection_test(),
-
             // Tool Integration Tests
             self.list_available_tools_test(),
             self.execute_tool_test(),
             self.tool_call_history_test(),
-
             // File Upload Tests
             self.upload_file_test(),
             self.file_processing_test(),
             self.get_file_status_test(),
-
             // Settings and Configuration
             self.get_settings_test(),
             self.update_settings_test(),
-
             // Error Handling Tests
             self.malformed_request_test(),
             self.large_payload_test(),
@@ -222,9 +216,9 @@ impl ApiCertificationSuite {
             expected_status: StatusCode::OK,
             timeout: Duration::from_secs(5),
             requires_auth: true,
-            validation_rules: vec![
-                ResponseValidationRule::JsonFieldExists("message".to_string()),
-            ],
+            validation_rules: vec![ResponseValidationRule::JsonFieldExists(
+                "message".to_string(),
+            )],
         }
     }
 
@@ -262,9 +256,7 @@ impl ApiCertificationSuite {
             expected_status: StatusCode::UNAUTHORIZED,
             timeout: Duration::from_secs(5),
             requires_auth: false, // Intentionally no auth to test security
-            validation_rules: vec![
-                ResponseValidationRule::JsonFieldExists("error".to_string()),
-            ],
+            validation_rules: vec![ResponseValidationRule::JsonFieldExists("error".to_string())],
         }
     }
 
@@ -372,7 +364,10 @@ impl ApiCertificationSuite {
             requires_auth: true,
             validation_rules: vec![
                 ResponseValidationRule::HeaderExists("Content-Type".to_string()),
-                ResponseValidationRule::HeaderEquals("Content-Type".to_string(), "text/event-stream".to_string()),
+                ResponseValidationRule::HeaderEquals(
+                    "Content-Type".to_string(),
+                    "text/event-stream".to_string(),
+                ),
             ],
         }
     }
@@ -393,7 +388,10 @@ impl ApiCertificationSuite {
             requires_auth: true,
             validation_rules: vec![
                 ResponseValidationRule::HeaderExists("Content-Type".to_string()),
-                ResponseValidationRule::HeaderEquals("Content-Type".to_string(), "text/event-stream".to_string()),
+                ResponseValidationRule::HeaderEquals(
+                    "Content-Type".to_string(),
+                    "text/event-stream".to_string(),
+                ),
                 ResponseValidationRule::HeaderExists("Cache-Control".to_string()),
             ],
         }
@@ -612,9 +610,7 @@ impl ApiCertificationSuite {
             expected_status: StatusCode::PAYLOAD_TOO_LARGE,
             timeout: Duration::from_secs(30),
             requires_auth: true,
-            validation_rules: vec![
-                ResponseValidationRule::JsonFieldExists("error".to_string()),
-            ],
+            validation_rules: vec![ResponseValidationRule::JsonFieldExists("error".to_string())],
         }
     }
 
@@ -637,7 +633,10 @@ impl ApiCertificationSuite {
     }
 
     /// Execute a single API test
-    async fn execute_single_test(&mut self, test: ApiEndpointTest) -> Result<ApiTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn execute_single_test(
+        &mut self,
+        test: ApiEndpointTest,
+    ) -> Result<ApiTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = std::time::Instant::now();
 
         // Set up authentication if required
@@ -662,9 +661,10 @@ impl ApiCertificationSuite {
         }
 
         // Add authentication header
-        if test.requires_auth && let Some(token) = &self.auth_token {
-            request_builder =
-                request_builder.header("Authorization", format!("Bearer {}", token));
+        if test.requires_auth
+            && let Some(token) = &self.auth_token
+        {
+            request_builder = request_builder.header("Authorization", format!("Bearer {}", token));
         }
 
         // Add body if present
@@ -696,7 +696,10 @@ impl ApiCertificationSuite {
         let message = if success {
             "Test passed".to_string()
         } else {
-            format!("Test failed: expected status {}, got {}", test.expected_status, status_code)
+            format!(
+                "Test failed: expected status {}, got {}",
+                test.expected_status, status_code
+            )
         };
 
         Ok(ApiTestResult {
@@ -773,24 +776,15 @@ impl ApiCertificationSuite {
                     false
                 }
             }
-            ResponseValidationRule::HeaderExists(header_name) => {
-                headers.contains_key(header_name)
-            }
-            ResponseValidationRule::HeaderEquals(header_name, expected) => {
-                headers.get(header_name)
-                    .and_then(|v| v.to_str().ok())
-                    .map(|v| v == expected)
-                    .unwrap_or(false)
-            }
-            ResponseValidationRule::ResponseTimeMax(max_duration) => {
-                duration <= *max_duration
-            }
-            ResponseValidationRule::BodyContains(content) => {
-                response_body.contains(content)
-            }
-            ResponseValidationRule::BodyNotEmpty => {
-                !response_body.is_empty()
-            }
+            ResponseValidationRule::HeaderExists(header_name) => headers.contains_key(header_name),
+            ResponseValidationRule::HeaderEquals(header_name, expected) => headers
+                .get(header_name)
+                .and_then(|v| v.to_str().ok())
+                .map(|v| v == expected)
+                .unwrap_or(false),
+            ResponseValidationRule::ResponseTimeMax(max_duration) => duration <= *max_duration,
+            ResponseValidationRule::BodyContains(content) => response_body.contains(content),
+            ResponseValidationRule::BodyNotEmpty => !response_body.is_empty(),
         }
     }
 
@@ -812,16 +806,14 @@ impl ApiCertificationSuite {
     fn json_field_type(&self, json: &Value, field_path: &str, expected_type: &str) -> bool {
         let parts: Vec<&str> = field_path.split('.').collect();
         self.navigate_json_path(json, &parts)
-            .map(|value| {
-                match expected_type {
-                    "string" => value.is_string(),
-                    "number" => value.is_number(),
-                    "boolean" => value.is_boolean(),
-                    "array" => value.is_array(),
-                    "object" => value.is_object(),
-                    "null" => value.is_null(),
-                    _ => false,
-                }
+            .map(|value| match expected_type {
+                "string" => value.is_string(),
+                "number" => value.is_number(),
+                "boolean" => value.is_boolean(),
+                "array" => value.is_array(),
+                "object" => value.is_object(),
+                "null" => value.is_null(),
+                _ => false,
             })
             .unwrap_or(false)
     }
@@ -846,7 +838,8 @@ pub async fn execute_api_test(
     let results = suite.execute_comprehensive_tests().await?;
 
     // Find the specific test result
-    let test_result = results.iter()
+    let test_result = results
+        .iter()
         .find(|r| r.endpoint.contains(test_id) || r.method.to_lowercase().contains(test_id))
         .cloned()
         .unwrap_or_else(|| ApiTestResult {

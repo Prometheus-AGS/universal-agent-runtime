@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PMPO v1.0 — Prometheus Meta-Prompting Orchestration</title>
+
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;600;700&family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ── TOKENS ───────────────────────────────────────── */
+:root {
+  --bg:           #0B0F14;
+  --card:         #0F1620;
+  --muted:        #141C26;
+  --border:       #1E2D3F;
+  --border-hi:    #2B3F55;
+  --fg:           #E8EDF3;
+  --fg-muted:     #A7B0BC;
+  --fg-subtle:    #5C6B7A;
+  --ember:        #FF6A3D;
+  --ember-dim:    rgba(255,106,61,.12);
+  --ember-glow:   rgba(255,106,61,.05);
+  --success:      #4ADE80;
+  --warn:         #FBBF24;
+  --neutral:      #94A3B8;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-ui:      'Inter', sans-serif;
+  --font-body:    'Roboto', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --radius:       10px;
+  --radius-lg:    16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ─────────────────────────────────────────── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(11,15,20,.92);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .9rem; letter-spacing: -.02em;
+  color: var(--fg); white-space: nowrap;
+}
+.nav-brand em { color: var(--ember); font-style: normal; }
+.nav-links {
+  display: flex; gap: 1.4rem; list-style: none;
+}
+.nav-links a {
+  font-family: var(--font-ui);
+  font-size: .68rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .09em;
+  color: var(--fg-muted); text-decoration: none;
+  transition: color .2s;
+  white-space: nowrap;
+}
+.nav-links a:hover { color: var(--ember); }
+.nav-meta {
+  font-family: var(--font-mono);
+  font-size: .63rem; color: var(--fg-subtle); letter-spacing: .06em;
+  white-space: nowrap;
+}
+
+/* ── LAYOUT ──────────────────────────────────────── */
+.wrap {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 7rem 2rem 6rem;
+}
+
+/* ── HERO ────────────────────────────────────────── */
+.hero {
+  padding: 3.5rem 0 4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4.5rem;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: -2rem; right: -2rem; bottom: 0;
+  background: radial-gradient(ellipse 60% 80% at 0% 50%, var(--ember-glow), transparent 55%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .9rem;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700; letter-spacing: -.03em;
+  line-height: 1.15; margin-bottom: 1.1rem;
+}
+.hero-title em { color: var(--ember); font-style: normal; }
+.hero-sub {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .95rem;
+  max-width: 640px; margin-bottom: 1.8rem; line-height: 1.7;
+}
+.hero-meta {
+  display: flex; gap: .75rem; flex-wrap: wrap;
+}
+.meta-chip {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .06em;
+  color: var(--fg-subtle);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px; padding: .25rem .6rem;
+}
+
+/* ── DEFINITION BANNER ───────────────────────────── */
+.definition {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-left: 3px solid var(--ember);
+  border-radius: var(--radius);
+  padding: 1.6rem 1.8rem;
+  margin-bottom: 4.5rem;
+}
+.definition-label {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .75rem;
+}
+.definition-text {
+  font-family: var(--font-ui);
+  font-size: .92rem; color: var(--fg-muted); line-height: 1.75;
+}
+.definition-text strong { color: var(--fg); font-weight: 600; }
+
+/* ── SECTION ─────────────────────────────────────── */
+.section { margin-bottom: 4.5rem; }
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .7rem;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: .6rem;
+}
+.section-lead {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .93rem;
+  max-width: 680px; margin-bottom: 1.6rem; line-height: 1.7;
+}
+.prose {
+  font-family: var(--font-body);
+  color: var(--fg-muted); font-size: .93rem; line-height: 1.8;
+  max-width: 720px; margin-bottom: 1.2rem;
+}
+.prose strong { color: var(--fg); font-weight: 500; }
+
+/* ── LOOP STEPS (THE 4-PHASE CANONICAL LOOP) ────── */
+.loop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: 1.2rem;
+}
+.loop-step {
+  background: var(--card);
+  padding: 1.6rem;
+  position: relative;
+}
+.loop-step::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--ember);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.loop-step:hover::before { opacity: 1; }
+.loop-num {
+  font-family: var(--font-mono);
+  font-size: .65rem; font-weight: 700; letter-spacing: .1em;
+  color: var(--ember);
+  background: var(--ember-dim);
+  border-radius: 4px; padding: .2rem .5rem;
+  display: inline-block; margin-bottom: .8rem;
+}
+.loop-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem; font-weight: 700; letter-spacing: -.02em;
+  margin-bottom: .5rem;
+}
+.loop-body {
+  font-family: var(--font-ui);
+  font-size: .82rem; color: var(--fg-muted); line-height: 1.65;
+}
+.loop-divider {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: .8rem; color: var(--ember);
+  background: var(--muted);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: .8rem 0; writing-mode: vertical-rl;
+  letter-spacing: .1em;
+}
+
+/* ── IO TABLE (INPUTS/OUTPUTS) ───────────────────── */
+.io-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+@media(max-width: 600px) { .io-grid { grid-template-columns: 1fr; } }
+.io-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.3rem 1.5rem;
+}
+.io-card-label {
+  font-family: var(--font-mono);
+  font-size: .63rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-subtle); margin-bottom: .8rem;
+}
+.io-item {
+  font-family: var(--font-mono);
+  font-size: .75rem; color: var(--fg-muted); line-height: 2;
+}
+.io-item::before {
+  content: '→  ';
+  color: var(--ember);
+}
+
+/* ── TASK GRAPH ──────────────────────────────────── */
+.task-list {
+  display: flex; flex-direction: column; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 1.2rem;
+}
+.task-item {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  transition: background .15s;
+}
+.task-item:last-child { border-bottom: none; }
+.task-item:hover { background: var(--muted); }
+.task-n {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: .65rem; font-weight: 700; color: var(--ember);
+  background: var(--muted);
+  border-right: 1px solid var(--border);
+}
+.task-body {
+  padding: .7rem 1rem;
+  font-family: var(--font-ui);
+  font-size: .82rem; color: var(--fg-muted); line-height: 1.55;
+}
+.task-body strong { color: var(--fg); font-weight: 600; }
+
+/* ── STAGE MAPPING ───────────────────────────────── */
+.stage-grid {
+  display: flex; flex-direction: column; gap: 1rem;
+  margin-top: 1.2rem;
+}
+.stage-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.6rem;
+}
+.stage-header {
+  display: flex; align-items: baseline; gap: .9rem;
+  margin-bottom: .6rem;
+}
+.stage-tag {
+  font-family: var(--font-mono);
+  font-size: .65rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  padding: .2rem .55rem; border-radius: 4px; flex-shrink: 0;
+}
+.tag-spec    { background: rgba(255,106,61,.14); color: var(--ember); }
+.tag-plan    { background: rgba(251,191,36,.1);  color: var(--warn); }
+.tag-execute { background: rgba(74,222,128,.1);  color: var(--success); }
+.tag-reflect { background: rgba(148,163,184,.1); color: var(--neutral); }
+
+.stage-title {
+  font-family: var(--font-display);
+  font-size: 1rem; font-weight: 700; letter-spacing: -.015em;
+}
+.stage-body {
+  font-family: var(--font-ui);
+  font-size: .83rem; color: var(--fg-muted); line-height: 1.68;
+}
+.stage-body strong { color: var(--fg); font-weight: 600; }
+.stage-items {
+  margin-top: .6rem; display: flex; flex-direction: column; gap: .25rem;
+}
+.stage-item {
+  font-family: var(--font-mono);
+  font-size: .73rem; color: var(--fg-muted); line-height: 1.7;
+}
+.stage-item::before { content: '·  '; color: var(--ember); }
+
+/* ── ACCEPTANCE CRITERIA ─────────────────────────── */
+.criteria-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: .75rem;
+  margin-top: 1.2rem;
+}
+.criterion {
+  display: flex; gap: .9rem; align-items: flex-start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  transition: border-color .2s;
+}
+.criterion:hover { border-color: var(--border-hi); }
+.crit-num {
+  font-family: var(--font-mono);
+  font-size: .65rem; font-weight: 700; color: var(--ember);
+  background: var(--ember-dim);
+  border-radius: 4px; padding: .18rem .45rem;
+  flex-shrink: 0; margin-top: .15rem;
+}
+.crit-body {
+  font-family: var(--font-ui);
+  font-size: .83rem; color: var(--fg-muted); line-height: 1.6;
+}
+.crit-body strong { color: var(--fg); font-weight: 600; }
+
+/* ── CLI SURFACE ─────────────────────────────────── */
+.cli-block {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.6rem;
+  margin-bottom: 1rem;
+}
+.cli-label {
+  font-family: var(--font-mono);
+  font-size: .63rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-subtle); margin-bottom: .75rem;
+}
+.cli-cmd {
+  font-family: var(--font-mono);
+  font-size: .8rem; line-height: 2; color: var(--fg-muted);
+}
+.cli-cmd .prompt { color: var(--ember); user-select: none; }
+.cli-cmd .cmd    { color: var(--fg); }
+.cli-cmd .arg    { color: var(--success); }
+.cli-cmd .flag   { color: var(--warn); }
+.cli-cmd .comment { color: var(--fg-subtle); }
+
+/* ── ARTIFACT TREE ───────────────────────────────── */
+.artifact-tree {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+  font-family: var(--font-mono);
+  font-size: .78rem; line-height: 2; color: var(--fg-muted);
+}
+.artifact-tree .dir  { color: var(--ember); }
+.artifact-tree .file { color: var(--fg-muted); }
+.artifact-tree .desc { color: var(--fg-subtle); }
+
+/* ── TABLES ──────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin-top: .4rem; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-ui); font-size: .82rem;
+}
+thead { border-bottom: 1px solid var(--border-hi); }
+th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: .63rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-subtle); padding: .6rem 1rem;
+}
+td {
+  padding: .65rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted); vertical-align: top;
+}
+td:first-child { color: var(--fg); font-weight: 500; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--muted); }
+.mono { font-family: var(--font-mono); font-size: .76rem; }
+
+/* ── CONCLUSION ──────────────────────────────────── */
+.conclusion {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  position: relative; overflow: hidden;
+}
+.conclusion::before {
+  content: '';
+  position: absolute; top: 0; right: 0; bottom: 0; width: 40%;
+  background: radial-gradient(ellipse at 100% 50%, var(--ember-dim), transparent 70%);
+  pointer-events: none;
+}
+.conclusion-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: 1rem;
+}
+.conclusion-body {
+  font-family: var(--font-ui);
+  font-size: .9rem; color: var(--fg-muted); line-height: 1.8;
+  max-width: 620px; margin-bottom: 1.6rem;
+}
+.pill-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pill {
+  font-family: var(--font-mono);
+  font-size: .68rem; letter-spacing: .04em;
+  background: var(--muted);
+  border: 1px solid var(--border-hi);
+  border-radius: 99px; padding: .28rem .8rem;
+  color: var(--fg-muted);
+}
+
+/* ── FOOTER ──────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  margin-top: 4rem; padding: 2rem 0;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .85rem;
+  letter-spacing: -.02em; color: var(--fg-muted);
+}
+.footer-brand em { color: var(--ember); font-style: normal; }
+.footer-meta {
+  font-family: var(--font-mono);
+  font-size: .62rem; color: var(--fg-subtle); letter-spacing: .06em;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-brand">travis<em>james</em>.ai</div>
+  <ul class="nav-links">
+    <li><a href="#definition">Definition</a></li>
+    <li><a href="#loop">Canonical Loop</a></li>
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#criteria">Acceptance</a></li>
+    <li><a href="#tooling">Tooling</a></li>
+  </ul>
+  <div class="nav-meta">PMPO v1.0 · UAR Integration Edition · 2026-02-18</div>
+</nav>
+
+<!-- ── WRAP ─────────────────────────────────────────── -->
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero" id="top">
+    <div class="hero-eyebrow">Specification Document</div>
+    <h1 class="hero-title">Prometheus<br><em>Meta-Prompting Orchestration</em></h1>
+    <p class="hero-sub">A repeatable, specification-driven control loop for transforming human-authored intent artifacts into validated, executable system outputs through disciplined Spec → Plan → Execute → Reflect cycles.</p>
+    <div class="hero-meta">
+      <span class="meta-chip">v1.0</span>
+      <span class="meta-chip">UAR Integration Edition</span>
+      <span class="meta-chip">UAR-AGENT-MD v1.1</span>
+      <span class="meta-chip">UAR-GOV v1.0</span>
+      <span class="meta-chip">uar compile pipeline</span>
+    </div>
+  </header>
+
+  <!-- DEFINITION -->
+  <div class="definition" id="definition">
+    <div class="definition-label">Precise Definition</div>
+    <div class="definition-text">
+      PMPO is not "prompt engineering." It is a <strong>meta-orchestration methodology</strong> that treats documents as inputs to compilation, requires formal constraints and validation gates, produces actionable artifacts (binaries, configs, signed descriptors), and closes the loop with measured outcomes and structured improvement. In the UAR context, PMPO is the operational bridge between human-authored specifications (<strong>agent.md</strong>), deterministic enforcement (<strong>Cedar + PEP</strong>), and executable runtime entities (<strong>AgentActor + endpoints + skills</strong>).
+    </div>
+  </div>
+
+  <!-- ── SECTION 1: WHY ─────────────────────────────── -->
+  <section class="section">
+    <div class="section-eyebrow">§ 01 — Rationale</div>
+    <h2 class="section-title">Why PMPO Matters for UAR</h2>
+    <p class="section-lead">UAR is explicitly spec-first: behavior is described in documents and enforced by a runtime. PMPO is the operational bridge that makes that conversion repeatable, auditable, and secure.</p>
+
+    <div class="io-grid" style="grid-template-columns: repeat(3,1fr);">
+      <div class="io-card">
+        <div class="io-card-label">Repeatable</div>
+        <div class="definition-text" style="font-size:.83rem; color:var(--fg-muted);">Same input produces the same compiled descriptor. Determinism is a first-class requirement, not an aspiration.</div>
+      </div>
+      <div class="io-card">
+        <div class="io-card-label">Auditable</div>
+        <div class="definition-text" style="font-size:.83rem; color:var(--fg-muted);">Every decision is logged. The compile report provides stage-by-stage evidence for governance review and incident investigation.</div>
+      </div>
+      <div class="io-card">
+        <div class="io-card-label">Composable</div>
+        <div class="definition-text" style="font-size:.83rem; color:var(--fg-muted);">A task graph, not an ad-hoc sequence. Steps have typed inputs, acceptance checks, and explicit failure modes.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 2: CANONICAL LOOP ─────────────────── -->
+  <section class="section" id="loop">
+    <div class="section-eyebrow">§ 02 — Canonical Loop</div>
+    <h2 class="section-title">Spec → Plan → Execute → Reflect</h2>
+    <p class="section-lead">The four phases are not suggestions. Each phase has strict inputs, outputs, and a defined artifact that gates entry to the next phase.</p>
+
+    <div class="loop-grid">
+      <div class="loop-step">
+        <div class="loop-num">01 · SPEC</div>
+        <div class="loop-name">Normalize Intent</div>
+        <div class="loop-body">Convert ambiguous human-authored intent into a strict artifact with explicit contracts. Produce a parsed and normalized AgentDescriptor IR plus a Validation Contract — what must be true for compilation to proceed.</div>
+      </div>
+      <div class="loop-step">
+        <div class="loop-num">02 · PLAN</div>
+        <div class="loop-name">Task Graph</div>
+        <div class="loop-body">Decompose work into an ordered, typed task graph. Each task has required inputs, the tool or routine used, acceptance checks, and failure modes with remediation hints. Nothing proceeds without a plan.</div>
+      </div>
+      <div class="loop-step">
+        <div class="loop-num">03 · EXECUTE</div>
+        <div class="loop-name">Build the Agent</div>
+        <div class="loop-body">Run the plan against the artifact using UAR-AGENT-MD stages 01–08. Produce a compiled Cedar policy, validated schemas, resolved MCP config, registered A2A endpoints, installed PEP bindings, and a signed runtime descriptor.</div>
+      </div>
+      <div class="loop-step">
+        <div class="loop-num">04 · REFLECT</div>
+        <div class="loop-name">Verify & Improve</div>
+        <div class="loop-body">Check every output against acceptance criteria. Analyze failures. Detect spec-to-runtime drift. Produce a compile report with reason codes and remediation suggestions that feed the next PMPO loop.</div>
+      </div>
+    </div>
+
+    <!-- Phase IO detail -->
+    <div style="margin-top:2.5rem; display:flex; flex-direction:column; gap:1.2rem;">
+
+      <!-- SPEC phase IO -->
+      <div class="stage-card">
+        <div class="stage-header">
+          <span class="stage-tag tag-spec">Spec</span>
+          <span class="stage-title">Inputs → Artifact: agent.ir.json</span>
+        </div>
+        <div class="io-grid" style="margin-top:.8rem;">
+          <div>
+            <div class="io-card-label" style="font-family:var(--font-mono);font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-subtle);margin-bottom:.6rem;">Inputs</div>
+            <div class="io-item">agent.md (UAR-AGENT-MD v1.1)</div>
+            <div class="io-item">Referenced A2UI schemas (by ID/version)</div>
+            <div class="io-item">Referenced JSON Schemas (IO)</div>
+            <div class="io-item">Embedded Cedar policy text</div>
+            <div class="io-item">MCP server declarations</div>
+            <div class="io-item">Runtime profile selection</div>
+          </div>
+          <div>
+            <div class="io-card-label" style="font-family:var(--font-mono);font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-subtle);margin-bottom:.6rem;">Outputs</div>
+            <div class="io-item">Parsed AgentDescriptor IR</div>
+            <div class="io-item">Referenced dependency list</div>
+            <div class="io-item">Strict Validation Contract</div>
+            <div class="io-item">agent.ir.json (normalized IR)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXECUTE phase IO -->
+      <div class="stage-card">
+        <div class="stage-header">
+          <span class="stage-tag tag-execute">Execute</span>
+          <span class="stage-title">Compiled Outputs (Stages 01–08)</span>
+        </div>
+        <div class="io-grid" style="margin-top:.8rem;">
+          <div>
+            <div class="io-item">agent.descriptor.json</div>
+            <div class="io-item">policy.compiled (Cedar authorizer)</div>
+            <div class="io-item">routes.a2a.json (actor routing)</div>
+          </div>
+          <div>
+            <div class="io-item">pep.bindings.json (capability → enforcement)</div>
+            <div class="io-item">agent.descriptor.sig (signature)</div>
+            <div class="io-item">compile.report.json (audit)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REFLECT phase checks -->
+      <div class="stage-card">
+        <div class="stage-header">
+          <span class="stage-tag tag-reflect">Reflect</span>
+          <span class="stage-title">Verification Checks</span>
+        </div>
+        <div class="stage-items" style="margin-top:.6rem;">
+          <div class="stage-item"><strong>Determinism</strong> — same inputs produce the same descriptor hash</div>
+          <div class="stage-item"><strong>Completeness</strong> — every declared capability has a corresponding PEP binding</div>
+          <div class="stage-item"><strong>Governance coverage</strong> — all sensitive actions have explicit policy rules or explicit deny</div>
+          <div class="stage-item"><strong>Schema coherence</strong> — UI actions ↔ skills/A2A endpoints must bind; A2A endpoints ↔ schema files must exist</div>
+          <div class="stage-item"><strong>Operational readiness</strong> — MCP auth references resolvable; profile overrides do not violate max budgets</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── SECTION 3: PIPELINE MAPPING ───────────────── -->
+  <section class="section" id="pipeline">
+    <div class="section-eyebrow">§ 03 — Pipeline Mapping</div>
+    <h2 class="section-title">PMPO → UAR Compilation Stages</h2>
+    <p class="section-lead">UAR-AGENT-MD §19 defines 8 compilation stages. PMPO wraps these as a strict orchestration loop. The following maps PMPO phases to their corresponding UAR stages.</p>
+
+    <div class="stage-grid">
+
+      <div class="stage-card">
+        <div class="stage-header">
+          <span class="stage-tag tag-spec">Spec Phase</span>
+          <span class="stage-title">Stages 01–02 · Normalization & Contracts</span>
+        </div>
+        <div class="stage-body">The Spec phase makes intent unambiguous. In UAR compilation this means normalizing the frontmatter and resolving the A2UI contract.</div>
+        <div class="stage-items">
+          <div class="stage-item"><strong>Stage 01 · Validate Frontmatter</strong> — normalize versioning, schema compatibility, runtime constraints; produce IR header and compatibility contract</div>
+          <div class="stage-item"><strong>Stage 02 · Validate A2UI Schemas</strong> — resolve <span class="mono">ui.artifacts[*].schema</span> against registry; resolve <span class="mono">ui.actions[*].input_schema/output_schema</span>; produce UI contract</div>
+        </div>
+      </div>
+
+      <div class="stage-card">
+        <div class="stage-header">
+          <span class="stage-tag tag-plan">Plan Phase</span>
+          <span class="stage-title">Deterministic Task Graph</span>
+        </div>
+        <div class="stage-body">PMPO converts the 8 compilation stages into a task graph with explicit acceptance criteria per step. Each task produces a small artifact and a success predicate.</div>
+      </div>
+
+      <div class="stage-card">
+        <div class="stage-header">
+          <span class="stage-tag tag-execute">Execute Phase</span>
+          <span class="stage-title">Stages 03–08 · Build the Runtime Agent</span>
+        </div>
+        <div class="stage-items">
+          <div class="stage-item"><strong>Stage 03 · Validate MCP Server Config</strong> — verify endpoints, auth types, env var presence; ensure tool capability cross-refs match declared MCP servers</div>
+          <div class="stage-item"><strong>Stage 04 · Validate A2A JSON Schemas</strong> — parse input/output JSON Schema; enforce structural constraints; record schema fingerprints for audit and caching</div>
+          <div class="stage-item"><strong>Stage 05 · Compile Cedar Policy</strong> — parse embedded Cedar; type-check entity/action/resource usage; compile to authorizer-ready representation; ensure policy covers all sensitive actions (fail-closed)</div>
+          <div class="stage-item"><strong>Stage 06 · Register Actor Endpoints</strong> — bind <span class="mono">a2a.endpoints[*].id</span> into actor routing registry; attach schema IDs, timeouts, and caller restrictions</div>
+          <div class="stage-item"><strong>Stage 07 · Install PEP Enforcement</strong> — for each capability surface (LLM, tools, file, net, plugin load, a2a.call): install a PEP gate, ensure requests build correctly, attach budget and rate-limit obligations</div>
+          <div class="stage-item"><strong>Stage 08 · Emit Signed Descriptor</strong> — emit canonical JSON descriptor (stable ordering); sign descriptor and referenced fingerprints; emit compile report with stage results</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Task Graph -->
+    <div style="margin-top:2rem;">
+      <div class="section-eyebrow" style="margin-bottom:.7rem;">Plan Phase · Canonical Task Graph</div>
+      <div class="task-list">
+        <div class="task-item"><div class="task-n">01</div><div class="task-body"><strong>Parse markdown</strong> — structural sections present</div></div>
+        <div class="task-item"><div class="task-n">02</div><div class="task-body"><strong>Validate frontmatter compatibility</strong></div></div>
+        <div class="task-item"><div class="task-n">03</div><div class="task-body"><strong>Merge deployment profile overrides</strong></div></div>
+        <div class="task-item"><div class="task-n">04</div><div class="task-body"><strong>Resolve A2UI schema IDs</strong> → schema documents</div></div>
+        <div class="task-item"><div class="task-n">05</div><div class="task-body"><strong>Resolve schema files</strong> → JSON Schema parse</div></div>
+        <div class="task-item"><div class="task-n">06</div><div class="task-body"><strong>Validate MCP server config</strong> + auth references</div></div>
+        <div class="task-item"><div class="task-n">07</div><div class="task-body"><strong>Validate A2A endpoints</strong> reference valid schemas</div></div>
+        <div class="task-item"><div class="task-n">08</div><div class="task-body"><strong>Compile Cedar policy</strong> + validate entity/action references</div></div>
+        <div class="task-item"><div class="task-n">09</div><div class="task-body"><strong>Bind endpoints</strong> into actor routing table</div></div>
+        <div class="task-item"><div class="task-n">10</div><div class="task-body"><strong>Derive PEP bindings</strong> for every declared capability surface</div></div>
+        <div class="task-item"><div class="task-n">11</div><div class="task-body"><strong>Emit descriptor + signature + compile report</strong></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 4: ACCEPTANCE CRITERIA ────────────── -->
+  <section class="section" id="criteria">
+    <div class="section-eyebrow">§ 04 — Acceptance Criteria</div>
+    <h2 class="section-title">What "Done" Means</h2>
+    <p class="section-lead">An agent is considered actionable when all eight criteria are satisfied. Partial satisfaction is a compile failure, not a warning.</p>
+
+    <div class="criteria-grid">
+      <div class="criterion">
+        <div class="crit-num">01</div>
+        <div class="crit-body"><strong>Descriptor validity</strong> — canonical descriptor parses and matches UAR domain types</div>
+      </div>
+      <div class="criterion">
+        <div class="crit-num">02</div>
+        <div class="crit-body"><strong>UI contract validity</strong> — every A2UI reference resolves; every UI action has typed IO</div>
+      </div>
+      <div class="criterion">
+        <div class="crit-num">03</div>
+        <div class="crit-body"><strong>MCP readiness</strong> — all declared MCP servers are structurally valid and capability-matched</div>
+      </div>
+      <div class="criterion">
+        <div class="crit-num">04</div>
+        <div class="crit-body"><strong>A2A contract validity</strong> — every endpoint has valid JSON Schema IO</div>
+      </div>
+      <div class="criterion">
+        <div class="crit-num">05</div>
+        <div class="crit-body"><strong>Governance compiled</strong> — Cedar policy compiles and references known actions and resources</div>
+      </div>
+      <div class="criterion">
+        <div class="crit-num">06</div>
+        <div class="crit-body"><strong>PEP installed</strong> — all sensitive capability boundaries are guarded</div>
+      </div>
+      <div class="criterion">
+        <div class="crit-num">07</div>
+        <div class="crit-body"><strong>Signature present</strong> — descriptor and fingerprints are signed</div>
+      </div>
+      <div class="criterion">
+        <div class="crit-num">08</div>
+        <div class="crit-body"><strong>Runtime load test</strong> — agent can be loaded and registered without warnings</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 5: TOOLING ─────────────────────────── -->
+  <section class="section" id="tooling">
+    <div class="section-eyebrow">§ 05 — Tooling Surface</div>
+    <h2 class="section-title">CLI Commands & Artifact Outputs</h2>
+    <p class="section-lead">PMPO becomes concrete inside UAR through a versioned CLI and stable artifact locations. Every compile run is reproducible from its artifact directory.</p>
+
+    <div class="cli-block">
+      <div class="cli-label">Core Compile Commands</div>
+      <div class="cli-cmd">
+        <span class="prompt">$ </span><span class="cmd">uar compile</span> <span class="arg">agent.md</span><br>
+        <span class="comment">  # Full PMPO loop → emits signed descriptor + compile report</span><br>
+        <br>
+        <span class="prompt">$ </span><span class="cmd">uar compile</span> <span class="flag">--plan-only</span> <span class="arg">agent.md</span><br>
+        <span class="comment">  # Emits task graph without execution</span><br>
+        <br>
+        <span class="prompt">$ </span><span class="cmd">uar compile</span> <span class="flag">--reflect</span> <span class="arg">agent.md</span><br>
+        <span class="comment">  # Runs verification against prior artifacts</span>
+      </div>
+    </div>
+
+    <div class="cli-block">
+      <div class="cli-label">Governance Debug Commands</div>
+      <div class="cli-cmd">
+        <span class="prompt">$ </span><span class="cmd">uar policy simulate</span> <span class="arg">agent.md</span> <span class="flag">--action</span> <span class="arg">llm.invoke</span> <span class="flag">--resource</span> <span class="arg">model:gpt-4o</span><br>
+        <br>
+        <span class="prompt">$ </span><span class="cmd">uar policy explain</span>  <span class="arg">agent.md</span> <span class="flag">--action</span> <span class="arg">net.http.request</span> <span class="flag">--resource</span> <span class="arg">https://example.com</span>
+      </div>
+    </div>
+
+    <div style="margin-top:1.2rem;">
+      <div class="section-eyebrow" style="margin-bottom:.7rem;">Artifact Output Structure</div>
+      <div class="artifact-tree">
+<span class="dir">dist/</span><br>
+└── <span class="dir">&lt;agent-id&gt;/</span><br>
+    └── <span class="dir">&lt;version&gt;/</span><br>
+        ├── <span class="file">descriptor.json</span>        <span class="desc">— canonical normalized descriptor</span><br>
+        ├── <span class="file">descriptor.sig</span>         <span class="desc">— descriptor + fingerprint signature</span><br>
+        ├── <span class="file">compile.report.json</span>    <span class="desc">— stage-by-stage verdicts + remediation</span><br>
+        └── <span class="file">fingerprints.json</span>      <span class="desc">— schema + policy content hashes</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONCLUSION ─────────────────────────────────── -->
+  <section class="section">
+    <div class="conclusion">
+      <div class="section-eyebrow">Summary</div>
+      <div class="conclusion-title">The Operational Methodology Behind Spec-Driven Agents</div>
+      <div class="conclusion-body">
+        PMPO is what makes UAR "specification-driven" in practice rather than in principle. The Spec phase ensures the agent document is unambiguous and contract-complete. The Plan phase converts compilation into a deterministic task graph with measurable acceptance criteria. The Execute phase runs the UAR-AGENT-MD pipeline stages 01–08 to produce a signed descriptor. The Reflect phase verifies determinism, governance coverage, and bindability — feeding improvements into the next loop. This is how a UAR-AGENT-MD document becomes an actionable, governed AgentActor in the Universal Agent Runtime.
+      </div>
+      <div class="pill-list">
+        <span class="pill">Spec → Normalize Intent</span>
+        <span class="pill">Plan → Task Graph</span>
+        <span class="pill">Execute → Stages 01–08</span>
+        <span class="pill">Reflect → Verify & Improve</span>
+        <span class="pill">Cedar Governance</span>
+        <span class="pill">Signed Descriptors</span>
+        <span class="pill">uar compile pipeline</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-brand">travis<em>james</em>.ai</div>
+    <div class="footer-meta">PMPO v1.0 · UAR INTEGRATION EDITION · 2026-02-18 · PROMETHEUS AGENTIC GROWTH SOLUTIONS</div>
+  </footer>
+
+</div><!-- /wrap -->
+
+</body>
+</html>

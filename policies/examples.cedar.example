@@ -1,0 +1,21 @@
+// Example: Restrict a dangerous tool to specific agents
+//
+// This policy denies execution of "dangerous_tool" for ALL agents.
+// To use this policy, rename the file to remove the ".example" suffix,
+// or copy the rules you want into a new .cedar file.
+//
+// forbid (
+//     principal,
+//     action == Action::"execute_tool",
+//     resource == Tool::"dangerous_tool"
+// );
+
+// Example: Only allow a specific agent to spawn other agents
+//
+// forbid (
+//     principal,
+//     action == Action::"spawn_agent",
+//     resource
+// ) unless {
+//     principal == Agent::"orchestrator"
+// };

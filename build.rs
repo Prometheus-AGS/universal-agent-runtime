@@ -21,8 +21,7 @@ fn main() {
         let model_dir = Path::new("src/uar/runtime/matching/models");
         let model_filename = "bg-small-en-v1.5.onnx";
         let model_path = model_dir.join(model_filename);
-        let url =
-            "https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/onnx/model_quantized.onnx";
+        let url = "https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/onnx/model_quantized.onnx";
 
         // Download model if it doesn't exist
         if !model_path.exists() {

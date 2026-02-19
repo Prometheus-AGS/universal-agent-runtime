@@ -8,11 +8,11 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+use dotenvy::dotenv;
+use std::sync::Arc;
 use universal_agent_runtime::config::{AppConfig, load_llm_settings};
 use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
-use dotenvy::dotenv;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() {

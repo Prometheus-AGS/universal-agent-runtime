@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RFC-0001 — UAR Agent Definition Specification Standard</title>
+
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;600;700&family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ── TOKENS ───────────────────────────────────────── */
+:root {
+  --bg:           #0B0F14;
+  --card:         #0F1620;
+  --muted:        #141C26;
+  --border:       #1E2D3F;
+  --border-hi:    #2B3F55;
+  --fg:           #E8EDF3;
+  --fg-muted:     #A7B0BC;
+  --fg-subtle:    #5C6B7A;
+  --ember:        #FF6A3D;
+  --ember-dim:    rgba(255,106,61,.12);
+  --ember-glow:   rgba(255,106,61,.05);
+  --success:      #4ADE80;
+  --warn:         #FBBF24;
+  --neutral:      #94A3B8;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-ui:      'Inter', sans-serif;
+  --font-body:    'Roboto', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --radius:       10px;
+  --radius-lg:    16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ─────────────────────────────────────────── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(11,15,20,.93);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1.5rem;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .9rem; letter-spacing: -.02em;
+  color: var(--fg); white-space: nowrap;
+}
+.nav-brand em { color: var(--ember); font-style: normal; }
+.nav-links {
+  display: flex; gap: 1.4rem; list-style: none; flex-wrap: nowrap;
+}
+.nav-links a {
+  font-family: var(--font-ui);
+  font-size: .68rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .09em;
+  color: var(--fg-muted); text-decoration: none;
+  transition: color .2s; white-space: nowrap;
+}
+.nav-links a:hover { color: var(--ember); }
+.nav-meta {
+  font-family: var(--font-mono);
+  font-size: .63rem; color: var(--fg-subtle); letter-spacing: .06em;
+  white-space: nowrap;
+}
+
+/* ── LAYOUT ──────────────────────────────────────── */
+.wrap {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 7rem 2rem 6rem;
+}
+
+/* ── HERO ────────────────────────────────────────── */
+.hero {
+  padding: 3.5rem 0 4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4rem;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: -2rem; right: -2rem; bottom: 0;
+  background: radial-gradient(ellipse 55% 70% at 5% 50%, var(--ember-glow), transparent 60%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .85rem;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3.8vw, 2.6rem);
+  font-weight: 700; letter-spacing: -.03em;
+  line-height: 1.15; margin-bottom: 1rem;
+}
+.hero-title em { color: var(--ember); font-style: normal; }
+.hero-sub {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .93rem;
+  max-width: 620px; margin-bottom: 1.8rem; line-height: 1.7;
+}
+.hero-meta {
+  display: flex; gap: .65rem; flex-wrap: wrap; margin-bottom: 1.6rem;
+}
+.meta-chip {
+  font-family: var(--font-mono);
+  font-size: .64rem; letter-spacing: .06em;
+  color: var(--fg-subtle);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px; padding: .22rem .55rem;
+}
+.meta-chip.status-draft {
+  color: var(--warn);
+  background: rgba(251,191,36,.08);
+  border-color: rgba(251,191,36,.2);
+}
+
+/* ── RFC HEADER TABLE ────────────────────────────── */
+.rfc-header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 1.5rem;
+}
+.rfc-field {
+  background: var(--card);
+  padding: .85rem 1.1rem;
+}
+.rfc-field-label {
+  font-family: var(--font-mono);
+  font-size: .6rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-subtle); margin-bottom: .25rem;
+}
+.rfc-field-value {
+  font-family: var(--font-ui);
+  font-size: .82rem; font-weight: 500; color: var(--fg);
+}
+.rfc-field-value a {
+  color: var(--ember); text-decoration: none;
+}
+.rfc-field-value a:hover { text-decoration: underline; }
+
+/* ── ABSTRACT BANNER ─────────────────────────────── */
+.abstract {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-left: 3px solid var(--ember);
+  border-radius: var(--radius);
+  padding: 1.6rem 1.8rem;
+  margin-bottom: 4rem;
+}
+.abstract-label {
+  font-family: var(--font-mono);
+  font-size: .63rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .75rem;
+}
+.abstract-text {
+  font-family: var(--font-ui);
+  font-size: .92rem; color: var(--fg-muted); line-height: 1.78;
+  margin-bottom: 1.1rem;
+}
+.abstract-text strong { color: var(--fg); font-weight: 600; }
+.objective-list {
+  display: flex; flex-direction: column; gap: .35rem;
+  margin-top: .6rem;
+}
+.objective-item {
+  font-family: var(--font-mono);
+  font-size: .76rem; color: var(--fg-muted); line-height: 1.6;
+}
+.objective-item::before { content: '→  '; color: var(--ember); }
+
+/* ── SECTION ─────────────────────────────────────── */
+.section { margin-bottom: 4rem; }
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .63rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .65rem;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: .6rem;
+}
+.section-lead {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .92rem;
+  max-width: 680px; margin-bottom: 1.5rem; line-height: 1.72;
+}
+.prose {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .9rem; line-height: 1.8;
+  max-width: 720px; margin-bottom: 1rem;
+}
+.prose strong { color: var(--fg); font-weight: 600; }
+
+/* ── TERMINOLOGY ─────────────────────────────────── */
+.term-grid {
+  display: flex; flex-direction: column; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 1rem;
+}
+.term-item {
+  display: grid; grid-template-columns: 11rem 1fr;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+.term-item:last-child { border-bottom: none; }
+.term-item:hover { background: var(--muted); }
+.term-key {
+  padding: .8rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: .74rem; font-weight: 600;
+  color: var(--ember);
+  border-right: 1px solid var(--border);
+  display: flex; align-items: center;
+}
+.term-val {
+  padding: .8rem 1.1rem;
+  font-family: var(--font-ui);
+  font-size: .83rem; color: var(--fg-muted); line-height: 1.6;
+  display: flex; align-items: center;
+}
+
+/* ── GOALS / NON-GOALS ───────────────────────────── */
+.goal-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+  margin-top: 1rem;
+}
+@media(max-width:600px) { .goal-grid { grid-template-columns: 1fr; } }
+.goal-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.3rem 1.5rem;
+}
+.goal-card-label {
+  font-family: var(--font-mono);
+  font-size: .62rem; letter-spacing: .12em; text-transform: uppercase;
+  margin-bottom: .75rem;
+}
+.goal-card-label.goals   { color: var(--success); }
+.goal-card-label.nongoals { color: var(--neutral); }
+.goal-item {
+  font-family: var(--font-ui);
+  font-size: .83rem; color: var(--fg-muted); line-height: 1.9;
+}
+.goal-item::before { content: '→  '; }
+.goal-item.goals::before   { color: var(--success); }
+.goal-item.nongoals::before { color: var(--neutral); }
+
+/* ── SPEC SECTIONS (REQUIRED STRUCTURE) ──────────── */
+.spec-structure {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.3rem 1.5rem;
+  margin-top: 1rem;
+  font-family: var(--font-mono);
+  font-size: .78rem; line-height: 2;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--fg-muted);
+}
+.spec-structure .root  { color: var(--fg); font-weight: 600; }
+.spec-structure .req   { color: var(--ember); }
+.spec-structure .note  { color: var(--fg-subtle); }
+
+/* ── REQUIREMENTS ACCORDION ──────────────────────── */
+.req-list {
+  display: flex; flex-direction: column; gap: .5rem;
+  margin-top: 1.2rem;
+}
+.req-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.req-header {
+  display: flex; align-items: center; gap: .9rem;
+  padding: 1rem 1.3rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s;
+}
+.req-header:hover { background: var(--muted); }
+.req-num {
+  font-family: var(--font-mono);
+  font-size: .63rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--ember); background: var(--ember-dim);
+  border-radius: 4px; padding: .18rem .48rem;
+  flex-shrink: 0;
+}
+.req-title {
+  font-family: var(--font-display);
+  font-size: .95rem; font-weight: 700; letter-spacing: -.015em;
+  flex: 1;
+}
+.req-chevron {
+  font-family: var(--font-mono); font-size: .8rem;
+  color: var(--fg-subtle); flex-shrink: 0;
+  transition: transform .2s;
+}
+.req-card.open .req-chevron { transform: rotate(90deg); color: var(--ember); }
+.req-body {
+  display: none;
+  padding: 0 1.3rem 1.1rem;
+  border-top: 1px solid var(--border);
+}
+.req-card.open .req-body { display: block; }
+.req-body-inner {
+  padding-top: .9rem;
+  font-family: var(--font-ui);
+  font-size: .84rem; color: var(--fg-muted); line-height: 1.75;
+}
+.req-must {
+  display: flex; flex-direction: column; gap: .3rem; margin-top: .7rem;
+}
+.req-must-item {
+  font-family: var(--font-mono);
+  font-size: .73rem; color: var(--fg-muted); line-height: 1.7;
+}
+.req-must-item::before { content: 'MUST  '; color: var(--ember); font-weight: 700; }
+.req-must-item.should::before { content: 'SHOULD  '; color: var(--warn); font-weight: 700; }
+.req-must-item.may::before    { content: 'MAY  '; color: var(--neutral); font-weight: 700; }
+.req-must-item.fail::before   { content: 'MUST FAIL  '; color: #F87171; font-weight: 700; }
+
+/* ── RFC KEYWORDS ────────────────────────────────── */
+.keyword-bar {
+  display: flex; flex-wrap: wrap; gap: .4rem;
+  margin-top: 1rem;
+}
+.kw {
+  font-family: var(--font-mono);
+  font-size: .68rem; font-weight: 700; letter-spacing: .05em;
+  padding: .22rem .6rem; border-radius: 4px;
+}
+.kw-must    { background: rgba(255,106,61,.14); color: var(--ember); }
+.kw-should  { background: rgba(251,191,36,.1);  color: var(--warn); }
+.kw-may     { background: rgba(148,163,184,.1); color: var(--neutral); }
+
+/* ── CONFORMANCE CHECKLIST ───────────────────────── */
+.conform-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .75rem; margin-top: 1.2rem;
+}
+.conform-item {
+  display: flex; gap: .85rem; align-items: flex-start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .9rem 1.1rem;
+  transition: border-color .2s;
+}
+.conform-item:hover { border-color: var(--border-hi); }
+.conform-check {
+  font-family: var(--font-mono);
+  font-size: .7rem; font-weight: 700;
+  color: var(--success);
+  flex-shrink: 0; margin-top: .1rem;
+}
+.conform-body {
+  font-family: var(--font-ui);
+  font-size: .82rem; color: var(--fg-muted); line-height: 1.6;
+}
+
+/* ── FUTURE WORK ─────────────────────────────────── */
+.future-list {
+  display: flex; flex-direction: column; gap: .5rem; margin-top: 1rem;
+}
+.future-item {
+  display: flex; gap: .8rem; align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .8rem 1.1rem;
+  font-family: var(--font-ui); font-size: .84rem; color: var(--fg-muted);
+}
+.future-item::before {
+  content: '◦';
+  font-family: var(--font-mono); color: var(--fg-subtle);
+  flex-shrink: 0;
+}
+
+/* ── CONCLUSION ──────────────────────────────────── */
+.conclusion {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  position: relative; overflow: hidden;
+}
+.conclusion::before {
+  content: '';
+  position: absolute; top: 0; right: 0; bottom: 0; width: 45%;
+  background: radial-gradient(ellipse at 100% 50%, var(--ember-dim), transparent 65%);
+  pointer-events: none;
+}
+.conclusion-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: .9rem;
+}
+.conclusion-body {
+  font-family: var(--font-ui);
+  font-size: .9rem; color: var(--fg-muted); line-height: 1.82;
+  max-width: 600px; margin-bottom: .6rem;
+}
+.conclusion-body strong { color: var(--fg); font-weight: 600; }
+.tagline {
+  font-family: var(--font-display);
+  font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em;
+  color: var(--ember); margin-top: 1.4rem;
+}
+
+/* ── FOOTER ──────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  margin-top: 4rem; padding: 2rem 0;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .85rem;
+  letter-spacing: -.02em; color: var(--fg-muted);
+}
+.footer-brand em { color: var(--ember); font-style: normal; }
+.footer-meta {
+  font-family: var(--font-mono);
+  font-size: .62rem; color: var(--fg-subtle); letter-spacing: .06em;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-brand">travis<em>james</em>.ai</div>
+  <ul class="nav-links">
+    <li><a href="#abstract">Abstract</a></li>
+    <li><a href="#terminology">Terminology</a></li>
+    <li><a href="#structure">Structure</a></li>
+    <li><a href="#requirements">Requirements</a></li>
+    <li><a href="#conformance">Conformance</a></li>
+    <li><a href="#future">Future Work</a></li>
+  </ul>
+  <div class="nav-meta">RFC-0001 · DRAFT · 2026-02-18</div>
+</nav>
+
+<div class="wrap">
+
+  <!-- ── HERO ───────────────────────────────────────── -->
+  <header class="hero" id="top">
+    <div class="hero-eyebrow">Prometheus Architecture Group · Request for Comments</div>
+    <h1 class="hero-title"><em>RFC-0001</em> — UAR Agent Definition<br>Specification Standard</h1>
+    <p class="hero-sub">The formal standard for agent definition within the Universal Agent Runtime. Defines the structure, semantics, validation rules, and compilation requirements for agent artifacts written in Markdown under the UAR-AGENT-MD schema.</p>
+    <div class="hero-meta">
+      <span class="meta-chip status-draft">Status: Draft</span>
+      <span class="meta-chip">UAR-AGENT-MD v1.1</span>
+      <span class="meta-chip">UAR-GOV v1.0</span>
+      <span class="meta-chip">PMPO v1.0</span>
+      <span class="meta-chip">Supersedes: None</span>
+    </div>
+
+    <div class="rfc-header">
+      <div class="rfc-field">
+        <div class="rfc-field-label">Document ID</div>
+        <div class="rfc-field-value">RFC-0001</div>
+      </div>
+      <div class="rfc-field">
+        <div class="rfc-field-label">Status</div>
+        <div class="rfc-field-value" style="color:var(--warn);">Draft</div>
+      </div>
+      <div class="rfc-field">
+        <div class="rfc-field-label">Author</div>
+        <div class="rfc-field-value">Prometheus Architecture Group</div>
+      </div>
+      <div class="rfc-field">
+        <div class="rfc-field-label">Created</div>
+        <div class="rfc-field-value">2026-02-18</div>
+      </div>
+      <div class="rfc-field">
+        <div class="rfc-field-label">Applies To</div>
+        <div class="rfc-field-value">Universal Agent Runtime (UAR)</div>
+      </div>
+      <div class="rfc-field">
+        <div class="rfc-field-label">Supersedes</div>
+        <div class="rfc-field-value" style="color:var(--fg-subtle);">None</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── ABSTRACT ───────────────────────────────────── -->
+  <div class="abstract" id="abstract">
+    <div class="abstract-label">§ 1 — Abstract</div>
+    <div class="abstract-text">
+      This RFC formally defines the standard specification format for agent definition within the Universal Agent Runtime. It describes the structure, semantics, validation rules, and compilation requirements for agent artifacts written in Markdown under the UAR-AGENT-MD schema. <strong>This RFC does not define runtime implementation details.</strong> It defines the specification standard that runtimes MUST follow.
+    </div>
+    <div class="abstract-text" style="margin-bottom:.4rem;">The objective of this RFC is to:</div>
+    <div class="objective-list">
+      <div class="objective-item">Establish a stable, versioned specification contract for agent artifacts</div>
+      <div class="objective-item">Define deterministic compilation semantics</div>
+      <div class="objective-item">Formalize governance, UI, MCP, and A2A contract requirements</div>
+      <div class="objective-item">Enable interoperability across runtimes, registries, and tooling</div>
+    </div>
+  </div>
+
+  <!-- ── TERMINOLOGY ────────────────────────────────── -->
+  <section class="section" id="terminology">
+    <div class="section-eyebrow">§ 2 — Terminology</div>
+    <h2 class="section-title">Key Words & Definitions</h2>
+    <p class="section-lead">The key words below are interpreted as described in RFC 2119. This document uses the following terms with specific meaning throughout.</p>
+
+    <div class="keyword-bar">
+      <span class="kw kw-must">MUST</span>
+      <span class="kw kw-must">MUST NOT</span>
+      <span class="kw kw-must">REQUIRED</span>
+      <span class="kw kw-must">SHALL</span>
+      <span class="kw kw-must">SHALL NOT</span>
+      <span class="kw kw-should">SHOULD</span>
+      <span class="kw kw-should">SHOULD NOT</span>
+      <span class="kw kw-may">MAY</span>
+    </div>
+
+    <div class="term-grid" style="margin-top:1.4rem;">
+      <div class="term-item">
+        <div class="term-key">Agent Artifact</div>
+        <div class="term-val">A Markdown document conforming to the UAR-AGENT-MD schema.</div>
+      </div>
+      <div class="term-item">
+        <div class="term-key">Descriptor</div>
+        <div class="term-val">The normalized, canonical JSON representation produced by compilation.</div>
+      </div>
+      <div class="term-item">
+        <div class="term-key">Compilation</div>
+        <div class="term-val">The deterministic transformation of an Agent Artifact into a signed Descriptor.</div>
+      </div>
+      <div class="term-item">
+        <div class="term-key">Capability Surface</div>
+        <div class="term-val">Any runtime boundary requiring policy enforcement: LLM, tool, file, net, plugin, A2A.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── GOALS ──────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-eyebrow">§ 3 – 4 — Goals & Non-Goals</div>
+    <h2 class="section-title">Scope</h2>
+    <p class="section-lead">This RFC establishes what the specification standard covers and explicitly what it does not. Boundaries are as important as requirements.</p>
+
+    <div class="goal-grid">
+      <div class="goal-card">
+        <div class="goal-card-label goals">Goals</div>
+        <div class="goal-item goals">Provide a deterministic agent definition format</div>
+        <div class="goal-item goals">Enable governance-first execution via Cedar policies</div>
+        <div class="goal-item goals">Support declarative UI contracts (A2UI)</div>
+        <div class="goal-item goals">Support explicit MCP infrastructure dependencies</div>
+        <div class="goal-item goals">Support typed Agent-to-Agent contracts</div>
+        <div class="goal-item goals">Enable portable, local-first deployment</div>
+      </div>
+      <div class="goal-card">
+        <div class="goal-card-label nongoals">Non-Goals</div>
+        <div class="goal-item nongoals">Defining the internal architecture of UAR</div>
+        <div class="goal-item nongoals">Defining UI rendering implementations</div>
+        <div class="goal-item nongoals">Defining MCP protocol details</div>
+        <div class="goal-item nongoals">Replacing external IAM systems</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STRUCTURE ──────────────────────────────────── -->
+  <section class="section" id="structure">
+    <div class="section-eyebrow">§ 5 — Specification Structure</div>
+    <h2 class="section-title">Required Artifact Structure</h2>
+    <p class="section-lead">An Agent Artifact MUST contain the following top-level sections in Markdown. All sections are REQUIRED. A compliant runtime MUST reject any artifact missing a declared section.</p>
+
+    <div class="spec-structure"><span class="root"># Agent: &lt;name&gt;</span>
+
+<span class="req">## Metadata</span>              <span class="note">— id, version, runtime, schema</span>
+<span class="req">## Identity</span>             <span class="note">— principal · Cedar entity mapping</span>
+<span class="req">## UI (A2UI)</span>            <span class="note">— artifacts · actions · schema IDs</span>
+<span class="req">## Capabilities</span>         <span class="note">— declared runtime surfaces</span>
+<span class="req">## Skills</span>               <span class="note">— id · entrypoint · required_tools</span>
+<span class="req">## Tools</span>                <span class="note">— id · type · MCP bindings</span>
+<span class="req">## MCP Servers</span>          <span class="note">— endpoint · auth · capabilities</span>
+<span class="req">## Knowledge Base</span>       <span class="note">— symbolic references · isolation</span>
+<span class="req">## Memory Model</span>         <span class="note">— isolation scope declaration</span>
+<span class="req">## A2A Contracts</span>        <span class="note">— typed endpoints · JSON Schema IO</span>
+<span class="req">## Governance</span>           <span class="note">— embedded Cedar policy</span>
+<span class="req">## Budgets & Constraints</span> <span class="note">— explicit ceilings</span>
+<span class="req">## Execution Model</span>      <span class="note">— model type · concurrency · timeout</span>
+<span class="req">## Observability</span>        <span class="note">— audit requirements</span>
+<span class="req">## Deployment Profiles</span>  <span class="note">— environment overrides</span></div>
+  </section>
+
+  <!-- ── REQUIREMENTS ───────────────────────────────── -->
+  <section class="section" id="requirements">
+    <div class="section-eyebrow">§ 6 – 20 — Section Requirements</div>
+    <h2 class="section-title">Per-Section Specification</h2>
+    <p class="section-lead">Each section of the Agent Artifact carries explicit MUST, SHOULD, and MAY obligations. Expand any section to view its requirements. Compilation MUST fail on any MUST violation.</p>
+
+    <div class="req-list">
+
+      <div class="req-card" id="r-meta">
+        <div class="req-header" onclick="toggleReq('r-meta')">
+          <div class="req-num">§ 06</div>
+          <div class="req-title">Metadata</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            The Metadata section MUST contain valid YAML frontmatter establishing the agent's identity and compatibility contract.
+            <div class="req-must">
+              <div class="req-must-item">contain valid YAML frontmatter</div>
+              <div class="req-must-item">declare <code>id</code> (string, globally unique)</div>
+              <div class="req-must-item">declare <code>version</code> (semver)</div>
+              <div class="req-must-item">declare <code>runtime</code> (compatibility constraint)</div>
+              <div class="req-must-item">declare <code>schema</code> (UAR-AGENT-MD version)</div>
+              <div class="req-must-item fail">if required fields are missing or incompatible</div>
+              <div class="req-must-item may">include <code>owner</code>, <code>license</code>, <code>checksum</code>, <code>ui_schema_version</code></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-identity">
+        <div class="req-header" onclick="toggleReq('r-identity')">
+          <div class="req-num">§ 07</div>
+          <div class="req-title">Identity</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Identity defines the Cedar principal that governance policies evaluate against.
+            <div class="req-must">
+              <div class="req-must-item">define a principal object mapping to governance entities</div>
+              <div class="req-must-item">declare <code>type</code> and <code>namespace</code> at minimum</div>
+              <div class="req-must-item">be compatible with Cedar entity schemas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-ui">
+        <div class="req-header" onclick="toggleReq('r-ui')">
+          <div class="req-num">§ 08</div>
+          <div class="req-title">UI (A2UI)</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            The A2UI section establishes the declarative UI contract that frontends resolve and render dynamically.
+            <div class="req-must">
+              <div class="req-must-item">declare artifacts referencing versioned A2UI schema IDs</div>
+              <div class="req-must-item">declare UI actions with JSON Schema <code>input_schema</code> and <code>output_schema</code></div>
+              <div class="req-must-item">verify all A2UI schemas resolve via registry (at compile time)</div>
+              <div class="req-must-item">verify all schema references are valid JSON Schema</div>
+              <div class="req-must-item">verify all UI actions bind to either skills or A2A endpoints</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-cap">
+        <div class="req-header" onclick="toggleReq('r-cap')">
+          <div class="req-num">§ 09</div>
+          <div class="req-title">Capabilities</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Capabilities are declarations only. Declaration is not permission.
+            <div class="req-must">
+              <div class="req-must-item">declare all requested runtime surfaces</div>
+              <div class="req-must-item">NOT imply permission (capabilities are declarations only)</div>
+              <div class="req-must-item">have a corresponding governance evaluation path for each declared surface</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-skills">
+        <div class="req-header" onclick="toggleReq('r-skills')">
+          <div class="req-num">§ 10</div>
+          <div class="req-title">Skills</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Skills are the executable units referenced by UI actions and A2A contracts.
+            <div class="req-must">
+              <div class="req-must-item">declare <code>id</code>, <code>entrypoint</code>, and <code>required_tools</code></div>
+              <div class="req-must-item">verify referenced tools exist (at compile time)</div>
+              <div class="req-must-item">verify entrypoints are valid (compile-time or runtime resolvable)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-tools">
+        <div class="req-header" onclick="toggleReq('r-tools')">
+          <div class="req-num">§ 11</div>
+          <div class="req-title">Tools</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Tools form the typed interface between skills and runtime capabilities.
+            <div class="req-must">
+              <div class="req-must-item">explicitly declare <code>id</code> and <code>type</code></div>
+              <div class="req-must-item">match MCP capability references to declared MCP servers</div>
+              <div class="req-must-item should">declare additional constraints (models, domains)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-mcp">
+        <div class="req-header" onclick="toggleReq('r-mcp')">
+          <div class="req-num">§ 12</div>
+          <div class="req-title">MCP Servers</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            MCP server declarations establish explicit infrastructure dependencies. No implicit server access is permitted.
+            <div class="req-must">
+              <div class="req-must-item">declare <code>id</code>, <code>endpoint</code>, authentication method, and supported capabilities</div>
+              <div class="req-must-item">validate structural correctness at compile time</div>
+              <div class="req-must-item">ensure tool-to-capability mapping integrity</div>
+              <div class="req-must-item fail">if an undeclared MCP capability is referenced</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-km">
+        <div class="req-header" onclick="toggleReq('r-km')">
+          <div class="req-num">§ 13</div>
+          <div class="req-title">Knowledge & Memory</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Knowledge and memory declarations govern data access isolation at the tenant boundary.
+            <div class="req-must">
+              <div class="req-must-item">use symbolic knowledge references (resolved at runtime)</div>
+              <div class="req-must-item">define isolation scope in memory declarations</div>
+              <div class="req-must-item">ensure no implicit cross-tenant access is possible</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-a2a">
+        <div class="req-header" onclick="toggleReq('r-a2a')">
+          <div class="req-num">§ 14</div>
+          <div class="req-title">A2A Contracts</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            A2A contracts are the typed interfaces through which agents call and are called by other agents.
+            <div class="req-must">
+              <div class="req-must-item">each endpoint declare <code>id</code>, <code>input_schema</code>, and <code>output_schema</code></div>
+              <div class="req-must-item">schemas be valid JSON Schema</div>
+              <div class="req-must-item">register endpoints into the actor routing layer at compile time</div>
+              <div class="req-must-item">enforce allowed callers via governance</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-gov">
+        <div class="req-header" onclick="toggleReq('r-gov')">
+          <div class="req-num">§ 15</div>
+          <div class="req-title">Governance</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Governance is not optional. Incomplete or invalid governance is a compilation failure, not a warning.
+            <div class="req-must">
+              <div class="req-must-item">embed Cedar-compatible policy text</div>
+              <div class="req-must-item">parse policy at compile time</div>
+              <div class="req-must-item">type-check entity references</div>
+              <div class="req-must-item">validate referenced actions and resources</div>
+              <div class="req-must-item">ensure all sensitive capability surfaces have explicit policy coverage or explicit denial</div>
+              <div class="req-must-item fail">if governance is incomplete or invalid</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-budgets">
+        <div class="req-header" onclick="toggleReq('r-budgets')">
+          <div class="req-num">§ 16</div>
+          <div class="req-title">Budgets & Constraints</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Budgets define explicit resource ceilings that are injected into governance evaluation context.
+            <div class="req-must">
+              <div class="req-must-item">define explicit ceilings for all budgeted resources</div>
+              <div class="req-must-item">ensure budgets do not exceed deployment maximums</div>
+              <div class="req-must-item">inject budget context into governance evaluation</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-exec">
+        <div class="req-header" onclick="toggleReq('r-exec')">
+          <div class="req-num">§ 17</div>
+          <div class="req-title">Execution Model</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Execution configuration governs concurrency and timeout behavior for the agent's runtime lifecycle.
+            <div class="req-must">
+              <div class="req-must-item">define model type (actor / supervised / etc.)</div>
+              <div class="req-must-item">define concurrency limits</div>
+              <div class="req-must-item">define timeout limits</div>
+              <div class="req-must-item fail">on invalid execution model declaration</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-obs">
+        <div class="req-header" onclick="toggleReq('r-obs')">
+          <div class="req-num">§ 18</div>
+          <div class="req-title">Observability</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Observability requirements gate the logging pipeline at compile time.
+            <div class="req-must">
+              <div class="req-must-item">specify audit requirements</div>
+              <div class="req-must-item">ensure logging pipeline is enabled if audit is required</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-profiles">
+        <div class="req-header" onclick="toggleReq('r-profiles')">
+          <div class="req-num">§ 19</div>
+          <div class="req-title">Deployment Profiles</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Profiles allow environment-specific configuration overrides within declared constraint bounds.
+            <div class="req-must">
+              <div class="req-must-item">merge profile settings deterministically</div>
+              <div class="req-must-item">validate resulting configuration against constraints</div>
+              <div class="req-must-item may">override budgets and configuration</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-compile">
+        <div class="req-header" onclick="toggleReq('r-compile')">
+          <div class="req-num">§ 20</div>
+          <div class="req-title">Deterministic Compilation</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Determinism is a first-class requirement. Identical inputs MUST produce identical outputs.
+            <div class="req-must">
+              <div class="req-must-item">be deterministic: identical input → identical descriptor hash</div>
+              <div class="req-must-item">fail closed on any validation error</div>
+              <div class="req-must-item">emit canonical JSON descriptor (stable field ordering)</div>
+              <div class="req-must-item">emit signature over descriptor and referenced fingerprints</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="req-card" id="r-security">
+        <div class="req-header" onclick="toggleReq('r-security')">
+          <div class="req-num">§ 21</div>
+          <div class="req-title">Security Requirements</div>
+          <div class="req-chevron">▶</div>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            Security requirements apply to any conforming runtime implementation. No implicit grants are permitted.
+            <div class="req-must">
+              <div class="req-must-item">NOT permit implicit capability grants</div>
+              <div class="req-must-item">NOT permit bypass paths around governance</div>
+              <div class="req-must-item">NOT permit implicit network or file access</div>
+              <div class="req-must-item">guard all capability surfaces with a PEP</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── VERSIONING ─────────────────────────────────── -->
+  <section class="section">
+    <div class="section-eyebrow">§ 22 — Versioning</div>
+    <h2 class="section-title">Versioning Policy</h2>
+    <p class="prose">This specification SHALL follow semantic versioning. Breaking changes require a new schema version and explicit migration documentation. Tooling MUST surface version incompatibility as a compilation error, not a runtime warning.</p>
+  </section>
+
+  <!-- ── CONFORMANCE ────────────────────────────────── -->
+  <section class="section" id="conformance">
+    <div class="section-eyebrow">§ 23 — Conformance</div>
+    <h2 class="section-title">Conformance Criteria</h2>
+    <p class="section-lead">A runtime implementation is compliant with this RFC if and only if all four criteria are satisfied. Partial conformance is not conformance.</p>
+
+    <div class="conform-grid">
+      <div class="conform-item">
+        <div class="conform-check">✓</div>
+        <div class="conform-body">Accepts valid UAR-AGENT-MD documents without error</div>
+      </div>
+      <div class="conform-item">
+        <div class="conform-check">✓</div>
+        <div class="conform-body">Rejects invalid documents with structured error output</div>
+      </div>
+      <div class="conform-item">
+        <div class="conform-check">✓</div>
+        <div class="conform-body">Produces deterministic descriptors (same input → same hash)</div>
+      </div>
+      <div class="conform-item">
+        <div class="conform-check">✓</div>
+        <div class="conform-body">Enforces governance at all declared capability surfaces</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FUTURE WORK ────────────────────────────────── -->
+  <section class="section" id="future">
+    <div class="section-eyebrow">§ 24 — Future Work</div>
+    <h2 class="section-title">Planned Extensions</h2>
+    <p class="section-lead">The following items are out of scope for RFC-0001 but are planned as follow-on specification work.</p>
+
+    <div class="future-list">
+      <div class="future-item">Formal JSON Schema publication for UAR-AGENT-MD</div>
+      <div class="future-item">Descriptor registry standard</div>
+      <div class="future-item">Remote attestation standard</div>
+      <div class="future-item">Policy Cards interoperability (arXiv:2510.24383)</div>
+    </div>
+  </section>
+
+  <!-- ── CONCLUSION ─────────────────────────────────── -->
+  <section class="section">
+    <div class="conclusion">
+      <div class="section-eyebrow">§ 25 — Conclusion</div>
+      <div class="conclusion-title">A Compiler-Based Agent Operating System</div>
+      <div class="conclusion-body">
+        This RFC formalizes the UAR Agent Definition Standard as a <strong>deterministic, governance-first, specification-driven artifact model</strong>. By codifying agent definition as a strict document standard with formal compilation semantics, UAR becomes a compiler-based agent operating system — not an ad-hoc framework. Implementations that conform to this RFC provide verifiable, auditable, and reproducible agent execution by design.
+      </div>
+      <div class="tagline">The agent definition is no longer configuration — it is a contract.</div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-brand">travis<em>james</em>.ai</div>
+    <div class="footer-meta">RFC-0001 · DRAFT · PROMETHEUS ARCHITECTURE GROUP · 2026-02-18</div>
+  </footer>
+
+</div><!-- /wrap -->
+
+<script>
+function toggleReq(id) {
+  const card = document.getElementById(id);
+  card.classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

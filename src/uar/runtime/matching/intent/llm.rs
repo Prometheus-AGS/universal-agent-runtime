@@ -90,7 +90,8 @@ impl IntentClassifier for LlmClassifier {
 
         // Create a minimal orchestrator (no tools needed for classification)
         let mcp = Arc::new(McpRegistry::new_empty());
-        let orchestrator = Orchestrator::new(self.settings.clone(), mcp);
+        let native_skills = Arc::new(crate::uar::runtime::native_skill::NativeSkillRegistry::new());
+        let orchestrator = Orchestrator::new(self.settings.clone(), mcp, native_skills);
 
         let messages = vec![Message {
             role: MessageRole::User,

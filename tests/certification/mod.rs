@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use std::time::Duration;
 use tokio::time::timeout;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 pub mod api_certification;
 pub mod database_certification;
@@ -47,10 +47,10 @@ pub enum TestCategory {
 /// Priority levels for certification tests
 #[derive(Debug, Clone, PartialEq)]
 pub enum TestPriority {
-    Critical,    // Must pass for certification
-    High,        // Should pass, failure needs investigation
-    Medium,      // Nice to pass, acceptable failures with justification
-    Low,         // Optional, informational
+    Critical, // Must pass for certification
+    High,     // Should pass, failure needs investigation
+    Medium,   // Nice to pass, acceptable failures with justification
+    Low,      // Optional, informational
 }
 
 /// Result of certification test execution
@@ -137,17 +137,18 @@ impl CertificationSuite {
         for test in ordered_tests {
             info!("Executing certification test: {}", test.name);
 
-            let test_result = match timeout(test.timeout, self.execute_single_test(test, environment_id)).await {
-                Ok(result) => result,
-                Err(_) => CertificationResult {
-                    test_id: test.id.clone(),
-                    success: false,
-                    duration: test.timeout,
-                    message: "Test timed out".to_string(),
-                    details: None,
-                    artifacts: Vec::new(),
-                }
-            };
+            let test_result =
+                match timeout(test.timeout, self.execute_single_test(test, environment_id)).await {
+                    Ok(result) => result,
+                    Err(_) => CertificationResult {
+                        test_id: test.id.clone(),
+                        success: false,
+                        duration: test.timeout,
+                        message: "Test timed out".to_string(),
+                        details: None,
+                        artifacts: Vec::new(),
+                    },
+                };
 
             // Update counters
             if test_result.success {
@@ -163,12 +164,16 @@ impl CertificationSuite {
 
             // Stop execution if critical test fails
             if !results.last().unwrap().success && test.priority == TestPriority::Critical {
-                error!("Critical test failed: {}. Stopping certification.", test.name);
+                error!(
+                    "Critical test failed: {}. Stopping certification.",
+                    test.name
+                );
                 break;
             }
         }
 
-        let certification_status = self.determine_certification_status(critical_failures, failed, passed);
+        let certification_status =
+            self.determine_certification_status(critical_failures, failed, passed);
 
         CertificationReport {
             suite_name: self.name.clone(),
@@ -185,38 +190,42 @@ impl CertificationSuite {
     }
 
     /// Execute a single certification test
-    async fn execute_single_test(&self, test: &CertificationTest, environment_id: &str) -> CertificationResult {
+    async fn execute_single_test(
+        &self,
+        test: &CertificationTest,
+        environment_id: &str,
+    ) -> CertificationResult {
         let start_time = std::time::Instant::now();
 
         let result = match test.category {
             TestCategory::Api => {
                 api_certification::execute_api_test(&test.id, environment_id).await
-            },
+            }
             TestCategory::Database => {
                 database_certification::execute_database_test(&test.id, environment_id).await
-            },
+            }
             TestCategory::Service => {
                 service_certification::execute_service_test(&test.id, environment_id).await
-            },
+            }
             TestCategory::UserInterface => {
                 ui_certification::execute_ui_test(&test.id, environment_id).await
-            },
+            }
             TestCategory::Integration => {
-                self.execute_integration_test(&test.id, environment_id).await
-            },
+                self.execute_integration_test(&test.id, environment_id)
+                    .await
+            }
             TestCategory::Performance => {
-                self.execute_performance_test(&test.id, environment_id).await
-            },
-            TestCategory::Security => {
-                self.execute_security_test(&test.id, environment_id).await
-            },
+                self.execute_performance_test(&test.id, environment_id)
+                    .await
+            }
+            TestCategory::Security => self.execute_security_test(&test.id, environment_id).await,
         };
 
         match result {
             Ok(mut test_result) => {
                 test_result.duration = start_time.elapsed();
                 test_result
-            },
+            }
             Err(e) => CertificationResult {
                 test_id: test.id.clone(),
                 success: false,
@@ -224,7 +233,7 @@ impl CertificationSuite {
                 message: format!("Test execution failed: {}", e),
                 details: Some(serde_json::json!({ "error": e.to_string() })),
                 artifacts: Vec::new(),
-            }
+            },
         }
     }
 
@@ -243,8 +252,8 @@ impl CertificationSuite {
                 }
 
                 // Check if all dependencies are satisfied
-                let dependencies_satisfied = test.dependencies.iter()
-                    .all(|dep| processed.contains(dep));
+                let dependencies_satisfied =
+                    test.dependencies.iter().all(|dep| processed.contains(dep));
 
                 if dependencies_satisfied {
                     ordered.push(test);
@@ -270,7 +279,12 @@ impl CertificationSuite {
     }
 
     /// Determine overall certification status
-    fn determine_certification_status(&self, critical_failures: usize, failed: usize, passed: usize) -> CertificationStatus {
+    fn determine_certification_status(
+        &self,
+        critical_failures: usize,
+        failed: usize,
+        passed: usize,
+    ) -> CertificationStatus {
         if critical_failures > 0 {
             CertificationStatus::Failed
         } else if failed == 0 {
@@ -295,14 +309,17 @@ impl CertificationSuite {
         info.insert("arch".to_string(), std::env::consts::ARCH.to_string());
 
         // Add timestamp
-        info.insert("executed_at".to_string(),
-            chrono::Utc::now().to_rfc3339());
+        info.insert("executed_at".to_string(), chrono::Utc::now().to_rfc3339());
 
         info
     }
 
     /// Execute integration test
-    async fn execute_integration_test(&self, test_id: &str, environment_id: &str) -> Result<CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn execute_integration_test(
+        &self,
+        test_id: &str,
+        environment_id: &str,
+    ) -> Result<CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
         // Integration test implementation
         Ok(CertificationResult {
             test_id: test_id.to_string(),
@@ -315,7 +332,11 @@ impl CertificationSuite {
     }
 
     /// Execute performance test
-    async fn execute_performance_test(&self, test_id: &str, environment_id: &str) -> Result<CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn execute_performance_test(
+        &self,
+        test_id: &str,
+        environment_id: &str,
+    ) -> Result<CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
         // Performance test implementation
         Ok(CertificationResult {
             test_id: test_id.to_string(),
@@ -334,7 +355,11 @@ impl CertificationSuite {
     }
 
     /// Execute security test
-    async fn execute_security_test(&self, test_id: &str, environment_id: &str) -> Result<CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn execute_security_test(
+        &self,
+        test_id: &str,
+        environment_id: &str,
+    ) -> Result<CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
         // Security test implementation
         Ok(CertificationResult {
             test_id: test_id.to_string(),
@@ -409,7 +434,10 @@ pub fn create_comprehensive_suite() -> CertificationSuite {
         category: TestCategory::UserInterface,
         priority: TestPriority::High,
         timeout: Duration::from_secs(180),
-        dependencies: vec!["api_authentication".to_string(), "llm_integration".to_string()],
+        dependencies: vec![
+            "api_authentication".to_string(),
+            "llm_integration".to_string(),
+        ],
         environment_setup: vec!["postgres".to_string(), "redis".to_string()],
     });
 
@@ -424,9 +452,13 @@ pub fn create_comprehensive_suite() -> CertificationSuite {
         dependencies: vec![
             "api_authentication".to_string(),
             "database_connectivity".to_string(),
-            "ui_chat_flow".to_string()
+            "ui_chat_flow".to_string(),
         ],
-        environment_setup: vec!["postgres".to_string(), "redis".to_string(), "surreal".to_string()],
+        environment_setup: vec![
+            "postgres".to_string(),
+            "redis".to_string(),
+            "surreal".to_string(),
+        ],
     });
 
     suite
@@ -458,13 +490,18 @@ impl CertificationReport {
             pass_rate,
             self.critical_failures,
             self.total_tests,
-            self.environment_info.get("environment_id").unwrap_or(&"unknown".to_string())
+            self.environment_info
+                .get("environment_id")
+                .unwrap_or(&"unknown".to_string())
         )
     }
 
     /// Check if certification passed
     pub fn is_certified(&self) -> bool {
-        matches!(self.certification_status, CertificationStatus::Passed | CertificationStatus::Conditional)
+        matches!(
+            self.certification_status,
+            CertificationStatus::Passed | CertificationStatus::Conditional
+        )
     }
 }
 
@@ -496,15 +533,27 @@ mod tests {
         let suite = CertificationSuite::new("test".to_string());
 
         // No failures = Passed
-        assert_eq!(suite.determine_certification_status(0, 0, 10), CertificationStatus::Passed);
+        assert_eq!(
+            suite.determine_certification_status(0, 0, 10),
+            CertificationStatus::Passed
+        );
 
         // Critical failure = Failed
-        assert_eq!(suite.determine_certification_status(1, 1, 9), CertificationStatus::Failed);
+        assert_eq!(
+            suite.determine_certification_status(1, 1, 9),
+            CertificationStatus::Failed
+        );
 
         // High failure rate = Failed
-        assert_eq!(suite.determine_certification_status(0, 5, 5), CertificationStatus::Failed);
+        assert_eq!(
+            suite.determine_certification_status(0, 5, 5),
+            CertificationStatus::Failed
+        );
 
         // Low failure rate = Conditional
-        assert_eq!(suite.determine_certification_status(0, 1, 9), CertificationStatus::Conditional);
+        assert_eq!(
+            suite.determine_certification_status(0, 1, 9),
+            CertificationStatus::Conditional
+        );
     }
 }

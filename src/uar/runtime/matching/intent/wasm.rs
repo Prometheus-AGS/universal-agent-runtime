@@ -144,10 +144,12 @@ mod tests {
         let result = classifier.classify("test query", &[], &registry).await;
 
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("no component_path specified"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("no component_path specified")
+        );
     }
 
     #[tokio::test]
@@ -158,9 +160,11 @@ mod tests {
         let result = classifier.classify("test query", &[], &registry).await;
 
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("not implemented yet"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("not implemented yet")
+        );
     }
 }

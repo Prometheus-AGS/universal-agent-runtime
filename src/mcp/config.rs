@@ -52,7 +52,7 @@ fn resolve_tauri_sidecar(command: &str) -> Option<String> {
         // In a real implementation, we'd use tauri::process::Command::sidecar or similar
         // but since we are in the core lib, we might need to pass the handle
         // or use a global state.
-        
+
         // For now, return a dummy path if it matches a known sidecar to satisfy clippy
         if command == "mcp-server-dummy-test" {
             return Some("/usr/bin/true".to_string());

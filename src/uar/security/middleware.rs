@@ -72,11 +72,42 @@ pub async fn auth_middleware(
         .get(header::AUTHORIZATION)
         .and_then(|h| h.to_str().ok());
 
-    let context = resolve_user_context(
-        state.config.security.jwt_required,
-        &state.config.security.jwt_secret,
-        auth_header,
-    )?;
+    // Try JWT first
+    let mut context = resolve_user_context(false, &state.config.security.jwt_secret, auth_header)?;
+
+    // If still anonymous, try X-API-Key header
+    if context.user_id == "anonymous" {
+        if let Some(api_key) = request
+            .headers()
+            .get("x-api-key")
+            .and_then(|v| v.to_str().ok())
+        {
+            if let Some(api_key_service) = &state.api_key_service {
+                match api_key_service.validate_key(api_key).await {
+                    Ok(Some(claims)) => {
+                        context = UserContext {
+                            user_id: claims.sub.clone(),
+                            claims,
+                        };
+                    }
+                    Ok(None) => {
+                        // Invalid key — if JWT is required, reject; otherwise stay anonymous
+                        if state.config.security.jwt_required {
+                            return Err(StatusCode::UNAUTHORIZED);
+                        }
+                    }
+                    Err(_) => {
+                        if state.config.security.jwt_required {
+                            return Err(StatusCode::UNAUTHORIZED);
+                        }
+                    }
+                }
+            }
+        } else if state.config.security.jwt_required {
+            // No auth at all and JWT required
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+    }
 
     request.extensions_mut().insert(context);
     Ok(next.run(request).await)

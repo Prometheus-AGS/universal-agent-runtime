@@ -1,13 +1,19 @@
 use std::time::Duration;
-use tracing::{info, error};
+use tracing::{error, info};
 
 pub mod comprehensive;
 
 pub use comprehensive::*;
 
 /// Execute database certification test by test ID and environment
-pub async fn execute_database_test(test_id: &str, environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
-    info!("Executing database certification test: {} in environment: {}", test_id, environment_id);
+pub async fn execute_database_test(
+    test_id: &str,
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+    info!(
+        "Executing database certification test: {} in environment: {}",
+        test_id, environment_id
+    );
 
     match test_id {
         "database_connectivity" => execute_connectivity_test(environment_id).await,
@@ -31,10 +37,15 @@ pub async fn execute_database_test(test_id: &str, environment_id: &str) -> Resul
 }
 
 /// Execute database connectivity test
-async fn execute_connectivity_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_connectivity_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
-    info!("Testing database connectivity in environment: {}", environment_id);
+    info!(
+        "Testing database connectivity in environment: {}",
+        environment_id
+    );
 
     // Create and execute comprehensive database test suite
     let suite = DatabaseCertificationSuite::new();
@@ -47,9 +58,24 @@ async fn execute_connectivity_test(environment_id: &str) -> Result<crate::certif
     let all_successful = postgres_result.success && surreal_result.success && redis_result.success;
 
     let artifacts = vec![
-        format!("postgres_connection_time_ms: {}", postgres_result.performance_metrics.connection_time.as_millis()),
-        format!("surreal_connection_time_ms: {}", surreal_result.performance_metrics.connection_time.as_millis()),
-        format!("redis_connection_time_ms: {}", redis_result.performance_metrics.connection_time.as_millis()),
+        format!(
+            "postgres_connection_time_ms: {}",
+            postgres_result
+                .performance_metrics
+                .connection_time
+                .as_millis()
+        ),
+        format!(
+            "surreal_connection_time_ms: {}",
+            surreal_result
+                .performance_metrics
+                .connection_time
+                .as_millis()
+        ),
+        format!(
+            "redis_connection_time_ms: {}",
+            redis_result.performance_metrics.connection_time.as_millis()
+        ),
     ];
 
     Ok(crate::certification::CertificationResult {
@@ -81,10 +107,15 @@ async fn execute_connectivity_test(environment_id: &str) -> Result<crate::certif
 }
 
 /// Execute `PostgreSQL` operations test
-async fn execute_postgres_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_postgres_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
-    info!("Testing PostgreSQL operations in environment: {}", environment_id);
+    info!(
+        "Testing PostgreSQL operations in environment: {}",
+        environment_id
+    );
 
     let suite = DatabaseCertificationSuite::new();
     let results = suite.test_postgres_operations().await?;
@@ -93,9 +124,17 @@ async fn execute_postgres_test(environment_id: &str) -> Result<crate::certificat
     let successful_tests = results.iter().filter(|r| r.success).count();
     let all_successful = successful_tests == total_tests;
 
-    let artifacts = results.iter().map(|r| {
-        format!("{}: {} ({}ms)", r.test_id, if r.success { "PASS" } else { "FAIL" }, r.duration.as_millis())
-    }).collect();
+    let artifacts = results
+        .iter()
+        .map(|r| {
+            format!(
+                "{}: {} ({}ms)",
+                r.test_id,
+                if r.success { "PASS" } else { "FAIL" },
+                r.duration.as_millis()
+            )
+        })
+        .collect();
 
     Ok(crate::certification::CertificationResult {
         test_id: "postgres_operations".to_string(),
@@ -121,10 +160,15 @@ async fn execute_postgres_test(environment_id: &str) -> Result<crate::certificat
 }
 
 /// Execute `SurrealDB` operations test
-async fn execute_surreal_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_surreal_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
-    info!("Testing SurrealDB operations in environment: {}", environment_id);
+    info!(
+        "Testing SurrealDB operations in environment: {}",
+        environment_id
+    );
 
     let suite = DatabaseCertificationSuite::new();
     let results = suite.test_surreal_operations().await?;
@@ -133,9 +177,17 @@ async fn execute_surreal_test(environment_id: &str) -> Result<crate::certificati
     let successful_tests = results.iter().filter(|r| r.success).count();
     let all_successful = successful_tests == total_tests;
 
-    let artifacts = results.iter().map(|r| {
-        format!("{}: {} ({}ms)", r.test_id, if r.success { "PASS" } else { "FAIL" }, r.duration.as_millis())
-    }).collect();
+    let artifacts = results
+        .iter()
+        .map(|r| {
+            format!(
+                "{}: {} ({}ms)",
+                r.test_id,
+                if r.success { "PASS" } else { "FAIL" },
+                r.duration.as_millis()
+            )
+        })
+        .collect();
 
     Ok(crate::certification::CertificationResult {
         test_id: "surreal_operations".to_string(),
@@ -161,10 +213,15 @@ async fn execute_surreal_test(environment_id: &str) -> Result<crate::certificati
 }
 
 /// Execute Redis operations test
-async fn execute_redis_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_redis_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
-    info!("Testing Redis operations in environment: {}", environment_id);
+    info!(
+        "Testing Redis operations in environment: {}",
+        environment_id
+    );
 
     let suite = DatabaseCertificationSuite::new();
     let results = suite.test_redis_operations().await?;
@@ -173,9 +230,17 @@ async fn execute_redis_test(environment_id: &str) -> Result<crate::certification
     let successful_tests = results.iter().filter(|r| r.success).count();
     let all_successful = successful_tests == total_tests;
 
-    let artifacts = results.iter().map(|r| {
-        format!("{}: {} ({}ms)", r.test_id, if r.success { "PASS" } else { "FAIL" }, r.duration.as_millis())
-    }).collect();
+    let artifacts = results
+        .iter()
+        .map(|r| {
+            format!(
+                "{}: {} ({}ms)",
+                r.test_id,
+                if r.success { "PASS" } else { "FAIL" },
+                r.duration.as_millis()
+            )
+        })
+        .collect();
 
     Ok(crate::certification::CertificationResult {
         test_id: "redis_operations".to_string(),
@@ -201,10 +266,15 @@ async fn execute_redis_test(environment_id: &str) -> Result<crate::certification
 }
 
 /// Execute database performance test
-async fn execute_performance_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_performance_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
-    info!("Testing database performance in environment: {}", environment_id);
+    info!(
+        "Testing database performance in environment: {}",
+        environment_id
+    );
 
     let suite = DatabaseCertificationSuite::new();
 
@@ -222,10 +292,17 @@ async fn execute_performance_test(environment_id: &str) -> Result<crate::certifi
     // Check performance thresholds
     let mut threshold_violations = Vec::new();
     for result in &all_results {
-        if result.performance_metrics.connection_time > Duration::from_millis(suite.performance_thresholds.connection_time_ms) {
-            threshold_violations.push(format!("{}: Connection time exceeded threshold", result.test_id));
+        if result.performance_metrics.connection_time
+            > Duration::from_millis(suite.performance_thresholds.connection_time_ms)
+        {
+            threshold_violations.push(format!(
+                "{}: Connection time exceeded threshold",
+                result.test_id
+            ));
         }
-        if result.performance_metrics.query_time > Duration::from_millis(suite.performance_thresholds.query_time_ms) {
+        if result.performance_metrics.query_time
+            > Duration::from_millis(suite.performance_thresholds.query_time_ms)
+        {
             threshold_violations.push(format!("{}: Query time exceeded threshold", result.test_id));
         }
     }
@@ -233,22 +310,35 @@ async fn execute_performance_test(environment_id: &str) -> Result<crate::certifi
     let performance_passed = threshold_violations.is_empty();
     let final_success = all_successful && performance_passed;
 
-    let artifacts = all_results.iter().map(|r| {
-        format!("{}: {} (query: {}ms, conn: {}ms)",
-            r.test_id,
-            if r.success { "PASS" } else { "FAIL" },
-            r.performance_metrics.query_time.as_millis(),
-            r.performance_metrics.connection_time.as_millis())
-    }).chain(threshold_violations.iter().cloned()).collect();
+    let artifacts = all_results
+        .iter()
+        .map(|r| {
+            format!(
+                "{}: {} (query: {}ms, conn: {}ms)",
+                r.test_id,
+                if r.success { "PASS" } else { "FAIL" },
+                r.performance_metrics.query_time.as_millis(),
+                r.performance_metrics.connection_time.as_millis()
+            )
+        })
+        .chain(threshold_violations.iter().cloned())
+        .collect();
 
     Ok(crate::certification::CertificationResult {
         test_id: "database_performance".to_string(),
         success: final_success,
         duration: start_time.elapsed(),
         message: if final_success {
-            format!("Performance tests passed: {successful_tests}/{total_tests} tests, 0 threshold violations")
+            format!(
+                "Performance tests passed: {successful_tests}/{total_tests} tests, 0 threshold violations"
+            )
         } else {
-            format!("Performance issues detected: {}/{} tests passed, {} threshold violations", successful_tests, total_tests, threshold_violations.len())
+            format!(
+                "Performance issues detected: {}/{} tests passed, {} threshold violations",
+                successful_tests,
+                total_tests,
+                threshold_violations.len()
+            )
         },
         details: Some(serde_json::json!({
             "environment_id": environment_id,
@@ -266,10 +356,15 @@ async fn execute_performance_test(environment_id: &str) -> Result<crate::certifi
 }
 
 /// Execute comprehensive database integration test
-async fn execute_integration_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_integration_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
-    info!("Testing database integration in environment: {}", environment_id);
+    info!(
+        "Testing database integration in environment: {}",
+        environment_id
+    );
 
     let mut suite = DatabaseCertificationSuite::new();
     let report = suite.execute_comprehensive_tests().await?;
@@ -282,8 +377,17 @@ async fn execute_integration_test(environment_id: &str) -> Result<crate::certifi
         format!("surreal_tests: {}", report.surreal_results.len()),
         format!("redis_tests: {}", report.redis_results.len()),
         format!("certification_status: {:?}", report.certification_status),
-        format!("avg_connection_time_ms: {}", report.performance_summary.average_connection_time.as_millis()),
-        format!("avg_query_time_ms: {}", report.performance_summary.average_query_time.as_millis()),
+        format!(
+            "avg_connection_time_ms: {}",
+            report
+                .performance_summary
+                .average_connection_time
+                .as_millis()
+        ),
+        format!(
+            "avg_query_time_ms: {}",
+            report.performance_summary.average_query_time.as_millis()
+        ),
     ];
 
     Ok(crate::certification::CertificationResult {

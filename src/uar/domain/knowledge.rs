@@ -113,5 +113,7 @@ pub enum DocumentStatus {
     Pending,
     Processing,
     Indexed,
-    Failed { error: String },
+    Failed {
+        error: String,
+    },
 }

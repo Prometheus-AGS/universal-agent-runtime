@@ -46,6 +46,7 @@ coverage_report/
 src-tauri/gen/
 *.tsbuildinfo
 .fastembed_cache/
+data/
 
 # Documentation
 *.md

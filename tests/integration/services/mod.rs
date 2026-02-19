@@ -1,15 +1,21 @@
 #![allow(clippy::pedantic)]
 
 use std::time::Duration;
-use tracing::{info, error};
+use tracing::{error, info};
 
 pub mod comprehensive;
 
 pub use comprehensive::*;
 
 /// Execute service certification test by test ID and environment
-pub async fn execute_service_test(test_id: &str, environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
-    info!("Executing service certification test: {} in environment: {}", test_id, environment_id);
+pub async fn execute_service_test(
+    test_id: &str,
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+    info!(
+        "Executing service certification test: {} in environment: {}",
+        test_id, environment_id
+    );
 
     match test_id {
         "llm_integration" => execute_llm_integration_test(environment_id).await,
@@ -33,7 +39,9 @@ pub async fn execute_service_test(test_id: &str, environment_id: &str) -> Result
 }
 
 /// Execute LLM integration test
-async fn execute_llm_integration_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_llm_integration_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
     info!("Testing LLM integration in environment: {}", environment_id);
@@ -51,15 +59,26 @@ async fn execute_llm_integration_test(environment_id: &str) -> Result<crate::cer
     let successful_tests = all_results.iter().filter(|r| r.success).count();
     let all_successful = successful_tests == total_tests;
 
-    let artifacts = all_results.iter().map(|r| {
-        format!("{}: {} ({}ms)", r.test_id, if r.success { "PASS" } else { "FAIL" }, r.duration.as_millis())
-    }).collect();
+    let artifacts = all_results
+        .iter()
+        .map(|r| {
+            format!(
+                "{}: {} ({}ms)",
+                r.test_id,
+                if r.success { "PASS" } else { "FAIL" },
+                r.duration.as_millis()
+            )
+        })
+        .collect();
 
     Ok(crate::certification::CertificationResult {
         test_id: "llm_integration".to_string(),
         success: all_successful,
         duration: start_time.elapsed(),
-        message: format!("LLM integration tests: {}/{} passed", successful_tests, total_tests),
+        message: format!(
+            "LLM integration tests: {}/{} passed",
+            successful_tests, total_tests
+        ),
         details: Some(serde_json::json!({
             "environment_id": environment_id,
             "total_tests": total_tests,
@@ -86,7 +105,9 @@ async fn execute_llm_integration_test(environment_id: &str) -> Result<crate::cer
 }
 
 /// Execute MCP integration test
-async fn execute_mcp_integration_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_mcp_integration_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
     info!("Testing MCP integration in environment: {}", environment_id);
@@ -105,17 +126,32 @@ async fn execute_mcp_integration_test(environment_id: &str) -> Result<crate::cer
     let all_successful = successful_tests == total_tests;
 
     // Count tools tested
-    let tools_tested: usize = suite.mcp_configs.iter().map(|c| c.expected_tools.len()).sum();
+    let tools_tested: usize = suite
+        .mcp_configs
+        .iter()
+        .map(|c| c.expected_tools.len())
+        .sum();
 
-    let artifacts = all_results.iter().map(|r| {
-        format!("{}: {} ({}ms)", r.test_id, if r.success { "PASS" } else { "FAIL" }, r.duration.as_millis())
-    }).collect();
+    let artifacts = all_results
+        .iter()
+        .map(|r| {
+            format!(
+                "{}: {} ({}ms)",
+                r.test_id,
+                if r.success { "PASS" } else { "FAIL" },
+                r.duration.as_millis()
+            )
+        })
+        .collect();
 
     Ok(crate::certification::CertificationResult {
         test_id: "mcp_integration".to_string(),
         success: all_successful,
         duration: start_time.elapsed(),
-        message: format!("MCP integration tests: {}/{} passed, {} tools tested", successful_tests, total_tests, tools_tested),
+        message: format!(
+            "MCP integration tests: {}/{} passed, {} tools tested",
+            successful_tests, total_tests, tools_tested
+        ),
         details: Some(serde_json::json!({
             "environment_id": environment_id,
             "total_tests": total_tests,
@@ -142,10 +178,15 @@ async fn execute_mcp_integration_test(environment_id: &str) -> Result<crate::cer
 }
 
 /// Execute external API integration test
-async fn execute_external_api_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_external_api_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
-    info!("Testing external API integration in environment: {}", environment_id);
+    info!(
+        "Testing external API integration in environment: {}",
+        environment_id
+    );
 
     let suite = ServiceIntegrationSuite::new();
 
@@ -160,15 +201,26 @@ async fn execute_external_api_test(environment_id: &str) -> Result<crate::certif
     let successful_tests = all_results.iter().filter(|r| r.success).count();
     let all_successful = successful_tests == total_tests;
 
-    let artifacts = all_results.iter().map(|r| {
-        format!("{}: {} ({}ms)", r.test_id, if r.success { "PASS" } else { "FAIL" }, r.duration.as_millis())
-    }).collect();
+    let artifacts = all_results
+        .iter()
+        .map(|r| {
+            format!(
+                "{}: {} ({}ms)",
+                r.test_id,
+                if r.success { "PASS" } else { "FAIL" },
+                r.duration.as_millis()
+            )
+        })
+        .collect();
 
     Ok(crate::certification::CertificationResult {
         test_id: "external_api_integration".to_string(),
         success: all_successful,
         duration: start_time.elapsed(),
-        message: format!("External API integration tests: {}/{} passed", successful_tests, total_tests),
+        message: format!(
+            "External API integration tests: {}/{} passed",
+            successful_tests, total_tests
+        ),
         details: Some(serde_json::json!({
             "environment_id": environment_id,
             "total_tests": total_tests,
@@ -194,10 +246,15 @@ async fn execute_external_api_test(environment_id: &str) -> Result<crate::certif
 }
 
 /// Execute service performance test
-async fn execute_service_performance_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_service_performance_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
-    info!("Testing service performance in environment: {}", environment_id);
+    info!(
+        "Testing service performance in environment: {}",
+        environment_id
+    );
 
     let mut suite = ServiceIntegrationSuite::new();
     let report = suite.execute_comprehensive_tests().await?;
@@ -210,9 +267,26 @@ async fn execute_service_performance_test(environment_id: &str) -> Result<crate:
         format!("total_tests: {}", report.total_tests),
         format!("passed_tests: {}", report.passed_tests),
         format!("failed_tests: {}", report.failed_tests),
-        format!("avg_response_time_ms: {}", report.performance_summary.average_response_time.as_millis()),
-        format!("fastest_service: {}", report.performance_summary.fastest_service.as_deref().unwrap_or("N/A")),
-        format!("slowest_service: {}", report.performance_summary.slowest_service.as_deref().unwrap_or("N/A")),
+        format!(
+            "avg_response_time_ms: {}",
+            report.performance_summary.average_response_time.as_millis()
+        ),
+        format!(
+            "fastest_service: {}",
+            report
+                .performance_summary
+                .fastest_service
+                .as_deref()
+                .unwrap_or("N/A")
+        ),
+        format!(
+            "slowest_service: {}",
+            report
+                .performance_summary
+                .slowest_service
+                .as_deref()
+                .unwrap_or("N/A")
+        ),
         format!("threshold_violations: {}", threshold_violations.len()),
     ];
 
@@ -221,11 +295,16 @@ async fn execute_service_performance_test(environment_id: &str) -> Result<crate:
         success: performance_passed && report.is_certified(),
         duration: start_time.elapsed(),
         message: if performance_passed {
-            format!("Service performance tests passed: {} violations, avg response {}ms",
+            format!(
+                "Service performance tests passed: {} violations, avg response {}ms",
                 threshold_violations.len(),
-                report.performance_summary.average_response_time.as_millis())
+                report.performance_summary.average_response_time.as_millis()
+            )
         } else {
-            format!("Service performance issues detected: {} violations", threshold_violations.len())
+            format!(
+                "Service performance issues detected: {} violations",
+                threshold_violations.len()
+            )
         },
         details: Some(serde_json::json!({
             "environment_id": environment_id,
@@ -250,10 +329,15 @@ async fn execute_service_performance_test(environment_id: &str) -> Result<crate:
 }
 
 /// Execute streaming integration test
-async fn execute_streaming_integration_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_streaming_integration_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
-    info!("Testing streaming integration in environment: {}", environment_id);
+    info!(
+        "Testing streaming integration in environment: {}",
+        environment_id
+    );
 
     let suite = ServiceIntegrationSuite::new();
 
@@ -272,40 +356,51 @@ async fn execute_streaming_integration_test(environment_id: &str) -> Result<crat
     let avg_tokens_per_second = streaming_results
         .iter()
         .filter_map(|r| r.performance_metrics.tokens_per_second)
-        .sum::<f64>() / successful_tests as f64;
+        .sum::<f64>()
+        / successful_tests as f64;
 
     let avg_first_token_time = streaming_results
         .iter()
         .map(|r| r.performance_metrics.first_byte_time)
-        .sum::<Duration>() / total_tests as u32;
+        .sum::<Duration>()
+        / total_tests as u32;
 
-    let streaming_threshold_met = avg_tokens_per_second >= suite.performance_thresholds.streaming_tokens_per_second;
-    let first_token_threshold_met = avg_first_token_time <= Duration::from_millis(suite.performance_thresholds.streaming_first_token_ms);
+    let streaming_threshold_met =
+        avg_tokens_per_second >= suite.performance_thresholds.streaming_tokens_per_second;
+    let first_token_threshold_met = avg_first_token_time
+        <= Duration::from_millis(suite.performance_thresholds.streaming_first_token_ms);
 
     let final_success = all_successful && streaming_threshold_met && first_token_threshold_met;
 
-    let artifacts = streaming_results.iter().map(|r| {
-        let tokens_per_sec = r.performance_metrics.tokens_per_second.unwrap_or(0.0);
-        format!("{}: {} ({:.1} tokens/sec, first token: {}ms)",
-            r.service_name,
-            if r.success { "PASS" } else { "FAIL" },
-            tokens_per_sec,
-            r.performance_metrics.first_byte_time.as_millis())
-    }).collect();
+    let artifacts = streaming_results
+        .iter()
+        .map(|r| {
+            let tokens_per_sec = r.performance_metrics.tokens_per_second.unwrap_or(0.0);
+            format!(
+                "{}: {} ({:.1} tokens/sec, first token: {}ms)",
+                r.service_name,
+                if r.success { "PASS" } else { "FAIL" },
+                tokens_per_sec,
+                r.performance_metrics.first_byte_time.as_millis()
+            )
+        })
+        .collect();
 
     Ok(crate::certification::CertificationResult {
         test_id: "streaming_integration".to_string(),
         success: final_success,
         duration: start_time.elapsed(),
         message: if final_success {
-            format!("Streaming integration tests passed: {:.1} avg tokens/sec, {}ms avg first token",
+            format!(
+                "Streaming integration tests passed: {:.1} avg tokens/sec, {}ms avg first token",
                 avg_tokens_per_second,
-                avg_first_token_time.as_millis())
+                avg_first_token_time.as_millis()
+            )
         } else {
-            format!("Streaming integration issues: {}/{} services passed, {:.1} tokens/sec",
-                successful_tests,
-                total_tests,
-                avg_tokens_per_second)
+            format!(
+                "Streaming integration issues: {}/{} services passed, {:.1} tokens/sec",
+                successful_tests, total_tests, avg_tokens_per_second
+            )
         },
         details: Some(serde_json::json!({
             "environment_id": environment_id,
@@ -327,10 +422,15 @@ async fn execute_streaming_integration_test(environment_id: &str) -> Result<crat
 }
 
 /// Execute tool calling integration test
-async fn execute_tool_calling_test(environment_id: &str) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
+async fn execute_tool_calling_test(
+    environment_id: &str,
+) -> Result<crate::certification::CertificationResult, Box<dyn std::error::Error + Send + Sync>> {
     let start_time = std::time::Instant::now();
 
-    info!("Testing tool calling integration in environment: {}", environment_id);
+    info!(
+        "Testing tool calling integration in environment: {}",
+        environment_id
+    );
 
     let suite = ServiceIntegrationSuite::new();
 
@@ -355,15 +455,26 @@ async fn execute_tool_calling_test(environment_id: &str) -> Result<crate::certif
     let successful_tests = tool_calling_results.iter().filter(|r| r.success).count();
     let all_successful = successful_tests == total_tests;
 
-    let artifacts = tool_calling_results.iter().map(|r| {
-        format!("{}: {} ({}ms)", r.test_id, if r.success { "PASS" } else { "FAIL" }, r.duration.as_millis())
-    }).collect();
+    let artifacts = tool_calling_results
+        .iter()
+        .map(|r| {
+            format!(
+                "{}: {} ({}ms)",
+                r.test_id,
+                if r.success { "PASS" } else { "FAIL" },
+                r.duration.as_millis()
+            )
+        })
+        .collect();
 
     Ok(crate::certification::CertificationResult {
         test_id: "tool_calling_integration".to_string(),
         success: all_successful,
         duration: start_time.elapsed(),
-        message: format!("Tool calling integration tests: {}/{} passed", successful_tests, total_tests),
+        message: format!(
+            "Tool calling integration tests: {}/{} passed",
+            successful_tests, total_tests
+        ),
         details: Some(serde_json::json!({
             "environment_id": environment_id,
             "tool_calling_metrics": {

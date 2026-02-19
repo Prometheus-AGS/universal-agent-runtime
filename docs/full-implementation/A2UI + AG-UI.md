@@ -1,5 +1,7 @@
 # A2UI + AG-UI
 
+> Note: Route examples in this historical design document may reference legacy endpoints such as `/api/chat/stream`. The current supported runtime chat contract is `/api/chat/completion` (alias `/v1/chat/completions`) with `stream` controlling SSE vs non-streaming responses.
+
 Here’s something you should know because it’s *actually changing how interactive AI apps are built and experienced right now* — the agent‑UI stack is rapidly converging on streaming, rich, interoperable interfaces you can run live **today** instead of stitching together ad‑hoc websockets and brittle custom layers.
 
 ![Image](https://storage.googleapis.com/gweb-developer-goog-blog-assets/images/a2ui-blog-1-component-gallery_2.original.png)

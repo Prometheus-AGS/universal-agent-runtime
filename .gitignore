@@ -61,3 +61,4 @@ test-config.yaml
 # Generated files
 src-tauri/gen/
 *.tsbuildinfo
+data/

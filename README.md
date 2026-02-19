@@ -393,6 +393,51 @@ After running tests, coverage reports are available at:
 
 ## Core Design Principles
 
+## Chat API Protocol
+
+Primary chat endpoint:
+
+- `POST /api/chat/completion`
+
+Compatibility alias:
+
+- `POST /v1/chat/completions`
+
+Disabled legacy endpoints:
+
+- `/api/chat` (all methods)
+- `/api/chat/*` (all methods except `/api/chat/completion`)
+- `/api/sessions/*`
+
+Session behavior:
+
+- Session ID is optional on request.
+- If omitted, the server generates an anonymous session.
+- Clients may provide their own session ID via `X-UAR-Session-ID` or `session_id`, but it must be a UUID.
+- If a non-UUID session ID is provided, the server returns `400 Bad Request`.
+- The server returns session ID in `X-UAR-Session-ID` response header (and body for non-streaming).
+- Send `X-UAR-Session-ID` on subsequent requests to retain context.
+
+Streaming behavior:
+
+- `stream: false` returns a final OpenAI-style `chat.completion` JSON body.
+- `stream: true` returns SSE chunks.
+- `stream_mode: "openai"` (default) emits OpenAI chunks.
+- `stream_mode: "agui"` emits AG-UI named events (`agui.*`).
+- `stream_mode: "dual"` emits both formats.
+
+Model resolution:
+
+- `\"model\": \"gpt-5.2\"` resolves against the default provider.
+- `\"model\": \"provider/model\"` resolves explicit provider and model.
+- Unknown model/provider returns `404` with message `Unknown model`.
+
+Full protocol reference:
+
+- [Chat Completion Protocol](docs/API_CHAT_COMPLETION.md)
+
+---
+
 ### 1. Tools Are Non-Optional
 
 This system assumes:
@@ -789,6 +834,21 @@ This project is Tauri-ready by design:
 *   no API keys in the browser
 *   SSE works identically in webview
 *   same UI codebase for web + desktop + mobile
+
+---
+
+## Licensing
+
+This project is dual-licensed:
+
+- Open source: `AGPL-3.0-only` (see `LICENSE`)
+- Commercial: separate commercial terms for AGPL-incompatible usage (see `LICENSE-COMMERCIAL.md`)
+
+Additional policy documents:
+
+- Licensing model details: `docs/licensing/LICENSING.md`
+- Trademark policy: `TRADEMARKS.md`
+- Contributor terms: `CONTRIBUTING.md`
 
 ---
 

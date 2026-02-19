@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UAR Architecture Assessment — Post-Implementation Review</title>
+
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;600;700&family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ── TOKENS ───────────────────────────────────────── */
+:root {
+  --bg:           #0B0F14;
+  --card:         #0F1620;
+  --muted:        #141C26;
+  --border:       #1E2D3F;
+  --border-hi:    #2B3F55;
+  --fg:           #E8EDF3;
+  --fg-muted:     #A7B0BC;
+  --fg-subtle:    #5C6B7A;
+  --ember:        #FF6A3D;
+  --ember-dim:    rgba(255,106,61,.12);
+  --ember-glow:   rgba(255,106,61,.06);
+  --success:      #4ADE80;
+  --warn:         #FBBF24;
+  --neutral:      #94A3B8;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-ui:      'Inter', sans-serif;
+  --font-body:    'Roboto', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --radius:       10px;
+  --radius-lg:    16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ─────────────────────────────────────────── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(11,15,20,.92);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .9rem; letter-spacing: -.02em;
+  color: var(--fg);
+}
+.nav-brand em { color: var(--ember); font-style: normal; }
+.nav-meta {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  color: var(--fg-subtle);
+  letter-spacing: .06em;
+}
+.nav-links {
+  display: flex; gap: 1.6rem; list-style: none;
+}
+.nav-links a {
+  font-family: var(--font-ui);
+  font-size: .7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .09em;
+  color: var(--fg-muted); text-decoration: none;
+  transition: color .2s;
+}
+.nav-links a:hover { color: var(--ember); }
+
+/* ── LAYOUT ──────────────────────────────────────── */
+.wrap {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 7rem 2rem 6rem;
+}
+
+/* ── HERO ────────────────────────────────────────── */
+.hero {
+  padding: 3.5rem 0 4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4.5rem;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: -2rem; right: -2rem; bottom: 0;
+  background: radial-gradient(ellipse 70% 80% at 0% 50%, var(--ember-glow), transparent 60%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .9rem;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700; letter-spacing: -.03em;
+  line-height: 1.15; margin-bottom: 1.1rem;
+}
+.hero-title em { color: var(--ember); font-style: normal; }
+.hero-sub {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .95rem;
+  max-width: 580px; margin-bottom: 1.8rem;
+}
+.hero-meta {
+  display: flex; gap: 1.5rem; flex-wrap: wrap;
+}
+.meta-chip {
+  font-family: var(--font-mono);
+  font-size: .68rem; letter-spacing: .06em;
+  color: var(--fg-subtle);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px; padding: .25rem .6rem;
+}
+
+/* ── VERDICT BANNER ──────────────────────────────── */
+.verdict {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-left: 3px solid var(--ember);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.8rem;
+  margin-bottom: 4.5rem;
+}
+.verdict-label {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .5rem;
+}
+.verdict-text {
+  font-family: var(--font-ui);
+  font-size: 1rem; font-weight: 500; line-height: 1.6;
+  color: var(--fg);
+}
+
+/* ── SECTION ─────────────────────────────────────── */
+.section { margin-bottom: 4.5rem; }
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .7rem;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: .5rem;
+}
+.section-sub {
+  font-family: var(--font-display);
+  font-size: 1.1rem; font-weight: 600; letter-spacing: -.02em;
+  color: var(--fg-muted); margin-top: 2rem; margin-bottom: .75rem;
+}
+.section-lead {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .93rem;
+  max-width: 680px; margin-bottom: 1.5rem; line-height: 1.7;
+}
+.prose {
+  font-family: var(--font-body);
+  color: var(--fg-muted); font-size: .93rem; line-height: 1.8;
+  max-width: 720px; margin-bottom: 1.2rem;
+}
+.prose strong { color: var(--fg); font-weight: 500; }
+
+/* ── CARDS ───────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.8rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+
+.license-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.6rem;
+}
+.license-card-label {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .4rem;
+}
+.license-card-title {
+  font-family: var(--font-display);
+  font-size: 1rem; font-weight: 700;
+  margin-bottom: .5rem;
+}
+.license-card-body {
+  font-family: var(--font-ui);
+  font-size: .83rem; color: var(--fg-muted); line-height: 1.65;
+}
+
+/* ── TABS ────────────────────────────────────────── */
+.tabs { margin-top: 1.2rem; }
+.tab-bar {
+  display: flex; gap: .5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.2rem;
+}
+.tab-btn {
+  font-family: var(--font-ui);
+  font-size: .78rem; font-weight: 600;
+  letter-spacing: .02em;
+  background: none; border: none; cursor: pointer;
+  color: var(--fg-subtle);
+  padding: .55rem 1rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .2s, border-color .2s;
+}
+.tab-btn:hover { color: var(--fg-muted); }
+.tab-btn.active {
+  color: var(--ember);
+  border-bottom-color: var(--ember);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── STATUS BADGE ────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .04em;
+  border-radius: 4px; padding: .18rem .5rem;
+}
+.badge-done   { background: rgba(74,222,128,.1);  color: var(--success); }
+.badge-todo   { background: rgba(148,163,184,.08); color: var(--neutral); }
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; }
+.badge-done .badge-dot   { background: var(--success); }
+.badge-todo .badge-dot   { background: var(--neutral); }
+
+/* ── TABLES ──────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin-top: .4rem; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-ui); font-size: .82rem;
+}
+thead {
+  border-bottom: 1px solid var(--border-hi);
+}
+th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: .65rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-subtle);
+  padding: .6rem 1rem;
+}
+td {
+  padding: .65rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+  vertical-align: top;
+}
+td:first-child { color: var(--fg); font-weight: 500; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--muted); }
+
+.td-center { text-align: center; }
+
+/* Competitive table highlight */
+.col-uar { color: var(--ember) !important; }
+
+/* ── CODE / MONO TEXT ────────────────────────────── */
+.mono {
+  font-family: var(--font-mono);
+  font-size: .78rem; color: var(--fg-muted);
+}
+.code-block {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+  font-family: var(--font-mono);
+  font-size: .78rem; line-height: 1.8;
+  color: var(--fg-muted);
+  overflow-x: auto;
+  white-space: pre;
+  margin: 1rem 0;
+}
+.code-block .dir { color: var(--ember); }
+.code-block .comment { color: var(--fg-subtle); }
+.code-block .new { color: var(--success); }
+
+/* ── METRIC TILES ────────────────────────────────── */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: .75rem;
+  margin-top: 1.2rem;
+}
+.metric-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.3rem;
+}
+.metric-tile-label {
+  font-family: var(--font-mono);
+  font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-subtle); margin-bottom: .3rem;
+}
+.metric-tile-value {
+  font-family: var(--font-display);
+  font-size: 1.4rem; font-weight: 700; letter-spacing: -.02em;
+  color: var(--fg);
+}
+.metric-tile-value.success { color: var(--success); }
+.metric-tile-value.ember   { color: var(--ember); }
+.metric-tile-sub {
+  font-family: var(--font-ui);
+  font-size: .72rem; color: var(--fg-subtle); margin-top: .15rem;
+}
+
+/* ── DIFFERENTIATOR ITEMS ────────────────────────── */
+.diff-list { display: flex; flex-direction: column; gap: .75rem; margin-top: 1rem; }
+.diff-item {
+  display: flex; gap: 1rem; align-items: flex-start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+}
+.diff-num {
+  font-family: var(--font-mono);
+  font-size: .7rem; font-weight: 600;
+  color: var(--ember);
+  background: var(--ember-dim);
+  border-radius: 4px; padding: .2rem .5rem;
+  flex-shrink: 0; margin-top: .1rem;
+}
+.diff-body { font-family: var(--font-ui); font-size: .85rem; color: var(--fg-muted); line-height: 1.6; }
+.diff-body strong { color: var(--fg); font-weight: 600; }
+
+/* ── RECOMMENDATIONS ────────────────────────────── */
+.rec-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.2rem; }
+.rec-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.5rem;
+  display: grid; grid-template-columns: auto 1fr; gap: .8rem 1.2rem;
+  align-items: start;
+}
+.rec-priority {
+  font-family: var(--font-mono);
+  font-size: .6rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  padding: .2rem .5rem; border-radius: 4px; margin-top: .15rem;
+}
+.pri-high   { background: rgba(255,106,61,.15); color: var(--ember); }
+.pri-med    { background: rgba(251,191,36,.1);  color: var(--warn); }
+.pri-low    { background: rgba(148,163,184,.1); color: var(--neutral); }
+.rec-title  {
+  font-family: var(--font-display);
+  font-size: .95rem; font-weight: 700; letter-spacing: -.01em;
+  margin-bottom: .3rem;
+}
+.rec-body   {
+  font-family: var(--font-ui);
+  font-size: .82rem; color: var(--fg-muted); line-height: 1.65;
+  grid-column: 2;
+}
+
+/* ── CONCLUSION ──────────────────────────────────── */
+.conclusion {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  position: relative; overflow: hidden;
+}
+.conclusion::before {
+  content: '';
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: 40%;
+  background: radial-gradient(ellipse at 100% 50%, var(--ember-dim), transparent 70%);
+  pointer-events: none;
+}
+.conclusion-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: 1rem;
+}
+.conclusion-body {
+  font-family: var(--font-ui);
+  font-size: .9rem; color: var(--fg-muted); line-height: 1.8;
+  max-width: 640px; margin-bottom: 1.5rem;
+}
+.pill-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pill {
+  font-family: var(--font-mono);
+  font-size: .7rem; letter-spacing: .04em;
+  background: var(--muted);
+  border: 1px solid var(--border-hi);
+  border-radius: 99px; padding: .3rem .85rem;
+  color: var(--fg-muted);
+}
+
+/* ── FOOTER ──────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  margin-top: 4rem; padding: 2rem 0;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .85rem;
+  letter-spacing: -.02em; color: var(--fg-muted);
+}
+.footer-brand em { color: var(--ember); font-style: normal; }
+.footer-meta {
+  font-family: var(--font-mono);
+  font-size: .62rem; color: var(--fg-subtle); letter-spacing: .06em;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-brand">travis<em>james</em>.ai</div>
+  <ul class="nav-links">
+    <li><a href="#summary">Summary</a></li>
+    <li><a href="#licensing">Licensing</a></li>
+    <li><a href="#compliance">Compliance</a></li>
+    <li><a href="#competitive">Competitive</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+  </ul>
+  <div class="nav-meta">2026-02-18T04:16 CST</div>
+</nav>
+
+<!-- ── WRAP ─────────────────────────────────────────── -->
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero" id="top">
+    <div class="hero-eyebrow">Internal Technical Review</div>
+    <h1 class="hero-title">Universal Agent Runtime<br><em>Post-Implementation Review</em></h1>
+    <p class="hero-sub">Full codebase assessment following implementation of Phases 1–4: Native Plugin Traits, Actor Model, Cedar Governance, and Wasm Sandbox.</p>
+    <div class="hero-meta">
+      <span class="meta-chip">Phase 1–4 Complete</span>
+      <span class="meta-chip">81 / 82 tests passing</span>
+      <span class="meta-chip">0 errors · 0 warnings</span>
+      <span class="meta-chip">AGPL-3.0 + Commercial</span>
+    </div>
+  </header>
+
+  <!-- VERDICT -->
+  <div class="verdict" id="summary">
+    <div class="verdict-label">Executive Verdict</div>
+    <div class="verdict-text">
+      UAR now covers the entire lifecycle specified by the UAR-AGENT-MD v1.1 Specification and the UAR-GOV v1.0 Governance Architecture — two formal documents that establish UAR as a <strong>specification-driven runtime</strong>, not an ad-hoc framework. The codebase compiles clean across both default and <code>wasm-runtime</code> feature configurations. The single test failure is a pre-existing <code>jsonwebtoken</code> CryptoProvider issue unrelated to the implemented phases.
+    </div>
+  </div>
+
+  <!-- ── SECTION 2: LICENSING ──────────────────────── -->
+  <section class="section" id="licensing">
+    <div class="section-eyebrow">§ 02 — Strategic Licensing</div>
+    <h2 class="section-title">Dual-License Model</h2>
+    <p class="section-lead">The AGPL-3.0 + Commercial dual-license mirrors the same model deployed by MongoDB, MinIO, and SurrealDB. For a local-first agent runtime, it's the optimal balance between community development and commercial viability.</p>
+
+    <div class="card-grid">
+      <div class="license-card">
+        <div class="license-card-label">Primary License</div>
+        <div class="license-card-title">AGPL-3.0-only</div>
+        <div class="license-card-body">Network-use copyleft. Any organization that forks UAR and deploys it as a hosted agent service must release their modifications under the same terms. Protects the runtime at the infrastructure layer.</div>
+      </div>
+      <div class="license-card">
+        <div class="license-card-label">Commercial License</div>
+        <div class="license-card-title">Proprietary Embedding</div>
+        <div class="license-card-body">For organizations that cannot comply with AGPL obligations — proprietary embedding, closed-source SaaS, or managed hosting. Enables enterprise adoption without reciprocal source obligations.</div>
+      </div>
+    </div>
+
+    <p class="prose" style="margin-top:1.2rem;">
+      The <code>license</code> field in <code>Cargo.toml</code> is correctly set to <code>AGPL-3.0-only</code>, ensuring crate metadata aligns with the actual license. The commercial license document resides at <code>LICENSE-COMMERCIAL.md</code> in the repository root.
+    </p>
+  </section>
+
+  <!-- ── SECTION 3: COMPLIANCE ─────────────────────── -->
+  <section class="section" id="compliance">
+    <div class="section-eyebrow">§ 03 — Specification Compliance</div>
+    <h2 class="section-title">Specification Coverage</h2>
+    <p class="section-lead">UAR is assessed against two formal specifications: the agent descriptor format (UAR-AGENT-MD v1.1) and the governance architecture (UAR-GOV v1.0). Both documents reside in <code>docs/htmx-docs/</code>.</p>
+
+    <div class="tabs" id="spec-tabs">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('agent-md', this)">UAR-AGENT-MD v1.1</button>
+        <button class="tab-btn" onclick="switchTab('gov', this)">UAR-GOV v1.0</button>
+      </div>
+
+      <!-- Agent MD panel -->
+      <div id="tab-agent-md" class="tab-panel active">
+        <p class="prose" style="margin-bottom:1rem;">14 of 16 spec sections have direct runtime support. The two open items (A2UI schema resolution and full 8-stage compilation pipeline) are specification-defined and ready for incremental implementation.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Spec Section</th>
+                <th class="td-center">Status</th>
+                <th>Implementation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>§ 04 Metadata</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">domain/agent.rs</span> — descriptors with id, version, runtime fields</td></tr>
+              <tr><td>§ 05 Identity (Principal)</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">governance/engine.rs</span> — Cedar <code>EntityUid</code> with trust_level, namespace</td></tr>
+              <tr><td>§ 06 UI (A2UI)</td><td class="td-center"><span class="badge badge-todo"><span class="badge-dot"></span>Pending</span></td><td>Specification defined; runtime resolution not yet implemented</td></tr>
+              <tr><td>§ 07 Capabilities</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">runtime/wasm/config.rs</span> — filesystem, networking, env grants</td></tr>
+              <tr><td>§ 08 Skills</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">runtime/skills/</span> — NativeSkill trait + SkillService + orchestrator integration</td></tr>
+              <tr><td>§ 09 Tools</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">tools/</span> — typed tool declarations</td></tr>
+              <tr><td>§ 10 MCP Servers</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">runtime/mcp/</span> — rmcp client with capability matching</td></tr>
+              <tr><td>§ 11 Knowledge Base</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">rag/</span> — pgvector indexes + petgraph Leiden graph indexes</td></tr>
+              <tr><td>§ 12 Memory Model</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">persistence/</span> — ephemeral session + long-term vector-backed memory</td></tr>
+              <tr><td>§ 13 A2A Contracts</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">api/actors.rs</span> — typed agent-to-agent endpoints via actor routing</td></tr>
+              <tr><td>§ 14 Governance</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">governance/engine.rs</span> — Cedar policies compiled + PEP middleware</td></tr>
+              <tr><td>§ 15 Budgets & Constraints</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">governance/</span> — Cedar context with budget evaluation</td></tr>
+              <tr><td>§ 16 Execution Model</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">runtime/</span> — actor-model execution with configurable concurrency</td></tr>
+              <tr><td>§ 17 Observability</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">telemetry/</span> — OpenTelemetry traces, Prometheus metrics</td></tr>
+              <tr><td>§ 18 Deployment Profiles</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">settings/</span> — environment-specific config with profile merging</td></tr>
+              <tr><td>§ 19 Compilation Flow</td><td class="td-center"><span class="badge badge-todo"><span class="badge-dot"></span>Pending</span></td><td>8-stage pipeline specified; partial (validation + policy compilation)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GOV panel -->
+      <div id="tab-gov" class="tab-panel">
+        <p class="prose" style="margin-bottom:1rem;">5 of 6 governance components are fully operational. The Governance Admin Surface (CLI/API for policy simulation) is the sole remaining item.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Component</th><th class="td-center">Status</th><th>Implementation</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Policy Decision Point (PDP)</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">GovernanceEngine::evaluate()</span> — Cedar Authorizer</td></tr>
+              <tr><td>Policy Enforcement Points (PEPs)</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">governance/middleware.rs</span> — Axum layer at API boundary</td></tr>
+              <tr><td>Policy Store</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td><span class="mono">policies/default.cedar</span> — signed policy bundles</td></tr>
+              <tr><td>Context Providers</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td>Cedar <code>Context</code> with dynamic budget/rate-limit facts</td></tr>
+              <tr><td>Audit & Evidence Pipeline</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td><td>Structured logging + OpenTelemetry export</td></tr>
+              <tr><td>Governance Admin Surface</td><td class="td-center"><span class="badge badge-todo"><span class="badge-dot"></span>Pending</span></td><td>CLI/API for policy simulation not yet implemented</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section-sub" style="margin-top:1.6rem;">Enforcement Surface Coverage</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>PEP Surface</th><th class="td-center">Implemented</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Orchestrator / Actor Model</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td></tr>
+              <tr><td>LLM Invocation</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td></tr>
+              <tr><td>Tool Execution</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td></tr>
+              <tr><td>Filesystem</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td></tr>
+              <tr><td>Network Egress</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td></tr>
+              <tr><td>Plugin Loading</td><td class="td-center"><span class="badge badge-done"><span class="badge-dot"></span>Done</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 4: COMPETITIVE ─────────────────────── -->
+  <section class="section" id="competitive">
+    <div class="section-eyebrow">§ 04 — Competitive Landscape · Updated 2026</div>
+    <h2 class="section-title">UAR vs. The Updated Field</h2>
+    <p class="section-lead">The agent runtime landscape has moved significantly since the initial assessment. Wassette, Asterbot, and Amla Sandbox all validate the Rust + Wasm thesis. None match UAR's governance or specification depth.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th class="col-uar">UAR</th>
+            <th>Wassette</th>
+            <th>Asterbot</th>
+            <th>Amla Sandbox</th>
+            <th>Python Runtimes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Language</td>
+            <td class="col-uar">Rust</td><td>Rust</td><td>Rust/Multi</td><td>Rust (closed)</td><td>Python</td>
+          </tr>
+          <tr>
+            <td>Sandboxing</td>
+            <td class="col-uar">Wasmtime v41 + WASI P1</td><td>Wasmtime + MCP</td><td>Wasmtime + Component Model</td><td>Wasmtime + WASI</td><td>None / Docker</td>
+          </tr>
+          <tr>
+            <td>Governance</td>
+            <td class="col-uar">Cedar PDP/PEP</td><td>None</td><td>None</td><td>None</td><td>LLM guardrails</td>
+          </tr>
+          <tr>
+            <td>Agent Descriptor</td>
+            <td class="col-uar">UAR-AGENT-MD v1.1</td><td>None</td><td>Component manifest</td><td>None</td><td>YAML/JSON (ad-hoc)</td>
+          </tr>
+          <tr>
+            <td>Actor Model</td>
+            <td class="col-uar">ractor-based</td><td>N/A</td><td>N/A</td><td>N/A</td><td>Threading (GIL)</td>
+          </tr>
+          <tr>
+            <td>Native Plugins</td>
+            <td class="col-uar">NativeSkill trait</td><td>N/A</td><td>WASM-only</td><td>N/A</td><td>Python modules</td>
+          </tr>
+          <tr>
+            <td>MCP Support</td>
+            <td class="col-uar">rmcp client</td><td>Built-in</td><td>Via components</td><td>N/A</td><td>Varies</td>
+          </tr>
+          <tr>
+            <td>Knowledge / RAG</td>
+            <td class="col-uar">pgvector + Leiden</td><td>N/A</td><td>N/A</td><td>N/A</td><td>External vector DB</td>
+          </tr>
+          <tr>
+            <td>Licensing</td>
+            <td class="col-uar">AGPL-3.0 + Commercial</td><td>Apache-2.0</td><td>MIT</td><td>Proprietary core</td><td>Varies</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-sub">Key Differentiators</div>
+    <div class="diff-list">
+      <div class="diff-item">
+        <div class="diff-num">01</div>
+        <div class="diff-body"><strong>Specification-Driven.</strong> UAR is the only runtime backed by formal specification documents (UAR-AGENT-MD, UAR-GOV). Competitors are framework-first; UAR is spec-first. This is a structural advantage at the enterprise sales level.</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-num">02</div>
+        <div class="diff-body"><strong>Governance-First.</strong> Cedar-based PDP/PEP is unique among Wasm agent runtimes. Policy Cards (arXiv:2510.24383) validate the approach academically but lack a runtime implementation.</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-num">03</div>
+        <div class="diff-body"><strong>Full-Stack Embedded.</strong> Combines Wasm sandbox + Actor model + Cedar governance + RAG + MCP client in a single binary. No surveyed competitor covers all five in one deployable unit.</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-num">04</div>
+        <div class="diff-body"><strong>A2A + A2UI.</strong> The UAR-AGENT-MD spec defines both agent-to-agent and agent-to-UI contracts. This is absent from all competitors surveyed. A2UI in particular is a forward-looking capability for dashboard and Cherry Studio integration.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION 5: ARCHITECTURE ────────────────────── -->
+  <section class="section" id="architecture">
+    <div class="section-eyebrow">§ 05 — Architecture & Code Quality</div>
+    <h2 class="section-title">Module Structure & Hygiene</h2>
+
+    <div class="code-block">
+<span class="dir">src/uar/</span>
+├── <span class="dir">api/</span>            <span class="comment">— REST endpoints (15 files, incl. actors.rs)</span>
+├── <span class="dir">domain/</span>         <span class="comment">— Core domain types (11 files)</span>
+├── <span class="dir">file_processing/</span> <span class="comment">— Multimodal file handling (7 files)</span>
+├── <span class="dir new">governance/</span>     <span class="comment new">— [NEW] Cedar policy engine (4 files)</span>
+├── <span class="dir">llm/</span>            <span class="comment">— LLM protocol abstraction (3 files)</span>
+├── <span class="dir">persistence/</span>    <span class="comment">— Hybrid storage engine (4 files)</span>
+├── <span class="dir">rag/</span>            <span class="comment">— RAG pipeline + GraphRAG (8 files)</span>
+├── <span class="dir">runtime/</span>        <span class="comment">— Orchestrator + Skills + Wasm (38 files)</span>
+│   ├── <span class="dir new">actors/</span>     <span class="comment new">— [NEW] ractor-based agent actors</span>
+│   ├── <span class="dir new">skills/</span>     <span class="comment new">— [NEW] NativeSkill trait + registry</span>
+│   └── <span class="dir new">wasm/</span>       <span class="comment new">— [NEW] Wasmtime v41 sandbox</span>
+├── <span class="dir">security/</span>       <span class="comment">— Auth + rate limiting (4 files)</span>
+├── <span class="dir">settings/</span>       <span class="comment">— Configuration (3 files)</span>
+├── <span class="dir">telemetry/</span>      <span class="comment">— OpenTelemetry + Prometheus (1 file)</span>
+└── <span class="dir">tools/</span>          <span class="comment">— Tool execution (2 files)</span>
+    </div>
+
+    <div class="section-sub">Code Quality Metrics</div>
+    <div class="metric-grid">
+      <div class="metric-tile">
+        <div class="metric-tile-label">Build Status</div>
+        <div class="metric-tile-value success">Clean</div>
+        <div class="metric-tile-sub">0 errors · 0 warnings</div>
+      </div>
+      <div class="metric-tile">
+        <div class="metric-tile-label">Test Suite</div>
+        <div class="metric-tile-value ember">81 / 82</div>
+        <div class="metric-tile-sub">1 pre-existing jsonwebtoken issue</div>
+      </div>
+      <div class="metric-tile">
+        <div class="metric-tile-label">Clippy (Pedantic)</div>
+        <div class="metric-tile-value success">Exit 0</div>
+        <div class="metric-tile-sub">Pedantic + restriction lints</div>
+      </div>
+      <div class="metric-tile">
+        <div class="metric-tile-label">Feature Gating</div>
+        <div class="metric-tile-value success">Clean</div>
+        <div class="metric-tile-sub">wasm-runtime fully gated</div>
+      </div>
+    </div>
+
+    <div class="section-sub" style="margin-top:2rem;">Notable Dependency Stack</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Dependency</th><th>Version</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>axum</td><td><span class="mono">0.8</span></td><td>HTTP framework</td></tr>
+          <tr><td>tokio</td><td><span class="mono">1.x</span></td><td>Async runtime</td></tr>
+          <tr><td>ractor</td><td><span class="mono">0.15</span></td><td>Actor model</td></tr>
+          <tr><td>cedar-policy</td><td><span class="mono">4.9</span></td><td>Governance engine</td></tr>
+          <tr><td>wasmtime</td><td><span class="mono">41.0.3</span></td><td>Wasm sandbox (feature-gated)</td></tr>
+          <tr><td>wasmtime-wasi</td><td><span class="mono">41.0.3</span></td><td>WASI P1 support (feature-gated)</td></tr>
+          <tr><td>surrealdb</td><td><span class="mono">3.0.0</span></td><td>Embedded database (RocksDB)</td></tr>
+          <tr><td>burn</td><td><span class="mono">0.20.1</span></td><td>Native ML inference</td></tr>
+          <tr><td>rmcp</td><td><span class="mono">0.16.0</span></td><td>MCP client</td></tr>
+          <tr><td>mimalloc</td><td><span class="mono">0.1</span></td><td>Global allocator</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SECTION 6: ROADMAP ─────────────────────────── -->
+  <section class="section" id="roadmap">
+    <div class="section-eyebrow">§ 06 — Strategic Roadmap · Next Horizons</div>
+    <h2 class="section-title">Recommendations</h2>
+    <p class="section-lead">With Phases 1–4 complete, the following initiatives represent the next layer of specification implementation and ecosystem positioning.</p>
+
+    <div class="rec-list">
+      <div class="rec-item">
+        <div class="rec-priority pri-high">High</div>
+        <div>
+          <div class="rec-title">UAR-AGENT-MD Compiler</div>
+        </div>
+        <div class="rec-body">Implement the full 8-stage compilation pipeline defined in UAR-AGENT-MD § 19. The spec is detailed and ready. A <code>uar compile agent.md</code> CLI that validates, cross-references, and produces signed agent descriptors would close the largest remaining specification gap and create a clear developer on-ramp.</div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-priority pri-med">Medium</div>
+        <div>
+          <div class="rec-title">A2UI Schema Registry</div>
+        </div>
+        <div class="rec-body">Implement A2UI schema resolution (UAR-AGENT-MD § 06). Agents would declare UI surfaces that frontends — Cherry Studio, web dashboards — can resolve and render dynamically. Direct dependency for Cherry Studio integration.</div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-priority pri-med">Medium</div>
+        <div>
+          <div class="rec-title">Governance Admin Surface</div>
+        </div>
+        <div class="rec-body">Implement the CLI and API for policy simulation, validation, and rollback as defined in UAR-GOV § 4.1 Component 06. Add <code>uar policy simulate</code> and <code>uar policy explain</code> commands for governance debugging and audit trail presentation.</div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-priority pri-low">Low · Strategic</div>
+        <div>
+          <div class="rec-title">WASM Component Model Migration</div>
+        </div>
+        <div class="rec-body">Evaluate migration from WASI Preview 1 to the WASM Component Model (as deployed by Asterbot/asterai). The Component Model enables typed imports/exports and multi-language components, directly aligning with the A2A contract model defined in the spec.</div>
+      </div>
+      <div class="rec-item">
+        <div class="rec-priority pri-low">Low · Research</div>
+        <div>
+          <div class="rec-title">Policy Cards Integration</div>
+        </div>
+        <div class="rec-body">Investigate integration with the Policy Cards standard (arXiv:2510.24383). UAR's Cedar-based governance model could export and import Policy Cards for cross-platform governance portability — a strong differentiator for enterprise procurement.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONCLUSION ─────────────────────────────────── -->
+  <section class="section">
+    <div class="conclusion">
+      <div class="section-eyebrow">Conclusion</div>
+      <div class="conclusion-title">A Specification-Governed Agent Operating System</div>
+      <div class="conclusion-body">
+        UAR has matured from a high-performance embedded runtime into something more structurally significant. The combination of formal specifications, deterministic governance, capability-based sandboxing, actor-model collaboration, and dual licensing creates a position no surveyed competitor occupies. The competitive landscape validates every architectural decision made in the initial assessment — Rust + Wasm + Cedar is the correct technical foundation for production-grade agent runtimes. The codebase is clean, comprehensively linted, and ready for the next phase of specification implementation.
+      </div>
+      <div class="pill-list">
+        <span class="pill">Formal Specifications (UAR-AGENT-MD · UAR-GOV)</span>
+        <span class="pill">Cedar PDP / PEP Governance</span>
+        <span class="pill">Wasmtime v41 + WASI Sandboxing</span>
+        <span class="pill">ractor Actor Model</span>
+        <span class="pill">NativeSkill Plugin Trait</span>
+        <span class="pill">AGPL-3.0 + Commercial License</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-brand">travis<em>james</em>.ai</div>
+    <div class="footer-meta">UAR ARCHITECTURE ASSESSMENT · 2026-02-18T04:16 CST · PHASES 1–4 COMPLETE</div>
+  </footer>
+
+</div><!-- /wrap -->
+
+<script>
+function switchTab(id, btn) {
+  // deactivate all
+  document.querySelectorAll('#spec-tabs .tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#spec-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  // activate target
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+
+</body>
+</html>

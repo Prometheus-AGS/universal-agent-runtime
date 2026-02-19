@@ -12,10 +12,12 @@
 //! ```rust,ignore
 //! use universal_agent_runtime::llm::{Orchestrator, LlmSettings, LlmProtocol};
 //! use universal_agent_runtime::mcp::registry::McpRegistry;
+//! use universal_agent_runtime::uar::runtime::native_skill::NativeSkillRegistry;
 //!
 //! let settings = LlmSettings { /* ... */ };
 //! let mcp = McpRegistry::load_from_file("mcp.json").await?;
-//! let orchestrator = Orchestrator::new(settings, mcp);
+//! let native_skills = Arc::new(NativeSkillRegistry::new());
+//! let orchestrator = Orchestrator::new(settings, mcp, native_skills);
 //!
 //! let stream = orchestrator.chat("Hello, what time is it?").await?;
 //! ```
@@ -28,6 +30,7 @@ use uuid::Uuid;
 
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent;
+use crate::uar::runtime::native_skill::NativeSkillRegistry;
 
 use super::{
     ChatCompletionsDriver, LlmDriver, LlmProtocol, LlmRequest, LlmSettings, Message,
@@ -57,6 +60,7 @@ pub struct Orchestrator {
     settings: LlmSettings,
     mcp: Arc<McpRegistry>,
     driver: Arc<dyn LlmDriver>,
+    native_skills: Arc<NativeSkillRegistry>,
 }
 
 #[allow(clippy::missing_fields_in_debug)]
@@ -70,9 +74,13 @@ impl std::fmt::Debug for Orchestrator {
 }
 
 impl Orchestrator {
-    /// Create a new orchestrator with the given settings and MCP registry.
+    /// Create a new orchestrator with the given settings, MCP registry, and native skill registry.
     #[allow(dead_code)]
-    pub fn new(settings: LlmSettings, mcp: Arc<McpRegistry>) -> Self {
+    pub fn new(
+        settings: LlmSettings,
+        mcp: Arc<McpRegistry>,
+        native_skills: Arc<NativeSkillRegistry>,
+    ) -> Self {
         let driver: Arc<dyn LlmDriver> = match settings.protocol {
             LlmProtocol::Responses => Arc::new(ResponsesDriver::new(settings.clone())),
             LlmProtocol::Chat => Arc::new(ChatCompletionsDriver::new(settings.clone())),
@@ -87,6 +95,7 @@ impl Orchestrator {
             settings,
             mcp,
             driver,
+            native_skills,
         }
     }
 
@@ -414,36 +423,73 @@ impl Orchestrator {
                         "Executing tool call"
                     );
 
-                    let (content, success) = match orchestrator.mcp.call_namespaced_tool(tool_name, arguments.clone()).await {
-                        Ok(result) => {
-                            let content = serde_json::to_string(&result).unwrap_or_default();
+                    let (content, success) = {
+                        // Priority: check native skills first, then fall back to MCP
+                        if let Some(native_skill) = orchestrator.native_skills.get(tool_name).await {
                             tracing::info!(
                                 request_id = %request_id,
                                 iteration = iteration,
                                 tool_id = %tool_call.id,
                                 tool_name = %tool_name,
-                                result_length = content.len(),
-                                "Tool call succeeded"
+                                "Executing via native skill (bypassing MCP)"
                             );
-                            tracing::debug!(
-                                request_id = %request_id,
-                                tool_id = %tool_call.id,
-                                result = %content,
-                                "Tool call result"
-                            );
-                            (content, true)
-                        }
-                        Err(e) => {
-                            let error_msg = format!("Error: {e}");
-                            tracing::error!(
-                                request_id = %request_id,
-                                iteration = iteration,
-                                tool_id = %tool_call.id,
-                                tool_name = %tool_name,
-                                error = %e,
-                                "Tool call failed"
-                            );
-                            (error_msg, false)
+                            match native_skill.execute(arguments.clone()).await {
+                                Ok(result) => {
+                                    let content = serde_json::to_string(&result).unwrap_or_default();
+                                    tracing::info!(
+                                        request_id = %request_id,
+                                        tool_id = %tool_call.id,
+                                        tool_name = %tool_name,
+                                        result_length = content.len(),
+                                        "Native skill execution succeeded"
+                                    );
+                                    (content, true)
+                                }
+                                Err(e) => {
+                                    let error_msg = format!("Native skill error: {e}");
+                                    tracing::error!(
+                                        request_id = %request_id,
+                                        tool_id = %tool_call.id,
+                                        tool_name = %tool_name,
+                                        error = %e,
+                                        "Native skill execution failed"
+                                    );
+                                    (error_msg, false)
+                                }
+                            }
+                        } else {
+                            match orchestrator.mcp.call_namespaced_tool(tool_name, arguments.clone()).await {
+                                Ok(result) => {
+                                    let content = serde_json::to_string(&result).unwrap_or_default();
+                                    tracing::info!(
+                                        request_id = %request_id,
+                                        iteration = iteration,
+                                        tool_id = %tool_call.id,
+                                        tool_name = %tool_name,
+                                        result_length = content.len(),
+                                        "Tool call succeeded"
+                                    );
+                                    tracing::debug!(
+                                        request_id = %request_id,
+                                        tool_id = %tool_call.id,
+                                        result = %content,
+                                        "Tool call result"
+                                    );
+                                    (content, true)
+                                }
+                                Err(e) => {
+                                    let error_msg = format!("Error: {e}");
+                                    tracing::error!(
+                                        request_id = %request_id,
+                                        iteration = iteration,
+                                        tool_id = %tool_call.id,
+                                        tool_name = %tool_name,
+                                        error = %e,
+                                        "Tool call failed"
+                                    );
+                                    (error_msg, false)
+                                }
+                            }
                         }
                     };
 

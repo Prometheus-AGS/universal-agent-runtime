@@ -137,7 +137,7 @@ The Web Component manages streaming state and renders messages.
 2. **HTMX `hx-on--before-request`** fires:
    - Calls `chatStream.addUserMessage(msg)` - **User message appears immediately**
    - Sets `session_id` from Alpine store
-3. Form submits to `/api/chat`
+3. Form submits to `/api/chat/completion`
 4. **HTMX `hx-on--after-request`** fires:
    - Updates Alpine store with `session_id` from response
    - Calls `chatStream.startStream(response)` to begin SSE

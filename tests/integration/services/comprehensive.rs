@@ -272,7 +272,9 @@ impl ServiceIntegrationSuite {
     }
 
     /// Execute comprehensive service integration tests
-    pub async fn execute_comprehensive_tests(&mut self) -> Result<ServiceIntegrationReport, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn execute_comprehensive_tests(
+        &mut self,
+    ) -> Result<ServiceIntegrationReport, Box<dyn std::error::Error + Send + Sync>> {
         info!("Starting comprehensive service integration tests");
 
         let start_time = chrono::Utc::now();
@@ -302,19 +304,22 @@ impl ServiceIntegrationSuite {
         }
 
         // Generate comprehensive report
-        let report = self.generate_integration_report(
-            start_time,
-            llm_results,
-            mcp_results,
-            api_results,
-        ).await;
+        let report = self
+            .generate_integration_report(start_time, llm_results, mcp_results, api_results)
+            .await;
 
-        info!("Service integration tests completed: {:?}", report.integration_status);
+        info!(
+            "Service integration tests completed: {:?}",
+            report.integration_status
+        );
         Ok(report)
     }
 
     /// Test LLM service integration
-    pub async fn test_llm_service(&self, config: &LLMConfig) -> Result<Vec<ServiceTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_llm_service(
+        &self,
+        config: &LLMConfig,
+    ) -> Result<Vec<ServiceTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         info!("Testing LLM service: {}", config.name);
@@ -343,7 +348,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test LLM connection
-    async fn test_llm_connection(&self, config: &LLMConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_llm_connection(
+        &self,
+        config: &LLMConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
         let connection_start = Instant::now();
 
@@ -400,7 +408,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test LLM completion
-    async fn test_llm_completion(&self, config: &LLMConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_llm_completion(
+        &self,
+        config: &LLMConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate LLM completion request
@@ -454,14 +465,20 @@ impl ServiceIntegrationSuite {
             validation_results,
             artifacts: vec![
                 format!("tokens_generated: {}", token_count),
-                format!("tokens_per_second: {:.2}", token_count as f64 / start_time.elapsed().as_secs_f64()),
+                format!(
+                    "tokens_per_second: {:.2}",
+                    token_count as f64 / start_time.elapsed().as_secs_f64()
+                ),
                 format!("response_length: {} chars", response_text.len()),
             ],
         })
     }
 
     /// Test LLM streaming
-    pub async fn test_llm_streaming(&self, config: &LLMConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_llm_streaming(
+        &self,
+        config: &LLMConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate streaming response
@@ -533,7 +550,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test LLM tool calling
-    pub async fn test_llm_tool_calling(&self, config: &LLMConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_llm_tool_calling(
+        &self,
+        config: &LLMConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate tool calling scenario
@@ -601,7 +621,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test LLM error handling
-    async fn test_llm_error_handling(&self, config: &LLMConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_llm_error_handling(
+        &self,
+        config: &LLMConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate error scenario and recovery
@@ -659,7 +682,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test LLM performance
-    async fn test_llm_performance(&self, config: &LLMConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_llm_performance(
+        &self,
+        config: &LLMConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate performance benchmark
@@ -678,7 +704,8 @@ impl ServiceIntegrationSuite {
             retry_count: 0,
         };
 
-        let performance_passed = start_time.elapsed() <= Duration::from_millis(self.performance_thresholds.llm_response_time_ms);
+        let performance_passed = start_time.elapsed()
+            <= Duration::from_millis(self.performance_thresholds.llm_response_time_ms);
 
         let validation_results = self.validate_service_result(&ServiceTestResult {
             test_id: format!("{}_performance", config.name),
@@ -693,7 +720,11 @@ impl ServiceIntegrationSuite {
                 "tokens_per_second": tokens_per_second,
                 "threshold_met": performance_passed
             })),
-            error_message: if performance_passed { None } else { Some("Performance threshold exceeded".to_string()) },
+            error_message: if performance_passed {
+                None
+            } else {
+                Some("Performance threshold exceeded".to_string())
+            },
             performance_metrics: metrics.clone(),
             validation_results: Vec::new(),
             artifacts: Vec::new(),
@@ -712,7 +743,11 @@ impl ServiceIntegrationSuite {
                 "tokens_per_second": tokens_per_second,
                 "threshold_met": performance_passed
             })),
-            error_message: if performance_passed { None } else { Some("Performance threshold exceeded".to_string()) },
+            error_message: if performance_passed {
+                None
+            } else {
+                Some("Performance threshold exceeded".to_string())
+            },
             performance_metrics: metrics,
             validation_results,
             artifacts: vec![
@@ -725,7 +760,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test MCP service integration
-    pub async fn test_mcp_service(&self, config: &MCPConfig) -> Result<Vec<ServiceTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_mcp_service(
+        &self,
+        config: &MCPConfig,
+    ) -> Result<Vec<ServiceTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         info!("Testing MCP service: {}", config.name);
@@ -748,7 +786,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test MCP connection
-    async fn test_mcp_connection(&self, config: &MCPConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_mcp_connection(
+        &self,
+        config: &MCPConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate MCP server connection
@@ -803,7 +844,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test MCP tool discovery
-    async fn test_mcp_tool_discovery(&self, config: &MCPConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_mcp_tool_discovery(
+        &self,
+        config: &MCPConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate tool discovery
@@ -843,7 +887,11 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test MCP tool execution
-    pub async fn test_mcp_tool_execution(&self, config: &MCPConfig, tool_name: &str) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_mcp_tool_execution(
+        &self,
+        config: &MCPConfig,
+        tool_name: &str,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate tool execution
@@ -865,7 +913,8 @@ impl ServiceIntegrationSuite {
             retry_count: 0,
         };
 
-        let tool_execution_passed = start_time.elapsed() <= Duration::from_millis(self.performance_thresholds.mcp_tool_call_time_ms);
+        let tool_execution_passed = start_time.elapsed()
+            <= Duration::from_millis(self.performance_thresholds.mcp_tool_call_time_ms);
 
         Ok(ServiceTestResult {
             test_id: format!("{}_{}_execution", config.name, tool_name),
@@ -875,7 +924,11 @@ impl ServiceIntegrationSuite {
             success: tool_execution_passed,
             duration: start_time.elapsed(),
             response_data: Some(execution_result),
-            error_message: if tool_execution_passed { None } else { Some("Tool execution timeout".to_string()) },
+            error_message: if tool_execution_passed {
+                None
+            } else {
+                Some("Tool execution timeout".to_string())
+            },
             performance_metrics: metrics,
             validation_results: Vec::new(),
             artifacts: vec![
@@ -887,7 +940,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test MCP error handling
-    async fn test_mcp_error_handling(&self, config: &MCPConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_mcp_error_handling(
+        &self,
+        config: &MCPConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate error scenario and recovery
@@ -925,7 +981,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test external API integration
-    pub async fn test_external_api(&self, config: &ExternalAPIConfig) -> Result<Vec<ServiceTestResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn test_external_api(
+        &self,
+        config: &ExternalAPIConfig,
+    ) -> Result<Vec<ServiceTestResult>, Box<dyn std::error::Error + Send + Sync>> {
         let mut results = Vec::new();
 
         info!("Testing external API: {}", config.name);
@@ -948,7 +1007,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test API health check
-    async fn test_api_health_check(&self, config: &ExternalAPIConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_api_health_check(
+        &self,
+        config: &ExternalAPIConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate health check
@@ -987,13 +1049,18 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test API endpoint
-    async fn test_api_endpoint(&self, config: &ExternalAPIConfig, endpoint: &str) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_api_endpoint(
+        &self,
+        config: &ExternalAPIConfig,
+        endpoint: &str,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate API call
         sleep(Duration::from_millis(150)).await;
 
-        let response_passed = start_time.elapsed() <= Duration::from_millis(self.performance_thresholds.api_response_time_ms);
+        let response_passed = start_time.elapsed()
+            <= Duration::from_millis(self.performance_thresholds.api_response_time_ms);
 
         let metrics = ServicePerformanceMetrics {
             connection_time: Duration::from_millis(25),
@@ -1017,7 +1084,11 @@ impl ServiceIntegrationSuite {
                 "response_code": 200,
                 "threshold_met": response_passed
             })),
-            error_message: if response_passed { None } else { Some("Response time threshold exceeded".to_string()) },
+            error_message: if response_passed {
+                None
+            } else {
+                Some("Response time threshold exceeded".to_string())
+            },
             performance_metrics: metrics,
             validation_results: Vec::new(),
             artifacts: vec![
@@ -1029,7 +1100,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test API authentication
-    async fn test_api_authentication(&self, config: &ExternalAPIConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_api_authentication(
+        &self,
+        config: &ExternalAPIConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate authentication test
@@ -1069,7 +1143,10 @@ impl ServiceIntegrationSuite {
     }
 
     /// Test API rate limiting
-    async fn test_api_rate_limiting(&self, config: &ExternalAPIConfig) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_api_rate_limiting(
+        &self,
+        config: &ExternalAPIConfig,
+    ) -> Result<ServiceTestResult, Box<dyn std::error::Error + Send + Sync>> {
         let start_time = Instant::now();
 
         // Simulate rate limiting test
@@ -1110,7 +1187,9 @@ impl ServiceIntegrationSuite {
     pub fn supports_tool_calling(&self, config: &LLMConfig) -> bool {
         match config.provider {
             LLMProvider::OpenAI | LLMProvider::Anthropic => true,
-            LLMProvider::Azure => config.model.contains("gpt-4") || config.model.contains("gpt-3.5"),
+            LLMProvider::Azure => {
+                config.model.contains("gpt-4") || config.model.contains("gpt-3.5")
+            }
             LLMProvider::Local | LLMProvider::Ollama => false,
         }
     }
@@ -1201,12 +1280,14 @@ impl ServiceIntegrationSuite {
             let avg_tokens_per_second = streaming_results
                 .iter()
                 .filter_map(|r| r.performance_metrics.tokens_per_second)
-                .sum::<f64>() / streaming_results.len() as f64;
+                .sum::<f64>()
+                / streaming_results.len() as f64;
 
             let avg_first_token_time = streaming_results
                 .iter()
                 .map(|r| r.performance_metrics.first_byte_time)
-                .sum::<Duration>() / streaming_results.len() as u32;
+                .sum::<Duration>()
+                / streaming_results.len() as u32;
 
             Some(StreamingMetrics {
                 average_first_token_time: avg_first_token_time,
@@ -1221,18 +1302,33 @@ impl ServiceIntegrationSuite {
         for result in &all_results {
             match result.service_type {
                 ServiceType::LLM => {
-                    if result.performance_metrics.total_response_time > Duration::from_millis(self.performance_thresholds.llm_response_time_ms) {
-                        threshold_violations.push(format!("{}: LLM response time exceeded", result.service_name));
+                    if result.performance_metrics.total_response_time
+                        > Duration::from_millis(self.performance_thresholds.llm_response_time_ms)
+                    {
+                        threshold_violations.push(format!(
+                            "{}: LLM response time exceeded",
+                            result.service_name
+                        ));
                     }
                 }
                 ServiceType::MCP => {
-                    if result.performance_metrics.total_response_time > Duration::from_millis(self.performance_thresholds.mcp_tool_call_time_ms) {
-                        threshold_violations.push(format!("{}: MCP tool call time exceeded", result.service_name));
+                    if result.performance_metrics.total_response_time
+                        > Duration::from_millis(self.performance_thresholds.mcp_tool_call_time_ms)
+                    {
+                        threshold_violations.push(format!(
+                            "{}: MCP tool call time exceeded",
+                            result.service_name
+                        ));
                     }
                 }
                 ServiceType::ExternalAPI => {
-                    if result.performance_metrics.total_response_time > Duration::from_millis(self.performance_thresholds.api_response_time_ms) {
-                        threshold_violations.push(format!("{}: API response time exceeded", result.service_name));
+                    if result.performance_metrics.total_response_time
+                        > Duration::from_millis(self.performance_thresholds.api_response_time_ms)
+                    {
+                        threshold_violations.push(format!(
+                            "{}: API response time exceeded",
+                            result.service_name
+                        ));
                     }
                 }
             }
@@ -1265,7 +1361,9 @@ impl ServiceIntegrationSuite {
 
         let mut failed_rules_by_category = HashMap::new();
         for validation in all_validations.iter().filter(|v| !v.passed) {
-            *failed_rules_by_category.entry(validation.category.clone()).or_insert(0) += 1;
+            *failed_rules_by_category
+                .entry(validation.category.clone())
+                .or_insert(0) += 1;
         }
 
         let validation_summary = ServiceValidationSummary {
@@ -1352,7 +1450,10 @@ impl ServiceIntegrationSuite {
                 url: Some("https://mcp.tavily.com/mcp/".to_string()),
                 environment: {
                     let mut env = HashMap::new();
-                    env.insert("TAVILY_API_KEY".to_string(), "${TAVILY_API_KEY}".to_string());
+                    env.insert(
+                        "TAVILY_API_KEY".to_string(),
+                        "${TAVILY_API_KEY}".to_string(),
+                    );
                     env
                 },
                 timeout: Duration::from_secs(15),
@@ -1363,52 +1464,48 @@ impl ServiceIntegrationSuite {
 
     /// Create default external API configurations
     fn create_default_external_apis() -> Vec<ExternalAPIConfig> {
-        vec![
-            ExternalAPIConfig {
-                name: "Tavily API".to_string(),
-                base_url: "https://api.tavily.com".to_string(),
-                api_key_env: Some("TAVILY_API_KEY".to_string()),
-                headers: HashMap::new(),
-                timeout: Duration::from_secs(10),
-                retry_attempts: 3,
-                health_endpoint: "/health".to_string(),
-                test_endpoints: vec!["/search".to_string(), "/extract".to_string()],
-            },
-        ]
+        vec![ExternalAPIConfig {
+            name: "Tavily API".to_string(),
+            base_url: "https://api.tavily.com".to_string(),
+            api_key_env: Some("TAVILY_API_KEY".to_string()),
+            headers: HashMap::new(),
+            timeout: Duration::from_secs(10),
+            retry_attempts: 3,
+            health_endpoint: "/health".to_string(),
+            test_endpoints: vec!["/search".to_string(), "/extract".to_string()],
+        }]
     }
 
     /// Create default test scenarios
     fn create_default_test_scenarios() -> Vec<ServiceTestScenario> {
-        vec![
-            ServiceTestScenario {
-                id: "llm_basic_completion".to_string(),
-                name: "LLM Basic Completion".to_string(),
-                description: "Test basic text completion with LLM".to_string(),
-                service_type: ServiceType::LLM,
-                test_data: TestData {
-                    inputs: {
-                        let mut inputs = HashMap::new();
-                        inputs.insert("prompt".to_string(), serde_json::json!("What is 2+2?"));
-                        inputs
-                    },
-                    context: None,
-                    parameters: HashMap::new(),
+        vec![ServiceTestScenario {
+            id: "llm_basic_completion".to_string(),
+            name: "LLM Basic Completion".to_string(),
+            description: "Test basic text completion with LLM".to_string(),
+            service_type: ServiceType::LLM,
+            test_data: TestData {
+                inputs: {
+                    let mut inputs = HashMap::new();
+                    inputs.insert("prompt".to_string(), serde_json::json!("What is 2+2?"));
+                    inputs
                 },
-                expected_outcomes: vec![
-                    ExpectedOutcome {
-                        outcome_type: OutcomeType::ResponseTime,
-                        value: serde_json::json!(3000),
-                        tolerance: Some(500.0),
-                    },
-                    ExpectedOutcome {
-                        outcome_type: OutcomeType::ContentMatch,
-                        value: serde_json::json!("4"),
-                        tolerance: None,
-                    },
-                ],
-                timeout: Duration::from_secs(10),
+                context: None,
+                parameters: HashMap::new(),
             },
-        ]
+            expected_outcomes: vec![
+                ExpectedOutcome {
+                    outcome_type: OutcomeType::ResponseTime,
+                    value: serde_json::json!(3000),
+                    tolerance: Some(500.0),
+                },
+                ExpectedOutcome {
+                    outcome_type: OutcomeType::ContentMatch,
+                    value: serde_json::json!("4"),
+                    tolerance: None,
+                },
+            ],
+            timeout: Duration::from_secs(10),
+        }]
     }
 
     /// Create default validation rules
@@ -1420,7 +1517,9 @@ impl ServiceIntegrationSuite {
                 category: ServiceValidationCategory::Performance,
                 severity: ValidationSeverity::High,
                 applies_to: vec![ServiceType::LLM, ServiceType::MCP, ServiceType::ExternalAPI],
-                validator: |result| result.performance_metrics.total_response_time < Duration::from_secs(5),
+                validator: |result| {
+                    result.performance_metrics.total_response_time < Duration::from_secs(5)
+                },
             },
             ServiceValidationRule {
                 id: "connection_success".to_string(),
@@ -1466,15 +1565,15 @@ impl ServiceIntegrationReport {
             0.0
         };
 
-        let streaming_info = if let Some(ref streaming) = self.performance_summary.streaming_performance {
-            format!(
-                "\\nStreaming: {:.1} tokens/sec, {} sessions",
-                streaming.average_tokens_per_second,
-                streaming.streaming_sessions
-            )
-        } else {
-            String::new()
-        };
+        let streaming_info =
+            if let Some(ref streaming) = self.performance_summary.streaming_performance {
+                format!(
+                    "\\nStreaming: {:.1} tokens/sec, {} sessions",
+                    streaming.average_tokens_per_second, streaming.streaming_sessions
+                )
+            } else {
+                String::new()
+            };
 
         format!(
             "Service Integration Report\\n\
@@ -1542,7 +1641,11 @@ mod tests {
     fn test_mcp_config_creation() {
         let configs = ServiceIntegrationSuite::create_default_mcp_configs();
 
-        assert!(configs.iter().any(|c| c.server_type == MCPServerType::Stdio));
+        assert!(
+            configs
+                .iter()
+                .any(|c| c.server_type == MCPServerType::Stdio)
+        );
         assert!(configs.iter().any(|c| c.server_type == MCPServerType::HTTP));
     }
 
@@ -1618,6 +1721,10 @@ mod tests {
         assert!(!rules.is_empty());
         assert!(rules.iter().any(|r| r.id == "response_time"));
         assert!(rules.iter().any(|r| r.id == "connection_success"));
-        assert!(rules.iter().any(|r| r.category == ServiceValidationCategory::Performance));
+        assert!(
+            rules
+                .iter()
+                .any(|r| r.category == ServiceValidationCategory::Performance)
+        );
     }
 }

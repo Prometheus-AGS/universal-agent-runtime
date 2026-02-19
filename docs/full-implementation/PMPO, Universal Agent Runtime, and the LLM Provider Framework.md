@@ -1,5 +1,6 @@
 # **PMPO, Universal Agent Runtime, and the LLM Provider Framework**
 
+> Note: This is a historical implementation document. Route examples that mention legacy chat streaming paths should be interpreted using the current protocol: `/api/chat/completion` (alias `/v1/chat/completions`), with `stream` controlling streaming behavior.
 
 
 

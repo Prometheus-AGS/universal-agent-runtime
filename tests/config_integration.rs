@@ -1,7 +1,7 @@
-use universal_agent_runtime::config::AppConfig;
 use serial_test::serial;
 use std::env;
 use std::fs;
+use universal_agent_runtime::config::AppConfig;
 
 // Helper to clear environment variables that might interfere with tests
 // Helper to clear environment variables that might interfere with tests

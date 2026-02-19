@@ -49,14 +49,14 @@ impl StrongholdKeyManager {
 /// Conversation manager for multi-party sessions.
 #[derive(Debug, Clone, Default)]
 pub struct ConversationManager {
-    conversations: Arc<RwLock<HashMap<ConversationId, Vec<UserId>>>>,
+    _conversations: Arc<RwLock<HashMap<ConversationId, Vec<UserId>>>>,
 }
 
 impl ConversationManager {
     /// Creates a new conversation manager.
     pub fn new() -> Self {
         Self {
-            conversations: Arc::new(RwLock::new(HashMap::new())),
+            _conversations: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 }
@@ -83,7 +83,7 @@ impl StreamingSession {
 #[derive(Debug, Clone)]
 pub struct EncryptedSession {
     id: String,
-    user_id: Option<UserId>,
+    _user_id: Option<UserId>,
 }
 
 impl EncryptedSession {
@@ -91,7 +91,7 @@ impl EncryptedSession {
     pub fn new(id: impl Into<String>) -> Self {
         Self {
             id: id.into(),
-            user_id: None,
+            _user_id: None,
         }
     }
 
