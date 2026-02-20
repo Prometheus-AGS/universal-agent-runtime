@@ -10,8 +10,10 @@ use axum::{
     routing::{any, get, post},
 };
 use chrono::Utc;
+use futures::StreamExt as _;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -25,8 +27,9 @@ use tracing::{info, warn};
 
 use crate::AppState;
 use crate::config::AppConfig;
-use crate::llm::{LlmSettings, Orchestrator};
+use crate::llm::{ChatCompletionsDriver, LlmDriver, LlmSettings, Orchestrator};
 use crate::mcp::registry::McpRegistry;
+use crate::normalized::NormalizedEvent as DriverEvent;
 use crate::session::SessionStore;
 use crate::uar::api::sse::to_agui_event;
 use crate::uar::{
@@ -37,6 +40,7 @@ use crate::uar::{
         PersistenceLayer,
         providers::{postgres::PostgresProvider, surreal::SurrealDbProvider},
     },
+    prompt_cache::{CachedEntry, PromptCacheProvider, SurrealMemPromptCacheProvider},
     rag::{
         chunking::ChunkingStrategy, ingest::IngestService, ingestion_worker::IngestionWorkerPool,
     },
@@ -346,6 +350,16 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
             None
         };
 
+    let prompt_cache_provider: Arc<dyn PromptCacheProvider> =
+        match SurrealMemPromptCacheProvider::new().await {
+            Ok(provider) => Arc::new(provider),
+            Err(e) => {
+                return Err(anyhow::anyhow!(
+                    "failed to initialize prompt cache provider: {e}"
+                ));
+            }
+        };
+
     let state = AppState {
         mcp,
         orchestrator,
@@ -365,6 +379,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         api_key_service: Some(Arc::clone(&api_key_service)),
         compiler_service: Some(Arc::clone(&compiler_service)),
         settings_manager: settings_manager.clone(),
+        prompt_cache_provider,
         #[cfg(feature = "wasm-runtime")]
         wasm_sandbox: {
             use crate::uar::runtime::wasm::{config::WasmConfig, sandbox::WasmSandbox};
@@ -517,6 +532,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         )
         .route("/api/{*path}", any(api_route_not_found))
         .route("/v1/chat/completions", post(api_chat_completion))
+        .route("/v1/messages", post(api_messages))
         // Serve the React SPA from static/.
         // ServeDir serves /assets/*, /favicon.svg, /manifest.json etc. with correct MIME types.
         // The not_found_service fallback delivers index.html for unknown paths (client-side routing).
@@ -787,6 +803,1028 @@ async fn api_route_not_found() -> Response {
             }
         })),
     )
+        .into_response()
+}
+
+#[derive(Debug, Deserialize)]
+struct AnthropicMessagesRequest {
+    #[serde(default)]
+    model: String,
+    #[serde(default)]
+    messages: Vec<AnthropicMessageInput>,
+    #[serde(default)]
+    system: Option<AnthropicSystemInput>,
+    #[serde(default)]
+    tools: Vec<AnthropicToolInput>,
+    #[serde(default)]
+    stream: bool,
+    #[serde(flatten)]
+    _extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct AnthropicMessageInput {
+    role: String,
+    #[serde(default)]
+    content: AnthropicContentInput,
+    #[serde(flatten)]
+    _extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(untagged)]
+enum AnthropicContentInput {
+    Text(String),
+    #[default]
+    Empty,
+    Blocks(Vec<AnthropicContentBlockInput>),
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+struct AnthropicContentBlockInput {
+    #[serde(rename = "type", default)]
+    block_type: String,
+    #[serde(default)]
+    text: Option<String>,
+    #[serde(default)]
+    id: Option<String>,
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    input: Option<Value>,
+    #[serde(default)]
+    source: Option<Value>,
+    #[serde(default)]
+    content: Option<Value>,
+    #[serde(default)]
+    tool_use_id: Option<String>,
+    #[serde(default)]
+    cache_control: Option<AnthropicCacheControlInput>,
+    #[serde(flatten)]
+    _extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+struct AnthropicCacheControlInput {
+    #[serde(rename = "type", default)]
+    _cache_type: String,
+    #[serde(flatten)]
+    _extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(untagged)]
+enum AnthropicSystemInput {
+    Text(String),
+    Blocks(Vec<AnthropicContentBlockInput>),
+    #[default]
+    Empty,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+struct AnthropicToolInput {
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    description: Option<String>,
+    #[serde(default)]
+    input_schema: Option<Value>,
+    #[serde(flatten)]
+    _extra: HashMap<String, Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+struct AnthropicUsage {
+    input_tokens: u32,
+    output_tokens: u32,
+    cache_creation_input_tokens: u32,
+    cache_read_input_tokens: u32,
+}
+
+#[derive(Debug, Clone)]
+enum ActiveAnthropicBlock {
+    Text { index: usize },
+    Tool { index: usize, call_index: usize },
+}
+
+#[derive(Debug, Clone)]
+struct ToolTrack {
+    index: usize,
+    id: String,
+    name: String,
+    input_json: String,
+    sent_json: String,
+    started: bool,
+}
+
+fn anthropic_error_response(status: StatusCode, message: &str) -> Response {
+    (
+        status,
+        Json(json!({
+            "type": "error",
+            "error": {
+                "type": "invalid_request_error",
+                "message": message
+            }
+        })),
+    )
+        .into_response()
+}
+
+fn anthropic_sse_event(name: &str, payload: Value) -> Event {
+    let data = serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
+    Event::default().event(name).data(data)
+}
+
+fn ensure_toolu_id(id: &str) -> String {
+    let trimmed = id.trim();
+    if trimmed.is_empty() {
+        return format!("toolu_{}", Uuid::new_v4().simple());
+    }
+    if trimmed.starts_with("toolu_") {
+        trimmed.to_string()
+    } else {
+        format!("toolu_{trimmed}")
+    }
+}
+
+fn estimate_tokens(text: &str) -> u32 {
+    crate::uar::runtime::context::token_service::TokenService::estimate_string(text)
+        .min(u32::MAX as usize) as u32
+}
+
+fn hash_prompt_text(text: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(text.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+fn content_blocks(content: &AnthropicContentInput) -> Vec<AnthropicContentBlockInput> {
+    match content {
+        AnthropicContentInput::Text(text) => vec![AnthropicContentBlockInput {
+            block_type: "text".to_string(),
+            text: Some(text.clone()),
+            ..AnthropicContentBlockInput::default()
+        }],
+        AnthropicContentInput::Blocks(blocks) => blocks.clone(),
+        AnthropicContentInput::Empty => Vec::new(),
+    }
+}
+
+fn system_blocks(system: &AnthropicSystemInput) -> Vec<AnthropicContentBlockInput> {
+    match system {
+        AnthropicSystemInput::Text(text) => vec![AnthropicContentBlockInput {
+            block_type: "text".to_string(),
+            text: Some(text.clone()),
+            ..AnthropicContentBlockInput::default()
+        }],
+        AnthropicSystemInput::Blocks(blocks) => blocks.clone(),
+        AnthropicSystemInput::Empty => Vec::new(),
+    }
+}
+
+fn tool_result_text(block: &AnthropicContentBlockInput) -> String {
+    let Some(content) = &block.content else {
+        return String::new();
+    };
+
+    match content {
+        Value::String(s) => s.clone(),
+        Value::Array(parts) => {
+            let mut text = String::new();
+            for part in parts {
+                if let Some(part_text) = part.get("text").and_then(Value::as_str) {
+                    if !text.is_empty() {
+                        text.push('\n');
+                    }
+                    text.push_str(part_text);
+                } else if let Some(part_str) = part.as_str() {
+                    if !text.is_empty() {
+                        text.push('\n');
+                    }
+                    text.push_str(part_str);
+                }
+            }
+            if text.is_empty() {
+                content.to_string()
+            } else {
+                text
+            }
+        }
+        _ => content.to_string(),
+    }
+}
+
+fn anthropic_image_to_openai_part(block: &AnthropicContentBlockInput) -> Option<Value> {
+    let source = block.source.as_ref()?;
+    let source_type = source
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+
+    let url = if source_type == "base64" {
+        let media = source
+            .get("media_type")
+            .and_then(Value::as_str)
+            .unwrap_or("image/png");
+        let data = source.get("data").and_then(Value::as_str)?;
+        format!("data:{media};base64,{data}")
+    } else {
+        source
+            .get("url")
+            .and_then(Value::as_str)
+            .map(ToString::to_string)?
+    };
+
+    Some(json!({
+        "type": "image_url",
+        "image_url": {
+            "url": url,
+            "detail": "auto"
+        }
+    }))
+}
+
+fn flush_user_parts(messages: &mut Vec<Value>, parts: &mut Vec<Value>) {
+    if parts.is_empty() {
+        return;
+    }
+
+    let content = if parts.len() == 1
+        && parts[0]
+            .get("type")
+            .and_then(Value::as_str)
+            .is_some_and(|kind| kind == "text")
+    {
+        parts[0]
+            .get("text")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string()
+            .into()
+    } else {
+        Value::Array(parts.clone())
+    };
+
+    messages.push(json!({
+        "role": "user",
+        "content": content
+    }));
+    parts.clear();
+}
+
+fn convert_anthropic_messages_to_openai(req: &AnthropicMessagesRequest) -> Vec<Value> {
+    let mut out = Vec::new();
+
+    if let Some(system) = &req.system {
+        for block in system_blocks(system) {
+            if block.block_type == "text"
+                && let Some(text) = block.text
+            {
+                out.push(json!({
+                    "role": "system",
+                    "content": text
+                }));
+            }
+        }
+    }
+
+    for message in &req.messages {
+        let role = message.role.to_ascii_lowercase();
+        let blocks = content_blocks(&message.content);
+
+        if role == "assistant" {
+            let mut text = String::new();
+            let mut tool_calls = Vec::<Value>::new();
+
+            for block in blocks {
+                match block.block_type.as_str() {
+                    "text" => {
+                        if let Some(part) = block.text
+                            && !part.is_empty()
+                        {
+                            if !text.is_empty() {
+                                text.push('\n');
+                            }
+                            text.push_str(&part);
+                        }
+                    }
+                    "tool_use" => {
+                        let generated_id = format!("toolu_{}", Uuid::new_v4().simple());
+                        let call_id =
+                            ensure_toolu_id(block.id.as_deref().unwrap_or(generated_id.as_str()));
+                        let name = block.name.unwrap_or_else(|| "tool".to_string());
+                        let input = block.input.unwrap_or_else(|| json!({}));
+                        tool_calls.push(json!({
+                            "id": call_id,
+                            "type": "function",
+                            "function": {
+                                "name": name,
+                                "arguments": input.to_string()
+                            }
+                        }));
+                    }
+                    _ => {}
+                }
+            }
+
+            if !text.is_empty() || !tool_calls.is_empty() {
+                out.push(json!({
+                    "role": "assistant",
+                    "content": text,
+                    "tool_calls": if tool_calls.is_empty() { Value::Null } else { Value::Array(tool_calls) }
+                }));
+            }
+            continue;
+        }
+
+        if role == "user" {
+            let mut user_parts = Vec::<Value>::new();
+
+            for block in blocks {
+                match block.block_type.as_str() {
+                    "text" => {
+                        if let Some(text) = block.text {
+                            user_parts.push(json!({
+                                "type": "text",
+                                "text": text
+                            }));
+                        }
+                    }
+                    "image" => {
+                        if let Some(part) = anthropic_image_to_openai_part(&block) {
+                            user_parts.push(part);
+                        }
+                    }
+                    "tool_result" => {
+                        flush_user_parts(&mut out, &mut user_parts);
+                        out.push(json!({
+                            "role": "tool",
+                            "tool_call_id": ensure_toolu_id(block.tool_use_id.as_deref().unwrap_or_default()),
+                            "content": tool_result_text(&block),
+                        }));
+                    }
+                    _ => {
+                        if let Some(text) = block.text {
+                            user_parts.push(json!({
+                                "type": "text",
+                                "text": text
+                            }));
+                        }
+                    }
+                }
+            }
+            flush_user_parts(&mut out, &mut user_parts);
+            continue;
+        }
+
+        if role == "system" {
+            let mut text = String::new();
+            for block in blocks {
+                if block.block_type == "text"
+                    && let Some(part) = block.text
+                {
+                    if !text.is_empty() {
+                        text.push('\n');
+                    }
+                    text.push_str(&part);
+                }
+            }
+
+            if !text.is_empty() {
+                out.push(json!({
+                    "role": "system",
+                    "content": text
+                }));
+            }
+        }
+    }
+
+    out
+}
+
+fn convert_anthropic_tools_to_openai(tools: &[AnthropicToolInput]) -> Vec<Value> {
+    tools
+        .iter()
+        .filter(|tool| !tool.name.trim().is_empty())
+        .map(|tool| {
+            json!({
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description.clone().unwrap_or_default(),
+                    "parameters": tool.input_schema.clone().unwrap_or_else(|| json!({ "type": "object", "properties": {} }))
+                }
+            })
+        })
+        .collect()
+}
+
+async fn compute_anthropic_input_usage(
+    req: &AnthropicMessagesRequest,
+    provider: &Arc<dyn PromptCacheProvider>,
+) -> AnthropicUsage {
+    let mut usage = AnthropicUsage::default();
+
+    let mut blocks = Vec::<AnthropicContentBlockInput>::new();
+    if let Some(system) = &req.system {
+        blocks.extend(system_blocks(system));
+    }
+    for message in &req.messages {
+        blocks.extend(content_blocks(&message.content));
+    }
+
+    for block in blocks {
+        match block.block_type.as_str() {
+            "text" => {
+                let text = block.text.unwrap_or_default();
+                if text.is_empty() {
+                    continue;
+                }
+                let token_count = estimate_tokens(&text);
+                if block.cache_control.is_some() {
+                    let hash = hash_prompt_text(&text);
+                    if let Some(entry) = provider.get(&hash).await {
+                        usage.cache_read_input_tokens = usage
+                            .cache_read_input_tokens
+                            .saturating_add(entry.token_count);
+                    } else {
+                        usage.cache_creation_input_tokens = usage
+                            .cache_creation_input_tokens
+                            .saturating_add(token_count);
+                        let _ = provider
+                            .set(
+                                &hash,
+                                CachedEntry {
+                                    token_count,
+                                    compiled_representation: text.as_bytes().to_vec(),
+                                    created_at: Utc::now(),
+                                },
+                            )
+                            .await;
+                    }
+                } else {
+                    usage.input_tokens = usage.input_tokens.saturating_add(token_count);
+                }
+            }
+            "tool_result" => {
+                let text = tool_result_text(&block);
+                usage.input_tokens = usage.input_tokens.saturating_add(estimate_tokens(&text));
+            }
+            "tool_use" => {
+                let rendered = block
+                    .input
+                    .as_ref()
+                    .map_or_else(String::new, Value::to_string);
+                usage.input_tokens = usage
+                    .input_tokens
+                    .saturating_add(estimate_tokens(&rendered));
+            }
+            _ => {
+                if let Some(text) = block.text {
+                    usage.input_tokens = usage.input_tokens.saturating_add(estimate_tokens(&text));
+                }
+            }
+        }
+    }
+
+    usage
+}
+
+async fn resolve_anthropic_model(
+    state: &AppState,
+    requested_model: &str,
+) -> Result<ResolvedModel, Response> {
+    let default_provider_id = match state.provider_registry.default_id().await {
+        Some(id) => id,
+        None => {
+            let providers = state.provider_registry.list().await;
+            if let Some(first) = providers.first() {
+                first.id.clone()
+            } else {
+                return Err(anthropic_error_response(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "No configured providers",
+                ));
+            }
+        }
+    };
+
+    let mut provider_id = default_provider_id;
+    let mut model_id = requested_model.trim().to_string();
+
+    if let Some((provider_hint, model_hint)) = requested_model.split_once('/')
+        && !provider_hint.trim().is_empty()
+        && !model_hint.trim().is_empty()
+        && state
+            .provider_registry
+            .get(provider_hint.trim())
+            .await
+            .is_some()
+    {
+        provider_id = provider_hint.trim().to_string();
+        model_id = model_hint.trim().to_string();
+    }
+
+    if model_id.is_empty()
+        && let Some(provider) = state.provider_registry.get(&provider_id).await
+    {
+        if let Some(default_model) = provider.default_model {
+            model_id = default_model;
+        } else if let Some(first_model) = provider.models.first() {
+            model_id = first_model.id.clone();
+        }
+    }
+
+    if model_id.is_empty() {
+        model_id = "default".to_string();
+    }
+
+    Ok(ResolvedModel {
+        provider_id,
+        model_id,
+    })
+}
+
+async fn api_messages(
+    State(state): State<AppState>,
+    Json(req): Json<AnthropicMessagesRequest>,
+) -> Response {
+    if req.messages.is_empty() {
+        return anthropic_error_response(
+            StatusCode::BAD_REQUEST,
+            "messages must contain at least one message",
+        );
+    }
+
+    let resolved_model = match resolve_anthropic_model(&state, &req.model).await {
+        Ok(value) => value,
+        Err(resp) => return resp,
+    };
+
+    let llm_settings = match state
+        .provider_registry
+        .resolve(&resolved_model.provider_id, &resolved_model.model_id)
+        .await
+    {
+        Some(settings) => settings,
+        None => {
+            return anthropic_error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Failed to resolve provider settings",
+            );
+        }
+    };
+
+    let openai_messages = convert_anthropic_messages_to_openai(&req);
+
+    let llm_request = crate::llm::LlmRequest {
+        messages: openai_messages,
+        tools: convert_anthropic_tools_to_openai(&req.tools),
+    };
+
+    let driver = ChatCompletionsDriver::new(llm_settings);
+    let driver_stream = match driver.stream(llm_request).await {
+        Ok(stream) => stream,
+        Err(err) => {
+            tracing::error!(error = %err, "Anthropic adapter failed to start stream");
+            return anthropic_error_response(
+                StatusCode::BAD_GATEWAY,
+                "Upstream model request failed",
+            );
+        }
+    };
+
+    let response_model = if req.model.trim().is_empty() {
+        resolved_model.model_id
+    } else {
+        req.model.clone()
+    };
+    let input_usage = compute_anthropic_input_usage(&req, &state.prompt_cache_provider).await;
+
+    if !req.stream {
+        let mut final_text = String::new();
+        let mut tool_blocks: Vec<Value> = Vec::new();
+        let mut provider_completion_tokens: Option<u32> = None;
+        let mut estimated_output_tokens: u32 = 0;
+
+        futures::pin_mut!(driver_stream);
+        while let Some(next) = driver_stream.next().await {
+            match next {
+                Ok(DriverEvent::MessageDelta { text }) => {
+                    estimated_output_tokens =
+                        estimated_output_tokens.saturating_add(estimate_tokens(&text));
+                    final_text.push_str(&text);
+                }
+                Ok(DriverEvent::ToolCallComplete {
+                    id,
+                    name,
+                    arguments_json,
+                    ..
+                }) => {
+                    estimated_output_tokens =
+                        estimated_output_tokens.saturating_add(estimate_tokens(&arguments_json));
+                    let parsed_input = serde_json::from_str::<Value>(&arguments_json)
+                        .unwrap_or_else(|_| json!({ "raw": arguments_json }));
+                    tool_blocks.push(json!({
+                        "type": "tool_use",
+                        "id": ensure_toolu_id(&id),
+                        "name": name,
+                        "input": parsed_input
+                    }));
+                }
+                Ok(DriverEvent::Usage {
+                    completion_tokens, ..
+                }) => {
+                    provider_completion_tokens = Some(completion_tokens);
+                }
+                Ok(DriverEvent::Done) => break,
+                Ok(DriverEvent::Error { message, .. }) => {
+                    return anthropic_error_response(StatusCode::BAD_GATEWAY, &message);
+                }
+                Err(err) => {
+                    tracing::error!(error = %err, "Anthropic adapter stream error");
+                    return anthropic_error_response(
+                        StatusCode::BAD_GATEWAY,
+                        "Upstream model stream failed",
+                    );
+                }
+                _ => {}
+            }
+        }
+
+        let mut usage = input_usage.clone();
+        usage.output_tokens = provider_completion_tokens.unwrap_or(estimated_output_tokens);
+
+        let mut content = Vec::<Value>::new();
+        if !final_text.is_empty() {
+            content.push(json!({
+                "type": "text",
+                "text": final_text
+            }));
+        }
+        content.extend(tool_blocks);
+
+        return Json(json!({
+            "id": format!("msg_{}", Uuid::new_v4().simple()),
+            "type": "message",
+            "role": "assistant",
+            "model": response_model,
+            "content": content,
+            "stop_reason": if content.iter().any(|b| b.get("type").and_then(Value::as_str).is_some_and(|t| t == "tool_use")) {
+                "tool_use"
+            } else {
+                "end_turn"
+            },
+            "stop_sequence": Value::Null,
+            "usage": usage
+        }))
+        .into_response();
+    }
+
+    let stream = async_stream::stream! {
+        let message_id = format!("msg_{}", Uuid::new_v4().simple());
+        let mut active_block: Option<ActiveAnthropicBlock> = None;
+        let mut tool_tracks: HashMap<usize, ToolTrack> = HashMap::new();
+        let mut next_block_index: usize = 0;
+        let mut saw_tool_use = false;
+        let mut estimated_output_tokens: u32 = 0;
+        let mut provider_completion_tokens: Option<u32> = None;
+        let mut finalized = false;
+
+        yield Ok::<Event, std::convert::Infallible>(anthropic_sse_event("message_start", json!({
+            "type": "message_start",
+            "message": {
+                "id": message_id,
+                "type": "message",
+                "role": "assistant",
+                "model": response_model,
+                "content": [],
+                "stop_reason": Value::Null,
+                "stop_sequence": Value::Null,
+                "usage": AnthropicUsage {
+                    input_tokens: input_usage.input_tokens,
+                    output_tokens: 0,
+                    cache_creation_input_tokens: input_usage.cache_creation_input_tokens,
+                    cache_read_input_tokens: input_usage.cache_read_input_tokens,
+                }
+            }
+        })));
+
+        futures::pin_mut!(driver_stream);
+        while let Some(next) = driver_stream.next().await {
+            match next {
+                Ok(DriverEvent::MessageDelta { text }) => {
+                    if text.is_empty() {
+                        continue;
+                    }
+
+                    if let Some(ActiveAnthropicBlock::Tool { index, .. }) = active_block.take() {
+                        yield Ok(anthropic_sse_event("content_block_stop", json!({
+                            "type": "content_block_stop",
+                            "index": index
+                        })));
+                    }
+
+                    let text_index = match active_block {
+                        Some(ActiveAnthropicBlock::Text { index }) => index,
+                        _ => {
+                            let index = next_block_index;
+                            next_block_index = next_block_index.saturating_add(1);
+                            active_block = Some(ActiveAnthropicBlock::Text { index });
+                            yield Ok(anthropic_sse_event("content_block_start", json!({
+                                "type": "content_block_start",
+                                "index": index,
+                                "content_block": {
+                                    "type": "text",
+                                    "text": ""
+                                }
+                            })));
+                            index
+                        }
+                    };
+
+                    estimated_output_tokens = estimated_output_tokens.saturating_add(estimate_tokens(&text));
+                    yield Ok(anthropic_sse_event("content_block_delta", json!({
+                        "type": "content_block_delta",
+                        "index": text_index,
+                        "delta": {
+                            "type": "text_delta",
+                            "text": text
+                        }
+                    })));
+                }
+                Ok(DriverEvent::ToolCallDelta {
+                    call_index,
+                    id,
+                    name,
+                    arguments_delta,
+                }) => {
+                    if let Some(ActiveAnthropicBlock::Text { index }) = active_block.take() {
+                        yield Ok(anthropic_sse_event("content_block_stop", json!({
+                            "type": "content_block_stop",
+                            "index": index
+                        })));
+                    }
+
+                    let track = tool_tracks.entry(call_index).or_insert_with(|| ToolTrack {
+                        index: {
+                            let index = next_block_index;
+                            next_block_index = next_block_index.saturating_add(1);
+                            index
+                        },
+                        id: ensure_toolu_id(
+                            id.as_deref()
+                                .unwrap_or(format!("toolu_{}", Uuid::new_v4().simple()).as_str()),
+                        ),
+                        name: name.clone().unwrap_or_else(|| "tool".to_string()),
+                        input_json: String::new(),
+                        sent_json: String::new(),
+                        started: false,
+                    });
+
+                    if let Some(tool_id) = id {
+                        track.id = ensure_toolu_id(&tool_id);
+                    }
+                    if let Some(tool_name) = name {
+                        track.name = tool_name;
+                    }
+
+                    if !track.started {
+                        track.started = true;
+                        yield Ok(anthropic_sse_event("content_block_start", json!({
+                            "type": "content_block_start",
+                            "index": track.index,
+                            "content_block": {
+                                "type": "tool_use",
+                                "id": track.id,
+                                "name": track.name,
+                                "input": {}
+                            }
+                        })));
+                    }
+                    active_block = Some(ActiveAnthropicBlock::Tool {
+                        index: track.index,
+                        call_index,
+                    });
+
+                    if let Some(delta) = arguments_delta
+                        && !delta.is_empty()
+                    {
+                        estimated_output_tokens =
+                            estimated_output_tokens.saturating_add(estimate_tokens(&delta));
+                        track.sent_json.push_str(&delta);
+                        track.input_json.push_str(&delta);
+                        yield Ok(anthropic_sse_event("content_block_delta", json!({
+                            "type": "content_block_delta",
+                            "index": track.index,
+                            "delta": {
+                                "type": "input_json_delta",
+                                "partial_json": delta
+                            }
+                        })));
+                    }
+                }
+                Ok(DriverEvent::ToolCallComplete {
+                    call_index,
+                    id,
+                    name,
+                    arguments_json,
+                }) => {
+                    if let Some(ActiveAnthropicBlock::Text { index }) = active_block.take() {
+                        yield Ok(anthropic_sse_event("content_block_stop", json!({
+                            "type": "content_block_stop",
+                            "index": index
+                        })));
+                    }
+
+                    let track = tool_tracks.entry(call_index).or_insert_with(|| ToolTrack {
+                        index: {
+                            let index = next_block_index;
+                            next_block_index = next_block_index.saturating_add(1);
+                            index
+                        },
+                        id: ensure_toolu_id(&id),
+                        name: name.clone(),
+                        input_json: String::new(),
+                        sent_json: String::new(),
+                        started: false,
+                    });
+
+                    track.id = ensure_toolu_id(&id);
+                    track.name = name.clone();
+
+                    if !track.started {
+                        track.started = true;
+                        yield Ok(anthropic_sse_event("content_block_start", json!({
+                            "type": "content_block_start",
+                            "index": track.index,
+                            "content_block": {
+                                "type": "tool_use",
+                                "id": track.id,
+                                "name": track.name,
+                                "input": {}
+                            }
+                        })));
+                    }
+
+                    let remaining_json = if track.sent_json.is_empty() {
+                        arguments_json.clone()
+                    } else if arguments_json.starts_with(&track.sent_json) {
+                        arguments_json[track.sent_json.len()..].to_string()
+                    } else {
+                        String::new()
+                    };
+
+                    if !remaining_json.is_empty() {
+                        estimated_output_tokens = estimated_output_tokens
+                            .saturating_add(estimate_tokens(&remaining_json));
+                        track.sent_json.push_str(&remaining_json);
+                        yield Ok(anthropic_sse_event("content_block_delta", json!({
+                            "type": "content_block_delta",
+                            "index": track.index,
+                            "delta": {
+                                "type": "input_json_delta",
+                                "partial_json": remaining_json
+                            }
+                        })));
+                    }
+
+                    track.input_json = arguments_json;
+
+                    if let Some(ActiveAnthropicBlock::Tool { index, call_index: active_call }) = active_block {
+                        if active_call == call_index {
+                            yield Ok(anthropic_sse_event("content_block_stop", json!({
+                                "type": "content_block_stop",
+                                "index": index
+                            })));
+                            active_block = None;
+                        }
+                    }
+                    saw_tool_use = true;
+                }
+                Ok(DriverEvent::Usage {
+                    completion_tokens, ..
+                }) => {
+                    provider_completion_tokens = Some(completion_tokens);
+                }
+                Ok(DriverEvent::Done) => {
+                    if let Some(block) = active_block.take() {
+                        let index = match block {
+                            ActiveAnthropicBlock::Text { index } => index,
+                            ActiveAnthropicBlock::Tool { index, .. } => index,
+                        };
+                        yield Ok(anthropic_sse_event("content_block_stop", json!({
+                            "type": "content_block_stop",
+                            "index": index
+                        })));
+                    }
+
+                    let mut usage = input_usage.clone();
+                    usage.output_tokens = provider_completion_tokens.unwrap_or(estimated_output_tokens);
+                    yield Ok(anthropic_sse_event("message_delta", json!({
+                        "type": "message_delta",
+                        "delta": {
+                            "stop_reason": if saw_tool_use { "tool_use" } else { "end_turn" },
+                            "stop_sequence": Value::Null
+                        },
+                        "usage": usage
+                    })));
+                    yield Ok(anthropic_sse_event("message_stop", json!({
+                        "type": "message_stop"
+                    })));
+                    finalized = true;
+                    break;
+                }
+                Ok(DriverEvent::Error { message, .. }) => {
+                    tracing::error!("Anthropic adapter upstream error: {}", message);
+                    if let Some(block) = active_block.take() {
+                        let index = match block {
+                            ActiveAnthropicBlock::Text { index } => index,
+                            ActiveAnthropicBlock::Tool { index, .. } => index,
+                        };
+                        yield Ok(anthropic_sse_event("content_block_stop", json!({
+                            "type": "content_block_stop",
+                            "index": index
+                        })));
+                    }
+                    let mut usage = input_usage.clone();
+                    usage.output_tokens = provider_completion_tokens.unwrap_or(estimated_output_tokens);
+                    yield Ok(anthropic_sse_event("message_delta", json!({
+                        "type": "message_delta",
+                        "delta": {
+                            "stop_reason": "error",
+                            "stop_sequence": Value::Null
+                        },
+                        "usage": usage
+                    })));
+                    yield Ok(anthropic_sse_event("message_stop", json!({
+                        "type": "message_stop"
+                    })));
+                    finalized = true;
+                    break;
+                }
+                Err(err) => {
+                    tracing::error!(error = %err, "Anthropic adapter upstream stream error");
+                    if let Some(block) = active_block.take() {
+                        let index = match block {
+                            ActiveAnthropicBlock::Text { index } => index,
+                            ActiveAnthropicBlock::Tool { index, .. } => index,
+                        };
+                        yield Ok(anthropic_sse_event("content_block_stop", json!({
+                            "type": "content_block_stop",
+                            "index": index
+                        })));
+                    }
+                    let mut usage = input_usage.clone();
+                    usage.output_tokens = provider_completion_tokens.unwrap_or(estimated_output_tokens);
+                    yield Ok(anthropic_sse_event("message_delta", json!({
+                        "type": "message_delta",
+                        "delta": {
+                            "stop_reason": "error",
+                            "stop_sequence": Value::Null
+                        },
+                        "usage": usage
+                    })));
+                    yield Ok(anthropic_sse_event("message_stop", json!({
+                        "type": "message_stop"
+                    })));
+                    finalized = true;
+                    break;
+                }
+                _ => {}
+            }
+        }
+
+        if !finalized {
+            if let Some(block) = active_block.take() {
+                let index = match block {
+                    ActiveAnthropicBlock::Text { index } => index,
+                    ActiveAnthropicBlock::Tool { index, .. } => index,
+                };
+                yield Ok(anthropic_sse_event("content_block_stop", json!({
+                    "type": "content_block_stop",
+                    "index": index
+                })));
+            }
+            let mut usage = input_usage.clone();
+            usage.output_tokens = provider_completion_tokens.unwrap_or(estimated_output_tokens);
+            yield Ok(anthropic_sse_event("message_delta", json!({
+                "type": "message_delta",
+                "delta": {
+                    "stop_reason": if saw_tool_use { "tool_use" } else { "end_turn" },
+                    "stop_sequence": Value::Null
+                },
+                "usage": usage
+            })));
+            yield Ok(anthropic_sse_event("message_stop", json!({
+                "type": "message_stop"
+            })));
+        }
+    };
+
+    Sse::new(stream)
+        .keep_alive(KeepAlive::new().interval(Duration::from_secs(15)))
         .into_response()
 }
 
@@ -1751,4 +2789,103 @@ async fn api_chat_completion(
         response.headers_mut().append(header::SET_COOKIE, cookie);
     }
     response
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ensure_toolu_id_prefixes_non_prefixed_ids() {
+        assert_eq!(ensure_toolu_id("abc"), "toolu_abc");
+        assert_eq!(ensure_toolu_id("toolu_xyz"), "toolu_xyz");
+    }
+
+    #[test]
+    fn convert_anthropic_messages_round_trips_tool_blocks() {
+        let req = AnthropicMessagesRequest {
+            model: "claude-sonnet-4-20250514".to_string(),
+            messages: vec![
+                AnthropicMessageInput {
+                    role: "assistant".to_string(),
+                    content: AnthropicContentInput::Blocks(vec![AnthropicContentBlockInput {
+                        block_type: "tool_use".to_string(),
+                        id: Some("call_1".to_string()),
+                        name: Some("edit_file".to_string()),
+                        input: Some(json!({"path":"foo.rs"})),
+                        ..AnthropicContentBlockInput::default()
+                    }]),
+                    _extra: HashMap::new(),
+                },
+                AnthropicMessageInput {
+                    role: "user".to_string(),
+                    content: AnthropicContentInput::Blocks(vec![AnthropicContentBlockInput {
+                        block_type: "tool_result".to_string(),
+                        tool_use_id: Some("call_1".to_string()),
+                        content: Some(json!("ok")),
+                        ..AnthropicContentBlockInput::default()
+                    }]),
+                    _extra: HashMap::new(),
+                },
+            ],
+            system: None,
+            tools: Vec::new(),
+            stream: true,
+            _extra: HashMap::new(),
+        };
+
+        let out = convert_anthropic_messages_to_openai(&req);
+        assert_eq!(out.len(), 2);
+        assert_eq!(
+            out[0].get("role").and_then(Value::as_str),
+            Some("assistant")
+        );
+        assert_eq!(
+            out[0]
+                .get("tool_calls")
+                .and_then(Value::as_array)
+                .map(Vec::len),
+            Some(1)
+        );
+        assert_eq!(out[1].get("role").and_then(Value::as_str), Some("tool"));
+        assert_eq!(
+            out[1].get("tool_call_id").and_then(Value::as_str),
+            Some("toolu_call_1")
+        );
+    }
+
+    #[tokio::test]
+    async fn compute_anthropic_input_usage_tracks_cache_create_and_hit() {
+        let cache = SurrealMemPromptCacheProvider::new()
+            .await
+            .expect("cache should initialize");
+        let provider: Arc<dyn PromptCacheProvider> = Arc::new(cache);
+        let request = AnthropicMessagesRequest {
+            model: "claude-sonnet-4-20250514".to_string(),
+            messages: vec![AnthropicMessageInput {
+                role: "user".to_string(),
+                content: AnthropicContentInput::Blocks(vec![AnthropicContentBlockInput {
+                    block_type: "text".to_string(),
+                    text: Some("cached text block".to_string()),
+                    cache_control: Some(AnthropicCacheControlInput::default()),
+                    ..AnthropicContentBlockInput::default()
+                }]),
+                _extra: HashMap::new(),
+            }],
+            system: None,
+            tools: Vec::new(),
+            stream: true,
+            _extra: HashMap::new(),
+        };
+
+        let first = compute_anthropic_input_usage(&request, &provider).await;
+        assert_eq!(first.input_tokens, 0);
+        assert!(first.cache_creation_input_tokens > 0);
+        assert_eq!(first.cache_read_input_tokens, 0);
+
+        let second = compute_anthropic_input_usage(&request, &provider).await;
+        assert_eq!(second.input_tokens, 0);
+        assert_eq!(second.cache_creation_input_tokens, 0);
+        assert!(second.cache_read_input_tokens > 0);
+    }
 }

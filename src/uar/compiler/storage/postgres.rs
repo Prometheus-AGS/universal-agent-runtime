@@ -13,7 +13,7 @@ use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 
 use crate::uar::compiler::pipeline::CompileOutput;
-use crate::uar::compiler::session::{persistence::SessionStorage, CompilerSession};
+use crate::uar::compiler::session::{CompilerSession, persistence::SessionStorage};
 
 use super::{ReportRecord, SpecRecord, SpecStorage};
 
@@ -198,19 +198,18 @@ impl SpecStorage for PostgresCompilerStorage {
     }
 
     async fn get_report(&self, id: &str) -> Result<Option<ReportRecord>> {
-        let row = sqlx::query(
-            "SELECT id, spec_id, data, created_at FROM uar_reports WHERE id = $1",
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await
-        .context("failed to fetch report")?;
+        let row =
+            sqlx::query("SELECT id, spec_id, data, created_at FROM uar_reports WHERE id = $1")
+                .bind(id)
+                .fetch_optional(&self.pool)
+                .await
+                .context("failed to fetch report")?;
 
         row.map(|r| {
             use sqlx::Row;
             let data: serde_json::Value = r.get("data");
-            let output: CompileOutput = serde_json::from_value(data)
-                .context("failed to deserialize compile output")?;
+            let output: CompileOutput =
+                serde_json::from_value(data).context("failed to deserialize compile output")?;
             let created_at: DateTime<Utc> = r.get("created_at");
             Ok(ReportRecord {
                 id: r.get("id"),
@@ -240,8 +239,8 @@ impl SpecStorage for PostgresCompilerStorage {
             .map(|r| {
                 use sqlx::Row;
                 let data: serde_json::Value = r.get("data");
-                let output: CompileOutput = serde_json::from_value(data)
-                    .context("failed to deserialize compile output")?;
+                let output: CompileOutput =
+                    serde_json::from_value(data).context("failed to deserialize compile output")?;
                 let created_at: DateTime<Utc> = r.get("created_at");
                 Ok(ReportRecord {
                     id: r.get("id"),
@@ -283,19 +282,16 @@ impl SessionStorage for PostgresCompilerStorage {
     }
 
     async fn get_session(&self, id: &str) -> Result<Option<CompilerSession>> {
-        let row = sqlx::query(
-            "SELECT data FROM uar_compiler_sessions WHERE id = $1",
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await
-        .context("failed to fetch session")?;
+        let row = sqlx::query("SELECT data FROM uar_compiler_sessions WHERE id = $1")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .context("failed to fetch session")?;
 
         row.map(|r| {
             use sqlx::Row;
             let data: serde_json::Value = r.get("data");
-            serde_json::from_value::<CompilerSession>(data)
-                .context("failed to deserialize session")
+            serde_json::from_value::<CompilerSession>(data).context("failed to deserialize session")
         })
         .transpose()
     }
@@ -311,12 +307,10 @@ impl SessionStorage for PostgresCompilerStorage {
     }
 
     async fn list_sessions(&self) -> Result<Vec<CompilerSession>> {
-        let rows = sqlx::query(
-            "SELECT data FROM uar_compiler_sessions ORDER BY updated_at DESC",
-        )
-        .fetch_all(&self.pool)
-        .await
-        .context("failed to list sessions")?;
+        let rows = sqlx::query("SELECT data FROM uar_compiler_sessions ORDER BY updated_at DESC")
+            .fetch_all(&self.pool)
+            .await
+            .context("failed to list sessions")?;
 
         rows.into_iter()
             .map(|r| {

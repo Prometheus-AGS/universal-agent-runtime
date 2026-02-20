@@ -6,6 +6,7 @@ pub mod file_processing;
 pub mod governance;
 pub mod llm;
 pub mod persistence;
+pub mod prompt_cache;
 pub mod rag;
 pub mod runtime;
 pub mod security;
