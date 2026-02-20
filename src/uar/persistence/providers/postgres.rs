@@ -776,4 +776,239 @@ impl PersistenceLayer for PostgresProvider {
 
         Ok(())
     }
+
+    // =========================================================================
+    // Settings Management
+    // =========================================================================
+
+    async fn upsert_settings_type(
+        &self,
+        st: &crate::uar::settings::schema::SettingsType,
+    ) -> Result<()> {
+        sqlx::query(
+            r"
+            INSERT INTO settings_types (id, name, key, schema, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (key) DO UPDATE SET
+                name       = EXCLUDED.name,
+                schema     = EXCLUDED.schema,
+                updated_at = now()
+            ",
+        )
+        .bind(st.id)
+        .bind(&st.name)
+        .bind(&st.key)
+        .bind(&st.schema)
+        .bind(st.created_at)
+        .bind(st.updated_at)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn list_settings_types(&self) -> Result<Vec<crate::uar::settings::schema::SettingsType>> {
+        let rows = sqlx::query(
+            "SELECT id, name, key, schema, created_at, updated_at FROM settings_types ORDER BY key",
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut types = Vec::new();
+        for row in rows {
+            let id: uuid::Uuid = row.try_get("id")?;
+            let name: String = row.try_get("name")?;
+            let key: String = row.try_get("key")?;
+            let schema: serde_json::Value = row.try_get("schema")?;
+            let created_at: chrono::DateTime<chrono::Utc> = row.try_get("created_at")?;
+            let updated_at: Option<chrono::DateTime<chrono::Utc>> = row.try_get("updated_at")?;
+            types.push(crate::uar::settings::schema::SettingsType {
+                id,
+                name,
+                key,
+                schema,
+                created_at,
+                updated_at,
+            });
+        }
+        Ok(types)
+    }
+
+    async fn get_settings_type(
+        &self,
+        key: &str,
+    ) -> Result<Option<crate::uar::settings::schema::SettingsType>> {
+        let row = sqlx::query(
+            "SELECT id, name, key, schema, created_at, updated_at FROM settings_types WHERE key = $1",
+        )
+        .bind(key)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        if let Some(row) = row {
+            let id: uuid::Uuid = row.try_get("id")?;
+            let name: String = row.try_get("name")?;
+            let key: String = row.try_get("key")?;
+            let schema: serde_json::Value = row.try_get("schema")?;
+            let created_at: chrono::DateTime<chrono::Utc> = row.try_get("created_at")?;
+            let updated_at: Option<chrono::DateTime<chrono::Utc>> = row.try_get("updated_at")?;
+            Ok(Some(crate::uar::settings::schema::SettingsType {
+                id,
+                name,
+                key,
+                schema,
+                created_at,
+                updated_at,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn upsert_setting(&self, setting: &crate::uar::settings::schema::Settings) -> Result<()> {
+        // Validate data against the parent type's JSON Schema before writing.
+        let type_key = setting.key.split('.').next().unwrap_or("unknown");
+        if let Some(st) = self.get_settings_type(type_key).await? {
+            validate_setting_data(&setting.data, &st.schema, &setting.key)?;
+        }
+
+        sqlx::query(
+            r"
+            INSERT INTO settings (id, settings_type_id, name, key, data, parent_id, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (key) DO UPDATE SET
+                settings_type_id = EXCLUDED.settings_type_id,
+                name             = EXCLUDED.name,
+                data             = EXCLUDED.data,
+                parent_id        = EXCLUDED.parent_id,
+                updated_at       = now()
+            ",
+        )
+        .bind(setting.id)
+        .bind(setting.settings_type_id)
+        .bind(&setting.name)
+        .bind(&setting.key)
+        .bind(&setting.data)
+        .bind(setting.parent_id)
+        .bind(setting.created_at)
+        .bind(setting.updated_at)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_setting(
+        &self,
+        key: &str,
+    ) -> Result<Option<crate::uar::settings::schema::Settings>> {
+        let row = sqlx::query(
+            "SELECT id, settings_type_id, name, key, data, parent_id, created_at, updated_at FROM settings WHERE key = $1",
+        )
+        .bind(key)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        if let Some(row) = row {
+            Ok(Some(pg_row_to_setting(row)?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn list_settings(
+        &self,
+        type_key: Option<&str>,
+        parent_id: Option<uuid::Uuid>,
+    ) -> Result<Vec<crate::uar::settings::schema::Settings>> {
+        // Dynamic query depending on filters.
+        let rows = match (type_key, parent_id) {
+            (Some(tk), Some(pid)) => {
+                let prefix = format!("{tk}.%");
+                sqlx::query(
+                    "SELECT id, settings_type_id, name, key, data, parent_id, created_at, updated_at \
+                     FROM settings WHERE key LIKE $1 AND parent_id = $2 ORDER BY key",
+                )
+                .bind(&prefix)
+                .bind(pid)
+                .fetch_all(&self.pool)
+                .await?
+            }
+            (Some(tk), None) => {
+                let prefix = format!("{tk}.%");
+                sqlx::query(
+                    "SELECT id, settings_type_id, name, key, data, parent_id, created_at, updated_at \
+                     FROM settings WHERE key LIKE $1 ORDER BY key",
+                )
+                .bind(&prefix)
+                .fetch_all(&self.pool)
+                .await?
+            }
+            (None, Some(pid)) => sqlx::query(
+                "SELECT id, settings_type_id, name, key, data, parent_id, created_at, updated_at \
+                     FROM settings WHERE parent_id = $1 ORDER BY key",
+            )
+            .bind(pid)
+            .fetch_all(&self.pool)
+            .await?,
+            (None, None) => sqlx::query(
+                "SELECT id, settings_type_id, name, key, data, parent_id, created_at, updated_at \
+                     FROM settings ORDER BY key",
+            )
+            .fetch_all(&self.pool)
+            .await?,
+        };
+
+        rows.into_iter().map(pg_row_to_setting).collect()
+    }
+
+    async fn delete_setting(&self, key: &str) -> Result<()> {
+        sqlx::query("DELETE FROM settings WHERE key = $1")
+            .bind(key)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+}
+
+// =============================================================================
+// Postgres helpers
+// =============================================================================
+
+fn pg_row_to_setting(row: sqlx::postgres::PgRow) -> Result<crate::uar::settings::schema::Settings> {
+    let id: uuid::Uuid = row.try_get("id")?;
+    let settings_type_id: uuid::Uuid = row.try_get("settings_type_id")?;
+    let name: String = row.try_get("name")?;
+    let key: String = row.try_get("key")?;
+    let data: serde_json::Value = row.try_get("data")?;
+    let parent_id: Option<uuid::Uuid> = row.try_get("parent_id")?;
+    let created_at: chrono::DateTime<chrono::Utc> = row.try_get("created_at")?;
+    let updated_at: Option<chrono::DateTime<chrono::Utc>> = row.try_get("updated_at")?;
+    Ok(crate::uar::settings::schema::Settings {
+        id,
+        settings_type_id,
+        name,
+        key,
+        data,
+        parent_id,
+        created_at,
+        updated_at,
+    })
+}
+
+/// Validate `data` against a JSON Schema using the `jsonschema` crate (v0.29 API).
+fn validate_setting_data(
+    data: &serde_json::Value,
+    schema: &serde_json::Value,
+    setting_key: &str,
+) -> Result<()> {
+    let validator = jsonschema::validator_for(schema)
+        .map_err(|e| anyhow::anyhow!("Invalid JSON Schema for setting '{setting_key}': {e}"))?;
+    let errors: Vec<String> = validator.iter_errors(data).map(|e| e.to_string()).collect();
+    if !errors.is_empty() {
+        return Err(anyhow::anyhow!(
+            "Setting '{}' data failed JSON Schema validation:\n{}",
+            setting_key,
+            errors.join("\n")
+        ));
+    }
+    Ok(())
 }

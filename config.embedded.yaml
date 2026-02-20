@@ -1,0 +1,48 @@
+server:
+  port: 1906
+  host: "127.0.0.1"
+
+security:
+  jwt_required: false
+  jwt_secret: "dev_secret_key_at_least_32_characters_long"
+
+resilience:
+  rate_limit_enabled: false
+  timeout_disabled: true
+  requests_per_second: 100.0
+  burst_size: 200.0
+
+persistence:
+  provider: "surreal"
+  database_url: "rocksdb://./data/uar-dev-db"
+  external_cache_enabled: false
+  vector_dimension: 384
+
+file_processing:
+  provider: "auto"
+  upload_dir: "./tmp/uploads"
+  max_files_per_prompt: 10
+  max_file_size: 52428800
+  max_total_size: 104857600
+
+vision:
+  auto_detect: true
+  model: null
+
+knowledge_bases:
+  named: {}
+
+intent_classifier:
+  backend: "rules"
+  topk: 3
+  accept_threshold: 0.7
+  margin_threshold: 0.1
+
+providers:
+  - id: openai
+    display_name: "OpenAI"
+    base_url: "https://api.openai.com"
+    api_key: "${LLM_API_KEY}" # set via environment variable or run-dev.sh
+    protocol: "auto"
+    enabled: true
+    default_model: "gpt-5.2"

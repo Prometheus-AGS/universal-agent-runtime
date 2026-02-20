@@ -100,8 +100,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
             Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
         let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
-            compiler_store
-                as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
+            compiler_store as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
         let registry = Arc::new(crate::uar::api::a2a::SurrealAgentRegistry::new(db))
             as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
 
@@ -122,8 +121,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
             Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
         let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
-            compiler_store
-                as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
+            compiler_store as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
         let registry = Arc::new(crate::uar::api::a2a::PostgresAgentRegistry::new(pool))
             as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
 
@@ -303,7 +301,10 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     // Initialize Compiler Service
     let compiler_service = if let Some((spec_store, session_store)) = compiler_storage {
         info!("Initializing Compiler Service with persistent storage");
-        Arc::new(uar::compiler::CompilerService::new(spec_store, session_store))
+        Arc::new(uar::compiler::CompilerService::new(
+            spec_store,
+            session_store,
+        ))
     } else {
         info!("Initializing Compiler Service with in-memory storage");
         Arc::new(uar::compiler::CompilerService::in_memory())
@@ -320,6 +321,30 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     info!("A2A state initialized");
     let federated_agent_registry: Arc<dyn uar::api::a2a::AgentRegistry> = agent_registry
         .unwrap_or_else(|| Arc::new(crate::uar::api::a2a::registry::InMemoryAgentRegistry::new()));
+
+    // Initialize SettingsManager — seed config into DB, detect drift on restart.
+    let settings_manager: Option<Arc<crate::uar::settings::manager::SettingsManager>> =
+        if let Some(p) = &persistence {
+            let mgr = Arc::new(crate::uar::settings::manager::SettingsManager::new(
+                Arc::clone(p),
+            ));
+            match mgr.initialize(&config).await {
+                Ok(stats) => info!(
+                    seeded = stats.seeded,
+                    updated = stats.updated,
+                    drift = stats.drift_count,
+                    types = stats.types_upserted,
+                    "Settings bootstrapped from config into DB"
+                ),
+                Err(e) => {
+                    tracing::error!(error = ?e, "Settings bootstrap failed — continuing without persistent settings")
+                }
+            }
+            Some(mgr)
+        } else {
+            info!("No persistence layer — settings manager disabled");
+            None
+        };
 
     let state = AppState {
         mcp,
@@ -339,6 +364,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         governance_engine: Arc::clone(&governance_engine),
         api_key_service: Some(Arc::clone(&api_key_service)),
         compiler_service: Some(Arc::clone(&compiler_service)),
+        settings_manager: settings_manager.clone(),
         #[cfg(feature = "wasm-runtime")]
         wasm_sandbox: {
             use crate::uar::runtime::wasm::{config::WasmConfig, sandbox::WasmSandbox};
@@ -413,6 +439,15 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
             "/api/uar/actors",
             uar::api::actors::build_router().with_state(Arc::clone(&state.actor_system)),
         )
+        // Settings API (runtime config administration)
+        .nest(
+            "/api/uar/settings",
+            uar::api::settings::build_router().with_state(Arc::new(
+                uar::api::settings::SettingsApiState {
+                    settings_manager: settings_manager.clone(),
+                },
+            )),
+        )
         // A2A Compiler Agent — JSON-RPC endpoint
         .nest(
             "/a2a/compiler",
@@ -477,9 +512,12 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         )
         .route("/api/{*path}", any(api_route_not_found))
         .route("/v1/chat/completions", post(api_chat_completion))
-        .nest_service("/static", ServeDir::new("static"))
-        // Serve React SPA entry point for all non-API unknown routes (hard reload support).
-        .fallback_service(ServeFile::new("static/index.html"))
+        // Serve the React SPA from static/.
+        // ServeDir serves /assets/*, /favicon.svg, /manifest.json etc. with correct MIME types.
+        // The not_found_service fallback delivers index.html for unknown paths (client-side routing).
+        .fallback_service(
+            ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")),
+        )
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             uar::security::middleware::auth_middleware,

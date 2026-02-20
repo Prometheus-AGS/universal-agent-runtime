@@ -1,9 +1,26 @@
 use std::env;
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-env-changed=SKIP_MODEL_BUILD");
+    println!("cargo:rerun-if-env-changed=SKIP_FRONTEND_BUILD");
+
+    // -------------------------------------------------------------------------
+    // Frontend Build
+    // -------------------------------------------------------------------------
+    // Build the Vite + React frontend unless explicitly skipped.
+    // Set SKIP_FRONTEND_BUILD=1 to skip (e.g. inside Docker when static/ is
+    // already pre-built or copied in a prior layer).
+    if env::var("SKIP_FRONTEND_BUILD").is_err() {
+        build_frontend();
+    }
+
+    // -------------------------------------------------------------------------
+    // ONNX Model Build
+    // -------------------------------------------------------------------------
     println!("cargo:rerun-if-env-changed=SKIP_MODEL_BUILD");
 
     // Check if we should skip model building (for testing or CI)
@@ -81,6 +98,90 @@ fn main() {
     {
         create_stub_model();
     }
+}
+
+/// Build the Vite + React frontend application.
+///
+/// Runs `bun install --frozen-lockfile` followed by `bun run build` inside the
+/// `frontend/` directory.  The Vite config writes output to `../static` (the
+/// repo-root `static/` directory) which Axum serves at runtime.
+///
+/// Cargo change-tracking:
+///   - Re-runs when any file inside `frontend/src` or `frontend/public` changes.
+///   - Re-runs when the frontend's `package.json`, `vite.config.ts`, or
+///     `tailwind.config.ts` changes.
+///   - Does *not* re-run when only `frontend/node_modules` changes.
+fn build_frontend() {
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set");
+    let frontend_dir = Path::new(&manifest_dir).join("frontend");
+
+    if !frontend_dir.exists() {
+        println!("cargo:warning=frontend/ directory not found — skipping frontend build");
+        return;
+    }
+
+    // Tell Cargo to re-run this script when frontend sources change.
+    // We enumerate the key config files individually, and use a broad rerun
+    // for the src/ and public/ trees.
+    for file in &[
+        "frontend/package.json",
+        "frontend/vite.config.ts",
+        "frontend/vite.config.js",
+        "frontend/tailwind.config.ts",
+        "frontend/postcss.config.js",
+        "frontend/tsconfig.json",
+        "frontend/index.html",
+    ] {
+        println!("cargo:rerun-if-changed={file}");
+    }
+    println!("cargo:rerun-if-changed=frontend/src");
+    println!("cargo:rerun-if-changed=frontend/public");
+
+    // Resolve the package manager: prefer bun, fall back to npm.
+    let pm = if which("bun") { "bun" } else { "npm" };
+
+    println!("cargo:warning=Installing frontend dependencies with {pm}…");
+
+    // Install dependencies
+    let install_args: &[&str] = if pm == "bun" {
+        &["install", "--frozen-lockfile"]
+    } else {
+        &["ci", "--prefer-offline"]
+    };
+
+    let install_status = Command::new(pm)
+        .args(install_args)
+        .current_dir(&frontend_dir)
+        .status()
+        .unwrap_or_else(|e| panic!("Failed to run `{pm} install`: {e}"));
+
+    if !install_status.success() {
+        panic!("Frontend dependency installation failed (exit code: {install_status})");
+    }
+
+    println!("cargo:warning=Building frontend assets with {pm} run build…");
+
+    // Run the build
+    let build_status = Command::new(pm)
+        .args(["run", "build"])
+        .current_dir(&frontend_dir)
+        .status()
+        .unwrap_or_else(|e| panic!("Failed to run `{pm} run build`: {e}"));
+
+    if !build_status.success() {
+        panic!("Frontend build failed (exit code: {build_status})");
+    }
+
+    println!("cargo:warning=Frontend build complete — assets written to static/");
+}
+
+/// Returns `true` if `name` resolves to an executable on `$PATH`.
+fn which(name: &str) -> bool {
+    Command::new(if cfg!(windows) { "where" } else { "which" })
+        .arg(name)
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
 }
 
 fn create_stub_model() {

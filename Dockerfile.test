@@ -1,19 +1,21 @@
 # Multi-stage Docker build for testing environment
 # This Dockerfile creates a comprehensive testing environment with all necessary tools
 
-FROM node:18-bookworm AS node-deps
+FROM node:20-bookworm AS node-deps
 WORKDIR /app
-COPY package.json bun.lockb* ./
+COPY package.json bun.lock* ./
 RUN npm install -g bun && bun install --frozen-lockfile
 
-FROM rust:1.75-bookworm AS rust-deps
+FROM rust:1.85-bookworm AS rust-deps
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
+ARG SKIP_MODEL_BUILD=1
+ENV SKIP_MODEL_BUILD=${SKIP_MODEL_BUILD}
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN cargo build --release && rm -rf src
 
 # Test execution environment
-FROM rust:1.75-bookworm
+FROM rust:1.85-bookworm
 
 # Install system dependencies for testing
 RUN apt-get update && apt-get install -y \
@@ -31,7 +33,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js and Bun for TypeScript testing
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g bun
 
@@ -64,6 +66,7 @@ ENV RUSTFLAGS="-C instrument-coverage"
 ENV LLVM_PROFILE_FILE="/coverage/rust-%p-%m.profraw"
 ENV NODE_ENV=test
 ENV CI=true
+ENV SKIP_MODEL_BUILD=1
 
 # Install additional test utilities
 RUN pip3 install --no-cache-dir \
@@ -99,22 +102,22 @@ mkdir -p "$RESULTS_DIR" "$COVERAGE_DIR" "$REPORTS_DIR"
 
 # Function to run with timing
 run_with_timing() {
-    local name="$1"
-    shift
-    echo -e "${BLUE}🏃 Running: $name${NC}"
-    local start_time=$(date +%s)
+local name="$1"
+shift
+echo -e "${BLUE}🏃 Running: $name${NC}"
+local start_time=$(date +%s)
 
-    if "$@"; then
-        local end_time=$(date +%s)
-        local duration=$((end_time - start_time))
-        echo -e "${GREEN}✅ $name completed in ${duration}s${NC}"
-        return 0
-    else
-        local end_time=$(date +%s)
-        local duration=$((end_time - start_time))
-        echo -e "${RED}❌ $name failed after ${duration}s${NC}"
-        return 1
-    fi
+if "$@"; then
+local end_time=$(date +%s)
+local duration=$((end_time - start_time))
+echo -e "${GREEN}✅ $name completed in ${duration}s${NC}"
+return 0
+else
+local end_time=$(date +%s)
+local duration=$((end_time - start_time))
+echo -e "${RED}❌ $name failed after ${duration}s${NC}"
+return 1
+fi
 }
 
 # 1. Rust unit tests with coverage
@@ -148,9 +151,9 @@ run_with_timing "E2E tests" \
 
 # 6. Performance tests (if enabled)
 if [[ "${RUN_PERFORMANCE_TESTS:-false}" == "true" ]]; then
-    echo -e "${YELLOW}⚡ Phase 6: Performance Tests${NC}"
-    run_with_timing "Performance tests" \
-        cargo test --test performance --release
+echo -e "${YELLOW}⚡ Phase 6: Performance Tests${NC}"
+run_with_timing "Performance tests" \
+    cargo test --test performance --release
 fi
 
 # 7. Generate coverage reports
@@ -176,27 +179,27 @@ echo -e "${GREEN}📋 Coverage reports generated${NC}"
 echo -e "${YELLOW}📋 Phase 8: Unified Report Generation${NC}"
 cat > "$REPORTS_DIR/test-summary.json" << REPORT_EOF
 {
-  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)",
-  "test_run_id": "$(uuidgen)",
-  "environment": {
-    "rust_version": "$(rustc --version)",
-    "node_version": "$(node --version)",
-    "bun_version": "$(bun --version)",
-    "os": "$(uname -a)"
-  },
-  "phases": {
-    "rust_unit": {"status": "completed"},
-    "typescript_unit": {"status": "completed"},
-    "rust_integration": {"status": "completed"},
-    "api_integration": {"status": "completed"},
-    "e2e": {"status": "completed"},
-    "coverage": {"status": "completed"}
-  },
-  "artifacts": {
-    "coverage_dir": "$COVERAGE_DIR",
-    "results_dir": "$RESULTS_DIR",
-    "reports_dir": "$REPORTS_DIR"
-  }
+"timestamp": "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)",
+"test_run_id": "$(uuidgen)",
+"environment": {
+"rust_version": "$(rustc --version)",
+"node_version": "$(node --version)",
+"bun_version": "$(bun --version)",
+"os": "$(uname -a)"
+},
+"phases": {
+"rust_unit": {"status": "completed"},
+"typescript_unit": {"status": "completed"},
+"rust_integration": {"status": "completed"},
+"api_integration": {"status": "completed"},
+"e2e": {"status": "completed"},
+"coverage": {"status": "completed"}
+},
+"artifacts": {
+"coverage_dir": "$COVERAGE_DIR",
+"results_dir": "$RESULTS_DIR",
+"reports_dir": "$REPORTS_DIR"
+}
 }
 REPORT_EOF
 
@@ -219,32 +222,26 @@ echo "🔍 Checking service dependencies..."
 
 # Check PostgreSQL
 if ! pg_isready -h postgres -p 5432 -U postgres -d uar_test -q; then
-    echo "❌ PostgreSQL not ready"
-    exit 1
+echo "❌ PostgreSQL not ready"
+exit 1
 fi
 
 # Check Redis
 if ! redis-cli -h redis -p 6379 ping >/dev/null 2>&1; then
-    echo "❌ Redis not ready"
-    exit 1
+echo "❌ Redis not ready"
+exit 1
 fi
 
 # Check SurrealDB
 if ! curl -sf http://surreal:8000/health >/dev/null 2>&1; then
-    echo "❌ SurrealDB not ready"
-    exit 1
-fi
-
-# Check Unstructured API
-if ! curl -sf http://unstructured:8000/healthcheck >/dev/null 2>&1; then
-    echo "❌ Unstructured API not ready"
-    exit 1
+echo "❌ SurrealDB not ready"
+exit 1
 fi
 
 # Check main application
 if ! curl -sf http://app:3001/health >/dev/null 2>&1; then
-    echo "❌ Main application not ready"
-    exit 1
+echo "❌ Main application not ready"
+exit 1
 fi
 
 echo "✅ All services ready"

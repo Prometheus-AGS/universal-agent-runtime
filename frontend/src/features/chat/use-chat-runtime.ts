@@ -36,10 +36,14 @@ function richMessageToThreadMessageLike(msg: RichMessage): ThreadMessageLike {
   }
   if (parts.length === 0) parts.push({ type: "text", text: "" });
 
+  const errorText = msg.status === "failed"
+    ? (msg.content.find((b): b is Extract<ContentBlock, { type: "error" }> => b.type === "error") as { type: "error"; message: string } | undefined)?.message ?? "An error occurred."
+    : undefined;
+
   return {
     role: "assistant", id: msg.id, content: parts, createdAt: toDate(msg.createdAt),
     status: msg.status === "in_progress" ? { type: "running" } : msg.status === "failed" ? { type: "incomplete", reason: "error" } : { type: "complete", reason: "stop" as const },
-    metadata: { ...baseMetadata, unstable_state: null, unstable_annotations: [], unstable_data: [], steps: [] },
+    metadata: { ...baseMetadata, unstable_state: null, unstable_annotations: [], unstable_data: [], steps: [], custom: errorText ? { errorText } : {} },
   };
 }
 

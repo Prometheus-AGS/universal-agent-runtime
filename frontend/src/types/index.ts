@@ -107,3 +107,46 @@ export interface UarCompilerSession {
   created_at?: string;
   skill_ids?: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Settings API types
+// ---------------------------------------------------------------------------
+
+/** A registered settings namespace (type) with its JSON Schema. */
+export interface SettingsType {
+  id: string;
+  key: string;
+  name: string;
+  schema: Record<string, unknown>;
+  created_at: string;
+  updated_at?: string;
+}
+
+/** Source of a setting value. */
+export type SettingSource = "Default" | "ConfigFile" | "EnvVar" | "Api";
+
+/** Transient metadata attached to a setting at runtime. */
+export interface SettingsMeta {
+  source: SettingSource;
+  is_drift: boolean;
+  last_changed_at?: string;
+}
+
+/** A setting value plus its runtime metadata. */
+export interface SettingWithMeta {
+  id: string;
+  settings_type_id: string;
+  key: string;
+  name: string;
+  data: unknown;
+  parent_id?: string;
+  created_at: string;
+  updated_at?: string;
+  meta: SettingsMeta;
+}
+
+/** A drift item — setting differs from config-file default. */
+export interface SettingsDriftItem {
+  setting: SettingWithMeta;
+  config_value: unknown;
+}

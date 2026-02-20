@@ -38,7 +38,11 @@ impl SurrealDbProvider {
         if is_server_endpoint(&endpoint) {
             let username = surreal_user.unwrap_or("root").to_string();
             let password = surreal_pass.unwrap_or("root").to_string();
-            db.signin(Root { username, password }).await?;
+            db.signin(Root {
+                username: username.clone(),
+                password,
+            })
+            .await?;
             tracing::info!("SurrealDB server signin completed as '{}'", username);
         }
 
@@ -468,6 +472,396 @@ impl PersistenceLayer for SurrealDbProvider {
 
         Ok(())
     }
+
+    // =========================================================================
+    // Settings Management
+    // =========================================================================
+
+    async fn upsert_settings_type(
+        &self,
+        st: &crate::uar::settings::schema::SettingsType,
+    ) -> Result<()> {
+        let payload: serde_json::Value = serde_json::json!({
+            "name": st.name,
+            "key": st.key,
+            "schema": st.schema,
+            "created_at": st.created_at,
+            "updated_at": st.updated_at,
+        });
+        self.db
+            .query("UPSERT type::record('settings_types', $key) CONTENT $data")
+            .bind(("key", st.key.clone()))
+            .bind(("data", payload))
+            .await
+            .with_context(|| format!("upserting settings_type '{}'", st.key))?;
+        Ok(())
+    }
+
+    async fn list_settings_types(&self) -> Result<Vec<crate::uar::settings::schema::SettingsType>> {
+        let mut resp = self
+            .db
+            .query("SELECT * FROM settings_types")
+            .await
+            .context("listing settings_types")?;
+        let rows: Vec<surrealdb::types::Value> = resp
+            .take::<Vec<surrealdb::types::Value>>(0)
+            .or_else(|e| {
+                if e.to_string().contains("does not exist") {
+                    Ok(vec![])
+                } else {
+                    Err(anyhow::anyhow!(e))
+                }
+            })
+            .context("taking settings_types results")?;
+        rows.into_iter()
+            .map(|v| surreal_value_to_settings_type(surreal_to_json(v)?))
+            .collect()
+    }
+
+    async fn get_settings_type(
+        &self,
+        key: &str,
+    ) -> Result<Option<crate::uar::settings::schema::SettingsType>> {
+        let mut resp = self
+            .db
+            .query("SELECT * FROM type::record('settings_types', $key)")
+            .bind(("key", key.to_string()))
+            .await
+            .with_context(|| format!("get_settings_type({key})"))?;
+        let rows: Vec<surrealdb::types::Value> = resp
+            .take::<Vec<surrealdb::types::Value>>(0)
+            .or_else(|e| {
+                if e.to_string().contains("does not exist") {
+                    Ok(vec![])
+                } else {
+                    Err(anyhow::anyhow!(e))
+                }
+            })
+            .with_context(|| format!("taking settings_type({key})"))?;
+        rows.into_iter()
+            .next()
+            .map(|v| surreal_value_to_settings_type(surreal_to_json(v)?))
+            .transpose()
+    }
+
+    async fn upsert_setting(&self, setting: &crate::uar::settings::schema::Settings) -> Result<()> {
+        // Validate data against the leaf property schema extracted from the parent type.
+        // Setting keys are dotted: `server.port` → type key `server`, property key `port`.
+        // We validate `data` against `type.schema.properties.port` (leaf schema), not
+        // the root type schema (which is type:object) — leaf values are primitives.
+        let type_key = setting.key.split('.').next().unwrap_or("unknown");
+        let leaf_key = setting.key.splitn(2, '.').nth(1).unwrap_or(&setting.key);
+        if let Some(st) = self.get_settings_type(type_key).await? {
+            // Try to resolve the leaf-level property schema from the type's schema.
+            // Setting keys are dotted: `server.port` → leaf key `port`.
+            // We validate only if a matching property schema exists; otherwise skip.
+            // This avoids false failures when types use a namespace-level schema without
+            // a 1:1 property-per-setting mapping (e.g. knowledge_bases.named_keys).
+            if let Some(leaf_schema) = st
+                .schema
+                .get("properties")
+                .and_then(|props| props.get(leaf_key))
+            {
+                validate_against_schema(&setting.data, leaf_schema, &setting.key)?;
+            }
+        }
+
+        let record_id = setting.key.replace('.', "_");
+        let payload: serde_json::Value = serde_json::json!({
+            "settings_type_key": type_key,
+            "name": setting.name,
+            "key": setting.key,
+            "data": setting.data,
+            "parent_id": setting.parent_id,
+            "created_at": setting.created_at,
+            "updated_at": setting.updated_at,
+        });
+        self.db
+            .query("UPSERT type::record('settings', $rid) CONTENT $data")
+            .bind(("rid", record_id))
+            .bind(("data", payload))
+            .await
+            .with_context(|| format!("upserting setting '{}'", setting.key))?;
+        Ok(())
+    }
+
+    async fn get_setting(
+        &self,
+        key: &str,
+    ) -> Result<Option<crate::uar::settings::schema::Settings>> {
+        let record_id = key.replace('.', "_");
+        let mut resp = self
+            .db
+            .query("SELECT * FROM type::record('settings', $rid)")
+            .bind(("rid", record_id))
+            .await
+            .with_context(|| format!("get_setting({key})"))?;
+        let rows: Vec<surrealdb::types::Value> = resp
+            .take::<Vec<surrealdb::types::Value>>(0)
+            .or_else(|e| {
+                if e.to_string().contains("does not exist") {
+                    Ok(vec![])
+                } else {
+                    Err(anyhow::anyhow!(e))
+                }
+            })
+            .with_context(|| format!("taking setting({key})"))?;
+        rows.into_iter()
+            .next()
+            .map(|v| surreal_value_to_setting(surreal_to_json(v)?))
+            .transpose()
+    }
+
+    async fn list_settings(
+        &self,
+        type_key: Option<&str>,
+        parent_id: Option<uuid::Uuid>,
+    ) -> Result<Vec<crate::uar::settings::schema::Settings>> {
+        let mut resp = self
+            .db
+            .query("SELECT * FROM settings")
+            .await
+            .context("listing settings")?;
+        let rows: Vec<surrealdb::types::Value> = resp
+            .take::<Vec<surrealdb::types::Value>>(0)
+            .or_else(|e| {
+                if e.to_string().contains("does not exist") {
+                    Ok(vec![])
+                } else {
+                    Err(anyhow::anyhow!(e))
+                }
+            })
+            .context("taking settings results")?;
+
+        let all: Vec<crate::uar::settings::schema::Settings> = rows
+            .into_iter()
+            .map(|v| surreal_value_to_setting(surreal_to_json(v)?))
+            .collect::<Result<_>>()?;
+
+        let filtered = all.into_iter().filter(|s| {
+            let type_ok = type_key
+                .map(|tk| s.key.starts_with(&format!("{tk}.")))
+                .unwrap_or(true);
+            let parent_ok = parent_id
+                .map(|pid| s.parent_id == Some(pid))
+                .unwrap_or(true);
+            type_ok && parent_ok
+        });
+
+        Ok(filtered.collect())
+    }
+
+    async fn delete_setting(&self, key: &str) -> Result<()> {
+        let record_id = key.replace('.', "_");
+        self.db
+            .query("DELETE type::record('settings', $rid)")
+            .bind(("rid", record_id))
+            .await
+            .with_context(|| format!("delete_setting({key})"))?;
+        Ok(())
+    }
+}
+
+/// Convert a `surrealdb::types::Value` to a standard `serde_json::Value`.
+///
+/// `surrealdb_types::Value` implements `Serialize` but uses enum-variant JSON:
+/// `{"Object": {"name": {"String": "Server"}, ...}}`, `{"Array": [...]}`, `"Null"`.
+/// This function recursively unwraps those variants into flat standard JSON.
+fn surreal_to_json(v: surrealdb::types::Value) -> Result<serde_json::Value> {
+    let raw = serde_json::to_value(&v).context("serialising surrealdb Value")?;
+    Ok(unwrap_surreal_value(raw))
+}
+
+/// Recursively unwrap surrealdb_types enum-variant JSON into flat JSON.
+///
+/// Handles:
+/// - `{"String": "foo"}` → `"foo"`
+/// - `{"Object": {fields}}` → `{fields}` (each field recursively unwrapped)
+/// - `{"Array": [...]}` → `[...]` (each element recursively unwrapped)
+/// - `{"Integer": n}` / `{"Float": n}` / `{"Number": n}` → the numeric value
+/// - `{"Bool": b}` → `b`
+/// - `{"DateTime": s}` → `s`
+/// - `{"Uuid": s}` / `{"RecordId": ...}` → handled as opaque string/object
+/// - `"Null"` (string) / `null` → `null`
+/// - Raw primitives (from nested serialization) → passed-through as-is
+fn unwrap_surreal_value(v: serde_json::Value) -> serde_json::Value {
+    use serde_json::Value as J;
+    match v {
+        // `"Null"` comes through as the JSON string "Null"
+        J::String(ref s) if s == "Null" => J::Null,
+        // Already a raw primitive — return as-is
+        J::Bool(_) | J::Number(_) | J::Null | J::String(_) => v,
+        J::Array(arr) => J::Array(arr.into_iter().map(unwrap_surreal_value).collect()),
+        J::Object(map) => {
+            // SurrealDB enum wrappers are single-key objects whose key is the variant name.
+            if map.len() == 1 {
+                let (variant, inner) = map.into_iter().next().unwrap();
+                match variant.as_str() {
+                    "String" | "DateTime" => {
+                        // unwrap: may itself be a wrapped string
+                        unwrap_surreal_value(inner)
+                    }
+                    "Integer" | "Float" => unwrap_surreal_value(inner),
+                    "Bool" => unwrap_surreal_value(inner),
+                    "Object" => {
+                        // inner is an JSON object of wrapped field values
+                        if let J::Object(fields) = inner {
+                            J::Object(
+                                fields
+                                    .into_iter()
+                                    .map(|(k, v)| (k, unwrap_surreal_value(v)))
+                                    .collect(),
+                            )
+                        } else {
+                            unwrap_surreal_value(inner)
+                        }
+                    }
+                    "Array" => {
+                        if let J::Array(arr) = inner {
+                            J::Array(arr.into_iter().map(unwrap_surreal_value).collect())
+                        } else {
+                            unwrap_surreal_value(inner)
+                        }
+                    }
+                    // "RecordId", "Uuid", "Bytes", etc. — collapse to null / ignore
+                    "RecordId" | "Uuid" | "Bytes" | "Regexp" | "Range" => {
+                        // For record IDs embedded in a row the value isn't meaningful
+                        // at the application level; drop them so they don't confuse
+                        // the row-adapter functions.
+                        J::Null
+                    }
+                    // Unknown single-key variant — recurse into the inner value
+                    _ => unwrap_surreal_value(inner),
+                }
+            } else {
+                // Multi-key object — just recurse into each field (shouldn't normally occur
+                // at the top variant level but supports future-proofing)
+                J::Object(
+                    map.into_iter()
+                        .map(|(k, v)| (k, unwrap_surreal_value(v)))
+                        .collect(),
+                )
+            }
+        }
+    }
+}
+
+// =============================================================================
+// SurrealDB row → domain type adapters
+// =============================================================================
+//
+// SurrealDB returns record IDs in its own format (a Thing struct that serialises
+// as e.g. `{"tb":"settings_types","id":{"String":"server"}}`) rather than a
+// Uuid. We use lightweight sub-structs that accept serde_json::Value and convert
+// to our domain types without touching the public API structs.
+
+/// Convert a raw SurrealDB JSON value to `SettingsType`.
+fn surreal_value_to_settings_type(
+    v: serde_json::Value,
+) -> Result<crate::uar::settings::schema::SettingsType> {
+    use serde_json::Value as V;
+    let obj = v
+        .as_object()
+        .ok_or_else(|| anyhow::anyhow!("expected object, got: {v}"))?;
+
+    // The key is the SurrealDB record identifier sub-field (String variant).
+    let key = obj.get("key").and_then(V::as_str).unwrap_or("").to_string();
+
+    let name = obj
+        .get("name")
+        .and_then(V::as_str)
+        .unwrap_or(&key)
+        .to_string();
+
+    let schema = obj
+        .get("schema")
+        .cloned()
+        .unwrap_or(serde_json::Value::Null);
+
+    let created_at = obj
+        .get("created_at")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_else(chrono::Utc::now);
+
+    let updated_at = obj
+        .get("updated_at")
+        .and_then(|v| serde_json::from_value(v.clone()).ok());
+
+    Ok(crate::uar::settings::schema::SettingsType {
+        id: uuid::Uuid::new_v4(), // stable in-memory proxy; SurrealDB uses key as real ID
+        name,
+        key,
+        schema,
+        created_at,
+        updated_at,
+    })
+}
+
+/// Convert a raw SurrealDB JSON value to `Settings`.
+fn surreal_value_to_setting(
+    v: serde_json::Value,
+) -> Result<crate::uar::settings::schema::Settings> {
+    use serde_json::Value as V;
+    let obj = v
+        .as_object()
+        .ok_or_else(|| anyhow::anyhow!("expected object, got: {v}"))?;
+
+    let key = obj.get("key").and_then(V::as_str).unwrap_or("").to_string();
+
+    let name = obj
+        .get("name")
+        .and_then(V::as_str)
+        .unwrap_or(&key)
+        .to_string();
+
+    let data = obj.get("data").cloned().unwrap_or(serde_json::Value::Null);
+
+    let parent_id: Option<uuid::Uuid> = obj
+        .get("parent_id")
+        .and_then(|v| serde_json::from_value(v.clone()).ok());
+
+    let created_at = obj
+        .get("created_at")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_else(chrono::Utc::now);
+
+    let updated_at = obj
+        .get("updated_at")
+        .and_then(|v| serde_json::from_value(v.clone()).ok());
+
+    Ok(crate::uar::settings::schema::Settings {
+        id: uuid::Uuid::new_v4(),            // in-memory proxy
+        settings_type_id: uuid::Uuid::nil(), // looked up via settings_type_key if needed
+        name,
+        key,
+        data,
+        parent_id,
+        created_at,
+        updated_at,
+    })
+}
+
+// =============================================================================
+// Helper: JSON Schema validation
+// =============================================================================
+
+/// Validate `data` against a JSON Schema using the `jsonschema` crate (v0.29 API).
+fn validate_against_schema(
+    data: &serde_json::Value,
+    schema: &serde_json::Value,
+    setting_key: &str,
+) -> Result<()> {
+    let validator = jsonschema::validator_for(schema)
+        .map_err(|e| anyhow::anyhow!("Invalid JSON Schema for setting '{setting_key}': {e}"))?;
+    let errors: Vec<String> = validator.iter_errors(data).map(|e| e.to_string()).collect();
+    if !errors.is_empty() {
+        return Err(anyhow::anyhow!(
+            "Setting '{}' data failed JSON Schema validation:\n{}",
+            setting_key,
+            errors.join("\n")
+        ));
+    }
+    Ok(())
 }
 
 fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {

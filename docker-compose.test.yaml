@@ -3,15 +3,29 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        SKIP_MODEL_BUILD: "1"
     environment:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/uar_test
       - SURREAL_URL=ws://surreal:8000/rpc
       - REDIS_URL=redis://redis:6379
-      - RUST_LOG=info
+      # Persistence
+      - UAR_PERSISTENCE__PROVIDER=postgres
+      - UAR_PERSISTENCE__DATABASE_URL=postgres://postgres:postgres@postgres:5432/uar_test
+      # Server port (test uses 3001 to avoid conflicts)
+      - UAR_SERVER__PORT=3001
+      # LLM (stub values for tests — real requests should be mocked)
+      - LLM_PROTOCOL=auto
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.openai.com}
+      - LLM_API_KEY=${LLM_API_KEY:-test-key}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o}
+      # File processing
       - UAR_FILE_PROCESSING__UNSTRUCTURED__API_URL=http://unstructured:8000/general/v0/general
       - UAR_FILE_PROCESSING__UNSTRUCTURED__API_KEY=test_key
+      # Test flags
       - TEST_MODE=true
       - COVERAGE=true
+      - RUST_LOG=info
     ports:
       - "3001:3001"
     depends_on:
@@ -74,7 +88,7 @@ services:
     ports:
       - "8001:8000"
     healthcheck:
-      test: ["CMD-SHELL", "surreal sql --conn http://localhost:8000 --user root --pass root --ns test --db test --pretty 'SELECT 1;' || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -140,12 +154,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.test
+      args:
+        SKIP_MODEL_BUILD: "1"
     environment:
-      - TEST_CONFIG=/config/test-config.yaml
+      - TEST_CONFIG=/config/config.test.yaml
       - RUST_LOG=debug
       - COVERAGE=true
     volumes:
-      - ./test-config.yaml:/config/test-config.yaml:ro
+      - ./config.test.yaml:/config/config.test.yaml:ro
       - ./tests:/tests:ro
       - test-results:/test-results
       - test-coverage:/coverage

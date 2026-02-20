@@ -4,6 +4,7 @@
 
 # Dependencies
 node_modules/
+frontend/node_modules/
 target/
 .yarn/
 .pnp.*
@@ -48,6 +49,29 @@ src-tauri/gen/
 .fastembed_cache/
 data/
 
-# Documentation
-*.md
+# Root-level documentation (not needed at runtime)
+/README.md
+/CONTRIBUTING.md
+/TEMPLATE_USAGE.md
+/TESTING.md
+/TEST_EXECUTION_REPORT.md
+/TRADEMARKS.md
+/WARP.md
+/AGENTS.md
+/CLAUDE.md
+/CLINE.md
 docs/
+plans/
+openspec/
+
+# Agent tooling configs (not needed at runtime)
+.agent/
+.cursor/
+.codex/
+.kilocode/
+.opencode/
+.roo/
+.windsurf/
+.clinerules/
+.claude/
+.specify/

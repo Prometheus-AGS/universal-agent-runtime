@@ -175,11 +175,13 @@ export const useChatMessageStore = create<ChatMessageStore>()(
                 (block as SkillActivationContentBlock).status = "complete";
               }
             }
-            // Take a plain snapshot; never leak Immer draft proxies outside set().
-            finalMsgSnapshot = {
+            // Snapshot outside the Immer proxy using JSON round-trip.
+            // structuredClone() fails on Immer draft proxies; JSON parse/stringify is safe
+            // for our plain JSON-serialisable content blocks.
+            finalMsgSnapshot = JSON.parse(JSON.stringify({
               ...messages[idx],
-              content: structuredClone(messages[idx].content),
-            };
+              content: messages[idx].content,
+            })) as RichMessage;
           }
         }
         state.streamingByThread[threadId] = { ...defaultStreamingState };
@@ -192,20 +194,38 @@ export const useChatMessageStore = create<ChatMessageStore>()(
       void getDbInstance().touchThread(threadId);
     },
 
-    setStreamError: (threadId, error) =>
+    setStreamError: (threadId, error) => {
       set((state) => {
-        const streaming = state.streamingByThread[threadId];
-        if (!streaming) return;
+        if (!state.messagesByThread[threadId]) state.messagesByThread[threadId] = [];
         const messages = state.messagesByThread[threadId];
-        if (messages && streaming.streamingMessageId) {
+        const streaming = state.streamingByThread[threadId];
+
+        if (streaming?.streamingMessageId) {
+          // In-flight message exists — mark it failed and append error block
           const idx = messages.findIndex((m) => m.id === streaming.streamingMessageId);
           if (idx !== -1) {
             messages[idx].status = "failed";
-            messages[idx].content.push({ type: "error", message: error });
+            // Replace any empty content with the error block
+            if (messages[idx].content.length === 0) {
+              messages[idx].content.push({ type: "error", message: error });
+            } else {
+              messages[idx].content.push({ type: "error", message: error });
+            }
           }
+        } else {
+          // No in-flight message (error hit before stream started) — inject a fresh error bubble
+          const errMsg: RichMessage = {
+            id: `error-${Date.now()}`,
+            role: "assistant",
+            content: [{ type: "error", message: error }],
+            createdAt: new Date(),
+            status: "failed",
+          };
+          messages.push(errMsg);
         }
         state.streamingByThread[threadId] = { ...defaultStreamingState };
-      }),
+      });
+    },
 
     clearThread: (threadId) =>
       set((state) => {

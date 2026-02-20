@@ -6,6 +6,7 @@ import {
   Key,
   Layers,
   Server,
+  SlidersHorizontal,
   Wrench,
   Zap,
 } from "lucide-react";
@@ -19,7 +20,8 @@ export type AdminSection =
   | "tools"
   | "auth"
   | "knowledge"
-  | "compiler";
+  | "compiler"
+  | "settings";
 
 const NAV_ITEMS: { id: AdminSection; label: string; icon: FC<{ size?: number; className?: string }> }[] = [
   { id: "providers", label: "Providers", icon: Server },
@@ -30,6 +32,7 @@ const NAV_ITEMS: { id: AdminSection; label: string; icon: FC<{ size?: number; cl
   { id: "auth", label: "API Keys", icon: Key },
   { id: "knowledge", label: "Knowledge", icon: BookOpen },
   { id: "compiler", label: "Compiler", icon: Code2 },
+  { id: "settings", label: "Settings", icon: SlidersHorizontal },
 ];
 
 interface AdminShellProps {

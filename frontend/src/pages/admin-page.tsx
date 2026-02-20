@@ -7,6 +7,7 @@ import { ToolsPage } from "@/admin/pages/tools-page";
 import { AuthPage } from "@/admin/pages/auth-page";
 import { KnowledgePage } from "@/admin/pages/knowledge-page";
 import { CompilerPage } from "@/admin/pages/compiler-page";
+import { SettingsPage } from "@/admin/pages/settings-page";
 
 function renderAdminContent(section: AdminSection) {
   switch (section) {
@@ -18,6 +19,7 @@ function renderAdminContent(section: AdminSection) {
     case "auth": return <AuthPage />;
     case "knowledge": return <KnowledgePage />;
     case "compiler": return <CompilerPage />;
+    case "settings": return <SettingsPage />;
   }
 }
 

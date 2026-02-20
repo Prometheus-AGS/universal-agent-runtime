@@ -3,13 +3,15 @@ import {
   AuiIf,
   BranchPickerPrimitive,
   ComposerPrimitive,
-  ErrorPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
+  type ThreadMessageLike,
   type ToolCallMessagePartProps,
+  useMessage,
   useMessagePartText,
 } from "@assistant-ui/react";
 import {
+  AlertTriangleIcon,
   ArrowDownIcon,
   ArrowUpIcon,
   BrainIcon,
@@ -17,6 +19,7 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ClipboardIcon,
   CopyIcon,
   PencilIcon,
   RefreshCwIcon,
@@ -24,7 +27,7 @@ import {
   SquareIcon,
   UserIcon,
 } from "lucide-react";
-import { type FC, useState } from "react";
+import { type FC, useCallback, useState } from "react";
 import { EnhancedMarkdownText } from "@/components/assistant-ui/enhanced-markdown-text";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { Button } from "@/components/ui/button";
@@ -90,15 +93,37 @@ const ThreadScrollToBottom: FC = () => (
 
 const EnhancedComposer: FC = () => (
   <ComposerPrimitive.Root className="relative flex w-full flex-col">
-    <ComposerPrimitive.AttachmentDropzone className="flex w-full flex-col rounded-2xl border border-input bg-background/80 px-1 pt-2 backdrop-blur-sm outline-none transition-shadow has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-ring/20">
+    <ComposerPrimitive.AttachmentDropzone className="relative flex w-full flex-col rounded-2xl border border-input bg-background/80 px-1 pt-2 backdrop-blur-sm outline-none transition-shadow has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-ring/20 overflow-hidden">
+
+      {/* Animated progress bar — only visible while request is in-flight */}
+      <AuiIf condition={(s) => s.thread.isRunning}>
+        <div className="absolute inset-x-0 top-0 h-[2px] overflow-hidden rounded-t-2xl">
+          <div className="h-full w-1/2 animate-[shimmer_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-primary to-transparent" />
+        </div>
+      </AuiIf>
+
       <ComposerPrimitive.Input
         placeholder="Send a message to the agent…"
-        className="mb-1 max-h-48 min-h-[3.5rem] w-full resize-none bg-transparent px-4 pt-3 pb-3 font-body text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-0"
+        className="mb-1 max-h-48 min-h-[3.5rem] w-full resize-none bg-transparent px-4 pt-3 pb-3 font-body text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-40 transition-opacity"
         rows={1}
         autoFocus
         aria-label="Message input"
       />
-      <div className="relative mx-2 mb-2 flex items-center justify-end">
+
+      <div className="relative mx-2 mb-2 flex items-center gap-2 justify-end">
+        {/* Thinking indicator — shown while running */}
+        <AuiIf condition={(s) => s.thread.isRunning}>
+          <span className="flex items-center gap-1.5 mr-auto font-mono text-[11px] text-muted-foreground/70">
+            <span className="inline-flex gap-0.5 items-center">
+              <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
+              <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.2s_infinite]" />
+              <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.4s_infinite]" />
+            </span>
+            Agent is thinking…
+          </span>
+        </AuiIf>
+
+        {/* Send button — hidden while running */}
         <AuiIf condition={(s) => !s.thread.isRunning}>
           <ComposerPrimitive.Send asChild>
             <TooltipIconButton tooltip="Send message" side="bottom" type="submit" variant="default" size="icon" className="size-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90" aria-label="Send message">
@@ -106,6 +131,8 @@ const EnhancedComposer: FC = () => (
             </TooltipIconButton>
           </ComposerPrimitive.Send>
         </AuiIf>
+
+        {/* Cancel button — shown while running */}
         <AuiIf condition={(s) => s.thread.isRunning}>
           <ComposerPrimitive.Cancel asChild>
             <Button type="button" variant="default" size="icon" className="size-8 rounded-full" aria-label="Stop generating">
@@ -213,13 +240,66 @@ const ToolCallPart: FC<ToolCallMessagePartProps> = ({ toolName, args, result, st
   return <ToolCallBlockWrapper toolName={toolName} args={args as Record<string, unknown>} result={result} status={status} />;
 };
 
-const MessageError: FC = () => (
-  <MessagePrimitive.Error>
-    <ErrorPrimitive.Root className="mt-2 rounded-md border border-destructive bg-destructive/10 p-3 text-destructive text-sm">
-      <ErrorPrimitive.Message className="line-clamp-3" />
-    </ErrorPrimitive.Root>
-  </MessagePrimitive.Error>
-);
+const MessageError: FC = () => {
+  const [copied, setCopied] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Read error text from the message status — assistant-ui marks failed messages as
+  // status: { type: "incomplete", reason: "error" }; the reason field is what we populated
+  // via richMessageToThreadMessageLike which sets reason: "error". The actual text lives
+  // in the message's metadata.custom.errorText which we set during conversion.
+  const errorText = useMessage((m: ThreadMessageLike) => {
+    if (m.status?.type !== "incomplete") return null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (m as any).metadata?.custom?.errorText as string | undefined ?? null;
+  });
+
+  const handleCopy = useCallback(() => {
+    if (!errorText) return;
+    void navigator.clipboard.writeText(errorText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [errorText]);
+
+  if (!errorText) return null;
+
+  return (
+    <div className="mt-3 w-full overflow-hidden rounded-xl border border-destructive/60 bg-destructive/5 shadow-sm">
+      {/* Header */}
+      <div className="flex items-center gap-2 border-b border-destructive/30 bg-destructive/10 px-3 py-2">
+        <AlertTriangleIcon size={14} className="shrink-0 text-destructive" />
+        <span className="flex-1 font-mono text-[11px] font-semibold uppercase tracking-widest text-destructive">
+          Agent Error
+        </span>
+        <button
+          onClick={() => setCollapsed((c) => !c)}
+          className="flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-destructive/70 hover:bg-destructive/10 transition-colors"
+          aria-label={collapsed ? "Expand error" : "Collapse error"}
+        >
+          {collapsed ? "expand" : "collapse"}
+          <ChevronDownIcon size={11} className={cn("transition-transform", !collapsed && "rotate-180")} />
+        </button>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-destructive/70 hover:bg-destructive/10 transition-colors"
+          aria-label="Copy error details"
+        >
+          {copied ? <CheckIcon size={11} /> : <ClipboardIcon size={11} />}
+          {copied ? "copied" : "copy"}
+        </button>
+      </div>
+      {/* Body — full error text, no clipping */}
+      {!collapsed && (
+        <div className="px-3 py-3">
+          <pre className="whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-destructive/90">
+            {errorText}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AssistantActionBar: FC = () => (
   <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" autohideFloat="single-branch" className="col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground">

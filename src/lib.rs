@@ -20,6 +20,7 @@
 // Allow pedantic clippy warnings that don't add value for this codebase
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::missing_fields_in_debug)]
+#![recursion_limit = "512"]
 #![allow(clippy::implicit_hasher)]
 #![allow(clippy::assigning_clones)]
 #![allow(clippy::match_same_arms)]
@@ -54,6 +55,7 @@ use uar::runtime::matching::VectorMatcher;
 use uar::runtime::native_skill::NativeSkillRegistry;
 use uar::runtime::skills::service::SkillService;
 use uar::security::api_keys::ApiKeyService;
+use uar::settings::manager::SettingsManager;
 
 /// Application state shared across all handlers.
 #[derive(Clone, Debug)]
@@ -93,6 +95,8 @@ pub struct AppState {
     pub api_key_service: Option<Arc<ApiKeyService>>,
     /// Compiler service for spec management and pipeline execution
     pub compiler_service: Option<Arc<CompilerService>>,
+    /// Settings manager — runtime configuration administration + plugin extension point
+    pub settings_manager: Option<Arc<SettingsManager>>,
     /// Wasm sandbox runtime for executing Wasm agents (feature-gated)
     #[cfg(feature = "wasm-runtime")]
     pub wasm_sandbox: Option<Arc<uar::runtime::wasm::sandbox::WasmSandbox>>,

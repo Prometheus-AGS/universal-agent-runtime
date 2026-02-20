@@ -3,8 +3,10 @@ use crate::uar::domain::knowledge::{
     DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeMatch,
 };
 use crate::uar::domain::skills::{Skill, SkillMatch};
+use crate::uar::settings::schema::{Settings, SettingsType};
 use anyhow::Result;
 use async_trait::async_trait;
+use uuid::Uuid;
 
 pub mod providers;
 
@@ -120,4 +122,51 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<crate::uar::domain::memory::MemoryMatch>>;
+
+    // =========================================================================
+    // Settings Management
+    // =========================================================================
+
+    /// Upsert a settings type definition (core UAR namespace or plugin-provided).
+    /// Callers pass in the full struct including JSON Schema — idempotent on key.
+    async fn upsert_settings_type(&self, _st: &SettingsType) -> Result<()> {
+        Ok(())
+    }
+
+    /// List all registered settings types.
+    async fn list_settings_types(&self) -> Result<Vec<SettingsType>> {
+        Ok(Vec::new())
+    }
+
+    /// Get a settings type by key slug (e.g. "server").
+    async fn get_settings_type(&self, _key: &str) -> Result<Option<SettingsType>> {
+        Ok(None)
+    }
+
+    /// Upsert a single setting value.
+    ///
+    /// Implementations MUST validate `setting.data` against the parent type's
+    /// JSON Schema (fetched via `get_settings_type`) and return `Err` if invalid.
+    async fn upsert_setting(&self, _setting: &Settings) -> Result<()> {
+        Ok(())
+    }
+
+    /// Get one setting by its unique dotted key (e.g. "server.port").
+    async fn get_setting(&self, _key: &str) -> Result<Option<Settings>> {
+        Ok(None)
+    }
+
+    /// List settings, optionally scoped to a type key and/or parent_id.
+    async fn list_settings(
+        &self,
+        _type_key: Option<&str>,
+        _parent_id: Option<Uuid>,
+    ) -> Result<Vec<Settings>> {
+        Ok(Vec::new())
+    }
+
+    /// Delete a setting by key (reset-to-default workflow).
+    async fn delete_setting(&self, _key: &str) -> Result<()> {
+        Ok(())
+    }
 }

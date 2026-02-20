@@ -364,18 +364,12 @@ impl Default for ChunkingConfig {
 }
 
 impl AppConfig {
-    pub fn load() -> Result<Self, config::ConfigError> {
-        Self::load_from_args(std::env::args())
-    }
-
-    pub fn load_from_args<I, T>(args: I) -> Result<Self, config::ConfigError>
-    where
-        I: IntoIterator<Item = T>,
-        T: Into<std::ffi::OsString> + Clone,
-    {
-        let cli =
-            Cli::try_parse_from(args).map_err(|e| config::ConfigError::Message(e.to_string()))?;
-
+    /// Load config using the already-parsed `Cli` struct.
+    ///
+    /// Call this from `main` *after* `Cli::parse()` so that clap's built-in
+    /// early-exit flags (`--version`, `--help`) are handled before any config
+    /// validation or env-var lookups occur.
+    pub fn load_with_cli(cli: Cli) -> Result<Self, config::ConfigError> {
         let mut builder = Config::builder();
 
         // 1. Default Defaults
@@ -463,13 +457,24 @@ impl AppConfig {
         // The cli definitions above have `env = "PORT"` etc, but `clap` handles those.
         // Wait, if `clap` handles env vars, then `cli` struct will have them populated.
         // So applying `cli` values as overrides essentially handles the Env vars defined in `clap` structs too!
-        // That's efficient. We just need to ensure `UAR_` prefix env vars from `config` crate don't conflict or are preferred correctly.
-        // Priority: CLI Flag > CLI Env Var > Config File > Defaults.
-        // `config::Environment` adds another layer: UAR_SERVER__PORT.
-        // This seems robust.
-
         let cfg = builder.build()?;
         cfg.try_deserialize()
+    }
+
+    /// Load config by parsing args from the environment (convenience wrapper).
+    pub fn load() -> Result<Self, config::ConfigError> {
+        Self::load_with_cli(Cli::parse())
+    }
+
+    /// Load config from a custom arg iterator — used in tests.
+    pub fn load_from_args<I, T>(args: I) -> Result<Self, config::ConfigError>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<std::ffi::OsString> + Clone,
+    {
+        let cli =
+            Cli::try_parse_from(args).map_err(|e| config::ConfigError::Message(e.to_string()))?;
+        Self::load_with_cli(cli)
     }
 }
 

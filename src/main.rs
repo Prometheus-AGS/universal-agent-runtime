@@ -8,9 +8,10 @@ use mimalloc::MiMalloc;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+use clap::Parser as _;
 use dotenvy::dotenv;
 use std::sync::Arc;
-use universal_agent_runtime::config::{AppConfig, load_llm_settings};
+use universal_agent_runtime::config::{AppConfig, Cli, load_llm_settings};
 use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
 
@@ -19,13 +20,15 @@ async fn main() {
     // Initialize Telemetry (Logging, Tracing, Metrics)
     uar::telemetry::init();
 
-    tracing::info!("Initializing Universal Agent Runtime...");
+    // Parse CLI args first — this lets clap handle --version, --help, and
+    // other early-exit flags BEFORE any config loading or env-var validation.
+    let cli = Cli::parse();
 
     // Load .env (if present)
     let _ = dotenv();
 
     // Load Configuration (CLI > Env > File)
-    let config = match AppConfig::load() {
+    let config = match AppConfig::load_with_cli(cli) {
         Ok(c) => Arc::new(c),
         Err(e) => {
             tracing::error!("Failed to load configuration: {:?}", e);

@@ -3,17 +3,42 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        SKIP_MODEL_BUILD: "1"
     ports:
       - "3000:3000"
     environment:
+      # Database
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/uar
       - SURREAL_URL=ws://surreal:8000/rpc
       - REDIS_URL=redis://redis:6379
+      # Persistence
+      - UAR_PERSISTENCE__PROVIDER=postgres
+      - UAR_PERSISTENCE__DATABASE_URL=postgres://postgres:postgres@postgres:5432/uar
+      # LLM (override via .env or shell env)
+      - LLM_PROTOCOL=${LLM_PROTOCOL:-auto}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.openai.com}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o}
+      # MCP tools
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      # Logging
       - RUST_LOG=debug
     depends_on:
-      - postgres
-      - surreal
-      - redis
+      postgres:
+        condition: service_healthy
+      surreal:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:3000/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - uar_data_dev:/data
     networks:
       - uar-network
 
@@ -27,6 +52,12 @@ services:
       - POSTGRES_DB=uar
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d uar" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - uar-network
 
@@ -38,7 +69,7 @@ services:
     volumes:
       - surreal_data_dev:/data
     healthcheck:
-      test: ["CMD-SHELL", "surreal sql --conn http://localhost:8000 --user root --pass root --ns test --db test --pretty 'SELECT 1;' || exit 1"]
+      test: [ "CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -53,6 +84,12 @@ services:
       - "8001:8001" # RedisInsight
     volumes:
       - redis_data_dev:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
     networks:
       - uar-network
 
@@ -61,6 +98,7 @@ networks:
     driver: bridge
 
 volumes:
+  uar_data_dev:
   postgres_data_dev:
   surreal_data_dev:
   redis_data_dev:

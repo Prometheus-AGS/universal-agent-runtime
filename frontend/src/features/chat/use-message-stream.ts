@@ -22,7 +22,7 @@ interface AguiError { kind: "error"; request_id: string; message: string; code?:
 interface AguiSkillActivated { kind: "skill"; phase: "activated"; request_id: string; skill: { id: string; title: string }; selection_method: string }
 interface AguiContextUpdate { kind: "context"; phase: "update"; strategy: string; messages_removed: number; tokens_saved: number; was_applied: boolean; summary_generated: boolean }
 
-type AguiPayload = AguiMessageDelta | AguiThinkingDelta | AguiReasoningDelta | AguiCitationAdded | AguiToolCallDelta | AguiToolCallComplete | AguiToolResult | AguiError | AguiSkillActivated | AguiContextUpdate | { kind: string; [k: string]: unknown };
+type AguiPayload = AguiMessageDelta | AguiThinkingDelta | AguiReasoningDelta | AguiCitationAdded | AguiToolCallDelta | AguiToolCallComplete | AguiToolResult | AguiError | AguiSkillActivated | AguiContextUpdate | { kind: string;[k: string]: unknown };
 
 function parseSseBlock(raw: string): { event: string; data: string } | null {
   let event = "message";
@@ -67,8 +67,15 @@ export function useMessageStream() {
         });
 
         if (!res.ok) {
-          const text = await res.text().catch(() => "Request failed");
-          throw new Error(`POST /api/chat/completion ${res.status}: ${text}`);
+          const body = await res.text().catch(() => "(no response body)");
+          const ts = new Date().toISOString();
+          throw new Error(
+            `[${ts}] LLM request failed\n` +
+            `  URL: POST ${UAR_URL}\n` +
+            `  Status: ${res.status} ${res.statusText}\n` +
+            `  Session: ${threadId}\n` +
+            `  Response body:\n${body}`
+          );
         }
         if (!res.body) throw new Error("Response body is null");
 
@@ -133,8 +140,16 @@ export function useMessageStream() {
                 }
                 case "agui.error": {
                   const e = agui as AguiError;
-                  store.setStreamError(threadId, e.message);
-                  callbacks?.onError?.(new Error(e.message));
+                  const ts = new Date().toISOString();
+                  const detail = [
+                    `[${ts}] Agent stream error`,
+                    e.code ? `  Code: ${e.code}` : null,
+                    `  Message: ${e.message}`,
+                    `  Session: ${threadId}`,
+                    `  Request: ${e.request_id}`,
+                  ].filter(Boolean).join("\n");
+                  store.setStreamError(threadId, detail);
+                  callbacks?.onError?.(new Error(detail));
                   return;
                 }
                 case "agui.skill.activated": {
@@ -169,9 +184,13 @@ export function useMessageStream() {
         callbacks?.onComplete?.();
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
-        const error = err instanceof Error ? err : new Error("Stream failed");
-        useChatMessageStore.getState().setStreamError(threadId, error.message);
-        callbacks?.onError?.(error);
+        const error = err instanceof Error ? err : new Error(String(err));
+        // error.message already has full context (URL, status, body, timestamp)
+        // from the throw above; for unexpected runtime errors, add stack info
+        const detail = error.message.startsWith("[20") ? error.message
+          : `[${new Date().toISOString()}] Unexpected error\n  ${error.message}\n  Session: ${threadId}`;
+        useChatMessageStore.getState().setStreamError(threadId, detail);
+        callbacks?.onError?.(new Error(detail));
       }
     },
     [cancelStream],
