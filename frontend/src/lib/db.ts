@@ -3,6 +3,12 @@ import type { ContentBlock, RichMessage } from "@/types/chat-content";
 import type { LocalThread } from "@/types";
 
 // ---------------------------------------------------------------------------
+// Status callback type — emitted during open() for loading-screen feedback
+// ---------------------------------------------------------------------------
+
+export type OnStatusFn = (msg: string) => void;
+
+// ---------------------------------------------------------------------------
 // Module-level singleton — set once by DbProvider, consumed by stores
 // ---------------------------------------------------------------------------
 
@@ -86,16 +92,18 @@ export class UarDb {
 
   // ---- lifecycle ----------------------------------------------------------
 
-  static async open(): Promise<UarDb> {
+  static async open(onStatus?: OnStatusFn): Promise<UarDb> {
+    onStatus?.("Opening local database…");
     const db = new PGlite("idb://uar-threads");
     const instance = new UarDb(db);
-    await instance.runMigrations();
-    await instance.migrateFromLocalStorage();
+    await instance.runMigrations(onStatus);
+    await instance.migrateFromLocalStorage(onStatus);
+    onStatus?.("Database ready");
     return instance;
   }
 
-  private async runMigrations(): Promise<void> {
-    // Bootstrap migration table
+  private async runMigrations(onStatus?: OnStatusFn): Promise<void> {
+    onStatus?.("Bootstrapping schema migrations table…");
     await this.db.exec(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         version    INTEGER     PRIMARY KEY,
@@ -109,19 +117,28 @@ export class UarDb {
         [m.version],
       );
       if (rows.length === 0) {
+        onStatus?.(`Applying migration ${m.version}: ${m.name}…`);
         await this.db.exec(m.up);
         await this.db.query(
           "INSERT INTO schema_migrations (version) VALUES ($1)",
           [m.version],
         );
+        onStatus?.(`Migration ${m.version} applied`);
+      } else {
+        onStatus?.(`Migration ${m.version} (${m.name}) already applied`);
       }
     }
   }
 
   /** One-time migration of any data that was previously stored in localStorage. */
-  private async migrateFromLocalStorage(): Promise<void> {
+  private async migrateFromLocalStorage(onStatus?: OnStatusFn): Promise<void> {
     const flag = "uar-pglite-migrated-v1";
-    if (localStorage.getItem(flag)) return;
+    if (localStorage.getItem(flag)) {
+      onStatus?.("No legacy localStorage data to migrate");
+      return;
+    }
+
+    onStatus?.("Migrating legacy data from localStorage…");
 
     // Migrate thread registry
     const rawRegistry = localStorage.getItem("uar-thread-registry");
@@ -129,10 +146,15 @@ export class UarDb {
       try {
         const parsed = JSON.parse(rawRegistry) as { state?: { threads?: Record<string, LocalThread> } };
         const threads = parsed.state?.threads ?? {};
+        const count = Object.keys(threads).length;
+        onStatus?.(`Migrating ${count} legacy thread(s)…`);
         for (const t of Object.values(threads)) {
           await this.upsertThread(t).catch(() => { /* skip invalid rows */ });
         }
+        onStatus?.(`Migrated ${count} thread(s)`);
       } catch { /* ignore parse errors */ }
+    } else {
+      onStatus?.("No legacy thread registry found");
     }
 
     // Migrate message store
@@ -141,6 +163,8 @@ export class UarDb {
       try {
         const parsed = JSON.parse(rawMessages) as { state?: { messagesByThread?: Record<string, RichMessage[]> } };
         const byThread = parsed.state?.messagesByThread ?? {};
+        const totalMsgs = Object.values(byThread).reduce((n, msgs) => n + msgs.length, 0);
+        onStatus?.(`Migrating ${totalMsgs} legacy message(s)…`);
         for (const [threadId, msgs] of Object.entries(byThread)) {
           // Ensure thread exists before inserting messages
           const exists = await this.db.query<{ id: string }>(
@@ -152,13 +176,17 @@ export class UarDb {
             await this.insertMessage(threadId, msg).catch(() => { /* skip duplicates */ });
           }
         }
+        onStatus?.(`Migrated ${totalMsgs} message(s)`);
       } catch { /* ignore parse errors */ }
+    } else {
+      onStatus?.("No legacy messages found");
     }
 
     // Clean up localStorage keys that are now superseded
     localStorage.removeItem("uar-thread-registry");
     localStorage.removeItem("uar-chat-messages");
     localStorage.setItem(flag, "1");
+    onStatus?.("Legacy migration complete — localStorage cleared");
   }
 
   // ---- threads ------------------------------------------------------------
