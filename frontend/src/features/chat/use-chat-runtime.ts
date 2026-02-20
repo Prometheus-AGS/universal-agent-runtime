@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useExternalStoreRuntime, type AppendMessage, type ThreadMessageLike } from "@assistant-ui/react";
-import { useChatMessageStore } from "@/stores/chat-message-store";
+import { useChatMessageStore, selectIsStreaming } from "@/stores/chat-message-store";
 import { useChatIntentStore } from "@/stores/chat-intent-store";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { useDb } from "@/lib/db-context";
@@ -144,14 +144,16 @@ export function useChatRuntime(threadId: string): {
     useChatMessageStore.getState().finishStream(threadId);
   }, [threadId, cancelStream]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (initialMessageSent.current || messages.length > 0 || isStreaming) return;
+    const storeState = useChatMessageStore.getState();
+    const currentMessages = storeState.messagesByThread[threadId] ?? [];
+    const currentIsStreaming = selectIsStreaming(threadId)(storeState);
+    if (initialMessageSent.current || currentMessages.length > 0 || currentIsStreaming) return;
     const pending = consumePendingPrompt();
     if (!pending) return;
     initialMessageSent.current = true;
     void startStream(threadId, { message: pending }, { onComplete: () => { void afterStreamComplete(pending); } });
-  }, [threadId]);
+  }, [threadId, consumePendingPrompt, startStream, afterStreamComplete]);
 
   const threadMessageLikes = useMemo(() => messages.map(richMessageToThreadMessageLike), [messages]);
 
