@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use surrealdb::Surreal;
 use surrealdb::engine::any::{self, Any};
+use surrealdb::opt::auth::Root;
 
 #[derive(Debug)]
 pub struct SurrealDbProvider {
@@ -16,15 +17,31 @@ pub struct SurrealDbProvider {
 }
 
 impl SurrealDbProvider {
-    pub async fn new(connection_string: &str) -> Result<Self> {
+    /// Connect to SurrealDB.
+    ///
+    /// For server endpoints (`ws://`, `wss://`, `http://`, `https://`) the
+    /// caller may supply optional root credentials.  When credentials are
+    /// absent the defaults `root` / `root` are used, which matches a
+    /// freshly-started SurrealDB server.  For embedded endpoints (RocksDB,
+    /// in-memory) authentication is not performed.
+    pub async fn new(
+        connection_string: &str,
+        surreal_user: Option<&str>,
+        surreal_pass: Option<&str>,
+    ) -> Result<Self> {
         let endpoint = normalize_endpoint(connection_string);
         tracing::info!("Connecting to SurrealDB: {}", endpoint);
 
-        // The any::connect function will automatically determine the engine type
-        // from the connection string (e.g., "rocksdb://./data/uar.db" or "ws://localhost:8000")
-        let db = any::connect(endpoint).await?;
+        let db = any::connect(&endpoint).await?;
 
-        // Use default namespace and database
+        // Server-mode endpoints require signin before namespace/db selection.
+        if is_server_endpoint(&endpoint) {
+            let username = surreal_user.unwrap_or("root").to_string();
+            let password = surreal_pass.unwrap_or("root").to_string();
+            db.signin(Root { username, password }).await?;
+            tracing::info!("SurrealDB server signin completed as '{}'", username);
+        }
+
         db.use_ns("uar").use_db("uar").await?;
 
         tracing::info!("SurrealDB connected successfully");
@@ -35,6 +52,16 @@ impl SurrealDbProvider {
     pub fn client(&self) -> Surreal<Any> {
         self.db.clone()
     }
+}
+
+/// Returns `true` for network-accessible SurrealDB endpoints that require
+/// explicit authentication before selecting a namespace/database.
+fn is_server_endpoint(endpoint: &str) -> bool {
+    let l = endpoint.to_ascii_lowercase();
+    l.starts_with("ws://")
+        || l.starts_with("wss://")
+        || l.starts_with("http://")
+        || l.starts_with("https://")
 }
 
 fn normalize_endpoint(connection_string: &str) -> String {

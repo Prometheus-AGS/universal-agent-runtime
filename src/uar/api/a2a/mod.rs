@@ -19,6 +19,7 @@ pub mod agent_card;
 pub mod discovery;
 pub mod handler;
 pub mod registry;
+pub mod registry_postgres;
 pub mod task_store;
 pub mod types;
 
@@ -34,6 +35,7 @@ pub use handler::A2AState;
 pub use registry::{
     AgentInfo, AgentRegistry, ExternalSkill, InMemoryAgentRegistry, SurrealAgentRegistry,
 };
+pub use registry_postgres::PostgresAgentRegistry;
 pub use task_store::TaskStore;
 
 /// Build the A2A router.

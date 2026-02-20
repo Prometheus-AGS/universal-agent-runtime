@@ -86,6 +86,14 @@ pub struct PersistenceConfig {
     pub database_url: String,
     pub vector_dimension: usize,
     pub external_cache_enabled: bool,
+    /// Optional username for SurrealDB server mode (ws:// / wss:// / http:// / https://).
+    /// Ignored for embedded (file/rocksdb) endpoints.
+    #[serde(default)]
+    pub surreal_user: Option<String>,
+    /// Optional password for SurrealDB server mode.
+    /// Ignored for embedded (file/rocksdb) endpoints.
+    #[serde(default)]
+    pub surreal_pass: Option<String>,
 }
 
 /// Configuration for file processing and uploads.

@@ -13,6 +13,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
+pub mod postgres;
 pub mod surreal;
 
 use super::pipeline::CompileOutput;

@@ -71,33 +71,67 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         tracing::error!("Failed to initialize VectorMatcher: {:?}", e);
     }
 
-    // Initialize persistence based on config
-    let (persistence_layer, compiler_storage, agent_registry) = if matches!(
+    // Initialize persistence based on config.
+    // All three branches produce trait-object arcs so the types unify across arms.
+    let (persistence_layer, compiler_storage, agent_registry): (
+        Arc<dyn PersistenceLayer>,
+        Option<(
+            Arc<dyn crate::uar::compiler::storage::SpecStorage>,
+            Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>,
+        )>,
+        Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
+    ) = if matches!(
         config.persistence.provider.as_str(),
         "surreal" | "surrealdb"
     ) {
-        let provider = SurrealDbProvider::new(&config.persistence.database_url)
-            .await
-            .expect("Failed to initialize SurrealDB");
+        let provider = SurrealDbProvider::new(
+            &config.persistence.database_url,
+            config.persistence.surreal_user.as_deref(),
+            config.persistence.surreal_pass.as_deref(),
+        )
+        .await
+        .expect("Failed to initialize SurrealDB");
 
         // Create compiler storage sharing the same DB connection
         let db = provider.client();
         let compiler_store = Arc::new(
             crate::uar::compiler::storage::surreal::SurrealCompilerStorage::new(db.clone()),
         );
+        let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
+            Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
+        let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
+            compiler_store
+                as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
         let registry = Arc::new(crate::uar::api::a2a::SurrealAgentRegistry::new(db))
             as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
 
         (
             Arc::new(provider) as Arc<dyn PersistenceLayer>,
-            Some(compiler_store),
+            Some((spec, sess)),
             Some(registry),
         )
     } else {
         let provider = PostgresProvider::new(&config.persistence.database_url)
             .await
             .expect("Failed to initialize Postgres");
-        (Arc::new(provider) as Arc<dyn PersistenceLayer>, None, None)
+        let pool = provider.get_pool().clone();
+
+        let compiler_store = Arc::new(
+            crate::uar::compiler::storage::postgres::PostgresCompilerStorage::new(pool.clone()),
+        );
+        let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
+            Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
+        let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
+            compiler_store
+                as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
+        let registry = Arc::new(crate::uar::api::a2a::PostgresAgentRegistry::new(pool))
+            as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
+
+        (
+            Arc::new(provider) as Arc<dyn PersistenceLayer>,
+            Some((spec, sess)),
+            Some(registry),
+        )
     };
     let persistence = Some(persistence_layer);
 
@@ -267,12 +301,9 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     info!("API key service initialized");
 
     // Initialize Compiler Service
-    let compiler_service = if let Some(storage) = compiler_storage {
-        info!("Initializing Compiler Service with SurrealDB storage");
-        Arc::new(uar::compiler::CompilerService::new(
-            storage.clone(),
-            storage,
-        ))
+    let compiler_service = if let Some((spec_store, session_store)) = compiler_storage {
+        info!("Initializing Compiler Service with persistent storage");
+        Arc::new(uar::compiler::CompilerService::new(spec_store, session_store))
     } else {
         info!("Initializing Compiler Service with in-memory storage");
         Arc::new(uar::compiler::CompilerService::in_memory())
