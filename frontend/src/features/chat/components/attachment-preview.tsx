@@ -11,7 +11,7 @@
  *  - × remove button in top-right corner
  */
 
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useMemo } from "react";
 import { X, FileText, FileImage, File, Loader2 } from "lucide-react";
 import type { PendingAttachment } from "@/types";
 
@@ -119,18 +119,24 @@ interface ImgProps {
 }
 
 const ImageThumbnail: FC<ImgProps> = ({ file, uploaded }) => {
-    const [src, setSrc] = useState<string | null>(uploaded?.url ?? null);
+    // Prefer the server-issued URL once the upload completes.
+    const uploadedUrl = uploaded?.url ?? null;
 
+    // Create a local preview URL only while the server URL isn't available yet.
+    // useMemo handles creation; the returned cleanup revokes the previous URL.
+    const objectUrl = useMemo(() => {
+        if (uploadedUrl) return null;
+        return URL.createObjectURL(file);
+    }, [file, uploadedUrl]);
+
+    // Revoke the object URL when the memo recomputes or the component unmounts.
     useEffect(() => {
-        if (uploaded?.url) {
-            setSrc(uploaded.url);
-            return;
-        }
-        // Show local object URL while upload is in-progress
-        const url = URL.createObjectURL(file);
-        setSrc(url);
-        return () => URL.revokeObjectURL(url);
-    }, [file, uploaded]);
+        return () => {
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [objectUrl]);
+
+    const src = uploadedUrl ?? objectUrl;
 
     if (!src) return <FileImage className="h-5 w-5" />;
 
