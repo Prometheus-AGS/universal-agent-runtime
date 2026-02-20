@@ -1,0 +1,17 @@
+{
+  "name": "Universal Agent Runtime",
+  "short_name": "UAR",
+  "description": "Administration and testing interface for Universal Agent Runtime",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F1923",
+  "theme_color": "#0F1923",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

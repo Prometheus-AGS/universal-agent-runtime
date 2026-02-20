@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* UAR Dark Theme (Flat 2.0 — travisjames.ai brand) */
+    --background: 214 28% 10%;         /* #0F1923 deep navy */
+    --foreground: 210 20% 85%;         /* #C8D0DA near-white */
+
+    --card: 214 24% 13%;               /* #141E28 surface */
+    --card-foreground: 210 20% 85%;
+
+    --popover: 214 24% 13%;
+    --popover-foreground: 210 20% 85%;
+
+    --primary: 20 100% 56%;            /* #FF6A3D ember orange */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 214 20% 20%;          /* #233041 */
+    --secondary-foreground: 210 20% 75%;
+
+    --muted: 214 22% 17%;              /* #1B2636 */
+    --muted-foreground: 210 14% 55%;   /* #7A8A9A */
+
+    --accent: 214 22% 17%;
+    --accent-foreground: 210 20% 85%;
+
+    --destructive: 4 90% 58%;          /* #F2483A */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 18% 22%;             /* #293848 */
+    --input: 214 20% 20%;
+    --ring: 20 100% 56%;
+
+    --radius: 0.625rem;
+
+    --ember: 20 100% 56%;              /* #FF6A3D */
+    --success: 142 70% 45%;
+    --warning: 38 92% 50%;
+
+    /* Sidebar widths */
+    --sidebar-w: 240px;
+    --right-w: 280px;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Scrollbar styling */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  /* Focus visible */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-1 ring-offset-background;
+  }
+
+  /* Pointer cursor on interactive elements */
+  button, [role="button"], a, [role="link"], label[for] {
+    cursor: pointer;
+  }
+}
+
+/* assistant-ui overrides */
+.aui-root {
+  --aui-thread-max-width: 48rem;
+}
+
+/* Highlight.js code block theme (dark) */
+.hljs {
+  background: hsl(214 28% 8%) !important;
+  color: hsl(210 20% 82%) !important;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: hsl(20 100% 56%); }
+.hljs-string, .hljs-attr { color: hsl(140 60% 65%); }
+.hljs-number, .hljs-literal { color: hsl(200 80% 65%); }
+.hljs-comment { color: hsl(210 14% 45%); font-style: italic; }
+.hljs-function, .hljs-title { color: hsl(40 90% 65%); }
+.hljs-type, .hljs-class { color: hsl(260 60% 75%); }
+.hljs-variable, .hljs-params { color: hsl(210 20% 82%); }
+
+/* Mobile safe areas */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}

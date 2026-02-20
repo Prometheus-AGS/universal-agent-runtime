@@ -329,8 +329,6 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .route("/health", get(health_handler))
         .route("/healthz", get(health_handler))
         .route("/readyz", get(health_handler))
-        .route_service("/", ServeFile::new("static/index.html"))
-        .route_service("/about", ServeFile::new("static/about.html"))
         .route("/api/models", get(api_models))
         .route("/api/generate-title", post(api_generate_title))
         .route("/api/chat/completion", post(api_chat_completion))
@@ -338,9 +336,6 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .route("/api/chat/{*path}", any(legacy_chat_route_disabled))
         .route("/api/sessions", any(legacy_sessions_route_disabled))
         .route("/api/sessions/{*path}", any(legacy_sessions_route_disabled))
-        .route_service("/htmx", ServeFile::new("static/index.html"))
-        .route_service("/htmx/", ServeFile::new("static/index.html"))
-        .route_service("/htmx/about", ServeFile::new("static/about.html"))
         .nest(
             "/api/uar",
             uar::api::router().with_state(Arc::clone(&state.run_manager)),
@@ -449,12 +444,11 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
             post(uar::api::memory::save_memory_handler)
                 .get(uar::api::memory::search_memory_handler),
         )
+        .route("/api/{*path}", any(api_route_not_found))
         .route("/v1/chat/completions", post(api_chat_completion))
-        // Note: Static files are now served via the root nest_service above
-        // Serve static files with fallback to index.html for SPA routing
-        .fallback_service(
-            ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")),
-        )
+        .nest_service("/static", ServeDir::new("static"))
+        // Serve React SPA entry point for all non-API unknown routes (hard reload support).
+        .fallback_service(ServeFile::new("static/index.html"))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             uar::security::middleware::auth_middleware,
@@ -702,6 +696,20 @@ async fn legacy_sessions_route_disabled() -> Response {
                 "message": "Session history route disabled. Reuse X-UAR-Session-ID with POST /api/chat/completion",
                 "type": "invalid_request_error",
                 "code": "legacy_route_disabled"
+            }
+        })),
+    )
+        .into_response()
+}
+
+async fn api_route_not_found() -> Response {
+    (
+        StatusCode::NOT_FOUND,
+        Json(json!({
+            "error": {
+                "message": "API route not found",
+                "type": "invalid_request_error",
+                "code": "api_route_not_found"
             }
         })),
     )

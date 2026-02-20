@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RFC-AAP-001 — Agent Artifact Protocol</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Space+Grotesk:wght@400;600;700&amp;family=Roboto:wght@300;400;500;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet" />
+
+<style>
+/* ── TOKENS ─────────────────────────────────────────── */
+:root {
+  --bg:           #0B0F14;
+  --card:         #0F1620;
+  --muted:        #141C26;
+  --border:       #1E2D3F;
+  --border-hi:    #2B3F55;
+  --fg:           #E8EDF3;
+  --fg-muted:     #A7B0BC;
+  --fg-subtle:    #5C6B7A;
+  --ember:        #FF6A3D;
+  --ember-dim:    rgba(255,106,61,.12);
+  --ember-glow:   rgba(255,106,61,.05);
+  --success:      #4ADE80;
+  --warn:         #FBBF24;
+  --neutral:      #94A3B8;
+  --info:         #60A5FA;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-ui:      'Inter', sans-serif;
+  --font-body:    'Roboto', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --radius:       10px;
+  --radius-lg:    16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ─────────────────────────────────────────────── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(11,15,20,.93);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1.5rem;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .9rem; letter-spacing: -.02em;
+  color: var(--fg); white-space: nowrap;
+}
+.nav-brand em { color: var(--ember); font-style: normal; }
+.nav-links {
+  display: flex; gap: 1.4rem; list-style: none; flex-wrap: nowrap;
+}
+.nav-links a {
+  font-family: var(--font-ui);
+  font-size: .68rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .09em;
+  color: var(--fg-muted); text-decoration: none;
+  transition: color .2s; white-space: nowrap;
+}
+.nav-links a:hover { color: var(--ember); }
+.nav-meta {
+  font-family: var(--font-mono);
+  font-size: .63rem; color: var(--fg-subtle); letter-spacing: .06em;
+  white-space: nowrap;
+}
+
+/* ── LAYOUT ──────────────────────────────────────────── */
+.wrap {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 7rem 2rem 6rem;
+}
+
+/* ── HERO ────────────────────────────────────────────── */
+.hero {
+  padding: 3.5rem 0 4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4rem;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: -2rem; right: -2rem; bottom: 0;
+  background: radial-gradient(ellipse 55% 70% at 5% 50%, var(--ember-glow), transparent 60%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .85rem;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3.8vw, 2.6rem);
+  font-weight: 700; letter-spacing: -.03em;
+  line-height: 1.15; margin-bottom: 1rem;
+}
+.hero-title em { color: var(--ember); font-style: normal; }
+.hero-sub {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .93rem;
+  max-width: 620px; margin-bottom: 1.8rem; line-height: 1.7;
+}
+.hero-meta {
+  display: flex; gap: .65rem; flex-wrap: wrap; margin-bottom: 1.6rem;
+}
+.meta-chip {
+  font-family: var(--font-mono);
+  font-size: .64rem; letter-spacing: .06em;
+  color: var(--fg-subtle);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px; padding: .22rem .55rem;
+}
+.meta-chip.status-draft {
+  color: var(--warn);
+  background: rgba(251,191,36,.08);
+  border-color: rgba(251,191,36,.2);
+}
+
+/* ── RFC HEADER TABLE ────────────────────────────────── */
+.rfc-header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 1.5rem;
+}
+.rfc-field {
+  background: var(--card);
+  padding: .85rem 1.1rem;
+}
+.rfc-field-label {
+  font-family: var(--font-mono);
+  font-size: .6rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--fg-subtle); margin-bottom: .25rem;
+}
+.rfc-field-value {
+  font-family: var(--font-ui);
+  font-size: .82rem; font-weight: 500; color: var(--fg);
+}
+
+/* ── ABSTRACT ────────────────────────────────────────── */
+.abstract {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-left: 3px solid var(--ember);
+  border-radius: var(--radius);
+  padding: 1.6rem 1.8rem;
+  margin-bottom: 4rem;
+}
+.abstract-label {
+  font-family: var(--font-mono);
+  font-size: .63rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .75rem;
+}
+.abstract-text {
+  font-family: var(--font-ui);
+  font-size: .92rem; color: var(--fg-muted); line-height: 1.78;
+  margin-bottom: 1.1rem;
+}
+.abstract-text strong { color: var(--fg); font-weight: 600; }
+.objective-list {
+  display: flex; flex-direction: column; gap: .35rem;
+  margin-top: .6rem;
+}
+.objective-item {
+  font-family: var(--font-mono);
+  font-size: .76rem; color: var(--fg-muted); line-height: 1.6;
+}
+.objective-item::before { content: '→  '; color: var(--ember); }
+
+/* ── SECTION ─────────────────────────────────────────── */
+.section { margin-bottom: 4rem; }
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .63rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .65rem;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: .6rem;
+}
+.section-lead {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .92rem;
+  max-width: 680px; margin-bottom: 1.5rem; line-height: 1.72;
+}
+.prose {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .9rem; line-height: 1.8;
+  max-width: 720px; margin-bottom: 1rem;
+}
+.prose strong { color: var(--fg); font-weight: 600; }
+
+/* ── PROPERTY GRID ───────────────────────────────────── */
+.prop-grid {
+  display: flex; flex-direction: column; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 1rem;
+}
+.prop-item {
+  display: grid; grid-template-columns: 13rem 1fr;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+.prop-item:last-child { border-bottom: none; }
+.prop-item:hover { background: var(--muted); }
+.prop-key {
+  padding: .8rem 1.1rem;
+  font-family: var(--font-mono);
+  font-size: .74rem; font-weight: 600;
+  color: var(--ember);
+  border-right: 1px solid var(--border);
+  display: flex; align-items: center;
+}
+.prop-val {
+  padding: .8rem 1.1rem;
+  font-family: var(--font-ui);
+  font-size: .83rem; color: var(--fg-muted); line-height: 1.6;
+  display: flex; align-items: center;
+}
+
+/* ── CODE BLOCK ──────────────────────────────────────── */
+.code-block {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.3rem 1.5rem;
+  margin: 1rem 0;
+  font-family: var(--font-mono);
+  font-size: .78rem; line-height: 1.85;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--fg-muted);
+}
+.code-block .key   { color: var(--info); }
+.code-block .val   { color: var(--success); }
+.code-block .str   { color: var(--warn); }
+.code-block .punct { color: var(--fg-subtle); }
+.code-label {
+  font-family: var(--font-mono);
+  font-size: .6rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-subtle); margin-bottom: .4rem;
+}
+
+/* ── MUST/SHOULD REQUIREMENTS ────────────────────────── */
+.req-list {
+  display: flex; flex-direction: column; gap: .5rem;
+  margin-top: 1.2rem;
+}
+.req-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.req-header {
+  display: flex; align-items: center; gap: .9rem;
+  padding: 1rem 1.3rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s;
+}
+.req-header:hover { background: var(--muted); }
+.req-num {
+  font-family: var(--font-mono);
+  font-size: .63rem; font-weight: 700; letter-spacing: .08em;
+  color: var(--ember); background: var(--ember-dim);
+  border-radius: 4px; padding: .18rem .48rem;
+  flex-shrink: 0;
+}
+.req-title {
+  font-family: var(--font-display);
+  font-size: .95rem; font-weight: 700; letter-spacing: -.015em;
+  flex: 1;
+}
+.req-chevron {
+  font-family: var(--font-mono); font-size: .8rem;
+  color: var(--fg-subtle); flex-shrink: 0;
+  transition: transform .2s;
+}
+.req-card.open .req-chevron { transform: rotate(90deg); color: var(--ember); }
+.req-body {
+  display: none;
+  padding: 0 1.3rem 1.1rem;
+  border-top: 1px solid var(--border);
+}
+.req-card.open .req-body { display: block; }
+.req-body-inner {
+  padding-top: .9rem;
+  font-family: var(--font-ui);
+  font-size: .84rem; color: var(--fg-muted); line-height: 1.75;
+}
+.req-must {
+  display: flex; flex-direction: column; gap: .3rem; margin-top: .7rem;
+}
+.req-must-item {
+  font-family: var(--font-mono);
+  font-size: .73rem; color: var(--fg-muted); line-height: 1.7;
+}
+.req-must-item::before { content: 'MUST  '; color: var(--ember); font-weight: 700; }
+.req-must-item.should::before { content: 'SHOULD  '; color: var(--warn); font-weight: 700; }
+.req-must-item.may::before    { content: 'MAY  '; color: var(--neutral); font-weight: 700; }
+
+/* ── FOUR-COLUMN PILLAR GRID ─────────────────────────── */
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+.pillar-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.3rem 1.4rem;
+}
+.pillar-num {
+  font-family: var(--font-mono);
+  font-size: .62rem; font-weight: 700; letter-spacing: .1em;
+  color: var(--ember); margin-bottom: .55rem;
+}
+.pillar-title {
+  font-family: var(--font-display);
+  font-size: .95rem; font-weight: 700; letter-spacing: -.01em;
+  margin-bottom: .4rem;
+}
+.pillar-body {
+  font-family: var(--font-ui);
+  font-size: .8rem; color: var(--fg-muted); line-height: 1.65;
+}
+
+/* ── EXECUTION MODES ─────────────────────────────────── */
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+.mode-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+  position: relative;
+  overflow: hidden;
+}
+.mode-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--ember);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.mode-card:hover::before { opacity: 1; }
+.mode-label {
+  font-family: var(--font-mono);
+  font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .5rem;
+}
+.mode-title {
+  font-family: var(--font-display);
+  font-size: .92rem; font-weight: 700; letter-spacing: -.01em;
+  margin-bottom: .4rem;
+}
+.mode-body {
+  font-family: var(--font-ui);
+  font-size: .79rem; color: var(--fg-muted); line-height: 1.65;
+}
+
+/* ── RELATIONSHIP TABLE ──────────────────────────────── */
+.rel-table {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 1.2rem;
+  width: 100%;
+}
+.rel-table table {
+  width: 100%; border-collapse: collapse;
+}
+.rel-table th {
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: .63rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-subtle);
+  padding: .75rem 1rem; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.rel-table td {
+  padding: .8rem 1rem;
+  font-family: var(--font-ui);
+  font-size: .82rem; color: var(--fg-muted); line-height: 1.6;
+  border-bottom: 1px solid var(--border);
+}
+.rel-table tr:last-child td { border-bottom: none; }
+.rel-table tr:hover td { background: var(--muted); }
+.rel-table td:first-child {
+  font-family: var(--font-mono);
+  font-size: .76rem; font-weight: 600; color: var(--ember);
+}
+
+/* ── VERSIONING RULES ────────────────────────────────── */
+.version-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+.version-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+}
+.version-bump {
+  font-family: var(--font-mono);
+  font-size: .72rem; font-weight: 700; letter-spacing: .06em;
+  color: var(--ember);
+  background: var(--ember-dim);
+  border-radius: 4px; display: inline-block;
+  padding: .16rem .48rem; margin-bottom: .55rem;
+}
+.version-bump.minor { color: var(--warn); background: rgba(251,191,36,.1); }
+.version-body {
+  font-family: var(--font-ui);
+  font-size: .8rem; color: var(--fg-muted); line-height: 1.65;
+}
+
+/* ── SUMMARY BLOCK ───────────────────────────────────── */
+.summary {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-left: 3px solid var(--ember);
+  border-radius: var(--radius);
+  padding: 1.8rem 2rem;
+  margin-top: 2rem;
+}
+.summary-label {
+  font-family: var(--font-mono);
+  font-size: .63rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .75rem;
+}
+.summary-text {
+  font-family: var(--font-ui);
+  font-size: .92rem; color: var(--fg-muted); line-height: 1.78;
+}
+.summary-text strong { color: var(--fg); font-weight: 600; }
+.unifies {
+  display: flex; flex-wrap: wrap; gap: .5rem;
+  margin-top: 1rem;
+}
+.unify-chip {
+  font-family: var(--font-mono);
+  font-size: .7rem; letter-spacing: .04em;
+  color: var(--fg-muted);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px; padding: .22rem .6rem;
+}
+
+/* ── FOOTER ──────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 2.5rem 0 0;
+  margin-top: 4rem;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-brand {
+  font-family: var(--font-display);
+  font-size: .85rem; font-weight: 700; letter-spacing: -.02em;
+  color: var(--fg-subtle);
+}
+.footer-brand em { color: var(--ember); font-style: normal; }
+.footer-meta {
+  font-family: var(--font-mono);
+  font-size: .62rem; color: var(--fg-subtle); letter-spacing: .06em;
+  text-align: right;
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">travis<em>james</em>.ai</div>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#asd">ASD</a></li>
+    <li><a href="#schema">Schema</a></li>
+    <li><a href="#a2ui">A2UI</a></li>
+    <li><a href="#events">Events</a></li>
+    <li><a href="#a2a">A2A</a></li>
+    <li><a href="#security">Security</a></li>
+    <li><a href="#relationship">APP Rel.</a></li>
+  </ul>
+  <div class="nav-meta">RFC-AAP-001</div>
+</nav>
+
+<main class="wrap">
+
+  <!-- HERO -->
+  <header class="hero" id="overview">
+    <div class="hero-eyebrow">Agent Publishing Protocol — Specification</div>
+    <h1 class="hero-title">Agent <em>Artifact</em> Protocol</h1>
+    <p class="hero-sub">
+      Defines structured, executable, UI-renderable artifacts for agents operating
+      within the Agent Publishing Protocol. Standardizes artifact schema,
+      UI definition, events, and agent-to-agent contracts.
+    </p>
+    <div class="hero-meta">
+      <span class="meta-chip status-draft">Draft v0.1</span>
+      <span class="meta-chip">RFC-AAP-001</span>
+      <span class="meta-chip">Scope: APP Artifacts</span>
+    </div>
+    <div class="rfc-header">
+      <div class="rfc-field">
+        <div class="rfc-field-label">Document ID</div>
+        <div class="rfc-field-value">RFC-AAP-001</div>
+      </div>
+      <div class="rfc-field">
+        <div class="rfc-field-label">Status</div>
+        <div class="rfc-field-value">Draft v0.1</div>
+      </div>
+      <div class="rfc-field">
+        <div class="rfc-field-label">Protocol</div>
+        <div class="rfc-field-value">Agent Publishing Protocol (APP)</div>
+      </div>
+      <div class="rfc-field">
+        <div class="rfc-field-label">Layer</div>
+        <div class="rfc-field-value">Artifact Definition</div>
+      </div>
+      <div class="rfc-field">
+        <div class="rfc-field-label">Replaces</div>
+        <div class="rfc-field-value">Lexicon Specification</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ABSTRACT -->
+  <div class="abstract">
+    <div class="abstract-label">Abstract</div>
+    <p class="abstract-text">
+      The <strong>Agent Artifact Protocol (AAP)</strong> defines the internal structure of agentic artifacts —
+      the fundamental units of agent-produced, agent-consumable content operating within the
+      Agent Publishing Protocol ecosystem. AAP replaces the fragmented "lexicon" approach with
+      a unified artifact specification that integrates schema validation, declarative UI, event
+      semantics, and invocation contracts into a single coherent definition document.
+    </p>
+    <div class="objective-list">
+      <div class="objective-item">Schema-validated content with strict type enforcement</div>
+      <div class="objective-item">UI-renderable via declarative A2UI component bindings</div>
+      <div class="objective-item">Event-emitting with lifecycle-aware payload contracts</div>
+      <div class="objective-item">Invocation-capable through typed A2A operation contracts</div>
+      <div class="objective-item">Cryptographically signed for publication integrity</div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: OVERVIEW -->
+  <section class="section" id="overview-detail">
+    <div class="section-eyebrow">§ 1 — Overview</div>
+    <h2 class="section-title">What Is an Artifact?</h2>
+    <p class="section-lead">
+      An artifact is the atomic unit of structured content within the AAP ecosystem.
+      Unlike raw data or untyped messages, an artifact carries its own schema,
+      rendering instructions, event surface, and operational contracts.
+    </p>
+    <div class="pillar-grid">
+      <div class="pillar-card">
+        <div class="pillar-num">01</div>
+        <div class="pillar-title">JSON Schema</div>
+        <p class="pillar-body">Defines field types, validation constraints, and serialization format. Enforced before publication.</p>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-num">02</div>
+        <div class="pillar-title">A2UI Definition</div>
+        <p class="pillar-body">Declarative UI layout specifying component bindings, field mappings, and conditional rendering logic.</p>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-num">03</div>
+        <div class="pillar-title">Event Definitions</div>
+        <p class="pillar-body">Named lifecycle events with typed payloads conforming to the APP event envelope specification.</p>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-num">04</div>
+        <div class="pillar-title">A2A Contracts</div>
+        <p class="pillar-body">Schema-validated invocation operations enabling structured agent-to-agent capability calls.</p>
+      </div>
+      <div class="pillar-card">
+        <div class="pillar-num">05</div>
+        <div class="pillar-title">Governance Metadata</div>
+        <p class="pillar-body">Policy-bound access controls, rate limits, role requirements, and execution constraints.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: ASD -->
+  <section class="section" id="asd">
+    <div class="section-eyebrow">§ 2 — Artifact Specification Document</div>
+    <h2 class="section-title">Artifact Specification Document (ASD)</h2>
+    <p class="section-lead">
+      Every artifact type must be defined by an Artifact Specification Document.
+      The ASD is the authoritative source of truth for schema, rendering, events,
+      invocation contracts, and governance for that artifact type.
+    </p>
+    <div class="code-label">ASD — Top-Level Structure</div>
+    <div class="code-block">{
+  <span class="key">"id"</span>:         <span class="str">"com.prometheus.report"</span>,
+  <span class="key">"version"</span>:    <span class="str">"1.0.0"</span>,
+  <span class="key">"schema"</span>:     <span class="punct">{</span> <span class="key">/* JSON Schema definition */</span> <span class="punct">}</span>,
+  <span class="key">"a2ui"</span>:       <span class="punct">{</span> <span class="key">/* UI component bindings */</span> <span class="punct">}</span>,
+  <span class="key">"events"</span>:    <span class="punct">{</span> <span class="key">/* Event surface definitions */</span> <span class="punct">}</span>,
+  <span class="key">"a2a"</span>:        <span class="punct">{</span> <span class="key">/* Invocation operation contracts */</span> <span class="punct">}</span>,
+  <span class="key">"governance"</span>: <span class="punct">{</span> <span class="key">/* Policy and access metadata */</span> <span class="punct">}</span>
+}</div>
+  </section>
+
+  <!-- SECTION 3: JSON SCHEMA -->
+  <section class="section" id="schema">
+    <div class="section-eyebrow">§ 3 — JSON Schema Section</div>
+    <h2 class="section-title">Schema Definition</h2>
+    <p class="section-lead">
+      The schema section defines the data contract for the artifact. All fields,
+      types, and validation constraints are declared here. Validation
+      <strong>must</strong> occur before any artifact is published into APP.
+    </p>
+    <div class="prop-grid">
+      <div class="prop-item">
+        <div class="prop-key">required fields</div>
+        <div class="prop-val">Fields that must be present for the artifact to be considered valid</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">field types</div>
+        <div class="prop-val">Standard JSON Schema type annotations: string, number, boolean, object, array</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">constraints</div>
+        <div class="prop-val">Length limits, patterns, enumerations, and format validators</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">serialization</div>
+        <div class="prop-val">Canonical serialization format required for consistent hashing and signing</div>
+      </div>
+    </div>
+    <div class="code-label" style="margin-top:1.4rem">Example — com.prometheus.report schema</div>
+    <div class="code-block">{
+  <span class="key">"type"</span>: <span class="str">"object"</span>,
+  <span class="key">"properties"</span>: {
+    <span class="key">"title"</span>:   { <span class="key">"type"</span>: <span class="str">"string"</span> },
+    <span class="key">"content"</span>: { <span class="key">"type"</span>: <span class="str">"string"</span> },
+    <span class="key">"author"</span>:  { <span class="key">"type"</span>: <span class="str">"string"</span> }
+  },
+  <span class="key">"required"</span>: [<span class="str">"title"</span>, <span class="str">"content"</span>]
+}</div>
+    <div class="req-list" style="margin-top:1.4rem">
+      <div class="req-card" onclick="this.classList.toggle('open')">
+        <div class="req-header">
+          <span class="req-num">R-3.1</span>
+          <span class="req-title">Schema Validation Requirements</span>
+          <span class="req-chevron">▶</span>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            <p>All artifacts must pass schema validation prior to publication. Validation failures must be reported with field-level detail.</p>
+            <div class="req-must">
+              <div class="req-must-item">Schema validation MUST occur before publication</div>
+              <div class="req-must-item">Failed artifacts MUST NOT be published to APP feeds</div>
+              <div class="req-must-item should">Validation errors SHOULD include field path and failure reason</div>
+              <div class="req-must-item may">Implementations MAY cache compiled schemas for performance</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: A2UI -->
+  <section class="section" id="a2ui">
+    <div class="section-eyebrow">§ 4 — A2UI Section</div>
+    <h2 class="section-title">Declarative UI Definition</h2>
+    <p class="section-lead">
+      The A2UI section specifies how the artifact is rendered. Rendering engines must treat
+      A2UI as declarative instructions — not imperative code. Field bindings map artifact
+      data to named UI components with defined display semantics.
+    </p>
+    <div class="prop-grid">
+      <div class="prop-item">
+        <div class="prop-key">component layout</div>
+        <div class="prop-val">Named layout strategy: vertical, horizontal, grid, or card</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">field bindings</div>
+        <div class="prop-val">Maps artifact data fields to named UI components (h1, markdown, table, etc.)</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">interactive controls</div>
+        <div class="prop-val">Optional controls: buttons, inputs, or triggers that invoke A2A operations</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">conditional logic</div>
+        <div class="prop-val">Show/hide rules based on field values or artifact state</div>
+      </div>
+    </div>
+    <div class="code-label" style="margin-top:1.4rem">Example — A2UI definition</div>
+    <div class="code-block">{
+  <span class="key">"component"</span>: <span class="str">"ReportView"</span>,
+  <span class="key">"layout"</span>:    <span class="str">"vertical"</span>,
+  <span class="key">"bindings"</span>: {
+    <span class="key">"title"</span>:   <span class="str">"h1"</span>,
+    <span class="key">"content"</span>: <span class="str">"markdown"</span>
+  }
+}</div>
+  </section>
+
+  <!-- SECTION 5: EVENTS -->
+  <section class="section" id="events">
+    <div class="section-eyebrow">§ 5 — Event Definitions</div>
+    <h2 class="section-title">Artifact Event Surface</h2>
+    <p class="section-lead">
+      Artifacts may emit lifecycle events. All events must conform to the APP event
+      envelope format and carry typed payloads. Events enable reactive agent coordination
+      across the publishing graph.
+    </p>
+    <div class="code-label">Event Definition Structure</div>
+    <div class="code-block">{
+  <span class="key">"artifact.created"</span>: {
+    <span class="key">"payload"</span>: { <span class="key">"type"</span>: <span class="str">"object"</span> }
+  },
+  <span class="key">"artifact.updated"</span>: {
+    <span class="key">"payload"</span>: { <span class="key">"type"</span>: <span class="str">"object"</span> }
+  }
+}</div>
+    <div class="req-list" style="margin-top:1.4rem">
+      <div class="req-card" onclick="this.classList.toggle('open')">
+        <div class="req-header">
+          <span class="req-num">R-5.1</span>
+          <span class="req-title">Event Envelope Conformance</span>
+          <span class="req-chevron">▶</span>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            <p>All artifact events must conform to the APP event envelope specification, ensuring consistent delivery semantics across the protocol stack.</p>
+            <div class="req-must">
+              <div class="req-must-item">Events MUST conform to APP event envelope format</div>
+              <div class="req-must-item">Event payloads MUST be schema-validated before emission</div>
+              <div class="req-must-item should">Event names SHOULD follow dot-notation namespacing (e.g., artifact.created)</div>
+              <div class="req-must-item may">Artifacts MAY define custom event types beyond the standard lifecycle set</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: A2A -->
+  <section class="section" id="a2a">
+    <div class="section-eyebrow">§ 6 — A2A Invocation Contracts</div>
+    <h2 class="section-title">Agent-to-Agent Operations</h2>
+    <p class="section-lead">
+      The A2A section defines callable operations that other agents or systems may invoke
+      on the artifact. Each operation declares its input schema, output schema, and
+      streaming capability. All invocations must be schema-validated before execution.
+    </p>
+    <div class="code-label">A2A Operation Definition</div>
+    <div class="code-block">{
+  <span class="key">"operations"</span>: {
+    <span class="key">"summarize"</span>: {
+      <span class="key">"inputSchema"</span>:  <span class="punct">{}</span>,
+      <span class="key">"outputSchema"</span>: <span class="punct">{}</span>,
+      <span class="key">"streaming"</span>:    <span class="val">true</span>
+    }
+  }
+}</div>
+    <div class="req-list" style="margin-top:1.4rem">
+      <div class="req-card" onclick="this.classList.toggle('open')">
+        <div class="req-header">
+          <span class="req-num">R-6.1</span>
+          <span class="req-title">Invocation Validation</span>
+          <span class="req-chevron">▶</span>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            <p>All A2A operation invocations must pass schema validation on both input and output boundaries. Streaming operations must emit schema-conformant chunks.</p>
+            <div class="req-must">
+              <div class="req-must-item">Invocation inputs MUST be validated against inputSchema before execution</div>
+              <div class="req-must-item">Operation outputs MUST conform to declared outputSchema</div>
+              <div class="req-must-item should">Streaming operations SHOULD emit progress events via the artifact event surface</div>
+              <div class="req-must-item may">Implementations MAY cache operation results for idempotent operations</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 7: ARTIFACT INSTANCE -->
+  <section class="section" id="instance">
+    <div class="section-eyebrow">§ 7 — Artifact Instance Structure</div>
+    <h2 class="section-title">Instance Format</h2>
+    <p class="section-lead">
+      An artifact instance is a published, signed record conforming to the type's ASD.
+      Instances carry a content-addressed identifier (CID), cryptographic signature,
+      and author DID alongside the artifact data payload.
+    </p>
+    <div class="code-label">Artifact Instance</div>
+    <div class="code-block">{
+  <span class="key">"uri"</span>:       <span class="str">"app://did:example/artifact/123"</span>,
+  <span class="key">"type"</span>:      <span class="str">"com.prometheus.report"</span>,
+  <span class="key">"version"</span>:   <span class="str">"1.0.0"</span>,
+  <span class="key">"data"</span>:      <span class="punct">{</span> <span class="key">/* artifact payload conforming to schema */</span> <span class="punct">}</span>,
+  <span class="key">"cid"</span>:       <span class="str">"bafyrei..."</span>,
+  <span class="key">"createdAt"</span>: <span class="str">"2025-01-01T00:00:00Z"</span>,
+  <span class="key">"author"</span>:    <span class="str">"did:plc:..."</span>,
+  <span class="key">"signature"</span>: <span class="str">"..."</span>
+}</div>
+    <div class="prop-grid" style="margin-top:1.4rem">
+      <div class="prop-item">
+        <div class="prop-key">uri</div>
+        <div class="prop-val">Globally unique artifact identifier within the APP namespace</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">type</div>
+        <div class="prop-val">Reverse-DNS ASD identifier. Must resolve to a valid Artifact Specification Document</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">cid</div>
+        <div class="prop-val">Content-addressed identifier for verifiable data integrity</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">signature</div>
+        <div class="prop-val">Cryptographic signature from the author DID keypair, required for publication</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 8: VERSIONING -->
+  <section class="section" id="versioning">
+    <div class="section-eyebrow">§ 8 — Versioning Rules</div>
+    <h2 class="section-title">Schema Versioning</h2>
+    <p class="section-lead">
+      Artifact version must match its ASD version. Version management follows
+      semantic conventions where breaking changes mandate a major version increment.
+    </p>
+    <div class="version-grid">
+      <div class="version-card">
+        <div class="version-bump">MAJOR</div>
+        <p class="version-body">Required for any breaking schema changes — field removals, type changes, or altered required fields.</p>
+      </div>
+      <div class="version-card">
+        <div class="version-bump minor">MINOR</div>
+        <p class="version-body">Non-breaking UI updates, new optional fields, or additive A2UI binding changes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 9: EXECUTION SEMANTICS -->
+  <section class="section" id="execution">
+    <div class="section-eyebrow">§ 9 — Execution Semantics</div>
+    <h2 class="section-title">Artifact Execution Modes</h2>
+    <p class="section-lead">
+      Artifacts span a capability spectrum from passive data containers to stateful
+      executable systems. All execution occurs within the UAR sandbox environment.
+    </p>
+    <div class="mode-grid">
+      <div class="mode-card">
+        <div class="mode-label">Mode 01</div>
+        <div class="mode-title">Passive</div>
+        <p class="mode-body">Data-only artifacts. No event surface, no invocable operations. Pure structured content delivery.</p>
+      </div>
+      <div class="mode-card">
+        <div class="mode-label">Mode 02</div>
+        <div class="mode-title">Interactive</div>
+        <p class="mode-body">UI-driven artifacts with A2UI controls that surface user interactions within the rendering context.</p>
+      </div>
+      <div class="mode-card">
+        <div class="mode-label">Mode 03</div>
+        <div class="mode-title">Executable</div>
+        <p class="mode-body">Exposes A2A operations. Other agents may invoke defined capabilities against the artifact instance.</p>
+      </div>
+      <div class="mode-card">
+        <div class="mode-label">Mode 04</div>
+        <div class="mode-title">Stateful</div>
+        <p class="mode-body">Emits lifecycle events across its operational lifespan. Enables reactive coordination in multi-agent flows.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 10: GOVERNANCE -->
+  <section class="section" id="governance">
+    <div class="section-eyebrow">§ 10 — Governance Metadata</div>
+    <h2 class="section-title">Policy &amp; Access Controls</h2>
+    <p class="section-lead">
+      Governance metadata defines the policy surface for artifact execution. Governance
+      engines evaluate all policies prior to any invocation. This section is evaluated
+      by the UAR Cedar policy engine at runtime.
+    </p>
+    <div class="prop-grid">
+      <div class="prop-item">
+        <div class="prop-key">required roles</div>
+        <div class="prop-val">DID-based roles that must be present in the caller's credential set for invocation</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">access restrictions</div>
+        <div class="prop-val">Namespace or identity-scoped restrictions limiting artifact visibility or invocability</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">rate limits</div>
+        <div class="prop-val">Per-caller or global invocation rate constraints enforced at the UAR boundary</div>
+      </div>
+      <div class="prop-item">
+        <div class="prop-key">execution policies</div>
+        <div class="prop-val">Cedar-expressed policy trees evaluated before any A2A operation proceeds</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 11: SECURITY -->
+  <section class="section" id="security">
+    <div class="section-eyebrow">§ 11 — Security Model</div>
+    <h2 class="section-title">Security Requirements</h2>
+    <p class="section-lead">
+      The AAP security model enforces validation, signing, and sandboxing as
+      non-negotiable properties. No artifact may bypass any of these controls.
+    </p>
+    <div class="req-list">
+      <div class="req-card" onclick="this.classList.toggle('open')">
+        <div class="req-header">
+          <span class="req-num">R-11.1</span>
+          <span class="req-title">Data Validation</span>
+          <span class="req-chevron">▶</span>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            <div class="req-must">
+              <div class="req-must-item">Artifact data MUST be schema-validated prior to any operation</div>
+              <div class="req-must-item">Malformed artifact instances MUST be rejected at ingestion</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="req-card" onclick="this.classList.toggle('open')">
+        <div class="req-header">
+          <span class="req-num">R-11.2</span>
+          <span class="req-title">Publication Signing</span>
+          <span class="req-chevron">▶</span>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            <div class="req-must">
+              <div class="req-must-item">A valid cryptographic signature MUST be present for publication</div>
+              <div class="req-must-item">Signatures MUST be verified against the author DID's declared keys</div>
+              <div class="req-must-item should">Signature schemes SHOULD use EdDSA (Ed25519)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="req-card" onclick="this.classList.toggle('open')">
+        <div class="req-header">
+          <span class="req-num">R-11.3</span>
+          <span class="req-title">Sandboxed Execution</span>
+          <span class="req-chevron">▶</span>
+        </div>
+        <div class="req-body">
+          <div class="req-body-inner">
+            <div class="req-must">
+              <div class="req-must-item">All artifact execution MUST occur within UAR sandbox boundaries</div>
+              <div class="req-must-item">Invocation inputs MUST be validated before execution begins</div>
+              <div class="req-must-item">Sandbox escapes MUST trigger immediate termination and audit logging</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 12: RELATIONSHIP TO APP -->
+  <section class="section" id="relationship">
+    <div class="section-eyebrow">§ 12 — Protocol Relationship</div>
+    <h2 class="section-title">AAP + APP — Division of Responsibility</h2>
+    <p class="section-lead">
+      APP and AAP are complementary layers in the decentralized agent publishing stack.
+      APP operates at the transport and distribution layer; AAP operates at the content
+      and capability definition layer. APP transports AAP artifacts — it does not define them.
+    </p>
+    <div class="rel-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Protocol</th>
+            <th>Responsibility</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>APP</td>
+            <td>Publishing, feed inclusion, event streaming, session coordination</td>
+          </tr>
+          <tr>
+            <td>AAP</td>
+            <td>Artifact schema, UI structure, invocation semantics, event type definitions</td>
+          </tr>
+          <tr>
+            <td>APP + AAP</td>
+            <td>Together form the complete decentralized agent publishing and execution ecosystem</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SUMMARY -->
+  <section class="section" id="summary">
+    <div class="section-eyebrow">§ 13 — Summary</div>
+    <h2 class="section-title">Protocol Summary</h2>
+    <div class="summary">
+      <div class="summary-label">AAP — What It Unifies</div>
+      <p class="summary-text">
+        The <strong>Agent Artifact Protocol</strong> defines the internal structure of agentic content.
+        It provides a single, coherent specification surface that replaces fragmented lexicon definitions
+        with a unified document combining schema, UI, invocation, and event semantics.
+        Together with APP, it forms a complete decentralized agent publishing and execution ecosystem
+        capable of supporting sovereign, policy-governed, multi-agent workflows at production scale.
+      </p>
+      <div class="unifies">
+        <span class="unify-chip">Schema Validation</span>
+        <span class="unify-chip">Declarative UI</span>
+        <span class="unify-chip">A2A Invocation</span>
+        <span class="unify-chip">Event Semantics</span>
+        <span class="unify-chip">Governance Metadata</span>
+        <span class="unify-chip">Cryptographic Signing</span>
+        <span class="unify-chip">Sandboxed Execution</span>
+        <span class="unify-chip">Version Control</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-brand">travis<em>james</em>.ai</div>
+    <div class="footer-meta">
+      RFC-AAP-001 · Draft v0.1<br />
+      Agent Artifact Protocol — Prometheus Agentic Growth Solutions
+    </div>
+  </footer>
+
+</main>
+
+<script>
+  // Accordion toggle (no HTMX dependency needed for inline toggle)
+  document.querySelectorAll('.req-header').forEach(function(h) {
+    h.addEventListener('click', function() {
+      var card = this.closest('.req-card');
+      card.classList.toggle('open');
+    });
+  });
+</script>
+
+</body>
+</html>
