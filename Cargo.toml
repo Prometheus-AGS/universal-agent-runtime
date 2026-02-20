@@ -51,7 +51,7 @@ tower-http = { version = "0.6.8", features = [
 
 # Async runtime
 tokio = { version = "1", features = ["full", "process"] }
-tokio-util = { version = "0.7", features = ["codec"] }
+tokio-util = { version = "0.7", features = ["codec", "io"] }
 
 # Serialization
 serde = { version = "1", features = ["derive"] }

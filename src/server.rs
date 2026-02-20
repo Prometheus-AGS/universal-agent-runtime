@@ -389,6 +389,11 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .route("/api/models", get(api_models))
         .route("/api/generate-title", post(api_generate_title))
         .route("/api/chat/completion", post(api_chat_completion))
+        .route("/api/upload", post(uar::api::upload::upload_handler))
+        .route(
+            "/api/attachments/{id}",
+            get(uar::api::upload::serve_attachment_handler),
+        )
         .route("/api/chat", any(legacy_chat_route_disabled))
         .route("/api/chat/{*path}", any(legacy_chat_route_disabled))
         .route("/api/sessions", any(legacy_sessions_route_disabled))
@@ -839,6 +844,9 @@ struct ChatCompletionRequest {
     /// Optional UAR extension; header is preferred.
     #[serde(default)]
     session_id: Option<String>,
+    /// Files attached to this message (uploaded via POST /api/upload).
+    #[serde(default)]
+    attachments: Vec<crate::uar::api::upload::AttachmentInput>,
 }
 
 #[derive(Debug, Serialize)]
@@ -1012,6 +1020,57 @@ fn extract_input_message(req: &ChatCompletionRequest) -> Option<String> {
         .find(|m| m.role.eq_ignore_ascii_case("user"))
         .and_then(|m| extract_text_content(&m.content))
         .filter(|s| !s.trim().is_empty())
+}
+
+/// Build a JSON string representing an OpenAI-style multipart content array.
+///
+/// Layout:
+///   1. For each non-image attachment: `{ type:"text", text:"[filename]\n<content>" }`
+///   2. User message text: `{ type:"text", text:"..." }`
+///   3. For each image attachment: `{ type:"image_url", image_url:{ url:"/api/attachments/{id}", detail:"auto" } }`
+///
+/// Returns `None` if there are no attachments (caller uses plain text instead).
+fn build_multipart_content(
+    user_text: &str,
+    attachments: &[crate::uar::api::upload::AttachmentInput],
+) -> Option<String> {
+    if attachments.is_empty() {
+        return None;
+    }
+    let mut parts: Vec<serde_json::Value> = Vec::new();
+
+    // Document text blocks first (context before the question).
+    for att in attachments {
+        if !att.content_type.starts_with("image/") {
+            if let Some(text) = &att.text_content {
+                parts.push(serde_json::json!({
+                    "type": "text",
+                    "text": format!("[{}]\n{}", att.filename, text)
+                }));
+            }
+        }
+    }
+
+    // User message text.
+    if !user_text.is_empty() {
+        parts.push(serde_json::json!({ "type": "text", "text": user_text }));
+    }
+
+    // Image parts last.
+    for att in attachments {
+        if att.content_type.starts_with("image/") {
+            parts.push(serde_json::json!({
+                "type": "image_url",
+                "image_url": { "url": att.url, "detail": "auto" }
+            }));
+        }
+    }
+
+    if parts.is_empty() {
+        return None;
+    }
+
+    serde_json::to_string(&parts).ok()
 }
 
 fn extract_cookie_session_id(headers: &HeaderMap) -> Option<String> {
@@ -1227,9 +1286,14 @@ async fn api_chat_completion(
     agent.policy.provider.default.provider = resolved_model.provider_id.clone();
     agent.policy.provider.default.model = resolved_model.model_id.clone();
 
+    // If attachments were uploaded, assemble an OpenAI-style multipart content string
+    // (document context blocks + user text + image_url parts).  Otherwise pass plain text.
+    let effective_input =
+        build_multipart_content(&input_message, &req.attachments).unwrap_or(input_message);
+
     let run_id = state
         .run_manager
-        .start_run(agent, input_message, Some(session_id.clone()), None)
+        .start_run(agent, effective_input, Some(session_id.clone()), None)
         .await;
 
     let Some(mut rx) = state.run_manager.subscribe(&run_id).await else {

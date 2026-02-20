@@ -150,3 +150,40 @@ export interface SettingsDriftItem {
   setting: SettingWithMeta;
   config_value: unknown;
 }
+
+// ---------------------------------------------------------------------------
+// Chat Attachment types
+// ---------------------------------------------------------------------------
+
+/** Response from POST /api/upload for a single file. */
+export interface UploadedFileResponse {
+  id: string;
+  filename: string;
+  content_type: string;
+  size: number;
+  is_image: boolean;
+  /** Retrieval URL: GET /api/attachments/{id} */
+  url: string;
+  /** Extracted text content for document files. */
+  text_content?: string;
+}
+
+/** An attachment in-flight or ready to send. */
+export interface PendingAttachment {
+  /** Client-side temp ID before upload completes. */
+  localId: string;
+  file: File;
+  status: "uploading" | "ready" | "error";
+  /** Set once upload succeeds. */
+  uploaded?: UploadedFileResponse;
+  errorMessage?: string;
+}
+
+/** Serialized attachment reference sent in the chat completion request body. */
+export interface AttachmentPayload {
+  id: string;
+  filename: string;
+  content_type: string;
+  url: string;
+  text_content?: string;
+}

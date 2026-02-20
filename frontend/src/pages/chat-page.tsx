@@ -3,6 +3,7 @@ import { EnhancedThread } from "@/components/assistant-ui/enhanced-thread";
 import { LeftSidebar } from "@/components/layout/left-sidebar";
 import { useUiStore } from "@/stores/ui-store";
 import { useChatRuntime } from "@/features/chat/use-chat-runtime";
+import { AttachmentContext } from "@/features/chat/attachment-context";
 import { useEffect } from "react";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { cn } from "@/lib/utils";
@@ -10,10 +11,12 @@ import { Button } from "@/components/ui/button";
 
 /** Thread detail view — wraps chat runtime for the store-selected thread. */
 function ThreadView({ threadId }: { threadId: string }) {
-  const runtime = useChatRuntime(threadId);
+  const { runtime, attachmentManager } = useChatRuntime(threadId);
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <EnhancedThread />
+      <AttachmentContext.Provider value={attachmentManager}>
+        <EnhancedThread />
+      </AttachmentContext.Provider>
     </AssistantRuntimeProvider>
   );
 }

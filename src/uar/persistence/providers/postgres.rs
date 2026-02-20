@@ -967,6 +967,67 @@ impl PersistenceLayer for PostgresProvider {
             .await?;
         Ok(())
     }
+
+    // =========================================================================
+    // Chat Attachment Storage
+    // =========================================================================
+
+    async fn insert_attachment(
+        &self,
+        meta: &crate::uar::persistence::AttachmentMeta,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"INSERT INTO chat_attachments
+               (id, session_id, filename, content_type, file_path, file_size, is_image, text_content, created_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+               ON CONFLICT (id) DO NOTHING"#,
+        )
+        .bind(&meta.id)
+        .bind(&meta.session_id)
+        .bind(&meta.filename)
+        .bind(&meta.content_type)
+        .bind(&meta.file_path)
+        .bind(meta.file_size)
+        .bind(meta.is_image)
+        .bind(&meta.text_content)
+        .bind(meta.created_at)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get_attachment(
+        &self,
+        id: &str,
+    ) -> Result<Option<crate::uar::persistence::AttachmentMeta>> {
+        let row = sqlx::query(
+            "SELECT id, session_id, filename, content_type, file_path, file_size, is_image, text_content, created_at
+             FROM chat_attachments WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        match row {
+            None => Ok(None),
+            Some(r) => Ok(Some(pg_row_to_attachment_meta(r)?)),
+        }
+    }
+
+    async fn list_attachments_for_session(
+        &self,
+        session_id: &str,
+    ) -> Result<Vec<crate::uar::persistence::AttachmentMeta>> {
+        let rows = sqlx::query(
+            "SELECT id, session_id, filename, content_type, file_path, file_size, is_image, text_content, created_at
+             FROM chat_attachments WHERE session_id = $1 ORDER BY created_at ASC",
+        )
+        .bind(session_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        rows.into_iter().map(pg_row_to_attachment_meta).collect()
+    }
 }
 
 // =============================================================================
@@ -991,6 +1052,22 @@ fn pg_row_to_setting(row: sqlx::postgres::PgRow) -> Result<crate::uar::settings:
         parent_id,
         created_at,
         updated_at,
+    })
+}
+
+fn pg_row_to_attachment_meta(
+    row: sqlx::postgres::PgRow,
+) -> Result<crate::uar::persistence::AttachmentMeta> {
+    Ok(crate::uar::persistence::AttachmentMeta {
+        id: row.try_get("id")?,
+        session_id: row.try_get("session_id")?,
+        filename: row.try_get("filename")?,
+        content_type: row.try_get("content_type")?,
+        file_path: row.try_get("file_path")?,
+        file_size: row.try_get("file_size")?,
+        is_image: row.try_get("is_image")?,
+        text_content: row.try_get("text_content")?,
+        created_at: row.try_get("created_at")?,
     })
 }
 

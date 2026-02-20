@@ -1,10 +1,14 @@
 import { useCallback, useRef } from "react";
 import { useChatMessageStore } from "@/stores/chat-message-store";
 import type { ToolCallContentBlock } from "@/types/chat-content";
+import type { AttachmentPayload } from "@/types";
 
 const UAR_URL = "/api/chat/completion";
 
-export interface UarChatPayload { message: string }
+export interface UarChatPayload {
+  message: string;
+  attachments?: AttachmentPayload[];
+}
 export interface StreamCallbacks {
   onComplete?: () => void;
   onError?: (error: Error) => void;
@@ -48,9 +52,13 @@ export function useMessageStream() {
       cancelStream();
 
       const userMsgId = `user-${Date.now()}`;
+      // Build user message content: text + any image attachments for in-thread display
+      const imageBlocks = (payload.attachments ?? [])
+        .filter((a) => a.content_type.startsWith("image/"))
+        .map((a) => ({ type: "image" as const, url: a.url, alt: a.filename }));
       useChatMessageStore.getState().initThread(threadId, [
         ...(useChatMessageStore.getState().messagesByThread[threadId] ?? []),
-        { id: userMsgId, role: "user", content: [{ type: "text", text: payload.message }], createdAt: new Date(), status: "complete" },
+        { id: userMsgId, role: "user", content: [{ type: "text", text: payload.message }, ...imageBlocks], createdAt: new Date(), status: "complete" },
       ]);
 
       const controller = new AbortController();
@@ -62,7 +70,12 @@ export function useMessageStream() {
         const res = await fetch(UAR_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-UAR-Session-ID": threadId },
-          body: JSON.stringify({ message: payload.message, stream: true, stream_mode: "dual" }),
+          body: JSON.stringify({
+            message: payload.message,
+            stream: true,
+            stream_mode: "dual",
+            ...(payload.attachments?.length ? { attachments: payload.attachments } : {}),
+          }),
           signal: controller.signal,
         });
 

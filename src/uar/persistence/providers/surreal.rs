@@ -660,6 +660,85 @@ impl PersistenceLayer for SurrealDbProvider {
             .with_context(|| format!("delete_setting({key})"))?;
         Ok(())
     }
+
+    // =========================================================================
+    // Chat Attachment Storage
+    // =========================================================================
+
+    async fn insert_attachment(
+        &self,
+        meta: &crate::uar::persistence::AttachmentMeta,
+    ) -> Result<()> {
+        use serde::{Deserialize, Serialize};
+        #[derive(Serialize, Deserialize)]
+        struct AttachRecord {
+            id: String,
+            session_id: String,
+            filename: String,
+            content_type: String,
+            file_path: String,
+            file_size: i64,
+            is_image: bool,
+            text_content: Option<String>,
+            created_at: chrono::DateTime<chrono::Utc>,
+        }
+        let record = AttachRecord {
+            id: meta.id.clone(),
+            session_id: meta.session_id.clone(),
+            filename: meta.filename.clone(),
+            content_type: meta.content_type.clone(),
+            file_path: meta.file_path.clone(),
+            file_size: meta.file_size,
+            is_image: meta.is_image,
+            text_content: meta.text_content.clone(),
+            created_at: meta.created_at,
+        };
+        self.db
+            .query("CREATE type::record('chat_attachments', $id) CONTENT $data")
+            .bind(("id", meta.id.clone()))
+            .bind((
+                "data",
+                serde_json::to_value(&record).context("serialize attach record")?,
+            ))
+            .await
+            .context("insert_attachment")?;
+        Ok(())
+    }
+
+    async fn get_attachment(
+        &self,
+        id: &str,
+    ) -> Result<Option<crate::uar::persistence::AttachmentMeta>> {
+        let id_owned = id.to_string();
+        let mut res = self
+            .db
+            .query("SELECT * FROM type::record('chat_attachments', $id)")
+            .bind(("id", id_owned))
+            .await
+            .context("get_attachment")?;
+        let val: Option<serde_json::Value> = res.take(0)?;
+        match val {
+            None => Ok(None),
+            Some(v) => Ok(Some(surreal_json_to_attachment_meta(v)?)),
+        }
+    }
+
+    async fn list_attachments_for_session(
+        &self,
+        session_id: &str,
+    ) -> Result<Vec<crate::uar::persistence::AttachmentMeta>> {
+        let sid_owned = session_id.to_string();
+        let mut res = self
+            .db
+            .query("SELECT * FROM chat_attachments WHERE session_id = $sid ORDER BY created_at ASC")
+            .bind(("sid", sid_owned))
+            .await
+            .context("list_attachments_for_session")?;
+        let vals: Vec<serde_json::Value> = res.take(0)?;
+        vals.into_iter()
+            .map(surreal_json_to_attachment_meta)
+            .collect()
+    }
 }
 
 /// Convert a `surrealdb::types::Value` to a standard `serde_json::Value`.
@@ -874,4 +953,34 @@ fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
     } else {
         dot_product / (norm_a * norm_b)
     }
+}
+
+fn surreal_json_to_attachment_meta(
+    v: serde_json::Value,
+) -> anyhow::Result<crate::uar::persistence::AttachmentMeta> {
+    use anyhow::Context as _;
+    let id = v["id"].as_str().unwrap_or_default().to_string();
+    let session_id = v["session_id"].as_str().unwrap_or_default().to_string();
+    let filename = v["filename"].as_str().unwrap_or_default().to_string();
+    let content_type = v["content_type"].as_str().unwrap_or_default().to_string();
+    let file_path = v["file_path"].as_str().unwrap_or_default().to_string();
+    let file_size = v["file_size"].as_i64().unwrap_or(0);
+    let is_image = v["is_image"].as_bool().unwrap_or(false);
+    let text_content = v["text_content"].as_str().map(ToString::to_string);
+    let created_at_str = v["created_at"].as_str().unwrap_or("1970-01-01T00:00:00Z");
+    let created_at: chrono::DateTime<chrono::Utc> =
+        chrono::DateTime::parse_from_rfc3339(created_at_str)
+            .context("parse created_at")?
+            .with_timezone(&chrono::Utc);
+    Ok(crate::uar::persistence::AttachmentMeta {
+        id,
+        session_id,
+        filename,
+        content_type,
+        file_path,
+        file_size,
+        is_image,
+        text_content,
+        created_at,
+    })
 }

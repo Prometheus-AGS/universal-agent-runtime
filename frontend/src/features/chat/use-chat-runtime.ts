@@ -8,6 +8,10 @@ import { useChatMessages } from "./use-chat-messages";
 import { useMessageStream } from "./use-message-stream";
 import { generateThreadTitle } from "./use-thread-naming";
 import type { RichMessage, ContentBlock } from "@/types/chat-content";
+import { useAttachmentManager } from "./use-attachment-manager";
+import type { AttachmentManager } from "./use-attachment-manager";
+
+export type { AttachmentManager };
 
 function richMessageToThreadMessageLike(msg: RichMessage): ThreadMessageLike {
   const baseMetadata = { custom: {} };
@@ -51,7 +55,10 @@ function extractText(msg: RichMessage): string {
   return msg.content.filter((b): b is Extract<ContentBlock, { type: "text" }> => b.type === "text").map((b) => b.text).join("");
 }
 
-export function useChatRuntime(threadId: string) {
+export function useChatRuntime(threadId: string): {
+  runtime: ReturnType<typeof useExternalStoreRuntime>;
+  attachmentManager: AttachmentManager;
+} {
   const db = useDb();
   const consumePendingPrompt = useChatIntentStore((s) => s.consumePendingPrompt);
   const { startStream, cancelStream } = useMessageStream();
@@ -59,6 +66,7 @@ export function useChatRuntime(threadId: string) {
   const initialMessageSent = useRef(false);
   const titleGeneratedRef = useRef(false);
   const messagesLoadedRef = useRef(false);
+  const attachmentManager = useAttachmentManager(threadId);
 
   const setActive = useThreadRegistryStore((s) => s.setActive);
   const registerThread = useThreadRegistryStore((s) => s.registerThread);
@@ -104,6 +112,10 @@ export function useChatRuntime(threadId: string) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const userText = (textPart as any).text as string;
 
+      // Capture (and clear) pending attachments before starting the stream.
+      const attachments = attachmentManager.toPayload();
+      attachmentManager.clear();
+
       // Persist the user message to PGlite before starting the stream
       const userMsg: RichMessage = {
         id: crypto.randomUUID(),
@@ -118,9 +130,13 @@ export function useChatRuntime(threadId: string) {
         await db.insertMessage(threadId, userMsg);
       }
 
-      await startStream(threadId, { message: userText }, { onComplete: () => { void afterStreamComplete(userText); } });
+      await startStream(
+        threadId,
+        { message: userText, attachments: attachments.length ? attachments : undefined },
+        { onComplete: () => { void afterStreamComplete(userText); } },
+      );
     },
-    [threadId, db, startStream, afterStreamComplete],
+    [threadId, db, startStream, afterStreamComplete, attachmentManager],
   );
 
   const onCancel = useCallback(async () => {
@@ -140,5 +156,6 @@ export function useChatRuntime(threadId: string) {
   const threadMessageLikes = useMemo(() => messages.map(richMessageToThreadMessageLike), [messages]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return useExternalStoreRuntime({ messages: threadMessageLikes, isRunning: isStreaming, onNew, onCancel } as any);
+  const runtime = useExternalStoreRuntime({ messages: threadMessageLikes, isRunning: isStreaming, onNew, onCancel } as any);
+  return { runtime, attachmentManager };
 }

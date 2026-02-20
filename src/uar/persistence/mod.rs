@@ -6,9 +6,27 @@ use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::settings::schema::{Settings, SettingsType};
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 pub mod providers;
+
+/// Metadata for a file uploaded during a chat session.
+/// The actual bytes live on disk at `file_path`; served via GET /api/attachments/{id}.
+#[derive(Debug, Clone)]
+pub struct AttachmentMeta {
+    pub id: String,
+    pub session_id: String,
+    pub filename: String,
+    pub content_type: String,
+    /// Absolute path to the stored file on disk.
+    pub file_path: String,
+    pub file_size: i64,
+    pub is_image: bool,
+    /// Extracted text for non-image documents (PDF, Word, plain text).
+    pub text_content: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
 
 #[derive(Debug)]
 pub struct PostgresProvider;
@@ -168,5 +186,24 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     /// Delete a setting by key (reset-to-default workflow).
     async fn delete_setting(&self, _key: &str) -> Result<()> {
         Ok(())
+    }
+
+    // =========================================================================
+    // Chat Attachment Storage
+    // =========================================================================
+
+    /// Persist attachment metadata after a file has been written to disk.
+    async fn insert_attachment(&self, _meta: &AttachmentMeta) -> Result<()> {
+        Ok(())
+    }
+
+    /// Retrieve attachment metadata by ID.
+    async fn get_attachment(&self, _id: &str) -> Result<Option<AttachmentMeta>> {
+        Ok(None)
+    }
+
+    /// List all attachments uploaded during a given chat session.
+    async fn list_attachments_for_session(&self, _session_id: &str) -> Result<Vec<AttachmentMeta>> {
+        Ok(Vec::new())
     }
 }

@@ -21,19 +21,22 @@ import {
   ChevronRightIcon,
   ClipboardIcon,
   CopyIcon,
+  PaperclipIcon,
   PencilIcon,
   RefreshCwIcon,
   SparklesIcon,
   SquareIcon,
   UserIcon,
 } from "lucide-react";
-import { type FC, useCallback, useState } from "react";
+import { type FC, useCallback, useRef, useState } from "react";
 import { EnhancedMarkdownText } from "@/components/assistant-ui/enhanced-markdown-text";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { Button } from "@/components/ui/button";
 import { ContextUpdateBlock } from "@/features/chat/components/context-update-block";
 import { SkillActivationBlock } from "@/features/chat/components/skill-activation-block";
 import { ToolCallBlockWrapper } from "@/features/chat/components/tool-call-block";
+import { AttachmentPreviewStrip } from "@/features/chat/components/attachment-preview";
+import { useAttachmentContext } from "@/features/chat/attachment-context";
 import { cn } from "@/lib/utils";
 
 export const EnhancedThread: FC = () => (
@@ -91,59 +94,110 @@ const ThreadScrollToBottom: FC = () => (
   </ThreadPrimitive.ScrollToBottom>
 );
 
-const EnhancedComposer: FC = () => (
-  <ComposerPrimitive.Root className="relative flex w-full flex-col">
-    <ComposerPrimitive.AttachmentDropzone className="relative flex w-full flex-col rounded-2xl border border-input bg-background/80 px-1 pt-2 backdrop-blur-sm outline-none transition-shadow has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-ring/20 overflow-hidden">
+const EnhancedComposer: FC = () => {
+  const attachmentManager = useAttachmentContext();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-      {/* Animated progress bar — only visible while request is in-flight */}
-      <AuiIf condition={(s) => s.thread.isRunning}>
-        <div className="absolute inset-x-0 top-0 h-[2px] overflow-hidden rounded-t-2xl">
-          <div className="h-full w-1/2 animate-[shimmer_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-primary to-transparent" />
-        </div>
-      </AuiIf>
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && attachmentManager) {
+        attachmentManager.add(e.target.files);
+      }
+      // Reset so same file can be re-attached if removed
+      if (e.target) e.target.value = "";
+    },
+    [attachmentManager],
+  );
 
-      <ComposerPrimitive.Input
-        placeholder="Send a message to the agent…"
-        className="mb-1 max-h-48 min-h-[3.5rem] w-full resize-none bg-transparent px-4 pt-3 pb-3 font-body text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-40 transition-opacity"
-        rows={1}
-        autoFocus
-        aria-label="Message input"
+  return (
+    <ComposerPrimitive.Root className="relative flex w-full flex-col">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*,.pdf,.doc,.docx,.txt,.md,.json,.csv"
+        className="sr-only"
+        onChange={handleFileChange}
+        aria-hidden
       />
 
-      <div className="relative mx-2 mb-2 flex items-center gap-2 justify-end">
-        {/* Thinking indicator — shown while running */}
+      <ComposerPrimitive.AttachmentDropzone className="relative flex w-full flex-col rounded-2xl border border-input bg-background/80 px-1 pt-2 backdrop-blur-sm outline-none transition-shadow has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-ring/20 overflow-hidden">
+
+        {/* Animated progress bar — only visible while request is in-flight */}
         <AuiIf condition={(s) => s.thread.isRunning}>
-          <span className="flex items-center gap-1.5 mr-auto font-mono text-[11px] text-muted-foreground/70">
-            <span className="inline-flex gap-0.5 items-center">
-              <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
-              <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.2s_infinite]" />
-              <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.4s_infinite]" />
-            </span>
-            Agent is thinking…
-          </span>
+          <div className="absolute inset-x-0 top-0 h-[2px] overflow-hidden rounded-t-2xl">
+            <div className="h-full w-1/2 animate-[shimmer_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-primary to-transparent" />
+          </div>
         </AuiIf>
 
-        {/* Send button — hidden while running */}
-        <AuiIf condition={(s) => !s.thread.isRunning}>
-          <ComposerPrimitive.Send asChild>
-            <TooltipIconButton tooltip="Send message" side="bottom" type="submit" variant="default" size="icon" className="size-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90" aria-label="Send message">
-              <ArrowUpIcon className="size-4" />
+        {/* Attachment preview strip – shown above textarea when files are pending */}
+        {attachmentManager && attachmentManager.pending.length > 0 && (
+          <AttachmentPreviewStrip
+            attachments={attachmentManager.pending}
+            onRemove={attachmentManager.remove}
+          />
+        )}
+
+        <ComposerPrimitive.Input
+          placeholder="Send a message to the agent…"
+          className="mb-1 max-h-48 min-h-[3.5rem] w-full resize-none bg-transparent px-4 pt-3 pb-3 font-body text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-40 transition-opacity"
+          rows={1}
+          autoFocus
+          aria-label="Message input"
+        />
+
+        <div className="relative mx-2 mb-2 flex items-center gap-2">
+          {/* Attach file button */}
+          {attachmentManager && (
+            <TooltipIconButton
+              tooltip="Attach file"
+              side="top"
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-7 rounded-full text-muted-foreground hover:text-foreground"
+              aria-label="Attach file"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <PaperclipIcon className="size-4" />
             </TooltipIconButton>
-          </ComposerPrimitive.Send>
-        </AuiIf>
+          )}
 
-        {/* Cancel button — shown while running */}
-        <AuiIf condition={(s) => s.thread.isRunning}>
-          <ComposerPrimitive.Cancel asChild>
-            <Button type="button" variant="default" size="icon" className="size-8 rounded-full" aria-label="Stop generating">
-              <SquareIcon className="size-3 fill-current" />
-            </Button>
-          </ComposerPrimitive.Cancel>
-        </AuiIf>
-      </div>
-    </ComposerPrimitive.AttachmentDropzone>
-  </ComposerPrimitive.Root>
-);
+          {/* Thinking indicator — shown while running */}
+          <AuiIf condition={(s) => s.thread.isRunning}>
+            <span className="flex items-center gap-1.5 ml-auto font-mono text-[11px] text-muted-foreground/70">
+              <span className="inline-flex gap-0.5 items-center">
+                <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
+                <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.2s_infinite]" />
+                <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.4s_infinite]" />
+              </span>
+              Agent is thinking…
+            </span>
+          </AuiIf>
+
+          {/* Send button — hidden while running */}
+          <AuiIf condition={(s) => !s.thread.isRunning}>
+            <ComposerPrimitive.Send asChild>
+              <TooltipIconButton tooltip="Send message" side="bottom" type="submit" variant="default" size="icon" className="size-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 ml-auto" aria-label="Send message">
+                <ArrowUpIcon className="size-4" />
+              </TooltipIconButton>
+            </ComposerPrimitive.Send>
+          </AuiIf>
+
+          {/* Cancel button — shown while running */}
+          <AuiIf condition={(s) => s.thread.isRunning}>
+            <ComposerPrimitive.Cancel asChild>
+              <Button type="button" variant="default" size="icon" className="size-8 rounded-full" aria-label="Stop generating">
+                <SquareIcon className="size-3 fill-current" />
+              </Button>
+            </ComposerPrimitive.Cancel>
+          </AuiIf>
+        </div>
+      </ComposerPrimitive.AttachmentDropzone>
+    </ComposerPrimitive.Root>
+  );
+};
 
 const UserAvatar: FC = () => (
   <div className="flex flex-col items-center gap-1 pt-0.5">
