@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>prom-lanes v2 — Concurrent Agent Orchestration Engine</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Space+Grotesk:wght@400;600;700&amp;family=Roboto:wght@300;400;500;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet" />
+
+<style>
+/* ── TOKENS ─────────────────────────────────────────── */
+:root {
+  --bg:           #0B0F14;
+  --card:         #0F1620;
+  --muted:        #141C26;
+  --border:       #1E2D3F;
+  --border-hi:    #2B3F55;
+  --fg:           #E8EDF3;
+  --fg-muted:     #A7B0BC;
+  --fg-subtle:    #5C6B7A;
+  --ember:        #FF6A3D;
+  --ember-dim:    rgba(255,106,61,.12);
+  --ember-glow:   rgba(255,106,61,.05);
+  --ember-muted:  rgba(255,106,61,.08);
+  --success:      #4ADE80;
+  --success-dim:  rgba(74,222,128,.1);
+  --warn:         #FBBF24;
+  --warn-dim:     rgba(251,191,36,.1);
+  --info:         #60A5FA;
+  --info-dim:     rgba(96,165,250,.1);
+  --neutral:      #94A3B8;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-ui:      'Inter', sans-serif;
+  --font-body:    'Roboto', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --radius:       10px;
+  --radius-lg:    16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ─────────────────────────────────────────────── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(11,15,20,.93);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 2rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 1.5rem;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .9rem; letter-spacing: -.02em;
+  color: var(--fg); white-space: nowrap;
+}
+.nav-brand em { color: var(--ember); font-style: normal; }
+.nav-links { display: flex; gap: 1.4rem; list-style: none; flex-wrap: nowrap; }
+.nav-links a {
+  font-family: var(--font-ui); font-size: .68rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .09em;
+  color: var(--fg-muted); text-decoration: none; transition: color .2s; white-space: nowrap;
+}
+.nav-links a:hover { color: var(--ember); }
+.nav-meta {
+  font-family: var(--font-mono); font-size: .63rem; color: var(--fg-subtle);
+  letter-spacing: .06em; white-space: nowrap;
+}
+
+/* ── LAYOUT ──────────────────────────────────────────── */
+.wrap { max-width: 1060px; margin: 0 auto; padding: 7rem 2rem 6rem; }
+
+/* ── HERO ────────────────────────────────────────────── */
+.hero {
+  padding: 3.5rem 0 4rem; border-bottom: 1px solid var(--border);
+  margin-bottom: 4rem; position: relative;
+}
+.hero::before {
+  content: ''; position: absolute; top: 0; left: -2rem; right: -2rem; bottom: 0;
+  background: radial-gradient(ellipse 55% 70% at 5% 50%, var(--ember-glow), transparent 60%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono); font-size: .72rem; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: 1rem; position: relative;
+}
+.hero h1 {
+  font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-weight: 700; letter-spacing: -.03em; line-height: 1.05;
+  margin-bottom: 1rem; position: relative;
+}
+.hero h1 span { color: var(--ember); }
+.hero-sub {
+  font-family: var(--font-body); font-size: 1.15rem; font-weight: 300;
+  line-height: 1.7; color: var(--fg-muted); max-width: 62ch; position: relative;
+}
+.hero-meta { display: flex; gap: 1.5rem; margin-top: 1.5rem; flex-wrap: wrap; position: relative; }
+.hero-meta .pill {
+  font-family: var(--font-mono); font-size: .65rem; font-weight: 500;
+  padding: .25rem .7rem; border: 1px solid var(--border-hi); border-radius: 999px; color: var(--fg-muted);
+}
+
+/* ── SECTIONS ────────────────────────────────────────── */
+.section { margin-bottom: 4rem; }
+.section-label {
+  font-family: var(--font-mono); font-size: .68rem; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .6rem;
+}
+.section h2 {
+  font-family: var(--font-display); font-size: 1.7rem; font-weight: 700;
+  letter-spacing: -.02em; line-height: 1.1; margin-bottom: 1rem;
+}
+.section h3 {
+  font-family: var(--font-display); font-size: 1.2rem; font-weight: 600;
+  letter-spacing: -.01em; line-height: 1.15;
+  margin-bottom: .75rem; margin-top: 2rem;
+}
+.section h4 {
+  font-family: var(--font-display); font-size: 1rem; font-weight: 600;
+  letter-spacing: -.01em; line-height: 1.15;
+  margin-bottom: .5rem; margin-top: 1.5rem;
+}
+.section p { color: var(--fg-muted); max-width: 65ch; margin-bottom: 1rem; }
+.section p strong { color: var(--fg); font-weight: 500; }
+
+/* ── CARDS ───────────────────────────────────────────── */
+.card-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem; margin-top: 1.25rem;
+}
+.card-grid-3 {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem; margin-top: 1.25rem;
+}
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.25rem 1.4rem;
+}
+.card.accent { border-color: var(--ember); background: var(--ember-dim); }
+.card-title {
+  font-family: var(--font-display); font-size: .95rem; font-weight: 700;
+  letter-spacing: -.02em; margin-bottom: .4rem;
+}
+.card.accent .card-title { color: var(--ember); }
+.card-desc {
+  font-family: var(--font-body); font-size: .82rem; color: var(--fg-muted); line-height: 1.6;
+}
+.card-label {
+  font-family: var(--font-mono); font-size: .62rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ember); margin-bottom: .5rem;
+}
+
+/* ── DATA TABLES ─────────────────────────────────────── */
+.data-table { width: 100%; border-collapse: collapse; margin-top: 1rem; margin-bottom: 1.5rem; }
+.data-table th {
+  font-family: var(--font-ui); font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--fg-subtle); text-align: left;
+  padding: .6rem .8rem; border-bottom: 1px solid var(--border-hi);
+}
+.data-table td {
+  font-family: var(--font-body); font-size: .82rem; color: var(--fg-muted);
+  padding: .6rem .8rem; border-bottom: 1px solid var(--border); vertical-align: top;
+}
+.data-table td:first-child {
+  font-family: var(--font-mono); font-size: .78rem; color: var(--fg); font-weight: 500;
+}
+.data-table tr:last-child td { border-bottom: none; }
+
+/* ── CODE BLOCKS ─────────────────────────────────────── */
+.code-block {
+  background: var(--muted); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.2rem 1.4rem;
+  overflow-x: auto; margin: 1rem 0 1.5rem;
+}
+.code-block pre {
+  font-family: var(--font-mono); font-size: .78rem; line-height: 1.7;
+  color: var(--fg-muted); white-space: pre;
+}
+.code-block pre .kw { color: var(--ember); }
+.code-block pre .ty { color: var(--info); }
+.code-block pre .cm { color: var(--fg-subtle); }
+.code-block pre .st { color: var(--success); }
+.code-block pre .fn { color: var(--fg); }
+.code-block-label {
+  font-family: var(--font-mono); font-size: .6rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-subtle); margin-bottom: .5rem;
+}
+
+/* ── STATE MACHINE ───────────────────────────────────── */
+.state-flow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin: 1rem 0 1.5rem; }
+.state-node {
+  font-family: var(--font-mono); font-size: .72rem; font-weight: 600;
+  padding: .35rem .8rem; border-radius: 6px;
+  border: 1px solid var(--border-hi); color: var(--fg); background: var(--card);
+}
+.state-node.active { border-color: var(--ember); background: var(--ember-dim); color: var(--ember); }
+.state-node.terminal { border-color: var(--fg-subtle); color: var(--fg-subtle); border-style: dashed; }
+.state-arrow { font-family: var(--font-mono); font-size: .7rem; color: var(--fg-subtle); }
+
+/* ── PHASE TIMELINE ──────────────────────────────────── */
+.phase {
+  border-left: 2px solid var(--border); padding-left: 1.5rem;
+  margin-bottom: 2.5rem; position: relative;
+}
+.phase::before {
+  content: ''; position: absolute; left: -5px; top: .25rem;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--ember);
+}
+.phase-header { display: flex; align-items: baseline; gap: .8rem; margin-bottom: .4rem; }
+.phase-num { font-family: var(--font-mono); font-size: .65rem; font-weight: 700; color: var(--ember); letter-spacing: .1em; }
+.phase-title { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; }
+.phase-est { font-family: var(--font-mono); font-size: .6rem; color: var(--fg-subtle); letter-spacing: .06em; }
+.phase-body { font-size: .85rem; color: var(--fg-muted); line-height: 1.7; }
+.phase-deliverables { margin-top: .6rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+.phase-deliverables .pill {
+  font-family: var(--font-mono); font-size: .6rem; font-weight: 500;
+  padding: .2rem .6rem; border: 1px solid var(--border-hi); border-radius: 999px; color: var(--fg-muted);
+}
+
+/* ── PILL LIST ───────────────────────────────────────── */
+.pill-list { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .5rem; }
+.pill-list .pill {
+  font-family: var(--font-mono); font-size: .6rem; font-weight: 500;
+  padding: .2rem .55rem; border: 1px solid var(--border-hi); border-radius: 999px; color: var(--fg-muted);
+}
+
+/* ── CALLOUT ─────────────────────────────────────────── */
+.callout {
+  background: var(--ember-muted); border: 1px solid rgba(255,106,61,.18);
+  border-radius: var(--radius); padding: 1rem 1.25rem; margin: 1.25rem 0;
+}
+.callout-title {
+  font-family: var(--font-ui); font-size: .75rem; font-weight: 700;
+  color: var(--ember); margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .06em;
+}
+.callout-body { font-family: var(--font-body); font-size: .82rem; color: var(--fg-muted); line-height: 1.6; }
+.callout.info {
+  background: var(--info-dim); border-color: rgba(96,165,250,.18);
+}
+.callout.info .callout-title { color: var(--info); }
+
+/* ── DECISION TABLE ──────────────────────────────────── */
+.decision-table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+.decision-table th {
+  font-family: var(--font-ui); font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--fg-subtle); text-align: left;
+  padding: .5rem .7rem; border-bottom: 1px solid var(--border-hi);
+}
+.decision-table td {
+  font-family: var(--font-body); font-size: .8rem; color: var(--fg-muted);
+  padding: .55rem .7rem; border-bottom: 1px solid var(--border); vertical-align: top;
+}
+.decision-table td:first-child { font-family: var(--font-ui); font-weight: 600; color: var(--fg); font-size: .78rem; }
+.decision-table td:nth-child(2) { font-family: var(--font-mono); font-size: .75rem; color: var(--ember); }
+
+/* ── TIER CARDS ──────────────────────────────────────── */
+.tier-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: .75rem; margin-top: 1rem;
+}
+.tier-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .85rem 1rem; text-align: center;
+}
+.tier-card.primary { border-color: var(--ember); background: var(--ember-dim); }
+.tier-card.platform { border-color: var(--info); background: var(--info-dim); }
+.tier-card .tier-name { font-family: var(--font-display); font-size: .85rem; font-weight: 700; margin-bottom: .2rem; }
+.tier-card .tier-detail { font-family: var(--font-mono); font-size: .6rem; color: var(--fg-subtle); }
+.tier-card.primary .tier-name { color: var(--ember); }
+.tier-card.platform .tier-name { color: var(--info); }
+
+/* ── TREE BLOCK ──────────────────────────────────────── */
+.tree-block {
+  background: var(--muted); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.2rem 1.4rem;
+  margin: 1rem 0 1.5rem; overflow-x: auto;
+}
+.tree-block pre {
+  font-family: var(--font-mono); font-size: .75rem; line-height: 1.8;
+  color: var(--fg-muted); white-space: pre;
+}
+.tree-block pre .dir { color: var(--info); }
+.tree-block pre .cm { color: var(--fg-subtle); font-style: italic; }
+
+/* ── COMPOSITION MATRIX ──────────────────────────────── */
+.matrix { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+.matrix th {
+  font-family: var(--font-ui); font-size: .65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--fg-subtle); text-align: center;
+  padding: .5rem .6rem; border-bottom: 1px solid var(--border-hi);
+}
+.matrix th:first-child { text-align: left; }
+.matrix td {
+  font-family: var(--font-mono); font-size: .72rem; text-align: center;
+  padding: .5rem .6rem; border-bottom: 1px solid var(--border);
+}
+.matrix td:first-child {
+  font-family: var(--font-ui); font-weight: 600; color: var(--fg);
+  font-size: .75rem; text-align: left;
+}
+.matrix .yes { color: var(--success); }
+.matrix .opt { color: var(--warn); }
+.matrix .no { color: var(--fg-subtle); }
+
+/* ── TABS ────────────────────────────────────────────── */
+.tabs { margin: 1.25rem 0; }
+.tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+.tab-btn {
+  font-family: var(--font-ui); font-size: .72rem; font-weight: 600;
+  color: var(--fg-subtle); background: none; border: none;
+  padding: .6rem 1.1rem; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all .2s;
+}
+.tab-btn:hover { color: var(--fg-muted); }
+.tab-btn.active { color: var(--ember); border-bottom-color: var(--ember); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── CLI REFERENCE ───────────────────────────────────── */
+.cli-cmd { display: flex; align-items: baseline; gap: .75rem; margin-bottom: .6rem; }
+.cli-prompt { font-family: var(--font-mono); font-size: .72rem; color: var(--fg-subtle); user-select: none; }
+.cli-text { font-family: var(--font-mono); font-size: .78rem; color: var(--fg); }
+.cli-text .arg { color: var(--ember); }
+.cli-text .flag { color: var(--info); }
+.cli-text .comment { color: var(--fg-subtle); font-style: italic; }
+
+/* ── AXIS DIAGRAM ────────────────────────────────────── */
+.axis-diagram {
+  display: grid; grid-template-columns: auto 1fr; gap: 0;
+  margin: 1.5rem 0; border: 1px solid var(--border); border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.axis-y-label {
+  writing-mode: vertical-lr; transform: rotate(180deg);
+  font-family: var(--font-ui); font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--ember); padding: 1rem .6rem;
+  background: var(--ember-dim); border-right: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+.axis-content { padding: 1.25rem; }
+.axis-x-label {
+  font-family: var(--font-ui); font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--info); text-align: center;
+  padding: .6rem; border-top: 1px solid var(--border);
+  background: var(--info-dim);
+}
+
+/* ── FOOTER ──────────────────────────────────────────── */
+.footer {
+  margin-top: 5rem; padding: 2rem 0; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-brand { font-family: var(--font-display); font-weight: 700; font-size: .8rem; color: var(--fg-subtle); }
+.footer-brand em { color: var(--ember); font-style: normal; }
+.footer-meta { font-family: var(--font-mono); font-size: .6rem; color: var(--fg-subtle); letter-spacing: .06em; }
+
+@media (max-width: 720px) {
+  .nav { padding: .6rem 1rem; }
+  .nav-links { display: none; }
+  .wrap { padding: 5rem 1rem 4rem; }
+  .card-grid, .card-grid-3 { grid-template-columns: 1fr; }
+  .tier-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-brand">prom<em>-lanes</em></div>
+  <ul class="nav-links">
+    <li><a href="#thesis">Thesis</a></li>
+    <li><a href="#axes">Two Axes</a></li>
+    <li><a href="#workspace">Workspace</a></li>
+    <li><a href="#backends">Backends</a></li>
+    <li><a href="#engine">Engine</a></li>
+    <li><a href="#phases">Phases</a></li>
+    <li><a href="#uar">UAR</a></li>
+    <li><a href="#cli">CLI</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+  </ul>
+  <span class="nav-meta">v0.2.0 · 2026-02-21</span>
+</nav>
+
+<!-- ── CONTENT ────────────────────────────────────────── -->
+<div class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">Concurrent Agent Orchestration Engine</div>
+    <h1>prom<span>-lanes</span></h1>
+    <p class="hero-sub">
+      A Rust library and CLI that treats agent concurrency as infrastructure — not just for code.
+      Two orthogonal abstraction axes compose freely: <strong>WorkspaceProviders</strong> handle isolation
+      (git worktrees, SurrealDB namespaces, Postgres schemas), while <strong>AgentBackends</strong> handle execution
+      (CLI tools, the UAR runtime, and OpenAI Agents SDK). Any workspace × any backend. One engine.
+    </p>
+    <div class="hero-meta">
+      <span class="pill">Rust · Library + Binary</span>
+      <span class="pill">WorkspaceProvider Trait</span>
+      <span class="pill">7+ Agent Backends</span>
+      <span class="pill">UAR Recursive Orchestration</span>
+      <span class="pill">OpenAI Agents SDK</span>
+      <span class="pill">Git · SurrealDB · Postgres</span>
+    </div>
+  </section>
+
+  <!-- ── THESIS ──────────────────────────────────────── -->
+  <section id="thesis" class="section">
+    <div class="section-label">00 · Problem & Thesis</div>
+    <h2>Beyond Coding Assistants</h2>
+
+    <p>
+      The original prom-lanes solved concurrent AI coding sessions with git worktree isolation. That was the right starting point, but it was also a specific instance of a universal pattern: <strong>any parallel agent workload requires isolated workspaces, scoped task contracts, deterministic lifecycle management, and controlled result integration.</strong>
+    </p>
+
+    <p>
+      Data pipeline agents need the same discipline as coding agents — just with database namespaces instead of worktrees. Research agents need scoped document spaces. Analytics agents need schema-isolated query environments. The orchestration primitives (lanes, state machines, merge gates, event buses) are identical. Only the isolation substrate and the agent backend differ.
+    </p>
+
+    <p>
+      <strong>prom-lanes v2</strong> factors the architecture along two orthogonal axes. WorkspaceProviders manage isolation — git, SurrealDB, Postgres, or plain directories. AgentBackends manage execution — CLI coding tools, the UAR runtime itself, or external platforms like OpenAI's Agents SDK. These compose freely: run an OpenAI agent against a SurrealDB workspace, or a Claude Code session in a git worktree, or a UAR agent instance in a Postgres-backed environment. The engine doesn't care. It manages lanes.
+    </p>
+
+    <div class="callout">
+      <div class="callout-title">Architectural Insight</div>
+      <div class="callout-body">
+        Workspace × Backend is the composition matrix. The engine orchestrates lanes. WorkspaceProviders answer <em>"where does the agent work?"</em> AgentBackends answer <em>"who does the work?"</em> Neither knows about the other. The lane ties them together.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TWO AXES ────────────────────────────────────── -->
+  <section id="axes" class="section">
+    <div class="section-label">01 · Composition Model</div>
+    <h2>Two Orthogonal Axes</h2>
+
+    <p>
+      Every lane sits at the intersection of a workspace provider and an agent backend. The engine manages the lane lifecycle without knowledge of the specifics of either. This produces a composition matrix where any cell is a valid configuration.
+    </p>
+
+    <h3>Composition Matrix</h3>
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Git Worktree</th>
+          <th>SurrealDB</th>
+          <th>Postgres</th>
+          <th>Directory</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Claude Code</td>
+          <td class="yes">●</td>
+          <td class="no">—</td>
+          <td class="no">—</td>
+          <td class="opt">○</td>
+        </tr>
+        <tr>
+          <td>opencode</td>
+          <td class="yes">●</td>
+          <td class="no">—</td>
+          <td class="no">—</td>
+          <td class="opt">○</td>
+        </tr>
+        <tr>
+          <td>Codex</td>
+          <td class="yes">●</td>
+          <td class="no">—</td>
+          <td class="no">—</td>
+          <td class="opt">○</td>
+        </tr>
+        <tr>
+          <td>UAR Agent</td>
+          <td class="yes">●</td>
+          <td class="yes">●</td>
+          <td class="yes">●</td>
+          <td class="yes">●</td>
+        </tr>
+        <tr>
+          <td>OpenAI Agents</td>
+          <td class="opt">○</td>
+          <td class="yes">●</td>
+          <td class="yes">●</td>
+          <td class="yes">●</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size: .75rem; color: var(--fg-subtle); margin-top: -.5rem;">
+      <span style="color: var(--success);">●</span> Primary use case &nbsp;
+      <span style="color: var(--warn);">○</span> Supported, secondary &nbsp;
+      <span style="color: var(--fg-subtle);">—</span> Not applicable
+    </p>
+
+    <h3>Design Principles (Updated)</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-label">Principle 01</div>
+        <div class="card-title">Workspace Agnosticism</div>
+        <div class="card-desc">The engine never assumes filesystem isolation. WorkspaceProvider trait abstracts create, snapshot, merge, and destroy across git, databases, and plain directories.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Principle 02</div>
+        <div class="card-title">Backend Agnosticism</div>
+        <div class="card-desc">The engine never assumes a CLI process. AgentBackend trait covers CLI tools, HTTP API platforms, and in-process runtime invocations with a unified start/poll/stop interface.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Principle 03</div>
+        <div class="card-title">Free Composition</div>
+        <div class="card-desc">Any workspace × any backend. The lane model binds them. The engine orchestrates the lifecycle. Neither axis knows about the other.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Principle 04</div>
+        <div class="card-title">Workers Deliver, Leads Merge</div>
+        <div class="card-desc">No agent self-merges into shared state. Workers produce results in their isolated workspace. The lead session — human or reviewer agent — owns integration.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Principle 05</div>
+        <div class="card-title">Library First</div>
+        <div class="card-desc">The core crate is the product. CLI is a thin adapter. UAR embeds the library directly. No process boundary required.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Principle 06</div>
+        <div class="card-title">Recursive Orchestration</div>
+        <div class="card-desc">UAR can be both the host (running prom-lanes as a NativeSkill) and a backend (prom-lanes orchestrating UAR agent instances). Depth guard prevents infinite recursion.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WORKSPACE PROVIDERS ─────────────────────────── -->
+  <section id="workspace" class="section">
+    <div class="section-label">02 · Workspace Providers</div>
+    <h2>The Isolation Axis</h2>
+
+    <p>
+      A <strong>WorkspaceProvider</strong> manages the isolated environment where an agent operates. It doesn't understand what the agent does — it manages creation, state capture, result integration, and cleanup. The semantics of "merge" vary by provider, but the trait interface is uniform.
+    </p>
+
+    <h3>WorkspaceProvider Trait</h3>
+    <div class="code-block">
+      <div class="code-block-label">crates/core/src/workspace/trait.rs</div>
+<pre><span class="kw">pub trait</span> <span class="ty">WorkspaceProvider</span>: <span class="ty">Send</span> + <span class="ty">Sync</span> {
+    <span class="cm">/// Unique key for registry lookup</span>
+    <span class="kw">fn</span> <span class="fn">key</span>(&amp;self) -> &amp;<span class="kw">'static str</span>;
+
+    <span class="cm">/// Create an isolated workspace, return a handle</span>
+    <span class="kw">fn</span> <span class="fn">create</span>(&amp;self, config: <span class="ty">WorkspaceConfig</span>) -> <span class="ty">Result</span>&lt;<span class="ty">WorkspaceHandle</span>&gt;;
+
+    <span class="cm">/// Check workspace state: clean, dirty, artifacts produced</span>
+    <span class="kw">fn</span> <span class="fn">status</span>(&amp;self, handle: &amp;<span class="ty">WorkspaceHandle</span>) -> <span class="ty">Result</span>&lt;<span class="ty">WorkspaceStatus</span>&gt;;
+
+    <span class="cm">/// Capture current state for potential rollback</span>
+    <span class="kw">fn</span> <span class="fn">snapshot</span>(&amp;self, handle: &amp;<span class="ty">WorkspaceHandle</span>) -> <span class="ty">Result</span>&lt;<span class="ty">SnapshotId</span>&gt;;
+
+    <span class="cm">/// Integrate workspace results into the shared target</span>
+    <span class="kw">fn</span> <span class="fn">merge_into</span>(&amp;self, handle: &amp;<span class="ty">WorkspaceHandle</span>, target: &amp;<span class="ty">MergeTarget</span>) -> <span class="ty">Result</span>&lt;<span class="ty">MergeResult</span>&gt;;
+
+    <span class="cm">/// Destroy workspace and reclaim resources</span>
+    <span class="kw">fn</span> <span class="fn">destroy</span>(&amp;self, handle: <span class="ty">WorkspaceHandle</span>) -> <span class="ty">Result</span>&lt;()&gt;;
+
+    <span class="cm">/// The address agents use to access this workspace</span>
+    <span class="kw">fn</span> <span class="fn">address</span>(&amp;self, handle: &amp;<span class="ty">WorkspaceHandle</span>) -> <span class="ty">WorkspaceAddress</span>;
+}
+
+<span class="cm">/// How agents locate and access their workspace</span>
+<span class="kw">pub enum</span> <span class="ty">WorkspaceAddress</span> {
+    <span class="fn">FilePath</span>(<span class="ty">PathBuf</span>),                       <span class="cm">// git worktrees, directories</span>
+    <span class="fn">DatabaseUri</span>(<span class="ty">String</span>),                     <span class="cm">// surreal://db/lane_042</span>
+    <span class="fn">ConnectionString</span>(<span class="ty">String</span>),               <span class="cm">// postgres://...?schema=lane_042</span>
+}</pre>
+    </div>
+
+    <h3>Provider Implementations</h3>
+
+    <div class="tabs" id="ws-tabs">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('git','ws-tabs',this)">Git Worktree</button>
+        <button class="tab-btn" onclick="switchTab('surreal','ws-tabs',this)">SurrealDB</button>
+        <button class="tab-btn" onclick="switchTab('postgres','ws-tabs',this)">Postgres</button>
+        <button class="tab-btn" onclick="switchTab('dir','ws-tabs',this)">Directory</button>
+      </div>
+
+      <div id="tab-git" class="tab-panel active">
+        <h4>GitWorkspaceProvider</h4>
+        <p>The original isolation model. Each lane gets a git branch + worktree checkout. Merge means <code>git merge --no-ff</code>. Snapshot means commit. Destroy means <code>git worktree remove</code>.</p>
+        <table class="data-table">
+          <thead><tr><th>Operation</th><th>Implementation</th></tr></thead>
+          <tbody>
+            <tr><td>create</td><td>git worktree add -b lane/&lt;task&gt; .worktrees/&lt;task&gt; &lt;base&gt;</td></tr>
+            <tr><td>status</td><td>git -C &lt;worktree&gt; status --porcelain + diff --stat</td></tr>
+            <tr><td>snapshot</td><td>git -C &lt;worktree&gt; commit -am "snapshot"</td></tr>
+            <tr><td>merge_into</td><td>git checkout &lt;base&gt; &amp;&amp; git merge --no-ff lane/&lt;task&gt;</td></tr>
+            <tr><td>destroy</td><td>git worktree remove &lt;path&gt; &amp;&amp; git branch -d lane/&lt;task&gt;</td></tr>
+            <tr><td>address</td><td>FilePath(.worktrees/&lt;task&gt;)</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Best for:</strong> Any task where the agent modifies source files — coding, documentation, config generation.</p>
+      </div>
+
+      <div id="tab-surreal" class="tab-panel">
+        <h4>SurrealWorkspaceProvider</h4>
+        <p>Each lane gets a dedicated SurrealDB namespace. The agent reads and writes records within its namespace. Merge copies results into the shared namespace with configurable conflict resolution.</p>
+        <table class="data-table">
+          <thead><tr><th>Operation</th><th>Implementation</th></tr></thead>
+          <tbody>
+            <tr><td>create</td><td>DEFINE NAMESPACE lane_&lt;id&gt;; seed from template tables</td></tr>
+            <tr><td>status</td><td>SELECT count() FROM lane_&lt;id&gt;.* — track record counts, timestamps</td></tr>
+            <tr><td>snapshot</td><td>EXPORT lane_&lt;id&gt; → versioned snapshot file</td></tr>
+            <tr><td>merge_into</td><td>INSERT INTO shared SELECT * FROM lane_&lt;id&gt;.results (with upsert/conflict policy)</td></tr>
+            <tr><td>destroy</td><td>REMOVE NAMESPACE lane_&lt;id&gt;</td></tr>
+            <tr><td>address</td><td>DatabaseUri(surreal://&lt;host&gt;/&lt;db&gt;/lane_&lt;id&gt;)</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Best for:</strong> Data transformation, research aggregation, knowledge graph construction, any task where the agent's output is structured records.</p>
+      </div>
+
+      <div id="tab-postgres" class="tab-panel">
+        <h4>PostgresWorkspaceProvider</h4>
+        <p>Each lane gets a dedicated Postgres schema. The agent operates within its schema boundary. Merge integrates results into the shared schema with SQL-based conflict resolution.</p>
+        <table class="data-table">
+          <thead><tr><th>Operation</th><th>Implementation</th></tr></thead>
+          <tbody>
+            <tr><td>create</td><td>CREATE SCHEMA lane_&lt;id&gt;; clone template tables via CREATE TABLE ... (LIKE ...)</td></tr>
+            <tr><td>status</td><td>Query pg_stat_user_tables for schema, count modified rows</td></tr>
+            <tr><td>snapshot</td><td>pg_dump --schema=lane_&lt;id&gt; → versioned SQL file</td></tr>
+            <tr><td>merge_into</td><td>INSERT INTO shared.results SELECT * FROM lane_&lt;id&gt;.results ON CONFLICT ...</td></tr>
+            <tr><td>destroy</td><td>DROP SCHEMA lane_&lt;id&gt; CASCADE</td></tr>
+            <tr><td>address</td><td>ConnectionString(postgres://...?options=-c search_path=lane_&lt;id&gt;)</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Best for:</strong> Analytics pipelines, ETL tasks, report generation — any task where the agent produces relational data.</p>
+      </div>
+
+      <div id="tab-dir" class="tab-panel">
+        <h4>DirectoryWorkspaceProvider</h4>
+        <p>Simplest provider: each lane gets a plain directory, optionally seeded from a template. No version control. Merge means copying output files to a shared directory. Snapshot means tar/zip.</p>
+        <table class="data-table">
+          <thead><tr><th>Operation</th><th>Implementation</th></tr></thead>
+          <tbody>
+            <tr><td>create</td><td>mkdir -p .workspaces/lane_&lt;id&gt;; cp -r template/* if configured</td></tr>
+            <tr><td>status</td><td>find .workspaces/lane_&lt;id&gt; -newer &lt;marker&gt; — list modified files</td></tr>
+            <tr><td>snapshot</td><td>tar czf snapshots/lane_&lt;id&gt;_&lt;ts&gt;.tar.gz .workspaces/lane_&lt;id&gt;</td></tr>
+            <tr><td>merge_into</td><td>cp -r .workspaces/lane_&lt;id&gt;/output/* shared_output/</td></tr>
+            <tr><td>destroy</td><td>rm -rf .workspaces/lane_&lt;id&gt;</td></tr>
+            <tr><td>address</td><td>FilePath(.workspaces/lane_&lt;id&gt;)</td></tr>
+          </tbody>
+        </table>
+        <p><strong>Best for:</strong> File generation tasks, document production, image processing, any task where the agent produces files without needing version control.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── AGENT BACKENDS ──────────────────────────────── -->
+  <section id="backends" class="section">
+    <div class="section-label">03 · Agent Backends</div>
+    <h2>The Execution Axis</h2>
+
+    <p>
+      The AgentBackend trait is expanded to cover three distinct execution models: CLI processes (coding tools), platform APIs (OpenAI), and in-process runtime invocation (UAR). A new <code>BackendKind</code> enum lets the engine decide how to monitor each backend — process watching, API polling, or channel listening.
+    </p>
+
+    <h3>Expanded AgentBackend Trait</h3>
+    <div class="code-block">
+      <div class="code-block-label">crates/core/src/backends/trait.rs</div>
+<pre><span class="kw">pub enum</span> <span class="ty">BackendKind</span> {
+    <span class="fn">Cli</span>,       <span class="cm">// local process: watch PID, capture stdout/stderr</span>
+    <span class="fn">Platform</span>,  <span class="cm">// remote API: poll endpoint for completion</span>
+    <span class="fn">Runtime</span>,   <span class="cm">// in-process: direct channel communication</span>
+}
+
+<span class="kw">pub trait</span> <span class="ty">AgentBackend</span>: <span class="ty">Send</span> + <span class="ty">Sync</span> {
+    <span class="cm">/// Unique key for registry lookup</span>
+    <span class="kw">fn</span> <span class="fn">key</span>(&amp;self) -> &amp;<span class="kw">'static str</span>;
+
+    <span class="cm">/// How the engine monitors this backend</span>
+    <span class="kw">fn</span> <span class="fn">kind</span>(&amp;self) -> <span class="ty">BackendKind</span>;
+
+    <span class="cm">/// Start the agent with a workspace address and task prompt</span>
+    <span class="kw">fn</span> <span class="fn">start</span>(&amp;self, req: <span class="ty">StartRequest</span>) -> <span class="ty">Result</span>&lt;<span class="ty">RunningSession</span>&gt;;
+
+    <span class="cm">/// Poll for current status (essential for Platform and Runtime)</span>
+    <span class="kw">fn</span> <span class="fn">poll</span>(&amp;self, session: &amp;<span class="ty">RunningSession</span>) -> <span class="ty">Result</span>&lt;<span class="ty">SessionStatus</span>&gt;;
+
+    <span class="cm">/// Stop/terminate a running session</span>
+    <span class="kw">fn</span> <span class="fn">stop</span>(&amp;self, session: &amp;<span class="ty">RunningSession</span>) -> <span class="ty">Result</span>&lt;()&gt;;
+
+    <span class="cm">/// Whether this backend supports session resumption</span>
+    <span class="kw">fn</span> <span class="fn">supports_resume</span>(&amp;self) -> <span class="ty">bool</span> { <span class="kw">false</span> }
+
+    <span class="cm">/// Whether this backend emits streaming events</span>
+    <span class="kw">fn</span> <span class="fn">supports_streaming</span>(&amp;self) -> <span class="ty">bool</span> { <span class="kw">false</span> }
+}
+
+<span class="kw">pub struct</span> <span class="ty">StartRequest</span> {
+    <span class="kw">pub</span> workspace:  <span class="ty">WorkspaceAddress</span>,  <span class="cm">// from WorkspaceProvider</span>
+    <span class="kw">pub</span> prompt:     <span class="ty">String</span>,            <span class="cm">// task contract content</span>
+    <span class="kw">pub</span> model:      <span class="ty">Option</span>&lt;<span class="ty">String</span>&gt;,
+    <span class="kw">pub</span> env:        <span class="ty">Vec</span>&lt;(<span class="ty">String</span>, <span class="ty">String</span>)&gt;,
+    <span class="kw">pub</span> log_path:   <span class="ty">PathBuf</span>,
+}
+
+<span class="kw">pub enum</span> <span class="ty">SessionStatus</span> {
+    <span class="fn">Running</span>,
+    <span class="fn">Completed</span> { output: <span class="ty">Option</span>&lt;<span class="ty">String</span>&gt; },
+    <span class="fn">Failed</span>    { error: <span class="ty">String</span> },
+}</pre>
+    </div>
+
+    <h3>Backend Tiers</h3>
+    <div class="tier-grid">
+      <div class="tier-card primary">
+        <div class="tier-name">Claude Code</div>
+        <div class="tier-detail">Cli · Tier 1</div>
+      </div>
+      <div class="tier-card primary">
+        <div class="tier-name">opencode</div>
+        <div class="tier-detail">Cli · Tier 1</div>
+      </div>
+      <div class="tier-card primary">
+        <div class="tier-name">Codex</div>
+        <div class="tier-detail">Cli · Tier 1</div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-name">Roo Code</div>
+        <div class="tier-detail">Cli · Tier 2</div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-name">Antigravity</div>
+        <div class="tier-detail">Cli · Tier 2</div>
+      </div>
+      <div class="tier-card platform">
+        <div class="tier-name">UAR Agent</div>
+        <div class="tier-detail">Runtime · Core</div>
+      </div>
+      <div class="tier-card platform">
+        <div class="tier-name">OpenAI Agents</div>
+        <div class="tier-detail">Platform · Core</div>
+      </div>
+    </div>
+
+    <h3>Platform Backend: OpenAI Agents SDK</h3>
+
+    <p>
+      OpenAI's Agents SDK (Responses API with native tool use, code interpreter, and file search) is the right choice for the single external platform backend. It carries the largest ecosystem weight, has a production-grade API surface, and provides a well-defined agent lifecycle: <strong>create agent → create thread → run → poll → complete</strong>.
+    </p>
+
+    <div class="callout info">
+      <div class="callout-title">Why OpenAI Over Alternatives</div>
+      <div class="callout-body">
+        LangGraph, CrewAI, and AutoGen are frameworks — they run in your process and own the orchestration model. That conflicts with prom-lanes, which IS the orchestrator. OpenAI Agents SDK is a service: you send a task, poll for completion, collect results. Clean backend boundary. The agent runs on OpenAI's infrastructure; prom-lanes manages the lane lifecycle around it.
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-label">crates/core/src/backends/openai_agents.rs — sketch</div>
+<pre><span class="kw">pub struct</span> <span class="ty">OpenAiAgentsBackend</span> {
+    client:       <span class="ty">OpenAiClient</span>,
+    assistant_id: <span class="ty">Option</span>&lt;<span class="ty">String</span>&gt;,  <span class="cm">// pre-configured or created per-lane</span>
+}
+
+<span class="kw">impl</span> <span class="ty">AgentBackend</span> <span class="kw">for</span> <span class="ty">OpenAiAgentsBackend</span> {
+    <span class="kw">fn</span> <span class="fn">key</span>(&amp;self) -> &amp;<span class="kw">'static str</span> { <span class="st">"openai"</span> }
+    <span class="kw">fn</span> <span class="fn">kind</span>(&amp;self) -> <span class="ty">BackendKind</span> { <span class="ty">BackendKind</span>::Platform }
+
+    <span class="kw">fn</span> <span class="fn">start</span>(&amp;self, req: <span class="ty">StartRequest</span>) -> <span class="ty">Result</span>&lt;<span class="ty">RunningSession</span>&gt; {
+        <span class="cm">// 1. Upload workspace artifacts as files (if applicable)</span>
+        <span class="cm">// 2. Create thread with task contract as initial message</span>
+        <span class="cm">// 3. Create run on the thread</span>
+        <span class="cm">// 4. Return RunningSession with thread_id + run_id</span>
+    }
+
+    <span class="kw">fn</span> <span class="fn">poll</span>(&amp;self, session: &amp;<span class="ty">RunningSession</span>) -> <span class="ty">Result</span>&lt;<span class="ty">SessionStatus</span>&gt; {
+        <span class="cm">// GET /threads/{thread_id}/runs/{run_id}</span>
+        <span class="cm">// Map OpenAI run status → SessionStatus</span>
+    }
+
+    <span class="kw">fn</span> <span class="fn">stop</span>(&amp;self, session: &amp;<span class="ty">RunningSession</span>) -> <span class="ty">Result</span>&lt;()&gt; {
+        <span class="cm">// POST /threads/{thread_id}/runs/{run_id}/cancel</span>
+    }
+
+    <span class="kw">fn</span> <span class="fn">supports_streaming</span>(&amp;self) -> <span class="ty">bool</span> { <span class="kw">true</span> }
+}</pre>
+    </div>
+
+    <h3>Runtime Backend: UAR</h3>
+
+    <p>
+      The UarBackend creates a recursive orchestration loop: prom-lanes orchestrates UAR agent instances, and UAR can itself run prom-lanes as a NativeSkill. A <strong>depth guard</strong> (configurable, default max depth: 3) prevents infinite recursion. Communication is in-process via channels — no HTTP, no CLI spawning.
+    </p>
+
+    <div class="code-block">
+      <div class="code-block-label">crates/core/src/backends/uar.rs — sketch</div>
+<pre><span class="kw">pub struct</span> <span class="ty">UarBackend</span> {
+    runtime:   <span class="ty">Arc</span>&lt;<span class="ty">UarRuntime</span>&gt;,
+    max_depth: <span class="ty">u8</span>,            <span class="cm">// recursion depth guard (default: 3)</span>
+}
+
+<span class="kw">impl</span> <span class="ty">AgentBackend</span> <span class="kw">for</span> <span class="ty">UarBackend</span> {
+    <span class="kw">fn</span> <span class="fn">key</span>(&amp;self) -> &amp;<span class="kw">'static str</span> { <span class="st">"uar"</span> }
+    <span class="kw">fn</span> <span class="fn">kind</span>(&amp;self) -> <span class="ty">BackendKind</span> { <span class="ty">BackendKind</span>::Runtime }
+
+    <span class="kw">fn</span> <span class="fn">start</span>(&amp;self, req: <span class="ty">StartRequest</span>) -> <span class="ty">Result</span>&lt;<span class="ty">RunningSession</span>&gt; {
+        <span class="cm">// 1. Check depth guard — reject if at max</span>
+        <span class="cm">// 2. Instantiate UAR agent with workspace address</span>
+        <span class="cm">// 3. Inject task contract as initial skill context</span>
+        <span class="cm">// 4. Spawn agent on actor supervisor</span>
+        <span class="cm">// 5. Return RunningSession with actor handle</span>
+    }
+
+    <span class="kw">fn</span> <span class="fn">poll</span>(&amp;self, session: &amp;<span class="ty">RunningSession</span>) -> <span class="ty">Result</span>&lt;<span class="ty">SessionStatus</span>&gt; {
+        <span class="cm">// Query actor supervisor for agent state</span>
+    }
+
+    <span class="kw">fn</span> <span class="fn">stop</span>(&amp;self, session: &amp;<span class="ty">RunningSession</span>) -> <span class="ty">Result</span>&lt;()&gt; {
+        <span class="cm">// Send shutdown signal to actor</span>
+    }
+
+    <span class="kw">fn</span> <span class="fn">supports_streaming</span>(&amp;self) -> <span class="ty">bool</span> { <span class="kw">true</span> }
+    <span class="kw">fn</span> <span class="fn">supports_resume</span>(&amp;self) -> <span class="ty">bool</span> { <span class="kw">true</span> }
+}</pre>
+    </div>
+  </section>
+
+  <!-- ── ENGINE ──────────────────────────────────────── -->
+  <section id="engine" class="section">
+    <div class="section-label">04 · Engine Architecture</div>
+    <h2>Orchestration Core</h2>
+
+    <h3>Updated Lane Model</h3>
+    <div class="code-block">
+<pre><span class="kw">pub struct</span> <span class="ty">Lane</span> {
+    <span class="kw">pub</span> id:                  <span class="ty">LaneId</span>,
+    <span class="kw">pub</span> task_id:             <span class="ty">String</span>,
+    <span class="kw">pub</span> backend:             <span class="ty">String</span>,             <span class="cm">// "claude" | "opencode" | "openai" | "uar"</span>
+    <span class="kw">pub</span> workspace_provider:  <span class="ty">String</span>,             <span class="cm">// "git" | "surreal" | "postgres" | "directory"</span>
+    <span class="kw">pub</span> workspace_handle:    <span class="ty">WorkspaceHandle</span>,    <span class="cm">// opaque handle from provider</span>
+    <span class="kw">pub</span> status:              <span class="ty">LaneStatus</span>,
+    <span class="kw">pub</span> session:             <span class="ty">Option</span>&lt;<span class="ty">RunningSession</span>&gt;,
+    <span class="kw">pub</span> contract_path:       <span class="ty">PathBuf</span>,
+    <span class="kw">pub</span> acceptance:          <span class="ty">Vec</span>&lt;<span class="ty">String</span>&gt;,
+    <span class="kw">pub</span> created_at:          <span class="ty">DateTime</span>&lt;<span class="ty">Utc</span>&gt;,
+    <span class="kw">pub</span> updated_at:          <span class="ty">DateTime</span>&lt;<span class="ty">Utc</span>&gt;,
+}</pre>
+    </div>
+
+    <h3>Lane State Machine</h3>
+    <div class="state-flow">
+      <span class="state-node active">Ready</span>
+      <span class="state-arrow">→</span>
+      <span class="state-node">Running</span>
+      <span class="state-arrow">→</span>
+      <span class="state-node">Review</span>
+      <span class="state-arrow">→</span>
+      <span class="state-node">Merged</span>
+    </div>
+    <div class="state-flow" style="margin-top: .5rem;">
+      <span class="state-node terminal">Failed</span>
+      <span class="state-node terminal">Blocked</span>
+      <span class="state-node terminal">Canceled</span>
+      <span style="font-family: var(--font-mono); font-size: .65rem; color: var(--fg-subtle); margin-left: .5rem;">terminal — reachable from any active state</span>
+    </div>
+
+    <h3>Engine Facade</h3>
+    <div class="code-block">
+<pre><span class="kw">pub struct</span> <span class="ty">Engine</span>&lt;<span class="ty">S</span>: <span class="ty">Store</span>&gt; {
+    store:      <span class="ty">S</span>,
+    workspaces: <span class="ty">WorkspaceRegistry</span>,    <span class="cm">// key → Box&lt;dyn WorkspaceProvider&gt;</span>
+    backends:   <span class="ty">BackendRegistry</span>,      <span class="cm">// key → Box&lt;dyn AgentBackend&gt;</span>
+    events:     <span class="ty">EventBus</span>,
+}
+
+<span class="kw">impl</span>&lt;<span class="ty">S</span>: <span class="ty">Store</span>&gt; <span class="ty">Engine</span>&lt;<span class="ty">S</span>&gt; {
+    <span class="kw">pub fn</span> <span class="fn">plan_from_openspec</span>(&amp;self, root: &amp;<span class="ty">Path</span>) -> <span class="ty">Result</span>&lt;<span class="ty">Vec</span>&lt;<span class="ty">Lane</span>&gt;&gt;;
+
+    <span class="kw">pub fn</span> <span class="fn">lane_create</span>(&amp;self, req: <span class="ty">LaneCreateRequest</span>) -> <span class="ty">Result</span>&lt;<span class="ty">Lane</span>&gt;;
+    <span class="cm">// 1. Lookup workspace provider by key</span>
+    <span class="cm">// 2. Call provider.create(config) → workspace handle</span>
+    <span class="cm">// 3. Generate TASK.md contract</span>
+    <span class="cm">// 4. Persist lane with status = Ready</span>
+
+    <span class="kw">pub fn</span> <span class="fn">lane_start</span>(&amp;self, id: <span class="ty">LaneId</span>) -> <span class="ty">Result</span>&lt;()&gt;;
+    <span class="cm">// 1. Lookup backend by key</span>
+    <span class="cm">// 2. Get workspace address from provider</span>
+    <span class="cm">// 3. Call backend.start(StartRequest { workspace, prompt, ... })</span>
+    <span class="cm">// 4. Transition: Ready → Running</span>
+
+    <span class="kw">pub fn</span> <span class="fn">lane_poll</span>(&amp;self, id: <span class="ty">LaneId</span>) -> <span class="ty">Result</span>&lt;<span class="ty">SessionStatus</span>&gt;;
+    <span class="cm">// Delegates to backend.poll(session)</span>
+
+    <span class="kw">pub fn</span> <span class="fn">lane_finalize</span>(&amp;self, id: <span class="ty">LaneId</span>) -> <span class="ty">Result</span>&lt;<span class="ty">LaneFinalization</span>&gt;;
+    <span class="cm">// 1. Run acceptance tests</span>
+    <span class="cm">// 2. Call workspace.status() to check artifacts</span>
+    <span class="cm">// 3. Transition: Running → Review</span>
+
+    <span class="kw">pub fn</span> <span class="fn">lane_merge</span>(&amp;self, id: <span class="ty">LaneId</span>, target: <span class="ty">MergeTarget</span>) -> <span class="ty">Result</span>&lt;<span class="ty">MergeResult</span>&gt;;
+    <span class="cm">// 1. Enforce lead-only</span>
+    <span class="cm">// 2. Call workspace.merge_into(handle, target)</span>
+    <span class="cm">// 3. Transition: Review → Merged</span>
+
+    <span class="kw">pub fn</span> <span class="fn">lane_clean</span>(&amp;self, id: <span class="ty">LaneId</span>) -> <span class="ty">Result</span>&lt;()&gt;;
+    <span class="cm">// Call workspace.destroy(handle)</span>
+}</pre>
+    </div>
+
+    <h3>Event Bus</h3>
+    <div class="code-block">
+<pre><span class="kw">pub enum</span> <span class="ty">EngineEvent</span> {
+    <span class="fn">LaneCreated</span>       { lane_id: <span class="ty">LaneId</span>, backend: <span class="ty">String</span>, workspace: <span class="ty">String</span> },
+    <span class="fn">WorkspaceReady</span>    { lane_id: <span class="ty">LaneId</span>, address: <span class="ty">WorkspaceAddress</span> },
+    <span class="fn">SessionStarted</span>    { lane_id: <span class="ty">LaneId</span>, backend_kind: <span class="ty">BackendKind</span> },
+    <span class="fn">SessionPoll</span>       { lane_id: <span class="ty">LaneId</span>, status: <span class="ty">SessionStatus</span> },
+    <span class="fn">LogLine</span>           { lane_id: <span class="ty">LaneId</span>, line: <span class="ty">String</span> },
+    <span class="fn">TestsStarted</span>      { lane_id: <span class="ty">LaneId</span>, cmd: <span class="ty">String</span> },
+    <span class="fn">TestsFinished</span>     { lane_id: <span class="ty">LaneId</span>, ok: <span class="ty">bool</span>, duration_ms: <span class="ty">u64</span> },
+    <span class="fn">LaneFinalized</span>     { lane_id: <span class="ty">LaneId</span> },
+    <span class="fn">MergeStarted</span>      { lane_id: <span class="ty">LaneId</span>, target: <span class="ty">MergeTarget</span> },
+    <span class="fn">LaneMerged</span>        { lane_id: <span class="ty">LaneId</span>, result: <span class="ty">MergeResult</span> },
+    <span class="fn">LaneFailed</span>        { lane_id: <span class="ty">LaneId</span>, error: <span class="ty">String</span> },
+}</pre>
+    </div>
+  </section>
+
+  <!-- ── WORKSPACE LAYOUT ────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">05 · Workspace Structure</div>
+    <h2>Cargo Workspace Layout</h2>
+
+    <div class="tree-block">
+<pre><span class="dir">prom-lanes/</span>
+  Cargo.toml                              <span class="cm"># workspace root</span>
+  <span class="dir">crates/</span>
+    <span class="dir">core/</span>                                 <span class="cm"># prom-lanes-core (library)</span>
+      <span class="dir">src/</span>
+        lib.rs
+        <span class="dir">engine/</span>
+          engine.rs                       <span class="cm"># Engine&lt;S: Store&gt; facade</span>
+          events.rs                       <span class="cm"># EngineEvent + EventBus</span>
+        <span class="dir">lanes/</span>
+          lane.rs                         <span class="cm"># Lane model + LaneStatus</span>
+          state_machine.rs                <span class="cm"># transition guards</span>
+          contract.rs                     <span class="cm"># TASK.md generator</span>
+        <span class="dir">workspace/</span>                        <span class="cm"># NEW — isolation axis</span>
+          trait.rs                        <span class="cm"># WorkspaceProvider + WorkspaceAddress</span>
+          registry.rs                     <span class="cm"># WorkspaceRegistry</span>
+          git.rs                          <span class="cm"># GitWorkspaceProvider</span>
+          surreal.rs                      <span class="cm"># SurrealWorkspaceProvider</span>
+          postgres.rs                     <span class="cm"># PostgresWorkspaceProvider</span>
+          directory.rs                    <span class="cm"># DirectoryWorkspaceProvider</span>
+        <span class="dir">backends/</span>                         <span class="cm"># execution axis</span>
+          trait.rs                        <span class="cm"># AgentBackend + BackendKind</span>
+          registry.rs                     <span class="cm"># BackendRegistry</span>
+          claude_code.rs                  <span class="cm"># Cli</span>
+          opencode.rs                     <span class="cm"># Cli</span>
+          codex.rs                        <span class="cm"># Cli</span>
+          roo_code.rs                     <span class="cm"># Cli</span>
+          antigravity.rs                  <span class="cm"># Cli</span>
+          openai_agents.rs                <span class="cm"># Platform — NEW</span>
+          uar.rs                          <span class="cm"># Runtime — NEW</span>
+        <span class="dir">persist/</span>
+          store.rs                        <span class="cm"># Store trait</span>
+          json_store.rs                   <span class="cm"># default JSON persistence</span>
+        <span class="dir">planner/</span>
+          openspec.rs                     <span class="cm"># OpenSpec adapter</span>
+        <span class="dir">exec/</span>
+          process.rs                      <span class="cm"># spawn/stop/log (for Cli backends)</span>
+          commands.rs                     <span class="cm"># acceptance test runner</span>
+    <span class="dir">cli/</span>                                  <span class="cm"># prom-lanes (binary)</span>
+      <span class="dir">src/</span>
+        main.rs
+        <span class="dir">commands/</span>
+          plan.rs
+          lane.rs
+          status.rs
+          merge.rs</pre>
+    </div>
+  </section>
+
+  <!-- ── DECISIONS ───────────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">06 · Architectural Decisions</div>
+    <h2>Decision Record</h2>
+
+    <table class="decision-table">
+      <thead><tr><th>Decision</th><th>Choice</th><th>Rationale</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>External platform</td>
+          <td>OpenAI Agents SDK</td>
+          <td>Service model (not framework). Clean backend boundary. Largest ecosystem. Production API with tool use, code interpreter, file search. Doesn't compete with prom-lanes as orchestrator.</td>
+        </tr>
+        <tr>
+          <td>Recursion guard</td>
+          <td>depth counter (max: 3)</td>
+          <td>UAR as both host and backend creates recursive potential. Counter threaded through StartRequest. Rejected if depth ≥ max.</td>
+        </tr>
+        <tr>
+          <td>Workspace abstraction</td>
+          <td>WorkspaceProvider trait</td>
+          <td>Same pattern as AgentBackend: registry of implementations. Engine never assumes filesystem. Workspace × Backend compose freely.</td>
+        </tr>
+        <tr>
+          <td>Backend monitoring</td>
+          <td>BackendKind → poll()</td>
+          <td>Cli: PID-alive check. Platform: HTTP poll. Runtime: channel recv. Unified poll() method, engine dispatches by kind.</td>
+        </tr>
+        <tr>
+          <td>Workspace merge semantics</td>
+          <td>provider-specific</td>
+          <td>Git: merge --no-ff. SurrealDB: INSERT INTO shared. Postgres: schema-to-schema upsert. Directory: file copy. Interface is uniform; implementation varies.</td>
+        </tr>
+        <tr>
+          <td>Feature gating</td>
+          <td>cargo features</td>
+          <td>surreal, postgres, openai, uar as optional features. Core + git + directory + CLI backends always available. Minimizes dependency tree.</td>
+        </tr>
+        <tr>
+          <td>Default workspace</td>
+          <td>git (code), directory (general)</td>
+          <td>CLI auto-selects based on .git presence. If repo, default git. Otherwise, directory. Overridable via --workspace flag.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── PHASES ──────────────────────────────────────── -->
+  <section id="phases" class="section">
+    <div class="section-label">07 · Implementation Phases</div>
+    <h2>Nine-Phase Build Sequence</h2>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 1</span>
+        <span class="phase-title">Foundation — Lane Model & Persistence</span>
+        <span class="phase-est">2–3 days</span>
+      </div>
+      <div class="phase-body">
+        Lane struct (now with workspace_provider and workspace_handle fields). LaneStatus enum. State machine with transition guards. Store trait + JsonStore. Comprehensive unit tests for every valid and invalid transition.
+      </div>
+      <div class="phase-deliverables">
+        <span class="pill">Lane model</span>
+        <span class="pill">State machine</span>
+        <span class="pill">Store trait</span>
+        <span class="pill">JsonStore</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 2</span>
+        <span class="phase-title">Workspace Provider Trait + Git + Directory</span>
+        <span class="phase-est">2–3 days</span>
+      </div>
+      <div class="phase-body">
+        WorkspaceProvider trait with all five methods. WorkspaceRegistry. GitWorkspaceProvider (shells out to git: create worktree, status, snapshot via commit, merge --no-ff, destroy). DirectoryWorkspaceProvider (mkdir, tar snapshot, file copy merge). WorkspaceAddress enum. Integration tests with 3+ parallel workspaces.
+      </div>
+      <div class="phase-deliverables">
+        <span class="pill">WorkspaceProvider trait</span>
+        <span class="pill">GitWorkspaceProvider</span>
+        <span class="pill">DirectoryWorkspaceProvider</span>
+        <span class="pill">WorkspaceRegistry</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 3</span>
+        <span class="phase-title">AgentBackend Trait + First CLI Backend</span>
+        <span class="phase-est">1–2 days</span>
+      </div>
+      <div class="phase-body">
+        AgentBackend trait with kind(), poll(), supports_streaming(). BackendKind enum. BackendRegistry. CodexBackend as first implementation (Cli kind, simplest adapter). Full lifecycle: create lane with git workspace + codex backend → start → poll → stop → finalize.
+      </div>
+      <div class="phase-deliverables">
+        <span class="pill">AgentBackend trait</span>
+        <span class="pill">BackendKind</span>
+        <span class="pill">CodexBackend</span>
+        <span class="pill">End-to-end lifecycle</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 4</span>
+        <span class="phase-title">Engine + Contracts + OpenSpec</span>
+        <span class="phase-est">2–3 days</span>
+      </div>
+      <div class="phase-body">
+        Engine&lt;S: Store&gt; wiring WorkspaceRegistry + BackendRegistry. Task contract generator (TASK.md). OpenSpec adapter. Engine methods: plan_from_openspec(), lane_create() (resolves workspace + backend from registries), lane_start(), lane_poll(), lane_stop().
+      </div>
+      <div class="phase-deliverables">
+        <span class="pill">Engine facade</span>
+        <span class="pill">Contract generator</span>
+        <span class="pill">OpenSpec adapter</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 5</span>
+        <span class="phase-title">Finalization & Merge Gate</span>
+        <span class="phase-est">2 days</span>
+      </div>
+      <div class="phase-body">
+        lane_finalize(): run acceptance tests, check workspace status, verify deliverables. lane_merge(): call workspace.merge_into() — delegates to provider. Lead-only enforcement. lane_clean(): call workspace.destroy(). Works identically regardless of workspace provider.
+      </div>
+      <div class="phase-deliverables">
+        <span class="pill">Finalization</span>
+        <span class="pill">Provider-agnostic merge</span>
+        <span class="pill">Cleanup</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 6</span>
+        <span class="phase-title">Remaining CLI Backends + CLI Binary</span>
+        <span class="phase-est">2–3 days</span>
+      </div>
+      <div class="phase-body">
+        ClaudeCodeBackend, OpenCodeBackend (Tier 1). RooCodeBackend, AntigravityBackend (Tier 2). Backend auto-detection. CLI binary with clap: plan, lane create/start/stop/finalize/merge/status/logs/clean. Auto-select workspace provider based on .git presence.
+      </div>
+      <div class="phase-deliverables">
+        <span class="pill">5 CLI backends</span>
+        <span class="pill">Auto-detection</span>
+        <span class="pill">CLI binary</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 7</span>
+        <span class="phase-title">Database Workspace Providers</span>
+        <span class="phase-est">3–4 days</span>
+      </div>
+      <div class="phase-body">
+        SurrealWorkspaceProvider (behind <code>surreal</code> feature flag): namespace creation, record count status, EXPORT snapshot, namespace-to-namespace merge. PostgresWorkspaceProvider (behind <code>postgres</code> feature flag): schema creation, pg_stat status, pg_dump snapshot, schema-to-schema upsert merge. Integration tests for both.
+      </div>
+      <div class="phase-deliverables">
+        <span class="pill">SurrealWorkspaceProvider</span>
+        <span class="pill">PostgresWorkspaceProvider</span>
+        <span class="pill">Feature flags</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 8</span>
+        <span class="phase-title">Platform Backends — OpenAI + UAR</span>
+        <span class="phase-est">3–4 days</span>
+      </div>
+      <div class="phase-body">
+        OpenAiAgentsBackend (behind <code>openai</code> feature flag): Agents SDK integration via Responses API. Thread + run lifecycle. File upload for workspace artifacts. Poll-based monitoring. UarBackend (behind <code>uar</code> feature flag): in-process agent instantiation via actor supervisor. Depth guard. Channel-based communication.
+      </div>
+      <div class="phase-deliverables">
+        <span class="pill">OpenAiAgentsBackend</span>
+        <span class="pill">UarBackend</span>
+        <span class="pill">Depth guard</span>
+        <span class="pill">Platform polling</span>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-num">PHASE 9</span>
+        <span class="phase-title">Events, Concurrency & UAR Integration</span>
+        <span class="phase-est">2–3 days</span>
+      </div>
+      <div class="phase-body">
+        EngineEvent bus (crossbeam_channel default, tokio::broadcast behind async flag). Concurrency limiter (max_running_lanes + queue). Composition tests: cross-product of workspace × backend. Public API surface audit. PromLanesSkill NativeSkill wrapper for UAR.
+      </div>
+      <div class="phase-deliverables">
+        <span class="pill">Event streaming</span>
+        <span class="pill">Concurrency limiter</span>
+        <span class="pill">Composition tests</span>
+        <span class="pill">NativeSkill wrapper</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── UAR INTEGRATION ─────────────────────────────── -->
+  <section id="uar" class="section">
+    <div class="section-label">08 · UAR Integration</div>
+    <h2>Bidirectional Embedding</h2>
+
+    <p>
+      The UAR relationship is now bidirectional. UAR embeds prom-lanes-core as a NativeSkill (prom-lanes orchestrates external agents on UAR's behalf). And prom-lanes includes a UarBackend that orchestrates UAR agent instances as lane workers. This creates a <strong>fractal orchestration model</strong> where the runtime and the orchestrator reinforce each other.
+    </p>
+
+    <div class="code-block">
+      <div class="code-block-label">Bidirectional Architecture</div>
+<pre><span class="cm">┌─────────────────────────────────────────┐</span>
+<span class="cm">│              UAR Runtime                │</span>
+<span class="cm">│  ┌───────────────────────────────────┐  │</span>
+<span class="cm">│  │    PromLanesSkill (NativeSkill)   │  │</span>
+<span class="cm">│  │  ┌─────────────────────────────┐  │  │</span>
+<span class="cm">│  │  │      prom-lanes Engine      │  │  │</span>
+<span class="cm">│  │  │                             │  │  │</span>
+<span class="cm">│  │  │  ┌─────┐ ┌─────┐ ┌──────┐ │  │  │</span>
+<span class="cm">│  │  │  │ Git │ │Surl │ │ PG   │ │  │  │</span>  <span class="cm">← WorkspaceProviders</span>
+<span class="cm">│  │  │  └─────┘ └─────┘ └──────┘ │  │  │</span>
+<span class="cm">│  │  │                             │  │  │</span>
+<span class="cm">│  │  │  ┌──────┐ ┌──────┐ ┌────┐ │  │  │</span>
+<span class="cm">│  │  │  │Claude│ │OpenAI│ │UAR │◄┤──┤──┤──── depth guard</span>
+<span class="cm">│  │  │  └──────┘ └──────┘ └────┘ │  │  │</span>  <span class="cm">← AgentBackends</span>
+<span class="cm">│  │  └─────────────────────────────┘  │  │</span>
+<span class="cm">│  └───────────────────────────────────┘  │</span>
+<span class="cm">│                                         │</span>
+<span class="cm">│  Cedar PDP · SurrealDB · Actor System   │</span>
+<span class="cm">└─────────────────────────────────────────┘</span></pre>
+    </div>
+
+    <h3>Integration Surface</h3>
+    <table class="data-table">
+      <thead><tr><th>UAR Component</th><th>prom-lanes Surface</th></tr></thead>
+      <tbody>
+        <tr><td>Actor Supervisor</td><td>EngineEvent stream (tokio::broadcast) + UarBackend agent spawning</td></tr>
+        <tr><td>SurrealDB</td><td>Store trait (SurrealStore) + SurrealWorkspaceProvider</td></tr>
+        <tr><td>Cedar PDP</td><td>Policy gate on lane_merge(), lane_start(), backend selection</td></tr>
+        <tr><td>NativeSkill</td><td>PromLanesSkill wrapping Engine methods</td></tr>
+        <tr><td>AG-UI</td><td>EngineEvents mapped to SSE stream for frontend</td></tr>
+        <tr><td>Agent Instances</td><td>UarBackend spawns UAR agents as lane workers</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── CLI ─────────────────────────────────────────── -->
+  <section id="cli" class="section">
+    <div class="section-label">09 · CLI Reference</div>
+    <h2>Command Interface</h2>
+
+    <div style="margin-top: 1.25rem;">
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">plan</span> <span class="comment"># sync OpenSpec tasks → lane queue</span></span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">lane create</span> TASK-042 <span class="flag">--backend</span> claude <span class="flag">--workspace</span> git <span class="flag">--base</span> main</span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">lane create</span> TASK-099 <span class="flag">--backend</span> openai <span class="flag">--workspace</span> surreal <span class="comment"># data task</span></span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">lane create</span> TASK-101 <span class="flag">--backend</span> uar <span class="flag">--workspace</span> postgres <span class="comment"># analytics task</span></span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">lane start</span> &lt;LANE_ID&gt;</span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">lane status</span> <span class="comment"># all lanes: state · backend · workspace · duration</span></span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">lane logs</span> &lt;LANE_ID&gt;</span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">lane stop</span> &lt;LANE_ID&gt;</span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">lane finalize</span> &lt;LANE_ID&gt;</span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">lane merge</span> &lt;LANE_ID&gt; <span class="flag">--target</span> main <span class="comment"># git: branch merge · surreal: namespace merge · pg: schema merge</span></span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">lane clean</span> &lt;LANE_ID&gt;</span>
+      </div>
+      <div class="cli-cmd">
+        <span class="cli-prompt">$</span>
+        <span class="cli-text">prom-lanes <span class="arg">providers</span> <span class="comment"># list available workspace providers + backends</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ROADMAP ─────────────────────────────────────── -->
+  <section id="roadmap" class="section">
+    <div class="section-label">10 · Post-v1.0 Roadmap</div>
+    <h2>Future Evolution</h2>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-label">v1.1</div>
+        <div class="card-title">Daemon Mode</div>
+        <div class="card-desc">prom-lanesd background process with HTTP/IPC API. Persistent lane management and real-time event streaming to any client.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">v1.1</div>
+        <div class="card-title">Cedar Governance</div>
+        <div class="card-desc">Policy-gate lane operations via UAR's Cedar PDP. Control who merges, which backends are permitted, workspace provider restrictions per project.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">v1.2</div>
+        <div class="card-title">WASM Plugins</div>
+        <div class="card-desc">Hot-load new workspace providers and agent backends as WASM modules. New adapters by dropping a .wasm file. No recompilation.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">v1.2</div>
+        <div class="card-title">MCP Server</div>
+        <div class="card-desc">Expose lane operations as MCP tools. Any MCP-compatible client can create, start, monitor, and merge lanes across workspace types.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">v2.0</div>
+        <div class="card-title">Distributed Lanes</div>
+        <div class="card-desc">Lanes spanning multiple machines. Remote workspaces via SSH or cloud-native providers. Central engine coordinating distributed agent processes.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">v2.0</div>
+        <div class="card-title">Conflict Resolution Engine</div>
+        <div class="card-desc">Provider-aware conflict detection and resolution. Git three-way merge. SurrealDB CRDT-based merge. Postgres constraint-aware upsert. Human-in-the-loop for ambiguous conflicts.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SUMMARY ─────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">Summary</div>
+    <h2>What This Produces</h2>
+
+    <p>
+      <strong>prom-lanes v2</strong> is a concurrent agent orchestration engine built on two orthogonal axes: WorkspaceProviders manage isolation (git, SurrealDB, Postgres, directories) while AgentBackends manage execution (CLI tools, OpenAI Agents SDK, UAR runtime). Any workspace × any backend. One engine manages the lane lifecycle.
+    </p>
+
+    <p>
+      The UAR integration is now bidirectional — prom-lanes embeds in UAR as a NativeSkill, and UAR embeds in prom-lanes as a backend. This creates a fractal orchestration model where coding agents, data agents, and research agents all share the same concurrency infrastructure.
+    </p>
+
+    <div class="pill-list" style="margin-top: 1rem;">
+      <span class="pill">Rust · Cargo Workspace</span>
+      <span class="pill">Library + Binary</span>
+      <span class="pill">4 Workspace Providers</span>
+      <span class="pill">7+ Agent Backends</span>
+      <span class="pill">OpenAI Agents SDK</span>
+      <span class="pill">UAR Recursive Orchestration</span>
+      <span class="pill">Feature-Gated Providers</span>
+      <span class="pill">~19–25 days to v1.0</span>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-brand">travis<em>james</em>.ai</div>
+    <div class="footer-meta">PROM-LANES v0.2.0 · 2026-02-21 · CONCURRENT AGENT ORCHESTRATION ENGINE</div>
+  </footer>
+
+</div><!-- /wrap -->
+
+<script>
+function switchTab(id, container, btn) {
+  const tabs = document.getElementById(container);
+  tabs.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  tabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+
+</body>
+</html>
