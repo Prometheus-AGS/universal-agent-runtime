@@ -64,7 +64,7 @@ variable "llm_base_url" {
 variable "llm_model" {
   description = "LLM model identifier (e.g. gpt-4o)"
   type        = string
-  default     = "gpt-4o"
+  default     = "gpt-5.2"
 }
 
 variable "llm_api_key" {
