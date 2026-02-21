@@ -152,20 +152,18 @@ resource "kubernetes_ingress_v1" "surreal_api_ingress" {
     }
 
     annotations = {
-      "kubernetes.io/ingress.class"                    = "nginx"
-      "cert-manager.io/cluster-issuer"                 = "letsencrypt-prod"
-      "nginx.ingress.kubernetes.io/ssl-redirect"       = "true"
-      "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+      "kubernetes.io/ingress.class"                     = "nginx"
+      "cert-manager.io/cluster-issuer"                  = "letsencrypt-prod"
+      "nginx.ingress.kubernetes.io/ssl-redirect"        = "true"
+      "nginx.ingress.kubernetes.io/force-ssl-redirect"  = "true"
       # Extended timeouts for long-lived WebSocket connections
-      "nginx.ingress.kubernetes.io/proxy-read-timeout" = "3600"
-      "nginx.ingress.kubernetes.io/proxy-send-timeout" = "3600"
+      "nginx.ingress.kubernetes.io/proxy-read-timeout"  = "3600"
+      "nginx.ingress.kubernetes.io/proxy-send-timeout"  = "3600"
       # Disable response buffering for WebSocket / streaming
-      "nginx.ingress.kubernetes.io/proxy-buffering"    = "off"
-      # WebSocket upgrade headers
-      "nginx.ingress.kubernetes.io/configuration-snippet" = <<-EOT
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      EOT
+      "nginx.ingress.kubernetes.io/proxy-buffering"     = "off"
+      # WebSocket upgrade — nginx ingress handles Upgrade/Connection headers
+      # automatically when proxy-http-version is set to 1.1; no snippet needed.
+      "nginx.ingress.kubernetes.io/proxy-http-version"  = "1.1"
     }
   }
 
@@ -222,11 +220,9 @@ resource "kubernetes_ingress_v1" "dbgate_ingress" {
       "nginx.ingress.kubernetes.io/proxy-read-timeout" = "300"
       "nginx.ingress.kubernetes.io/proxy-send-timeout" = "300"
       "nginx.ingress.kubernetes.io/proxy-body-size"    = "50m"
-      # WebSocket support for DbGate's real-time query results
-      "nginx.ingress.kubernetes.io/configuration-snippet" = <<-EOT
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-      EOT
+      # WebSocket upgrade — nginx ingress handles Upgrade/Connection headers
+      # automatically when proxy-http-version is set to 1.1; no snippet needed.
+      "nginx.ingress.kubernetes.io/proxy-http-version" = "1.1"
     }
   }
 
