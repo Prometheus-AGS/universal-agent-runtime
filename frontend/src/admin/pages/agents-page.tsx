@@ -1,6 +1,11 @@
 import { type FC, useCallback, useEffect, useState } from "react";
 import { Bot, Brain, Loader2, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import type { AgentsResponse, UarAgent } from "@/types";
 
@@ -20,30 +25,37 @@ const SCOPE_OPTIONS = [
   { value: "session", label: "Session-scoped" },
 ];
 
+type TriValue = "inherit" | "on" | "off";
+
+function encodeTriValue(v: boolean | null): TriValue {
+  if (v === null) return "inherit";
+  return v ? "on" : "off";
+}
+
+function decodeTriValue(s: string): boolean | null {
+  if (s === "on") return true;
+  if (s === "off") return false;
+  return null;
+}
+
 function TriToggle({ value, onChange }: { value: boolean | null; onChange: (v: boolean | null) => void }) {
-  const labels: { v: boolean | null; label: string }[] = [
-    { v: null, label: "Inherit" },
-    { v: true, label: "On" },
-    { v: false, label: "Off" },
-  ];
   return (
-    <div className="inline-flex rounded-lg border border-border overflow-hidden text-[11px] font-mono">
-      {labels.map(({ v, label }) => (
-        <button
-          key={label}
-          type="button"
-          onClick={() => onChange(v)}
-          className={cn(
-            "cursor-pointer px-3 py-1 transition-colors",
-            value === v
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-muted/50"
-          )}
+    <ToggleGroup
+      type="single"
+      value={encodeTriValue(value)}
+      onValueChange={(s) => { if (s) onChange(decodeTriValue(s)); }}
+      className="gap-0 overflow-hidden rounded-lg border border-border"
+    >
+      {(["inherit", "on", "off"] as TriValue[]).map((v) => (
+        <ToggleGroupItem
+          key={v}
+          value={v}
+          className="rounded-none border-0 px-3 py-1 font-mono text-[11px] capitalize data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
         >
-          {label}
-        </button>
+          {v.charAt(0).toUpperCase() + v.slice(1)}
+        </ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }
 
@@ -92,58 +104,75 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
         </p>
       </div>
 
-      <div className="space-y-3 rounded-lg border border-border bg-card p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-mono text-[12px] font-medium text-foreground">Memory Enabled</p>
-            <p className="font-mono text-[10px] text-muted-foreground mt-0.5">Override global memory on/off for this agent.</p>
+      <Card className="rounded-lg border-border shadow-none">
+        <CardContent className="space-y-3 p-4">
+          {/* Memory Enabled */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-mono text-[12px] font-medium text-foreground">Memory Enabled</p>
+              <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">Override global memory on/off for this agent.</p>
+            </div>
+            <TriToggle value={state.memory_enabled} onChange={(v) => setState((s) => ({ ...s, memory_enabled: v }))} />
           </div>
-          <TriToggle value={state.memory_enabled} onChange={(v) => setState((s) => ({ ...s, memory_enabled: v }))} />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-mono text-[12px] font-medium text-foreground">Auto-Capture</p>
-            <p className="font-mono text-[10px] text-muted-foreground mt-0.5">Extract memories after each turn.</p>
-          </div>
-          <TriToggle value={state.auto_capture} onChange={(v) => setState((s) => ({ ...s, auto_capture: v }))} />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-mono text-[12px] font-medium text-foreground">Context Injection</p>
-            <p className="font-mono text-[10px] text-muted-foreground mt-0.5">Inject memories as system prompt prefix.</p>
-          </div>
-          <TriToggle value={state.inject_context} onChange={(v) => setState((s) => ({ ...s, inject_context: v }))} />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-mono text-[12px] font-medium text-foreground">Default Scope</p>
-            <p className="font-mono text-[10px] text-muted-foreground mt-0.5">Scope for memories saved by this agent.</p>
-          </div>
-          <select
-            value={state.memory_scope}
-            onChange={(e) => setState((s) => ({ ...s, memory_scope: e.target.value }))}
-            className="h-8 rounded-md border border-input bg-background px-3 font-mono text-[12px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {SCOPE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
 
-        {error && (
-          <p className="font-mono text-[11px] text-destructive">{error}</p>
-        )}
+          {/* Auto-Capture */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-mono text-[12px] font-medium text-foreground">Auto-Capture</p>
+              <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">Extract memories after each turn.</p>
+            </div>
+            <TriToggle value={state.auto_capture} onChange={(v) => setState((s) => ({ ...s, auto_capture: v }))} />
+          </div>
 
-        <div className="flex items-center gap-2 pt-1">
-          <Button size="sm" onClick={() => void save()} disabled={saving} className="gap-1.5">
-            {saving ? <Loader2 size={12} className="animate-spin" /> : null}
-            Save Memory Settings
-          </Button>
-          {saved && (
-            <span className="font-mono text-[11px] text-green-400">Saved ✓</span>
+          {/* Context Injection */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-mono text-[12px] font-medium text-foreground">Context Injection</p>
+              <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">Inject memories as system prompt prefix.</p>
+            </div>
+            <TriToggle value={state.inject_context} onChange={(v) => setState((s) => ({ ...s, inject_context: v }))} />
+          </div>
+
+          {/* Default Scope */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-mono text-[12px] font-medium text-foreground">Default Scope</p>
+              <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">Scope for memories saved by this agent.</p>
+            </div>
+            <Select
+              value={state.memory_scope}
+              onValueChange={(v) => setState((s) => ({ ...s, memory_scope: v }))}
+            >
+              <SelectTrigger className="h-8 w-36 font-mono text-[12px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SCOPE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value} className="font-mono text-[12px]">
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {error && (
+            <Alert variant="destructive" className="py-2">
+              <AlertDescription className="font-mono text-[11px]">{error}</AlertDescription>
+            </Alert>
           )}
-        </div>
-      </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <Button size="sm" onClick={() => void save()} disabled={saving} className="gap-1.5">
+              {saving ? <Loader2 size={12} className="animate-spin" /> : null}
+              Save Memory Settings
+            </Button>
+            {saved && (
+              <span className="font-mono text-[11px] text-green-400">Saved ✓</span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -185,55 +214,94 @@ export const AgentsPage: FC = () => {
             <RefreshCw size={12} className={cn(loading && "animate-spin")} />
           </Button>
         </div>
-        <div className="flex-1 overflow-y-auto py-2">
-          {loading && <div className="flex justify-center py-8"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>}
-          {error && <p className="px-4 py-4 font-mono text-[11px] text-destructive">Error: {error}</p>}
-          {!loading && agents.length === 0 && <p className="px-4 py-4 font-mono text-[11px] text-muted-foreground">No agents configured</p>}
-          {agents.map((a) => (
-            <button key={a.id} onClick={() => setSelected(a)} className={cn("flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors", selected?.id === a.id ? "bg-accent" : "hover:bg-muted/50")}>
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/15"><Bot size={14} className="text-primary" /></div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-display text-[13px] font-semibold text-foreground">{a.metadata?.title ?? a.id}</p>
-                <p className="font-mono text-[10px] text-muted-foreground">{a.kind ?? "agent"}</p>
+        <ScrollArea className="flex-1">
+          <div className="py-2">
+            {loading && (
+              <div className="flex justify-center py-8">
+                <Loader2 size={16} className="animate-spin text-muted-foreground" />
               </div>
-            </button>
-          ))}
-        </div>
+            )}
+            {error && (
+              <Alert variant="destructive" className="mx-3 my-2 py-2">
+                <AlertDescription className="font-mono text-[11px]">Error: {error}</AlertDescription>
+              </Alert>
+            )}
+            {!loading && agents.length === 0 && (
+              <p className="px-4 py-4 font-mono text-[11px] text-muted-foreground">No agents configured</p>
+            )}
+            {agents.map((a) => (
+              <Button
+                key={a.id}
+                variant="ghost"
+                onClick={() => setSelected(a)}
+                className={cn(
+                  "h-auto w-full cursor-pointer justify-start rounded-none px-4 py-2.5 text-left",
+                  selected?.id === a.id ? "bg-accent hover:bg-accent" : "hover:bg-muted/50",
+                )}
+              >
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/15">
+                  <Bot size={14} className="text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-display text-[13px] font-semibold text-foreground">
+                    {a.metadata?.title ?? a.id}
+                  </p>
+                  <p className="font-mono text-[10px] text-muted-foreground">{a.kind ?? "agent"}</p>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </ScrollArea>
       </div>
 
       {/* Detail */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {selected ? (
-          <div className="flex-1 overflow-y-auto p-6">
-            <h2 className="font-display text-lg font-semibold text-foreground">{selected.metadata?.title ?? selected.id}</h2>
-            {selected.metadata?.description && <p className="mt-1 font-body text-sm text-muted-foreground">{selected.metadata.description}</p>}
-            <div className="mt-4">
-              <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">ID</p>
-              <p className="font-mono text-sm text-foreground">{selected.id}</p>
-            </div>
-            {selected.kind && (
-              <div className="mt-4">
-                <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Kind</p>
-                <p className="font-mono text-sm text-foreground">{selected.kind}</p>
-              </div>
-            )}
-            {selected.skills && selected.skills.length > 0 && (
-              <div className="mt-4">
-                <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Skills ({selected.skills.length})</p>
-                <div className="flex flex-col gap-1">
-                  {selected.skills.map((sk) => (
-                    <div key={sk.skill_id} className="rounded-md border border-border bg-card px-3 py-2">
-                      <p className="font-mono text-[12px] text-foreground">{sk.title}</p>
-                      {sk.description && <p className="font-body text-xs text-muted-foreground">{sk.description}</p>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          <ScrollArea className="flex-1">
+            <div className="p-6">
+              <h2 className="font-display text-lg font-semibold text-foreground">
+                {selected.metadata?.title ?? selected.id}
+              </h2>
+              {selected.metadata?.description && (
+                <p className="mt-1 font-body text-sm text-muted-foreground">{selected.metadata.description}</p>
+              )}
 
-            {/* Memory section */}
-            <AgentMemorySection agent={selected} />
-          </div>
+              <div className="mt-4">
+                <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">ID</p>
+                <p className="font-mono text-sm text-foreground">{selected.id}</p>
+              </div>
+
+              {selected.kind && (
+                <div className="mt-4">
+                  <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Kind</p>
+                  <p className="font-mono text-sm text-foreground">{selected.kind}</p>
+                </div>
+              )}
+
+              {selected.skills && selected.skills.length > 0 && (
+                <div className="mt-4">
+                  <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Skills ({selected.skills.length})
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    {selected.skills.map((sk) => (
+                      <Card key={sk.skill_id} className="rounded-md border-border shadow-none">
+                        <CardContent className="px-3 py-2">
+                          <p className="font-mono text-[12px] text-foreground">{sk.title}</p>
+                          {sk.description && (
+                            <p className="font-body text-xs text-muted-foreground">{sk.description}</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Memory section */}
+              <AgentMemorySection agent={selected} />
+            </div>
+          </ScrollArea>
         ) : (
           <div className="flex flex-1 items-center justify-center">
             <p className="font-mono text-[11px] text-muted-foreground">← Select an agent</p>
