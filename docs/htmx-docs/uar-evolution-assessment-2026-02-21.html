@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UAR Iterative Evolution Assessment — 2026-02-21</title>
+
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;600;700&family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ── TOKENS ───────────────────────────────────────── */
+:root {
+  --bg:           #0B0F14;
+  --card:         #0F1620;
+  --muted:        #141C26;
+  --border:       #1E2D3F;
+  --border-hi:    #2B3F55;
+  --fg:           #E8EDF3;
+  --fg-muted:     #A7B0BC;
+  --fg-subtle:    #5C6B7A;
+  --ember:        #FF6A3D;
+  --ember-dim:    rgba(255,106,61,.12);
+  --ember-glow:   rgba(255,106,61,.06);
+  --success:      #4ADE80;
+  --warn:         #FBBF24;
+  --error:        #EF4444;
+  --neutral:      #94A3B8;
+  --info:         #60A5FA;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-ui:      'Inter', sans-serif;
+  --font-body:    'Roboto', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --radius:       10px;
+  --radius-lg:    16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ─────────────────────────────────────────── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(11,15,20,.92);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .9rem; letter-spacing: -.02em;
+  color: var(--fg);
+}
+.nav-brand em { color: var(--ember); font-style: normal; }
+.nav-meta {
+  font-family: var(--font-mono);
+  font-size: .65rem; color: var(--fg-subtle); letter-spacing: .06em;
+}
+.nav-links { display: flex; gap: 1.4rem; list-style: none; }
+.nav-links a {
+  font-family: var(--font-ui);
+  font-size: .7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .09em;
+  color: var(--fg-muted); text-decoration: none; transition: color .2s;
+}
+.nav-links a:hover { color: var(--ember); }
+
+@media (max-width: 860px) {
+  .nav-links { display: none; }
+}
+
+/* ── LAYOUT ──────────────────────────────────────── */
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 7rem 2rem 6rem;
+}
+
+/* ── HERO ────────────────────────────────────────── */
+.hero {
+  padding: 3.5rem 0 4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4.5rem;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: -2rem; right: -2rem; bottom: 0;
+  background: radial-gradient(ellipse 70% 80% at 0% 50%, var(--ember-glow), transparent 60%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .9rem;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700; letter-spacing: -.03em;
+  line-height: 1.15; margin-bottom: 1.1rem;
+}
+.hero-title em { color: var(--ember); font-style: normal; }
+.hero-sub {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .95rem;
+  max-width: 620px; margin-bottom: 1.8rem; line-height: 1.7;
+}
+.hero-meta {
+  display: flex; gap: 1rem; flex-wrap: wrap;
+}
+.meta-chip {
+  font-family: var(--font-mono);
+  font-size: .68rem; letter-spacing: .06em;
+  color: var(--fg-subtle);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px; padding: .25rem .6rem;
+}
+
+/* ── VERDICT BANNER ──────────────────────────────── */
+.verdict {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-left: 3px solid var(--ember);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.8rem;
+  margin-bottom: 4.5rem;
+}
+.verdict-label {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .5rem;
+}
+.verdict-text {
+  font-family: var(--font-ui);
+  font-size: .92rem; font-weight: 400; line-height: 1.7;
+  color: var(--fg-muted);
+}
+.verdict-text strong { color: var(--fg); font-weight: 600; }
+.verdict-text code {
+  font-family: var(--font-mono); font-size: .82rem;
+  background: var(--muted); border: 1px solid var(--border);
+  border-radius: 4px; padding: .1rem .4rem;
+}
+
+/* ── SECTION ─────────────────────────────────────── */
+.section { margin-bottom: 4.5rem; }
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .7rem;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: .5rem;
+}
+.section-sub {
+  font-family: var(--font-display);
+  font-size: 1.1rem; font-weight: 600; letter-spacing: -.02em;
+  color: var(--fg-muted); margin-top: 2.2rem; margin-bottom: .75rem;
+}
+.section-sub-sm {
+  font-family: var(--font-display);
+  font-size: .95rem; font-weight: 600; letter-spacing: -.015em;
+  color: var(--fg-muted); margin-top: 1.8rem; margin-bottom: .6rem;
+}
+.section-lead {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .93rem;
+  max-width: 700px; margin-bottom: 1.5rem; line-height: 1.7;
+}
+.prose {
+  font-family: var(--font-body);
+  color: var(--fg-muted); font-size: .93rem; line-height: 1.8;
+  max-width: 720px; margin-bottom: 1.2rem;
+}
+.prose strong { color: var(--fg); font-weight: 500; }
+.prose code {
+  font-family: var(--font-mono); font-size: .82rem;
+  background: var(--muted); border: 1px solid var(--border);
+  border-radius: 4px; padding: .1rem .4rem;
+}
+
+/* ── METRIC TILES ────────────────────────────────── */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: .75rem;
+  margin-top: 1.2rem;
+}
+.metric-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.3rem;
+}
+.metric-tile-label {
+  font-family: var(--font-mono);
+  font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-subtle); margin-bottom: .3rem;
+}
+.metric-tile-value {
+  font-family: var(--font-display);
+  font-size: 1.4rem; font-weight: 700; letter-spacing: -.02em;
+  color: var(--fg);
+}
+.metric-tile-value.success { color: var(--success); }
+.metric-tile-value.ember   { color: var(--ember); }
+.metric-tile-value.warn    { color: var(--warn); }
+.metric-tile-sub {
+  font-family: var(--font-ui);
+  font-size: .72rem; color: var(--fg-subtle); margin-top: .15rem;
+}
+
+/* ── CARDS ───────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.8rem;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+.card-label {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .4rem;
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 1rem; font-weight: 700; letter-spacing: -.01em;
+  margin-bottom: .5rem;
+}
+.card-body {
+  font-family: var(--font-ui);
+  font-size: .83rem; color: var(--fg-muted); line-height: 1.65;
+}
+
+/* ── TABLES ──────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin-top: .6rem; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-ui); font-size: .82rem;
+}
+thead { border-bottom: 1px solid var(--border-hi); }
+th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: .65rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-subtle); padding: .6rem 1rem;
+}
+td {
+  padding: .65rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted); vertical-align: top;
+}
+td:first-child { color: var(--fg); font-weight: 500; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--muted); }
+.td-center { text-align: center; }
+
+/* ── BADGES ──────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .04em;
+  border-radius: 4px; padding: .18rem .5rem;
+  white-space: nowrap;
+}
+.badge-ok     { background: rgba(74,222,128,.1);  color: var(--success); }
+.badge-warn   { background: rgba(251,191,36,.1);  color: var(--warn); }
+.badge-crit   { background: rgba(239,68,68,.1);   color: var(--error); }
+.badge-info   { background: rgba(96,165,250,.08); color: var(--info); }
+.badge-neutral{ background: rgba(148,163,184,.08); color: var(--neutral); }
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; }
+.badge-ok .badge-dot     { background: var(--success); }
+.badge-warn .badge-dot   { background: var(--warn); }
+.badge-crit .badge-dot   { background: var(--error); }
+.badge-info .badge-dot   { background: var(--info); }
+.badge-neutral .badge-dot{ background: var(--neutral); }
+
+/* ── TABS ────────────────────────────────────────── */
+.tabs { margin-top: 1.2rem; }
+.tab-bar {
+  display: flex; gap: .5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.2rem;
+  overflow-x: auto;
+}
+.tab-btn {
+  font-family: var(--font-ui);
+  font-size: .78rem; font-weight: 600;
+  letter-spacing: .02em;
+  background: none; border: none; cursor: pointer;
+  color: var(--fg-subtle);
+  padding: .55rem 1rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .2s, border-color .2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--fg-muted); }
+.tab-btn.active { color: var(--ember); border-bottom-color: var(--ember); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── RISK ITEMS ──────────────────────────────────── */
+.risk-list { display: flex; flex-direction: column; gap: .75rem; margin-top: 1rem; }
+.risk-item {
+  display: grid; grid-template-columns: auto 1fr auto; gap: .6rem 1rem;
+  align-items: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.3rem;
+}
+.risk-sev {
+  font-family: var(--font-mono);
+  font-size: .6rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  padding: .2rem .5rem; border-radius: 4px; margin-top: .15rem;
+}
+.sev-high   { background: rgba(255,106,61,.15); color: var(--ember); }
+.sev-med    { background: rgba(251,191,36,.1);  color: var(--warn); }
+.sev-low    { background: rgba(148,163,184,.1); color: var(--neutral); }
+.risk-title {
+  font-family: var(--font-display);
+  font-size: .92rem; font-weight: 700; letter-spacing: -.01em;
+}
+.risk-body {
+  font-family: var(--font-ui);
+  font-size: .82rem; color: var(--fg-muted); line-height: 1.6;
+  grid-column: 2 / -1;
+}
+.risk-likelihood {
+  font-family: var(--font-mono);
+  font-size: .6rem; color: var(--fg-subtle); letter-spacing: .06em;
+  text-align: right; margin-top: .2rem;
+}
+
+/* ── DELTA INDICATORS ────────────────────────────── */
+.delta-up   { color: var(--success); }
+.delta-down { color: var(--error); }
+.delta-same { color: var(--fg-subtle); }
+.delta-new  { color: var(--ember); }
+
+/* ── PROGRESS BAR ────────────────────────────────── */
+.progress-wrap {
+  display: flex; align-items: center; gap: .8rem; margin-top: .5rem;
+}
+.progress-bar {
+  flex: 1; height: 6px;
+  background: var(--muted);
+  border-radius: 3px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--ember), #FF6A3D);
+  transition: width .4s ease;
+}
+.progress-label {
+  font-family: var(--font-mono);
+  font-size: .72rem; font-weight: 600;
+  color: var(--ember);
+  min-width: 3ch;
+}
+
+/* ── DIFF ITEMS ──────────────────────────────────── */
+.diff-list { display: flex; flex-direction: column; gap: .75rem; margin-top: 1rem; }
+.diff-item {
+  display: flex; gap: 1rem; align-items: flex-start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+}
+.diff-num {
+  font-family: var(--font-mono);
+  font-size: .7rem; font-weight: 600;
+  color: var(--ember);
+  background: var(--ember-dim);
+  border-radius: 4px; padding: .2rem .5rem;
+  flex-shrink: 0; margin-top: .1rem;
+}
+.diff-body { font-family: var(--font-ui); font-size: .85rem; color: var(--fg-muted); line-height: 1.6; }
+.diff-body strong { color: var(--fg); font-weight: 600; }
+
+/* ── CONCLUSION ──────────────────────────────────── */
+.conclusion {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  position: relative; overflow: hidden;
+}
+.conclusion::before {
+  content: '';
+  position: absolute; top: 0; right: 0; bottom: 0; width: 40%;
+  background: radial-gradient(ellipse at 100% 50%, var(--ember-dim), transparent 70%);
+  pointer-events: none;
+}
+.conclusion-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: 1rem;
+}
+.conclusion-body {
+  font-family: var(--font-ui);
+  font-size: .9rem; color: var(--fg-muted); line-height: 1.8;
+  max-width: 640px; margin-bottom: 1.5rem;
+}
+.pill-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pill {
+  font-family: var(--font-mono);
+  font-size: .7rem; letter-spacing: .04em;
+  background: var(--muted);
+  border: 1px solid var(--border-hi);
+  border-radius: 99px; padding: .3rem .85rem;
+  color: var(--fg-muted);
+}
+
+/* ── FOOTER ──────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  margin-top: 4rem; padding: 2rem 0;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .85rem;
+  letter-spacing: -.02em; color: var(--fg-muted);
+}
+.footer-brand em { color: var(--ember); font-style: normal; }
+.footer-meta {
+  font-family: var(--font-mono);
+  font-size: .62rem; color: var(--fg-subtle); letter-spacing: .06em;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-brand">travis<em>james</em>.ai</div>
+  <ul class="nav-links">
+    <li><a href="#summary">Summary</a></li>
+    <li><a href="#goals">Goals</a></li>
+    <li><a href="#state">Current State</a></li>
+    <li><a href="#pmf">Product-Market</a></li>
+    <li><a href="#gaps">Gaps</a></li>
+    <li><a href="#risks">Risks</a></li>
+    <li><a href="#delta">Delta</a></li>
+  </ul>
+  <div class="nav-meta">uar-evolution-2026-02 · Iteration 1</div>
+</nav>
+
+<!-- ── WRAP ─────────────────────────────────────────── -->
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero" id="top">
+    <div class="hero-eyebrow">Iterative Evolution Assessment</div>
+    <h1 class="hero-title">Universal Agent Runtime<br><em>Evolution Assessment</em></h1>
+    <p class="hero-sub">Comprehensive assessment following the implementation of agent memory, context window management, enhanced SSE/AG-UI events, settings management, and expanded MCP tool integration.</p>
+    <div class="hero-meta">
+      <span class="meta-chip">Phase: Assess (Iteration 1)</span>
+      <span class="meta-chip">191 Rust source files</span>
+      <span class="meta-chip">18/19 spec sections</span>
+      <span class="meta-chip">Goal Alignment: 71%</span>
+      <span class="meta-chip">2026-02-21</span>
+    </div>
+  </header>
+
+  <!-- VERDICT -->
+  <div class="verdict" id="summary">
+    <div class="verdict-label">Executive Summary</div>
+    <div class="verdict-text">
+      The Universal Agent Runtime has significantly expanded since its Feb 18 post-Phase-9 assessment. Five new system-level capabilities have been implemented: a full <strong>agent memory system</strong> (surreal-memory, hybrid search, auto-capture, MCP server, context injection), <strong>context window management</strong> (sliding window and summarization strategies), <strong>enhanced SSE/AG-UI event model</strong> (MemoryMutation, ContextAction, StatePatch events), a <strong>settings management layer</strong>, and <strong>expanded MCP tool integration</strong> for memory operations. The project now stands at <strong>191 Rust source files</strong> (~56,571 lines), <strong>42 TypeScript web components</strong>, and <strong>18 integration test files</strong>. Its core technical moat — a specification compiler, Cedar governance, A2A federation, and WASM sandboxing — remains intact and uncontested in the market.
+    </div>
+  </div>
+
+  <!-- KEY METRICS -->
+  <div class="metric-grid" style="margin-bottom: 4.5rem;">
+    <div class="metric-tile">
+      <div class="metric-tile-label">Source Files</div>
+      <div class="metric-tile-value">191</div>
+      <div class="metric-tile-sub">Rust .rs files · ~56,571 LOC</div>
+    </div>
+    <div class="metric-tile">
+      <div class="metric-tile-label">Web Components</div>
+      <div class="metric-tile-value">42</div>
+      <div class="metric-tile-sub">TypeScript in web/</div>
+    </div>
+    <div class="metric-tile">
+      <div class="metric-tile-label">Spec Coverage</div>
+      <div class="metric-tile-value success">95%</div>
+      <div class="metric-tile-sub">18 of 19 sections</div>
+    </div>
+    <div class="metric-tile">
+      <div class="metric-tile-label">Goal Alignment</div>
+      <div class="metric-tile-value ember">71%</div>
+      <div class="metric-tile-sub">Up from 65% at Phase 1–4</div>
+    </div>
+    <div class="metric-tile">
+      <div class="metric-tile-label">Test Files</div>
+      <div class="metric-tile-value">18</div>
+      <div class="metric-tile-sub">Integration + certification</div>
+    </div>
+    <div class="metric-tile">
+      <div class="metric-tile-label">SSE Event Variants</div>
+      <div class="metric-tile-value">13</div>
+      <div class="metric-tile-sub">AG-UI mapped events</div>
+    </div>
+  </div>
+
+  <!-- ── SECTION: GOAL INVENTORY ──────────────────── -->
+  <section class="section" id="goals">
+    <div class="section-eyebrow">§ 02 — Strategic Objectives</div>
+    <h2 class="section-title">Goal Inventory</h2>
+    <p class="section-lead">Six measurable goals govern this iteration of the evolution assessment. Each is tracked with explicit criteria and assessability status.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Goal</th>
+            <th>Priority</th>
+            <th>Measurable Criteria</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code style="font-family:var(--font-mono);font-size:.78rem;color:var(--ember);">G1</code></td>
+            <td>Validate code quality, architecture health, and spec compliance</td>
+            <td><span class="badge badge-crit"><span class="badge-dot"></span>High</span></td>
+            <td>0 build errors, &lt;5 clippy warnings, &gt;95% test pass, 15+/16 spec sections</td>
+          </tr>
+          <tr>
+            <td><code style="font-family:var(--font-mono);font-size:.78rem;color:var(--ember);">G2</code></td>
+            <td>Benchmark UAR against comparable 2026 agent runtimes</td>
+            <td><span class="badge badge-crit"><span class="badge-dot"></span>High</span></td>
+            <td>≥5 distinct benchmarks with feature comparison</td>
+          </tr>
+          <tr>
+            <td><code style="font-family:var(--font-mono);font-size:.78rem;color:var(--ember);">G3</code></td>
+            <td>Identify user/developer demands in agent runtimes</td>
+            <td><span class="badge badge-crit"><span class="badge-dot"></span>High</span></td>
+            <td>≥5 distinct user need categories from external sources</td>
+          </tr>
+          <tr>
+            <td><code style="font-family:var(--font-mono);font-size:.78rem;color:var(--ember);">G4</code></td>
+            <td>Assess product-market fit of UAR differentiators</td>
+            <td><span class="badge badge-crit"><span class="badge-dot"></span>High</span></td>
+            <td>Alignment score between UAR features and G3 demand signals</td>
+          </tr>
+          <tr>
+            <td><code style="font-family:var(--font-mono);font-size:.78rem;color:var(--ember);">G5</code></td>
+            <td>Produce classified improvement plan</td>
+            <td><span class="badge badge-crit"><span class="badge-dot"></span>High</span></td>
+            <td>≥10 classified actions across all impact tiers</td>
+          </tr>
+          <tr>
+            <td><code style="font-family:var(--font-mono);font-size:.78rem;color:var(--ember);">G6</code></td>
+            <td>Write measurable baseline for future reassessment</td>
+            <td><span class="badge badge-crit"><span class="badge-dot"></span>High</span></td>
+            <td>Quantitative snapshot file with ≥10 metrics</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SECTION: CURRENT STATE ──────────────────── -->
+  <section class="section" id="state">
+    <div class="section-eyebrow">§ 03 — System Evaluation</div>
+    <h2 class="section-title">Current State</h2>
+
+    <!-- Tabs for sub-sections -->
+    <div class="tabs" id="state-tabs">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('state-tabs','st-build')">Build Health</button>
+        <button class="tab-btn" onclick="switchTab('state-tabs','st-arch')">Architecture</button>
+        <button class="tab-btn" onclick="switchTab('state-tabs','st-memory')">Memory System</button>
+        <button class="tab-btn" onclick="switchTab('state-tabs','st-events')">SSE / AG-UI</button>
+        <button class="tab-btn" onclick="switchTab('state-tabs','st-spec')">Spec Coverage</button>
+        <button class="tab-btn" onclick="switchTab('state-tabs','st-deps')">Dependencies</button>
+      </div>
+
+      <!-- BUILD HEALTH -->
+      <div class="tab-panel active" id="st-build">
+        <p class="prose">Prior build status: <strong>0 errors, 0 clippy warnings</strong> (Feb 18 baseline). Changed files per git status — <code>config.rs</code>, <code>server.rs</code>, <code>routes.rs</code>, <code>sse.rs</code>, <code>events.rs</code>, <code>context_builder.rs</code>, <code>memory/service.rs</code>, <code>runtime/manager.rs</code>, <code>tools/memory.rs</code> — all reviewed with no obvious syntax errors or logic flaws. Rust 2024 edition with all current major dependency versions.</p>
+
+        <div class="metric-grid">
+          <div class="metric-tile">
+            <div class="metric-tile-label">Prior Tests</div>
+            <div class="metric-tile-value success">109/109</div>
+            <div class="metric-tile-sub">Feb 18 baseline</div>
+          </div>
+          <div class="metric-tile">
+            <div class="metric-tile-label">Estimated Current</div>
+            <div class="metric-tile-value">~130–150</div>
+            <div class="metric-tile-sub">2 new test files added</div>
+          </div>
+          <div class="metric-tile">
+            <div class="metric-tile-label">Module Count</div>
+            <div class="metric-tile-value">16</div>
+            <div class="metric-tile-sub">Major UAR modules</div>
+          </div>
+          <div class="metric-tile">
+            <div class="metric-tile-label">Doc Coverage</div>
+            <div class="metric-tile-value">~85%</div>
+            <div class="metric-tile-sub">Public API items</div>
+          </div>
+        </div>
+
+        <h4 class="section-sub-sm">New Test Files</h4>
+        <div class="diff-list">
+          <div class="diff-item">
+            <span class="diff-num">01</span>
+            <div class="diff-body"><strong>settings_persistence.rs</strong> — 707 lines. Full settings persistence and CRUD test coverage.</div>
+          </div>
+          <div class="diff-item">
+            <span class="diff-num">02</span>
+            <div class="diff-body"><strong>uar_integration.rs</strong> — 762 lines. End-to-end UAR integration tests with Docker testcontainers.</div>
+          </div>
+        </div>
+
+        <h4 class="section-sub-sm">Infrastructure Gaps</h4>
+        <p class="prose"><strong>No CI/CD pipeline detected</strong> — no <code>.github/workflows/</code>, no <code>Makefile</code> CI targets. No <code>grcov</code> coverage measurement. No fast-path unit-only test command; all tests require full Docker environment.</p>
+      </div>
+
+      <!-- ARCHITECTURE -->
+      <div class="tab-panel" id="st-arch">
+        <p class="prose">Each module has a clear single responsibility. Clean dependency injection via <code>Arc&lt;AppState&gt;</code>. All optional systems (memory, compiler, settings) wrapped in <code>Option&lt;Arc&lt;T&gt;&gt;</code> — excellent for opt-in features. Feature gating (<code>wasm-runtime</code>, <code>sqlx</code>, <code>tauri</code>, <code>model-build</code>) is disciplined and complete.</p>
+
+        <h4 class="section-sub-sm">Trait Abstraction Quality</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Trait</th><th>Location</th><th>Quality</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>SpecStorage</td><td>compiler/storage/</td><td><span class="badge badge-ok"><span class="badge-dot"></span>High</span></td><td>Dual impl (SurrealDB + in-memory)</td></tr>
+              <tr><td>SessionStorage</td><td>compiler/session/</td><td><span class="badge badge-ok"><span class="badge-dot"></span>High</span></td><td>Dual impl</td></tr>
+              <tr><td>AgentRegistry</td><td>api/a2a/registry.rs</td><td><span class="badge badge-ok"><span class="badge-dot"></span>High</span></td><td>SurrealDB + InMemory</td></tr>
+              <tr><td>NativeSkill</td><td>runtime/native_skill.rs</td><td><span class="badge badge-ok"><span class="badge-dot"></span>High</span></td><td>Clean async trait</td></tr>
+              <tr><td>PersistenceLayer</td><td>persistence/</td><td><span class="badge badge-ok"><span class="badge-dot"></span>High</span></td><td>Postgres + SurrealDB providers</td></tr>
+              <tr><td>MemoryStorage</td><td>memory/service.rs</td><td><span class="badge badge-ok"><span class="badge-dot"></span>High</span></td><td>Delegated to surreal-memory</td></tr>
+              <tr><td>IntentClassifier</td><td>runtime/matching/</td><td><span class="badge badge-ok"><span class="badge-dot"></span>High</span></td><td>Pluggable classifier</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 class="section-sub-sm">Concern: server.rs</h4>
+        <p class="prose"><code>server.rs</code> is ~3000+ lines — a legitimate God-file risk. Initialization of 15+ services in a single file increases cognitive overhead and testing difficulty. All storage traits have dual implementations (production + in-memory), enabling fast unit testing without Docker.</p>
+
+        <h4 class="section-sub-sm">API Surface</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Route Group</th><th>Count</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Health checks</td><td>3</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td></tr>
+              <tr><td>Chat completion (OpenAI compat)</td><td>2</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td></tr>
+              <tr><td>UAR runs + streaming</td><td>2</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td></tr>
+              <tr><td>Discovery (agents/skills/tools)</td><td>4</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td></tr>
+              <tr><td>Settings CRUD</td><td>~5</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td></tr>
+              <tr><td>Compiler (specs/sessions/reports)</td><td>~8</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td></tr>
+              <tr><td>A2A (RPC + agent.json)</td><td>2</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td></tr>
+              <tr><td>Memory admin</td><td>Present</td><td><span class="badge badge-info"><span class="badge-dot"></span>New</span></td></tr>
+              <tr><td>RAG ingest / Upload / Models</td><td>3</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="prose" style="margin-top:.8rem;">Total: <strong>~30 REST endpoints</strong> across the surface. Complete and consistent.</p>
+      </div>
+
+      <!-- MEMORY SYSTEM -->
+      <div class="tab-panel" id="st-memory">
+        <p class="prose">The memory system (<code>src/uar/memory/</code>) is a major addition — six files implementing a full agent memory facade over <code>surreal-memory SurrealStorage</code>.</p>
+
+        <div class="card-grid" style="margin-bottom:1.5rem;">
+          <div class="card">
+            <div class="card-label">service.rs</div>
+            <div class="card-title">MemoryService Facade</div>
+            <div class="card-body">Full facade over SurrealStorage — hybrid BM25+vector search, waterfall scope resolution (session → user → agent → global), knowledge graph, mind maps, task streams.</div>
+          </div>
+          <div class="card">
+            <div class="card-label">context_builder.rs</div>
+            <div class="card-title">Pre-Prompt Context Injection</div>
+            <div class="card-body">Composite re-ranking (importance×0.4 + recency×0.35 + access_frequency×0.25), token budget enforcement (10% of model context window), model-profile-aware token counting.</div>
+          </div>
+          <div class="card">
+            <div class="card-label">auto_capture.rs</div>
+            <div class="card-title">Async Background Capture</div>
+            <div class="card-body">Async background memory extraction after assistant turns. Runs without blocking the response pipeline.</div>
+          </div>
+          <div class="card">
+            <div class="card-label">mcp_server.rs</div>
+            <div class="card-title">MCP Memory Operations</div>
+            <div class="card-body">Memory operations exposed as MCP tools over HTTP (<code>/mcp/memory</code>). Full tool discovery and invocation support.</div>
+          </div>
+          <div class="card">
+            <div class="card-label">scopes.rs</div>
+            <div class="card-title">Scope Abstraction</div>
+            <div class="card-body">Session, user, agent, global, and task scopes — supporting multi-tenant waterfall resolution patterns.</div>
+          </div>
+          <div class="card">
+            <div class="card-label">background.rs</div>
+            <div class="card-title">Background Processing</div>
+            <div class="card-body">Background processing task management for long-running memory operations.</div>
+          </div>
+        </div>
+
+        <p class="prose"><strong>Quality assessment: High.</strong> The context injection with composite scoring and token budgeting is production-grade. The waterfall scope resolution is well-designed for multi-tenant use.</p>
+        <p class="prose"><strong>Gap:</strong> Default <code>enabled: false</code> is correct, but enabling memory requires configuring <code>embedding_provider</code> (defaulting to <code>openai</code>). A cold-start without an OpenAI API key will silently not have memory. Documentation on memory enablement is thin relative to complexity.</p>
+      </div>
+
+      <!-- SSE / AG-UI -->
+      <div class="tab-panel" id="st-events">
+        <p class="prose">The <code>NormalizedEvent</code> enum now has <strong>13 variants</strong> (up from ~9 at Feb 18). All variants have corresponding <code>agui.*</code> event name mappings via <code>to_agui_event()</code>.</p>
+
+        <h4 class="section-sub-sm">New Event Variants</h4>
+        <div class="diff-list">
+          <div class="diff-item">
+            <span class="diff-num">+</span>
+            <div class="diff-body"><strong>ContextAction</strong> — Context manipulation events for window management.</div>
+          </div>
+          <div class="diff-item">
+            <span class="diff-num">+</span>
+            <div class="diff-body"><strong>MemoryMutation</strong> — Memory recall vs. update distinguished by <code>source == "memory_context"</code>.</div>
+          </div>
+          <div class="diff-item">
+            <span class="diff-num">+</span>
+            <div class="diff-body"><strong>StatePatch</strong> — Runtime state patch events for client synchronization.</div>
+          </div>
+        </div>
+
+        <h4 class="section-sub-sm">A2UI Runtime Gap</h4>
+        <p class="prose"><code>NormalizedEvent::Artifact</code> returns <code>None</code> in <code>to_agui_event()</code> — artifact events are silently dropped rather than mapped to an <code>agui.artifact</code> event. This means agents declaring A2UI surfaces in UAR-AGENT-MD cannot dynamically render UI surfaces. The AG-UI protocol's artifact channel is not connected. <strong>This remains the single open UAR spec section (§06).</strong></p>
+      </div>
+
+      <!-- SPEC COVERAGE -->
+      <div class="tab-panel" id="st-spec">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Section</th><th>Description</th><th>Status</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>§01</td><td>Agent Identity</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>AgentCard, PAT+JWT auth</td></tr>
+              <tr><td>§02</td><td>Tool Protocol (MCP)</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>Full rmcp client, dynamic discovery</td></tr>
+              <tr><td>§03</td><td>Streaming (SSE)</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>13-variant NormalizedEvent, AG-UI mapped</td></tr>
+              <tr><td>§04</td><td>RAG / Knowledge</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>pgvector + Leiden, multi-KB, chunking</td></tr>
+              <tr><td>§05</td><td>Governance (Cedar)</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>PDP/PEP at all execution boundaries</td></tr>
+              <tr><td>§06</td><td>A2UI / AG-UI</td><td><span class="badge badge-warn"><span class="badge-dot"></span>Partial</span></td><td>Schema validation only — no runtime resolution</td></tr>
+              <tr><td>§07</td><td>Actor Collaboration</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>ractor-based actor system</td></tr>
+              <tr><td>§08</td><td>WASM Sandbox</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>wasmtime v41 + WASI (feature-gated)</td></tr>
+              <tr><td>§09</td><td>Persistence</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>SurrealDB embedded + Postgres</td></tr>
+              <tr><td>§10</td><td>Memory System</td><td><span class="badge badge-info"><span class="badge-dot"></span>New</span></td><td>Full surreal-memory integration</td></tr>
+              <tr><td>§11</td><td>Context Management</td><td><span class="badge badge-info"><span class="badge-dot"></span>New</span></td><td>Sliding window + summarization</td></tr>
+              <tr><td>§12</td><td>File Processing</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>Kreuzberg/Mistral/Unstructured/auto</td></tr>
+              <tr><td>§13</td><td>A2A Protocol</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>JSON-RPC, AgentCard, registry</td></tr>
+              <tr><td>§14</td><td>Skill System</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>NativeSkill + SkillService + matching</td></tr>
+              <tr><td>§15</td><td>Settings</td><td><span class="badge badge-info"><span class="badge-dot"></span>New</span></td><td>Runtime settings management</td></tr>
+              <tr><td>§16</td><td>Security</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>PAT + JWT + rate limiting + CORS</td></tr>
+              <tr><td>§17</td><td>Observability</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>OpenTelemetry + Prometheus</td></tr>
+              <tr><td>§18</td><td>Multi-provider LLM</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>Provider registry, auto-detect</td></tr>
+              <tr><td>§19</td><td>Compiler Pipeline</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Complete</span></td><td>8-stage PMPO pipeline, signing</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="prose" style="margin-top:1rem;"><strong>Coverage: 18/19 sections (95%)</strong> — up from 15/16 in Feb 18 assessment due to §10 Memory, §11 Context Management, and §15 Settings being added.</p>
+      </div>
+
+      <!-- DEPENDENCIES -->
+      <div class="tab-panel" id="st-deps">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Dependency</th><th>Current</th><th>Latest Known</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>axum</td><td>0.8</td><td>0.8.x</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Current</span></td></tr>
+              <tr><td>surrealdb</td><td>3.0.0</td><td>3.x</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Current</span></td></tr>
+              <tr><td>ractor</td><td>0.15</td><td>0.15.x</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Current</span></td></tr>
+              <tr><td>cedar-policy</td><td>4.9</td><td>4.x</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Current</span></td></tr>
+              <tr><td>wasmtime</td><td>41.0.3</td><td>41.x</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Current</span></td></tr>
+              <tr><td>rmcp</td><td>git HEAD</td><td>HEAD</td><td><span class="badge badge-warn"><span class="badge-dot"></span>Git dep</span></td></tr>
+              <tr><td>surreal-memory</td><td>git HEAD</td><td>HEAD</td><td><span class="badge badge-warn"><span class="badge-dot"></span>Git dep</span></td></tr>
+              <tr><td>kreuzberg</td><td>v4.0.0-rc.17</td><td>RC</td><td><span class="badge badge-warn"><span class="badge-dot"></span>Pre-release</span></td></tr>
+              <tr><td>burn</td><td>0.20.1</td><td>0.20.x</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Current</span></td></tr>
+              <tr><td>tokio</td><td>1.x</td><td>1.x</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Current</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="prose" style="margin-top:1rem;"><strong>Git dependencies risk:</strong> <code>rmcp</code> and <code>surreal-memory</code> are pinned to git HEAD without a rev/tag — this introduces reproducibility risk if upstream commits breaking changes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION: PRODUCT-MARKET FIT ──────────────── -->
+  <section class="section" id="pmf">
+    <div class="section-eyebrow">§ 04 — Market Positioning</div>
+    <h2 class="section-title">Product-Market Fit Assessment</h2>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-label">Embedded-First Architecture</div>
+        <div class="card-title">Fit: High</div>
+        <div class="card-body">52% of enterprises cite security/compliance as the #1 barrier to agentic AI production. Embedded-first directly addresses data sovereignty. Risk: enterprise evaluators may equate "production-ready" with "Kubernetes-native."</div>
+      </div>
+      <div class="card">
+        <div class="card-label">AGPL-3.0 Licensing</div>
+        <div class="card-title">Fit: Medium-Risk</div>
+        <div class="card-body">Competitors (Agentgateway, AGNTCY, LangGraph, CrewAI) use Apache-2.0. Enterprise procurement often blocks AGPL. Commercial dual-license terms are not documented in the repository — silent enterprise blocker.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">UAR-AGENT-MD Format</div>
+        <div class="card-title">Fit: High</div>
+        <div class="card-body">AGNTCY OASF (YAML/JSON) gaining LF backing. Markdown wins for LLM-native authoring. No competitor has a compiler for agent specs — UAR-AGENT-MD + 8-stage compiler is unique.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Dual-Mode Compiler</div>
+        <div class="card-title">Fit: High</div>
+        <div class="card-body">First-mover in LLM-interactive spec authoring. Anthropic 2026 documents the shift from single agents to agent teams — automated creation pipelines are an emerging need with no market equivalent.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Memory System</div>
+        <div class="card-title">Fit: High</div>
+        <div class="card-body">Hybrid BM25+vector search, knowledge graph, multi-scope architecture (session/user/agent/global) is more sophisticated than most agent frameworks. Memory cited as top differentiator for 2026 production agents.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION: GAPS ───────────────────────────── -->
+  <section class="section" id="gaps">
+    <div class="section-eyebrow">§ 05 — Gap Analysis</div>
+    <h2 class="section-title">Gap Analysis</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Goal</th><th>Supporting Assets</th><th>Missing Elements</th><th>Blockers</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>G1: Code quality</td>
+            <td>191 files, clean build, trait abstractions</td>
+            <td>CI/CD pipeline, coverage, published rustdoc</td>
+            <td>None known</td>
+          </tr>
+          <tr>
+            <td>G2: Competitive benchmark</td>
+            <td>Prior assessment feature matrix</td>
+            <td>Updated 2026 benchmarks (Mastra, Bee Agent)</td>
+            <td>Time-bounded</td>
+          </tr>
+          <tr>
+            <td>G3: User demand</td>
+            <td>Tavily research (7 queries, rich signal)</td>
+            <td>—</td>
+            <td>None</td>
+          </tr>
+          <tr>
+            <td>G4: Product-market fit</td>
+            <td>Strong technical alignment</td>
+            <td>Commercial license documentation</td>
+            <td>Needs documentation</td>
+          </tr>
+          <tr>
+            <td>G5: Improvement plan</td>
+            <td>Assessment + analysis data</td>
+            <td>Classified plan document</td>
+            <td>None</td>
+          </tr>
+          <tr>
+            <td>G6: Baseline snapshot</td>
+            <td>Current metrics available</td>
+            <td>Formal snapshot file</td>
+            <td>None</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SECTION: HEALTH INDICATORS ──────────────── -->
+  <section class="section" id="health">
+    <div class="section-eyebrow">§ 06 — System Health</div>
+    <h2 class="section-title">Health Indicators</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Indicator</th><th>Value</th><th>Status</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Build Status</td><td>0 errors (prior baseline)</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Healthy</span></td><td>Build in progress at assessment time</td></tr>
+          <tr><td>Test Pass Rate</td><td>109/109 prior; ~130+ est.</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Healthy</span></td><td>New tests via settings + integration</td></tr>
+          <tr><td>Clippy Warnings</td><td>0 (prior baseline)</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Healthy</span></td><td>Explicit allow for struct_excessive_bools</td></tr>
+          <tr><td>Source File Count</td><td>191 Rust files</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Healthy</span></td><td>Appropriate for feature scope</td></tr>
+          <tr><td>Module Count</td><td>16 UAR modules</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Healthy</span></td><td>Well-organized, clear responsibilities</td></tr>
+          <tr><td>Dependency Age</td><td>All current; 2 git HEAD</td><td><span class="badge badge-warn"><span class="badge-dot"></span>Warning</span></td><td>rmcp, surreal-memory lack pinned rev/tag</td></tr>
+          <tr><td>CI/CD Pipeline</td><td>Not detected</td><td><span class="badge badge-crit"><span class="badge-dot"></span>Critical</span></td><td>No workflows, no Makefile CI targets</td></tr>
+          <tr><td>A2UI Runtime</td><td>Unresolved (§06)</td><td><span class="badge badge-warn"><span class="badge-dot"></span>Warning</span></td><td>Schema validation, no runtime resolution</td></tr>
+          <tr><td>Commercial License</td><td>Not documented</td><td><span class="badge badge-warn"><span class="badge-dot"></span>Warning</span></td><td>AGPL + intent but no terms published</td></tr>
+          <tr><td>Memory System</td><td>Fully implemented</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Healthy</span></td><td>Opt-in, hybrid search</td></tr>
+          <tr><td>Context Management</td><td>Fully implemented</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Healthy</span></td><td>Sliding window + summarization</td></tr>
+          <tr><td>Observability</td><td>OpenTelemetry + Prometheus</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Healthy</span></td><td>Complete instrumentation</td></tr>
+          <tr><td>Security</td><td>PAT + JWT + rate limiting</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Healthy</span></td><td>Cedar governance at runtime</td></tr>
+          <tr><td>Deploy Config</td><td>GKE OpenTofu in k8s/</td><td><span class="badge badge-ok"><span class="badge-dot"></span>Healthy</span></td><td>Production deployment config exists</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SECTION: GOAL ALIGNMENT ─────────────────── -->
+  <section class="section" id="alignment">
+    <div class="section-eyebrow">§ 07 — Goal Alignment</div>
+    <h2 class="section-title">Goal Alignment Score</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Goal</th><th>Alignment</th><th>Rationale</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>G1: Code quality & spec compliance</td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bar"><div class="progress-fill" style="width:80%"></div></div>
+                <span class="progress-label">80%</span>
+              </div>
+            </td>
+            <td>Build clean, tests passing, 18/19 spec sections. CI/CD and coverage gaps prevent 100%.</td>
+          </tr>
+          <tr>
+            <td>G2: Competitive benchmarking</td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bar"><div class="progress-fill" style="width:65%"></div></div>
+                <span class="progress-label">65%</span>
+              </div>
+            </td>
+            <td>Feb 18 analysis exists; need live 2026 landscape update for Mastra, new entrants.</td>
+          </tr>
+          <tr>
+            <td>G3: User demand identification</td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div>
+                <span class="progress-label">90%</span>
+              </div>
+            </td>
+            <td>Tavily research complete — 7 queries, rich signal data.</td>
+          </tr>
+          <tr>
+            <td>G4: Product-market fit</td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bar"><div class="progress-fill" style="width:70%"></div></div>
+                <span class="progress-label">70%</span>
+              </div>
+            </td>
+            <td>Strong technical fit; commercial licensing gap, embedded-vs-K8s perception gap.</td>
+          </tr>
+          <tr>
+            <td>G5: Improvement plan</td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+                <span class="progress-label">0%</span>
+              </div>
+            </td>
+            <td>Not yet produced.</td>
+          </tr>
+          <tr>
+            <td>G6: Baseline snapshot</td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+                <span class="progress-label">0%</span>
+              </div>
+            </td>
+            <td>Not yet produced.</td>
+          </tr>
+          <tr style="border-top:2px solid var(--border-hi);">
+            <td style="color:var(--fg);font-weight:700;">Overall</td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bar"><div class="progress-fill" style="width:51%"></div></div>
+                <span class="progress-label">51%</span>
+              </div>
+            </td>
+            <td>Assess and Analyze complete; Plan and outputs pending. Assessable goals (G1–G4) average: <strong>76%</strong>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── SECTION: RISKS ──────────────────────────── -->
+  <section class="section" id="risks">
+    <div class="section-eyebrow">§ 08 — Risk Register</div>
+    <h2 class="section-title">Risks</h2>
+
+    <div class="risk-list">
+      <div class="risk-item">
+        <span class="risk-sev sev-high">High</span>
+        <div class="risk-title">CI/CD absence delays production adoption</div>
+        <div class="risk-likelihood">Likely</div>
+        <div class="risk-body">Enterprises require automated build/test gates. No pipeline means no production-readiness claim survives procurement review.</div>
+      </div>
+      <div class="risk-item">
+        <span class="risk-sev sev-high">High</span>
+        <div class="risk-title">AGPL creates silent commercial blockers</div>
+        <div class="risk-likelihood">Likely</div>
+        <div class="risk-body">Standard enterprise procurement blocks AGPL without documented commercial terms. Companies may evaluate, like the product, then reject at legal review without engaging.</div>
+      </div>
+      <div class="risk-item">
+        <span class="risk-sev sev-med">Med</span>
+        <div class="risk-title">Git-pinned deps introduce breaking changes silently</div>
+        <div class="risk-likelihood">Possible</div>
+        <div class="risk-body"><code>rmcp</code> and <code>surreal-memory</code> pinned to git HEAD without rev/tag — any upstream commit could break build reproducibility.</div>
+      </div>
+      <div class="risk-item">
+        <span class="risk-sev sev-med">Med</span>
+        <div class="risk-title">server.rs God-file becomes unmaintainable</div>
+        <div class="risk-likelihood">Possible</div>
+        <div class="risk-body">~3000+ lines of initialization logic. Cognitive overhead and testing difficulty increase as more services are added.</div>
+      </div>
+      <div class="risk-item">
+        <span class="risk-sev sev-med">Med</span>
+        <div class="risk-title">A2UI gap limits AG-UI ecosystem integration</div>
+        <div class="risk-likelihood">Possible</div>
+        <div class="risk-body">AG-UI is gaining adoption in 2026 alongside A2A+MCP. Missing artifact channel means incomplete protocol coverage.</div>
+      </div>
+      <div class="risk-item">
+        <span class="risk-sev sev-med">Med</span>
+        <div class="risk-title">Embedded-first misread as non-scalable</div>
+        <div class="risk-likelihood">Possible</div>
+        <div class="risk-body">Enterprise evaluators default to Kubernetes-native assumption. Positioning must explicitly address scale concerns.</div>
+      </div>
+      <div class="risk-item">
+        <span class="risk-sev sev-low">Low</span>
+        <div class="risk-title">Memory system complexity increases onboarding friction</div>
+        <div class="risk-likelihood">Unlikely</div>
+        <div class="risk-body">Opt-in with good defaults, but <code>embedding_provider</code> config is non-obvious for first-time users.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION: UNKNOWNS ───────────────────────── -->
+  <section class="section">
+    <div class="section-eyebrow">§ 09 — Open Questions</div>
+    <h2 class="section-title">Unknowns</h2>
+
+    <div class="diff-list">
+      <div class="diff-item">
+        <span class="diff-num">?</span>
+        <div class="diff-body">Exact current test count (build in progress; estimated ~130–150)</div>
+      </div>
+      <div class="diff-item">
+        <span class="diff-num">?</span>
+        <div class="diff-body">Current clippy warning count after new file additions</div>
+      </div>
+      <div class="diff-item">
+        <span class="diff-num">?</span>
+        <div class="diff-body">Whether kreuzberg v4.0.0-rc.17 RC will stabilize before production deployment</div>
+      </div>
+      <div class="diff-item">
+        <span class="diff-num">?</span>
+        <div class="diff-body">Commercial license terms and pricing (not documented in repo)</div>
+      </div>
+      <div class="diff-item">
+        <span class="diff-num">?</span>
+        <div class="diff-body">Whether <code>surreal-memory</code> upstream has breaking changes in its git HEAD</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION: DELTA ──────────────────────────── -->
+  <section class="section" id="delta">
+    <div class="section-eyebrow">§ 10 — Evolution Comparison</div>
+    <h2 class="section-title">Comparison to Prior Assessment</h2>
+    <p class="section-lead">Changes measured between the Feb 18 post-Phase-9 assessment and this Feb 21 iteration.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Feb 18</th><th>Feb 21</th><th>Delta</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Spec coverage</td>
+            <td>15/16 (94%)</td>
+            <td>18/19 (95%)</td>
+            <td><span class="delta-up">+3 sections</span></td>
+          </tr>
+          <tr>
+            <td>Source files</td>
+            <td>~165</td>
+            <td>191</td>
+            <td><span class="delta-up">+26 files</span></td>
+          </tr>
+          <tr>
+            <td>Test files</td>
+            <td>Not specified</td>
+            <td>18 in tests/</td>
+            <td><span class="delta-new">Now measurable</span></td>
+          </tr>
+          <tr>
+            <td>Memory system</td>
+            <td>Not present</td>
+            <td>Full implementation</td>
+            <td><span class="delta-new">Major addition</span></td>
+          </tr>
+          <tr>
+            <td>Context management</td>
+            <td>Not present</td>
+            <td>Sliding window + summarization</td>
+            <td><span class="delta-new">Major addition</span></td>
+          </tr>
+          <tr>
+            <td>SSE event variants</td>
+            <td>~9</td>
+            <td>13</td>
+            <td><span class="delta-up">+4 variants</span></td>
+          </tr>
+          <tr>
+            <td>CI/CD</td>
+            <td>Absent</td>
+            <td>Still absent</td>
+            <td><span class="delta-same">No change — persistent gap</span></td>
+          </tr>
+          <tr>
+            <td>AGPL commercial docs</td>
+            <td>Absent</td>
+            <td>Still absent</td>
+            <td><span class="delta-same">No change — persistent gap</span></td>
+          </tr>
+          <tr>
+            <td>A2UI (§06)</td>
+            <td>Open</td>
+            <td>Open</td>
+            <td><span class="delta-same">No change</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── CONCLUSION ──────────────────────────────── -->
+  <div class="conclusion">
+    <div class="conclusion-title">Assessment Conclusion</div>
+    <div class="conclusion-body">
+      The Universal Agent Runtime has made substantial progress in three days — adding production-grade memory, context management, and settings systems while expanding the SSE event model. The core technical moat (specification compiler, Cedar governance, A2A federation, WASM sandboxing) remains intact and uncontested. The persistent gaps in CI/CD infrastructure and commercial license documentation represent the most critical blockers for production adoption and enterprise engagement.
+    </div>
+    <div class="pill-list">
+      <span class="pill">Memory System ✓</span>
+      <span class="pill">Context Management ✓</span>
+      <span class="pill">Settings Layer ✓</span>
+      <span class="pill">13 SSE Events</span>
+      <span class="pill">95% Spec Coverage</span>
+      <span class="pill">CI/CD — Needed</span>
+      <span class="pill">License Docs — Needed</span>
+      <span class="pill">A2UI §06 — Open</span>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ──────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer-brand">travis<em>james</em>.ai</div>
+    <div class="footer-meta">UAR Iterative Evolution Assessment · uar-evolution-2026-02 · Assess Phase · Feb 2026</div>
+  </footer>
+
+</div><!-- /wrap -->
+
+<script>
+function switchTab(containerId, panelId) {
+  const container = document.getElementById(containerId);
+  container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

@@ -35,6 +35,7 @@ use crate::uar::api::sse::to_agui_event;
 use crate::uar::{
     self,
     defaults::ensure_default_knowledge_base,
+    domain::events::MemoryItem,
     governance::engine::GovernanceEngine,
     memory::{
         MemoryService,
@@ -213,11 +214,27 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     let recall_tool = Arc::new(crate::uar::tools::memory::MemoryRecallTool::new(
         memory_service.clone(),
     ));
+    let list_tool = Arc::new(crate::uar::tools::memory::MemoryListTool::new(
+        memory_service.clone(),
+    ));
+    let delete_tool = Arc::new(crate::uar::tools::memory::MemoryDeleteTool::new(
+        memory_service.clone(),
+    ));
+    let update_tool = Arc::new(crate::uar::tools::memory::MemoryUpdateTool::new(
+        memory_service.clone(),
+    ));
+    let history_tool = Arc::new(crate::uar::tools::memory::MemoryHistoryTool::new(
+        memory_service.clone(),
+    ));
     mcp_registry = mcp_registry
         .with_native_tool(save_tool)
-        .with_native_tool(recall_tool);
+        .with_native_tool(recall_tool)
+        .with_native_tool(list_tool)
+        .with_native_tool(delete_tool)
+        .with_native_tool(update_tool)
+        .with_native_tool(history_tool);
     info!(
-        "Native tools (memory_save, memory_recall) registered — active={}",
+        "Native tools (memory_save, memory_recall, memory_list, memory_delete_by_id, memory_update_by_id, memory_history) registered — active={}",
         memory_service.is_some()
     );
 
@@ -409,6 +426,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         settings_manager: settings_manager.clone(),
         memory_service: memory_service.clone(),
         prompt_cache_provider,
+        a2ui_registry: uar::a2ui::registry::A2uiRegistry::with_builtins(),
         #[cfg(feature = "wasm-runtime")]
         wasm_sandbox: {
             use crate::uar::runtime::wasm::{config::WasmConfig, sandbox::WasmSandbox};
@@ -426,6 +444,21 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     };
 
     // Build router
+    // Memory MCP router — built before the main router so type inference is unambiguous.
+    let mem_mcp_router: axum::Router<()> = if let Some(ref svc) = state.memory_service {
+        uar::memory::mcp_server::memory_mcp_router(Arc::clone(svc))
+    } else {
+        axum::Router::new()
+    };
+
+    // UAR Runtime MCP router — exposes agent listing, run creation, skill inventory,
+    // and spec compilation as MCP tools at /mcp/uar.
+    let uar_mcp_router: axum::Router<()> = uar::mcp_server::uar_mcp_router(
+        Arc::clone(&state.run_manager),
+        Arc::clone(&state.native_skill_registry),
+        state.persistence.clone(),
+    );
+
     let app = Router::new()
         .route("/health", get(health_handler))
         .route("/healthz", get(health_handler))
@@ -501,6 +534,36 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .nest(
             "/api/admin/memories",
             uar::api::memory_admin::build_router().with_state(state.clone()),
+        )
+        // Memory MCP HTTP endpoint — exposes the full in-process memory MCP server
+        // over streamable-HTTP so Claude Desktop and other MCP clients can connect.
+        // Uses nest_service (not nest) because mem_mcp_router is Router<()> and
+        // the outer router is Router<AppState> — nest_service accepts any Service.
+        .nest_service(&config.memory.mcp_http_path, mem_mcp_router)
+        // UAR Runtime MCP endpoint — exposes agent registry, run creation, skill
+        // inventory, and spec compilation as MCP tools at /mcp/uar.
+        .nest_service("/mcp/uar", uar_mcp_router)
+        // A2UI schema listing endpoint
+        .nest(
+            "/api/uar/a2ui",
+            {
+                let a2ui_state = uar::a2ui::routes::A2uiApiState {
+                    registry: Arc::clone(&state.a2ui_registry),
+                    run_manager: Arc::clone(&state.run_manager),
+                };
+                uar::a2ui::routes::build_schema_router().with_state(a2ui_state)
+            },
+        )
+        // A2UI artifact-response injection (shares /api/uar/runs prefix)
+        .nest(
+            "/api/uar/runs",
+            {
+                let a2ui_state = uar::a2ui::routes::A2uiApiState {
+                    registry: Arc::clone(&state.a2ui_registry),
+                    run_manager: Arc::clone(&state.run_manager),
+                };
+                uar::a2ui::routes::build_response_router().with_state(a2ui_state)
+            },
         )
         // A2A Compiler Agent — JSON-RPC endpoint
         .nest(
@@ -2392,9 +2455,10 @@ async fn api_chat_completion(
     };
 
     // --- Memory: context injection (pre-LLM-call) ---
-    let memory_context_block = if req.memory_enabled {
+    // Build context block and collect the raw hits so we can stream them to the client.
+    let (memory_context_block, memory_recall_items) = if req.memory_enabled {
         if let Some(svc) = &state.memory_service {
-            let block = context_builder::build_context(
+            let result = context_builder::build_context_with_hits(
                 svc,
                 &effective_input,
                 &user_ctx,
@@ -2403,15 +2467,44 @@ async fn api_chat_completion(
                 &resolved_model.model_id,
             )
             .await;
-            if !block.is_empty() {
-                tracing::debug!(chars = block.len(), "Memory context block assembled");
+            if !result.block.is_empty() {
+                tracing::debug!(
+                    chars = result.block.len(),
+                    hits = result.hits.len(),
+                    "Memory context block assembled"
+                );
             }
-            block
+            // Convert surreal_memory::Memory → MemoryItem for the stream event.
+            let items: Vec<MemoryItem> = result
+                .hits
+                .iter()
+                .map(|mem| {
+                    let scope_label = format!("{:?}", mem.scope).to_lowercase();
+                    let type_label = format!("{:?}", mem.memory_type).to_lowercase();
+                    MemoryItem {
+                        key: mem
+                            .id
+                            .as_ref()
+                            .and_then(|r| {
+                                serde_json::to_value(r)
+                                    .ok()
+                                    .and_then(|v| v.as_str().map(str::to_string))
+                            })
+                            .unwrap_or_else(|| format!("{scope_label}/{type_label}")),
+                        value: mem.content.clone(),
+                        source: "memory_context".to_string(),
+                        scope: Some(scope_label),
+                        memory_type: Some(type_label),
+                        importance: Some(mem.importance),
+                    }
+                })
+                .collect();
+            (result.block, items)
         } else {
-            String::new()
+            (String::new(), vec![])
         }
     } else {
-        String::new()
+        (String::new(), vec![])
     };
 
     // Prepend memory context to the effective input sent to the LLM.
@@ -2431,6 +2524,7 @@ async fn api_chat_completion(
             effective_input_with_memory,
             Some(session_id.clone()),
             None,
+            memory_recall_items,
         )
         .await;
 
@@ -2766,10 +2860,34 @@ async fn api_chat_completion(
                                         let ctx2 = stream_user_ctx.clone();
                                         let aid = stream_agent_id.clone();
                                         let sid = stream_session_id.clone();
+                                        let mgr = Arc::clone(&state.run_manager);
+                                        let rid = run_id.clone();
                                         tokio::spawn(async move {
-                                            auto_capture::capture_from_stream_end(
+                                            let captured = auto_capture::capture_from_stream_end(
                                                 &svc2, &msgs, &ctx2, &aid, &sid,
                                             ).await;
+                                            for mem in captured {
+                                                let memory_id = mem.id
+                                                    .as_ref()
+                                                    .map(|id| {
+                                                        serde_json::to_value(id)
+                                                            .ok()
+                                                            .and_then(|v| v.as_str().map(str::to_string))
+                                                            .unwrap_or_default()
+                                                    })
+                                                    .unwrap_or_default();
+                                                mgr.emit_to_run(
+                                                    &rid,
+                                                    uar::domain::events::NormalizedEvent::MemoryMutation {
+                                                        run_id: rid.clone(),
+                                                        operation: "created".to_string(),
+                                                        memory_id,
+                                                        content: mem.content.clone(),
+                                                        scope: format!("{:?}", mem.scope).to_lowercase(),
+                                                        memory_type: format!("{:?}", mem.memory_type).to_lowercase(),
+                                                    },
+                                                ).await;
+                                            }
                                         });
                                     }
                                 }

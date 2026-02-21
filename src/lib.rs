@@ -103,6 +103,8 @@ pub struct AppState {
     pub settings_manager: Option<Arc<SettingsManager>>,
     /// Prompt cache provider used by Anthropic-compatible API endpoints.
     pub prompt_cache_provider: Arc<dyn PromptCacheProvider>,
+    /// A2UI schema registry — resolves artifact schema IDs declared in UAR-AGENT-MD §06.
+    pub a2ui_registry: Arc<uar::a2ui::registry::A2uiRegistry>,
     /// Wasm sandbox runtime for executing Wasm agents (feature-gated)
     #[cfg(feature = "wasm-runtime")]
     pub wasm_sandbox: Option<Arc<uar::runtime::wasm::sandbox::WasmSandbox>>,

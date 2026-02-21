@@ -1,3 +1,4 @@
+pub mod a2ui;
 pub mod api;
 pub mod compiler;
 pub mod defaults;
@@ -5,6 +6,7 @@ pub mod domain;
 pub mod file_processing;
 pub mod governance;
 pub mod llm;
+pub mod mcp_server;
 pub mod memory;
 pub mod persistence;
 pub mod prompt_cache;

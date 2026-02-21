@@ -94,6 +94,72 @@ pub struct RunManager {
     native_skills: Arc<NativeSkillRegistry>,
 }
 
+/// Memory mutation tool name sets — used to detect side effects in ToolEnd events.
+const MEMORY_CREATE_TOOLS: &[&str] = &["memory_add", "memory_save", "memory_extract_from_conversation"];
+const MEMORY_UPDATE_TOOLS: &[&str] = &["memory_update"];
+const MEMORY_DELETE_TOOLS: &[&str] = &["memory_delete", "memory_delete_all"];
+
+/// Inspect a `ToolEnd` event and, if it represents a memory mutation, return a
+/// corresponding `MemoryMutation` event. Returns `None` for non-memory tools.
+fn memory_mutation_from_tool_end(
+    evt: &NormalizedEvent,
+    run_id: &str,
+) -> Option<NormalizedEvent> {
+    let NormalizedEvent::ToolEnd { tool, output, ok, .. } = evt else {
+        return None;
+    };
+
+    if !ok {
+        return None;
+    }
+
+    let operation = if MEMORY_CREATE_TOOLS.contains(&tool.as_str()) {
+        "created"
+    } else if MEMORY_UPDATE_TOOLS.contains(&tool.as_str()) {
+        "updated"
+    } else if MEMORY_DELETE_TOOLS.contains(&tool.as_str()) {
+        "deleted"
+    } else {
+        return None;
+    };
+
+    // Try to extract memory_id and content from the tool output JSON.
+    let memory_id = output
+        .get("memory_id")
+        .or_else(|| output.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let content = output
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let scope = output
+        .get("scope")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+
+    let memory_type = output
+        .get("memory_type")
+        .or_else(|| output.get("type"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("semantic")
+        .to_string();
+
+    Some(NormalizedEvent::MemoryMutation {
+        run_id: run_id.to_string(),
+        operation: operation.to_string(),
+        memory_id,
+        content,
+        scope,
+        memory_type,
+    })
+}
+
 impl std::fmt::Debug for RunManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RunManager")
@@ -202,11 +268,12 @@ impl RunManager {
     }
 
     #[instrument(
-        skip(self, artifact, input),
+        skip(self, artifact, input, memory_hits),
         fields(
             agent_id = %artifact.id,
             session_id = ?session_id,
             user_id = ?user_id,
+            memory_hits = memory_hits.len(),
             run_id = tracing::field::Empty
         )
     )]
@@ -216,6 +283,7 @@ impl RunManager {
         input: String,
         session_id: Option<String>,
         user_id: Option<String>,
+        memory_hits: Vec<MemoryItem>,
     ) -> String {
         let run_id = Uuid::new_v4().to_string();
         tracing::Span::current().record("run_id", &run_id);
@@ -551,6 +619,21 @@ impl RunManager {
                 })
                 .await;
 
+            // 2. Emit pre-call memory recall hits so the client knows what context was injected.
+            if !memory_hits.is_empty() {
+                tracing::debug!(
+                    run_id = %execute_run_id,
+                    count = memory_hits.len(),
+                    "Emitting pre-call memory recall hits"
+                );
+                emitter
+                    .emit(NormalizedEvent::MemoryRecall {
+                        run_id: execute_run_id.clone(),
+                        items: memory_hits,
+                    })
+                    .await;
+            }
+
             emitter
                 .emit(NormalizedEvent::StatePatch {
                     run_id: execute_run_id.clone(),
@@ -570,6 +653,10 @@ impl RunManager {
             let mut accumulated_tool_calls: Vec<crate::llm::ToolCall> = Vec::new();
             let mut tool_call_indices: HashMap<String, usize> = HashMap::new();
             let mut tool_call_names: HashMap<String, String> = HashMap::new();
+
+            // Token usage tracking — accumulated across all LLM calls in this run.
+            let mut total_input_tokens: u32 = 0;
+            let mut total_output_tokens: u32 = 0;
 
             // 2. Execute Orchestrator
             match orchestrator.chat_with_history(messages).await {
@@ -617,6 +704,9 @@ impl RunManager {
                                 run_id: execute_run_id.clone(),
                                 items: vec![MemoryItem {
                                     key,
+                                    scope: None,
+                                    memory_type: None,
+                                    importance: None,
                                     value,
                                     source: operation,
                                 }],
@@ -713,11 +803,28 @@ impl RunManager {
                                     code: code.unwrap_or_default(),
                                 })
                             }
+                            crate::normalized::NormalizedEvent::Usage {
+                                prompt_tokens,
+                                completion_tokens,
+                                total_tokens: _,
+                            } => {
+                                total_input_tokens = total_input_tokens.saturating_add(prompt_tokens);
+                                total_output_tokens = total_output_tokens.saturating_add(completion_tokens);
+                                None // Accumulate — emit on RunDone
+                            }
                             _ => None, // Ignore other events for now
                         };
 
                         if let Some(evt) = uar_event {
+                            // Derive a memory mutation event before consuming the ToolEnd.
+                            let mutation_evt = memory_mutation_from_tool_end(
+                                &evt,
+                                &execute_run_id,
+                            );
                             emitter.emit(evt).await;
+                            if let Some(m) = mutation_evt {
+                                emitter.emit(m).await;
+                            }
                         }
                     }
                 }
@@ -736,11 +843,27 @@ impl RunManager {
                 execution_session.add_assistant_message(accumulated_content);
             }
 
-            emitter
-                .emit(NormalizedEvent::RunDone {
-                    run_id: execute_run_id,
-                })
-                .await;
+            let total_tokens = total_input_tokens.saturating_add(total_output_tokens);
+            let has_usage = total_input_tokens > 0 || total_output_tokens > 0;
+
+            if has_usage {
+                emitter
+                    .emit(NormalizedEvent::RunDoneWithUsage {
+                        run_id: execute_run_id,
+                        input_tokens: Some(total_input_tokens),
+                        output_tokens: Some(total_output_tokens),
+                        total_tokens: Some(total_tokens),
+                        cost_usd_estimate: None, // TODO: add per-model pricing table
+                        model: None,
+                    })
+                    .await;
+            } else {
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: execute_run_id,
+                    })
+                    .await;
+            }
         });
 
         run_id
@@ -749,6 +872,27 @@ impl RunManager {
     pub async fn subscribe(&self, run_id: &str) -> Option<broadcast::Receiver<StreamEvent>> {
         let runs = self.active_runs.read().await;
         runs.get(run_id).map(|state| state.sender.subscribe())
+    }
+
+    /// Emit an event into an existing run's broadcast channel.
+    ///
+    /// This is used by external callers (e.g. post-stream auto-capture) that need to
+    /// inject events after `start_run` returns. The event is also appended to the
+    /// run's history buffer so late-connecting SSE clients can replay it.
+    /// Silently no-ops if the run has already been cleaned up.
+    pub async fn emit_to_run(&self, run_id: &str, event: NormalizedEvent) {
+        let runs = self.active_runs.read().await;
+        if let Some(state) = runs.get(run_id) {
+            let mut history = state.history.lock().await;
+            let id = history.next_id;
+            history.next_id = history.next_id.saturating_add(1);
+            let stream_event = StreamEvent { id, event };
+            history.buffer.push_back(stream_event.clone());
+            if history.buffer.len() > EVENT_HISTORY_LIMIT {
+                history.buffer.pop_front();
+            }
+            let _ = state.sender.send(stream_event);
+        }
     }
 
     pub async fn history_since(

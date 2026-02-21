@@ -15,6 +15,27 @@ bun.lockb
 .env.local
 .env.*.local
 
+# OpenTofu / Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+# tfvars files contain sensitive credentials — keep out of version control.
+# Commit terraform.tfvars.example instead of terraform.tfvars.
+*.tfvars
+*.tfvars.json
+# Override files are local-only
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+# Plan output
+*tfplan*
+# CLI config
+.terraformrc
+terraform.rc
+
 # Build outputs
 /static/main.js
 /static/main.js.map

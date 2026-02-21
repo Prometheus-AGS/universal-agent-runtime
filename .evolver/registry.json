@@ -1,0 +1,11 @@
+{
+  "evolutions": {
+    "uar-evolution-2026-02": {
+      "path": ".evolver/evolutions/uar-evolution-2026-02",
+      "created_at": "2026-02-21T00:00:00Z",
+      "domain": "software+business",
+      "status": "in_progress",
+      "iteration": 1
+    }
+  }
+}

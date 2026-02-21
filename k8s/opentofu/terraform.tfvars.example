@@ -1,0 +1,42 @@
+# Copy this file to terraform.tfvars and fill in real values.
+# terraform.tfvars is git-ignored because it contains secrets.
+
+# ── GCP / GKE ──────────────────────────────────────────────────────────────
+gcp_project_id       = "your-gcp-project-id"
+gcp_region           = "us-central1"
+gke_cluster_name     = "client-cluster"
+gke_cluster_location = "us-central1"
+
+# ── PostgreSQL ──────────────────────────────────────────────────────────────
+postgres_image    = "tribehealth/uar-postgres:pg17"
+postgres_db       = "uar"
+postgres_user     = "uar"
+postgres_password = ""   # required
+
+# ── LLM ────────────────────────────────────────────────────────────────────
+llm_base_url = "https://api.openai.com"
+llm_model    = "gpt-4o"
+llm_api_key  = ""   # required
+
+# ── OpenAI (embeddings) ─────────────────────────────────────────────────────
+openai_api_key = ""   # required (can be same as llm_api_key if using OpenAI)
+
+# ── Application secrets ─────────────────────────────────────────────────────
+jwt_secret           = ""   # required — generate with: openssl rand -base64 64
+tavily_api_key       = ""   # required for web-search MCP tool
+unstructured_api_key = ""   # required for document ingestion
+
+# ── SurrealDB ────────────────────────────────────────────────────────────────
+surreal_image = "surrealdb/surrealdb:v3"
+surreal_user  = "root"
+surreal_pass  = ""   # required — choose a strong password
+
+# ── Surrealist Web UI ────────────────────────────────────────────────────────
+# After deploy, open https://surrealist.know-me.tools and connect to:
+#   wss://surreal-api.know-me.tools  (root / <surreal_pass>)
+surrealist_image = "surrealdb/surrealist:3.7.2"
+
+# ── DbGate ───────────────────────────────────────────────────────────────────
+# After deploy, open https://pg.know-me.tools — the UAR Postgres connection
+# is pre-configured automatically; no further setup required.
+dbgate_image = "dbgate/dbgate:latest"

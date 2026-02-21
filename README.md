@@ -863,6 +863,48 @@ bun run format
 
 ---
 
+## Memory System
+
+UAR ships a durable, multi-scope memory system that gives agents persistent recall across sessions. It captures facts automatically, injects relevant context before each LLM call, builds a knowledge graph of entities and relationships, and exposes all operations as MCP tools to any connected client.
+
+**Key capabilities**: session, user, agent, global, and task memory scopes · hybrid vector + BM25 retrieval · auto-capture from conversations · knowledge graph (entity/relation/observation model) · full MCP server at `/mcp/memory`
+
+Enable with `UAR_MEMORY__ENABLED=true`. See [docs/MEMORY_SYSTEM.md](docs/MEMORY_SYSTEM.md) for the complete guide including configuration, scope model, embedding providers, and quick start.
+
+---
+
+## CI/CD — Deployment to GKE
+
+Pushing to the `deployment` branch triggers `.github/workflows/deploy.yml`, which:
+
+1. Runs `cargo clippy`, `cargo fmt --check`, `bun run build`, and `cargo test --lib`
+2. Builds and pushes `tribehealth/universal-agent-runtime:deployment-<sha>` to Docker Hub
+3. Authenticates to GKE and performs a rolling update via `kubectl set image`
+4. Waits for `kubectl rollout status` to confirm health
+
+### Required GitHub Secrets
+
+Configure these in **Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|--------|-------------|
+| `DOCKER_USERNAME` | Docker Hub username (registry: `tribehealth`) |
+| `DOCKER_PASSWORD` | Docker Hub password or access token |
+| `GCP_SA_KEY` | Base64-encoded GCP service account JSON with `roles/container.developer` |
+| `GCP_PROJECT_ID` | GCP project ID (`prometheus-461323`) |
+| `GKE_CLUSTER_NAME` | GKE cluster name (`client-cluster`) |
+| `GKE_CLUSTER_LOCATION` | GKE cluster location (`us-central1`) |
+
+To generate the `GCP_SA_KEY`:
+```bash
+gcloud iam service-accounts keys create key.json \
+  --iam-account=<sa-name>@prometheus-461323.iam.gserviceaccount.com
+base64 -i key.json | pbcopy   # macOS — paste into the secret
+rm key.json
+```
+
+---
+
 ## Tauri Compatibility
 
 This project is Tauri-ready by design:

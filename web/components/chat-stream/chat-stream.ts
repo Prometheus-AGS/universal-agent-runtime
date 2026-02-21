@@ -13,6 +13,7 @@ import { debugLog } from "../../utils/logging";
 import { renderMarkdown } from "../../utils/markdown";
 import { generateUuid } from "../../utils/uuid";
 import type { AttachedFile } from "../file-upload/file-upload";
+import "../a2ui-artifact/a2ui-artifact";
 import { StreamController } from "./stream-controller";
 import { TranscriptView } from "./transcript-view";
 
@@ -277,6 +278,8 @@ export class ChatStream extends HTMLElement {
       "agui.reasoning.delta",
       "agui.citation.added",
       "agui.memory.update",
+      "agui.memory.recall",
+      "agui.memory.mutation",
       "agui.state.patch",
       "agui.tool_call.delta",
       "agui.tool_call.complete",
@@ -284,6 +287,10 @@ export class ChatStream extends HTMLElement {
       "agui.usage",
       "agui.error",
       "agui.done",
+      // A2UI: agent produces a displayable artifact
+      "agui.artifact",
+      // A2UI: agent needs user input before continuing
+      "agui.artifact_input_request",
     ];
 
     // Add listeners for all event types
@@ -354,6 +361,12 @@ export class ChatStream extends HTMLElement {
       return;
     }
 
+    // A2UI: render artifact events directly in the transcript
+    if (type === "agui.artifact" || type === "agui.artifact_input_request") {
+      this.handleArtifactEvent(type, agUiEvent as unknown as Record<string, unknown>);
+      return;
+    }
+
     // 1. Pass to Controller for View Updates
     this.controller?.handleEvent(agUiEvent);
 
@@ -362,6 +375,43 @@ export class ChatStream extends HTMLElement {
 
     if (agUiEvent.kind === "done") {
       this.closeStream();
+    }
+  }
+
+  /**
+   * Render an A2UI artifact into the transcript.
+   * For input requests, the agent run stays open until the user submits.
+   */
+  private handleArtifactEvent(
+    type: string,
+    data: Record<string, unknown>,
+  ): void {
+    const artifactId = String(data.artifact_id ?? generateUuid());
+    const artifactType = String(data.artifact_type ?? "display");
+    const title = String(data.title ?? "");
+    const content = typeof data.content === "string" ? data.content : JSON.stringify(data.content ?? "");
+    const runId = String(data.request_id ?? this.getAttribute("session-id") ?? "");
+
+    const el = document.createElement("a2ui-artifact") as HTMLElement;
+    el.setAttribute("run-id", runId);
+    el.setAttribute("artifact-id", artifactId);
+    el.setAttribute("artifact-type", artifactType);
+    el.setAttribute("title", title);
+    el.setAttribute("content", content);
+
+    const itemId = `artifact-${artifactId}`;
+    this.view?.upsertItem({
+      id: itemId,
+      kind: "html",
+      role: "assistant",
+      html: el.outerHTML,
+      element: el,
+    });
+
+    // For input requests the stream stays open (agent is paused).
+    // For display-only artifacts, check if the stream should close normally.
+    if (type === "agui.artifact" && artifactType === "display") {
+      // Display artifacts don't pause the agent — nothing extra to do.
     }
   }
 

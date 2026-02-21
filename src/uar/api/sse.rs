@@ -91,18 +91,36 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
             ))
         }
         NormalizedEvent::MemoryRecall { run_id, items } => {
-            let value = serde_json::to_string(items).unwrap_or_default();
-            Some((
-                "agui.memory.update",
-                serde_json::json!({
-                    "kind": "memory",
-                    "phase": "update",
-                    "request_id": run_id,
-                    "key": "recall",
-                    "value": value,
-                    "operation": "set"
-                }),
-            ))
+            // Distinguish pre-call context hits (source == "memory_context") from
+            // model-provided memory updates so clients can render them differently.
+            let is_context_injection =
+                items.first().is_some_and(|i| i.source == "memory_context");
+            if is_context_injection {
+                Some((
+                    "agui.memory.recall",
+                    serde_json::json!({
+                        "kind": "memory",
+                        "phase": "recall",
+                        "request_id": run_id,
+                        "items": items,
+                        "count": items.len()
+                    }),
+                ))
+            } else {
+                // Backward-compatible path: model-provided memory updates.
+                let value = serde_json::to_string(items).unwrap_or_default();
+                Some((
+                    "agui.memory.update",
+                    serde_json::json!({
+                        "kind": "memory",
+                        "phase": "update",
+                        "request_id": run_id,
+                        "key": "recall",
+                        "value": value,
+                        "operation": "set"
+                    }),
+                ))
+            }
         }
         NormalizedEvent::SkillActivated {
             run_id,
@@ -175,7 +193,46 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "success": ok
             }),
         )),
-        NormalizedEvent::Artifact { .. } => None,
+        NormalizedEvent::Artifact { run_id, artifact } => Some((
+            "agui.artifact",
+            serde_json::json!({
+                "kind": "artifact",
+                "phase": "complete",
+                "request_id": run_id,
+                "artifact_id": artifact.artifact_id,
+                "artifact_type": artifact.artifact_type,
+                "title": artifact.title,
+                "content": artifact.content,
+                "language": artifact.language,
+                "metadata": artifact.metadata
+            }),
+        )),
+        NormalizedEvent::ArtifactDisplay { run_id, artifact } => Some((
+            "agui.artifact",
+            serde_json::json!({
+                "kind": "artifact",
+                "phase": "complete",
+                "request_id": run_id,
+                "artifact_id": artifact.artifact_id,
+                "artifact_type": artifact.artifact_type,
+                "title": artifact.title,
+                "content": artifact.content,
+                "language": artifact.language,
+                "metadata": artifact.metadata
+            }),
+        )),
+        NormalizedEvent::ArtifactInputRequest { run_id, artifact } => Some((
+            "agui.artifact_input_request",
+            serde_json::json!({
+                "kind": "artifact_input_request",
+                "request_id": run_id,
+                "artifact_id": artifact.artifact_id,
+                "artifact_type": artifact.artifact_type,
+                "title": artifact.title,
+                "content": artifact.content,
+                "metadata": artifact.metadata
+            }),
+        )),
         NormalizedEvent::Error {
             run_id,
             code,
@@ -194,6 +251,27 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
             serde_json::json!({
                 "kind": "done",
                 "request_id": run_id
+            }),
+        )),
+        NormalizedEvent::RunDoneWithUsage {
+            run_id,
+            input_tokens,
+            output_tokens,
+            total_tokens,
+            cost_usd_estimate,
+            model,
+        } => Some((
+            "agui.done",
+            serde_json::json!({
+                "kind": "done",
+                "request_id": run_id,
+                "usage": {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "total_tokens": total_tokens,
+                    "cost_usd_estimate": cost_usd_estimate,
+                    "model": model
+                }
             }),
         )),
         NormalizedEvent::StatePatch { run_id, patch } => Some((
@@ -215,6 +293,26 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "tokens_saved": action.tokens_saved,
                 "was_applied": action.was_applied,
                 "summary_generated": action.summary_generated
+            }),
+        )),
+        NormalizedEvent::MemoryMutation {
+            run_id,
+            operation,
+            memory_id,
+            content,
+            scope,
+            memory_type,
+        } => Some((
+            "agui.memory.mutation",
+            serde_json::json!({
+                "kind": "memory",
+                "phase": "mutation",
+                "request_id": run_id,
+                "operation": operation,
+                "memory_id": memory_id,
+                "content": content,
+                "scope": scope,
+                "memory_type": memory_type
             }),
         )),
     }

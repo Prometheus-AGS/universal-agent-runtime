@@ -11,25 +11,34 @@ use crate::uar::security::claims::UserContext;
 
 use super::service::MemoryService;
 
-/// Assembles a formatted memory context block for injection into a system prompt.
+/// Result of a context build — includes the formatted prompt block and the
+/// raw memory hits that were included (for streaming to the client).
+pub struct ContextBuildResult {
+    /// Formatted memory block ready for injection into the system prompt.
+    pub block: String,
+    /// The ranked memory records that fit within the token budget.
+    pub hits: Vec<Memory>,
+}
+
+/// Assembles a formatted memory context block for injection into a system prompt,
+/// returning both the block and the raw memory hits.
 ///
 /// Performs a hybrid search waterfall: Session → User → Agent → Global.
 /// Results are re-ranked by a weighted score of importance, recency, and
 /// vector relevance. The block is truncated to fit within the model's token budget
 /// (or `max_tokens` from config if the model is not in the profile registry).
 ///
-/// Returns an empty string if no relevant memories are found.
-pub async fn build_context(
+/// Returns an empty block and empty hits if no relevant memories are found.
+pub async fn build_context_with_hits(
     service: &Arc<MemoryService>,
     query: &str,
     user_ctx: &UserContext,
     agent_id: Option<&str>,
     session_id: Option<&str>,
     model_id: &str,
-) -> String {
-    // First check if context injection is enabled.
+) -> ContextBuildResult {
     if !service.config().inject_context {
-        return String::new();
+        return ContextBuildResult { block: String::new(), hits: vec![] };
     }
 
     let max_tokens = service.config().max_context_tokens;
@@ -52,17 +61,18 @@ pub async fn build_context(
         Ok(m) => m,
         Err(e) => {
             tracing::warn!(error = %e, "context_builder: hybrid_search failed, using empty context");
-            return String::new();
+            return ContextBuildResult { block: String::new(), hits: vec![] };
         }
     };
 
     if memories.is_empty() {
-        return String::new();
+        return ContextBuildResult { block: String::new(), hits: vec![] };
     }
 
     // Rank and format memories up to the token budget.
     let mut total_tokens = 0u32;
     let mut lines: Vec<String> = Vec::with_capacity(memories.len());
+    let mut hits: Vec<Memory> = Vec::new();
 
     for mem in rank_memories(memories) {
         let token_estimate = mem.token_count.unwrap_or_else(|| {
@@ -80,18 +90,38 @@ pub async fn build_context(
         let scope_label = format!("{:?}", mem.scope).to_lowercase();
         let type_label = format!("{:?}", mem.memory_type).to_lowercase();
         lines.push(format!("[{scope_label}/{type_label}] {}", mem.content));
+        hits.push(mem);
     }
 
     if lines.is_empty() {
-        return String::new();
+        return ContextBuildResult { block: String::new(), hits: vec![] };
     }
 
-    format!(
+    let block = format!(
         "## Relevant Memory Context\n\
          The following memories are relevant to this conversation. \
          Use them to personalize your response without explicitly citing them:\n\n{}\n",
         lines.join("\n")
-    )
+    );
+
+    ContextBuildResult { block, hits }
+}
+
+/// Assembles a formatted memory context block for injection into a system prompt.
+///
+/// This is a convenience wrapper around [`build_context_with_hits`] for callers
+/// that do not need the raw memory hits.
+pub async fn build_context(
+    service: &Arc<MemoryService>,
+    query: &str,
+    user_ctx: &UserContext,
+    agent_id: Option<&str>,
+    session_id: Option<&str>,
+    model_id: &str,
+) -> String {
+    build_context_with_hits(service, query, user_ctx, agent_id, session_id, model_id)
+        .await
+        .block
 }
 
 /// Re-rank memories by a composite score of importance, recency, and access frequency.

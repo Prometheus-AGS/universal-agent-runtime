@@ -95,6 +95,16 @@ export class StreamController {
     }
 
     if (event.kind === "done") {
+      // If usage data is bundled into the done event, emit it first
+      if (event.usage) {
+        this.handleUsage({
+          input_tokens: event.usage.input_tokens ?? 0,
+          output_tokens: event.usage.output_tokens ?? 0,
+          cost: event.usage.cost_usd_estimate,
+          model: event.usage.model,
+        });
+        this.renderTokenBadge(event.usage);
+      }
       this.handleDone();
       return;
     }
@@ -279,6 +289,35 @@ export class StreamController {
         },
       }),
     );
+  }
+
+  /**
+   * Render a compact token + cost badge below the last assistant response.
+   * Shows: `in: 1,203 | out: 847 | total: 2,050 | ~$0.003`
+   */
+  private renderTokenBadge(usage: {
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+    cost_usd_estimate?: number;
+    model?: string;
+  }) {
+    const parts: string[] = [];
+    if (usage.input_tokens != null) parts.push(`in: ${usage.input_tokens.toLocaleString()}`);
+    if (usage.output_tokens != null) parts.push(`out: ${usage.output_tokens.toLocaleString()}`);
+    if (usage.total_tokens != null) parts.push(`total: ${usage.total_tokens.toLocaleString()}`);
+    if (usage.cost_usd_estimate != null && usage.cost_usd_estimate > 0) {
+      parts.push(`~$${usage.cost_usd_estimate.toFixed(4)}`);
+    }
+    if (usage.model) parts.push(usage.model);
+
+    if (parts.length === 0) return;
+
+    this.view.upsertItem({
+      id: createUniqueId(),
+      kind: "token-badge",
+      content: parts.join(" · "),
+    });
   }
 
   private handleStatePatch(patch: unknown) {

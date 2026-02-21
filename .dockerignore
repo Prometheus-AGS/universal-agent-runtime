@@ -75,3 +75,8 @@ openspec/
 .clinerules/
 .claude/
 .specify/
+
+# Infrastructure — k8s/ and OpenTofu files are never needed inside the
+# UAR application container.  Excluding them also prevents secrets in
+# terraform.tfvars from being uploaded to the Docker daemon build context.
+k8s/

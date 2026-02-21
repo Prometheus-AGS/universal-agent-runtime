@@ -81,7 +81,7 @@ reqwest = { version = "0.12", features = [
 ] }
 
 # MCP client + in-process server (memory MCP)
-rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", features = [
+rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", rev = "085470025f690050e8776ffa939e7ba71d3abc01", features = [
   "client",
   "server",
   "macros",
@@ -164,10 +164,17 @@ mime_guess = "2.0"
 base64 = "0.22"
 
 # Kreuzberg - document intelligence framework with Rust core (4.0 RC)
-kreuzberg = { git = "https://github.com/kreuzberg-dev/kreuzberg.git", tag = "v4.0.0-rc.17" }
+kreuzberg = { git = "https://github.com/kreuzberg-dev/kreuzberg.git", rev = "000244987eb93fdcaeb228c8c10e4fe1f44d699c" }
 
 # Worker pool for scalable document ingestion
-prometheus_parking_lot = { git = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs", features = [
+# Dependency Upgrade Process:
+#   1. Check upstream for the desired commit: git ls-remote <repo-url> HEAD
+#   2. Update `rev` to the new SHA below
+#   3. Run `cargo update -p <package>` to refresh Cargo.lock
+#   4. Run `cargo build` to verify compilation
+#   5. Run `cargo test` to verify no regressions
+#   6. Commit Cargo.toml + Cargo.lock together
+prometheus_parking_lot = { git = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs", rev = "32b481d6c5694545d35789894f6feecf5ac4ca3e", features = [
   "tokio-runtime",
 ] }
 num_cpus = "1.16"

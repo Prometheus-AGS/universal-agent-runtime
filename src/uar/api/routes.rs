@@ -42,7 +42,7 @@ async fn create_run(
     Json(req): Json<CreateRunRequest>,
 ) -> Json<CreateRunResponse> {
     let run_id = manager
-        .start_run(req.artifact, req.input, req.session_id, None)
+        .start_run(req.artifact, req.input, req.session_id, None, vec![])
         .await;
     Json(CreateRunResponse {
         run_id: run_id.clone(),

@@ -92,6 +92,7 @@ pub async fn chat_completions(
             last_message.clone(),
             Some(conversation_id.clone()),
             Some(user_context.user_id),
+            vec![],
         )
         .await;
 

@@ -1,0 +1,213 @@
+##############################################################################
+# UAR Production Docker Compose Stack
+#
+# Replicates the complete OpenTofu GKE deployment locally so you can run the
+# full production stack with a single command:
+#
+#   ./start.sh
+#
+# Services:
+#   postgres   — PostgreSQL 17 with pgvector + pgmq + all UAR migrations
+#   redis      — Redis 7 with AOF persistence
+#   surreal    — SurrealDB v3 with RocksDB backend
+#   surrealist — SurrealDB web UI (http://localhost:8080)
+#   dbgate     — Database admin UI (http://localhost:5050)
+#   uar        — Universal Agent Runtime (http://localhost:3000)
+#
+# Prerequisites:
+#   - Docker Desktop or Docker Engine + Compose v2
+#   - Copy .env.example to .env and fill in your secrets
+##############################################################################
+
+name: uar-prod
+
+services:
+
+  # ── PostgreSQL 17 ────────────────────────────────────────────────────────────
+  postgres:
+    image: tribehealth/uar-postgres:pg17
+    container_name: uar-postgres
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-uar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-uar}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-uar} -d ${POSTGRES_DB:-uar}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - uar-net
+
+  # ── Redis 7 ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: uar-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - uar-net
+
+  # ── SurrealDB v3 ─────────────────────────────────────────────────────────────
+  surreal:
+    image: surrealdb/surrealdb:v2
+    container_name: uar-surreal
+    restart: unless-stopped
+    command:
+      - start
+      - --user=${SURREAL_USER:-root}
+      - --pass=${SURREAL_PASS:-changeme}
+      - --bind=0.0.0.0:8000
+      - rocksdb:/data/memory.db
+    volumes:
+      - surreal-data:/data
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - uar-net
+
+  # ── Surrealist UI ────────────────────────────────────────────────────────────
+  # Web-based GUI for browsing SurrealDB, including the knowledge graph.
+  # Access at http://localhost:8080
+  surrealist:
+    image: ghcr.io/surrealdb/surrealist:latest
+    container_name: uar-surrealist
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      surreal:
+        condition: service_healthy
+    networks:
+      - uar-net
+
+  # ── DbGate ───────────────────────────────────────────────────────────────────
+  # Database admin UI for PostgreSQL (and other DBs).
+  # Access at http://localhost:5050
+  # Note: remapped from 3000 (GKE) to 5050 to avoid conflict with UAR.
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: uar-dbgate
+    restart: unless-stopped
+    environment:
+      - CONNECTIONS=con1
+      - LABEL_con1=UAR Postgres
+      - SERVER_con1=postgres
+      - PORT_con1=5432
+      - USER_con1=${POSTGRES_USER:-uar}
+      - PASSWORD_con1=${POSTGRES_PASSWORD:-changeme}
+      - DATABASE_con1=${POSTGRES_DB:-uar}
+      - ENGINE_con1=postgres@dbgate-plugin-postgres
+    ports:
+      - "5050:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - uar-net
+
+  # ── Universal Agent Runtime ──────────────────────────────────────────────────
+  # The main UAR application.
+  # Access at http://localhost:3000
+  uar:
+    image: tribehealth/universal-agent-runtime:latest
+    container_name: uar-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # ── Server ─────────────────────────────────────────────────────────────
+      UAR_SERVER__PORT: "3000"
+      UAR_SERVER__HOST: "0.0.0.0"
+
+      # ── Database (use Docker Compose service names for hostnames) ──────────
+      DATABASE_URL: postgres://${POSTGRES_USER:-uar}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-uar}
+      UAR_PERSISTENCE__PROVIDER: "postgres"
+      UAR_PERSISTENCE__EXTERNAL_CACHE_ENABLED: "true"
+
+      # ── Redis ───────────────────────────────────────────────────────────────
+      REDIS_URL: redis://redis:6379
+
+      # ── Memory / SurrealDB ──────────────────────────────────────────────────
+      UAR_MEMORY__ENABLED: "true"
+      UAR_MEMORY__EMBEDDING_PROVIDER: "openai"
+      UAR_MEMORY__EMBEDDING_MODEL: "text-embedding-3-small"
+      UAR_MEMORY__AUTO_CAPTURE: "true"
+      UAR_MEMORY__INJECT_CONTEXT: "true"
+      UAR_MEMORY__MCP_HTTP_ENABLED: "true"
+      UAR_MEMORY__SURREAL_ENDPOINT: "ws://surreal:8000"
+      UAR_MEMORY__SURREAL_USER: ${SURREAL_USER:-root}
+      UAR_MEMORY__SURREAL_PASS: ${SURREAL_PASS:-changeme}
+
+      # ── Security ────────────────────────────────────────────────────────────
+      UAR_SECURITY__JWT_REQUIRED: "false"   # Set to "true" in production
+
+      # ── File processing ─────────────────────────────────────────────────────
+      UAR_FILE_PROCESSING__PROVIDER: "unstructured"
+      UAR_FILE_PROCESSING__UPLOAD_DIR: "/uploads"
+      UAR_UNSTRUCTURED__API_URL: "https://api.unstructured.io/general/v0/general"
+
+      # ── LLM ─────────────────────────────────────────────────────────────────
+      LLM_PROTOCOL: "auto"
+
+      # ── Observability ────────────────────────────────────────────────────────
+      RUST_LOG: "info"
+    volumes:
+      - uar-uploads:/uploads
+      - uar-data:/data
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      surreal:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/healthz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - uar-net
+
+# ── Named volumes ─────────────────────────────────────────────────────────────
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  surreal-data:
+    driver: local
+  uar-uploads:
+    driver: local
+  uar-data:
+    driver: local
+
+# ── Internal network ──────────────────────────────────────────────────────────
+networks:
+  uar-net:
+    driver: bridge

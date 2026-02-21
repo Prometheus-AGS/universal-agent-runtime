@@ -418,6 +418,18 @@ pub struct MemoryConfig {
     /// SurrealDB database name for memory storage.
     #[serde(default = "MemoryConfig::default_database")]
     pub database: String,
+    /// External SurrealDB endpoint (ws:// or wss://). When set, overrides embedded mode.
+    /// Env var: UAR_MEMORY__SURREAL_ENDPOINT
+    #[serde(default)]
+    pub surreal_endpoint: Option<String>,
+    /// Username for the external SurrealDB instance.
+    /// Env var: UAR_MEMORY__SURREAL_USER
+    #[serde(default)]
+    pub surreal_user: Option<String>,
+    /// Password for the external SurrealDB instance.
+    /// Env var: UAR_MEMORY__SURREAL_PASS
+    #[serde(default)]
+    pub surreal_pass: Option<String>,
 }
 
 impl MemoryConfig {
@@ -477,6 +489,9 @@ impl Default for MemoryConfig {
             mcp_http_path: Self::default_mcp_http_path(),
             namespace: Self::default_namespace(),
             database: Self::default_database(),
+            surreal_endpoint: None,
+            surreal_user: None,
+            surreal_pass: None,
         }
     }
 }

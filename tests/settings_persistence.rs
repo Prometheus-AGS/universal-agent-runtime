@@ -32,8 +32,8 @@ use uuid::Uuid;
 use universal_agent_runtime::uar::runtime::matching::ClassifierConfig;
 use universal_agent_runtime::{
     config::{
-        AppConfig, FileProcessingConfig, KnowledgeBasesConfig, PersistenceConfig, ResilienceConfig,
-        SecurityConfig, ServerConfig, VisionConfig,
+        AppConfig, FileProcessingConfig, KnowledgeBasesConfig, MemoryConfig, PersistenceConfig,
+        ResilienceConfig, SecurityConfig, ServerConfig, VisionConfig,
     },
     uar::{
         persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
@@ -96,6 +96,7 @@ fn minimal_config() -> AppConfig {
         knowledge_bases: KnowledgeBasesConfig::default(),
         intent_classifier: ClassifierConfig::default(),
         providers: vec![],
+        memory: MemoryConfig::default(),
     }
 }
 

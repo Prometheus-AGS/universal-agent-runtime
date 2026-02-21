@@ -147,7 +147,7 @@ fn test_m1_parse_agent_artifact() {
       },
       "policy": {
         "provider": {
-          "default": { "provider": "openai", "model": "gpt-5" }
+          "default": { "provider": "openai", "model": "gpt-5.2" }
         },
         "tools": { "max_concurrent": 3 },
         "skills": { "prefer": [] }
@@ -229,6 +229,7 @@ async fn test_m2_run_lifecycle() {
             "Say 'Hello UAR Integration' and nothing else.".to_string(),
             Some(session_id.clone()),
             None,
+            vec![],
         )
         .await;
 
@@ -297,6 +298,7 @@ async fn test_m3_api_flow() {
             prompt,
             Some(session_id),
             None,
+            vec![],
         )
         .await;
 
@@ -364,6 +366,7 @@ async fn test_m4_tool_execution() {
             "Please mirror the word 'MAGIC'".to_string(),
             Some(session_id),
             None,
+            vec![],
         )
         .await;
 
@@ -506,6 +509,7 @@ async fn test_m6_skills_execution() {
             "trigger skill: please echo 'SKILL_WORKED'".to_string(),
             Some(session_id),
             None,
+            vec![],
         )
         .await;
 

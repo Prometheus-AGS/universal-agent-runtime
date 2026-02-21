@@ -84,19 +84,39 @@ impl MemoryService {
             "Memory embedding service ready"
         );
 
-        // Connect to embedded SurrealDB/RocksDB.
-        let surreal_config = SurrealConfig {
-            mode: SurrealMode::Embedded,
-            embedded_path: Some(config.db_path.clone()),
-            endpoint: None,
-            username: None,
-            password: None,
-            namespace: config.namespace.clone(),
-            database: config.database.clone(),
+        // Connect to SurrealDB — external server when `surreal_endpoint` is set, otherwise embedded.
+        let surreal_config = if let Some(ref endpoint) = config.surreal_endpoint {
+            tracing::info!(
+                endpoint = %endpoint,
+                "Memory: connecting to external SurrealDB instance"
+            );
+            SurrealConfig {
+                mode: SurrealMode::Server,
+                embedded_path: None,
+                endpoint: Some(endpoint.clone()),
+                username: config.surreal_user.clone(),
+                password: config.surreal_pass.clone(),
+                namespace: config.namespace.clone(),
+                database: config.database.clone(),
+            }
+        } else {
+            tracing::info!(
+                db_path = %config.db_path,
+                "Memory: using embedded SurrealDB/RocksDB"
+            );
+            SurrealConfig {
+                mode: SurrealMode::Embedded,
+                embedded_path: Some(config.db_path.clone()),
+                endpoint: None,
+                username: None,
+                password: None,
+                namespace: config.namespace.clone(),
+                database: config.database.clone(),
+            }
         };
         let storage = SurrealStorage::new(&surreal_config, embedding_svc)
             .await
-            .context("Failed to initialise embedded SurrealDB for memory")?;
+            .context("Failed to initialise SurrealDB for memory")?;
 
         Ok(Self {
             storage: Arc::new(storage),

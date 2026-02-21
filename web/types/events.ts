@@ -237,9 +237,19 @@ export interface AgUiErrorEvent {
   code?: string;
 }
 
+export interface AgUiDoneUsage {
+  input_tokens?: number;
+  output_tokens?: number;
+  total_tokens?: number;
+  cost_usd_estimate?: number;
+  model?: string;
+}
+
 export interface AgUiDoneEvent {
   kind: "done";
   request_id: string;
+  /** Token usage and cost estimate from RunDoneWithUsage events. */
+  usage?: AgUiDoneUsage;
 }
 
 export type AgUiEvent =

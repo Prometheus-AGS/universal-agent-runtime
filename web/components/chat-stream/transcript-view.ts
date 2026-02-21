@@ -8,7 +8,9 @@ export type ViewItemKind =
   | "tool_result"
   | "error"
   | "citations"
-  | "usage";
+  | "usage"
+  | "token-badge"
+  | "html";
 
 export interface ViewItem {
   id: string;
@@ -329,6 +331,20 @@ export class TranscriptView {
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 <span>${escapeHtml(item.content || "Unknown error")}</span>
             </div>
+        `;
+        break;
+
+      case "token-badge":
+        el.className = "chat-token-badge mb-2 px-4 flex justify-start ml-11";
+        el.innerHTML = `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium
+                       bg-surfaceVariant text-textMuted border border-surfaceContainerHighest
+                       font-mono tabular-nums" title="Token usage for this response">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+            </svg>
+            ${escapeHtml(item.content ?? "")}
+          </span>
         `;
         break;
     }

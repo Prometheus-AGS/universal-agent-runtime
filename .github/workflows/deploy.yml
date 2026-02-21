@@ -1,0 +1,185 @@
+name: Deploy to GKE
+
+# Triggers on every push to the `deployment` branch.
+# This workflow builds the Docker image, pushes it to Docker Hub,
+# and performs a rolling update of the UAR deployment on GKE.
+#
+# Required GitHub Secrets:
+#   DOCKER_USERNAME        — Docker Hub username (registry: tribehealth)
+#   DOCKER_PASSWORD        — Docker Hub password or access token
+#   GCP_SA_KEY             — base64-encoded GCP service account JSON key
+#                            Role required: roles/container.developer
+#   GCP_PROJECT_ID         — GCP project ID (prometheus-461323)
+#   GKE_CLUSTER_NAME       — GKE cluster name (client-cluster)
+#   GKE_CLUSTER_LOCATION   — GKE cluster location (us-central1)
+
+on:
+  push:
+    branches:
+      - deployment
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  DOCKER_REGISTRY: docker.io
+  DOCKER_IMAGE: tribehealth/universal-agent-runtime
+  K8S_NAMESPACE: uar
+  K8S_DEPLOYMENT: uar
+  K8S_CONTAINER: uar
+
+jobs:
+  # ── 1. Build & Validate ───────────────────────────────────────────────────
+  validate:
+    name: Build & Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Cache Bun packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Build frontend assets
+        run: bun run build
+
+      - name: Run unit tests
+        run: cargo test --lib --all-features
+        env:
+          RUST_LOG: error
+
+  # ── 2. Build & Push Docker Image ─────────────────────────────────────────
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 30
+
+    outputs:
+      image_tag: ${{ steps.image-meta.outputs.tag }}
+      image_full: ${{ steps.image-meta.outputs.full }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set image metadata
+        id: image-meta
+        run: |
+          SHORT_SHA="${GITHUB_SHA::8}"
+          TAG="deployment-${SHORT_SHA}"
+          FULL="${{ env.DOCKER_IMAGE }}:${TAG}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "full=${FULL}" >> $GITHUB_OUTPUT
+          echo "Building image: ${FULL}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ steps.image-meta.outputs.full }}
+            ${{ env.DOCKER_IMAGE }}:deployment-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Image digest
+        run: echo "Pushed ${{ steps.image-meta.outputs.full }}"
+
+  # ── 3. Deploy to GKE ─────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to GKE
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://uar.know-me.tools
+
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure kubectl for GKE
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+          location: ${{ secrets.GKE_CLUSTER_LOCATION }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Verify cluster connectivity
+        run: kubectl get nodes
+
+      - name: Rolling update — set new image
+        run: |
+          IMAGE="${{ needs.build-and-push.outputs.image_full }}"
+          echo "Deploying image: ${IMAGE}"
+          kubectl set image deployment/${{ env.K8S_DEPLOYMENT }} \
+            ${{ env.K8S_CONTAINER }}=${IMAGE} \
+            -n ${{ env.K8S_NAMESPACE }}
+
+      - name: Wait for rollout to complete
+        run: |
+          kubectl rollout status deployment/${{ env.K8S_DEPLOYMENT }} \
+            -n ${{ env.K8S_NAMESPACE }} \
+            --timeout=300s
+
+      - name: Verify deployment health
+        run: |
+          kubectl get pods -n ${{ env.K8S_NAMESPACE }} -l app.kubernetes.io/name=uar
+          kubectl get deployment ${{ env.K8S_DEPLOYMENT }} -n ${{ env.K8S_NAMESPACE }}
+
+      - name: Deployment summary
+        run: |
+          echo "Deployment complete"
+          echo "Image: ${{ needs.build-and-push.outputs.image_full }}"
+          echo "Namespace: ${{ env.K8S_NAMESPACE }}"
+          echo "Deployment: ${{ env.K8S_DEPLOYMENT }}"
