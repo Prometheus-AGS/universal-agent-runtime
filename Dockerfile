@@ -40,6 +40,11 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     protobuf-compiler \
     curl \
+    gcc \
+    g++ \
+    clang \
+    libclang-dev \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy manifests
@@ -47,7 +52,8 @@ COPY Cargo.toml Cargo.lock ./
 
 # Create dummy source to cache dependencies
 RUN mkdir src && \
-    echo "fn main() {println!(\"if you see this, the build broke\")}" > src/main.rs && \
+    echo "" > src/lib.rs && \
+    echo "fn main() {}" > src/main.rs && \
     cargo build --release && \
     rm -rf src
 
