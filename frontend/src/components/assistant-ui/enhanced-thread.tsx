@@ -46,13 +46,45 @@ import { useAttachmentContext } from "@/features/chat/attachment-context";
 import { useMemoryContext } from "@/features/chat/memory-context";
 import { cn } from "@/lib/utils";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
-import {
-  useChatMessageStore,
-  selectIsAwaitingFirstToken,
-  selectRetryAttempt,
-  selectRetryDelayMs,
-  selectRetryMaxAttempts,
-} from "@/stores/chat-message-store";
+import { useChatMessageStore } from "@/stores/chat-message-store";
+
+// ─── Stable AuiIf condition predicates ────────────────────────────────────────
+// Defined at module level so their references are stable across renders.
+// Passing inline arrow functions to AuiIf creates a new function reference on
+// every render, causing assistant-ui's Zustand subscriptions to re-fire and
+// triggering the React error #185 infinite update loop.
+const condThreadEmpty = (s: { thread: { isEmpty: boolean } }) => s.thread.isEmpty;
+const condThreadRunning = (s: { thread: { isRunning: boolean } }) => s.thread.isRunning;
+const condThreadNotRunning = (s: { thread: { isRunning: boolean } }) => !s.thread.isRunning;
+const condMessageCopied = (s: { message: { isCopied: boolean } }) => s.message.isCopied;
+const condMessageNotCopied = (s: { message: { isCopied: boolean } }) => !s.message.isCopied;
+
+// ─── Stable useMessage selectors ──────────────────────────────────────────────
+// Same reason as above: useMessage subscribes to per-message state using the
+// provided selector function. Inline selectors produce new references each
+// render, re-triggering subscriptions.
+function selectIsEmptyAndRunning(m: ThreadMessageLike): boolean {
+  if (m.status?.type !== "running") return false;
+  const parts = (m as unknown as { content?: unknown[] }).content ?? [];
+  return (
+    parts.length === 0 ||
+    parts.every(
+      (p) =>
+        typeof p === "object" &&
+        p !== null &&
+        (p as { type?: string; text?: string }).type === "text" &&
+        !(p as { text?: string }).text,
+    )
+  );
+}
+
+function selectErrorText(m: ThreadMessageLike): string | null {
+  if (m.status?.type !== "incomplete") return null;
+  const maybe = m as ThreadMessageLike & {
+    metadata?: { custom?: { errorText?: string } };
+  };
+  return maybe.metadata?.custom?.errorText ?? null;
+}
 
 export const EnhancedThread: FC = () => (
   <ThreadPrimitive.Root
@@ -63,11 +95,11 @@ export const EnhancedThread: FC = () => (
       turnAnchor="top"
       className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth px-4 pt-4"
     >
-      <AuiIf condition={(s) => s.thread.isEmpty}>
+      <AuiIf condition={condThreadEmpty}>
         <UarWelcome />
       </AuiIf>
 
-      <ThreadPrimitive.Messages components={{ UserMessage, EditComposer, AssistantMessage }} />
+      <ThreadPrimitive.Messages components={THREAD_COMPONENTS} />
 
       <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer sticky bottom-0 mx-auto mt-auto flex w-full max-w-(--thread-max-width) flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
         <ThreadScrollToBottom />
@@ -120,12 +152,33 @@ const EnhancedComposer: FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { memoryEnabled, setMemoryEnabled } = useMemoryContext();
   const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
-  const isAwaitingFirstToken = useChatMessageStore(
-    selectIsAwaitingFirstToken(activeThreadId ?? "__none__"),
+
+  // Stabilize curried selector references with useCallback so Zustand v5 sees
+  // the same selector object across renders when threadKey hasn't changed.
+  // The selectors are written inline so threadKey is genuinely in the closure.
+  const threadKey = activeThreadId ?? "__none__";
+  type StoreState = ReturnType<typeof useChatMessageStore.getState>;
+  const selectIsAwaiting = useCallback(
+    (s: StoreState) => s.streamingByThread[threadKey]?.awaitingFirstToken ?? false,
+    [threadKey],
   );
-  const retryAttempt = useChatMessageStore(selectRetryAttempt(activeThreadId ?? "__none__"));
-  const retryMaxAttempts = useChatMessageStore(selectRetryMaxAttempts(activeThreadId ?? "__none__"));
-  const retryDelayMs = useChatMessageStore(selectRetryDelayMs(activeThreadId ?? "__none__"));
+  const selectRetryAttemptCb = useCallback(
+    (s: StoreState) => s.streamingByThread[threadKey]?.retryAttempt ?? 0,
+    [threadKey],
+  );
+  const selectRetryMaxAttemptsCb = useCallback(
+    (s: StoreState) => s.streamingByThread[threadKey]?.retryMaxAttempts ?? 0,
+    [threadKey],
+  );
+  const selectRetryDelayMsCb = useCallback(
+    (s: StoreState) => s.streamingByThread[threadKey]?.retryDelayMs ?? 0,
+    [threadKey],
+  );
+
+  const isAwaitingFirstToken = useChatMessageStore(selectIsAwaiting);
+  const retryAttempt = useChatMessageStore(selectRetryAttemptCb);
+  const retryMaxAttempts = useChatMessageStore(selectRetryMaxAttemptsCb);
+  const retryDelayMs = useChatMessageStore(selectRetryDelayMsCb);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -223,7 +276,7 @@ const EnhancedComposer: FC = () => {
           )}
 
           {/* Running indicator (after stream begins) */}
-          <AuiIf condition={(s) => s.thread.isRunning}>
+          <AuiIf condition={condThreadRunning}>
             <span className={cn("ml-auto flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/70", isAwaitingFirstToken && "hidden")}>
               <span className="inline-flex items-center gap-0.5">
                 <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
@@ -235,7 +288,7 @@ const EnhancedComposer: FC = () => {
           </AuiIf>
 
           {/* Send button — hidden while running */}
-          <AuiIf condition={(s) => !s.thread.isRunning}>
+          <AuiIf condition={condThreadNotRunning}>
             <ComposerPrimitive.Send asChild>
               <TooltipIconButton tooltip="Send message" side="bottom" type="submit" variant="default" size="icon" className="size-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 ml-auto" aria-label="Send message">
                 <ArrowUpIcon className="size-4" />
@@ -244,7 +297,7 @@ const EnhancedComposer: FC = () => {
           </AuiIf>
 
           {/* Cancel button — shown while running */}
-          <AuiIf condition={(s) => s.thread.isRunning}>
+          <AuiIf condition={condThreadRunning}>
             <ComposerPrimitive.Cancel asChild>
               <Button type="button" variant="default" size="icon" className="size-8 rounded-full" aria-label="Stop generating">
                 <SquareIcon className="size-3 fill-current" />
@@ -289,7 +342,7 @@ const UserMessage: FC = () => (
       <UserActionBar />
       <div className="min-w-0 flex-1">
         <div className="wrap-break-word rounded-2xl rounded-tr-sm bg-zinc-800 px-4 py-3 font-body text-sm text-foreground leading-relaxed shadow-sm">
-          <MessagePrimitive.Parts components={{ Text: EnhancedMarkdownText }} />
+          <MessagePrimitive.Parts components={USER_MESSAGE_PARTS_COMPONENTS} />
         </div>
       </div>
       <UserAvatar />
@@ -310,13 +363,7 @@ const UserActionBar: FC = () => (
 
 /** Shows a spinner when the assistant message is still empty (pre-first-token). */
 const AssistantMessageBody: FC = () => {
-  const isEmptyAndRunning = useMessage((m: ThreadMessageLike) => {
-    if (m.status?.type !== "running") return false;
-    const parts = (m as unknown as { content?: unknown[] }).content ?? [];
-    return parts.length === 0 || parts.every(
-      (p) => typeof p === "object" && p !== null && (p as { type?: string; text?: string }).type === "text" && !(p as { text?: string }).text,
-    );
-  });
+  const isEmptyAndRunning = useMessage(selectIsEmptyAndRunning);
 
   return (
     <>
@@ -326,7 +373,7 @@ const AssistantMessageBody: FC = () => {
           <span className="font-mono text-[11px]">Agent is thinking…</span>
         </div>
       ) : (
-        <MessagePrimitive.Parts components={{ Text: EnhancedMarkdownText, Reasoning: ReasoningPart, tools: { Fallback: ToolCallPart } }} />
+        <MessagePrimitive.Parts components={ASSISTANT_MESSAGE_PARTS_COMPONENTS} />
       )}
       <MessageError />
     </>
@@ -487,13 +534,7 @@ const MessageError: FC = () => {
   const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
 
-  const errorText = useMessage((m: ThreadMessageLike) => {
-    if (m.status?.type !== "incomplete") return null;
-    const maybe = m as ThreadMessageLike & {
-      metadata?: { custom?: { errorText?: string } };
-    };
-    return maybe.metadata?.custom?.errorText ?? null;
-  });
+  const errorText = useMessage(selectErrorText);
 
   const handleCopy = useCallback(() => {
     if (!errorText) return;
@@ -555,8 +596,8 @@ const AssistantActionBar: FC = () => (
   <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" autohideFloat="single-branch" className="col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground">
     <ActionBarPrimitive.Copy asChild>
       <TooltipIconButton tooltip="Copy">
-        <AuiIf condition={(s) => s.message.isCopied}><CheckIcon /></AuiIf>
-        <AuiIf condition={(s) => !s.message.isCopied}><CopyIcon /></AuiIf>
+        <AuiIf condition={condMessageCopied}><CheckIcon /></AuiIf>
+        <AuiIf condition={condMessageNotCopied}><CopyIcon /></AuiIf>
       </TooltipIconButton>
     </ActionBarPrimitive.Copy>
   </ActionBarPrimitive.Root>
@@ -585,3 +626,16 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({ className, ...rest
     <BranchPickerPrimitive.Next asChild><TooltipIconButton tooltip="Next branch"><ChevronRightIcon /></TooltipIconButton></BranchPickerPrimitive.Next>
   </BranchPickerPrimitive.Root>
 );
+
+// ─── Stable components objects ─────────────────────────────────────────────────
+// Defined after all component declarations so they can reference them.
+// Object literals created inline inside JSX are new references on every render,
+// which causes assistant-ui's context/subscription machinery to re-render
+// indefinitely (React error #185). Module-level constants are created once.
+const USER_MESSAGE_PARTS_COMPONENTS = { Text: EnhancedMarkdownText };
+const ASSISTANT_MESSAGE_PARTS_COMPONENTS = {
+  Text: EnhancedMarkdownText,
+  Reasoning: ReasoningPart,
+  tools: { Fallback: ToolCallPart },
+};
+const THREAD_COMPONENTS = { UserMessage, EditComposer, AssistantMessage };
