@@ -23,7 +23,9 @@ resource "kubernetes_config_map" "uar_config" {
     UAR_PERSISTENCE__VECTOR_DIMENSION     = "1536"
 
     # ── Security ────────────────────────────────────────────────────────────
-    UAR_SECURITY__JWT_REQUIRED = "true"
+    # JWT is validated when present but not enforced — requests without a token
+    # run as anonymous. Set to "true" to require a valid token on every request.
+    UAR_SECURITY__JWT_REQUIRED = "false"
 
     # ── Resilience ──────────────────────────────────────────────────────────
     UAR_RESILIENCE__RATE_LIMIT_ENABLED = "true"

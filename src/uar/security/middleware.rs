@@ -67,6 +67,13 @@ pub async fn auth_middleware(
     mut request: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
+    // Health probe endpoints must always be reachable without credentials
+    // so that Kubernetes liveness and readiness probes pass.
+    let path = request.uri().path();
+    if matches!(path, "/health" | "/healthz" | "/readyz") {
+        return Ok(next.run(request).await);
+    }
+
     let auth_header = request
         .headers()
         .get(header::AUTHORIZATION)
