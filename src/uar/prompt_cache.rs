@@ -1,9 +1,11 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use surrealdb::Surreal;
-use surrealdb::engine::any::{self, Any};
+use tokio::sync::RwLock;
 
 /// Cached prompt metadata for Anthropic-compatible prompt caching.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -29,79 +31,43 @@ pub trait PromptCacheProvider: std::fmt::Debug + Send + Sync {
     async fn clear(&self) -> Result<()>;
 }
 
-/// In-memory embedded SurrealDB cache provider (`mem://`).
+/// Lock-free in-memory prompt cache backed by a `HashMap`.
+///
+/// Used as the default provider when no external cache backend is configured.
+/// Suitable for development, testing, and single-process deployments where
+/// cross-process cache sharing is not required.
 #[derive(Debug, Clone)]
 pub struct SurrealMemPromptCacheProvider {
-    db: Surreal<Any>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct PromptCacheRecord {
-    token_count: u32,
-    compiled_representation: Vec<u8>,
-    created_at: DateTime<Utc>,
+    store: Arc<RwLock<HashMap<String, CachedEntry>>>,
 }
 
 impl SurrealMemPromptCacheProvider {
-    /// Create a new in-memory prompt cache.
+    /// Create a new empty in-memory prompt cache.
     pub async fn new() -> Result<Self> {
-        let db = any::connect("mem://").await?;
-        db.use_ns("uar").use_db("prompt_cache").await?;
-        Ok(Self { db })
+        Ok(Self {
+            store: Arc::new(RwLock::new(HashMap::new())),
+        })
     }
 }
 
 #[async_trait]
 impl PromptCacheProvider for SurrealMemPromptCacheProvider {
     async fn get(&self, hash: &str) -> Option<CachedEntry> {
-        let result: anyhow::Result<Option<serde_json::Value>> = self
-            .db
-            .select(("prompt_cache", hash))
-            .await
-            .map_err(Into::into);
-
-        match result {
-            Ok(Some(record)) => match serde_json::from_value::<PromptCacheRecord>(record) {
-                Ok(parsed) => Some(CachedEntry {
-                    token_count: parsed.token_count,
-                    compiled_representation: parsed.compiled_representation,
-                    created_at: parsed.created_at,
-                }),
-                Err(err) => {
-                    tracing::warn!(error = %err, hash, "Prompt cache decode failed");
-                    None
-                }
-            },
-            Ok(None) => None,
-            Err(err) => {
-                tracing::warn!(error = %err, hash, "Prompt cache get failed");
-                None
-            }
-        }
+        self.store.read().await.get(hash).cloned()
     }
 
     async fn set(&self, hash: &str, entry: CachedEntry) -> Result<()> {
-        let record = PromptCacheRecord {
-            token_count: entry.token_count,
-            compiled_representation: entry.compiled_representation,
-            created_at: entry.created_at,
-        };
-        let payload = serde_json::to_value(record)?;
-        let _: Option<serde_json::Value> = self
-            .db
-            .upsert(("prompt_cache", hash))
-            .content(payload)
-            .await?;
+        self.store.write().await.insert(hash.to_owned(), entry);
         Ok(())
     }
 
     async fn delete(&self, hash: &str) -> Result<()> {
-        let _: Option<serde_json::Value> = self.db.delete(("prompt_cache", hash)).await?;
+        self.store.write().await.remove(hash);
         Ok(())
     }
 
     async fn clear(&self) -> Result<()> {
-        let _ = self.db.query("DELETE prompt_cache").await?;
+        self.store.write().await.clear();
         Ok(())
     }
 }
