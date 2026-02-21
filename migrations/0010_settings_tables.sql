@@ -19,6 +19,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_settings_types_updated ON settings_types;
 CREATE TRIGGER trg_settings_types_updated
     BEFORE UPDATE ON settings_types
     FOR EACH ROW EXECUTE FUNCTION _uar_settings_types_set_updated_at();
@@ -44,6 +45,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_settings_updated ON settings;
 CREATE TRIGGER trg_settings_updated
     BEFORE UPDATE ON settings
     FOR EACH ROW EXECUTE FUNCTION _uar_settings_set_updated_at();
