@@ -13,7 +13,10 @@
       "Bash(npx playwright test)",
       "mcp__mcp-filesystem__directory_tree",
       "mcp__mcp-filesystem__read_file_lines",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nMerge branch ''main'' of github.com:Prometheus-AGS/universal-agent-runtime\n\nResolve conflicts in static assets by using fresh build artifacts.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

@@ -12,6 +12,7 @@
 | [subscriptions.md](./subscriptions.md) | Subscription DSL — multi-channel subscriptions, server-side payload filters, extensible criteria |
 | [rust-implementation.md](./rust-implementation.md) | Rust implementation — module layout, broker, emitter, handler, filter engine, scaling path |
 | [uar-realtime-service.md](./uar-realtime-service.md) | **`uar-realtime` standalone service** — multi-transport hub (WS, WebRTC, SFU, SSE), internal publish API, deployment |
+| [workspace.md](./workspace.md) | **Cargo workspace structure** — monorepo layout, shared crate design, Docker targets, migration steps |
 | [api-reference.md](./api-reference.md) | HTTP upgrade endpoint, REST management API, SDK reference |
 | [integration.md](./integration.md) | How to use from frontend, Rust backend, and 3rd-party plugins |
 | [asyncapi.yaml](./asyncapi.yaml) | Machine-readable AsyncAPI 3.0 spec for the realtime endpoint |
