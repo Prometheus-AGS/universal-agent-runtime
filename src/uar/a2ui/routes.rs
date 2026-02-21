@@ -113,7 +113,10 @@ async fn submit_artifact_response(
         ok: true,
     };
 
-    state.run_manager.emit_to_run(&run.run_id, tool_result_event).await;
+    state
+        .run_manager
+        .emit_to_run(&run.run_id, tool_result_event)
+        .await;
 
     (
         StatusCode::OK,
@@ -140,6 +143,8 @@ pub fn build_schema_router() -> Router<A2uiApiState> {
 /// This is separate from the schema router because it shares the path prefix
 /// with the main runs API.
 pub fn build_response_router() -> Router<A2uiApiState> {
-    Router::new()
-        .route("/{run_id}/artifact-response", post(submit_artifact_response))
+    Router::new().route(
+        "/{run_id}/artifact-response",
+        post(submit_artifact_response),
+    )
 }

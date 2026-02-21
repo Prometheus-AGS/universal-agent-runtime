@@ -20,6 +20,7 @@ interface ChatMessageActions {
   loadMessagesFromDb(threadId: string): Promise<void>;
   initThread(threadId: string, messages: RichMessage[]): void;
   beginStream(threadId: string, runId: string): void;
+  setAwaitingRetry(threadId: string, runId: string, attempt: number, maxAttempts: number, delayMs: number): void;
   markStreamStarted(threadId: string, runId: string): void;
   appendTextDelta(threadId: string, runId: string, text: string): void;
   appendThinkingDelta(threadId: string, runId: string, text: string): void;
@@ -35,7 +36,15 @@ interface ChatMessageActions {
 
 type ChatMessageStore = ChatMessageState & ChatMessageActions;
 
-const defaultStreamingState: StreamingState = { isStreaming: false, runId: null, streamingMessageId: null, awaitingFirstToken: false };
+const defaultStreamingState: StreamingState = {
+  isStreaming: false,
+  runId: null,
+  streamingMessageId: null,
+  awaitingFirstToken: false,
+  retryAttempt: 0,
+  retryMaxAttempts: 0,
+  retryDelayMs: 0,
+};
 
 function ensureThread(state: ChatMessageState, threadId: string): RichMessage[] {
   if (!state.messagesByThread[threadId]) state.messagesByThread[threadId] = [];
@@ -58,7 +67,15 @@ function getOrCreateStreamingMessage(state: ChatMessageState, threadId: string, 
   const newMsg: RichMessage = { id: msgId, role: "assistant", content: [], createdAt: new Date(), status: "in_progress" };
   if (!state.messagesByThread[threadId]) state.messagesByThread[threadId] = [];
   state.messagesByThread[threadId].push(newMsg);
-  state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: msgId, awaitingFirstToken: false };
+  state.streamingByThread[threadId] = {
+    isStreaming: true,
+    runId,
+    streamingMessageId: msgId,
+    awaitingFirstToken: false,
+    retryAttempt: 0,
+    retryMaxAttempts: 0,
+    retryDelayMs: 0,
+  };
   return newMsg;
 }
 
@@ -90,7 +107,21 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           runId,
           streamingMessageId: null,
           awaitingFirstToken: true,
+          retryAttempt: 0,
+          retryMaxAttempts: 0,
+          retryDelayMs: 0,
         };
+      }),
+
+    setAwaitingRetry: (threadId, runId, attempt, maxAttempts, delayMs) =>
+      set((state) => {
+        ensureThread(state, threadId);
+        const streaming = ensureStreaming(state, threadId);
+        if (streaming.runId !== runId) return;
+        streaming.awaitingFirstToken = true;
+        streaming.retryAttempt = attempt;
+        streaming.retryMaxAttempts = maxAttempts;
+        streaming.retryDelayMs = delayMs;
       }),
 
     markStreamStarted: (threadId, runId) =>
@@ -98,6 +129,9 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         const streaming = ensureStreaming(state, threadId);
         if (streaming.runId !== runId) return;
         streaming.awaitingFirstToken = false;
+        streaming.retryAttempt = 0;
+        streaming.retryMaxAttempts = 0;
+        streaming.retryDelayMs = 0;
       }),
 
     appendTextDelta: (threadId, runId, text) =>
@@ -105,9 +139,20 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         ensureThread(state, threadId);
         const streaming = ensureStreaming(state, threadId);
         if (!streaming.isStreaming || streaming.runId !== runId) {
-          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+          state.streamingByThread[threadId] = {
+            isStreaming: true,
+            runId,
+            streamingMessageId: null,
+            awaitingFirstToken: false,
+            retryAttempt: 0,
+            retryMaxAttempts: 0,
+            retryDelayMs: 0,
+          };
         } else {
           streaming.awaitingFirstToken = false;
+          streaming.retryAttempt = 0;
+          streaming.retryMaxAttempts = 0;
+          streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
@@ -123,9 +168,20 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         ensureThread(state, threadId);
         const streaming = ensureStreaming(state, threadId);
         if (!streaming.isStreaming || streaming.runId !== runId) {
-          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+          state.streamingByThread[threadId] = {
+            isStreaming: true,
+            runId,
+            streamingMessageId: null,
+            awaitingFirstToken: false,
+            retryAttempt: 0,
+            retryMaxAttempts: 0,
+            retryDelayMs: 0,
+          };
         } else {
           streaming.awaitingFirstToken = false;
+          streaming.retryAttempt = 0;
+          streaming.retryMaxAttempts = 0;
+          streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
@@ -141,9 +197,20 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         ensureThread(state, threadId);
         const streaming = ensureStreaming(state, threadId);
         if (!streaming.isStreaming || streaming.runId !== runId) {
-          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+          state.streamingByThread[threadId] = {
+            isStreaming: true,
+            runId,
+            streamingMessageId: null,
+            awaitingFirstToken: false,
+            retryAttempt: 0,
+            retryMaxAttempts: 0,
+            retryDelayMs: 0,
+          };
         } else {
           streaming.awaitingFirstToken = false;
+          streaming.retryAttempt = 0;
+          streaming.retryMaxAttempts = 0;
+          streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
@@ -167,9 +234,20 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         ensureThread(state, threadId);
         const streaming = ensureStreaming(state, threadId);
         if (!streaming.isStreaming || streaming.runId !== runId) {
-          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+          state.streamingByThread[threadId] = {
+            isStreaming: true,
+            runId,
+            streamingMessageId: null,
+            awaitingFirstToken: false,
+            retryAttempt: 0,
+            retryMaxAttempts: 0,
+            retryDelayMs: 0,
+          };
         } else {
           streaming.awaitingFirstToken = false;
+          streaming.retryAttempt = 0;
+          streaming.retryMaxAttempts = 0;
+          streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
@@ -183,9 +261,20 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         ensureThread(state, threadId);
         const streaming = ensureStreaming(state, threadId);
         if (!streaming.isStreaming || streaming.runId !== runId) {
-          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+          state.streamingByThread[threadId] = {
+            isStreaming: true,
+            runId,
+            streamingMessageId: null,
+            awaitingFirstToken: false,
+            retryAttempt: 0,
+            retryMaxAttempts: 0,
+            retryDelayMs: 0,
+          };
         } else {
           streaming.awaitingFirstToken = false;
+          streaming.retryAttempt = 0;
+          streaming.retryMaxAttempts = 0;
+          streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
@@ -199,9 +288,20 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         ensureThread(state, threadId);
         const streaming = ensureStreaming(state, threadId);
         if (!streaming.isStreaming || streaming.runId !== runId) {
-          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+          state.streamingByThread[threadId] = {
+            isStreaming: true,
+            runId,
+            streamingMessageId: null,
+            awaitingFirstToken: false,
+            retryAttempt: 0,
+            retryMaxAttempts: 0,
+            retryDelayMs: 0,
+          };
         } else {
           streaming.awaitingFirstToken = false;
+          streaming.retryAttempt = 0;
+          streaming.retryMaxAttempts = 0;
+          streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
@@ -296,3 +396,9 @@ export const selectIsStreaming = (threadId: string) => (state: ChatMessageStore)
 
 export const selectIsAwaitingFirstToken = (threadId: string) => (state: ChatMessageStore) =>
   state.streamingByThread[threadId]?.awaitingFirstToken ?? false;
+
+export const selectRetryState = (threadId: string) => (state: ChatMessageStore) => ({
+  retryAttempt: state.streamingByThread[threadId]?.retryAttempt ?? 0,
+  retryMaxAttempts: state.streamingByThread[threadId]?.retryMaxAttempts ?? 0,
+  retryDelayMs: state.streamingByThread[threadId]?.retryDelayMs ?? 0,
+});

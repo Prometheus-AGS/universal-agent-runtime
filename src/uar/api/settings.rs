@@ -164,10 +164,7 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
             "/mistral-ocr",
             put(|s, q, h, b| update_namespace(s, q, h, b, "mistral_ocr")),
         )
-        .route(
-            "/memory",
-            get(|s, q, h| list_namespace(s, q, h, "memory")),
-        )
+        .route("/memory", get(|s, q, h| list_namespace(s, q, h, "memory")))
         .route(
             "/memory",
             put(|s, q, h, b| update_namespace(s, q, h, b, "memory")),

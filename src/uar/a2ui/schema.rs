@@ -29,7 +29,10 @@ pub enum ArtifactType {
 impl ArtifactType {
     /// Returns true if the artifact requires a user response before the agent can continue.
     pub fn requires_response(&self) -> bool {
-        matches!(self, Self::Form | Self::Confirm | Self::Select | Self::TextInput)
+        matches!(
+            self,
+            Self::Form | Self::Confirm | Self::Select | Self::TextInput
+        )
     }
 }
 

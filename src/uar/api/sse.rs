@@ -93,8 +93,7 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
         NormalizedEvent::MemoryRecall { run_id, items } => {
             // Distinguish pre-call context hits (source == "memory_context") from
             // model-provided memory updates so clients can render them differently.
-            let is_context_injection =
-                items.first().is_some_and(|i| i.source == "memory_context");
+            let is_context_injection = items.first().is_some_and(|i| i.source == "memory_context");
             if is_context_injection {
                 Some((
                     "agui.memory.recall",

@@ -535,6 +535,7 @@ impl PersistenceLayer for SurrealDbProvider {
                 .schema
                 .get("properties")
                 .and_then(|props| props.get(leaf_key))
+                .or_else(|| st.schema.get("additionalProperties"))
             {
                 validate_against_schema(&setting.data, leaf_schema, &setting.key)?;
             }

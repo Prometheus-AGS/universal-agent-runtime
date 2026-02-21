@@ -78,9 +78,84 @@ pub struct SecurityConfig {
 #[derive(Debug, Deserialize, Clone)]
 pub struct ResilienceConfig {
     pub rate_limit_enabled: bool,
+    #[serde(default)]
     pub timeout_disabled: bool,
     pub requests_per_second: f32,
     pub burst_size: f32,
+    #[serde(default = "ResilienceConfig::default_request_timeout_ms")]
+    pub request_timeout_ms: u64,
+    #[serde(default = "ResilienceConfig::default_stream_start_timeout_ms")]
+    pub stream_start_timeout_ms: u64,
+    #[serde(default = "ResilienceConfig::default_retries_enabled")]
+    pub retries_enabled: bool,
+    #[serde(default = "ResilienceConfig::default_retry_max_attempts")]
+    pub retry_max_attempts: u32,
+    #[serde(default = "ResilienceConfig::default_retry_base_delay_ms")]
+    pub retry_base_delay_ms: u64,
+    #[serde(default = "ResilienceConfig::default_retry_backoff_multiplier")]
+    pub retry_backoff_multiplier: f32,
+    #[serde(default = "ResilienceConfig::default_retry_max_delay_ms")]
+    pub retry_max_delay_ms: u64,
+    #[serde(default = "ResilienceConfig::default_retry_jitter_mode")]
+    pub retry_jitter_mode: String,
+    #[serde(default = "ResilienceConfig::default_retry_respect_retry_after")]
+    pub retry_respect_retry_after: bool,
+    #[serde(default = "ResilienceConfig::default_retryable_http_statuses")]
+    pub retryable_http_statuses: Vec<u16>,
+    #[serde(default = "ResilienceConfig::default_retryable_transport_errors")]
+    pub retryable_transport_errors: bool,
+    #[serde(default = "ResilienceConfig::default_retry_budget_ms")]
+    pub retry_budget_ms: u64,
+}
+
+impl ResilienceConfig {
+    fn default_request_timeout_ms() -> u64 {
+        30_000
+    }
+
+    fn default_stream_start_timeout_ms() -> u64 {
+        15_000
+    }
+
+    fn default_retries_enabled() -> bool {
+        true
+    }
+
+    fn default_retry_max_attempts() -> u32 {
+        3
+    }
+
+    fn default_retry_base_delay_ms() -> u64 {
+        1_000
+    }
+
+    fn default_retry_backoff_multiplier() -> f32 {
+        2.0
+    }
+
+    fn default_retry_max_delay_ms() -> u64 {
+        10_000
+    }
+
+    fn default_retry_jitter_mode() -> String {
+        "full".to_string()
+    }
+
+    fn default_retry_respect_retry_after() -> bool {
+        true
+    }
+
+    fn default_retryable_http_statuses() -> Vec<u16> {
+        vec![408, 425, 429, 500, 502, 503, 504]
+    }
+
+    fn default_retryable_transport_errors() -> bool {
+        true
+    }
+
+    fn default_retry_budget_ms() -> u64 {
+        20_000
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -512,8 +587,25 @@ impl AppConfig {
             .set_default("security.jwt_required", true)?
             .set_default("resilience.rate_limit_enabled", true)?
             .set_default("resilience.timeout_disabled", false)? // Default enabled (timeout_disabled=false)
-            .set_default("resilience.requests_per_second", 5.0)?
-            .set_default("resilience.burst_size", 10.0)?
+            .set_default("resilience.requests_per_second", 10.0)?
+            .set_default("resilience.burst_size", 20.0)?
+            .set_default("resilience.request_timeout_ms", 30_000_i64)?
+            .set_default("resilience.stream_start_timeout_ms", 15_000_i64)?
+            .set_default("resilience.retries_enabled", true)?
+            .set_default("resilience.retry_max_attempts", 3_i64)?
+            .set_default("resilience.retry_base_delay_ms", 1_000_i64)?
+            .set_default("resilience.retry_backoff_multiplier", 2.0)?
+            .set_default("resilience.retry_max_delay_ms", 10_000_i64)?
+            .set_default("resilience.retry_jitter_mode", "full")?
+            .set_default("resilience.retry_respect_retry_after", true)?
+            .set_default(
+                "resilience.retryable_http_statuses",
+                vec![
+                    408_i64, 425_i64, 429_i64, 500_i64, 502_i64, 503_i64, 504_i64,
+                ],
+            )?
+            .set_default("resilience.retryable_transport_errors", true)?
+            .set_default("resilience.retry_budget_ms", 20_000_i64)?
             .set_default("persistence.external_cache_enabled", false)?
             // 1536 = text-embedding-3-small; override via UAR_PERSISTENCE__VECTOR_DIMENSION
             .set_default("persistence.vector_dimension", 1536_i64)?
@@ -613,7 +705,19 @@ impl AppConfig {
         // Wait, if `clap` handles env vars, then `cli` struct will have them populated.
         // So applying `cli` values as overrides essentially handles the Env vars defined in `clap` structs too!
         let cfg = builder.build()?;
-        cfg.try_deserialize()
+        let mut deserialized: Self = cfg.try_deserialize()?;
+
+        // Backwards compatibility: legacy timeout toggle still maps to "no timeout".
+        if deserialized.resilience.timeout_disabled {
+            deserialized.resilience.request_timeout_ms = u64::MAX;
+        }
+
+        if deserialized.resilience.retryable_http_statuses.is_empty() {
+            deserialized.resilience.retryable_http_statuses =
+                ResilienceConfig::default_retryable_http_statuses();
+        }
+
+        Ok(deserialized)
     }
 
     /// Load config by parsing args from the environment (convenience wrapper).
@@ -694,4 +798,65 @@ pub fn load_llm_settings() -> Result<LlmSettings, String> {
         deployment_name,
         api_version,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::path::PathBuf;
+
+    fn base_cli() -> (Cli, PathBuf) {
+        let cfg_path = write_test_config_file();
+        (
+            Cli {
+                config: Some(cfg_path.to_string_lossy().to_string()),
+                port: None,
+                jwt_required: None,
+                rate_limit_enabled: None,
+                timeout_disabled: None,
+                external_cache_enabled: None,
+            },
+            cfg_path,
+        )
+    }
+
+    fn write_test_config_file() -> PathBuf {
+        let mut path = std::env::temp_dir();
+        path.push(format!("uar-config-test-{}.yaml", uuid::Uuid::new_v4()));
+        let yaml = r#"
+security:
+  jwt_secret: "test-secret"
+persistence:
+  provider: "surreal"
+  database_url: "rocksdb://./data/test-config"
+"#;
+        fs::write(&path, yaml).expect("test config should be writable");
+        path
+    }
+
+    #[test]
+    fn resilience_defaults_include_retry_and_timeout_fields() {
+        let (cli, cfg_path) = base_cli();
+        let cfg = AppConfig::load_with_cli(cli).expect("config should load");
+        assert_eq!(cfg.resilience.request_timeout_ms, 30_000);
+        assert_eq!(cfg.resilience.stream_start_timeout_ms, 15_000);
+        assert!(cfg.resilience.retries_enabled);
+        assert_eq!(cfg.resilience.retry_max_attempts, 3);
+        assert_eq!(
+            cfg.resilience.retryable_http_statuses,
+            vec![408, 425, 429, 500, 502, 503, 504]
+        );
+        let _ = fs::remove_file(cfg_path);
+    }
+
+    #[test]
+    fn legacy_timeout_disabled_maps_to_no_timeout_budget() {
+        let (mut cli, cfg_path) = base_cli();
+        cli.timeout_disabled = Some(true);
+        let cfg = AppConfig::load_with_cli(cli).expect("config should load");
+        assert!(cfg.resilience.timeout_disabled);
+        assert_eq!(cfg.resilience.request_timeout_ms, u64::MAX);
+        let _ = fs::remove_file(cfg_path);
+    }
 }

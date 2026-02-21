@@ -48,15 +48,53 @@ impl AppRateLimiter {
     }
 }
 
+fn should_rate_limit_path(path: &str) -> bool {
+    path == "/api"
+        || path.starts_with("/api/")
+        || path == "/v1"
+        || path.starts_with("/v1/")
+        || path == "/mcp"
+        || path.starts_with("/mcp/")
+        || path == "/a2a"
+        || path.starts_with("/a2a/")
+        || path == "/.well-known"
+        || path.starts_with("/.well-known/")
+}
+
 /// Middleware to enforce rate limits
 pub async fn rate_limit_middleware(
     State(state): State<AppState>,
     req: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    if state.config.resilience.rate_limit_enabled && !state.rate_limiter.check() {
+    let path = req.uri().path();
+    if state.config.resilience.rate_limit_enabled
+        && should_rate_limit_path(path)
+        && !state.rate_limiter.check()
+    {
         warn!("Rate limit exceeded");
         return Err(StatusCode::TOO_MANY_REQUESTS);
     }
     Ok(next.run(req).await)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rate_limit_policy_only_limits_api_and_protocol_routes() {
+        assert!(should_rate_limit_path("/api/chat/completion"));
+        assert!(should_rate_limit_path("/api/uar/providers"));
+        assert!(should_rate_limit_path("/v1/chat/completions"));
+        assert!(should_rate_limit_path("/mcp/uar"));
+        assert!(should_rate_limit_path("/a2a/registry"));
+
+        assert!(!should_rate_limit_path("/apple-touch-icon.png"));
+        assert!(!should_rate_limit_path("/manifest.json"));
+        assert!(!should_rate_limit_path("/favicon.svg"));
+        assert!(!should_rate_limit_path("/assets/index.js"));
+        assert!(!should_rate_limit_path("/threads"));
+        assert!(!should_rate_limit_path("/about"));
+    }
 }

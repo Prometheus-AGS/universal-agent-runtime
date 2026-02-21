@@ -33,7 +33,10 @@ impl A2uiRegistry {
 
         // SAFETY: we hold the only Arc reference at this point so we can safely block.
         // Using try_write succeeds because no other reader exists yet.
-        let mut guard = registry.schemas.try_write().expect("new registry has no contention");
+        let mut guard = registry
+            .schemas
+            .try_write()
+            .expect("new registry has no contention");
         for schema in builtins {
             guard.insert(schema.schema_id.clone(), schema);
         }

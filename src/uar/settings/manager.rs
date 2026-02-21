@@ -474,12 +474,52 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             "properties": {
                 "rate_limit_enabled": { "type": "boolean", "title": "Rate Limiting",
                     "x-control": "toggle", "x-order": 1 },
-                "timeout_disabled": { "type": "boolean", "title": "Disable Timeout",
-                    "x-control": "toggle", "x-order": 2 },
                 "requests_per_second": { "type": "number", "minimum": 0.1, "title": "Req/s",
-                    "x-control": "slider", "x-order": 3 },
+                    "x-control": "slider", "x-order": 2 },
                 "burst_size": { "type": "number", "minimum": 1, "title": "Burst Size",
-                    "x-control": "slider", "x-order": 4 }
+                    "x-control": "slider", "x-order": 3 },
+                "request_timeout_ms": { "type": "integer", "minimum": 1000, "title": "Request Timeout (ms)",
+                    "x-control": "slider", "x-order": 4 },
+                "stream_start_timeout_ms": { "type": "integer", "minimum": 1000, "title": "Stream Start Timeout (ms)",
+                    "x-control": "slider", "x-order": 5 },
+                "retries_enabled": { "type": "boolean", "title": "Retries Enabled",
+                    "x-control": "toggle", "x-order": 6 },
+                "retry_max_attempts": { "type": "integer", "minimum": 0, "maximum": 10, "title": "Max Retry Attempts",
+                    "x-control": "slider", "x-order": 7 },
+                "retry_base_delay_ms": { "type": "integer", "minimum": 100, "title": "Retry Base Delay (ms)",
+                    "x-control": "slider", "x-order": 8 },
+                "retry_backoff_multiplier": { "type": "number", "minimum": 1.1, "maximum": 5.0, "title": "Retry Backoff Multiplier",
+                    "x-control": "slider", "x-order": 9 },
+                "retry_max_delay_ms": { "type": "integer", "minimum": 100, "title": "Retry Max Delay (ms)",
+                    "x-control": "slider", "x-order": 10 },
+                "retry_jitter_mode": {
+                    "type": "string",
+                    "enum": ["none", "full", "equal", "decorrelated"],
+                    "title": "Retry Jitter Mode",
+                    "x-control": "select",
+                    "x-order": 11
+                },
+                "retry_respect_retry_after": { "type": "boolean", "title": "Respect Retry-After",
+                    "x-control": "toggle", "x-order": 12 },
+                "retryable_http_statuses": {
+                    "type": "array",
+                    "title": "Retryable HTTP Statuses",
+                    "items": { "type": "integer", "minimum": 100, "maximum": 599 },
+                    "minItems": 1,
+                    "x-control": "tag-input",
+                    "x-order": 13
+                },
+                "retryable_transport_errors": { "type": "boolean", "title": "Retryable Transport Errors",
+                    "x-control": "toggle", "x-order": 14 },
+                "retry_budget_ms": { "type": "integer", "minimum": 0, "title": "Retry Budget (ms)",
+                    "x-control": "slider", "x-order": 15 },
+                "timeout_disabled": {
+                    "type": "boolean",
+                    "title": "Disable Timeout (legacy)",
+                    "x-control": "toggle",
+                    "x-order": 99,
+                    "x-deprecated": true
+                }
             }
         });
         let st = make_type("Resilience Configuration", "resilience", schema);
@@ -493,12 +533,6 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             ),
             make_setting(
                 &st,
-                "resilience.timeout_disabled",
-                "Timeout Disabled",
-                json!(r.timeout_disabled),
-            ),
-            make_setting(
-                &st,
                 "resilience.requests_per_second",
                 "Req/s",
                 json!(r.requests_per_second),
@@ -508,6 +542,84 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "resilience.burst_size",
                 "Burst Size",
                 json!(r.burst_size),
+            ),
+            make_setting(
+                &st,
+                "resilience.request_timeout_ms",
+                "Request Timeout (ms)",
+                json!(r.request_timeout_ms),
+            ),
+            make_setting(
+                &st,
+                "resilience.stream_start_timeout_ms",
+                "Stream Start Timeout (ms)",
+                json!(r.stream_start_timeout_ms),
+            ),
+            make_setting(
+                &st,
+                "resilience.retries_enabled",
+                "Retries Enabled",
+                json!(r.retries_enabled),
+            ),
+            make_setting(
+                &st,
+                "resilience.retry_max_attempts",
+                "Max Retry Attempts",
+                json!(r.retry_max_attempts),
+            ),
+            make_setting(
+                &st,
+                "resilience.retry_base_delay_ms",
+                "Retry Base Delay (ms)",
+                json!(r.retry_base_delay_ms),
+            ),
+            make_setting(
+                &st,
+                "resilience.retry_backoff_multiplier",
+                "Retry Backoff Multiplier",
+                json!(r.retry_backoff_multiplier),
+            ),
+            make_setting(
+                &st,
+                "resilience.retry_max_delay_ms",
+                "Retry Max Delay (ms)",
+                json!(r.retry_max_delay_ms),
+            ),
+            make_setting(
+                &st,
+                "resilience.retry_jitter_mode",
+                "Retry Jitter Mode",
+                json!(r.retry_jitter_mode),
+            ),
+            make_setting(
+                &st,
+                "resilience.retry_respect_retry_after",
+                "Respect Retry-After",
+                json!(r.retry_respect_retry_after),
+            ),
+            make_setting(
+                &st,
+                "resilience.retryable_http_statuses",
+                "Retryable HTTP Statuses",
+                json!(r.retryable_http_statuses),
+            ),
+            make_setting(
+                &st,
+                "resilience.retryable_transport_errors",
+                "Retryable Transport Errors",
+                json!(r.retryable_transport_errors),
+            ),
+            make_setting(
+                &st,
+                "resilience.retry_budget_ms",
+                "Retry Budget (ms)",
+                json!(r.retry_budget_ms),
+            ),
+            make_setting(
+                &st,
+                "resilience.timeout_disabled",
+                "Timeout Disabled",
+                json!(r.timeout_disabled),
             ),
         ];
         result.push((st, settings));
@@ -1062,10 +1174,39 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
     // agent_config — per built-in agent configuration overrides
     // -------------------------------------------------------------------------
     {
-        let schema = json!({
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "title": "Agent Configuration",
-            "x-uar-ui": { "category": "Governance & Agents", "icon": "bot", "order": 12, "display_mode": "master-detail" },
+        let resilience_override_schema = json!({
+            "type": "object",
+            "properties": {
+                "mode": {
+                    "type": "string",
+                    "title": "Resilience Override Mode",
+                    "enum": ["inherit", "override"],
+                    "default": "inherit",
+                    "x-control": "select"
+                },
+                "rate_limit_enabled": { "type": "boolean" },
+                "requests_per_second": { "type": "number", "minimum": 0.1 },
+                "burst_size": { "type": "number", "minimum": 1 },
+                "request_timeout_ms": { "type": "integer", "minimum": 1000 },
+                "stream_start_timeout_ms": { "type": "integer", "minimum": 1000 },
+                "retries_enabled": { "type": "boolean" },
+                "retry_max_attempts": { "type": "integer", "minimum": 0, "maximum": 10 },
+                "retry_base_delay_ms": { "type": "integer", "minimum": 100 },
+                "retry_backoff_multiplier": { "type": "number", "minimum": 1.1, "maximum": 5.0 },
+                "retry_max_delay_ms": { "type": "integer", "minimum": 100 },
+                "retry_jitter_mode": { "type": "string", "enum": ["none", "full", "equal", "decorrelated"] },
+                "retry_respect_retry_after": { "type": "boolean" },
+                "retryable_http_statuses": {
+                    "type": "array",
+                    "items": { "type": "integer", "minimum": 100, "maximum": 599 },
+                    "minItems": 1
+                },
+                "retryable_transport_errors": { "type": "boolean" },
+                "retry_budget_ms": { "type": "integer", "minimum": 0 }
+            }
+        });
+
+        let agent_value_schema = json!({
             "type": "object",
             "properties": {
                 "enabled": { "type": "boolean", "title": "Enabled", "default": true, "x-control": "toggle" },
@@ -1083,8 +1224,18 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                     "type": "array", "title": "Allowed Tools (empty = all)",
                     "items": { "type": "string" },
                     "x-control": "tag-input"
-                }
-            }
+                },
+                "resilience": resilience_override_schema
+            },
+            "required": ["enabled", "context_strategy", "governance_mode", "allowed_tools"]
+        });
+
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Agent Configuration",
+            "x-uar-ui": { "category": "Governance & Agents", "icon": "bot", "order": 12, "display_mode": "master-detail" },
+            "type": "object",
+            "additionalProperties": agent_value_schema
         });
         let st = make_type("Agent Configuration", "agent_config", schema);
         // Seed default config for the built-in orchestrated agent
@@ -1092,7 +1243,10 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             "enabled": true,
             "context_strategy": "inherit",
             "governance_mode": "inherit",
-            "allowed_tools": []
+            "allowed_tools": [],
+            "resilience": {
+                "mode": "inherit"
+            }
         });
         let settings = vec![make_setting(
             &st,
@@ -1193,25 +1347,75 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
         let m = &config.memory;
         let settings = vec![
             make_setting(&st, "memory.enabled", "Enable Memory", json!(m.enabled)),
-            make_setting(&st, "memory.auto_capture", "Auto-capture", json!(m.auto_capture)),
-            make_setting(&st, "memory.inject_context", "Inject Context", json!(m.inject_context)),
-            make_setting(&st, "memory.embedding_provider", "Embedding Provider",
-                json!(m.embedding_provider)),
-            make_setting(&st, "memory.embedding_model", "Embedding Model",
-                json!(m.embedding_model)),
-            make_setting(&st, "memory.max_context_tokens", "Max Context Tokens",
-                json!(m.max_context_tokens)),
-            make_setting(&st, "memory.vector_weight", "Vector Weight", json!(m.vector_weight)),
-            make_setting(&st, "memory.bm25_weight", "BM25 Weight", json!(m.bm25_weight)),
+            make_setting(
+                &st,
+                "memory.auto_capture",
+                "Auto-capture",
+                json!(m.auto_capture),
+            ),
+            make_setting(
+                &st,
+                "memory.inject_context",
+                "Inject Context",
+                json!(m.inject_context),
+            ),
+            make_setting(
+                &st,
+                "memory.embedding_provider",
+                "Embedding Provider",
+                json!(m.embedding_provider),
+            ),
+            make_setting(
+                &st,
+                "memory.embedding_model",
+                "Embedding Model",
+                json!(m.embedding_model),
+            ),
+            make_setting(
+                &st,
+                "memory.max_context_tokens",
+                "Max Context Tokens",
+                json!(m.max_context_tokens),
+            ),
+            make_setting(
+                &st,
+                "memory.vector_weight",
+                "Vector Weight",
+                json!(m.vector_weight),
+            ),
+            make_setting(
+                &st,
+                "memory.bm25_weight",
+                "BM25 Weight",
+                json!(m.bm25_weight),
+            ),
             make_setting(&st, "memory.db_path", "DB Path", json!(m.db_path)),
-            make_setting(&st, "memory.mcp_http_enabled", "MCP HTTP Enabled",
-                json!(m.mcp_http_enabled)),
-            make_setting(&st, "memory.mcp_http_path", "MCP HTTP Path", json!(m.mcp_http_path)),
+            make_setting(
+                &st,
+                "memory.mcp_http_enabled",
+                "MCP HTTP Enabled",
+                json!(m.mcp_http_enabled),
+            ),
+            make_setting(
+                &st,
+                "memory.mcp_http_path",
+                "MCP HTTP Path",
+                json!(m.mcp_http_path),
+            ),
             make_setting(&st, "memory.namespace", "Namespace", json!(m.namespace)),
             make_setting(&st, "memory.database", "Database", json!(m.database)),
-            make_setting(&st, "memory.surreal_endpoint", "SurrealDB Endpoint",
-                json!(m.surreal_endpoint)),
-            make_setting(&st, "memory.surreal_user", "SurrealDB User", json!(m.surreal_user)),
+            make_setting(
+                &st,
+                "memory.surreal_endpoint",
+                "SurrealDB Endpoint",
+                json!(m.surreal_endpoint),
+            ),
+            make_setting(
+                &st,
+                "memory.surreal_user",
+                "SurrealDB User",
+                json!(m.surreal_user),
+            ),
         ];
         result.push((st, settings));
     }

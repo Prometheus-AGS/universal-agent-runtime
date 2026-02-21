@@ -24,7 +24,6 @@ import {
   Loader2Icon,
   PaperclipIcon,
   PencilIcon,
-  RefreshCwIcon,
   SparklesIcon,
   SquareIcon,
   UserIcon,
@@ -47,7 +46,7 @@ import { useAttachmentContext } from "@/features/chat/attachment-context";
 import { useMemoryContext } from "@/features/chat/memory-context";
 import { cn } from "@/lib/utils";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
-import { useChatMessageStore, selectIsAwaitingFirstToken } from "@/stores/chat-message-store";
+import { useChatMessageStore, selectIsAwaitingFirstToken, selectRetryState } from "@/stores/chat-message-store";
 
 export const EnhancedThread: FC = () => (
   <ThreadPrimitive.Root
@@ -117,6 +116,9 @@ const EnhancedComposer: FC = () => {
   const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
   const isAwaitingFirstToken = useChatMessageStore(
     selectIsAwaitingFirstToken(activeThreadId ?? "__none__"),
+  );
+  const retryState = useChatMessageStore(
+    selectRetryState(activeThreadId ?? "__none__"),
   );
 
   const handleFileChange = useCallback(
@@ -208,7 +210,9 @@ const EnhancedComposer: FC = () => {
           {isAwaitingFirstToken && (
             <span className="ml-auto flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/70">
               <Loader2Icon size={11} className="animate-spin text-primary" />
-              Waiting for model…
+              {retryState.retryAttempt > 0
+                ? `Retrying (${retryState.retryAttempt}/${Math.max(retryState.retryMaxAttempts, retryState.retryAttempt)}) in ${(retryState.retryDelayMs / 1000).toFixed(1)}s…`
+                : "Waiting for model…"}
             </span>
           )}
 
@@ -549,9 +553,6 @@ const AssistantActionBar: FC = () => (
         <AuiIf condition={(s) => !s.message.isCopied}><CopyIcon /></AuiIf>
       </TooltipIconButton>
     </ActionBarPrimitive.Copy>
-    <ActionBarPrimitive.Reload asChild>
-      <TooltipIconButton tooltip="Regenerate"><RefreshCwIcon /></TooltipIconButton>
-    </ActionBarPrimitive.Reload>
   </ActionBarPrimitive.Root>
 );
 

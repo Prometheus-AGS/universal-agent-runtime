@@ -32,6 +32,9 @@ use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
 use crate::session::SessionStore;
 use crate::uar::api::sse::to_agui_event;
+use crate::uar::settings::resilience_policy::{
+    PolicySource, ResiliencePolicy, resolve_effective_policy,
+};
 use crate::uar::{
     self,
     defaults::ensure_default_knowledge_base,
@@ -544,27 +547,21 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         // inventory, and spec compilation as MCP tools at /mcp/uar.
         .nest_service("/mcp/uar", uar_mcp_router)
         // A2UI schema listing endpoint
-        .nest(
-            "/api/uar/a2ui",
-            {
-                let a2ui_state = uar::a2ui::routes::A2uiApiState {
-                    registry: Arc::clone(&state.a2ui_registry),
-                    run_manager: Arc::clone(&state.run_manager),
-                };
-                uar::a2ui::routes::build_schema_router().with_state(a2ui_state)
-            },
-        )
+        .nest("/api/uar/a2ui", {
+            let a2ui_state = uar::a2ui::routes::A2uiApiState {
+                registry: Arc::clone(&state.a2ui_registry),
+                run_manager: Arc::clone(&state.run_manager),
+            };
+            uar::a2ui::routes::build_schema_router().with_state(a2ui_state)
+        })
         // A2UI artifact-response injection (shares /api/uar/runs prefix)
-        .nest(
-            "/api/uar/runs",
-            {
-                let a2ui_state = uar::a2ui::routes::A2uiApiState {
-                    registry: Arc::clone(&state.a2ui_registry),
-                    run_manager: Arc::clone(&state.run_manager),
-                };
-                uar::a2ui::routes::build_response_router().with_state(a2ui_state)
-            },
-        )
+        .nest("/api/uar/runs", {
+            let a2ui_state = uar::a2ui::routes::A2uiApiState {
+                registry: Arc::clone(&state.a2ui_registry),
+                run_manager: Arc::clone(&state.run_manager),
+            };
+            uar::a2ui::routes::build_response_router().with_state(a2ui_state)
+        })
         // A2A Compiler Agent — JSON-RPC endpoint
         .nest(
             "/a2a/compiler",
@@ -625,8 +622,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         // Providers: GET/POST /api/providers, GET/PUT/DELETE /api/providers/{id}, etc.
         .nest(
             "/api/providers",
-            uar::api::providers::build_router()
-                .with_state(Arc::clone(&state.provider_registry)),
+            uar::api::providers::build_router().with_state(Arc::clone(&state.provider_registry)),
         )
         // Skills: GET /api/skills, GET/DELETE /api/skills/{id}, etc.
         .nest(
@@ -682,14 +678,8 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         // Discovery catalog endpoints: GET /api/agents (list), GET /api/tools
         // The agents router above handles /api/agents/{id}/skills CRUD;
         // the discovery handlers provide the flat catalog list.
-        .route(
-            "/api/agents",
-            get(uar::api::discovery::list_agents),
-        )
-        .route(
-            "/api/tools",
-            get(uar::api::discovery::list_tools),
-        )
+        .route("/api/agents", get(uar::api::discovery::list_agents))
+        .route("/api/tools", get(uar::api::discovery::list_tools))
         // ────────────────────────────────────────────────────────────────────────────
         .route("/api/ingest", post(uar::api::ingest::ingest_handler))
         .route(
@@ -768,7 +758,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     let timeout_duration = if config.resilience.timeout_disabled {
         Duration::from_secs(365 * 24 * 60 * 60) // 1 year
     } else {
-        Duration::from_secs(30)
+        Duration::from_millis(config.resilience.request_timeout_ms.max(1_000))
     };
 
     let app = app
@@ -777,6 +767,10 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
             move |req: Request, next: Next| {
                 let duration = timeout_duration;
                 async move {
+                    let path = req.uri().path().to_string();
+                    if !should_apply_request_timeout(&path) {
+                        return next.run(req).await;
+                    }
                     match tokio::time::timeout(duration, next.run(req)).await {
                         Ok(res) => res,
                         Err(_) => {
@@ -805,6 +799,100 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     Ok(())
 }
 
+async fn load_global_resilience_policy(state: &AppState) -> ResiliencePolicy {
+    let mut policy = ResiliencePolicy::from(&state.config.resilience);
+
+    let Some(mgr) = &state.settings_manager else {
+        return policy;
+    };
+
+    macro_rules! apply_typed {
+        ($key:literal, $ty:ty, $field:ident) => {
+            if let Ok(Some(v)) = mgr.get_typed::<$ty>($key).await {
+                policy.$field = v;
+            }
+        };
+    }
+
+    apply_typed!("resilience.rate_limit_enabled", bool, rate_limit_enabled);
+    apply_typed!("resilience.requests_per_second", f32, requests_per_second);
+    apply_typed!("resilience.burst_size", f32, burst_size);
+    apply_typed!("resilience.request_timeout_ms", u64, request_timeout_ms);
+    apply_typed!(
+        "resilience.stream_start_timeout_ms",
+        u64,
+        stream_start_timeout_ms
+    );
+    apply_typed!("resilience.retries_enabled", bool, retries_enabled);
+    apply_typed!("resilience.retry_max_attempts", u32, retry_max_attempts);
+    apply_typed!("resilience.retry_base_delay_ms", u64, retry_base_delay_ms);
+    apply_typed!(
+        "resilience.retry_backoff_multiplier",
+        f32,
+        retry_backoff_multiplier
+    );
+    apply_typed!("resilience.retry_max_delay_ms", u64, retry_max_delay_ms);
+    apply_typed!("resilience.retry_jitter_mode", String, retry_jitter_mode);
+    apply_typed!(
+        "resilience.retry_respect_retry_after",
+        bool,
+        retry_respect_retry_after
+    );
+    apply_typed!(
+        "resilience.retryable_http_statuses",
+        Vec<u16>,
+        retryable_http_statuses
+    );
+    apply_typed!(
+        "resilience.retryable_transport_errors",
+        bool,
+        retryable_transport_errors
+    );
+    apply_typed!("resilience.retry_budget_ms", u64, retry_budget_ms);
+
+    if let Err(err) = policy.validate() {
+        tracing::warn!(
+            error = %err,
+            "Invalid global resilience settings detected; falling back to config defaults"
+        );
+        return ResiliencePolicy::from(&state.config.resilience);
+    }
+
+    policy
+}
+
+async fn resolve_effective_resilience_policy(
+    state: &AppState,
+    agent_id: &str,
+) -> (ResiliencePolicy, PolicySource) {
+    let global = load_global_resilience_policy(state).await;
+    let Some(mgr) = &state.settings_manager else {
+        return (global, PolicySource::Global);
+    };
+
+    let mut lookup_keys = vec![format!("agent_config.{agent_id}")];
+    if agent_id == "default-agent" {
+        lookup_keys.push("agent_config.orchestrated".to_string());
+    }
+
+    for key in lookup_keys {
+        if let Some(agent_cfg) = mgr.get_value(&key).await {
+            match resolve_effective_policy(&global, Some(&agent_cfg)) {
+                Ok(resolved) => return resolved,
+                Err(err) => {
+                    tracing::warn!(
+                        setting_key = %key,
+                        error = %err,
+                        "Invalid per-agent resilience override; using global policy"
+                    );
+                }
+            }
+        }
+    }
+
+    (global, PolicySource::Global)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // API Handlers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -813,6 +901,13 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
 
 async fn health_handler() -> StatusCode {
     StatusCode::OK
+}
+
+fn should_apply_request_timeout(path: &str) -> bool {
+    !matches!(
+        path,
+        "/api/chat/completion" | "/v1/chat/completions" | "/v1/messages"
+    )
 }
 
 #[derive(Debug, Deserialize)]
@@ -2529,6 +2624,21 @@ async fn api_chat_completion(
     let mut agent = uar::defaults::default_agent();
     agent.policy.provider.default.provider = resolved_model.provider_id.clone();
     agent.policy.provider.default.model = resolved_model.model_id.clone();
+    let agent_id_for_policy = agent.id.clone();
+    let (effective_resilience_policy, policy_source) =
+        resolve_effective_resilience_policy(&state, &agent_id_for_policy).await;
+
+    tracing::info!(
+        name: "resilience.policy.effective",
+        agent_id = %agent_id_for_policy,
+        source = ?policy_source,
+        request_timeout_ms = effective_resilience_policy.request_timeout_ms,
+        retries_enabled = effective_resilience_policy.retries_enabled,
+        retry_max_attempts = effective_resilience_policy.retry_max_attempts,
+        retry_base_delay_ms = effective_resilience_policy.retry_base_delay_ms,
+        retry_max_delay_ms = effective_resilience_policy.retry_max_delay_ms,
+        "Resolved effective resilience policy"
+    );
 
     // If attachments were uploaded, assemble an OpenAI-style multipart content string
     // (document context blocks + user text + image_url parts).  Otherwise pass plain text.
@@ -2671,7 +2781,7 @@ async fn api_chat_completion(
 
         // Clone into stream-owned variables.
         let stream_memory_service = state.memory_service.clone();
-        let stream_agent_id = "default".to_string(); // TODO: pull from resolved agent
+        let stream_agent_id = agent_id_for_policy.clone();
         let _stream_memory_ctx_count = stream_memory_ctx_count;
 
         let stream = async_stream::stream! {
@@ -3070,25 +3180,28 @@ async fn api_chat_completion(
     }
 
     let mut assistant_text = String::new();
-    let wait_result = timeout(Duration::from_secs(120), async {
-        loop {
-            match rx.recv().await {
-                Ok(event) => match event.event {
-                    uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
-                        assistant_text.push_str(&text_delta);
-                    }
-                    uar::domain::events::NormalizedEvent::RunDone { .. } => {
-                        break Ok::<(), String>(());
-                    }
-                    uar::domain::events::NormalizedEvent::Error { message, .. } => {
-                        break Err(message);
-                    }
-                    _ => {}
-                },
-                Err(e) => break Err(format!("Stream closed: {e}")),
+    let wait_result = timeout(
+        Duration::from_millis(effective_resilience_policy.request_timeout_ms),
+        async {
+            loop {
+                match rx.recv().await {
+                    Ok(event) => match event.event {
+                        uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
+                            assistant_text.push_str(&text_delta);
+                        }
+                        uar::domain::events::NormalizedEvent::RunDone { .. } => {
+                            break Ok::<(), String>(());
+                        }
+                        uar::domain::events::NormalizedEvent::Error { message, .. } => {
+                            break Err(message);
+                        }
+                        _ => {}
+                    },
+                    Err(e) => break Err(format!("Stream closed: {e}")),
+                }
             }
-        }
-    })
+        },
+    )
     .await;
 
     match wait_result {
@@ -3223,6 +3336,17 @@ mod tests {
             out[1].get("tool_call_id").and_then(Value::as_str),
             Some("toolu_call_1")
         );
+    }
+
+    #[test]
+    fn request_timeout_policy_skips_chat_stream_routes() {
+        assert!(!should_apply_request_timeout("/api/chat/completion"));
+        assert!(!should_apply_request_timeout("/v1/chat/completions"));
+        assert!(!should_apply_request_timeout("/v1/messages"));
+
+        assert!(should_apply_request_timeout("/api/generate-title"));
+        assert!(should_apply_request_timeout("/api/threads"));
+        assert!(should_apply_request_timeout("/assets/index.js"));
     }
 
     #[tokio::test]

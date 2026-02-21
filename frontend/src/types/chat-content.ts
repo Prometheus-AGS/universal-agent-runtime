@@ -55,6 +55,9 @@ export interface StreamingState {
   runId: string | null;
   streamingMessageId: string | null;
   awaitingFirstToken: boolean;
+  retryAttempt: number;
+  retryMaxAttempts: number;
+  retryDelayMs: number;
 }
 
 export function getMessageText(message: RichMessage): string {

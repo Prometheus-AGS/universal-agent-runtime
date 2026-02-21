@@ -20,9 +20,9 @@ describe("generateThreadTitle", () => {
     mock.restore();
   });
 
-  test("sends OpenAI-style non-streaming payload without custom session header", async () => {
+  test("sends /api/generate-title request payload without custom session header", async () => {
     const fetchMock = mock(async () => {
-      return new Response(JSON.stringify({ content: "Thread title" }), {
+      return new Response(JSON.stringify({ title: "Thread title" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
@@ -33,18 +33,15 @@ describe("generateThreadTitle", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const call = fetchMock.mock.calls[0];
+    const input = call?.[0];
     const init = call?.[1];
+    expect(input).toBe("/api/generate-title");
     const sessionIdHeader = getHeader(init, "X-UAR-Session-ID");
     expect(sessionIdHeader).toBeNull();
 
     const body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : null;
     expect(body).toBeObject();
-    expect(body?.stream).toBe(false);
-    expect(Array.isArray(body?.messages)).toBe(true);
-
-    const messages = body?.messages as Array<{ role?: string; content?: string }>;
-    expect(messages[0]?.role).toBe("user");
-    expect(typeof messages[0]?.content).toBe("string");
-    expect(messages[0]?.content).toContain("Generate a concise 4-6 word title");
+    expect(typeof body?.message).toBe("string");
+    expect(typeof body?.assistant_message).toBe("string");
   });
 });

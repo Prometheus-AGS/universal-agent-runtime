@@ -826,6 +826,7 @@ impl PersistenceLayer for PostgresProvider {
                     .get("properties")
                     .and_then(|p| p.get(prop))
                     .cloned()
+                    .or_else(|| st.schema.get("additionalProperties").cloned())
             } else {
                 Some(st.schema.clone())
             };

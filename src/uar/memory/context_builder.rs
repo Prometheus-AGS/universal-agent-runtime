@@ -38,7 +38,10 @@ pub async fn build_context_with_hits(
     model_id: &str,
 ) -> ContextBuildResult {
     if !service.config().inject_context {
-        return ContextBuildResult { block: String::new(), hits: vec![] };
+        return ContextBuildResult {
+            block: String::new(),
+            hits: vec![],
+        };
     }
 
     let max_tokens = service.config().max_context_tokens;
@@ -61,12 +64,18 @@ pub async fn build_context_with_hits(
         Ok(m) => m,
         Err(e) => {
             tracing::warn!(error = %e, "context_builder: hybrid_search failed, using empty context");
-            return ContextBuildResult { block: String::new(), hits: vec![] };
+            return ContextBuildResult {
+                block: String::new(),
+                hits: vec![],
+            };
         }
     };
 
     if memories.is_empty() {
-        return ContextBuildResult { block: String::new(), hits: vec![] };
+        return ContextBuildResult {
+            block: String::new(),
+            hits: vec![],
+        };
     }
 
     // Rank and format memories up to the token budget.
@@ -94,7 +103,10 @@ pub async fn build_context_with_hits(
     }
 
     if lines.is_empty() {
-        return ContextBuildResult { block: String::new(), hits: vec![] };
+        return ContextBuildResult {
+            block: String::new(),
+            hits: vec![],
+        };
     }
 
     let block = format!(

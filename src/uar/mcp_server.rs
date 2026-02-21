@@ -95,7 +95,8 @@ struct UarRuntimeMcpServer {
 
 impl std::fmt::Debug for UarRuntimeMcpServer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("UarRuntimeMcpServer").finish_non_exhaustive()
+        f.debug_struct("UarRuntimeMcpServer")
+            .finish_non_exhaustive()
     }
 }
 
@@ -121,9 +122,7 @@ impl UarRuntimeMcpServer {
     /// Returns an array of agent summaries including ID, title, description, version,
     /// and available tools. Use the `id` field with `uar_create_run` to start a run.
     #[tool(description = "List all compiled agents in the UAR registry")]
-    async fn uar_list_agents(
-        &self,
-    ) -> Result<CallToolResult, McpError> {
+    async fn uar_list_agents(&self) -> Result<CallToolResult, McpError> {
         let agents = if let Some(p) = &self.persistence {
             p.list_agents().await.map_err(err_mcp)?
         } else {
@@ -164,10 +163,12 @@ impl UarRuntimeMcpServer {
                 .map_err(err_mcp)?
                 .into_iter()
                 .find(|a| a.id == p.agent_id)
-                .ok_or_else(|| McpError::invalid_params(
-                    format!("agent '{}' not found in registry", p.agent_id),
-                    None,
-                ))?
+                .ok_or_else(|| {
+                    McpError::invalid_params(
+                        format!("agent '{}' not found in registry", p.agent_id),
+                        None,
+                    )
+                })?
         } else {
             return Err(McpError::invalid_params(
                 "persistence layer not configured; cannot look up agents",
@@ -204,14 +205,9 @@ impl UarRuntimeMcpServer {
         &self,
         Parameters(p): Parameters<RunIdParams>,
     ) -> Result<CallToolResult, McpError> {
-        let run = self
-            .run_manager
-            .get_run(&p.run_id)
-            .await
-            .ok_or_else(|| McpError::invalid_params(
-                format!("run '{}' not found", p.run_id),
-                None,
-            ))?;
+        let run = self.run_manager.get_run(&p.run_id).await.ok_or_else(|| {
+            McpError::invalid_params(format!("run '{}' not found", p.run_id), None)
+        })?;
 
         let status = serde_json::json!({
             "run_id": run.run_id,
@@ -229,9 +225,7 @@ impl UarRuntimeMcpServer {
     /// Native skills are high-performance in-process tools (e.g., the PMPO compiler,
     /// memory tools, document ingestion). Use this to discover available capabilities.
     #[tool(description = "List all registered UAR native skills")]
-    async fn uar_list_skills(
-        &self,
-    ) -> Result<CallToolResult, McpError> {
+    async fn uar_list_skills(&self) -> Result<CallToolResult, McpError> {
         let tools_json = self.native_skills.openai_tools_json().await;
 
         let skills: Vec<serde_json::Value> = tools_json
@@ -273,14 +267,9 @@ impl UarRuntimeMcpServer {
         let schema_registry = Arc::new(InMemorySchemaRegistry::default());
         let endpoint_registry = Arc::new(InMemoryEndpointRegistry::default());
 
-        let output = pipeline::compile(
-            ir,
-            schema_registry,
-            endpoint_registry,
-            key_provider,
-        )
-        .await
-        .map_err(|e| McpError::invalid_params(format!("compilation failed: {e}"), None))?;
+        let output = pipeline::compile(ir, schema_registry, endpoint_registry, key_provider)
+            .await
+            .map_err(|e| McpError::invalid_params(format!("compilation failed: {e}"), None))?;
 
         let result = serde_json::json!({
             "agent_id": output.descriptor.agent_id,

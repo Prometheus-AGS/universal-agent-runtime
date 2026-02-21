@@ -173,12 +173,15 @@ impl NativeTool for MemoryListTool {
             .into_iter()
             .take(limit)
             .map(|m| {
-                let id = m.id
-                    .as_ref()
-                    .map(|r| serde_json::to_value(r).ok()
-                        .and_then(|v| v.as_str().map(str::to_string))
-                        .unwrap_or_default())
-                    .unwrap_or_default();
+                let id =
+                    m.id.as_ref()
+                        .map(|r| {
+                            serde_json::to_value(r)
+                                .ok()
+                                .and_then(|v| v.as_str().map(str::to_string))
+                                .unwrap_or_default()
+                        })
+                        .unwrap_or_default();
                 json!({
                     "memory_id": id,
                     "content": m.content,
@@ -305,11 +308,15 @@ impl NativeTool for MemoryUpdateTool {
             .await
             .map_err(|e| anyhow::anyhow!("{e}"))?;
 
-        let new_id = updated.id
+        let new_id = updated
+            .id
             .as_ref()
-            .map(|r| serde_json::to_value(r).ok()
-                .and_then(|v| v.as_str().map(str::to_string))
-                .unwrap_or_default())
+            .map(|r| {
+                serde_json::to_value(r)
+                    .ok()
+                    .and_then(|v| v.as_str().map(str::to_string))
+                    .unwrap_or_default()
+            })
             .unwrap_or_default();
 
         Ok(json!({
@@ -372,13 +379,15 @@ impl NativeTool for MemoryHistoryTool {
 
         let entries: Vec<serde_json::Value> = history
             .iter()
-            .map(|h| json!({
-                "version": h.version,
-                "change_type": h.change_type,
-                "old_content": h.old_content,
-                "new_content": h.new_content,
-                "changed_at": h.changed_at.to_string(),
-            }))
+            .map(|h| {
+                json!({
+                    "version": h.version,
+                    "change_type": h.change_type,
+                    "old_content": h.old_content,
+                    "new_content": h.new_content,
+                    "changed_at": h.changed_at.to_string(),
+                })
+            })
             .collect();
 
         let count = entries.len();

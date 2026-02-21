@@ -164,6 +164,7 @@ function PanelHeader({
     onSave,
     onReload,
     loading,
+    saveDisabled = false,
 }: {
     title: string;
     subtitle?: string;
@@ -171,6 +172,7 @@ function PanelHeader({
     loading: boolean;
     onSave: () => void;
     onReload: () => void;
+    saveDisabled?: boolean;
 }) {
     return (
         <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
@@ -196,7 +198,7 @@ function PanelHeader({
                 <Button
                     size="sm"
                     onClick={onSave}
-                    disabled={saving}
+                    disabled={saving || saveDisabled}
                     className="gap-1.5"
                 >
                     {saving ? (
@@ -239,11 +241,13 @@ function NamespacePanel({
     namespace,
     title,
     subtitle,
+    saveDisabled,
     children,
 }: {
     namespace: string;
     title: string;
     subtitle?: string;
+    saveDisabled?: boolean;
     children: (ctx: {
         val: (key: string) => unknown;
         set: (key: string, value: unknown) => void;
@@ -270,6 +274,7 @@ function NamespacePanel({
                 subtitle={subtitle}
                 saving={saving}
                 loading={loading}
+                saveDisabled={saveDisabled}
                 onSave={() => void handleSave()}
                 onReload={() => void reload()}
             />
@@ -868,55 +873,372 @@ function KreuzbergPanel() {
 
 // --- Resilience -------------------------------------------------------------
 
+const RESILIENCE_RECOMMENDED_DEFAULTS = {
+    rate_limit_enabled: true,
+    requests_per_second: 10,
+    burst_size: 20,
+    request_timeout_ms: 30000,
+    stream_start_timeout_ms: 15000,
+    retries_enabled: true,
+    retry_max_attempts: 3,
+    retry_base_delay_ms: 1000,
+    retry_backoff_multiplier: 2,
+    retry_max_delay_ms: 10000,
+    retry_jitter_mode: "full",
+    retry_respect_retry_after: true,
+    retryable_http_statuses: [408, 425, 429, 500, 502, 503, 504],
+    retryable_transport_errors: true,
+    retry_budget_ms: 20000,
+} as const;
+
 function ResiliencePanel() {
+    const { values, loading, saving, error, setSetting, saveAll, reload } = useSettings("resilience");
+    const [savedFlash, setSavedFlash] = useState(false);
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [statusListInput, setStatusListInput] = useState("");
+
+    const valueFor = (key: string): unknown => values[`resilience.${key}`];
+    const setField = (key: string, value: unknown) => setSetting(`resilience.${key}`, value);
+
+    useEffect(() => {
+        const statuses = valueFor("retryable_http_statuses");
+        if (!Array.isArray(statuses)) return;
+        setStatusListInput(statuses.join(", "));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [values["resilience.retryable_http_statuses"]]);
+
+    const parsedStatuses = statusListInput
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    const hasInvalidStatusToken = parsedStatuses.some((item) => {
+        const n = Number(item);
+        return !Number.isInteger(n) || n < 100 || n > 599;
+    });
+    const statusNumbers = parsedStatuses
+        .map((item) => Number(item))
+        .filter((n) => Number.isInteger(n) && n >= 100 && n <= 599);
+
+    const validationErrors: Record<string, string> = {};
+    const reqPerSec = Number(valueFor("requests_per_second"));
+    if (!Number.isFinite(reqPerSec) || reqPerSec < 0.1) {
+        validationErrors.requests_per_second = "Must be at least 0.1 requests/sec.";
+    }
+    const burstSize = Number(valueFor("burst_size"));
+    if (!Number.isFinite(burstSize) || burstSize < 1) {
+        validationErrors.burst_size = "Burst size must be at least 1.";
+    }
+    const requestTimeoutMs = Number(valueFor("request_timeout_ms"));
+    if (!Number.isFinite(requestTimeoutMs) || requestTimeoutMs < 1000) {
+        validationErrors.request_timeout_ms = "Request timeout must be at least 1000ms.";
+    }
+    const streamStartTimeoutMs = Number(valueFor("stream_start_timeout_ms"));
+    if (!Number.isFinite(streamStartTimeoutMs) || streamStartTimeoutMs < 1000) {
+        validationErrors.stream_start_timeout_ms = "Stream start timeout must be at least 1000ms.";
+    }
+    const retryMaxAttempts = Number(valueFor("retry_max_attempts"));
+    if (!Number.isFinite(retryMaxAttempts) || retryMaxAttempts < 0 || retryMaxAttempts > 10) {
+        validationErrors.retry_max_attempts = "Retry attempts must be between 0 and 10.";
+    }
+    const retryBaseDelayMs = Number(valueFor("retry_base_delay_ms"));
+    if (!Number.isFinite(retryBaseDelayMs) || retryBaseDelayMs < 100) {
+        validationErrors.retry_base_delay_ms = "Base delay must be at least 100ms.";
+    }
+    const retryBackoffMultiplier = Number(valueFor("retry_backoff_multiplier"));
+    if (
+        !Number.isFinite(retryBackoffMultiplier)
+        || retryBackoffMultiplier < 1.1
+        || retryBackoffMultiplier > 5.0
+    ) {
+        validationErrors.retry_backoff_multiplier = "Backoff multiplier must be between 1.1 and 5.0.";
+    }
+    const retryMaxDelayMs = Number(valueFor("retry_max_delay_ms"));
+    if (!Number.isFinite(retryMaxDelayMs) || retryMaxDelayMs < 100) {
+        validationErrors.retry_max_delay_ms = "Max delay must be at least 100ms.";
+    }
+    const retryBudgetMs = Number(valueFor("retry_budget_ms"));
+    if (!Number.isFinite(retryBudgetMs) || retryBudgetMs < 0) {
+        validationErrors.retry_budget_ms = "Retry budget must be 0 or greater.";
+    }
+    if (hasInvalidStatusToken || statusNumbers.length === 0) {
+        validationErrors.retryable_http_statuses = "Use comma-separated HTTP codes between 100 and 599.";
+    }
+
+    const hasErrors = Object.keys(validationErrors).length > 0;
+
+    const handleSave = useCallback(async () => {
+        if (hasErrors) return;
+        await saveAll();
+        setSavedFlash(true);
+        setTimeout(() => setSavedFlash(false), 2500);
+    }, [hasErrors, saveAll]);
+
+    const resetRecommendedDefaults = useCallback(() => {
+        Object.entries(RESILIENCE_RECOMMENDED_DEFAULTS).forEach(([key, value]) => {
+            setField(key, value);
+        });
+        setStatusListInput(RESILIENCE_RECOMMENDED_DEFAULTS.retryable_http_statuses.join(", "));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const renderError = (key: string) => validationErrors[key]
+        ? <p className="font-mono text-[10px] text-destructive">{validationErrors[key]}</p>
+        : null;
+
     return (
-        <NamespacePanel namespace="resilience" title="Resilience">
-            {({ val, set }) => (
-                <>
-                    <div className="space-y-3">
-                        {[
-                            { key: "rate_limit_enabled", label: "Rate Limiting", hint: "Enforce per-IP request rate limiting" },
-                            { key: "timeout_disabled", label: "Disable Timeouts", hint: "Warning: removes all request timeouts" },
-                        ].map(({ key, label, hint }) => (
-                            <div key={key} className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
-                                <div>
-                                    <p className="font-mono text-[12px] font-medium text-foreground">{label}</p>
-                                    <p className="font-mono text-[10px] text-muted-foreground">{hint}</p>
-                                </div>
-                                <Toggle
-                                    value={(val(key) as boolean) ?? false}
-                                    onChange={(v) => set(key, v)}
-                                />
+        <div className="flex flex-1 flex-col overflow-hidden">
+            <PanelHeader
+                title="Resilience"
+                subtitle="Configure global rate limits, timeout budgets, and retry behavior."
+                saving={saving}
+                loading={loading}
+                saveDisabled={hasErrors}
+                onSave={() => void handleSave()}
+                onReload={() => void reload()}
+            />
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+                {loading && (
+                    <div className="flex items-center gap-2">
+                        <Loader2 size={15} className="animate-spin text-muted-foreground" />
+                        <span className="font-mono text-[11px] text-muted-foreground">Loading…</span>
+                    </div>
+                )}
+                <ErrorBanner error={error} />
+                <SavedBanner show={savedFlash} />
+                {!loading && (
+                    <>
+                        <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
+                            <div>
+                                <p className="font-mono text-[12px] font-medium text-foreground">Recommended defaults</p>
+                                <p className="font-mono text-[10px] text-muted-foreground">Reset all resilience controls to production-safe defaults.</p>
                             </div>
-                        ))}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field label="Requests per Second">
-                            <Input
-                                type="number"
-                                step={0.1}
-                                min={0.1}
-                                value={(val("requests_per_second") as number) ?? ""}
-                                onChange={(e) => set("requests_per_second", parseFloat(e.target.value))}
-                                placeholder="10.0"
-                                className="font-mono text-[12px]"
+                            <Button type="button" variant="outline" size="sm" onClick={resetRecommendedDefaults}>
+                                Reset Defaults
+                            </Button>
+                        </div>
+
+                        <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">Rate limiting</p>
+                        <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
+                            <div>
+                                <p className="font-mono text-[12px] font-medium text-foreground">Rate Limiting</p>
+                                <p className="font-mono text-[10px] text-muted-foreground">Throttle inbound API traffic to reduce overload bursts.</p>
+                            </div>
+                            <Toggle
+                                value={(valueFor("rate_limit_enabled") as boolean) ?? true}
+                                onChange={(v) => setField("rate_limit_enabled", v)}
                             />
-                        </Field>
-                        <Field label="Burst Size">
-                            <Input
-                                type="number"
-                                min={1}
-                                value={(val("burst_size") as number) ?? ""}
-                                onChange={(e) => set("burst_size", parseFloat(e.target.value))}
-                                placeholder="20"
-                                className="font-mono text-[12px]"
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Field label="Requests Per Second" hint="Lower value = stricter global throttling.">
+                                <Input
+                                    type="number"
+                                    step={0.1}
+                                    min={0.1}
+                                    value={(valueFor("requests_per_second") as number) ?? ""}
+                                    onChange={(e) => setField("requests_per_second", Number(e.target.value))}
+                                    className="font-mono text-[12px]"
+                                />
+                                {renderError("requests_per_second")}
+                            </Field>
+                            <Field label="Burst Size" hint="How many requests can pass in a short spike.">
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    value={(valueFor("burst_size") as number) ?? ""}
+                                    onChange={(e) => setField("burst_size", Number(e.target.value))}
+                                    className="font-mono text-[12px]"
+                                />
+                                {renderError("burst_size")}
+                            </Field>
+                        </div>
+
+                        <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">Timeouts</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Field label="Request Timeout (ms)" hint="Upper bound for non-stream response wait time.">
+                                <Input
+                                    type="number"
+                                    min={1000}
+                                    value={(valueFor("request_timeout_ms") as number) ?? ""}
+                                    onChange={(e) => setField("request_timeout_ms", Number(e.target.value))}
+                                    className="font-mono text-[12px]"
+                                />
+                                {renderError("request_timeout_ms")}
+                            </Field>
+                            <Field label="Stream Start Timeout (ms)" hint="How long to wait for first stream chunk before retry/fail.">
+                                <Input
+                                    type="number"
+                                    min={1000}
+                                    value={(valueFor("stream_start_timeout_ms") as number) ?? ""}
+                                    onChange={(e) => setField("stream_start_timeout_ms", Number(e.target.value))}
+                                    className="font-mono text-[12px]"
+                                />
+                                {renderError("stream_start_timeout_ms")}
+                            </Field>
+                        </div>
+
+                        <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">Retries</p>
+                        <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
+                            <div>
+                                <p className="font-mono text-[12px] font-medium text-foreground">Retries Enabled</p>
+                                <p className="font-mono text-[10px] text-muted-foreground">Retry transient failures with exponential backoff.</p>
+                            </div>
+                            <Toggle
+                                value={(valueFor("retries_enabled") as boolean) ?? true}
+                                onChange={(v) => setField("retries_enabled", v)}
                             />
-                        </Field>
-                    </div>
-                </>
-            )}
-        </NamespacePanel>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                            <Field label="Max Attempts" hint="Total attempts including the first request.">
+                                <Input
+                                    type="number"
+                                    min={0}
+                                    max={10}
+                                    value={(valueFor("retry_max_attempts") as number) ?? ""}
+                                    onChange={(e) => setField("retry_max_attempts", Number(e.target.value))}
+                                    className="font-mono text-[12px]"
+                                />
+                                {renderError("retry_max_attempts")}
+                            </Field>
+                            <Field label="Base Delay (ms)" hint="Initial retry delay before backoff multiplier.">
+                                <Input
+                                    type="number"
+                                    min={100}
+                                    value={(valueFor("retry_base_delay_ms") as number) ?? ""}
+                                    onChange={(e) => setField("retry_base_delay_ms", Number(e.target.value))}
+                                    className="font-mono text-[12px]"
+                                />
+                                {renderError("retry_base_delay_ms")}
+                            </Field>
+                            <Field label="Max Delay (ms)" hint="Hard cap for retry wait interval.">
+                                <Input
+                                    type="number"
+                                    min={100}
+                                    value={(valueFor("retry_max_delay_ms") as number) ?? ""}
+                                    onChange={(e) => setField("retry_max_delay_ms", Number(e.target.value))}
+                                    className="font-mono text-[12px]"
+                                />
+                                {renderError("retry_max_delay_ms")}
+                            </Field>
+                        </div>
+
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="justify-start px-0 font-mono text-[11px] text-muted-foreground hover:text-foreground"
+                            onClick={() => setShowAdvanced((v) => !v)}
+                        >
+                            {showAdvanced ? "Hide advanced retry controls" : "Show advanced retry controls"}
+                        </Button>
+
+                        {showAdvanced && (
+                            <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Field label="Backoff Multiplier" hint="Growth factor for each retry delay step.">
+                                        <Input
+                                            type="number"
+                                            step={0.1}
+                                            min={1.1}
+                                            max={5}
+                                            value={(valueFor("retry_backoff_multiplier") as number) ?? ""}
+                                            onChange={(e) => setField("retry_backoff_multiplier", Number(e.target.value))}
+                                            className="font-mono text-[12px]"
+                                        />
+                                        {renderError("retry_backoff_multiplier")}
+                                    </Field>
+                                    <Field label="Retry Budget (ms)" hint="Maximum total waiting time spent on retries.">
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            value={(valueFor("retry_budget_ms") as number) ?? ""}
+                                            onChange={(e) => setField("retry_budget_ms", Number(e.target.value))}
+                                            className="font-mono text-[12px]"
+                                        />
+                                        {renderError("retry_budget_ms")}
+                                    </Field>
+                                    <Field label="Jitter Mode" hint="Jitter spreads retries across clients to avoid synchronized spikes.">
+                                        <SettingSelect
+                                            value={(valueFor("retry_jitter_mode") as string) ?? "full"}
+                                            options={[
+                                                { value: "none", label: "None" },
+                                                { value: "full", label: "Full" },
+                                                { value: "equal", label: "Equal" },
+                                                { value: "decorrelated", label: "Decorrelated" },
+                                            ]}
+                                            onChange={(v) => setField("retry_jitter_mode", v)}
+                                        />
+                                    </Field>
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-3 py-2">
+                                            <span className="font-mono text-[11px] text-foreground">Respect Retry-After</span>
+                                            <Toggle
+                                                value={(valueFor("retry_respect_retry_after") as boolean) ?? true}
+                                                onChange={(v) => setField("retry_respect_retry_after", v)}
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-3 py-2">
+                                            <span className="font-mono text-[11px] text-foreground">Retry Transport Errors</span>
+                                            <Toggle
+                                                value={(valueFor("retryable_transport_errors") as boolean) ?? true}
+                                                onChange={(v) => setField("retryable_transport_errors", v)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                <Field label="Retryable HTTP Status Codes" hint="Comma-separated status codes (100-599).">
+                                    <Input
+                                        value={statusListInput}
+                                        onChange={(e) => {
+                                            const raw = e.target.value;
+                                            setStatusListInput(raw);
+                                            const next = raw
+                                                .split(",")
+                                                .map((item) => Number(item.trim()))
+                                                .filter((n) => Number.isInteger(n) && n >= 100 && n <= 599);
+                                            if (next.length > 0) setField("retryable_http_statuses", next);
+                                        }}
+                                        placeholder="408, 425, 429, 500, 502, 503, 504"
+                                        className="font-mono text-[12px]"
+                                    />
+                                    {renderError("retryable_http_statuses")}
+                                </Field>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
     );
+}
+
+function buildGlobalResiliencePreview(
+    values: Record<string, unknown>,
+): Record<string, unknown> {
+    const global = { ...RESILIENCE_RECOMMENDED_DEFAULTS } as Record<string, unknown>;
+    Object.keys(global).forEach((key) => {
+        const candidate = values[`resilience.${key}`];
+        if (candidate !== undefined) {
+            global[key] = candidate;
+        }
+    });
+    return global;
+}
+
+function mergeAgentResiliencePreview(
+    global: Record<string, unknown>,
+    override: Record<string, unknown>,
+): Record<string, unknown> {
+    if ((override.mode as string) !== "override") {
+        return global;
+    }
+    const merged = { ...global };
+    Object.entries(override).forEach(([k, v]) => {
+        if (k === "mode") return;
+        if (v !== undefined && v !== null) {
+            merged[k] = v;
+        }
+    });
+    return merged;
 }
 
 // --- Intent Classifier ------------------------------------------------------
@@ -1096,9 +1418,15 @@ const AGENT_GOV_OPTS = [
     { value: "deny_all", label: "Deny All" },
 ];
 
+const AGENT_RESILIENCE_MODE_OPTS = [
+    { value: "inherit", label: "Inherit Global" },
+    { value: "override", label: "Override" },
+];
+
 function AgentConfigPanel() {
     const { values, settings, loading, saving, error, setSetting, saveAll, reload } =
         useSettings("agent_config");
+    const { values: resilienceValues } = useSettings("resilience");
     const [savedFlash, setSavedFlash] = useState(false);
 
     const agentEntries = Object.values(settings).sort((a, b) => a.key.localeCompare(b.key));
@@ -1133,7 +1461,13 @@ function AgentConfigPanel() {
                     const agentId = s.key.replace("agent_config.", "");
                     const setField = (field: string, value: unknown) =>
                         setSetting(s.key, { ...data, [field]: value });
+                    const resilienceOverride = (data.resilience as Record<string, unknown>) ?? { mode: "inherit" };
+                    const setResilienceField = (field: string, value: unknown) =>
+                        setField("resilience", { ...resilienceOverride, [field]: value });
                     const enabled = data.enabled !== false;
+                    const resilienceMode = (resilienceOverride.mode as string) ?? "inherit";
+                    const globalPreview = buildGlobalResiliencePreview(resilienceValues);
+                    const effectivePreview = mergeAgentResiliencePreview(globalPreview, resilienceOverride);
                     return (
                         <div
                             key={s.key}
@@ -1193,6 +1527,68 @@ function AgentConfigPanel() {
                                     className="font-mono text-[12px]"
                                 />
                             </Field>
+                            <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
+                                <Field label="Resilience Policy">
+                                    <SettingSelect
+                                        value={resilienceMode}
+                                        options={AGENT_RESILIENCE_MODE_OPTS}
+                                        onChange={(v) => setResilienceField("mode", v)}
+                                    />
+                                </Field>
+                                {resilienceMode === "override" && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <Field label="Request Timeout (ms)">
+                                            <Input
+                                                type="number"
+                                                min={1000}
+                                                value={(resilienceOverride.request_timeout_ms as number) ?? ""}
+                                                onChange={(e) => setResilienceField("request_timeout_ms", e.target.value ? Number(e.target.value) : null)}
+                                                placeholder={`${globalPreview.request_timeout_ms ?? ""}`}
+                                                className="font-mono text-[12px]"
+                                            />
+                                        </Field>
+                                        <Field label="Retry Max Attempts">
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                max={10}
+                                                value={(resilienceOverride.retry_max_attempts as number) ?? ""}
+                                                onChange={(e) => setResilienceField("retry_max_attempts", e.target.value ? Number(e.target.value) : null)}
+                                                placeholder={`${globalPreview.retry_max_attempts ?? ""}`}
+                                                className="font-mono text-[12px]"
+                                            />
+                                        </Field>
+                                        <Field label="Retry Base Delay (ms)">
+                                            <Input
+                                                type="number"
+                                                min={100}
+                                                value={(resilienceOverride.retry_base_delay_ms as number) ?? ""}
+                                                onChange={(e) => setResilienceField("retry_base_delay_ms", e.target.value ? Number(e.target.value) : null)}
+                                                placeholder={`${globalPreview.retry_base_delay_ms ?? ""}`}
+                                                className="font-mono text-[12px]"
+                                            />
+                                        </Field>
+                                        <Field label="Retry Max Delay (ms)">
+                                            <Input
+                                                type="number"
+                                                min={100}
+                                                value={(resilienceOverride.retry_max_delay_ms as number) ?? ""}
+                                                onChange={(e) => setResilienceField("retry_max_delay_ms", e.target.value ? Number(e.target.value) : null)}
+                                                placeholder={`${globalPreview.retry_max_delay_ms ?? ""}`}
+                                                className="font-mono text-[12px]"
+                                            />
+                                        </Field>
+                                    </div>
+                                )}
+                                <div className="space-y-1">
+                                    <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                                        Effective policy preview
+                                    </p>
+                                    <pre className="max-h-36 overflow-auto rounded-md border border-border/60 bg-background/80 p-2 font-mono text-[10px] text-muted-foreground">
+                                        {JSON.stringify(effectivePreview, null, 2)}
+                                    </pre>
+                                </div>
+                            </div>
                         </div>
                     );
                 })}

@@ -95,17 +95,21 @@ pub struct RunManager {
 }
 
 /// Memory mutation tool name sets — used to detect side effects in ToolEnd events.
-const MEMORY_CREATE_TOOLS: &[&str] = &["memory_add", "memory_save", "memory_extract_from_conversation"];
+const MEMORY_CREATE_TOOLS: &[&str] = &[
+    "memory_add",
+    "memory_save",
+    "memory_extract_from_conversation",
+];
 const MEMORY_UPDATE_TOOLS: &[&str] = &["memory_update"];
 const MEMORY_DELETE_TOOLS: &[&str] = &["memory_delete", "memory_delete_all"];
 
 /// Inspect a `ToolEnd` event and, if it represents a memory mutation, return a
 /// corresponding `MemoryMutation` event. Returns `None` for non-memory tools.
-fn memory_mutation_from_tool_end(
-    evt: &NormalizedEvent,
-    run_id: &str,
-) -> Option<NormalizedEvent> {
-    let NormalizedEvent::ToolEnd { tool, output, ok, .. } = evt else {
+fn memory_mutation_from_tool_end(evt: &NormalizedEvent, run_id: &str) -> Option<NormalizedEvent> {
+    let NormalizedEvent::ToolEnd {
+        tool, output, ok, ..
+    } = evt
+    else {
         return None;
     };
 
@@ -808,8 +812,10 @@ impl RunManager {
                                 completion_tokens,
                                 total_tokens: _,
                             } => {
-                                total_input_tokens = total_input_tokens.saturating_add(prompt_tokens);
-                                total_output_tokens = total_output_tokens.saturating_add(completion_tokens);
+                                total_input_tokens =
+                                    total_input_tokens.saturating_add(prompt_tokens);
+                                total_output_tokens =
+                                    total_output_tokens.saturating_add(completion_tokens);
                                 None // Accumulate — emit on RunDone
                             }
                             _ => None, // Ignore other events for now
@@ -817,10 +823,7 @@ impl RunManager {
 
                         if let Some(evt) = uar_event {
                             // Derive a memory mutation event before consuming the ToolEnd.
-                            let mutation_evt = memory_mutation_from_tool_end(
-                                &evt,
-                                &execute_run_id,
-                            );
+                            let mutation_evt = memory_mutation_from_tool_end(&evt, &execute_run_id);
                             emitter.emit(evt).await;
                             if let Some(m) = mutation_evt {
                                 emitter.emit(m).await;
