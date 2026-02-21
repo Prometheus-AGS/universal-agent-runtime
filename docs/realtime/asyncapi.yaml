@@ -1,0 +1,638 @@
+asyncapi: 3.0.0
+
+info:
+  title: UAR Realtime API
+  version: 1.0.0
+  description: |
+    The Universal Agent Runtime (UAR) Realtime API provides a standardized,
+    generic, bi-directional channel-based messaging protocol over WebSocket.
+
+    It is modeled after Phoenix Channels and Supabase Realtime, offering:
+    - Topic-routed channels (many channels over one connection)
+    - Three message types: Broadcast, Presence, and Data Events
+    - Presence tracking (who is subscribed to a channel)
+    - Plugin-extendable channel namespace
+
+    **Protocol version:** `uar.realtime.v1`
+    **Wire format:** JSON (v1), MessagePack (v2, planned)
+  license:
+    name: Prometheus Commercial License
+    url: https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/LICENSE-COMMERCIAL.md
+  contact:
+    name: Prometheus AGS
+    url: https://github.com/Prometheus-AGS/universal-agent-runtime
+
+defaultContentType: application/json
+
+servers:
+  production:
+    host: "{host}"
+    protocol: wss
+    description: |
+      Production UAR instance. Replace `{host}` with your deployed hostname.
+    variables:
+      host:
+        default: api.example.com
+        description: Hostname of the UAR deployment
+    security:
+      - $ref: "#/components/securitySchemes/bearerAuth"
+  development:
+    host: localhost:8080
+    protocol: ws
+    description: Local development server
+    security:
+      - $ref: "#/components/securitySchemes/bearerAuth"
+
+channels:
+  # ──────────────────────────────────────────────────────────
+  # Lifecycle / Protocol Channel
+  # ──────────────────────────────────────────────────────────
+  heartbeat:
+    address: phoenix
+    description: Reserved channel for protocol-level heartbeat (keep-alive).
+    messages:
+      heartbeatMessage:
+        $ref: "#/components/messages/HeartbeatMessage"
+      heartbeatReply:
+        $ref: "#/components/messages/HeartbeatReply"
+
+  # ──────────────────────────────────────────────────────────
+  # System Channels
+  # ──────────────────────────────────────────────────────────
+  systemNotifications:
+    address: system:notifications
+    description: |
+      Global system-wide notification broadcast. All authenticated users may
+      subscribe. Server-push only.
+    messages:
+      joinRequest:
+        $ref: "#/components/messages/JoinRequest"
+      joinReply:
+        $ref: "#/components/messages/JoinReply"
+      systemNotification:
+        $ref: "#/components/messages/SystemNotification"
+      maintenanceWarning:
+        $ref: "#/components/messages/MaintenanceWarning"
+
+  # ──────────────────────────────────────────────────────────
+  # Agent Run Channels
+  # ──────────────────────────────────────────────────────────
+  agentRun:
+    address: "agent:run:{run_id}"
+    description: |
+      Per-run channel for tracking a single agent execution in real time.
+      Subscribe to receive token streaming, tool calls, and run lifecycle events.
+    parameters:
+      run_id:
+        description: Unique identifier for the agent run (UUID)
+    messages:
+      joinRequest:
+        $ref: "#/components/messages/JoinRequest"
+      joinReply:
+        $ref: "#/components/messages/JoinReply"
+      tokenDelta:
+        $ref: "#/components/messages/AgentTokenDelta"
+      tokenComplete:
+        $ref: "#/components/messages/AgentTokenComplete"
+      runStarted:
+        $ref: "#/components/messages/AgentRunStarted"
+      runCompleted:
+        $ref: "#/components/messages/AgentRunCompleted"
+      runFailed:
+        $ref: "#/components/messages/AgentRunFailed"
+      toolCalled:
+        $ref: "#/components/messages/AgentToolCalled"
+      toolResult:
+        $ref: "#/components/messages/AgentToolResult"
+      toolError:
+        $ref: "#/components/messages/AgentToolError"
+
+  # ──────────────────────────────────────────────────────────
+  # Session Channels
+  # ──────────────────────────────────────────────────────────
+  session:
+    address: "session:{session_id}"
+    description: |
+      Per-session channel tracking conversation-level events.
+    parameters:
+      session_id:
+        description: Unique session identifier
+    messages:
+      joinRequest:
+        $ref: "#/components/messages/JoinRequest"
+      joinReply:
+        $ref: "#/components/messages/JoinReply"
+      sessionCreated:
+        $ref: "#/components/messages/SessionCreated"
+      sessionUpdated:
+        $ref: "#/components/messages/SessionUpdated"
+      sessionDeleted:
+        $ref: "#/components/messages/SessionDeleted"
+      messageCreated:
+        $ref: "#/components/messages/SessionMessageCreated"
+      attachmentUploaded:
+        $ref: "#/components/messages/SessionAttachmentUploaded"
+
+  # ──────────────────────────────────────────────────────────
+  # Collaborative Session Channels
+  # ──────────────────────────────────────────────────────────
+  sessionCollab:
+    address: "session:{session_id}:collab"
+    description: |
+      Presence-enabled channel for multi-user collaborative sessions.
+      Clients can track who else is present and exchange ephemeral broadcast
+      messages (cursor positions, typing indicators, annotations).
+    parameters:
+      session_id:
+        description: Unique session identifier
+    messages:
+      joinRequest:
+        $ref: "#/components/messages/JoinRequest"
+      joinReply:
+        $ref: "#/components/messages/JoinReply"
+      presenceSync:
+        $ref: "#/components/messages/PresenceSync"
+      presenceJoined:
+        $ref: "#/components/messages/PresenceJoined"
+      presenceLeft:
+        $ref: "#/components/messages/PresenceLeft"
+      broadcast:
+        $ref: "#/components/messages/Broadcast"
+
+  # ──────────────────────────────────────────────────────────
+  # Plugin Channels (generic pattern)
+  # ──────────────────────────────────────────────────────────
+  plugin:
+    address: "plugin:{plugin_name}/{scope}"
+    description: |
+      Plugin-defined channels. Namespace is isolated per plugin.
+      Plugin must declare channels in its manifest.
+    parameters:
+      plugin_name:
+        description: Plugin identifier slug
+      scope:
+        description: Plugin-defined scope (may contain additional colons)
+
+operations:
+  # Client joins a channel
+  joinChannel:
+    action: send
+    channel:
+      $ref: "#/channels/agentRun"
+    summary: Subscribe to a topic channel
+    description: |
+      Client sends `uar_join` to subscribe to a channel. Server replies with
+      `uar_reply` containing status "ok" or "error".
+    messages:
+      - $ref: "#/channels/agentRun/messages/joinRequest"
+
+  # Server pushes events to client
+  receiveAgentEvents:
+    action: receive
+    channel:
+      $ref: "#/channels/agentRun"
+    summary: Receive agent run events
+    messages:
+      - $ref: "#/channels/agentRun/messages/tokenDelta"
+      - $ref: "#/channels/agentRun/messages/runCompleted"
+      - $ref: "#/channels/agentRun/messages/toolCalled"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Pass a JWT as the `Authorization: Bearer <token>` header during the
+        WebSocket handshake, or via the `?token=<token>` query parameter.
+
+  messages:
+    # ── Lifecycle ──────────────────────────────────────────
+    JoinRequest:
+      name: JoinRequest
+      title: Join Channel Request
+      summary: Client subscribes to a topic
+      payload:
+        $ref: "#/components/schemas/Envelope"
+      examples:
+        - name: joinAgentRun
+          payload:
+            v: 1
+            join_ref: "1"
+            ref: "1"
+            topic: "agent:run:abc123"
+            event: "uar_join"
+            payload:
+              config:
+                presence: false
+                filter: ["agent:token:delta", "agent:run:*"]
+
+    JoinReply:
+      name: JoinReply
+      title: Join Channel Reply
+      summary: Server confirms or rejects the join
+      payload:
+        $ref: "#/components/schemas/Envelope"
+      examples:
+        - name: joinSuccess
+          payload:
+            v: 1
+            join_ref: "1"
+            ref: "1"
+            topic: "agent:run:abc123"
+            event: "uar_reply"
+            payload:
+              status: "ok"
+              response:
+                channel_id: "ch_7f3a9b"
+                presence_state: {}
+
+    HeartbeatMessage:
+      name: HeartbeatMessage
+      summary: Client keep-alive ping
+      payload:
+        $ref: "#/components/schemas/Envelope"
+      examples:
+        - name: heartbeat
+          payload:
+            v: 1
+            join_ref: null
+            ref: "hb-1"
+            topic: "phoenix"
+            event: "uar_heartbeat"
+            payload: {}
+
+    HeartbeatReply:
+      name: HeartbeatReply
+      summary: Server pong for heartbeat
+      payload:
+        $ref: "#/components/schemas/Envelope"
+
+    # ── Agent Run Events ───────────────────────────────────
+    AgentRunStarted:
+      name: AgentRunStarted
+      summary: An agent run has started
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "agent:run:started"
+              payload:
+                $ref: "#/components/schemas/AgentRunStartedPayload"
+
+    AgentRunCompleted:
+      name: AgentRunCompleted
+      summary: An agent run completed successfully
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "agent:run:completed"
+              payload:
+                $ref: "#/components/schemas/AgentRunCompletedPayload"
+
+    AgentRunFailed:
+      name: AgentRunFailed
+      summary: An agent run failed
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "agent:run:failed"
+              payload:
+                $ref: "#/components/schemas/AgentRunFailedPayload"
+
+    AgentTokenDelta:
+      name: AgentTokenDelta
+      summary: A token chunk from the LLM stream
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "agent:token:delta"
+              payload:
+                $ref: "#/components/schemas/AgentTokenDeltaPayload"
+
+    AgentTokenComplete:
+      name: AgentTokenComplete
+      summary: LLM stream completed; full text available
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "agent:token:complete"
+
+    AgentToolCalled:
+      name: AgentToolCalled
+      summary: Agent invoked a tool
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "agent:tool:called"
+              payload:
+                $ref: "#/components/schemas/AgentToolCalledPayload"
+
+    AgentToolResult:
+      name: AgentToolResult
+      summary: Tool returned a result
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "agent:tool:result"
+
+    AgentToolError:
+      name: AgentToolError
+      summary: Tool returned an error
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "agent:tool:error"
+
+    # ── Session Events ─────────────────────────────────────
+    SessionCreated:
+      name: SessionCreated
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "session:created"
+
+    SessionUpdated:
+      name: SessionUpdated
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "session:updated"
+
+    SessionDeleted:
+      name: SessionDeleted
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "session:deleted"
+
+    SessionMessageCreated:
+      name: SessionMessageCreated
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "session:message:created"
+
+    SessionAttachmentUploaded:
+      name: SessionAttachmentUploaded
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "session:attachment:uploaded"
+
+    # ── System Events ──────────────────────────────────────
+    SystemNotification:
+      name: SystemNotification
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "system:notification"
+              payload:
+                $ref: "#/components/schemas/SystemNotificationPayload"
+
+    MaintenanceWarning:
+      name: MaintenanceWarning
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "system:maintenance:warning"
+
+    # ── Presence Events ────────────────────────────────────
+    PresenceSync:
+      name: PresenceSync
+      summary: Full presence state after join
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "user:presence:sync"
+
+    PresenceJoined:
+      name: PresenceJoined
+      summary: A user joined the channel
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "user:presence:joined"
+
+    PresenceLeft:
+      name: PresenceLeft
+      summary: A user left the channel
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "user:presence:left"
+
+    # ── Broadcast ──────────────────────────────────────────
+    Broadcast:
+      name: Broadcast
+      summary: Ephemeral client-to-client broadcast message
+      payload:
+        allOf:
+          - $ref: "#/components/schemas/Envelope"
+          - properties:
+              event:
+                const: "broadcast"
+              payload:
+                $ref: "#/components/schemas/BroadcastPayload"
+
+  schemas:
+    # ── Core Envelope ──────────────────────────────────────
+    Envelope:
+      type: object
+      required: [v, join_ref, ref, topic, event, payload]
+      properties:
+        v:
+          type: integer
+          const: 1
+          description: Protocol version
+        join_ref:
+          type: [string, "null"]
+          description: Client join reference; null for server-originated pushes
+        ref:
+          type: [string, "null"]
+          description: Client message reference for reply correlation; null for server broadcasts
+        topic:
+          type: string
+          description: Channel topic identifier (colon-delimited hierarchy)
+          examples:
+            - "agent:run:abc123"
+            - "session:sess_xyz"
+            - "system:notifications"
+        event:
+          type: string
+          description: Event name
+        payload:
+          type: object
+          description: Event-specific data
+
+    # ── Agent Payloads ─────────────────────────────────────
+    AgentRunStartedPayload:
+      type: object
+      required: [run_id, agent_id, session_id, started_at]
+      properties:
+        run_id:
+          type: string
+        agent_id:
+          type: string
+        session_id:
+          type: string
+        model:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+
+    AgentRunCompletedPayload:
+      type: object
+      required: [run_id, finish_reason]
+      properties:
+        run_id:
+          type: string
+        finish_reason:
+          type: string
+          enum: [stop, length, tool_calls, content_filter]
+        total_tokens:
+          type: integer
+        duration_ms:
+          type: integer
+
+    AgentRunFailedPayload:
+      type: object
+      required: [run_id, error]
+      properties:
+        run_id:
+          type: string
+        error:
+          type: string
+        code:
+          type: string
+
+    AgentTokenDeltaPayload:
+      type: object
+      required: [delta, token_index]
+      properties:
+        delta:
+          type: string
+          description: The text chunk to append
+        token_index:
+          type: integer
+        position:
+          type: integer
+
+    AgentToolCalledPayload:
+      type: object
+      required: [tool_name, tool_call_id, called_at]
+      properties:
+        tool_name:
+          type: string
+        tool_call_id:
+          type: string
+        arguments:
+          type: object
+        called_at:
+          type: string
+          format: date-time
+
+    # ── Presence Payload ───────────────────────────────────
+    PresenceMeta:
+      type: object
+      required: [online_at]
+      properties:
+        phx_ref:
+          type: string
+        online_at:
+          type: string
+          format: date-time
+        display_name:
+          type: string
+        client_type:
+          type: string
+          enum: [browser, desktop, mobile, api, plugin]
+
+    # ── Broadcast Payload ──────────────────────────────────
+    BroadcastPayload:
+      type: object
+      required: [event, payload]
+      properties:
+        event:
+          type: string
+          description: Application-defined event name within the broadcast
+        payload:
+          type: object
+
+    # ── System Payloads ────────────────────────────────────
+    SystemNotificationPayload:
+      type: object
+      required: [level, title, body]
+      properties:
+        level:
+          type: string
+          enum: [info, warning, error, critical]
+        title:
+          type: string
+        body:
+          type: string
+        action:
+          type: object
+          properties:
+            label:
+              type: string
+            url:
+              type: string
+              format: uri
+
+    # ── Error Payload ──────────────────────────────────────
+    ErrorPayload:
+      type: object
+      required: [reason, code]
+      properties:
+        reason:
+          type: string
+        code:
+          type: integer
+          description: |
+            4000 = invalid_message
+            4001 = unauthorized
+            4002 = topic_not_found
+            4003 = rate_limited
+            4004 = channel_full
+            4005 = protocol_version_unsupported
+            4006 = payload_too_large
+            4007 = buffer_warning
+            4008 = messages_dropped
