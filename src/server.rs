@@ -621,6 +621,76 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
                 },
             ))
         })
+        // ── Short-path aliases (frontend uses /api/X without the /uar/ prefix) ──────────
+        // Providers: GET/POST /api/providers, GET/PUT/DELETE /api/providers/{id}, etc.
+        .nest(
+            "/api/providers",
+            uar::api::providers::build_router()
+                .with_state(Arc::clone(&state.provider_registry)),
+        )
+        // Skills: GET /api/skills, GET/DELETE /api/skills/{id}, etc.
+        .nest(
+            "/api/skills",
+            uar::api::skills::build_router().with_state(Arc::clone(&state.skill_service)),
+        )
+        // Agent–skill bindings: GET/PUT /api/agents/{id}/skills, etc.
+        .nest(
+            "/api/agents",
+            uar::api::skills::build_agent_skills_router()
+                .with_state(Arc::clone(&state.skill_service)),
+        )
+        // Auth (API key management): GET/POST /api/auth/keys, DELETE /api/auth/keys/{id}
+        .nest(
+            "/api/auth",
+            uar::api::auth::build_router().with_state(Arc::new(uar::api::auth::AuthApiState {
+                api_key_service: Arc::clone(&api_key_service),
+            })),
+        )
+        // Compiler: GET/POST /api/compiler/sessions, etc.
+        .nest(
+            "/api/compiler",
+            uar::api::compiler::build_router().with_state(Arc::new(
+                uar::api::compiler::CompilerApiState {
+                    compiler_service: Arc::clone(&compiler_service),
+                },
+            )),
+        )
+        // Knowledge bases: GET/POST /api/knowledge, etc.
+        .nest("/api/knowledge", {
+            let ingestion_pool = if let Some(p) = &persistence {
+                if let Some(ingest) = &state.ingest_service {
+                    match IngestionWorkerPool::new(0, 100, Arc::clone(ingest), Arc::clone(p)) {
+                        Ok(pool) => Some(Arc::new(pool)),
+                        Err(_) => None,
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            uar::api::knowledge::build_router().with_state(Arc::new(
+                uar::api::knowledge::KnowledgeApiState {
+                    persistence: persistence
+                        .clone()
+                        .expect("Persistence required for KB API"),
+                    vector_matcher: Arc::clone(&vector_matcher),
+                    ingestion_pool,
+                },
+            ))
+        })
+        // Discovery catalog endpoints: GET /api/agents (list), GET /api/tools
+        // The agents router above handles /api/agents/{id}/skills CRUD;
+        // the discovery handlers provide the flat catalog list.
+        .route(
+            "/api/agents",
+            get(uar::api::discovery::list_agents),
+        )
+        .route(
+            "/api/tools",
+            get(uar::api::discovery::list_tools),
+        )
+        // ────────────────────────────────────────────────────────────────────────────
         .route("/api/ingest", post(uar::api::ingest::ingest_handler))
         .route(
             "/api/memory",

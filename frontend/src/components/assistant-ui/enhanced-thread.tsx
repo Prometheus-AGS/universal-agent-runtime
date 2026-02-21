@@ -21,6 +21,7 @@ import {
   ChevronRightIcon,
   ClipboardIcon,
   CopyIcon,
+  Loader2Icon,
   PaperclipIcon,
   PencilIcon,
   RefreshCwIcon,
@@ -31,7 +32,11 @@ import {
 import { type FC, useCallback, useRef, useState } from "react";
 import { EnhancedMarkdownText } from "@/components/assistant-ui/enhanced-markdown-text";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 import { ContextUpdateBlock } from "@/features/chat/components/context-update-block";
 import { SkillActivationBlock } from "@/features/chat/components/skill-activation-block";
 import { ToolCallBlockWrapper } from "@/features/chat/components/tool-call-block";
@@ -63,6 +68,8 @@ export const EnhancedThread: FC = () => (
   </ThreadPrimitive.Root>
 );
 
+// ─── Welcome Screen ───────────────────────────────────────────────────────────
+
 const UarWelcome: FC = () => (
   <div className="mx-auto my-auto flex w-full max-w-(--thread-max-width) grow flex-col">
     <div className="flex w-full grow flex-col items-center justify-center">
@@ -83,6 +90,8 @@ const UarWelcome: FC = () => (
   </div>
 );
 
+// ─── Scroll to bottom ─────────────────────────────────────────────────────────
+
 const ThreadScrollToBottom: FC = () => (
   <ThreadPrimitive.ScrollToBottom asChild>
     <TooltipIconButton
@@ -95,6 +104,8 @@ const ThreadScrollToBottom: FC = () => (
   </ThreadPrimitive.ScrollToBottom>
 );
 
+// ─── Composer ────────────────────────────────────────────────────────────────
+
 const EnhancedComposer: FC = () => {
   const attachmentManager = useAttachmentContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -105,7 +116,6 @@ const EnhancedComposer: FC = () => {
       if (e.target.files && attachmentManager) {
         attachmentManager.add(e.target.files);
       }
-      // Reset so same file can be re-attached if removed
       if (e.target) e.target.value = "";
     },
     [attachmentManager],
@@ -120,6 +130,7 @@ const EnhancedComposer: FC = () => {
         multiple
         accept="image/*,.pdf,.doc,.docx,.txt,.md,.json,.csv"
         className="sr-only"
+        title="Attach files"
         onChange={handleFileChange}
         aria-hidden
       />
@@ -133,7 +144,7 @@ const EnhancedComposer: FC = () => {
           </div>
         </AuiIf>
 
-        {/* Attachment preview strip – shown above textarea when files are pending */}
+        {/* Attachment preview strip */}
         {attachmentManager && attachmentManager.pending.length > 0 && (
           <AttachmentPreviewStrip
             attachments={attachmentManager.pending}
@@ -185,15 +196,15 @@ const EnhancedComposer: FC = () => {
             <BrainIcon className="size-4" />
           </TooltipIconButton>
 
-          {/* Thinking indicator — shown while running */}
+          {/* Running indicator */}
           <AuiIf condition={(s) => s.thread.isRunning}>
-            <span className="flex items-center gap-1.5 ml-auto font-mono text-[11px] text-muted-foreground/70">
-              <span className="inline-flex gap-0.5 items-center">
+            <span className="ml-auto flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/70">
+              <span className="inline-flex items-center gap-0.5">
                 <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
                 <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.2s_infinite]" />
                 <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.4s_infinite]" />
               </span>
-              Agent is thinking…
+              Generating…
             </span>
           </AuiIf>
 
@@ -220,23 +231,31 @@ const EnhancedComposer: FC = () => {
   );
 };
 
+// ─── Avatars ──────────────────────────────────────────────────────────────────
+
 const UserAvatar: FC = () => (
   <div className="flex flex-col items-center gap-1 pt-0.5">
-    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-zinc-200 ring-1 ring-zinc-600">
-      <UserIcon size={14} />
-    </div>
+    <Avatar className="size-8 ring-1 ring-zinc-600">
+      <AvatarFallback className="bg-zinc-700 text-zinc-200">
+        <UserIcon size={14} />
+      </AvatarFallback>
+    </Avatar>
     <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60">You</span>
   </div>
 );
 
 const AgentAvatar: FC = () => (
   <div className="flex flex-col items-center gap-1 pt-0.5">
-    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
-      <SparklesIcon size={14} />
-    </div>
+    <Avatar className="size-8 ring-1 ring-primary/30">
+      <AvatarFallback className="bg-primary/15 text-primary">
+        <SparklesIcon size={14} />
+      </AvatarFallback>
+    </Avatar>
     <span className="font-mono text-[9px] uppercase tracking-wider text-primary/70">Agent</span>
   </div>
 );
+
+// ─── User Message ─────────────────────────────────────────────────────────────
 
 const UserMessage: FC = () => (
   <MessagePrimitive.Root className="fade-in slide-in-from-bottom-1 mx-auto flex w-full max-w-(--thread-max-width) animate-in flex-col gap-0.5 px-4 py-2 duration-150" data-role="user">
@@ -261,14 +280,40 @@ const UserActionBar: FC = () => (
   </ActionBarPrimitive.Root>
 );
 
+// ─── Assistant Message ────────────────────────────────────────────────────────
+
+/** Shows a spinner when the assistant message is still empty (pre-first-token). */
+const AssistantMessageBody: FC = () => {
+  const isEmptyAndRunning = useMessage((m: ThreadMessageLike) => {
+    if (m.status?.type !== "running") return false;
+    const parts = (m as unknown as { content?: unknown[] }).content ?? [];
+    return parts.length === 0 || parts.every(
+      (p) => typeof p === "object" && p !== null && (p as { type?: string; text?: string }).type === "text" && !(p as { text?: string }).text,
+    );
+  });
+
+  return (
+    <>
+      {isEmptyAndRunning ? (
+        <div className="flex items-center gap-2.5 py-1 text-muted-foreground/70">
+          <Loader2Icon size={14} className="animate-spin text-primary" />
+          <span className="font-mono text-[11px]">Agent is thinking…</span>
+        </div>
+      ) : (
+        <MessagePrimitive.Parts components={{ Text: EnhancedMarkdownText, Reasoning: ReasoningPart, tools: { Fallback: ToolCallPart } }} />
+      )}
+      <MessageError />
+    </>
+  );
+};
+
 const AssistantMessage: FC = () => (
   <MessagePrimitive.Root className="fade-in slide-in-from-bottom-1 mx-auto flex w-full max-w-(--thread-max-width) animate-in flex-col gap-0.5 px-4 py-2 duration-150" data-role="assistant">
     <div className="flex w-full items-start gap-3">
       <AgentAvatar />
       <div className="min-w-0 flex-1">
         <div className="wrap-break-word rounded-2xl rounded-tl-sm bg-muted/60 px-4 py-3 font-body text-sm text-foreground leading-relaxed shadow-sm">
-          <MessagePrimitive.Parts components={{ Text: EnhancedMarkdownText, Reasoning: ReasoningPart, tools: { Fallback: ToolCallPart } }} />
-          <MessageError />
+          <AssistantMessageBody />
         </div>
       </div>
     </div>
@@ -276,32 +321,56 @@ const AssistantMessage: FC = () => (
   </MessagePrimitive.Root>
 );
 
+// ─── Reasoning Part ───────────────────────────────────────────────────────────
+
 const ReasoningPart: FC = () => {
   const { text, status } = useMessagePartText();
   const isStreaming = status.type === "running";
   const [isOpen, setIsOpen] = useState(isStreaming);
+
   return (
-    <div className="my-2 overflow-hidden rounded-lg border border-border/50 bg-muted/20">
-      <Button variant="ghost" onClick={() => setIsOpen((o) => !o)} className="flex h-auto w-full items-center justify-start gap-2 rounded-none px-3 py-2 hover:bg-muted/30" aria-expanded={isOpen}>
-        <BrainIcon size={13} className="shrink-0 text-muted-foreground" />
-        <span className="flex-1 font-mono text-[11px] text-muted-foreground">
-          {isStreaming ? (
-            <span className="flex items-center gap-2">{"// Reasoning"}<span className="inline-flex gap-0.5"><span className="h-1 w-1 animate-pulse rounded-full bg-primary/60" /><span className="h-1 w-1 animate-pulse rounded-full bg-primary/60 [animation-delay:0.2s]" /><span className="h-1 w-1 animate-pulse rounded-full bg-primary/60 [animation-delay:0.4s]" /></span></span>
-          ) : "// Reasoning"}
-        </span>
-        <ChevronDownIcon size={13} className={cn("shrink-0 text-muted-foreground transition-transform duration-150", isOpen && "rotate-180")} />
-      </Button>
-      {isOpen && (
-        <div className="border-t border-border/30 px-3 pb-3 pt-2">
-          <p className="whitespace-pre-wrap font-body text-[13px] leading-relaxed text-muted-foreground">
-            {text}
-            {isStreaming && <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-[pulse_1s_step-end_infinite] bg-primary" />}
-          </p>
-        </div>
-      )}
-    </div>
+    <Card className="my-2 overflow-hidden rounded-lg border-border/50 bg-muted/20 shadow-none">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            className="flex h-auto w-full items-center justify-start gap-2 rounded-none px-3 py-2 hover:bg-muted/30"
+            aria-expanded={isOpen}
+          >
+            <BrainIcon size={13} className="shrink-0 text-muted-foreground" />
+            <span className="flex-1 font-mono text-[11px] text-muted-foreground">
+              {isStreaming ? (
+                <span className="flex items-center gap-2">
+                  {"// Reasoning"}
+                  <span className="inline-flex gap-0.5">
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60" />
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60 [animation-delay:0.2s]" />
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60 [animation-delay:0.4s]" />
+                  </span>
+                </span>
+              ) : "// Reasoning"}
+            </span>
+            <ChevronDownIcon
+              size={13}
+              className={cn("shrink-0 text-muted-foreground transition-transform duration-150", isOpen && "rotate-180")}
+            />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <Separator className="opacity-30" />
+          <CardContent className="px-3 pb-3 pt-2">
+            <p className="whitespace-pre-wrap font-body text-[13px] leading-relaxed text-muted-foreground">
+              {text}
+              {isStreaming && <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-[pulse_1s_step-end_infinite] bg-primary" />}
+            </p>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   );
 };
+
+// ─── Tool Call Part ───────────────────────────────────────────────────────────
 
 const ToolCallPart: FC<ToolCallMessagePartProps> = ({ toolName, args, result, status }) => {
   if (toolName === "__skill__") {
@@ -315,17 +384,15 @@ const ToolCallPart: FC<ToolCallMessagePartProps> = ({ toolName, args, result, st
   return <ToolCallBlockWrapper toolName={toolName} args={args as Record<string, unknown>} result={result} status={status} />;
 };
 
+// ─── Message Error ────────────────────────────────────────────────────────────
+
 const MessageError: FC = () => {
   const [copied, setCopied] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
-  // Read error text from the message status — assistant-ui marks failed messages as
-  // status: { type: "incomplete", reason: "error" }; the reason field is what we populated
-  // via richMessageToThreadMessageLike which sets reason: "error". The actual text lives
-  // in the message's metadata.custom.errorText which we set during conversion.
   const errorText = useMessage((m: ThreadMessageLike) => {
     if (m.status?.type !== "incomplete") return null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // biome-ignore lint/suspicious/noExplicitAny: assistant-ui message metadata is untyped
     return (m as any).metadata?.custom?.errorText as string | undefined ?? null;
   });
 
@@ -340,41 +407,50 @@ const MessageError: FC = () => {
   if (!errorText) return null;
 
   return (
-    <div className="mt-3 w-full overflow-hidden rounded-xl border border-destructive/60 bg-destructive/5 shadow-sm">
-      {/* Header */}
-      <div className="flex items-center gap-2 border-b border-destructive/30 bg-destructive/10 px-3 py-2">
-        <AlertTriangleIcon size={14} className="shrink-0 text-destructive" />
-        <span className="flex-1 font-mono text-[11px] font-semibold uppercase tracking-widest text-destructive">
-          Agent Error
-        </span>
-        <button
-          onClick={() => setCollapsed((c) => !c)}
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-destructive/70 hover:bg-destructive/10 transition-colors"
-          aria-label={collapsed ? "Expand error" : "Collapse error"}
-        >
-          {collapsed ? "expand" : "collapse"}
-          <ChevronDownIcon size={11} className={cn("transition-transform", !collapsed && "rotate-180")} />
-        </button>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-destructive/70 hover:bg-destructive/10 transition-colors"
-          aria-label="Copy error details"
-        >
-          {copied ? <CheckIcon size={11} /> : <ClipboardIcon size={11} />}
-          {copied ? "copied" : "copy"}
-        </button>
-      </div>
-      {/* Body — full error text, no clipping */}
-      {!collapsed && (
-        <div className="px-3 py-3">
-          <pre className="whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-destructive/90">
-            {errorText}
-          </pre>
+    <Card className="mt-3 overflow-hidden rounded-xl border-destructive/60 bg-destructive/5 shadow-sm">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        {/* Error header */}
+        <div className="flex items-center gap-2 border-b border-destructive/30 bg-destructive/10 px-3 py-2">
+          <AlertTriangleIcon size={14} className="shrink-0 text-destructive" />
+          <span className="flex-1 font-mono text-[11px] font-semibold uppercase tracking-widest text-destructive">
+            Agent Error
+          </span>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex h-auto items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
+              aria-label={isOpen ? "Collapse error" : "Expand error"}
+            >
+              {isOpen ? "collapse" : "expand"}
+              <ChevronDownIcon size={11} className={cn("transition-transform", isOpen && "rotate-180")} />
+            </Button>
+          </CollapsibleTrigger>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCopy}
+            className="flex h-auto items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
+            aria-label="Copy error details"
+          >
+            {copied ? <CheckIcon size={11} /> : <ClipboardIcon size={11} />}
+            {copied ? "copied" : "copy"}
+          </Button>
         </div>
-      )}
-    </div>
+        {/* Error body */}
+        <CollapsibleContent>
+          <CardContent className="px-3 py-3">
+            <pre className="whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-destructive/90">
+              {errorText}
+            </pre>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   );
 };
+
+// ─── Assistant Action Bar ─────────────────────────────────────────────────────
 
 const AssistantActionBar: FC = () => (
   <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" autohideFloat="single-branch" className="col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground">
@@ -390,17 +466,21 @@ const AssistantActionBar: FC = () => (
   </ActionBarPrimitive.Root>
 );
 
+// ─── Edit Composer ────────────────────────────────────────────────────────────
+
 const EditComposer: FC = () => (
   <MessagePrimitive.Root className="mx-auto flex w-full max-w-(--thread-max-width) flex-col px-2 py-3">
     <ComposerPrimitive.Root className="ml-auto flex w-full max-w-[85%] flex-col rounded-2xl bg-muted">
       <ComposerPrimitive.Input className="min-h-14 w-full resize-none bg-transparent p-4 font-body text-foreground text-sm outline-none" autoFocus />
-      <div className="mx-3 mb-3 flex items-center gap-2 self-end">
+      <CardFooter className="mx-3 mb-3 flex items-center gap-2 self-end p-0">
         <ComposerPrimitive.Cancel asChild><Button variant="ghost" size="sm">Cancel</Button></ComposerPrimitive.Cancel>
         <ComposerPrimitive.Send asChild><Button size="sm">Update</Button></ComposerPrimitive.Send>
-      </div>
+      </CardFooter>
     </ComposerPrimitive.Root>
   </MessagePrimitive.Root>
 );
+
+// ─── Branch Picker ────────────────────────────────────────────────────────────
 
 const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({ className, ...rest }) => (
   <BranchPickerPrimitive.Root hideWhenSingleBranch className={cn("mr-2 -ml-2 inline-flex items-center text-muted-foreground text-xs", className)} {...rest}>

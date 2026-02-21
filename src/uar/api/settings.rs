@@ -156,6 +156,22 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
             "/skill-config",
             put(|s, q, h, b| update_namespace(s, q, h, b, "skill_config")),
         )
+        .route(
+            "/mistral-ocr",
+            get(|s, q, h| list_namespace(s, q, h, "mistral_ocr")),
+        )
+        .route(
+            "/mistral-ocr",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "mistral_ocr")),
+        )
+        .route(
+            "/memory",
+            get(|s, q, h| list_namespace(s, q, h, "memory")),
+        )
+        .route(
+            "/memory",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "memory")),
+        )
 }
 
 // =============================================================================

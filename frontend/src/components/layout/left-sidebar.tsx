@@ -83,7 +83,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
                 variant="ghost"
                 onClick={() => handleSelectThread(thread)}
                 className={cn(
-                  "h-auto w-full justify-start gap-2 rounded-md px-2.5 py-2 pr-9 text-left",
+                  "h-auto w-full cursor-pointer justify-start gap-2 rounded-md px-2.5 py-2 pr-9 text-left",
                   activeThreadId === thread.id
                     ? "border-l-[3px] border-l-primary bg-accent hover:bg-accent"
                     : "hover:bg-muted/50",

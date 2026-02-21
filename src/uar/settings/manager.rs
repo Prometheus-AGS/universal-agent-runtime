@@ -1150,6 +1150,72 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
         result.push((st, skill_settings));
     }
 
+    // -------------------------------------------------------------------------
+    // memory (agent memory system)
+    // -------------------------------------------------------------------------
+    {
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Agent Memory",
+            "x-uar-ui": { "category": "AI & LLM", "icon": "brain", "order": 2, "display_mode": "form" },
+            "type": "object",
+            "properties": {
+                "enabled": { "type": "boolean", "title": "Enable Memory System",
+                    "x-control": "toggle" },
+                "auto_capture": { "type": "boolean", "title": "Auto-capture",
+                    "x-control": "toggle" },
+                "inject_context": { "type": "boolean", "title": "Inject Memory Context",
+                    "x-control": "toggle" },
+                "embedding_provider": { "type": "string", "title": "Embedding Provider",
+                    "enum": ["openai", "cohere"], "x-control": "select" },
+                "embedding_model": { "type": "string", "title": "Embedding Model",
+                    "x-control": "text" },
+                "max_context_tokens": { "type": "integer", "minimum": 0,
+                    "title": "Max Context Tokens" },
+                "vector_weight": { "type": "number", "minimum": 0.0, "maximum": 1.0,
+                    "title": "Vector Search Weight", "x-control": "slider" },
+                "bm25_weight": { "type": "number", "minimum": 0.0, "maximum": 1.0,
+                    "title": "BM25 Search Weight", "x-control": "slider" },
+                "db_path": { "type": "string", "title": "DB Path", "x-control": "text" },
+                "mcp_http_enabled": { "type": "boolean", "title": "Expose via MCP HTTP",
+                    "x-control": "toggle" },
+                "mcp_http_path": { "type": "string", "title": "MCP HTTP Path",
+                    "x-control": "text" },
+                "namespace": { "type": "string", "title": "Namespace", "x-control": "text" },
+                "database": { "type": "string", "title": "Database", "x-control": "text" },
+                "surreal_endpoint": { "type": ["string", "null"], "title": "SurrealDB Endpoint",
+                    "x-control": "url" },
+                "surreal_user": { "type": ["string", "null"], "title": "SurrealDB User",
+                    "x-control": "text" }
+            }
+        });
+        let st = make_type("Agent Memory", "memory", schema);
+        let m = &config.memory;
+        let settings = vec![
+            make_setting(&st, "memory.enabled", "Enable Memory", json!(m.enabled)),
+            make_setting(&st, "memory.auto_capture", "Auto-capture", json!(m.auto_capture)),
+            make_setting(&st, "memory.inject_context", "Inject Context", json!(m.inject_context)),
+            make_setting(&st, "memory.embedding_provider", "Embedding Provider",
+                json!(m.embedding_provider)),
+            make_setting(&st, "memory.embedding_model", "Embedding Model",
+                json!(m.embedding_model)),
+            make_setting(&st, "memory.max_context_tokens", "Max Context Tokens",
+                json!(m.max_context_tokens)),
+            make_setting(&st, "memory.vector_weight", "Vector Weight", json!(m.vector_weight)),
+            make_setting(&st, "memory.bm25_weight", "BM25 Weight", json!(m.bm25_weight)),
+            make_setting(&st, "memory.db_path", "DB Path", json!(m.db_path)),
+            make_setting(&st, "memory.mcp_http_enabled", "MCP HTTP Enabled",
+                json!(m.mcp_http_enabled)),
+            make_setting(&st, "memory.mcp_http_path", "MCP HTTP Path", json!(m.mcp_http_path)),
+            make_setting(&st, "memory.namespace", "Namespace", json!(m.namespace)),
+            make_setting(&st, "memory.database", "Database", json!(m.database)),
+            make_setting(&st, "memory.surreal_endpoint", "SurrealDB Endpoint",
+                json!(m.surreal_endpoint)),
+            make_setting(&st, "memory.surreal_user", "SurrealDB User", json!(m.surreal_user)),
+        ];
+        result.push((st, settings));
+    }
+
     result
 }
 
