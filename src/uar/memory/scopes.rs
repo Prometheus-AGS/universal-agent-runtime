@@ -15,10 +15,7 @@ use crate::uar::security::claims::UserContext;
 /// - Authenticated callers may write any scope.
 /// - If no explicit scope is provided, authenticated callers default to `User`,
 ///   anonymous callers default to `Global`.
-pub fn resolve_scope(
-    user_ctx: &UserContext,
-    explicit_scope: Option<MemoryScope>,
-) -> MemoryScope {
+pub fn resolve_scope(user_ctx: &UserContext, explicit_scope: Option<MemoryScope>) -> MemoryScope {
     let is_anonymous = user_ctx.user_id == "anonymous";
 
     match explicit_scope {
@@ -71,7 +68,7 @@ pub fn user_id_for_query(user_ctx: &UserContext) -> Option<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::uar::security::claims::{UserClaims, UserContext};
+    use crate::uar::security::claims::UserClaims;
 
     fn make_anon() -> UserContext {
         UserContext {

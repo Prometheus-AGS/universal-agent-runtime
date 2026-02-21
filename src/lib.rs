@@ -49,6 +49,7 @@ use uar::compiler::CompilerService;
 use uar::governance::engine::GovernanceEngine;
 use uar::memory::service::MemoryService;
 use uar::persistence::PersistenceLayer;
+use uar::prompt_cache::PromptCacheProvider;
 use uar::rag::ingest::IngestService;
 use uar::runtime::actor::system::ActorCollaboration;
 use uar::runtime::manager::RunManager;
@@ -100,6 +101,8 @@ pub struct AppState {
     pub compiler_service: Option<Arc<CompilerService>>,
     /// Settings manager — runtime configuration administration + plugin extension point
     pub settings_manager: Option<Arc<SettingsManager>>,
+    /// Prompt cache provider used by Anthropic-compatible API endpoints.
+    pub prompt_cache_provider: Arc<dyn PromptCacheProvider>,
     /// Wasm sandbox runtime for executing Wasm agents (feature-gated)
     #[cfg(feature = "wasm-runtime")]
     pub wasm_sandbox: Option<Arc<uar::runtime::wasm::sandbox::WasmSandbox>>,
