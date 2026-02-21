@@ -48,22 +48,24 @@ export function TopNav() {
       {/* Nav links */}
       <nav className="flex items-center gap-1" role="navigation" aria-label="Main navigation">
         {NAV_ITEMS.map(({ path, label, icon: Icon, exactMatch }) => (
-          <Link key={path} to={path}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "h-8 gap-1.5 px-3 font-ui text-xs font-medium",
-                isActive(path, exactMatch)
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              aria-current={isActive(path, exactMatch) ? "page" : undefined}
-            >
+          <Button
+            key={path}
+            asChild
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-8 gap-1.5 px-3 font-ui text-xs font-medium",
+              isActive(path, exactMatch)
+                ? "bg-accent text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            aria-current={isActive(path, exactMatch) ? "page" : undefined}
+          >
+            <Link to={path}>
               <Icon size={14} />
               {label}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         ))}
       </nav>
     </header>

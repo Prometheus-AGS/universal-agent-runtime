@@ -700,9 +700,20 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .route("/api/{*path}", any(api_route_not_found))
         .route("/v1/chat/completions", post(api_chat_completion))
         .route("/v1/messages", post(api_messages))
+        // ── SPA client-side routes ────────────────────────────────────────────
+        // These paths are handled by React Router in the browser. When a user
+        // hard-refreshes or navigates directly to one of them, the browser sends
+        // a real GET request to the server. We explicitly serve index.html so
+        // that React Router can take over and render the correct view.
+        // Without this, ServeDir's not_found_service can race with the 404 path
+        // in some middleware configurations and leak a 404 to the browser.
+        .route("/threads", get(spa_index_handler))
+        .route("/admin", get(spa_index_handler))
+        .route("/admin/{*path}", get(spa_index_handler))
+        .route("/about", get(spa_index_handler))
         // Serve the React SPA from static/.
         // ServeDir serves /assets/*, /favicon.svg, /manifest.json etc. with correct MIME types.
-        // The not_found_service fallback delivers index.html for unknown paths (client-side routing).
+        // The not_found_service fallback delivers index.html for any other unknown paths.
         .fallback_service(
             ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")),
         )
@@ -957,6 +968,25 @@ async fn legacy_sessions_route_disabled() -> Response {
         })),
     )
         .into_response()
+}
+
+/// Serves `static/index.html` for SPA client-side routes that need to survive
+/// a hard-refresh or direct-URL navigation. The file is read fresh each call so
+/// that a rolling update swaps content without a server restart.
+async fn spa_index_handler() -> Response {
+    match tokio::fs::read("static/index.html").await {
+        Ok(bytes) => (
+            StatusCode::OK,
+            [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+            bytes,
+        )
+            .into_response(),
+        Err(_) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Frontend assets not found. The server may still be starting up.",
+        )
+            .into_response(),
+    }
 }
 
 async fn api_route_not_found() -> Response {

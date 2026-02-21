@@ -1,7 +1,26 @@
-import { MessageSquare, MoreHorizontal, Plus, Search, Trash2 } from "lucide-react";
+import { MessageSquare, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { useChatMessageStore } from "@/stores/chat-message-store";
 import { useUiStore } from "@/stores/ui-store";
@@ -12,11 +31,15 @@ interface LeftSidebarProps { className?: string }
 
 export function LeftSidebar({ className }: LeftSidebarProps) {
   const [search, setSearch] = useState("");
+  const [renameThreadId, setRenameThreadId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteThreadId, setDeleteThreadId] = useState<string | null>(null);
   const setMobileSidebarOpen = useUiStore((s) => s.setMobileSidebarOpen);
 
   const threads = useThreadRegistryStore((s) => s.threads);
   const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
   const registerThread = useThreadRegistryStore((s) => s.registerThread);
+  const setTitle = useThreadRegistryStore((s) => s.setTitle);
   const setActive = useThreadRegistryStore((s) => s.setActive);
   const removeThread = useThreadRegistryStore((s) => s.removeThread);
 
@@ -24,6 +47,8 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
     .filter((t) => !t.isEphemeral)
     .filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+  const deleteThread = deleteThreadId ? threads[deleteThreadId] : null;
 
   const handleNewThread = () => {
     const id = crypto.randomUUID();
@@ -37,15 +62,29 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
     setMobileSidebarOpen(false);
   };
 
-  const handleDeleteThread = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
+  const handleConfirmDeleteThread = () => {
+    if (!deleteThreadId) return;
+
+    const id = deleteThreadId;
     removeThread(id);
     useChatMessageStore.getState().clearThread(id);
     if (activeThreadId === id) setActive(null);
+    setDeleteThreadId(null);
+  };
+
+  const handleRenameSubmit = () => {
+    if (!renameThreadId) return;
+    const nextTitle = renameValue.trim();
+    if (!nextTitle) return;
+
+    setTitle(renameThreadId, nextTitle);
+    setRenameThreadId(null);
+    setRenameValue("");
   };
 
   return (
-    <aside className={cn("flex h-full flex-col bg-card", className)}>
+    <>
+      <aside className={cn("flex h-full flex-col bg-card", className)}>
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-3 py-3">
         <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">Threads</span>
@@ -98,13 +137,29 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 hidden size-6 -translate-y-1/2 text-muted-foreground hover:text-foreground group-hover:flex" aria-label={`Actions for ${thread.title}`}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 z-10 flex size-6 -translate-y-1/2 opacity-0 pointer-events-none text-muted-foreground transition-opacity hover:text-foreground group-hover:opacity-100 group-hover:pointer-events-auto data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto"
+                    aria-label={`Actions for ${thread.title}`}
+                  >
                     <MoreHorizontal size={14} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => void handleDeleteThread(e, thread.id)}>
-                    <Trash2 size={14} />Delete thread
+                <DropdownMenuContent align="end" sideOffset={6}>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setRenameThreadId(thread.id);
+                      setRenameValue(thread.title);
+                    }}
+                  >
+                    <Pencil size={14} />Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={() => setDeleteThreadId(thread.id)}
+                  >
+                    <Trash2 size={14} />Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -112,6 +167,73 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
           ))
         )}
       </div>
-    </aside>
+      </aside>
+
+      <Dialog
+        open={renameThreadId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameThreadId(null);
+            setRenameValue("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename thread</DialogTitle>
+            <DialogDescription>Enter a new name for this thread.</DialogDescription>
+          </DialogHeader>
+          <Input
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleRenameSubmit();
+              }
+            }}
+            placeholder="Thread name"
+            autoFocus
+            aria-label="Thread name"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => {
+              setRenameThreadId(null);
+              setRenameValue("");
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleRenameSubmit} disabled={!renameValue.trim()}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={deleteThreadId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteThreadId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete thread?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteThread ? `This will permanently delete "${deleteThread.title}".` : "This action cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteThread}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
