@@ -46,14 +46,31 @@ resource "kubernetes_deployment" "uar" {
       }
 
       spec {
-        # Give the database time to become ready before starting the app.
+        # Wait for all backing services before starting the app.
         init_container {
           name  = "wait-for-postgres"
           image = "busybox:1.36"
-
           command = [
             "sh", "-c",
             "until nc -z postgres-svc 5432; do echo 'waiting for postgres...'; sleep 2; done",
+          ]
+        }
+
+        init_container {
+          name  = "wait-for-surreal"
+          image = "busybox:1.36"
+          command = [
+            "sh", "-c",
+            "until nc -z surreal-svc 8000; do echo 'waiting for surreal...'; sleep 2; done",
+          ]
+        }
+
+        init_container {
+          name  = "wait-for-redis"
+          image = "busybox:1.36"
+          command = [
+            "sh", "-c",
+            "until nc -z redis-svc 6379; do echo 'waiting for redis...'; sleep 2; done",
           ]
         }
 

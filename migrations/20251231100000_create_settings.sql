@@ -1,24 +1,13 @@
--- Settings Types Table
-CREATE TABLE IF NOT EXISTS settings_types (
-    id UUID PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
-    key TEXT NOT NULL UNIQUE,
-    description TEXT,
-    display_mode TEXT NOT NULL DEFAULT 'form',
-    schema JSONB,
-    icon_url TEXT
-);
-
--- Settings Table
-CREATE TABLE IF NOT EXISTS settings (
-    id UUID PRIMARY KEY,
-    settings_type_id UUID NOT NULL REFERENCES settings_types(id),
-    name TEXT NOT NULL,
-    key TEXT NOT NULL UNIQUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ,
-    data JSONB NOT NULL
-);
-
--- Index for querying settings by key
-CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key);
+-- SUPERSEDED: This migration is intentionally a no-op.
+--
+-- The canonical settings schema (settings_types + settings tables with
+-- parent_id, created_at, updated_at, triggers, and all indexes) is defined
+-- in migration 0010_settings_tables.sql, which runs before this file
+-- lexicographically and uses CREATE TABLE IF NOT EXISTS.
+--
+-- This file originally defined a conflicting schema (missing parent_id,
+-- missing created_at/updated_at on settings_types, extra columns
+-- description/display_mode/icon_url that the Rust code does not use).
+-- It has been emptied to prevent any future confusion or schema drift.
+--
+-- DO NOT add DDL here. All schema changes go through numbered migrations.
