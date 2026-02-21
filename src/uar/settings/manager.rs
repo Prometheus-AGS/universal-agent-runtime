@@ -210,13 +210,24 @@ impl SettingsManager {
         settings_type: SettingsType,
         defaults: Vec<Settings>,
     ) -> Result<()> {
-        self.persistence
+        // Use the actual stored id (ON CONFLICT keeps original) for FK references.
+        let actual_type_id = self
+            .persistence
             .upsert_settings_type(&settings_type)
             .await
             .with_context(|| format!("register_extension: upsert type '{}'", settings_type.key))?;
 
         let mut cache = self.cache.write().await;
         for setting in defaults {
+            // Ensure the FK points to the id that actually exists in the DB.
+            let setting = if setting.settings_type_id != actual_type_id {
+                Settings {
+                    settings_type_id: actual_type_id,
+                    ..setting
+                }
+            } else {
+                setting
+            };
             // Only insert if not already present (don't overwrite existing values).
             if self.persistence.get_setting(&setting.key).await?.is_none() {
                 self.persistence
