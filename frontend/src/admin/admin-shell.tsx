@@ -2,6 +2,7 @@ import { type FC, type ReactNode, useState } from "react";
 import {
   Bot,
   BookOpen,
+  Brain,
   Code2,
   Key,
   Layers,
@@ -20,6 +21,7 @@ export type AdminSection =
   | "tools"
   | "auth"
   | "knowledge"
+  | "memory"
   | "compiler"
   | "settings";
 
@@ -31,6 +33,7 @@ const NAV_ITEMS: { id: AdminSection; label: string; icon: FC<{ size?: number; cl
   { id: "tools", label: "Tools", icon: Wrench },
   { id: "auth", label: "API Keys", icon: Key },
   { id: "knowledge", label: "Knowledge", icon: BookOpen },
+  { id: "memory", label: "Memory", icon: Brain },
   { id: "compiler", label: "Compiler", icon: Code2 },
   { id: "settings", label: "Settings", icon: SlidersHorizontal },
 ];

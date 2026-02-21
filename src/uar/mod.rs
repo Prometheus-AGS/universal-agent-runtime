@@ -5,6 +5,7 @@ pub mod domain;
 pub mod file_processing;
 pub mod governance;
 pub mod llm;
+pub mod memory;
 pub mod persistence;
 pub mod rag;
 pub mod runtime;

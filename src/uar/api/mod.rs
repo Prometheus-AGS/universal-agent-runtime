@@ -7,6 +7,7 @@ pub mod discovery;
 pub mod ingest;
 pub mod knowledge;
 pub mod memory;
+pub mod memory_admin;
 pub mod openai;
 pub mod providers;
 pub mod routes;

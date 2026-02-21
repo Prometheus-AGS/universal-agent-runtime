@@ -1,8 +1,154 @@
 import { type FC, useCallback, useEffect, useState } from "react";
-import { Bot, Loader2, RefreshCw } from "lucide-react";
+import { Bot, Brain, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { AgentsResponse, UarAgent } from "@/types";
+
+// ── Agent Memory Section ───────────────────────────────────────────────────
+
+interface AgentMemoryState {
+  memory_enabled: boolean | null;   // null = inherit global
+  auto_capture: boolean | null;
+  inject_context: boolean | null;
+  memory_scope: string;
+}
+
+const SCOPE_OPTIONS = [
+  { value: "agent", label: "Agent-scoped" },
+  { value: "user", label: "User-scoped" },
+  { value: "global", label: "Global" },
+  { value: "session", label: "Session-scoped" },
+];
+
+function TriToggle({ value, onChange }: { value: boolean | null; onChange: (v: boolean | null) => void }) {
+  const labels: { v: boolean | null; label: string }[] = [
+    { v: null, label: "Inherit" },
+    { v: true, label: "On" },
+    { v: false, label: "Off" },
+  ];
+  return (
+    <div className="inline-flex rounded-lg border border-border overflow-hidden text-[11px] font-mono">
+      {labels.map(({ v, label }) => (
+        <button
+          key={label}
+          type="button"
+          onClick={() => onChange(v)}
+          className={cn(
+            "px-3 py-1 transition-colors",
+            value === v
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted/50"
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function AgentMemorySection({ agent }: { agent: UarAgent }) {
+  const [state, setState] = useState<AgentMemoryState>({
+    memory_enabled: null,
+    auto_capture: null,
+    inject_context: null,
+    memory_scope: (agent as unknown as Record<string, unknown>).memory_scope as string ?? "agent",
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const body: Record<string, unknown> = {};
+      if (state.memory_enabled !== null) body.memory_enabled = state.memory_enabled;
+      if (state.auto_capture !== null) body.memory_auto_capture = state.auto_capture;
+      if (state.inject_context !== null) body.memory_inject_context = state.inject_context;
+      body.memory_scope = state.memory_scope;
+
+      const r = await fetch(`/api/agents/${agent.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error(`${r.status}`);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-6">
+      <div className="mb-3 flex items-center gap-2">
+        <Brain size={14} className="text-primary" />
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Memory (per-agent override)
+        </p>
+      </div>
+
+      <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-mono text-[12px] font-medium text-foreground">Memory Enabled</p>
+            <p className="font-mono text-[10px] text-muted-foreground mt-0.5">Override global memory on/off for this agent.</p>
+          </div>
+          <TriToggle value={state.memory_enabled} onChange={(v) => setState((s) => ({ ...s, memory_enabled: v }))} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-mono text-[12px] font-medium text-foreground">Auto-Capture</p>
+            <p className="font-mono text-[10px] text-muted-foreground mt-0.5">Extract memories after each turn.</p>
+          </div>
+          <TriToggle value={state.auto_capture} onChange={(v) => setState((s) => ({ ...s, auto_capture: v }))} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-mono text-[12px] font-medium text-foreground">Context Injection</p>
+            <p className="font-mono text-[10px] text-muted-foreground mt-0.5">Inject memories as system prompt prefix.</p>
+          </div>
+          <TriToggle value={state.inject_context} onChange={(v) => setState((s) => ({ ...s, inject_context: v }))} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-mono text-[12px] font-medium text-foreground">Default Scope</p>
+            <p className="font-mono text-[10px] text-muted-foreground mt-0.5">Scope for memories saved by this agent.</p>
+          </div>
+          <select
+            value={state.memory_scope}
+            onChange={(e) => setState((s) => ({ ...s, memory_scope: e.target.value }))}
+            className="h-8 rounded-md border border-input bg-background px-3 font-mono text-[12px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {SCOPE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {error && (
+          <p className="font-mono text-[11px] text-destructive">{error}</p>
+        )}
+
+        <div className="flex items-center gap-2 pt-1">
+          <Button size="sm" onClick={() => void save()} disabled={saving} className="gap-1.5">
+            {saving ? <Loader2 size={12} className="animate-spin" /> : null}
+            Save Memory Settings
+          </Button>
+          {saved && (
+            <span className="font-mono text-[11px] text-green-400">Saved ✓</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Agents Page ───────────────────────────────────────────────────────
 
 export const AgentsPage: FC = () => {
   const [agents, setAgents] = useState<UarAgent[]>([]);
@@ -84,6 +230,9 @@ export const AgentsPage: FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Memory section */}
+            <AgentMemorySection agent={selected} />
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center">

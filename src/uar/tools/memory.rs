@@ -1,24 +1,30 @@
+//! NativeTools for memory operations (legacy shim).
+//!
+//! These tools (`memory_save` / `memory_recall`) are kept for backward
+//! compatibility with agents that use them directly. They now delegate to
+//! `AppState::memory_service` when available, and fall back to the persistence
+//! layer's no-op stubs otherwise.
+//!
+//! New agent implementations should prefer the MCP tools exposed by
+//! `UarMemoryMcpServer` in `uar::memory::mcp_server`, which provide full
+//! multi-scope, hybrid-search, and knowledge-graph capabilities.
+
 use crate::mcp::registry::NativeTool;
-use crate::uar::domain::memory::Memory;
-use crate::uar::persistence::PersistenceLayer;
-use crate::uar::runtime::matching::VectorMatcher;
 use async_trait::async_trait;
 use serde_json::json;
 use std::sync::Arc;
-use uuid::Uuid;
+
+use crate::uar::memory::service::MemoryService;
+use surreal_memory::Memory;
 
 #[derive(Debug)]
 pub struct MemorySaveTool {
-    persistence: Arc<dyn PersistenceLayer>,
-    vector_matcher: Arc<VectorMatcher>,
+    memory_service: Option<Arc<MemoryService>>,
 }
 
 impl MemorySaveTool {
-    pub fn new(persistence: Arc<dyn PersistenceLayer>, vector_matcher: Arc<VectorMatcher>) -> Self {
-        Self {
-            persistence,
-            vector_matcher,
-        }
+    pub fn new(memory_service: Option<Arc<MemoryService>>) -> Self {
+        Self { memory_service }
     }
 }
 
@@ -40,14 +46,18 @@ impl NativeTool for MemorySaveTool {
                     "type": "string",
                     "description": "The information content to memorize."
                 },
-                "tags": {
+                "categories": {
                     "type": "array",
                     "items": { "type": "string" },
-                    "description": "Optional tags for categorization."
+                    "description": "Optional categories for classification."
                 },
                 "agent_id": {
                     "type": "string",
                     "description": "Optional ID of the agent owning this memory. Omit for global memory."
+                },
+                "user_id": {
+                    "type": "string",
+                    "description": "Optional user ID for user-scoped memory."
                 }
             },
             "required": ["content"]
@@ -58,7 +68,7 @@ impl NativeTool for MemorySaveTool {
         let content = args["content"]
             .as_str()
             .ok_or_else(|| anyhow::anyhow!("Missing content"))?;
-        let tags: Vec<String> = args["tags"]
+        let categories: Vec<String> = args["categories"]
             .as_array()
             .map(|arr| {
                 arr.iter()
@@ -67,46 +77,41 @@ impl NativeTool for MemorySaveTool {
             })
             .unwrap_or_default();
         let agent_id = args["agent_id"].as_str().map(str::to_string);
+        let user_id = args["user_id"].as_str().map(str::to_string);
 
-        let embeddings = self
-            .vector_matcher
-            .embed_batch(vec![content.to_string()])
-            .await?;
-        let embedding = embeddings
-            .into_iter()
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("Failed to generate embedding"))?;
-
-        let memory = Memory {
-            id: Uuid::new_v4().to_string(),
-            agent_id,
-            content: content.to_string(),
-            tags,
-            embedding,
-            created_at: chrono::Utc::now().to_rfc3339(),
-        };
-
-        self.persistence.save_memory(&memory).await?;
-
-        Ok(json!({
-            "status": "success",
-            "memory_id": memory.id
-        }))
+        if let Some(svc) = &self.memory_service {
+            let memory = Memory::new(content.to_string(), user_id, agent_id, None, categories);
+            let stored = svc
+                .storage()
+                .add_memory(memory)
+                .await
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
+            let id = stored
+                .id
+                .as_ref()
+                .map(|r| {
+                    serde_json::to_value(r)
+                        .ok()
+                        .and_then(|v| v.as_str().map(str::to_string))
+                        .unwrap_or_default()
+                })
+                .unwrap_or_default();
+            Ok(json!({ "status": "success", "memory_id": id }))
+        } else {
+            tracing::warn!("memory_save called but MemoryService not enabled");
+            Ok(json!({ "status": "disabled", "message": "Memory system not enabled" }))
+        }
     }
 }
 
 #[derive(Debug)]
 pub struct MemoryRecallTool {
-    persistence: Arc<dyn PersistenceLayer>,
-    vector_matcher: Arc<VectorMatcher>,
+    memory_service: Option<Arc<MemoryService>>,
 }
 
 impl MemoryRecallTool {
-    pub fn new(persistence: Arc<dyn PersistenceLayer>, vector_matcher: Arc<VectorMatcher>) -> Self {
-        Self {
-            persistence,
-            vector_matcher,
-        }
+    pub fn new(memory_service: Option<Arc<MemoryService>>) -> Self {
+        Self { memory_service }
     }
 }
 
@@ -130,7 +135,11 @@ impl NativeTool for MemoryRecallTool {
                 },
                 "agent_id": {
                     "type": "string",
-                    "description": "Optional. If provided, searches Agent's memory + Global. If omitted, searches Global only."
+                    "description": "Optional. Filter to this agent's memories."
+                },
+                "user_id": {
+                    "type": "string",
+                    "description": "Optional. Filter to this user's memories."
                 },
                 "limit": {
                     "type": "integer",
@@ -145,35 +154,33 @@ impl NativeTool for MemoryRecallTool {
         let query = args["query"]
             .as_str()
             .ok_or_else(|| anyhow::anyhow!("Missing query"))?;
-        let agent_id = args["agent_id"].as_str(); // Option<&str>
+        let agent_id = args["agent_id"].as_str();
+        let user_id = args["user_id"].as_str();
         let limit = args["limit"].as_u64().unwrap_or(5) as usize;
 
-        let embeddings = self
-            .vector_matcher
-            .embed_batch(vec![query.to_string()])
-            .await?;
-        let embedding = embeddings
-            .into_iter()
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("Failed to generate embedding"))?;
+        let Some(svc) = &self.memory_service else {
+            return Ok(json!([]));
+        };
 
-        let matches = self
-            .persistence
-            .search_memory(agent_id, &embedding, limit, 0.0)
-            .await?;
+        let results = svc
+            .storage()
+            .search_memories(query, user_id, agent_id, None, None, limit)
+            .await
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
 
-        let results: Vec<serde_json::Value> = matches
-            .into_iter()
+        let json_results: Vec<serde_json::Value> = results
+            .iter()
             .map(|m| {
                 json!({
-                    "content": m.memory.content,
-                    "score": m.score,
-                    "tags": m.memory.tags,
-                    "type": if m.memory.agent_id.is_some() { "agent" } else { "global" }
+                    "content": m.content,
+                    "score": 1.0, // embedding score not returned in basic search
+                    "categories": m.categories,
+                    "scope": format!("{:?}", m.scope),
+                    "type": if m.agent_id.is_some() { "agent" } else { "global" }
                 })
             })
             .collect();
 
-        Ok(json!(results))
+        Ok(json!(json_results))
     }
 }

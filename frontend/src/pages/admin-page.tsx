@@ -6,6 +6,7 @@ import { AgentsPage } from "@/admin/pages/agents-page";
 import { ToolsPage } from "@/admin/pages/tools-page";
 import { AuthPage } from "@/admin/pages/auth-page";
 import { KnowledgePage } from "@/admin/pages/knowledge-page";
+import { MemoryPage } from "@/admin/pages/memory-page";
 import { CompilerPage } from "@/admin/pages/compiler-page";
 import { SettingsPage } from "@/admin/pages/settings-page";
 
@@ -18,6 +19,7 @@ function renderAdminContent(section: AdminSection) {
     case "tools": return <ToolsPage />;
     case "auth": return <AuthPage />;
     case "knowledge": return <KnowledgePage />;
+    case "memory": return <MemoryPage />;
     case "compiler": return <CompilerPage />;
     case "settings": return <SettingsPage />;
   }

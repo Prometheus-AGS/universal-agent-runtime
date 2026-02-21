@@ -346,28 +346,14 @@ impl PersistenceLayer for PostgresProvider {
         Ok(agents)
     }
 
-    // Memory System
+    // Memory System — delegates to MemoryService (backed by surreal-memory library)
+    // These stubs satisfy the PersistenceLayer trait. Real memory operations should
+    // go through `AppState::memory_service`.
     async fn save_memory(&self, memory: &crate::uar::domain::memory::Memory) -> Result<()> {
-        let embedding_vector = Vector::from(memory.embedding.clone());
-
-        sqlx::query(
-            r"
-            INSERT INTO memories (id, agent_id, content, tags, embedding, created_at)
-            VALUES ($1, $2, $3, $4, $5, NOW())
-            ON CONFLICT (id) DO UPDATE SET
-                agent_id = EXCLUDED.agent_id,
-                content = EXCLUDED.content,
-                tags = EXCLUDED.tags,
-                embedding = EXCLUDED.embedding
-            ",
-        )
-        .bind(&memory.id)
-        .bind(&memory.agent_id)
-        .bind(&memory.content)
-        .bind(&memory.tags)
-        .bind(embedding_vector)
-        .execute(&self.pool)
-        .await?;
+        tracing::debug!(
+            "save_memory stub (postgres) — use AppState::memory_service for real persistence"
+        );
+        let _ = memory;
         Ok(())
     }
 
@@ -378,58 +364,11 @@ impl PersistenceLayer for PostgresProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<crate::uar::domain::memory::MemoryMatch>> {
-        let embedding_vector = Vector::from(query_vec.to_vec());
-        let limit_i64 =
-            i64::try_from(limit).map_err(|err| anyhow::anyhow!("limit exceeds i64: {err}"))?;
-        let min_score_f64 = f64::from(min_score);
-
-        // Condition: (agent_id = $1 OR agent_id IS NULL)
-        // If $1 is NULL, it matches Global only.
-        // If $1 is 'A', it matches 'A' and Global.
-        let rows = sqlx::query(
-            r"
-            SELECT id, agent_id, content, tags, created_at, 1 - (embedding <=> $2) as score
-            FROM memories
-            WHERE (agent_id = $1 OR agent_id IS NULL)
-              AND 1 - (embedding <=> $2) >= $3
-            ORDER BY embedding <=> $2
-            LIMIT $4
-            ",
-        )
-        .bind(agent_id) // $1
-        .bind(embedding_vector) // $2
-        .bind(min_score_f64) // $3
-        .bind(limit_i64) // $4
-        .fetch_all(&self.pool)
-        .await?;
-
-        let mut matches = Vec::new();
-        for row in rows {
-            let id: String = row.try_get("id")?;
-            let a_id: Option<String> = row.try_get("agent_id")?;
-            let content: String = row.try_get("content")?;
-            let tags: Vec<String> = row.try_get("tags")?;
-
-            let created_at: Option<chrono::DateTime<chrono::Utc>> = row.try_get("created_at")?;
-            let created_at_str = created_at.map(|d| d.to_rfc3339()).unwrap_or_default();
-
-            let score: f64 = row.try_get("score")?;
-
-            let memory = crate::uar::domain::memory::Memory {
-                id,
-                agent_id: a_id,
-                content,
-                tags,
-                embedding: vec![],
-                created_at: created_at_str,
-            };
-
-            matches.push(crate::uar::domain::memory::MemoryMatch {
-                memory,
-                score: score as f32,
-            });
-        }
-        Ok(matches)
+        tracing::debug!(
+            "search_memory stub (postgres) — use AppState::memory_service for real queries"
+        );
+        let _ = (agent_id, query_vec, limit, min_score);
+        Ok(vec![])
     }
 
     // =========================================================================

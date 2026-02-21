@@ -1,17 +1,14 @@
-use serde::{Deserialize, Serialize};
+//! Agent memory domain types — re-exported from the `surreal-memory` library.
+//!
+//! This module uses the full-featured types from `surreal_memory` rather than
+//! a lightweight stub, providing proper multi-scope support, version history,
+//! and semantic deduplication metadata.
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Memory {
-    pub id: String,
-    pub agent_id: Option<String>, // None = Global
-    pub content: String,
-    pub tags: Vec<String>,
-    #[serde(skip)]
-    pub embedding: Vec<f32>,
-    pub created_at: String, // RFC3339
-}
+pub use surreal_memory::storage::MemoryStorage;
+pub use surreal_memory::{Memory, MemoryHistory, MemoryScope, MemoryType};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Lightweight search result wrapper for UAR internal use.
+#[derive(Debug, Clone)]
 pub struct MemoryMatch {
     pub memory: Memory,
     pub score: f32,

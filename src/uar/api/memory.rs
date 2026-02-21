@@ -1,5 +1,10 @@
+//! HTTP REST handlers for legacy memory endpoints.
+//!
+//! These endpoints (`POST /memory`, `GET /memory`) are kept for backward
+//! compatibility. New integrations should use the MCP memory tools at
+//! `/mcp/memory` which provide the full surreal-memory feature set.
+
 use crate::AppState;
-use crate::uar::domain::memory::Memory;
 use axum::{
     Json,
     extract::{Query, State},
@@ -8,139 +13,103 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::json;
-use uuid::Uuid;
+use surreal_memory::Memory;
 
 #[derive(Debug, Deserialize)]
 pub struct SaveMemoryRequest {
     pub content: String,
-    pub tags: Option<Vec<String>>,
+    pub categories: Option<Vec<String>>,
     pub agent_id: Option<String>,
+    pub user_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct SearchMemoryQuery {
     pub q: String,
     pub agent_id: Option<String>,
+    pub user_id: Option<String>,
     pub limit: Option<usize>,
-    pub min_score: Option<f32>,
 }
 
 pub async fn save_memory_handler(
     State(state): State<AppState>,
     Json(payload): Json<SaveMemoryRequest>,
 ) -> impl IntoResponse {
-    let Some(persistence) = &state.persistence else {
-        return (StatusCode::SERVICE_UNAVAILABLE, "Persistence not enabled").into_response();
+    let Some(svc) = &state.memory_service else {
+        return (StatusCode::SERVICE_UNAVAILABLE, "Memory system not enabled").into_response();
     };
 
-    // Generate embedding
-    // VectorMatcher only has embed_batch
-    let embedding = match state
-        .vector_matcher
-        .embed_batch(vec![payload.content.clone()])
-        .await
-    {
-        Ok(mut e) => {
-            if let Some(emb) = e.pop() {
-                emb
-            } else {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "No embedding generated".to_string(),
-                )
-                    .into_response();
-            }
+    let memory = Memory::new(
+        payload.content,
+        payload.user_id,
+        payload.agent_id,
+        None,
+        payload.categories.unwrap_or_default(),
+    );
+
+    match svc.storage().add_memory(memory).await {
+        Ok(stored) => {
+            let id = stored
+                .id
+                .as_ref()
+                .map(|r| {
+                    serde_json::to_value(r)
+                        .ok()
+                        .and_then(|v| v.as_str().map(str::to_string))
+                        .unwrap_or_default()
+                })
+                .unwrap_or_default();
+            Json(json!({ "status": "success", "id": id })).into_response()
         }
-        Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Embedding failed: {e}"),
-            )
-                .into_response();
-        }
-    };
-
-    let memory = Memory {
-        id: Uuid::new_v4().to_string(),
-        agent_id: payload.agent_id, // None is global
-        content: payload.content,
-        tags: payload.tags.unwrap_or_default(),
-        embedding,
-        created_at: chrono::Utc::now().to_rfc3339(),
-    };
-
-    if let Err(e) = persistence.save_memory(&memory).await {
-        return (
+        Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Save failed: {e}"),
         )
-            .into_response();
+            .into_response(),
     }
-
-    Json(json!({
-        "status": "success",
-        "id": memory.id
-    }))
-    .into_response()
 }
 
 pub async fn search_memory_handler(
     State(state): State<AppState>,
     Query(query): Query<SearchMemoryQuery>,
 ) -> impl IntoResponse {
-    let Some(persistence) = &state.persistence else {
-        return (StatusCode::SERVICE_UNAVAILABLE, "Persistence not enabled").into_response();
-    };
-
-    // Generate embedding for query
-    let embedding = match state
-        .vector_matcher
-        .embed_batch(vec![query.q.clone()])
-        .await
-    {
-        Ok(mut e) => {
-            if let Some(emb) = e.pop() {
-                emb
-            } else {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "No embedding generated".to_string(),
-                )
-                    .into_response();
-            }
-        }
-        Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Embedding failed: {e}"),
-            )
-                .into_response();
-        }
+    let Some(svc) = &state.memory_service else {
+        return (StatusCode::SERVICE_UNAVAILABLE, "Memory system not enabled").into_response();
     };
 
     let limit = query.limit.unwrap_or(10);
-    let min_score = query.min_score.unwrap_or(0.0);
 
-    // Agent ID logic:
-    // If query.agent_id is Some, search specific agent + global.
-    // If None, search ONLY global? Or implied "current agent"?
-    // The requirements say "System and per-agent basis".
-    // If I omit agent_id in query, I likely want System/Global memories.
-    // So passing query.agent_id.as_deref() works (matches PostgresProvider logic).
-
-    let matches = match persistence
-        .search_memory(query.agent_id.as_deref(), &embedding, limit, min_score)
+    match svc
+        .storage()
+        .search_memories(
+            &query.q,
+            query.user_id.as_deref(),
+            query.agent_id.as_deref(),
+            None,
+            None,
+            limit,
+        )
         .await
     {
-        Ok(m) => m,
-        Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Search failed: {e}"),
-            )
-                .into_response();
+        Ok(results) => {
+            let out: Vec<serde_json::Value> = results
+                .iter()
+                .map(|m| {
+                    json!({
+                        "content": m.content,
+                        "categories": m.categories,
+                        "scope": format!("{:?}", m.scope),
+                        "agent_id": m.agent_id,
+                        "user_id": m.user_id,
+                    })
+                })
+                .collect();
+            Json(json!(out)).into_response()
         }
-    };
-
-    Json(matches).into_response()
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Search failed: {e}"),
+        )
+            .into_response(),
+    }
 }

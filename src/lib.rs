@@ -47,6 +47,7 @@ use std::sync::Arc;
 use uar::api::a2a::AgentRegistry;
 use uar::compiler::CompilerService;
 use uar::governance::engine::GovernanceEngine;
+use uar::memory::service::MemoryService;
 use uar::persistence::PersistenceLayer;
 use uar::rag::ingest::IngestService;
 use uar::runtime::actor::system::ActorCollaboration;
@@ -93,6 +94,8 @@ pub struct AppState {
     pub governance_engine: Arc<GovernanceEngine>,
     /// API key service for PAT-based authentication
     pub api_key_service: Option<Arc<ApiKeyService>>,
+    /// Memory service backed by surreal-memory + SurrealDB/RocksDB (None if memory.enabled=false).
+    pub memory_service: Option<Arc<MemoryService>>,
     /// Compiler service for spec management and pipeline execution
     pub compiler_service: Option<Arc<CompilerService>>,
     /// Settings manager — runtime configuration administration + plugin extension point

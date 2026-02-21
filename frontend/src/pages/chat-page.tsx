@@ -4,6 +4,7 @@ import { LeftSidebar } from "@/components/layout/left-sidebar";
 import { useUiStore } from "@/stores/ui-store";
 import { useChatRuntime } from "@/features/chat/use-chat-runtime";
 import { AttachmentContext } from "@/features/chat/attachment-context";
+import { MemoryContextProvider } from "@/features/chat/memory-context";
 import { useEffect } from "react";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { cn } from "@/lib/utils";
@@ -13,11 +14,13 @@ import { Button } from "@/components/ui/button";
 function ThreadView({ threadId }: { threadId: string }) {
   const { runtime, attachmentManager } = useChatRuntime(threadId);
   return (
-    <AssistantRuntimeProvider runtime={runtime}>
-      <AttachmentContext.Provider value={attachmentManager}>
-        <EnhancedThread />
-      </AttachmentContext.Provider>
-    </AssistantRuntimeProvider>
+    <MemoryContextProvider>
+      <AssistantRuntimeProvider runtime={runtime}>
+        <AttachmentContext.Provider value={attachmentManager}>
+          <EnhancedThread />
+        </AttachmentContext.Provider>
+      </AssistantRuntimeProvider>
+    </MemoryContextProvider>
   );
 }
 

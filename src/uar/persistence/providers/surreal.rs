@@ -288,15 +288,17 @@ impl PersistenceLayer for SurrealDbProvider {
         from_db_vec(agents_raw)
     }
 
-    // Memory System
+    // Memory System — delegates to MemoryService (backed by surreal-memory library)
+    // These stubs satisfy the PersistenceLayer trait. Real memory operations should
+    // use `AppState::memory_service` (a MemoryService wrapping SurrealStorage from
+    // the surreal-memory library in its own embedded RocksDB store).
     async fn save_memory(&self, memory: &crate::uar::domain::memory::Memory) -> Result<()> {
-        // memory has embedding field
-        let payload = to_db_value(memory)?;
-        let _: Option<serde_json::Value> = self
-            .db
-            .upsert(("memories", memory.id.clone()))
-            .content(payload)
-            .await?;
+        // The surreal-memory library owns memory persistence in its own SurrealDB instance.
+        // This stub is a no-op; callers should use AppState::memory_service.
+        tracing::debug!(
+            "save_memory stub called — use AppState::memory_service for real persistence"
+        );
+        let _ = memory;
         Ok(())
     }
 
@@ -307,42 +309,13 @@ impl PersistenceLayer for SurrealDbProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<crate::uar::domain::memory::MemoryMatch>> {
-        // Fetch all (or filter by agent_id first if indexed)
-        // Then cosine similarity
-
-        let memories_raw: Vec<serde_json::Value> = if let Some(aid) = agent_id {
-            let sql = "SELECT * FROM memories WHERE agent_id = $aid OR agent_id IS NULL";
-            let mut res = self.db.query(sql).bind(("aid", aid.to_string())).await?;
-            res.take(0)?
-        } else {
-            // Global only? or ALL? Logic in Postgres was: where (agent_id = $1 OR agent_id IS NULL).
-            // If agent_id arg is None, we probably only want global ones (agent_id IS NULL)?
-            // Postgres query used: `WHERE (agent_id = $1 OR agent_id IS NULL)`
-            // If $1 is NULL, `agent_id = NULL` is false (in SQL usually), so only `agent_id IS NULL` matches.
-            // So if input agent_id is None, we fetch globals.
-            let sql = "SELECT * FROM memories WHERE agent_id IS NULL";
-            let mut res = self.db.query(sql).await?;
-            res.take(0)?
-        };
-        let memories: Vec<crate::uar::domain::memory::Memory> = from_db_vec(memories_raw)?;
-
-        let mut matches: Vec<crate::uar::domain::memory::MemoryMatch> = memories
-            .into_iter()
-            .map(|m| {
-                let score = cosine_similarity(&m.embedding, query_vec);
-                crate::uar::domain::memory::MemoryMatch { memory: m, score }
-            })
-            .filter(|m| m.score >= min_score)
-            .collect();
-
-        matches.sort_by(|a, b| {
-            b.score
-                .partial_cmp(&a.score)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        matches.truncate(limit);
-
-        Ok(matches)
+        // The surreal-memory library owns memory persistence in its own SurrealDB instance.
+        // This stub returns empty; callers should use AppState::memory_service.
+        tracing::debug!(
+            "search_memory stub called — use AppState::memory_service for real queries"
+        );
+        let _ = (agent_id, query_vec, limit, min_score);
+        Ok(vec![])
     }
 
     // =========================================================================

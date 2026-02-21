@@ -8,6 +8,8 @@ const UAR_URL = "/api/chat/completion";
 export interface UarChatPayload {
   message: string;
   attachments?: AttachmentPayload[];
+  /** When false, skips memory context injection and auto-capture for this turn. Defaults server-side to true. */
+  memory_enabled?: boolean;
 }
 export interface StreamCallbacks {
   onComplete?: () => void;
@@ -75,6 +77,7 @@ export function useMessageStream() {
             stream: true,
             stream_mode: "dual",
             ...(payload.attachments?.length ? { attachments: payload.attachments } : {}),
+            ...(payload.memory_enabled === false ? { memory_enabled: false } : {}),
           }),
           signal: controller.signal,
         });

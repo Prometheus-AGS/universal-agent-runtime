@@ -37,6 +37,7 @@ import { SkillActivationBlock } from "@/features/chat/components/skill-activatio
 import { ToolCallBlockWrapper } from "@/features/chat/components/tool-call-block";
 import { AttachmentPreviewStrip } from "@/features/chat/components/attachment-preview";
 import { useAttachmentContext } from "@/features/chat/attachment-context";
+import { useMemoryContext } from "@/features/chat/memory-context";
 import { cn } from "@/lib/utils";
 
 export const EnhancedThread: FC = () => (
@@ -97,6 +98,7 @@ const ThreadScrollToBottom: FC = () => (
 const EnhancedComposer: FC = () => {
   const attachmentManager = useAttachmentContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { memoryEnabled, setMemoryEnabled } = useMemoryContext();
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,6 +165,25 @@ const EnhancedComposer: FC = () => {
               <PaperclipIcon className="size-4" />
             </TooltipIconButton>
           )}
+
+          {/* Memory toggle button */}
+          <TooltipIconButton
+            tooltip={memoryEnabled ? "Memory ON – click to disable" : "Memory OFF – click to enable"}
+            side="top"
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "size-7 rounded-full transition-colors",
+              memoryEnabled
+                ? "text-primary hover:text-primary/80"
+                : "text-muted-foreground/40 hover:text-muted-foreground"
+            )}
+            aria-label={memoryEnabled ? "Disable memory for this message" : "Enable memory for this message"}
+            onClick={() => setMemoryEnabled(!memoryEnabled)}
+          >
+            <BrainIcon className="size-4" />
+          </TooltipIconButton>
 
           {/* Thinking indicator — shown while running */}
           <AuiIf condition={(s) => s.thread.isRunning}>

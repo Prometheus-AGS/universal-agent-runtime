@@ -58,6 +58,9 @@ pub struct AppConfig {
     /// LLM provider configurations (multi-provider support)
     #[serde(default)]
     pub providers: Vec<crate::llm::registry::ProviderConfig>,
+    /// Agent memory system configuration
+    #[serde(default)]
+    pub memory: MemoryConfig,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -363,6 +366,121 @@ impl Default for ChunkingConfig {
     }
 }
 
+// =============================================================================
+// MEMORY CONFIGURATION
+// =============================================================================
+
+/// Configuration for the in-process agent memory system, backed by surreal-memory + SurrealDB/RocksDB.
+#[derive(Debug, Deserialize, Clone)]
+pub struct MemoryConfig {
+    /// Enable the memory system (default: false — opt-in).
+    #[serde(default)]
+    pub enabled: bool,
+    /// Path to the RocksDB data directory for embedded mode.
+    #[serde(default = "MemoryConfig::default_db_path")]
+    pub db_path: String,
+    /// Embedding provider: "openai" | "cohere" | "local"
+    #[serde(default = "MemoryConfig::default_embedding_provider")]
+    pub embedding_provider: String,
+    /// Embedding model identifier (provider-specific).
+    #[serde(default = "MemoryConfig::default_embedding_model")]
+    pub embedding_model: String,
+    /// OpenAI API key for embeddings (used when embedding_provider = "openai").
+    #[serde(default)]
+    pub openai_api_key: Option<String>,
+    /// Cohere API key for embeddings (used when embedding_provider = "cohere").
+    #[serde(default)]
+    pub cohere_api_key: Option<String>,
+    /// Auto-capture memories from conversations after each assistant turn.
+    #[serde(default = "MemoryConfig::default_auto_capture")]
+    pub auto_capture: bool,
+    /// weight applied to the vector-similarity score in hybrid search (0.0–1.0).
+    #[serde(default = "MemoryConfig::default_vector_weight")]
+    pub vector_weight: f32,
+    /// Weight applied to the BM25 full-text score in hybrid search (0.0–1.0).
+    #[serde(default = "MemoryConfig::default_bm25_weight")]
+    pub bm25_weight: f32,
+    /// Inject relevant memory context into LLM prompts before each call.
+    #[serde(default = "MemoryConfig::default_inject_context")]
+    pub inject_context: bool,
+    /// Maximum tokens to include in an injected memory context block.
+    #[serde(default = "MemoryConfig::default_max_context_tokens")]
+    pub max_context_tokens: u32,
+    /// Expose the memory MCP tools over HTTP at `mcp_http_path`.
+    #[serde(default = "MemoryConfig::default_mcp_http_enabled")]
+    pub mcp_http_enabled: bool,
+    /// URL path for the streamable-HTTP MCP memory endpoint.
+    #[serde(default = "MemoryConfig::default_mcp_http_path")]
+    pub mcp_http_path: String,
+    /// SurrealDB namespace for memory storage.
+    #[serde(default = "MemoryConfig::default_namespace")]
+    pub namespace: String,
+    /// SurrealDB database name for memory storage.
+    #[serde(default = "MemoryConfig::default_database")]
+    pub database: String,
+}
+
+impl MemoryConfig {
+    fn default_db_path() -> String {
+        "./data/memory.db".to_string()
+    }
+    fn default_embedding_provider() -> String {
+        "openai".to_string()
+    }
+    fn default_embedding_model() -> String {
+        "text-embedding-3-small".to_string()
+    }
+    fn default_auto_capture() -> bool {
+        true
+    }
+    fn default_vector_weight() -> f32 {
+        0.7
+    }
+    fn default_bm25_weight() -> f32 {
+        0.3
+    }
+    fn default_inject_context() -> bool {
+        true
+    }
+    fn default_max_context_tokens() -> u32 {
+        2000
+    }
+    fn default_mcp_http_enabled() -> bool {
+        true
+    }
+    fn default_mcp_http_path() -> String {
+        "/mcp/memory".to_string()
+    }
+    fn default_namespace() -> String {
+        "uar".to_string()
+    }
+    fn default_database() -> String {
+        "memory".to_string()
+    }
+}
+
+impl Default for MemoryConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            db_path: Self::default_db_path(),
+            embedding_provider: Self::default_embedding_provider(),
+            embedding_model: Self::default_embedding_model(),
+            openai_api_key: None,
+            cohere_api_key: None,
+            auto_capture: Self::default_auto_capture(),
+            vector_weight: Self::default_vector_weight(),
+            bm25_weight: Self::default_bm25_weight(),
+            inject_context: Self::default_inject_context(),
+            max_context_tokens: Self::default_max_context_tokens(),
+            mcp_http_enabled: Self::default_mcp_http_enabled(),
+            mcp_http_path: Self::default_mcp_http_path(),
+            namespace: Self::default_namespace(),
+            database: Self::default_database(),
+        }
+    }
+}
+
 impl AppConfig {
     /// Load config using the already-parsed `Cli` struct.
     ///
@@ -395,7 +513,21 @@ impl AppConfig {
             .set_default("file_processing.max_file_size", 52_428_800_i64)?
             .set_default("file_processing.max_total_size", 104_857_600_i64)?
             // Vision defaults
-            .set_default("vision.auto_detect", true)?;
+            .set_default("vision.auto_detect", true)?
+            // Memory system defaults
+            .set_default("memory.enabled", false)?
+            .set_default("memory.db_path", "./data/memory.db")?
+            .set_default("memory.embedding_provider", "openai")?
+            .set_default("memory.embedding_model", "text-embedding-3-small")?
+            .set_default("memory.auto_capture", true)?
+            .set_default("memory.vector_weight", 0.7)?
+            .set_default("memory.bm25_weight", 0.3)?
+            .set_default("memory.inject_context", true)?
+            .set_default("memory.max_context_tokens", 2000_i64)?
+            .set_default("memory.mcp_http_enabled", true)?
+            .set_default("memory.mcp_http_path", "/mcp/memory")?
+            .set_default("memory.namespace", "uar")?
+            .set_default("memory.database", "memory")?;
 
         // 2. Config File Loading (Explicit > Implicit)
         if let Some(config_path) = &cli.config {

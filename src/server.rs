@@ -33,6 +33,11 @@ use crate::uar::{
     self,
     defaults::ensure_default_knowledge_base,
     governance::engine::GovernanceEngine,
+    memory::{
+        MemoryService,
+        auto_capture::{self, ConversationMessage},
+        context_builder,
+    },
     persistence::{
         PersistenceLayer,
         providers::{postgres::PostgresProvider, surreal::SurrealDbProvider},
@@ -50,7 +55,10 @@ use crate::uar::{
             storage::{FilesystemStorageProvider, SkillStorageProvider},
         },
     },
-    security::api_keys::{ApiKeyService, InMemoryApiKeyStorage},
+    security::{
+        api_keys::{ApiKeyService, InMemoryApiKeyStorage},
+        claims::UserContext,
+    },
 };
 
 /// Start the Axum server with the provided configuration.
@@ -166,28 +174,48 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         info!("Persistence and RAG enabled.");
     }
 
+    // Initialise the memory system if enabled in config.
+    let memory_service: Option<Arc<MemoryService>> = if config.memory.enabled {
+        match MemoryService::new(config.memory.clone()).await {
+            Ok(svc) => {
+                info!(
+                    "MemoryService initialized (embedding_provider={}, auto_capture={}, inject_context={})",
+                    config.memory.embedding_provider,
+                    config.memory.auto_capture,
+                    config.memory.inject_context
+                );
+                Some(Arc::new(svc))
+            }
+            Err(e) => {
+                tracing::error!(error = %e, "Failed to initialize MemoryService — memory disabled");
+                None
+            }
+        }
+    } else {
+        info!("Memory system disabled (UAR_MEMORY__ENABLED not set)");
+        None
+    };
+
     // MCP: connect once at startup
     // We update this to include native tools if persistence is present
     let mut mcp_registry = McpRegistry::load_from_file("mcp.json")
         .await
         .unwrap_or_else(|e| panic!("Failed to load MCP servers: {e:?}"));
 
-    if let Some(p) = &persistence {
-        // Register Memory Tools
-        let save_tool = Arc::new(crate::uar::tools::memory::MemorySaveTool::new(
-            Arc::clone(p),
-            Arc::clone(&vector_matcher),
-        ));
-        let recall_tool = Arc::new(crate::uar::tools::memory::MemoryRecallTool::new(
-            Arc::clone(p),
-            Arc::clone(&vector_matcher),
-        ));
-
-        mcp_registry = mcp_registry
-            .with_native_tool(save_tool)
-            .with_native_tool(recall_tool);
-        info!("Native tools (Memory) registered.");
-    }
+    // Register memory tools — live service if enabled, no-op shims otherwise.
+    let save_tool = Arc::new(crate::uar::tools::memory::MemorySaveTool::new(
+        memory_service.clone(),
+    ));
+    let recall_tool = Arc::new(crate::uar::tools::memory::MemoryRecallTool::new(
+        memory_service.clone(),
+    ));
+    mcp_registry = mcp_registry
+        .with_native_tool(save_tool)
+        .with_native_tool(recall_tool);
+    info!(
+        "Native tools (memory_save, memory_recall) registered — active={}",
+        memory_service.is_some()
+    );
 
     let mcp = Arc::new(mcp_registry);
 
@@ -365,6 +393,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         api_key_service: Some(Arc::clone(&api_key_service)),
         compiler_service: Some(Arc::clone(&compiler_service)),
         settings_manager: settings_manager.clone(),
+        memory_service: memory_service.clone(),
         #[cfg(feature = "wasm-runtime")]
         wasm_sandbox: {
             use crate::uar::runtime::wasm::{config::WasmConfig, sandbox::WasmSandbox};
@@ -452,6 +481,11 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
                     settings_manager: settings_manager.clone(),
                 },
             )),
+        )
+        // Admin Memory API (CRUD)
+        .nest(
+            "/api/admin/memories",
+            uar::api::memory_admin::build_router().with_state(state.clone()),
         )
         // A2A Compiler Agent — JSON-RPC endpoint
         .nest(
@@ -847,6 +881,15 @@ struct ChatCompletionRequest {
     /// Files attached to this message (uploaded via POST /api/upload).
     #[serde(default)]
     attachments: Vec<crate::uar::api::upload::AttachmentInput>,
+    /// Set to false to disable memory injection and auto-capture for this turn.
+    /// Defaults to true (respects global/agent memory config).
+    #[serde(default = "default_true")]
+    memory_enabled: bool,
+}
+
+#[inline]
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Debug, Serialize)]
@@ -1291,9 +1334,66 @@ async fn api_chat_completion(
     let effective_input =
         build_multipart_content(&input_message, &req.attachments).unwrap_or(input_message);
 
+    // Extract UserContext from request extensions (set by auth middleware, may be anonymous).
+    let user_ctx = {
+        use crate::uar::security::claims::UserClaims;
+        let uid = headers
+            .get("x-uar-user-id")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("anonymous")
+            .to_string();
+        UserContext {
+            user_id: uid.clone(),
+            claims: UserClaims {
+                sub: uid,
+                name: None,
+                roles: None,
+                exp: 0,
+            },
+        }
+    };
+
+    // --- Memory: context injection (pre-LLM-call) ---
+    let memory_context_block = if req.memory_enabled {
+        if let Some(svc) = &state.memory_service {
+            let block = context_builder::build_context(
+                svc,
+                &effective_input,
+                &user_ctx,
+                Some(&agent.id),
+                Some(&session_id),
+                &resolved_model.model_id,
+            )
+            .await;
+            if !block.is_empty() {
+                tracing::debug!(chars = block.len(), "Memory context block assembled");
+            }
+            block
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+
+    // Prepend memory context to the effective input sent to the LLM.
+    let effective_input_with_memory = if memory_context_block.is_empty() {
+        effective_input.clone()
+    } else {
+        format!(
+            "[MEMORY CONTEXT]\n{}\n[/MEMORY CONTEXT]\n\n{}",
+            memory_context_block, effective_input
+        )
+    };
+
     let run_id = state
         .run_manager
-        .start_run(agent, effective_input, Some(session_id.clone()), None)
+        .start_run(
+            agent,
+            effective_input_with_memory,
+            Some(session_id.clone()),
+            None,
+        )
         .await;
 
     let Some(mut rx) = state.run_manager.subscribe(&run_id).await else {
@@ -1313,10 +1413,21 @@ async fn api_chat_completion(
     let created = Utc::now().timestamp();
     let model_name = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
 
+    // Capture per-request values needed inside the stream closure.
+    let req_memory_enabled = req.memory_enabled;
+    let stream_user_ctx = user_ctx.clone();
+    let stream_memory_ctx_count = if memory_context_block.is_empty() {
+        0usize
+    } else {
+        1usize
+    };
+
     if req.stream {
         let emit_openai_chunks = req.stream_mode.emits_openai_chunks();
         let emit_agui_chunks = req.stream_mode.emits_agui_chunks();
         let stream_session_id = session_id.clone();
+        // Keep an extra copy for the response headers (stream_session_id is moved into the closure).
+        let response_session_id = session_id.clone();
         let stream_model_name = model_name.clone();
         let stream_completion_id = completion_id.clone();
         let replay = state
@@ -1326,7 +1437,24 @@ async fn api_chat_completion(
             .unwrap_or_default();
         let replay_max_id = replay.last().map_or(0, |event| event.id);
 
+        // Clone into stream-owned variables.
+        let stream_memory_service = state.memory_service.clone();
+        let stream_agent_id = "default".to_string(); // TODO: pull from resolved agent
+        let _stream_memory_ctx_count = stream_memory_ctx_count;
+
         let stream = async_stream::stream! {
+            // Emit agui.memory.context event so frontend can show indicator.
+            if emit_agui_chunks && _stream_memory_ctx_count > 0 {
+                let mem_event = Event::default()
+                    .event("agui.memory.context")
+                    .data(serde_json::to_string(&serde_json::json!({
+                        "kind": "memory",
+                        "phase": "injected",
+                        "count": _stream_memory_ctx_count
+                    })).unwrap_or_default());
+                yield Ok::<Event, std::convert::Infallible>(mem_event);
+            }
+
             if emit_openai_chunks {
                 let first = OpenAiChunk {
                     id: stream_completion_id.clone(),
@@ -1351,6 +1479,8 @@ async fn api_chat_completion(
             }
 
             let mut tool_name_by_id: HashMap<String, String> = HashMap::new();
+            let mut assistant_text_for_capture = String::new();
+            let mut user_text_for_capture = effective_input.clone();
 
             macro_rules! process_stream_event {
                 ($stream_event:expr) => {{
@@ -1372,7 +1502,9 @@ async fn api_chat_completion(
 
                     let mut should_stop = false;
                     match normalized_event {
-                        uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
+                        uar::domain::events::NormalizedEvent::ChatDelta { ref text_delta, .. } => {
+                            assistant_text_for_capture.push_str(text_delta);
+                            let text_delta = text_delta.clone();
                             if emit_openai_chunks {
                                 let chunk = OpenAiChunk {
                                     id: stream_completion_id.clone(),
@@ -1584,6 +1716,27 @@ async fn api_chat_completion(
                             }
                         }
                         uar::domain::events::NormalizedEvent::RunDone { .. } => {
+                            // --- Memory: auto-capture (fire-and-forget, post-stream) ---
+                            if req_memory_enabled {
+                                if let Some(ref svc) = stream_memory_service {
+                                    if !assistant_text_for_capture.is_empty() {
+                                        let msgs = vec![
+                                            ConversationMessage { role: "user".into(), content: user_text_for_capture.clone() },
+                                            ConversationMessage { role: "assistant".into(), content: assistant_text_for_capture.clone() },
+                                        ];
+                                        let svc2 = Arc::clone(svc);
+                                        let ctx2 = stream_user_ctx.clone();
+                                        let aid = stream_agent_id.clone();
+                                        let sid = stream_session_id.clone();
+                                        tokio::spawn(async move {
+                                            auto_capture::capture_from_stream_end(
+                                                &svc2, &msgs, &ctx2, &aid, &sid,
+                                            ).await;
+                                        });
+                                    }
+                                }
+                            }
+
                             if emit_openai_chunks {
                                 let final_chunk = OpenAiChunk {
                                     id: stream_completion_id.clone(),
@@ -1649,11 +1802,11 @@ async fn api_chat_completion(
             .into_response();
         response.headers_mut().insert(
             HeaderName::from_static("x-uar-session-id"),
-            HeaderValue::from_str(&stream_session_id)
+            HeaderValue::from_str(&response_session_id)
                 .unwrap_or_else(|_| HeaderValue::from_static("invalid")),
         );
         if let Ok(cookie) = HeaderValue::from_str(&format!(
-            "uar_session_id={stream_session_id}; Path=/; HttpOnly; SameSite=Lax"
+            "uar_session_id={response_session_id}; Path=/; HttpOnly; SameSite=Lax"
         )) {
             response.headers_mut().append(header::SET_COOKIE, cookie);
         }

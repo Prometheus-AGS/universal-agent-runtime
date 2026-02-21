@@ -10,6 +10,7 @@ import { generateThreadTitle } from "./use-thread-naming";
 import type { RichMessage, ContentBlock } from "@/types/chat-content";
 import { useAttachmentManager } from "./use-attachment-manager";
 import type { AttachmentManager } from "./use-attachment-manager";
+import { useMemoryContext } from "./memory-context";
 
 export type { AttachmentManager };
 
@@ -74,6 +75,7 @@ export function useChatRuntime(threadId: string): {
   const setTitle = useThreadRegistryStore((s) => s.setTitle);
   const touch = useThreadRegistryStore((s) => s.touch);
   const loadMessagesFromDb = useChatMessageStore((s) => s.loadMessagesFromDb);
+  const { memoryEnabled } = useMemoryContext();
 
   // Register the thread and set it active; load its messages from PGlite on mount.
   useEffect(() => {
@@ -132,11 +134,11 @@ export function useChatRuntime(threadId: string): {
 
       await startStream(
         threadId,
-        { message: userText, attachments: attachments.length ? attachments : undefined },
+        { message: userText, attachments: attachments.length ? attachments : undefined, memory_enabled: memoryEnabled },
         { onComplete: () => { void afterStreamComplete(userText); } },
       );
     },
-    [threadId, db, startStream, afterStreamComplete, attachmentManager],
+    [threadId, db, startStream, afterStreamComplete, attachmentManager, memoryEnabled],
   );
 
   const onCancel = useCallback(async () => {
@@ -152,8 +154,8 @@ export function useChatRuntime(threadId: string): {
     const pending = consumePendingPrompt();
     if (!pending) return;
     initialMessageSent.current = true;
-    void startStream(threadId, { message: pending }, { onComplete: () => { void afterStreamComplete(pending); } });
-  }, [threadId, consumePendingPrompt, startStream, afterStreamComplete]);
+    void startStream(threadId, { message: pending, memory_enabled: memoryEnabled }, { onComplete: () => { void afterStreamComplete(pending); } });
+  }, [threadId, consumePendingPrompt, startStream, afterStreamComplete, memoryEnabled]);
 
   const threadMessageLikes = useMemo(() => messages.map(richMessageToThreadMessageLike), [messages]);
 
