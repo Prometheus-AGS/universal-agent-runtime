@@ -29,6 +29,17 @@ resource "kubernetes_storage_class" "premium_rwo_immediate" {
   parameters = {
     type = "pd-ssd"
   }
+
+  # Pin all PVCs to a single zone so that pods mounting multiple volumes
+  # are always schedulable. Without this, Immediate binding scatters disks
+  # across zones and pods requiring two volumes in different zones can never
+  # be scheduled ("didn't match PersistentVolume's node affinity").
+  allowed_topologies {
+    match_label_expressions {
+      key    = "topology.gke.io/zone"
+      values = [var.gke_cluster_zone]
+    }
+  }
 }
 
 # ── PostgreSQL data ─────────────────────────────────────────────────────────

@@ -16,6 +16,12 @@ variable "gke_cluster_name" {
   type        = string
 }
 
+variable "gke_cluster_zone" {
+  description = "A single zone within the GKE cluster region used to pin all PVCs. Must match the zone where existing volumes already live (e.g. us-central1-a)."
+  type        = string
+  default     = "us-central1-a"
+}
+
 variable "gke_cluster_location" {
   description = "The location/zone of the GKE cluster"
   type        = string
