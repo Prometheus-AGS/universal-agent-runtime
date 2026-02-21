@@ -34,7 +34,7 @@ function TriToggle({ value, onChange }: { value: boolean | null; onChange: (v: b
           type="button"
           onClick={() => onChange(v)}
           className={cn(
-            "px-3 py-1 transition-colors",
+            "cursor-pointer px-3 py-1 transition-colors",
             value === v
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:bg-muted/50"

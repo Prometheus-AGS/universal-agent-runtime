@@ -26,7 +26,7 @@ pub fn default_agent() -> AgentArtifact {
             provider: ProviderPolicy {
                 default: ProviderSelection {
                     provider: "openai".to_string(),
-                    model: "gpt-4o".to_string(),
+                    model: "gpt-5.2".to_string(),
                 },
                 fallbacks: vec![],
             },

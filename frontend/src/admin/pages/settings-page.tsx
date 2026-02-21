@@ -409,7 +409,7 @@ function ProviderPanel() {
                                     <Input
                                         value={(data.default_model as string) ?? ""}
                                         onChange={(e) => setField("default_model", e.target.value)}
-                                        placeholder="gpt-4o"
+                                        placeholder="gpt-5.2"
                                         className="font-mono text-[12px]"
                                     />
                                 </Field>
@@ -433,7 +433,7 @@ function VisionPanel() {
                         <Input
                             value={(val("model") as string) ?? ""}
                             onChange={(e) => set("model", e.target.value || null)}
-                            placeholder="gpt-4o (inherits active model)"
+                            placeholder="gpt-5.2 (inherits active model)"
                             className="font-mono text-[12px]"
                         />
                     </Field>
@@ -1501,7 +1501,7 @@ export const SettingsPage: FC = () => {
                                                 active === key
                                                     ? "bg-accent text-foreground"
                                                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                                                !available && "cursor-not-allowed opacity-40"
+                                                available ? "cursor-pointer" : "cursor-not-allowed opacity-40"
                                             )}
                                         >
                                             <Icon

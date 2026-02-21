@@ -104,8 +104,23 @@
     @apply outline-none ring-2 ring-ring ring-offset-1 ring-offset-background;
   }
 
-  /* Pointer cursor on interactive elements */
-  button, [role="button"], a, [role="link"], label[for] {
+  /* Pointer cursor on all interactive elements */
+  button,
+  [role="button"],
+  a,
+  [role="link"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="switch"],
+  [role="combobox"],
+  [role="listitem"][tabindex],
+  label[for],
+  select,
+  summary,
+  [tabindex]:not([tabindex="-1"]) {
     cursor: pointer;
   }
 }

@@ -81,7 +81,7 @@ struct BuiltInToolEntry {
     source: &'static str,
 }
 
-async fn list_agents(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn list_agents(State(state): State<AppState>) -> impl IntoResponse {
     let mut runtime_agents = match &state.persistence {
         Some(persistence) => persistence.list_agents().await.unwrap_or_default(),
         None => Vec::new(),
@@ -175,7 +175,7 @@ async fn list_skills(State(state): State<AppState>) -> impl IntoResponse {
     Json(response)
 }
 
-async fn list_tools(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn list_tools(State(state): State<AppState>) -> impl IntoResponse {
     let mcp_servers = state.mcp.server_names();
     let tools = state
         .mcp

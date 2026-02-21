@@ -21,6 +21,7 @@ import {
   ChevronRightIcon,
   ClipboardIcon,
   CopyIcon,
+  Loader2Icon,
   PaperclipIcon,
   PencilIcon,
   RefreshCwIcon,
@@ -185,15 +186,15 @@ const EnhancedComposer: FC = () => {
             <BrainIcon className="size-4" />
           </TooltipIconButton>
 
-          {/* Thinking indicator — shown while running */}
+          {/* Running indicator — shown while generating (complements the in-bubble spinner) */}
           <AuiIf condition={(s) => s.thread.isRunning}>
-            <span className="flex items-center gap-1.5 ml-auto font-mono text-[11px] text-muted-foreground/70">
-              <span className="inline-flex gap-0.5 items-center">
+            <span className="ml-auto flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/70">
+              <span className="inline-flex items-center gap-0.5">
                 <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
                 <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.2s_infinite]" />
                 <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.4s_infinite]" />
               </span>
-              Agent is thinking…
+              Generating…
             </span>
           </AuiIf>
 
@@ -261,14 +262,38 @@ const UserActionBar: FC = () => (
   </ActionBarPrimitive.Root>
 );
 
+/** Shows a spinner when the assistant message is still empty (pre-first-token). */
+const AssistantMessageBody: FC = () => {
+  const isEmptyAndRunning = useMessage((m: ThreadMessageLike) => {
+    if (m.status?.type !== "running") return false;
+    const parts = (m as unknown as { content?: unknown[] }).content ?? [];
+    return parts.length === 0 || parts.every(
+      (p) => typeof p === "object" && p !== null && (p as { type?: string; text?: string }).type === "text" && !(p as { text?: string }).text,
+    );
+  });
+
+  return (
+    <>
+      {isEmptyAndRunning ? (
+        <div className="flex items-center gap-2.5 py-1 text-muted-foreground/70">
+          <Loader2Icon size={14} className="animate-spin text-primary" />
+          <span className="font-mono text-[11px]">Agent is thinking…</span>
+        </div>
+      ) : (
+        <MessagePrimitive.Parts components={{ Text: EnhancedMarkdownText, Reasoning: ReasoningPart, tools: { Fallback: ToolCallPart } }} />
+      )}
+      <MessageError />
+    </>
+  );
+};
+
 const AssistantMessage: FC = () => (
   <MessagePrimitive.Root className="fade-in slide-in-from-bottom-1 mx-auto flex w-full max-w-(--thread-max-width) animate-in flex-col gap-0.5 px-4 py-2 duration-150" data-role="assistant">
     <div className="flex w-full items-start gap-3">
       <AgentAvatar />
       <div className="min-w-0 flex-1">
         <div className="wrap-break-word rounded-2xl rounded-tl-sm bg-muted/60 px-4 py-3 font-body text-sm text-foreground leading-relaxed shadow-sm">
-          <MessagePrimitive.Parts components={{ Text: EnhancedMarkdownText, Reasoning: ReasoningPart, tools: { Fallback: ToolCallPart } }} />
-          <MessageError />
+          <AssistantMessageBody />
         </div>
       </div>
     </div>

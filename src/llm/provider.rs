@@ -111,7 +111,7 @@ impl Provider {
         let lower = model.to_lowercase();
 
         // OpenAI vision models
-        if lower.contains("gpt-4o") || lower.contains("gpt-4-vision") {
+        if lower.contains("gpt-4o") || lower.contains("gpt-4-vision") || lower.contains("gpt-5") {
             return true;
         }
 
