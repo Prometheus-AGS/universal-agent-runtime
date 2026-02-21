@@ -4,6 +4,13 @@
 # are stored on separate SSD PVCs.
 
 resource "kubernetes_deployment" "uar" {
+  depends_on = [
+    kubernetes_stateful_set.postgres,
+    kubernetes_deployment.redis,
+    kubernetes_config_map.uar_config,
+    kubernetes_secret.uar_db_credentials,
+    kubernetes_secret.uar_app_secrets
+  ]
   metadata {
     name      = "uar"
     namespace = kubernetes_namespace.uar.metadata[0].name
@@ -50,7 +57,7 @@ resource "kubernetes_deployment" "uar" {
 
         container {
           name  = "uar"
-          image = "tribehealth/universal-agent-runtime:02212026.2"
+          image = "tribehealth/universal-agent-runtime:02212026.2-a"
 
           port {
             name           = "http"
@@ -213,16 +220,6 @@ resource "kubernetes_deployment" "uar" {
       }
     }
   }
-
-  depends_on = [
-    kubernetes_stateful_set.postgres,
-    kubernetes_deployment.redis,
-    kubernetes_config_map.uar_config,
-    kubernetes_secret.uar_db_credentials,
-    kubernetes_secret.uar_app_secrets,
-    kubernetes_persistent_volume_claim.uar_uploads,
-    kubernetes_persistent_volume_claim.uar_data,
-  ]
 }
 
 # ── ClusterIP Service ──────────────────────────────────────────────────────
