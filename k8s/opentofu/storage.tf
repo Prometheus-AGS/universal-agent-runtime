@@ -1,22 +1,20 @@
 # SSD-backed PersistentVolumeClaims for all UAR services.
-# GKE's "premium-rwo" StorageClass provisions zonal SSD Persistent Disks.
-# All volumes are ReadWriteOnce — appropriate for single-replica workloads.
+# All PVCs use the Immediate-binding StorageClass (premium-rwo-immediate).
+#
+# GKE's built-in "premium-rwo" uses WaitForFirstConsumer, which deadlocks
+# for standalone PVCs: the provisioner waits for a pod to pick a zone, but
+# the pod waits for the PVC to bind first. Immediate binding provisions the
+# disk at PVC creation time, breaking the deadlock for all workloads.
 
 locals {
-  ssd_storage_class          = "premium-rwo"
-  ssd_storage_class_immediate = "premium-rwo-immediate"
-  uar_namespace              = kubernetes_namespace.uar.metadata[0].name
+  ssd_storage_class = "premium-rwo-immediate"
+  uar_namespace     = kubernetes_namespace.uar.metadata[0].name
 }
 
-# ── Immediate-binding SSD StorageClass ──────────────────────────────────────
-# GKE's built-in "premium-rwo" uses WaitForFirstConsumer, which deadlocks
-# when a standalone PVC (not a StatefulSet volumeClaimTemplate) is created
-# before any pod exists — the provisioner waits for a pod to determine the
-# zone, but the pod waits for the PVC to bind. Using Immediate binding
-# provisions the disk in the cluster's default zone upfront.
+# ── StorageClass: Immediate SSD ──────────────────────────────────────────────
 resource "kubernetes_storage_class" "premium_rwo_immediate" {
   metadata {
-    name = local.ssd_storage_class_immediate
+    name = local.ssd_storage_class
 
     labels = {
       "app.kubernetes.io/part-of" = "universal-agent-runtime"
@@ -34,9 +32,6 @@ resource "kubernetes_storage_class" "premium_rwo_immediate" {
 }
 
 # ── PostgreSQL data ─────────────────────────────────────────────────────────
-# Uses the Immediate-binding StorageClass so the disk is provisioned as soon
-# as this PVC is created — before the Postgres pod is scheduled. This avoids
-# the WaitForFirstConsumer deadlock that occurs with standalone PVCs.
 resource "kubernetes_persistent_volume_claim" "postgres_data" {
   metadata {
     name      = "postgres-data-pvc"
@@ -50,7 +45,7 @@ resource "kubernetes_persistent_volume_claim" "postgres_data" {
 
   spec {
     access_modes       = ["ReadWriteOnce"]
-    storage_class_name = local.ssd_storage_class_immediate
+    storage_class_name = local.ssd_storage_class
 
     resources {
       requests = {
@@ -89,6 +84,8 @@ resource "kubernetes_persistent_volume_claim" "redis_data" {
       }
     }
   }
+
+  depends_on = [kubernetes_storage_class.premium_rwo_immediate]
 }
 
 # ── UAR file uploads ────────────────────────────────────────────────────────
@@ -116,6 +113,8 @@ resource "kubernetes_persistent_volume_claim" "uar_uploads" {
       }
     }
   }
+
+  depends_on = [kubernetes_storage_class.premium_rwo_immediate]
 }
 
 # ── SurrealDB data ───────────────────────────────────────────────────────────
@@ -141,6 +140,8 @@ resource "kubernetes_persistent_volume_claim" "surreal_data" {
       }
     }
   }
+
+  depends_on = [kubernetes_storage_class.premium_rwo_immediate]
 
   # Prevent accidental deletion of memory data during tofu destroy.
   lifecycle {
@@ -172,4 +173,6 @@ resource "kubernetes_persistent_volume_claim" "uar_data" {
       }
     }
   }
+
+  depends_on = [kubernetes_storage_class.premium_rwo_immediate]
 }
