@@ -60,7 +60,7 @@ impl TestingInfrastructure {
             // Visualization Dashboard API
             .route("/api/v2/dashboard/overview", get(get_dashboard_overview))
             .route("/api/v2/dashboard/charts/data", get(get_chart_data))
-            .route("/api/v2/dashboard/charts/:chart_type", get(get_specialized_chart))
+            .route("/api/v2/dashboard/charts/{chart_type}", get(get_specialized_chart))
             .route("/api/v2/dashboard/html", get(get_dashboard_html))
 
             // Real-time WebSocket endpoint

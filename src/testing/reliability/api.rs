@@ -226,15 +226,15 @@ pub fn create_reliability_api_router() -> Router<ReliabilityApiState> {
     Router::new()
         .route("/overview", get(get_reliability_overview))
         .route("/health", get(get_health_score))
-        .route("/trends/:metric", get(get_reliability_trends))
+        .route("/trends/{metric}", get(get_reliability_trends))
         .route("/flaky-tests", get(get_flaky_tests))
         .route("/patterns", get(get_failure_patterns))
         .route("/recommendations", get(get_recommendations))
         .route("/alerts", get(get_active_alerts))
         .route("/predictions", get(get_reliability_predictions))
         .route("/analysis/custom", post(run_custom_analysis))
-        .route("/test/:test_id/reliability", get(get_test_reliability))
-        .route("/environment/:env/reliability", get(get_environment_reliability))
+        .route("/test/{test_id}/reliability", get(get_test_reliability))
+        .route("/environment/{env}/reliability", get(get_environment_reliability))
         .route("/status", get(get_api_status))
 }
 

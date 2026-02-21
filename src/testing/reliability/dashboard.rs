@@ -914,8 +914,8 @@ pub fn create_reliability_dashboard_router() -> Router<Arc<RwLock<TestReliabilit
     Router::new()
         .route("/", get(dashboard_home))
         .route("/overview", get(dashboard_overview_json))
-        .route("/test/:test_id", get(test_reliability_dashboard))
-        .route("/environment/:env", get(environment_dashboard))
+        .route("/test/{test_id}", get(test_reliability_dashboard))
+        .route("/environment/{env}", get(environment_dashboard))
 }
 
 /// GET / - Main dashboard HTML

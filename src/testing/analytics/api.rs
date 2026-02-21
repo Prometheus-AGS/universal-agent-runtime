@@ -121,7 +121,7 @@ pub fn create_analytics_router() -> Router<AnalyticsApiState> {
         .route("/analytics/coverage", get(get_coverage_analysis))
         .route("/analytics/performance", get(get_performance_analysis))
         .route("/analytics/reliability", get(get_reliability_analysis))
-        .route("/analytics/trends/:metric", get(get_trend_analysis))
+        .route("/analytics/trends/{metric}", get(get_trend_analysis))
         .route("/analytics/custom", post(run_custom_analysis))
         .route("/analytics/health", get(get_system_health))
 }

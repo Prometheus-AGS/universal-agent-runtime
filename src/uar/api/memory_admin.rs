@@ -295,7 +295,7 @@ pub fn build_router() -> Router<AppState> {
         .route("/stats", get(memory_stats_handler))
         .route("/search", get(search_memories_handler))
         .route(
-            "/:id",
+            "/{id}",
             get(get_memory_handler).delete(delete_memory_handler),
         )
 }
