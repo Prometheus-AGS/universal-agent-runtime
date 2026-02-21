@@ -89,6 +89,9 @@ COPY --from=builder /app/static /app/static
 # Copy tokenizer model files needed by VectorMatcher
 COPY --from=builder /app/src/uar/runtime/matching/models/*.json /app/models/
 
+# Copy MCP server configuration (loaded at startup by McpRegistry)
+COPY mcp.json /app/mcp.json
+
 # Create data directories used at runtime
 RUN mkdir -p /data/ingest /app/skills /app/policies /app/models
 

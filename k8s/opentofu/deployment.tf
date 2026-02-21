@@ -6,10 +6,12 @@
 resource "kubernetes_deployment" "uar" {
   depends_on = [
     kubernetes_stateful_set.postgres,
+    kubernetes_stateful_set.surreal,
     kubernetes_deployment.redis,
     kubernetes_config_map.uar_config,
     kubernetes_secret.uar_db_credentials,
-    kubernetes_secret.uar_app_secrets
+    kubernetes_secret.uar_app_secrets,
+    kubernetes_secret.uar_surreal_credentials,
   ]
   metadata {
     name      = "uar"
@@ -57,7 +59,7 @@ resource "kubernetes_deployment" "uar" {
 
         container {
           name  = "uar"
-          image = "tribehealth/universal-agent-runtime:02212026.2-a"
+          image = "tribehealth/universal-agent-runtime:02212026.3"
 
           port {
             name           = "http"
