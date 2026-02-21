@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UAR Memory System — Production Documentation</title>
+
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;600;700&family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ── TOKENS ───────────────────────────────────────── */
+:root {
+  --bg:           #0B0F14;
+  --card:         #0F1620;
+  --muted:        #141C26;
+  --border:       #1E2D3F;
+  --border-hi:    #2B3F55;
+  --fg:           #E8EDF3;
+  --fg-muted:     #A7B0BC;
+  --fg-subtle:    #5C6B7A;
+  --ember:        #FF6A3D;
+  --ember-dim:    rgba(255,106,61,.12);
+  --ember-glow:   rgba(255,106,61,.06);
+  --success:      #4ADE80;
+  --warn:         #FBBF24;
+  --error:        #EF4444;
+  --neutral:      #94A3B8;
+  --info:         #60A5FA;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-ui:      'Inter', sans-serif;
+  --font-body:    'Roboto', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --radius:       10px;
+  --radius-lg:    16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ─────────────────────────────────────────── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(11,15,20,.92);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .9rem; letter-spacing: -.02em;
+  color: var(--fg);
+}
+.nav-brand em { color: var(--ember); font-style: normal; }
+.nav-meta {
+  font-family: var(--font-mono);
+  font-size: .65rem; color: var(--fg-subtle); letter-spacing: .06em;
+}
+.nav-links { display: flex; gap: 1.4rem; list-style: none; }
+.nav-links a {
+  font-family: var(--font-ui);
+  font-size: .7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .09em;
+  color: var(--fg-muted); text-decoration: none; transition: color .2s;
+}
+.nav-links a:hover { color: var(--ember); }
+@media (max-width: 900px) { .nav-links { display: none; } }
+
+/* ── LAYOUT ──────────────────────────────────────── */
+.wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 7rem 2rem 6rem;
+}
+
+/* ── HERO ────────────────────────────────────────── */
+.hero {
+  padding: 3.5rem 0 4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4.5rem;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: -2rem; right: -2rem; bottom: 0;
+  background: radial-gradient(ellipse 70% 80% at 0% 50%, var(--ember-glow), transparent 60%);
+  pointer-events: none;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .9rem;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 700; letter-spacing: -.03em;
+  line-height: 1.15; margin-bottom: 1.1rem;
+}
+.hero-title em { color: var(--ember); font-style: normal; }
+.hero-sub {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .95rem;
+  max-width: 640px; margin-bottom: 1.8rem; line-height: 1.7;
+}
+.hero-meta { display: flex; gap: 1rem; flex-wrap: wrap; }
+.meta-chip {
+  font-family: var(--font-mono);
+  font-size: .68rem; letter-spacing: .06em;
+  color: var(--fg-subtle);
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px; padding: .25rem .6rem;
+}
+
+/* ── FEATURE STRIP ───────────────────────────────── */
+.feature-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: .75rem;
+  margin-bottom: 4.5rem;
+}
+.feature-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  display: flex; gap: .75rem; align-items: flex-start;
+}
+.feature-chip-icon {
+  font-family: var(--font-mono);
+  font-size: .7rem; font-weight: 600;
+  color: var(--ember);
+  background: var(--ember-dim);
+  border-radius: 4px; padding: .2rem .5rem;
+  flex-shrink: 0; margin-top: .1rem;
+}
+.feature-chip-text {
+  font-family: var(--font-ui);
+  font-size: .83rem; color: var(--fg-muted); line-height: 1.55;
+}
+.feature-chip-text strong { color: var(--fg); font-weight: 600; }
+
+/* ── SECTION ─────────────────────────────────────── */
+.section { margin-bottom: 4.5rem; }
+.section-eyebrow {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .7rem;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: .5rem;
+}
+.section-sub {
+  font-family: var(--font-display);
+  font-size: 1.1rem; font-weight: 600; letter-spacing: -.02em;
+  color: var(--fg-muted); margin-top: 2.2rem; margin-bottom: .75rem;
+}
+.section-sub-sm {
+  font-family: var(--font-display);
+  font-size: .95rem; font-weight: 600; letter-spacing: -.015em;
+  color: var(--fg-muted); margin-top: 1.8rem; margin-bottom: .6rem;
+}
+.section-lead {
+  font-family: var(--font-ui);
+  color: var(--fg-muted); font-size: .93rem;
+  max-width: 700px; margin-bottom: 1.5rem; line-height: 1.7;
+}
+.prose {
+  font-family: var(--font-body);
+  color: var(--fg-muted); font-size: .93rem; line-height: 1.8;
+  max-width: 720px; margin-bottom: 1.2rem;
+}
+.prose strong { color: var(--fg); font-weight: 500; }
+.prose code {
+  font-family: var(--font-mono); font-size: .82rem;
+  background: var(--muted); border: 1px solid var(--border);
+  border-radius: 4px; padding: .1rem .4rem;
+}
+.prose a {
+  color: var(--ember); text-decoration: none;
+  border-bottom: 1px solid rgba(255,106,61,.3);
+  transition: border-color .2s;
+}
+.prose a:hover { border-bottom-color: var(--ember); }
+
+/* ── CARDS ───────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.8rem;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+.card-label {
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .4rem;
+}
+.card-title {
+  font-family: var(--font-display);
+  font-size: 1rem; font-weight: 700; letter-spacing: -.01em;
+  margin-bottom: .5rem;
+}
+.card-body {
+  font-family: var(--font-ui);
+  font-size: .83rem; color: var(--fg-muted); line-height: 1.65;
+}
+.card-body code {
+  font-family: var(--font-mono); font-size: .78rem;
+  background: var(--muted); border: 1px solid var(--border);
+  border-radius: 3px; padding: .08rem .35rem;
+}
+
+/* ── TABLES ──────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin-top: .6rem; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--font-ui); font-size: .82rem;
+}
+thead { border-bottom: 1px solid var(--border-hi); }
+th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: .65rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-subtle); padding: .6rem 1rem;
+}
+td {
+  padding: .65rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted); vertical-align: top;
+}
+td:first-child { color: var(--fg); font-weight: 500; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--muted); }
+td code {
+  font-family: var(--font-mono); font-size: .78rem;
+  background: var(--muted); border: 1px solid var(--border);
+  border-radius: 3px; padding: .08rem .35rem;
+}
+
+/* ── CODE BLOCKS ─────────────────────────────────── */
+.code-block {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+  font-family: var(--font-mono);
+  font-size: .78rem; line-height: 1.8;
+  color: var(--fg-muted);
+  overflow-x: auto;
+  margin: 1rem 0;
+  position: relative;
+  white-space: pre-wrap;
+}
+.code-block .comment { color: var(--fg-subtle); }
+.code-block .key     { color: var(--fg); }
+.code-block .val     { color: var(--success); }
+.code-block .str     { color: var(--info); }
+.code-block .flag    { color: var(--ember); }
+.code-lang {
+  position: absolute; top: .5rem; right: .7rem;
+  font-family: var(--font-mono);
+  font-size: .58rem; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--fg-subtle);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 3px; padding: .15rem .45rem;
+}
+
+/* ── TABS ────────────────────────────────────────── */
+.tabs { margin-top: 1.2rem; }
+.tab-bar {
+  display: flex; gap: .5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.2rem;
+  overflow-x: auto;
+}
+.tab-btn {
+  font-family: var(--font-ui);
+  font-size: .78rem; font-weight: 600;
+  letter-spacing: .02em;
+  background: none; border: none; cursor: pointer;
+  color: var(--fg-subtle);
+  padding: .55rem 1rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .2s, border-color .2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--fg-muted); }
+.tab-btn.active { color: var(--ember); border-bottom-color: var(--ember); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── BADGES ──────────────────────────────────────── */
+.badge {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-family: var(--font-mono);
+  font-size: .65rem; letter-spacing: .04em;
+  border-radius: 4px; padding: .18rem .5rem;
+  white-space: nowrap;
+}
+.badge-ok   { background: rgba(74,222,128,.1);  color: var(--success); }
+.badge-warn { background: rgba(251,191,36,.1);  color: var(--warn); }
+.badge-info { background: rgba(96,165,250,.08); color: var(--info); }
+.badge-ember{ background: var(--ember-dim);     color: var(--ember); }
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; }
+.badge-ok .badge-dot   { background: var(--success); }
+.badge-warn .badge-dot { background: var(--warn); }
+.badge-info .badge-dot { background: var(--info); }
+
+/* ── STEP BLOCKS ─────────────────────────────────── */
+.steps { display: flex; flex-direction: column; gap: 1.2rem; margin-top: 1.2rem; }
+.step {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.6rem;
+  position: relative;
+  padding-left: 4rem;
+}
+.step-num {
+  position: absolute; left: 1.3rem; top: 1.4rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem; font-weight: 700;
+  color: var(--ember);
+  opacity: .6;
+}
+.step-title {
+  font-family: var(--font-display);
+  font-size: .95rem; font-weight: 700; letter-spacing: -.01em;
+  margin-bottom: .4rem;
+}
+.step-body {
+  font-family: var(--font-ui);
+  font-size: .83rem; color: var(--fg-muted); line-height: 1.65;
+}
+.step-body code {
+  font-family: var(--font-mono); font-size: .78rem;
+  background: var(--muted); border: 1px solid var(--border);
+  border-radius: 3px; padding: .08rem .35rem;
+}
+
+/* ── GRAPH DIAGRAM ───────────────────────────────── */
+.graph-block {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.6rem 2rem;
+  font-family: var(--font-mono);
+  font-size: .78rem; line-height: 2;
+  color: var(--fg-muted);
+  margin: 1rem 0;
+  white-space: pre-wrap;
+}
+.graph-entity { color: var(--ember); font-weight: 600; }
+.graph-relation { color: var(--fg-subtle); }
+.graph-obs { color: var(--info); }
+
+.graph-svg-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 2rem 1.5rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+/* ── CALLOUT ─────────────────────────────────────── */
+.callout {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-left: 3px solid var(--ember);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.6rem;
+  margin: 1.5rem 0;
+}
+.callout-label {
+  font-family: var(--font-mono);
+  font-size: .62rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ember); margin-bottom: .4rem;
+}
+.callout-text {
+  font-family: var(--font-ui);
+  font-size: .88rem; color: var(--fg-muted); line-height: 1.65;
+}
+.callout-text code {
+  font-family: var(--font-mono); font-size: .78rem;
+  background: var(--muted); border: 1px solid var(--border);
+  border-radius: 3px; padding: .08rem .35rem;
+}
+.callout-text strong { color: var(--fg); font-weight: 600; }
+
+/* ── CONCLUSION ──────────────────────────────────── */
+.conclusion {
+  background: var(--card);
+  border: 1px solid var(--border-hi);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  position: relative; overflow: hidden;
+}
+.conclusion::before {
+  content: '';
+  position: absolute; top: 0; right: 0; bottom: 0; width: 40%;
+  background: radial-gradient(ellipse at 100% 50%, var(--ember-dim), transparent 70%);
+  pointer-events: none;
+}
+.conclusion-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem; font-weight: 700; letter-spacing: -.025em;
+  margin-bottom: 1rem;
+}
+.conclusion-body {
+  font-family: var(--font-ui);
+  font-size: .9rem; color: var(--fg-muted); line-height: 1.8;
+  max-width: 640px; margin-bottom: 1.5rem;
+}
+.pill-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+.pill {
+  font-family: var(--font-mono);
+  font-size: .7rem; letter-spacing: .04em;
+  background: var(--muted);
+  border: 1px solid var(--border-hi);
+  border-radius: 99px; padding: .3rem .85rem;
+  color: var(--fg-muted);
+}
+
+/* ── FOOTER ──────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--border);
+  margin-top: 4rem; padding: 2rem 0;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 1rem;
+}
+.footer-brand {
+  font-family: var(--font-display);
+  font-weight: 700; font-size: .85rem;
+  letter-spacing: -.02em; color: var(--fg-muted);
+}
+.footer-brand em { color: var(--ember); font-style: normal; }
+.footer-meta {
+  font-family: var(--font-mono);
+  font-size: .62rem; color: var(--fg-subtle); letter-spacing: .06em;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-brand">travis<em>james</em>.ai</div>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#scopes">Scopes</a></li>
+    <li><a href="#config">Config</a></li>
+    <li><a href="#capture">Capture</a></li>
+    <li><a href="#injection">Injection</a></li>
+    <li><a href="#mcp">MCP Tools</a></li>
+    <li><a href="#graph">Knowledge Graph</a></li>
+    <li><a href="#quickstart">Quick Start</a></li>
+  </ul>
+  <div class="nav-meta">Universal Agent Runtime · Memory System</div>
+</nav>
+
+<!-- ── WRAP ─────────────────────────────────────────── -->
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero" id="overview">
+    <div class="hero-eyebrow">System Documentation</div>
+    <h1 class="hero-title">Memory <em>System</em></h1>
+    <p class="hero-sub">Production-grade, multi-scope agent memory built on surreal-memory and SurrealDB. Durable, cross-session recall that turns stateless LLMs into agents that remember users, learn from interactions, and build a persistent knowledge graph over time.</p>
+    <div class="hero-meta">
+      <span class="meta-chip">surreal-memory</span>
+      <span class="meta-chip">Hybrid BM25 + Vector</span>
+      <span class="meta-chip">5 Memory Scopes</span>
+      <span class="meta-chip">Knowledge Graph</span>
+      <span class="meta-chip">MCP Native</span>
+      <span class="meta-chip">Opt-In</span>
+    </div>
+  </header>
+
+  <!-- FEATURE STRIP -->
+  <div class="feature-strip">
+    <div class="feature-chip">
+      <span class="feature-chip-icon">01</span>
+      <div class="feature-chip-text"><strong>Auto-capture</strong> — extracts important facts from each assistant response</div>
+    </div>
+    <div class="feature-chip">
+      <span class="feature-chip-icon">02</span>
+      <div class="feature-chip-text"><strong>Context injection</strong> — injects relevant memories into the system prompt before each LLM call</div>
+    </div>
+    <div class="feature-chip">
+      <span class="feature-chip-icon">03</span>
+      <div class="feature-chip-text"><strong>Hybrid search</strong> — vector similarity + BM25 full-text, ranked by recency and importance</div>
+    </div>
+    <div class="feature-chip">
+      <span class="feature-chip-icon">04</span>
+      <div class="feature-chip-text"><strong>MCP tools</strong> — all operations exposed so agents can read, write, and delete memories mid-conversation</div>
+    </div>
+    <div class="feature-chip">
+      <span class="feature-chip-icon">05</span>
+      <div class="feature-chip-text"><strong>Knowledge graph</strong> — entities, relationships, and observations built over time</div>
+    </div>
+  </div>
+
+  <!-- ── SECTION: MEMORY SCOPES ──────────────────── -->
+  <section class="section" id="scopes">
+    <div class="section-eyebrow">§ 01 — Data Model</div>
+    <h2 class="section-title">Memory Scopes</h2>
+    <p class="section-lead">Every memory record is tagged with a scope that determines its lifetime and access boundary. At injection time, UAR retrieves memories ranked across all scopes, weighted by relevance — with session and user scopes given higher weight for personalization.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Scope</th><th>Context</th><th>Lifetime</th><th>Best For</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>session</code></td>
+            <td>Current conversation ID</td>
+            <td>Until session ends or cleared</td>
+            <td>Immediate context — user intent for this chat</td>
+          </tr>
+          <tr>
+            <td><code>user</code></td>
+            <td>User ID</td>
+            <td>Permanent (until deleted)</td>
+            <td>Persistent preferences, facts, history</td>
+          </tr>
+          <tr>
+            <td><code>agent</code></td>
+            <td>Agent ID</td>
+            <td>Permanent (until deleted)</td>
+            <td>Agent-specific knowledge, domain facts</td>
+          </tr>
+          <tr>
+            <td><code>global</code></td>
+            <td>None</td>
+            <td>Permanent, shared</td>
+            <td>Cross-agent shared knowledge, org-wide facts</td>
+          </tr>
+          <tr>
+            <td><code>task</code></td>
+            <td>Task stream ID</td>
+            <td>Until task completes</td>
+            <td>Multi-step workflow state, intermediate results</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="section-sub">Memory Types</h3>
+    <p class="section-lead">The <code>memory_type</code> field is optional on write — UAR auto-classifies if not specified.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-label">Episodic</div>
+        <div class="card-title">Facts & Events</div>
+        <div class="card-body">Facts from past conversations. "User prefers dark mode", "Called API at 3pm on Feb 20".</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Semantic</div>
+        <div class="card-title">Knowledge Graph</div>
+        <div class="card-body">Structured entries — entities (User, Product), relations (<code>works_at</code>, <code>prefers</code>), observations.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Procedural</div>
+        <div class="card-title">Learned Patterns</div>
+        <div class="card-body">Instructions and workflows. "When user asks about billing, always check Stripe".</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Associative</div>
+        <div class="card-title">Concept Links</div>
+        <div class="card-body">Connections between concepts. "Topic X relates to Topic Y based on conversation history".</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION: ENABLING MEMORY ────────────────── -->
+  <section class="section" id="config">
+    <div class="section-eyebrow">§ 02 — Configuration</div>
+    <h2 class="section-title">Enabling Memory</h2>
+
+    <div class="callout">
+      <div class="callout-label">Default State</div>
+      <div class="callout-text">Memory is <strong>disabled by default</strong>. Set <code>UAR_MEMORY__ENABLED=true</code> to activate it. An embedding provider is required — the default is OpenAI's <code>text-embedding-3-small</code>.</div>
+    </div>
+
+    <div class="tabs" id="config-tabs">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('config-tabs','cfg-toml')">Config File</button>
+        <button class="tab-btn" onclick="switchTab('config-tabs','cfg-env')">Environment Variables</button>
+        <button class="tab-btn" onclick="switchTab('config-tabs','cfg-providers')">Embedding Providers</button>
+      </div>
+
+      <!-- CONFIG FILE -->
+      <div class="tab-panel active" id="cfg-toml">
+        <div class="code-block">
+          <span class="code-lang">toml</span>
+<span class="comment"># config.toml</span>
+[<span class="key">memory</span>]
+<span class="key">enabled</span>            = <span class="val">true</span>
+<span class="key">embedding_provider</span> = <span class="str">"openai"</span>
+<span class="key">embedding_model</span>    = <span class="str">"text-embedding-3-small"</span>
+<span class="key">auto_capture</span>       = <span class="val">true</span>
+<span class="key">inject_context</span>     = <span class="val">true</span>
+        </div>
+      </div>
+
+      <!-- ENV VARS -->
+      <div class="tab-panel" id="cfg-env">
+        <div class="code-block">
+          <span class="code-lang">bash</span>
+<span class="key">UAR_MEMORY__ENABLED</span>=<span class="val">true</span>
+<span class="key">UAR_MEMORY__EMBEDDING_PROVIDER</span>=<span class="str">openai</span>   <span class="comment"># openai | cohere | local</span>
+<span class="key">UAR_MEMORY__EMBEDDING_MODEL</span>=<span class="str">text-embedding-3-small</span>
+<span class="key">OPENAI_API_KEY</span>=<span class="str">sk-...</span>                   <span class="comment"># required when provider=openai</span>
+        </div>
+      </div>
+
+      <!-- PROVIDERS -->
+      <div class="tab-panel" id="cfg-providers">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Provider</th><th>Required Env Var</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>openai</code></td>
+                <td><code>OPENAI_API_KEY</code></td>
+                <td>Default. Uses <code>text-embedding-3-small</code></td>
+              </tr>
+              <tr>
+                <td><code>cohere</code></td>
+                <td><code>UAR_MEMORY__COHERE_API_KEY</code></td>
+                <td>Use <code>embed-english-v3.0</code> or multilingual equivalent</td>
+              </tr>
+              <tr>
+                <td><code>local</code></td>
+                <td>—</td>
+                <td>Requires local embedding server at <code>UAR_MEMORY__LOCAL_EMBEDDING_URL</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION: AUTO-CAPTURE ───────────────────── -->
+  <section class="section" id="capture">
+    <div class="section-eyebrow">§ 03 — Background Extraction</div>
+    <h2 class="section-title">Auto-Capture</h2>
+    <p class="section-lead">When <code>auto_capture = true</code> (the default when memory is enabled), UAR automatically extracts and stores key facts from each assistant response without the agent needing to call any tool.</p>
+
+    <h3 class="section-sub">Pipeline</h3>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <div class="step-title">Extraction Prompt</div>
+        <div class="step-body">After each assistant turn completes, the auto-capture pipeline sends the response + conversation context to the LLM with a fact-extraction prompt.</div>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <div class="step-title">Fact Identification</div>
+        <div class="step-body">The LLM identifies facts worth remembering — user preferences, stated facts, decisions made.</div>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <div class="step-title">Embed & Store</div>
+        <div class="step-body">Each fact is embedded and stored in <code>scope = "session"</code> or <code>scope = "user"</code> depending on content classification.</div>
+      </div>
+      <div class="step">
+        <span class="step-num">4</span>
+        <div class="step-title">Deduplication</div>
+        <div class="step-body">Duplicate facts are detected via embedding similarity and merged or skipped to prevent memory bloat.</div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:1.5rem;">
+      <div class="callout-label">Manual-Only Mode</div>
+      <div class="callout-text">To disable auto-capture while keeping memory enabled, set <code>UAR_MEMORY__AUTO_CAPTURE=false</code>. Agents can still use MCP tools to manage memory explicitly.</div>
+    </div>
+  </section>
+
+  <!-- ── SECTION: CONTEXT INJECTION ──────────────── -->
+  <section class="section" id="injection">
+    <div class="section-eyebrow">§ 04 — Prompt Augmentation</div>
+    <h2 class="section-title">Context Injection</h2>
+    <p class="section-lead">When <code>inject_context = true</code>, UAR prepends a structured memory block to the LLM's system prompt before each call. The injected block is scoped, timestamped, and relevance-scored.</p>
+
+    <h3 class="section-sub">Injection Format</h3>
+    <div class="code-block">
+      <span class="code-lang">injected prompt</span>
+<span class="comment">## Recalled Memories</span>
+
+<span class="flag">1.</span> [<span class="str">user/2025-11-01</span>] User prefers responses in bullet points. <span class="comment">(relevance: 0.94)</span>
+<span class="flag">2.</span> [<span class="str">session</span>] User is asking about the quarterly report. <span class="comment">(relevance: 0.87)</span>
+<span class="flag">3.</span> [<span class="str">agent</span>] This agent specializes in financial data analysis. <span class="comment">(relevance: 0.81)</span>
+    </div>
+
+    <h3 class="section-sub">Tuning Parameters</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Parameter</th><th>Default</th><th>Effect</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>max_context_tokens</code></td>
+            <td><code>2000</code></td>
+            <td>Max tokens reserved for memory context. Increase for deeper recall; decrease to leave room for content.</td>
+          </tr>
+          <tr>
+            <td><code>vector_weight</code></td>
+            <td><code>0.7</code></td>
+            <td>Semantic similarity weight. Higher values favor meaning-based matches.</td>
+          </tr>
+          <tr>
+            <td><code>bm25_weight</code></td>
+            <td><code>0.3</code></td>
+            <td>Keyword match weight. Must sum to 1.0 with vector_weight.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="code-block" style="margin-top:1rem;">
+      <span class="code-lang">toml</span>
+[<span class="key">memory</span>]
+<span class="key">inject_context</span>     = <span class="val">true</span>
+<span class="key">max_context_tokens</span> = <span class="val">2000</span>      <span class="comment"># Max tokens for injected memories</span>
+<span class="key">vector_weight</span>      = <span class="val">0.7</span>       <span class="comment"># Semantic similarity weight (0–1)</span>
+<span class="key">bm25_weight</span>        = <span class="val">0.3</span>       <span class="comment"># BM25 keyword weight (0–1, sum=1)</span>
+    </div>
+  </section>
+
+  <!-- ── SECTION: MCP ACCESS ─────────────────────── -->
+  <section class="section" id="mcp">
+    <div class="section-eyebrow">§ 05 — Tool Integration</div>
+    <h2 class="section-title">MCP Access</h2>
+    <p class="section-lead">The memory system is exposed as a full MCP server at <code>/mcp/memory</code>. Any MCP-compatible client — Claude Desktop, LangGraph, AutoGen, Cursor — can use all memory tools directly.</p>
+
+    <div class="code-block">
+      <span class="code-lang">toml</span>
+[<span class="key">memory</span>]
+<span class="key">mcp_http_enabled</span> = <span class="val">true</span>
+<span class="key">mcp_http_path</span>    = <span class="str">"/mcp/memory"</span>   <span class="comment"># default</span>
+    </div>
+
+    <!-- MCP Tool Tabs -->
+    <div class="tabs" id="mcp-tabs">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('mcp-tabs','mcp-scoped')">Scoped Memory</button>
+        <button class="tab-btn" onclick="switchTab('mcp-tabs','mcp-kg')">Knowledge Graph</button>
+        <button class="tab-btn" onclick="switchTab('mcp-tabs','mcp-task')">Task Streams</button>
+        <button class="tab-btn" onclick="switchTab('mcp-tabs','mcp-client')">Client Config</button>
+      </div>
+
+      <!-- SCOPED MEMORY -->
+      <div class="tab-panel active" id="mcp-scoped">
+        <p class="prose" style="margin-bottom:.8rem;">Mem0-compatible scoped memory operations.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Tool</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>memory_add</code></td><td>Store a new memory with content, scope, and type</td></tr>
+              <tr><td><code>memory_get</code></td><td>Retrieve a memory by ID</td></tr>
+              <tr><td><code>memory_update</code></td><td>Update the content of an existing memory</td></tr>
+              <tr><td><code>memory_delete</code></td><td>Delete a memory by ID</td></tr>
+              <tr><td><code>memory_delete_all</code></td><td>Delete all memories matching a scope filter</td></tr>
+              <tr><td><code>memory_list</code></td><td>List all memories for a scope (paginated)</td></tr>
+              <tr><td><code>memory_search</code></td><td>Semantic vector search</td></tr>
+              <tr><td><code>memory_hybrid_search</code></td><td>Combined vector + BM25 search (recommended)</td></tr>
+              <tr><td><code>memory_history</code></td><td>Retrieve access/mutation history for a memory</td></tr>
+              <tr><td><code>memory_compress</code></td><td>Deduplicate and consolidate related memories</td></tr>
+              <tr><td><code>memory_extract_from_conversation</code></td><td>Extract facts from a conversation turn</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- KNOWLEDGE GRAPH -->
+      <div class="tab-panel" id="mcp-kg">
+        <p class="prose" style="margin-bottom:.8rem;">Entity-relationship operations for graph-RAG workflows.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Tool</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>kg_create_entity</code></td><td>Create a named entity (person, place, concept)</td></tr>
+              <tr><td><code>kg_add_observations</code></td><td>Attach factual observations to an entity</td></tr>
+              <tr><td><code>kg_create_relation</code></td><td>Define a directed relation between two entities</td></tr>
+              <tr><td><code>kg_read</code></td><td>Read an entity's full profile</td></tr>
+              <tr><td><code>kg_search</code></td><td>Exact-name entity search</td></tr>
+              <tr><td><code>kg_semantic_search</code></td><td>Semantic search across entities</td></tr>
+              <tr><td><code>kg_expand_neighbors</code></td><td>Expand the graph from a starting entity</td></tr>
+              <tr><td><code>kg_find_path</code></td><td>Find connection paths between two entities</td></tr>
+              <tr><td><code>kg_get_related</code></td><td>Get entities related to a target entity</td></tr>
+              <tr><td><code>kg_delete_entity</code></td><td>Remove an entity and its relations</td></tr>
+              <tr><td><code>kg_delete_relation</code></td><td>Remove a specific relation</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TASK STREAMS -->
+      <div class="tab-panel" id="mcp-task">
+        <p class="prose" style="margin-bottom:.8rem;">Multi-step workflow state management.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Tool</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>task_stream_create</code></td><td>Create a named task stream for multi-step workflows</td></tr>
+              <tr><td><code>task_stream_add</code></td><td>Append an event to a task stream</td></tr>
+              <tr><td><code>task_stream_get</code></td><td>Get a task stream's full history</td></tr>
+              <tr><td><code>task_stream_context</code></td><td>Get condensed context for the current task</td></tr>
+              <tr><td><code>task_stream_list</code></td><td>List active task streams</td></tr>
+              <tr><td><code>task_stream_archive</code></td><td>Archive a completed task stream</td></tr>
+              <tr><td><code>task_stream_auto_summarize</code></td><td>LLM-driven task stream compression</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CLIENT CONFIG -->
+      <div class="tab-panel" id="mcp-client">
+        <p class="prose" style="margin-bottom:.8rem;">Claude Desktop configuration example:</p>
+        <div class="code-block">
+          <span class="code-lang">json</span>
+{
+  <span class="str">"mcpServers"</span>: {
+    <span class="str">"uar-memory"</span>: {
+      <span class="str">"url"</span>: <span class="str">"http://localhost:3000/mcp/memory"</span>
+    }
+  }
+}
+        </div>
+        <p class="prose" style="margin-top:.8rem;">Any MCP-compatible client can connect to this endpoint — Claude Desktop, LangGraph, AutoGen, Cursor, and others.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION: KNOWLEDGE GRAPH ────────────────── -->
+  <section class="section" id="graph">
+    <div class="section-eyebrow">§ 06 — Graph Intelligence</div>
+    <h2 class="section-title">Knowledge Graph</h2>
+    <p class="section-lead">A structured entity-relationship model on top of the scoped memory system. Enables graph-RAG workflows where agents reason across connected entities.</p>
+
+    <h3 class="section-sub">Conceptual Model</h3>
+    <div class="graph-svg-wrap">
+      <svg viewBox="0 0 960 440" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 3.5 L 0 7 z" fill="#5C6B7A"/>
+          </marker>
+          <marker id="arrow-ember" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 3.5 L 0 7 z" fill="#FF6A3D"/>
+          </marker>
+          <filter id="glow">
+            <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#FF6A3D" flood-opacity=".12"/>
+          </filter>
+        </defs>
+
+        <!-- ── ENTITY: Alice (center-left) ── -->
+        <g transform="translate(175,180)">
+          <rect x="-115" y="-36" width="230" height="72" rx="10" fill="#0F1620" stroke="#FF6A3D" stroke-width="1.5" filter="url(#glow)"/>
+          <text x="0" y="-10" text-anchor="middle" fill="#FF6A3D" font-family="JetBrains Mono" font-size="10" font-weight="600" letter-spacing=".08em">USER</text>
+          <text x="0" y="14" text-anchor="middle" fill="#E8EDF3" font-family="Space Grotesk" font-size="17" font-weight="700">"Alice"</text>
+        </g>
+
+        <!-- ── ENTITY: Acme Corp (top-right) ── -->
+        <g transform="translate(620,90)">
+          <rect x="-130" y="-36" width="260" height="72" rx="10" fill="#0F1620" stroke="#2B3F55" stroke-width="1"/>
+          <text x="0" y="-10" text-anchor="middle" fill="#5C6B7A" font-family="JetBrains Mono" font-size="10" font-weight="600" letter-spacing=".08em">COMPANY</text>
+          <text x="0" y="14" text-anchor="middle" fill="#E8EDF3" font-family="Space Grotesk" font-size="17" font-weight="700">"Acme Corp"</text>
+        </g>
+
+        <!-- ── ENTITY: Bob (bottom-right) ── -->
+        <g transform="translate(620,290)">
+          <rect x="-100" y="-36" width="200" height="72" rx="10" fill="#0F1620" stroke="#2B3F55" stroke-width="1"/>
+          <text x="0" y="-10" text-anchor="middle" fill="#5C6B7A" font-family="JetBrains Mono" font-size="10" font-weight="600" letter-spacing=".08em">USER</text>
+          <text x="0" y="14" text-anchor="middle" fill="#E8EDF3" font-family="Space Grotesk" font-size="17" font-weight="700">"Bob"</text>
+        </g>
+
+        <!-- ── RELATION: Alice → works_at → Acme Corp ── -->
+        <line x1="290" y1="165" x2="490" y2="100" stroke="#FF6A3D" stroke-width="1.2" stroke-dasharray="6,4" marker-end="url(#arrow-ember)"/>
+        <g transform="translate(388,120)">
+          <rect x="-42" y="-11" width="84" height="22" rx="4" fill="rgba(255,106,61,.12)"/>
+          <text x="0" y="4" text-anchor="middle" fill="#FF6A3D" font-family="JetBrains Mono" font-size="10" font-weight="500">works_at</text>
+        </g>
+
+        <!-- ── RELATION: Alice → knows → Bob ── -->
+        <line x1="290" y1="200" x2="520" y2="280" stroke="#5C6B7A" stroke-width="1" stroke-dasharray="6,4" marker-end="url(#arrow)"/>
+        <g transform="translate(402,252)">
+          <rect x="-30" y="-11" width="60" height="22" rx="4" fill="rgba(92,107,122,.1)"/>
+          <text x="0" y="4" text-anchor="middle" fill="#5C6B7A" font-family="JetBrains Mono" font-size="10" font-weight="500">knows</text>
+        </g>
+
+        <!-- ── OBSERVATIONS (attached to Alice) ── -->
+        <g transform="translate(175,340)">
+          <rect x="-148" y="-16" width="296" height="32" rx="6" fill="rgba(96,165,250,.06)" stroke="rgba(96,165,250,.2)" stroke-width="1"/>
+          <circle cx="-130" cy="0" r="3" fill="#60A5FA"/>
+          <text x="-118" y="4" fill="#60A5FA" font-family="JetBrains Mono" font-size="10">"Works at Acme Corp"</text>
+        </g>
+        <line x1="175" y1="216" x2="175" y2="324" stroke="rgba(96,165,250,.2)" stroke-width="1" stroke-dasharray="3,3"/>
+
+        <g transform="translate(175,386)">
+          <rect x="-163" y="-16" width="326" height="32" rx="6" fill="rgba(96,165,250,.06)" stroke="rgba(96,165,250,.2)" stroke-width="1"/>
+          <circle cx="-145" cy="0" r="3" fill="#60A5FA"/>
+          <text x="-133" y="4" fill="#60A5FA" font-family="JetBrains Mono" font-size="10">"Prefers TypeScript over Python"</text>
+        </g>
+
+        <!-- ── LEGEND ── -->
+        <g transform="translate(800,350)">
+          <text x="0" y="0" fill="#5C6B7A" font-family="JetBrains Mono" font-size="9" letter-spacing=".06em">LEGEND</text>
+          <rect x="0" y="12" width="12" height="12" rx="2" fill="#0F1620" stroke="#FF6A3D" stroke-width="1"/>
+          <text x="20" y="22" fill="#A7B0BC" font-family="Inter" font-size="10">Entity</text>
+          <circle cx="6" cy="42" r="3" fill="#60A5FA"/>
+          <text x="20" y="45" fill="#A7B0BC" font-family="Inter" font-size="10">Observation</text>
+          <line x1="0" y1="60" x2="12" y2="60" stroke="#5C6B7A" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="20" y="64" fill="#A7B0BC" font-family="Inter" font-size="10">Relation</text>
+        </g>
+      </svg>
+    </div>
+
+    <h3 class="section-sub">Usage Example</h3>
+    <div class="code-block">
+      <span class="code-lang">python · mcp tool calls</span>
+<span class="comment"># Create an entity with observations</span>
+<span class="key">kg_create_entity</span>(
+    name=<span class="str">"Alice"</span>,
+    entity_type=<span class="str">"user"</span>,
+    observations=[<span class="str">"Alice works at Acme Corp"</span>]
+)
+
+<span class="comment"># Define a relationship</span>
+<span class="key">kg_create_relation</span>(
+    source=<span class="str">"Alice"</span>,
+    relation_type=<span class="str">"works_at"</span>,
+    target=<span class="str">"Acme Corp"</span>
+)
+
+<span class="comment"># Later, in a new session — expand the graph</span>
+<span class="key">kg_expand_neighbors</span>(entity=<span class="str">"Alice"</span>)
+<span class="comment"># → Returns: Acme Corp, Bob, ...</span>
+    </div>
+
+    <div class="callout">
+      <div class="callout-label">Visual Explorer</div>
+      <div class="callout-text">Surrealist (included in the Docker Compose stack) provides a visual graph explorer. Connect to <code>ws://localhost:8000</code> with your SurrealDB credentials to browse the knowledge graph interactively.</div>
+    </div>
+  </section>
+
+  <!-- ── SECTION: ANNOTATED CONFIG ───────────────── -->
+  <section class="section" id="annotated-config">
+    <div class="section-eyebrow">§ 07 — Reference</div>
+    <h2 class="section-title">Annotated Configuration</h2>
+    <p class="section-lead">Complete <code>[memory]</code> config block with every field documented.</p>
+
+    <div class="tabs" id="ref-tabs">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('ref-tabs','ref-toml')">config.toml</button>
+        <button class="tab-btn" onclick="switchTab('ref-tabs','ref-env')">Environment Variables</button>
+      </div>
+
+      <div class="tab-panel active" id="ref-toml">
+        <div class="code-block">
+          <span class="code-lang">toml</span>
+[<span class="key">memory</span>]
+<span class="comment"># ── Core ────────────────────────────────────────────────────────</span>
+<span class="key">enabled</span> = <span class="val">true</span>                        <span class="comment"># Master switch — false by default</span>
+
+<span class="comment"># ── Storage backend ──────────────────────────────────────────────</span>
+<span class="key">db_path</span> = <span class="str">"./data/memory.db"</span>          <span class="comment"># RocksDB path (embedded mode only)</span>
+
+<span class="comment"># External SurrealDB (production — overrides embedded mode)</span>
+<span class="comment"># surreal_endpoint = "ws://surreal-svc:8000"</span>
+<span class="comment"># surreal_user     = "root"</span>
+<span class="comment"># surreal_pass     = "changeme"</span>
+<span class="comment"># namespace        = "uar"</span>
+<span class="comment"># database         = "memory"</span>
+
+<span class="comment"># ── Embeddings ───────────────────────────────────────────────────</span>
+<span class="key">embedding_provider</span> = <span class="str">"openai"</span>         <span class="comment"># "openai" | "cohere" | "local"</span>
+<span class="key">embedding_model</span>    = <span class="str">"text-embedding-3-small"</span>
+
+<span class="comment"># ── Capture ──────────────────────────────────────────────────────</span>
+<span class="key">auto_capture</span> = <span class="val">true</span>                   <span class="comment"># Extract memories after each turn</span>
+
+<span class="comment"># ── Context injection ────────────────────────────────────────────</span>
+<span class="key">inject_context</span>     = <span class="val">true</span>             <span class="comment"># Prepend memory block to LLM prompt</span>
+<span class="key">max_context_tokens</span> = <span class="val">2000</span>             <span class="comment"># Max tokens for injected memories</span>
+<span class="key">vector_weight</span>      = <span class="val">0.7</span>              <span class="comment"># Semantic similarity weight (0–1)</span>
+<span class="key">bm25_weight</span>        = <span class="val">0.3</span>              <span class="comment"># BM25 keyword weight (0–1, sum=1)</span>
+
+<span class="comment"># ── MCP HTTP ─────────────────────────────────────────────────────</span>
+<span class="key">mcp_http_enabled</span> = <span class="val">true</span>               <span class="comment"># Expose memory tools as MCP server</span>
+<span class="key">mcp_http_path</span>    = <span class="str">"/mcp/memory"</span>     <span class="comment"># HTTP path for MCP endpoint</span>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="ref-env">
+        <div class="code-block">
+          <span class="code-lang">bash</span>
+<span class="key">UAR_MEMORY__ENABLED</span>=<span class="val">true</span>
+<span class="key">UAR_MEMORY__DB_PATH</span>=<span class="str">./data/memory.db</span>
+<span class="key">UAR_MEMORY__EMBEDDING_PROVIDER</span>=<span class="str">openai</span>
+<span class="key">UAR_MEMORY__EMBEDDING_MODEL</span>=<span class="str">text-embedding-3-small</span>
+<span class="key">UAR_MEMORY__AUTO_CAPTURE</span>=<span class="val">true</span>
+<span class="key">UAR_MEMORY__INJECT_CONTEXT</span>=<span class="val">true</span>
+<span class="key">UAR_MEMORY__MAX_CONTEXT_TOKENS</span>=<span class="val">2000</span>
+<span class="key">UAR_MEMORY__VECTOR_WEIGHT</span>=<span class="val">0.7</span>
+<span class="key">UAR_MEMORY__BM25_WEIGHT</span>=<span class="val">0.3</span>
+<span class="key">UAR_MEMORY__MCP_HTTP_ENABLED</span>=<span class="val">true</span>
+<span class="key">UAR_MEMORY__MCP_HTTP_PATH</span>=<span class="str">/mcp/memory</span>
+<span class="key">UAR_MEMORY__SURREAL_ENDPOINT</span>=<span class="str">ws://surreal-svc:8000</span>
+<span class="key">UAR_MEMORY__SURREAL_USER</span>=<span class="str">root</span>
+<span class="key">UAR_MEMORY__SURREAL_PASS</span>=<span class="str">changeme</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SECTION: QUICK START ────────────────────── -->
+  <section class="section" id="quickstart">
+    <div class="section-eyebrow">§ 08 — Getting Started</div>
+    <h2 class="section-title">Quick Start</h2>
+    <p class="section-lead">Five steps from zero to durable agent memory.</p>
+
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">1</span>
+        <div class="step-title">Enable Memory</div>
+        <div class="step-body">
+          <div class="code-block" style="margin-top:.5rem;">
+            <span class="code-lang">bash</span>
+<span class="key">export</span> UAR_MEMORY__ENABLED=<span class="val">true</span>
+<span class="key">export</span> OPENAI_API_KEY=<span class="str">sk-...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">2</span>
+        <div class="step-title">Start UAR</div>
+        <div class="step-body">
+          <div class="code-block" style="margin-top:.5rem;">
+            <span class="code-lang">bash</span>
+docker compose -f docker-compose.prod.yml up -d
+<span class="comment"># or: cargo run</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">3</span>
+        <div class="step-title">Run Your First Conversation</div>
+        <div class="step-body">Send a message through the web UI or via the API:
+          <div class="code-block" style="margin-top:.5rem;">
+            <span class="code-lang">bash</span>
+curl -X POST http://localhost:3000/api/uar/runs \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{"agent_id": "your-agent-id", "input": "My name is Alice and I work at Acme Corp."}'</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">4</span>
+        <div class="step-title">Verify Recall</div>
+        <div class="step-body">After the run completes, check what was remembered:
+          <div class="code-block" style="margin-top:.5rem;">
+            <span class="code-lang">bash</span>
+<span class="comment"># Via the memory admin API</span>
+curl <span class="str">"http://localhost:3000/api/admin/memories?scope=session"</span>
+          </div>
+          <p style="font-family:var(--font-ui);font-size:.83rem;color:var(--fg-muted);margin-top:.6rem;">Or connect Claude Desktop to the MCP endpoint and call <code style="font-family:var(--font-mono);font-size:.78rem;background:var(--muted);border:1px solid var(--border);border-radius:3px;padding:.08rem .35rem;">memory_list</code> — you should see the extracted fact about Alice.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <span class="step-num">5</span>
+        <div class="step-title">Inspect the Knowledge Graph</div>
+        <div class="step-body">Start a new conversation and ask: <em>"What do you know about Alice?"</em> — UAR will inject the recalled memory and the agent answers with the stored fact, even in a brand new session. To explore visually, open Surrealist at <code>http://localhost:8080</code> and connect to <code>ws://localhost:8000</code>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CONCLUSION ──────────────────────────────── -->
+  <div class="conclusion">
+    <div class="conclusion-title">Further Reading</div>
+    <div class="conclusion-body">
+      The memory system is one layer of the Universal Agent Runtime's production infrastructure. Explore the full architecture, dependency management, and the upstream surreal-memory library for deeper integration.
+    </div>
+    <div class="pill-list">
+      <span class="pill">Dependency Management</span>
+      <span class="pill">Architecture Overview</span>
+      <span class="pill">surreal-memory library</span>
+      <span class="pill">UAR-AGENT-MD Spec</span>
+      <span class="pill">Cedar Governance</span>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ──────────────────────────────────── -->
+  <footer class="footer">
+    <div class="footer-brand">travis<em>james</em>.ai</div>
+    <div class="footer-meta">Universal Agent Runtime · Memory System Documentation · Feb 2026</div>
+  </footer>
+
+</div><!-- /wrap -->
+
+<script>
+function switchTab(containerId, panelId) {
+  const container = document.getElementById(containerId);
+  container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

@@ -85,7 +85,7 @@ impl VectorMatcher {
         if tok_guard.is_none() {
             info!("Initializing Tokenizer...");
             // Try to load from the downloaded file
-            let path = std::path::Path::new("src/uar/runtime/matching/models/tokenizer.json");
+            let path = std::path::Path::new("/app/models/tokenizer.json");
             let tokenizer = if path.exists() {
                 Tokenizer::from_file(path).map_err(|e| anyhow::anyhow!(e))?
             } else {

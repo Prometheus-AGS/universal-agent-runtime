@@ -99,7 +99,7 @@ resource "kubernetes_stateful_set" "postgres" {
           # ── Health checks ─────────────────────────────────────────────────
           liveness_probe {
             exec {
-              command = ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
+              command = ["pg_isready", "-U", var.postgres_user, "-d", var.postgres_db]
             }
             initial_delay_seconds = 30
             period_seconds        = 10
@@ -109,7 +109,7 @@ resource "kubernetes_stateful_set" "postgres" {
 
           readiness_probe {
             exec {
-              command = ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
+              command = ["pg_isready", "-U", var.postgres_user, "-d", var.postgres_db]
             }
             initial_delay_seconds = 10
             period_seconds        = 5

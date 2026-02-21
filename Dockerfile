@@ -86,8 +86,11 @@ COPY --from=builder /app/target/release/universal-agent-runtime /app/server
 # Copy static assets (served by the app at /static)
 COPY --from=builder /app/static /app/static
 
+# Copy tokenizer model files needed by VectorMatcher
+COPY --from=builder /app/src/uar/runtime/matching/models/*.json /app/models/
+
 # Create data directories used at runtime
-RUN mkdir -p /data/ingest /app/skills /app/policies
+RUN mkdir -p /data/ingest /app/skills /app/policies /app/models
 
 # Expose port
 EXPOSE 3000
