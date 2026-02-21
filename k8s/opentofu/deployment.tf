@@ -59,7 +59,7 @@ resource "kubernetes_deployment" "uar" {
 
         container {
           name  = "uar"
-          image = "tribehealth/universal-agent-runtime:02212026.3"
+          image = "tribehealth/universal-agent-runtime:02212026.4"
 
           port {
             name           = "http"
@@ -154,6 +154,16 @@ resource "kubernetes_deployment" "uar" {
               secret_key_ref {
                 name = kubernetes_secret.uar_app_secrets.metadata[0].name
                 key  = "REDIS_URL"
+              }
+            }
+          }
+
+          env {
+            name = "UAR_MEMORY__SURREAL_PASS"
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.uar_app_secrets.metadata[0].name
+                key  = "UAR_MEMORY__SURREAL_PASS"
               }
             }
           }
