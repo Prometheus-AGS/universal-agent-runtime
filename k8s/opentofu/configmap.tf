@@ -18,6 +18,9 @@ resource "kubernetes_config_map" "uar_config" {
     # ── Persistence ──────────────────────────────────────────────────────────
     UAR_PERSISTENCE__PROVIDER             = "postgres"
     UAR_PERSISTENCE__EXTERNAL_CACHE_ENABLED = "true"
+    # Dimensions for the pgvector column; must match the embedding model.
+    # text-embedding-3-small → 1536, text-embedding-3-large → 3072
+    UAR_PERSISTENCE__VECTOR_DIMENSION     = "1536"
 
     # ── Security ────────────────────────────────────────────────────────────
     UAR_SECURITY__JWT_REQUIRED = "true"

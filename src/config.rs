@@ -515,6 +515,8 @@ impl AppConfig {
             .set_default("resilience.requests_per_second", 5.0)?
             .set_default("resilience.burst_size", 10.0)?
             .set_default("persistence.external_cache_enabled", false)?
+            // 1536 = text-embedding-3-small; override via UAR_PERSISTENCE__VECTOR_DIMENSION
+            .set_default("persistence.vector_dimension", 1536_i64)?
             // File processing defaults
             .set_default("file_processing.provider", "auto")?
             .set_default(
