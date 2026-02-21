@@ -54,6 +54,7 @@ export interface StreamingState {
   isStreaming: boolean;
   runId: string | null;
   streamingMessageId: string | null;
+  awaitingFirstToken: boolean;
 }
 
 export function getMessageText(message: RichMessage): string {

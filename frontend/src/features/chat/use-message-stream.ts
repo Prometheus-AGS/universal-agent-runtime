@@ -27,8 +27,96 @@ interface AguiToolResult { kind: "tool_result"; request_id: string; call_index: 
 interface AguiError { kind: "error"; request_id: string; message: string; code?: string }
 interface AguiSkillActivated { kind: "skill"; phase: "activated"; request_id: string; skill: { id: string; title: string }; selection_method: string }
 interface AguiContextUpdate { kind: "context"; phase: "update"; strategy: string; messages_removed: number; tokens_saved: number; was_applied: boolean; summary_generated: boolean }
+interface AguiMemoryRecallItem {
+  key: string;
+  value: string;
+  source: string;
+  scope?: string;
+  memory_type?: string;
+  importance?: number;
+}
+interface AguiMemoryRecall {
+  kind: "memory";
+  phase: "recall";
+  request_id: string;
+  items: AguiMemoryRecallItem[];
+  count?: number;
+}
+interface AguiMemoryMutation {
+  kind: "memory";
+  phase: "mutation";
+  request_id: string;
+  operation: string;
+  memory_id: string;
+  content: string;
+  scope: string;
+  memory_type: string;
+}
+interface AguiMemoryUpdate {
+  kind: "memory";
+  phase: "update";
+  request_id: string;
+  key: string;
+  value: string;
+  operation: string;
+}
+interface AguiArtifactInputRequest {
+  kind: "artifact_input_request";
+  request_id: string;
+  artifact_id: string;
+  artifact_type: string;
+  title: string;
+  content: string;
+  metadata: Record<string, unknown>;
+}
+interface AguiArtifactDisplay {
+  kind: "artifact";
+  phase: "complete";
+  request_id: string;
+  artifact_id: string;
+  artifact_type: string;
+  title: string;
+  content: string;
+  language?: string;
+  metadata: Record<string, unknown>;
+}
+interface AguiRaw {
+  kind: "raw";
+  event?: unknown;
+  source?: string;
+}
+interface AguiCustom {
+  kind: "custom";
+  name?: string;
+  value?: unknown;
+  data?: unknown;
+}
 
-type AguiPayload = AguiMessageDelta | AguiThinkingDelta | AguiReasoningDelta | AguiCitationAdded | AguiToolCallDelta | AguiToolCallComplete | AguiToolResult | AguiError | AguiSkillActivated | AguiContextUpdate | { kind: string;[k: string]: unknown };
+type AguiPayload = AguiMessageDelta | AguiThinkingDelta | AguiReasoningDelta | AguiCitationAdded | AguiToolCallDelta | AguiToolCallComplete | AguiToolResult | AguiError | AguiSkillActivated | AguiContextUpdate | AguiMemoryRecall | AguiMemoryMutation | AguiMemoryUpdate | AguiArtifactInputRequest | AguiArtifactDisplay | AguiRaw | AguiCustom | { kind: string;[k: string]: unknown };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function extractA2uiEnvelope(value: unknown): Record<string, unknown> | null {
+  if (!isRecord(value)) return null;
+  const directKeys = ["surfaceUpdate", "dataModelUpdate", "beginRendering", "deleteSurface"];
+  if (directKeys.some((k) => k in value)) return value;
+
+  if ("event" in value) {
+    const nested = extractA2uiEnvelope(value.event);
+    if (nested) return nested;
+  }
+  if ("value" in value) {
+    const nested = extractA2uiEnvelope(value.value);
+    if (nested) return nested;
+  }
+  if ("data" in value) {
+    const nested = extractA2uiEnvelope(value.data);
+    if (nested) return nested;
+  }
+  return null;
+}
 
 function parseSseBlock(raw: string): { event: string; data: string } | null {
   let event = "message";
@@ -67,6 +155,7 @@ export function useMessageStream() {
       abortRef.current = controller;
       const runId = `run-${Date.now()}`;
       const pendingArgs = new Map<string, string>();
+      useChatMessageStore.getState().beginStream(threadId, runId);
 
       try {
         const res = await fetch(UAR_URL, {
@@ -117,6 +206,9 @@ export function useMessageStream() {
               try { agui = JSON.parse(data) as AguiPayload; } catch { continue; }
 
               const store = useChatMessageStore.getState();
+              if (event !== "agui.error" && event !== "agui.done") {
+                store.markStreamStarted(threadId, runId);
+              }
 
               switch (event) {
                 case "agui.message.delta": {
@@ -132,7 +224,7 @@ export function useMessageStream() {
                 }
                 case "agui.citation.added": {
                   const e = agui as AguiCitationAdded;
-                  if (e.citation) store.addCitation(threadId, { source: e.citation.title ?? e.citation.url ?? "Source", content: e.citation.snippet ?? "", url: e.citation.url });
+                  if (e.citation) store.addCitation(threadId, runId, { source: e.citation.title ?? e.citation.url ?? "Source", content: e.citation.snippet ?? "", url: e.citation.url });
                   break;
                 }
                 case "agui.tool_call.delta": {
@@ -145,7 +237,7 @@ export function useMessageStream() {
                   let args: Record<string, unknown>;
                   try { args = JSON.parse(e.arguments_json) as Record<string, unknown>; } catch { args = { _raw: e.arguments_json }; }
                   const toolCall: ToolCallContentBlock = { type: "tool-call", toolCallId: e.id, toolName: e.name, args, status: "running" };
-                  store.addToolCall(threadId, toolCall);
+                  store.addToolCall(threadId, runId, toolCall);
                   pendingArgs.delete(e.id);
                   break;
                 }
@@ -170,12 +262,120 @@ export function useMessageStream() {
                 }
                 case "agui.skill.activated": {
                   const e = agui as AguiSkillActivated;
-                  store.addSkillActivation(threadId, { skillId: e.skill.id, skillName: e.skill.title, selectionMethod: e.selection_method, status: "active" });
+                  store.addSkillActivation(threadId, runId, { skillId: e.skill.id, skillName: e.skill.title, selectionMethod: e.selection_method, status: "active" });
                   break;
                 }
                 case "agui.context.update": {
                   const e = agui as AguiContextUpdate;
-                  if (e.was_applied) store.addContextUpdate(threadId, { strategy: e.strategy, messagesRemoved: e.messages_removed, tokensSaved: e.tokens_saved, wasApplied: e.was_applied, summaryGenerated: e.summary_generated });
+                  if (e.was_applied) store.addContextUpdate(threadId, runId, { strategy: e.strategy, messagesRemoved: e.messages_removed, tokensSaved: e.tokens_saved, wasApplied: e.was_applied, summaryGenerated: e.summary_generated });
+                  break;
+                }
+                case "agui.memory.recall": {
+                  const e = agui as AguiMemoryRecall;
+                  const toolCall: ToolCallContentBlock = {
+                    type: "tool-call",
+                    toolCallId: `memory-recall-${Date.now()}`,
+                    toolName: "__memory_recall__",
+                    args: { items: e.items, count: e.count ?? e.items.length },
+                    status: "complete",
+                  };
+                  store.addToolCall(threadId, runId, toolCall);
+                  break;
+                }
+                case "agui.memory.mutation": {
+                  const e = agui as AguiMemoryMutation;
+                  const toolCall: ToolCallContentBlock = {
+                    type: "tool-call",
+                    toolCallId: e.memory_id || `memory-mutation-${Date.now()}`,
+                    toolName: "__memory_mutation__",
+                    args: {
+                      operation: e.operation,
+                      memoryId: e.memory_id,
+                      content: e.content,
+                      scope: e.scope,
+                      memoryType: e.memory_type,
+                    },
+                    status: "complete",
+                  };
+                  store.addToolCall(threadId, runId, toolCall);
+                  break;
+                }
+                case "agui.memory.update": {
+                  const e = agui as AguiMemoryUpdate;
+                  const toolCall: ToolCallContentBlock = {
+                    type: "tool-call",
+                    toolCallId: `memory-update-${Date.now()}`,
+                    toolName: "__memory_update__",
+                    args: {
+                      key: e.key,
+                      operation: e.operation,
+                      value: e.value,
+                    },
+                    status: "complete",
+                  };
+                  store.addToolCall(threadId, runId, toolCall);
+                  break;
+                }
+                case "agui.artifact_input_request": {
+                  const e = agui as AguiArtifactInputRequest;
+                  const toolCall: ToolCallContentBlock = {
+                    type: "tool-call",
+                    toolCallId: e.artifact_id,
+                    toolName: "__a2ui_input__",
+                    args: {
+                      runId: e.request_id,
+                      artifactId: e.artifact_id,
+                      artifactType: e.artifact_type,
+                      title: e.title,
+                      content: e.content,
+                      metadata: e.metadata,
+                    },
+                    status: "running",
+                  };
+                  store.addToolCall(threadId, runId, toolCall);
+                  break;
+                }
+                case "agui.artifact": {
+                  const e = agui as AguiArtifactDisplay;
+                  const toolCall: ToolCallContentBlock = {
+                    type: "tool-call",
+                    toolCallId: e.artifact_id,
+                    toolName: "__a2ui_display__",
+                    args: {
+                      artifactType: e.artifact_type,
+                      title: e.title,
+                      language: e.language,
+                      metadata: e.metadata,
+                    },
+                    result: e.content,
+                    status: "complete",
+                  };
+                  store.addToolCall(threadId, runId, toolCall);
+                  break;
+                }
+                case "agui.custom":
+                case "agui.raw": {
+                  const envelope = extractA2uiEnvelope(agui);
+                  if (!envelope) break;
+                  const envelopeType =
+                    "surfaceUpdate" in envelope ? "surfaceUpdate"
+                    : "dataModelUpdate" in envelope ? "dataModelUpdate"
+                    : "beginRendering" in envelope ? "beginRendering"
+                    : "deleteSurface" in envelope ? "deleteSurface"
+                    : "chunk";
+                  store.addToolCall(threadId, runId, {
+                    type: "tool-call",
+                    toolCallId: `a2ui-${envelopeType}-${Date.now()}`,
+                    toolName: "__a2ui_display__",
+                    args: {
+                      artifactType: "a2ui/chunk",
+                      title: `A2UI ${envelopeType}`,
+                      language: "json",
+                      metadata: {},
+                    },
+                    result: JSON.stringify(envelope, null, 2),
+                    status: "complete",
+                  });
                   break;
                 }
                 case "agui.done":
@@ -193,13 +393,17 @@ export function useMessageStream() {
               callbacks?.onComplete?.();
               return;
             }
+            useChatMessageStore.getState().markStreamStarted(threadId, runId);
           }
         }
 
         useChatMessageStore.getState().finishStream(threadId);
         callbacks?.onComplete?.();
       } catch (err) {
-        if ((err as Error).name === "AbortError") return;
+        if ((err as Error).name === "AbortError") {
+          useChatMessageStore.getState().finishStream(threadId);
+          return;
+        }
         const error = err instanceof Error ? err : new Error(String(err));
         // error.message already has full context (URL, status, body, timestamp)
         // from the throw above; for unexpected runtime errors, add stack info

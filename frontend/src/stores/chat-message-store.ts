@@ -19,13 +19,15 @@ interface ChatMessageActions {
   /** Load persisted messages for a thread from PGlite into Zustand. */
   loadMessagesFromDb(threadId: string): Promise<void>;
   initThread(threadId: string, messages: RichMessage[]): void;
+  beginStream(threadId: string, runId: string): void;
+  markStreamStarted(threadId: string, runId: string): void;
   appendTextDelta(threadId: string, runId: string, text: string): void;
   appendThinkingDelta(threadId: string, runId: string, text: string): void;
-  addToolCall(threadId: string, toolCall: ToolCallContentBlock): void;
+  addToolCall(threadId: string, runId: string, toolCall: ToolCallContentBlock): void;
   updateToolCall(threadId: string, toolCallId: string, update: Partial<Omit<ToolCallContentBlock, "type">>): void;
-  addCitation(threadId: string, citation: { source: string; content: string; url?: string }): void;
-  addSkillActivation(threadId: string, skill: { skillId: string; skillName: string; selectionMethod?: string; status: "active" | "complete" }): void;
-  addContextUpdate(threadId: string, update: Omit<ContextUpdateContentBlock, "type">): void;
+  addCitation(threadId: string, runId: string, citation: { source: string; content: string; url?: string }): void;
+  addSkillActivation(threadId: string, runId: string, skill: { skillId: string; skillName: string; selectionMethod?: string; status: "active" | "complete" }): void;
+  addContextUpdate(threadId: string, runId: string, update: Omit<ContextUpdateContentBlock, "type">): void;
   finishStream(threadId: string): void;
   setStreamError(threadId: string, error: string): void;
   clearThread(threadId: string): void;
@@ -33,7 +35,7 @@ interface ChatMessageActions {
 
 type ChatMessageStore = ChatMessageState & ChatMessageActions;
 
-const defaultStreamingState: StreamingState = { isStreaming: false, runId: null, streamingMessageId: null };
+const defaultStreamingState: StreamingState = { isStreaming: false, runId: null, streamingMessageId: null, awaitingFirstToken: false };
 
 function ensureThread(state: ChatMessageState, threadId: string): RichMessage[] {
   if (!state.messagesByThread[threadId]) state.messagesByThread[threadId] = [];
@@ -56,7 +58,7 @@ function getOrCreateStreamingMessage(state: ChatMessageState, threadId: string, 
   const newMsg: RichMessage = { id: msgId, role: "assistant", content: [], createdAt: new Date(), status: "in_progress" };
   if (!state.messagesByThread[threadId]) state.messagesByThread[threadId] = [];
   state.messagesByThread[threadId].push(newMsg);
-  state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: msgId };
+  state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: msgId, awaitingFirstToken: false };
   return newMsg;
 }
 
@@ -80,12 +82,32 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         if (!state.streamingByThread[threadId]) state.streamingByThread[threadId] = { ...defaultStreamingState };
       }),
 
+    beginStream: (threadId, runId) =>
+      set((state) => {
+        ensureThread(state, threadId);
+        state.streamingByThread[threadId] = {
+          isStreaming: true,
+          runId,
+          streamingMessageId: null,
+          awaitingFirstToken: true,
+        };
+      }),
+
+    markStreamStarted: (threadId, runId) =>
+      set((state) => {
+        const streaming = ensureStreaming(state, threadId);
+        if (streaming.runId !== runId) return;
+        streaming.awaitingFirstToken = false;
+      }),
+
     appendTextDelta: (threadId, runId, text) =>
       set((state) => {
         ensureThread(state, threadId);
         const streaming = ensureStreaming(state, threadId);
         if (!streaming.isStreaming || streaming.runId !== runId) {
-          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null };
+          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+        } else {
+          streaming.awaitingFirstToken = false;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
@@ -99,7 +121,12 @@ export const useChatMessageStore = create<ChatMessageStore>()(
     appendThinkingDelta: (threadId, runId, text) =>
       set((state) => {
         ensureThread(state, threadId);
-        ensureStreaming(state, threadId);
+        const streaming = ensureStreaming(state, threadId);
+        if (!streaming.isStreaming || streaming.runId !== runId) {
+          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+        } else {
+          streaming.awaitingFirstToken = false;
+        }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
         const idx = messages.findIndex((m) => m.id === msg.id);
@@ -109,13 +136,18 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         else messages[idx].content.push({ type: "reasoning", text });
       }),
 
-    addToolCall: (threadId, toolCall) =>
+    addToolCall: (threadId, runId, toolCall) =>
       set((state) => {
         ensureThread(state, threadId);
-        const streaming = state.streamingByThread[threadId];
-        if (!streaming?.streamingMessageId) return;
+        const streaming = ensureStreaming(state, threadId);
+        if (!streaming.isStreaming || streaming.runId !== runId) {
+          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+        } else {
+          streaming.awaitingFirstToken = false;
+        }
+        const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
-        const idx = messages.findIndex((m) => m.id === streaming.streamingMessageId);
+        const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === -1) return;
         messages[idx].content.push(toolCall as ContentBlock);
       }),
@@ -130,32 +162,50 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         }
       }),
 
-    addCitation: (threadId, citation) =>
+    addCitation: (threadId, runId, citation) =>
       set((state) => {
-        const streaming = state.streamingByThread[threadId];
-        if (!streaming?.streamingMessageId) return;
+        ensureThread(state, threadId);
+        const streaming = ensureStreaming(state, threadId);
+        if (!streaming.isStreaming || streaming.runId !== runId) {
+          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+        } else {
+          streaming.awaitingFirstToken = false;
+        }
+        const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
-        const idx = messages?.findIndex((m) => m.id === streaming.streamingMessageId);
+        const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === undefined || idx === -1) return;
         messages[idx].content.push({ type: "citation", ...citation });
       }),
 
-    addSkillActivation: (threadId, skill) =>
+    addSkillActivation: (threadId, runId, skill) =>
       set((state) => {
-        const streaming = state.streamingByThread[threadId];
-        if (!streaming?.streamingMessageId) return;
+        ensureThread(state, threadId);
+        const streaming = ensureStreaming(state, threadId);
+        if (!streaming.isStreaming || streaming.runId !== runId) {
+          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+        } else {
+          streaming.awaitingFirstToken = false;
+        }
+        const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
-        const idx = messages?.findIndex((m) => m.id === streaming.streamingMessageId);
+        const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === undefined || idx === -1) return;
         messages[idx].content.push({ type: "skill-activation", skillId: skill.skillId, skillName: skill.skillName, selectionMethod: skill.selectionMethod, status: skill.status });
       }),
 
-    addContextUpdate: (threadId, update) =>
+    addContextUpdate: (threadId, runId, update) =>
       set((state) => {
-        const streaming = state.streamingByThread[threadId];
-        if (!streaming?.streamingMessageId) return;
+        ensureThread(state, threadId);
+        const streaming = ensureStreaming(state, threadId);
+        if (!streaming.isStreaming || streaming.runId !== runId) {
+          state.streamingByThread[threadId] = { isStreaming: true, runId, streamingMessageId: null, awaitingFirstToken: false };
+        } else {
+          streaming.awaitingFirstToken = false;
+        }
+        const msg = getOrCreateStreamingMessage(state, threadId, runId);
         const messages = state.messagesByThread[threadId];
-        const idx = messages?.findIndex((m) => m.id === streaming.streamingMessageId);
+        const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === undefined || idx === -1) return;
         messages[idx].content.push({ type: "context-update", ...update });
       }),
@@ -243,3 +293,6 @@ export const selectThreadMessages = (threadId: string) => (state: ChatMessageSto
 
 export const selectIsStreaming = (threadId: string) => (state: ChatMessageStore) =>
   state.streamingByThread[threadId]?.isStreaming ?? false;
+
+export const selectIsAwaitingFirstToken = (threadId: string) => (state: ChatMessageStore) =>
+  state.streamingByThread[threadId]?.awaitingFirstToken ?? false;

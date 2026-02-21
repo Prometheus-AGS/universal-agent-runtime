@@ -39,11 +39,15 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Separator } from "@/components/ui/separator";
 import { ContextUpdateBlock } from "@/features/chat/components/context-update-block";
 import { SkillActivationBlock } from "@/features/chat/components/skill-activation-block";
+import { MemoryMutationBlock, MemoryRecallBlock, MemoryUpdateBlock } from "@/features/chat/components/memory-chunk-block";
+import { A2uiDisplayBlock, A2uiInputBlock } from "@/features/chat/components/a2ui-artifact-block";
 import { ToolCallBlockWrapper } from "@/features/chat/components/tool-call-block";
 import { AttachmentPreviewStrip } from "@/features/chat/components/attachment-preview";
 import { useAttachmentContext } from "@/features/chat/attachment-context";
 import { useMemoryContext } from "@/features/chat/memory-context";
 import { cn } from "@/lib/utils";
+import { useThreadRegistryStore } from "@/stores/thread-registry-store";
+import { useChatMessageStore, selectIsAwaitingFirstToken } from "@/stores/chat-message-store";
 
 export const EnhancedThread: FC = () => (
   <ThreadPrimitive.Root
@@ -110,6 +114,10 @@ const EnhancedComposer: FC = () => {
   const attachmentManager = useAttachmentContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { memoryEnabled, setMemoryEnabled } = useMemoryContext();
+  const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
+  const isAwaitingFirstToken = useChatMessageStore(
+    selectIsAwaitingFirstToken(activeThreadId ?? "__none__"),
+  );
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,12 +145,12 @@ const EnhancedComposer: FC = () => {
 
       <ComposerPrimitive.AttachmentDropzone className="relative flex w-full flex-col rounded-2xl border border-input bg-background/80 px-1 pt-2 backdrop-blur-sm outline-none transition-shadow has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-ring/20 overflow-hidden">
 
-        {/* Animated progress bar — only visible while request is in-flight */}
-        <AuiIf condition={(s) => s.thread.isRunning}>
+        {/* Animated progress bar — only visible while waiting for first streamed token */}
+        {isAwaitingFirstToken && (
           <div className="absolute inset-x-0 top-0 h-[2px] overflow-hidden rounded-t-2xl">
             <div className="h-full w-1/2 animate-[shimmer_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-primary to-transparent" />
           </div>
-        </AuiIf>
+        )}
 
         {/* Attachment preview strip */}
         {attachmentManager && attachmentManager.pending.length > 0 && (
@@ -196,9 +204,17 @@ const EnhancedComposer: FC = () => {
             <BrainIcon className="size-4" />
           </TooltipIconButton>
 
-          {/* Running indicator */}
-          <AuiIf condition={(s) => s.thread.isRunning}>
+          {/* Request in-flight indicator (pre-stream) */}
+          {isAwaitingFirstToken && (
             <span className="ml-auto flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/70">
+              <Loader2Icon size={11} className="animate-spin text-primary" />
+              Waiting for model…
+            </span>
+          )}
+
+          {/* Running indicator (after stream begins) */}
+          <AuiIf condition={(s) => s.thread.isRunning}>
+            <span className={cn("ml-auto flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/70", isAwaitingFirstToken && "hidden")}>
               <span className="inline-flex items-center gap-0.5">
                 <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
                 <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.2s_infinite]" />
@@ -381,6 +397,77 @@ const ToolCallPart: FC<ToolCallMessagePartProps> = ({ toolName, args, result, st
     const a = args as { strategy: string; messagesRemoved: number; tokensSaved: number; wasApplied: boolean; summaryGenerated: boolean };
     return <ContextUpdateBlock strategy={a.strategy} messagesRemoved={a.messagesRemoved} tokensSaved={a.tokensSaved} wasApplied={a.wasApplied} summaryGenerated={a.summaryGenerated} />;
   }
+  if (toolName === "__memory_recall__") {
+    const a = args as {
+      items: Array<{
+        key: string;
+        value: string;
+        source: string;
+        scope?: string;
+        memory_type?: string;
+        importance?: number;
+      }>;
+      count?: number;
+    };
+    return <MemoryRecallBlock items={a.items ?? []} count={a.count} />;
+  }
+  if (toolName === "__memory_mutation__") {
+    const a = args as {
+      operation: string;
+      memoryId: string;
+      content: string;
+      scope: string;
+      memoryType: string;
+    };
+    return (
+      <MemoryMutationBlock
+        operation={a.operation}
+        memoryId={a.memoryId}
+        content={a.content}
+        scope={a.scope}
+        memoryType={a.memoryType}
+      />
+    );
+  }
+  if (toolName === "__memory_update__") {
+    const a = args as { key: string; operation: string; value: string };
+    return <MemoryUpdateBlock memoryKey={a.key} operation={a.operation} value={a.value} />;
+  }
+  if (toolName === "__a2ui_input__") {
+    const a = args as {
+      runId: string;
+      artifactId: string;
+      artifactType: string;
+      title: string;
+      content: string;
+      metadata: Record<string, unknown>;
+    };
+    const artifactStatus: "running" | "complete" | "failed" =
+      status.type === "running" ? "running" : status.type === "incomplete" ? "failed" : "complete";
+    return (
+      <A2uiInputBlock
+        runId={a.runId}
+        artifactId={a.artifactId}
+        artifactType={a.artifactType}
+        title={a.title}
+        content={a.content}
+        metadata={a.metadata}
+        status={artifactStatus}
+        result={typeof result === "string" ? result : result ? JSON.stringify(result) : undefined}
+      />
+    );
+  }
+  if (toolName === "__a2ui_display__") {
+    const a = args as { artifactType: string; title: string; language?: string };
+    return (
+      <A2uiDisplayBlock
+        artifactType={a.artifactType}
+        title={a.title}
+        language={a.language}
+        content={typeof result === "string" ? result : result ? JSON.stringify(result, null, 2) : ""}
+      />
+    );
+  }
   return <ToolCallBlockWrapper toolName={toolName} args={args as Record<string, unknown>} result={result} status={status} />;
 };
 
@@ -392,8 +479,10 @@ const MessageError: FC = () => {
 
   const errorText = useMessage((m: ThreadMessageLike) => {
     if (m.status?.type !== "incomplete") return null;
-    // biome-ignore lint/suspicious/noExplicitAny: assistant-ui message metadata is untyped
-    return (m as any).metadata?.custom?.errorText as string | undefined ?? null;
+    const maybe = m as ThreadMessageLike & {
+      metadata?: { custom?: { errorText?: string } };
+    };
+    return maybe.metadata?.custom?.errorText ?? null;
   });
 
   const handleCopy = useCallback(() => {
