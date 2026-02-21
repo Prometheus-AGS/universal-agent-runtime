@@ -23,7 +23,7 @@ RUN cd frontend && bun run build
 # ─────────────────────────────────────────────────────────────────
 # Stage 2: Rust build
 # ─────────────────────────────────────────────────────────────────
-FROM rust:1.85-slim-bookworm AS builder
+FROM rust:1.93-slim-bookworm AS builder
 
 WORKDIR /app
 
