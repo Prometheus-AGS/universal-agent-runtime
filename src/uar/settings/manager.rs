@@ -617,7 +617,9 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             "properties": {
                 "default": { "type": ["object", "null"], "title": "Default KB Config" },
                 "named": { "type": "object", "title": "Named KBs",
-                    "additionalProperties": { "type": "object" } }
+                    "additionalProperties": { "type": "object" } },
+                "named_keys": { "type": "array", "items": { "type": "string" },
+                    "title": "Named KB Keys" }
             }
         });
         let st = make_type("Knowledge Bases", "knowledge_bases", schema);
@@ -814,7 +816,7 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             "type": "object",
             "properties": {
                 "api_key": { "type": "string", "title": "API Key", "x-sensitive": true, "x-control": "password" },
-                "model": { "type": "string", "title": "OCR Model", "x-control": "select" }
+                "ocr_model": { "type": "string", "title": "OCR Model", "x-control": "select" }
             }
         });
         let st = make_type("Mistral OCR", "mistral_ocr", schema);

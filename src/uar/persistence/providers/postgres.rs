@@ -811,24 +811,27 @@ impl PersistenceLayer for PostgresProvider {
     async fn upsert_setting(&self, setting: &crate::uar::settings::schema::Settings) -> Result<()> {
         // Validate data against the JSON Schema before writing.
         // For leaf settings (e.g. "server.port"), the namespace schema describes the full
-        // object — not the individual field. Extract the property sub-schema when one exists
-        // so that scalar values like 3000 are validated against {"type":"integer"} rather
-        // than the top-level {"type":"object"} schema. For settings that store a full object
-        // (e.g. "provider.openai", "agent_config.orchestrated"), no matching property entry
-        // exists in the schema, so we fall back to validating against the full namespace schema.
+        // Validate `data` against the JSON Schema for this setting's property.
+        // When a dotted key like "server.port" is used, look up only the "port" property
+        // sub-schema so that scalar values (e.g. 3000) are validated against {"type":"integer"}
+        // rather than the top-level {"type":"object"} namespace schema.
+        // If the property is not present in the schema (e.g. free-form keys like
+        // "agent_config.orchestrated" or "provider.openai"), skip validation entirely —
+        // never fall back to the full namespace schema, which would reject non-object values.
         let type_key = setting.key.split('.').next().unwrap_or("unknown");
         let prop_key = setting.key.splitn(2, '.').nth(1);
         if let Some(st) = self.get_settings_type(type_key).await? {
-            let schema = if let Some(prop) = prop_key {
+            let schema_opt: Option<serde_json::Value> = if let Some(prop) = prop_key {
                 st.schema
                     .get("properties")
                     .and_then(|p| p.get(prop))
                     .cloned()
-                    .unwrap_or_else(|| st.schema.clone())
             } else {
-                st.schema.clone()
+                Some(st.schema.clone())
             };
-            validate_setting_data(&setting.data, &schema, &setting.key)?;
+            if let Some(schema) = schema_opt {
+                validate_setting_data(&setting.data, &schema, &setting.key)?;
+            }
         }
 
         sqlx::query(
