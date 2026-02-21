@@ -397,8 +397,11 @@ export const selectIsStreaming = (threadId: string) => (state: ChatMessageStore)
 export const selectIsAwaitingFirstToken = (threadId: string) => (state: ChatMessageStore) =>
   state.streamingByThread[threadId]?.awaitingFirstToken ?? false;
 
-export const selectRetryState = (threadId: string) => (state: ChatMessageStore) => ({
-  retryAttempt: state.streamingByThread[threadId]?.retryAttempt ?? 0,
-  retryMaxAttempts: state.streamingByThread[threadId]?.retryMaxAttempts ?? 0,
-  retryDelayMs: state.streamingByThread[threadId]?.retryDelayMs ?? 0,
-});
+export const selectRetryAttempt = (threadId: string) => (state: ChatMessageStore) =>
+  state.streamingByThread[threadId]?.retryAttempt ?? 0;
+
+export const selectRetryMaxAttempts = (threadId: string) => (state: ChatMessageStore) =>
+  state.streamingByThread[threadId]?.retryMaxAttempts ?? 0;
+
+export const selectRetryDelayMs = (threadId: string) => (state: ChatMessageStore) =>
+  state.streamingByThread[threadId]?.retryDelayMs ?? 0;

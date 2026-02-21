@@ -46,7 +46,13 @@ import { useAttachmentContext } from "@/features/chat/attachment-context";
 import { useMemoryContext } from "@/features/chat/memory-context";
 import { cn } from "@/lib/utils";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
-import { useChatMessageStore, selectIsAwaitingFirstToken, selectRetryState } from "@/stores/chat-message-store";
+import {
+  useChatMessageStore,
+  selectIsAwaitingFirstToken,
+  selectRetryAttempt,
+  selectRetryDelayMs,
+  selectRetryMaxAttempts,
+} from "@/stores/chat-message-store";
 
 export const EnhancedThread: FC = () => (
   <ThreadPrimitive.Root
@@ -117,9 +123,9 @@ const EnhancedComposer: FC = () => {
   const isAwaitingFirstToken = useChatMessageStore(
     selectIsAwaitingFirstToken(activeThreadId ?? "__none__"),
   );
-  const retryState = useChatMessageStore(
-    selectRetryState(activeThreadId ?? "__none__"),
-  );
+  const retryAttempt = useChatMessageStore(selectRetryAttempt(activeThreadId ?? "__none__"));
+  const retryMaxAttempts = useChatMessageStore(selectRetryMaxAttempts(activeThreadId ?? "__none__"));
+  const retryDelayMs = useChatMessageStore(selectRetryDelayMs(activeThreadId ?? "__none__"));
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -210,8 +216,8 @@ const EnhancedComposer: FC = () => {
           {isAwaitingFirstToken && (
             <span className="ml-auto flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/70">
               <Loader2Icon size={11} className="animate-spin text-primary" />
-              {retryState.retryAttempt > 0
-                ? `Retrying (${retryState.retryAttempt}/${Math.max(retryState.retryMaxAttempts, retryState.retryAttempt)}) in ${(retryState.retryDelayMs / 1000).toFixed(1)}s…`
+              {retryAttempt > 0
+                ? `Retrying (${retryAttempt}/${Math.max(retryMaxAttempts, retryAttempt)}) in ${(retryDelayMs / 1000).toFixed(1)}s…`
                 : "Waiting for model…"}
             </span>
           )}

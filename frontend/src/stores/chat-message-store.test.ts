@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { useChatMessageStore } from "./chat-message-store";
+import {
+  selectRetryAttempt,
+  selectRetryDelayMs,
+  selectRetryMaxAttempts,
+  useChatMessageStore,
+} from "./chat-message-store";
 
 const THREAD_ID = "thread-test";
 
@@ -59,5 +64,16 @@ describe("chat-message-store streaming", () => {
     }
 
     expect(useChatMessageStore.getState().streamingByThread[THREAD_ID]?.awaitingFirstToken).toBe(false);
+  });
+
+  test("retry selectors expose primitive values", () => {
+    useChatMessageStore.getState().initThread(THREAD_ID, []);
+    useChatMessageStore.getState().beginStream(THREAD_ID, "run-1");
+    useChatMessageStore.getState().setAwaitingRetry(THREAD_ID, "run-1", 2, 5, 1200);
+
+    const state = useChatMessageStore.getState();
+    expect(selectRetryAttempt(THREAD_ID)(state)).toBe(2);
+    expect(selectRetryMaxAttempts(THREAD_ID)(state)).toBe(5);
+    expect(selectRetryDelayMs(THREAD_ID)(state)).toBe(1200);
   });
 });
