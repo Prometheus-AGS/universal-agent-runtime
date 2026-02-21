@@ -587,9 +587,15 @@ impl AppConfig {
         }
 
         // 5. Environment Variables (prefixed with UAR_) - for any keys not explicitly overridden above
-        // E.g. UAR_SERVER__PORT=8000
+        // E.g. UAR_SERVER__PORT=8000, UAR_SECURITY__JWT_SECRET=...
+        //
+        // prefix_separator("_") is required: config 0.13+ defaults the prefix separator to the
+        // same value as `separator` (i.e. "__"), which would only match "UAR__*" vars.
+        // Setting it to "_" makes the library strip "UAR_" from the front and then split
+        // on "__" for nesting — matching the "UAR_SECTION__KEY" convention used throughout.
         builder = builder.add_source(
             Environment::with_prefix("UAR")
+                .prefix_separator("_")
                 .separator("__")
                 .try_parsing(true),
         );
