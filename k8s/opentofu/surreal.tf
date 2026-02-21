@@ -39,6 +39,14 @@ resource "kubernetes_stateful_set" "surreal" {
       }
 
       spec {
+        # SurrealDB runs as UID 1000 (user "surreal"). GKE volumes mount
+        # owned by root, so fsGroup causes kubelet to chown /data to GID 1000
+        # before the container starts — eliminating the Permission denied crash.
+        security_context {
+          fs_group    = 1000
+          run_as_user = 1000
+        }
+
         container {
           name  = "surreal"
           image = var.surreal_image
