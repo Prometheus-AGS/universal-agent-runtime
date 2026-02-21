@@ -62,7 +62,12 @@ export function ChatPage() {
     <div className="flex flex-1 overflow-hidden">
       {/* Mobile sidebar overlay */}
       {mobileSidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setMobileSidebarOpen(false)} aria-hidden />
+        <div
+          className="fixed inset-0 z-40 cursor-pointer bg-black/60 md:hidden"
+          data-clickable="true"
+          onClick={() => setMobileSidebarOpen(false)}
+          aria-hidden
+        />
       )}
 
       {/* Left sidebar */}

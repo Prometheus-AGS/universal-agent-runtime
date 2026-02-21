@@ -105,9 +105,9 @@
   }
 
   /* Pointer cursor on all interactive elements */
-  button,
-  [role="button"],
-  a,
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
   [role="link"],
   [role="tab"],
   [role="menuitem"],
@@ -116,12 +116,20 @@
   [role="radio"],
   [role="switch"],
   [role="combobox"],
-  [role="listitem"][tabindex],
   label[for],
-  select,
+  select:not(:disabled),
   summary,
-  [tabindex]:not([tabindex="-1"]) {
-    cursor: pointer;
+  nav a,
+  nav button,
+  [data-clickable="true"] {
+    cursor: pointer !important;
+  }
+
+  button:disabled,
+  select:disabled,
+  [aria-disabled="true"],
+  [data-disabled="true"] {
+    cursor: not-allowed !important;
   }
 }
 

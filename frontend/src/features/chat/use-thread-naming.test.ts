@@ -20,8 +20,8 @@ describe("generateThreadTitle", () => {
     mock.restore();
   });
 
-  test("sends a UUID X-UAR-Session-ID header", async () => {
-    const fetchMock = mock(async (_input: RequestInfo | URL, _init?: RequestInit) => {
+  test("sends OpenAI-style non-streaming payload without custom session header", async () => {
+    const fetchMock = mock(async () => {
       return new Response(JSON.stringify({ content: "Thread title" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -34,10 +34,17 @@ describe("generateThreadTitle", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const call = fetchMock.mock.calls[0];
     const init = call?.[1];
-    const sessionId = getHeader(init, "X-UAR-Session-ID");
-    expect(sessionId).toBeString();
-    expect(sessionId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-    );
+    const sessionIdHeader = getHeader(init, "X-UAR-Session-ID");
+    expect(sessionIdHeader).toBeNull();
+
+    const body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : null;
+    expect(body).toBeObject();
+    expect(body?.stream).toBe(false);
+    expect(Array.isArray(body?.messages)).toBe(true);
+
+    const messages = body?.messages as Array<{ role?: string; content?: string }>;
+    expect(messages[0]?.role).toBe("user");
+    expect(typeof messages[0]?.content).toBe("string");
+    expect(messages[0]?.content).toContain("Generate a concise 4-6 word title");
   });
 });

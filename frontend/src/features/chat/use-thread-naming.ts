@@ -7,12 +7,16 @@ interface NonStreamingResponse { content?: string; message?: string; choices?: {
 export async function generateThreadTitle(userMsg: string, assistantMsg: string): Promise<string> {
   const fallback = "New conversation";
   if (!userMsg.trim() || !assistantMsg.trim()) return fallback;
-  const ephemeralSessionId = `__title_gen__${Date.now()}`;
   try {
     const res = await fetch(TITLE_GEN_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-UAR-Session-ID": ephemeralSessionId },
-      body: JSON.stringify({ message: TITLE_PROMPT(userMsg, assistantMsg), stream: false }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        stream: false,
+        messages: [
+          { role: "user", content: TITLE_PROMPT(userMsg, assistantMsg) },
+        ],
+      }),
     });
     if (!res.ok) return fallback;
     const contentType = res.headers.get("content-type") ?? "";
