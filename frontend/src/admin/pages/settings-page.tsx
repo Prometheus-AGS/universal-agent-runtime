@@ -35,6 +35,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/hooks/use-settings";
 import type { SettingsType } from "@/types";
@@ -102,23 +103,11 @@ const Toggle: FC<{
     onChange: (v: boolean) => void;
     disabled?: boolean;
 }> = ({ value, onChange, disabled }) => (
-    <button
-        type="button"
+    <Switch
+        checked={value}
+        onCheckedChange={onChange}
         disabled={disabled}
-        onClick={() => onChange(!value)}
-        className={cn(
-            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            value ? "bg-primary" : "bg-muted",
-            disabled && "cursor-not-allowed opacity-50"
-        )}
-    >
-        <span
-            className={cn(
-                "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform",
-                value ? "translate-x-4" : "translate-x-0"
-            )}
-        />
-    </button>
+    />
 );
 
 const MaskedInput: FC<{
@@ -1492,16 +1481,18 @@ export const SettingsPage: FC = () => {
                                 {items.map(({ key, label, icon: Icon }) => {
                                     const available = availableKeys.size === 0 || availableKeys.has(key);
                                     return (
-                                        <button
+                                        <Button
                                             key={key}
                                             onClick={() => setActive(key)}
                                             disabled={!available}
+                                            variant={active === key ? "secondary" : "ghost"}
+                                            size="sm"
                                             className={cn(
-                                                "flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors",
+                                                "flex w-full items-center justify-start gap-2.5 text-left font-medium",
                                                 active === key
-                                                    ? "bg-accent text-foreground"
-                                                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                                                available ? "cursor-pointer" : "cursor-not-allowed opacity-40"
+                                                    ? "text-foreground"
+                                                    : "text-muted-foreground hover:text-foreground",
+                                                !available && "cursor-not-allowed opacity-40"
                                             )}
                                         >
                                             <Icon
@@ -1512,7 +1503,7 @@ export const SettingsPage: FC = () => {
                                             {active === key && (
                                                 <ChevronRight size={11} className="ml-auto shrink-0 text-muted-foreground" />
                                             )}
-                                        </button>
+                                        </Button>
                                     );
                                 })}
                             </div>
