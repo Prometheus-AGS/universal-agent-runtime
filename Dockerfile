@@ -73,11 +73,13 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 
-# Install runtime dependencies
+# Install runtime dependencies + Node.js 22 (required for npx-based MCP servers)
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
     curl \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy binary from builder
