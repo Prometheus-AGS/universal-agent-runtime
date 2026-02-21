@@ -81,27 +81,37 @@ impl SettingsManager {
         let desired = build_core_schema(config);
         let mut stats = BootstrapStats::default();
 
-        // 1. Upsert all settings types (idempotent on key).
-        for (st, _) in &desired {
-            self.persistence
+        // Upsert each settings type and immediately reconcile its settings using the
+        // *actual* stored id returned by the persistence layer. ON CONFLICT DO UPDATE
+        // keeps the original row's id, so we must not use st.id for FK references —
+        // we use the value returned by upsert_settings_type instead.
+        let mut new_cache: HashMap<String, CacheEntry> = HashMap::new();
+
+        for (st, settings) in &desired {
+            let actual_type_id = self
+                .persistence
                 .upsert_settings_type(st)
                 .await
                 .with_context(|| format!("upserting settings type '{}'", st.key))?;
             stats.types_upserted += 1;
-        }
 
-        // 2. Reconcile individual settings.
-        let mut new_cache: HashMap<String, CacheEntry> = HashMap::new();
-
-        for (st, settings) in &desired {
             for desired_setting in settings {
+                // Ensure the FK points to the row that actually exists in the DB.
+                let desired_setting = if desired_setting.settings_type_id != actual_type_id {
+                    Settings {
+                        settings_type_id: actual_type_id,
+                        ..desired_setting.clone()
+                    }
+                } else {
+                    desired_setting.clone()
+                };
                 let key = &desired_setting.key;
 
                 match self.persistence.get_setting(key).await? {
                     None => {
                         // First boot — insert.
                         self.persistence
-                            .upsert_setting(desired_setting)
+                            .upsert_setting(&desired_setting)
                             .await
                             .with_context(|| format!("seeding setting '{key}'"))?;
                         new_cache.insert(
@@ -143,7 +153,7 @@ impl SettingsManager {
                         } else if data_differs {
                             // Config-controlled value changed — overwrite DB.
                             self.persistence
-                                .upsert_setting(desired_setting)
+                                .upsert_setting(&desired_setting)
                                 .await
                                 .with_context(|| format!("updating setting '{key}'"))?;
                             new_cache.insert(

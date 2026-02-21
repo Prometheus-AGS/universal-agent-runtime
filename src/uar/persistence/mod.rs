@@ -147,8 +147,11 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
 
     /// Upsert a settings type definition (core UAR namespace or plugin-provided).
     /// Callers pass in the full struct including JSON Schema — idempotent on key.
-    async fn upsert_settings_type(&self, _st: &SettingsType) -> Result<()> {
-        Ok(())
+    /// Returns the **actual** `id` stored in the database: on a first insert this
+    /// matches `st.id`, but on a conflict-update the original row's `id` is kept,
+    /// so callers must use the returned value when constructing FK references.
+    async fn upsert_settings_type(&self, _st: &SettingsType) -> Result<Uuid> {
+        Ok(_st.id)
     }
 
     /// List all registered settings types.

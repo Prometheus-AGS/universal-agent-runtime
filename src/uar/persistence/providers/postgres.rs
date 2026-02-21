@@ -723,8 +723,11 @@ impl PersistenceLayer for PostgresProvider {
     async fn upsert_settings_type(
         &self,
         st: &crate::uar::settings::schema::SettingsType,
-    ) -> Result<()> {
-        sqlx::query(
+    ) -> Result<uuid::Uuid> {
+        // RETURNING id gives us the id that is actually stored: on a fresh insert
+        // this equals st.id, but on an ON CONFLICT update the original row keeps
+        // its id — callers must use the returned value for FK references.
+        let row = sqlx::query(
             r"
             INSERT INTO settings_types (id, name, key, schema, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6)
@@ -732,6 +735,7 @@ impl PersistenceLayer for PostgresProvider {
                 name       = EXCLUDED.name,
                 schema     = EXCLUDED.schema,
                 updated_at = now()
+            RETURNING id
             ",
         )
         .bind(st.id)
@@ -740,9 +744,10 @@ impl PersistenceLayer for PostgresProvider {
         .bind(&st.schema)
         .bind(st.created_at)
         .bind(st.updated_at)
-        .execute(&self.pool)
+        .fetch_one(&self.pool)
         .await?;
-        Ok(())
+        let id: uuid::Uuid = row.try_get("id")?;
+        Ok(id)
     }
 
     async fn list_settings_types(&self) -> Result<Vec<crate::uar::settings::schema::SettingsType>> {

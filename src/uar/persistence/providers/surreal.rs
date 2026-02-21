@@ -453,7 +453,7 @@ impl PersistenceLayer for SurrealDbProvider {
     async fn upsert_settings_type(
         &self,
         st: &crate::uar::settings::schema::SettingsType,
-    ) -> Result<()> {
+    ) -> Result<uuid::Uuid> {
         let payload: serde_json::Value = serde_json::json!({
             "name": st.name,
             "key": st.key,
@@ -467,7 +467,8 @@ impl PersistenceLayer for SurrealDbProvider {
             .bind(("data", payload))
             .await
             .with_context(|| format!("upserting settings_type '{}'", st.key))?;
-        Ok(())
+        // SurrealDB uses string record IDs; return st.id as the FK identifier.
+        Ok(st.id)
     }
 
     async fn list_settings_types(&self) -> Result<Vec<crate::uar::settings::schema::SettingsType>> {
