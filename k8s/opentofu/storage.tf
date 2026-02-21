@@ -3,11 +3,40 @@
 # All volumes are ReadWriteOnce — appropriate for single-replica workloads.
 
 locals {
-  ssd_storage_class = "premium-rwo"
-  uar_namespace     = kubernetes_namespace.uar.metadata[0].name
+  ssd_storage_class          = "premium-rwo"
+  ssd_storage_class_immediate = "premium-rwo-immediate"
+  uar_namespace              = kubernetes_namespace.uar.metadata[0].name
+}
+
+# ── Immediate-binding SSD StorageClass ──────────────────────────────────────
+# GKE's built-in "premium-rwo" uses WaitForFirstConsumer, which deadlocks
+# when a standalone PVC (not a StatefulSet volumeClaimTemplate) is created
+# before any pod exists — the provisioner waits for a pod to determine the
+# zone, but the pod waits for the PVC to bind. Using Immediate binding
+# provisions the disk in the cluster's default zone upfront.
+resource "kubernetes_storage_class" "premium_rwo_immediate" {
+  metadata {
+    name = local.ssd_storage_class_immediate
+
+    labels = {
+      "app.kubernetes.io/part-of" = "universal-agent-runtime"
+    }
+  }
+
+  storage_provisioner    = "pd.csi.storage.gke.io"
+  volume_binding_mode    = "Immediate"
+  reclaim_policy         = "Retain"
+  allow_volume_expansion = true
+
+  parameters = {
+    type = "pd-ssd"
+  }
 }
 
 # ── PostgreSQL data ─────────────────────────────────────────────────────────
+# Uses the Immediate-binding StorageClass so the disk is provisioned as soon
+# as this PVC is created — before the Postgres pod is scheduled. This avoids
+# the WaitForFirstConsumer deadlock that occurs with standalone PVCs.
 resource "kubernetes_persistent_volume_claim" "postgres_data" {
   metadata {
     name      = "postgres-data-pvc"
@@ -21,7 +50,7 @@ resource "kubernetes_persistent_volume_claim" "postgres_data" {
 
   spec {
     access_modes       = ["ReadWriteOnce"]
-    storage_class_name = local.ssd_storage_class
+    storage_class_name = local.ssd_storage_class_immediate
 
     resources {
       requests = {
@@ -29,6 +58,8 @@ resource "kubernetes_persistent_volume_claim" "postgres_data" {
       }
     }
   }
+
+  depends_on = [kubernetes_storage_class.premium_rwo_immediate]
 
   # Prevent accidental deletion of database data during tofu destroy.
   lifecycle {

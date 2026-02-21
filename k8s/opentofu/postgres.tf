@@ -134,6 +134,7 @@ resource "kubernetes_stateful_set" "postgres" {
   }
 
   depends_on = [
+    kubernetes_storage_class.premium_rwo_immediate,
     kubernetes_persistent_volume_claim.postgres_data,
     kubernetes_secret.uar_db_credentials,
   ]
