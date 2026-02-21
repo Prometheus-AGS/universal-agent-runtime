@@ -76,7 +76,7 @@ resource "kubernetes_deployment" "uar" {
 
         container {
           name  = "uar"
-          image = "tribehealth/universal-agent-runtime:02212026.15"
+          image = "tribehealth/universal-agent-runtime:02212026.17"
 
           port {
             name           = "http"
@@ -196,6 +196,15 @@ resource "kubernetes_deployment" "uar" {
             mount_path = "/data"
           }
 
+          # Mount each skill's SKILL.md from the skills ConfigMap into the
+          # skills directory so FilesystemStorageProvider discovers them.
+          volume_mount {
+            name       = "uar-skills"
+            mount_path = "/app/skills/artifact-refiner/SKILL.md"
+            sub_path   = "artifact-refiner---SKILL.md"
+            read_only  = true
+          }
+
           # ── Resources ─────────────────────────────────────────────────────
           resources {
             requests = {
@@ -244,6 +253,14 @@ resource "kubernetes_deployment" "uar" {
           name = "uar-data"
           persistent_volume_claim {
             claim_name = kubernetes_persistent_volume_claim.uar_data.metadata[0].name
+          }
+        }
+
+        # Skills volume — backed by the skills ConfigMap
+        volume {
+          name = "uar-skills"
+          config_map {
+            name = kubernetes_config_map.uar_skills.metadata[0].name
           }
         }
       }
