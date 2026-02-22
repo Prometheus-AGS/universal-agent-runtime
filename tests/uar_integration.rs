@@ -60,8 +60,12 @@ async fn setup_real_env() -> (Arc<RunManager>, Arc<SessionStore>) {
     let mcp = Arc::new(McpRegistry::new_empty());
     let sessions = SessionStore::new();
     let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
-    let vector_matcher =
-        Arc::new(universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(0.75));
+    let vector_matcher = Arc::new(
+        universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+            0.75,
+            "src/uar/runtime/matching/models".to_string(),
+        ),
+    );
     let run_manager = Arc::new(
         RunManager::new(
             settings,
@@ -112,8 +116,12 @@ async fn setup_real_env_with_tools() -> (
 
     let sessions = SessionStore::new();
     let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
-    let vector_matcher =
-        Arc::new(universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(0.75));
+    let vector_matcher = Arc::new(
+        universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+            0.75,
+            "src/uar/runtime/matching/models".to_string(),
+        ),
+    );
     let run_manager = Arc::new(
         RunManager::new(
             settings,
@@ -718,7 +726,10 @@ You are a database expert.
     }
 
     // Initialize Vector Matcher
-    let matcher = universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(0.6); // Lower threshold for test
+    let matcher = universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+        0.6,
+        "src/uar/runtime/matching/models".to_string(),
+    ); // Lower threshold for test
     matcher
         .initialize()
         .await

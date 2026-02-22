@@ -181,6 +181,7 @@ num_cpus = "1.16"
 
 # Graph algorithms for community detection (Leiden)
 petgraph = "0.8"
+dirs = "6.0.0"
 
 # Leptos SSR (minimal templating)
 

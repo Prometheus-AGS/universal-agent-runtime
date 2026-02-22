@@ -24,7 +24,7 @@ use crate::uar::{domain::events::NormalizedEvent, runtime::manager::RunManager};
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct A2uiApiState {
     pub registry: Arc<A2uiRegistry>,
     pub run_manager: Arc<RunManager>,

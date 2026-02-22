@@ -13,6 +13,7 @@ use super::service::MemoryService;
 
 /// Result of a context build — includes the formatted prompt block and the
 /// raw memory hits that were included (for streaming to the client).
+#[derive(Debug)]
 pub struct ContextBuildResult {
     /// Formatted memory block ready for injection into the system prompt.
     pub block: String,

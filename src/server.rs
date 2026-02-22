@@ -20,9 +20,9 @@ use std::time::Duration;
 use tokio::time::timeout;
 use uuid::Uuid;
 
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
-use tower_http::cors::{Any, CorsLayer};
 
 use tracing::{info, warn};
 
@@ -81,7 +81,10 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
 
     // Initialize Persistence & RAG
     let mut ingest_service: Option<Arc<IngestService>> = None;
-    let vector_matcher = Arc::new(VectorMatcher::new(0.75));
+    let vector_matcher = Arc::new(VectorMatcher::new(
+        config.models.vector_threshold,
+        config.models.models_dir.clone(),
+    ));
 
     // Initialize VectorMatcher explicitly (shared)
     if let Err(e) = vector_matcher.initialize().await {
@@ -279,13 +282,11 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
     // after a restart. The DB provider is added after the filesystem provider
     // so API-pushed skills (provider_id = "api") take precedence on name conflict.
     if let Some(ref persistence_layer) = persistence {
-        let db_provider: Arc<dyn SkillStorageProvider> = Arc::new(
-            DatabaseStorageProvider::new(
-                "db-skills",
-                "Database Skills",
-                Arc::clone(persistence_layer),
-            ),
-        );
+        let db_provider: Arc<dyn SkillStorageProvider> = Arc::new(DatabaseStorageProvider::new(
+            "db-skills",
+            "Database Skills",
+            Arc::clone(persistence_layer),
+        ));
         skill_service.add_provider(db_provider);
     }
     if let Err(e) = skill_service.initialize().await {
@@ -711,6 +712,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         // that React Router can take over and render the correct view.
         // Without this, ServeDir's not_found_service can race with the 404 path
         // in some middleware configurations and leak a 404 to the browser.
+        .route("/", get(spa_index_handler))
         .route("/threads", get(spa_index_handler))
         .route("/admin", get(spa_index_handler))
         .route("/admin/{*path}", get(spa_index_handler))
@@ -3373,7 +3375,7 @@ mod tests {
 
     #[tokio::test]
     async fn cors_layer_allows_all_origins_methods_and_headers() {
-        use axum::{body::Body, http::header, http::Method, routing::get, Router};
+        use axum::{Router, body::Body, http::Method, http::header, routing::get};
         use tower::ServiceExt;
 
         let app = Router::new()
@@ -3385,15 +3387,33 @@ mod tests {
             .uri("/ping")
             .header(header::ORIGIN, "https://example.com")
             .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
-            .header(header::ACCESS_CONTROL_REQUEST_HEADERS, "x-custom,content-type")
+            .header(
+                header::ACCESS_CONTROL_REQUEST_HEADERS,
+                "x-custom,content-type",
+            )
             .body(Body::empty())
             .expect("preflight request should build");
 
-        let res = app.oneshot(req).await.expect("preflight request should succeed");
+        let res = app
+            .oneshot(req)
+            .await
+            .expect("preflight request should succeed");
         assert!(res.status().is_success());
-        assert!(res.headers().get(header::ACCESS_CONTROL_ALLOW_ORIGIN).is_some());
-        assert!(res.headers().get(header::ACCESS_CONTROL_ALLOW_METHODS).is_some());
-        assert!(res.headers().get(header::ACCESS_CONTROL_ALLOW_HEADERS).is_some());
+        assert!(
+            res.headers()
+                .get(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+                .is_some()
+        );
+        assert!(
+            res.headers()
+                .get(header::ACCESS_CONTROL_ALLOW_METHODS)
+                .is_some()
+        );
+        assert!(
+            res.headers()
+                .get(header::ACCESS_CONTROL_ALLOW_HEADERS)
+                .is_some()
+        );
     }
 
     #[tokio::test]

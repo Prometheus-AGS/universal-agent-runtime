@@ -105,6 +105,7 @@ fn minimal_config() -> AppConfig {
         mistral_ocr: None,
         kreuzberg: None,
         vision: VisionConfig::default(),
+        models: Default::default(),
         knowledge_bases: KnowledgeBasesConfig::default(),
         intent_classifier: ClassifierConfig::default(),
         providers: vec![],
@@ -504,7 +505,7 @@ async fn mgr_list_all_with_meta() -> Result<()> {
     let stats = mgr.initialize(&minimal_config()).await?;
 
     let all = mgr.list_all_with_meta().await;
-    assert_eq!(all.len(), stats.seeded as usize);
+    assert_eq!(all.len(), stats.seeded);
     Ok(())
 }
 

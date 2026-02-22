@@ -50,6 +50,9 @@ pub struct AppConfig {
     pub kreuzberg: Option<KreuzbergConfig>,
     #[serde(default)]
     pub vision: VisionConfig,
+    /// Model files configuration (tokenizer, embeddings, etc.)
+    #[serde(default)]
+    pub models: ModelsConfig,
     #[serde(default)]
     pub knowledge_bases: KnowledgeBasesConfig,
     /// Intent classifier configuration for skill matching
@@ -353,6 +356,37 @@ impl Default for VisionConfig {
     }
 }
 
+/// Model files configuration (tokenizer, embeddings, etc.).
+#[derive(Debug, Deserialize, Clone)]
+pub struct ModelsConfig {
+    /// Directory containing model files (tokenizer.json, etc.)
+    #[serde(default = "ModelsConfig::default_models_dir")]
+    pub models_dir: String,
+    /// Vector matching threshold for similarity matching
+    #[serde(default = "ModelsConfig::default_vector_threshold")]
+    pub vector_threshold: f32,
+}
+
+impl ModelsConfig {
+    fn default_models_dir() -> String {
+        // Default to the development path, will be overridden in Docker
+        "src/uar/runtime/matching/models".to_string()
+    }
+
+    fn default_vector_threshold() -> f32 {
+        0.75
+    }
+}
+
+impl Default for ModelsConfig {
+    fn default() -> Self {
+        Self {
+            models_dir: Self::default_models_dir(),
+            vector_threshold: Self::default_vector_threshold(),
+        }
+    }
+}
+
 // =============================================================================
 // KNOWLEDGE BASES CONFIGURATION
 // =============================================================================
@@ -585,6 +619,10 @@ impl AppConfig {
             .set_default("server.port", 3000)?
             .set_default("server.host", "0.0.0.0")?
             .set_default("security.jwt_required", true)?
+            .set_default(
+                "security.jwt_secret",
+                "fallback_secret_change_in_production",
+            )?
             .set_default("resilience.rate_limit_enabled", true)?
             .set_default("resilience.timeout_disabled", false)? // Default enabled (timeout_disabled=false)
             .set_default("resilience.requests_per_second", 10.0)?
@@ -623,6 +661,9 @@ impl AppConfig {
             .set_default("file_processing.max_total_size", 104_857_600_i64)?
             // Vision defaults
             .set_default("vision.auto_detect", true)?
+            // Models defaults
+            .set_default("models.models_dir", "src/uar/runtime/matching/models")?
+            .set_default("models.vector_threshold", 0.75)?
             // Memory system defaults
             .set_default("memory.enabled", false)?
             .set_default("memory.db_path", "./data/memory.db")?
@@ -646,6 +687,13 @@ impl AppConfig {
             let cwd_config = std::path::Path::new("config.yaml");
             if cwd_config.exists() {
                 builder = builder.add_source(config::File::from(cwd_config));
+            } else if let Some(mut home_config) = dirs::home_dir() {
+                // implicit 2: ~/.uar/config.yaml
+                home_config.push(".uar");
+                home_config.push("config.yaml");
+                if home_config.exists() {
+                    builder = builder.add_source(config::File::from(home_config));
+                }
             }
         }
         // 4. Manual CLI Overrides
@@ -678,6 +726,9 @@ impl AppConfig {
         }
         if let Ok(val) = env::var("UAR_PERSISTENCE__DATABASE_URL") {
             builder = builder.set_override("persistence.database_url", val)?;
+        }
+        if let Ok(val) = env::var("UAR_MODELS_DIR") {
+            builder = builder.set_override("models.models_dir", val)?;
         }
 
         // 5. Environment Variables (prefixed with UAR_) - for any keys not explicitly overridden above
@@ -738,14 +789,13 @@ impl AppConfig {
 }
 
 pub fn load_llm_settings() -> Result<LlmSettings, String> {
-    let base_url = std::env::var("LLM_BASE_URL")
-        .map_err(|err| format!("Missing required env var: LLM_BASE_URL: {err}"))?;
+    let base_url =
+        std::env::var("LLM_BASE_URL").unwrap_or_else(|_| "http://localhost:11434/v1".to_string());
     if base_url.trim().is_empty() {
         return Err("LLM_BASE_URL cannot be empty".to_string());
     }
 
-    let model = std::env::var("LLM_MODEL")
-        .map_err(|err| format!("Missing required env var: LLM_MODEL: {err}"))?;
+    let model = std::env::var("LLM_MODEL").unwrap_or_else(|_| "llama3".to_string());
     if model.trim().is_empty() {
         return Err("LLM_MODEL cannot be empty".to_string());
     }

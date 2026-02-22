@@ -269,6 +269,26 @@ vision:
   auto_detect: true
 
 # =============================================================================
+# MODEL FILES (Tokenizers, Embeddings)
+# =============================================================================
+
+models:
+  # Directory containing model files (tokenizer.json, embeddings, etc.).
+  # This path is used by the VectorMatcher for loading tokenizer files.
+  # Default: "src/uar/runtime/matching/models" (development)
+  # Production: "/app/models" (Docker)
+  # Env: UAR_MODELS_DIR
+  models_dir: "src/uar/runtime/matching/models"
+
+  # Threshold for vector similarity matching in skill classification.
+  # Higher values require closer matches (more conservative).
+  # Lower values allow looser matches (more inclusive).
+  # Range: 0.0 to 1.0
+  # Default: 0.75
+  # Env: UAR_MODELS__VECTOR_THRESHOLD
+  vector_threshold: 0.75
+
+# =============================================================================
 # KNOWLEDGE BASES (RAG Document Scoping)
 # =============================================================================
 

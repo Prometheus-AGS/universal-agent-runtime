@@ -2,7 +2,7 @@ use universal_agent_runtime::uar::runtime::matching::vector::VectorMatcher;
 
 #[tokio::test]
 async fn test_burn_embedding_initialization() {
-    let matcher = VectorMatcher::new(0.7);
+    let matcher = VectorMatcher::new(0.7, "src/uar/runtime/matching/models".to_string());
     // Initialize (should trigger model loading)
     let res = matcher.initialize().await;
     assert!(
@@ -14,7 +14,7 @@ async fn test_burn_embedding_initialization() {
 
 #[tokio::test]
 async fn test_burn_embedding_shape() {
-    let matcher = VectorMatcher::new(0.7);
+    let matcher = VectorMatcher::new(0.7, "src/uar/runtime/matching/models".to_string());
     matcher.initialize().await.expect("Initialization failed");
 
     let texts = vec!["Hello world".to_string(), "Burn is great".to_string()];

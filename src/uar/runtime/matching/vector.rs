@@ -49,6 +49,7 @@ pub struct VectorMatcher {
     tokenizer: Arc<Mutex<Option<Tokenizer>>>,
     embeddings: Arc<Mutex<EmbeddingCache>>,
     threshold: f32,
+    models_dir: String,
 }
 
 impl std::fmt::Debug for VectorMatcher {
@@ -61,12 +62,13 @@ impl std::fmt::Debug for VectorMatcher {
 }
 
 impl VectorMatcher {
-    pub fn new(threshold: f32) -> Self {
+    pub fn new(threshold: f32, models_dir: String) -> Self {
         Self {
             model: Arc::new(Mutex::new(None)),
             tokenizer: Arc::new(Mutex::new(None)),
             embeddings: Arc::new(Mutex::new(Vec::new())),
             threshold,
+            models_dir,
         }
     }
 
@@ -84,18 +86,55 @@ impl VectorMatcher {
         let mut tok_guard = self.tokenizer.lock().await;
         if tok_guard.is_none() {
             info!("Initializing Tokenizer...");
-            // Try to load from the downloaded file
-            let path = std::path::Path::new("/app/models/tokenizer.json");
-            let tokenizer = if path.exists() {
-                Tokenizer::from_file(path).map_err(|e| anyhow::anyhow!(e))?
+            
+            // Try multiple potential tokenizer paths
+            let tokenizer_paths = vec![
+                // Environment variable override (highest priority)
+                std::env::var("UAR_MODELS_DIR")
+                    .map(|dir| std::path::PathBuf::from(dir).join("tokenizer.json"))
+                    .ok(),
+                // Configuration-specified path (second priority)
+                Some(std::path::PathBuf::from(&self.models_dir).join("tokenizer.json")),
+                // Docker/production path (fallback)
+                Some(std::path::PathBuf::from("/app/models/tokenizer.json")),
+                // Development paths (fallbacks)
+                Some(std::path::PathBuf::from("src/uar/runtime/matching/models/tokenizer.json")),
+                Some(std::path::PathBuf::from("./src/uar/runtime/matching/models/tokenizer.json")),
+            ].into_iter().flatten().collect::<Vec<_>>();
+            
+            let mut tokenizer = None;
+            let mut last_error = None;
+            
+            for path in &tokenizer_paths {
+                if path.exists() {
+                    match Tokenizer::from_file(path) {
+                        Ok(t) => {
+                            info!("Tokenizer loaded from: {}", path.display());
+                            tokenizer = Some(t);
+                            break;
+                        }
+                        Err(e) => {
+                            warn!("Failed to load tokenizer from {}: {}", path.display(), e);
+                            last_error = Some(anyhow::anyhow!(e));
+                        }
+                    }
+                }
+            }
+            
+            if let Some(tokenizer) = tokenizer {
+                *tok_guard = Some(tokenizer);
             } else {
-                return Err(anyhow::anyhow!(
-                    "Tokenizer file not found at {}",
-                    path.display()
-                ));
-            };
-
-            *tok_guard = Some(tokenizer);
+                return Err(last_error.unwrap_or_else(|| {
+                    anyhow::anyhow!(
+                        "Tokenizer file not found at any of these paths: {}",
+                        tokenizer_paths
+                            .iter()
+                            .map(|p| p.display().to_string())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                }));
+            }
         }
 
         Ok(())
