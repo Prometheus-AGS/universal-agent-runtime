@@ -249,11 +249,20 @@ impl LlmDriver for ChatCompletionsDriver {
                                     .and_then(serde_json::Value::as_u64),
                             )
                         {
+                            // Extract OpenAI cached_tokens from prompt_tokens_details
+                            #[allow(clippy::cast_possible_truncation)]
+                            let cached_tokens: Option<u32> = usage
+                                .get("prompt_tokens_details")
+                                .and_then(|d| d.get("cached_tokens"))
+                                .and_then(serde_json::Value::as_u64)
+                                .map(|v| v as u32);
+
                             event_count += 1;
                             tracing::info!(
                                 prompt_tokens = prompt,
                                 completion_tokens = completion,
                                 total_tokens = total,
+                                cached_tokens = ?cached_tokens,
                                 "Received usage information from API"
                             );
                             #[allow(clippy::cast_possible_truncation)]
@@ -261,6 +270,8 @@ impl LlmDriver for ChatCompletionsDriver {
                                 prompt_tokens: prompt as u32,
                                 completion_tokens: completion as u32,
                                 total_tokens: total as u32,
+                                cached_tokens,
+                                cache_creation_tokens: None,
                             };
                         }
 

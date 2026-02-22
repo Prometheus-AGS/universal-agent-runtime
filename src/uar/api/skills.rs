@@ -4,7 +4,7 @@
 //! and per-agent skill bindings.
 
 use crate::uar::domain::skills::{Skill, SkillTriggers};
-use crate::uar::runtime::skills::service::{SkillMatchingConfig, SkillService};
+use crate::uar::runtime::skills::service::{SkillMatchingConfig, SkillService, SkillUpdate};
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -24,6 +24,7 @@ pub fn build_router() -> Router<Arc<SkillService>> {
         .route("/", get(list_skills))
         .route("/", post(create_skill))
         .route("/{id}", get(get_skill))
+        .route("/{id}", put(update_skill))
         .route("/{id}", delete(delete_skill))
         .route("/{id}/toggle", post(toggle_skill))
         .route("/match", get(match_skills))
@@ -106,6 +107,17 @@ struct ToggleRequest {
     enabled: bool,
 }
 
+#[derive(Deserialize, Default)]
+struct UpdateSkillRequest {
+    version: Option<String>,
+    title: Option<String>,
+    description: Option<String>,
+    triggers: Option<SkillTriggers>,
+    prompt_overlay: Option<String>,
+    preferred_tools: Option<Vec<String>>,
+    enabled: Option<bool>,
+}
+
 #[derive(Deserialize)]
 struct MatchQuery {
     q: String,
@@ -171,6 +183,32 @@ async fn delete_skill(
     match service.delete_skill_permanent(&id).await {
         Ok(true) => StatusCode::NO_CONTENT.into_response(),
         Ok(false) => StatusCode::NOT_FOUND.into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:?}") })),
+        )
+            .into_response(),
+    }
+}
+
+async fn update_skill(
+    State(service): State<Arc<SkillService>>,
+    Path(id): Path<String>,
+    Json(req): Json<UpdateSkillRequest>,
+) -> impl IntoResponse {
+    let patch = SkillUpdate {
+        version: req.version,
+        title: req.title,
+        description: req.description,
+        triggers: req.triggers,
+        prompt_overlay: req.prompt_overlay,
+        preferred_tools: req.preferred_tools,
+        enabled: req.enabled,
+    };
+
+    match service.update_skill(&id, patch).await {
+        Ok(Some(skill)) => Json(SkillResponse::from(skill)).into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({ "error": format!("{e:?}") })),

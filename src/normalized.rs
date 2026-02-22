@@ -169,6 +169,12 @@ pub enum NormalizedEvent {
         completion_tokens: u32,
         /// Total tokens used (prompt + completion).
         total_tokens: u32,
+        /// Tokens served from the provider's prompt cache (OpenAI: `cached_tokens`; Anthropic: `cache_read_input_tokens`).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        cached_tokens: Option<u32>,
+        /// Tokens written into the provider's prompt cache (Anthropic: `cache_creation_input_tokens`).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        cache_creation_tokens: Option<u32>,
     },
 
     /// Stream has completed successfully.
@@ -346,6 +352,8 @@ pub fn agui_sse_event(evt: &NormalizedEvent, request_id: &str) -> String {
             prompt_tokens,
             completion_tokens,
             total_tokens,
+            cached_tokens,
+            cache_creation_tokens,
         } => (
             "agui.usage",
             serde_json::json!({
@@ -353,7 +361,9 @@ pub fn agui_sse_event(evt: &NormalizedEvent, request_id: &str) -> String {
                 "request_id": request_id,
                 "prompt_tokens": prompt_tokens,
                 "completion_tokens": completion_tokens,
-                "total_tokens": total_tokens
+                "total_tokens": total_tokens,
+                "cached_tokens": cached_tokens,
+                "cache_creation_tokens": cache_creation_tokens
             }),
         ),
         NormalizedEvent::Error { message, code } => (

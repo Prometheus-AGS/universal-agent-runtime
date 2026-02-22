@@ -45,8 +45,15 @@ export interface UarSkill {
   skill_id: string;
   title: string;
   description?: string;
+  version?: string;
   provider_id?: string;
   enabled?: boolean;
+  triggers?: {
+    keywords?: string[];
+    semantic?: string | null;
+  };
+  preferred_tools?: string[];
+  prompt_overlay?: string;
 }
 
 /** UAR API — AgentMetadata */
@@ -149,6 +156,21 @@ export interface SettingWithMeta {
 export interface SettingsDriftItem {
   setting: SettingWithMeta;
   config_value: unknown;
+}
+
+// ---------------------------------------------------------------------------
+// Per-user settings types
+// ---------------------------------------------------------------------------
+
+/** Granularity at which a user's prompt-caching preference applies. */
+export type CachingScope = "session" | "user" | "agent";
+
+/** Per-user prompt-caching preferences returned by GET /api/uar/user/settings. */
+export interface UserSettings {
+  user_id: string;
+  prompt_caching_enabled: boolean | null;
+  preferred_scope: CachingScope;
+  updated_at: string;
 }
 
 // ---------------------------------------------------------------------------

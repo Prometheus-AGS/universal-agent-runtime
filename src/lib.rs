@@ -56,6 +56,7 @@ use uar::runtime::manager::RunManager;
 use uar::runtime::matching::VectorMatcher;
 use uar::runtime::native_skill::NativeSkillRegistry;
 use uar::runtime::skills::service::SkillService;
+use uar::runtime::user_settings_store::UserSettingsStore;
 use uar::security::api_keys::ApiKeyService;
 use uar::settings::manager::SettingsManager;
 
@@ -103,6 +104,8 @@ pub struct AppState {
     pub settings_manager: Option<Arc<SettingsManager>>,
     /// Prompt cache provider used by Anthropic-compatible API endpoints.
     pub prompt_cache_provider: Arc<dyn PromptCacheProvider>,
+    /// Per-user prompt-caching preferences store.
+    pub user_settings_store: Arc<UserSettingsStore>,
     /// A2UI schema registry — resolves artifact schema IDs declared in UAR-AGENT-MD §06.
     pub a2ui_registry: Arc<uar::a2ui::registry::A2uiRegistry>,
     /// Wasm sandbox runtime for executing Wasm agents (feature-gated)

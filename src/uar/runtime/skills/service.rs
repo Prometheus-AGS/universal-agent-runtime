@@ -75,6 +75,18 @@ impl Default for SkillMatchingConfig {
     }
 }
 
+/// Patch fields for updating an existing skill.
+#[derive(Debug, Clone, Default)]
+pub struct SkillUpdate {
+    pub version: Option<String>,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub triggers: Option<crate::uar::domain::skills::SkillTriggers>,
+    pub prompt_overlay: Option<String>,
+    pub preferred_tools: Option<Vec<String>>,
+    pub enabled: Option<bool>,
+}
+
 /// Central skill service coordinating storage + matching.
 pub struct SkillService {
     /// In-memory skill index
@@ -189,7 +201,23 @@ impl SkillService {
 
     /// Toggle a skill's enabled state.
     pub async fn toggle_skill(&self, id: &str, enabled: bool) -> bool {
-        self.registry.write().await.toggle(id, enabled)
+        match self
+            .update_skill(
+                id,
+                SkillUpdate {
+                    enabled: Some(enabled),
+                    ..SkillUpdate::default()
+                },
+            )
+            .await
+        {
+            Ok(Some(_)) => true,
+            Ok(None) => false,
+            Err(e) => {
+                warn!("Failed to toggle skill '{}': {:?}", id, e);
+                false
+            }
+        }
     }
 
     /// Create a new skill dynamically via API.
@@ -220,6 +248,62 @@ impl SkillService {
 
         info!("Created skill via API: {}", skill.skill_id);
         Ok(skill)
+    }
+
+    /// Update an existing skill by ID.
+    ///
+    /// Returns `Ok(None)` if the skill does not exist.
+    pub async fn update_skill(
+        &self,
+        id: &str,
+        update: SkillUpdate,
+    ) -> anyhow::Result<Option<Skill>> {
+        let existing = { self.registry.read().await.get(id).cloned() };
+        let Some(mut skill) = existing else {
+            return Ok(None);
+        };
+
+        if let Some(version) = update.version {
+            skill.version = version;
+        }
+        if let Some(title) = update.title {
+            skill.title = title;
+        }
+        if let Some(description) = update.description {
+            skill.description = description;
+        }
+        if let Some(triggers) = update.triggers {
+            skill.triggers = triggers;
+        }
+        if let Some(prompt_overlay) = update.prompt_overlay {
+            skill.prompt_overlay = prompt_overlay;
+        }
+        if let Some(preferred_tools) = update.preferred_tools {
+            skill.preferred_tools = preferred_tools;
+        }
+        if let Some(enabled) = update.enabled {
+            skill.enabled = enabled;
+        }
+
+        self.registry.write().await.register(skill.clone()).await;
+
+        // Persist updates to writable filesystem skills so changes survive restarts.
+        for provider in &self.providers {
+            if provider.kind() == StorageProviderKind::Filesystem {
+                if let Err(e) = provider.save_skill(&skill).await {
+                    warn!(
+                        "Could not write updated skill '{}' to filesystem provider '{}': {:?}",
+                        skill.skill_id,
+                        provider.name(),
+                        e
+                    );
+                }
+                break;
+            }
+        }
+
+        info!("Updated skill via API: {}", skill.skill_id);
+        Ok(Some(skill))
     }
 
     /// Permanently delete a skill from the registry, database, and filesystem.
@@ -427,5 +511,84 @@ impl SkillService {
     /// Get the list of registered providers.
     pub fn providers(&self) -> &[Arc<dyn SkillStorageProvider>] {
         &self.providers
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::uar::domain::skills::{SkillConstraints, SkillTriggers};
+
+    fn test_skill() -> Skill {
+        Skill {
+            skill_id: "test-skill".to_string(),
+            version: "1.0.0".to_string(),
+            title: "Test Skill".to_string(),
+            description: "Initial description".to_string(),
+            triggers: SkillTriggers {
+                keywords: vec!["initial".to_string()],
+                semantic: None,
+            },
+            prompt_overlay: "# Initial Prompt".to_string(),
+            preferred_tools: vec!["search".to_string()],
+            mcp_config: None,
+            constraints: SkillConstraints::default(),
+            enabled: true,
+            provider_id: "api".to_string(),
+        }
+    }
+
+    #[tokio::test]
+    async fn update_skill_modifies_selected_fields() {
+        let service = SkillService::new(None, None);
+        let created = service
+            .create_skill(test_skill())
+            .await
+            .expect("skill should be created");
+
+        let updated = service
+            .update_skill(
+                &created.skill_id,
+                SkillUpdate {
+                    title: Some("Updated Skill".to_string()),
+                    description: Some("Updated description".to_string()),
+                    prompt_overlay: Some("## Updated markdown prompt".to_string()),
+                    preferred_tools: Some(vec!["memory".to_string(), "search".to_string()]),
+                    triggers: Some(SkillTriggers {
+                        keywords: vec!["updated".to_string()],
+                        semantic: Some("updated semantic".to_string()),
+                    }),
+                    enabled: Some(false),
+                    ..SkillUpdate::default()
+                },
+            )
+            .await
+            .expect("update should succeed")
+            .expect("skill should exist");
+
+        assert_eq!(updated.skill_id, "test-skill");
+        assert_eq!(updated.title, "Updated Skill");
+        assert_eq!(updated.description, "Updated description");
+        assert_eq!(updated.prompt_overlay, "## Updated markdown prompt");
+        assert_eq!(updated.preferred_tools, vec!["memory", "search"]);
+        assert_eq!(updated.triggers.keywords, vec!["updated"]);
+        assert_eq!(updated.enabled, false);
+    }
+
+    #[tokio::test]
+    async fn update_skill_returns_none_for_missing_skill() {
+        let service = SkillService::new(None, None);
+        let result = service
+            .update_skill(
+                "missing-skill",
+                SkillUpdate {
+                    title: Some("No-op".to_string()),
+                    ..SkillUpdate::default()
+                },
+            )
+            .await
+            .expect("missing update should not error");
+
+        assert!(result.is_none());
     }
 }
