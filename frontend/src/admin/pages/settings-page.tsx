@@ -3,6 +3,7 @@ import {
     type ReactNode,
     useCallback,
     useEffect,
+    useRef,
     useState,
 } from "react";
 import {
@@ -23,6 +24,7 @@ import {
     Server,
     ShieldCheck,
     SlidersHorizontal,
+    User,
     Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,7 +46,7 @@ import type { SettingsType } from "@/types";
 // Namespace definition — the sidebar nav
 // =============================================================================
 
-type NavCategory = "AI & LLM" | "File Processing" | "Infrastructure" | "Governance & Agents";
+type NavCategory = "AI & LLM" | "File Processing" | "Infrastructure" | "Governance & Agents" | "Caching & Users";
 
 interface NavItem {
     key: string;
@@ -69,6 +71,8 @@ const NAV_ITEMS: NavItem[] = [
     { key: "governance", label: "Governance", icon: ShieldCheck, category: "Governance & Agents" },
     { key: "agent_config", label: "Agents", icon: Bot, category: "Governance & Agents" },
     { key: "skill_config", label: "Skills", icon: Zap, category: "Governance & Agents" },
+    { key: "prompt_caching", label: "Prompt Caching", icon: Zap, category: "Caching & Users" },
+    { key: "user_settings", label: "User Settings", icon: User, category: "Caching & Users" },
 ];
 
 const CATEGORIES: NavCategory[] = [
@@ -76,6 +80,7 @@ const CATEGORIES: NavCategory[] = [
     "File Processing",
     "Infrastructure",
     "Governance & Agents",
+    "Caching & Users",
 ];
 
 // =============================================================================
@@ -1825,6 +1830,258 @@ function MemoryPanel() {
 }
 
 
+// =============================================================================
+// Prompt Caching Panel
+// =============================================================================
+
+function PromptCachingPanel() {
+    return (
+        <NamespacePanel namespace="prompt_caching" title="Prompt Caching">
+            {({ val, set }) => (
+                <>
+                    <p className="font-mono text-[10px] text-muted-foreground mb-3">
+                        Prompt caching reduces latency and token costs by reusing stable parts of the
+                        system prompt. Anthropic injects <code>cache_control</code> blocks;
+                        OpenAI caches automatically on eligible models.
+                    </p>
+
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 mb-1">
+                        <div>
+                            <p className="font-mono text-[12px] font-medium text-foreground">
+                                Enable Prompt Caching (Global Default)
+                            </p>
+                            <p className="font-mono text-[10px] text-muted-foreground">
+                                System-wide default; users can override per-session via the chat toolbar.
+                            </p>
+                        </div>
+                        <Toggle
+                            value={(val("enabled") as boolean) ?? false}
+                            onChange={(v) => set("enabled", v)}
+                        />
+                    </div>
+
+                    <Field label="Cache Control Type" hint="Only 'ephemeral' is supported by Anthropic.">
+                        <SettingSelect
+                            value={(val("cache_control_type") as string) ?? "ephemeral"}
+                            options={[{ value: "ephemeral", label: "ephemeral" }]}
+                            onChange={(v) => set("cache_control_type", v)}
+                        />
+                    </Field>
+
+                    <div className="mt-4 rounded-lg border border-border bg-muted/30 px-4 py-3">
+                        <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                            Supported Providers
+                        </p>
+                        <div className="flex gap-2 mt-1">
+                            <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-0.5 font-mono text-[11px] font-medium text-foreground">
+                                Anthropic
+                            </span>
+                            <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-0.5 font-mono text-[11px] font-medium text-foreground">
+                                OpenAI (auto)
+                            </span>
+                        </div>
+                        <p className="font-mono text-[10px] text-muted-foreground mt-2">
+                            Priority: session override → user preference → agent setting → this global default.
+                        </p>
+                    </div>
+                </>
+            )}
+        </NamespacePanel>
+    );
+}
+
+// =============================================================================
+// User Settings Panel (JWT-gated)
+// =============================================================================
+
+interface UarUserSettings {
+    user_id: string;
+    prompt_caching_enabled: boolean | null;
+    preferred_scope: "session" | "user" | "agent";
+    updated_at: string;
+}
+
+function UserSettingsPanel() {
+    const [settings, setSettings] = useState<UarUserSettings | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [saved, setSaved] = useState(false);
+    const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const apiKey = ((import.meta as unknown as { env: Record<string, string> }).env.VITE_UAR_API_KEY) ?? "";
+    const isJwt = apiKey.startsWith("ey");
+
+    const fetchSettings = useCallback(async () => {
+        if (!isJwt) return;
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetch("/api/uar/user/settings", {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiKey}`,
+                },
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json() as UarUserSettings;
+            setSettings(data);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed to load user settings");
+        } finally {
+            setLoading(false);
+        }
+    }, [apiKey, isJwt]);
+
+    useEffect(() => { void fetchSettings(); }, [fetchSettings]);
+
+    const save = async () => {
+        if (!settings || !isJwt) return;
+        setSaving(true);
+        setError(null);
+        try {
+            const res = await fetch("/api/uar/user/settings", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    prompt_caching_enabled: settings.prompt_caching_enabled,
+                    preferred_scope: settings.preferred_scope,
+                }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json() as UarUserSettings;
+            setSettings(data);
+            setSaved(true);
+            if (savedTimer.current) clearTimeout(savedTimer.current);
+            savedTimer.current = setTimeout(() => setSaved(false), 2000);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed to save user settings");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (!isJwt) {
+        return (
+            <div className="flex flex-1 flex-col overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+                    <div>
+                        <h2 className="font-mono text-[14px] font-semibold text-foreground">User Settings</h2>
+                        <p className="font-mono text-[11px] text-muted-foreground">JWT authentication required</p>
+                    </div>
+                </div>
+                <div className="flex flex-1 items-center justify-center p-8">
+                    <div className="flex flex-col items-center gap-3 text-center">
+                        <User size={32} className="text-muted-foreground/40" />
+                        <p className="font-mono text-[12px] text-muted-foreground">
+                            Per-user settings are only available when{" "}
+                            <code className="rounded bg-muted px-1">VITE_UAR_API_KEY</code> is a JWT
+                            Bearer token.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-1 flex-col overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+                <div>
+                    <h2 className="font-mono text-[14px] font-semibold text-foreground">User Settings</h2>
+                    <p className="font-mono text-[11px] text-muted-foreground">
+                        Per-user prompt-caching preferences for{" "}
+                        <span className="font-medium text-foreground">{settings?.user_id ?? "…"}</span>
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="font-mono text-[11px]"
+                        onClick={() => { void fetchSettings(); }}
+                        disabled={loading}
+                    >
+                        {loading ? <Loader2 size={12} className="animate-spin mr-1" /> : <RefreshCw size={12} className="mr-1" />}
+                        Reload
+                    </Button>
+                    <Button
+                        size="sm"
+                        className="font-mono text-[11px]"
+                        onClick={() => { void save(); }}
+                        disabled={saving || loading || !settings}
+                    >
+                        {saved
+                            ? <><Check size={12} className="mr-1" /> Saved</>
+                            : saving
+                                ? <><Loader2 size={12} className="animate-spin mr-1" /> Saving…</>
+                                : <><Save size={12} className="mr-1" /> Save</>}
+                    </Button>
+                </div>
+            </div>
+
+            {error && (
+                <div className="mx-6 mt-4 flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2">
+                    <AlertCircle size={13} className="text-destructive" />
+                    <span className="font-mono text-[11px] text-destructive">{error}</span>
+                </div>
+            )}
+
+            <div className="space-y-4 p-6">
+                <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
+                    <div>
+                        <p className="font-mono text-[12px] font-medium text-foreground">
+                            Prompt Caching Enabled
+                        </p>
+                        <p className="font-mono text-[10px] text-muted-foreground">
+                            Override the global default for your account. Null = inherit global setting.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            className="font-mono text-[10px] text-muted-foreground underline"
+                            onClick={() => setSettings(s => s ? { ...s, prompt_caching_enabled: null } : s)}
+                        >
+                            reset
+                        </button>
+                        <Toggle
+                            value={settings?.prompt_caching_enabled ?? false}
+                            onChange={(v) => setSettings(s => s ? { ...s, prompt_caching_enabled: v } : s)}
+                            disabled={!settings}
+                        />
+                    </div>
+                </div>
+
+                <Field label="Preferred Scope" hint="Which level of settings takes precedence when no session override is present.">
+                    <SettingSelect
+                        value={settings?.preferred_scope ?? "session"}
+                        options={[
+                            { value: "session", label: "Session (per-conversation)" },
+                            { value: "user", label: "User (account-wide)" },
+                            { value: "agent", label: "Agent (per-agent default)" },
+                        ]}
+                        onChange={(v) =>
+                            setSettings(s =>
+                                s ? { ...s, preferred_scope: v as "session" | "user" | "agent" } : s,
+                            )
+                        }
+                    />
+                </Field>
+
+                {settings?.updated_at && (
+                    <p className="font-mono text-[10px] text-muted-foreground">
+                        Last updated: {new Date(settings.updated_at).toLocaleString()}
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+}
+
 const PANEL_MAP: Record<string, () => ReactNode> = {
     provider: () => <ProviderPanel />,
     vision: () => <VisionPanel />,
@@ -1841,6 +2098,8 @@ const PANEL_MAP: Record<string, () => ReactNode> = {
     governance: () => <GovernancePanel />,
     agent_config: () => <AgentConfigPanel />,
     skill_config: () => <SkillConfigPanel />,
+    prompt_caching: () => <PromptCachingPanel />,
+    user_settings: () => <UserSettingsPanel />,
 };
 
 export const SettingsPage: FC = () => {

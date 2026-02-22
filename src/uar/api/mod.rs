@@ -15,6 +15,7 @@ pub mod settings;
 pub mod skills;
 pub mod sse;
 pub mod upload;
+pub mod user_settings;
 
 use axum::Router;
 

@@ -76,7 +76,7 @@ resource "kubernetes_deployment" "uar" {
 
         container {
           name  = "uar"
-          image = "tribehealth/universal-agent-runtime:02212026.17"
+          image = "tribehealth/universal-agent-runtime:02212026.19"
 
           port {
             name           = "http"

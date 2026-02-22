@@ -422,6 +422,8 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
             }
         };
 
+    let user_settings_store = Arc::new(crate::uar::runtime::user_settings_store::UserSettingsStore::new());
+
     let state = AppState {
         mcp,
         orchestrator,
@@ -443,6 +445,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         settings_manager: settings_manager.clone(),
         memory_service: memory_service.clone(),
         prompt_cache_provider,
+        user_settings_store: Arc::clone(&user_settings_store),
         a2ui_registry: uar::a2ui::registry::A2uiRegistry::with_builtins(),
         #[cfg(feature = "wasm-runtime")]
         wasm_sandbox: {
@@ -546,6 +549,11 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
                     settings_manager: settings_manager.clone(),
                 },
             )),
+        )
+        // Per-user settings API (prompt caching preferences etc.)
+        .nest(
+            "/api/uar/user",
+            uar::api::user_settings::build_router().with_state(Arc::clone(&user_settings_store)),
         )
         // Admin Memory API (CRUD)
         .nest(
@@ -1132,6 +1140,13 @@ struct AnthropicMessagesRequest {
     tools: Vec<AnthropicToolInput>,
     #[serde(default)]
     stream: bool,
+    /// Per-request prompt-caching override.
+    ///
+    /// When `true`, the UAR automatically injects `cache_control: {type: ephemeral}`
+    /// into the last system block and the last human-turn content block before
+    /// forwarding to Anthropic.
+    #[serde(default)]
+    prompt_caching_enabled: Option<bool>,
     #[serde(flatten)]
     _extra: HashMap<String, Value>,
 }
@@ -1294,6 +1309,71 @@ fn system_blocks(system: &AnthropicSystemInput) -> Vec<AnthropicContentBlockInpu
         }],
         AnthropicSystemInput::Blocks(blocks) => blocks.clone(),
         AnthropicSystemInput::Empty => Vec::new(),
+    }
+}
+
+/// Inject `cache_control: {type: ephemeral}` into an Anthropic request.
+///
+/// Per the Anthropic prompt-caching spec, markers are placed on:
+/// 1. The last text block in the system prompt (stable prefix — highest reuse).
+/// 2. The last text block of the last human-turn message (conversation context).
+///
+/// Blocks that already carry a `cache_control` are left untouched.
+fn inject_anthropic_cache_control(req: &mut AnthropicMessagesRequest) {
+    let ephemeral = AnthropicCacheControlInput {
+        _cache_type: "ephemeral".to_string(),
+        _extra: Default::default(),
+    };
+
+    // 1. Mark the last text block in the system prompt.
+    if let Some(system) = &mut req.system {
+        match system {
+            AnthropicSystemInput::Text(text) => {
+                let owned = std::mem::take(text);
+                *system = AnthropicSystemInput::Blocks(vec![AnthropicContentBlockInput {
+                    block_type: "text".to_string(),
+                    text: Some(owned),
+                    cache_control: Some(ephemeral.clone()),
+                    ..AnthropicContentBlockInput::default()
+                }]);
+            }
+            AnthropicSystemInput::Blocks(blocks) => {
+                if let Some(last_text) = blocks.iter_mut().rev().find(|b| {
+                    b.block_type == "text" && b.cache_control.is_none()
+                }) {
+                    last_text.cache_control = Some(ephemeral.clone());
+                }
+            }
+            AnthropicSystemInput::Empty => {}
+        }
+    }
+
+    // 2. Mark the last text block of the last human-turn message.
+    if let Some(last_human) = req
+        .messages
+        .iter_mut()
+        .rev()
+        .find(|m| m.role == "user")
+    {
+        match &mut last_human.content {
+            AnthropicContentInput::Text(text) => {
+                let owned = std::mem::take(text);
+                last_human.content = AnthropicContentInput::Blocks(vec![AnthropicContentBlockInput {
+                    block_type: "text".to_string(),
+                    text: Some(owned),
+                    cache_control: Some(ephemeral),
+                    ..AnthropicContentBlockInput::default()
+                }]);
+            }
+            AnthropicContentInput::Blocks(blocks) => {
+                if let Some(last_text) = blocks.iter_mut().rev().find(|b| {
+                    b.block_type == "text" && b.cache_control.is_none()
+                }) {
+                    last_text.cache_control = Some(ephemeral);
+                }
+            }
+            AnthropicContentInput::Empty => {}
+        }
     }
 }
 
@@ -1662,7 +1742,7 @@ async fn resolve_anthropic_model(
 
 async fn api_messages(
     State(state): State<AppState>,
-    Json(req): Json<AnthropicMessagesRequest>,
+    Json(mut req): Json<AnthropicMessagesRequest>,
 ) -> Response {
     if req.messages.is_empty() {
         return anthropic_error_response(
@@ -1689,6 +1769,20 @@ async fn api_messages(
             );
         }
     };
+
+    // Resolve effective prompt-caching setting for this request.
+    // The global default is off; the per-request field takes precedence.
+    let effective_caching = crate::uar::domain::prompt_caching::resolve_effective_caching(
+        req.prompt_caching_enabled,
+        None, // user-level settings not available without JWT on Anthropic endpoint
+        None,
+        false, // global default: off
+    );
+
+    if effective_caching {
+        inject_anthropic_cache_control(&mut req);
+        tracing::debug!("Injected cache_control blocks into Anthropic request");
+    }
 
     let openai_messages = convert_anthropic_messages_to_openai(&req);
 
@@ -2203,6 +2297,13 @@ struct ChatCompletionRequest {
     /// Defaults to true (respects global/agent memory config).
     #[serde(default = "default_true")]
     memory_enabled: bool,
+    /// Per-request prompt-caching override.
+    ///
+    /// `true` — enable caching for this turn (highest priority).
+    /// `false` — disable caching for this turn.
+    /// `null` / absent — inherit from user → agent → global settings.
+    #[serde(default)]
+    prompt_caching_enabled: Option<bool>,
 }
 
 #[inline]
@@ -2685,6 +2786,32 @@ async fn api_chat_completion(
             },
         }
     };
+
+    // --- Prompt caching: resolve effective setting for this request ---
+    let effective_prompt_caching = {
+        use crate::uar::domain::prompt_caching::resolve_effective_caching;
+        // Session-level override from request body (highest priority)
+        let session_override = req.prompt_caching_enabled;
+        // User-level preference (requires non-anonymous user)
+        let user_pref = if user_ctx.user_id != "anonymous" {
+            state
+                .user_settings_store
+                .caching_enabled_for(&user_ctx.user_id)
+                .await
+        } else {
+            None
+        };
+        // Agent-level default (not yet stored per-agent — placeholder for future)
+        let agent_pref: Option<bool> = None;
+        // Global default: off unless explicitly configured
+        let global = false;
+        resolve_effective_caching(session_override, user_pref, agent_pref, global)
+    };
+    tracing::debug!(
+        prompt_caching_enabled = effective_prompt_caching,
+        user_id = %user_ctx.user_id,
+        "Resolved effective prompt-caching setting"
+    );
 
     // --- Memory: context injection (pre-LLM-call) ---
     // Build context block and collect the raw hits so we can stream them to the client.
@@ -3336,7 +3463,8 @@ mod tests {
             ],
             system: None,
             tools: Vec::new(),
-            stream: true,
+            stream: false,
+            prompt_caching_enabled: None,
             _extra: HashMap::new(),
         };
 
@@ -3417,6 +3545,7 @@ mod tests {
             system: None,
             tools: Vec::new(),
             stream: true,
+            prompt_caching_enabled: None,
             _extra: HashMap::new(),
         };
 

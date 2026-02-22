@@ -811,6 +811,7 @@ impl RunManager {
                                 prompt_tokens,
                                 completion_tokens,
                                 total_tokens: _,
+                                ..
                             } => {
                                 total_input_tokens =
                                     total_input_tokens.saturating_add(prompt_tokens);

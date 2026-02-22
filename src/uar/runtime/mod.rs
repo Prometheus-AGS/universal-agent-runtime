@@ -5,5 +5,6 @@ pub mod matching;
 pub mod native_skill;
 pub mod native_skills;
 pub mod skills;
+pub mod user_settings_store;
 #[cfg(feature = "wasm-runtime")]
 pub mod wasm;
