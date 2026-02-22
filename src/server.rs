@@ -61,7 +61,7 @@ use crate::uar::{
         native_skill::NativeSkillRegistry,
         skills::{
             SkillService,
-            storage::{FilesystemStorageProvider, SkillStorageProvider},
+            storage::{DatabaseStorageProvider, FilesystemStorageProvider, SkillStorageProvider},
         },
     },
     security::{
@@ -275,6 +275,19 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         "skills",
     ));
     skill_service.add_provider(fs_provider);
+    // Register the database provider so skills pushed via the API are reloaded
+    // after a restart. The DB provider is added after the filesystem provider
+    // so API-pushed skills (provider_id = "api") take precedence on name conflict.
+    if let Some(ref persistence_layer) = persistence {
+        let db_provider: Arc<dyn SkillStorageProvider> = Arc::new(
+            DatabaseStorageProvider::new(
+                "db-skills",
+                "Database Skills",
+                Arc::clone(persistence_layer),
+            ),
+        );
+        skill_service.add_provider(db_provider);
+    }
     if let Err(e) = skill_service.initialize().await {
         eprintln!("Warning: Failed to initialize skills: {e:?}");
     }

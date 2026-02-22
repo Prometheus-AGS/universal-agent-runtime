@@ -7,7 +7,7 @@
 //! - Script execution (sandboxed)
 
 use super::registry::SkillRegistry;
-use super::storage::SkillStorageProvider;
+use super::storage::{SkillStorageProvider, StorageProviderKind};
 use crate::uar::domain::skills::Skill;
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::runtime::matching::vector::VectorMatcher;
@@ -190,6 +190,56 @@ impl SkillService {
     /// Toggle a skill's enabled state.
     pub async fn toggle_skill(&self, id: &str, enabled: bool) -> bool {
         self.registry.write().await.toggle(id, enabled)
+    }
+
+    /// Create a new skill dynamically via API.
+    ///
+    /// Persists to the database (via the registry's auto-persist path) and
+    /// writes a SKILL.md file to the writable filesystem provider so the
+    /// skill survives pod restarts.
+    pub async fn create_skill(&self, mut skill: Skill) -> anyhow::Result<Skill> {
+        skill.provider_id = "api".to_string();
+
+        // Persist to DB + embed via registry (requires persistence + VectorMatcher)
+        self.registry.write().await.register(skill.clone()).await;
+
+        // Also write to the filesystem provider (skills/dynamic/) for restart durability
+        for provider in &self.providers {
+            if provider.kind() == StorageProviderKind::Filesystem {
+                if let Err(e) = provider.save_skill(&skill).await {
+                    warn!(
+                        "Could not write skill '{}' to filesystem provider '{}': {:?}",
+                        skill.skill_id,
+                        provider.name(),
+                        e
+                    );
+                }
+                break;
+            }
+        }
+
+        info!("Created skill via API: {}", skill.skill_id);
+        Ok(skill)
+    }
+
+    /// Permanently delete a skill from the registry, database, and filesystem.
+    pub async fn delete_skill_permanent(&self, id: &str) -> anyhow::Result<bool> {
+        let removed = self.registry.write().await.remove(id).is_some();
+
+        // Delete from all providers that support deletion
+        for provider in &self.providers {
+            if let Err(e) = provider.delete_skill(id).await {
+                warn!(
+                    "Provider '{}' delete_skill('{}') failed (non-fatal): {:?}",
+                    provider.name(),
+                    id,
+                    e
+                );
+            }
+        }
+
+        info!("Deleted skill permanently: {}", id);
+        Ok(removed)
     }
 
     /// Match skills to a query for a specific agent.
