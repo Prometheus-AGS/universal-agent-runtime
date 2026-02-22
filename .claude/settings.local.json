@@ -16,7 +16,9 @@
       "Bash(cat:*)",
       "Bash(git rm:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nMerge branch ''main'' of github.com:Prometheus-AGS/universal-agent-runtime\n\nResolve conflicts in static assets by using fresh build artifacts.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nMerge branch ''main'' of github.com:Prometheus-AGS/universal-agent-runtime\n\nResolve conflicts in static assets by using fresh build artifacts.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git checkout:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
