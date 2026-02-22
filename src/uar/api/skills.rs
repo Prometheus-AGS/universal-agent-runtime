@@ -3,6 +3,7 @@
 //! REST endpoints for skills CRUD, matching configuration,
 //! and per-agent skill bindings.
 
+use crate::uar::domain::skills::{Skill, SkillTriggers};
 use crate::uar::runtime::skills::service::{SkillMatchingConfig, SkillService};
 use axum::{
     Json, Router,
@@ -21,6 +22,7 @@ pub fn build_router() -> Router<Arc<SkillService>> {
     Router::new()
         // Skills CRUD
         .route("/", get(list_skills))
+        .route("/", post(create_skill))
         .route("/{id}", get(get_skill))
         .route("/{id}", delete(delete_skill))
         .route("/{id}/toggle", post(toggle_skill))
@@ -42,15 +44,19 @@ pub fn build_agent_skills_router() -> Router<Arc<SkillService>> {
         .route("/{agent_id}/skills/{skill_id}", delete(remove_agent_skill))
 }
 
-// --- Response types ---
+// --- Request / Response types ---
 
 #[derive(Serialize)]
 struct SkillResponse {
     skill_id: String,
     title: String,
     description: String,
+    version: String,
     enabled: bool,
     provider_id: String,
+    triggers: crate::uar::domain::skills::SkillTriggers,
+    preferred_tools: Vec<String>,
+    prompt_overlay: String,
 }
 
 impl From<crate::uar::domain::skills::Skill> for SkillResponse {
@@ -59,10 +65,40 @@ impl From<crate::uar::domain::skills::Skill> for SkillResponse {
             skill_id: s.skill_id,
             title: s.title,
             description: s.description,
+            version: s.version,
             enabled: s.enabled,
             provider_id: s.provider_id,
+            triggers: s.triggers,
+            preferred_tools: s.preferred_tools,
+            prompt_overlay: s.prompt_overlay,
         }
     }
+}
+
+/// Request body for creating a skill dynamically via the API.
+#[derive(Deserialize)]
+struct CreateSkillRequest {
+    /// Human-readable skill name. The `skill_id` is derived from this.
+    name: String,
+    #[serde(default = "default_version")]
+    version: String,
+    description: String,
+    #[serde(default)]
+    triggers: SkillTriggers,
+    #[serde(default)]
+    prompt_overlay: String,
+    #[serde(default)]
+    preferred_tools: Vec<String>,
+    #[serde(default = "default_enabled")]
+    enabled: bool,
+}
+
+fn default_version() -> String {
+    "1.0.0".to_string()
+}
+
+fn default_enabled() -> bool {
+    true
 }
 
 #[derive(Deserialize)]
@@ -88,6 +124,35 @@ async fn list_skills(State(service): State<Arc<SkillService>>) -> Json<Vec<Skill
     Json(skills.into_iter().map(SkillResponse::from).collect())
 }
 
+async fn create_skill(
+    State(service): State<Arc<SkillService>>,
+    Json(req): Json<CreateSkillRequest>,
+) -> impl IntoResponse {
+    let skill_id = req.name.to_lowercase().replace(' ', "-");
+    let skill = Skill {
+        skill_id,
+        version: req.version,
+        title: req.name,
+        description: req.description,
+        triggers: req.triggers,
+        prompt_overlay: req.prompt_overlay,
+        preferred_tools: req.preferred_tools,
+        mcp_config: None,
+        constraints: Default::default(),
+        enabled: req.enabled,
+        provider_id: "api".to_string(),
+    };
+
+    match service.create_skill(skill).await {
+        Ok(created) => (StatusCode::CREATED, Json(SkillResponse::from(created))).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:?}") })),
+        )
+            .into_response(),
+    }
+}
+
 async fn get_skill(
     State(service): State<Arc<SkillService>>,
     Path(id): Path<String>,
@@ -103,11 +168,14 @@ async fn delete_skill(
     State(service): State<Arc<SkillService>>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {
-    // Toggle to disabled (registry-level removal)
-    if service.toggle_skill(&id, false).await {
-        StatusCode::NO_CONTENT.into_response()
-    } else {
-        StatusCode::NOT_FOUND.into_response()
+    match service.delete_skill_permanent(&id).await {
+        Ok(true) => StatusCode::NO_CONTENT.into_response(),
+        Ok(false) => StatusCode::NOT_FOUND.into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": format!("{e:?}") })),
+        )
+            .into_response(),
     }
 }
 

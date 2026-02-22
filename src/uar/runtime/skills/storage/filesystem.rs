@@ -133,6 +133,25 @@ pub fn parse_skill_file(content: &str) -> anyhow::Result<(SkillManifest, String)
     Ok((manifest, body))
 }
 
+/// Serialize a `Skill` back to SKILL.md format (YAML frontmatter + markdown body).
+pub fn serialize_skill_to_md(skill: &Skill) -> anyhow::Result<String> {
+    let manifest = SkillManifest {
+        name: skill.title.clone(),
+        version: skill.version.clone(),
+        description: skill.description.clone(),
+        authors: Vec::new(),
+        triggers: skill.triggers.clone(),
+        tools: skill.preferred_tools.clone(),
+    };
+    let yaml = serde_yml::to_string(&manifest)?;
+    let body = if skill.prompt_overlay.is_empty() {
+        format!("# {}\n\n{}", skill.title, skill.description)
+    } else {
+        skill.prompt_overlay.clone()
+    };
+    Ok(format!("---\n{yaml}---\n\n{body}\n"))
+}
+
 #[async_trait]
 impl SkillStorageProvider for FilesystemStorageProvider {
     fn id(&self) -> &str {
@@ -179,12 +198,36 @@ impl SkillStorageProvider for FilesystemStorageProvider {
         Ok(skills)
     }
 
-    async fn save_skill(&self, _skill: &Skill) -> anyhow::Result<()> {
-        // Filesystem provider is read-only for now
-        Err(anyhow::anyhow!("Filesystem storage provider is read-only"))
+    async fn save_skill(&self, skill: &Skill) -> anyhow::Result<()> {
+        // Write to skills/dynamic/<skill_id>/SKILL.md so the skill persists
+        // across restarts and is picked up by future filesystem scans.
+        let skill_dir = self.path.join("dynamic").join(&skill.skill_id);
+        fs::create_dir_all(&skill_dir).await?;
+        let content = serialize_skill_to_md(skill)?;
+        fs::write(skill_dir.join("SKILL.md"), content).await?;
+        self.skills_cache
+            .write()
+            .await
+            .insert(skill.skill_id.clone(), skill.clone());
+        info!(
+            "FilesystemStorageProvider '{}': wrote skill '{}' to {:?}",
+            self.name,
+            skill.skill_id,
+            skill_dir
+        );
+        Ok(())
     }
 
-    async fn delete_skill(&self, _id: &str) -> anyhow::Result<()> {
-        Err(anyhow::anyhow!("Filesystem storage provider is read-only"))
+    async fn delete_skill(&self, id: &str) -> anyhow::Result<()> {
+        let skill_dir = self.path.join("dynamic").join(id);
+        if skill_dir.exists() {
+            fs::remove_dir_all(&skill_dir).await?;
+            info!(
+                "FilesystemStorageProvider '{}': deleted skill dir {:?}",
+                self.name, skill_dir
+            );
+        }
+        self.skills_cache.write().await.remove(id);
+        Ok(())
     }
 }
