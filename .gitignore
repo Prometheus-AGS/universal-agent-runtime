@@ -83,3 +83,4 @@ test-config.yaml
 src-tauri/gen/
 *.tsbuildinfo
 data/
+static/assets
