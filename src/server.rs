@@ -22,6 +22,7 @@ use uuid::Uuid;
 
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
+use tower_http::cors::{Any, CorsLayer};
 
 use tracing::{info, warn};
 
@@ -784,6 +785,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
             state.clone(),
             uar::security::rate_limit::rate_limit_middleware,
         ))
+        .layer(build_permissive_cors_layer())
         .with_state(state);
 
     let addr = format!("{}:{}", config.server.host, config.server.port);
@@ -797,6 +799,13 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
 
     axum::serve(listener, app.into_make_service()).await?;
     Ok(())
+}
+
+fn build_permissive_cors_layer() -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any)
 }
 
 async fn load_global_resilience_policy(state: &AppState) -> ResiliencePolicy {
@@ -3347,6 +3356,31 @@ mod tests {
         assert!(should_apply_request_timeout("/api/generate-title"));
         assert!(should_apply_request_timeout("/api/threads"));
         assert!(should_apply_request_timeout("/assets/index.js"));
+    }
+
+    #[tokio::test]
+    async fn cors_layer_allows_all_origins_methods_and_headers() {
+        use axum::{body::Body, http::header, http::Method, routing::get, Router};
+        use tower::ServiceExt;
+
+        let app = Router::new()
+            .route("/ping", get(|| async { "ok" }))
+            .layer(build_permissive_cors_layer());
+
+        let req = Request::builder()
+            .method(Method::OPTIONS)
+            .uri("/ping")
+            .header(header::ORIGIN, "https://example.com")
+            .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
+            .header(header::ACCESS_CONTROL_REQUEST_HEADERS, "x-custom,content-type")
+            .body(Body::empty())
+            .expect("preflight request should build");
+
+        let res = app.oneshot(req).await.expect("preflight request should succeed");
+        assert!(res.status().is_success());
+        assert!(res.headers().get(header::ACCESS_CONTROL_ALLOW_ORIGIN).is_some());
+        assert!(res.headers().get(header::ACCESS_CONTROL_ALLOW_METHODS).is_some());
+        assert!(res.headers().get(header::ACCESS_CONTROL_ALLOW_HEADERS).is_some());
     }
 
     #[tokio::test]
