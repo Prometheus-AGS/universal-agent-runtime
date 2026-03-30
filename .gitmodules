@@ -1,0 +1,3 @@
+[submodule "models.dev"]
+	path = models.dev
+	url = git@github.com:Know-Me-Tools/models.dev.git
