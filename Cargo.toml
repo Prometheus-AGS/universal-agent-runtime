@@ -13,10 +13,10 @@ path = "src/main.rs"
 
 [dev-dependencies]
 anyhow = "1.0"
-axum-test = "18.4.1"
-serial_test = "3.0"
-tempfile = "3.24.0"
-tokio = { version = "1.0", features = ["full", "test-util"] }
+axum-test = "19.1.1"
+serial_test = "3.4.0"
+tempfile = "3.27.0"
+tokio = { version = "1.50.0", features = ["full", "test-util"] }
 tower = { version = "0.5.2", features = ["util"] }
 
 # Testing infrastructure dependencies
@@ -24,11 +24,13 @@ grcov = "0.8"
 testcontainers = "0.23"
 mockall = "0.13"
 tokio-test = "0.4"
-rustls = { version = "0.23", features = ["ring"] }
+rustls = { version = "0.23.37", features = ["ring"] }
 
 [build-dependencies]
 burn-import = { version = "0.20.1", optional = true }
 ureq = "3.2.0"
+serde_json = "1.0"
+serde = { version = "1", features = ["derive"] }
 
 [features]
 default = []
@@ -63,10 +65,10 @@ async-stream = "0.3"
 async-trait = "0.1"
 
 # Actor model
-ractor = "0.15"
+ractor = "0.15.12"
 
 # Governance policy engine
-cedar-policy = "4.9"
+cedar-policy = "4.9.1"
 
 # Wasm runtime (feature-gated)
 wasmtime = { version = "41.0.3", optional = true }
@@ -100,7 +102,7 @@ surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-serve
 url = "2.5.7"
 uuid = { version = "1.21.0", features = ["v4", "serde"] }
 dotenvy = "0.15.7"
-clap = { version = "4.5.59", features = ["derive", "env"] }
+clap = { version = "4.6.0", features = ["derive", "env"] }
 
 # Performance (M-MIMALLOC-APPS)
 mimalloc = "0.1"
@@ -136,26 +138,26 @@ sqlx = { version = "0.8.6", features = [
 ] }
 pgvector = { version = "0.4.1", features = ["sqlx"] }
 text-splitter = "0.29.3"
-chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4.44", features = ["serde"] }
 walkdir = "2.5.0"
 jsonwebtoken = "10.2.0"
 tracing-opentelemetry = "0.32.0"
 opentelemetry = "0.31.0"
-opentelemetry-otlp = "0.31.0"
+opentelemetry-otlp = "0.31.1"
 opentelemetry_sdk = { version = "0.31.0", features = ["rt-tokio"] }
 metrics = "0.24.3"
 metrics-exporter-prometheus = "0.18.1"
-config = "0.15.19"
-surrealdb = { version = "3.0.0", features = ["kv-rocksdb"] }
-jsonschema = { version = "0.29", default-features = false }
+config = "0.15.22"
+surrealdb = { version = "3.0.5", features = ["kv-rocksdb"] }
+jsonschema = { version = "0.45.0", default-features = false }
 governor = { version = "0.10.4", features = ["std", "jitter", "quanta"] }
 nonzero_ext = "0.3.0"
 
 # Compiler pipeline (UAR-AGENT-MD → descriptor)
-pulldown-cmark = "0.13"
-sha2 = "0.10"
+pulldown-cmark = "0.13.3"
+sha2 = "0.11.0"
 ed25519-dalek = { version = "2.1", features = ["rand_core"] }
-rand = "0.8"
+rand = "0.10.0"
 argon2 = "0.5"
 
 # File processing (multimodal support)
@@ -163,8 +165,8 @@ thiserror = "2.0"
 mime_guess = "2.0"
 base64 = "0.22"
 
-# Kreuzberg - document intelligence framework with Rust core (4.0 RC)
-kreuzberg = { git = "https://github.com/kreuzberg-dev/kreuzberg.git", rev = "000244987eb93fdcaeb228c8c10e4fe1f44d699c" }
+# Kreuzberg - document intelligence framework with Rust core
+kreuzberg = "4.6"
 
 # Worker pool for scalable document ingestion
 # Dependency Upgrade Process:
@@ -182,6 +184,10 @@ num_cpus = "1.16"
 # Graph algorithms for community detection (Leiden)
 petgraph = "0.8"
 dirs = "6.0.0"
+
+# Universal LLM client — 142+ providers, streaming, tool calling
+liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", features = ["full"] }
+secrecy = { version = "0.10", features = ["serde"] }
 
 # Leptos SSR (minimal templating)
 

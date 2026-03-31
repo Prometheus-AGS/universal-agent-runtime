@@ -7,7 +7,6 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 use ed25519_dalek::{Signer, SigningKey, Verifier};
-use rand::rngs::OsRng;
 use tracing::info;
 
 use super::error::CompileError;
@@ -60,7 +59,9 @@ impl LocalKeyProvider {
             std::fs::create_dir_all(&key_dir).map_err(|e| {
                 CompileError::Signing(format!("failed to create key directory: {e}"))
             })?;
-            let key = SigningKey::generate(&mut OsRng);
+            let mut key_bytes = [0u8; 32];
+            rand::fill(&mut key_bytes);
+            let key = SigningKey::from_bytes(&key_bytes);
             std::fs::write(&key_path, key.to_bytes())
                 .map_err(|e| CompileError::Signing(format!("failed to write signing key: {e}")))?;
             // Write the public key alongside for convenience
@@ -79,7 +80,11 @@ impl LocalKeyProvider {
     /// Useful for testing and as a default when no key directory is configured.
     pub fn ephemeral() -> Self {
         Self {
-            signing_key: SigningKey::generate(&mut OsRng),
+            signing_key: {
+                let mut key_bytes = [0u8; 32];
+                rand::fill(&mut key_bytes);
+                SigningKey::from_bytes(&key_bytes)
+            },
         }
     }
 }

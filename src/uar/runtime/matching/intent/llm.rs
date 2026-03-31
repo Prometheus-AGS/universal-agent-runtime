@@ -6,7 +6,8 @@
 
 use super::tfidf::TfIdfClassifier;
 use super::{ClassificationResult, IntentClassifier, IntentScore};
-use crate::llm::{LlmSettings, Message, MessageContent, MessageRole, Orchestrator};
+use crate::config::LlmConfig;
+use crate::llm::{Message, MessageContent, MessageRole, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::uar::domain::skills::Skill;
 use crate::uar::runtime::skills::SkillRegistry;
@@ -18,7 +19,7 @@ use std::sync::Arc;
 /// LLM-backed intent classifier.
 #[derive(Debug)]
 pub struct LlmClassifier {
-    settings: LlmSettings,
+    llm_config: LlmConfig,
     topk: usize,
     /// Fallback classifier when LLM is unavailable
     fallback: TfIdfClassifier,
@@ -38,9 +39,9 @@ struct LlmMatch {
 
 impl LlmClassifier {
     /// Creates a new LLM classifier with the given settings.
-    pub fn new(settings: LlmSettings, topk: usize) -> Self {
+    pub fn new(llm_config: LlmConfig, topk: usize) -> Self {
         Self {
-            settings,
+            llm_config,
             topk,
             fallback: TfIdfClassifier::new(topk),
         }
@@ -91,7 +92,7 @@ impl IntentClassifier for LlmClassifier {
         // Create a minimal orchestrator (no tools needed for classification)
         let mcp = Arc::new(McpRegistry::new_empty());
         let native_skills = Arc::new(crate::uar::runtime::native_skill::NativeSkillRegistry::new());
-        let orchestrator = Orchestrator::new(self.settings.clone(), mcp, native_skills);
+        let orchestrator = Orchestrator::new(self.llm_config.clone(), mcp, native_skills)?;
 
         let messages = vec![Message {
             role: MessageRole::User,

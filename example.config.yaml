@@ -65,14 +65,88 @@ persistence:
   # Env: UAR_PERSISTENCE__REDIS_URL
   # redis_url: "redis://localhost:6379"
 
-# LLM Configuration
-# Note: These are currently handled via separate Environment Variables, not this config file.
-# They are documented here for completeness.
+# =============================================================================
+# LLM CONFIGURATION (liter-llm unified client)
+# =============================================================================
+# Configure the default LLM provider and model used by UAR agents.
+# Uses liter-llm to support 142+ providers with a single unified API.
 #
-# LLM_BASE_URL: (Required) Base URL of your LLM provider (e.g., https://api.openai.com/v1)
-# LLM_MODEL: (Required) Model ID (e.g., gpt-4o)
-# LLM_API_KEY: (Optional) API Key
-# LLM_PROTOCOL: (Optional) "auto", "chat", or "responses"
+# Environment variable precedence (highest → lowest):
+#   1. CLI args  (--llm-model, --llm-api-key, --llm-base-url, …)
+#   2. UAR_LLM__* env vars  (e.g. UAR_LLM__MODEL, UAR_LLM__API_KEY)
+#   3. Legacy LLM_* env vars  (e.g. LLM_MODEL, LLM_API_KEY — for backward compat)
+#   4. Provider-specific keys  (e.g. OPENAI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY)
+#   5. This config file  (llm: section below)
+#   6. Compiled defaults
+
+llm:
+  # Model in "provider/model" format.
+  # See https://models.dev for a full list of supported providers and models.
+  # Default: "openai/gpt-4o"
+  # Env: UAR_LLM__MODEL | LLM_MODEL | --llm-model
+  model: "openai/gpt-4o"
+
+  # API key for the selected provider.
+  # Can also be set via OPENAI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY, etc.
+  # Default: none (required for cloud providers)
+  # Env: UAR_LLM__API_KEY | LLM_API_KEY | --llm-api-key
+  # api_key: "sk-..."
+
+  # Base URL override — bypasses liter-llm provider auto-detection.
+  # Use this to point at local Ollama, LM Studio, or a custom proxy.
+  # Default: none (auto-detected from provider name)
+  # Env: UAR_LLM__BASE_URL | LLM_BASE_URL | --llm-base-url
+  # base_url: "http://localhost:11434"
+
+  # Request timeout in seconds.
+  # Default: 60
+  # Env: UAR_LLM__TIMEOUT_SECS
+  timeout_secs: 60
+
+  # Maximum number of retries on 429 / 5xx errors.
+  # Default: 3
+  # Env: UAR_LLM__MAX_RETRIES
+  max_retries: 3
+
+  # Enable parallel tool calls (where supported by the model).
+  # Default: null (let the model decide)
+  # Env: UAR_LLM__PARALLEL_TOOL_CALLS
+  # parallel_tool_calls: true
+
+  # Enable per-request cost tracking (logged via tracing).
+  # Default: false
+  # Env: UAR_LLM__COST_TRACKING
+  cost_tracking: false
+
+  # Enable OpenTelemetry tracing spans for LLM requests.
+  # Default: true
+  # Env: UAR_LLM__TRACING
+  tracing: true
+
+  # Cooldown duration after transient errors (seconds).
+  # Default: none
+  # Env: UAR_LLM__COOLDOWN_SECS
+  # cooldown_secs: 5
+
+  # Health-check polling interval (seconds).
+  # Default: none (no polling)
+  # Env: UAR_LLM__HEALTH_CHECK_SECS
+  # health_check_secs: 30
+
+  # --- Budget enforcement (Tower middleware) ---
+  # budget:
+  #   global_limit: 10.00       # Max total USD spend before requests are blocked
+  #   per_request_limit: 0.05   # Max USD per single request
+
+  # --- Rate limiting (Tower middleware) ---
+  # rate_limit:
+  #   requests_per_minute: 60
+  #   tokens_per_minute: 100000
+
+  # --- Response caching (Tower middleware) ---
+  # cache:
+  #   enabled: true
+  #   ttl_secs: 300
 
 # =============================================================================
 # PROVIDERS (Multi-Provider LLM Support)

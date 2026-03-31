@@ -7,7 +7,7 @@ export interface LocalThread {
   updatedAt: string;
 }
 
-/** UAR API — ProviderConfig */
+/** UAR API — ProviderConfig (registry-managed provider override) */
 export interface UarProvider {
   id: string;
   display_name?: string;
@@ -18,7 +18,7 @@ export interface UarProvider {
   models?: UarModel[];
 }
 
-/** UAR API — ModelConfig */
+/** UAR API — ModelConfig (registry-managed model override) */
 export interface UarModel {
   id: string;
   display_name?: string;
@@ -34,10 +34,81 @@ export interface ProvidersResponse {
   default_id?: string;
 }
 
-/** UAR API — ModelsResponse */
+/** UAR API — ModelsResponse (legacy shape) */
 export interface ModelsResponse {
   models: UarModel[];
   active_model?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Catalog types (from /api/models and /api/catalog — backed by ModelCatalog)
+// ---------------------------------------------------------------------------
+
+/** Model capability flags from the compile-time catalog. */
+export interface CatalogModelCapabilities {
+  tool_call: boolean;
+  reasoning: boolean;
+  structured_output: boolean;
+  streaming: boolean;
+  attachment?: boolean;
+}
+
+/** Pricing per 1M tokens (USD). */
+export interface CatalogModelCost {
+  input: number;
+  output: number;
+  cache_read?: number;
+  cache_write?: number;
+}
+
+/** Context / output token limits. */
+export interface CatalogModelLimits {
+  context: number;
+  input: number;
+  output: number;
+}
+
+/** A single model entry from /api/models. */
+export interface CatalogModel {
+  name: string;
+  family?: string;
+  limit: CatalogModelLimits;
+  cost: CatalogModelCost;
+  modalities: { input: string[]; output: string[] };
+  tool_call: boolean;
+  reasoning: boolean;
+  structured_output: boolean;
+  streaming: boolean;
+  open_weights: boolean;
+}
+
+/** A provider entry from /api/models. */
+export interface CatalogProvider {
+  display_name: string;
+  base_url?: string;
+  configured: boolean;
+  models: Record<string, CatalogModel>;
+}
+
+/** Full /api/models response: provider_id → CatalogProvider. */
+export type CatalogModelsResponse = Record<string, CatalogProvider>;
+
+/** A provider summary from /api/catalog. */
+export interface CatalogProviderSummary {
+  id: string;
+  display_name: string;
+  base_url?: string;
+  model_count: number;
+  configured: boolean;
+  auth_env_var?: string;
+  endpoints: string[];
+}
+
+/** Full /api/catalog response. */
+export interface CatalogResponse {
+  provider_count: number;
+  model_count: number;
+  providers: CatalogProviderSummary[];
 }
 
 /** UAR API — SkillConfig */

@@ -10,14 +10,15 @@
 //! # Example
 //!
 //! ```rust,ignore
-//! use universal_agent_runtime::llm::{Orchestrator, LlmSettings, LlmProtocol};
+//! use universal_agent_runtime::config::LlmConfig;
+//! use universal_agent_runtime::llm::Orchestrator;
 //! use universal_agent_runtime::mcp::registry::McpRegistry;
 //! use universal_agent_runtime::uar::runtime::native_skill::NativeSkillRegistry;
 //!
-//! let settings = LlmSettings { /* ... */ };
+//! let llm_config = LlmConfig::default();
 //! let mcp = McpRegistry::load_from_file("mcp.json").await?;
 //! let native_skills = Arc::new(NativeSkillRegistry::new());
-//! let orchestrator = Orchestrator::new(settings, mcp, native_skills);
+//! let orchestrator = Orchestrator::new(llm_config, mcp, native_skills)?;
 //!
 //! let stream = orchestrator.chat("Hello, what time is it?").await?;
 //! ```
@@ -28,13 +29,14 @@ use std::sync::Arc;
 use futures::{Stream, StreamExt};
 use uuid::Uuid;
 
+use crate::config::LlmConfig;
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent;
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
 
 use super::{
-    ChatCompletionsDriver, LlmDriver, LlmProtocol, LlmRequest, LlmSettings, Message,
-    MessageContent, MessageRole, ResponsesDriver, ToolCall, ToolCallFunction,
+    LiterLlmDriver, LlmDriver, LlmRequest, Message,
+    MessageContent, MessageRole, ToolCall, ToolCallFunction,
 };
 
 /// Maximum number of tool loop iterations to prevent infinite loops.
@@ -57,7 +59,7 @@ struct ToolCallAccumulator {
 /// - Request ID tracking
 #[derive(Clone)]
 pub struct Orchestrator {
-    settings: LlmSettings,
+    llm_config: LlmConfig,
     mcp: Arc<McpRegistry>,
     driver: Arc<dyn LlmDriver>,
     native_skills: Arc<NativeSkillRegistry>,
@@ -67,43 +69,46 @@ pub struct Orchestrator {
 impl std::fmt::Debug for Orchestrator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Orchestrator")
-            .field("settings", &self.settings)
+            .field("model", &self.llm_config.model)
             .field("mcp", &"McpRegistry")
             .finish()
     }
 }
 
 impl Orchestrator {
-    /// Create a new orchestrator with the given settings, MCP registry, and native skill registry.
+    /// Create a new orchestrator with the given LLM config, MCP registry, and native skill registry.
+    ///
+    /// Uses `LiterLlmDriver` backed by liter-llm's `DefaultClient` for all
+    /// 142+ providers with unified tool-call normalization.
+    /// # Errors
+    ///
+    /// Returns an error if the underlying LLM client cannot be constructed.
     #[allow(dead_code)]
     pub fn new(
-        settings: LlmSettings,
+        llm_config: LlmConfig,
         mcp: Arc<McpRegistry>,
         native_skills: Arc<NativeSkillRegistry>,
-    ) -> Self {
-        let driver: Arc<dyn LlmDriver> = match settings.protocol {
-            LlmProtocol::Responses => Arc::new(ResponsesDriver::new(settings.clone())),
-            LlmProtocol::Chat => Arc::new(ChatCompletionsDriver::new(settings.clone())),
-            LlmProtocol::Auto => {
-                // Default to Chat Completions API as it's more widely supported
-                // Responses API is only for specific models that explicitly support it
-                Arc::new(ChatCompletionsDriver::new(settings.clone()))
-            }
-        };
+    ) -> anyhow::Result<Self> {
+        let client_config = crate::config::build_client_config(&llm_config);
+        let driver: Arc<dyn LlmDriver> = Arc::new(LiterLlmDriver::new(
+            client_config,
+            llm_config.model.clone(),
+            llm_config.parallel_tool_calls,
+        )?);
 
-        Self {
-            settings,
+        Ok(Self {
+            llm_config,
             mcp,
             driver,
             native_skills,
-        }
+        })
     }
 
-    /// Get the LLM settings.
+    /// Get the LLM configuration.
     #[must_use]
     #[allow(dead_code)]
-    pub fn settings(&self) -> &LlmSettings {
-        &self.settings
+    pub fn llm_config(&self) -> &LlmConfig {
+        &self.llm_config
     }
 
     /// Get the MCP registry.

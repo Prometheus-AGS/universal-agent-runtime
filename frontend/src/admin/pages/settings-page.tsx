@@ -56,7 +56,8 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-    { key: "provider", label: "LLM Providers", icon: Server, category: "AI & LLM" },
+    { key: "llm", label: "LLM (liter-llm)", icon: Server, category: "AI & LLM" },
+    { key: "provider", label: "Provider Overrides", icon: Server, category: "AI & LLM" },
     { key: "vision", label: "Vision", icon: Eye, category: "AI & LLM" },
     { key: "context_management", label: "Context Management", icon: Layers, category: "AI & LLM" },
     { key: "rag", label: "RAG & Chunking", icon: Scissors, category: "AI & LLM" },

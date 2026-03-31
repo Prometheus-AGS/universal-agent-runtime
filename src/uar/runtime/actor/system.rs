@@ -12,7 +12,7 @@ use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tracing::info;
 
-use crate::llm::LlmSettings;
+use crate::config::LlmConfig;
 use crate::mcp::registry::McpRegistry;
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
 
@@ -54,8 +54,8 @@ impl std::fmt::Debug for ActorHandle {
 pub struct ActorCollaboration {
     /// Active actors keyed by their actor name/ID.
     actors: RwLock<HashMap<String, ActorHandle>>,
-    /// Shared LLM settings for spawning new orchestrators.
-    settings: LlmSettings,
+    /// Shared LLM config for spawning new orchestrators.
+    llm_config: LlmConfig,
     /// Global MCP registry.
     mcp: Arc<McpRegistry>,
     /// Global native skill registry.
@@ -73,13 +73,13 @@ impl std::fmt::Debug for ActorCollaboration {
 impl ActorCollaboration {
     /// Create a new actor collaboration system.
     pub fn new(
-        settings: LlmSettings,
+        llm_config: LlmConfig,
         mcp: Arc<McpRegistry>,
         native_skills: Arc<NativeSkillRegistry>,
     ) -> Self {
         Self {
             actors: RwLock::new(HashMap::new()),
-            settings,
+            llm_config,
             mcp,
             native_skills,
         }
@@ -104,7 +104,7 @@ impl ActorCollaboration {
 
         let args = AgentActorArgs {
             agent_id: agent_id.clone(),
-            settings: self.settings.clone(),
+            llm_config: self.llm_config.clone(),
             mcp: Arc::clone(&self.mcp),
             native_skills: Arc::clone(&self.native_skills),
             system_prompt,

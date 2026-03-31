@@ -1,8 +1,7 @@
 //! LLM driver traits and implementations.
 //!
 //! This module provides protocol-agnostic abstractions for interacting with
-//! Large Language Models, supporting both `OpenAI` Chat Completions and
-//! Responses APIs.
+//! Large Language Models via the liter-llm universal client library.
 //!
 //! # Overview
 //!
@@ -10,73 +9,24 @@
 //! LLM implementations must support. The [`Orchestrator`] builds on top
 //! of drivers to provide tool loop execution.
 //!
-//! # Drivers
+//! # Driver
 //!
-//! - [`ChatCompletionsDriver`]: `OpenAI` Chat Completions API (`/v1/chat/completions`)
-//! - [`ResponsesDriver`]: `OpenAI` Responses API (`/v1/responses`)
-//!
-//! # Example
-//!
-//! ```rust,ignore
-//! use universal_agent_runtime::llm::{LlmSettings, LlmProtocol, Orchestrator};
-//!
-//! let settings = LlmSettings {
-//!     base_url: "https://api.openai.com".to_string(),
-//!     api_key: Some("sk-...".to_string()),
-//!     model: "gpt-4".to_string(),
-//!     protocol: LlmProtocol::Chat,
-//! };
-//! ```
+//! - [`LiterLlmDriver`]: Universal driver using liter-llm for 142+ providers
 
-pub mod chat_completions;
+pub mod catalog;
+pub mod liter_driver;
 pub mod orchestrator;
-pub mod provider;
 pub mod registry;
-pub mod responses;
+pub mod router;
 
-pub use chat_completions::ChatCompletionsDriver;
+pub use catalog::ModelCatalog;
+pub use liter_driver::LiterLlmDriver;
 pub use orchestrator::Orchestrator;
-pub use provider::Provider;
 pub use registry::{ProviderConfig, ProviderRegistry};
-pub use responses::ResponsesDriver;
+pub use router::ModelRouter;
 
 use crate::normalized::NormalizedEvent;
 use futures::Stream;
-
-/// LLM connection and model settings.
-#[derive(Debug, Clone)]
-pub struct LlmSettings {
-    /// Base URL for the LLM API (e.g., `https://api.openai.com`).
-    pub base_url: String,
-    /// Optional API key for authentication.
-    pub api_key: Option<String>,
-    /// Model identifier (e.g., `gpt-4`, `claude-3-opus`).
-    pub model: String,
-    /// Protocol to use for communication.
-    pub protocol: LlmProtocol,
-    /// Provider type (auto-detected from `base_url` if not specified).
-    pub provider: Provider,
-    /// Whether to enable parallel tool calls (provider-dependent).
-    pub parallel_tool_calls: Option<bool>,
-    /// Azure deployment name (required for Azure `OpenAI`).
-    #[allow(dead_code)]
-    pub deployment_name: Option<String>,
-    /// Azure API version (required for Azure `OpenAI`).
-    #[allow(dead_code)]
-    pub api_version: Option<String>,
-}
-
-/// LLM protocol variants.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum LlmProtocol {
-    /// Automatically detect protocol based on the provider.
-    #[default]
-    Auto,
-    /// `OpenAI` Responses API (`/v1/responses`).
-    Responses,
-    /// `OpenAI` Chat Completions API (`/v1/chat/completions`).
-    Chat,
-}
 
 /// A message in a conversation.
 ///

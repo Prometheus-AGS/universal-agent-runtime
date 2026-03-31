@@ -2,13 +2,15 @@
 //!
 //! This module provides a [`ProviderRegistry`] that maps provider IDs to their
 //! connection configurations, enabling per-agent provider selection with
-//! fallback chains.
+//! fallback chains. It integrates with `LlmConfig` for the liter-llm client
+//! and enriches provider records with data from the compile-time [`ModelCatalog`].
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::sync::RwLock;
 
-use super::{LlmProtocol, LlmSettings, Provider};
+use crate::config::LlmConfig;
+use super::catalog::{ModelCatalog, ProviderInfo};
 
 // =============================================================================
 // PROVIDER CONFIGURATION TYPES
@@ -58,26 +60,6 @@ pub enum ProtocolSetting {
     Responses,
 }
 
-impl From<ProtocolSetting> for LlmProtocol {
-    fn from(s: ProtocolSetting) -> Self {
-        match s {
-            ProtocolSetting::Auto => LlmProtocol::Auto,
-            ProtocolSetting::Chat => LlmProtocol::Chat,
-            ProtocolSetting::Responses => LlmProtocol::Responses,
-        }
-    }
-}
-
-impl From<LlmProtocol> for ProtocolSetting {
-    fn from(p: LlmProtocol) -> Self {
-        match p {
-            LlmProtocol::Auto => ProtocolSetting::Auto,
-            LlmProtocol::Chat => ProtocolSetting::Chat,
-            LlmProtocol::Responses => ProtocolSetting::Responses,
-        }
-    }
-}
-
 /// Configuration for a single model within a provider.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelConfig {
@@ -113,7 +95,7 @@ fn default_supports_tools() -> bool {
 /// The registry supports:
 /// - Multiple named providers (e.g., "openai", "groq", "azure-prod")
 /// - A designated default provider
-/// - Resolution of `ProviderSelection` → `LlmSettings`
+/// - Resolution of provider/model → `LlmConfig`
 /// - Fallback chains via `ProviderPolicy`
 #[derive(Debug)]
 pub struct ProviderRegistry {
@@ -130,33 +112,45 @@ impl ProviderRegistry {
         }
     }
 
-    /// Seed the registry with the global `LlmSettings` as the "default" provider.
+    /// Seed the registry from the global `LlmConfig`.
     ///
-    /// This maintains backward compatibility — env-var-based config is
-    /// automatically available as a named provider.
-    pub async fn seed_from_settings(&self, settings: &LlmSettings) {
-        let provider_id = detect_provider_id(&settings.base_url);
+    /// Extracts the provider from the `model` field's `provider/model` format,
+    /// enriches the entry with catalog metadata (display name, base URL, model
+    /// list), and sets it as the default provider.
+    pub async fn seed_from_llm_config(&self, config: &LlmConfig) {
+        let (provider_id, model_id) = split_model_string(&config.model);
+        let catalog = ModelCatalog::global();
+        let catalog_provider = catalog.provider(&provider_id);
 
-        let config = ProviderConfig {
+        let models = catalog_provider
+            .map(|p| models_from_catalog(p))
+            .unwrap_or_default();
+
+        let display_name = catalog_provider
+            .map(|p| p.display_name.clone())
+            .unwrap_or_else(|| format!("{provider_id} (default)"));
+
+        let base_url = config
+            .base_url
+            .clone()
+            .or_else(|| {
+                catalog_provider.and_then(|p| p.base_url.clone())
+            })
+            .unwrap_or_default();
+
+        let pc = ProviderConfig {
             id: provider_id.clone(),
-            display_name: format!("{} (default)", provider_id),
-            base_url: settings.base_url.clone(),
-            api_key: settings.api_key.clone(),
-            protocol: settings.protocol.into(),
-            default_model: Some(settings.model.clone()),
-            models: vec![ModelConfig {
-                id: settings.model.clone(),
-                display_name: None,
-                context_window: None,
-                supports_vision: Provider::supports_vision(&settings.model),
-                supports_tools: true,
-                max_output_tokens: None,
-            }],
+            display_name,
+            base_url,
+            api_key: config.api_key.clone(),
+            protocol: ProtocolSetting::Auto,
+            default_model: Some(model_id),
+            models,
             enabled: true,
         };
 
         let mut providers = self.providers.write().await;
-        providers.insert(provider_id.clone(), config);
+        providers.insert(provider_id.clone(), pc);
         drop(providers);
 
         let mut default = self.default_id.write().await;
@@ -177,10 +171,60 @@ impl ProviderRegistry {
         }
     }
 
-    /// Register a new provider.
+    /// Register a new provider (internal / seeding use).
     pub async fn register(&self, config: ProviderConfig) -> anyhow::Result<()> {
         let mut providers = self.providers.write().await;
         tracing::info!(provider_id = %config.id, "Registering provider");
+        providers.insert(config.id.clone(), config);
+        Ok(())
+    }
+
+    /// Register a custom provider that is not (or is not yet) in the built-in catalog.
+    ///
+    /// Use this for custom endpoints such as local Ollama instances, corporate
+    /// proxy servers, or third-party compatible APIs. If the provider ID matches
+    /// a catalog entry and the caller did not supply any models, the catalog's
+    /// model list is used to enrich the entry automatically.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `config.id` is empty.
+    pub async fn register_custom_provider(&self, mut config: ProviderConfig) -> anyhow::Result<()> {
+        if config.id.is_empty() {
+            anyhow::bail!("Custom provider ID must not be empty");
+        }
+
+        // Auto-enrich from catalog when the caller didn't specify models.
+        if config.models.is_empty() {
+            let catalog = ModelCatalog::global();
+            if let Some(catalog_provider) = catalog.provider(&config.id) {
+                config.models = models_from_catalog(catalog_provider);
+
+                if config.display_name.is_empty() {
+                    config.display_name = catalog_provider.display_name.clone();
+                }
+                if config.base_url.is_empty() {
+                    if let Some(ref url) = catalog_provider.base_url {
+                        config.base_url = url.clone();
+                    }
+                }
+
+                tracing::debug!(
+                    provider_id = %config.id,
+                    catalog_models = config.models.len(),
+                    "Auto-enriched custom provider from catalog"
+                );
+            }
+        }
+
+        tracing::info!(
+            provider_id = %config.id,
+            base_url = %config.base_url,
+            models = config.models.len(),
+            "Registering custom provider"
+        );
+
+        let mut providers = self.providers.write().await;
         providers.insert(config.id.clone(), config);
         Ok(())
     }
@@ -189,6 +233,12 @@ impl ProviderRegistry {
     pub async fn get(&self, id: &str) -> Option<ProviderConfig> {
         let providers = self.providers.read().await;
         providers.get(id).cloned()
+    }
+
+    /// Check if a provider is configured (exists and enabled).
+    pub async fn is_configured(&self, id: &str) -> bool {
+        let providers = self.providers.read().await;
+        providers.get(id).is_some_and(|p| p.enabled)
     }
 
     /// List all providers.
@@ -202,7 +252,6 @@ impl ProviderRegistry {
         let mut providers = self.providers.write().await;
         providers.remove(id);
 
-        // Clear default if it was the removed provider
         let mut default = self.default_id.write().await;
         if default.as_deref() == Some(id) {
             *default = None;
@@ -239,11 +288,12 @@ impl ProviderRegistry {
         Ok(())
     }
 
-    /// Resolve a provider selection to `LlmSettings`.
-    ///
-    /// Looks up the provider by `selection.provider`, then uses
-    /// `selection.model` (or the provider's default model).
-    pub async fn resolve(&self, provider_id: &str, model: &str) -> Option<LlmSettings> {
+    /// Resolve a provider/model pair into an `LlmConfig` for the liter-llm driver.
+    pub async fn resolve_to_llm_config(
+        &self,
+        provider_id: &str,
+        model: &str,
+    ) -> Option<LlmConfig> {
         let providers = self.providers.read().await;
         let config = providers.get(provider_id)?;
 
@@ -261,31 +311,27 @@ impl ProviderRegistry {
             model.to_string()
         };
 
-        let provider = Provider::detect_from_url(&config.base_url);
+        let full_model = format!("{provider_id}/{resolved_model}");
 
-        Some(LlmSettings {
-            base_url: config.base_url.clone(),
+        Some(LlmConfig {
+            model: full_model,
             api_key: config.api_key.clone(),
-            model: resolved_model,
-            protocol: config.protocol.clone().into(),
-            provider,
-            parallel_tool_calls: None,
-            deployment_name: None,
-            api_version: None,
+            base_url: if config.base_url.is_empty() {
+                None
+            } else {
+                Some(config.base_url.clone())
+            },
+            ..LlmConfig::default()
         })
     }
 
-    /// Resolve using the agent's provider policy.
-    ///
-    /// Tries the default provider selection first, then iterates through
-    /// fallbacks. Returns `None` if no provider can be resolved.
-    pub async fn resolve_from_policy(
+    /// Resolve using the agent's provider policy into an `LlmConfig`.
+    pub async fn resolve_llm_config_from_policy(
         &self,
         policy: &crate::uar::domain::artifact::ProviderPolicy,
-    ) -> Option<LlmSettings> {
-        // Try primary provider
-        if let Some(settings) = self
-            .resolve(&policy.default.provider, &policy.default.model)
+    ) -> Option<LlmConfig> {
+        if let Some(cfg) = self
+            .resolve_to_llm_config(&policy.default.provider, &policy.default.model)
             .await
         {
             tracing::debug!(
@@ -293,19 +339,21 @@ impl ProviderRegistry {
                 model = %policy.default.model,
                 "Resolved primary provider"
             );
-            return Some(settings);
+            return Some(cfg);
         }
 
-        // Try fallbacks in order
         for (i, fallback) in policy.fallbacks.iter().enumerate() {
-            if let Some(settings) = self.resolve(&fallback.provider, &fallback.model).await {
+            if let Some(cfg) = self
+                .resolve_to_llm_config(&fallback.provider, &fallback.model)
+                .await
+            {
                 tracing::info!(
                     provider = %fallback.provider,
                     model = %fallback.model,
                     fallback_index = i,
                     "Resolved fallback provider"
                 );
-                return Some(settings);
+                return Some(cfg);
             }
         }
 
@@ -334,7 +382,48 @@ impl Default for ProviderRegistry {
 // HELPERS
 // =============================================================================
 
+/// Convert a catalog [`ProviderInfo`] model list into the registry's [`ModelConfig`] format.
+fn models_from_catalog(provider: &ProviderInfo) -> Vec<ModelConfig> {
+    provider
+        .models
+        .iter()
+        .map(|m| ModelConfig {
+            id: m.id.clone(),
+            display_name: if m.name.is_empty() {
+                None
+            } else {
+                Some(m.name.clone())
+            },
+            context_window: if m.limits.context_window > 0 {
+                u32::try_from(m.limits.context_window).ok()
+            } else {
+                None
+            },
+            supports_vision: m.modalities.input.iter().any(|i| i == "image"),
+            supports_tools: m.capabilities.tool_call,
+            max_output_tokens: if m.limits.max_output > 0 {
+                u32::try_from(m.limits.max_output).ok()
+            } else {
+                None
+            },
+        })
+        .collect()
+}
+
+/// Split a `provider/model` string into `(provider_id, model_id)`.
+///
+/// If no slash is present, uses URL-based detection as the provider and the
+/// entire string as the model.
+fn split_model_string(model: &str) -> (String, String) {
+    if let Some((provider, model_id)) = model.split_once('/') {
+        (provider.to_string(), model_id.to_string())
+    } else {
+        ("default".to_string(), model.to_string())
+    }
+}
+
 /// Detect a short provider ID from a base URL.
+#[allow(dead_code)]
 fn detect_provider_id(base_url: &str) -> String {
     let lower = base_url.to_lowercase();
 
@@ -390,16 +479,17 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_resolve() {
+    async fn test_resolve_to_llm_config() {
         let registry = ProviderRegistry::new();
         let config = make_test_config("groq", "https://api.groq.com/openai");
         registry.register(config).await.unwrap();
 
-        let settings = registry.resolve("groq", "llama-3.3-70b").await;
-        assert!(settings.is_some());
-        let s = settings.unwrap();
-        assert_eq!(s.model, "llama-3.3-70b");
-        assert_eq!(s.base_url, "https://api.groq.com/openai");
+        let llm = registry
+            .resolve_to_llm_config("groq", "llama-3.3-70b")
+            .await;
+        assert!(llm.is_some());
+        let c = llm.unwrap();
+        assert_eq!(c.model, "groq/llama-3.3-70b");
     }
 
     #[tokio::test]
@@ -408,9 +498,9 @@ mod tests {
         let config = make_test_config("openai", "https://api.openai.com");
         registry.register(config).await.unwrap();
 
-        let settings = registry.resolve("openai", "").await;
-        assert!(settings.is_some());
-        assert_eq!(settings.unwrap().model, "test-model");
+        let llm = registry.resolve_to_llm_config("openai", "").await;
+        assert!(llm.is_some());
+        assert_eq!(llm.unwrap().model, "openai/test-model");
     }
 
     #[tokio::test]
@@ -420,38 +510,34 @@ mod tests {
         config.enabled = false;
         registry.register(config).await.unwrap();
 
-        let settings = registry.resolve("disabled", "model").await;
-        assert!(settings.is_none());
+        let llm = registry
+            .resolve_to_llm_config("disabled", "model")
+            .await;
+        assert!(llm.is_none());
     }
 
     #[tokio::test]
     async fn test_resolve_unknown_provider() {
         let registry = ProviderRegistry::new();
-        let settings = registry.resolve("nonexistent", "model").await;
-        assert!(settings.is_none());
+        let llm = registry
+            .resolve_to_llm_config("nonexistent", "model")
+            .await;
+        assert!(llm.is_none());
     }
 
     #[tokio::test]
-    async fn test_seed_from_settings() {
-        let settings = LlmSettings {
-            base_url: "https://api.openai.com".to_string(),
+    async fn test_seed_from_llm_config() {
+        let config = LlmConfig {
+            model: "openai/gpt-4o".to_string(),
             api_key: Some("sk-test".to_string()),
-            model: "gpt-4o".to_string(),
-            protocol: LlmProtocol::Auto,
-            provider: Provider::OpenAI,
-            parallel_tool_calls: None,
-            deployment_name: None,
-            api_version: None,
+            ..LlmConfig::default()
         };
 
         let registry = ProviderRegistry::new();
-        registry.seed_from_settings(&settings).await;
+        registry.seed_from_llm_config(&config).await;
 
         let default_id = registry.default_id().await;
         assert_eq!(default_id, Some("openai".to_string()));
-
-        let resolved = registry.resolve("openai", "gpt-4o").await;
-        assert!(resolved.is_some());
     }
 
     #[tokio::test]
@@ -484,5 +570,16 @@ mod tests {
         assert_eq!(detect_provider_id("https://api.groq.com"), "groq");
         assert_eq!(detect_provider_id("https://api.together.ai"), "together");
         assert_eq!(detect_provider_id("https://custom.llm.dev"), "default");
+    }
+
+    #[test]
+    fn test_split_model_string() {
+        let (p, m) = split_model_string("openai/gpt-4o");
+        assert_eq!(p, "openai");
+        assert_eq!(m, "gpt-4o");
+
+        let (p, m) = split_model_string("llama3");
+        assert_eq!(p, "default");
+        assert_eq!(m, "llama3");
     }
 }

@@ -1,4 +1,5 @@
-use crate::llm::{LlmSettings, Message, MessageRole, Orchestrator};
+use crate::config::LlmConfig;
+use crate::llm::{Message, MessageRole, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::session::SessionStore;
 use crate::uar::domain::{
@@ -73,7 +74,7 @@ pub struct RunManager {
     active_runs: Arc<RwLock<ActiveRunMap>>,
     // Map session_id -> most recent run_id for deterministic session lookup.
     session_current_run: Arc<RwLock<HashMap<String, String>>>,
-    settings: LlmSettings,
+    llm_config: LlmConfig,
     global_mcp: Arc<McpRegistry>,
     sessions: SessionStore,
     skills: Arc<RwLock<SkillRegistry>>,
@@ -168,7 +169,7 @@ impl std::fmt::Debug for RunManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RunManager")
             .field("active_runs_count", &"<locked>")
-            .field("settings", &self.settings)
+            .field("llm_config", &self.llm_config)
             .field("classifier_config", &self.classifier_config)
             .finish_non_exhaustive()
     }
@@ -176,7 +177,7 @@ impl std::fmt::Debug for RunManager {
 
 impl RunManager {
     pub async fn new(
-        settings: LlmSettings,
+        llm_config: LlmConfig,
         global_mcp: Arc<McpRegistry>,
         sessions: SessionStore,
         skills: Arc<RwLock<SkillRegistry>>,
@@ -184,7 +185,7 @@ impl RunManager {
         persistence: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
     ) -> Self {
         Self::with_classifier_config(
-            settings,
+            llm_config,
             global_mcp,
             sessions,
             skills,
@@ -198,7 +199,7 @@ impl RunManager {
 
     /// Creates a new RunManager with a custom classifier configuration.
     pub async fn with_classifier_config(
-        settings: LlmSettings,
+        llm_config: LlmConfig,
         global_mcp: Arc<McpRegistry>,
         sessions: SessionStore,
         skills: Arc<RwLock<SkillRegistry>>,
@@ -237,7 +238,7 @@ impl RunManager {
         Self {
             active_runs: Arc::new(RwLock::new(HashMap::new())),
             session_current_run: Arc::new(RwLock::new(HashMap::new())),
-            settings,
+            llm_config,
             global_mcp,
             sessions,
             skills,
@@ -580,10 +581,10 @@ impl RunManager {
         }
         let mcp = Arc::new(final_mcp);
 
-        // Resolve per-agent LLM settings via provider registry, falling back to global
-        let settings = if let Some(ref registry) = self.provider_registry {
+        // Resolve per-agent LLM config via provider registry, falling back to global
+        let run_llm_config = if let Some(ref registry) = self.provider_registry {
             match registry
-                .resolve_from_policy(&artifact.policy.provider)
+                .resolve_llm_config_from_policy(&artifact.policy.provider)
                 .await
             {
                 Some(resolved) => {
@@ -596,18 +597,24 @@ impl RunManager {
                 }
                 None => {
                     tracing::debug!("No provider match for agent policy, using global settings");
-                    self.settings.clone()
+                    self.llm_config.clone()
                 }
             }
         } else {
-            self.settings.clone()
+            self.llm_config.clone()
         };
 
-        let orchestrator = Arc::new(Orchestrator::new(
-            settings,
+        let orchestrator = match Orchestrator::new(
+            run_llm_config,
             mcp,
             Arc::clone(&self.native_skills),
-        ));
+        ) {
+            Ok(o) => Arc::new(o),
+            Err(e) => {
+                tracing::error!(error = %e, "Failed to create orchestrator");
+                return run_id;
+            }
+        };
 
         let execute_run_id = run_id.clone();
         let execute_agent_id = artifact.id.clone();

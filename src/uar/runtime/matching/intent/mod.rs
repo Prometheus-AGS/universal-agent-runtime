@@ -194,7 +194,7 @@ pub trait IntentClassifier: Send + Sync + std::fmt::Debug {
 /// Factory for creating intent classifiers based on config.
 ///
 /// Note: `LocalEmbedding` and `Llm` backends require additional resources
-/// (VectorMatcher, LlmSettings) that cannot be provided through this factory alone.
+/// (VectorMatcher, LlmConfig) that cannot be provided through this factory alone.
 /// Use the dedicated constructors for those classifiers, or call
 /// `create_classifier_with_resources` instead.
 pub fn create_classifier(config: &ClassifierConfig) -> Box<dyn IntentClassifier> {
@@ -220,7 +220,7 @@ pub fn create_classifier(config: &ClassifierConfig) -> Box<dyn IntentClassifier>
 pub fn create_classifier_with_resources(
     config: &ClassifierConfig,
     vector_matcher: Option<std::sync::Arc<crate::uar::runtime::matching::vector::VectorMatcher>>,
-    llm_settings: Option<crate::llm::LlmSettings>,
+    llm_config: Option<crate::config::LlmConfig>,
 ) -> Box<dyn IntentClassifier> {
     match config.backend {
         ClassifierBackend::LocalEmbedding => {
@@ -235,10 +235,10 @@ pub fn create_classifier_with_resources(
             }
         }
         ClassifierBackend::Llm => {
-            if let Some(settings) = llm_settings {
-                Box::new(llm::LlmClassifier::new(settings, config.topk))
+            if let Some(cfg) = llm_config {
+                Box::new(llm::LlmClassifier::new(cfg, config.topk))
             } else {
-                tracing::warn!("LLM classifier requires LlmSettings; falling back to TF-IDF");
+                tracing::warn!("LLM classifier requires LlmConfig; falling back to TF-IDF");
                 Box::new(tfidf::TfIdfClassifier::new(config.topk))
             }
         }

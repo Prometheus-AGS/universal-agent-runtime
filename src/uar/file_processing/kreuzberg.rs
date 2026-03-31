@@ -42,7 +42,7 @@ impl KreuzbergProvider {
             let ocr_config = kreuzberg::OcrConfig {
                 backend: self.config.ocr_backend.clone(),
                 language: self.config.ocr_language.clone(),
-                tesseract_config: None,
+                ..kreuzberg::OcrConfig::default()
             };
             config.ocr = Some(ocr_config);
         }
@@ -104,12 +104,12 @@ impl FileProcessor for KreuzbergProvider {
             .images
             .unwrap_or_default()
             .into_iter()
-            .map(|img| ExtractedImage {
-                data: img.data,
+        .map(|img| ExtractedImage {
+                data: img.data.to_vec(),
                 mime_type: format!("image/{}", img.format),
                 description: None,
             })
-            .collect();
+        .collect();
 
         Ok(ProcessingResult {
             content,
@@ -191,7 +191,7 @@ pub async fn process_bytes(
         let ocr_config = kreuzberg::OcrConfig {
             backend: config.ocr_backend.clone(),
             language: config.ocr_language.clone(),
-            tesseract_config: None,
+            ..kreuzberg::OcrConfig::default()
         };
         extraction_config.ocr = Some(ocr_config);
     }
@@ -236,7 +236,7 @@ pub async fn process_bytes(
         .unwrap_or_default()
         .into_iter()
         .map(|img| ExtractedImage {
-            data: img.data,
+            data: img.data.to_vec(),
             mime_type: format!("image/{}", img.format),
             description: None,
         })

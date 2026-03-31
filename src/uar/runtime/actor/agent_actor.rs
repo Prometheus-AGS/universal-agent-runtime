@@ -9,7 +9,8 @@ use std::sync::Arc;
 use ractor::{Actor, ActorProcessingErr, ActorRef};
 use tracing::{error, info};
 
-use crate::llm::{LlmSettings, Message, MessageContent, MessageRole, Orchestrator};
+use crate::config::LlmConfig;
+use crate::llm::{Message, MessageContent, MessageRole, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
 
@@ -49,8 +50,8 @@ pub struct AgentActor;
 pub struct AgentActorArgs {
     /// Agent artifact ID.
     pub agent_id: String,
-    /// LLM settings for this agent's orchestrator.
-    pub settings: LlmSettings,
+    /// LLM config for this agent's orchestrator.
+    pub llm_config: LlmConfig,
     /// MCP registry shared across the runtime.
     pub mcp: Arc<McpRegistry>,
     /// Native skill registry shared across the runtime.
@@ -112,10 +113,10 @@ impl Actor for AgentActor {
         info!(agent_id = %args.agent_id, "Agent actor starting");
 
         let orchestrator = Arc::new(Orchestrator::new(
-            args.settings,
+            args.llm_config,
             args.mcp,
             args.native_skills,
-        ));
+        )?);
 
         let mut history = Vec::new();
         if let Some(system_prompt) = args.system_prompt {

@@ -31,7 +31,7 @@ fn setup() -> TestServer {
         .nest("/agents", build_agent_skills_router())
         .with_state(service);
 
-    TestServer::new(app).expect("TestServer should start")
+    TestServer::new(app)
 }
 
 /// Minimal valid skill creation payload.

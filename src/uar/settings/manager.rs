@@ -1420,6 +1420,123 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
         result.push((st, settings));
     }
 
+    // -------------------------------------------------------------------------
+    // llm — unified liter-llm client configuration
+    // -------------------------------------------------------------------------
+    {
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "LLM Configuration",
+            "x-uar-ui": {
+                "category": "AI & LLM",
+                "icon": "cpu",
+                "order": 1,
+                "display_mode": "form"
+            },
+            "type": "object",
+            "properties": {
+                "model": {
+                    "type": "string",
+                    "title": "Default Model",
+                    "description": "Model in provider/model format (e.g. openai/gpt-4o). See models.dev for the full list.",
+                    "x-control": "text"
+                },
+                "api_key": {
+                    "type": ["string", "null"],
+                    "title": "API Key",
+                    "description": "API key for the default provider. Stored encrypted.",
+                    "x-control": "password"
+                },
+                "base_url": {
+                    "type": ["string", "null"],
+                    "title": "Base URL Override",
+                    "description": "Override provider base URL (e.g. for Ollama or a custom proxy).",
+                    "x-control": "url"
+                },
+                "timeout_secs": {
+                    "type": "integer",
+                    "title": "Request Timeout (seconds)",
+                    "minimum": 1,
+                    "maximum": 600,
+                    "x-control": "number"
+                },
+                "max_retries": {
+                    "type": "integer",
+                    "title": "Max Retries",
+                    "minimum": 0,
+                    "maximum": 10,
+                    "x-control": "number"
+                },
+                "parallel_tool_calls": {
+                    "type": ["boolean", "null"],
+                    "title": "Parallel Tool Calls",
+                    "description": "Allow the model to issue multiple tool calls in a single turn.",
+                    "x-control": "toggle"
+                },
+                "cost_tracking": {
+                    "type": "boolean",
+                    "title": "Cost Tracking",
+                    "description": "Log per-request token cost via tracing.",
+                    "x-control": "toggle"
+                },
+                "tracing": {
+                    "type": "boolean",
+                    "title": "OpenTelemetry Tracing",
+                    "description": "Emit OTEL spans for every LLM request.",
+                    "x-control": "toggle"
+                },
+                "cooldown_secs": {
+                    "type": ["integer", "null"],
+                    "title": "Error Cooldown (seconds)",
+                    "minimum": 0,
+                    "x-control": "number"
+                },
+                "health_check_secs": {
+                    "type": ["integer", "null"],
+                    "title": "Health Check Interval (seconds)",
+                    "minimum": 0,
+                    "x-control": "number"
+                }
+            },
+            "required": ["model"]
+        });
+        let llm = &config.llm;
+        let st = make_type("LLM Configuration", "llm", schema);
+        let settings = vec![
+            make_setting(&st, "llm.model", "Default Model", json!(llm.model)),
+            make_setting(&st, "llm.api_key", "API Key", json!(llm.api_key)),
+            make_setting(&st, "llm.base_url", "Base URL", json!(llm.base_url)),
+            make_setting(&st, "llm.timeout_secs", "Timeout (s)", json!(llm.timeout_secs)),
+            make_setting(&st, "llm.max_retries", "Max Retries", json!(llm.max_retries)),
+            make_setting(
+                &st,
+                "llm.parallel_tool_calls",
+                "Parallel Tool Calls",
+                json!(llm.parallel_tool_calls),
+            ),
+            make_setting(
+                &st,
+                "llm.cost_tracking",
+                "Cost Tracking",
+                json!(llm.cost_tracking),
+            ),
+            make_setting(&st, "llm.tracing", "OTEL Tracing", json!(llm.tracing)),
+            make_setting(
+                &st,
+                "llm.cooldown_secs",
+                "Cooldown (s)",
+                json!(llm.cooldown_secs),
+            ),
+            make_setting(
+                &st,
+                "llm.health_check_secs",
+                "Health Check Interval (s)",
+                json!(llm.health_check_secs),
+            ),
+        ];
+        result.push((st, settings));
+    }
+
     result
 }
 

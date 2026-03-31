@@ -1,10 +1,10 @@
-use crate::llm::{LlmProtocol, LlmSettings, Provider};
 use crate::uar::runtime::matching::ClassifierConfig;
 use clap::Parser;
 use config::{Config, Environment};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
+use std::time::Duration;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -32,6 +32,26 @@ pub struct Cli {
     /// Enable external cache (Redis)
     #[arg(long, env = "EXTERNAL_CACHE_ENABLED")]
     pub external_cache_enabled: Option<bool>,
+
+    /// Default LLM model (provider/model format, e.g., "openai/gpt-4o")
+    #[arg(long, env = "LLM_MODEL")]
+    pub llm_model: Option<String>,
+
+    /// LLM API key
+    #[arg(long, env = "LLM_API_KEY")]
+    pub llm_api_key: Option<String>,
+
+    /// LLM base URL override
+    #[arg(long, env = "LLM_BASE_URL")]
+    pub llm_base_url: Option<String>,
+
+    /// LLM protocol (auto, chat, responses)
+    #[arg(long, env = "LLM_PROTOCOL")]
+    pub llm_protocol: Option<String>,
+
+    /// LLM budget limit (USD)
+    #[arg(long, env = "UAR_LLM__BUDGET__GLOBAL_LIMIT")]
+    pub llm_budget_limit: Option<f64>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -58,6 +78,9 @@ pub struct AppConfig {
     /// Intent classifier configuration for skill matching
     #[serde(default)]
     pub intent_classifier: ClassifierConfig,
+    /// LLM configuration (liter-llm unified client)
+    #[serde(default)]
+    pub llm: LlmConfig,
     /// LLM provider configurations (multi-provider support)
     #[serde(default)]
     pub providers: Vec<crate::llm::registry::ProviderConfig>,
@@ -677,7 +700,14 @@ impl AppConfig {
             .set_default("memory.mcp_http_enabled", true)?
             .set_default("memory.mcp_http_path", "/mcp/memory")?
             .set_default("memory.namespace", "uar")?
-            .set_default("memory.database", "memory")?;
+            .set_default("memory.database", "memory")?
+            // LLM defaults
+            .set_default("llm.model", "openai/gpt-4o")?
+            .set_default("llm.protocol", "auto")?
+            .set_default("llm.timeout_secs", 60_i64)?
+            .set_default("llm.max_retries", 3_i64)?
+            .set_default("llm.cost_tracking", false)?
+            .set_default("llm.tracing", true)?;
 
         // 2. Config File Loading (Explicit > Implicit)
         if let Some(config_path) = &cli.config {
@@ -706,6 +736,23 @@ impl AppConfig {
         }
         if let Some(cache) = cli.external_cache_enabled {
             builder = builder.set_override("persistence.external_cache_enabled", cache)?;
+        }
+
+        // LLM CLI overrides
+        if let Some(ref model) = cli.llm_model {
+            builder = builder.set_override("llm.model", model.clone())?;
+        }
+        if let Some(ref api_key) = cli.llm_api_key {
+            builder = builder.set_override("llm.api_key", api_key.clone())?;
+        }
+        if let Some(ref base_url) = cli.llm_base_url {
+            builder = builder.set_override("llm.base_url", base_url.clone())?;
+        }
+        if let Some(ref protocol) = cli.llm_protocol {
+            builder = builder.set_override("llm.protocol", protocol.clone())?;
+        }
+        if let Some(budget) = cli.llm_budget_limit {
+            builder = builder.set_override("llm.budget.global_limit", budget)?;
         }
 
         // 4. Manual Environment Overrides
@@ -748,13 +795,43 @@ impl AppConfig {
         // Implicit provider override if DB URL looks like a path or ws://?
         // No, let users set UAR_PERSISTENCE__PROVIDER explicitly.
 
-        // Additional Env Vars Mapping (fallback for legacy/direct envs not prefixed or using different names)
-        // Note: `config`'s Environment source handles `UAR_SERVER__PORT` nicely.
-        // If we want to support generic `PORT` or `DATABASE_URL` we might need manual mapping or another source.
-        // For now, adhering to user's requirement "Environment variable for each setting".
-        // The cli definitions above have `env = "PORT"` etc, but `clap` handles those.
-        // Wait, if `clap` handles env vars, then `cli` struct will have them populated.
-        // So applying `cli` values as overrides essentially handles the Env vars defined in `clap` structs too!
+        // Backward-compat: LLM_* legacy env vars (lower priority than UAR_LLM__* and CLI).
+        // These are kept so existing deployments don't break after migrating to liter-llm.
+        // Precedence: UAR_LLM__* (via Environment source above) > LLM_* (here) > config file > defaults.
+        if let Ok(val) = env::var("LLM_MODEL") {
+            builder = builder.set_override("llm.model", val)?;
+        }
+        if let Ok(val) = env::var("LLM_API_KEY") {
+            builder = builder.set_override("llm.api_key", val)?;
+        }
+        if let Ok(val) = env::var("LLM_BASE_URL") {
+            builder = builder.set_override("llm.base_url", val)?;
+        }
+        if let Ok(val) = env::var("LLM_PROTOCOL") {
+            builder = builder.set_override("llm.protocol", val)?;
+        }
+        // Provider-specific API key shortcuts — map to llm.api_key if llm.api_key not set
+        // (UAR_LLM__API_KEY or LLM_API_KEY take precedence).
+        for provider_key in &[
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "GROQ_API_KEY",
+            "MISTRAL_API_KEY",
+            "COHERE_API_KEY",
+            "GEMINI_API_KEY",
+            "TOGETHER_API_KEY",
+            "PERPLEXITY_API_KEY",
+        ] {
+            if let Ok(val) = env::var(provider_key) {
+                // Only set as the default api_key if no explicit key is configured yet.
+                // Use a flag to avoid overriding an already-set key.
+                builder = builder.set_default(
+                    &format!("llm._provider_keys.{}", provider_key.to_lowercase()),
+                    val,
+                )?;
+            }
+        }
+
         let cfg = builder.build()?;
         let mut deserialized: Self = cfg.try_deserialize()?;
 
@@ -788,66 +865,186 @@ impl AppConfig {
     }
 }
 
-pub fn load_llm_settings() -> Result<LlmSettings, String> {
-    let base_url =
-        std::env::var("LLM_BASE_URL").unwrap_or_else(|_| "http://localhost:11434/v1".to_string());
-    if base_url.trim().is_empty() {
-        return Err("LLM_BASE_URL cannot be empty".to_string());
+/// Load just the merged [`LlmConfig`] from all layered configuration sources.
+///
+/// Applies layers in ascending priority:
+/// compiled defaults → `config.yaml` `llm:` section → `UAR_LLM__*` env vars →
+/// `LLM_*` legacy env vars → `cli` arguments.
+///
+/// Takes ownership of `cli` (a parsed [`Cli`] struct). To load without CLI
+/// arguments use `Cli::try_parse()` or construct a default `Cli` with
+/// `Cli::parse_from(std::iter::empty::<&str>())`.
+///
+/// # Errors
+///
+/// Returns an error if any configuration source cannot be read or parsed.
+pub fn load_llm_config(cli: Cli) -> anyhow::Result<LlmConfig> {
+    AppConfig::load_with_cli(cli)
+        .map(|cfg| cfg.llm)
+        .map_err(|e| anyhow::anyhow!("Failed to load LLM configuration: {e}"))
+}
+
+/// Build a `liter_llm::ClientConfig` from the merged `LlmConfig`.
+pub fn build_client_config(llm: &LlmConfig) -> liter_llm::ClientConfig {
+    let api_key = llm
+        .api_key
+        .clone()
+        .or_else(|| std::env::var("LLM_API_KEY").ok())
+        .unwrap_or_default();
+
+    let mut builder = liter_llm::ClientConfigBuilder::new(api_key)
+        .timeout(Duration::from_secs(llm.timeout_secs))
+        .max_retries(llm.max_retries);
+
+    if let Some(ref url) = llm.base_url {
+        builder = builder.base_url(url.clone());
     }
 
-    let model = std::env::var("LLM_MODEL").unwrap_or_else(|_| "llama3".to_string());
-    if model.trim().is_empty() {
-        return Err("LLM_MODEL cannot be empty".to_string());
+    builder.build()
+}
+
+// =============================================================================
+// LLM CONFIGURATION
+// =============================================================================
+
+/// Unified LLM configuration for the liter-llm client.
+///
+/// Settings are loaded from all layers via [`load_llm_config`]:
+/// compiled defaults → `config.yaml` `llm:` section → `UAR_LLM__*` env vars →
+/// `LLM_*` legacy env vars → CLI arguments.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LlmConfig {
+    /// Default model in `provider/model` format (e.g., `"openai/gpt-4o"`).
+    #[serde(default = "LlmConfig::default_model")]
+    pub model: String,
+    /// API key for the default provider.
+    #[serde(default)]
+    pub api_key: Option<String>,
+    /// Base URL override (bypasses provider auto-detection).
+    #[serde(default)]
+    pub base_url: Option<String>,
+    /// Protocol hint: `"auto"` | `"chat"` | `"responses"`.
+    #[serde(default = "LlmConfig::default_protocol")]
+    pub protocol: String,
+    /// Whether to enable parallel tool calls.
+    #[serde(default)]
+    pub parallel_tool_calls: Option<bool>,
+    /// Request timeout in seconds.
+    #[serde(default = "LlmConfig::default_timeout_secs")]
+    pub timeout_secs: u64,
+    /// Maximum retries on 429/5xx.
+    #[serde(default = "LlmConfig::default_max_retries")]
+    pub max_retries: u32,
+    /// Cache configuration for Tower middleware.
+    #[serde(default)]
+    pub cache: Option<LlmCacheConfig>,
+    /// Budget enforcement configuration.
+    #[serde(default)]
+    pub budget: Option<LlmBudgetConfig>,
+    /// Rate limiting configuration.
+    #[serde(default)]
+    pub rate_limit: Option<LlmRateLimitConfig>,
+    /// Enable per-request cost tracking.
+    #[serde(default)]
+    pub cost_tracking: bool,
+    /// Enable OpenTelemetry tracing spans.
+    #[serde(default = "LlmConfig::default_tracing")]
+    pub tracing: bool,
+    /// Cooldown after transient errors (seconds).
+    #[serde(default)]
+    pub cooldown_secs: Option<u64>,
+    /// Health check interval (seconds).
+    #[serde(default)]
+    pub health_check_secs: Option<u64>,
+}
+
+impl LlmConfig {
+    fn default_model() -> String {
+        "openai/gpt-4o".to_string()
     }
-
-    let api_key = std::env::var("LLM_API_KEY")
-        .ok()
-        .filter(|s| !s.trim().is_empty());
-
-    let protocol = match std::env::var("LLM_PROTOCOL")
-        .unwrap_or_else(|_| "auto".to_string())
-        .to_lowercase()
-        .as_str()
-    {
-        "responses" => LlmProtocol::Responses,
-        "chat" => LlmProtocol::Chat,
-        _ => LlmProtocol::Auto,
-    };
-
-    // Auto-detect provider from base URL
-    let mut provider = Provider::detect_from_url(&base_url);
-
-    // Load Azure-specific settings if needed
-    let deployment_name = std::env::var("AZURE_DEPLOYMENT_NAME").ok();
-    let api_version = std::env::var("AZURE_API_VERSION").ok();
-
-    // Update provider with Azure deployment info if provided
-    if let Provider::AzureOpenAI { .. } = &provider
-        && let Some(deployment) = &deployment_name
-    {
-        provider = Provider::AzureOpenAI {
-            deployment_name: deployment.clone(),
-            api_version: api_version
-                .clone()
-                .unwrap_or_else(|| "2024-08-01-preview".to_string()),
-        };
+    fn default_protocol() -> String {
+        "auto".to_string()
     }
+    fn default_timeout_secs() -> u64 {
+        60
+    }
+    fn default_max_retries() -> u32 {
+        3
+    }
+    fn default_tracing() -> bool {
+        true
+    }
+}
 
-    // Load optional parallel tool calls setting
-    let parallel_tool_calls = std::env::var("LLM_PARALLEL_TOOLS")
-        .ok()
-        .and_then(|s| s.parse().ok());
+impl Default for LlmConfig {
+    fn default() -> Self {
+        Self {
+            model: Self::default_model(),
+            api_key: None,
+            base_url: None,
+            protocol: Self::default_protocol(),
+            parallel_tool_calls: None,
+            timeout_secs: Self::default_timeout_secs(),
+            max_retries: Self::default_max_retries(),
+            cache: None,
+            budget: None,
+            rate_limit: None,
+            cost_tracking: false,
+            tracing: Self::default_tracing(),
+            cooldown_secs: None,
+            health_check_secs: None,
+        }
+    }
+}
 
-    Ok(LlmSettings {
-        base_url,
-        api_key,
-        model,
-        protocol,
-        provider,
-        parallel_tool_calls,
-        deployment_name,
-        api_version,
-    })
+/// Cache configuration for the liter-llm Tower middleware.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LlmCacheConfig {
+    /// Maximum number of cached entries.
+    #[serde(default = "LlmCacheConfig::default_max_entries")]
+    pub max_entries: usize,
+    /// TTL for cached entries (seconds).
+    #[serde(default = "LlmCacheConfig::default_ttl_secs")]
+    pub ttl_secs: u64,
+}
+
+impl LlmCacheConfig {
+    fn default_max_entries() -> usize {
+        1000
+    }
+    fn default_ttl_secs() -> u64 {
+        3600
+    }
+}
+
+/// Budget enforcement configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LlmBudgetConfig {
+    /// Global spending limit in USD.
+    pub global_limit: f64,
+    /// Per-model spending limits.
+    #[serde(default)]
+    pub model_limits: HashMap<String, f64>,
+    /// Enforcement mode: `"hard"` (reject) or `"soft"` (warn).
+    #[serde(default = "LlmBudgetConfig::default_enforcement")]
+    pub enforcement: String,
+}
+
+impl LlmBudgetConfig {
+    fn default_enforcement() -> String {
+        "hard".to_string()
+    }
+}
+
+/// Rate limiting configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LlmRateLimitConfig {
+    /// Requests per minute.
+    #[serde(default)]
+    pub rpm: Option<u32>,
+    /// Tokens per minute.
+    #[serde(default)]
+    pub tpm: Option<u64>,
 }
 
 #[cfg(test)]
@@ -866,6 +1063,11 @@ mod tests {
                 rate_limit_enabled: None,
                 timeout_disabled: None,
                 external_cache_enabled: None,
+                llm_model: None,
+                llm_api_key: None,
+                llm_base_url: None,
+                llm_protocol: None,
+                llm_budget_limit: None,
             },
             cfg_path,
         )

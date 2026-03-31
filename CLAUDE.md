@@ -151,9 +151,20 @@ Define MCP servers for tool discovery:
 ```
 
 ### Environment Variables
-Set up the following in `.env`:
-- `TAVILY_API_KEY`: For web search functionality
-- LLM provider API keys (OpenAI, Azure, etc.)
+Set up the following in `.env` (copy from `.env.example`):
+- `UAR_LLM__MODEL`: Default model in `provider/model` format (e.g. `openai/gpt-4o`). See models.dev.
+- `UAR_LLM__API_KEY`: API key for the selected provider.
+- Provider-specific shortcuts: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, etc.
+- `TAVILY_API_KEY`: For web search functionality via MCP.
+- Backward-compatible: `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` (still supported, lower priority).
+
+LLM configuration precedence (highest → lowest):
+1. CLI args (`--llm-model`, `--llm-api-key`, `--llm-base-url`)
+2. `UAR_LLM__*` env vars
+3. Legacy `LLM_*` env vars
+4. Provider-specific keys (`OPENAI_API_KEY`, etc.)
+5. `llm:` section in `config.yaml`
+6. Compiled defaults
 
 ## Important Development Patterns
 

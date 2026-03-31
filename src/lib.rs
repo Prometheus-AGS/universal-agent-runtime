@@ -108,6 +108,8 @@ pub struct AppState {
     pub user_settings_store: Arc<UserSettingsStore>,
     /// A2UI schema registry — resolves artifact schema IDs declared in UAR-AGENT-MD §06.
     pub a2ui_registry: Arc<uar::a2ui::registry::A2uiRegistry>,
+    /// Model router — selects optimal model based on capability requirements from the catalog.
+    pub model_router: Arc<llm::ModelRouter>,
     /// Wasm sandbox runtime for executing Wasm agents (feature-gated)
     #[cfg(feature = "wasm-runtime")]
     pub wasm_sandbox: Option<Arc<uar::runtime::wasm::sandbox::WasmSandbox>>,

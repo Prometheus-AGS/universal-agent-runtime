@@ -3,7 +3,7 @@ use serde_json::json;
 use serial_test::serial;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use universal_agent_runtime::llm::{LlmProtocol, LlmSettings, Provider};
+use universal_agent_runtime::config::LlmConfig;
 use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar;
@@ -41,20 +41,13 @@ async fn setup_real_env() -> (Arc<RunManager>, Arc<SessionStore>) {
     // Load .env if available
     let _ = dotenv();
 
-    let base_url =
-        std::env::var("LLM_BASE_URL").expect("LLM_BASE_URL must be set for integration tests");
     let model = std::env::var("LLM_MODEL").expect("LLM_MODEL must be set for integration tests");
-    let api_key = std::env::var("LLM_API_KEY").ok();
 
-    let settings = LlmSettings {
-        base_url: base_url.clone(),
-        api_key,
+    let llm_config = LlmConfig {
         model,
-        protocol: LlmProtocol::Auto,
-        provider: Provider::detect_from_url(&base_url),
-        parallel_tool_calls: None,
-        deployment_name: std::env::var("AZURE_DEPLOYMENT_NAME").ok(),
-        api_version: std::env::var("AZURE_API_VERSION").ok(),
+        api_key: std::env::var("LLM_API_KEY").ok(),
+        base_url: std::env::var("LLM_BASE_URL").ok(),
+        ..LlmConfig::default()
     };
 
     let mcp = Arc::new(McpRegistry::new_empty());
@@ -68,7 +61,7 @@ async fn setup_real_env() -> (Arc<RunManager>, Arc<SessionStore>) {
     );
     let run_manager = Arc::new(
         RunManager::new(
-            settings,
+            llm_config,
             mcp,
             sessions.clone(),
             Arc::clone(&skills),
@@ -92,23 +85,15 @@ async fn setup_real_env_with_tools() -> (
     // Load .env if available
     let _ = dotenv();
 
-    let base_url =
-        std::env::var("LLM_BASE_URL").expect("LLM_BASE_URL must be set for integration tests");
     let model = std::env::var("LLM_MODEL").expect("LLM_MODEL must be set for integration tests");
-    let api_key = std::env::var("LLM_API_KEY").ok();
 
-    let settings = LlmSettings {
-        base_url: base_url.clone(),
-        api_key,
+    let llm_config = LlmConfig {
         model,
-        protocol: LlmProtocol::Auto,
-        provider: Provider::detect_from_url(&base_url),
-        parallel_tool_calls: None,
-        deployment_name: std::env::var("AZURE_DEPLOYMENT_NAME").ok(),
-        api_version: std::env::var("AZURE_API_VERSION").ok(),
+        api_key: std::env::var("LLM_API_KEY").ok(),
+        base_url: std::env::var("LLM_BASE_URL").ok(),
+        ..LlmConfig::default()
     };
 
-    // Register a test tool "mirror"
     let mcp = Arc::new(McpRegistry::new_with_test_tool(
         "mirror",
         "Returns the input back to you",
@@ -124,7 +109,7 @@ async fn setup_real_env_with_tools() -> (
     );
     let run_manager = Arc::new(
         RunManager::new(
-            settings,
+            llm_config,
             mcp,
             sessions.clone(),
             Arc::clone(&skills),

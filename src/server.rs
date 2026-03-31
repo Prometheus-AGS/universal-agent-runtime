@@ -28,7 +28,7 @@ use tracing::{info, warn};
 
 use crate::AppState;
 use crate::config::AppConfig;
-use crate::llm::{ChatCompletionsDriver, LlmDriver, LlmSettings, Orchestrator};
+use crate::llm::{LlmDriver, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
 use crate::session::SessionStore;
@@ -71,11 +71,11 @@ use crate::uar::{
 };
 
 /// Start the Axum server with the provided configuration.
-pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyhow::Result<()> {
+pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
+    let llm_config = config.llm.clone();
     info!(
         name: "llm.config.loaded",
-        base_url = %settings.base_url,
-        model = %settings.model,
+        model = %llm_config.model,
         "LLM configuration loaded"
     );
 
@@ -261,10 +261,10 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
 
     // Create orchestrator
     let orchestrator = Arc::new(Orchestrator::new(
-        settings.clone(),
+        llm_config.clone(),
         Arc::clone(&mcp),
         Arc::clone(&native_skill_registry),
-    ));
+    )?);
 
     // Session store
     let sessions = SessionStore::new();
@@ -297,7 +297,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
 
     // Initialize Provider Registry
     let provider_registry = Arc::new(crate::llm::ProviderRegistry::new());
-    provider_registry.seed_from_settings(&settings).await;
+    provider_registry.seed_from_llm_config(&llm_config).await;
     if !config.providers.is_empty() {
         provider_registry
             .seed_from_configs(config.providers.clone())
@@ -306,12 +306,12 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
 
     let run_manager = Arc::new(
         RunManager::new(
-            settings.clone(),
+            llm_config.clone(),
             Arc::clone(&mcp),
             sessions.clone(),
             Arc::clone(&skills),
-            Arc::clone(&vector_matcher), // Passed explicitly
-            persistence.clone(),         // Passed explicitly
+            Arc::clone(&vector_matcher),
+            persistence.clone(),
         )
         .await
         .with_skill_service(Arc::clone(&skill_service))
@@ -329,7 +329,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
 
     // Initialize Actor Collaboration System
     let actor_system = Arc::new(ActorCollaboration::new(
-        settings.clone(),
+        llm_config.clone(),
         Arc::clone(&mcp),
         Arc::clone(&native_skill_registry),
     ));
@@ -437,6 +437,7 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         config: Arc::clone(&config),
         skill_service: Arc::clone(&skill_service),
         provider_registry: Arc::clone(&provider_registry),
+        model_router: Arc::new(crate::llm::ModelRouter::new(Arc::clone(&provider_registry))),
         native_skill_registry: Arc::clone(&native_skill_registry),
         federated_agent_registry: Arc::clone(&federated_agent_registry),
         actor_system: Arc::clone(&actor_system),
@@ -485,6 +486,8 @@ pub async fn start_server(config: Arc<AppConfig>, settings: LlmSettings) -> anyh
         .route("/healthz", get(health_handler))
         .route("/readyz", get(health_handler))
         .route("/api/models", get(api_models))
+        .route("/api/catalog", get(api_catalog))
+        .route("/api/uar/route", post(api_route_model))
         .route("/api/generate-title", post(api_generate_title))
         .route("/api/chat/completion", post(api_chat_completion))
         .route("/api/upload", post(uar::api::upload::upload_handler))
@@ -984,89 +987,190 @@ async fn api_generate_title(Json(req): Json<GenerateTitleRequest>) -> Response {
     Json(json!({ "title": title })).into_response()
 }
 
+/// GET /api/models
+///
+/// Returns the full model catalog (all providers × models from the compile-time
+/// `ModelCatalog`), enriched with a `configured` flag indicating whether the
+/// provider has a live API key registered in the `ProviderRegistry`.
+///
+/// Response shape:
+/// ```json
+/// {
+///   "<provider_id>": {
+///     "display_name": "OpenAI",
+///     "base_url": "https://api.openai.com/v1",
+///     "configured": true,
+///     "models": {
+///       "<model_id>": {
+///         "name": "GPT-4o",
+///         "limit": { "context": 128000, "input": 128000, "output": 16384 },
+///         "cost": { "input": 2.50, "output": 10.00 },
+///         "modalities": { "input": ["text", "image"], "output": ["text"] },
+///         "tool_call": true,
+///         "reasoning": false
+///       }
+///     }
+///   }
+/// }
+/// ```
 async fn api_models(State(state): State<AppState>) -> Response {
-    let providers = state.provider_registry.list().await;
+    let catalog = crate::llm::ModelCatalog::global();
+    let configured_ids: std::collections::HashSet<String> = state
+        .provider_registry
+        .list()
+        .await
+        .into_iter()
+        .filter(|p| p.enabled)
+        .map(|p| p.id)
+        .collect();
+
     let mut root = serde_json::Map::new();
 
-    for provider in providers.into_iter().filter(|p| p.enabled) {
+    for provider in catalog.all_providers() {
         let mut models = serde_json::Map::new();
-
-        let model_entries = if provider.models.is_empty() {
-            provider
-                .default_model
-                .iter()
-                .map(|id| {
-                    (
-                        id.clone(),
-                        None,
-                        Some(128_000_u32),
-                        Some(4_096_u32),
-                        false,
-                        true,
-                    )
-                })
-                .collect::<Vec<_>>()
-        } else {
-            provider
-                .models
-                .iter()
-                .map(|model| {
-                    (
-                        model.id.clone(),
-                        model.display_name.clone(),
-                        model.context_window,
-                        model.max_output_tokens,
-                        model.supports_vision,
-                        model.supports_tools,
-                    )
-                })
-                .collect::<Vec<_>>()
-        };
-
-        for (
-            model_id,
-            display_name,
-            context_window,
-            max_output_tokens,
-            supports_vision,
-            supports_tools,
-        ) in model_entries
-        {
-            let context = context_window.unwrap_or(128_000);
-            let output = max_output_tokens.unwrap_or(4_096);
-            let input_modalities: Value = if supports_vision {
-                json!(["text", "image"])
+        for model in &provider.models {
+            let input_cost = model.cost.as_ref().map(|c| c.input).unwrap_or(0.0);
+            let output_cost = model.cost.as_ref().map(|c| c.output).unwrap_or(0.0);
+            let context = if model.limits.context_window > 0 {
+                model.limits.context_window
             } else {
-                json!(["text"])
+                128_000
+            };
+            let max_output = if model.limits.max_output > 0 {
+                model.limits.max_output
+            } else {
+                4_096
             };
 
             models.insert(
-                model_id.clone(),
+                model.id.clone(),
                 json!({
-                    "name": display_name.unwrap_or(model_id),
+                    "name": model.name,
+                    "family": model.family,
                     "limit": {
                         "context": context,
                         "input": context,
-                        "output": output
+                        "output": max_output
                     },
                     "cost": {
-                        "input": 0.0,
-                        "output": 0.0
+                        "input": input_cost,
+                        "output": output_cost
                     },
                     "modalities": {
-                        "input": input_modalities,
-                        "output": ["text"]
+                        "input": model.modalities.input,
+                        "output": model.modalities.output
                     },
-                    "tool_call": supports_tools,
-                    "reasoning": true
+                    "tool_call": model.capabilities.tool_call,
+                    "reasoning": model.capabilities.reasoning,
+                    "structured_output": model.capabilities.structured_output,
+                    "streaming": model.capabilities.streaming,
+                    "open_weights": model.open_weights
                 }),
             );
         }
 
-        root.insert(provider.id, json!({ "models": models }));
+        root.insert(
+            provider.id.clone(),
+            json!({
+                "display_name": provider.display_name,
+                "base_url": provider.base_url,
+                "configured": configured_ids.contains(&provider.id),
+                "models": models
+            }),
+        );
     }
 
     Json(Value::Object(root)).into_response()
+}
+
+/// GET /api/catalog
+///
+/// Returns a lightweight summary of all providers known by the compile-time
+/// `ModelCatalog` — no API keys exposed, suitable for the admin UI discovery page.
+async fn api_catalog(State(state): State<AppState>) -> Response {
+    let catalog = crate::llm::ModelCatalog::global();
+    let configured_ids: std::collections::HashSet<String> = state
+        .provider_registry
+        .list()
+        .await
+        .into_iter()
+        .filter(|p| p.enabled)
+        .map(|p| p.id)
+        .collect();
+
+    let providers: Vec<Value> = catalog
+        .all_providers()
+        .iter()
+        .map(|p| {
+            let env_var = p
+                .auth
+                .as_ref()
+                .and_then(|a| a.env_var.clone());
+            json!({
+                "id": p.id,
+                "display_name": p.display_name,
+                "base_url": p.base_url,
+                "model_count": p.models.len(),
+                "configured": configured_ids.contains(&p.id),
+                "auth_env_var": env_var,
+                "endpoints": p.endpoints,
+            })
+        })
+        .collect();
+
+    Json(json!({
+        "provider_count": catalog.provider_count(),
+        "model_count": catalog.model_count(),
+        "providers": providers
+    }))
+    .into_response()
+}
+
+/// POST /api/uar/route
+///
+/// Selects the best available model based on capability requirements.
+///
+/// Request body (all optional):
+/// ```json
+/// {
+///   "needs_tools": true,
+///   "needs_reasoning": false,
+///   "needs_vision": false,
+///   "needs_structured_output": false,
+///   "min_context": 32000,
+///   "max_cost_per_1m_input": 5.0,
+///   "preferred_provider": "openai"
+/// }
+/// ```
+///
+/// Response:
+/// ```json
+/// { "model": "openai/gpt-4o" }
+/// ```
+/// or `404` if no suitable model is available.
+async fn api_route_model(State(state): State<AppState>, Json(req): Json<serde_json::Value>) -> Response {
+    use crate::llm::router::RouteRequirements;
+
+    let requirements = RouteRequirements {
+        needs_tools: req.get("needs_tools").and_then(|v| v.as_bool()).unwrap_or(false),
+        needs_reasoning: req.get("needs_reasoning").and_then(|v| v.as_bool()).unwrap_or(false),
+        needs_vision: req.get("needs_vision").and_then(|v| v.as_bool()).unwrap_or(false),
+        needs_structured_output: req
+            .get("needs_structured_output")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        min_context: req.get("min_context").and_then(|v| v.as_u64()),
+        max_cost_per_1m_input: req.get("max_cost_per_1m_input").and_then(|v| v.as_f64()),
+        preferred_provider: req
+            .get("preferred_provider")
+            .and_then(|v| v.as_str())
+            .map(String::from),
+    };
+
+    match state.model_router.route(&requirements).await {
+        Some(model) => Json(json!({ "model": model })).into_response(),
+        None => (StatusCode::NOT_FOUND, Json(json!({ "error": "No suitable model found" }))).into_response(),
+    }
 }
 
 async fn legacy_chat_route_disabled() -> Response {
@@ -1287,7 +1391,8 @@ fn estimate_tokens(text: &str) -> u32 {
 fn hash_prompt_text(text: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(text.as_bytes());
-    format!("{:x}", hasher.finalize())
+    let digest = hasher.finalize();
+    digest.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 fn content_blocks(content: &AnthropicContentInput) -> Vec<AnthropicContentBlockInput> {
@@ -1758,12 +1863,12 @@ async fn api_messages(
         Err(resp) => return resp,
     };
 
-    let llm_settings = match state
+    let resolved_llm_config = match state
         .provider_registry
-        .resolve(&resolved_model.provider_id, &resolved_model.model_id)
+        .resolve_to_llm_config(&resolved_model.provider_id, &resolved_model.model_id)
         .await
     {
-        Some(settings) => settings,
+        Some(cfg) => cfg,
         None => {
             return anthropic_error_response(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -1772,13 +1877,11 @@ async fn api_messages(
         }
     };
 
-    // Resolve effective prompt-caching setting for this request.
-    // The global default is off; the per-request field takes precedence.
     let effective_caching = crate::uar::domain::prompt_caching::resolve_effective_caching(
         req.prompt_caching_enabled,
-        None, // user-level settings not available without JWT on Anthropic endpoint
         None,
-        false, // global default: off
+        None,
+        false,
     );
 
     if effective_caching {
@@ -1793,7 +1896,18 @@ async fn api_messages(
         tools: convert_anthropic_tools_to_openai(&req.tools),
     };
 
-    let driver = ChatCompletionsDriver::new(llm_settings);
+    let client_config = crate::config::build_client_config(&resolved_llm_config);
+    let model_str = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
+    let driver = match crate::llm::LiterLlmDriver::new(client_config, model_str, None) {
+        Ok(d) => d,
+        Err(err) => {
+            tracing::error!(error = %err, "Failed to create LiterLlmDriver");
+            return anthropic_error_response(
+                StatusCode::BAD_GATEWAY,
+                "Failed to initialize upstream model client",
+            );
+        }
+    };
     let driver_stream = match driver.stream(llm_request).await {
         Ok(stream) => stream,
         Err(err) => {

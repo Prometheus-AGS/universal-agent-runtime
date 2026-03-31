@@ -1,32 +1,54 @@
-import { type FC, useCallback, useEffect, useState } from "react";
-import { Circle, CircleOff, Loader2, RefreshCw } from "lucide-react";
+import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { ModelsResponse, UarModel, UarProvider } from "@/types";
+import type { CatalogModel, CatalogModelsResponse } from "@/types";
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface FlatModel {
+  key: string;           // "openai/gpt-4o"
+  provider_id: string;
+  provider_name: string;
+  model_id: string;
+  model: CatalogModel;
+  configured: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// API helpers
+// ---------------------------------------------------------------------------
+
+async function fetchModels(): Promise<CatalogModelsResponse> {
+  const res = await fetch("/api/models");
+  if (!res.ok) throw new Error(`Models fetch failed: ${res.status}`);
+  return res.json() as Promise<CatalogModelsResponse>;
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 
 export const ModelsPage: FC = () => {
-  const [models, setModels] = useState<UarModel[]>([]);
-  const [providers, setProviders] = useState<UarProvider[]>([]);
-  const [activeModel, setActiveModel] = useState<string | undefined>();
+  const [response, setResponse] = useState<CatalogModelsResponse>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string>("all");
+  const [query, setQuery] = useState("");
+  const [capabilities, setCapabilities] = useState<{ tools: boolean; reasoning: boolean; vision: boolean }>({
+    tools: false, reasoning: false, vision: false,
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [modelsRes, providersRes] = await Promise.all([
-        fetch("/api/models"),
-        fetch("/api/providers"),
-      ]);
-      const modelsData = await modelsRes.json() as ModelsResponse & { data?: ModelsResponse };
-      const providersData = await providersRes.json() as { providers?: UarProvider[]; data?: { providers?: UarProvider[] } };
-      const p = providersData.data?.providers ?? providersData.providers ?? [];
-      setProviders(p);
-      const m = modelsData.data?.models ?? modelsData.models ?? [];
-      setModels(m);
-      setActiveModel(modelsData.data?.active_model ?? modelsData.active_model);
+      const data = await fetchModels();
+      setResponse(data);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -36,66 +58,176 @@ export const ModelsPage: FC = () => {
 
   useEffect(() => { void load(); }, [load]);
 
-  const handleSetActive = async (id: string) => {
-    try {
-      await fetch(`/api/models/${id}/activate`, { method: "POST" });
-      setActiveModel(id);
-    } catch { /**/ }
-  };
+  // Flatten into a filterable list
+  const allModels: FlatModel[] = useMemo(() => {
+    return Object.entries(response).flatMap(([providerId, providerData]) =>
+      Object.entries(providerData.models).map(([modelId, model]) => ({
+        key: `${providerId}/${modelId}`,
+        provider_id: providerId,
+        provider_name: providerData.display_name,
+        model_id: modelId,
+        model,
+        configured: providerData.configured,
+      })),
+    );
+  }, [response]);
 
-  const filtered = selectedProvider === "all" ? models : models.filter((m) => m.id.startsWith(selectedProvider));
+  const providers = useMemo(() => {
+    const seen = new Set<string>();
+    return allModels
+      .filter((m) => !seen.has(m.provider_id) && seen.add(m.provider_id))
+      .map((m) => ({ id: m.provider_id, name: m.provider_name, configured: m.configured }));
+  }, [allModels]);
+
+  const filtered = useMemo(() => {
+    let list = allModels;
+    if (selectedProvider !== "all") list = list.filter((m) => m.provider_id === selectedProvider);
+    if (capabilities.tools) list = list.filter((m) => m.model.tool_call);
+    if (capabilities.reasoning) list = list.filter((m) => m.model.reasoning);
+    if (capabilities.vision) list = list.filter((m) => m.model.modalities.input.includes("image"));
+    if (query) {
+      const q = query.toLowerCase();
+      list = list.filter((m) => m.key.toLowerCase().includes(q) || m.model.name.toLowerCase().includes(q));
+    }
+    return list;
+  }, [allModels, selectedProvider, capabilities, query]);
+
+  const toggleCap = (cap: keyof typeof capabilities) =>
+    setCapabilities((prev) => ({ ...prev, [cap]: !prev[cap] }));
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Header */}
       <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
         <div>
           <h2 className="font-display text-lg font-semibold text-foreground">Models</h2>
-          <p className="font-mono text-[11px] text-muted-foreground">{models.length} models configured</p>
+          <p className="font-mono text-[11px] text-muted-foreground">
+            {filtered.length} of {allModels.length} models · {providers.length} providers
+          </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => void load()} className="gap-1.5">
           <RefreshCw size={13} className={cn(loading && "animate-spin")} />Refresh
         </Button>
       </div>
 
-      {/* Provider filter */}
-      {providers.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto border-b border-border bg-background px-6 py-2">
-          <button onClick={() => setSelectedProvider("all")} className={cn("shrink-0 rounded-full px-3 py-1 font-mono text-[11px] transition-colors", selectedProvider === "all" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground")}>All</button>
+      {/* Filters */}
+      <div className="flex flex-col gap-2 border-b border-border bg-background px-6 py-3">
+        {/* Search */}
+        <div className="relative">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search models…"
+            className="h-8 pl-8 font-mono text-[12px]"
+          />
+        </div>
+
+        {/* Provider filter pills */}
+        <div className="flex flex-wrap gap-1">
+          <button
+            onClick={() => setSelectedProvider("all")}
+            className={cn(
+              "rounded-full px-2.5 py-0.5 font-mono text-[11px] transition-colors",
+              selectedProvider === "all" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            All
+          </button>
           {providers.map((p) => (
-            <button key={p.id} onClick={() => setSelectedProvider(p.id)} className={cn("shrink-0 rounded-full px-3 py-1 font-mono text-[11px] transition-colors", selectedProvider === p.id ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground")}>
-              {p.display_name ?? p.id}
+            <button
+              key={p.id}
+              onClick={() => setSelectedProvider(p.id)}
+              className={cn(
+                "rounded-full px-2.5 py-0.5 font-mono text-[11px] transition-colors",
+                selectedProvider === p.id ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground",
+                !p.configured && "opacity-50",
+              )}
+            >
+              {p.name}
             </button>
           ))}
         </div>
-      )}
 
+        {/* Capability filters */}
+        <div className="flex gap-1">
+          {(["tools", "reasoning", "vision"] as const).map((cap) => (
+            <button
+              key={cap}
+              onClick={() => toggleCap(cap)}
+              className={cn(
+                "rounded border px-2 py-0.5 font-mono text-[10px] transition-colors capitalize",
+                capabilities[cap]
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground",
+              )}
+            >
+              {cap}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Model list */}
       <div className="flex-1 overflow-y-auto p-6">
-        {loading && <div className="flex items-center gap-2"><Loader2 size={16} className="animate-spin text-muted-foreground" /><span className="font-mono text-[11px] text-muted-foreground">Loading…</span></div>}
+        {loading && (
+          <div className="flex items-center gap-2">
+            <Loader2 size={16} className="animate-spin text-muted-foreground" />
+            <span className="font-mono text-[11px] text-muted-foreground">Loading…</span>
+          </div>
+        )}
         {error && <p className="font-mono text-[11px] text-destructive">Error: {error}</p>}
-        {!loading && filtered.length === 0 && <p className="font-mono text-[11px] text-muted-foreground">No models found</p>}
-        <div className="flex flex-col gap-2">
+        {!loading && filtered.length === 0 && (
+          <p className="font-mono text-[11px] text-muted-foreground">No models match the current filters.</p>
+        )}
+        <div className="flex flex-col gap-1.5">
           {filtered.map((m) => (
-            <div key={m.id} className={cn("flex items-center gap-3 rounded-lg border px-4 py-3", m.id === activeModel ? "border-primary/40 bg-primary/5" : "border-border bg-card")}>
-              <div className="shrink-0">
-                {m.enabled !== false ? <Circle size={8} className="fill-success text-success" /> : <CircleOff size={8} className="text-muted-foreground" />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-mono text-[13px] font-medium text-foreground">{m.display_name ?? m.id}</p>
-                <p className="font-mono text-[10px] text-muted-foreground">{m.id}</p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {m.context_window && <span className="font-mono text-[10px] text-muted-foreground">{(m.context_window / 1000).toFixed(0)}k ctx</span>}
-                {m.supports_tools && <span className="rounded border border-border px-1 font-mono text-[9px] text-muted-foreground">tools</span>}
-                {m.supports_vision && <span className="rounded border border-border px-1 font-mono text-[9px] text-muted-foreground">vision</span>}
-                {m.id === activeModel && <span className="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-[9px] text-primary">active</span>}
-                {m.id !== activeModel && (
-                  <Button variant="outline" size="sm" className="h-6 px-2 text-[11px]" onClick={() => void handleSetActive(m.id)}>Set active</Button>
-                )}
-              </div>
-            </div>
+            <ModelRow key={m.key} flat={m} />
           ))}
         </div>
       </div>
     </div>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Model row
+// ---------------------------------------------------------------------------
+
+function ModelRow({ flat }: { flat: FlatModel }) {
+  const { model, key, provider_name, configured } = flat;
+  const ctx = model.limit.context;
+  const inputCost = model.cost.input;
+  const outputCost = model.cost.output;
+
+  return (
+    <div className={cn(
+      "flex items-center gap-3 rounded-lg border px-4 py-3",
+      configured ? "border-border bg-card" : "border-border/40 bg-muted/20 opacity-60",
+    )}>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="font-mono text-[13px] font-medium text-foreground">{model.name || flat.model_id}</p>
+          {!configured && <span className="font-mono text-[9px] text-muted-foreground">(not configured)</span>}
+        </div>
+        <p className="font-mono text-[10px] text-muted-foreground">{key}</p>
+        <p className="font-mono text-[10px] text-muted-foreground">{provider_name}</p>
+      </div>
+
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+        {ctx > 0 && (
+          <span className="font-mono text-[10px] text-muted-foreground">{(ctx / 1000).toFixed(0)}k ctx</span>
+        )}
+        {inputCost > 0 && (
+          <span className="font-mono text-[10px] text-muted-foreground">
+            ${inputCost.toFixed(2)}/${outputCost.toFixed(2)} /1M
+          </span>
+        )}
+        {model.tool_call && <Badge variant="outline" className="h-4 px-1 font-mono text-[9px]">tools</Badge>}
+        {model.reasoning && <Badge variant="outline" className="h-4 px-1 font-mono text-[9px]">reasoning</Badge>}
+        {model.modalities.input.includes("image") && <Badge variant="outline" className="h-4 px-1 font-mono text-[9px]">vision</Badge>}
+        {model.open_weights && <Badge variant="outline" className="h-4 px-1 font-mono text-[9px]">open</Badge>}
+      </div>
+    </div>
+  );
+}
