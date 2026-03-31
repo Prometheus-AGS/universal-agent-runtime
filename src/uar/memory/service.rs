@@ -540,7 +540,7 @@ impl MemoryService {
 
     pub async fn get_mindmap(&self, name: &str, user_id: Option<&str>) -> Result<Option<MindMap>> {
         self.storage
-            .get_mindmap(name, user_id)
+            .get_mindmap(name, user_id, None)
             .await
             .context("get_mindmap failed")
     }
@@ -563,7 +563,7 @@ impl MemoryService {
         node: MindMapNode,
     ) -> Result<MindMap> {
         self.storage
-            .add_mindmap_node(mindmap_name, user_id, node)
+            .add_mindmap_node(mindmap_name, user_id, None, node)
             .await
             .context("add_mindmap_node failed")
     }
@@ -575,7 +575,7 @@ impl MemoryService {
         edge: MindMapEdge,
     ) -> Result<MindMap> {
         self.storage
-            .add_mindmap_edge(mindmap_name, user_id, edge)
+            .add_mindmap_edge(mindmap_name, user_id, None, edge)
             .await
             .context("add_mindmap_edge failed")
     }
@@ -587,14 +587,14 @@ impl MemoryService {
         node_id: &str,
     ) -> Result<MindMap> {
         self.storage
-            .delete_mindmap_node(mindmap_name, user_id, node_id)
+            .delete_mindmap_node(mindmap_name, user_id, None, node_id)
             .await
             .context("delete_mindmap_node failed")
     }
 
     pub async fn delete_mindmap(&self, name: &str, user_id: Option<&str>) -> Result<()> {
         self.storage
-            .delete_mindmap(name, user_id)
+            .delete_mindmap(name, user_id, None)
             .await
             .context("delete_mindmap failed")
     }
