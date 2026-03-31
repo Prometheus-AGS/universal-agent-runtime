@@ -98,6 +98,7 @@ impl MemoryService {
                 password: config.surreal_pass.clone(),
                 namespace: config.namespace.clone(),
                 database: config.database.clone(),
+                ..Default::default()
             }
         } else {
             tracing::info!(
@@ -112,6 +113,7 @@ impl MemoryService {
                 password: None,
                 namespace: config.namespace.clone(),
                 database: config.database.clone(),
+                ..Default::default()
             }
         };
         let storage = SurrealStorage::new(&surreal_config, embedding_svc)

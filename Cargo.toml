@@ -96,7 +96,7 @@ rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", rev = "085470
 ] }
 
 # Memory system — surreal-memory library
-surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server", rev = "c6f95c905c16907ad58ef9049f32dcc9531d40eb", package = "surreal-memory", features = ["embedded"] }
+surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server", branch = "main", package = "surreal-memory", features = ["embedded"] }
 
 # Utilities
 url = "2.5.7"
