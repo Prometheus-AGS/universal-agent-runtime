@@ -1,211 +1,342 @@
 # Provider Configuration Guide
 
-This document describes how to configure the application for different LLM providers.
+UAR's LLM layer is powered by **[liter-llm](https://github.com/GQAdonis/liter-llm)**, a Rust-native universal LLM client. It supports 142+ providers through a single unified API and handles tool-call normalization across all wire formats automatically.
 
-## Environment Variables
+---
 
-### Required Variables
+## Model Addressing
 
-```bash
-LLM_BASE_URL=https://api.openai.com
-LLM_API_KEY=sk-....
-LLM_MODEL=gpt-5.2
+All providers and models are addressed in `provider/model` format:
+
+```
+openai/gpt-4o
+anthropic/claude-sonnet-4
+google/gemini-2.0-flash
+groq/llama-3.3-70b-versatile
+mistral/mistral-large-latest
+ollama/llama3.2
 ```
 
-### Optional Variables
+This is the format used in:
+- `UAR_LLM__MODEL` env var
+- `llm.model` in `config.yaml`
+- `--llm-model` CLI argument
+- Chat API requests: `"model": "openai/gpt-4o"`
+
+---
+
+## Quick Configuration
+
+### Environment Variables (Recommended)
+
+The simplest approach: set your provider's API key and the model you want.
 
 ```bash
-# Protocol selection (default: auto)
-LLM_PROTOCOL=auto | responses | chat
+# OpenAI
+OPENAI_API_KEY=sk-...
+UAR_LLM__MODEL=openai/gpt-4o
 
-# Enable/disable parallel tool calls (default: auto-detected by provider)
-LLM_PARALLEL_TOOLS=true
+# Anthropic Claude
+ANTHROPIC_API_KEY=sk-ant-...
+UAR_LLM__MODEL=anthropic/claude-sonnet-4
 
-# Azure OpenAI specific (required if using Azure)
-AZURE_DEPLOYMENT_NAME=gpt-4
-AZURE_API_VERSION=2024-08-01-preview
+# Google Gemini
+GEMINI_API_KEY=...
+UAR_LLM__MODEL=google/gemini-2.0-flash
+
+# Groq (fast inference, free tier)
+GROQ_API_KEY=gsk_...
+UAR_LLM__MODEL=groq/llama-3.3-70b-versatile
+
+# Mistral
+MISTRAL_API_KEY=...
+UAR_LLM__MODEL=mistral/mistral-large-latest
+
+# Cohere
+COHERE_API_KEY=...
+UAR_LLM__MODEL=cohere/command-r-plus
+
+# Together.ai
+TOGETHER_API_KEY=...
+UAR_LLM__MODEL=together/meta-llama/Llama-3-70b-chat-hf
+
+# Perplexity
+PERPLEXITY_API_KEY=...
+UAR_LLM__MODEL=perplexity/llama-3.1-sonar-large-128k-online
+
+# Local Ollama (no API key needed)
+UAR_LLM__MODEL=ollama/llama3.2
+UAR_LLM__BASE_URL=http://localhost:11434
+
+# LM Studio (local, OpenAI-compatible)
+UAR_LLM__MODEL=lmstudio/my-model
+UAR_LLM__BASE_URL=http://localhost:1234/v1
 ```
+
+---
+
+## Configuration Precedence
+
+Settings are merged from multiple sources. Higher priority overrides lower:
+
+| Priority | Source | Example |
+|---|---|---|
+| **1 (highest)** | CLI flags | `--llm-model openai/gpt-4o --llm-api-key sk-...` |
+| **2** | `UAR_LLM__*` env vars | `UAR_LLM__MODEL=openai/gpt-4o` |
+| **3** | Legacy `LLM_*` env vars | `LLM_MODEL=gpt-4o` (backward compat) |
+| **4** | Provider shortcut keys | `OPENAI_API_KEY=sk-...` |
+| **5** | `config.yaml` `llm:` section | see YAML reference below |
+| **6 (lowest)** | Compiled defaults | `openai/gpt-4o`, 60s timeout |
+
+### Environment Variable Reference
+
+```bash
+# Primary (structured) env vars — highest env priority
+UAR_LLM__MODEL=openai/gpt-4o          # provider/model format
+UAR_LLM__API_KEY=sk-...               # API key for the provider
+UAR_LLM__BASE_URL=http://localhost:11434  # override for local/proxy
+UAR_LLM__TIMEOUT_SECS=60
+UAR_LLM__MAX_RETRIES=3
+UAR_LLM__COST_TRACKING=false
+UAR_LLM__TRACING=true
+UAR_LLM__BUDGET__GLOBAL_LIMIT=10.0    # USD spending cap
+
+# Provider-specific shortcut keys (auto-mapped to llm.api_key)
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GROQ_API_KEY=gsk_...
+MISTRAL_API_KEY=...
+COHERE_API_KEY=...
+GEMINI_API_KEY=...
+TOGETHER_API_KEY=...
+PERPLEXITY_API_KEY=...
+
+# Legacy vars (still supported, lower priority than UAR_LLM__*)
+LLM_MODEL=gpt-4o
+LLM_API_KEY=sk-...
+LLM_BASE_URL=https://api.openai.com/v1
+```
+
+### CLI Arguments
+
+```bash
+./universal-agent-runtime \
+  --llm-model openai/gpt-4o \
+  --llm-api-key sk-... \
+  --llm-base-url https://api.openai.com \
+  --llm-protocol auto \
+  --llm-budget-limit 5.0
+```
+
+---
+
+## YAML Configuration Reference
+
+```yaml
+# config.yaml
+llm:
+  # Model in provider/model format (required)
+  model: "openai/gpt-4o"
+
+  # API key — prefer environment variables for security
+  # api_key: "sk-..."
+
+  # Base URL override — use for local endpoints or proxies
+  # base_url: "http://localhost:11434"
+
+  # Request timeout in seconds (default: 60)
+  timeout_secs: 60
+
+  # Maximum retry attempts on transient errors (default: 3)
+  max_retries: 3
+
+  # Enable/disable parallel tool calls (default: null = auto-detect)
+  # parallel_tool_calls: true
+
+  # Enable cost tracking via Tower middleware (default: false)
+  cost_tracking: false
+
+  # Enable OpenTelemetry tracing (default: true)
+  tracing: true
+
+  # Cooldown between requests in seconds (default: null = none)
+  # cooldown_secs: 1
+
+  # Health check interval in seconds (default: null = disabled)
+  # health_check_secs: 30
+
+  # Budget enforcement
+  # budget:
+  #   global_limit: 10.0       # USD
+  #   enforcement: "hard"      # "hard" = reject, "soft" = warn
+  #   model_limits:
+  #     "openai/gpt-4o": 5.0
+
+  # Rate limiting
+  # rate_limit:
+  #   rpm: 60                  # requests per minute
+  #   tpm: 100000              # tokens per minute
+```
+
+---
 
 ## Supported Providers
 
-### OpenAI
+The full catalog is embedded at build time from [models.dev](https://models.dev) and liter-llm. Query it at runtime:
 
 ```bash
-LLM_BASE_URL=https://api.openai.com
-LLM_API_KEY=sk-...
-LLM_MODEL=gpt-5.2
+# All providers with model counts and auth env vars
+curl http://localhost:3001/api/catalog
+
+# Full model capabilities, pricing, and limits per provider
+curl http://localhost:3001/api/models
 ```
 
-**Supported Models**: `gpt-5.2`, `gpt-5.2-pro`, `gpt-5.2-codex`, `gpt-4o`, `gpt-4`, etc.
+### Selected Providers
 
-**Features**:
-- Parallel tool calls: ✅ Supported
-- Streaming: ✅ Supported
-- Tool calling: ✅ Supported
+| Provider | Example model | Key env var | Notes |
+|---|---|---|---|
+| **OpenAI** | `openai/gpt-4o` | `OPENAI_API_KEY` | Tool calling, vision, streaming |
+| **Anthropic** | `anthropic/claude-sonnet-4` | `ANTHROPIC_API_KEY` | Tool calling, vision, extended thinking |
+| **Google** | `google/gemini-2.0-flash` | `GEMINI_API_KEY` | Multimodal, long context |
+| **Groq** | `groq/llama-3.3-70b-versatile` | `GROQ_API_KEY` | Ultra-fast LPU inference |
+| **Mistral** | `mistral/mistral-large-latest` | `MISTRAL_API_KEY` | European provider |
+| **Cohere** | `cohere/command-r-plus` | `COHERE_API_KEY` | RAG-optimized |
+| **Together.ai** | `together/meta-llama/Llama-3-70b` | `TOGETHER_API_KEY` | Open model hosting |
+| **Perplexity** | `perplexity/llama-3.1-sonar-large-128k-online` | `PERPLEXITY_API_KEY` | Real-time search |
+| **Ollama** | `ollama/llama3.2` | *(none)* | Local, privacy-preserving |
+| **LM Studio** | `lmstudio/<model>` | *(none)* | Local, OpenAI-compatible |
+| **OpenRouter** | `openrouter/openai/gpt-4o` | `OPENROUTER_API_KEY` | Multi-provider gateway |
+| **Azure OpenAI** | `azure/<deployment>` | `AZURE_API_KEY` | Enterprise Azure |
+| **AWS Bedrock** | `bedrock/anthropic.claude-3` | AWS credentials | AWS-native |
+| **Vertex AI** | `vertex/gemini-2.0-flash` | GCP credentials | Google Cloud |
+| **Fireworks** | `fireworks/llama-v3-70b-instruct` | `FIREWORKS_API_KEY` | Fast open models |
+| **Deepseek** | `deepseek/deepseek-chat` | `DEEPSEEK_API_KEY` | Code + reasoning |
 
-### Azure OpenAI
+142+ providers total. All tool-call format differences are normalized automatically.
+
+---
+
+## Tool Calling
+
+All providers route through the same `LiterLlmDriver`, which normalizes tool-call formats:
+
+| Provider wire format | Normalized to |
+|---|---|
+| Anthropic `tool_use` / `tool_result` content blocks | OpenAI `tool_calls` / `tool` role messages |
+| Google `functionCall` / `functionResponse` | OpenAI `tool_calls` / `tool` role messages |
+| Mistral `tool_calls` (slightly different shape) | OpenAI `tool_calls` |
+| Standard OpenAI `tool_calls` | Passed through unchanged |
+
+You do not need to configure anything for tool calling — it works automatically for any provider that supports it. Capability data is included in the model catalog (`GET /api/models`).
+
+---
+
+## Multi-Provider Configuration
+
+You can configure additional provider overrides (e.g., custom API keys per team, internal proxies) via the `providers` section in `config.yaml`. These supplement the compile-time catalog — the catalog provides model lists and defaults, your config provides API keys and overrides.
+
+```yaml
+providers:
+  - id: "openai"
+    display_name: "OpenAI (Production)"
+    base_url: "https://api.openai.com"
+    api_key: "${OPENAI_API_KEY}"
+    default_model: "gpt-4o"
+    enabled: true
+
+  - id: "groq"
+    display_name: "Groq (Fast)"
+    base_url: "https://api.groq.com/openai"
+    api_key: "${GROQ_API_KEY}"
+    default_model: "llama-3.3-70b-versatile"
+    enabled: true
+
+  - id: "internal-proxy"
+    display_name: "Internal LLM Proxy"
+    base_url: "https://llm-proxy.corp.example.com"
+    api_key: "${INTERNAL_PROXY_KEY}"
+    default_model: "gpt-4o"
+    enabled: true
+```
+
+Per-agent provider selection (in agent artifact YAML):
+
+```yaml
+policy:
+  provider:
+    default: { provider: "groq", model: "llama-3.3-70b-versatile" }
+    fallbacks:
+      - { provider: "openai", model: "gpt-4o-mini" }
+      - { provider: "internal-proxy", model: "gpt-4o" }
+```
+
+### Provider REST API
+
+Manage providers at runtime without restart:
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/uar/providers` | List all configured providers |
+| `GET` | `/api/uar/providers/{id}` | Get a single provider |
+| `POST` | `/api/uar/providers` | Register a new provider override |
+| `PUT` | `/api/uar/providers/{id}` | Update a provider |
+| `DELETE` | `/api/uar/providers/{id}` | Remove a provider |
+| `GET` | `/api/uar/providers/{id}/models` | List models for a provider |
+| `POST` | `/api/uar/providers/{id}/default` | Set the default provider |
+
+---
+
+## Model Routing
+
+UAR can automatically select the best model for a given task based on the compile-time catalog:
 
 ```bash
-LLM_BASE_URL=https://your-resource.openai.azure.com
-LLM_API_KEY=your-azure-key
-LLM_MODEL=gpt-4  # Not used in URL, but kept for reference
-AZURE_DEPLOYMENT_NAME=gpt-4-deployment
-AZURE_API_VERSION=2024-08-01-preview
+curl -X POST http://localhost:3001/api/uar/route \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "needs_tools": true,
+    "needs_vision": false,
+    "min_context": 32000,
+    "max_cost_per_1m_tokens": 3.0,
+    "preferred_provider": "openai"
+  }'
 ```
 
-**Features**:
-- Parallel tool calls: ✅ Supported
-- Streaming: ✅ Supported
-- Tool calling: ✅ Supported
+The router queries the embedded `ModelCatalog` — no network calls — and returns the best match from configured providers.
 
-**Note**: Azure uses deployment names in the URL instead of model names. The URL pattern is:
-```
-{base_url}/openai/deployments/{deployment_name}/chat/completions?api-version={version}
-```
-
-### OpenRouter
-
-```bash
-LLM_BASE_URL=https://openrouter.ai/api
-LLM_API_KEY=sk-or-...
-LLM_MODEL=openai/gpt-4
-```
-
-**Features**:
-- Parallel tool calls: ✅ Supported (model-dependent)
-- Streaming: ✅ Supported
-- Tool calling: ✅ Supported
-- Multi-provider routing: ✅ Supported
-
-**Note**: OpenRouter routes to multiple providers transparently. Tool calling support depends on the underlying model.
-
-### Together.ai
-
-```bash
-LLM_BASE_URL=https://api.together.xyz
-LLM_API_KEY=...
-LLM_MODEL=meta-llama/Llama-3-70b-chat-hf
-```
-
-**Features**:
-- Parallel tool calls: ⚠️ Model-dependent
-- Streaming: ✅ Supported
-- Tool calling: ✅ Supported
-
-### Groq
-
-```bash
-LLM_BASE_URL=https://api.groq.com
-LLM_API_KEY=gsk-...
-LLM_MODEL=llama-3.1-70b-versatile
-```
-
-**Features**:
-- Parallel tool calls: ✅ Supported
-- Streaming: ✅ Supported
-- Tool calling: ✅ Supported
-- Fast inference: ✅ Optimized hardware
-
-**Note**: Groq provides extremely fast inference with LPU (Language Processing Units).
-
-## Provider Auto-Detection
-
-The application automatically detects the provider based on the `LLM_BASE_URL`:
-
-- `api.openai.com` → OpenAI
-- `*.openai.azure.com` → Azure OpenAI
-- `openrouter.ai` → OpenRouter
-- `together.ai` or `together.xyz` → Together.ai
-- `groq.com` → Groq
-- Others → Generic OpenAI-compatible
-
-## Tool Calling Configuration
-
-### Parallel Tool Calls
-
-By default, the application auto-detects whether the provider supports parallel tool calls. You can override this behavior:
-
-```bash
-# Force enable parallel tool calls
-LLM_PARALLEL_TOOLS=true
-
-# Force disable parallel tool calls
-LLM_PARALLEL_TOOLS=false
-```
-
-**Providers with Parallel Tool Call Support**:
-- ✅ OpenAI
-- ✅ Azure OpenAI
-- ✅ Groq
-- ⚠️ OpenRouter (model-dependent)
-- ⚠️ Together.ai (model-dependent)
-
-## Example Configurations
-
-### Example 1: OpenAI with GPT-5.2
-
-```bash
-LLM_PROTOCOL=auto
-LLM_BASE_URL=https://api.openai.com
-LLM_API_KEY=sk-proj-...
-LLM_MODEL=gpt-5.2
-LLM_PARALLEL_TOOLS=true
-```
-
-### Example 2: Azure OpenAI
-
-```bash
-LLM_PROTOCOL=auto
-LLM_BASE_URL=https://my-resource.openai.azure.com
-LLM_API_KEY=abc123...
-LLM_MODEL=gpt-4
-AZURE_DEPLOYMENT_NAME=gpt-4-deployment
-AZURE_API_VERSION=2024-08-01-preview
-```
-
-### Example 3: Groq with Fast Inference
-
-```bash
-LLM_PROTOCOL=auto
-LLM_BASE_URL=https://api.groq.com
-LLM_API_KEY=gsk-...
-LLM_MODEL=llama-3.1-70b-versatile
-```
-
-### Example 4: OpenRouter Multi-Provider
-
-```bash
-LLM_PROTOCOL=auto
-LLM_BASE_URL=https://openrouter.ai/api
-LLM_API_KEY=sk-or-...
-LLM_MODEL=anthropic/claude-3-opus
-```
+---
 
 ## Troubleshooting
 
-### "Missing required env var: LLM_BASE_URL"
+### "Failed to load LLM configuration"
 
-Make sure you have a `.env` file in the project root with the required variables. Copy `.env.example` to `.env` and fill in your values.
-
-### Azure: "Deployment not found"
-
-Verify that:
-1. `AZURE_DEPLOYMENT_NAME` matches your actual deployment name in Azure
-2. `AZURE_API_VERSION` is a valid API version
-3. Your API key has access to the deployment
+Ensure at minimum `UAR_LLM__MODEL` is set (or `LLM_MODEL` for legacy compat), and that an API key is available via the provider shortcut or `UAR_LLM__API_KEY`.
 
 ### Tool calls not working
 
-1. Check if your model supports tool calling
-2. Try setting `LLM_PARALLEL_TOOLS=false` if the model doesn't support parallel calls
-3. Verify your API key has the necessary permissions
+1. Check `GET /api/models` to confirm `"tool_call": true` for your model
+2. Check `GET /api/uar/providers` to confirm your provider is enabled
+3. Tool-call support depends on the model — some Ollama models may not support it
 
-## Testing
-
-To test your configuration:
+### Local Ollama not connecting
 
 ```bash
-cargo run
+# Confirm Ollama is running and accessible
+curl http://localhost:11434/api/tags
+
+# Config
+UAR_LLM__MODEL=ollama/llama3.2
+UAR_LLM__BASE_URL=http://localhost:11434
+# No API key needed
 ```
 
-The server will start on `http://127.0.0.1:3000`. Open the URL in your browser and try sending a message that would trigger a tool call (e.g., "What time is it?").
+### Viewing the full provider catalog
+
+```bash
+# All providers with auth env var hints
+curl http://localhost:3001/api/catalog | jq '.providers[] | {id, display_name, auth_env_var, model_count}'
+
+# All models with capability flags
+curl http://localhost:3001/api/models | jq 'to_entries[] | {provider: .key, models: (.value.models | keys)}'
+```
