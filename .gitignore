@@ -1,6 +1,6 @@
 # Rust
 target/
-Cargo.lock
+# Cargo.lock is committed for reproducible builds of this binary crate + lib.
 **/*.rs.bk
 *.pdb
 
