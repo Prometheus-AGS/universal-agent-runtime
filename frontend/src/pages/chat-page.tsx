@@ -37,7 +37,7 @@ function NoThreadSelected() {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-      <p className="font-mono text-[11px] text-primary">{"// Select or start a thread"}</p>
+      <p className="font-mono text-[11px] text-primary">{"Select a thread or start a new one"}</p>
       <Button
         onClick={handleNew}
         type="button"
@@ -66,7 +66,10 @@ export function ChatPage() {
           className="fixed inset-0 z-40 cursor-pointer bg-black/60 md:hidden"
           data-clickable="true"
           onClick={() => setMobileSidebarOpen(false)}
-          aria-hidden
+          onKeyDown={(e) => { if (e.key === "Escape") setMobileSidebarOpen(false); }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close sidebar"
         />
       )}
 

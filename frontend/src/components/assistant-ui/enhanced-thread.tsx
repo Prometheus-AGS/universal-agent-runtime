@@ -446,7 +446,7 @@ const ReasoningPart: FC = () => {
         <CollapsibleContent>
           <Separator className="opacity-30" />
           <CardContent className="px-3 pb-3 pt-2">
-            <p className="whitespace-pre-wrap font-body text-[13px] leading-relaxed text-muted-foreground">
+            <p className="whitespace-pre-wrap font-body text-sm leading-relaxed text-muted-foreground">
               {text}
               {isStreaming && <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-[pulse_1s_step-end_infinite] bg-primary" />}
             </p>

@@ -37,7 +37,7 @@ export function AboutPage() {
             <Bot size={36} className="text-primary" />
           </div>
           <h1 className="font-display text-4xl font-bold tracking-tight text-foreground">Universal Agent Runtime</h1>
-          <p className="mt-3 font-mono text-sm text-primary">{"// Agentic streaming LLM infrastructure"}</p>
+          <p className="mt-3 font-mono text-sm text-primary">{"Agentic streaming AI infrastructure"}</p>
 
           {health && (
             <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-4 py-1.5">

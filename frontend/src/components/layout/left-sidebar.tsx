@@ -102,7 +102,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
             placeholder="Search threads…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-transparent font-ui text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none"
+            className="w-full bg-transparent font-ui text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             aria-label="Search threads"
           />
         </div>
@@ -112,7 +112,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
       <div className="flex-1 overflow-y-auto px-1.5 py-1">
         {visibleThreads.length === 0 ? (
           <div className="px-3 py-8 text-center">
-            <p className="font-mono text-[11px] text-primary">{"// No threads yet"}</p>
+            <p className="font-mono text-[11px] text-primary">{"No threads yet"}</p>
             <p className="mt-1 font-body text-xs text-muted-foreground">Start a new thread above</p>
           </div>
         ) : (
@@ -131,7 +131,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
               >
                 <MessageSquare size={14} className="mt-0.5 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-[13px] font-semibold text-foreground">{thread.title}</p>
+                  <p className="truncate font-display text-sm font-semibold text-foreground">{thread.title}</p>
                   <span className="font-mono text-[10px] text-muted-foreground">{formatRelativeTime(thread.updatedAt)}</span>
                 </div>
               </Button>

@@ -1,4 +1,7 @@
+import { type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { AdminShell, type AdminSection } from "@/admin/admin-shell";
+import { AdminWelcome } from "@/admin/components/admin-welcome";
 import { ProvidersPage } from "@/admin/pages/providers-page";
 import { ModelsPage } from "@/admin/pages/models-page";
 import { SkillsPage } from "@/admin/pages/skills-page";
@@ -12,23 +15,37 @@ import { SettingsPage } from "@/admin/pages/settings-page";
 import { A2uiTestingPage } from "@/admin/A2uiTestingPage";
 import { McpHealthPage } from "@/admin/McpHealthPage";
 
-function renderAdminContent(section: AdminSection) {
-  switch (section) {
-    case "providers": return <ProvidersPage />;
-    case "models": return <ModelsPage />;
-    case "skills": return <SkillsPage />;
-    case "agents": return <AgentsPage />;
-    case "tools": return <ToolsPage />;
-    case "auth": return <AuthPage />;
-    case "knowledge": return <KnowledgePage />;
-    case "memory": return <MemoryPage />;
-    case "compiler": return <CompilerPage />;
-    case "settings": return <SettingsPage />;
-    case "a2ui-testing": return <A2uiTestingPage />;
-    case "mcp-health": return <McpHealthPage />;
-  }
-}
+const PAGE_MAP: Record<AdminSection, () => ReactNode> = {
+  providers: () => <ProvidersPage />,
+  models: () => <ModelsPage />,
+  skills: () => <SkillsPage />,
+  agents: () => <AgentsPage />,
+  tools: () => <ToolsPage />,
+  auth: () => <AuthPage />,
+  knowledge: () => <KnowledgePage />,
+  memory: () => <MemoryPage />,
+  compiler: () => <CompilerPage />,
+  settings: () => <SettingsPage />,
+  "a2ui-testing": () => <A2uiTestingPage />,
+  "mcp-health": () => <McpHealthPage />,
+};
 
 export function AdminPage() {
+  const navigate = useNavigate();
+
+  function renderAdminContent(section: AdminSection) {
+    return (
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Welcome banner — only on the providers page (the default landing) */}
+        {section === "providers" && (
+          <AdminWelcome onNavigate={(path) => navigate(path)} />
+        )}
+        <div className="flex flex-1 overflow-hidden">
+          {PAGE_MAP[section]?.() ?? null}
+        </div>
+      </div>
+    );
+  }
+
   return <AdminShell renderContent={renderAdminContent} />;
 }

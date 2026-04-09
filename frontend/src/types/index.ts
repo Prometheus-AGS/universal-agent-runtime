@@ -176,6 +176,43 @@ export interface UarKnowledgeBase {
   name: string;
   description?: string;
   document_count?: number;
+  config?: KbConfig;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** UAR API — KbConfig */
+export interface KbConfig {
+  embedding_provider?: string;
+  embedding_model?: string;
+  vector_dimensions?: number;
+  file_processor?: string;
+  chunk_strategy?: string;
+}
+
+/** UAR API — KnowledgeDocument */
+export interface UarKnowledgeDocument {
+  id: string;
+  kb_id: string;
+  filename: string;
+  file_path?: string;
+  mime_type?: string;
+  chunk_count: number;
+  status: DocumentStatus;
+  error_message?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Document processing status */
+export type DocumentStatus = "pending" | "processing" | "indexed" | "failed";
+
+/** UAR API — SearchResult */
+export interface KbSearchResult {
+  content: string;
+  score: number;
+  metadata?: Record<string, unknown>;
+  document_id?: string;
 }
 
 /** UAR API — CompilerSession */

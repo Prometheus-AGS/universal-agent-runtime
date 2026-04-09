@@ -307,7 +307,7 @@ export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({ artifactType, titl
         </span>
       </div>
       <p className="font-display text-sm font-semibold text-foreground">{title || "Artifact"}</p>
-      <pre className="mt-2 whitespace-pre-wrap rounded-md border border-border/40 bg-background/70 p-2 font-body text-[12px] text-muted-foreground">
+      <pre className="mt-2 whitespace-pre-wrap rounded-md border border-border/40 bg-background/70 p-2 font-body text-xs text-muted-foreground">
         {content}
       </pre>
     </div>

@@ -29,8 +29,8 @@ export const ToolCallBlock: FC<ToolCallBlockProps> = ({ toolName, args, result, 
     <div className="my-2 overflow-hidden rounded-lg border border-border/50 bg-card">
       <Button variant="ghost" onClick={() => setIsExpanded((e) => !e)} className="flex h-auto w-full items-center justify-start gap-2.5 rounded-none px-3 py-2.5 hover:bg-muted/20" aria-expanded={isExpanded}>
         <WrenchIcon size={13} className="shrink-0 text-primary" />
-        <span className="font-mono text-[12px] font-medium text-primary">{toolName}</span>
-        <span className={cn("ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide", config.badgeClass)}>
+        <span className="font-mono text-xs font-medium text-primary">{toolName}</span>
+        <span className={cn("ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-xs uppercase tracking-wide", config.badgeClass)}>
           <Icon size={10} className={config.iconClass} />{config.label}
         </span>
         <ChevronDownIcon size={13} className={cn("shrink-0 text-muted-foreground transition-transform duration-150", isExpanded && "rotate-180")} />
@@ -39,19 +39,19 @@ export const ToolCallBlock: FC<ToolCallBlockProps> = ({ toolName, args, result, 
         <div className="divide-y divide-border/30 border-t border-border/30">
           {hasArgs && (
             <div className="px-3 pb-3 pt-2">
-              <p className="mb-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{"// Arguments"}</p>
-              <pre className="hljs rounded-md p-3 text-[11px] overflow-x-auto"><code>{argsJson}</code></pre>
+              <p className="mb-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground">{"Arguments"}</p>
+              <pre className="hljs rounded-md p-3 text-xs overflow-x-auto"><code>{argsJson}</code></pre>
             </div>
           )}
           {result && (
             <div className="px-3 pb-3 pt-2">
-              <p className="mb-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{"// Result"}</p>
-              <p className="font-body text-[13px] leading-relaxed text-muted-foreground">{result}</p>
+              <p className="mb-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground">{"Result"}</p>
+              <p className="font-body text-sm leading-relaxed text-muted-foreground">{result}</p>
             </div>
           )}
           {status === "running" && !result && (
             <div className="px-3 py-2">
-              <p className="font-mono text-[11px] text-muted-foreground">Waiting for result…</p>
+              <p className="font-mono text-xs text-muted-foreground">Waiting for result…</p>
             </div>
           )}
         </div>

@@ -10,8 +10,19 @@ import {
     Search,
     Trash2,
 } from "lucide-react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AdminEmptyInline, AdminError, AdminTableSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -56,7 +67,7 @@ const SCOPE_COLORS: Record<string, string> = {
 function ScopeBadge({ scope }: { scope: string }) {
     const cls = SCOPE_COLORS[scope] ?? "bg-muted text-muted-foreground border-border";
     return (
-        <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-[10px] font-medium", cls)}>
+        <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-xs font-medium", cls)}>
             {scope}
         </span>
     );
@@ -87,6 +98,7 @@ export const MemoryPage: FC = () => {
     const [selected, setSelected] = useState<MemoryItem | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [showBulkDelete, setShowBulkDelete] = useState(false);
     const [savedFlash, setSavedFlash] = useState(false);
 
     // Pagination
@@ -198,7 +210,7 @@ export const MemoryPage: FC = () => {
                     </div>
                     <div>
                         <h2 className="font-display text-lg font-semibold text-foreground">Memory Browser</h2>
-                        <p className="font-mono text-[11px] text-muted-foreground">
+                        <p className="font-mono text-xs text-muted-foreground">
                             {stats ? `${stats.total} total memories` : "Loading stats…"}
                         </p>
                     </div>
@@ -211,7 +223,7 @@ export const MemoryPage: FC = () => {
                     <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => void bulkDelete()}
+                        onClick={() => setShowBulkDelete(true)}
                         disabled={deleting || items.length === 0}
                         className="gap-1.5"
                     >
@@ -227,25 +239,25 @@ export const MemoryPage: FC = () => {
                     {Object.entries(stats.by_scope).map(([scope, count]) => (
                         <div key={scope} className="flex items-center gap-1.5">
                             <ScopeBadge scope={scope} />
-                            <span className="font-mono text-[11px] text-muted-foreground">{count}</span>
+                            <span className="font-mono text-xs text-muted-foreground">{count}</span>
                         </div>
                     ))}
                 </div>
             )}
 
             {/* Filters */}
-            <div className="flex items-center gap-3 border-b border-border px-6 py-3">
-                <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 flex-1 max-w-xs">
+            <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:gap-3 sm:px-6">
+                <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 flex-1 min-w-[200px] max-w-xs">
                     <Search size={13} className="shrink-0 text-muted-foreground" />
                     <input
                         value={searchQ}
                         onChange={(e) => setSearchQ(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") { setSearchMode(!!searchQ); void load(); } }}
-                        placeholder="Semantic search…"
-                        className="flex-1 bg-transparent font-mono text-[12px] outline-none placeholder:text-muted-foreground/50"
+                        placeholder="Search memories by meaning..."
+                        className="flex-1 bg-transparent font-mono text-xs outline-none placeholder:text-muted-foreground/50"
                     />
                     {searchQ && (
-                        <button onClick={() => { setSearchQ(""); setSearchMode(false); void load(); }} className="text-muted-foreground hover:text-foreground">
+                        <button onClick={() => { setSearchQ(""); setSearchMode(false); void load(); }} className="text-muted-foreground transition-colors hover:text-foreground">
                             ×
                         </button>
                     )}
@@ -254,13 +266,13 @@ export const MemoryPage: FC = () => {
                     value={userId}
                     onChange={(e) => setUserId(e.target.value)}
                     placeholder="Filter by User ID"
-                    className="max-w-[180px] font-mono text-[12px]"
+                    className="min-w-[140px] max-w-[180px] font-mono text-xs"
                 />
                 <Input
                     value={agentId}
                     onChange={(e) => setAgentId(e.target.value)}
                     placeholder="Filter by Agent ID"
-                    className="max-w-[180px] font-mono text-[12px]"
+                    className="min-w-[140px] max-w-[180px] font-mono text-xs"
                 />
                 <Button size="sm" onClick={() => { setSearchMode(!!searchQ); void load(); }} className="gap-1.5">
                     Apply
@@ -271,42 +283,39 @@ export const MemoryPage: FC = () => {
             {savedFlash && (
                 <div className="mx-6 mt-3 flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 px-4 py-2">
                     <Check size={13} className="text-success" />
-                    <span className="font-mono text-[11px] text-success">Deleted successfully</span>
+                    <span className="font-mono text-xs text-success">Deleted successfully</span>
                 </div>
             )}
             {error && (
-                <div className="mx-6 mt-3 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2">
-                    <AlertCircle size={13} className="text-destructive" />
-                    <span className="font-mono text-[11px] text-destructive">{error}</span>
-                </div>
+                <div className="mx-6 mt-3"><AdminError error={error} /></div>
             )}
 
             {/* Content: table + detail panel */}
             <div className="flex flex-1 overflow-hidden">
                 {/* Table */}
                 <div className="flex flex-1 flex-col overflow-hidden">
-                    {loading ? (
-                        <div className="flex flex-1 items-center justify-center">
-                            <Loader2 size={20} className="animate-spin text-muted-foreground" />
+                    {loading && items.length === 0 ? (
+                        <div className="p-6">
+                            <AdminTableSkeleton rows={6} cols={6} />
                         </div>
                     ) : pageItems.length === 0 ? (
                         <div className="flex flex-1 items-center justify-center">
-                            <p className="font-mono text-[11px] text-muted-foreground">
+                            <AdminEmptyInline>
                                 {items.length === 0 ? "No memories found" : "No items on this page"}
-                            </p>
+                            </AdminEmptyInline>
                         </div>
                     ) : (
                         <>
-                            <div className="flex-1 overflow-y-auto">
-                                <table className="w-full text-left">
+                            <div className="flex-1 overflow-auto">
+                                <table className="min-w-[700px] w-full text-left">
                                     <thead className="sticky top-0 bg-card border-b border-border">
                                         <tr>
-                                            <th className="px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Scope</th>
-                                            <th className="px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Content</th>
-                                            <th className="px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Agent</th>
-                                            <th className="px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">User</th>
-                                            <th className="px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Imp.</th>
-                                            <th className="px-4 py-2 font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Created</th>
+                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scope</th>
+                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">Content</th>
+                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">Agent</th>
+                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</th>
+                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">Importance</th>
+                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">Created</th>
                                             <th className="px-4 py-2" />
                                         </tr>
                                     </thead>
@@ -315,21 +324,25 @@ export const MemoryPage: FC = () => {
                                             <tr
                                                 key={m.id}
                                                 onClick={() => setSelected(selected?.id === m.id ? null : m)}
+                                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(selected?.id === m.id ? null : m); } }}
+                                                tabIndex={0}
+                                                role="button"
+                                                aria-selected={selected?.id === m.id}
                                                 className={cn(
-                                                    "cursor-pointer transition-colors",
+                                                    "cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                                                     selected?.id === m.id ? "bg-accent" : "hover:bg-muted/40"
                                                 )}
                                             >
                                                 <td className="px-4 py-2.5"><ScopeBadge scope={m.scope} /></td>
-                                                <td className="px-4 py-2.5 font-body text-[13px] text-foreground max-w-xs">
+                                                <td className="px-4 py-2.5 font-body text-sm text-foreground max-w-xs">
                                                     {truncate(m.content, 80)}
                                                 </td>
-                                                <td className="px-4 py-2.5 font-mono text-[11px] text-muted-foreground">{m.agent_id ?? "—"}</td>
-                                                <td className="px-4 py-2.5 font-mono text-[11px] text-muted-foreground">{m.user_id ?? "—"}</td>
-                                                <td className="px-4 py-2.5 font-mono text-[11px] text-muted-foreground">
+                                                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{m.agent_id ?? "—"}</td>
+                                                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{m.user_id ?? "—"}</td>
+                                                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
                                                     {m.importance.toFixed(2)}
                                                 </td>
-                                                <td className="px-4 py-2.5 font-mono text-[10px] text-muted-foreground whitespace-nowrap">
+                                                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
                                                     {new Date(m.created_at).toLocaleDateString()}
                                                 </td>
                                                 <td className="px-4 py-2.5">
@@ -338,7 +351,7 @@ export const MemoryPage: FC = () => {
                                                             <Button
                                                                 size="sm"
                                                                 variant="destructive"
-                                                                className="h-6 px-2 text-[10px]"
+                                                                className="h-6 px-2 text-xs"
                                                                 disabled={deleting}
                                                                 onClick={(e) => { e.stopPropagation(); void deleteOne(m.id); }}
                                                             >
@@ -347,7 +360,7 @@ export const MemoryPage: FC = () => {
                                                             <Button
                                                                 size="sm"
                                                                 variant="ghost"
-                                                                className="h-6 px-2 text-[10px]"
+                                                                className="h-6 px-2 text-xs"
                                                                 onClick={(e) => { e.stopPropagation(); setDeleteConfirm(null); }}
                                                             >
                                                                 Cancel
@@ -372,17 +385,17 @@ export const MemoryPage: FC = () => {
 
                             {/* Pagination */}
                             <div className="flex items-center justify-between border-t border-border px-4 py-2">
-                                <span className="font-mono text-[11px] text-muted-foreground">
+                                <span className="font-mono text-xs text-muted-foreground">
                                     {start + 1}–{Math.min(end, items.length)} of {items.length}
                                 </span>
                                 <div className="flex items-center gap-1">
-                                    <Button size="icon" variant="ghost" className="h-7 w-7" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7" disabled={page === 0} onClick={() => setPage((p) => p - 1)} aria-label="Previous page">
                                         <ChevronLeft size={13} />
                                     </Button>
-                                    <span className="font-mono text-[11px] text-muted-foreground px-2">
+                                    <span className="font-mono text-xs text-muted-foreground px-2">
                                         {page + 1} / {totalPages}
                                     </span>
-                                    <Button size="icon" variant="ghost" className="h-7 w-7" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)} aria-label="Next page">
                                         <ChevronRight size={13} />
                                     </Button>
                                 </div>
@@ -395,26 +408,26 @@ export const MemoryPage: FC = () => {
                 {selected && (
                     <div className="w-80 shrink-0 overflow-y-auto border-l border-border bg-card p-5">
                         <div className="flex items-start justify-between mb-4">
-                            <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            <p className="font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                 Memory Detail
                             </p>
-                            <button onClick={() => setSelected(null)} className="text-muted-foreground hover:text-foreground">×</button>
+                            <button onClick={() => setSelected(null)} className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Close detail panel">×</button>
                         </div>
                         <div className="space-y-3">
                             <div>
-                                <p className="font-mono text-[10px] text-muted-foreground uppercase mb-1">Scope</p>
+                                <p className="font-mono text-xs text-muted-foreground uppercase mb-1">Scope</p>
                                 <ScopeBadge scope={selected.scope} />
                             </div>
                             <div>
-                                <p className="font-mono text-[10px] text-muted-foreground uppercase mb-1">Content</p>
-                                <p className="font-body text-[13px] text-foreground whitespace-pre-wrap">{selected.content}</p>
+                                <p className="font-mono text-xs text-muted-foreground uppercase mb-1">Content</p>
+                                <p className="font-body text-sm text-foreground whitespace-pre-wrap">{selected.content}</p>
                             </div>
                             {selected.categories.length > 0 && (
                                 <div>
-                                    <p className="font-mono text-[10px] text-muted-foreground uppercase mb-1">Categories</p>
+                                    <p className="font-mono text-xs text-muted-foreground uppercase mb-1">Categories</p>
                                     <div className="flex flex-wrap gap-1">
                                         {selected.categories.map((c) => (
-                                            <span key={c} className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">{c}</span>
+                                            <span key={c} className="rounded-full bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground">{c}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -456,6 +469,26 @@ export const MemoryPage: FC = () => {
                     </div>
                 )}
             </div>
+            <AlertDialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete all visible memories?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete {items.length} memory {items.length === 1 ? "item" : "items"} matching the current filters. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => { e.preventDefault(); setShowBulkDelete(false); void bulkDelete(); }}
+                            disabled={deleting}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {deleting ? <Loader2 size={12} className="animate-spin" /> : "Delete All"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };
@@ -463,8 +496,8 @@ export const MemoryPage: FC = () => {
 function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
     return (
         <div>
-            <p className="font-mono text-[10px] text-muted-foreground uppercase mb-0.5">{label}</p>
-            <p className={cn("text-[12px] text-foreground break-all", mono ? "font-mono" : "font-body")}>{value}</p>
+            <p className="font-mono text-xs text-muted-foreground uppercase mb-0.5">{label}</p>
+            <p className={cn("text-xs text-foreground break-all", mono ? "font-mono" : "font-body")}>{value}</p>
         </div>
     );
 }

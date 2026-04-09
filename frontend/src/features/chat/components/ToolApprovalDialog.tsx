@@ -94,7 +94,7 @@ export const ToolApprovalDialog: FC<ToolApprovalDialogProps> = ({
             <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Tool
             </p>
-            <p className="font-mono text-[12px] font-medium text-primary">
+            <p className="font-mono text-xs font-medium text-primary">
               {toolName}
             </p>
           </div>
@@ -104,7 +104,7 @@ export const ToolApprovalDialog: FC<ToolApprovalDialogProps> = ({
               <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 Risk Reason
               </p>
-              <p className="text-[13px] text-warning">{riskReason}</p>
+              <p className="text-sm text-warning">{riskReason}</p>
             </div>
           )}
 
@@ -118,7 +118,7 @@ export const ToolApprovalDialog: FC<ToolApprovalDialogProps> = ({
           </div>
 
           <div className="flex items-center justify-center">
-            <span className="font-mono text-[12px] text-muted-foreground">
+            <span className="font-mono text-xs text-muted-foreground">
               Auto-reject in{" "}
               <span className="font-semibold text-foreground">{timerLabel}</span>
             </span>

@@ -1,8 +1,9 @@
 import { type FC, useCallback, useEffect, useState } from "react";
-import { FileJson, Loader2, RefreshCw, Send } from "lucide-react";
+import { FileJson, RefreshCw, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
 
 interface A2uiSchema {
@@ -83,7 +84,7 @@ export const A2uiTestingPage: FC = () => {
           <h2 className="font-display text-lg font-semibold text-foreground">
             A2UI Schema Testing
           </h2>
-          <p className="font-mono text-[11px] text-muted-foreground">
+          <p className="font-mono text-xs text-muted-foreground">
             {schemas.length} schemas available
           </p>
         </div>
@@ -102,23 +103,13 @@ export const A2uiTestingPage: FC = () => {
         {/* Left: schema list + custom JSON */}
         <div className="flex w-72 shrink-0 flex-col border-r border-border">
           <div className="flex-1 overflow-y-auto p-4">
-            <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            <p className="mb-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
               Schemas
             </p>
-            {loading && (
-              <div className="flex items-center gap-2 py-4">
-                <Loader2 size={14} className="animate-spin text-muted-foreground" />
-              </div>
-            )}
-            {error && (
-              <p className="font-mono text-[11px] text-destructive">
-                Error: {error}
-              </p>
-            )}
-            {!loading && schemas.length === 0 && (
-              <p className="font-mono text-[11px] text-muted-foreground">
-                No schemas found
-              </p>
+            {loading && schemas.length === 0 && <AdminSidebarSkeleton rows={4} />}
+            <AdminError error={error} />
+            {!loading && schemas.length === 0 && !error && (
+              <AdminEmptyInline>No schemas found</AdminEmptyInline>
             )}
             <div className="flex flex-col gap-1">
               {schemas.map((schema) => (
@@ -129,7 +120,7 @@ export const A2uiTestingPage: FC = () => {
                     setResponse(null);
                   }}
                   className={cn(
-                    "flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
+                    "flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                     selected?.id === schema.id
                       ? "bg-accent text-foreground"
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
@@ -144,10 +135,10 @@ export const A2uiTestingPage: FC = () => {
                     )}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-mono text-[12px] font-medium">
+                    <p className="truncate font-mono text-xs font-medium">
                       {schema.id}
                     </p>
-                    <p className="truncate font-mono text-[10px] text-muted-foreground/60">
+                    <p className="truncate font-mono text-xs text-muted-foreground/60">
                       {schema.type}
                     </p>
                   </div>
@@ -158,17 +149,17 @@ export const A2uiTestingPage: FC = () => {
 
           {/* Custom JSON input */}
           <div className="border-t border-border p-4">
-            <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            <p className="mb-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
               Custom Schema JSON
             </p>
             <Textarea
               value={customJson}
               onChange={(e) => setCustomJson(e.target.value)}
               placeholder='{"type":"form","id":"test",...}'
-              className="mb-2 h-28 font-mono text-[11px]"
+              className="mb-2 h-28 font-mono text-xs"
             />
             {customError && (
-              <p className="mb-2 font-mono text-[10px] text-destructive">
+              <p className="mb-2 font-mono text-xs text-destructive">
                 {customError}
               </p>
             )}
@@ -187,7 +178,7 @@ export const A2uiTestingPage: FC = () => {
         <div className="flex flex-1 flex-col overflow-y-auto p-6">
           {!selected && (
             <div className="flex flex-1 items-center justify-center">
-              <p className="font-mono text-[11px] text-muted-foreground">
+              <p className="font-mono text-xs text-muted-foreground">
                 Select a schema or paste custom JSON to preview
               </p>
             </div>
@@ -205,7 +196,7 @@ export const A2uiTestingPage: FC = () => {
                     {selected.description}
                   </p>
                 )}
-                <span className="mt-2 inline-block rounded border border-border px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                <span className="mt-2 inline-block rounded border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground">
                   {selected.type}
                 </span>
               </div>
@@ -216,10 +207,10 @@ export const A2uiTestingPage: FC = () => {
               {/* Response JSON */}
               {response && (
                 <div>
-                  <p className="mb-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  <p className="mb-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground">
                     Response Payload
                   </p>
-                  <pre className="hljs rounded-md p-3 text-[11px]">
+                  <pre className="hljs rounded-md p-3 text-xs">
                     <code>{JSON.stringify(response, null, 2)}</code>
                   </pre>
                 </div>
@@ -252,7 +243,7 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
         <div className="space-y-3 rounded-lg border border-border bg-card p-4">
           {schema.fields?.map((field) => (
             <div key={field.name}>
-              <label className="mb-1 block font-mono text-[11px] font-medium text-foreground">
+              <label className="mb-1 block font-mono text-xs font-medium text-foreground">
                 {field.label ?? field.name}
                 {field.required && (
                   <span className="ml-1 text-destructive">*</span>
@@ -276,7 +267,7 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
                   value={values[field.name] ?? ""}
                   onChange={(e) => handleChange(field.name, e.target.value)}
                   placeholder={field.placeholder}
-                  className="font-mono text-[11px]"
+                  className="font-mono text-xs"
                 />
               ) : (
                 <Input
@@ -304,7 +295,7 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
       return (
         <div className="space-y-3 rounded-lg border border-border bg-card p-4">
           <p className="text-sm text-foreground">
-            {schema.content ?? schema.description ?? "Confirm this action?"}
+            {schema.content ?? schema.description ?? "Do you want to proceed with this action?"}
           </p>
           <div className="flex gap-2">
             <Button
@@ -371,10 +362,10 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
     default:
       return (
         <div className="rounded-lg border border-border bg-card p-4">
-          <p className="mb-2 font-mono text-[11px] text-muted-foreground">
+          <p className="mb-2 font-mono text-xs text-muted-foreground">
             Unknown schema type: {schema.type}
           </p>
-          <pre className="hljs rounded-md p-3 text-[11px]">
+          <pre className="hljs rounded-md p-3 text-xs">
             <code>{JSON.stringify(schema, null, 2)}</code>
           </pre>
         </div>

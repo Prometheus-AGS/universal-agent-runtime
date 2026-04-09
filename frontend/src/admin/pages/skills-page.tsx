@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
 import type { UarSkill } from "@/types";
 import {
@@ -53,7 +54,7 @@ const MarkdownEditorField: FC<MarkdownEditorFieldProps> = ({
 }) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="font-mono text-[11px] text-muted-foreground">
+      <Label htmlFor={id} className="font-mono text-xs text-muted-foreground">
         {label}
       </Label>
       <Tabs defaultValue="write" className="w-full">
@@ -78,7 +79,7 @@ const MarkdownEditorField: FC<MarkdownEditorFieldProps> = ({
         <TabsContent value="preview" className="mt-2">
           <div className="min-h-[9.6rem] rounded-md border border-border bg-muted/20 p-3">
             {value.trim().length === 0 ? (
-              <p className="font-mono text-[11px] text-muted-foreground">Nothing to preview</p>
+              <p className="font-mono text-xs text-muted-foreground">Nothing to preview</p>
             ) : (
               <div className="prose prose-sm max-w-none dark:prose-invert">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
@@ -231,7 +232,7 @@ export const SkillsPage: FC = () => {
       <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
         <div>
           <h2 className="font-display text-lg font-semibold text-foreground">Skills</h2>
-          <p className="font-mono text-[11px] text-muted-foreground">{skills.length} skills</p>
+          <p className="font-mono text-xs text-muted-foreground">{skills.length} skills</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => void load()} className="gap-1.5">
@@ -246,14 +247,15 @@ export const SkillsPage: FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        {loading && (
-          <div className="flex items-center gap-2">
-            <Loader2 size={16} className="animate-spin text-muted-foreground" />
-          </div>
-        )}
-        {error && <p className="mb-3 font-mono text-[11px] text-destructive">Error: {error}</p>}
-        {!loading && sortedSkills.length === 0 && (
-          <p className="font-mono text-[11px] text-muted-foreground">No skills configured</p>
+        {loading && sortedSkills.length === 0 && <AdminListSkeleton rows={4} />}
+        <AdminError error={error} />
+        {!loading && sortedSkills.length === 0 && !error && (
+          <AdminEmptyState
+            icon={Zap}
+            title="No skills configured"
+            description="Skills give agents specialized capabilities. Create a skill to define custom behaviors and prompts."
+            action={{ label: "New Skill", icon: Plus, onClick: () => { resetDialogState(); setIsDialogOpen(true); } }}
+          />
         )}
 
         <div className="flex flex-col gap-2.5">
@@ -277,7 +279,7 @@ export const SkillsPage: FC = () => {
                   <Zap size={14} className={isEnabled ? "text-primary" : "text-muted-foreground"} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-display text-[13px] font-semibold text-foreground">
+                  <p className="font-display text-sm font-semibold text-foreground">
                     {skill.title || skill.skill_id}
                   </p>
                   {skill.description && (
@@ -342,7 +344,7 @@ export const SkillsPage: FC = () => {
           <div className="space-y-3">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="skill-title" className="font-mono text-[11px] text-muted-foreground">
+                <Label htmlFor="skill-title" className="font-mono text-xs text-muted-foreground">
                   Skill title
                 </Label>
                 <Input
@@ -353,7 +355,7 @@ export const SkillsPage: FC = () => {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="skill-version" className="font-mono text-[11px] text-muted-foreground">
+                <Label htmlFor="skill-version" className="font-mono text-xs text-muted-foreground">
                   Version
                 </Label>
                 <Input
@@ -367,7 +369,7 @@ export const SkillsPage: FC = () => {
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="skill-keywords" className="font-mono text-[11px] text-muted-foreground">
+                <Label htmlFor="skill-keywords" className="font-mono text-xs text-muted-foreground">
                   Keywords (comma-separated)
                 </Label>
                 <Input
@@ -380,7 +382,7 @@ export const SkillsPage: FC = () => {
               <div className="space-y-1.5">
                 <Label
                   htmlFor="skill-preferred-tools"
-                  className="font-mono text-[11px] text-muted-foreground"
+                  className="font-mono text-xs text-muted-foreground"
                 >
                   Preferred tools (comma-separated)
                 </Label>
@@ -396,7 +398,7 @@ export const SkillsPage: FC = () => {
             <div className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-3 py-2">
               <div>
                 <p className="font-display text-sm font-medium text-foreground">Enabled</p>
-                <p className="font-mono text-[11px] text-muted-foreground">
+                <p className="font-mono text-xs text-muted-foreground">
                   Disabled skills remain installed but cannot be selected.
                 </p>
               </div>

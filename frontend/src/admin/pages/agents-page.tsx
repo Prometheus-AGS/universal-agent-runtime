@@ -1,11 +1,12 @@
 import { type FC, useCallback, useEffect, useState } from "react";
-import { Bot, Brain, Loader2, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, Bot, Brain, Loader2, RefreshCw } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
 import type { AgentsResponse, UarAgent } from "@/types";
 
@@ -50,7 +51,7 @@ function TriToggle({ value, onChange }: { value: boolean | null; onChange: (v: b
         <ToggleGroupItem
           key={v}
           value={v}
-          className="rounded-none border-0 px-3 py-1 font-mono text-[11px] capitalize data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          className="rounded-none border-0 px-3 py-1 font-mono text-xs capitalize data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
         >
           {v.charAt(0).toUpperCase() + v.slice(1)}
         </ToggleGroupItem>
@@ -99,7 +100,7 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
     <div className="mt-6">
       <div className="mb-3 flex items-center gap-2">
         <Brain size={14} className="text-primary" />
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Memory (per-agent override)
         </p>
       </div>
@@ -109,8 +110,8 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
           {/* Memory Enabled */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-mono text-[12px] font-medium text-foreground">Memory Enabled</p>
-              <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">Override global memory on/off for this agent.</p>
+              <p className="font-mono text-xs font-medium text-foreground">Memory Enabled</p>
+              <p className="mt-0.5 font-mono text-xs text-muted-foreground">Override global memory on/off for this agent.</p>
             </div>
             <TriToggle value={state.memory_enabled} onChange={(v) => setState((s) => ({ ...s, memory_enabled: v }))} />
           </div>
@@ -118,8 +119,8 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
           {/* Auto-Capture */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-mono text-[12px] font-medium text-foreground">Auto-Capture</p>
-              <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">Extract memories after each turn.</p>
+              <p className="font-mono text-xs font-medium text-foreground">Auto-Capture</p>
+              <p className="mt-0.5 font-mono text-xs text-muted-foreground">Extract memories after each turn.</p>
             </div>
             <TriToggle value={state.auto_capture} onChange={(v) => setState((s) => ({ ...s, auto_capture: v }))} />
           </div>
@@ -127,8 +128,8 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
           {/* Context Injection */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-mono text-[12px] font-medium text-foreground">Context Injection</p>
-              <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">Inject memories as system prompt prefix.</p>
+              <p className="font-mono text-xs font-medium text-foreground">Context Injection</p>
+              <p className="mt-0.5 font-mono text-xs text-muted-foreground">Inject memories as system prompt prefix.</p>
             </div>
             <TriToggle value={state.inject_context} onChange={(v) => setState((s) => ({ ...s, inject_context: v }))} />
           </div>
@@ -136,19 +137,19 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
           {/* Default Scope */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-mono text-[12px] font-medium text-foreground">Default Scope</p>
-              <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">Scope for memories saved by this agent.</p>
+              <p className="font-mono text-xs font-medium text-foreground">Default Scope</p>
+              <p className="mt-0.5 font-mono text-xs text-muted-foreground">Scope for memories saved by this agent.</p>
             </div>
             <Select
               value={state.memory_scope}
               onValueChange={(v) => setState((s) => ({ ...s, memory_scope: v }))}
             >
-              <SelectTrigger className="h-8 w-36 font-mono text-[12px]">
+              <SelectTrigger className="h-8 w-36 font-mono text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {SCOPE_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value} className="font-mono text-[12px]">
+                  <SelectItem key={o.value} value={o.value} className="font-mono text-xs">
                     {o.label}
                   </SelectItem>
                 ))}
@@ -156,11 +157,7 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
             </Select>
           </div>
 
-          {error && (
-            <Alert variant="destructive" className="py-2">
-              <AlertDescription className="font-mono text-[11px]">{error}</AlertDescription>
-            </Alert>
-          )}
+          {error && <AdminError error={error} />}
 
           <div className="flex items-center gap-2 pt-1">
             <Button size="sm" onClick={() => void save()} disabled={saving} className="gap-1.5">
@@ -168,7 +165,7 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
               Save Memory Settings
             </Button>
             {saved && (
-              <span className="font-mono text-[11px] text-green-400">Saved ✓</span>
+              <span className="font-mono text-xs text-green-400">Saved ✓</span>
             )}
           </div>
         </CardContent>
@@ -205,29 +202,21 @@ export const AgentsPage: FC = () => {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
       {/* Agent list */}
-      <div className="flex w-64 shrink-0 flex-col border-r border-border bg-background">
+      <div className={cn("flex shrink-0 flex-col border-b border-border bg-background md:w-64 md:border-b-0 md:border-r", selected ? "hidden md:flex" : "flex flex-1 md:flex-initial")}>
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">Agents</p>
+          <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Agents</p>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => void load()} aria-label="Refresh">
             <RefreshCw size={12} className={cn(loading && "animate-spin")} />
           </Button>
         </div>
         <ScrollArea className="flex-1">
           <div className="py-2">
-            {loading && (
-              <div className="flex justify-center py-8">
-                <Loader2 size={16} className="animate-spin text-muted-foreground" />
-              </div>
-            )}
-            {error && (
-              <Alert variant="destructive" className="mx-3 my-2 py-2">
-                <AlertDescription className="font-mono text-[11px]">Error: {error}</AlertDescription>
-              </Alert>
-            )}
-            {!loading && agents.length === 0 && (
-              <p className="px-4 py-4 font-mono text-[11px] text-muted-foreground">No agents configured</p>
+            {loading && agents.length === 0 && <AdminSidebarSkeleton rows={4} />}
+            {error && <div className="px-3 py-2"><AdminError error={error} /></div>}
+            {!loading && agents.length === 0 && !error && (
+              <AdminEmptyInline>No agents configured</AdminEmptyInline>
             )}
             {agents.map((a) => (
               <Button
@@ -243,10 +232,10 @@ export const AgentsPage: FC = () => {
                   <Bot size={14} className="text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-[13px] font-semibold text-foreground">
+                  <p className="truncate font-display text-sm font-semibold text-foreground">
                     {a.metadata?.title ?? a.id}
                   </p>
-                  <p className="font-mono text-[10px] text-muted-foreground">{a.kind ?? "agent"}</p>
+                  <p className="font-mono text-xs text-muted-foreground">{a.kind ?? "agent"}</p>
                 </div>
               </Button>
             ))}
@@ -255,39 +244,44 @@ export const AgentsPage: FC = () => {
       </div>
 
       {/* Detail */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className={cn("flex flex-1 flex-col overflow-hidden", !selected && "hidden md:flex")}>
         {selected ? (
           <ScrollArea className="flex-1">
-            <div className="p-6">
-              <h2 className="font-display text-lg font-semibold text-foreground">
-                {selected.metadata?.title ?? selected.id}
-              </h2>
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="h-7 w-7 md:hidden" onClick={() => setSelected(null)} aria-label="Back to agents">
+                  <ArrowLeft size={14} />
+                </Button>
+                <h2 className="font-display text-lg font-semibold text-foreground">
+                  {selected.metadata?.title ?? selected.id}
+                </h2>
+              </div>
               {selected.metadata?.description && (
                 <p className="mt-1 font-body text-sm text-muted-foreground">{selected.metadata.description}</p>
               )}
 
               <div className="mt-4">
-                <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">ID</p>
+                <p className="mb-1 font-mono text-xs uppercase tracking-widest text-muted-foreground">ID</p>
                 <p className="font-mono text-sm text-foreground">{selected.id}</p>
               </div>
 
               {selected.kind && (
                 <div className="mt-4">
-                  <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Kind</p>
+                  <p className="mb-1 font-mono text-xs uppercase tracking-widest text-muted-foreground">Kind</p>
                   <p className="font-mono text-sm text-foreground">{selected.kind}</p>
                 </div>
               )}
 
               {selected.skills && selected.skills.length > 0 && (
                 <div className="mt-4">
-                  <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  <p className="mb-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
                     Skills ({selected.skills.length})
                   </p>
                   <div className="flex flex-col gap-1.5">
                     {selected.skills.map((sk) => (
                       <Card key={sk.skill_id} className="rounded-md border-border shadow-none">
                         <CardContent className="px-3 py-2">
-                          <p className="font-mono text-[12px] text-foreground">{sk.title}</p>
+                          <p className="font-mono text-xs text-foreground">{sk.title}</p>
                           {sk.description && (
                             <p className="font-body text-xs text-muted-foreground">{sk.description}</p>
                           )}
@@ -304,7 +298,7 @@ export const AgentsPage: FC = () => {
           </ScrollArea>
         ) : (
           <div className="flex flex-1 items-center justify-center">
-            <p className="font-mono text-[11px] text-muted-foreground">← Select an agent</p>
+            <p className="font-mono text-xs text-muted-foreground">Select an agent from the list to configure it</p>
           </div>
         )}
       </div>

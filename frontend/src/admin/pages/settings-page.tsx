@@ -11,6 +11,7 @@ import {
     Bot,
     Brain,
     Check,
+    ChevronDown,
     ChevronRight,
     Database,
     Eye,
@@ -38,8 +39,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn, friendlyError } from "@/lib/utils";
 import { useSettings } from "@/hooks/use-settings";
+import { useOnboarding } from "@/hooks/use-onboarding";
 import type { SettingsType } from "@/types";
 
 // =============================================================================
@@ -51,29 +54,30 @@ type NavCategory = "AI & LLM" | "File Processing" | "Infrastructure" | "Governan
 interface NavItem {
     key: string;
     label: string;
+    subtitle: string;
     icon: FC<{ size?: number; className?: string }>;
     category: NavCategory;
 }
 
 const NAV_ITEMS: NavItem[] = [
-    { key: "llm", label: "LLM (liter-llm)", icon: Server, category: "AI & LLM" },
-    { key: "provider", label: "Provider Overrides", icon: Server, category: "AI & LLM" },
-    { key: "vision", label: "Vision", icon: Eye, category: "AI & LLM" },
-    { key: "context_management", label: "Context Management", icon: Layers, category: "AI & LLM" },
-    { key: "rag", label: "RAG & Chunking", icon: Scissors, category: "AI & LLM" },
-    { key: "knowledge_bases", label: "Knowledge Bases", icon: Database, category: "AI & LLM" },
-    { key: "memory", label: "Memory", icon: Brain, category: "AI & LLM" },
-    { key: "file_processing", label: "File Processing", icon: FileText, category: "File Processing" },
-    { key: "unstructured", label: "Unstructured API", icon: FileText, category: "File Processing" },
-    { key: "mistral_ocr", label: "Mistral OCR", icon: SlidersHorizontal, category: "File Processing" },
-    { key: "kreuzberg", label: "Kreuzberg OCR", icon: SlidersHorizontal, category: "File Processing" },
-    { key: "resilience", label: "Resilience", icon: Brain, category: "Infrastructure" },
-    { key: "intent_classifier", label: "Intent Classifier", icon: Brain, category: "Infrastructure" },
-    { key: "governance", label: "Governance", icon: ShieldCheck, category: "Governance & Agents" },
-    { key: "agent_config", label: "Agents", icon: Bot, category: "Governance & Agents" },
-    { key: "skill_config", label: "Skills", icon: Zap, category: "Governance & Agents" },
-    { key: "prompt_caching", label: "Prompt Caching", icon: Zap, category: "Caching & Users" },
-    { key: "user_settings", label: "User Settings", icon: User, category: "Caching & Users" },
+    { key: "llm", label: "LLM (liter-llm)", subtitle: "Default model & API key", icon: Server, category: "AI & LLM" },
+    { key: "provider", label: "Provider Overrides", subtitle: "Per-provider protocol & keys", icon: Server, category: "AI & LLM" },
+    { key: "vision", label: "Vision", subtitle: "Image analysis settings", icon: Eye, category: "AI & LLM" },
+    { key: "context_management", label: "Context Management", subtitle: "Token budgets & strategies", icon: Layers, category: "AI & LLM" },
+    { key: "rag", label: "RAG & Chunking", subtitle: "Embedding & chunk strategies", icon: Scissors, category: "AI & LLM" },
+    { key: "knowledge_bases", label: "Knowledge Bases", subtitle: "Default KB settings", icon: Database, category: "AI & LLM" },
+    { key: "memory", label: "Memory", subtitle: "Agent memory behavior", icon: Brain, category: "AI & LLM" },
+    { key: "file_processing", label: "File Processing", subtitle: "Upload limits & providers", icon: FileText, category: "File Processing" },
+    { key: "unstructured", label: "Unstructured API", subtitle: "Unstructured.io integration", icon: FileText, category: "File Processing" },
+    { key: "mistral_ocr", label: "Mistral OCR", subtitle: "Mistral document extraction", icon: SlidersHorizontal, category: "File Processing" },
+    { key: "kreuzberg", label: "Kreuzberg OCR", subtitle: "Local OCR engine", icon: SlidersHorizontal, category: "File Processing" },
+    { key: "resilience", label: "Resilience", subtitle: "Rate limits, retries, timeouts", icon: Brain, category: "Infrastructure" },
+    { key: "intent_classifier", label: "Intent Classifier", subtitle: "Request routing rules", icon: Brain, category: "Infrastructure" },
+    { key: "governance", label: "Governance", subtitle: "Policies & guardrails", icon: ShieldCheck, category: "Governance & Agents" },
+    { key: "agent_config", label: "Agents", subtitle: "Default agent behavior", icon: Bot, category: "Governance & Agents" },
+    { key: "skill_config", label: "Skills", subtitle: "Skill activation defaults", icon: Zap, category: "Governance & Agents" },
+    { key: "prompt_caching", label: "Prompt Caching", subtitle: "Cache scope & TTL", icon: Zap, category: "Caching & Users" },
+    { key: "user_settings", label: "User Settings", subtitle: "Per-user preferences", icon: User, category: "Caching & Users" },
 ];
 
 const CATEGORIES: NavCategory[] = [
@@ -88,21 +92,64 @@ const CATEGORIES: NavCategory[] = [
 // Shared primitive components
 // =============================================================================
 
-const Field: FC<{ label: string; hint?: string; children: ReactNode }> = ({
-    label,
-    hint,
-    children,
-}) => (
+const Field: FC<{
+    label: string;
+    hint?: string;
+    defaultValue?: string;
+    children: ReactNode;
+}> = ({ label, hint, defaultValue, children }) => (
     <div className="space-y-1.5">
-        <Label className="font-mono text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-            {label}
-        </Label>
+        <div className="flex items-baseline gap-2">
+            <Label className="font-mono text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {label}
+            </Label>
+            {defaultValue && (
+                <span className="font-mono text-xs text-muted-foreground/50">
+                    default: {defaultValue}
+                </span>
+            )}
+        </div>
         {children}
         {hint && (
-            <p className="font-mono text-[10px] text-muted-foreground/60">{hint}</p>
+            <p className="font-mono text-xs text-muted-foreground/60">{hint}</p>
         )}
     </div>
 );
+
+/** Collapsible "Advanced settings" section for progressive disclosure. */
+const AdvancedSection: FC<{
+    label?: string;
+    children: ReactNode;
+    defaultOpen?: boolean;
+}> = ({ label = "Advanced settings", children, defaultOpen = false }) => {
+    const [open, setOpen] = useState(defaultOpen);
+    return (
+        <Collapsible open={open} onOpenChange={setOpen}>
+            <CollapsibleTrigger asChild>
+                <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-left transition-colors hover:bg-muted/50"
+                >
+                    <ChevronDown
+                        size={13}
+                        className={cn(
+                            "shrink-0 text-muted-foreground transition-transform duration-200",
+                            !open && "-rotate-90",
+                        )}
+                    />
+                    <span className="font-mono text-xs font-medium text-muted-foreground">
+                        {label}
+                    </span>
+                </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+                <div className="mt-4 space-y-6 border-l-2 border-border/30 pl-4">
+                    {children}
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
+    );
+};
 
 const Toggle: FC<{
     value: boolean;
@@ -129,7 +176,7 @@ const MaskedInput: FC<{
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder ?? "••••••••"}
-                className="font-mono text-[12px]"
+                className="font-mono text-xs"
             />
             <Button
                 variant="ghost"
@@ -137,6 +184,7 @@ const MaskedInput: FC<{
                 className="shrink-0"
                 onClick={() => setShow((s) => !s)}
                 type="button"
+                aria-label={show ? "Hide value" : "Show value"}
             >
                 {show ? <EyeOff size={14} /> : <Eye size={14} />}
             </Button>
@@ -150,12 +198,12 @@ const SettingSelect: FC<{
     onChange: (v: string) => void;
 }> = ({ value, options, onChange }) => (
     <Select value={value ?? ""} onValueChange={onChange}>
-        <SelectTrigger className="font-mono text-[12px]">
+        <SelectTrigger className="font-mono text-xs">
             <SelectValue />
         </SelectTrigger>
         <SelectContent>
             {options.map((o) => (
-                <SelectItem key={o.value} value={o.value} className="font-mono text-[12px]">
+                <SelectItem key={o.value} value={o.value} className="font-mono text-xs">
                     {o.label}
                 </SelectItem>
             ))}
@@ -187,7 +235,7 @@ function PanelHeader({
                     {title}
                 </h2>
                 {subtitle && (
-                    <p className="font-mono text-[11px] text-muted-foreground">{subtitle}</p>
+                    <p className="font-mono text-xs text-muted-foreground">{subtitle}</p>
                 )}
             </div>
             <div className="flex items-center gap-2">
@@ -224,7 +272,7 @@ function SavedBanner({ show }: { show: boolean }) {
     return (
         <div className="mx-6 mb-4 flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 px-4 py-2">
             <Check size={13} className="text-success" />
-            <span className="font-mono text-[11px] text-success">Settings saved</span>
+            <span className="font-mono text-xs text-success">Settings saved</span>
         </div>
     );
 }
@@ -234,7 +282,7 @@ function ErrorBanner({ error }: { error: string | null }) {
     return (
         <div className="mx-6 mb-4 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-2">
             <AlertCircle size={13} className="text-destructive" />
-            <span className="font-mono text-[11px] text-destructive">{error}</span>
+            <span className="font-mono text-xs text-destructive">{friendlyError(error)}</span>
         </div>
     );
 }
@@ -243,16 +291,39 @@ function ErrorBanner({ error }: { error: string | null }) {
 // Generic namespace panel wrapper
 // =============================================================================
 
+/** Dismissible help text shown once at the top of a settings panel. */
+function SettingsHint({ id, children }: { id: string; children: ReactNode }) {
+    const { dismissed, dismiss } = useOnboarding(`settings-hint-${id}`);
+    if (dismissed) return null;
+    return (
+        <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+            <AlertCircle size={13} className="mt-0.5 shrink-0 text-primary" />
+            <p className="flex-1 font-body text-xs leading-relaxed text-muted-foreground">
+                {children}
+            </p>
+            <button
+                onClick={dismiss}
+                className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Dismiss hint"
+            >
+                <span className="text-xs">Got it</span>
+            </button>
+        </div>
+    );
+}
+
 function NamespacePanel({
     namespace,
     title,
     subtitle,
+    hint,
     saveDisabled,
     children,
 }: {
     namespace: string;
     title: string;
     subtitle?: string;
+    hint?: string;
     saveDisabled?: boolean;
     children: (ctx: {
         val: (key: string) => unknown;
@@ -288,13 +359,14 @@ function NamespacePanel({
                 {loading && (
                     <div className="flex items-center gap-2">
                         <Loader2 size={15} className="animate-spin text-muted-foreground" />
-                        <span className="font-mono text-[11px] text-muted-foreground">
+                        <span className="font-mono text-xs text-muted-foreground">
                             Loading…
                         </span>
                     </div>
                 )}
                 <ErrorBanner error={error} />
                 <SavedBanner show={savedFlash} />
+                {hint && <SettingsHint id={namespace}>{hint}</SettingsHint>}
                 {!loading && (
                     <div className="space-y-6">{children({ val, set })}</div>
                 )}
@@ -338,13 +410,13 @@ function ProviderPanel() {
                 {loading && (
                     <div className="flex items-center gap-2">
                         <Loader2 size={15} className="animate-spin text-muted-foreground" />
-                        <span className="font-mono text-[11px] text-muted-foreground">Loading…</span>
+                        <span className="font-mono text-xs text-muted-foreground">Loading…</span>
                     </div>
                 )}
                 <ErrorBanner error={error} />
                 <SavedBanner show={savedFlash} />
                 {!loading && providerEntries.length === 0 && (
-                    <p className="font-mono text-[11px] text-muted-foreground">
+                    <p className="font-mono text-xs text-muted-foreground">
                         No providers configured. Add providers in your config file to manage them here.
                     </p>
                 )}
@@ -366,10 +438,10 @@ function ProviderPanel() {
                         >
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-display text-[14px] font-semibold text-foreground">
+                                    <p className="font-display text-sm font-semibold text-foreground">
                                         {(data.display_name as string) ?? s.name}
                                     </p>
-                                    <p className="font-mono text-[10px] text-muted-foreground">
+                                    <p className="font-mono text-xs text-muted-foreground">
                                         {s.key}
                                     </p>
                                 </div>
@@ -384,7 +456,7 @@ function ProviderPanel() {
                                         value={(data.base_url as string) ?? ""}
                                         onChange={(e) => setField("base_url", e.target.value)}
                                         placeholder="https://api.example.com/v1"
-                                        className="font-mono text-[12px]"
+                                        className="font-mono text-xs"
                                     />
                                 </Field>
                                 <Field label="Protocol">
@@ -410,7 +482,7 @@ function ProviderPanel() {
                                         value={(data.default_model as string) ?? ""}
                                         onChange={(e) => setField("default_model", e.target.value)}
                                         placeholder="gpt-5.2"
-                                        className="font-mono text-[12px]"
+                                        className="font-mono text-xs"
                                     />
                                 </Field>
                             </div>
@@ -434,15 +506,15 @@ function VisionPanel() {
                             value={(val("model") as string) ?? ""}
                             onChange={(e) => set("model", e.target.value || null)}
                             placeholder="gpt-5.2 (inherits active model)"
-                            className="font-mono text-[12px]"
+                            className="font-mono text-xs"
                         />
                     </Field>
                     <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
                         <div>
-                            <p className="font-mono text-[12px] font-medium text-foreground">
+                            <p className="font-mono text-xs font-medium text-foreground">
                                 Auto-detect Vision Capability
                             </p>
-                            <p className="font-mono text-[10px] text-muted-foreground">
+                            <p className="font-mono text-xs text-muted-foreground">
                                 Automatically probe model capabilities on first use
                             </p>
                         </div>
@@ -473,12 +545,14 @@ function ContextManagementPanel() {
             namespace="context_management"
             title="Context Management"
             subtitle="Global defaults — agents can override individually"
+            hint="Context management controls how conversations handle token limits. The strategy determines what happens when a conversation gets too long — whether to summarize, trim older messages, or use a sliding window. Most users can leave the defaults."
         >
             {({ val, set }) => (
                 <>
                     <Field
                         label="Strategy"
                         hint="How to handle conversations that approach the token limit"
+                        defaultValue="sliding_window"
                     >
                         <SettingSelect
                             value={(val("strategy") as string) ?? "sliding_window"}
@@ -486,66 +560,69 @@ function ContextManagementPanel() {
                             onChange={(v) => set("strategy", v)}
                         />
                     </Field>
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field
-                            label="Max Tokens"
-                            hint="Leave blank to use model's context window"
-                        >
-                            <Input
-                                type="number"
-                                value={(val("max_tokens") as number) ?? ""}
-                                onChange={(e) =>
-                                    set("max_tokens", e.target.value ? parseInt(e.target.value) : null)
-                                }
-                                placeholder="Blank = model limit"
-                                min={512}
-                                className="font-mono text-[12px]"
-                            />
-                        </Field>
-                        <Field label="Trigger Threshold" hint="0.1 – 1.0 (e.g. 0.85 = 85% full)">
-                            <Input
-                                type="number"
-                                step={0.05}
-                                min={0.1}
-                                max={1.0}
-                                value={(val("trigger_threshold") as number) ?? 0.85}
-                                onChange={(e) => set("trigger_threshold", parseFloat(e.target.value))}
-                                className="font-mono text-[12px]"
-                            />
-                        </Field>
-                        <Field label="Max Messages (sliding window)" hint="Maximum number of messages to keep">
-                            <Input
-                                type="number"
-                                value={(val("max_messages") as number) ?? ""}
-                                onChange={(e) =>
-                                    set("max_messages", e.target.value ? parseInt(e.target.value) : null)
-                                }
-                                placeholder="Unlimited"
-                                min={1}
-                                className="font-mono text-[12px]"
-                            />
-                        </Field>
-                        <Field label="Summary Budget (tokens)" hint="Token budget for generated summaries">
+                    <Field label="Trigger Threshold" hint="Start managing context when usage exceeds this ratio" defaultValue="0.85">
+                        <Input
+                            type="number"
+                            step={0.05}
+                            min={0.1}
+                            max={1.0}
+                            value={(val("trigger_threshold") as number) ?? 0.85}
+                            onChange={(e) => set("trigger_threshold", parseFloat(e.target.value))}
+                            className="font-mono text-xs"
+                        />
+                    </Field>
+                    <AdvancedSection label="Token limits, summarization & model override">
+                        <div className="grid grid-cols-2 gap-4">
+                            <Field
+                                label="Max Tokens"
+                                hint="Leave blank to use model's context window"
+                            >
+                                <Input
+                                    type="number"
+                                    value={(val("max_tokens") as number) ?? ""}
+                                    onChange={(e) =>
+                                        set("max_tokens", e.target.value ? parseInt(e.target.value) : null)
+                                    }
+                                    placeholder="Blank = model limit"
+                                    min={512}
+                                    className="font-mono text-xs"
+                                />
+                            </Field>
+                            <Field label="Max Messages" hint="Sliding window message limit" defaultValue="unlimited">
+                                <Input
+                                    type="number"
+                                    value={(val("max_messages") as number) ?? ""}
+                                    onChange={(e) =>
+                                        set("max_messages", e.target.value ? parseInt(e.target.value) : null)
+                                    }
+                                    placeholder="Unlimited"
+                                    min={1}
+                                    className="font-mono text-xs"
+                                />
+                            </Field>
+                        </div>
+                        <Field label="Summary Budget (tokens)" hint="Token budget for generated summaries" defaultValue="1000">
                             <Input
                                 type="number"
                                 value={(val("summary_budget") as number) ?? 1000}
                                 onChange={(e) => set("summary_budget", parseInt(e.target.value))}
                                 min={100}
-                                className="font-mono text-[12px]"
+                                className="font-mono text-xs"
                             />
                         </Field>
-                    </div>
-                    <Field
-                        label="Summarization Model Override"
-                        hint="Override which model performs summarization (blank = use active model)"
-                    >
-                        <Input
-                            value={(val("summarization_model") as string) ?? ""}
-                            onChange={(e) => set("summarization_model", e.target.value || null)}
-                            placeholder="Inherits active model"
-                            className="font-mono text-[12px]"
-                        />
-                    </Field>
+                        <Field
+                            label="Summarization Model"
+                            hint="Override which model performs summarization"
+                            defaultValue="active model"
+                        >
+                            <Input
+                                value={(val("summarization_model") as string) ?? ""}
+                                onChange={(e) => set("summarization_model", e.target.value || null)}
+                                placeholder="Inherits active model"
+                                className="font-mono text-xs"
+                            />
+                        </Field>
+                    </AdvancedSection>
                 </>
             )}
         </NamespacePanel>
@@ -570,6 +647,7 @@ function RagPanel() {
             namespace="rag"
             title="RAG & Chunking"
             subtitle="Retrieval-augmented generation and document chunking defaults"
+            hint="These settings control how uploaded documents are split into searchable pieces (chunks) and how similarity search works. The chunking strategy affects search quality — 'recursive' works well for most documents. Only change these if search results aren't meeting your needs."
         >
             {({ val, set }) => {
                 const strategy = (val("chunking_strategy") as string) ?? "recursive";
@@ -590,7 +668,7 @@ function RagPanel() {
                                         value={(val("chunk_size") as number) ?? 1024}
                                         onChange={(e) => set("chunk_size", parseInt(e.target.value))}
                                         min={64}
-                                        className="font-mono text-[12px]"
+                                        className="font-mono text-xs"
                                     />
                                 </Field>
                             )}
@@ -601,7 +679,7 @@ function RagPanel() {
                                         value={(val("chunk_tokens") as number) ?? 256}
                                         onChange={(e) => set("chunk_tokens", parseInt(e.target.value))}
                                         min={16}
-                                        className="font-mono text-[12px]"
+                                        className="font-mono text-xs"
                                     />
                                 </Field>
                             )}
@@ -614,30 +692,30 @@ function RagPanel() {
                                         max={1.0}
                                         value={(val("semantic_threshold") as number) ?? 0.75}
                                         onChange={(e) => set("semantic_threshold", parseFloat(e.target.value))}
-                                        className="font-mono text-[12px]"
+                                        className="font-mono text-xs"
                                     />
                                 </Field>
                             )}
                         </div>
                         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-                            <p className="font-mono text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                            <p className="font-mono text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                                 Embedding
                             </p>
                             <div className="grid grid-cols-2 gap-4">
-                                <Field label="Embedding Provider ID">
+                                <Field label="Embedding Provider ID" defaultValue="openai">
                                     <Input
                                         value={(val("embedding_provider") as string) ?? ""}
                                         onChange={(e) => set("embedding_provider", e.target.value)}
                                         placeholder="openai"
-                                        className="font-mono text-[12px]"
+                                        className="font-mono text-xs"
                                     />
                                 </Field>
-                                <Field label="Embedding Model ID">
+                                <Field label="Embedding Model ID" defaultValue="text-embedding-3-small">
                                     <Input
                                         value={(val("embedding_model") as string) ?? ""}
                                         onChange={(e) => set("embedding_model", e.target.value)}
                                         placeholder="text-embedding-3-small"
-                                        className="font-mono text-[12px]"
+                                        className="font-mono text-xs"
                                     />
                                 </Field>
                             </div>
@@ -670,7 +748,7 @@ function KnowledgeBasesPanel() {
                                     value={(defaultKb.embedding_provider as string) ?? ""}
                                     onChange={(e) => setDefault("embedding_provider", e.target.value)}
                                     placeholder="openai"
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                             </Field>
                             <Field label="Default Embedding Model">
@@ -678,7 +756,7 @@ function KnowledgeBasesPanel() {
                                     value={(defaultKb.embedding_model as string) ?? ""}
                                     onChange={(e) => setDefault("embedding_model", e.target.value)}
                                     placeholder="text-embedding-3-small"
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                             </Field>
                             <Field label="Chunking Strategy">
@@ -686,7 +764,7 @@ function KnowledgeBasesPanel() {
                                     value={(defaultKb.chunking_strategy as string) ?? ""}
                                     onChange={(e) => setDefault("chunking_strategy", e.target.value)}
                                     placeholder="recursive"
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                             </Field>
                             <Field label="Chunk Size">
@@ -697,7 +775,7 @@ function KnowledgeBasesPanel() {
                                         setDefault("chunk_size", e.target.value ? parseInt(e.target.value) : null)
                                     }
                                     placeholder="1024"
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                             </Field>
                         </div>
@@ -734,7 +812,7 @@ function FileProcessingPanel() {
                             value={(val("upload_dir") as string) ?? ""}
                             onChange={(e) => set("upload_dir", e.target.value)}
                             placeholder="/tmp/uploads"
-                            className="font-mono text-[12px]"
+                            className="font-mono text-xs"
                         />
                     </Field>
                     <div className="grid grid-cols-2 gap-4">
@@ -744,7 +822,7 @@ function FileProcessingPanel() {
                                 min={1}
                                 value={(val("max_files_per_prompt") as number) ?? ""}
                                 onChange={(e) => set("max_files_per_prompt", parseInt(e.target.value))}
-                                className="font-mono text-[12px]"
+                                className="font-mono text-xs"
                             />
                         </Field>
                         <Field label="Max File Size (bytes)">
@@ -754,7 +832,7 @@ function FileProcessingPanel() {
                                 value={(val("max_file_size") as number) ?? ""}
                                 onChange={(e) => set("max_file_size", parseInt(e.target.value))}
                                 placeholder="10485760 (10MB)"
-                                className="font-mono text-[12px]"
+                                className="font-mono text-xs"
                             />
                         </Field>
                         <Field label="Max Total Size (bytes)">
@@ -764,7 +842,7 @@ function FileProcessingPanel() {
                                 value={(val("max_total_size") as number) ?? ""}
                                 onChange={(e) => set("max_total_size", parseInt(e.target.value))}
                                 placeholder="52428800 (50MB)"
-                                className="font-mono text-[12px]"
+                                className="font-mono text-xs"
                             />
                         </Field>
                     </div>
@@ -786,7 +864,7 @@ function UnstructuredPanel() {
                             value={(val("api_url") as string) ?? ""}
                             onChange={(e) => set("api_url", e.target.value)}
                             placeholder="https://api.unstructuredapp.io"
-                            className="font-mono text-[12px]"
+                            className="font-mono text-xs"
                         />
                     </Field>
                     <Field label="API Key" hint="Masked for security">
@@ -819,7 +897,7 @@ function MistralOcrPanel() {
                             value={(val("ocr_model") as string) ?? ""}
                             onChange={(e) => set("ocr_model", e.target.value)}
                             placeholder="mistral-ocr-latest"
-                            className="font-mono text-[12px]"
+                            className="font-mono text-xs"
                         />
                     </Field>
                 </>
@@ -842,8 +920,8 @@ function KreuzbergPanel() {
                         ].map(({ key, label, hint }) => (
                             <div key={key} className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
                                 <div>
-                                    <p className="font-mono text-[12px] font-medium text-foreground">{label}</p>
-                                    <p className="font-mono text-[10px] text-muted-foreground">{hint}</p>
+                                    <p className="font-mono text-xs font-medium text-foreground">{label}</p>
+                                    <p className="font-mono text-xs text-muted-foreground">{hint}</p>
                                 </div>
                                 <Toggle
                                     value={(val(key) as boolean) ?? (key === "ocr_enabled")}
@@ -857,7 +935,7 @@ function KreuzbergPanel() {
                             value={(val("ocr_backend") as string) ?? ""}
                             onChange={(e) => set("ocr_backend", e.target.value)}
                             placeholder="tesseract"
-                            className="font-mono text-[12px]"
+                            className="font-mono text-xs"
                         />
                     </Field>
                     <Field label="Output Format">
@@ -900,7 +978,6 @@ const RESILIENCE_RECOMMENDED_DEFAULTS = {
 function ResiliencePanel() {
     const { values, loading, saving, error, setSetting, saveAll, reload } = useSettings("resilience");
     const [savedFlash, setSavedFlash] = useState(false);
-    const [showAdvanced, setShowAdvanced] = useState(false);
     const [statusListInput, setStatusListInput] = useState("");
 
     const valueFor = (key: string): unknown => values[`resilience.${key}`];
@@ -988,7 +1065,7 @@ function ResiliencePanel() {
     }, []);
 
     const renderError = (key: string) => validationErrors[key]
-        ? <p className="font-mono text-[10px] text-destructive">{validationErrors[key]}</p>
+        ? <p className="font-mono text-xs text-destructive">{validationErrors[key]}</p>
         : null;
 
     return (
@@ -1006,28 +1083,31 @@ function ResiliencePanel() {
                 {loading && (
                     <div className="flex items-center gap-2">
                         <Loader2 size={15} className="animate-spin text-muted-foreground" />
-                        <span className="font-mono text-[11px] text-muted-foreground">Loading…</span>
+                        <span className="font-mono text-xs text-muted-foreground">Loading…</span>
                     </div>
                 )}
                 <ErrorBanner error={error} />
                 <SavedBanner show={savedFlash} />
+                <SettingsHint id="resilience">
+                    Resilience settings protect your runtime from overload and API failures. Rate limiting prevents too many requests, timeouts stop hung requests, and retries automatically recover from transient errors. The defaults work well for most deployments — only adjust if you're seeing specific issues.
+                </SettingsHint>
                 {!loading && (
                     <>
                         <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
                             <div>
-                                <p className="font-mono text-[12px] font-medium text-foreground">Recommended defaults</p>
-                                <p className="font-mono text-[10px] text-muted-foreground">Reset all resilience controls to production-safe defaults.</p>
+                                <p className="font-mono text-xs font-medium text-foreground">Recommended defaults</p>
+                                <p className="font-mono text-xs text-muted-foreground">Reset all resilience controls to production-safe defaults.</p>
                             </div>
                             <Button type="button" variant="outline" size="sm" onClick={resetRecommendedDefaults}>
                                 Reset Defaults
                             </Button>
                         </div>
 
-                        <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">Rate limiting</p>
+                        <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground/50">Rate limiting</p>
                         <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
                             <div>
-                                <p className="font-mono text-[12px] font-medium text-foreground">Rate Limiting</p>
-                                <p className="font-mono text-[10px] text-muted-foreground">Throttle inbound API traffic to reduce overload bursts.</p>
+                                <p className="font-mono text-xs font-medium text-foreground">Rate Limiting</p>
+                                <p className="font-mono text-xs text-muted-foreground">Throttle inbound API traffic to reduce overload bursts.</p>
                             </div>
                             <Toggle
                                 value={(valueFor("rate_limit_enabled") as boolean) ?? true}
@@ -1035,58 +1115,58 @@ function ResiliencePanel() {
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <Field label="Requests Per Second" hint="Lower value = stricter global throttling.">
+                            <Field label="Requests Per Second" hint="Lower value = stricter global throttling." defaultValue="10">
                                 <Input
                                     type="number"
                                     step={0.1}
                                     min={0.1}
                                     value={(valueFor("requests_per_second") as number) ?? ""}
                                     onChange={(e) => setField("requests_per_second", Number(e.target.value))}
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                                 {renderError("requests_per_second")}
                             </Field>
-                            <Field label="Burst Size" hint="How many requests can pass in a short spike.">
+                            <Field label="Burst Size" hint="How many requests can pass in a short spike." defaultValue="20">
                                 <Input
                                     type="number"
                                     min={1}
                                     value={(valueFor("burst_size") as number) ?? ""}
                                     onChange={(e) => setField("burst_size", Number(e.target.value))}
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                                 {renderError("burst_size")}
                             </Field>
                         </div>
 
-                        <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">Timeouts</p>
+                        <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground/50">Timeouts</p>
                         <div className="grid grid-cols-2 gap-4">
-                            <Field label="Request Timeout (ms)" hint="Upper bound for non-stream response wait time.">
+                            <Field label="Request Timeout (ms)" hint="Upper bound for non-stream response wait time." defaultValue="30000">
                                 <Input
                                     type="number"
                                     min={1000}
                                     value={(valueFor("request_timeout_ms") as number) ?? ""}
                                     onChange={(e) => setField("request_timeout_ms", Number(e.target.value))}
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                                 {renderError("request_timeout_ms")}
                             </Field>
-                            <Field label="Stream Start Timeout (ms)" hint="How long to wait for first stream chunk before retry/fail.">
+                            <Field label="Stream Start Timeout (ms)" hint="How long to wait for first stream chunk before retry/fail." defaultValue="15000">
                                 <Input
                                     type="number"
                                     min={1000}
                                     value={(valueFor("stream_start_timeout_ms") as number) ?? ""}
                                     onChange={(e) => setField("stream_start_timeout_ms", Number(e.target.value))}
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                                 {renderError("stream_start_timeout_ms")}
                             </Field>
                         </div>
 
-                        <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">Retries</p>
+                        <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground/50">Retries</p>
                         <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
                             <div>
-                                <p className="font-mono text-[12px] font-medium text-foreground">Retries Enabled</p>
-                                <p className="font-mono text-[10px] text-muted-foreground">Retry transient failures with exponential backoff.</p>
+                                <p className="font-mono text-xs font-medium text-foreground">Retries Enabled</p>
+                                <p className="font-mono text-xs text-muted-foreground">Retry transient failures with exponential backoff.</p>
                             </div>
                             <Toggle
                                 value={(valueFor("retries_enabled") as boolean) ?? true}
@@ -1094,53 +1174,42 @@ function ResiliencePanel() {
                             />
                         </div>
                         <div className="grid grid-cols-3 gap-4">
-                            <Field label="Max Attempts" hint="Total attempts including the first request.">
+                            <Field label="Max Attempts" hint="Total attempts including the first request." defaultValue="3">
                                 <Input
                                     type="number"
                                     min={0}
                                     max={10}
                                     value={(valueFor("retry_max_attempts") as number) ?? ""}
                                     onChange={(e) => setField("retry_max_attempts", Number(e.target.value))}
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                                 {renderError("retry_max_attempts")}
                             </Field>
-                            <Field label="Base Delay (ms)" hint="Initial retry delay before backoff multiplier.">
+                            <Field label="Base Delay (ms)" hint="Initial retry delay before backoff multiplier." defaultValue="1000">
                                 <Input
                                     type="number"
                                     min={100}
                                     value={(valueFor("retry_base_delay_ms") as number) ?? ""}
                                     onChange={(e) => setField("retry_base_delay_ms", Number(e.target.value))}
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                                 {renderError("retry_base_delay_ms")}
                             </Field>
-                            <Field label="Max Delay (ms)" hint="Hard cap for retry wait interval.">
+                            <Field label="Max Delay (ms)" hint="Hard cap for retry wait interval." defaultValue="10000">
                                 <Input
                                     type="number"
                                     min={100}
                                     value={(valueFor("retry_max_delay_ms") as number) ?? ""}
                                     onChange={(e) => setField("retry_max_delay_ms", Number(e.target.value))}
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                                 {renderError("retry_max_delay_ms")}
                             </Field>
                         </div>
 
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="justify-start px-0 font-mono text-[11px] text-muted-foreground hover:text-foreground"
-                            onClick={() => setShowAdvanced((v) => !v)}
-                        >
-                            {showAdvanced ? "Hide advanced retry controls" : "Show advanced retry controls"}
-                        </Button>
-
-                        {showAdvanced && (
-                            <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+                        <AdvancedSection label="Backoff, jitter & retry budget">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <Field label="Backoff Multiplier" hint="Growth factor for each retry delay step.">
+                                    <Field label="Backoff Multiplier" hint="Growth factor for each retry delay step." defaultValue="2">
                                         <Input
                                             type="number"
                                             step={0.1}
@@ -1148,21 +1217,21 @@ function ResiliencePanel() {
                                             max={5}
                                             value={(valueFor("retry_backoff_multiplier") as number) ?? ""}
                                             onChange={(e) => setField("retry_backoff_multiplier", Number(e.target.value))}
-                                            className="font-mono text-[12px]"
+                                            className="font-mono text-xs"
                                         />
                                         {renderError("retry_backoff_multiplier")}
                                     </Field>
-                                    <Field label="Retry Budget (ms)" hint="Maximum total waiting time spent on retries.">
+                                    <Field label="Retry Budget (ms)" hint="Maximum total waiting time spent on retries." defaultValue="20000">
                                         <Input
                                             type="number"
                                             min={0}
                                             value={(valueFor("retry_budget_ms") as number) ?? ""}
                                             onChange={(e) => setField("retry_budget_ms", Number(e.target.value))}
-                                            className="font-mono text-[12px]"
+                                            className="font-mono text-xs"
                                         />
                                         {renderError("retry_budget_ms")}
                                     </Field>
-                                    <Field label="Jitter Mode" hint="Jitter spreads retries across clients to avoid synchronized spikes.">
+                                    <Field label="Jitter Mode" hint="Spreads retries to avoid synchronized spikes." defaultValue="full">
                                         <SettingSelect
                                             value={(valueFor("retry_jitter_mode") as string) ?? "full"}
                                             options={[
@@ -1176,14 +1245,14 @@ function ResiliencePanel() {
                                     </Field>
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-3 py-2">
-                                            <span className="font-mono text-[11px] text-foreground">Respect Retry-After</span>
+                                            <span className="font-mono text-xs text-foreground">Respect Retry-After</span>
                                             <Toggle
                                                 value={(valueFor("retry_respect_retry_after") as boolean) ?? true}
                                                 onChange={(v) => setField("retry_respect_retry_after", v)}
                                             />
                                         </div>
                                         <div className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-3 py-2">
-                                            <span className="font-mono text-[11px] text-foreground">Retry Transport Errors</span>
+                                            <span className="font-mono text-xs text-foreground">Retry Transport Errors</span>
                                             <Toggle
                                                 value={(valueFor("retryable_transport_errors") as boolean) ?? true}
                                                 onChange={(v) => setField("retryable_transport_errors", v)}
@@ -1191,7 +1260,7 @@ function ResiliencePanel() {
                                         </div>
                                     </div>
                                 </div>
-                                <Field label="Retryable HTTP Status Codes" hint="Comma-separated status codes (100-599).">
+                                <Field label="Retryable HTTP Status Codes" hint="Comma-separated status codes (100-599)." defaultValue="408, 425, 429, 500, 502, 503, 504">
                                     <Input
                                         value={statusListInput}
                                         onChange={(e) => {
@@ -1204,12 +1273,11 @@ function ResiliencePanel() {
                                             if (next.length > 0) setField("retryable_http_statuses", next);
                                         }}
                                         placeholder="408, 425, 429, 500, 502, 503, 504"
-                                        className="font-mono text-[12px]"
+                                        className="font-mono text-xs"
                                     />
                                     {renderError("retryable_http_statuses")}
                                 </Field>
-                            </div>
-                        )}
+                        </AdvancedSection>
                     </>
                 )}
             </div>
@@ -1277,7 +1345,7 @@ function IntentClassifierPanel() {
                                 min={1}
                                 value={(val("topk") as number) ?? 3}
                                 onChange={(e) => set("topk", parseInt(e.target.value))}
-                                className="font-mono text-[12px]"
+                                className="font-mono text-xs"
                             />
                         </Field>
                         <Field label="Accept Threshold" hint="0.0 – 1.0">
@@ -1288,7 +1356,7 @@ function IntentClassifierPanel() {
                                 max={1.0}
                                 value={(val("accept_threshold") as number) ?? 0.7}
                                 onChange={(e) => set("accept_threshold", parseFloat(e.target.value))}
-                                className="font-mono text-[12px]"
+                                className="font-mono text-xs"
                             />
                         </Field>
                         <Field label="Margin Threshold" hint="0.0 – 1.0 (confidence margin between top results)">
@@ -1299,7 +1367,7 @@ function IntentClassifierPanel() {
                                 max={1.0}
                                 value={(val("margin_threshold") as number) ?? 0.1}
                                 onChange={(e) => set("margin_threshold", parseFloat(e.target.value))}
-                                className="font-mono text-[12px]"
+                                className="font-mono text-xs"
                             />
                         </Field>
                     </div>
@@ -1309,7 +1377,7 @@ function IntentClassifierPanel() {
                                 value={(val("wasm_component_path") as string) ?? ""}
                                 onChange={(e) => set("wasm_component_path", e.target.value || null)}
                                 placeholder="/path/to/component.wasm"
-                                className="font-mono text-[12px]"
+                                className="font-mono text-xs"
                             />
                         </Field>
                     )}
@@ -1363,7 +1431,7 @@ function GovernancePanel() {
                         </Field>
                         {mode !== "permit_all" && (
                             <div className="space-y-2">
-                                <Label className="font-mono text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                                <Label className="font-mono text-xs font-medium text-muted-foreground uppercase tracking-wide">
                                     Globally Allowed Actions
                                 </Label>
                                 <div className="space-y-2">
@@ -1378,8 +1446,8 @@ function GovernancePanel() {
                                                 onChange={() => toggleAction(value)}
                                                 className="accent-primary"
                                             />
-                                            <span className="font-mono text-[12px] text-foreground">{label}</span>
-                                            <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+                                            <span className="font-mono text-xs text-foreground">{label}</span>
+                                            <span className="ml-auto font-mono text-xs text-muted-foreground">
                                                 {value}
                                             </span>
                                         </label>
@@ -1389,10 +1457,10 @@ function GovernancePanel() {
                         )}
                         <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
                             <div>
-                                <p className="font-mono text-[12px] font-medium text-foreground">
+                                <p className="font-mono text-xs font-medium text-foreground">
                                     Hot Policy Reload
                                 </p>
-                                <p className="font-mono text-[10px] text-muted-foreground">
+                                <p className="font-mono text-xs text-muted-foreground">
                                     Reload Cedar policy files without restarting the server
                                 </p>
                             </div>
@@ -1457,7 +1525,7 @@ function AgentConfigPanel() {
                 {loading && (
                     <div className="flex items-center gap-2">
                         <Loader2 size={15} className="animate-spin text-muted-foreground" />
-                        <span className="font-mono text-[11px] text-muted-foreground">Loading…</span>
+                        <span className="font-mono text-xs text-muted-foreground">Loading…</span>
                     </div>
                 )}
                 <ErrorBanner error={error} />
@@ -1484,11 +1552,11 @@ function AgentConfigPanel() {
                         >
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="font-display text-[14px] font-semibold text-foreground flex items-center gap-2">
+                                    <p className="font-display text-sm font-semibold text-foreground flex items-center gap-2">
                                         <Bot size={14} className="text-muted-foreground" />
                                         {s.name}
                                     </p>
-                                    <p className="font-mono text-[10px] text-muted-foreground">{agentId}</p>
+                                    <p className="font-mono text-xs text-muted-foreground">{agentId}</p>
                                 </div>
                                 <Toggle
                                     value={enabled}
@@ -1530,7 +1598,7 @@ function AgentConfigPanel() {
                                         )
                                     }
                                     placeholder="web_search, code_exec, … (blank = all)"
-                                    className="font-mono text-[12px]"
+                                    className="font-mono text-xs"
                                 />
                             </Field>
                             <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3">
@@ -1550,7 +1618,7 @@ function AgentConfigPanel() {
                                                 value={(resilienceOverride.request_timeout_ms as number) ?? ""}
                                                 onChange={(e) => setResilienceField("request_timeout_ms", e.target.value ? Number(e.target.value) : null)}
                                                 placeholder={`${globalPreview.request_timeout_ms ?? ""}`}
-                                                className="font-mono text-[12px]"
+                                                className="font-mono text-xs"
                                             />
                                         </Field>
                                         <Field label="Retry Max Attempts">
@@ -1561,7 +1629,7 @@ function AgentConfigPanel() {
                                                 value={(resilienceOverride.retry_max_attempts as number) ?? ""}
                                                 onChange={(e) => setResilienceField("retry_max_attempts", e.target.value ? Number(e.target.value) : null)}
                                                 placeholder={`${globalPreview.retry_max_attempts ?? ""}`}
-                                                className="font-mono text-[12px]"
+                                                className="font-mono text-xs"
                                             />
                                         </Field>
                                         <Field label="Retry Base Delay (ms)">
@@ -1571,7 +1639,7 @@ function AgentConfigPanel() {
                                                 value={(resilienceOverride.retry_base_delay_ms as number) ?? ""}
                                                 onChange={(e) => setResilienceField("retry_base_delay_ms", e.target.value ? Number(e.target.value) : null)}
                                                 placeholder={`${globalPreview.retry_base_delay_ms ?? ""}`}
-                                                className="font-mono text-[12px]"
+                                                className="font-mono text-xs"
                                             />
                                         </Field>
                                         <Field label="Retry Max Delay (ms)">
@@ -1581,16 +1649,16 @@ function AgentConfigPanel() {
                                                 value={(resilienceOverride.retry_max_delay_ms as number) ?? ""}
                                                 onChange={(e) => setResilienceField("retry_max_delay_ms", e.target.value ? Number(e.target.value) : null)}
                                                 placeholder={`${globalPreview.retry_max_delay_ms ?? ""}`}
-                                                className="font-mono text-[12px]"
+                                                className="font-mono text-xs"
                                             />
                                         </Field>
                                     </div>
                                 )}
                                 <div className="space-y-1">
-                                    <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                                    <p className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
                                         Effective policy preview
                                     </p>
-                                    <pre className="max-h-36 overflow-auto rounded-md border border-border/60 bg-background/80 p-2 font-mono text-[10px] text-muted-foreground">
+                                    <pre className="max-h-36 overflow-auto rounded-md border border-border/60 bg-background/80 p-2 font-mono text-xs text-muted-foreground">
                                         {JSON.stringify(effectivePreview, null, 2)}
                                     </pre>
                                 </div>
@@ -1599,7 +1667,7 @@ function AgentConfigPanel() {
                     );
                 })}
                 {!loading && agentEntries.length === 0 && (
-                    <p className="font-mono text-[11px] text-muted-foreground">
+                    <p className="font-mono text-xs text-muted-foreground">
                         No agents configured yet.
                     </p>
                 )}
@@ -1637,7 +1705,7 @@ function SkillConfigPanel() {
                 {loading && (
                     <div className="flex items-center gap-2">
                         <Loader2 size={15} className="animate-spin text-muted-foreground" />
-                        <span className="font-mono text-[11px] text-muted-foreground">Loading…</span>
+                        <span className="font-mono text-xs text-muted-foreground">Loading…</span>
                     </div>
                 )}
                 <ErrorBanner error={error} />
@@ -1660,17 +1728,17 @@ function SkillConfigPanel() {
                                 <Zap size={14} className={cn(enabled ? "text-primary" : "text-muted-foreground")} />
                             </div>
                             <div className="min-w-0 flex-1 space-y-1">
-                                <p className={cn("font-mono text-[13px] font-medium", enabled ? "text-foreground" : "text-muted-foreground")}>
+                                <p className={cn("font-mono text-sm font-medium", enabled ? "text-foreground" : "text-muted-foreground")}>
                                     {skillId}
                                 </p>
-                                <p className="font-mono text-[10px] text-muted-foreground">
+                                <p className="font-mono text-xs text-muted-foreground">
                                     {(data.description as string) ?? ""}
                                 </p>
                                 <Input
                                     value={(data.description as string) ?? ""}
                                     onChange={(e) => setField("description", e.target.value)}
                                     placeholder="Override description…"
-                                    className="mt-1.5 h-7 font-mono text-[11px]"
+                                    className="mt-1.5 h-7 font-mono text-xs"
                                 />
                             </div>
                             <Toggle
@@ -1699,16 +1767,17 @@ function MemoryPanel() {
             namespace="memory"
             title="Agent Memory"
             subtitle="Persistent memory across conversations: auto-capture, context injection, and scoped retrieval."
+            hint="Memory lets agents remember information across conversations. When enabled, agents can automatically save important details and recall them later. Scopes control who can access memories — 'user' scope means memories are private to each user, while 'global' is shared by all agents."
         >
             {({ val, set }) => (
                 <>
-                    <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-2">
+                    <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-2">
                         Global Control
                     </p>
                     <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 mb-1">
                         <div>
-                            <p className="font-mono text-[12px] font-medium text-foreground">Enable Memory System</p>
-                            <p className="font-mono text-[10px] text-muted-foreground">Initialize the in-process vector memory store on startup.</p>
+                            <p className="font-mono text-xs font-medium text-foreground">Enable Memory System</p>
+                            <p className="font-mono text-xs text-muted-foreground">Initialize the in-process vector memory store on startup.</p>
                         </div>
                         <Toggle value={(val("enabled") as boolean) ?? false} onChange={(v) => set("enabled", v)} />
                     </div>
@@ -1725,20 +1794,20 @@ function MemoryPanel() {
                         />
                     </Field>
 
-                    <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50 mt-4 mb-2">
+                    <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mt-4 mb-2">
                         Auto-Capture &amp; Injection
                     </p>
                     <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 mb-1">
                         <div>
-                            <p className="font-mono text-[12px] font-medium text-foreground">Auto-Capture</p>
-                            <p className="font-mono text-[10px] text-muted-foreground">Extract memories from each completed assistant turn.</p>
+                            <p className="font-mono text-xs font-medium text-foreground">Auto-Capture</p>
+                            <p className="font-mono text-xs text-muted-foreground">Extract memories from each completed assistant turn.</p>
                         </div>
                         <Toggle value={(val("auto_capture") as boolean) ?? true} onChange={(v) => set("auto_capture", v)} />
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 mb-1">
                         <div>
-                            <p className="font-mono text-[12px] font-medium text-foreground">Context Injection</p>
-                            <p className="font-mono text-[10px] text-muted-foreground">Inject relevant memories as a system prompt prefix before each LLM call.</p>
+                            <p className="font-mono text-xs font-medium text-foreground">Context Injection</p>
+                            <p className="font-mono text-xs text-muted-foreground">Inject relevant memories as a system prompt prefix before each LLM call.</p>
                         </div>
                         <Toggle value={(val("inject_context") as boolean) ?? true} onChange={(v) => set("inject_context", v)} />
                     </div>
@@ -1747,11 +1816,11 @@ function MemoryPanel() {
                             type="number" min={100} max={32000}
                             value={(val("max_context_tokens") as number) ?? 4096}
                             onChange={(e) => set("max_context_tokens", Number(e.target.value))}
-                            className="w-32 font-mono text-[12px]"
+                            className="w-32 font-mono text-xs"
                         />
                     </Field>
 
-                    <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50 mt-4 mb-2">
+                    <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mt-4 mb-2">
                         Retrieval Weights
                     </p>
                     <Field label="Vector (Semantic) Weight" hint="0.0–1.0. Higher = more semantic similarity.">
@@ -1759,7 +1828,7 @@ function MemoryPanel() {
                             type="number" min={0} max={1} step={0.05}
                             value={(val("vector_weight") as number) ?? 0.7}
                             onChange={(e) => set("vector_weight", parseFloat(e.target.value))}
-                            className="w-28 font-mono text-[12px]"
+                            className="w-28 font-mono text-xs"
                         />
                     </Field>
                     <Field label="BM25 (Keyword) Weight" hint="0.0–1.0. Higher = more keyword match.">
@@ -1767,11 +1836,11 @@ function MemoryPanel() {
                             type="number" min={0} max={1} step={0.05}
                             value={(val("bm25_weight") as number) ?? 0.3}
                             onChange={(e) => set("bm25_weight", parseFloat(e.target.value))}
-                            className="w-28 font-mono text-[12px]"
+                            className="w-28 font-mono text-xs"
                         />
                     </Field>
 
-                    <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50 mt-4 mb-2">
+                    <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mt-4 mb-2">
                         Embedding Provider
                     </p>
                     <Field label="Provider">
@@ -1790,11 +1859,11 @@ function MemoryPanel() {
                             value={(val("embedding_model") as string) ?? "text-embedding-3-small"}
                             onChange={(e) => set("embedding_model", e.target.value)}
                             placeholder="text-embedding-3-small"
-                            className="w-64 font-mono text-[12px]"
+                            className="w-64 font-mono text-xs"
                         />
                     </Field>
 
-                    <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50 mt-4 mb-2">
+                    <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mt-4 mb-2">
                         Storage
                     </p>
                     <Field label="DB Path" hint="Filesystem path for the embedded SurrealDB memory store.">
@@ -1802,17 +1871,17 @@ function MemoryPanel() {
                             value={(val("db_path") as string) ?? "data/memory"}
                             onChange={(e) => set("db_path", e.target.value)}
                             placeholder="data/memory"
-                            className="w-64 font-mono text-[12px]"
+                            className="w-64 font-mono text-xs"
                         />
                     </Field>
 
-                    <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50 mt-4 mb-2">
+                    <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground/50 mt-4 mb-2">
                         MCP HTTP Endpoint
                     </p>
                     <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 mb-1">
                         <div>
-                            <p className="font-mono text-[12px] font-medium text-foreground">Enable MCP Endpoint</p>
-                            <p className="font-mono text-[10px] text-muted-foreground">Expose memory tools over HTTP as a Model Context Protocol server.</p>
+                            <p className="font-mono text-xs font-medium text-foreground">Enable MCP Endpoint</p>
+                            <p className="font-mono text-xs text-muted-foreground">Expose memory tools over HTTP as a Model Context Protocol server.</p>
                         </div>
                         <Toggle value={(val("mcp_http_enabled") as boolean) ?? false} onChange={(v) => set("mcp_http_enabled", v)} />
                     </div>
@@ -1821,7 +1890,7 @@ function MemoryPanel() {
                             value={(val("mcp_http_path") as string) ?? "/mcp/memory"}
                             onChange={(e) => set("mcp_http_path", e.target.value)}
                             placeholder="/mcp/memory"
-                            className="w-48 font-mono text-[12px]"
+                            className="w-48 font-mono text-xs"
                         />
                     </Field>
                 </>
@@ -1837,10 +1906,10 @@ function MemoryPanel() {
 
 function PromptCachingPanel() {
     return (
-        <NamespacePanel namespace="prompt_caching" title="Prompt Caching">
+        <NamespacePanel namespace="prompt_caching" title="Prompt Caching" hint="Prompt caching stores frequently-used prompt prefixes to reduce costs and latency. This is especially effective for system prompts and tool definitions that don't change between requests. Enable it to save on API costs with supported providers.">
             {({ val, set }) => (
                 <>
-                    <p className="font-mono text-[10px] text-muted-foreground mb-3">
+                    <p className="font-mono text-xs text-muted-foreground mb-3">
                         Prompt caching reduces latency and token costs by reusing stable parts of the
                         system prompt. Anthropic injects <code>cache_control</code> blocks;
                         OpenAI caches automatically on eligible models.
@@ -1848,10 +1917,10 @@ function PromptCachingPanel() {
 
                     <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 mb-1">
                         <div>
-                            <p className="font-mono text-[12px] font-medium text-foreground">
+                            <p className="font-mono text-xs font-medium text-foreground">
                                 Enable Prompt Caching (Global Default)
                             </p>
-                            <p className="font-mono text-[10px] text-muted-foreground">
+                            <p className="font-mono text-xs text-muted-foreground">
                                 System-wide default; users can override per-session via the chat toolbar.
                             </p>
                         </div>
@@ -1870,18 +1939,18 @@ function PromptCachingPanel() {
                     </Field>
 
                     <div className="mt-4 rounded-lg border border-border bg-muted/30 px-4 py-3">
-                        <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                        <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
                             Supported Providers
                         </p>
                         <div className="flex gap-2 mt-1">
-                            <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-0.5 font-mono text-[11px] font-medium text-foreground">
+                            <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-0.5 font-mono text-xs font-medium text-foreground">
                                 Anthropic
                             </span>
-                            <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-0.5 font-mono text-[11px] font-medium text-foreground">
+                            <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-0.5 font-mono text-xs font-medium text-foreground">
                                 OpenAI (auto)
                             </span>
                         </div>
-                        <p className="font-mono text-[10px] text-muted-foreground mt-2">
+                        <p className="font-mono text-xs text-muted-foreground mt-2">
                             Priority: session override → user preference → agent setting → this global default.
                         </p>
                     </div>
@@ -1970,14 +2039,14 @@ function UserSettingsPanel() {
             <div className="flex flex-1 flex-col overflow-y-auto">
                 <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
                     <div>
-                        <h2 className="font-mono text-[14px] font-semibold text-foreground">User Settings</h2>
-                        <p className="font-mono text-[11px] text-muted-foreground">JWT authentication required</p>
+                        <h2 className="font-mono text-sm font-semibold text-foreground">User Settings</h2>
+                        <p className="font-mono text-xs text-muted-foreground">JWT authentication required</p>
                     </div>
                 </div>
                 <div className="flex flex-1 items-center justify-center p-8">
                     <div className="flex flex-col items-center gap-3 text-center">
                         <User size={32} className="text-muted-foreground/40" />
-                        <p className="font-mono text-[12px] text-muted-foreground">
+                        <p className="font-mono text-xs text-muted-foreground">
                             Per-user settings are only available when{" "}
                             <code className="rounded bg-muted px-1">VITE_UAR_API_KEY</code> is a JWT
                             Bearer token.
@@ -1992,8 +2061,8 @@ function UserSettingsPanel() {
         <div className="flex flex-1 flex-col overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
                 <div>
-                    <h2 className="font-mono text-[14px] font-semibold text-foreground">User Settings</h2>
-                    <p className="font-mono text-[11px] text-muted-foreground">
+                    <h2 className="font-mono text-sm font-semibold text-foreground">User Settings</h2>
+                    <p className="font-mono text-xs text-muted-foreground">
                         Per-user prompt-caching preferences for{" "}
                         <span className="font-medium text-foreground">{settings?.user_id ?? "…"}</span>
                     </p>
@@ -2002,7 +2071,7 @@ function UserSettingsPanel() {
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="font-mono text-[11px]"
+                        className="font-mono text-xs"
                         onClick={() => { void fetchSettings(); }}
                         disabled={loading}
                     >
@@ -2011,7 +2080,7 @@ function UserSettingsPanel() {
                     </Button>
                     <Button
                         size="sm"
-                        className="font-mono text-[11px]"
+                        className="font-mono text-xs"
                         onClick={() => { void save(); }}
                         disabled={saving || loading || !settings}
                     >
@@ -2027,24 +2096,24 @@ function UserSettingsPanel() {
             {error && (
                 <div className="mx-6 mt-4 flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2">
                     <AlertCircle size={13} className="text-destructive" />
-                    <span className="font-mono text-[11px] text-destructive">{error}</span>
+                    <span className="font-mono text-xs text-destructive">{friendlyError(error)}</span>
                 </div>
             )}
 
             <div className="space-y-4 p-6">
                 <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
                     <div>
-                        <p className="font-mono text-[12px] font-medium text-foreground">
+                        <p className="font-mono text-xs font-medium text-foreground">
                             Prompt Caching Enabled
                         </p>
-                        <p className="font-mono text-[10px] text-muted-foreground">
+                        <p className="font-mono text-xs text-muted-foreground">
                             Override the global default for your account. Null = inherit global setting.
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            className="font-mono text-[10px] text-muted-foreground underline"
+                            className="font-mono text-xs text-muted-foreground underline"
                             onClick={() => setSettings(s => s ? { ...s, prompt_caching_enabled: null } : s)}
                         >
                             reset
@@ -2074,7 +2143,7 @@ function UserSettingsPanel() {
                 </Field>
 
                 {settings?.updated_at && (
-                    <p className="font-mono text-[10px] text-muted-foreground">
+                    <p className="font-mono text-xs text-muted-foreground">
                         Last updated: {new Date(settings.updated_at).toLocaleString()}
                     </p>
                 )}
@@ -2118,11 +2187,11 @@ export const SettingsPage: FC = () => {
     const availableKeys = new Set(types.map((t) => t.key));
 
     return (
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
             {/* Sidebar */}
-            <aside className="flex w-52 shrink-0 flex-col border-r border-border bg-card">
+            <aside className="flex shrink-0 flex-col border-b border-border bg-card md:w-52 md:border-b-0 md:border-r">
                 <div className="border-b border-border px-4 py-3">
-                    <p className="font-mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                    <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">
                         Settings
                     </p>
                 </div>
@@ -2131,10 +2200,10 @@ export const SettingsPage: FC = () => {
                         const items = NAV_ITEMS.filter((n) => n.category === cat);
                         return (
                             <div key={cat} className="mb-1">
-                                <p className="px-3 pb-1 pt-2 font-mono text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                                <p className="px-3 pb-1 pt-2 font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground/70">
                                     {cat}
                                 </p>
-                                {items.map(({ key, label, icon: Icon }) => {
+                                {items.map(({ key, label, subtitle, icon: Icon }) => {
                                     const available = availableKeys.size === 0 || availableKeys.has(key);
                                     return (
                                         <Button
@@ -2144,18 +2213,19 @@ export const SettingsPage: FC = () => {
                                             variant={active === key ? "secondary" : "ghost"}
                                             size="sm"
                                             className={cn(
-                                                "flex w-full items-center justify-start gap-2.5 text-left font-medium",
+                                                "flex h-auto w-full items-center justify-start gap-2.5 py-2 text-left font-medium",
                                                 active === key
                                                     ? "text-foreground"
                                                     : "text-muted-foreground hover:text-foreground",
                                                 !available && "cursor-not-allowed opacity-40"
                                             )}
+                                            title={subtitle}
                                         >
                                             <Icon
                                                 size={13}
-                                                className={active === key ? "text-primary" : "text-muted-foreground"}
+                                                className={cn("shrink-0", active === key ? "text-primary" : "text-muted-foreground")}
                                             />
-                                            <span className="truncate text-[12px]">{label}</span>
+                                            <span className="truncate text-xs">{label}</span>
                                             {active === key && (
                                                 <ChevronRight size={11} className="ml-auto shrink-0 text-muted-foreground" />
                                             )}
@@ -2172,7 +2242,7 @@ export const SettingsPage: FC = () => {
             <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
                 {PANEL_MAP[active]?.() ?? (
                     <div className="flex flex-1 items-center justify-center">
-                        <p className="font-mono text-[11px] text-muted-foreground">
+                        <p className="font-mono text-xs text-muted-foreground">
                             Select a settings category
                         </p>
                     </div>

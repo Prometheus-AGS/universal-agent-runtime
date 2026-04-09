@@ -56,7 +56,7 @@ export const MemoryRecallBlock: FC<MemoryRecallBlockProps> = ({ items, count }) 
               {item.scope && <span className="font-mono text-[9px] text-muted-foreground/70">[{item.scope}]</span>}
               {item.memory_type && <span className="font-mono text-[9px] text-muted-foreground/70">{item.memory_type}</span>}
             </div>
-            <p className="mt-0.5 whitespace-pre-wrap font-body text-[12px] text-muted-foreground">
+            <p className="mt-0.5 whitespace-pre-wrap font-body text-xs text-muted-foreground">
               {truncate(item.value)}
             </p>
           </div>
@@ -88,7 +88,7 @@ export const MemoryMutationBlock: FC<MemoryMutationBlockProps> = ({
         {memoryId || "(no memory id)"}
       </p>
       {content && (
-        <p className="mt-1 whitespace-pre-wrap font-body text-[12px] text-muted-foreground">
+        <p className="mt-1 whitespace-pre-wrap font-body text-xs text-muted-foreground">
           {truncate(content)}
         </p>
       )}
@@ -109,7 +109,7 @@ export const MemoryUpdateBlock: FC<MemoryUpdateBlockProps> = ({ memoryKey, opera
         </span>
       </div>
       <p className="font-mono text-[10px] text-foreground/80">{memoryKey}</p>
-      <p className="mt-1 whitespace-pre-wrap font-body text-[12px] text-muted-foreground">
+      <p className="mt-1 whitespace-pre-wrap font-body text-xs text-muted-foreground">
         {truncate(value)}
       </p>
     </div>

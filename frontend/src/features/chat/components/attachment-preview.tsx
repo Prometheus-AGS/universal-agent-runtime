@@ -51,7 +51,7 @@ const AttachmentChip: FC<ChipProps> = ({ attachment, onRemove }) => {
 
     return (
         <div
-            title={isError ? (errorMessage ?? "Upload failed") : file.name}
+            title={isError ? (errorMessage ?? "Upload failed. Try again or use a smaller file.") : file.name}
             className={[
                 "relative flex items-center gap-2 rounded-xl border bg-background/90 p-1.5 shadow-sm transition-all",
                 "h-14 min-w-[120px] max-w-[180px]",
@@ -75,7 +75,7 @@ const AttachmentChip: FC<ChipProps> = ({ attachment, onRemove }) => {
                     {file.name}
                 </span>
                 <span className="text-[10px] leading-tight text-muted-foreground">
-                    {isUploading ? "Uploading…" : isError ? "Error" : mimeLabel}
+                    {isUploading ? "Uploading..." : isError ? "Upload failed" : mimeLabel}
                 </span>
             </div>
 

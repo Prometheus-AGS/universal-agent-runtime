@@ -36,7 +36,7 @@ const CodeBlock: FC<{ code: string; language?: string }> = ({ code, language }) 
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{language}</span>
         </div>
       )}
-      <pre className="overflow-x-auto p-0"><code ref={ref} className="hljs block p-4 text-[13px] leading-relaxed">{code}</code></pre>
+      <pre className="overflow-x-auto p-0"><code ref={ref} className="hljs block p-4 text-sm leading-relaxed">{code}</code></pre>
     </div>
   );
 };

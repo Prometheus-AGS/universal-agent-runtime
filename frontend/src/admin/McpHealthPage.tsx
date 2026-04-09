@@ -1,6 +1,7 @@
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, RefreshCw, Server, Wrench } from "lucide-react";
+import { RefreshCw, Server, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
 
 interface McpServerHealth {
@@ -68,9 +69,9 @@ export const McpHealthPage: FC = () => {
       <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
         <div>
           <h2 className="font-display text-lg font-semibold text-foreground">
-            MCP Server Health
+            Tool Server Health
           </h2>
-          <p className="font-mono text-[11px] text-muted-foreground">
+          <p className="font-mono text-xs text-muted-foreground">
             {servers.length} servers &middot; auto-refresh 30s
           </p>
         </div>
@@ -86,26 +87,14 @@ export const McpHealthPage: FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        {loading && servers.length === 0 && (
-          <div className="flex items-center gap-2 py-4">
-            <Loader2 size={16} className="animate-spin text-muted-foreground" />
-          </div>
-        )}
-        {error && (
-          <p className="font-mono text-[11px] text-destructive">
-            Error: {error}
-          </p>
-        )}
+        {loading && servers.length === 0 && <AdminListSkeleton rows={3} />}
+        <AdminError error={error} />
         {!loading && servers.length === 0 && !error && (
-          <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-            <Server size={32} className="text-muted-foreground/40" />
-            <p className="font-mono text-[11px] text-muted-foreground">
-              No MCP servers configured
-            </p>
-            <p className="text-[12px] text-muted-foreground/60">
-              Add servers to mcp.json to get started
-            </p>
-          </div>
+          <AdminEmptyState
+            icon={Server}
+            title="No tool servers configured"
+            description="Add tool servers to mcp.json to enable agent capabilities like web search, code execution, and more."
+          />
         )}
 
         {servers.length > 0 && (
@@ -119,12 +108,12 @@ export const McpHealthPage: FC = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     {statusDot(server.status)}
-                    <p className="font-mono text-[12px] font-medium text-foreground">
+                    <p className="font-mono text-xs font-medium text-foreground">
                       {server.name}
                     </p>
                   </div>
                   {server.error && (
-                    <p className="mt-0.5 font-mono text-[10px] text-destructive">
+                    <p className="mt-0.5 font-mono text-xs text-destructive">
                       {server.error}
                     </p>
                   )}
@@ -132,7 +121,7 @@ export const McpHealthPage: FC = () => {
                 <span className="shrink-0 rounded border border-border px-1.5 py-0.5 font-mono text-[9px] uppercase text-muted-foreground">
                   {server.transport}
                 </span>
-                <div className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-muted-foreground">
+                <div className="flex shrink-0 items-center gap-1 font-mono text-xs text-muted-foreground">
                   <Wrench size={11} />
                   {server.tool_count}
                 </div>

@@ -1,6 +1,7 @@
 import { type FC, useCallback, useEffect, useState } from "react";
 import { Code2, Loader2, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
 import type { UarCompilerSession } from "@/types";
 
@@ -51,7 +52,7 @@ export const CompilerPage: FC = () => {
       <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
         <div>
           <h2 className="font-display text-lg font-semibold text-foreground">Compiler Sessions</h2>
-          <p className="font-mono text-[11px] text-muted-foreground">WASM skill compilation</p>
+          <p className="font-mono text-xs text-muted-foreground">Compile skills into portable modules</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => void load()} className="gap-1.5"><RefreshCw size={13} className={cn(loading && "animate-spin")} />Refresh</Button>
@@ -61,25 +62,26 @@ export const CompilerPage: FC = () => {
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-6">
-        {loading && <div className="flex items-center gap-2"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>}
-        {error && <p className="font-mono text-[11px] text-destructive">Error: {error}</p>}
-        {!loading && sessions.length === 0 && (
-          <div className="flex flex-col items-center gap-4 py-16 text-center">
-            <div className="flex size-16 items-center justify-center rounded-2xl border border-border bg-muted/30"><Code2 size={28} className="text-muted-foreground" /></div>
-            <p className="font-mono text-[11px] text-muted-foreground">No compiler sessions yet</p>
-            <Button size="sm" onClick={() => void handleCreate()} className="gap-1.5"><Plus size={13} />Create session</Button>
-          </div>
+        {loading && sessions.length === 0 && <AdminListSkeleton rows={3} />}
+        <AdminError error={error} />
+        {!loading && sessions.length === 0 && !error && (
+          <AdminEmptyState
+            icon={Code2}
+            title="No compiler sessions yet"
+            description="Compile skills into portable WebAssembly modules that can run anywhere."
+            action={{ label: "Create session", icon: Plus, onClick: () => void handleCreate() }}
+          />
         )}
         <div className="flex flex-col gap-2">
           {sessions.map((s) => (
             <div key={s.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
               <div className="flex size-8 items-center justify-center rounded-md bg-muted"><Code2 size={14} className="text-muted-foreground" /></div>
               <div className="min-w-0 flex-1">
-                <p className="font-mono text-[12px] text-foreground">{s.id}</p>
-                {s.created_at && <p className="font-mono text-[10px] text-muted-foreground">{new Date(s.created_at).toLocaleString()}</p>}
+                <p className="font-mono text-xs text-foreground">{s.id}</p>
+                {s.created_at && <p className="font-mono text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()}</p>}
               </div>
-              {s.skill_ids && s.skill_ids.length > 0 && <span className="font-mono text-[10px] text-muted-foreground">{s.skill_ids.length} skills</span>}
-              {s.status && <span className={cn("font-mono text-[11px] font-medium capitalize", statusColor(s.status))}>{s.status}</span>}
+              {s.skill_ids && s.skill_ids.length > 0 && <span className="font-mono text-xs text-muted-foreground">{s.skill_ids.length} skills</span>}
+              {s.status && <span className={cn("font-mono text-xs font-medium capitalize", statusColor(s.status))}>{s.status}</span>}
             </div>
           ))}
         </div>
