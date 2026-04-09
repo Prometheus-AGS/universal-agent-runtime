@@ -987,6 +987,10 @@ pub struct LlmConfig {
     /// Health check interval (seconds).
     #[serde(default)]
     pub health_check_secs: Option<u64>,
+    /// Extended thinking budget (tokens). When set, enables thinking for
+    /// Anthropic models with the specified token budget.
+    #[serde(default)]
+    pub thinking_budget: Option<u32>,
 }
 
 impl LlmConfig {
@@ -1024,6 +1028,7 @@ impl Default for LlmConfig {
             tracing: Self::default_tracing(),
             cooldown_secs: None,
             health_check_secs: None,
+            thinking_budget: None,
         }
     }
 }

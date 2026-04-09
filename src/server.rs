@@ -2250,20 +2250,37 @@ async fn api_messages(
     let llm_request = crate::llm::LlmRequest {
         messages: openai_messages,
         tools: convert_anthropic_tools_to_openai(&req.tools),
+        cache_strategy: None,
+        thinking_config: None,
+        anthropic_system: None,
     };
 
     let client_config = crate::config::build_client_config(&resolved_llm_config);
     let model_str = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
-    let driver = match crate::llm::LiterLlmDriver::new(client_config, model_str, None) {
-        Ok(d) => d,
-        Err(err) => {
-            tracing::error!(error = %err, "Failed to create LiterLlmDriver");
-            return anthropic_error_response(
-                StatusCode::BAD_GATEWAY,
-                "Failed to initialize upstream model client",
-            );
-        }
-    };
+    let driver: std::sync::Arc<dyn LlmDriver> =
+        if crate::llm::detect_provider(&model_str) == "anthropic"
+            && crate::llm::anthropic_native_driver_enabled()
+        {
+            std::sync::Arc::new(crate::llm::anthropic_driver::AnthropicDriver::new(
+                resolved_llm_config.api_key.clone().unwrap_or_default(),
+                model_str.clone(),
+                resolved_llm_config.base_url.clone(),
+                None,
+                Some(crate::llm::anthropic_cache::CacheStrategy::default()),
+                None,
+            ))
+        } else {
+            match crate::llm::LiterLlmDriver::new(client_config, model_str, None) {
+                Ok(d) => std::sync::Arc::new(d),
+                Err(err) => {
+                    tracing::error!(error = %err, "Failed to create LiterLlmDriver");
+                    return anthropic_error_response(
+                        StatusCode::BAD_GATEWAY,
+                        "Failed to initialize upstream model client",
+                    );
+                }
+            }
+        };
     let driver_stream = match driver.stream(llm_request).await {
         Ok(stream) => stream,
         Err(err) => {

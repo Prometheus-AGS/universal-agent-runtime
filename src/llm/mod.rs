@@ -13,11 +13,19 @@
 //!
 //! - [`LiterLlmDriver`]: Universal driver using liter-llm for 142+ providers
 
+pub mod anthropic_cache;
+pub mod anthropic_driver;
+pub mod anthropic_streaming;
+pub mod anthropic_types;
+pub mod capability_registry;
 pub mod catalog;
 pub mod liter_driver;
 pub mod orchestrator;
 pub mod registry;
 pub mod router;
+pub mod tool_extractor;
+pub mod tool_normalizer;
+pub mod xml_tool_injector;
 
 pub use catalog::ModelCatalog;
 pub use liter_driver::LiterLlmDriver;
@@ -27,6 +35,20 @@ pub use router::ModelRouter;
 
 use crate::normalized::NormalizedEvent;
 use futures::Stream;
+
+/// Extract the provider name from a "provider/model" string.
+#[must_use]
+pub fn detect_provider(model: &str) -> &str {
+    model.split('/').next().unwrap_or("unknown")
+}
+
+/// Check if the native Anthropic driver is enabled (default: true).
+#[must_use]
+pub fn anthropic_native_driver_enabled() -> bool {
+    std::env::var("ANTHROPIC_NATIVE_DRIVER")
+        .map(|v| v != "false" && v != "0")
+        .unwrap_or(true)
+}
 
 /// A message in a conversation.
 ///
@@ -238,6 +260,16 @@ pub struct LlmRequest {
     pub messages: Vec<serde_json::Value>,
     /// Available tools in `OpenAI` function schema format.
     pub tools: Vec<serde_json::Value>,
+    /// Anthropic-specific: cache strategy to apply before sending.
+    /// Ignored by non-Anthropic drivers.
+    pub cache_strategy: Option<anthropic_cache::CacheStrategy>,
+    /// Anthropic-specific: extended thinking configuration.
+    /// Ignored by non-Anthropic drivers.
+    pub thinking_config: Option<anthropic_types::ThinkingConfig>,
+    /// Anthropic-specific: system blocks (supports cache_control per block).
+    /// When present, the driver uses these instead of extracting from messages.
+    /// Ignored by non-Anthropic drivers.
+    pub anthropic_system: Option<Vec<serde_json::Value>>,
 }
 
 /// Trait for LLM streaming drivers.

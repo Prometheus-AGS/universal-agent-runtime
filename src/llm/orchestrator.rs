@@ -254,6 +254,9 @@ impl Orchestrator {
                 let req = LlmRequest {
                     messages: message_json.clone(),
                     tools: tools.clone(),
+                    cache_strategy: None,
+                    thinking_config: None,
+                    anthropic_system: None,
                 };
 
                 // Log the full request being sent to the LLM
@@ -621,6 +624,9 @@ impl Orchestrator {
         let req = LlmRequest {
             messages: message_json,
             tools,
+            cache_strategy: None,
+            thinking_config: None,
+            anthropic_system: None,
         };
 
         // Stream from the driver and collect message deltas

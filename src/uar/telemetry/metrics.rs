@@ -65,6 +65,20 @@ pub fn record_llm_tokens(provider: &str, model: &str, input_tokens: u64, output_
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Cache Token Metrics
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Record prompt-cache token usage (write = cache miss tokens, read = cache hit tokens).
+pub fn record_cache_tokens(provider: &str, model: &str, write_tokens: u32, read_tokens: u32) {
+    let labels = [
+        ("provider", provider.to_string()),
+        ("model", model.to_string()),
+    ];
+    counter!("uar_cache_write_tokens_total", &labels).increment(u64::from(write_tokens));
+    counter!("uar_cache_read_tokens_total", &labels).increment(u64::from(read_tokens));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Tool Call Metrics
 // ─────────────────────────────────────────────────────────────────────────────
 

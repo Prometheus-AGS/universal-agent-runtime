@@ -48,6 +48,9 @@ pub async fn summarize_messages(
             }),
         ],
         tools: vec![],
+        cache_strategy: None,
+        thinking_config: None,
+        anthropic_system: None,
     };
 
     let mut stream = driver.stream(request).await?;
