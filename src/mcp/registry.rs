@@ -60,7 +60,7 @@ impl McpRegistry {
 
         for (name, entry) in &cfg.mcp_servers {
             let svc = match entry {
-                McpServerEntry::Stdio { command, args, env } => {
+                McpServerEntry::Stdio { command, args, env, .. } => {
                     let env = expand_env_map(env);
 
                     let command_path = resolve_mcp_command(command);

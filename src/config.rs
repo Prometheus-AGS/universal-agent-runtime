@@ -87,6 +87,9 @@ pub struct AppConfig {
     /// Agent memory system configuration
     #[serde(default)]
     pub memory: MemoryConfig,
+    /// Sandbox code-execution configuration
+    #[serde(default)]
+    pub sandbox: SandboxRuntimeConfig,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -655,6 +658,61 @@ impl Default for MemoryConfig {
             surreal_endpoint: None,
             surreal_user: None,
             surreal_pass: None,
+        }
+    }
+}
+
+// =============================================================================
+// SANDBOX RUNTIME CONFIGURATION
+// =============================================================================
+
+/// Configuration for the sandboxed code-execution subsystem.
+#[derive(Debug, Deserialize, Clone)]
+pub struct SandboxRuntimeConfig {
+    /// Runner selection: "auto", "microsandbox", "wasmtime", "remote".
+    #[serde(default = "SandboxRuntimeConfig::default_runner")]
+    pub runner: String,
+    /// URL for the remote sandbox runner (required when runner = "remote").
+    #[serde(default)]
+    pub remote_url: Option<String>,
+    /// Default memory limit per sandbox (MiB).
+    #[serde(default = "SandboxRuntimeConfig::default_memory_mib")]
+    pub default_memory_mib: u32,
+    /// Default execution timeout (seconds).
+    #[serde(default = "SandboxRuntimeConfig::default_timeout_secs")]
+    pub default_timeout_secs: u64,
+    /// Whether sandboxes have network access by default.
+    #[serde(default)]
+    pub network_enabled: bool,
+    /// Maximum number of concurrent sandbox sessions.
+    #[serde(default = "SandboxRuntimeConfig::default_max_concurrent")]
+    pub max_concurrent: usize,
+}
+
+impl SandboxRuntimeConfig {
+    fn default_runner() -> String {
+        "auto".to_string()
+    }
+    fn default_memory_mib() -> u32 {
+        512
+    }
+    fn default_timeout_secs() -> u64 {
+        300
+    }
+    fn default_max_concurrent() -> usize {
+        10
+    }
+}
+
+impl Default for SandboxRuntimeConfig {
+    fn default() -> Self {
+        Self {
+            runner: Self::default_runner(),
+            remote_url: None,
+            default_memory_mib: Self::default_memory_mib(),
+            default_timeout_secs: Self::default_timeout_secs(),
+            network_enabled: false,
+            max_concurrent: Self::default_max_concurrent(),
         }
     }
 }

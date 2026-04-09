@@ -33,6 +33,7 @@ pub mod config;
 pub mod llm;
 pub mod mcp;
 pub mod normalized;
+pub mod sandbox;
 pub mod server;
 pub mod session;
 pub mod uar;

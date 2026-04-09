@@ -148,6 +148,18 @@ pub enum NormalizedEvent {
     },
 
     // ─────────────────────────────────────────────────────────────────────
+    // Sandbox Execution
+    // ─────────────────────────────────────────────────────────────────────
+    /// Real-time output from a sandboxed code execution.
+    #[serde(rename = "sandbox.output")]
+    SandboxOutput {
+        /// Output stream: `"stdout"` or `"stderr"`.
+        stream: String,
+        /// Output data fragment.
+        data: String,
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
     // Errors and Completion
     // ─────────────────────────────────────────────────────────────────────
     /// An error occurred during streaming.
@@ -228,6 +240,7 @@ pub fn event_name(evt: &NormalizedEvent) -> &'static str {
         NormalizedEvent::ToolCallComplete { .. } => "tool_call.complete",
         NormalizedEvent::ToolResult { .. } => "tool_result",
         NormalizedEvent::Usage { .. } => "usage",
+        NormalizedEvent::SandboxOutput { .. } => "sandbox.output",
         NormalizedEvent::Error { .. } => "error",
         NormalizedEvent::Done => "done",
     }
@@ -364,6 +377,16 @@ pub fn agui_sse_event(evt: &NormalizedEvent, request_id: &str) -> String {
                 "total_tokens": total_tokens,
                 "cached_tokens": cached_tokens,
                 "cache_creation_tokens": cache_creation_tokens
+            }),
+        ),
+        NormalizedEvent::SandboxOutput { stream, data } => (
+            "agui.sandbox.output",
+            serde_json::json!({
+                "kind": "sandbox",
+                "phase": "output",
+                "request_id": request_id,
+                "stream": stream,
+                "data": data
             }),
         ),
         NormalizedEvent::Error { message, code } => (

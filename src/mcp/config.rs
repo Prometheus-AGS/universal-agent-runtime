@@ -16,6 +16,9 @@ pub enum McpServerEntry {
         args: Vec<String>,
         #[serde(default)]
         env: HashMap<String, String>,
+        /// When true, the MCP server process runs inside a sandbox.
+        #[serde(default)]
+        sandboxed: bool,
     },
     RemoteHttp {
         url: String,

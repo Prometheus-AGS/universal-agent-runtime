@@ -39,6 +39,7 @@ model-build = ["dep:burn-import"]
 sqlx = []
 tauri = []
 wasm-runtime = ["dep:wasmtime", "dep:wasmtime-wasi"]
+sandbox-microsandbox = ["dep:microsandbox"]
 
 
 [dependencies]
@@ -192,6 +193,9 @@ dirs = "6.0.0"
 
 # Filesystem watcher for skill hot-reload
 notify = "7"
+
+# Microsandbox — hardware VM isolation for sandboxed code execution (feature-gated)
+microsandbox = { version = "0.3", optional = true }
 
 # Universal LLM client — 142+ providers, streaming, tool calling
 liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", features = ["full"] }

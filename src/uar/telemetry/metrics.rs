@@ -101,6 +101,39 @@ pub fn set_active_sessions(count: f64) {
     gauge!("uar_active_sessions").set(count);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Sandbox Metrics
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Record sandbox creation.
+pub fn record_sandbox_created(runner_type: &str, language: &str) {
+    let labels = [
+        ("runner_type", runner_type.to_string()),
+        ("language", language.to_string()),
+    ];
+    counter!("uar_sandbox_created_total", &labels).increment(1);
+}
+
+/// Record sandbox execution duration.
+pub fn record_sandbox_execution(language: &str, exit_code_class: &str, duration_secs: f64) {
+    let labels = [
+        ("language", language.to_string()),
+        ("exit_code_class", exit_code_class.to_string()),
+    ];
+    histogram!("uar_sandbox_execution_duration_seconds", &labels).record(duration_secs);
+}
+
+/// Set active sandbox count gauge.
+pub fn set_active_sandboxes(count: f64) {
+    gauge!("uar_sandbox_active").set(count);
+}
+
+/// Record sandbox error.
+pub fn record_sandbox_error(error_type: &str) {
+    let labels = [("error_type", error_type.to_string())];
+    counter!("uar_sandbox_errors_total", &labels).increment(1);
+}
+
 /// Record MCP server status.
 pub fn set_mcp_server_status(server_name: &str, healthy: bool) {
     let labels = [("server_name", server_name.to_string())];
