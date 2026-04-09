@@ -70,7 +70,7 @@ pub async fn auth_middleware(
     // Health probe endpoints must always be reachable without credentials
     // so that Kubernetes liveness and readiness probes pass.
     let path = request.uri().path();
-    if matches!(path, "/health" | "/healthz" | "/readyz") {
+    if matches!(path, "/health" | "/healthz" | "/readyz" | "/metrics") {
         return Ok(next.run(request).await);
     }
 

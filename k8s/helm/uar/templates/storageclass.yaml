@@ -1,0 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.storageClass.name }}
+  labels:
+    {{- include "uar.labels" . | nindent 4 }}
+provisioner: {{ .Values.storageClass.provisioner }}
+volumeBindingMode: {{ .Values.storageClass.volumeBindingMode }}
+reclaimPolicy: {{ .Values.storageClass.reclaimPolicy }}
+allowVolumeExpansion: {{ .Values.storageClass.allowVolumeExpansion }}
+parameters:
+  {{- toYaml .Values.storageClass.parameters | nindent 2 }}

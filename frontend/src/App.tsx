@@ -5,6 +5,7 @@ import { ChatPage } from "@/pages/chat-page";
 import { AdminPage } from "@/pages/admin-page";
 import { AboutPage } from "@/pages/about-page";
 import { Toaster } from "sonner";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { useThreadHydration } from "@/stores/thread-registry-store";
 
 const queryClient = new QueryClient({
@@ -16,6 +17,7 @@ function AppRoutes() {
   useThreadHydration();
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
+      <OfflineBanner />
       <TopNav />
       <Routes>
         {/* Chat — activeThreadId from store drives which thread is shown */}

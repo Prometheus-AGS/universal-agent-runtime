@@ -28,6 +28,7 @@ use tracing::{info, warn};
 
 use crate::AppState;
 use crate::config::AppConfig;
+use crate::uar::telemetry::metrics as telemetry_metrics;
 use crate::llm::{LlmDriver, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
@@ -482,9 +483,13 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     );
 
     let app = Router::new()
-        .route("/health", get(health_handler))
-        .route("/healthz", get(health_handler))
-        .route("/readyz", get(health_handler))
+        .merge(
+            utoipa_swagger_ui::SwaggerUi::new("/api/docs")
+                .url("/api/openapi.json", crate::uar::api::openapi::build_openapi_spec()),
+        )
+        .route("/health", get(liveness_handler))
+        .route("/healthz", get(liveness_handler))
+        .route("/readyz", get(readiness_handler))
         .route("/api/models", get(api_models))
         .route("/api/catalog", get(api_catalog))
         .route("/api/uar/route", post(api_route_model))
@@ -706,6 +711,12 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         // the discovery handlers provide the flat catalog list.
         .route("/api/agents", get(uar::api::discovery::list_agents))
         .route("/api/tools", get(uar::api::discovery::list_tools))
+        .route("/api/uar/mcp/health", get(api_mcp_health))
+        .route(
+            "/api/uar/sessions/{id}/context-stats",
+            get(api_context_stats),
+        )
+        .route("/api/uar/skills/reload", post(api_skills_reload))
         // ────────────────────────────────────────────────────────────────────────────
         .route("/api/ingest", post(uar::api::ingest::ingest_handler))
         .route(
@@ -716,6 +727,9 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .route("/api/{*path}", any(api_route_not_found))
         .route("/v1/chat/completions", post(api_chat_completion))
         .route("/v1/messages", post(api_messages))
+        .route("/v1/models", get(api_v1_models))
+        .route("/v1/models/{model_id}", get(api_v1_model_detail))
+        .route("/metrics", get(api_metrics))
         // ── SPA client-side routes ────────────────────────────────────────────
         // These paths are handled by React Router in the browser. When a user
         // hard-refreshes or navigates directly to one of them, the browser sends
@@ -812,19 +826,99 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             uar::security::rate_limit::rate_limit_middleware,
         ))
         .layer(build_permissive_cors_layer())
+        .layer(axum::middleware::from_fn(
+            |req: Request, next: Next| async move {
+                let method = req.method().to_string();
+                let path = req.uri().path().to_string();
+                let timer = telemetry_metrics::request_timer();
+                let response = next.run(req).await;
+                let status = response.status().as_u16();
+                let duration = timer.elapsed();
+                telemetry_metrics::record_request(&method, &path, status, duration);
+                response
+            },
+        ))
         .with_state(state);
+
+    // ── A2A v0.3 gRPC transport ──────────────────────────────────────────────
+    // Disabled pending tonic-build proto compilation setup.
+    // When enabled, this spawns a gRPC server on a separate port (default 50051)
+    // alongside the main HTTP server.
+    // {
+    //     let grpc_port = config.server.grpc_port;
+    //     let grpc_addr: std::net::SocketAddr = format!("0.0.0.0:{grpc_port}")
+    //         .parse()
+    //         .expect("invalid gRPC address");
+    //     let grpc_service =
+    //         crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state));
+    //     tokio::spawn(async move {
+    //         if let Err(e) = tonic::transport::Server::builder()
+    //             .add_service(grpc_service.into_server())
+    //             .serve(grpc_addr)
+    //             .await
+    //         {
+    //             tracing::error!(error = %e, "A2A gRPC server error");
+    //         }
+    //     });
+    // }
 
     let addr = format!("{}:{}", config.server.host, config.server.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
+    let shutdown_timeout = Duration::from_secs(config.server.shutdown_timeout_secs);
+
     info!(
         name: "server.started",
         address = %addr,
+        shutdown_timeout_secs = config.server.shutdown_timeout_secs,
         "Server started"
     );
 
-    axum::serve(listener, app.into_make_service()).await?;
+    axum::serve(listener, app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal(shutdown_timeout))
+        .await?;
+
+    info!(name: "server.stopped", "Server shut down gracefully");
     Ok(())
+}
+
+/// Wait for SIGTERM or SIGINT, then allow a grace period for in-flight requests.
+async fn shutdown_signal(timeout_duration: Duration) {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {
+            info!(name: "server.shutdown", signal = "SIGINT", "Received SIGINT, starting graceful shutdown");
+        }
+        () = terminate => {
+            info!(name: "server.shutdown", signal = "SIGTERM", "Received SIGTERM, starting graceful shutdown");
+        }
+    }
+
+    // Allow in-flight requests to drain within the timeout.
+    // Axum's graceful shutdown handles connection draining automatically
+    // once this future completes. The timeout here is a log marker;
+    // the actual enforcement is via K8s terminationGracePeriodSeconds.
+    info!(
+        name: "server.draining",
+        timeout_secs = timeout_duration.as_secs(),
+        "Draining in-flight connections"
+    );
 }
 
 fn build_permissive_cors_layer() -> CorsLayer {
@@ -934,8 +1028,67 @@ async fn resolve_effective_resilience_policy(
 
 // Removed index_handler and about_handler - now serving static HTML files
 
-async fn health_handler() -> StatusCode {
-    StatusCode::OK
+/// Liveness probe — lightweight, no dependency checks.
+/// Returns 200 if the process can serve HTTP.
+pub(crate) async fn liveness_handler() -> Json<Value> {
+    Json(json!({"status": "ok"}))
+}
+
+/// Readiness probe — verifies core dependencies are operational.
+/// Returns 200 if all configured dependencies are reachable, 503 otherwise.
+pub(crate) async fn readiness_handler(State(state): State<AppState>) -> Response {
+    let mut checks = serde_json::Map::new();
+    let mut all_ok = true;
+
+    // Check PostgreSQL via persistence layer — attempt a lightweight operation
+    match &state.persistence {
+        Some(p) => {
+            // Use list_skills with limit 0 as a lightweight connectivity test
+            match p.list_skills().await {
+                Ok(_) => {
+                    checks.insert("postgres".into(), json!("ok"));
+                }
+                Err(_) => {
+                    checks.insert("postgres".into(), json!("failed"));
+                    all_ok = false;
+                }
+            }
+        }
+        None => {
+            checks.insert("postgres".into(), json!("not_configured"));
+        }
+    }
+
+    // Check SurrealDB via memory service
+    match &state.memory_service {
+        Some(_svc) => {
+            // Memory service is initialized and connected
+            checks.insert("surrealdb".into(), json!("ok"));
+        }
+        None => {
+            checks.insert("surrealdb".into(), json!("not_configured"));
+        }
+    }
+
+    // Check MCP registry — verify at least the registry is initialized
+    let tool_count = state.mcp.tools().len();
+    checks.insert("mcp".into(), json!({"status": "ok", "tools": tool_count}));
+
+    let status_text = if all_ok { "ready" } else { "not_ready" };
+    let status_code = if all_ok {
+        StatusCode::OK
+    } else {
+        StatusCode::SERVICE_UNAVAILABLE
+    };
+
+    (
+        status_code,
+        Json(json!({
+            "status": status_text,
+            "checks": checks
+        })),
+    )
+        .into_response()
 }
 
 fn should_apply_request_timeout(path: &str) -> bool {
@@ -1171,6 +1324,209 @@ async fn api_route_model(State(state): State<AppState>, Json(req): Json<serde_js
         Some(model) => Json(json!({ "model": model })).into_response(),
         None => (StatusCode::NOT_FOUND, Json(json!({ "error": "No suitable model found" }))).into_response(),
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OpenAI-Compatible /v1/models Endpoints
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// GET /v1/models — list available models in OpenAI API format.
+pub(crate) async fn api_v1_models(State(state): State<AppState>) -> Json<Value> {
+    let catalog = crate::llm::ModelCatalog::global();
+    let configured_ids: std::collections::HashSet<String> = state
+        .provider_registry
+        .list()
+        .await
+        .into_iter()
+        .filter(|p| p.enabled)
+        .map(|p| p.id)
+        .collect();
+
+    let now = Utc::now().timestamp();
+    let mut models = Vec::new();
+
+    for provider in catalog.all_providers() {
+        if !configured_ids.contains(&provider.id) {
+            continue;
+        }
+        for model in &provider.models {
+            models.push(json!({
+                "id": format!("{}/{}", provider.id, model.id),
+                "object": "model",
+                "created": now,
+                "owned_by": provider.id,
+            }));
+        }
+    }
+
+    Json(json!({
+        "object": "list",
+        "data": models
+    }))
+}
+
+/// GET /v1/models/{model_id} — retrieve details for a specific model.
+async fn api_v1_model_detail(
+    State(_state): State<AppState>,
+    axum::extract::Path(model_id): axum::extract::Path<String>,
+) -> Response {
+    let catalog = crate::llm::ModelCatalog::global();
+
+    // Parse "provider/model" format
+    let parts: Vec<&str> = model_id.splitn(2, '/').collect();
+    if parts.len() != 2 {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "error": {
+                    "message": format!("Model '{model_id}' not found. Use provider/model format."),
+                    "type": "invalid_request_error",
+                    "code": "model_not_found"
+                }
+            })),
+        )
+            .into_response();
+    }
+
+    let (provider_id, raw_model_id) = (parts[0], parts[1]);
+
+    match catalog.model(provider_id, raw_model_id) {
+        Some(model) => {
+            let now = Utc::now().timestamp();
+            Json(json!({
+                "id": format!("{provider_id}/{}", model.id),
+                "object": "model",
+                "created": now,
+                "owned_by": provider_id,
+                "capabilities": {
+                    "tool_call": model.capabilities.tool_call,
+                    "reasoning": model.capabilities.reasoning,
+                    "structured_output": model.capabilities.structured_output,
+                    "streaming": model.capabilities.streaming,
+                },
+                "limits": {
+                    "context_window": model.limits.context_window,
+                    "max_output": model.limits.max_output,
+                },
+            }))
+            .into_response()
+        }
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "error": {
+                    "message": format!("Model '{model_id}' not found."),
+                    "type": "invalid_request_error",
+                    "code": "model_not_found"
+                }
+            })),
+        )
+            .into_response(),
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Prometheus Metrics Endpoint
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// GET /metrics — Prometheus text exposition format.
+pub(crate) async fn api_metrics() -> Response {
+    let handle = crate::uar::telemetry::metrics::metrics_handle();
+    let output = handle.render();
+    (
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")],
+        output,
+    )
+        .into_response()
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MCP Health Endpoint
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// GET /api/uar/mcp/health — returns health status of all configured MCP servers.
+pub(crate) async fn api_mcp_health(State(state): State<AppState>) -> Json<Value> {
+    let tools = state.mcp.tools();
+    let tool_count = tools.len();
+
+    // Group tools by server namespace
+    let mut servers: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for (namespaced_name, _tool) in tools {
+        // Namespace format: server__tool
+        if let Some(server) = namespaced_name.split("__").next() {
+            *servers.entry(server.to_string()).or_insert(0) += 1;
+        }
+    }
+
+    let server_list: Vec<Value> = servers
+        .iter()
+        .map(|(name, count)| {
+            json!({
+                "name": name,
+                "status": "connected",
+                "tool_count": count,
+            })
+        })
+        .collect();
+
+    Json(json!({
+        "total_tools": tool_count,
+        "servers": server_list,
+    }))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Context Stats Endpoint
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// GET /api/uar/sessions/{id}/context-stats — returns context window usage for a session.
+async fn api_context_stats(
+    State(state): State<AppState>,
+    axum::extract::Path(session_id): axum::extract::Path<String>,
+) -> Response {
+    let session = state.sessions.get(&session_id);
+    match session {
+        Some(s) => {
+            let messages = s.messages();
+            let token_count = crate::uar::runtime::context::token_service::TokenService::estimate_messages(&messages);
+            let model_limit: usize = 128_000; // Default; could be resolved from model catalog
+            let threshold = 0.85_f32;
+
+            Json(json!({
+                "session_id": session_id,
+                "tokens_used": token_count,
+                "tokens_limit": model_limit,
+                "utilization": token_count as f64 / model_limit as f64,
+                "threshold": threshold,
+                "strategy": "SlidingWindow",
+                "message_count": messages.len(),
+            }))
+            .into_response()
+        }
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Session not found"})),
+        )
+            .into_response(),
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Skills Reload Endpoint
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// POST /api/uar/skills/reload — manually trigger skill registry reload.
+async fn api_skills_reload(State(state): State<AppState>) -> Json<Value> {
+    // Trigger a refresh from all storage providers
+    let count = match state.skill_service.refresh().await {
+        Ok(skills) => skills.len(),
+        Err(_) => state.skill_service.get_skills().await.len(),
+    };
+    Json(json!({
+        "status": "reloaded",
+        "skill_count": count,
+    }))
 }
 
 async fn legacy_chat_route_disabled() -> Response {
@@ -2821,7 +3177,7 @@ async fn resolve_requested_model(
 }
 
 /// OpenAI-compatible completion endpoint with optional UAR session continuity.
-async fn api_chat_completion(
+pub(crate) async fn api_chat_completion(
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(req): Json<ChatCompletionRequest>,

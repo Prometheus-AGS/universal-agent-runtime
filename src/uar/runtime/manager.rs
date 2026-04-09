@@ -18,8 +18,9 @@ use std::{
     collections::{HashMap, VecDeque},
     fmt::Write,
     sync::Arc,
+    time::Duration,
 };
-use tokio::sync::{Mutex, RwLock, broadcast};
+use tokio::sync::{Mutex, RwLock, broadcast, oneshot};
 use tracing::instrument;
 use uuid::Uuid;
 
@@ -93,6 +94,10 @@ pub struct RunManager {
     provider_registry: Option<Arc<crate::llm::ProviderRegistry>>,
     /// Native skill registry for in-process tool execution
     native_skills: Arc<NativeSkillRegistry>,
+    /// Pending tool-call approval channels: run_id -> oneshot sender.
+    /// When a tool call requires approval, a oneshot channel is inserted here.
+    /// The approval endpoint sends `true` (approved) or `false` (rejected) through it.
+    pending_approvals: Arc<Mutex<HashMap<String, oneshot::Sender<bool>>>>,
 }
 
 /// Memory mutation tool name sets — used to detect side effects in ToolEnd events.
@@ -163,6 +168,15 @@ fn memory_mutation_from_tool_end(evt: &NormalizedEvent, run_id: &str) -> Option<
         scope,
         memory_type,
     })
+}
+
+/// Simple heuristic to determine if a tool call requires user approval before execution.
+/// Tools whose names contain destructive or write-oriented keywords are flagged.
+/// This will be replaced by Cedar policy evaluation in a future milestone.
+fn tool_requires_approval(tool_name: &str) -> bool {
+    let lower = tool_name.to_lowercase();
+    const RISKY_KEYWORDS: &[&str] = &["delete", "remove", "write", "drop", "truncate", "destroy"];
+    RISKY_KEYWORDS.iter().any(|kw| lower.contains(kw))
 }
 
 impl std::fmt::Debug for RunManager {
@@ -251,6 +265,7 @@ impl RunManager {
             skill_service: None,
             provider_registry: None,
             native_skills,
+            pending_approvals: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -270,6 +285,22 @@ impl RunManager {
     pub fn with_native_skills(mut self, registry: Arc<NativeSkillRegistry>) -> Self {
         self.native_skills = registry;
         self
+    }
+
+    /// Resolve a pending tool-call approval for the given run.
+    /// Returns `true` if an approval was pending and the decision was delivered,
+    /// `false` if no pending approval was found for that run_id.
+    pub async fn resolve_approval(&self, run_id: &str, approved: bool) -> bool {
+        let sender = {
+            let mut approvals = self.pending_approvals.lock().await;
+            approvals.remove(run_id)
+        };
+        if let Some(tx) = sender {
+            let _ = tx.send(approved);
+            true
+        } else {
+            false
+        }
     }
 
     #[instrument(
@@ -609,7 +640,70 @@ impl RunManager {
             mcp,
             Arc::clone(&self.native_skills),
         ) {
-            Ok(o) => Arc::new(o),
+            Ok(o) => {
+                // Wire up tool approval gate
+                let approval_run_id = run_id.clone();
+                let approval_emitter = emitter.clone();
+                let approval_pending = Arc::clone(&self.pending_approvals);
+                let gate: crate::llm::ToolApprovalGate = Arc::new(move |tool_call_id, tool_name, arguments_json, call_index| {
+                    let run_id = approval_run_id.clone();
+                    let emitter = approval_emitter.clone();
+                    let pending = Arc::clone(&approval_pending);
+                    Box::pin(async move {
+                        if !tool_requires_approval(&tool_name) {
+                            return crate::llm::ToolApprovalResult::Approved;
+                        }
+                        let risk_reason = format!(
+                            "Tool '{}' may perform a destructive or write operation",
+                            tool_name
+                        );
+                        // Emit approval-required event to the client
+                        emitter.emit(NormalizedEvent::ToolCallApprovalRequired {
+                            run_id: run_id.clone(),
+                            call_index,
+                            tool_call_id: tool_call_id.clone(),
+                            name: tool_name.clone(),
+                            arguments_json: arguments_json.clone(),
+                            risk_reason: risk_reason.clone(),
+                        }).await;
+                        // Create oneshot channel and wait for approval
+                        let (tx, rx) = oneshot::channel();
+                        {
+                            let mut approvals = pending.lock().await;
+                            approvals.insert(run_id.clone(), tx);
+                        }
+                        // Wait with 5-minute timeout; auto-reject on timeout or channel error
+                        match tokio::time::timeout(Duration::from_secs(300), rx).await {
+                            Ok(Ok(true)) => {
+                                tracing::info!(run_id = %run_id, tool = %tool_name, "Tool call approved by user");
+                                crate::llm::ToolApprovalResult::Approved
+                            }
+                            Ok(Ok(false)) => {
+                                tracing::info!(run_id = %run_id, tool = %tool_name, "Tool call rejected by user");
+                                crate::llm::ToolApprovalResult::Rejected {
+                                    reason: "Rejected by user".to_string(),
+                                }
+                            }
+                            Ok(Err(_)) => {
+                                tracing::warn!(run_id = %run_id, tool = %tool_name, "Approval channel dropped");
+                                crate::llm::ToolApprovalResult::Rejected {
+                                    reason: "Approval channel closed".to_string(),
+                                }
+                            }
+                            Err(_) => {
+                                // Timeout — clean up the pending entry
+                                let mut approvals = pending.lock().await;
+                                approvals.remove(&run_id);
+                                tracing::warn!(run_id = %run_id, tool = %tool_name, "Tool approval timed out after 5 minutes");
+                                crate::llm::ToolApprovalResult::Rejected {
+                                    reason: "Approval timed out after 5 minutes".to_string(),
+                                }
+                            }
+                        }
+                    })
+                });
+                Arc::new(o.with_tool_approval_gate(gate))
+            }
             Err(e) => {
                 tracing::error!(error = %e, "Failed to create orchestrator");
                 return run_id;

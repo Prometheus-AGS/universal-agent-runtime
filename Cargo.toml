@@ -28,6 +28,7 @@ rustls = { version = "0.23.37", features = ["ring"] }
 
 [build-dependencies]
 burn-import = { version = "0.20.1", optional = true }
+tonic-build = "0.14"
 ureq = "3.2.0"
 serde_json = "1.0"
 serde = { version = "1", features = ["derive"] }
@@ -58,6 +59,10 @@ tokio-util = { version = "0.7", features = ["codec", "io"] }
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.147"
+
+# gRPC (A2A v0.3 transport)
+tonic = "0.14"
+prost = "0.13"
 
 # Async utilities
 futures = "0.3.32"
@@ -185,9 +190,16 @@ num_cpus = "1.16"
 petgraph = "0.8"
 dirs = "6.0.0"
 
+# Filesystem watcher for skill hot-reload
+notify = "7"
+
 # Universal LLM client — 142+ providers, streaming, tool calling
 liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", features = ["full"] }
 secrecy = { version = "0.10", features = ["serde"] }
+
+# OpenAPI / Swagger documentation
+utoipa = { version = "5", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
 
 # Leptos SSR (minimal templating)
 

@@ -109,6 +109,17 @@ pub enum NormalizedEvent {
         artifact: ArtifactPayload,
     },
 
+    /// A tool call requires user approval before execution.
+    /// The run is paused until the user responds via the approval endpoint.
+    ToolCallApprovalRequired {
+        run_id: String,
+        call_index: usize,
+        tool_call_id: String,
+        name: String,
+        arguments_json: String,
+        risk_reason: String,
+    },
+
     /// A run completed. Optionally carries token usage and cost estimates
     /// when the persistence layer or LLM provider reports them.
     RunDoneWithUsage {

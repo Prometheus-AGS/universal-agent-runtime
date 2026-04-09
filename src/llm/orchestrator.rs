@@ -24,6 +24,7 @@
 //! ```
 
 use std::collections::BTreeMap;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use futures::{Stream, StreamExt};
@@ -38,6 +39,28 @@ use super::{
     LiterLlmDriver, LlmDriver, LlmRequest, Message,
     MessageContent, MessageRole, ToolCall, ToolCallFunction,
 };
+
+/// Result of a tool approval gate check.
+#[derive(Debug, Clone)]
+pub enum ToolApprovalResult {
+    /// Tool is approved for execution.
+    Approved,
+    /// Tool execution was rejected by the user or timed out.
+    Rejected { reason: String },
+}
+
+/// A callback invoked before each tool call execution to allow approval/rejection.
+/// Returns `Approved` to proceed or `Rejected` to skip the tool call.
+pub type ToolApprovalGate = Arc<
+    dyn Fn(
+            String,              // tool_call_id
+            String,              // tool_name
+            String,              // arguments_json
+            usize,               // call_index
+        ) -> Pin<Box<dyn Future<Output = ToolApprovalResult> + Send>>
+        + Send
+        + Sync,
+>;
 
 /// Maximum number of tool loop iterations to prevent infinite loops.
 const MAX_TOOL_ITERATIONS: usize = 10;
@@ -63,6 +86,9 @@ pub struct Orchestrator {
     mcp: Arc<McpRegistry>,
     driver: Arc<dyn LlmDriver>,
     native_skills: Arc<NativeSkillRegistry>,
+    /// Optional gate that is consulted before each tool call execution.
+    /// If `None`, all tool calls are approved automatically.
+    tool_approval_gate: Option<ToolApprovalGate>,
 }
 
 #[allow(clippy::missing_fields_in_debug)]
@@ -101,6 +127,7 @@ impl Orchestrator {
             mcp,
             driver,
             native_skills,
+            tool_approval_gate: None,
         })
     }
 
@@ -116,6 +143,13 @@ impl Orchestrator {
     #[allow(dead_code)]
     pub fn mcp(&self) -> &McpRegistry {
         &self.mcp
+    }
+
+    /// Set a tool approval gate that will be consulted before each tool call.
+    #[must_use]
+    pub fn with_tool_approval_gate(mut self, gate: ToolApprovalGate) -> Self {
+        self.tool_approval_gate = Some(gate);
+        self
     }
 
     /// Start a chat interaction with the given user message.
@@ -427,6 +461,38 @@ impl Orchestrator {
                         tool_name = %tool_name,
                         "Executing tool call"
                     );
+
+                    // Check tool approval gate if configured
+                    if let Some(ref gate) = orchestrator.tool_approval_gate {
+                        let result = gate(
+                            tool_call.id.clone(),
+                            tool_name.clone(),
+                            tool_call.function.arguments.clone(),
+                            idx,
+                        ).await;
+                        if let ToolApprovalResult::Rejected { reason } = result {
+                            tracing::warn!(
+                                request_id = %request_id,
+                                tool_id = %tool_call.id,
+                                tool_name = %tool_name,
+                                reason = %reason,
+                                "Tool call rejected by approval gate"
+                            );
+                            let rejection_content = format!("Tool call rejected: {reason}");
+                            yield NormalizedEvent::ToolResult {
+                                id: tool_call.id.clone(),
+                                name: tool_name.clone(),
+                                content: rejection_content.clone(),
+                                success: false,
+                            };
+                            message_json.push(serde_json::json!({
+                                "role": "tool",
+                                "tool_call_id": tool_call.id,
+                                "content": rejection_content
+                            }));
+                            continue;
+                        }
+                    }
 
                     let (content, success) = {
                         // Priority: check native skills first, then fall back to MCP

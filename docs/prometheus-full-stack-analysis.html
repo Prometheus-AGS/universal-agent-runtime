@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prometheus Full-Stack — Agent Architecture Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #0B0F14;
+    --bg-card:      #0F1620;
+    --bg-raised:    #141C28;
+    --bg-deep:      #090D11;
+    --border:       #1E2D40;
+    --border-soft:  #172030;
+    --ember:        #E04E28;
+    --ember-bright: #FF6A3D;
+    --text-primary: #E8EDF3;
+    --text-sec:     #7A92AA;
+    --text-muted:   #3E5268;
+    --green:        #2DB87A;
+    --amber:        #D4A82A;
+    --blue:         #3B82C4;
+    --violet:       #8B5CF6;
+    --teal:         #0EA5A0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 72px 64px 56px;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(224,78,40,0.1) 0%, transparent 68%);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 40%;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,130,196,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 20px;
+  }
+  .hero-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1.08;
+    color: var(--text-primary);
+    max-width: 760px;
+    margin-bottom: 20px;
+  }
+  .hero-title span { color: var(--ember); }
+  .hero-subtitle {
+    font-size: 16px;
+    color: var(--text-sec);
+    max-width: 660px;
+    line-height: 1.7;
+    margin-bottom: 40px;
+  }
+  .hero-systems {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .system-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+  .pill-ember  { color: var(--ember-bright); border-color: rgba(224,78,40,0.4);  background: rgba(224,78,40,0.08); }
+  .pill-blue   { color: #6BA8D6;             border-color: rgba(59,130,196,0.4); background: rgba(59,130,196,0.07); }
+  .pill-green  { color: #5CC99A;             border-color: rgba(45,184,122,0.4); background: rgba(45,184,122,0.07); }
+  .pill-violet { color: #A78BFA;             border-color: rgba(139,92,246,0.4); background: rgba(139,92,246,0.07); }
+  .pill-teal   { color: #4DD4CF;             border-color: rgba(14,165,160,0.4); background: rgba(14,165,160,0.07); }
+
+  /* ── LAYOUT ── */
+  .section {
+    padding: 56px 64px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .section:last-of-type { border-bottom: none; }
+
+  .section-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 27px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .section-intro {
+    font-size: 15px;
+    color: var(--text-sec);
+    max-width: 800px;
+    line-height: 1.75;
+    margin-bottom: 40px;
+  }
+
+  h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 32px 0 12px;
+  }
+  h3:first-child { margin-top: 0; }
+
+  p {
+    font-size: 14px;
+    color: var(--text-sec);
+    line-height: 1.8;
+    margin-bottom: 14px;
+  }
+  p:last-child { margin-bottom: 0; }
+  p strong { color: var(--text-primary); }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: rgba(255,255,255,0.06);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ember-bright);
+  }
+
+  /* ── ARCH DIAGRAM ── */
+  .arch {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px 36px;
+    margin: 24px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-sec);
+    line-height: 1.85;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .arch .hi  { color: var(--ember-bright); font-weight: 700; }
+  .arch .b   { color: #6BA8D6; }
+  .arch .g   { color: #5CC99A; }
+  .arch .v   { color: #A78BFA; }
+  .arch .t   { color: #4DD4CF; }
+  .arch .dim { color: var(--text-muted); }
+  .arch .am  { color: var(--amber); }
+
+  /* ── CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .card-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .card-grid.four  { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px 28px;
+  }
+  .card.ember  { border-color: rgba(224,78,40,0.35); background: rgba(224,78,40,0.04); }
+  .card.blue   { border-color: rgba(59,130,196,0.35); background: rgba(59,130,196,0.04); }
+  .card.green  { border-color: rgba(45,184,122,0.35); background: rgba(45,184,122,0.04); }
+  .card.violet { border-color: rgba(139,92,246,0.35); background: rgba(139,92,246,0.04); }
+  .card.teal   { border-color: rgba(14,165,160,0.35); background: rgba(14,165,160,0.04); }
+
+  .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .card p { font-size: 13px; }
+
+  /* ── TABLES ── */
+  .table-wrap { overflow-x: auto; margin: 24px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  thead th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border-soft); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody td {
+    padding: 11px 14px;
+    color: var(--text-sec);
+    vertical-align: top;
+    line-height: 1.55;
+  }
+  tbody td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+  tr.hi-row td { background: rgba(224,78,40,0.05); }
+  tr.hi-row td:first-child { color: var(--ember-bright); }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-left: 5px;
+  }
+  .b-ember  { color: var(--ember-bright); background: rgba(224,78,40,0.14); border: 1px solid rgba(224,78,40,0.3); }
+  .b-green  { color: #5CC99A;             background: rgba(45,184,122,0.1); border: 1px solid rgba(45,184,122,0.3); }
+  .b-blue   { color: #6BA8D6;             background: rgba(59,130,196,0.1); border: 1px solid rgba(59,130,196,0.3); }
+  .b-violet { color: #A78BFA;             background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); }
+  .b-amber  { color: var(--amber);        background: rgba(212,168,42,0.1); border: 1px solid rgba(212,168,42,0.3); }
+  .b-muted  { color: var(--text-sec);     background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
+  .b-teal   { color: #4DD4CF;             background: rgba(14,165,160,0.1); border: 1px solid rgba(14,165,160,0.3); }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    font-size: 14px;
+    color: var(--text-sec);
+    line-height: 1.75;
+  }
+  .callout strong { color: var(--text-primary); }
+  .callout.ember  { background: rgba(224,78,40,0.06); border: 1px solid rgba(224,78,40,0.25); border-left: 3px solid var(--ember); }
+  .callout.blue   { background: rgba(59,130,196,0.05); border: 1px solid rgba(59,130,196,0.25); border-left: 3px solid var(--blue); }
+  .callout.green  { background: rgba(45,184,122,0.05); border: 1px solid rgba(45,184,122,0.25); border-left: 3px solid var(--green); }
+  .callout.violet { background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.25); border-left: 3px solid var(--violet); }
+  .callout.amber  { background: rgba(212,168,42,0.05); border: 1px solid rgba(212,168,42,0.25); border-left: 3px solid var(--amber); }
+
+  /* ── LISTS ── */
+  ul.styled { list-style: none; padding: 0; margin: 16px 0; }
+  ul.styled li {
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-sec);
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border-soft);
+    line-height: 1.65;
+  }
+  ul.styled li:last-child { border-bottom: none; }
+  ul.styled li::before {
+    content: '→';
+    color: var(--ember);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  ul.styled li strong { color: var(--text-primary); }
+
+  /* ── MCP LAYER DIAGRAM ── */
+  .layer-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin: 24px 0;
+  }
+  .layer {
+    display: flex;
+    align-items: stretch;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .layer-num {
+    width: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--bg-raised);
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+  }
+  .layer-body {
+    flex: 1;
+    padding: 14px 20px;
+    background: var(--bg-card);
+  }
+  .layer-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .layer-desc {
+    font-size: 13px;
+    color: var(--text-sec);
+    line-height: 1.55;
+  }
+  .layer-connector {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 3px 0;
+  }
+
+  /* ── SIGNAL GRID ── */
+  .signal-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin: 28px 0;
+  }
+  .signal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 22px 20px;
+  }
+  .signal-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 5px;
+    color: var(--ember);
+  }
+  .signal.blue  .signal-num { color: var(--blue); }
+  .signal.green .signal-num { color: var(--green); }
+  .signal.violet .signal-num { color: var(--violet); }
+  .signal-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .signal-desc { font-size: 12px; color: var(--text-sec); line-height: 1.5; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+    margin: 40px 0;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    padding: 40px 64px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-brand { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--ember); }
+  .footer-meta  { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); }
+
+  @media (max-width: 860px) {
+    .hero, .section { padding: 40px 24px; }
+    .card-grid, .card-grid.three, .card-grid.four, .signal-grid { grid-template-columns: 1fr; }
+    .footer { flex-direction: column; gap: 12px; padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Prometheus AGS — Full-Stack Architecture Analysis</div>
+  <h1 class="hero-title">The <span>Sovereign Agent</span> Operating Stack</h1>
+  <p class="hero-subtitle">A structural analysis of four Prometheus-ecosystem systems — surreal-memory-server, Universal Agent Runtime, candle-vllm, and the OpenFang UAR driver — operating as an integrated, self-contained agent execution platform with layered MCP, sovereign inference, and persistent memory.</p>
+  <div class="hero-systems">
+    <span class="system-pill pill-ember">candle-vllm</span>
+    <span class="system-pill pill-violet">turboquant-rs</span>
+    <span class="system-pill pill-blue">universal-agent-runtime</span>
+    <span class="system-pill pill-green">surreal-memory-server</span>
+    <span class="system-pill pill-teal">openfang (UAR driver)</span>
+  </div>
+</div>
+
+<!-- SECTION 01: THE SYSTEM AT FULL SCALE -->
+<div class="section">
+  <div class="section-eyebrow">01 — Overview</div>
+  <h2 class="section-title">What the Combination Actually Is</h2>
+  <p class="section-intro">When these four systems operate together they form something the ecosystem does not yet have a clean name for: a <strong>full-stack, sovereign agent execution environment</strong> where inference, memory, tool execution, and agent orchestration are each implemented in Rust, each owned in full, and each independently composable without an external API dependency anywhere in the execution path.</p>
+
+  <div class="signal-grid">
+    <div class="signal">
+      <div class="signal-num">4</div>
+      <div class="signal-lbl">Rust systems</div>
+      <div class="signal-desc">All four layers are Rust-native. No Python runtime, no Node.js agent loop, no cloud SDK dependency in the critical path.</div>
+    </div>
+    <div class="signal blue">
+      <div class="signal-num">3</div>
+      <div class="signal-lbl">MCP layers</div>
+      <div class="signal-desc">MCP operates simultaneously at the inference layer (candle-vllm), the runtime layer (UAR), and the agent OS layer (OpenFang). Independent, composable.</div>
+    </div>
+    <div class="signal green">
+      <div class="signal-num">142+</div>
+      <div class="signal-lbl">LLM providers</div>
+      <div class="signal-desc">Through UAR's liter-llm integration, any provider including candle-vllm itself is reachable with identical API shape from OpenFang agents.</div>
+    </div>
+    <div class="signal violet">
+      <div class="signal-num">$0</div>
+      <div class="signal-lbl">Inference floor</div>
+      <div class="signal-desc">When candle-vllm is the backend, the per-token cost is structural zero — no API key, no metered call, no external service dependency.</div>
+    </div>
+  </div>
+
+  <div class="callout ember">
+    <p><strong>The central claim:</strong> No existing open-source agent framework combines Rust-native agent orchestration, self-hosted inference with KV compression, SurrealDB-backed semantic memory, and a multi-level MCP protocol mesh in a single deployable stack. The combination described here is novel not because each component is novel in isolation — it is novel because every layer is production-grade, each layer is independently owned, and all four layers compose without translation loss at any seam.</p>
+  </div>
+</div>
+
+<!-- SECTION 02: SYSTEM ARCHITECTURE -->
+<div class="section">
+  <div class="section-eyebrow">02 — Architecture</div>
+  <h2 class="section-title">Full-Stack Execution Model</h2>
+  <p class="section-intro">Each system occupies a distinct layer. The execution flow from an OpenFang agent producing a response to a user involves all four layers in sequence. The diagram below shows the complete execution path at the level of crate boundaries and protocol seams.</p>
+
+<div class="arch">
+<span class="dim">═══════════════════════════════════════════════════════════════════════════════</span>
+<span class="v">  OPENFANG AGENT OS</span>                                    <span class="dim">(openfang — 14 crates)</span>
+<span class="dim">═══════════════════════════════════════════════════════════════════════════════</span>
+
+  <span class="dim">Agent Manifest:  provider = "uar"  │  model = "candle-vllm/qwen2.5-14b"</span>
+
+  <span class="v">openfang-runtime</span>
+     ├── <span class="v">drivers/uar.rs</span>             <span class="dim">── UarDriver: wraps UAR LiterLlmDriver</span>
+     │     └── <span class="b">universal_agent_runtime::</span><span class="b">LiterLlmDriver</span>
+     │               └── liter-llm DefaultClient  <span class="dim">→ any provider/model string</span>
+     │
+     ├── <span class="v">mcp.rs</span>                       <span class="dim">── MCP client (stdio + SSE)</span>
+     │     └── connects to <span class="g">surreal-memory-server</span> HTTP MCP endpoint
+     │           └── 42 memory tools: <span class="g">mcp_memory_*  mcp_kg_*  mcp_task_*</span>
+     │
+     ├── Skills system                  <span class="dim">── 60 bundled + FangHub + ClawHub</span>
+     │     └── SKILL.md injected into system prompt at runtime
+     │
+     └── 16-layer security model        <span class="dim">── WASM sandbox, RBAC, taint, audit chain</span>
+
+<span class="dim">───────────────────────────────────────────────────────────────────────────────</span>
+<span class="dim">  Protocol seam: HTTP  (OpenAI-compatible Chat Completions + liter-llm routing)</span>
+<span class="dim">───────────────────────────────────────────────────────────────────────────────</span>
+
+<span class="b">  UNIVERSAL AGENT RUNTIME (UAR)</span>                       <span class="dim">(Rust, Axum 0.8)</span>
+<span class="dim">═══════════════════════════════════════════════════════════════════════════════</span>
+
+  <span class="b">LiterLlmDriver</span>                 <span class="dim">── unified provider/model addressing</span>
+     └── base_url → <span class="hi">candle-vllm</span> HTTP endpoint   <span class="dim">OR</span>   any cloud provider
+     └── NormalizedEvent stream: message.delta / tool_call.* / usage / done
+
+  <span class="b">Orchestrator</span>                   <span class="dim">── MCP tool loop + streaming</span>
+     ├── MCP Registry               <span class="dim">── discovers tools from mcp.json</span>
+     │     └── connects to <span class="g">surreal-memory-server</span> /mcp/http
+     └── Memory system
+           └── UAR_MEMORY__* config → <span class="g">surreal-memory-server</span> REST API
+                 ├── auto-capture after each turn
+                 └── hybrid injection before each LLM call
+
+  <span class="b">liter-llm compile-time catalog</span>  <span class="dim">── 142+ providers baked into binary at build.rs</span>
+     └── candle-vllm registered as OpenAI-compat provider
+           └── base_url = http://localhost:2000
+
+<span class="dim">───────────────────────────────────────────────────────────────────────────────</span>
+<span class="dim">  Protocol seam: HTTP  (OpenAI-compatible API  /v1/chat/completions)</span>
+<span class="dim">───────────────────────────────────────────────────────────────────────────────</span>
+
+<span class="hi">  CANDLE-VLLM  (Prometheus fork, feature/god-mode)</span>     <span class="dim">(Rust, 4-crate workspace)</span>
+<span class="dim">═══════════════════════════════════════════════════════════════════════════════</span>
+
+  <span class="hi">Parking-lot scheduler</span>          <span class="dim">── resource-aware OS thread pool + backpressure</span>
+  <span class="hi">MCP client</span>  (src/mcp/)         <span class="dim">── connects to surreal-memory-server at this layer too</span>
+  <span class="hi">Tool calling</span>                   <span class="dim">── streaming deltas, 4 format auto-detect</span>
+  <span class="hi">CacheEngine</span>
+     └── <span class="am">CompressedStore</span>         <span class="dim">── TurboQuant 3-bit transparent KV compression</span>
+           └── turboquant-rs       <span class="dim">── SIMD FWHT + Lloyd-Max + bitpack</span>
+                 └── ~5× effective context  │  ~5× concurrent request capacity
+
+<span class="dim">───────────────────────────────────────────────────────────────────────────────</span>
+<span class="dim">  Protocol seam: HTTP + MCP (stdio / Streamable HTTP)</span>
+<span class="dim">───────────────────────────────────────────────────────────────────────────────</span>
+
+<span class="g">  SURREAL-MEMORY-SERVER</span>                                <span class="dim">(Rust, Axum 0.8)</span>
+<span class="dim">═══════════════════════════════════════════════════════════════════════════════</span>
+
+  <span class="g">42 MCP tools</span>: scoped memory · knowledge graph · Graph-RAG · TaskStreams · Mindmaps
+  <span class="g">REST API</span>: /api/v1/memory  /api/v1/entities  /api/v1/mindmaps  /api/v1/taskstreams
+  <span class="g">A2A SSE</span>: /a2a/tasks/:id/events          <span class="dim">── agent-to-agent task coordination</span>
+  <span class="g">Embedding providers</span>: Local (bge-small/base/large)  │  OpenAI  │  Cohere
+  <span class="g">TTL decay worker</span>                          <span class="dim">── background memory expiry</span>
+
+  <span class="g">SurrealDB</span> (embedded or server)
+     ├── HNSW vector indexes             <span class="dim">── semantic search</span>
+     ├── BM25 full-text                  <span class="dim">── keyword search</span>
+     ├── RocksDB store                   <span class="dim">── durable persistence</span>
+     └── Schema v6: entities · memory · task_streams · model_profiles · mindmaps
+</div>
+</div>
+
+<!-- SECTION 03: MCP LAYERING -->
+<div class="section">
+  <div class="section-eyebrow">03 — MCP Protocol Mesh</div>
+  <h2 class="section-title">Three Independent MCP Layers — One Memory Substrate</h2>
+  <p class="section-intro">The most architecturally significant property of this stack is that MCP operates independently at three distinct layers, each with a different purpose and scope. surreal-memory-server sits behind all three of them as a shared memory substrate — producing a result that no single-layer MCP integration can achieve.</p>
+
+  <div class="layer-stack">
+    <div class="layer">
+      <div class="layer-num" style="color:#A78BFA; background: rgba(139,92,246,0.08);">L3</div>
+      <div class="layer-body">
+        <div class="layer-name">OpenFang — Agent OS MCP Client <span class="badge b-violet">openfang-runtime/mcp.rs</span></div>
+        <div class="layer-desc">OpenFang connects to external MCP servers at kernel boot time. surreal-memory-server's HTTP MCP endpoint (<code>/mcp/http</code>) is registered in <code>config.toml</code>. The 42 memory tools become namespaced as <code>mcp_memory_add</code>, <code>mcp_kg_create_entity</code>, <code>mcp_task_stream_context</code>, etc., and are available to <strong>every agent in the OpenFang kernel</strong> automatically — no per-agent configuration required. This is the agent-level tool layer: agents explicitly call memory tools as part of their reasoning.</div>
+      </div>
+    </div>
+    <div class="layer-connector">│ memory tools flow up │</div>
+    <div class="layer">
+      <div class="layer-num" style="color:#6BA8D6; background: rgba(59,130,196,0.08);">L2</div>
+      <div class="layer-body">
+        <div class="layer-name">UAR — Runtime MCP Orchestrator <span class="badge b-blue">src/mcp/ + UAR_MEMORY__*</span></div>
+        <div class="layer-desc">UAR operates MCP at the orchestration layer — the tool loop in the Orchestrator discovers and calls MCP tools from <code>mcp.json</code> on every turn. Simultaneously, UAR's dedicated memory system (<code>UAR_MEMORY__ENABLED=true</code>) connects to surreal-memory-server via REST and runs <strong>automatic capture and injection</strong>: after each assistant turn it extracts facts and stores them, and before each LLM call it retrieves relevant memories and prepends a structured recall block to the system prompt. This layer operates transparently — the LLM receives richer context without the agent explicitly asking for it.</div>
+      </div>
+    </div>
+    <div class="layer-connector">│ memory injected into system prompt │</div>
+    <div class="layer">
+      <div class="layer-num" style="color:#FF6A3D; background: rgba(224,78,40,0.08);">L1</div>
+      <div class="layer-body">
+        <div class="layer-name">candle-vllm — Inference Layer MCP Client <span class="badge b-ember">src/mcp/</span></div>
+        <div class="layer-desc">candle-vllm's Prometheus fork includes a hand-rolled MCP client (stdio + HTTP) configured via <code>mcp.json</code>. When surreal-memory-server is registered here, memory tools are injected directly into the OpenAI-compatible <code>/v1/chat/completions</code> tool list — before any token is generated. This means that a raw API call to candle-vllm <em>without any agent framework</em> still has access to all 42 memory tools. This is the deepest possible integration point: memory as infrastructure, not as middleware.</div>
+      </div>
+    </div>
+    <div class="layer-connector">│ tools injected at inference layer │</div>
+    <div class="layer">
+      <div class="layer-num" style="color:#4DD4CF; background: rgba(14,165,160,0.08);">S</div>
+      <div class="layer-body">
+        <div class="layer-name">surreal-memory-server — Shared Memory Substrate <span class="badge b-teal">42 MCP tools · REST API · A2A SSE</span></div>
+        <div class="layer-desc">Serves all three layers simultaneously over a single SurrealDB instance. HNSW vector search and BM25 full-text are available to all callers. The dual-transport design (stdio for Claude Desktop, HTTP for programmatic) means the same memory substrate is available for local development, production Docker deployments, and Kubernetes pods without any transport-layer reconfiguration.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout blue">
+    <p><strong>The three-layer effect:</strong> When all three MCP connections are live, the model's context is shaped at three different points in the request lifecycle — by the inference server (L1, tool injection before decoding), by the runtime (L2, system prompt injection before dispatch), and by the agent loop (L3, explicit tool calls within reasoning). No single integration achieves all three. The stack does.</p>
+  </div>
+</div>
+
+<!-- SECTION 04: INFERENCE ROUTING -->
+<div class="section">
+  <div class="section-eyebrow">04 — Inference Routing</div>
+  <h2 class="section-title">OpenFang → UAR Driver → candle-vllm</h2>
+  <p class="section-intro">The UAR driver in OpenFang (<code>crates/openfang-runtime/src/drivers/uar.rs</code>) is the seam that makes candle-vllm a first-class provider for any OpenFang agent. The implementation is clean: the driver wraps UAR's <code>LiterLlmDriver</code>, which in turn points to the candle-vllm endpoint via liter-llm's OpenAI-compatible routing.</p>
+
+  <div class="arch"><span class="dim">Agent manifest configuration:</span>
+
+  [model]
+  provider = <span class="g">"uar"</span>
+  model    = <span class="g">"candle-vllm/qwen2.5-32b-q4"</span>   <span class="dim"># any liter-llm provider/model string</span>
+
+  [env]
+  UAR_LLM__BASE_URL = <span class="hi">"http://localhost:2000"</span>     <span class="dim"># candle-vllm endpoint</span>
+  UAR_LLM__MODEL    = <span class="hi">"candle-vllm/qwen2.5-32b-q4"</span>
+
+<span class="dim">────────────────────────────────────────────────────────────────────────────</span>
+
+<span class="dim">Execution path for each agent turn:</span>
+
+  <span class="v">OpenFang agent loop</span>
+     → <span class="v">UarDriver::stream()</span>
+           → <span class="v">UarDriver::make_driver(model)</span>
+                 → <span class="b">LiterLlmDriver::new</span>(client_config, model)
+                       → <span class="b">liter_llm::DefaultClient</span>
+                             → HTTP POST <span class="hi">http://localhost:2000/v1/chat/completions</span>
+                                   ↓
+                             <span class="hi">candle-vllm parking-lot scheduler</span>
+                                   ├── resource accounting (GPU blocks)
+                                   ├── backpressure (queue / 503)
+                                   └── <span class="am">CompressedStore (TurboQuant)</span>
+                                         ↓
+                                   <span class="hi">pipeline.forward()</span>  (Qwen2.5 / Llama / DeepSeek / etc.)
+                                         ↓
+                             ChatCompletionChunk SSE stream
+                                   ↓
+                       NormalizedEvent stream
+                             message.delta · tool_call.delta · tool_call.complete · done
+                                   ↓
+     → StreamEvent → <span class="v">OpenFang tool runner</span> (if tool calls present)
+           → executes tools (built-in + skill + MCP) → returns results
+           → loops until EndTurn or max continuations
+
+<span class="dim">────────────────────────────────────────────────────────────────────────────</span>
+
+<span class="dim">Message normalization handled by liter-llm (transparent):</span>
+
+  Anthropic <span class="dim">tool_use blocks</span>    ──┐
+  Google <span class="dim">functionCall</span>          ──┤→ OpenAI-style tool_calls[]
+  Mistral <span class="dim">tool_calls</span>          ──┘
+  candle-vllm <span class="dim">streaming deltas</span> → NormalizedEvent::ToolCallDelta / ToolCallComplete</div>
+
+  <h3>What the UarDriver Enables That the Other Drivers Cannot</h3>
+  <div class="card-grid">
+    <div class="card blue">
+      <div class="card-label">Provider Breadth</div>
+      <div class="card-title">142+ providers from a single agent manifest field</div>
+      <p>Any OpenFang agent can address <code>openai/gpt-4o</code>, <code>anthropic/claude-opus-4</code>, <code>groq/llama-3.3-70b</code>, or <code>candle-vllm/qwen2.5-32b-q4</code> by changing a single string — no driver swap, no rebuild, no config restructure.</p>
+    </div>
+    <div class="card ember">
+      <div class="card-label">Cost Floor</div>
+      <div class="card-title">Self-hosted candle-vllm as the zero-cost provider</div>
+      <p>When <code>UAR_LLM__BASE_URL</code> points at a local or private candle-vllm instance, the per-token cost is zero. Routing between self-hosted and cloud providers can be encoded in the agent manifest — different agents in the same kernel can use different cost tiers without any code change.</p>
+    </div>
+    <div class="card violet">
+      <div class="card-label">Streaming Fidelity</div>
+      <div class="card-title">Full streaming tool-call delta support preserved end-to-end</div>
+      <p>The UAR driver correctly emits <code>StreamEvent::ToolUseStart</code>, <code>ToolInputDelta</code>, and <code>ToolUseEnd</code> events by tracking <code>call_index</code> across partial chunks — matching the streaming behavior of the native OpenFang drivers. No polling, no buffering.</p>
+    </div>
+    <div class="card green">
+      <div class="card-label">Compile-Time Catalog</div>
+      <div class="card-title">Provider capabilities baked in — no runtime discovery</div>
+      <p>UAR's <code>build.rs</code> embeds the full liter-llm provider catalog at compile time. candle-vllm as an OpenAI-compatible provider gets capability metadata (tool support, context limits, cost) resolved at build time — the agent framework makes routing decisions without any network round-trip.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 05: MEMORY ARCHITECTURE -->
+<div class="section">
+  <div class="section-eyebrow">05 — Memory Architecture</div>
+  <h2 class="section-title">surreal-memory-server as the Unified Memory Plane</h2>
+  <p class="section-intro">surreal-memory-server is not just UAR's memory backend. It is the shared memory substrate for the entire stack — accessible simultaneously by OpenFang agents (via MCP), by UAR (via REST + MCP), and by candle-vllm inference sessions (via MCP tool injection). The consequence is that memory written by one layer is immediately readable by any other layer in the same session.</p>
+
+  <h3>Memory Capability Matrix</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>OpenFang (L3 MCP)</th>
+          <th>UAR (L2 REST + MCP)</th>
+          <th>candle-vllm (L1 MCP)</th>
+          <th>Significance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="hi-row">
+          <td>Scoped memory (4 types × 5 scopes)</td>
+          <td><span class="badge b-green">✓ MCP tool</span></td>
+          <td><span class="badge b-green">✓ Auto-capture + inject</span></td>
+          <td><span class="badge b-green">✓ MCP tool</span></td>
+          <td>Facts persist cross-session at user, agent, and global scope</td>
+        </tr>
+        <tr>
+          <td>Knowledge graph (entities + relations)</td>
+          <td><span class="badge b-green">✓ MCP tool</span></td>
+          <td><span class="badge b-green">✓ kg_* tools via MCP</span></td>
+          <td><span class="badge b-green">✓ MCP tool</span></td>
+          <td>Structured world model accumulates across all interactions</td>
+        </tr>
+        <tr>
+          <td>Graph-RAG traversal</td>
+          <td><span class="badge b-green">✓</span></td>
+          <td><span class="badge b-green">✓</span></td>
+          <td><span class="badge b-green">✓</span></td>
+          <td>find_path, expand_neighbors available to all layers</td>
+        </tr>
+        <tr>
+          <td>TaskStreams (token-budgeted workflow context)</td>
+          <td><span class="badge b-green">✓ MCP tool</span></td>
+          <td><span class="badge b-green">✓ task_stream_* tools</span></td>
+          <td><span class="badge b-green">✓ MCP tool</span></td>
+          <td>Multi-step workflow state shared across agent-inference boundary</td>
+        </tr>
+        <tr>
+          <td>Hybrid search (BM25 + HNSW vector)</td>
+          <td><span class="badge b-green">✓</span></td>
+          <td><span class="badge b-green">✓ with configurable weighting</span></td>
+          <td><span class="badge b-green">✓</span></td>
+          <td>Weighted recall (default 0.7 vector / 0.3 BM25) across all layers</td>
+        </tr>
+        <tr>
+          <td>Auto-capture from conversation turns</td>
+          <td><span class="badge b-muted">Manual (explicit tool call)</span></td>
+          <td><span class="badge b-green">✓ Automatic (UAR_MEMORY__AUTO_CAPTURE)</span></td>
+          <td><span class="badge b-muted">Manual</span></td>
+          <td>UAR is the autonomous memory layer — no agent prompt engineering needed</td>
+        </tr>
+        <tr>
+          <td>System prompt injection</td>
+          <td><span class="badge b-muted">Manual (read tool + format)</span></td>
+          <td><span class="badge b-green">✓ Automatic (inject_context)</span></td>
+          <td><span class="badge b-muted">Via tool call result</span></td>
+          <td>UAR ensures relevant past context is always present before the LLM sees the query</td>
+        </tr>
+        <tr>
+          <td>Temporal history (graph at time T)</td>
+          <td><span class="badge b-green">✓</span></td>
+          <td><span class="badge b-green">✓</span></td>
+          <td><span class="badge b-green">✓</span></td>
+          <td>Any layer can query the knowledge state at any past timestamp</td>
+        </tr>
+        <tr>
+          <td>A2A SSE stream</td>
+          <td><span class="badge b-muted">OpenFang A2A client used</span></td>
+          <td><span class="badge b-muted">Not wired directly</span></td>
+          <td><span class="badge b-muted">Not wired directly</span></td>
+          <td>Agent-to-agent task events; natural integration point for multi-agent workflows</td>
+        </tr>
+        <tr>
+          <td>Mindmaps (persona / ideation generation)</td>
+          <td><span class="badge b-green">✓ MCP tool</span></td>
+          <td><span class="badge b-green">✓</span></td>
+          <td><span class="badge b-green">✓</span></td>
+          <td>Structural reasoning artifacts persist alongside memory and graph data</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout green">
+    <p><strong>The convergence effect:</strong> UAR's automatic capture runs after every inference turn — including turns served by candle-vllm. Facts extracted by UAR are immediately retrievable by OpenFang agents via the L3 MCP connection and by subsequent candle-vllm sessions via the L1 MCP tool injection. The memory state is not per-layer. It is global to the stack, with SurrealDB as the single source of truth.</p>
+  </div>
+</div>
+
+<!-- SECTION 06: SKILLS ARCHITECTURE -->
+<div class="section">
+  <div class="section-eyebrow">06 — Skills &amp; Agentic Capability</div>
+  <h2 class="section-title">Three-Level Skills Architecture</h2>
+  <p class="section-intro">Skills in this stack operate at three independent levels, each additive. The combination gives any agent in the OpenFang kernel access to a capabilities envelope that no single framework provides alone.</p>
+
+  <div class="card-grid three">
+    <div class="card violet">
+      <div class="card-label">Level 1 — OpenFang Native Skills</div>
+      <div class="card-title">60 bundled skills + FangHub + ClawHub</div>
+      <p>Compiled into the OpenFang binary via <code>include_str!()</code>. Skills are <code>skill.toml</code> + Python/WASM/Node.js/PromptOnly code. SKILL.md auto-parsed for OpenClaw cross-ecosystem compatibility. Prompt injection scanner protects all skill content. Activated per-agent via <code>[skills]</code> in the agent manifest — the LLM receives SKILL.md domain expertise injected into its system prompt at runtime.</p>
+    </div>
+    <div class="card blue">
+      <div class="card-label">Level 2 — UAR Native Skills</div>
+      <div class="card-title">MCP-first tool execution + compile-time model routing</div>
+      <p>UAR's Orchestrator runs the tool loop against any MCP server registered in <code>mcp.json</code>. surreal-memory-server's 42 tools are a UAR-level skill set. The compile-time model catalog enables UAR to select the best available model for each capability requirement — routing specific tasks to candle-vllm versus a cloud provider based on tool support, context, and cost ceiling.</p>
+    </div>
+    <div class="card ember">
+      <div class="card-label">Level 3 — candle-vllm MCP Skills</div>
+      <div class="card-title">Memory tools injected at the inference layer</div>
+      <p>When surreal-memory-server is registered in candle-vllm's <code>mcp.json</code>, its tools are injected directly into every chat completion request — below the agent framework, below the runtime. A model that does not know it is inside OpenFang or UAR still has access to the memory substrate. This is capabilities-as-infrastructure: skills at the inference layer, not the application layer.</p>
+    </div>
+  </div>
+
+  <div class="callout ember">
+    <p><strong>Multi-level skills composition:</strong> An OpenFang agent using the UAR driver with candle-vllm backend inherits skills from all three levels simultaneously. The SKILL.md domain context shapes how the LLM reasons; UAR's tool loop enables it to act across MCP tools; candle-vllm's MCP injection ensures memory access exists even if both upper layers fail to call it explicitly. The redundancy is intentional — robust agent behavior does not depend on perfect prompt engineering at any single layer.</p>
+  </div>
+</div>
+
+<!-- SECTION 07: INTEGRATION SEAMS -->
+<div class="section">
+  <div class="section-eyebrow">07 — Integration Seams</div>
+  <h2 class="section-title">What Is Wired vs. What Needs Configuration</h2>
+  <p class="section-intro">The four systems are architecturally compatible and the integration code is in place. The connections below distinguish what is already implemented (code exists, protocol compatibility confirmed) from what requires runtime configuration or is an identified gap.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Integration Point</th>
+          <th>Status</th>
+          <th>What It Requires</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="hi-row">
+          <td>OpenFang UarDriver → UAR LiterLlmDriver</td>
+          <td><span class="badge b-green">Implemented</span></td>
+          <td><code>provider = "uar"</code> in agent manifest</td>
+          <td>Full streaming + tool-call delta support. Production-ready.</td>
+        </tr>
+        <tr class="hi-row">
+          <td>UAR LiterLlmDriver → candle-vllm</td>
+          <td><span class="badge b-green">Implemented</span></td>
+          <td><code>UAR_LLM__BASE_URL</code> + <code>UAR_LLM__MODEL</code></td>
+          <td>OpenAI-compatible endpoint; NormalizedEvent stream intact.</td>
+        </tr>
+        <tr class="hi-row">
+          <td>UAR memory system → surreal-memory-server REST</td>
+          <td><span class="badge b-green">Implemented</span></td>
+          <td><code>UAR_MEMORY__ENABLED=true</code> + <code>UAR_MEMORY__SURREAL_ENDPOINT</code></td>
+          <td>Auto-capture + inject. Embedding provider configurable.</td>
+        </tr>
+        <tr class="hi-row">
+          <td>candle-vllm MCP client → surreal-memory-server</td>
+          <td><span class="badge b-green">Implemented</span></td>
+          <td>Entry in candle-vllm <code>mcp.json</code></td>
+          <td>HTTP MCP transport at <code>/mcp/http</code>. All 42 tools injected.</td>
+        </tr>
+        <tr>
+          <td>OpenFang MCP client → surreal-memory-server</td>
+          <td><span class="badge b-green">Implemented</span></td>
+          <td>Entry in OpenFang <code>config.toml [[mcp_servers]]</code></td>
+          <td>SSE or stdio transport. Tools namespaced as <code>mcp_memory_*</code>.</td>
+        </tr>
+        <tr>
+          <td>TurboQuant KV compression inside candle-vllm</td>
+          <td><span class="badge b-green">Implemented</span></td>
+          <td><code>kvcache_compression.bits: 3</code> in <code>models.yaml</code></td>
+          <td>Transparent to all upstream layers. ~5× context multiplier.</td>
+        </tr>
+        <tr>
+          <td>surreal-memory-server local Candle embeddings</td>
+          <td><span class="badge b-green">Implemented</span></td>
+          <td><code>EMBEDDING_PROVIDER=local</code></td>
+          <td>BGE-small/base/large via Candle. Zero API key. GPU-accelerated optional.</td>
+        </tr>
+        <tr>
+          <td>OpenFang A2A client → surreal-memory-server A2A SSE</td>
+          <td><span class="badge b-amber">Config gap</span></td>
+          <td>Register surreal-memory-server in OpenFang <code>[a2a.external_agents]</code></td>
+          <td>Protocol match exists. Wiring not yet documented. Natural next integration.</td>
+        </tr>
+        <tr>
+          <td>candle-vllm parking-lot scheduler ← UAR concurrency pressure</td>
+          <td><span class="badge b-blue">Automatic</span></td>
+          <td>No configuration — scheduler handles backpressure transparently</td>
+          <td>503 returned when GPU capacity exhausted. UAR should implement retry logic.</td>
+        </tr>
+        <tr>
+          <td>OpenFang multi-agent → surreal-memory-server shared scope</td>
+          <td><span class="badge b-blue">Architectural</span></td>
+          <td>Use <code>scope = "global"</code> on memory writes</td>
+          <td>Global memory scope crosses agent boundaries. Multi-agent knowledge sharing works by design.</td>
+        </tr>
+        <tr>
+          <td>surreal-memory-server TTL decay tuning for UAR auto-capture</td>
+          <td><span class="badge b-amber">Config gap</span></td>
+          <td>Configure <code>SURREAL_*</code> TTL env vars to match UAR session lifetime</td>
+          <td>UAR session-scoped memories should expire when sessions close. Requires alignment.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 08: WHAT THIS ENABLES -->
+<div class="section">
+  <div class="section-eyebrow">08 — Strategic Significance</div>
+  <h2 class="section-title">What the Combined Stack Makes Possible</h2>
+  <p class="section-intro">The strategic implications compound across two axes: what individual developers and the Prometheus AGS product portfolio can do with this stack that they could not do before, and what position in the market this combination describes.</p>
+
+  <h3>Capabilities Unlocked</h3>
+  <ul class="styled">
+    <li><strong>Fully sovereign agent deployment with durable memory</strong> — An OpenFang agent using candle-vllm as backend with surreal-memory-server as memory plane has zero external API dependencies. No token charge, no cloud dependency, no data leaving the deployment perimeter. This is a viable architecture for regulated environments (banking, healthcare) where data sovereignty is a hard constraint.</li>
+    <li><strong>Persistent world model across sessions</strong> — The knowledge graph accumulates across every conversation, every agent, every session. The surreal-memory-server's temporal history API allows querying "what did the system know at time T" — audit trail for regulated use cases where knowing what the agent knew is as important as what it did.</li>
+    <li><strong>Cost-routing at the agent manifest level</strong> — Per-agent provider routing in the UarDriver means a single OpenFang kernel can run some agents on candle-vllm (zero marginal cost, local hardware) and others on frontier APIs (Claude, GPT-5) — routing by task complexity, capability requirement, or cost ceiling, all encoded declaratively in agent manifests without code changes.</li>
+    <li><strong>Multi-agent shared context via global memory scope</strong> — Any agent writing to <code>scope = "global"</code> produces knowledge immediately available to every other agent in the kernel. Multi-agent workflows can coordinate through shared structured memory rather than explicit message passing — the knowledge graph is the coordination substrate.</li>
+    <li><strong>Context length multiplied by TurboQuant</strong> — For long-running agent workflows that accumulate large TaskStream histories or require deep document context, the 5× effective context multiplier from TurboQuant KV compression directly extends what is possible on fixed hardware. A 32K context window becomes a 160K context window without changing the model or the hardware.</li>
+    <li><strong>OpenFang's 40 channel adapters on self-hosted inference</strong> — OpenFang's Telegram, Discord, Slack, WhatsApp (and 36 other) channel adapters route incoming messages to agents that now have candle-vllm as their inference backend. A WhatsApp message can trigger an agent whose response is generated locally, whose memory is stored in SurrealDB, and whose cost to the operator is approximately zero beyond hardware depreciation.</li>
+    <li><strong>Prompt injection protection at every layer</strong> — OpenFang's skill scanner, WASM dual-metered sandbox, SSRF protection, and 16-layer security model operate above candle-vllm's MCP tool injection. A malicious tool result from surreal-memory-server (in a compromised deployment) would hit OpenFang's loop guard and tool result truncation before it could affect the agent's behavior.</li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <h3>Competitive Position</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>This Stack</th>
+          <th>LangGraph / CrewAI</th>
+          <th>OpenClaw</th>
+          <th>vLLM standalone</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="hi-row">
+          <td>Rust-native end-to-end</td>
+          <td><span class="badge b-green">Full stack</span></td>
+          <td><span class="badge b-muted">Python</span></td>
+          <td><span class="badge b-muted">TypeScript</span></td>
+          <td><span class="badge b-muted">Python/C++</span></td>
+        </tr>
+        <tr>
+          <td>Self-hosted inference (KV compressed)</td>
+          <td><span class="badge b-green">✓ TurboQuant 3-bit</span></td>
+          <td><span class="badge b-muted">No</span></td>
+          <td><span class="badge b-muted">No</span></td>
+          <td><span class="badge b-amber">Inference only</span></td>
+        </tr>
+        <tr>
+          <td>Three-level MCP integration</td>
+          <td><span class="badge b-green">✓</span></td>
+          <td><span class="badge b-muted">Single layer</span></td>
+          <td><span class="badge b-muted">Single layer</span></td>
+          <td><span class="badge b-muted">None</span></td>
+        </tr>
+        <tr>
+          <td>Persistent vector + graph memory</td>
+          <td><span class="badge b-green">SurrealDB HNSW</span></td>
+          <td><span class="badge b-amber">External</span></td>
+          <td><span class="badge b-muted">File-based</span></td>
+          <td><span class="badge b-muted">None</span></td>
+        </tr>
+        <tr>
+          <td>Agent OS (schedules, channels, WASM sandbox)</td>
+          <td><span class="badge b-green">OpenFang 16 security layers</span></td>
+          <td><span class="badge b-muted">None</span></td>
+          <td><span class="badge b-muted">Partial</span></td>
+          <td><span class="badge b-muted">None</span></td>
+        </tr>
+        <tr>
+          <td>Data sovereignty (zero cloud dependency)</td>
+          <td><span class="badge b-green">Full — all layers owned</span></td>
+          <td><span class="badge b-muted">Requires cloud LLM</span></td>
+          <td><span class="badge b-muted">Requires cloud LLM</span></td>
+          <td><span class="badge b-amber">Inference only</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout violet">
+    <p><strong>The position this describes:</strong> The Prometheus stack is the only Rust-native, fully self-hostable agent operating environment that combines KV-compressed inference, persistent graph-vector memory, three-level MCP integration, and an enterprise-grade security model in a single deployable configuration. The OpenFang UAR driver is the bridge that makes it composable — OpenFang agents gain access to 142+ providers and self-hosted inference without any changes to the OpenFang codebase beyond the <code>drivers/uar.rs</code> file that is already implemented and shipped.</p>
+  </div>
+</div>
+
+<!-- SECTION 09: KNOWN GAPS -->
+<div class="section">
+  <div class="section-eyebrow">09 — Known Gaps &amp; Next Actions</div>
+  <h2 class="section-title">What Still Needs to Close</h2>
+
+  <div class="card-grid">
+    <div class="card amber">
+      <div class="card-label">Configuration Gap</div>
+      <div class="card-title">UAR 503 handling for candle-vllm backpressure</div>
+      <p>When candle-vllm's parking-lot scheduler returns HTTP 503 (queue depth exceeded), UAR should implement exponential backoff retry logic in <code>LiterLlmDriver</code> rather than surfacing the error directly to the agent loop. candle-vllm's contract is correct — the client behavior needs alignment.</p>
+    </div>
+    <div class="card amber">
+      <div class="card-label">Configuration Gap</div>
+      <div class="card-title">Session TTL alignment between UAR and surreal-memory-server</div>
+      <p>UAR auto-captures session-scoped memories at every turn. surreal-memory-server's TTL decay worker needs to be configured to expire session-scoped entries when UAR sessions close — otherwise session memories accumulate indefinitely. Requires coordination between <code>UAR_MEMORY__*</code> session lifetime settings and surreal-memory-server's TTL environment variables.</p>
+    </div>
+    <div class="card blue">
+      <div class="card-label">Integration Opportunity</div>
+      <div class="card-title">OpenFang A2A → surreal-memory-server A2A SSE</div>
+      <p>surreal-memory-server exposes <code>GET /a2a/tasks/:id/events</code> as an SSE stream for agent-to-agent task coordination. Registering surreal-memory-server as an external agent in OpenFang's <code>[a2a]</code> config creates a direct task coordination channel between the agent OS and the memory plane — useful for long-running background memory operations (bulk embedding, graph compaction) that shouldn't block the agent loop.</p>
+    </div>
+    <div class="card blue">
+      <div class="card-label">Integration Opportunity</div>
+      <div class="card-title">Stratum offline model profiling → candle-vllm models.yaml generation</div>
+      <p>The Stratum project (offline vLLM profile tool) produces <code>.stratum</code> profile files for models. These profiles contain the per-model memory and performance characteristics that could feed candle-vllm's <code>models.yaml</code> configuration automatically — closing the loop between model selection, VRAM budgeting, and TurboQuant compression policy without manual configuration.</p>
+    </div>
+  </div>
+
+  <div class="callout green">
+    <p><strong>The configuration gaps are not blockers.</strong> The architecture is complete. Every protocol seam is implemented and tested. The gaps above are operational tuning items — aligning runtime parameters between systems that are already protocol-compatible. The integration opportunity items represent the next layer of structural depth that this stack is uniquely positioned to achieve.</p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-brand">travisjames.ai</div>
+  <div class="footer-meta">Prometheus AGS · Full-Stack Architecture Analysis · April 2026 · Confidential</div>
+</div>
+
+</body>
+</html>

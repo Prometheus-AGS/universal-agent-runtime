@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "config-state.schema.json",
+  "title": "ConfigWizardSession",
+  "description": "State for a UAR config wizard session",
+  "type": "object",
+  "required": ["session_name", "mode", "status", "created_at"],
+  "properties": {
+    "session_name": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]{1,50}$",
+      "description": "Unique session identifier"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["wizard", "advise", "validate", "migrate", "k8s", "model_select", "stack"],
+      "description": "Active mode for this session"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "complete", "failed", "paused"],
+      "description": "Current session status"
+    },
+    "current_phase": {
+      "type": "string",
+      "description": "Name of the currently executing phase"
+    },
+    "phases_complete": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Ordered list of completed phases"
+    },
+    "wizard_answers": {
+      "$ref": "#/$defs/WizardAnswers"
+    },
+    "model_selection": {
+      "$ref": "#/$defs/ModelSelection"
+    },
+    "output_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["filename", "path"],
+        "properties": {
+          "filename": { "type": "string" },
+          "path": { "type": "string" },
+          "written": { "type": "boolean", "default": false },
+          "size_bytes": { "type": "integer" }
+        }
+      }
+    },
+    "candle_vllm_url": {
+      "type": ["string", "null"],
+      "format": "uri",
+      "description": "candle-vllm instance URL"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "WizardAnswers": {
+      "type": "object",
+      "properties": {
+        "deployment_scenario": {
+          "type": "string",
+          "enum": ["local-dev", "docker-compose", "kubernetes", "cloud-vm", "candle-vllm-stack"]
+        },
+        "llm_provider": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["cloud", "candle-vllm", "ollama", "lm-studio", "custom"] },
+            "provider_name": { "type": "string" },
+            "base_url": { "type": ["string", "null"] },
+            "model": { "type": "string" },
+            "candle_vllm_url": { "type": ["string", "null"] }
+          }
+        },
+        "database": {
+          "type": "object",
+          "properties": {
+            "provider": { "type": "string", "enum": ["postgres", "surreal"] },
+            "connection_pattern": { "type": "string" }
+          }
+        },
+        "security": {
+          "type": "object",
+          "properties": {
+            "jwt_required": { "type": "boolean" }
+          }
+        },
+        "optional_features": {
+          "type": "object",
+          "properties": {
+            "external_cache": { "type": "boolean" },
+            "memory_enabled": { "type": "boolean" },
+            "file_processing": { "type": "boolean" },
+            "vision": { "type": "boolean" }
+          }
+        },
+        "route_to_model_select": { "type": "boolean" }
+      }
+    },
+    "ModelSelection": {
+      "$ref": "model-select-state.schema.json#/$defs/ModelSelectOutput"
+    }
+  }
+}

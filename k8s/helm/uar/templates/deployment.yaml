@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "uar.fullname" . }}
+  namespace: {{ include "uar.namespace" . }}
+  labels:
+    {{- include "uar.appLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.uar.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "uar.appSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "uar.appSelectorLabels" . | nindent 8 }}
+        app.kubernetes.io/part-of: universal-agent-runtime
+    spec:
+      serviceAccountName: {{ include "uar.fullname" . }}-app
+      terminationGracePeriodSeconds: {{ .Values.uar.terminationGracePeriodSeconds }}
+      containers:
+        - name: uar
+          image: "{{ .Values.uar.image.repository }}{{- if .Values.uar.image.tag }}:{{ .Values.uar.image.tag }}{{- end }}"
+          imagePullPolicy: {{ .Values.uar.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "uar.fullname" . }}-config
+            - secretRef:
+                name: {{ include "uar.fullname" . }}-secrets
+          livenessProbe:
+            {{- toYaml .Values.uar.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.uar.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.uar.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: skills
+              mountPath: /app/skills
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: skills
+          emptyDir: {}

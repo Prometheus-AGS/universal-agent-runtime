@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "model-select-state.schema.json",
+  "title": "ModelSelectState",
+  "description": "State and output for the model selection advisor phase",
+  "type": "object",
+  "required": ["session_name", "phase", "hardware_profile"],
+  "properties": {
+    "session_name": { "type": "string" },
+    "phase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6,
+      "description": "1=hardware, 2=requirements, 3=research, 4=scoring, 5=turboquant, 6=output"
+    },
+    "hardware_profile": {
+      "type": "object",
+      "required": ["platform"],
+      "properties": {
+        "platform": { "type": "string", "enum": ["cuda", "metal", "cpu", "cloud"] },
+        "vram_gb": { "type": ["number", "null"] },
+        "ram_gb": { "type": ["number", "null"] },
+        "gpu_count": { "type": "integer", "default": 1 },
+        "gpu_model": { "type": ["string", "null"] },
+        "apple_chip": { "type": ["string", "null"], "description": "e.g. M4 Pro, M3 Max" }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "properties": {
+        "context_window_k": { "type": "integer", "description": "Minimum context in K tokens" },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["text", "tools", "vision", "reasoning", "code"]
+          }
+        },
+        "priority": { "type": "string", "enum": ["speed", "quality", "balanced"] },
+        "deployment": { "type": "string", "enum": ["local", "cloud", "hybrid"] },
+        "budget_tier": { "type": "string", "enum": ["free", "low", "medium", "unlimited"] }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["hf_id", "name", "score"],
+        "properties": {
+          "hf_id": { "type": "string" },
+          "name": { "type": "string" },
+          "provider": { "type": "string", "description": "candle-vllm, openai, anthropic, etc." },
+          "params_b": { "type": "number" },
+          "dtype": { "type": "string" },
+          "vram_gb": { "type": "number" },
+          "context_k": { "type": "integer" },
+          "tps_reference": { "type": ["number", "null"] },
+          "cost_per_1m_input": { "type": ["number", "null"] },
+          "capabilities": {
+            "type": "object",
+            "properties": {
+              "tools": { "type": "boolean" },
+              "vision": { "type": "boolean" },
+              "reasoning": { "type": "boolean" }
+            }
+          },
+          "score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "vram_fit_score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "capability_score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "reasoning": { "type": "string" }
+        }
+      }
+    },
+    "selected_model": {
+      "type": "object",
+      "required": ["hf_id", "name", "dtype", "mem_mb"],
+      "properties": {
+        "hf_id": { "type": "string" },
+        "name": { "type": "string", "description": "models.yaml alias" },
+        "weight_file": { "type": ["string", "null"], "description": "GGUF weight file if applicable" },
+        "dtype": { "type": "string", "enum": ["bf16", "f16", "f32"] },
+        "vram_gb": { "type": "number" },
+        "context_window_k": { "type": "integer" },
+        "mem_mb": { "type": "integer", "description": "params.mem for models.yaml" },
+        "max_num_seqs": { "type": "integer" },
+        "block_size": { "type": "integer", "default": 16 },
+        "supports_vision": { "type": "boolean", "default": false },
+        "supports_tools": { "type": "boolean", "default": true },
+        "prefill_chunk_size": { "type": ["integer", "null"] }
+      }
+    },
+    "turboquant": {
+      "type": "object",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "bits": { "type": "integer", "enum": [2, 3, 4] },
+        "policy_type": {
+          "type": "string",
+          "enum": ["always", "threshold_tokens", "memory_pressure"]
+        },
+        "policy_yaml": { "type": "string", "description": "Ready-to-embed YAML fragment" },
+        "headroom_pct": { "type": "number" },
+        "compression_ratio": { "type": "number" },
+        "effective_context_k": { "type": "integer" }
+      }
+    },
+    "research_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string" },
+          "title": { "type": "string" },
+          "relevant_info": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ModelSelectOutput": {
+      "type": "object",
+      "description": "Exported for use in config-state.schema.json",
+      "$ref": "#"
+    }
+  }
+}

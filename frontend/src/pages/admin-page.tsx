@@ -9,6 +9,8 @@ import { KnowledgePage } from "@/admin/pages/knowledge-page";
 import { MemoryPage } from "@/admin/pages/memory-page";
 import { CompilerPage } from "@/admin/pages/compiler-page";
 import { SettingsPage } from "@/admin/pages/settings-page";
+import { A2uiTestingPage } from "@/admin/A2uiTestingPage";
+import { McpHealthPage } from "@/admin/McpHealthPage";
 
 function renderAdminContent(section: AdminSection) {
   switch (section) {
@@ -22,6 +24,8 @@ function renderAdminContent(section: AdminSection) {
     case "memory": return <MemoryPage />;
     case "compiler": return <CompilerPage />;
     case "settings": return <SettingsPage />;
+    case "a2ui-testing": return <A2uiTestingPage />;
+    case "mcp-health": return <McpHealthPage />;
   }
 }
 

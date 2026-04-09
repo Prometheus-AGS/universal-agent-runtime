@@ -15,6 +15,7 @@ use liter_llm::{
 };
 
 use crate::normalized::NormalizedEvent;
+use crate::uar::telemetry::metrics as telemetry_metrics;
 
 use super::{LlmDriver, LlmRequest};
 
@@ -112,6 +113,8 @@ impl LlmDriver for LiterLlmDriver {
         // Collect chunks eagerly into a Vec, then stream owned events.
         // This is necessary because liter-llm's BoxStream borrows from the client
         // and cannot be moved into a 'static stream directly.
+        let metrics_model = self.model.clone();
+
         let chunk_stream = self.client.chat_stream(chat_req).await?;
         let chunks: Vec<Result<ChatCompletionChunk, _>> = chunk_stream.collect().await;
 
@@ -200,6 +203,18 @@ impl LlmDriver for LiterLlmDriver {
                             cache_creation_tokens: None,
                         });
                     }
+
+                    // Record LLM token metrics
+                    let (provider, model_name) = metrics_model
+                        .split_once('/')
+                        .unwrap_or(("unknown", &metrics_model));
+                    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+                    telemetry_metrics::record_llm_tokens(
+                        provider,
+                        model_name,
+                        usage.prompt_tokens as u64,
+                        usage.completion_tokens as u64,
+                    );
                 }
             }
 

@@ -93,6 +93,37 @@ pub struct AppConfig {
 pub struct ServerConfig {
     pub port: u16,
     pub host: String,
+    #[serde(default = "ServerConfig::default_shutdown_timeout_secs")]
+    pub shutdown_timeout_secs: u64,
+    #[serde(default = "ServerConfig::default_log_format")]
+    pub log_format: LogFormat,
+    /// Port for the A2A v0.3 gRPC transport. Defaults to 50051.
+    /// Configurable via `UAR_SERVER__GRPC_PORT`.
+    #[serde(default = "ServerConfig::default_grpc_port")]
+    pub grpc_port: u16,
+}
+
+impl ServerConfig {
+    fn default_shutdown_timeout_secs() -> u64 {
+        30
+    }
+
+    fn default_log_format() -> LogFormat {
+        LogFormat::Json
+    }
+
+    fn default_grpc_port() -> u16 {
+        50051
+    }
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum LogFormat {
+    #[default]
+    Json,
+    Compact,
+    Pretty,
 }
 
 #[derive(Debug, Deserialize, Clone)]

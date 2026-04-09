@@ -1,4 +1,5 @@
 pub mod a2a;
+pub mod openapi;
 pub mod actors;
 pub mod adapters;
 pub mod auth;

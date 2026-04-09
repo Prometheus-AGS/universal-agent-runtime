@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UAR Tool Normalizer — uar-tool-normalizer Crate Specification</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:           #0B0F14;
+    --fg:           #E8EDF3;
+    --card:         #0F1620;
+    --muted:        #141C26;
+    --muted-fg:     #A7B0BC;
+    --border:       #233041;
+    --primary:      #FF6A3D;
+    --primary-dim:  #E04E28;
+    --accent:       #2A1B17;
+    --accent-fg:    #FFB199;
+    --secondary:    #1A2432;
+    --secondary-fg: #E8EDF3;
+    --success:      #22C55E;
+    --success-dim:  rgba(34,197,94,.12);
+    --info:         #60A5FA;
+    --info-dim:     rgba(96,165,250,.12);
+    --warning:      #F59E0B;
+    --warning-dim:  rgba(245,158,11,.12);
+    --violet:       #A78BFA;
+    --violet-dim:   rgba(167,139,250,.12);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    line-height: 1.72;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NAV ── */
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .875rem 2.5rem;
+    background: rgba(11,15,20,.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    letter-spacing: -.02em; color: var(--fg);
+  }
+  .nav-brand span { color: var(--primary); }
+  .nav-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .08em;
+    color: var(--muted-fg); text-transform: uppercase;
+  }
+  .nav-pill {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .06em;
+    color: var(--warning);
+    background: var(--warning-dim);
+    border: 1px solid rgba(245,158,11,.25);
+    border-radius: 999px;
+    padding: .25rem .65rem;
+  }
+  .nav-pill::before {
+    content: ''; display: block;
+    width: 6px; height: 6px;
+    background: var(--warning);
+    border-radius: 50%;
+  }
+
+  /* ── LAYOUT ── */
+  .page-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 3.5rem 2rem 7rem;
+  }
+
+  /* ── HERO ── */
+  .doc-hero {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2.5rem;
+    margin-bottom: 3rem;
+  }
+  .doc-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem; letter-spacing: .12em;
+    color: var(--primary); text-transform: uppercase;
+    margin-bottom: .75rem;
+  }
+  .doc-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    font-weight: 700;
+    letter-spacing: -.03em; line-height: 1.06;
+    color: var(--fg);
+    margin-bottom: .5rem;
+  }
+  .doc-title em { color: var(--primary); font-style: normal; }
+  .doc-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem; letter-spacing: .05em;
+    color: var(--muted-fg);
+    margin-top: .75rem; margin-bottom: 1.25rem;
+    max-width: 70ch;
+    line-height: 1.6;
+  }
+  .doc-meta-row {
+    display: flex; flex-wrap: wrap; gap: .5rem;
+    margin-top: 1.25rem;
+  }
+  .badge {
+    font-family: 'Inter', sans-serif;
+    font-size: .68rem; font-weight: 600;
+    letter-spacing: .04em; text-transform: uppercase;
+    padding: .2rem .65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted-fg);
+    background: var(--muted);
+  }
+  .badge.primary {
+    color: var(--primary);
+    background: var(--accent);
+    border-color: rgba(255,106,61,.3);
+  }
+  .badge.info {
+    color: var(--info);
+    background: var(--info-dim);
+    border-color: rgba(96,165,250,.3);
+  }
+  .badge.success {
+    color: var(--success);
+    background: var(--success-dim);
+    border-color: rgba(34,197,94,.3);
+  }
+  .badge.violet {
+    color: var(--violet);
+    background: var(--violet-dim);
+    border-color: rgba(167,139,250,.3);
+  }
+
+  /* ── SECTION ── */
+  .section-block { margin-bottom: 3.25rem; }
+
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .1em;
+    color: var(--primary); text-transform: uppercase;
+    margin-bottom: .4rem;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    letter-spacing: -.02em; line-height: 1.1;
+    color: var(--fg);
+    margin-bottom: .75rem;
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.05rem; font-weight: 700;
+    letter-spacing: -.015em; line-height: 1.2;
+    color: var(--fg);
+    margin: 2rem 0 .65rem;
+  }
+
+  h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: .88rem; font-weight: 600;
+    letter-spacing: -.01em;
+    color: var(--accent-fg);
+    margin: 1.25rem 0 .4rem;
+  }
+
+  p {
+    font-family: 'Roboto', sans-serif;
+    font-size: .94rem; line-height: 1.72;
+    color: var(--fg);
+    margin-bottom: .85rem;
+    max-width: 68ch;
+  }
+
+  /* ── CODE BLOCKS ── */
+  .code-wrap {
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1.25rem 0;
+  }
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .55rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  .code-lang {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--primary);
+  }
+  .code-file {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .62rem; letter-spacing: .06em;
+    color: var(--muted-fg);
+  }
+  pre {
+    padding: 1.25rem 1.35rem;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8rem; line-height: 1.75;
+    color: var(--muted-fg);
+  }
+  /* Syntax tokens */
+  .kw  { color: #C792EA; }  /* keyword  */
+  .ty  { color: #82AAFF; }  /* type     */
+  .fn  { color: #82AAFF; }  /* function */
+  .st  { color: #C3E88D; }  /* string   */
+  .cm  { color: #546E7A; font-style: italic; } /* comment */
+  .nm  { color: #F78C6C; }  /* number   */
+  .lt  { color: #FF5370; }  /* lifetime */
+  .at  { color: #FFCB6B; }  /* attribute */
+  .op  { color: var(--muted-fg); }
+  .hi  { color: var(--primary); font-weight: 600; }
+  .g   { color: var(--success); }
+  .b   { color: var(--info); }
+  .am  { color: var(--warning); }
+  .dim { color: #3D5166; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    font-family: 'Roboto', sans-serif;
+    font-size: .88rem; line-height: 1.6;
+  }
+  .callout p { font-size: .88rem; margin-bottom: 0; max-width: none; }
+  .callout strong { font-weight: 600; }
+  .callout.ember {
+    background: var(--accent);
+    border: 1px solid rgba(255,106,61,.25);
+    border-left: 3px solid var(--primary);
+    color: var(--accent-fg);
+  }
+  .callout.info {
+    background: var(--info-dim);
+    border: 1px solid rgba(96,165,250,.25);
+    border-left: 3px solid var(--info);
+    color: #93C5FD;
+  }
+  .callout.success {
+    background: var(--success-dim);
+    border: 1px solid rgba(34,197,94,.25);
+    border-left: 3px solid var(--success);
+    color: #86EFAC;
+  }
+  .callout.warning {
+    background: var(--warning-dim);
+    border: 1px solid rgba(245,158,11,.25);
+    border-left: 3px solid var(--warning);
+    color: #FCD34D;
+  }
+  .callout.violet {
+    background: var(--violet-dim);
+    border: 1px solid rgba(167,139,250,.25);
+    border-left: 3px solid var(--violet);
+    color: #C4B5FD;
+  }
+
+  /* ── CAPABILITY CARDS ── */
+  .cap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin: 1.25rem 0;
+  }
+  .cap-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.25rem;
+  }
+  .cap-card-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .6rem; letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-bottom: .5rem;
+  }
+  .cap-card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: .9rem; font-weight: 700;
+    letter-spacing: -.01em; color: var(--fg);
+    margin-bottom: .35rem;
+  }
+  .cap-card-body {
+    font-family: 'Roboto', sans-serif;
+    font-size: .82rem; line-height: 1.55;
+    color: var(--muted-fg);
+  }
+  .cap-card-body code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75em;
+    background: var(--muted);
+    padding: .1em .35em;
+    border-radius: 3px;
+    color: var(--accent-fg);
+  }
+  .tag-native  { color: var(--success); }
+  .tag-grammar { color: var(--info); }
+  .tag-instruct{ color: var(--warning); }
+  .tag-text    { color: var(--muted-fg); }
+
+  /* ── STATE MACHINE DIAGRAM ── */
+  .state-diagram {
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 1.25rem 0;
+    overflow-x: auto;
+  }
+  .state-diagram svg { display: block; max-width: 100%; }
+
+  /* ── PIPELINE TABLE ── */
+  .pipe-table {
+    width: 100%; border-collapse: collapse;
+    margin: 1rem 0;
+    font-family: 'Roboto', sans-serif;
+    font-size: .85rem;
+  }
+  .pipe-table th {
+    font-family: 'Inter', sans-serif;
+    font-size: .63rem; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted-fg);
+    text-align: left; padding: .5rem .85rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--muted);
+  }
+  .pipe-table td {
+    padding: .6rem .85rem;
+    border-bottom: 1px solid rgba(35,48,65,.6);
+    color: var(--fg);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .pipe-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem; color: var(--accent-fg);
+    white-space: nowrap;
+  }
+  .pipe-table tr:hover td { background: rgba(255,106,61,.04); }
+
+  /* ── FLOW LIST ── */
+  .flow-list {
+    list-style: none;
+    display: flex; flex-direction: column;
+    margin: 1rem 0;
+  }
+  .flow-item {
+    display: flex; gap: 1rem; align-items: flex-start;
+    padding: .85rem 1.1rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    position: relative;
+  }
+  .flow-item:first-child { border-radius: 8px 8px 0 0; }
+  .flow-item:last-child  { border-radius: 0 0 8px 8px; }
+  .flow-item + .flow-item { border-top: none; }
+  .flow-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem; font-weight: 700;
+    color: var(--primary);
+    background: var(--accent);
+    border: 1px solid rgba(255,106,61,.3);
+    border-radius: 6px;
+    padding: .2rem .45rem;
+    min-width: 2rem; text-align: center;
+    margin-top: .1rem; flex-shrink: 0;
+  }
+  .flow-content h4 {
+    font-size: .88rem; font-weight: 600;
+    color: var(--fg); margin: 0 0 .2rem;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .flow-content p {
+    font-size: .82rem; line-height: 1.5;
+    color: var(--muted-fg); margin: 0; max-width: none;
+  }
+  .flow-content code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .8em;
+    background: var(--muted);
+    padding: .1em .35em;
+    border-radius: 3px;
+    color: var(--accent-fg);
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  /* inline code */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .82em;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    padding: .1em .4em;
+    border-radius: 4px;
+    color: var(--accent-fg);
+  }
+
+  ul.doc-list {
+    list-style: none;
+    margin: .75rem 0 1rem;
+    display: flex; flex-direction: column; gap: .3rem;
+  }
+  ul.doc-list li {
+    font-family: 'Roboto', sans-serif;
+    font-size: .9rem; line-height: 1.55;
+    color: var(--fg);
+    padding-left: 1.25rem;
+    position: relative;
+  }
+  ul.doc-list li::before {
+    content: '—';
+    position: absolute; left: 0;
+    color: var(--primary);
+    font-size: .75rem;
+  }
+  ul.doc-list li strong { font-weight: 600; }
+
+  /* section anchor offset */
+  [id] { scroll-margin-top: 5rem; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">travis<span>james</span>.ai</div>
+  <div class="nav-meta">UAR · uar-tool-normalizer · v0.1.0-draft</div>
+  <div class="nav-pill">Draft</div>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- HERO -->
+  <header class="doc-hero">
+    <div class="doc-eyebrow">Crate Specification · Universal Agent Runtime</div>
+    <h1 class="doc-title">UAR <em>Tool Normalizer</em></h1>
+    <p class="doc-subtitle">
+      A streaming middleware crate that wraps any backend model provider and normalizes
+      tool-calling behavior to be structurally identical to Claude Sonnet 4.6 — regardless
+      of whether the backend speaks structured tool calls natively, requires prompt injection,
+      or emits plain text.
+    </p>
+    <div class="doc-meta-row">
+      <span class="badge primary">uar-tool-normalizer</span>
+      <span class="badge">Rust</span>
+      <span class="badge">Axum 0.8</span>
+      <span class="badge info">Depends: uar-driver-core</span>
+      <span class="badge">v0.1.0-draft</span>
+      <span class="badge">2026-04-08</span>
+    </div>
+  </header>
+
+  <!-- §01 MOTIVATION -->
+  <section class="section-block" id="s-motivation">
+    <div class="section-num">§ 01 — Motivation</div>
+    <h2>Why This Crate Exists</h2>
+
+    <p>
+      UAR's <code>LiterLlmDriver</code> routes requests to 142+ model providers. Every provider
+      speaks a different dialect of tool calling — or none at all. Downstream consumers (the
+      OpenFang tool runner, AG-UI event emitters, <code>gen_ui_core</code>'s A2UI pipeline) are
+      written against Anthropic's native tool-use contract. Without normalization, every consumer
+      must handle every provider's divergent behavior.
+    </p>
+
+    <p>
+      This crate eliminates that surface area entirely. It wraps any <code>DriverTrait</code>
+      implementor and produces a <code>NormalizedEvent</code> stream that is structurally
+      indistinguishable from a real <code>claude-sonnet-4-6</code> response — complete with
+      <code>ToolUseStart</code>, <code>ToolInputDelta</code>, and <code>ToolUseComplete</code>
+      events carrying valid <code>tool_use_id</code>s, parsed JSON inputs, and correct stop reasons.
+    </p>
+
+    <div class="callout ember">
+      <p><strong>Invariant:</strong> Every consumer of UAR's event stream can assume
+      <code>claude-sonnet-4-6</code> semantics. Whether the actual inference is running on a
+      local candle-vllm Qwen2.5 instance at zero cost or a remote Groq Llama endpoint is an
+      infrastructure detail. The tool semantics contract never changes.</p>
+    </div>
+  </section>
+
+  <!-- §02 CAPABILITY TAXONOMY -->
+  <section class="section-block" id="s-capability">
+    <div class="section-num">§ 02 — Capability Taxonomy</div>
+    <h2>ToolCallCapability</h2>
+
+    <p>
+      Every backend model is assigned one of four capability levels. The level determines
+      which normalization strategy the <code>ToolNormalizerDriver</code> applies. Profiles are
+      registered at startup and resolved by model-string pattern matching.
+    </p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Rust</span>
+        <span class="code-file">uar-tool-normalizer/src/capability.rs</span>
+      </div>
+      <pre><span class="at">#[derive(Debug, Clone, PartialEq, Eq)]</span>
+<span class="kw">pub enum</span> <span class="ty">ToolCallCapability</span> {
+    <span class="cm">/// Model produces structured tool-call blocks natively.</span>
+    <span class="cm">/// Applies to: Anthropic, OpenAI, Gemini 1.5+, Mistral Large, Cohere Command R+.</span>
+    <span class="cm">/// Strategy: pass-through with response-format normalization only.</span>
+    <span class="g">Native</span>,
+
+    <span class="cm">/// Model supports grammar-constrained JSON output (Hermes, Functionary, candle-vllm</span>
+    <span class="cm">/// with --grammar-file or --guided-json flag). Produces valid JSON but not in a</span>
+    <span class="cm">/// tool-call envelope — the driver must wrap the JSON into a ToolUseComplete event.</span>
+    <span class="cm">/// Strategy: inject JSON schema as grammar constraint; parse structured output.</span>
+    <span class="b">GrammarConstrained</span>,
+
+    <span class="cm">/// Model is instruction-tuned to follow a specific tool-call format when prompted.</span>
+    <span class="cm">/// Applies to: Qwen2.5-Instruct, DeepSeek-V3, Llama-3.1-Instruct, Phi-4-Instruct,</span>
+    <span class="cm">/// Devstral-Small-2, and most instruction-tuned GGUF variants on candle-vllm.</span>
+    <span class="cm">/// Strategy: inject XML schema into system prompt; extract via streaming state machine.</span>
+    <span class="am">InstructionTuned</span>,
+
+    <span class="cm">/// Model has no tool-call capability. Pure text generation only.</span>
+    <span class="cm">/// Strategy: inject few-shot examples + XML schema; aggressive extraction with retry.</span>
+    <span class="ty">TextOnly</span>,
+}
+
+<span class="at">#[derive(Debug, Clone, PartialEq, Eq)]</span>
+<span class="kw">pub enum</span> <span class="ty">ToolCallFormat</span> {
+    <span class="cm">/// Anthropic native: content block with type "tool_use".</span>
+    <span class="ty">AnthropicNative</span>,
+    <span class="cm">/// OpenAI native: tool_calls[] array in choices[0].delta.</span>
+    <span class="ty">OpenAiNative</span>,
+    <span class="cm">/// Hermes XML: &lt;tool_call&gt;{"name":…,"arguments":…}&lt;/tool_call&gt;</span>
+    <span class="ty">HermesXml</span>,
+    <span class="cm">/// Llama-3.1 tag: &lt;|python_tag|&gt; or function-call JSON block.</span>
+    <span class="ty">Llama31Tag</span>,
+    <span class="cm">/// Generic XML: &lt;tool_call&gt;{"name":…,"input":…}&lt;/tool_call&gt; (UAR standard injection)</span>
+    <span class="ty">GenericXml</span>,
+    <span class="cm">/// Raw JSON with best-effort extraction.</span>
+    <span class="ty">RawJson</span>,
+}
+
+<span class="at">#[derive(Debug, Clone)]</span>
+<span class="kw">pub struct</span> <span class="ty">ModelCapabilityProfile</span> {
+    <span class="kw">pub</span> tool_call_capability:    <span class="ty">ToolCallCapability</span>,
+    <span class="kw">pub</span> tool_call_format:        <span class="ty">ToolCallFormat</span>,
+    <span class="kw">pub</span> supports_system_prompt:  <span class="ty">bool</span>,
+    <span class="kw">pub</span> supports_parallel_tools: <span class="ty">bool</span>,
+    <span class="kw">pub</span> supports_streaming:      <span class="ty">bool</span>,
+    <span class="kw">pub</span> max_context_tokens:      <span class="ty">u32</span>,
+    <span class="cm">/// Some models stall on empty tool lists. If true, omit tools when list is empty.</span>
+    <span class="kw">pub</span> omit_empty_tool_list:    <span class="ty">bool</span>,
+}</pre>
+    </div>
+
+    <div class="cap-grid">
+      <div class="cap-card">
+        <div class="cap-card-tag tag-native">Native</div>
+        <div class="cap-card-title">Structured tool blocks</div>
+        <div class="cap-card-body">
+          Pass-through with response-format normalization only. OpenAI
+          <code>tool_calls[]</code> deltas are translated to Anthropic
+          <code>ToolUseStart/Delta/Complete</code> events. No prompt modification.
+        </div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-card-tag tag-grammar">GrammarConstrained</div>
+        <div class="cap-card-title">Constrained JSON output</div>
+        <div class="cap-card-body">
+          JSON schema injected as grammar constraint parameter. Valid JSON output is
+          wrapped into a synthetic <code>ToolUseComplete</code> event. Works with
+          Hermes 2 Pro and Functionary variants.
+        </div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-card-tag tag-instruct">InstructionTuned</div>
+        <div class="cap-card-title">Prompt-driven XML format</div>
+        <div class="cap-card-body">
+          XML tool schema injected into system prompt. Streaming
+          <code>ExtractorState</code> machine intercepts
+          <code>&lt;tool_call&gt;</code> blocks and promotes them to structured events
+          before they reach the consumer.
+        </div>
+      </div>
+      <div class="cap-card">
+        <div class="cap-card-tag tag-text">TextOnly</div>
+        <div class="cap-card-title">Few-shot + aggressive extraction</div>
+        <div class="cap-card-body">
+          Full few-shot examples + schema injected. Multi-pass extraction with
+          retry budget. Last resort: emit a partial <code>ToolUseComplete</code>
+          with best-effort JSON repair.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- §03 CAPABILITY REGISTRY -->
+  <section class="section-block" id="s-registry">
+    <div class="section-num">§ 03 — Model Registry</div>
+    <h2>ModelCapabilityRegistry</h2>
+
+    <p>
+      The registry maps model address strings (provider/model patterns) to
+      <code>ModelCapabilityProfile</code> records. It is constructed once at UAR startup from
+      a compiled-in default set and a user-supplied override file. Glob patterns allow a single
+      entry to cover an entire model family.
+    </p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Rust</span>
+        <span class="code-file">uar-tool-normalizer/src/capability.rs</span>
+      </div>
+      <pre><span class="kw">pub struct</span> <span class="ty">ModelCapabilityRegistry</span> {
+    <span class="cm">/// Ordered list of (glob-pattern, profile) pairs.</span>
+    <span class="cm">/// First match wins. More specific patterns must be registered before broader ones.</span>
+    entries: <span class="ty">Vec</span>&lt;(<span class="ty">String</span>, <span class="ty">ModelCapabilityProfile</span>)&gt;,
+}
+
+<span class="kw">impl</span> <span class="ty">ModelCapabilityRegistry</span> {
+    <span class="cm">/// Build with the compiled-in default profiles.</span>
+    <span class="kw">pub fn</span> <span class="fn">default</span>() -> <span class="ty">Self</span>;
+
+    <span class="cm">/// Register a new pattern. Inserted at the front (highest priority).</span>
+    <span class="kw">pub fn</span> <span class="fn">register</span>(&amp;<span class="kw">mut</span> self, pattern: &amp;<span class="ty">str</span>, profile: <span class="ty">ModelCapabilityProfile</span>);
+
+    <span class="cm">/// Resolve a model address string to its profile.</span>
+    <span class="cm">/// Falls back to InstructionTuned + GenericXml for unknown models.</span>
+    <span class="kw">pub fn</span> <span class="fn">get</span>(&amp;self, model: &amp;<span class="ty">str</span>) -> &amp;<span class="ty">ModelCapabilityProfile</span>;
+
+    <span class="cm">/// Load overrides from a TOML file at `path`. Merged on top of defaults.</span>
+    <span class="kw">pub fn</span> <span class="fn">load_overrides</span>(&amp;<span class="kw">mut</span> self, path: &amp;<span class="ty">Path</span>) -> <span class="ty">anyhow::Result</span>&lt;()&gt;;
+}
+
+<span class="cm">// ── Compiled-in default profiles (selection) ──────────────────────────────────</span>
+
+<span class="kw">fn</span> <span class="fn">default_profiles</span>() -> <span class="ty">Vec</span>&lt;(&amp;<span class="lt">'static</span> <span class="ty">str</span>, <span class="ty">ModelCapabilityProfile</span>)&gt; {
+    <span class="kw">vec!</span>[
+        (<span class="st">"anthropic/*"</span>, <span class="ty">ModelCapabilityProfile</span> {
+            tool_call_capability:    <span class="ty">ToolCallCapability</span>::<span class="g">Native</span>,
+            tool_call_format:        <span class="ty">ToolCallFormat</span>::AnthropicNative,
+            supports_system_prompt:  <span class="kw">true</span>,
+            supports_parallel_tools: <span class="kw">true</span>,
+            supports_streaming:      <span class="kw">true</span>,
+            max_context_tokens:      <span class="nm">200_000</span>,
+            omit_empty_tool_list:    <span class="kw">false</span>,
+        }),
+        (<span class="st">"openai/*"</span>, <span class="ty">ModelCapabilityProfile</span> {
+            tool_call_capability:    <span class="ty">ToolCallCapability</span>::<span class="g">Native</span>,
+            tool_call_format:        <span class="ty">ToolCallFormat</span>::OpenAiNative,
+            supports_system_prompt:  <span class="kw">true</span>,
+            supports_parallel_tools: <span class="kw">true</span>,
+            supports_streaming:      <span class="kw">true</span>,
+            max_context_tokens:      <span class="nm">128_000</span>,
+            omit_empty_tool_list:    <span class="kw">false</span>,
+        }),
+        (<span class="st">"candle-vllm/*qwen2.5*"</span>, <span class="ty">ModelCapabilityProfile</span> {
+            tool_call_capability:    <span class="ty">ToolCallCapability</span>::<span class="am">InstructionTuned</span>,
+            tool_call_format:        <span class="ty">ToolCallFormat</span>::GenericXml,
+            supports_system_prompt:  <span class="kw">true</span>,
+            supports_parallel_tools: <span class="kw">false</span>,
+            supports_streaming:      <span class="kw">true</span>,
+            max_context_tokens:      <span class="nm">32_768</span>,
+            omit_empty_tool_list:    <span class="kw">true</span>,
+        }),
+        (<span class="st">"candle-vllm/*devstral*"</span>, <span class="ty">ModelCapabilityProfile</span> {
+            tool_call_capability:    <span class="ty">ToolCallCapability</span>::<span class="am">InstructionTuned</span>,
+            tool_call_format:        <span class="ty">ToolCallFormat</span>::GenericXml,
+            supports_system_prompt:  <span class="kw">true</span>,
+            supports_parallel_tools: <span class="kw">false</span>,
+            supports_streaming:      <span class="kw">true</span>,
+            max_context_tokens:      <span class="nm">32_768</span>,
+            omit_empty_tool_list:    <span class="kw">true</span>,
+        }),
+        (<span class="st">"groq/llama*"</span>, <span class="ty">ModelCapabilityProfile</span> {
+            tool_call_capability:    <span class="ty">ToolCallCapability</span>::<span class="b">GrammarConstrained</span>,
+            tool_call_format:        <span class="ty">ToolCallFormat</span>::OpenAiNative,
+            supports_system_prompt:  <span class="kw">true</span>,
+            supports_parallel_tools: <span class="kw">true</span>,
+            supports_streaming:      <span class="kw">true</span>,
+            max_context_tokens:      <span class="nm">128_000</span>,
+            omit_empty_tool_list:    <span class="kw">false</span>,
+        }),
+        (<span class="st">"ollama/*"</span>, <span class="ty">ModelCapabilityProfile</span> {
+            tool_call_capability:    <span class="ty">ToolCallCapability</span>::<span class="am">InstructionTuned</span>,
+            tool_call_format:        <span class="ty">ToolCallFormat</span>::GenericXml,
+            supports_system_prompt:  <span class="kw">true</span>,
+            supports_parallel_tools: <span class="kw">false</span>,
+            supports_streaming:      <span class="kw">true</span>,
+            max_context_tokens:      <span class="nm">8_192</span>,
+            omit_empty_tool_list:    <span class="kw">true</span>,
+        }),
+        <span class="cm">// Fallback — must be last</span>
+        (<span class="st">"*"</span>, <span class="ty">ModelCapabilityProfile</span> {
+            tool_call_capability:    <span class="ty">ToolCallCapability</span>::<span class="am">InstructionTuned</span>,
+            tool_call_format:        <span class="ty">ToolCallFormat</span>::GenericXml,
+            supports_system_prompt:  <span class="kw">true</span>,
+            supports_parallel_tools: <span class="kw">false</span>,
+            supports_streaming:      <span class="kw">true</span>,
+            max_context_tokens:      <span class="nm">8_192</span>,
+            omit_empty_tool_list:    <span class="kw">true</span>,
+        }),
+    ]
+}</pre>
+    </div>
+  </section>
+
+  <!-- §04 PROMPT INJECTION -->
+  <section class="section-block" id="s-injector">
+    <div class="section-num">§ 04 — Prompt Injection</div>
+    <h2>PromptToolInjector</h2>
+
+    <p>
+      For <code>InstructionTuned</code> and <code>TextOnly</code> backends, the tool schema
+      must be communicated through the system prompt. The injector serializes the tool list
+      into a deterministic XML block and prepends it to the system prompt before the request
+      reaches the inner driver. Tool definitions are idempotent — injecting the same set
+      twice produces the same block.
+    </p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Rust</span>
+        <span class="code-file">uar-tool-normalizer/src/injector.rs</span>
+      </div>
+      <pre><span class="kw">pub struct</span> <span class="ty">PromptToolInjector</span> {
+    format: <span class="ty">ToolCallFormat</span>,
+    include_few_shot: <span class="ty">bool</span>,   <span class="cm">// true for TextOnly capability</span>
+}
+
+<span class="kw">impl</span> <span class="ty">PromptToolInjector</span> {
+    <span class="kw">pub fn</span> <span class="fn">new</span>(format: <span class="ty">ToolCallFormat</span>, capability: &amp;<span class="ty">ToolCallCapability</span>) -> <span class="ty">Self</span> {
+        <span class="ty">Self</span> {
+            format,
+            include_few_shot: matches!(capability, <span class="ty">ToolCallCapability</span>::<span class="ty">TextOnly</span>),
+        }
+    }
+
+    <span class="cm">/// Prepend tool schema block to the existing system prompt.</span>
+    <span class="cm">/// Returns the augmented system string. No-ops when tools list is empty.</span>
+    <span class="kw">pub fn</span> <span class="fn">inject</span>(&amp;self, system: &amp;<span class="ty">str</span>, tools: &amp;[<span class="ty">NormalizedTool</span>]) -> <span class="ty">String</span>;
+
+    <span class="cm">/// Render the tool schema block alone (for testing / logging).</span>
+    <span class="kw">pub fn</span> <span class="fn">render_schema_block</span>(&amp;self, tools: &amp;[<span class="ty">NormalizedTool</span>]) -> <span class="ty">String</span>;
+}</pre>
+    </div>
+
+    <h3>Injected system prompt format (GenericXml)</h3>
+    <p>
+      The XML block is injected at the top of the system prompt, separated from the original
+      content by a double newline. The format is deliberately verbose — models respond better
+      to explicit field descriptions than to compact JSON Schema.
+    </p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">XML</span>
+        <span class="code-file">Rendered injection — GenericXml format</span>
+      </div>
+      <pre><span class="hi">&lt;tool_definitions&gt;</span>
+  <span class="b">&lt;tool name="search_memory"&gt;</span>
+    <span class="g">&lt;description&gt;</span>Search the agent's long-term memory store.<span class="g">&lt;/description&gt;</span>
+    <span class="am">&lt;parameters type="object"&gt;</span>
+      <span class="ty">&lt;property name="query" type="string" required="true"&gt;</span>
+        The search query string.
+      <span class="ty">&lt;/property&gt;</span>
+      <span class="ty">&lt;property name="limit" type="integer" required="false" default="5"&gt;</span>
+        Maximum number of results to return.
+      <span class="ty">&lt;/property&gt;</span>
+    <span class="am">&lt;/parameters&gt;</span>
+  <span class="b">&lt;/tool&gt;</span>
+  <span class="dim">&lt;!-- additional tools … --&gt;</span>
+<span class="hi">&lt;/tool_definitions&gt;</span>
+
+<span class="dim">To call a tool, emit ONLY the following format with no surrounding prose,</span>
+<span class="dim">no markdown fences, and nothing before or after the tag on the same line:</span>
+
+<span class="hi">&lt;tool_call&gt;</span>
+{"name": "search_memory", "input": {"query": "user preference history", "limit": 3}}
+<span class="hi">&lt;/tool_call&gt;</span>
+
+<span class="dim">After receiving tool results in a &lt;tool_result&gt; block, continue your response</span>
+<span class="dim">normally. You may call multiple tools sequentially but not in parallel.</span>
+
+<span class="dim">---</span>
+<span class="dim">Original system prompt continues below.</span>
+</pre>
+    </div>
+
+    <div class="callout info">
+      <p><strong>Hermes format divergence:</strong> When <code>ToolCallFormat::HermesXml</code>
+      is selected the injector switches to the Hermes 2 schema convention
+      (<code>&lt;tool_call&gt;{"name":…,"arguments":…}&lt;/tool_call&gt;</code> with
+      <code>arguments</code> instead of <code>input</code>). The extractor normalizes both
+      key names to <code>input</code> before emitting events, so consumers always see the
+      Anthropic-style field name.</p>
+    </div>
+  </section>
+
+  <!-- §05 STREAMING EXTRACTOR -->
+  <section class="section-block" id="s-extractor">
+    <div class="section-num">§ 05 — Streaming Extractor</div>
+    <h2>ToolCallExtractor — Streaming State Machine</h2>
+
+    <p>
+      The extractor is the core of the normalization work. It sits in-line on the
+      <code>NormalizedEvent</code> stream and transforms raw text events into structured
+      tool-call events without buffering the full response. It is a pinned, stateful
+      <code>Stream</code> adapter.
+    </p>
+
+    <h3>ExtractorState</h3>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Rust</span>
+        <span class="code-file">uar-tool-normalizer/src/extractor.rs</span>
+      </div>
+      <pre><span class="cm">/// The complete state the extractor carries between stream polls.</span>
+<span class="kw">enum</span> <span class="ty">ExtractorState</span> {
+    <span class="cm">/// Normal text emission. MessageDelta events pass through unchanged.</span>
+    <span class="ty">Text</span>,
+
+    <span class="cm">/// We have seen the opening of a tag but not the closing &gt;.</span>
+    <span class="cm">/// Buffering tag bytes to confirm the tag name.</span>
+    <span class="ty">InOpenTag</span> {
+        buf: <span class="ty">String</span>,
+    },
+
+    <span class="cm">/// Inside a confirmed &lt;tool_call&gt; block.</span>
+    <span class="cm">/// Accumulating JSON content. Emitting ToolCallDelta events as bytes arrive.</span>
+    <span class="ty">InToolCall</span> {
+        <span class="cm">/// The JSON being accumulated. Pre-allocated to avoid reallocs.</span>
+        json_buf: <span class="ty">String</span>,
+        <span class="cm">/// Synthetic tool-use id for this invocation (uuid v4, generated on tag open).</span>
+        tool_use_id: <span class="ty">String</span>,
+        <span class="cm">/// Running index of this tool call within the current response.</span>
+        call_index: <span class="ty">usize</span>,
+        <span class="cm">/// Whether we've already emitted a ToolUseStart event.</span>
+        started: <span class="ty">bool</span>,
+    },
+
+    <span class="cm">/// Accumulated a complete JSON buffer; parsing it now.</span>
+    <span class="cm">/// Brief transient state — emits ToolUseComplete then transitions to Text.</span>
+    <span class="ty">Completing</span> {
+        json_buf: <span class="ty">String</span>,
+        tool_use_id: <span class="ty">String</span>,
+        call_index: <span class="ty">usize</span>,
+    },
+
+    <span class="cm">/// A parse error occurred. Entering retry or degraded-emit mode.</span>
+    <span class="ty">ParseError</span> {
+        raw: <span class="ty">String</span>,
+        tool_use_id: <span class="ty">String</span>,
+        retries_remaining: <span class="ty">u8</span>,
+    },
+}
+
+<span class="kw">pub struct</span> <span class="ty">ToolCallExtractor</span>&lt;S&gt; {
+    inner: <span class="ty">S</span>,
+    state: <span class="ty">ExtractorState</span>,
+    call_counter: <span class="ty">usize</span>,
+    format: <span class="ty">ToolCallFormat</span>,
+    retry_budget: <span class="ty">u8</span>,       <span class="cm">// default 2 — attempts at JSON repair before giving up</span>
+    text_suppress: <span class="ty">bool</span>,    <span class="cm">// suppress MessageDelta output while inside a tool block</span>
+}
+
+<span class="kw">impl</span>&lt;S&gt; <span class="ty">ToolCallExtractor</span>&lt;S&gt;
+<span class="kw">where</span>
+    S: <span class="ty">Stream</span>&lt;Item = <span class="ty">NormalizedEvent</span>&gt; + <span class="ty">Unpin</span>,
+{
+    <span class="kw">pub fn</span> <span class="fn">new</span>(inner: S, format: <span class="ty">ToolCallFormat</span>, retry_budget: <span class="ty">u8</span>) -> <span class="ty">Self</span> {
+        <span class="ty">Self</span> {
+            inner,
+            state: <span class="ty">ExtractorState</span>::<span class="ty">Text</span>,
+            call_counter: <span class="nm">0</span>,
+            format,
+            retry_budget,
+            text_suppress: <span class="kw">false</span>,
+        }
+    }
+}</pre>
+    </div>
+
+    <h3>State transitions</h3>
+
+    <div class="state-diagram">
+      <svg viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" font-family="JetBrains Mono, monospace">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#4B6080"/>
+          </marker>
+          <marker id="arr-g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#22C55E"/>
+          </marker>
+          <marker id="arr-r" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#FF5370"/>
+          </marker>
+        </defs>
+
+        <!-- State: Text -->
+        <rect x="20" y="100" width="110" height="44" rx="7" fill="#0F1620" stroke="#233041" stroke-width="1.5"/>
+        <text x="75" y="119" font-size="9" fill="#A7B0BC" text-anchor="middle">Text</text>
+        <text x="75" y="133" font-size="7.5" fill="#546E7A" text-anchor="middle">emit MessageDelta</text>
+
+        <!-- State: InOpenTag -->
+        <rect x="195" y="40" width="130" height="44" rx="7" fill="#0F1620" stroke="#233041" stroke-width="1.5"/>
+        <text x="260" y="59" font-size="9" fill="#A7B0BC" text-anchor="middle">InOpenTag</text>
+        <text x="260" y="73" font-size="7.5" fill="#546E7A" text-anchor="middle">buffer tag bytes</text>
+
+        <!-- State: InToolCall -->
+        <rect x="380" y="100" width="130" height="52" rx="7" fill="#1A2432" stroke="rgba(255,106,61,.4)" stroke-width="1.5"/>
+        <text x="445" y="121" font-size="9" fill="#FF6A3D" text-anchor="middle">InToolCall</text>
+        <text x="445" y="134" font-size="7.5" fill="#A7B0BC" text-anchor="middle">buffer JSON</text>
+        <text x="445" y="147" font-size="7.5" fill="#546E7A" text-anchor="middle">emit ToolInputDelta</text>
+
+        <!-- State: Completing -->
+        <rect x="560" y="40" width="130" height="44" rx="7" fill="#0D1C0E" stroke="rgba(34,197,94,.35)" stroke-width="1.5"/>
+        <text x="625" y="59" font-size="9" fill="#22C55E" text-anchor="middle">Completing</text>
+        <text x="625" y="73" font-size="7.5" fill="#86EFAC" text-anchor="middle">parse + emit Complete</text>
+
+        <!-- State: ParseError -->
+        <rect x="560" y="170" width="130" height="44" rx="7" fill="#1A0D0D" stroke="rgba(255,83,112,.35)" stroke-width="1.5"/>
+        <text x="625" y="189" font-size="9" fill="#FF5370" text-anchor="middle">ParseError</text>
+        <text x="625" y="203" font-size="7.5" fill="#FF9EAF" text-anchor="middle">repair / degrade</text>
+
+        <!-- Arrows -->
+        <!-- Text → InOpenTag: detect '<' -->
+        <path d="M 130 108 Q 160 60 193 62" fill="none" stroke="#4B6080" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="148" y="72" font-size="7" fill="#4B6080">detect &lt;</text>
+
+        <!-- InOpenTag → Text: mismatch -->
+        <path d="M 193 70 Q 160 90 130 118" fill="none" stroke="#4B6080" stroke-width="1" marker-end="url(#arr)"/>
+        <text x="138" y="95" font-size="7" fill="#4B6080">mismatch</text>
+
+        <!-- InOpenTag → InToolCall: confirmed tag -->
+        <path d="M 325 62 Q 360 80 378 118" fill="none" stroke="#FF6A3D" stroke-width="1.2" marker-end="url(#arr)"/>
+        <text x="338" y="80" font-size="7" fill="#FF6A3D">confirmed</text>
+
+        <!-- InToolCall → Completing: close tag -->
+        <path d="M 510 114 Q 540 80 558 62" fill="none" stroke="#22C55E" stroke-width="1.2" marker-end="url(#arr-g)"/>
+        <text x="524" y="76" font-size="7" fill="#22C55E">&lt;/tool_call&gt;</text>
+
+        <!-- InToolCall → ParseError: parse fail -->
+        <path d="M 510 140 Q 540 180 558 190" fill="none" stroke="#FF5370" stroke-width="1" marker-end="url(#arr-r)"/>
+        <text x="520" y="178" font-size="7" fill="#FF5370">parse fail</text>
+
+        <!-- Completing → Text: done -->
+        <path d="M 625 86 Q 620 220 135 127" fill="none" stroke="#4B6080" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+        <text x="380" y="238" font-size="7" fill="#4B6080">→ Text (reset counter)</text>
+
+        <!-- ParseError → Text: retry exhausted -->
+        <path d="M 560 190 Q 400 250 135 130" fill="none" stroke="#FF5370" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arr-r)"/>
+      </svg>
+    </div>
+
+    <h3>Stream implementation</h3>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Rust</span>
+        <span class="code-file">uar-tool-normalizer/src/extractor.rs</span>
+      </div>
+      <pre><span class="kw">impl</span>&lt;S&gt; <span class="ty">Stream</span> <span class="kw">for</span> <span class="ty">ToolCallExtractor</span>&lt;S&gt;
+<span class="kw">where</span>
+    S: <span class="ty">Stream</span>&lt;Item = <span class="ty">NormalizedEvent</span>&gt; + <span class="ty">Unpin</span>,
+{
+    <span class="kw">type</span> Item = <span class="ty">NormalizedEvent</span>;
+
+    <span class="kw">fn</span> <span class="fn">poll_next</span>(
+        <span class="kw">mut</span> self: <span class="ty">Pin</span>&lt;&amp;<span class="kw">mut</span> <span class="ty">Self</span>&gt;,
+        cx: &amp;<span class="kw">mut</span> <span class="ty">Context</span>&lt;'_&gt;,
+    ) -> <span class="ty">Poll</span>&lt;<span class="ty">Option</span>&lt;<span class="ty">NormalizedEvent</span>&gt;&gt; {
+        <span class="kw">loop</span> {
+            <span class="kw">let</span> event = <span class="kw">match</span> <span class="ty">Pin</span>::new(&amp;<span class="kw">mut</span> self.inner).<span class="fn">poll_next</span>(cx) {
+                <span class="ty">Poll</span>::Ready(<span class="ty">Some</span>(e))  => e,
+                <span class="ty">Poll</span>::Ready(<span class="ty">None</span>)     => <span class="kw">return</span> <span class="ty">Poll</span>::Ready(<span class="ty">None</span>),
+                <span class="ty">Poll</span>::Pending         => <span class="kw">return</span> <span class="ty">Poll</span>::Pending,
+            };
+
+            <span class="kw">match</span> &amp;<span class="kw">mut</span> self.state {
+
+                <span class="ty">ExtractorState</span>::<span class="ty">Text</span> => {
+                    <span class="kw">if let</span> <span class="ty">NormalizedEvent</span>::MessageDelta { text } = &amp;event {
+                        <span class="kw">if let</span> <span class="ty">Some</span>(rest) = text.<span class="fn">strip_prefix</span>(<span class="st">'&lt;'</span>) {
+                            <span class="cm">// Possible tag opening — transition to InOpenTag</span>
+                            self.state = <span class="ty">ExtractorState</span>::<span class="ty">InOpenTag</span> {
+                                buf: rest.<span class="fn">to_owned</span>(),
+                            };
+                            <span class="kw">continue</span>; <span class="cm">// suppress the delta; wait for tag confirmation</span>
+                        }
+                    }
+                    <span class="kw">return</span> <span class="ty">Poll</span>::Ready(<span class="ty">Some</span>(event));
+                }
+
+                <span class="ty">ExtractorState</span>::<span class="ty">InOpenTag</span> { buf } => {
+                    <span class="kw">if let</span> <span class="ty">NormalizedEvent</span>::MessageDelta { text } = &amp;event {
+                        buf.<span class="fn">push_str</span>(text);
+                        <span class="kw">let</span> tag_name = <span class="fn">extract_open_tag_name</span>(buf);
+                        <span class="kw">match</span> tag_name {
+                            <span class="ty">TagMatch</span>::<span class="ty">ToolCall</span> => {
+                                <span class="kw">let</span> id = <span class="fn">new_tool_use_id</span>();
+                                <span class="kw">let</span> idx = self.call_counter;
+                                self.call_counter += <span class="nm">1</span>;
+                                self.state = <span class="ty">ExtractorState</span>::<span class="ty">InToolCall</span> {
+                                    json_buf:    <span class="ty">String</span>::<span class="fn">with_capacity</span>(<span class="nm">256</span>),
+                                    tool_use_id: id.<span class="fn">clone</span>(),
+                                    call_index:  idx,
+                                    started:     <span class="kw">false</span>,
+                                };
+                                <span class="kw">continue</span>;
+                            }
+                            <span class="ty">TagMatch</span>::<span class="ty">NoMatch</span> => {
+                                <span class="cm">// Not a tool tag — flush buffered text and return to Text</span>
+                                <span class="kw">let</span> flushed = <span class="ty">NormalizedEvent</span>::MessageDelta {
+                                    text: <span class="kw">format!</span>(<span class="st">"&lt;{}"</span>, std::mem::take(buf)),
+                                };
+                                self.state = <span class="ty">ExtractorState</span>::<span class="ty">Text</span>;
+                                <span class="kw">return</span> <span class="ty">Poll</span>::Ready(<span class="ty">Some</span>(flushed));
+                            }
+                            <span class="ty">TagMatch</span>::<span class="ty">Partial</span> => <span class="kw">continue</span>, <span class="cm">// still accumulating</span>
+                        }
+                    } <span class="kw">else</span> {
+                        <span class="cm">// Non-text event mid-tag-open: flush and pass through</span>
+                        <span class="kw">let</span> flushed = <span class="ty">NormalizedEvent</span>::MessageDelta {
+                            text: <span class="kw">format!</span>(<span class="st">"&lt;{}"</span>, std::mem::take(buf)),
+                        };
+                        self.state = <span class="ty">ExtractorState</span>::<span class="ty">Text</span>;
+                        <span class="cm">// Return flushed first; re-queue `event` next poll via inner</span>
+                        <span class="kw">return</span> <span class="ty">Poll</span>::Ready(<span class="ty">Some</span>(flushed));
+                    }
+                }
+
+                <span class="ty">ExtractorState</span>::<span class="ty">InToolCall</span> { json_buf, tool_use_id, call_index, started } => {
+                    <span class="kw">if let</span> <span class="ty">NormalizedEvent</span>::MessageDelta { text } = &amp;event {
+                        <span class="kw">if let</span> <span class="ty">Some</span>(before_close) = <span class="fn">split_at_close_tag</span>(text) {
+                            <span class="cm">// Close tag found — finalize JSON</span>
+                            json_buf.<span class="fn">push_str</span>(before_close);
+                            self.state = <span class="ty">ExtractorState</span>::<span class="ty">Completing</span> {
+                                json_buf:    std::mem::<span class="fn">take</span>(json_buf),
+                                tool_use_id: std::mem::<span class="fn">take</span>(tool_use_id),
+                                call_index:  *call_index,
+                            };
+                            <span class="kw">continue</span>;
+                        }
+                        <span class="cm">// Mid-stream JSON fragment — emit ToolInputDelta</span>
+                        json_buf.<span class="fn">push_str</span>(text);
+                        <span class="kw">let</span> delta_evt = <span class="ty">NormalizedEvent</span>::ToolInputDelta {
+                            index:       *call_index,
+                            tool_use_id: tool_use_id.<span class="fn">clone</span>(),
+                            fragment:    text.<span class="fn">clone</span>(),
+                        };
+                        <span class="cm">// Emit ToolUseStart on first fragment</span>
+                        <span class="kw">if</span> !*started {
+                            *started = <span class="kw">true</span>;
+                            <span class="cm">// name unknown until JSON is parsed — emit with empty name</span>
+                            <span class="cm">// (consumer must wait for ToolUseComplete for the name)</span>
+                            <span class="kw">return</span> <span class="ty">Poll</span>::Ready(<span class="ty">Some</span>(<span class="ty">NormalizedEvent</span>::ToolUseStart {
+                                index:       *call_index,
+                                tool_use_id: tool_use_id.<span class="fn">clone</span>(),
+                            }));
+                        }
+                        <span class="kw">return</span> <span class="ty">Poll</span>::Ready(<span class="ty">Some</span>(delta_evt));
+                    }
+                    <span class="cm">// Non-text events (Done, UsageUpdate) pass through unchanged</span>
+                    <span class="kw">return</span> <span class="ty">Poll</span>::Ready(<span class="ty">Some</span>(event));
+                }
+
+                <span class="ty">ExtractorState</span>::<span class="ty">Completing</span> { json_buf, tool_use_id, call_index } => {
+                    <span class="kw">let</span> json_str = std::mem::<span class="fn">take</span>(json_buf);
+                    <span class="kw">let</span> idx       = *call_index;
+                    <span class="kw">let</span> id        = std::mem::<span class="fn">take</span>(tool_use_id);
+
+                    <span class="kw">match</span> <span class="fn">parse_tool_call_json</span>(&amp;json_str, self.format) {
+                        <span class="ty">Ok</span>((name, input)) => {
+                            self.state = <span class="ty">ExtractorState</span>::<span class="ty">Text</span>;
+                            <span class="kw">return</span> <span class="ty">Poll</span>::Ready(<span class="ty">Some</span>(<span class="ty">NormalizedEvent</span>::ToolUseComplete {
+                                index: idx, tool_use_id: id, name, input,
+                            }));
+                        }
+                        <span class="ty">Err</span>(_) => {
+                            self.state = <span class="ty">ExtractorState</span>::<span class="ty">ParseError</span> {
+                                raw:               json_str,
+                                tool_use_id:       id,
+                                retries_remaining: self.retry_budget,
+                            };
+                            <span class="kw">continue</span>;
+                        }
+                    }
+                }
+
+                <span class="ty">ExtractorState</span>::<span class="ty">ParseError</span> { raw, tool_use_id, retries_remaining } => {
+                    <span class="kw">if</span> *retries_remaining > <span class="nm">0</span> {
+                        *retries_remaining -= <span class="nm">1</span>;
+                        <span class="kw">if let</span> <span class="ty">Ok</span>((name, input)) = <span class="fn">repair_and_parse</span>(raw) {
+                            <span class="kw">let</span> id  = std::mem::<span class="fn">take</span>(tool_use_id);
+                            <span class="kw">let</span> idx = self.call_counter - <span class="nm">1</span>;
+                            self.state = <span class="ty">ExtractorState</span>::<span class="ty">Text</span>;
+                            <span class="kw">return</span> <span class="ty">Poll</span>::Ready(<span class="ty">Some</span>(<span class="ty">NormalizedEvent</span>::ToolUseComplete {
+                                index: idx, tool_use_id: id, name, input,
+                            }));
+                        }
+                    }
+                    <span class="cm">// Exhausted — emit a degraded ToolUseError and continue as Text</span>
+                    <span class="kw">let</span> id  = std::mem::<span class="fn">take</span>(tool_use_id);
+                    <span class="kw">let</span> raw = std::mem::<span class="fn">take</span>(raw);
+                    self.state = <span class="ty">ExtractorState</span>::<span class="ty">Text</span>;
+                    <span class="kw">return</span> <span class="ty">Poll</span>::Ready(<span class="ty">Some</span>(<span class="ty">NormalizedEvent</span>::ToolUseError {
+                        tool_use_id: id,
+                        reason:      <span class="kw">format!</span>(<span class="st">"json parse failed after retry: {raw}"</span>),
+                    }));
+                }
+            }
+        }
+    }
+}</pre>
+    </div>
+
+    <div class="callout warning">
+      <p><strong>mem::take discipline:</strong> Every transition out of a state containing a
+      <code>String</code> buffer uses <code>std::mem::take</code> rather than
+      <code>.clone()</code>. The state field is left empty (zero-allocation) and ownership
+      moves forward. This is the primary allocation discipline for the hot path — a streaming
+      extractor running across thousands of agent turns must not pressure the allocator
+      on every state exit.</p>
+    </div>
+  </section>
+
+  <!-- §06 TOOL NORMALIZER DRIVER -->
+  <section class="section-block" id="s-driver">
+    <div class="section-num">§ 06 — Normalizer Driver</div>
+    <h2>ToolNormalizerDriver</h2>
+
+    <p>
+      The driver wraps any <code>DriverTrait</code> implementor and produces a fully
+      normalized <code>NormalizedEvent</code> stream. It selects the transformation
+      pipeline at call time based on the capability profile for the active model.
+    </p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Rust</span>
+        <span class="code-file">uar-tool-normalizer/src/wrapper.rs</span>
+      </div>
+      <pre><span class="kw">pub struct</span> <span class="ty">ToolNormalizerDriver</span>&lt;D&gt; {
+    inner:    D,
+    registry: <span class="ty">Arc</span>&lt;<span class="ty">ModelCapabilityRegistry</span>&gt;,
+    model:    <span class="ty">String</span>,
+    config:   <span class="ty">NormalizerConfig</span>,
+}
+
+<span class="at">#[derive(Debug, Clone)]</span>
+<span class="kw">pub struct</span> <span class="ty">NormalizerConfig</span> {
+    <span class="cm">/// Retry budget for the ToolCallExtractor on JSON parse failure.</span>
+    <span class="kw">pub</span> extractor_retry_budget: <span class="ty">u8</span>,          <span class="cm">// default: 2</span>
+    <span class="cm">/// Suppress raw text emission from MessageDelta while inside a tool block.</span>
+    <span class="kw">pub</span> suppress_tool_text:    <span class="ty">bool</span>,         <span class="cm">// default: true</span>
+    <span class="cm">/// If the model omits a tool call entirely, inject a single no-op tool result</span>
+    <span class="cm">/// so the conversation loop doesn't stall. Applies to TextOnly only.</span>
+    <span class="kw">pub</span> inject_noop_on_miss:   <span class="ty">bool</span>,         <span class="cm">// default: false</span>
+    <span class="cm">/// Parallel tool call behaviour override. If false, emit only the first</span>
+    <span class="cm">/// tool call even if the model emits multiple in one turn.</span>
+    <span class="kw">pub</span> allow_parallel:        <span class="ty">bool</span>,         <span class="cm">// default: from profile</span>
+}
+
+<span class="kw">impl</span>&lt;D: <span class="ty">DriverTrait</span>&gt; <span class="ty">ToolNormalizerDriver</span>&lt;D&gt; {
+    <span class="kw">pub fn</span> <span class="fn">new</span>(
+        inner:    D,
+        model:    <span class="ty">String</span>,
+        registry: <span class="ty">Arc</span>&lt;<span class="ty">ModelCapabilityRegistry</span>&gt;,
+        config:   <span class="ty">NormalizerConfig</span>,
+    ) -> <span class="ty">Self</span> { ... }
+}
+
+<span class="kw">impl</span>&lt;D: <span class="ty">DriverTrait</span>&gt; <span class="ty">DriverTrait</span> <span class="kw">for</span> <span class="ty">ToolNormalizerDriver</span>&lt;D&gt; {
+    <span class="kw">async fn</span> <span class="fn">stream</span>(&amp;self, req: <span class="ty">NormalizedRequest</span>)
+        -> <span class="ty">Result</span>&lt;<span class="kw">impl</span> <span class="ty">Stream</span>&lt;Item = <span class="ty">NormalizedEvent</span>&gt;&gt;
+    {
+        <span class="kw">let</span> profile = self.registry.<span class="fn">get</span>(&amp;self.model);
+
+        <span class="kw">match</span> profile.tool_call_capability {
+
+            <span class="ty">ToolCallCapability</span>::<span class="g">Native</span> => {
+                <span class="cm">// Pass-through: inner already speaks structured tool calls.</span>
+                <span class="cm">// Only normalize event shapes (OpenAI → Anthropic if needed).</span>
+                <span class="kw">let</span> raw = self.inner.<span class="fn">stream</span>(req).<span class="kw">await</span>?;
+                <span class="ty">Ok</span>(<span class="fn">format_normalize</span>(raw, profile.tool_call_format))
+            }
+
+            <span class="ty">ToolCallCapability</span>::<span class="b">GrammarConstrained</span> => {
+                <span class="cm">// Inject JSON schema as grammar constraint parameter.</span>
+                <span class="kw">let</span> augmented = <span class="fn">inject_grammar_constraint</span>(req, profile);
+                <span class="kw">let</span> raw = self.inner.<span class="fn">stream</span>(augmented).<span class="kw">await</span>?;
+                <span class="cm">// Wrap structured JSON output into ToolUseComplete events.</span>
+                <span class="ty">Ok</span>(<span class="ty">GrammarToolWrapper</span>::<span class="fn">new</span>(raw).<span class="fn">into_stream</span>())
+            }
+
+            <span class="ty">ToolCallCapability</span>::<span class="am">InstructionTuned</span> => {
+                <span class="cm">// Inject XML schema into system prompt.</span>
+                <span class="kw">let</span> injector = <span class="ty">PromptToolInjector</span>::<span class="fn">new</span>(
+                    profile.tool_call_format,
+                    &amp;<span class="ty">ToolCallCapability</span>::InstructionTuned,
+                );
+                <span class="kw">let</span> augmented = injector.<span class="fn">inject_into_request</span>(req);
+                <span class="kw">let</span> raw = self.inner.<span class="fn">stream</span>(augmented).<span class="kw">await</span>?;
+                <span class="cm">// Stream through the extractor state machine.</span>
+                <span class="ty">Ok</span>(<span class="ty">ToolCallExtractor</span>::<span class="fn">new</span>(
+                    raw,
+                    profile.tool_call_format,
+                    self.config.extractor_retry_budget,
+                ))
+            }
+
+            <span class="ty">ToolCallCapability</span>::<span class="ty">TextOnly</span> => {
+                <span class="cm">// Inject few-shot examples + schema into system prompt.</span>
+                <span class="kw">let</span> injector = <span class="ty">PromptToolInjector</span>::<span class="fn">new</span>(
+                    profile.tool_call_format,
+                    &amp;<span class="ty">ToolCallCapability</span>::TextOnly,
+                );
+                <span class="kw">let</span> augmented = injector.<span class="fn">inject_into_request</span>(req);
+                <span class="kw">let</span> raw = self.inner.<span class="fn">stream</span>(augmented).<span class="kw">await</span>?;
+                <span class="ty">Ok</span>(<span class="ty">ToolCallExtractor</span>::<span class="fn">new</span>(
+                    raw,
+                    profile.tool_call_format,
+                    self.config.extractor_retry_budget,
+                ))
+            }
+        }
+    }
+}</pre>
+    </div>
+
+    <h3>format_normalize — OpenAI → Anthropic event translation</h3>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Rust</span>
+        <span class="code-file">uar-tool-normalizer/src/wrapper.rs</span>
+      </div>
+      <pre><span class="cm">/// Translate OpenAI-style tool_calls[] delta events into Anthropic-style</span>
+<span class="cm">/// ToolUseStart / ToolInputDelta / ToolUseComplete events.</span>
+<span class="cm">/// This is the normalization pass for Native-capability models that speak</span>
+<span class="cm">/// OpenAI wire format (GPT-4o, Groq, Mistral, etc.).</span>
+<span class="kw">fn</span> <span class="fn">format_normalize</span>&lt;S&gt;(
+    inner: S,
+    format: <span class="ty">ToolCallFormat</span>,
+) -> <span class="kw">impl</span> <span class="ty">Stream</span>&lt;Item = <span class="ty">NormalizedEvent</span>&gt;
+<span class="kw">where</span>
+    S: <span class="ty">Stream</span>&lt;Item = <span class="ty">NormalizedEvent</span>&gt; + <span class="ty">Unpin</span>,
+{
+    <span class="kw">match</span> format {
+        <span class="cm">// Anthropic native — already correct shape, pass through</span>
+        <span class="ty">ToolCallFormat</span>::AnthropicNative => <span class="ty">Either</span>::Left(inner),
+        <span class="cm">// OpenAI native — translate via OpenAiEventAdapter</span>
+        <span class="ty">ToolCallFormat</span>::OpenAiNative => {
+            <span class="ty">Either</span>::Right(<span class="ty">OpenAiEventAdapter</span>::<span class="fn">new</span>(inner))
+        }
+        <span class="cm">// Other Native-tagged formats: shouldn't occur in practice</span>
+        _ => <span class="ty">Either</span>::Left(inner),
+    }
+}
+
+<span class="cm">/// Stateful adapter that tracks partial OpenAI tool_call deltas and</span>
+<span class="cm">/// assembles them into Anthropic-style events.</span>
+<span class="kw">struct</span> <span class="ty">OpenAiEventAdapter</span>&lt;S&gt; {
+    inner:        S,
+    <span class="cm">/// In-flight tool calls indexed by OpenAI's tool_call index.</span>
+    active_calls: <span class="ty">BTreeMap</span>&lt;<span class="ty">usize</span>, <span class="ty">ActiveOpenAiCall</span>&gt;,
+}
+
+<span class="kw">struct</span> <span class="ty">ActiveOpenAiCall</span> {
+    tool_use_id:  <span class="ty">String</span>,   <span class="cm">// OpenAI provides this in the first delta chunk</span>
+    name:         <span class="ty">String</span>,   <span class="cm">// also in first chunk</span>
+    args_buf:     <span class="ty">String</span>,   <span class="cm">// accumulates JSON string across deltas</span>
+    started:      <span class="ty">bool</span>,
+}</pre>
+    </div>
+  </section>
+
+  <!-- §07 SHIM FACADE -->
+  <section class="section-block" id="s-shim">
+    <div class="section-num">§ 07 — Public Facade</div>
+    <h2>ClaudeSonnet46Shim</h2>
+
+    <p>
+      The shim is the high-level entry point that consumers use when they want any backend
+      to behave like Claude Sonnet 4.6. It composes the capability registry, injector,
+      extractor, and driver dispatch into a single ergonomic surface. It always reports
+      its model identifier as <code>claude-sonnet-4-6</code> to callers.
+    </p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Rust</span>
+        <span class="code-file">uar-tool-normalizer/src/shim.rs</span>
+      </div>
+      <pre><span class="kw">pub struct</span> <span class="ty">ClaudeSonnet46Shim</span> {
+    driver:   <span class="ty">Box</span>&lt;<span class="kw">dyn</span> <span class="ty">DriverTrait</span> + <span class="ty">Send</span> + <span class="ty">Sync</span>&gt;,
+    config:   <span class="ty">ShimConfig</span>,
+}
+
+<span class="at">#[derive(Debug, Clone)]</span>
+<span class="kw">pub struct</span> <span class="ty">ShimConfig</span> {
+    <span class="cm">/// The real model behind the shim (e.g. "candle-vllm/qwen2.5-14b-q4").</span>
+    <span class="kw">pub</span> real_model:      <span class="ty">String</span>,
+    <span class="cm">/// Normalizer behaviour flags.</span>
+    <span class="kw">pub</span> normalizer:      <span class="ty">NormalizerConfig</span>,
+    <span class="cm">/// Maximum tokens for model responses.</span>
+    <span class="kw">pub</span> max_tokens:      <span class="ty">u32</span>,
+    <span class="cm">/// If true, return stop_reason "end_turn" on tool calls (Claude behaviour).</span>
+    <span class="kw">pub</span> claude_stop_reason: <span class="ty">bool</span>,   <span class="cm">// default: true</span>
+}
+
+<span class="kw">impl</span> <span class="ty">ClaudeSonnet46Shim</span> {
+    <span class="cm">/// Construct the shim from any DriverTrait + a capability registry.</span>
+    <span class="kw">pub fn</span> <span class="fn">new</span>&lt;D: <span class="ty">DriverTrait</span> + <span class="ty">Send</span> + <span class="ty">Sync</span> + <span class="st">'static</span>&gt;(
+        inner:    D,
+        registry: <span class="ty">Arc</span>&lt;<span class="ty">ModelCapabilityRegistry</span>&gt;,
+        config:   <span class="ty">ShimConfig</span>,
+    ) -> <span class="ty">Self</span> {
+        <span class="kw">let</span> driver = <span class="ty">Box</span>::<span class="fn">new</span>(<span class="ty">ToolNormalizerDriver</span>::<span class="fn">new</span>(
+            inner,
+            config.real_model.<span class="fn">clone</span>(),
+            registry,
+            config.normalizer.<span class="fn">clone</span>(),
+        ));
+        <span class="ty">Self</span> { driver, config }
+    }
+
+    <span class="cm">/// The model identifier this shim presents to consumers.</span>
+    <span class="kw">pub fn</span> <span class="fn">reported_model</span>(&amp;self) -> &amp;<span class="lt">'static</span> <span class="ty">str</span> { <span class="st">"claude-sonnet-4-6"</span> }
+
+    <span class="cm">/// Single-turn streaming request.</span>
+    <span class="cm">/// Returns a NormalizedEvent stream with Claude-identical tool call semantics.</span>
+    <span class="kw">pub async fn</span> <span class="fn">stream</span>(
+        &amp;self,
+        req: <span class="ty">NormalizedRequest</span>,
+    ) -> <span class="ty">Result</span>&lt;<span class="kw">impl</span> <span class="ty">Stream</span>&lt;Item = <span class="ty">NormalizedEvent</span>&gt;&gt; {
+        self.driver.<span class="fn">stream</span>(req).<span class="kw">await</span>
+    }
+
+    <span class="cm">/// Blocking collect — waits for full response, returns assembled MessagesResponse.</span>
+    <span class="cm">/// Useful for non-streaming agent steps where latency is not the bottleneck.</span>
+    <span class="kw">pub async fn</span> <span class="fn">invoke</span>(
+        &amp;self,
+        req: <span class="ty">NormalizedRequest</span>,
+    ) -> <span class="ty">Result</span>&lt;<span class="ty">AssembledResponse</span>&gt; {
+        <span class="kw">let</span> stream = self.<span class="fn">stream</span>(req).<span class="kw">await</span>?;
+        <span class="ty">ResponseAssembler</span>::<span class="fn">collect</span>(stream, &amp;self.config).<span class="kw">await</span>
+    }
+}
+
+<span class="cm">/// Assembles a complete response from a NormalizedEvent stream.</span>
+<span class="kw">pub struct</span> <span class="ty">ResponseAssembler</span>;
+
+<span class="kw">impl</span> <span class="ty">ResponseAssembler</span> {
+    <span class="kw">pub async fn</span> <span class="fn">collect</span>&lt;S&gt;(
+        stream: S,
+        config: &amp;<span class="ty">ShimConfig</span>,
+    ) -> <span class="ty">Result</span>&lt;<span class="ty">AssembledResponse</span>&gt;
+    <span class="kw">where</span>
+        S: <span class="ty">Stream</span>&lt;Item = <span class="ty">NormalizedEvent</span>&gt; + <span class="ty">Unpin</span>,
+    {
+        <span class="kw">let mut</span> text_buf   = <span class="ty">String</span>::<span class="fn">new</span>();
+        <span class="kw">let mut</span> tool_calls = <span class="ty">Vec</span>::&lt;<span class="ty">AssembledToolCall</span>&gt;::<span class="fn">new</span>();
+        <span class="kw">let mut</span> stop_reason = <span class="ty">StopReason</span>::EndTurn;
+
+        pin_mut!(stream);
+        <span class="kw">while let</span> <span class="ty">Some</span>(event) = stream.<span class="fn">next</span>().<span class="kw">await</span> {
+            <span class="kw">match</span> event {
+                <span class="ty">NormalizedEvent</span>::MessageDelta { text } =>
+                    text_buf.<span class="fn">push_str</span>(&amp;text),
+                <span class="ty">NormalizedEvent</span>::ToolUseComplete { index, tool_use_id, name, input } => {
+                    tool_calls.<span class="fn">push</span>(<span class="ty">AssembledToolCall</span> { index, tool_use_id, name, input });
+                    <span class="kw">if</span> config.claude_stop_reason {
+                        stop_reason = <span class="ty">StopReason</span>::ToolUse;
+                    }
+                }
+                <span class="ty">NormalizedEvent</span>::Done { stop_reason: sr } =>
+                    stop_reason = <span class="fn">map_stop_reason</span>(sr, config),
+                _ => {}
+            }
+        }
+
+        <span class="ty">Ok</span>(<span class="ty">AssembledResponse</span> {
+            model:       config.real_model.<span class="fn">clone</span>(),
+            reported_as: <span class="st">"claude-sonnet-4-6"</span>.<span class="fn">to_owned</span>(),
+            text:        text_buf,
+            tool_calls,
+            stop_reason,
+        })
+    }
+}</pre>
+    </div>
+  </section>
+
+  <!-- §08 NORMALIZED EVENT EXTENSIONS -->
+  <section class="section-block" id="s-events">
+    <div class="section-num">§ 08 — Event Contract</div>
+    <h2>NormalizedEvent Extensions</h2>
+
+    <p>
+      The crate extends <code>NormalizedEvent</code> with three new variants required
+      to carry full Claude Sonnet 4.6 tool semantics. These variants are additive —
+      existing consumers that don't handle them will receive a no-op default match arm.
+    </p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Rust</span>
+        <span class="code-file">uar-driver-core/src/event.rs — additions</span>
+      </div>
+      <pre><span class="cm">/// Emitted when a tool call begins streaming (name not yet known).</span>
+<span class="cm">/// Consumers that need to show a "thinking…" indicator can act on this.</span>
+<span class="ty">ToolUseStart</span> {
+    index:       <span class="ty">usize</span>,
+    tool_use_id: <span class="ty">String</span>,
+},
+
+<span class="cm">/// Fragment of the tool input JSON, emitted as bytes arrive.</span>
+<span class="cm">/// Allows consumers to show live JSON streaming in the UI.</span>
+<span class="ty">ToolInputDelta</span> {
+    index:       <span class="ty">usize</span>,
+    tool_use_id: <span class="ty">String</span>,
+    fragment:    <span class="ty">String</span>,
+},
+
+<span class="cm">/// Tool call fully received and parsed. Name and input are now available.</span>
+<span class="cm">/// This is the signal for the tool runner to execute.</span>
+<span class="ty">ToolUseComplete</span> {
+    index:       <span class="ty">usize</span>,
+    tool_use_id: <span class="ty">String</span>,
+    name:        <span class="ty">String</span>,
+    input:       <span class="ty">serde_json::Value</span>,
+},
+
+<span class="cm">/// A tool call was detected but could not be parsed after all retry attempts.</span>
+<span class="cm">/// The tool runner should log this and continue — do not stall the loop.</span>
+<span class="ty">ToolUseError</span> {
+    tool_use_id: <span class="ty">String</span>,
+    reason:      <span class="ty">String</span>,
+},</pre>
+    </div>
+
+    <h3>Event ordering contract</h3>
+
+    <p>
+      For every tool call in a response, the shim guarantees the following ordering
+      invariant regardless of which backend produced the response:
+    </p>
+
+    <ol class="flow-list">
+      <li class="flow-item">
+        <div class="flow-num">1</div>
+        <div class="flow-content">
+          <h4>ToolUseStart</h4>
+          <p>Emitted on first byte inside a tool call block. <code>tool_use_id</code> is stable
+          for the lifetime of this call. Name is not yet available.</p>
+        </div>
+      </li>
+      <li class="flow-item">
+        <div class="flow-num">2</div>
+        <div class="flow-content">
+          <h4>ToolInputDelta ×N</h4>
+          <p>Zero or more delta events carrying fragments of the raw JSON input string.
+          Each fragment appended in order reconstructs the full input.</p>
+        </div>
+      </li>
+      <li class="flow-item">
+        <div class="flow-num">3</div>
+        <div class="flow-content">
+          <h4>ToolUseComplete</h4>
+          <p>Carries the parsed <code>name</code> and <code>serde_json::Value</code> input.
+          This is the authoritative event. The tool runner acts here.</p>
+        </div>
+      </li>
+      <li class="flow-item">
+        <div class="flow-num">4</div>
+        <div class="flow-content">
+          <h4>Done</h4>
+          <p>After all tool calls and any remaining text content.
+          <code>stop_reason</code> is always <code>"tool_use"</code> when at least
+          one <code>ToolUseComplete</code> was emitted in the turn.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- §09 CRATE MAP -->
+  <section class="section-block" id="s-crate">
+    <div class="section-num">§ 09 — Crate Structure</div>
+    <h2>File Map</h2>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Tree</span>
+        <span class="code-file">uar-tool-normalizer/</span>
+      </div>
+      <pre><span class="hi">uar-tool-normalizer/</span>
+├── <span class="b">Cargo.toml</span>
+└── <span class="b">src/</span>
+    ├── <span class="g">lib.rs</span>             <span class="dim">pub use: ToolNormalizerDriver, ClaudeSonnet46Shim,</span>
+    │                         <span class="dim">ModelCapabilityRegistry, NormalizerConfig, ShimConfig</span>
+    ├── <span class="g">capability.rs</span>      <span class="dim">ToolCallCapability, ToolCallFormat, ModelCapabilityProfile,</span>
+    │                         <span class="dim">ModelCapabilityRegistry, default_profiles()</span>
+    ├── <span class="g">injector.rs</span>        <span class="dim">PromptToolInjector — XML/Hermes schema injection</span>
+    ├── <span class="g">extractor.rs</span>       <span class="dim">ToolCallExtractor, ExtractorState — streaming state machine</span>
+    ├── <span class="g">wrapper.rs</span>         <span class="dim">ToolNormalizerDriver, format_normalize, OpenAiEventAdapter</span>
+    ├── <span class="g">grammar.rs</span>         <span class="dim">GrammarToolWrapper — constrained JSON output handler</span>
+    ├── <span class="g">shim.rs</span>            <span class="dim">ClaudeSonnet46Shim, ShimConfig, ResponseAssembler</span>
+    ├── <span class="g">parse.rs</span>           <span class="dim">parse_tool_call_json(), repair_and_parse(), extract_open_tag_name()</span>
+    │                         <span class="dim">split_at_close_tag(), new_tool_use_id()</span>
+    └── <span class="g">error.rs</span>           <span class="dim">NormalizerError, ParseError</span>
+
+<span class="hi">Cargo.toml dependencies:</span>
+    <span class="am">tokio</span>          = { features = ["rt", "sync", "macros"] }
+    <span class="am">futures</span>        = "0.3"
+    <span class="am">futures-util</span>   = "0.3"
+    <span class="am">pin-project</span>    = "1"
+    <span class="am">serde</span>          = { features = ["derive"] }
+    <span class="am">serde_json</span>     = "1"
+    <span class="am">uuid</span>           = { features = ["v4"] }
+    <span class="am">glob-match</span>     = "0.2"     <span class="dim"># for ModelCapabilityRegistry pattern matching</span>
+    <span class="am">quick-xml</span>      = "0.37"   <span class="dim"># for PromptToolInjector XML rendering</span>
+    <span class="am">parking_lot</span>    = "0.12"
+    <span class="am">anyhow</span>         = "1"
+    <span class="am">tracing</span>        = "0.1"
+    <span class="dim">uar-driver-core</span>          <span class="dim"># workspace dep — DriverTrait, NormalizedEvent, NormalizedRequest</span></pre>
+    </div>
+  </section>
+
+  <!-- §10 INTEGRATION -->
+  <section class="section-block" id="s-integration">
+    <div class="section-num">§ 10 — Integration</div>
+    <h2>UAR Dispatch Integration</h2>
+
+    <p>
+      The normalizer inserts at the UAR dispatch layer. When a request arrives, the
+      provider string determines whether it routes through <code>AnthropicDriver</code>
+      (Phase 1, future) or through <code>LiterLlmDriver</code> wrapped in
+      <code>ToolNormalizerDriver</code>.
+    </p>
+
+    <div class="code-wrap">
+      <div class="code-header">
+        <span class="code-lang">Rust</span>
+        <span class="code-file">universal-agent-runtime/src/dispatch.rs</span>
+      </div>
+      <pre><span class="kw">pub fn</span> <span class="fn">build_driver</span>(
+    model_addr:  &amp;<span class="ty">str</span>,
+    config:      &amp;<span class="ty">UarConfig</span>,
+    registry:    <span class="ty">Arc</span>&lt;<span class="ty">ModelCapabilityRegistry</span>&gt;,
+) -> <span class="ty">Box</span>&lt;<span class="kw">dyn</span> <span class="ty">DriverTrait</span> + <span class="ty">Send</span> + <span class="ty">Sync</span>&gt; {
+    <span class="kw">match</span> <span class="fn">parse_provider</span>(model_addr) {
+
+        <span class="ty">Provider</span>::Anthropic => {
+            <span class="cm">// Native Anthropic driver (Phase 1 — uar-anthropic crate).</span>
+            <span class="cm">// No normalization needed; already speaks Claude semantics.</span>
+            <span class="ty">Box</span>::<span class="fn">new</span>(<span class="ty">AnthropicDriver</span>::<span class="fn">new</span>(config.<span class="fn">anthropic_key</span>(), config))
+        }
+
+        <span class="ty">Provider</span>::Other => {
+            <span class="cm">// All other providers: LiterLlmDriver wrapped in ToolNormalizerDriver.</span>
+            <span class="kw">let</span> base = <span class="ty">LiterLlmDriver</span>::<span class="fn">new</span>(model_addr, config);
+            <span class="ty">Box</span>::<span class="fn">new</span>(<span class="ty">ToolNormalizerDriver</span>::<span class="fn">new</span>(
+                base,
+                model_addr.<span class="fn">to_owned</span>(),
+                registry,
+                <span class="ty">NormalizerConfig</span>::<span class="fn">default</span>(),
+            ))
+        }
+    }
+}
+
+<span class="cm">// The shim variant — for consumers that want the full Claude Sonnet 4.6 facade:</span>
+<span class="kw">pub fn</span> <span class="fn">build_shim</span>(
+    model_addr: &amp;<span class="ty">str</span>,
+    config:     &amp;<span class="ty">UarConfig</span>,
+    registry:   <span class="ty">Arc</span>&lt;<span class="ty">ModelCapabilityRegistry</span>&gt;,
+) -> <span class="ty">ClaudeSonnet46Shim</span> {
+    <span class="kw">let</span> base = <span class="ty">LiterLlmDriver</span>::<span class="fn">new</span>(model_addr, config);
+    <span class="ty">ClaudeSonnet46Shim</span>::<span class="fn">new</span>(
+        base,
+        registry,
+        <span class="ty">ShimConfig</span> {
+            real_model: model_addr.<span class="fn">to_owned</span>(),
+            normalizer: <span class="ty">NormalizerConfig</span>::<span class="fn">default</span>(),
+            max_tokens: config.default_max_tokens,
+            claude_stop_reason: <span class="kw">true</span>,
+        },
+    )
+}</pre>
+    </div>
+
+    <div class="callout success">
+      <p><strong>Zero-change downstream contract:</strong> OpenFang's tool runner, the AG-UI
+      event emitter, and <code>gen_ui_core</code>'s A2UI adapter all consume
+      <code>NormalizedEvent</code> streams. Adding <code>ToolNormalizerDriver</code> to the
+      dispatch layer requires zero changes in any of those consumers. The new event variants
+      (<code>ToolUseStart</code>, <code>ToolInputDelta</code>) are additive; existing
+      <code>_ => {}</code> match arms absorb them without modification.</p>
+    </div>
+  </section>
+
+  <!-- §11 TESTING -->
+  <section class="section-block" id="s-testing">
+    <div class="section-num">§ 11 — Testing Strategy</div>
+    <h2>Test Surface</h2>
+
+    <p>
+      The extractor state machine is the highest-complexity component and demands
+      thorough unit coverage. Each transition edge must be driven by a dedicated test.
+      Integration tests drive the full shim against a mock inner driver.
+    </p>
+
+    <table class="pipe-table">
+      <thead>
+        <tr>
+          <th>Test</th>
+          <th>What it covers</th>
+          <th>Strategy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>extractor::text_passthrough</td>
+          <td>MessageDelta events with no tags pass unchanged</td>
+          <td>Unit — mock stream</td>
+        </tr>
+        <tr>
+          <td>extractor::single_tool_call</td>
+          <td>Complete &lt;tool_call&gt;…&lt;/tool_call&gt; in one delta</td>
+          <td>Unit</td>
+        </tr>
+        <tr>
+          <td>extractor::fragmented_tool_call</td>
+          <td>JSON split across multiple MessageDelta fragments</td>
+          <td>Unit — 3-fragment split</td>
+        </tr>
+        <tr>
+          <td>extractor::false_positive_tag</td>
+          <td>&lt;tool_results&gt; tag flushed, not consumed as tool call</td>
+          <td>Unit</td>
+        </tr>
+        <tr>
+          <td>extractor::parse_error_retry</td>
+          <td>Malformed JSON triggers repair_and_parse(); recovers on retry</td>
+          <td>Unit</td>
+        </tr>
+        <tr>
+          <td>extractor::parse_error_exhausted</td>
+          <td>ToolUseError emitted after retry budget exhausted</td>
+          <td>Unit</td>
+        </tr>
+        <tr>
+          <td>extractor::sequential_two_calls</td>
+          <td>Two sequential tool calls produce correct indices</td>
+          <td>Unit</td>
+        </tr>
+        <tr>
+          <td>injector::xml_roundtrip</td>
+          <td>Injected XML parses back to original NormalizedTool list</td>
+          <td>Unit</td>
+        </tr>
+        <tr>
+          <td>injector::hermes_format</td>
+          <td>HermesXml injection uses arguments key; extractor normalizes to input</td>
+          <td>Unit</td>
+        </tr>
+        <tr>
+          <td>registry::glob_resolution</td>
+          <td>Pattern priority and fallback profile resolution</td>
+          <td>Unit</td>
+        </tr>
+        <tr>
+          <td>shim::invoke_qwen_candle</td>
+          <td>Full end-to-end: qwen2.5 candle-vllm mock → AssembledResponse</td>
+          <td>Integration — MockDriver</td>
+        </tr>
+        <tr>
+          <td>shim::invoke_openai_native</td>
+          <td>OpenAI-native delta format → Anthropic-style ToolUseComplete</td>
+          <td>Integration — MockDriver</td>
+        </tr>
+        <tr>
+          <td>shim::reported_model_invariant</td>
+          <td>reported_model() always returns "claude-sonnet-4-6"</td>
+          <td>Unit</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr class="divider">
+
+  <!-- FOOTER -->
+  <footer style="text-align:center; padding-top:1rem;">
+    <p style="font-family:'JetBrains Mono',monospace; font-size:.65rem; letter-spacing:.08em; color:var(--muted-fg); text-transform:uppercase;">
+      travisjames.ai · Prometheus AGS · uar-tool-normalizer v0.1.0-draft · 2026-04-08
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

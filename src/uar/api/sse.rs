@@ -294,6 +294,26 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "summary_generated": action.summary_generated
             }),
         )),
+        NormalizedEvent::ToolCallApprovalRequired {
+            run_id,
+            call_index,
+            tool_call_id,
+            name,
+            arguments_json,
+            risk_reason,
+        } => Some((
+            "agui.tool_call.approval_required",
+            serde_json::json!({
+                "kind": "tool_call",
+                "phase": "approval_required",
+                "request_id": run_id,
+                "call_index": call_index,
+                "id": tool_call_id,
+                "name": name,
+                "arguments_json": arguments_json,
+                "risk_reason": risk_reason
+            }),
+        )),
         NormalizedEvent::MemoryMutation {
             run_id,
             operation,

@@ -4,7 +4,7 @@ use crate::uar::{
 use axum::{
     Json, Router,
     extract::{Path, Query, State},
-    http::HeaderMap,
+    http::{HeaderMap, StatusCode},
     response::IntoResponse,
     routing::{get, post},
 };
@@ -17,6 +17,7 @@ pub fn build_router() -> Router<Arc<RunManager>> {
     Router::new()
         .route("/runs", post(create_run))
         .route("/runs/{id}/stream", get(stream_run))
+        .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
 }
 
 #[derive(Deserialize)]
@@ -81,4 +82,25 @@ async fn stream_run(
     let stream = tokio_stream::iter(replay).chain(live_stream);
 
     build_sse_response(stream).into_response()
+}
+
+#[derive(Deserialize)]
+struct ToolApprovalRequest {
+    approved: bool,
+}
+
+/// POST /api/uar/runs/{run_id}/tool-approval
+///
+/// Submit an approval or rejection decision for a pending tool call.
+/// Returns 200 OK if the decision was delivered, 404 if no pending approval exists.
+async fn api_tool_approval(
+    State(manager): State<Arc<RunManager>>,
+    Path(run_id): Path<String>,
+    Json(body): Json<ToolApprovalRequest>,
+) -> impl IntoResponse {
+    if manager.resolve_approval(&run_id, body.approved).await {
+        StatusCode::OK
+    } else {
+        StatusCode::NOT_FOUND
+    }
 }

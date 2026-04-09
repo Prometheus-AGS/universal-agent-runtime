@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uar
+  namespace: uar
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+        - name: uar
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          env:
+            - name: RUST_LOG
+              value: "info"
+            - name: UAR_ENV
+              value: "production"
+            - name: UAR_SERVER__HOST
+              value: "0.0.0.0"
+            - name: UAR_SERVER__PORT
+              value: "3000"

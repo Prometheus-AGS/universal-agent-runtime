@@ -21,7 +21,7 @@ pub mod router;
 
 pub use catalog::ModelCatalog;
 pub use liter_driver::LiterLlmDriver;
-pub use orchestrator::Orchestrator;
+pub use orchestrator::{Orchestrator, ToolApprovalGate, ToolApprovalResult};
 pub use registry::{ProviderConfig, ProviderRegistry};
 pub use router::ModelRouter;
 

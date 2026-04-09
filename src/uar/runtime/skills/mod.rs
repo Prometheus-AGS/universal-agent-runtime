@@ -9,6 +9,7 @@
 pub mod registry;
 pub mod service;
 pub mod storage;
+pub mod watcher;
 
 pub use registry::SkillRegistry;
 pub use service::{SkillMatchingAlgorithm, SkillMatchingConfig, SkillService};

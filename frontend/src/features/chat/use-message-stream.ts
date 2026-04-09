@@ -1,5 +1,6 @@
 import { useCallback, useRef } from "react";
 import { useChatMessageStore } from "@/stores/chat-message-store";
+import { useAgentStatusStore } from "@/stores/agent-status-store";
 import type { ToolCallContentBlock } from "@/types/chat-content";
 import type { AttachmentPayload } from "@/types";
 
@@ -435,6 +436,7 @@ export function useMessageStream() {
                   case "agui.message.delta": {
                     const e = agui as AguiMessageDelta;
                     if (e.delta?.text) store.appendTextDelta(threadId, runId, e.delta.text);
+                    useAgentStatusStore.getState().setThinking();
                     break;
                   }
                   case "agui.thinking.delta":
@@ -460,6 +462,12 @@ export function useMessageStream() {
                     const toolCall: ToolCallContentBlock = { type: "tool-call", toolCallId: e.id, toolName: e.name, args, status: "running" };
                     store.addToolCall(threadId, runId, toolCall);
                     pendingArgs.delete(e.id);
+                    const nameLower = e.name.toLowerCase();
+                    if (nameLower.includes("search") || nameLower.includes("tavily")) {
+                      useAgentStatusStore.getState().setSearching();
+                    } else {
+                      useAgentStatusStore.getState().setExecuting(e.name);
+                    }
                     break;
                   }
                   case "agui.tool_result": {
@@ -603,6 +611,7 @@ export function useMessageStream() {
                   case "agui.done":
                     clearTimeout(streamStartTimer);
                     store.finishStream(threadId);
+                    useAgentStatusStore.getState().setIdle();
                     callbacks?.onComplete?.();
                     return;
                   default:
@@ -614,6 +623,7 @@ export function useMessageStream() {
               if (event === "message" && data === "[DONE]") {
                 clearTimeout(streamStartTimer);
                 useChatMessageStore.getState().finishStream(threadId);
+                useAgentStatusStore.getState().setIdle();
                 callbacks?.onComplete?.();
                 return;
               }

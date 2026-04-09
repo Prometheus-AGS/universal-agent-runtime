@@ -365,11 +365,14 @@ impl McpRegistry {
             "MCP tool executed"
         );
 
-        // Optional: Emit metrics if the metrics crate is used
+        // Emit raw metrics via the metrics crate
         metrics::counter!("mcp_tool_calls_total", "tool" => namespaced_tool.to_string(), "success" => success.to_string()).increment(1);
         #[allow(clippy::cast_precision_loss)]
         metrics::histogram!("mcp_tool_duration_ms", "tool" => namespaced_tool.to_string())
             .record(duration.as_millis() as f64);
+
+        // Record normalized tool call metrics via telemetry module
+        crate::uar::telemetry::metrics::record_tool_call(namespaced_tool, success);
 
         let res =
             res.with_context(|| format!("tools/call failed for {server_name}::{raw_tool_name}"))?;

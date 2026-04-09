@@ -1,0 +1,126 @@
+# Universal Agent Runtime Helm chart values
+
+uar:
+  replicaCount: 2
+  image:
+    repository: PLACEHOLDER_IMAGE
+    tag: ""
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /readyz
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  terminationGracePeriodSeconds: 60
+  env:
+    UAR_SERVER__PORT: "3000"
+    UAR_SERVER__HOST: "0.0.0.0"
+    UAR_SERVER__LOG_FORMAT: "json"
+    UAR_SERVER__SHUTDOWN_TIMEOUT_SECS: "30"
+    UAR_MEMORY__ENABLED: "true"
+    UAR_MEMORY__SURREAL_ENDPOINT: "ws://surrealdb:8000"
+    DATABASE_URL: "postgres://uar:CHANGEME@postgres:5432/uar"
+    RUST_LOG: "info,universal_agent_runtime=debug"
+  secrets:
+    UAR_LLM__API_KEY: Q0hBTkdFTUU=
+    UAR_SECURITY__JWT_SECRET: Q0hBTkdFTUU=
+    POSTGRES_PASSWORD: Q0hBTkdFTUU=
+    SURREAL_USER: cm9vdA==
+    SURREAL_PASS: Q0hBTkdFTUU=
+
+postgres:
+  enabled: true
+  image:
+    repository: pgvector/pgvector
+    tag: pg17
+  storage:
+    size: 20Gi
+  credentials:
+    database: uar
+    username: uar
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+surrealdb:
+  enabled: true
+  image:
+    repository: surrealdb/surrealdb
+    tag: v3
+  storage:
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: 7-alpine
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+
+storageClass:
+  name: uar-immediate
+  provisioner: pd.csi.storage.gke.io
+  volumeBindingMode: Immediate
+  reclaimPolicy: Retain
+  allowVolumeExpansion: true
+  parameters:
+    type: pd-ssd
+
+gateway:
+  enabled: false
+  hostname: uar.example.com
+  gatewayRef:
+    name: envoy-gateway
+    namespace: envoy-gateway-system
+
+networkPolicies:
+  enabled: true
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  cpu:
+    averageUtilization: 70
+  memory:
+    averageUtilization: 80
+  scaleDown:
+    stabilizationWindowSeconds: 300

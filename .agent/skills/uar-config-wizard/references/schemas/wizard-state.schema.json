@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "wizard-state.schema.json",
+  "title": "WizardState",
+  "description": "Intermediate state for the guided wizard interview phase",
+  "type": "object",
+  "required": ["session_name", "current_group", "answers_collected"],
+  "properties": {
+    "session_name": { "type": "string" },
+    "current_group": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6,
+      "description": "Current question group (1=scenario, 2=llm, 3=db, 4=security, 5=optional, 6=advanced)"
+    },
+    "groups_complete": {
+      "type": "array",
+      "items": { "type": "integer" }
+    },
+    "answers_collected": {
+      "type": "object",
+      "properties": {
+        "deployment_scenario": {
+          "type": "string",
+          "enum": ["local-dev", "docker-compose", "kubernetes", "cloud-vm", "candle-vllm-stack"]
+        },
+        "llm_type": {
+          "type": "string",
+          "enum": ["cloud", "candle-vllm", "ollama", "lm-studio", "custom"]
+        },
+        "llm_provider_name": { "type": "string" },
+        "llm_model": { "type": "string" },
+        "llm_base_url": { "type": ["string", "null"] },
+        "candle_vllm_url": { "type": ["string", "null"] },
+        "db_provider": { "type": "string", "enum": ["postgres", "surreal"] },
+        "db_connection_pattern": { "type": "string" },
+        "jwt_required": { "type": "boolean" },
+        "external_cache": { "type": "boolean" },
+        "memory_enabled": { "type": "boolean" },
+        "file_processing": { "type": "boolean" },
+        "vision_enabled": { "type": "boolean" },
+        "rate_limit_rps": { "type": "number" },
+        "burst_size": { "type": "number" },
+        "retry_max_attempts": { "type": "integer" }
+      }
+    },
+    "route_to_model_select": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when candle-vllm was chosen and model selection should follow"
+    },
+    "advanced_requested": { "type": "boolean", "default": false }
+  }
+}

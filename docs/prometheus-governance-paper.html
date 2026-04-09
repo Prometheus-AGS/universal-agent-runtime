@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Governed by Construction — Agent Safety, Certification, and Decentralized Trust in the Prometheus Fabric</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&family=Roboto:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #0B0F14;
+    --bg-card:      #0F1620;
+    --bg-raised:    #141C28;
+    --bg-deep:      #090D11;
+    --border:       #1E2D40;
+    --border-soft:  #172030;
+    --ember:        #E04E28;
+    --ember-bright: #FF6A3D;
+    --text:         #E8EDF3;
+    --text-sec:     #8A9BB0;
+    --text-muted:   #3E5268;
+    --green:        #2DB87A;
+    --amber:        #D4A82A;
+    --blue:         #3B82C4;
+    --violet:       #8B5CF6;
+    --red:          #C0392B;
+    --teal:         #0EA5A0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+
+  /* ── PAPER HEADER ── */
+  .paper-header {
+    position: relative;
+    overflow: hidden;
+    padding: 80px 80px 64px;
+    border-bottom: 1px solid var(--border);
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+  .paper-header::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(224,78,40,0.07) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .paper-journal {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ember); margin-bottom: 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .paper-journal::before {
+    content: '';
+    display: inline-block;
+    width: 28px; height: 1px;
+    background: var(--ember);
+  }
+  .paper-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 40px; font-weight: 700; line-height: 1.12;
+    color: var(--text); max-width: 820px;
+    margin-bottom: 12px;
+  }
+  .paper-subtitle {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px; font-weight: 400; line-height: 1.4;
+    color: var(--text-sec); max-width: 760px; margin-bottom: 40px;
+  }
+  .paper-meta {
+    display: grid; grid-template-columns: repeat(4, auto);
+    gap: 32px; align-items: start; justify-content: start;
+    padding-top: 32px; border-top: 1px solid var(--border-soft);
+  }
+  .meta-item { display: flex; flex-direction: column; gap: 3px; }
+  .meta-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .meta-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 500; color: var(--text-sec);
+  }
+
+  /* ── DOCUMENT LAYOUT ── */
+  .document {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 0;
+  }
+
+  /* ── SIDEBAR TOC ── */
+  .toc {
+    position: sticky; top: 0;
+    height: 100vh; overflow-y: auto;
+    padding: 40px 24px 40px 32px;
+    border-right: 1px solid var(--border-soft);
+  }
+  .toc-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 16px;
+  }
+  .toc-item {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; color: var(--text-muted);
+    text-decoration: none; padding: 5px 0;
+    border-left: 2px solid transparent;
+    padding-left: 10px; margin-left: -12px;
+    line-height: 1.45;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .toc-item:hover { color: var(--text-sec); border-left-color: var(--border); }
+  .toc-item.active { color: var(--ember-bright); border-left-color: var(--ember); }
+  .toc-section {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted); margin: 20px 0 6px;
+  }
+
+  /* ── PAPER BODY ── */
+  .paper-body { padding: 48px 80px 80px; }
+
+  /* ── ABSTRACT ── */
+  .abstract {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--ember);
+    border-radius: 6px;
+    padding: 28px 32px;
+    margin-bottom: 56px;
+  }
+  .abstract-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ember); margin-bottom: 12px;
+  }
+  .abstract p {
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px; color: var(--text-sec);
+    line-height: 1.82; font-style: italic;
+  }
+  .abstract p strong { color: var(--text); font-style: normal; }
+
+  /* ── SECTIONS ── */
+  .paper-section { margin-bottom: 64px; }
+
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ember); margin-bottom: 8px;
+  }
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 26px; font-weight: 600; color: var(--text);
+    line-height: 1.2; margin-bottom: 6px;
+  }
+  .section-lead {
+    font-size: 15px; color: var(--text-sec);
+    max-width: 820px; line-height: 1.8;
+    margin-bottom: 36px; border-bottom: 1px solid var(--border-soft);
+    padding-bottom: 24px;
+  }
+
+  h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px; font-weight: 600; color: var(--text);
+    margin: 36px 0 12px;
+  }
+  h3:first-child { margin-top: 0; }
+
+  h4 {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 700; color: var(--text-sec);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin: 24px 0 8px;
+  }
+
+  p {
+    font-size: 14px; color: var(--text-sec);
+    line-height: 1.82; margin-bottom: 16px;
+  }
+  p:last-child { margin-bottom: 0; }
+  p strong { color: var(--text); }
+
+  code {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    background: rgba(255,255,255,0.06); padding: 1px 6px;
+    border-radius: 3px; color: var(--ember-bright);
+  }
+
+  /* ── CODE BLOCKS ── */
+  .code-block {
+    background: var(--bg-deep); border: 1px solid var(--border);
+    border-radius: 6px; padding: 24px 28px; margin: 20px 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--text-sec); line-height: 1.88;
+    overflow-x: auto; white-space: pre;
+  }
+  .code-block .hi  { color: var(--ember-bright); font-weight: 700; }
+  .code-block .g   { color: #5CC99A; }
+  .code-block .b   { color: #6BA8D6; }
+  .code-block .v   { color: #A78BFA; }
+  .code-block .am  { color: var(--amber); }
+  .code-block .r   { color: #E87070; }
+  .code-block .dim { color: var(--text-muted); }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    border-radius: 6px; padding: 18px 22px; margin: 20px 0;
+    font-size: 14px; color: var(--text-sec); line-height: 1.78;
+  }
+  .callout strong { color: var(--text); }
+  .callout.ember  { background: rgba(224,78,40,0.06);  border: 1px solid rgba(224,78,40,0.25); border-left: 3px solid var(--ember); }
+  .callout.green  { background: rgba(45,184,122,0.05); border: 1px solid rgba(45,184,122,0.25); border-left: 3px solid var(--green); }
+  .callout.blue   { background: rgba(59,130,196,0.05); border: 1px solid rgba(59,130,196,0.25); border-left: 3px solid var(--blue); }
+  .callout.violet { background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.25); border-left: 3px solid var(--violet); }
+  .callout.amber  { background: rgba(212,168,42,0.05); border: 1px solid rgba(212,168,42,0.25); border-left: 3px solid var(--amber); }
+  .callout.red    { background: rgba(192,57,43,0.05);  border: 1px solid rgba(192,57,43,0.25);  border-left: 3px solid var(--red); }
+
+  /* ── DEFINITION GRID ── */
+  .def-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+  .def-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .def-grid.four  { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .def-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 6px; padding: 18px 20px;
+  }
+  .def-card.ember  { border-color: rgba(224,78,40,0.35); }
+  .def-card.green  { border-color: rgba(45,184,122,0.35); }
+  .def-card.blue   { border-color: rgba(59,130,196,0.35); }
+  .def-card.violet { border-color: rgba(139,92,246,0.35); }
+  .def-card.amber  { border-color: rgba(212,168,42,0.35); }
+  .def-card-term {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    font-weight: 700; color: var(--ember-bright); margin-bottom: 4px;
+  }
+  .def-card-body { font-size: 13px; color: var(--text-sec); line-height: 1.6; }
+
+  /* ── TABLES ── */
+  .table-wrap { overflow-x: auto; margin: 20px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  thead th {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted); padding: 10px 14px; text-align: left; white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border-soft); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody td { padding: 11px 14px; color: var(--text-sec); vertical-align: top; line-height: 1.55; }
+  tbody td:first-child {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--text); white-space: nowrap;
+  }
+  tr.hi td { background: rgba(224,78,40,0.05); }
+  tr.hi td:first-child { color: var(--ember-bright); }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-block; font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 3px;
+    vertical-align: middle; margin-left: 4px;
+  }
+  .b-ember  { color: var(--ember-bright); background: rgba(224,78,40,0.14);  border: 1px solid rgba(224,78,40,0.3); }
+  .b-green  { color: #5CC99A;             background: rgba(45,184,122,0.1);  border: 1px solid rgba(45,184,122,0.3); }
+  .b-blue   { color: #6BA8D6;             background: rgba(59,130,196,0.1);  border: 1px solid rgba(59,130,196,0.3); }
+  .b-violet { color: #A78BFA;             background: rgba(139,92,246,0.1);  border: 1px solid rgba(139,92,246,0.3); }
+  .b-amber  { color: var(--amber);        background: rgba(212,168,42,0.1);  border: 1px solid rgba(212,168,42,0.3); }
+  .b-red    { color: #E87070;             background: rgba(192,57,43,0.1);   border: 1px solid rgba(192,57,43,0.3); }
+
+  /* ── LISTS ── */
+  ul.styled { list-style: none; padding: 0; margin: 14px 0; }
+  ul.styled li {
+    display: flex; gap: 10px; font-size: 14px; color: var(--text-sec);
+    padding: 6px 0; border-bottom: 1px solid var(--border-soft); line-height: 1.65;
+  }
+  ul.styled li:last-child { border-bottom: none; }
+  ul.styled li::before {
+    content: '→'; color: var(--ember);
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  ul.styled li strong { color: var(--text); }
+
+  /* ── TRUST TIERS ── */
+  .tier-stack { display: flex; flex-direction: column; gap: 2px; margin: 20px 0; }
+  .tier {
+    display: flex; border-radius: 5px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .tier-level {
+    width: 52px; flex-shrink: 0; display: flex;
+    align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    background: var(--bg-raised); border-right: 1px solid var(--border);
+  }
+  .tier-body { flex: 1; padding: 12px 18px; background: var(--bg-card); }
+  .tier-name {
+    font-family: 'Space Grotesk', sans-serif; font-size: 14px;
+    font-weight: 600; color: var(--text); margin-bottom: 3px;
+  }
+  .tier-desc { font-size: 13px; color: var(--text-sec); line-height: 1.5; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+    margin: 48px 0;
+  }
+
+  /* ── FOOTNOTES ── */
+  .footnotes {
+    margin-top: 64px; padding-top: 32px;
+    border-top: 1px solid var(--border-soft);
+  }
+  .footnotes-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 16px;
+  }
+  .footnote {
+    font-size: 12px; color: var(--text-muted); line-height: 1.7;
+    margin-bottom: 8px; display: flex; gap: 10px;
+  }
+  .fn-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--ember); flex-shrink: 0;
+  }
+
+  /* ── FOOTER ── */
+  .paper-footer {
+    max-width: 1120px; margin: 0 auto;
+    padding: 32px 80px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-brand { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--ember); }
+  .footer-meta  { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); }
+
+  @media (max-width: 900px) {
+    .document { grid-template-columns: 1fr; }
+    .toc { display: none; }
+    .paper-header, .paper-body { padding: 40px 24px; }
+    .paper-meta { grid-template-columns: 1fr 1fr; }
+    .def-grid, .def-grid.three, .def-grid.four { grid-template-columns: 1fr; }
+    .paper-footer { flex-direction: column; gap: 12px; padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PAPER HEADER -->
+<div class="paper-header">
+  <div class="paper-journal">Prometheus AGS · Technical Paper · Internal Reference</div>
+  <h1 class="paper-title">Governed by Construction</h1>
+  <div class="paper-subtitle">Agent Safety, Behavioral Certification, and Decentralized Trust in the Prometheus Fabric</div>
+  <div class="paper-meta">
+    <div class="meta-item">
+      <div class="meta-label">Publication</div>
+      <div class="meta-value">Prometheus AGS Internal</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Date</div>
+      <div class="meta-value">April 2026</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Classification</div>
+      <div class="meta-value">Confidential — Internal Strategy</div>
+    </div>
+    <div class="meta-item">
+      <div class="meta-label">Status</div>
+      <div class="meta-value">Working Draft v1.0</div>
+    </div>
+  </div>
+</div>
+
+<!-- DOCUMENT BODY -->
+<div class="document">
+
+  <!-- TOC -->
+  <nav class="toc">
+    <div class="toc-label">Contents</div>
+    <div class="toc-section">Foundations</div>
+    <a class="toc-item" href="#abstract">Abstract</a>
+    <a class="toc-item" href="#s1">1. Introduction</a>
+    <a class="toc-item" href="#s2">2. Cedar Policy Plane</a>
+    <a class="toc-item" href="#s3">3. Identity &amp; Trust Hierarchy</a>
+    <div class="toc-section">Five Properties</div>
+    <a class="toc-item" href="#s4">4. Preventing Harm</a>
+    <a class="toc-item" href="#s5">5. Certifying Envelopes</a>
+    <a class="toc-item" href="#s6">6. Device Portability</a>
+    <a class="toc-item" href="#s7">7. Decentralized Sync</a>
+    <a class="toc-item" href="#s8">8. Trusted Extensions</a>
+    <div class="toc-section">Synthesis</div>
+    <a class="toc-item" href="#s9">9. Governance Convergence</a>
+  </nav>
+
+  <!-- BODY -->
+  <div class="paper-body">
+
+    <!-- ABSTRACT -->
+    <div class="abstract" id="abstract">
+      <div class="abstract-label">Abstract</div>
+      <p>Autonomous AI agents present a class of safety and governance challenges that content moderation and LLM-level guardrails cannot adequately address. This paper describes the governance architecture of the Prometheus Fabric — a decentralized agent execution environment in which <strong>governance is a structural property of the runtime, not a policy layer applied on top of it</strong>. We describe five mutually reinforcing properties: (1) harm prevention through Cedar policy enforcement at every sensitive execution boundary; (2) behavioral certification through Kaia Verifiable Credentials that attest to consistent operation within declared parameters; (3) device-agnostic execution that maintains governance parity from enterprise clusters to consumer hardware; (4) decentralized synchronization using CRDTs, gossip-based policy propagation, and ATAgent PDS records that eliminate the requirement for a central coordination authority; and (5) execution isolation using signed WASM components and microsandbox hardware virtualization that structurally walls off untrusted code from private data. Taken together, these properties define a system in which <strong>an agent cannot exceed its certified behavioral envelope by construction</strong> — not by runtime monitoring after the fact, but by architectural impossibility.</p>
+    </div>
+
+    <!-- SECTION 1 -->
+    <div class="paper-section" id="s1">
+      <div class="section-num">§ 1 — Introduction</div>
+      <h2 class="section-title">The Governance Gap in Agentic AI</h2>
+      <div class="section-lead">The prevailing approach to AI agent safety is advisory: LLM-level system prompts, output filters, and content classifiers that ask the model to behave correctly. This approach fails under adversarial conditions, scales poorly across heterogeneous deployments, and provides no cryptographically verifiable evidence that behavior was compliant at any given moment.</div>
+
+      <p>The problem compounds as agents acquire autonomy. A stateless chatbot that only responds to direct queries has a bounded failure surface — the worst outcome is a bad response. An autonomous agent with tool access, persistent memory, multi-agent delegation authority, and scheduled background execution has an unbounded failure surface: it can take irreversible financial actions, exfiltrate private data, spawn subtasks that compound errors, and cause harm across sessions that no human monitors in real time.</p>
+
+      <p>Three categories of governance failure dominate deployed agentic systems in 2026:</p>
+
+      <div class="def-grid three">
+        <div class="def-card">
+          <div class="def-card-term">Privilege escalation</div>
+          <div class="def-card-body">An agent granted limited tool access finds a path to broader execution — through spawned subagents, through chained tool calls, or through prompt injection in external data sources — without any governance gate being triggered.</div>
+        </div>
+        <div class="def-card">
+          <div class="def-card-term">Parameter drift</div>
+          <div class="def-card-body">An agent certified for specific operational or financial parameters silently deviates after a model update, a context window overflow, or an unusual input pattern, with no mechanism to detect the deviation until harm has occurred.</div>
+        </div>
+        <div class="def-card">
+          <div class="def-card-term">Unverifiable provenance</div>
+          <div class="def-card-body">An agent delegated a subtask by an orchestrator has no cryptographic way to verify whether the delegating agent was itself certified, creating a chain of unverified trust in multi-agent workflows.</div>
+        </div>
+      </div>
+
+      <p>This paper describes how the Prometheus Fabric addresses all three failure categories through a five-property governance architecture grounded in Cedar policy enforcement, Kaia Verifiable Credential issuance, WASM execution sandboxing, decentralized CRDT synchronization, and microsandbox hardware isolation.</p>
+
+      <div class="callout ember">
+        <p><strong>The core architectural claim:</strong> Governance that depends on the agent choosing to behave correctly is not governance. Governance must be a property of the execution environment — enforced at the runtime layer, attested cryptographically, and verifiable by any participant in the fabric without trusting any central authority.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 2 -->
+    <div class="paper-section" id="s2">
+      <div class="section-num">§ 2 — The Cedar Policy Plane</div>
+      <h2 class="section-title">Deterministic Authorization at Every Execution Boundary</h2>
+      <div class="section-lead">The Universal Agent Runtime (UAR) implements governance through Cedar — a fine-grained authorization policy language designed for deterministic evaluation and strong fit with embedded Rust runtimes. Cedar policies decide; runtimes enforce. The model is not advisory.</div>
+
+      <h3>2.1 Architecture: PDP, PEPs, and the Control Flow</h3>
+      <p>Every sensitive operation in UAR passes through a two-component authorization model. The <strong>Policy Decision Point (PDP)</strong> evaluates a request against the active policy bundle and returns a decision — Permit or Deny — with accompanying obligations and reason codes. The <strong>Policy Enforcement Points (PEPs)</strong> are choke points embedded in the runtime at every boundary where an execution could cause harm, consume resources, or access protected data.</p>
+
+<div class="code-block"><span class="dim">Control flow — canonical authorization sequence:</span>
+
+<span class="hi">01 · Initiation</span>
+  Agent or actor attempts an operation (tool call, LLM invocation, spawn, network egress).
+
+<span class="hi">02 · Request Construction</span>
+  PEP constructs request tuple:
+    (<span class="b">principal</span>: AgentId/did:uar:agent-xyz,
+     <span class="b">action</span>:    <span class="g">"tool.run"</span> | <span class="g">"llm.invoke"</span> | <span class="g">"file.read"</span> | <span class="g">"net.egress"</span>,
+     <span class="b">resource</span>:  ToolId | ModelId | FilePath | HostPattern,
+     <span class="b">context</span>:   {budget_remaining, time, risk_score, kaia_vc_level})
+
+<span class="hi">03 · Policy Evaluation</span>
+  PDP evaluates against the active Cedar policy bundle.
+  Evaluation is <span class="am">deterministic</span> — no probabilistic scoring, no model judgment.
+
+<span class="hi">04 · Decision Return</span>
+  PDP returns:  Permit | Deny
+  Plus:         obligations (e.g. "log this decision")
+                reason_codes (e.g. "BUDGET_EXCEEDED", "TOOL_NOT_IN_ALLOWLIST")
+
+<span class="hi">05 · Enforcement</span>
+  PEP enforces obligations. Issues capability token (optional). Proceeds or <span class="r">aborts</span>.
+  If governance cannot evaluate: execution is <span class="r">DENIED</span>. Fail-closed is non-negotiable.
+
+<span class="hi">06 · Audit Record</span>
+  Append-only event: decision, principal, action, resource, reason, spend delta.
+  Optional DSSE signing of every audit event for tamper-evident evidence chain.</div>
+
+      <h3>2.2 Policy Types</h3>
+      <p>UAR-GOV defines six policy types that together cover the complete surface area of agent harm. Each type targets a distinct category of risk:</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Policy Type</th>
+              <th>What It Governs</th>
+              <th>Example Cedar Rule</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="hi">
+              <td>01</td>
+              <td>Authorization</td>
+              <td>Who may invoke which actions on which resources</td>
+              <td><code>permit if principal.certified_level &gt;= 2</code></td>
+            </tr>
+            <tr class="hi">
+              <td>02</td>
+              <td>Economic</td>
+              <td>Spend caps, token budgets, cost-per-call limits</td>
+              <td><code>deny when context.token_spend + req.tokens &gt; principal.budget</code></td>
+            </tr>
+            <tr>
+              <td>03</td>
+              <td>Operational</td>
+              <td>Timeouts, concurrency limits, rate limits per period</td>
+              <td><code>deny when context.calls_last_hour &gt;= 100</code></td>
+            </tr>
+            <tr>
+              <td>04</td>
+              <td>Data</td>
+              <td>PII access constraints, data residency rules, scope isolation</td>
+              <td><code>deny if resource.pii_class == "sensitive" &amp;&amp; !principal.hipaa_certified</code></td>
+            </tr>
+            <tr>
+              <td>05</td>
+              <td>Network</td>
+              <td>Egress allowlists and denylists for outbound connections</td>
+              <td><code>deny unless resource.host in principal.allowed_domains</code></td>
+            </tr>
+            <tr>
+              <td>06</td>
+              <td>Plugin</td>
+              <td>What WASM components may load, call, and access</td>
+              <td><code>permit only if plugin.signature.verified &amp;&amp; plugin.kaia_signed</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>2.3 Enforcement Surfaces (PEPs)</h3>
+      <p>Policy enforcement is implemented at every sensitive boundary in UAR. No operation crosses a boundary without passing through a PEP. There are no hidden paths.</p>
+
+<div class="code-block"><span class="dim">PEP placement — all sensitive boundaries in UAR:</span>
+
+  <span class="hi">Orchestrator / Actor Model PEP</span>
+    Trigger: agent-to-agent messaging, subagent spawn, task dispatch
+    Actions: <span class="g">actor.spawn</span>  <span class="g">actor.send</span>  <span class="g">actor.subscribe</span>
+    Prevents: Agent A spawning more than N children without authorization.
+              Prevents non-supervisory agents from spawning privileged children.
+
+  <span class="hi">LLM Invocation PEP</span>
+    Trigger: any request to a model provider (candle-vllm, cloud API, or local)
+    Actions: <span class="g">llm.invoke</span>  <span class="g">llm.stream</span>
+    Enforces: max_tokens_per_call · max_cost_per_call · max_calls_per_hour · allowed_model_list
+
+  <span class="hi">Tool Execution PEP</span>
+    Trigger: any tool call, including MCP tools and native skills
+    Actions: <span class="g">tool.run</span>  <span class="g">tool.list</span>
+    Enforces: tool allowlist per principal · sandboxing constraints · per-tool execution budget
+
+  <span class="hi">Storage / Database PEP</span>
+    Trigger: any read/write to SurrealDB, local filesystem, or embedded store
+    Actions: <span class="g">store.read</span>  <span class="g">store.write</span>  <span class="g">store.delete</span>
+    Enforces: PII class restrictions · namespace isolation · data residency
+
+  <span class="hi">Network Egress PEP</span>
+    Trigger: any outbound HTTP/WS connection attempt
+    Actions: <span class="g">net.connect</span>  <span class="g">net.fetch</span>
+    Enforces: domain allowlist · SSRF protection · cloud metadata endpoint blocking
+
+  <span class="hi">Plugin Load PEP</span>
+    Trigger: loading a WASM component or native skill
+    Actions: <span class="g">plugin.load</span>  <span class="g">plugin.execute</span>
+    Enforces: Ed25519 signature verification · Kaia VC check · trust tier routing</div>
+
+      <div class="callout blue">
+        <p><strong>The principle of no hidden bypass paths</strong> — enforced structurally: every sensitive operation in UAR routes through the governance layer. There is no code path that allows an agent to call a tool, invoke a model, access data, or initiate network egress without a Cedar evaluation occurring first. This is not a policy claim; it is verified at code review as an architectural invariant.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 3 -->
+    <div class="paper-section" id="s3">
+      <div class="section-num">§ 3 — Identity and the Trust Hierarchy</div>
+      <h2 class="section-title">DID, Kaia Verifiable Credentials, and the Identity-Trust-Permission Triad</h2>
+      <div class="section-lead">Cedar policies evaluate requests from principals. The quality of governance depends on the quality of principal identity — how reliably we can answer "who is this agent, what has it been verified to do, and what trust level does it carry?" The Prometheus identity architecture uses a three-layer DID hierarchy with Kaia Verifiable Credentials as the trust attestation that Cedar policies reference.</div>
+
+      <h3>3.1 The Three-Layer DID Hierarchy</h3>
+      <p>Every participant in the Prometheus Fabric has a Decentralized Identifier (DID) at one or more levels of the hierarchy. DIDs are self-sovereign — they are derived from Ed25519 key pairs, not assigned by a central authority. This means identity in the fabric is verifiable without any trusted third party.</p>
+
+<div class="code-block"><span class="dim">DID namespace hierarchy:</span>
+
+<span class="hi">did:prometheus:</span>  ←  Fabric-level identity
+  Scope:    The Prometheus Fabric node (server, cluster, or device acting as a fabric peer)
+  Keys:     Ed25519, HKDF-derived per node
+  Records:  Stored as app.prometheus.* records in ATAgent PDS
+  Used for: Mesh discovery, peer authentication, policy bundle signing
+
+<span class="hi">did:uar:</span>          ←  Runtime-level identity
+  Scope:    UAR agent instance or agent actor within a fabric node
+  Keys:     Derived from did:prometheus: parent via HKDF
+  Binding:  Agent manifest signed with Ed25519 under the UAR DID
+  Used for: Cedar policy evaluation (the principal), Kaia VC subject
+
+<span class="hi">did:key:</span>          ←  Session/device-level identity
+  Scope:    Ephemeral session credentials, device-local keys
+  Keys:     Ed25519 per session
+  Used for: Short-lived authorization tokens, WebRTC peer authentication
+
+<span class="dim">Trust chain verification:</span>
+
+  did:key  →  derives from  →  did:uar  →  derives from  →  did:prometheus:
+     ↑                             ↑                              ↑
+  Session trust            Agent trust                    Fabric trust
+  Ephemeral                Certified by Kaia              Signed policy bundles</div>
+
+      <h3>3.2 Ed25519 Agent Manifest Signing</h3>
+      <p>Every agent deployed in the Prometheus Fabric has a manifest — a structured declaration of its identity, capabilities, allowed tools, model configuration, and declared behavioral parameters. The manifest is signed with Ed25519 under the agent's <code>did:uar:</code> identifier. An agent cannot misrepresent its declared capabilities to Cedar: the PDP verifies the manifest signature before evaluating any policy against the agent's claims.</p>
+
+      <p>This signature chain provides three invariants: (1) the manifest has not been tampered with since signing; (2) the manifest was signed by the declared DID's key holder; and (3) the Cedar evaluation is operating on a verified identity document, not a self-reported claim.</p>
+
+      <h3>3.3 The Identity-Trust-Permission Triad</h3>
+      <p>Kaia Verifiable Credentials sit at the intersection of identity and permission. A Kaia VC is a W3C Verifiable Credential issued under the Kaia certification authority's DID, attesting that a specific <code>did:uar:</code> agent has been verified to behave within a defined behavioral envelope across a documented set of scenarios. Cedar policies reference the Kaia VC level as a trust attribute in policy evaluation.</p>
+
+<div class="code-block"><span class="dim">The identity-trust-permission triad in Cedar:</span>
+
+<span class="dim">// Cedar schema entity — Agent</span>
+<span class="b">entity</span> Agent = {
+  <span class="g">did</span>:             String,           <span class="dim">// did:uar:agent-id</span>
+  <span class="g">kaia_vc_level</span>:   Long,             <span class="dim">// 0–4, verified by Kaia</span>
+  <span class="g">kaia_vc_scope</span>:   Set&lt;String&gt;,      <span class="dim">// ["financial", "hipaa", "cfpb"]</span>
+  <span class="g">manifest_hash</span>:   String,           <span class="dim">// Ed25519-signed manifest hash</span>
+  <span class="g">allowed_tools</span>:   Set&lt;String&gt;,      <span class="dim">// declared in signed manifest</span>
+  <span class="g">budget_usd</span>:      Decimal,          <span class="dim">// cumulative spend ceiling</span>
+  <span class="g">spend_usd</span>:       Decimal,          <span class="dim">// current cumulative spend</span>
+};
+
+<span class="dim">// Cedar policy — financial operation requires L2 certification</span>
+<span class="b">permit</span>(
+  principal is Agent,
+  action    == Action::<span class="hi">"tool.run"</span>,
+  resource  is FinancialTool
+) <span class="b">when</span> {
+  principal.kaia_vc_level  >= <span class="am">2</span> &amp;&amp;
+  <span class="g">"financial"</span> in principal.kaia_vc_scope &amp;&amp;
+  principal.spend_usd + context.estimated_cost &lt;= principal.budget_usd
+};
+
+<span class="dim">// Cedar policy — PII access requires HIPAA scope in VC</span>
+<span class="b">forbid</span>(
+  principal is Agent,
+  action    == Action::<span class="hi">"store.read"</span>,
+  resource  is PIIRecord
+) <span class="b">unless</span> {
+  <span class="g">"hipaa"</span> in principal.kaia_vc_scope &amp;&amp;
+  principal.kaia_vc_level >= <span class="am">3</span>
+};</div>
+
+      <div class="callout green">
+        <p><strong>The triad closes the loop:</strong> An agent's identity (<code>did:uar:</code>) is cryptographically bound to its manifest. Its trust level (Kaia VC) is cryptographically attested and scope-specific. Its permissions (Cedar policy) reference both. An agent that has not been certified for financial operations cannot be granted access to financial tools — this is not a monitoring assertion, it is a Cedar evaluation result that produces Deny with reason code <code>KAIA_VC_SCOPE_MISSING</code>.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 4 -->
+    <div class="paper-section" id="s4">
+      <div class="section-num">§ 4 — Property I: Agents Cannot Do Harm</div>
+      <h2 class="section-title">Defense-in-Depth Across Five Independent Layers</h2>
+      <div class="section-lead">Harm prevention in the Prometheus Fabric is not achieved by a single control. It is achieved by five independent layers, each of which stops a different class of harmful behavior. An agent that evades one layer will be stopped by another. No single point of failure can produce uncontrolled harm.</div>
+
+      <h3>Layer 1 — Cedar PEPs at Every Boundary (Logical Enforcement)</h3>
+      <p>As described in §2, every sensitive operation passes through a Cedar PEP before execution. The fail-closed guarantee is absolute: if governance cannot evaluate — due to a missing policy bundle, a corrupted context, or a timeout — the default answer is Deny. This means a governance failure produces no access, never open access.</p>
+
+      <h3>Layer 2 — UAR WASM Sandbox (Execution Isolation)</h3>
+      <p>Agent code executing within UAR runs inside a Wasmtime-based WASM sandbox. The sandbox enforces three independent limits simultaneously:</p>
+
+      <ul class="styled">
+        <li><strong>Fuel metering</strong> — every WASM instruction consumes one fuel unit. When the fuel budget is exhausted, execution terminates with a deterministic error. This prevents infinite loops and unbounded computation even if the agent's logic is arbitrarily complex.</li>
+        <li><strong>Deny-by-default WASI capabilities</strong> — filesystem access, networking, and environment variable access are all disabled by default. Each capability requires explicit inclusion in the <code>WasmConfig</code>. An agent that has not been granted filesystem access cannot read private data regardless of what its WASM code attempts.</li>
+        <li><strong>Per-invocation memory isolation</strong> — each execution gets its own <code>Store</code>. Agents cannot share memory, access each other's heap, or persist state across invocations except through explicit UAR host functions. No agent can read another agent's in-flight state.</li>
+      </ul>
+
+      <h3>Layer 3 — OpenFang 16-Layer Security (Agent OS Enforcement)</h3>
+      <p>When agents run inside OpenFang's agent OS (via the UAR driver or direct deployment), they inherit OpenFang's comprehensive security stack, which operates independently of Cedar:</p>
+
+      <ul class="styled">
+        <li><strong>WASM dual metering</strong> — fuel metering + epoch interruption (wall-clock watchdog thread) simultaneously. A tool that blocks on I/O cannot escape the epoch timer even if fuel is unlimited.</li>
+        <li><strong>SHA256-based loop guard</strong> — detects agents repeatedly calling the same tool with the same parameters. After a configurable threshold, the tool call is blocked and a circuit breaker terminates the agent loop entirely.</li>
+        <li><strong>Prompt injection scanner</strong> — all skill content passes through <code>scan_prompt_content()</code> before activation. Override attempts, data exfiltration patterns, and shell injection references are detected and rejected.</li>
+        <li><strong>Merkle hash-chain audit trail</strong> — every action is cryptographically linked to the prior one. Any tampering with a single audit entry breaks the entire chain — providing tamper-evident evidence of agent behavior for Kaia certification review.</li>
+        <li><strong>SSRF protection and subprocess env_clear()</strong> — network requests are checked against private IP ranges and cloud metadata endpoints; subprocess execution clears the environment before selective re-injection, preventing secret leakage.</li>
+      </ul>
+
+      <h3>Layer 4 — Microsandbox Hardware VM Isolation (Untrusted Code)</h3>
+      <p>For code that cannot be trusted with UAR-level sandbox guarantees — untrusted WASM extensions, uncertified third-party tools, experimental agent code — microsandbox provides hardware VM isolation with sub-200ms boot times. The VM boundary is a hardware isolation boundary, not a software policy boundary. Code inside a microsandbox VM cannot access private data by architectural construction: there is no shared memory, no shared filesystem, and no communication channel except explicit API calls through the microsandbox gateway.</p>
+
+      <h3>Layer 5 — Kaia Continuous Monitoring (Behavioral Drift Detection)</h3>
+      <p>A certified agent can drift from its behavioral envelope after a model update, a context window overflow, or an adversarial input. Kaia's continuous monitoring layer compares live agent behavior against the behavioral profile documented during certification. When the drift score exceeds the configured threshold — measured against the reflection report's confidence and consistency metrics from PMPO executions — Kaia issues a drift alert, triggers re-certification, and optionally suspends the agent's VC pending review.</p>
+
+      <div class="callout red">
+        <p><strong>The harm prevention guarantee:</strong> An agent in the Prometheus Fabric cannot cause harm that exceeds its Cedar-granted permissions (Layer 1), cannot execute beyond its fuel budget (Layer 2), cannot escape its WASM memory boundary (Layer 2/3), cannot access hardware resources beyond what its microsandbox VM exposes (Layer 4), and will trigger a drift alert if its behavior deviates from its certified behavioral profile (Layer 5). Defeating all five layers simultaneously requires compromising multiple independent systems — each implemented in a different part of the stack with no shared failure mode.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 5 -->
+    <div class="paper-section" id="s5">
+      <div class="section-num">§ 5 — Property II: Certified Behavioral Envelopes</div>
+      <h2 class="section-title">Kaia VCs as Cryptographic Operational Contracts</h2>
+      <div class="section-lead">Preventing harm addresses the lower bound of agent behavior — what it cannot do. Certifying a behavioral envelope addresses the upper bound — what it consistently does within defined operational and financial parameters. Kaia provides the certification infrastructure that turns PMPO evidence into cryptographic attestations consumable by Cedar policy.</div>
+
+      <h3>5.1 PMPO Evidence → Kaia Certification Input</h3>
+      <p>The Prometheus Meta-Prompting Orchestration (PMPO) system produces structured evidence artifacts at each phase boundary. The Reflect phase in particular generates the inputs Kaia consumes:</p>
+
+<div class="code-block"><span class="dim">PMPO reflection artifacts consumed by Kaia:</span>
+
+  reflection.report.json {
+    specification_accuracy:  0.94,    <span class="dim">// did execution match the formal spec?</span>
+    confidence_score:        0.91,    <span class="dim">// how certain is the model's output?</span>
+    consistency_score:       0.96,    <span class="dim">// is output internally self-consistent?</span>
+    drift_analysis: [                 <span class="dim">// where did execution diverge from plan?</span>
+      { task: "T07", delta: "minor", within_tolerance: true },
+    ],
+    failure_modes: [],                <span class="dim">// what failure modes were encountered?</span>
+    budget_adherence: {
+      token_spend:    14_820,         <span class="dim">// actual vs. declared budget</span>
+      token_budget:   16_000,
+      cost_usd:       0.021
+    }
+  }
+
+<span class="dim">Kaia extends these with structured thought experiments:</span>
+
+  kaia_session.json {
+    scenarios_tested:  42,            <span class="dim">// edge cases exercised</span>
+    decision_points:   87,            <span class="dim">// decision nodes mapped in SurrealDB KG</span>
+    expert_validations: 3,            <span class="dim">// domain experts who reviewed</span>
+    risk_profile: {
+      financial_exposure:  "bounded", <span class="dim">// spend cannot exceed budget_usd</span>
+      data_scope:          "session", <span class="dim">// no cross-session data persistence</span>
+      pii_handling:        "none"
+    },
+    compliance_frameworks: ["CFPB_1033", "SOX"],
+    adversarial_coverage: 0.89        <span class="dim">// fraction of known attack patterns tested</span>
+  }</div>
+
+      <h3>5.2 Verifiable Credential Issuance</h3>
+      <p>When scenario coverage, PMPO evidence quality, expert sign-off, and risk assessment all pass their respective thresholds, Kaia issues a W3C Verifiable Credential under the Kaia certification authority's DID. The VC is Ed25519-signed and stored in the surreal-memory-server knowledge graph under the agent's <code>did:prometheus:</code> identifier.</p>
+
+<div class="code-block"><span class="dim">Example Kaia Verifiable Credential (abbreviated):</span>
+
+{
+  <span class="g">"@context"</span>:          ["https://www.w3.org/2018/credentials/v1"],
+  <span class="g">"type"</span>:               ["VerifiableCredential", "KaiaCertification"],
+  <span class="g">"issuer"</span>:             <span class="hi">"did:kaia:prometheus-operator-001"</span>,
+  <span class="g">"issuanceDate"</span>:       "2026-04-01T00:00:00Z",
+  <span class="g">"expirationDate"</span>:     "2027-04-01T00:00:00Z",  <span class="dim">// annual re-certification</span>
+  <span class="g">"credentialSubject"</span>: {
+    <span class="g">"id"</span>:                <span class="hi">"did:uar:cnb-mortgage-qualifier-v1"</span>,
+    <span class="g">"certificationLevel"</span>: <span class="am">2</span>,             <span class="dim">// L2 Enterprise</span>
+    <span class="g">"scope"</span>:             [<span class="g">"financial"</span>, <span class="g">"cfpb"</span>, <span class="g">"sox"</span>],
+    <span class="g">"operationalParams"</span>: {
+      <span class="g">"maxTokensPerCall"</span>:  <span class="am">4096</span>,
+      <span class="g">"maxSpendPerHour"</span>:   <span class="am">5.00</span>,           <span class="dim">// USD</span>
+      <span class="g">"allowedModelTiers"</span>: [<span class="g">"local"</span>, <span class="g">"balanced"</span>],
+      <span class="g">"dataResidency"</span>:     <span class="g">"bank-perimeter"</span>
+    },
+    <span class="g">"evidenceUri"</span>: <span class="dim">"surreal://memory.cnb.local/certifications/mortgage-v1"</span>
+  },
+  <span class="g">"proof"</span>: {
+    <span class="g">"type"</span>:    "Ed25519Signature2020",
+    <span class="g">"created"</span>: "2026-04-01T00:00:00Z",
+    <span class="g">"verificationMethod"</span>: "did:kaia:prometheus-operator-001#key-1",
+    <span class="g">"proofValue"</span>: "z5hf..."    <span class="dim">// Ed25519 signature over VC body</span>
+  }
+}</div>
+
+      <p>Cedar policies reference the VC's <code>certificationLevel</code> and <code>scope</code> fields, which the PDP retrieves from the signed VC stored in the knowledge graph. The VC also encodes the <code>operationalParams</code> directly — maximum spend per hour, allowed model tiers, data residency requirements — which Cedar enforces at the LLM Invocation PEP and Storage PEP respectively.</p>
+
+      <div class="callout violet">
+        <p><strong>The behavioral contract is cryptographic:</strong> An agent with a Kaia VC carries a cryptographically verifiable commitment that it was observed to behave within the declared <code>operationalParams</code> across a documented set of scenarios, validated by a named human expert who signed off with their domain-specific credentials. This is not a best-effort assertion — it is a falsifiable claim with an evidence trail stored in surreal-memory-server's temporal history, queryable at any past timestamp by any audit process.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 6 -->
+    <div class="paper-section" id="s6">
+      <div class="section-num">§ 6 — Property III: Device-Agnostic Governance</div>
+      <h2 class="section-title">Governance Parity from Enterprise Cluster to Consumer Hardware</h2>
+      <div class="section-lead">A governance architecture that only works in the cloud is not a governance architecture — it is a hosting dependency. The Prometheus Fabric is designed from the ground up to maintain the same governance properties across the complete device spectrum: from a 128 GB enterprise GPU cluster to a 6 GB consumer GPU to a smartphone running gen_ui_core. The Cedar policy bundle, the Kaia VC, and the WASM sandbox all travel with the agent, not with the infrastructure.</div>
+
+      <h3>6.1 Policy Portability — The Same Policy Bundle on Any Device</h3>
+      <p>UAR-GOV's explicit design goal is policy portability: the same governance model works on desktop, mobile, edge, and cloud. This is achievable because Cedar evaluation is pure computation — it takes a request tuple and a policy bundle and returns a decision. It requires no network call, no central authority, and no shared state. A signed policy bundle can be cached locally on any device and evaluated without connectivity.</p>
+
+      <p>The policy bundle is a signed artifact (Ed25519, signed by the Prometheus Fabric operator's DID) that contains the Cedar source, entity schema, and version metadata. When a device receives an updated policy bundle via gossip propagation (§7), it verifies the signature before installing the update. A tampered or unsigned bundle is rejected — the device continues operating under its last verified policy.</p>
+
+      <h3>6.2 Inference at Any Scale — candle-vllm + TurboQuant</h3>
+      <p>Governance parity requires that the same agent can run effectively on any hardware without degrading to a mode that bypasses governance. The candle-vllm inference server with TurboQuant KV compression enables this:</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Device Class</th>
+              <th>Hardware</th>
+              <th>Model</th>
+              <th>Context (3-bit TQ)</th>
+              <th>Governance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="hi">
+              <td>Enterprise cluster</td>
+              <td>4× A100 80 GB</td>
+              <td>DeepSeek-R1 671B</td>
+              <td>~500K tokens</td>
+              <td>Full Cedar + Kaia VC + microsandbox</td>
+            </tr>
+            <tr>
+              <td>Workstation</td>
+              <td>RTX 4090 24 GB</td>
+              <td>Qwen2.5-32B Q4</td>
+              <td>~135K tokens</td>
+              <td>Full Cedar + Kaia VC + WASM sandbox</td>
+            </tr>
+            <tr>
+              <td>Consumer GPU</td>
+              <td>RTX 4070 Ti 12 GB</td>
+              <td>DeepSeek-R1-14B Q4</td>
+              <td>~160K tokens</td>
+              <td>Full Cedar + Kaia VC + WASM sandbox</td>
+            </tr>
+            <tr>
+              <td>Mobile (Apple Silicon)</td>
+              <td>M4 Pro 24 GB unified</td>
+              <td>Qwen2.5-7B Q4 Metal</td>
+              <td>~160K tokens</td>
+              <td>Full Cedar + Kaia VC + gen_ui_core</td>
+            </tr>
+            <tr>
+              <td>Edge device</td>
+              <td>Raspberry Pi 5 8 GB</td>
+              <td>Phi-3-mini Q4 CPU</td>
+              <td>~40K tokens</td>
+              <td>Cedar (embedded) + Kaia VC (cached)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>The critical property: at every tier, Cedar evaluation is present, the Kaia VC is verified before granting permissions, and agent execution runs inside the WASM sandbox. The model is smaller on smaller hardware, but the governance envelope is identical. An agent certified to <code>kaia_vc_level: 2</code> with <code>maxSpendPerHour: 5.00</code> cannot exceed that spend on any device — the Cedar economic policy evaluation is local, deterministic, and does not require network connectivity to enforce.</p>
+
+      <h3>6.3 gen_ui_core — The Governance-Aware Fabric Node</h3>
+      <p>On mobile and desktop devices, the Prometheus Fabric node is implemented in <code>gen_ui_core</code> — a Flutter + Tauri + Rust FFI hybrid application framework. The Rust core of gen_ui_core is itself a Fabric node: it manages DID key derivation (Ed25519, HKDF), ATAgent PDS synchronization, local SurrealDB (embedded RocksDB), CRDT state primitives (diamond-types), and the UAR lightweight executor. The Flutter and Tauri UI layers are presentation only — they never call network APIs, invoke models, or execute tools directly. All of that runs in the Rust core, under governance.</p>
+
+      <div class="callout amber">
+        <p><strong>Privacy by architecture on mobile:</strong> A gen_ui_core mobile node processes all inference locally. User conversations, memory writes, tool calls, and knowledge graph updates never leave the device unless an explicit Cedar policy permits external egress. The same Cedar data policy that governs a bank's on-premise deployment governs the consumer's phone — with the same enforcement guarantees, locally evaluated, without any external validation server required.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 7 -->
+    <div class="paper-section" id="s7">
+      <div class="section-num">§ 7 — Property IV: Decentralized Synchronization Without Central Authority</div>
+      <h2 class="section-title">CRDTs, Gossip, WebRTC, and ATAgent PDS as the Fabric Coordination Substrate</h2>
+      <div class="section-lead">A governance architecture that requires a central server to function is not sovereign — it is a managed service with governance features. The Prometheus Fabric is designed to allow any device to participate in a fabric, synchronize state, propagate governance updates, and maintain protocol adherence without any central coordination point.</div>
+
+      <h3>7.1 The Synchronization Problem</h3>
+      <p>Decentralized agent coordination requires solving four sub-problems simultaneously: (1) how do nodes discover each other without a central registry; (2) how does state (agent outputs, memory writes, knowledge graph updates) converge across nodes without a coordinator; (3) how do governance updates (policy bundle revisions, VC revocations) propagate reliably without a broadcast server; and (4) how do nodes that have been offline synchronize back to the correct state when they reconnect. The Prometheus Fabric uses a different technology for each sub-problem, and they compose without conflict.</p>
+
+      <h3>7.2 Peer Discovery — Gossip Protocol</h3>
+      <p>Fabric peers discover each other through a gossip protocol over the OpenFang Protocol (OFP) wire layer. Each node maintains a <code>PeerRegistry</code> — a set of known peers with their agent advertisements. When a new peer connects, it sends a <code>Discover</code> message; the responder sends back its peer list. Over successive rounds, knowledge of all reachable peers propagates to all nodes in the mesh without any central registry being consulted. New peers joining the fabric become visible to all existing peers within <em>O(log N)</em> gossip rounds.</p>
+
+      <p>Governance-relevant gossip extends this: signed policy bundle updates are propagated through the same gossip mechanism. When the fabric operator publishes a new Cedar policy bundle, it is gossiped to all reachable peers. Each peer verifies the Ed25519 signature before installing the update. A node that was offline when the update propagated will receive the update from any peer it reconnects with — the gossip state is eventually consistent across the fabric.</p>
+
+      <h3>7.3 State Convergence — CRDTs (diamond-types)</h3>
+      <p>Agent state, surreal-memory-server knowledge graph updates, and document-level collaborative state all use Conflict-free Replicated Data Types (CRDTs) implemented via the <code>diamond-types</code> library. CRDTs have a mathematical property: concurrent updates from any number of nodes, applied in any order, produce the same final state. No coordinator, no locks, no conflict resolution protocol required.</p>
+
+<div class="code-block"><span class="dim">CRDT convergence — why it matters for governance:</span>
+
+  Problem without CRDT:
+    Node A (online):   agent writes memory record {id: 1, fact: "user prefers X"}
+    Node B (offline):  agent writes memory record {id: 1, fact: "user prefers Y"}
+    On reconnect:      conflict → last-write-wins → arbitrary result
+
+  With CRDT (diamond-types):
+    Node A:            [op1: insert "user prefers X" at position P]
+    Node B:            [op2: insert "user prefers Y" at position Q]
+    On merge:          both operations apply deterministically
+                       final state: "user prefers X, user prefers Y" (both preserved)
+                       deterministic regardless of merge order
+
+<span class="dim">Governance-critical application:</span>
+    Kaia VC revocations propagated as CRDT deletes:
+    → Revocation is a CRDT operation that produces the same result regardless of
+      which node processes it first or last.
+    → An agent whose VC has been revoked cannot regain permissions on a node that
+      has not yet received the revocation — but will lose them the moment the
+      CRDT delta arrives, with no coordinator required to enforce the revocation.</div>
+
+      <h3>7.4 Real-Time Coordination — WebRTC Data Channels</h3>
+      <p>For real-time agent-to-agent coordination between devices — including the human-in-the-loop approval pattern that UAR implements for high-stakes actions — WebRTC data channels provide direct peer-to-peer encrypted communication. An agent on a mobile device executing a Browser Hand action that requires purchase approval can open a WebRTC data channel directly to the user's desktop UAR instance, deliver the approval request, receive the confirmation, and resume execution — without routing through any server.</p>
+
+      <p>The WebRTC connection is established using the OFP HMAC-SHA256 mutual authentication handshake: both peers sign a nonce challenge with their respective DID keys, verify each other's signatures via constant-time comparison, and only then establish the data channel. This ensures that the approval signal arrives from a peer with a verified identity, not a spoofed connection.</p>
+
+      <h3>7.5 Persistent Fabric State — ATAgent PDS Records</h3>
+      <p>The AT Protocol Personal Data Server (ATAgent PDS) provides the persistent, portable, DID-linked record store for agent state that must survive device changes, fabric reconnections, and node failures. Agent definitions, behavioral parameters, Kaia VC references, and operational history are stored as <code>app.prometheus.*</code> lexicon records in the PDS. Because PDS records are content-addressed and DID-signed, they can be synchronized to any new node without trusting the node that provides them — the signature chain is self-verifying.</p>
+
+      <div class="callout teal" style="border-left-color: var(--teal); background: rgba(14,165,160,0.05); border-color: rgba(14,165,160,0.25);">
+        <p><strong>The governance convergence invariant for decentralized sync:</strong> Any node in the Prometheus Fabric, regardless of how long it has been offline or how many governance updates it has missed, will converge to the correct governance state within a bounded number of gossip rounds after reconnecting. CRDT merges are order-independent; policy bundle updates are signature-verified before application; Kaia VC revocations propagate as CRDT deletes. A node that does not yet have the latest governance state operates under the most recently verified policy it holds — which is the correct safe default, since outdated policies are stricter than newer ones by design.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 8 -->
+    <div class="paper-section" id="s8">
+      <div class="section-num">§ 8 — Property V: Signed Extensions and Execution Isolation</div>
+      <h2 class="section-title">WASM Component Signing and Microsandbox Hardware Walls</h2>
+      <div class="section-lead">The most dangerous attack surface in an agentic system is the extension model — third-party code that runs inside the agent's execution environment with potential access to private data, network endpoints, and inference infrastructure. The Prometheus Fabric neutralizes this attack surface through a two-tier model: signed WASM components with Kaia-attested trust levels, and microsandbox hardware VM isolation for code that cannot be trusted with software-only boundaries.</div>
+
+      <h3>8.1 The WASM Component Trust Model</h3>
+      <p>All third-party code in the Prometheus Fabric — skills, extensions, custom tools, MCP server implementations — executes as WASM components. The trust tier a component receives determines which execution environment hosts it and what resources it can access.</p>
+
+      <div class="tier-stack">
+        <div class="tier">
+          <div class="tier-level" style="color: #5CC99A; background: rgba(45,184,122,0.08);">T1</div>
+          <div class="tier-body">
+            <div class="tier-name">Kaia-Certified Components <span class="badge b-green">Ed25519 + VC Level ≥ 1</span></div>
+            <div class="tier-desc">WASM component has a valid Kaia VC with <code>scope: ["extension"]</code> and the component manifest is Ed25519-signed by the Prometheus Fabric operator or a trusted third-party certification authority. Runs inside UAR's Wasmtime sandbox with declared WASI capabilities. Cedar plugin policy verified at load time. Can access surreal-memory-server via UAR host functions within its declared capability set.</div>
+          </div>
+        </div>
+        <div class="tier">
+          <div class="tier-level" style="color: var(--amber); background: rgba(212,168,42,0.08);">T2</div>
+          <div class="tier-body">
+            <div class="tier-name">Operator-Signed, Uncertified Components <span class="badge b-amber">Ed25519 only, No Kaia VC</span></div>
+            <div class="tier-desc">Component is signed by the fabric operator (proving authenticity and integrity) but has not been Kaia-certified. Runs inside microsandbox — a hardware VM with <200ms boot time. No direct access to private data. All communication with the host goes through the microsandbox gateway API with explicit permission checks. Cannot access surreal-memory-server, the DID key store, or any persistent private data by construction.</div>
+          </div>
+        </div>
+        <div class="tier">
+          <div class="tier-level" style="color: #E87070; background: rgba(192,57,43,0.08);">T3</div>
+          <div class="tier-body">
+            <div class="tier-name">Unsigned or Unknown-Provenance Code <span class="badge b-red">Denied at Plugin Load PEP</span></div>
+            <div class="tier-desc">No signature, expired signature, or signature from an untrusted key root. Cedar plugin policy produces Deny at the <code>plugin.load</code> PEP. The component never executes. This is the default — all code is denied unless it has a verified signature from a trusted authority. There is no "run with a warning" mode.</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>8.2 Microsandbox Hardware Isolation</h3>
+      <p>Microsandbox provides hardware-level VM isolation using microVM technology — not Linux containers, not chroot jails, but full hardware virtualization boundaries. The key properties relevant to the Prometheus Fabric governance model:</p>
+
+      <ul class="styled">
+        <li><strong>Hardware VM boundary</strong> — memory, filesystem, and network are isolated at the hypervisor level. A WASM component inside a microsandbox VM cannot read host memory, access the host filesystem, or make network connections except through the microsandbox gateway API. This is a hardware invariant, not a software policy.</li>
+        <li><strong>Sub-200ms startup</strong> — the microsandbox VM boots in under 200ms, making it viable for per-request isolation of tools and extensions without introducing unacceptable latency into agent workflows.</li>
+        <li><strong>OCI-compatible image model</strong> — extensions are packaged as OCI container images. The same WASM component that a developer tests locally runs in the same OCI image in production microsandbox. No environment differences, no path-dependent security assumptions.</li>
+        <li><strong>Zero-access to private data by construction</strong> — the microsandbox VM has no mount point to the host SurrealDB, no access to the DID key store, and no route to the Kaia VC store. A compromised extension inside a microsandbox cannot exfiltrate private data because no data path to private storage exists. This is the correct security property: impossible by construction, not impossible by policy enforcement.</li>
+      </ul>
+
+<div class="code-block"><span class="dim">Data wall — what microsandbox can and cannot reach:</span>
+
+  <span class="dim">Microsandbox VM boundary:</span>
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  WASM Extension Code                                           │
+  │                                                                │
+  │  CAN call:     microsandbox gateway API (explicit, audited)    │
+  │  CAN receive:  task payload (passed at VM boot time)          │
+  │  CAN return:   result payload (returned at VM exit)           │
+  │                                                                │
+  │  CANNOT reach: did:uar: key store                             │
+  │  CANNOT reach: surreal-memory-server (private data)           │
+  │  CANNOT reach: host filesystem                                 │
+  │  CANNOT reach: other agents' WASM sandboxes                   │
+  │  CANNOT reach: Kaia VC store                                   │
+  │  CANNOT reach: Cedar policy bundle cache                       │
+  └─────────────────────────────────────────────────────────────────┘
+        │ (hardware VM boundary — not a software policy)
+        ▼
+  <span class="hi">Host UAR / gen_ui_core</span>
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  Private data, DID keys, Kaia VCs, Cedar policies, memory      │
+  │  (all inaccessible from inside microsandbox by construction)   │
+  └─────────────────────────────────────────────────────────────────┘</div>
+
+      <h3>8.3 Capability Imports — What WASM Can Export to Guest Code</h3>
+      <p>WASM components can only call host functions that the host explicitly exports into the guest's import namespace. In UAR's WASM sandbox, only two host functions are exported by default: <code>uar_log</code> and <code>uar_emit_event</code>. Neither of these provides access to private data. Any additional capability — reading from surreal-memory-server, calling an LLM, writing to the knowledge graph — must be explicitly granted via a Cedar capability token and implemented as a typed host function export. An agent cannot reach capabilities that the host did not deliberately expose to it.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 9 -->
+    <div class="paper-section" id="s9">
+      <div class="section-num">§ 9 — Synthesis</div>
+      <h2 class="section-title">The Governance Convergence Property</h2>
+      <div class="section-lead">The five properties described in this paper are not independent controls that happen to coexist. They are facets of a single architectural claim: that in the Prometheus Fabric, an agent cannot exceed its certified behavioral envelope by construction — not by monitoring, not by detection after harm has occurred, but because the system's structure makes the violation architecturally impossible.</div>
+
+      <h3>9.1 How the Five Properties Interlock</h3>
+
+<div class="code-block"><span class="dim">The governance convergence: five properties, one invariant.</span>
+
+<span class="hi">HARM PREVENTION</span>        (§4)
+  Cedar PEPs at every boundary   →  no operation proceeds without authorization
+  WASM sandbox + fuel metering   →  no execution exceeds resource budget
+  16-layer OpenFang security     →  no bypass path through agent OS
+  Microsandbox hardware VM       →  no extension reaches private data
+  Kaia drift monitoring          →  no undetected behavioral deviation
+                                 ∴  <span class="g">Harm requires defeating five independent layers simultaneously</span>
+
+<span class="hi">BEHAVIORAL CERTIFICATION</span>   (§5)
+  PMPO reflection artifacts      →  quantified evidence of execution quality
+  Kaia thought experiments       →  edge case and adversarial scenario coverage
+  W3C VC with Ed25519 proof      →  cryptographic behavioral attestation
+  Cedar operationalParams        →  VC-encoded limits enforced at PEP
+                                 ∴  <span class="g">Deviation from certified parameters is Cedar-denied, not monitored</span>
+
+<span class="hi">DEVICE PORTABILITY</span>         (§6)
+  Cedar local evaluation         →  no network required for policy decisions
+  candle-vllm + TurboQuant       →  frontier-class reasoning on consumer hardware
+  gen_ui_core Rust core          →  governance layer on iOS/Android/macOS/Windows
+  Policy bundle + VC cached      →  governance works fully offline
+                                 ∴  <span class="g">Governance parity is not degraded by hardware constraints</span>
+
+<span class="hi">DECENTRALIZED SYNC</span>         (§7)
+  Gossip + OFP                   →  peer discovery without central registry
+  diamond-types CRDT             →  state convergence without coordinator
+  WebRTC + HMAC-SHA256           →  authenticated real-time p2p coordination
+  ATAgent PDS + DID              →  portable, self-verifying persistent state
+                                 ∴  <span class="g">Governance state converges without trusting any central authority</span>
+
+<span class="hi">EXECUTION ISOLATION</span>        (§8)
+  Ed25519 component signing      →  all code has verified provenance
+  Kaia VC for T1 extensions      →  certified extensions get more trust
+  Microsandbox hardware VM       →  uncertified code is hardware-isolated
+  Deny-by-default at plugin PEP  →  unsigned code never executes
+                                 ∴  <span class="g">Untrusted code cannot reach private data by construction</span></div>
+
+      <h3>9.2 The Regulatory and Compliance Implication</h3>
+      <p>The governance architecture described in this paper produces compliance artifacts as structural byproducts of normal operation. The Merkle hash-chain audit trail captures every Cedar decision with tamper-evident evidence. Kaia VCs record behavioral scope and compliance framework attestations. PMPO reflection reports document execution quality against declared specifications. CRDT-merged knowledge graph updates carry timestamp proofs of when each fact entered the system.</p>
+
+      <p>This means a regulated deployment — banking, healthcare, government — does not require a separate compliance implementation layered on top of the operational system. The operational system <em>is</em> the compliance system. The evidence required by CFPB Section 1033, SOX audit requirements, HIPAA access logs, and EU AI Act transparency obligations is produced automatically, stored in surreal-memory-server's temporal history, and queryable at any past timestamp. No post-hoc documentation effort is required.</p>
+
+      <h3>9.3 What Remains to Complete</h3>
+      <p>The architecture described here has several components in implementation and several in design. The governance convergence property is architecturally sound — the principles, policy types, enforcement surfaces, and trust hierarchy are fully specified. The following represent the primary remaining engineering work to realize the complete architecture:</p>
+
+      <ul class="styled">
+        <li><strong>Full Cedar PEP integration in UAR</strong> — the policy framework is specified and the LLM Invocation PEP is implemented; the Storage, Network Egress, and Plugin Load PEPs require completion</li>
+        <li><strong>Kaia VC issuance pipeline</strong> — the certification workflow (MVP and functional specs) is complete; the CLI tooling, expert operator interface, and VC signing infrastructure require implementation</li>
+        <li><strong>Gossip-based policy propagation</strong> — OFP peer discovery is implemented in OpenFang; extending it for signed policy bundle propagation requires adding the Cedar bundle to gossip message payloads</li>
+        <li><strong>CRDT integration in gen_ui_core</strong> — diamond-types CRDT primitives are on the Sprint 2 roadmap for gen_ui_core; the integration with surreal-memory-server's write path requires a CRDT-aware merge layer</li>
+        <li><strong>Microsandbox integration for T2 extensions</strong> — microsandbox is operational as a standalone tool; integration into UAR's plugin load PEP as the execution environment for uncertified WASM components requires a UAR-microsandbox gateway adapter</li>
+      </ul>
+
+      <div class="callout green">
+        <p><strong>The final claim, stated with precision:</strong> When the five-property architecture described in this paper is fully implemented, the Prometheus Fabric will be the first open-source, Rust-native agent execution environment in which an agent's inability to exceed its behavioral envelope is a structural property provable by inspection of the runtime architecture — not a best-effort property dependent on monitoring, content filtering, or the agent's own adherence to instructions. Harm prevention, certified envelopes, device portability, decentralized synchronization, and execution isolation are not features of this system. They are properties of its construction.</p>
+      </div>
+    </div>
+
+    <!-- FOOTNOTES -->
+    <div class="footnotes">
+      <div class="footnotes-label">References &amp; Source Documents</div>
+      <div class="footnote"><span class="fn-num">[1]</span> UAR-GOV v1.0 — Universal Agent Runtime Governance Architecture Specification. Prometheus AGS Internal, 2026.</div>
+      <div class="footnote"><span class="fn-num">[2]</span> UAR-AGENT-MD v1.1 — Agent Manifest Definition Standard. Prometheus AGS Internal, 2026.</div>
+      <div class="footnote"><span class="fn-num">[3]</span> Kaia Functional Specification v1.0 — AI Agent Certification &amp; Debug Platform. Prometheus AGS Internal, 2026.</div>
+      <div class="footnote"><span class="fn-num">[4]</span> Prometheus Identity &amp; Access Architecture Standard v1.0. Prometheus AGS Internal, 2026.</div>
+      <div class="footnote"><span class="fn-num">[5]</span> OpenFang Architecture Documentation v0.3.30. RightNow AI, 2026. Crates: openfang-runtime, openfang-kernel, openfang-wire.</div>
+      <div class="footnote"><span class="fn-num">[6]</span> candle-vllm Prometheus Fork (feature/god-mode). TurboQuant KV Compression Integration. Prometheus AGS, 2026.</div>
+      <div class="footnote"><span class="fn-num">[7]</span> turboquant-rs — Pure Rust Implementation of TurboQuant (ICLR 2026). Prometheus AGS, 2026.</div>
+      <div class="footnote"><span class="fn-num">[8]</span> Microsandbox — Secure Execution of Untrusted Code via microVM Hardware Isolation. Experimental, 2026.</div>
+      <div class="footnote"><span class="fn-num">[9]</span> Zandieh, A. et al. "TurboQuant: Redefining AI Efficiency with Extreme Compression." ICLR 2026. Google Research, Google DeepMind.</div>
+      <div class="footnote"><span class="fn-num">[10]</span> diamond-types — A high-performance CRDT library for Rust. Implemented by Josephine Lau, 2024.</div>
+      <div class="footnote"><span class="fn-num">[11]</span> W3C Verifiable Credentials Data Model v2.0. World Wide Web Consortium, 2024.</div>
+      <div class="footnote"><span class="fn-num">[12]</span> Cedar Policy Language — Fine-grained authorization for modern applications. Amazon Web Services (open-sourced), 2023.</div>
+    </div>
+
+  </div><!-- /paper-body -->
+</div><!-- /document -->
+
+<!-- PAPER FOOTER -->
+<div class="paper-footer">
+  <div class="footer-brand">travisjames.ai</div>
+  <div class="footer-meta">Prometheus AGS · Technical Paper · April 2026 · Confidential · Working Draft v1.0</div>
+</div>
+
+</body>
+</html>

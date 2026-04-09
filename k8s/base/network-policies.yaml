@@ -1,0 +1,136 @@
+---
+# Default deny all ingress traffic in the uar namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: uar
+  labels:
+    app.kubernetes.io/part-of: universal-agent-runtime
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# Allow UAR app -> PostgreSQL on port 5432
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-uar-to-postgres
+  namespace: uar
+  labels:
+    app.kubernetes.io/part-of: universal-agent-runtime
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/component: database
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: uar
+              app.kubernetes.io/component: app
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# Allow UAR app -> Redis on port 6379
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-uar-to-redis
+  namespace: uar
+  labels:
+    app.kubernetes.io/part-of: universal-agent-runtime
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/component: cache
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: uar
+              app.kubernetes.io/component: app
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+# Allow UAR app -> SurrealDB on port 8000
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-uar-to-surrealdb
+  namespace: uar
+  labels:
+    app.kubernetes.io/part-of: universal-agent-runtime
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: surrealdb
+      app.kubernetes.io/component: database
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: uar
+              app.kubernetes.io/component: app
+      ports:
+        - protocol: TCP
+          port: 8000
+---
+# Allow Envoy Gateway -> UAR app on port 3000
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-envoy-to-uar
+  namespace: uar
+  labels:
+    app.kubernetes.io/part-of: universal-agent-runtime
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: uar
+      app.kubernetes.io/component: app
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: envoy-gateway-system
+      ports:
+        - protocol: TCP
+          port: 3000
+---
+# Allow Prometheus scraping -> UAR app on port 3000 from kube-system
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-to-uar
+  namespace: uar
+  labels:
+    app.kubernetes.io/part-of: universal-agent-runtime
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: uar
+      app.kubernetes.io/component: app
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 3000

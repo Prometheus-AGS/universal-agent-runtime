@@ -5,9 +5,24 @@ use std::process::Command;
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=proto/a2a.proto");
     println!("cargo:rerun-if-env-changed=SKIP_MODEL_BUILD");
     println!("cargo:rerun-if-env-changed=SKIP_FRONTEND_BUILD");
     println!("cargo:rerun-if-env-changed=SKIP_CATALOG_BUILD");
+
+    // -------------------------------------------------------------------------
+    // gRPC Proto Compilation (A2A v0.3)
+    // -------------------------------------------------------------------------
+    // A2A v0.3 gRPC: Proto file is at proto/a2a.proto for reference.
+    // Code generation requires tonic-build with prost feature which is
+    // undergoing API changes in v0.14. The gRPC service is defined manually
+    // in src/uar/api/a2a/grpc.rs using tonic's manual service builder.
+    // To enable auto-generation, add `tonic-build = { version = "0.14", features = ["prost"] }`
+    // to [build-dependencies] and uncomment the compile_protos call below.
+    // if Path::new("proto/a2a.proto").exists() {
+    //     tonic_build::compile_protos("proto/a2a.proto")
+    //         .expect("Failed to compile A2A proto");
+    // }
 
     // -------------------------------------------------------------------------
     // Provider / Model Catalog

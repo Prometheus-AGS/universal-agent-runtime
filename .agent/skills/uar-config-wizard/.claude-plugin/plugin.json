@@ -1,0 +1,23 @@
+{
+  "name": "uar-config-wizard",
+  "description": "Configuration assistant for Universal Agent Runtime: guided wizard, advisor, validator, migration assistant, model selection advisor (models.dev + candle-vllm + turboquant), and full stack bundle generator",
+  "version": "1.0.0",
+  "author": {
+    "name": "Prometheus AGS",
+    "url": "https://github.com/Prometheus-AGS"
+  },
+  "homepage": "https://github.com/Prometheus-AGS/universal-agent-runtime",
+  "repository": "https://github.com/Prometheus-AGS/universal-agent-runtime",
+  "license": "MIT",
+  "skills": [
+    "./skills/uar-config",
+    "./skills/uar-wizard",
+    "./skills/uar-validate",
+    "./skills/uar-migrate",
+    "./skills/uar-k8s-config",
+    "./skills/uar-model-select",
+    "./skills/uar-stack"
+  ],
+  "agents": "./agents",
+  "hooks": "./hooks/hooks.json"
+}

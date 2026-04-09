@@ -47,6 +47,8 @@ import { useMemoryContext } from "@/features/chat/memory-context";
 import { cn } from "@/lib/utils";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { useChatMessageStore } from "@/stores/chat-message-store";
+import { useAgentStatusStore } from "@/stores/agent-status-store";
+import { AgentStatusIndicator } from "@/features/chat/components/AgentStatusIndicator";
 
 // ─── Stable AuiIf condition predicates ────────────────────────────────────────
 // Defined at module level so their references are stable across renders.
@@ -86,6 +88,16 @@ function selectErrorText(m: ThreadMessageLike): string | null {
   return maybe.metadata?.custom?.errorText ?? null;
 }
 
+const ThreadAgentStatus: FC = () => {
+  const status = useAgentStatusStore((s) => s.status);
+  const toolName = useAgentStatusStore((s) => s.toolName);
+  return (
+    <div className="mx-auto w-full max-w-(--thread-max-width) px-4">
+      <AgentStatusIndicator status={{ type: status, toolName }} />
+    </div>
+  );
+};
+
 export const EnhancedThread: FC = () => (
   <ThreadPrimitive.Root
     className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
@@ -100,6 +112,8 @@ export const EnhancedThread: FC = () => (
       </AuiIf>
 
       <ThreadPrimitive.Messages components={THREAD_COMPONENTS} />
+
+      <ThreadAgentStatus />
 
       <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer sticky bottom-0 mx-auto mt-auto flex w-full max-w-(--thread-max-width) flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
         <ThreadScrollToBottom />

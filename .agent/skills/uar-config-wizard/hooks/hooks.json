@@ -1,0 +1,100 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-config.sh 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "wizard-guide",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/state-checkpoint.sh \"${CONFIG_SESSION:-default}\" wizard phase_complete 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflow-dispatch.sh \"${CONFIG_SESSION:-default}\" phase_complete wizard 2>&1 || true"
+          }
+        ]
+      },
+      {
+        "matcher": "config-advisor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/state-checkpoint.sh \"${CONFIG_SESSION:-default}\" advise phase_complete 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflow-dispatch.sh \"${CONFIG_SESSION:-default}\" phase_complete advise 2>&1 || true"
+          }
+        ]
+      },
+      {
+        "matcher": "validator",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/state-checkpoint.sh \"${CONFIG_SESSION:-default}\" validate phase_complete 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflow-dispatch.sh \"${CONFIG_SESSION:-default}\" phase_complete validate 2>&1 || true"
+          }
+        ]
+      },
+      {
+        "matcher": "generator",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-config.sh 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/state-checkpoint.sh \"${CONFIG_SESSION:-default}\" generate phase_complete 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflow-dispatch.sh \"${CONFIG_SESSION:-default}\" phase_complete generate 2>&1 || true"
+          }
+        ]
+      },
+      {
+        "matcher": "model-advisor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/state-checkpoint.sh \"${CONFIG_SESSION:-default}\" model_select phase_complete 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflow-dispatch.sh \"${CONFIG_SESSION:-default}\" phase_complete model_select 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/state-finalize.sh \"${CONFIG_SESSION:-default}\" 2>&1 || true"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/workflow-dispatch.sh \"${CONFIG_SESSION:-default}\" session_complete 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}

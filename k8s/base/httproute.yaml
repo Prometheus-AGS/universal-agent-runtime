@@ -1,0 +1,22 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: uar
+  namespace: uar
+  labels:
+    app.kubernetes.io/name: uar
+    app.kubernetes.io/part-of: universal-agent-runtime
+spec:
+  parentRefs:
+    - name: envoy-gateway
+      namespace: envoy-gateway-system
+  hostnames:
+    - "uar.example.com"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: uar
+          port: 3000

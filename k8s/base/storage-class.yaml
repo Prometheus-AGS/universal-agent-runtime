@@ -1,0 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: uar-immediate
+  labels:
+    app.kubernetes.io/part-of: universal-agent-runtime
+provisioner: pd.csi.storage.gke.io
+volumeBindingMode: Immediate
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+parameters:
+  type: pd-ssd

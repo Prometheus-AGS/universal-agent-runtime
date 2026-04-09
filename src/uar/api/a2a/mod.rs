@@ -17,6 +17,9 @@
 
 pub mod agent_card;
 pub mod discovery;
+// gRPC transport requires proto compilation via tonic-build.
+// Enable once tonic-build prost integration is configured.
+// pub mod grpc;
 pub mod handler;
 pub mod registry;
 pub mod registry_postgres;

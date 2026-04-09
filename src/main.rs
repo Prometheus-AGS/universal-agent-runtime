@@ -11,17 +11,30 @@ static GLOBAL: MiMalloc = MiMalloc;
 use clap::Parser as _;
 use dotenvy::dotenv;
 use std::sync::Arc;
-use universal_agent_runtime::config::{AppConfig, Cli};
+use universal_agent_runtime::config::{AppConfig, Cli, LogFormat};
 use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
 
 #[tokio::main]
 async fn main() {
-    uar::telemetry::init();
+    let _ = dotenv();
+
+    // Resolve log format early (before full config load) so telemetry
+    // is initialized with the correct format from the start.
+    let log_format = std::env::var("UAR_SERVER__LOG_FORMAT")
+        .ok()
+        .and_then(|v| match v.to_lowercase().as_str() {
+            "json" => Some(LogFormat::Json),
+            "compact" => Some(LogFormat::Compact),
+            "pretty" => Some(LogFormat::Pretty),
+            _ => None,
+        })
+        .unwrap_or_default();
+
+    uar::telemetry::init(&log_format);
+    uar::telemetry::metrics::init();
 
     let cli = Cli::parse();
-
-    let _ = dotenv();
 
     let config = match AppConfig::load_with_cli(cli) {
         Ok(c) => Arc::new(c),

@@ -61,6 +61,96 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  .light {
+    --background: 0 0% 98%;               /* #FAFAFA near-white */
+    --foreground: 214 20% 20%;            /* #283848 dark navy text */
+
+    --card: 0 0% 100%;                     /* #FFFFFF white surface */
+    --card-foreground: 214 20% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 214 20% 20%;
+
+    --primary: 20 100% 50%;               /* #FF5722 ember orange (slightly deeper for contrast) */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 214 15% 92%;             /* #E8ECF0 */
+    --secondary-foreground: 214 20% 30%;
+
+    --muted: 214 12% 94%;                 /* #EEF0F3 */
+    --muted-foreground: 214 10% 45%;      /* #6A7585 */
+
+    --accent: 214 12% 94%;
+    --accent-foreground: 214 20% 20%;
+
+    --destructive: 4 90% 50%;             /* #E53935 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 15% 88%;               /* #D8DDE4 */
+    --input: 214 15% 90%;
+    --ring: 20 100% 50%;
+
+    --ember: 20 100% 50%;
+    --success: 142 70% 38%;
+    --warning: 38 92% 45%;
+    --warning-foreground: 38 92% 10%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not(.dark) {
+      --background: 0 0% 98%;
+      --foreground: 214 20% 20%;
+
+      --card: 0 0% 100%;
+      --card-foreground: 214 20% 20%;
+
+      --popover: 0 0% 100%;
+      --popover-foreground: 214 20% 20%;
+
+      --primary: 20 100% 50%;
+      --primary-foreground: 0 0% 100%;
+
+      --secondary: 214 15% 92%;
+      --secondary-foreground: 214 20% 30%;
+
+      --muted: 214 12% 94%;
+      --muted-foreground: 214 10% 45%;
+
+      --accent: 214 12% 94%;
+      --accent-foreground: 214 20% 20%;
+
+      --destructive: 4 90% 50%;
+      --destructive-foreground: 0 0% 100%;
+
+      --border: 214 15% 88%;
+      --input: 214 15% 90%;
+      --ring: 20 100% 50%;
+
+      --ember: 20 100% 50%;
+      --success: 142 70% 38%;
+      --warning: 38 92% 45%;
+      --warning-foreground: 38 92% 10%;
+
+      --sidebar-background: 0 0% 98%;
+      --sidebar-foreground: 240 5.3% 26.1%;
+      --sidebar-primary: 240 5.9% 10%;
+      --sidebar-primary-foreground: 0 0% 98%;
+      --sidebar-accent: 240 4.8% 95.9%;
+      --sidebar-accent-foreground: 240 5.9% 10%;
+      --sidebar-border: 220 13% 91%;
+      --sidebar-ring: 217.2 91.2% 59.8%;
+    }
+  }
 }
 
 @layer base {
@@ -155,6 +245,19 @@
 .hljs-function, .hljs-title { color: hsl(40 90% 65%); }
 .hljs-type, .hljs-class { color: hsl(260 60% 75%); }
 .hljs-variable, .hljs-params { color: hsl(210 20% 82%); }
+
+/* Highlight.js code block theme (light) */
+.light .hljs {
+  background: hsl(214 12% 96%) !important;
+  color: hsl(214 20% 25%) !important;
+}
+.light .hljs-keyword, .light .hljs-selector-tag, .light .hljs-built_in { color: hsl(20 100% 42%); }
+.light .hljs-string, .light .hljs-attr { color: hsl(142 60% 32%); }
+.light .hljs-number, .light .hljs-literal { color: hsl(200 80% 40%); }
+.light .hljs-comment { color: hsl(210 10% 55%); font-style: italic; }
+.light .hljs-function, .light .hljs-title { color: hsl(40 80% 40%); }
+.light .hljs-type, .light .hljs-class { color: hsl(260 50% 50%); }
+.light .hljs-variable, .light .hljs-params { color: hsl(214 20% 25%); }
 
 /* Mobile safe areas */
 @supports (padding: max(0px)) {

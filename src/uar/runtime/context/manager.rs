@@ -1,5 +1,6 @@
+use super::summarizer;
 use super::token_service::TokenService;
-use crate::llm::{Message, MessageRole};
+use crate::llm::{LlmDriver, Message, MessageContent, MessageRole};
 use crate::uar::domain::context::{ContextAction, ContextConfig, ContextStrategy};
 use tracing::{info, warn};
 
@@ -15,10 +16,24 @@ impl ContextManager {
 
     /// Check if context management is needed and apply the configured strategy.
     /// Returns the (potentially modified) messages and an action report if changes were made.
+    ///
+    /// When using `ProgressiveSummarization`, an `LlmDriver` must be provided
+    /// to generate summaries. If `None`, falls back to `KeepFirstLast`.
     pub async fn apply(
         &self,
         messages: Vec<Message>,
         model_token_limit: usize,
+    ) -> (Vec<Message>, Option<ContextAction>) {
+        self.apply_with_driver(messages, model_token_limit, None)
+            .await
+    }
+
+    /// Apply context management with an optional LLM driver for summarization.
+    pub async fn apply_with_driver(
+        &self,
+        messages: Vec<Message>,
+        model_token_limit: usize,
+        driver: Option<&dyn LlmDriver>,
     ) -> (Vec<Message>, Option<ContextAction>) {
         let current_tokens = TokenService::estimate_messages(&messages);
         // Use configured max or model limit - buffer (e.g. 1000 tokens for output)
@@ -48,12 +63,21 @@ impl ContextManager {
                     .await
             }
             ContextStrategy::ProgressiveSummarization => {
-                // For now, fall back to KeepFirstLast until LLM summarizer is wired
-                warn!(
-                    "ProgressiveSummarization not yet fully wired, falling back to KeepFirstLast"
-                );
-                self.apply_keep_first_last(messages, effective_max, current_tokens)
+                if let Some(drv) = driver {
+                    self.apply_progressive_summarization(
+                        messages,
+                        effective_max,
+                        current_tokens,
+                        drv,
+                    )
                     .await
+                } else {
+                    warn!(
+                        "ProgressiveSummarization requires LLM driver; falling back to KeepFirstLast"
+                    );
+                    self.apply_keep_first_last(messages, effective_max, current_tokens)
+                        .await
+                }
             }
             _ => (messages, None),
         }
@@ -199,6 +223,106 @@ impl ContextManager {
                 tokens_saved,
                 was_applied: true,
                 summary_generated: false,
+            }),
+        )
+    }
+
+    async fn apply_progressive_summarization(
+        &self,
+        messages: Vec<Message>,
+        token_budget: usize,
+        original_tokens: usize,
+        driver: &dyn LlmDriver,
+    ) -> (Vec<Message>, Option<ContextAction>) {
+        // Strategy: keep system prompt + summarize older messages + keep recent tail
+        let mut head = Vec::new();
+        let mut budget = token_budget;
+
+        // 1. Preserve system messages
+        for msg in &messages {
+            if msg.role == MessageRole::System {
+                let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
+                if t < budget {
+                    head.push(msg.clone());
+                    budget -= t;
+                }
+            } else {
+                break;
+            }
+        }
+
+        // 2. Find split point: summarize older non-system messages, keep recent ones
+        let non_system: Vec<&Message> = messages
+            .iter()
+            .filter(|m| m.role != MessageRole::System)
+            .collect();
+
+        // Reserve ~40% of remaining budget for the summary, 60% for recent messages
+        let summary_budget = budget * 2 / 5;
+        let tail_budget = budget - summary_budget;
+
+        // 3. Collect tail (recent messages within tail_budget)
+        let mut tail = Vec::new();
+        let mut tail_used = 0;
+        for msg in non_system.iter().rev() {
+            let t = TokenService::estimate_string(msg.content.as_text().unwrap_or("")) + 3;
+            if tail_used + t <= tail_budget {
+                tail.push((*msg).clone());
+                tail_used += t;
+            } else {
+                break;
+            }
+        }
+        tail.reverse();
+        let tail_start = non_system.len().saturating_sub(tail.len());
+
+        // 4. Summarize the messages NOT in the tail
+        let to_summarize: Vec<Message> = non_system[..tail_start]
+            .iter()
+            .map(|m| (*m).clone())
+            .collect();
+
+        let summary_generated;
+        if !to_summarize.is_empty() {
+            match summarizer::summarize_messages(&to_summarize, driver).await {
+                Ok(summary_text) => {
+                    info!(
+                        summarized_count = to_summarize.len(),
+                        "Progressive summarization complete"
+                    );
+                    head.push(Message {
+                        role: MessageRole::Assistant,
+                        content: MessageContent::text(&format!(
+                            "[Summary of previous conversation]\n{summary_text}"
+                        )),
+                        tool_call_id: None,
+                        tool_calls: None,
+                    });
+                    summary_generated = true;
+                }
+                Err(e) => {
+                    warn!("Summarization failed: {e}; falling back to truncation");
+                    summary_generated = false;
+                }
+            }
+        } else {
+            summary_generated = false;
+        }
+
+        head.extend(tail);
+
+        let removed_count = messages.len() - head.len();
+        let tokens_saved =
+            original_tokens.saturating_sub(TokenService::estimate_messages(&head));
+
+        (
+            head,
+            Some(ContextAction {
+                strategy: ContextStrategy::ProgressiveSummarization,
+                messages_removed: removed_count,
+                tokens_saved,
+                was_applied: true,
+                summary_generated,
             }),
         )
     }

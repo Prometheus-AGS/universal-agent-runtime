@@ -6,6 +6,13 @@
       "domain": "software+business",
       "status": "in_progress",
       "iteration": 1
+    },
+    "uar-production-readiness-2026-04": {
+      "path": ".evolver/evolutions/uar-production-readiness-2026-04",
+      "created_at": "2026-04-08T00:00:00Z",
+      "domain": "software",
+      "status": "assessing",
+      "iteration": 1
     }
   }
 }

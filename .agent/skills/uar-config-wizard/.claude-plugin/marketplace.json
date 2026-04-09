@@ -1,0 +1,28 @@
+{
+  "name": "prometheus-ags-skills",
+  "owner": {
+    "name": "Prometheus AGS"
+  },
+  "metadata": {
+    "description": "Configuration and model-selection tools for the Universal Agent Runtime + candle-vllm stack.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "uar-config-wizard",
+      "source": "./",
+      "category": "productivity",
+      "tags": [
+        "configuration",
+        "uar",
+        "candle-vllm",
+        "turboquant",
+        "llm",
+        "wizard",
+        "model-selection",
+        "kubernetes",
+        "deployment"
+      ]
+    }
+  ]
+}

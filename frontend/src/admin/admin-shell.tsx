@@ -1,11 +1,13 @@
 import { type FC, type ReactNode, useState } from "react";
 import {
+  Activity,
   Bot,
   BookOpen,
   Brain,
   Code2,
   Key,
   Layers,
+  LayoutGrid,
   Server,
   SlidersHorizontal,
   Wrench,
@@ -23,7 +25,9 @@ export type AdminSection =
   | "knowledge"
   | "memory"
   | "compiler"
-  | "settings";
+  | "settings"
+  | "a2ui-testing"
+  | "mcp-health";
 
 const NAV_ITEMS: { id: AdminSection; label: string; icon: FC<{ size?: number; className?: string }> }[] = [
   { id: "providers", label: "Providers", icon: Server },
@@ -36,6 +40,8 @@ const NAV_ITEMS: { id: AdminSection; label: string; icon: FC<{ size?: number; cl
   { id: "memory", label: "Memory", icon: Brain },
   { id: "compiler", label: "Compiler", icon: Code2 },
   { id: "settings", label: "Settings", icon: SlidersHorizontal },
+  { id: "a2ui-testing", label: "A2UI Testing", icon: LayoutGrid },
+  { id: "mcp-health", label: "MCP Health", icon: Activity },
 ];
 
 interface AdminShellProps {

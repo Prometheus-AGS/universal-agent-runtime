@@ -321,6 +321,8 @@ impl SessionStore {
         let session = Session::new(id.clone());
         let mut guard = self.inner.sessions.write().unwrap();
         guard.insert(id, session.clone());
+        #[allow(clippy::cast_precision_loss)]
+        crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
         session
     }
 
@@ -349,7 +351,10 @@ impl SessionStore {
     /// Remove a session by ID.
     pub fn remove(&self, id: &str) -> Option<Session> {
         let mut guard = self.inner.sessions.write().unwrap();
-        guard.remove(id)
+        let removed = guard.remove(id);
+        #[allow(clippy::cast_precision_loss)]
+        crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
+        removed
     }
 
     /// Get the number of active sessions.
@@ -380,7 +385,12 @@ impl SessionStore {
         let mut guard = self.inner.sessions.write().unwrap();
         let before = guard.len();
         guard.retain(|_, session| !session.is_expired_with_timeout(timeout));
-        before - guard.len()
+        let removed = before - guard.len();
+        if removed > 0 {
+            #[allow(clippy::cast_precision_loss)]
+            crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
+        }
+        removed
     }
 
     /// List all session IDs.

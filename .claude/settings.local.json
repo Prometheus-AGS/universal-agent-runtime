@@ -18,7 +18,28 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nMerge branch ''main'' of github.com:Prometheus-AGS/universal-agent-runtime\n\nResolve conflicts in static assets by using fresh build artifacts.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git checkout:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(grep:*)",
+      "Skill(iterative-evolver)",
+      "WebSearch",
+      "Bash(openspec new:*)",
+      "Bash(openspec status:*)",
+      "Bash(openspec instructions:*)",
+      "Bash(cargo check:*)",
+      "Bash(bun run:*)",
+      "Bash(kubectl kustomize:*)",
+      "Bash(helm lint:*)",
+      "Bash(kill 323480)",
+      "Bash(sed:*)",
+      "Bash(python3:*)",
+      "Bash(UAR_SERVER__LOG_FORMAT=json UAR_LLM__API_KEY=test timeout 3 cargo run)",
+      "Bash(UAR_SERVER__LOG_FORMAT=json UAR_LLM__API_KEY=test timeout 5 cargo run)",
+      "Bash(cargo build:*)",
+      "Bash(UAR_SERVER__LOG_FORMAT=json UAR_LLM__API_KEY=test UAR_SECURITY__JWT_REQUIRED=false timeout 5 /home/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime)",
+      "Bash(docker build:*)",
+      "Bash(rm -rf /tmp/uar-test-db3)",
+      "Bash(mkdir -p /tmp/uar-test-db3)",
+      "Bash(UAR_SERVER__LOG_FORMAT=compact UAR_LLM__API_KEY=test UAR_SECURITY__JWT_REQUIRED=false UAR_SERVER__PORT=3097 UAR_PERSISTENCE__DATABASE_URL=\"rocksdb:///tmp/uar-test-db3/uar.db\" UAR_MEMORY__DB_PATH=\"/tmp/uar-test-db3/memory.db\" /home/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime)"
     ]
   }
 }

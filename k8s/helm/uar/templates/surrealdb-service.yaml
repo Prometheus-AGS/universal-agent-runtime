@@ -1,0 +1,21 @@
+{{- if .Values.surrealdb.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: surrealdb
+  namespace: {{ include "uar.namespace" . }}
+  labels:
+    app.kubernetes.io/name: surrealdb
+    app.kubernetes.io/component: database
+    app.kubernetes.io/part-of: universal-agent-runtime
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: surrealdb
+    app.kubernetes.io/component: database
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
+{{- end }}
