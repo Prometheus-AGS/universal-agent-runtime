@@ -69,6 +69,9 @@ fn minimal_config() -> AppConfig {
         server: ServerConfig {
             port: 3000,
             host: "127.0.0.1".to_string(),
+            shutdown_timeout_secs: 30,
+            log_format: universal_agent_runtime::config::LogFormat::Compact,
+            grpc_port: 50051,
         },
         security: SecurityConfig {
             jwt_required: false,
@@ -111,6 +114,7 @@ fn minimal_config() -> AppConfig {
         llm: LlmConfig::default(),
         providers: vec![],
         memory: MemoryConfig::default(),
+        sandbox: universal_agent_runtime::config::SandboxRuntimeConfig::default(),
     }
 }
 
