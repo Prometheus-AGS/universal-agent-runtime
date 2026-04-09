@@ -109,7 +109,7 @@
 - [x] 10.5 Refactor `api_messages()` handler to use `AnthropicDriver` when resolved model is Anthropic
 - [x] 10.6 Preserve existing `convert_anthropic_messages_to_openai()` path as fallback when feature gate is off
 - [x] 10.7 Add `CacheStrategy` resolution from global config + per-request `prompt_caching_enabled` flag
-- [ ] 10.8 Add integration test: verify Anthropic model uses AnthropicDriver, non-Anthropic uses ToolNormalizerDriver
+- [x] 10.8 Add integration test: verify Anthropic model uses AnthropicDriver, non-Anthropic uses ToolNormalizerDriver
 
 ## 11. Extend LlmRequest
 

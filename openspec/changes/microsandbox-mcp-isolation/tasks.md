@@ -109,10 +109,10 @@
 
 ## 13. End-to-End Verification
 
-- [ ] 13.1 Test `sandbox__code_exec` with Python code → verify output
-- [ ] 13.2 Test `sandbox__shell_exec` with bash command → verify output
-- [ ] 13.3 Test `sandbox__file_write` + `sandbox__file_read` round-trip
-- [ ] 13.4 Test session persistence: write file in turn 1, read it in turn 2
+- [x] 13.1 Test `sandbox__code_exec` with Python code → verify output
+- [x] 13.2 Test `sandbox__shell_exec` with bash command → verify output
+- [x] 13.3 Test `sandbox__file_write` + `sandbox__file_read` round-trip
+- [x] 13.4 Test session persistence: write file in turn 1, read it in turn 2
 - [ ] 13.5 Test sandboxed MCP server: spawn with `sandboxed: true`, verify tool calls work
-- [ ] 13.6 Test platform fallback: disable microsandbox feature, verify Wasmtime is selected
-- [ ] 13.7 Test TTL expiry: create sandbox, wait > TTL, verify cleanup
+- [x] 13.6 Test platform fallback: disable microsandbox feature, verify Wasmtime is selected
+- [x] 13.7 Test TTL expiry: create sandbox, wait > TTL, verify cleanup
