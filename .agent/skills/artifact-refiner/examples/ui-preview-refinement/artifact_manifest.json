@@ -1,0 +1,34 @@
+{
+  "artifact_type": "ui",
+  "generated_at": "2026-02-16T12:45:00Z",
+  "variants": [
+    {
+      "name": "card-preview",
+      "files": [
+        "examples/ui-preview-refinement/dist/previews/card/preview.html",
+        "examples/ui-preview-refinement/dist/previews/card/screenshot.png",
+        "examples/ui-preview-refinement/dist/previews/card/preview-report.json"
+      ]
+    }
+  ],
+  "preview": {
+    "required": true,
+    "runs": [
+      {
+        "artifact_id": "card",
+        "status": "success",
+        "html": "examples/ui-preview-refinement/dist/previews/card/preview.html",
+        "screenshot": "examples/ui-preview-refinement/dist/previews/card/screenshot.png",
+        "report": "examples/ui-preview-refinement/dist/previews/card/preview-report.json",
+        "runtime_source": "none",
+        "runtime_detail": "not-required"
+      }
+    ]
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": []
+  }
+}

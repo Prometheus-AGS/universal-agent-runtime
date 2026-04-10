@@ -1,0 +1,49 @@
+{
+  "constraints": [
+    {
+      "id": "c1",
+      "description": "Primary color must be deep blue (#0a1628)",
+      "severity": "blocking",
+      "type": "brand",
+      "validation": "hex_color_match",
+      "validated": true,
+      "last_checked": "2026-01-15T10:30:00Z"
+    },
+    {
+      "id": "c2",
+      "description": "Accent color must be electric cyan (#00d4ff)",
+      "severity": "blocking",
+      "type": "brand",
+      "validation": "hex_color_match",
+      "validated": true,
+      "last_checked": "2026-01-15T10:30:00Z"
+    },
+    {
+      "id": "c3",
+      "description": "Logo must be legible at 16x16 favicon size",
+      "severity": "blocking",
+      "type": "visual",
+      "validation": "favicon_legibility_check",
+      "validated": true,
+      "last_checked": "2026-01-15T10:32:00Z"
+    },
+    {
+      "id": "c4",
+      "description": "Must work on both #ffffff and #0a1628 backgrounds",
+      "severity": "blocking",
+      "type": "visual",
+      "validation": "contrast_ratio_check",
+      "validated": true,
+      "last_checked": "2026-01-15T10:32:00Z"
+    },
+    {
+      "id": "c5",
+      "description": "Style should evoke developer tooling and data flow",
+      "severity": "high",
+      "type": "aesthetic",
+      "validation": "subjective_review",
+      "validated": true,
+      "last_checked": "2026-01-15T10:45:00Z"
+    }
+  ]
+}

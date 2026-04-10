@@ -1,0 +1,85 @@
+{
+  "artifact_type": "logo",
+  "brand_name": "NexaFlow",
+  "version": "1.0.0",
+  "generated_at": "2026-01-15T10:45:00Z",
+  "iterations_completed": 2,
+  "variants": [
+    {
+      "name": "wordmark",
+      "file": "dist/nexaflow-logo.svg",
+      "format": "svg",
+      "description": "Full logo with NexaFlow wordmark"
+    },
+    {
+      "name": "wordmark-dark",
+      "file": "dist/nexaflow-logo-dark.svg",
+      "format": "svg",
+      "description": "Full logo for dark backgrounds"
+    },
+    {
+      "name": "icon",
+      "file": "dist/nexaflow-icon.svg",
+      "format": "svg",
+      "description": "Icon-only logo mark"
+    },
+    {
+      "name": "favicon-16",
+      "file": "dist/nexaflow-16.png",
+      "format": "png",
+      "dimensions": { "width": 16, "height": 16 }
+    },
+    {
+      "name": "favicon-32",
+      "file": "dist/nexaflow-32.png",
+      "format": "png",
+      "dimensions": { "width": 32, "height": 32 }
+    },
+    {
+      "name": "icon-48",
+      "file": "dist/nexaflow-48.png",
+      "format": "png",
+      "dimensions": { "width": 48, "height": 48 }
+    },
+    {
+      "name": "icon-64",
+      "file": "dist/nexaflow-64.png",
+      "format": "png",
+      "dimensions": { "width": 64, "height": 64 }
+    },
+    {
+      "name": "icon-128",
+      "file": "dist/nexaflow-128.png",
+      "format": "png",
+      "dimensions": { "width": 128, "height": 128 }
+    },
+    {
+      "name": "icon-192",
+      "file": "dist/nexaflow-192.png",
+      "format": "png",
+      "dimensions": { "width": 192, "height": 192 }
+    },
+    {
+      "name": "icon-256",
+      "file": "dist/nexaflow-256.png",
+      "format": "png",
+      "dimensions": { "width": 256, "height": 256 }
+    },
+    {
+      "name": "icon-512",
+      "file": "dist/nexaflow-512.png",
+      "format": "png",
+      "dimensions": { "width": 512, "height": 512 }
+    },
+    {
+      "name": "showcase",
+      "file": "dist/showcase.html",
+      "format": "html",
+      "description": "Interactive showcase page displaying all variants"
+    }
+  ],
+  "convergence": {
+    "decision": "terminate",
+    "reason": "All blocking and high constraints satisfied after iteration 2"
+  }
+}
