@@ -6,10 +6,12 @@ import { useChatRuntime } from "@/features/chat/use-chat-runtime";
 import { AttachmentContext } from "@/features/chat/attachment-context";
 import { MemoryContextProvider } from "@/features/chat/memory-context";
 import { AgentSelector } from "@/features/chat/agent-selector";
-import { useEffect } from "react";
+import { SessionConfigPanel } from "@/features/chat/session-config-panel";
+import { useEffect, useState } from "react";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Settings2 } from "lucide-react";
 
 /** Thread detail view — wraps chat runtime for the store-selected thread. */
 function ThreadView({ threadId }: { threadId: string }) {
@@ -55,6 +57,7 @@ export function ChatPage() {
   const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
   const mobileSidebarOpen = useUiStore((s) => s.mobileSidebarOpen);
   const setMobileSidebarOpen = useUiStore((s) => s.setMobileSidebarOpen);
+  const [configOpen, setConfigOpen] = useState(false);
 
   // Close mobile sidebar when active thread changes
   useEffect(() => { setMobileSidebarOpen(false); }, [activeThreadId, setMobileSidebarOpen]);
@@ -88,9 +91,23 @@ export function ChatPage() {
       <main className="flex flex-1 flex-col overflow-hidden min-w-0">
         {activeThreadId ? (
           <>
-            <div className="border-b border-border px-4 py-2">
-              <AgentSelector threadId={activeThreadId} />
+            <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+              <AgentSelector threadId={activeThreadId} className="flex-1" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setConfigOpen(true)}
+                aria-label="Session configuration"
+              >
+                <Settings2 size={14} />
+              </Button>
             </div>
+            <SessionConfigPanel
+              threadId={activeThreadId}
+              open={configOpen}
+              onOpenChange={setConfigOpen}
+            />
             <ThreadView threadId={activeThreadId} />
           </>
         ) : (
