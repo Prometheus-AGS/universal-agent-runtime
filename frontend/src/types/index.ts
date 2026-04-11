@@ -133,12 +133,55 @@ export interface AgentMetadata {
   description?: string;
 }
 
+/** UAR API — Provider selection within an agent policy */
+export interface UarProviderSelection {
+  provider: string;
+  model: string;
+}
+
+/** UAR API — Agent policy */
+export interface UarAgentPolicy {
+  provider?: {
+    default?: UarProviderSelection;
+    fallbacks?: UarProviderSelection[];
+  };
+  tools?: {
+    allow?: string[];
+    deny?: string[];
+    max_concurrent?: number;
+  };
+  skills?: {
+    prefer?: string[];
+    max_active?: number;
+  };
+}
+
+/** UAR API — Agent memory config */
+export interface UarAgentMemory {
+  conversation?: { enabled?: boolean };
+  kb?: {
+    enabled?: boolean;
+    knowledge_bases?: string[];
+    citation_required?: boolean;
+  };
+}
+
+/** UAR API — Tool bundle */
+export interface UarToolBundle {
+  id: string;
+  tools?: string[];
+  required?: boolean;
+}
+
 /** UAR API — RuntimeAgent */
 export interface UarAgent {
   id: string;
   kind?: string;
   metadata?: AgentMetadata;
   skills?: UarSkill[];
+  policy?: UarAgentPolicy;
+  memory?: UarAgentMemory;
+  tools?: { bundles?: UarToolBundle[] };
 }
 
 /** UAR API — AgentsResponse */

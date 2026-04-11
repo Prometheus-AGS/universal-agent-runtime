@@ -19,15 +19,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ModelSelector } from "@/components/model-selector";
+import type { AgentConfig } from "@/features/chat/agent-selector";
 
 interface SessionConfigPanelProps {
   threadId: string;
+  agentConfig?: AgentConfig | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function SessionConfigPanel({
   threadId,
+  agentConfig,
   open,
   onOpenChange,
 }: SessionConfigPanelProps) {
@@ -36,8 +39,16 @@ export function SessionConfigPanel({
   const [injectMemory, setInjectMemory] = useState(false);
   const [autoCapture, setAutoCapture] = useState(false);
   const [memoryScope, setMemoryScope] = useState("session");
-  const [toolApproval, setToolApproval] = useState("auto");
+  const [toolApproval, setToolApproval] = useState(agentConfig?.tool_approval ?? "auto");
   const [saving, setSaving] = useState(false);
+
+  // Sync tool approval when agent config changes.
+  // Only reset when the agent config actually changes (not on every render).
+  const [lastAgentModel, setLastAgentModel] = useState(agentConfig?.model);
+  if (agentConfig?.model !== lastAgentModel) {
+    setLastAgentModel(agentConfig?.model);
+    setToolApproval(agentConfig?.tool_approval ?? "auto");
+  }
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -98,7 +109,7 @@ export function SessionConfigPanel({
             <ModelSelector
               value={modelOverride}
               onChange={setModelOverride}
-              defaultLabel="Agent default"
+              defaultLabel={agentConfig?.model ? `Agent: ${agentConfig.model}` : "Agent default"}
               placeholder="Select model override..."
             />
             <p className="font-body text-xs text-muted-foreground">

@@ -46,6 +46,7 @@ import { useAttachmentContext } from "@/features/chat/attachment-context";
 import { useMemoryContext } from "@/features/chat/memory-context";
 import { cn } from "@/lib/utils";
 import { CapabilityToggles } from "@/features/chat/capability-toggles";
+import { useAgentConfig } from "@/features/chat/agent-config-context";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { useChatMessageStore } from "@/stores/chat-message-store";
 import { useAgentStatusStore } from "@/stores/agent-status-store";
@@ -101,6 +102,7 @@ const ThreadAgentStatus: FC = () => {
 
 export const EnhancedThread: FC = () => {
   const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
+  const agentConfig = useAgentConfig();
 
   return (
     <ThreadPrimitive.Root
@@ -122,7 +124,7 @@ export const EnhancedThread: FC = () => {
         <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer sticky bottom-0 mx-auto mt-auto flex w-full max-w-(--thread-max-width) flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
           <ThreadScrollToBottom />
           <EnhancedComposer />
-          <CapabilityToggles threadId={activeThreadId} className="mx-2" />
+          <CapabilityToggles threadId={activeThreadId} agentConfig={agentConfig} className="mx-2" />
         </ThreadPrimitive.ViewportFooter>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>

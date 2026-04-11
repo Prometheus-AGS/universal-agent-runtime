@@ -5,9 +5,10 @@ import { useUiStore } from "@/stores/ui-store";
 import { useChatRuntime } from "@/features/chat/use-chat-runtime";
 import { AttachmentContext } from "@/features/chat/attachment-context";
 import { MemoryContextProvider } from "@/features/chat/memory-context";
-import { AgentSelector } from "@/features/chat/agent-selector";
+import { AgentSelector, type AgentConfig } from "@/features/chat/agent-selector";
+import { AgentConfigContext } from "@/features/chat/agent-config-context";
 import { SessionConfigPanel } from "@/features/chat/session-config-panel";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ export function ChatPage() {
   const mobileSidebarOpen = useUiStore((s) => s.mobileSidebarOpen);
   const setMobileSidebarOpen = useUiStore((s) => s.setMobileSidebarOpen);
   const [configOpen, setConfigOpen] = useState(false);
+  const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
   const [providerCheck, setProviderCheck] = useState<{ loading: boolean; hasConfigured: boolean }>({ loading: true, hasConfigured: true });
   const navigate = useNavigate();
 
@@ -81,6 +83,13 @@ export function ChatPage() {
 
   // Close mobile sidebar when active thread changes
   useEffect(() => { setMobileSidebarOpen(false); }, [activeThreadId, setMobileSidebarOpen]);
+
+  // Reset agent config when thread changes
+  useEffect(() => { setAgentConfig(null); }, [activeThreadId]);
+
+  const handleAgentConfigChange = useCallback((config: AgentConfig | null) => {
+    setAgentConfig(config);
+  }, []);
 
   // No-default guard: block chat if no provider is configured
   if (!providerCheck.loading && !providerCheck.hasConfigured) {
@@ -138,7 +147,7 @@ export function ChatPage() {
         {activeThreadId ? (
           <>
             <div className="flex items-center gap-2 border-b border-border px-4 py-2">
-              <AgentSelector threadId={activeThreadId} className="flex-1" />
+              <AgentSelector threadId={activeThreadId} onAgentConfigChange={handleAgentConfigChange} className="flex-1" />
               <Button
                 variant="ghost"
                 size="icon"
@@ -151,10 +160,13 @@ export function ChatPage() {
             </div>
             <SessionConfigPanel
               threadId={activeThreadId}
+              agentConfig={agentConfig}
               open={configOpen}
               onOpenChange={setConfigOpen}
             />
-            <ThreadView threadId={activeThreadId} />
+            <AgentConfigContext.Provider value={agentConfig}>
+              <ThreadView threadId={activeThreadId} />
+            </AgentConfigContext.Provider>
           </>
         ) : (
           <NoThreadSelected />

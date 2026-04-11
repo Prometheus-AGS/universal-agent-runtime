@@ -1,4 +1,4 @@
-import { type FC, useState, useCallback } from "react";
+import { type FC, useState, useCallback, useEffect } from "react";
 import {
   Brain,
   Wrench,
@@ -14,11 +14,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import type { AgentConfig } from "@/features/chat/agent-selector";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface CapabilityTogglesProps {
   threadId: string | null;
+  agentConfig?: AgentConfig | null;
   className?: string;
 }
 
@@ -160,14 +162,35 @@ const INITIAL_SKILLS: ListItem[] = [];
 
 export const CapabilityToggles: FC<CapabilityTogglesProps> = ({
   threadId: _threadId,
+  agentConfig,
   className,
 }) => {
-  // ── Local state (V1 — will wire to agent session later) ──
+  // ── Local state ──
   const [knowledgeBases, setKnowledgeBases] = useState<ListItem[]>(INITIAL_KBS);
   const [tools, setTools] = useState<ListItem[]>(INITIAL_TOOLS);
   const [skills, setSkills] = useState<ListItem[]>(INITIAL_SKILLS);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(true);
+
+  // ── Sync toggles when agent config changes ──
+  useEffect(() => {
+    if (agentConfig) {
+      setSkills(
+        agentConfig.skills.map((s) => ({ id: s, label: s, enabled: true })),
+      );
+      setTools(
+        agentConfig.tools.map((t) => ({ id: t, label: t, enabled: true })),
+      );
+      setKnowledgeBases(
+        agentConfig.knowledge_bases.map((kb) => ({ id: kb, label: kb, enabled: true })),
+      );
+    } else {
+      // Reset to empty defaults when no agent selected
+      setSkills(INITIAL_SKILLS);
+      setTools(INITIAL_TOOLS);
+      setKnowledgeBases(INITIAL_KBS);
+    }
+  }, [agentConfig]);
 
   // ── List toggle helpers ──
   const toggleItem = useCallback(

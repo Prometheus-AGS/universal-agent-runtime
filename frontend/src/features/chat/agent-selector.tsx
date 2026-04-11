@@ -14,14 +14,43 @@ import {
 } from "@/components/ui/command";
 import type { UarAgent } from "@/types";
 
+/** Extracted agent configuration passed downstream to toggles & config panel. */
+export interface AgentConfig {
+  model?: string;
+  skills: string[];
+  tools: string[];
+  knowledge_bases: string[];
+  tool_approval?: string;
+}
+
+/** Extract a normalized AgentConfig from a full UarAgent. */
+export function extractAgentConfig(agent: UarAgent): AgentConfig {
+  const provider = agent.policy?.provider?.default;
+  const model = provider?.provider && provider?.model
+    ? `${provider.provider}/${provider.model}`
+    : provider?.model ?? undefined;
+
+  const skills = agent.policy?.skills?.prefer ?? [];
+
+  // Gather tools from policy.tools.allow and tools.bundles
+  const allowedTools = agent.policy?.tools?.allow ?? [];
+  const bundleTools = (agent.tools?.bundles ?? []).flatMap((b) => b.tools ?? []);
+  const tools = [...new Set([...allowedTools, ...bundleTools])];
+
+  const knowledge_bases = agent.memory?.kb?.knowledge_bases ?? [];
+
+  return { model, skills, tools, knowledge_bases };
+}
+
 interface AgentSelectorProps {
   threadId: string | null;
+  onAgentConfigChange?: (config: AgentConfig | null) => void;
   className?: string;
 }
 
 type AgentWithType = UarAgent & { _type: "runtime" | "federated" };
 
-export function AgentSelector({ threadId, className }: AgentSelectorProps) {
+export function AgentSelector({ threadId, onAgentConfigChange, className }: AgentSelectorProps) {
   const [agents, setAgents] = useState<AgentWithType[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -89,9 +118,35 @@ export function AgentSelector({ threadId, className }: AgentSelectorProps) {
       const next = agentId === selectedId ? null : agentId;
       setSelectedId(next);
       setOpen(false);
-      if (next) void applyAgentConfig(next);
+      if (next) {
+        void applyAgentConfig(next);
+        const agent = agents.find((a) => a.id === next);
+        if (agent) {
+          const config = extractAgentConfig(agent);
+          onAgentConfigChange?.(config);
+          setModelLabel(config.model ?? "Using default model");
+        }
+      } else {
+        onAgentConfigChange?.(null);
+        // Reset model label to system default
+        fetchConfiguredProviders()
+          .then((data) => {
+            const defaultId = data.default_id;
+            if (defaultId) {
+              const provider = (data.providers ?? []).find((p) => p.id === defaultId);
+              if (provider?.models && provider.models.length > 0) {
+                setModelLabel(`${defaultId}/${provider.models[0].id}`);
+              } else {
+                setModelLabel(`${defaultId}`);
+              }
+            } else if ((data.providers ?? []).length > 0) {
+              setModelLabel("Using default model");
+            }
+          })
+          .catch(() => { /* swallow */ });
+      }
     },
-    [selectedId, applyAgentConfig],
+    [selectedId, applyAgentConfig, agents, onAgentConfigChange],
   );
 
   const selectedAgent = agents.find((a) => a.id === selectedId);
