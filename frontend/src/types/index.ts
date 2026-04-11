@@ -153,6 +153,9 @@ export interface UarTool {
   namespaced_name?: string;
   description?: string;
   source?: string;
+  server?: string;
+  input_schema?: Record<string, unknown>;
+  parameters?: Record<string, unknown>;
 }
 
 /** UAR API — DiscoveryResponse */
