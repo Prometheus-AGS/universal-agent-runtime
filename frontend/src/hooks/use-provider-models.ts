@@ -1,10 +1,13 @@
 import { useEffect } from "react";
 
 import { useProviderModelsStore } from "@/stores/provider-models-store";
+import type { ProviderModelRow } from "@/services/models-api";
+
+const EMPTY_MODELS: ProviderModelRow[] = [];
 
 export function useProviderModels(providerId: string) {
   const loadForProvider = useProviderModelsStore((s) => s.loadForProvider);
-  const models = useProviderModelsStore((s) => s.rowsByProvider[providerId] ?? []);
+  const models = useProviderModelsStore((s) => s.rowsByProvider[providerId] ?? EMPTY_MODELS);
   const loadingModels = useProviderModelsStore((s) => s.loadingProviderId === providerId);
 
   useEffect(() => {
