@@ -456,7 +456,26 @@ fn split_model_string(model: &str) -> (String, String) {
     if let Some((provider, model_id)) = model.split_once('/') {
         (provider.to_string(), model_id.to_string())
     } else {
-        ("default".to_string(), model.to_string())
+        // No provider prefix — infer from model name patterns.
+        // liter-llm requires "provider/model" format; "default" is not a valid provider.
+        let inferred = if model.starts_with("gpt-") || model.starts_with("o1") || model.starts_with("o3") || model.starts_with("o4") || model.starts_with("chatgpt-") {
+            "openai"
+        } else if model.starts_with("claude-") {
+            "anthropic"
+        } else if model.starts_with("gemini-") || model.starts_with("gemma-") {
+            "google"
+        } else if model.starts_with("llama") || model.starts_with("mixtral") || model.starts_with("mistral") {
+            "groq"
+        } else {
+            // Fall back to openai-compatible as the most common default
+            "openai"
+        };
+        tracing::debug!(
+            model,
+            inferred_provider = inferred,
+            "No provider prefix in model name, inferred provider"
+        );
+        (inferred.to_string(), model.to_string())
     }
 }
 
