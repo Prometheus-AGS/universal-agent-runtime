@@ -61,7 +61,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-    { key: "llm", label: "LLM (liter-llm)", subtitle: "Default model & API key", icon: Server, category: "AI & LLM" },
+    { key: "llm", label: "LLM Configuration", subtitle: "Global defaults for LLM model, protocol, timeouts, and cost tracking", icon: Server, category: "AI & LLM" },
     { key: "provider", label: "Provider Overrides", subtitle: "Per-provider protocol & keys", icon: Server, category: "AI & LLM" },
     { key: "vision", label: "Vision", subtitle: "Image analysis settings", icon: Eye, category: "AI & LLM" },
     { key: "context_management", label: "Context Management", subtitle: "Token budgets & strategies", icon: Layers, category: "AI & LLM" },
