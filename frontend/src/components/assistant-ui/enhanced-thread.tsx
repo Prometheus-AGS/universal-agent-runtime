@@ -45,6 +45,7 @@ import { AttachmentPreviewStrip } from "@/features/chat/components/attachment-pr
 import { useAttachmentContext } from "@/features/chat/attachment-context";
 import { useMemoryContext } from "@/features/chat/memory-context";
 import { cn } from "@/lib/utils";
+import { CapabilityToggles } from "@/features/chat/capability-toggles";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { useChatMessageStore } from "@/stores/chat-message-store";
 import { useAgentStatusStore } from "@/stores/agent-status-store";
@@ -98,30 +99,35 @@ const ThreadAgentStatus: FC = () => {
   );
 };
 
-export const EnhancedThread: FC = () => (
-  <ThreadPrimitive.Root
-    className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
-    style={{ ["--thread-max-width" as string]: "48rem" }}
-  >
-    <ThreadPrimitive.Viewport
-      turnAnchor="top"
-      className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth px-4 pt-4"
+export const EnhancedThread: FC = () => {
+  const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
+
+  return (
+    <ThreadPrimitive.Root
+      className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
+      style={{ ["--thread-max-width" as string]: "48rem" }}
     >
-      <AuiIf condition={condThreadEmpty}>
-        <UarWelcome />
-      </AuiIf>
+      <ThreadPrimitive.Viewport
+        turnAnchor="top"
+        className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth px-4 pt-4"
+      >
+        <AuiIf condition={condThreadEmpty}>
+          <UarWelcome />
+        </AuiIf>
 
-      <ThreadPrimitive.Messages components={THREAD_COMPONENTS} />
+        <ThreadPrimitive.Messages components={THREAD_COMPONENTS} />
 
-      <ThreadAgentStatus />
+        <ThreadAgentStatus />
 
-      <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer sticky bottom-0 mx-auto mt-auto flex w-full max-w-(--thread-max-width) flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
-        <ThreadScrollToBottom />
-        <EnhancedComposer />
-      </ThreadPrimitive.ViewportFooter>
-    </ThreadPrimitive.Viewport>
-  </ThreadPrimitive.Root>
-);
+        <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer sticky bottom-0 mx-auto mt-auto flex w-full max-w-(--thread-max-width) flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
+          <ThreadScrollToBottom />
+          <EnhancedComposer />
+          <CapabilityToggles threadId={activeThreadId} className="mx-2" />
+        </ThreadPrimitive.ViewportFooter>
+      </ThreadPrimitive.Viewport>
+    </ThreadPrimitive.Root>
+  );
+};
 
 // ─── Welcome Screen ───────────────────────────────────────────────────────────
 
