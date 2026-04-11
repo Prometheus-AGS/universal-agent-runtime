@@ -1,4 +1,4 @@
-import { type FC, useState } from "react";
+import { type FC, useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle2, ChevronRight, Circle, Loader2, Plus, RefreshCw, Search, Server, XCircle } from "lucide-react";
 import {
   AlertDialog,
@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useProviderModels } from "@/hooks/use-provider-models";
 import { useProvidersAdmin } from "@/hooks/use-providers-admin";
 import type { CatalogProviderSummary } from "@/types";
+import { loadProvidersIntoGraph } from "@/entities/fetchers/providers";
 
 export const ProvidersPage: FC = () => {
   const {
@@ -36,6 +37,11 @@ export const ProvidersPage: FC = () => {
     setDefault,
     removeProvider,
   } = useProvidersAdmin();
+
+  // Populate the entity graph alongside the legacy store.
+  useEffect(() => {
+    void loadProvidersIntoGraph();
+  }, []);
 
   const [selected, setSelected] = useState<CatalogProviderSummary | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
