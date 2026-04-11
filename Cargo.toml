@@ -102,7 +102,8 @@ rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", rev = "085470
 ] }
 
 # Memory system — surreal-memory library
-surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server", branch = "main", package = "surreal-memory", features = ["embedded"] }
+# Memory system — surreal-memory library with mempalace knowledge graph
+surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server.git", branch = "main", package = "surreal-memory", features = ["embedded", "palace"] }
 
 # Utilities
 url = "2.5.7"
@@ -134,9 +135,10 @@ tokenizers = { version = "0.22.2", default-features = false, features = [
   "esaxx_fast",
 ] }
 tiktoken-rs = "0.9.1"
-sqlx = { version = "0.8.6", features = [
+sqlx = { version = "0.8.6", default-features = false, features = [
   "runtime-tokio-native-tls",
   "postgres",
+  "macros",
   "uuid",
   "chrono",
   "json",
