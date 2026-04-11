@@ -12,7 +12,7 @@ use axum::{
     response::IntoResponse,
     routing::get,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 pub fn build_router() -> Router<AppState> {
@@ -348,6 +348,82 @@ pub async fn delete_agent(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+// =========================================================================
+// Tool execution handler
+// =========================================================================
+
+#[derive(Debug, Deserialize)]
+pub struct ExecuteToolRequest {
+    #[serde(default)]
+    arguments: serde_json::Value,
+}
+
+#[derive(Debug, Serialize)]
+struct ExecuteToolResponse {
+    result: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
+    duration_ms: u128,
+    success: bool,
+}
+
+/// POST /api/tools/{name}/execute — execute a registered tool by namespaced name.
+pub async fn execute_tool(
+    State(state): State<AppState>,
+    Path(name): Path<String>,
+    Json(body): Json<ExecuteToolRequest>,
+) -> impl IntoResponse {
+    // Verify the tool exists before attempting execution.
+    let tool_exists = state
+        .mcp
+        .tools()
+        .iter()
+        .any(|(ns_name, _)| ns_name == &name);
+
+    if !tool_exists {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(ExecuteToolResponse {
+                result: None,
+                error: Some(format!("unknown tool: {name}")),
+                duration_ms: 0,
+                success: false,
+            }),
+        )
+            .into_response();
+    }
+
+    let start = std::time::Instant::now();
+    match state.mcp.call_namespaced_tool(&name, body.arguments).await {
+        Ok(result) => {
+            let duration_ms = start.elapsed().as_millis();
+            (
+                StatusCode::OK,
+                Json(ExecuteToolResponse {
+                    result: Some(result),
+                    error: None,
+                    duration_ms,
+                    success: true,
+                }),
+            )
+                .into_response()
+        }
+        Err(err) => {
+            let duration_ms = start.elapsed().as_millis();
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ExecuteToolResponse {
+                    result: None,
+                    error: Some(err.to_string()),
+                    duration_ms,
+                    success: false,
+                }),
+            )
+                .into_response()
+        }
+    }
 }
 
 /// RFC 7396 JSON Merge Patch: recursively merge `patch` into `target`.

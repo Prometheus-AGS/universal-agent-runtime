@@ -751,6 +751,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 .delete(uar::api::discovery::delete_agent),
         )
         .route("/api/tools", get(uar::api::discovery::list_tools))
+        .route("/api/tools/{name}/execute", post(uar::api::discovery::execute_tool))
         .route("/api/uar/mcp/health", get(api_mcp_health))
         .route(
             "/api/uar/sessions/{id}/context-stats",
