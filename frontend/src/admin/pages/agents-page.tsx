@@ -1,5 +1,5 @@
 import { type FC, useState } from "react";
-import { ArrowLeft, Bot, Brain, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, Bot, Brain, Loader2, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
+import { AgentAiBuilder } from "@/admin/components/agent-ai-builder";
 import { AgentEditor } from "@/admin/components/agent-editor";
 import { cn } from "@/lib/utils";
 import { useAgentsAdmin } from "@/hooks/use-agents-admin";
@@ -194,6 +195,9 @@ export const AgentsPage: FC = () => {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorAgent, setEditorAgent] = useState<UarAgent | null>(null);
 
+  // AI builder state
+  const [showAiBuilder, setShowAiBuilder] = useState(false);
+
   // Delete confirmation state
   const [deleteTarget, setDeleteTarget] = useState<UarAgent | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -211,6 +215,12 @@ export const AgentsPage: FC = () => {
 
   const handleEditorSave = () => {
     void load();
+  };
+
+  const handleAiGenerated = (agentData: Record<string, unknown>) => {
+    setShowAiBuilder(false);
+    setEditorAgent(agentData as unknown as UarAgent);
+    setEditorOpen(true);
   };
 
   const handleDelete = async () => {
@@ -240,6 +250,10 @@ export const AgentsPage: FC = () => {
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Agents</p>
           <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="h-6 gap-1 px-1.5" onClick={() => setShowAiBuilder(true)} aria-label="Create with AI">
+              <Sparkles size={12} />
+              <span className="hidden sm:inline font-mono text-xs">AI</span>
+            </Button>
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={openCreate} aria-label="New agent">
               <Plus size={12} />
             </Button>
@@ -352,6 +366,13 @@ export const AgentsPage: FC = () => {
           </div>
         )}
       </div>
+
+      {/* AI Builder Dialog */}
+      <AgentAiBuilder
+        open={showAiBuilder}
+        onOpenChange={setShowAiBuilder}
+        onGenerated={handleAiGenerated}
+      />
 
       {/* Agent Editor Sheet */}
       <AgentEditor
