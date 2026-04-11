@@ -776,6 +776,9 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             post(uar::api::memory::save_memory_handler)
                 .get(uar::api::memory::search_memory_handler),
         )
+        // Persistence info + SSE sync stream
+        .route("/api/config/persistence", get(persistence_info_handler))
+        .route("/api/uar/sync/stream", get(sync_stream_handler))
         .route("/api/{*path}", any(api_route_not_found))
         .route("/v1/chat/completions", post(api_chat_completion))
         .route("/v1/messages", post(api_messages))
@@ -1802,6 +1805,61 @@ fn anthropic_error_response(status: StatusCode, message: &str) -> Response {
             }
         })),
     )
+        .into_response()
+}
+
+// ── Persistence info + sync stream endpoints ─────────────────────────────
+
+/// GET /api/config/persistence — returns the configured persistence provider info.
+async fn persistence_info_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let config = &state.config.persistence;
+    let mode = if config.database_url.starts_with("rocksdb://")
+        || config.database_url.starts_with("mem://")
+        || config.database_url.starts_with("file://")
+    {
+        "embedded"
+    } else {
+        "remote"
+    };
+    Json(json!({
+        "provider": config.provider,
+        "mode": mode,
+        "database_url": config.database_url,
+    }))
+}
+
+/// GET /api/uar/sync/stream — SSE stream for entity change events (embedded SurrealDB only).
+///
+/// V1: sends periodic heartbeats; real LIVE SELECT integration will come later.
+async fn sync_stream_handler(State(state): State<AppState>) -> Response {
+    let config = &state.config.persistence;
+    let is_embedded = config.database_url.starts_with("rocksdb://")
+        || config.database_url.starts_with("mem://")
+        || config.database_url.starts_with("file://");
+
+    if !is_embedded {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "error": "SSE sync stream is only available for embedded SurrealDB mode"
+            })),
+        )
+            .into_response();
+    }
+
+    let stream = async_stream::stream! {
+        loop {
+            yield Ok::<_, std::convert::Infallible>(
+                Event::default()
+                    .event("heartbeat")
+                    .data(r#"{"status":"connected"}"#)
+            );
+            tokio::time::sleep(Duration::from_secs(30)).await;
+        }
+    };
+
+    Sse::new(stream)
+        .keep_alive(KeepAlive::default())
         .into_response()
 }
 
