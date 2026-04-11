@@ -1847,14 +1847,65 @@ async fn sync_stream_handler(State(state): State<AppState>) -> Response {
             .into_response();
     }
 
+    let persistence = state.persistence.clone();
+
     let stream = async_stream::stream! {
+        let mut interval = tokio::time::interval(Duration::from_secs(5));
+        let mut last_check = chrono::Utc::now().to_rfc3339();
+
+        // Send initial connected event so the client knows the stream is live.
+        yield Ok::<_, std::convert::Infallible>(
+            Event::default()
+                .event("connected")
+                .data(serde_json::json!({
+                    "status": "connected",
+                    "ts": chrono::Utc::now().to_rfc3339(),
+                    "tables": ["knowledge_bases", "knowledge_documents", "skills", "agents", "settings"]
+                }).to_string())
+        );
+
         loop {
-            yield Ok::<_, std::convert::Infallible>(
-                Event::default()
-                    .event("heartbeat")
-                    .data(r#"{"status":"connected"}"#)
-            );
-            tokio::time::sleep(Duration::from_secs(30)).await;
+            interval.tick().await;
+
+            let now = chrono::Utc::now();
+            let now_rfc = now.to_rfc3339();
+
+            // Poll entity tables for changes since last check.
+            // KnowledgeBase has an `updated_at` RFC3339 field we can compare.
+            if let Some(ref persistence) = persistence {
+                match persistence.list_knowledge_bases().await {
+                    Ok(kbs) => {
+                        // Compare RFC3339 strings lexicographically (valid for ISO timestamps).
+                        let changed: Vec<_> = kbs.iter()
+                            .filter(|kb| kb.updated_at.as_str() > last_check.as_str())
+                            .collect();
+                        for kb in &changed {
+                            yield Ok(Event::default().event("entity.change").data(
+                                serde_json::json!({
+                                    "table": "knowledge_bases",
+                                    "action": "update",
+                                    "id": kb.id,
+                                    "record": kb,
+                                    "ts": now_rfc
+                                }).to_string()
+                            ));
+                        }
+                    }
+                    Err(e) => {
+                        tracing::debug!(error = %e, "sync_stream: failed to poll knowledge_bases");
+                    }
+                }
+            }
+
+            last_check = now_rfc.clone();
+
+            // Heartbeat with timestamp so clients can detect stale connections.
+            yield Ok(Event::default().event("heartbeat").data(
+                serde_json::json!({
+                    "status": "connected",
+                    "ts": now_rfc
+                }).to_string()
+            ));
         }
     };
 
