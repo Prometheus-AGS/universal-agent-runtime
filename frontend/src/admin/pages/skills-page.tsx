@@ -1,4 +1,4 @@
-import { type FC, useMemo, useState } from "react";
+import { type FC, useEffect, useMemo, useState } from "react";
 import { FolderOpen, Loader2, Pencil, Plus, RefreshCw, Trash2, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -23,6 +23,7 @@ import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/componen
 import { SkillImportDialog } from "@/admin/components/skill-import-dialog";
 import { cn } from "@/lib/utils";
 import { useSkillsAdmin } from "@/hooks/use-skills-admin";
+import { loadSkillsIntoGraph } from "@/entities/fetchers/skills";
 import type { UarSkill } from "@/types";
 import {
   buildCreateSkillRequest,
@@ -101,6 +102,11 @@ export const SkillsPage: FC = () => {
     remove,
     save,
   } = useSkillsAdmin();
+
+  // Populate the entity graph alongside the legacy store.
+  useEffect(() => {
+    void loadSkillsIntoGraph();
+  }, []);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSkillId, setEditingSkillId] = useState<string | null>(null);

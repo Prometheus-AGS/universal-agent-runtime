@@ -1,4 +1,4 @@
-import { type FC, useState } from "react";
+import { type FC, useEffect, useState } from "react";
 import { ArrowLeft, Bot, Brain, Loader2, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { useAgentsAdmin } from "@/hooks/use-agents-admin";
 import { useAgentsAdminStore } from "@/stores/agents-admin-store";
 import { deleteAgent } from "@/services/agents-api";
+import { loadAgentsIntoGraph } from "@/entities/fetchers/agents";
 import type { UarAgent } from "@/types";
 
 // ── Agent Memory Section ───────────────────────────────────────────────────
@@ -190,6 +191,11 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
 export const AgentsPage: FC = () => {
   const { agents, loading, error, load } = useAgentsAdmin();
   const [selected, setSelected] = useState<UarAgent | null>(null);
+
+  // Populate the entity graph alongside the legacy store.
+  useEffect(() => {
+    void loadAgentsIntoGraph();
+  }, []);
 
   // Editor state
   const [editorOpen, setEditorOpen] = useState(false);

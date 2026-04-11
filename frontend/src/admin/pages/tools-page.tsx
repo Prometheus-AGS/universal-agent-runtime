@@ -1,4 +1,4 @@
-import { type FC, useState } from "react";
+import { type FC, useEffect, useState } from "react";
 import { RefreshCw, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,11 +6,17 @@ import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/componen
 import { ToolDetailPanel } from "@/admin/components/tool-detail-panel";
 import { cn } from "@/lib/utils";
 import { useToolsDiscovery } from "@/hooks/use-tools-discovery";
+import { loadToolsIntoGraph } from "@/entities/fetchers/tools";
 import type { ToolWithNs } from "@/stores/tools-discovery-store";
 
 export const ToolsPage: FC = () => {
   const { tools, loading, error, load } = useToolsDiscovery();
   const [search, setSearch] = useState("");
+
+  // Populate the entity graph alongside the legacy store.
+  useEffect(() => {
+    void loadToolsIntoGraph();
+  }, []);
   const [selectedTool, setSelectedTool] = useState<ToolWithNs | null>(null);
 
   const groups = tools

@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { loadKnowledgeBasesIntoGraph } from "@/entities/fetchers/knowledge";
 import { useKnowledgeAdmin } from "@/hooks/use-knowledge-admin";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { cn, friendlyError } from "@/lib/utils";
@@ -78,6 +79,11 @@ export const KnowledgePage: FC = () => {
 		clearDocView,
 		setUploadProgress,
 	} = useKnowledgeAdmin();
+
+	// Populate the entity graph alongside the legacy store.
+	useEffect(() => {
+		void loadKnowledgeBasesIntoGraph();
+	}, []);
 
 	const [showAdd, setShowAdd] = useState(false);
 	const [form, setForm] = useState({ name: "", description: "" });
