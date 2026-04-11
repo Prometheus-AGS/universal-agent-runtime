@@ -17,3 +17,23 @@ export async function patchAgent(agentId: string, body: Record<string, unknown>)
   });
   if (!r.ok) throw new Error(`${r.status}`);
 }
+
+export async function createAgent(agent: unknown): Promise<Response> {
+  return fetch("/api/agents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(agent),
+  });
+}
+
+export async function updateAgentFull(id: string, agent: unknown): Promise<Response> {
+  return fetch(`/api/agents/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(agent),
+  });
+}
+
+export async function deleteAgent(id: string): Promise<Response> {
+  return fetch(`/api/agents/${encodeURIComponent(id)}`, { method: "DELETE" });
+}

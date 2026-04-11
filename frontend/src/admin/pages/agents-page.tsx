@@ -1,15 +1,27 @@
 import { type FC, useState } from "react";
-import { ArrowLeft, Bot, Brain, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Bot, Brain, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
+import { AgentEditor } from "@/admin/components/agent-editor";
 import { cn } from "@/lib/utils";
 import { useAgentsAdmin } from "@/hooks/use-agents-admin";
 import { useAgentsAdminStore } from "@/stores/agents-admin-store";
+import { deleteAgent } from "@/services/agents-api";
 import type { UarAgent } from "@/types";
 
 // ── Agent Memory Section ───────────────────────────────────────────────────
@@ -163,7 +175,7 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
               Save Memory Settings
             </Button>
             {saved && (
-              <span className="font-mono text-xs text-green-400">Saved ✓</span>
+              <span className="font-mono text-xs text-green-400">Saved</span>
             )}
           </div>
         </CardContent>
@@ -178,15 +190,63 @@ export const AgentsPage: FC = () => {
   const { agents, loading, error, load } = useAgentsAdmin();
   const [selected, setSelected] = useState<UarAgent | null>(null);
 
+  // Editor state
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorAgent, setEditorAgent] = useState<UarAgent | null>(null);
+
+  // Delete confirmation state
+  const [deleteTarget, setDeleteTarget] = useState<UarAgent | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const openCreate = () => {
+    setEditorAgent(null);
+    setEditorOpen(true);
+  };
+
+  const openEdit = (agent: UarAgent) => {
+    setEditorAgent(agent);
+    setEditorOpen(true);
+  };
+
+  const handleEditorSave = () => {
+    void load();
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await deleteAgent(deleteTarget.id);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `${res.status}`);
+      }
+      if (selected?.id === deleteTarget.id) setSelected(null);
+      setDeleteTarget(null);
+      void load();
+    } catch (e) {
+      setDeleteError((e as Error).message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
       {/* Agent list */}
       <div className={cn("flex shrink-0 flex-col border-b border-border bg-background md:w-64 md:border-b-0 md:border-r", selected ? "hidden md:flex" : "flex flex-1 md:flex-initial")}>
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Agents</p>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => void load()} aria-label="Refresh">
-            <RefreshCw size={12} className={cn(loading && "animate-spin")} />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={openCreate} aria-label="New agent">
+              <Plus size={12} />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => void load()} aria-label="Refresh">
+              <RefreshCw size={12} className={cn(loading && "animate-spin")} />
+            </Button>
+          </div>
         </div>
         <ScrollArea className="flex-1">
           <div className="py-2">
@@ -229,9 +289,22 @@ export const AgentsPage: FC = () => {
                 <Button variant="ghost" size="icon" className="h-7 w-7 md:hidden" onClick={() => setSelected(null)} aria-label="Back to agents">
                   <ArrowLeft size={14} />
                 </Button>
-                <h2 className="font-display text-lg font-semibold text-foreground">
+                <h2 className="flex-1 font-display text-lg font-semibold text-foreground">
                   {selected.metadata?.title ?? selected.id}
                 </h2>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openEdit(selected)}>
+                  <Pencil size={12} />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setDeleteTarget(selected)}
+                >
+                  <Trash2 size={12} />
+                  Delete
+                </Button>
               </div>
               {selected.metadata?.description && (
                 <p className="mt-1 font-body text-sm text-muted-foreground">{selected.metadata.description}</p>
@@ -279,6 +352,40 @@ export const AgentsPage: FC = () => {
           </div>
         )}
       </div>
+
+      {/* Agent Editor Sheet */}
+      <AgentEditor
+        agent={editorAgent}
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        onSave={handleEditorSave}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeleteError(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Delete Agent</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{deleteTarget?.metadata?.title ?? deleteTarget?.id}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteError && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 font-mono text-xs text-destructive">{deleteError}</p>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); void handleDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5"
+            >
+              {deleting && <Loader2 size={14} className="animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
