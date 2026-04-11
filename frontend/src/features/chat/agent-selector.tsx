@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ChevronDownIcon, CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchAgentsList } from "@/services/agents-api";
+import { fetchConfiguredProviders } from "@/services/providers-api";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -25,6 +26,7 @@ export function AgentSelector({ threadId, className }: AgentSelectorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [modelLabel, setModelLabel] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +40,30 @@ export function AgentSelector({ threadId, className }: AgentSelectorProps) {
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Fetch default provider/model to display in header
+  useEffect(() => {
+    let cancelled = false;
+    fetchConfiguredProviders()
+      .then((data) => {
+        if (cancelled) return;
+        const defaultId = data.default_id;
+        if (defaultId) {
+          const provider = (data.providers ?? []).find((p) => p.id === defaultId);
+          if (provider?.models && provider.models.length > 0) {
+            setModelLabel(`${defaultId}/${provider.models[0].id}`);
+          } else {
+            setModelLabel(`${defaultId}`);
+          }
+        } else if ((data.providers ?? []).length > 0) {
+          setModelLabel("Using default model");
+        }
+      })
+      .catch(() => {
+        /* swallow */
       });
     return () => { cancelled = true; };
   }, []);
@@ -77,13 +103,18 @@ export function AgentSelector({ threadId, className }: AgentSelectorProps) {
         <button
           type="button"
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+            "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-left transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
             className,
           )}
           aria-label="Select agent"
         >
-          <span className="truncate max-w-[200px]">{displayName}</span>
-          <ChevronDownIcon size={12} className={cn("shrink-0 transition-transform", open && "rotate-180")} />
+          <div className="min-w-0 flex-1">
+            <span className="block truncate max-w-[200px] font-mono text-xs text-muted-foreground">{displayName}</span>
+            {modelLabel && (
+              <span className="block truncate max-w-[200px] font-mono text-[11px] text-muted-foreground/70">{modelLabel}</span>
+            )}
+          </div>
+          <ChevronDownIcon size={12} className={cn("shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">

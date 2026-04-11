@@ -1,5 +1,5 @@
 import { type FC, useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, ChevronRight, Circle, Loader2, Plus, RefreshCw, Search, Server, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronRight, Circle, Loader2, Plus, RefreshCw, Search, Server, Star, XCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -187,36 +187,42 @@ export const ProvidersPage: FC = () => {
             key={selected.id}
             provider={selected}
             isDefault={selected.id === defaultId}
+            defaultId={defaultId}
+            catalog={catalog}
             onSetDefault={() => handleSetDefault(selected.id)}
             onConfigure={() => handleConfigure(selected)}
             onDelete={() => setRemoveTarget(selected.id)}
             onBack={() => setSelected(null)}
           />
         ) : (
-          <div className="flex flex-1 items-center justify-center p-6">
-            <div className="max-w-sm text-center">
-              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10">
-                <Server size={20} className="text-primary" />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            {/* Default model banner */}
+            <DefaultModelBanner defaultId={defaultId} catalog={catalog} />
+            <div className="flex flex-1 items-center justify-center p-6">
+              <div className="max-w-sm text-center">
+                <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10">
+                  <Server size={20} className="text-primary" />
+                </div>
+                {configured.length === 0 ? (
+                  <>
+                    <p className="font-display text-sm font-semibold text-foreground">
+                      No providers configured yet
+                    </p>
+                    <p className="mt-2 font-body text-xs leading-relaxed text-muted-foreground">
+                      Providers connect this runtime to AI models. Select a provider from the list and click <strong>Configure</strong> to add your API key. Start with the provider you use most — you can always add more later.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-display text-sm font-semibold text-foreground">
+                      Select a provider
+                    </p>
+                    <p className="mt-2 font-body text-xs text-muted-foreground">
+                      Choose a provider from the list to view its models and configuration.
+                    </p>
+                  </>
+                )}
               </div>
-              {configured.length === 0 ? (
-                <>
-                  <p className="font-display text-sm font-semibold text-foreground">
-                    No providers configured yet
-                  </p>
-                  <p className="mt-2 font-body text-xs leading-relaxed text-muted-foreground">
-                    Providers connect this runtime to AI models. Select a provider from the list and click <strong>Configure</strong> to add your API key. Start with the provider you use most — you can always add more later.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="font-display text-sm font-semibold text-foreground">
-                    Select a provider
-                  </p>
-                  <p className="mt-2 font-body text-xs text-muted-foreground">
-                    Choose a provider from the list to view its models and configuration.
-                  </p>
-                </>
-              )}
             </div>
           </div>
         )}
@@ -288,23 +294,83 @@ export const ProvidersPage: FC = () => {
 };
 
 // ---------------------------------------------------------------------------
+// Default model banner (shown when no provider is selected)
+// ---------------------------------------------------------------------------
+
+function DefaultModelBanner({
+  defaultId,
+  catalog,
+}: {
+  defaultId: string | undefined;
+  catalog: CatalogProviderSummary[];
+}) {
+  const defaultProvider = defaultId ? catalog.find((p) => p.id === defaultId) : undefined;
+
+  if (defaultId && defaultProvider) {
+    return (
+      <div className="flex items-center gap-3 border-b border-border bg-primary/5 px-4 py-3">
+        <Star size={14} className="shrink-0 text-primary" />
+        <div className="min-w-0 flex-1">
+          <p className="font-mono text-xs text-muted-foreground">Default provider</p>
+          <p className="truncate font-display text-sm font-semibold text-foreground">
+            {defaultProvider.display_name}
+            <span className="ml-1.5 font-mono text-xs font-normal text-muted-foreground">({defaultId})</span>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 border-b border-amber-500/20 bg-amber-500/5 px-4 py-3">
+      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-amber-500/15">
+        <AlertTriangle size={12} className="text-amber-500" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-display text-sm font-semibold text-foreground">No default provider set</p>
+        <p className="font-body text-xs text-muted-foreground">
+          Select a configured provider and click "Set as default" to designate the default model for chat.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Provider detail panel
 // ---------------------------------------------------------------------------
 
 interface ProviderDetailProps {
   provider: CatalogProviderSummary;
   isDefault: boolean;
+  defaultId: string | undefined;
+  catalog: CatalogProviderSummary[];
   onSetDefault: () => void;
   onConfigure: () => void;
   onDelete: () => void;
   onBack: () => void;
 }
 
-function ProviderDetail({ provider, isDefault, onSetDefault, onConfigure, onDelete, onBack }: ProviderDetailProps) {
+function ProviderDetail({ provider, isDefault, defaultId, catalog, onSetDefault, onConfigure, onDelete, onBack }: ProviderDetailProps) {
   const { models, loadingModels } = useProviderModels(provider.id);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Default model banner when this provider IS the default */}
+      {isDefault && (
+        <div className="flex items-center gap-3 border-b border-primary/20 bg-primary/5 px-4 py-2.5 sm:px-6">
+          <Star size={14} className="shrink-0 fill-primary text-primary" />
+          <p className="font-display text-sm font-semibold text-primary">
+            Default Provider
+          </p>
+          {models.length > 0 && (
+            <span className="font-mono text-xs text-muted-foreground">
+              {provider.id}/{models[0].id}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Header */}
       <div className="border-b border-border bg-card px-4 py-4 sm:px-6">
         <div className="flex items-start justify-between">
@@ -332,7 +398,9 @@ function ProviderDetail({ provider, isDefault, onSetDefault, onConfigure, onDele
               <Plus size={12} />{provider.configured ? "Edit Config" : "Configure"}
             </Button>
             {provider.configured && !isDefault && (
-              <Button variant="outline" size="sm" onClick={onSetDefault} className="h-7 text-xs">Set as default</Button>
+              <Button variant="outline" size="sm" onClick={onSetDefault} className="h-7 text-xs">
+                <Star size={12} />Set as default
+              </Button>
             )}
             {provider.configured && (
               <Button variant="outline" size="sm" onClick={onDelete} className="h-7 border-destructive/40 text-xs text-destructive hover:bg-destructive/10">Remove</Button>

@@ -8,10 +8,12 @@ import { MemoryContextProvider } from "@/features/chat/memory-context";
 import { AgentSelector } from "@/features/chat/agent-selector";
 import { SessionConfigPanel } from "@/features/chat/session-config-panel";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Settings2 } from "lucide-react";
+import { AlertTriangle, Settings2 } from "lucide-react";
+import { fetchConfiguredProviders } from "@/services/providers-api";
 
 /** Thread detail view — wraps chat runtime for the store-selected thread. */
 function ThreadView({ threadId }: { threadId: string }) {
@@ -58,9 +60,53 @@ export function ChatPage() {
   const mobileSidebarOpen = useUiStore((s) => s.mobileSidebarOpen);
   const setMobileSidebarOpen = useUiStore((s) => s.setMobileSidebarOpen);
   const [configOpen, setConfigOpen] = useState(false);
+  const [providerCheck, setProviderCheck] = useState<{ loading: boolean; hasConfigured: boolean }>({ loading: true, hasConfigured: true });
+  const navigate = useNavigate();
+
+  // Check if at least one provider is configured
+  useEffect(() => {
+    let cancelled = false;
+    fetchConfiguredProviders()
+      .then((data) => {
+        if (!cancelled) {
+          const hasConfigured = (data.providers ?? []).length > 0;
+          setProviderCheck({ loading: false, hasConfigured });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setProviderCheck({ loading: false, hasConfigured: false });
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   // Close mobile sidebar when active thread changes
   useEffect(() => { setMobileSidebarOpen(false); }, [activeThreadId, setMobileSidebarOpen]);
+
+  // No-default guard: block chat if no provider is configured
+  if (!providerCheck.loading && !providerCheck.hasConfigured) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-amber-500/15">
+            <AlertTriangle size={24} className="text-amber-400" />
+          </div>
+          <h2 className="font-display text-lg font-semibold text-foreground">
+            No LLM Provider Configured
+          </h2>
+          <p className="mt-2 font-body text-sm text-muted-foreground">
+            You need to configure at least one LLM provider before you can chat.
+            Add your API key for OpenAI, Anthropic, or another provider.
+          </p>
+          <Button
+            className="mt-4"
+            onClick={() => navigate("/admin")}
+          >
+            Configure Provider
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 overflow-hidden">
