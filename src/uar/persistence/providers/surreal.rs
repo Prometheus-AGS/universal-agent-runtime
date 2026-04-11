@@ -319,6 +319,11 @@ impl PersistenceLayer for SurrealDbProvider {
         from_db_vec(agents_raw)
     }
 
+    async fn delete_agent(&self, id: &str) -> Result<()> {
+        let _: Option<surrealdb::types::Value> = self.db.delete(("agents", id)).await?;
+        Ok(())
+    }
+
     // Memory System — delegates to MemoryService (backed by surreal-memory library)
     // These stubs satisfy the PersistenceLayer trait. Real memory operations should
     // use `AppState::memory_service` (a MemoryService wrapping SurrealStorage from
@@ -836,13 +841,24 @@ fn unwrap_surreal_value(v: serde_json::Value) -> serde_json::Value {
                             unwrap_surreal_value(inner)
                         }
                     }
-                    // "RecordId", "Uuid", "Bytes", etc. — collapse to null / ignore
-                    "RecordId" | "Uuid" | "Bytes" | "Regexp" | "Range" => {
-                        // For record IDs embedded in a row the value isn't meaningful
-                        // at the application level; drop them so they don't confuse
-                        // the row-adapter functions.
+                    // RecordId: {"tb": "<table>", "id": <wrapped-id>}
+                    // Extract the inner `id` field so that record IDs round-trip
+                    // back to their original string/number value.
+                    "RecordId" => {
+                        if let J::Object(ref fields) = inner {
+                            if let Some(id_val) = fields.get("id") {
+                                let extracted = unwrap_surreal_value(id_val.clone());
+                                if !matches!(extracted, J::Null) {
+                                    return extracted;
+                                }
+                            }
+                        }
                         J::Null
                     }
+                    // Uuid wraps a UUID string directly — unwrap it.
+                    "Uuid" => unwrap_surreal_value(inner),
+                    // Bytes, Regexp, Range — not meaningful as application values.
+                    "Bytes" | "Regexp" | "Range" => J::Null,
                     // Unknown single-key variant — recurse into the inner value
                     _ => unwrap_surreal_value(inner),
                 }

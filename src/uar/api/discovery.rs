@@ -250,3 +250,126 @@ async fn resolve_agent_artifact(state: &AppState, agent_id: &str) -> Option<Agen
     let persistence = state.persistence.as_ref()?;
     persistence.load_agent(agent_id).await.ok().flatten()
 }
+
+// =========================================================================
+// Agent CRUD handlers
+// =========================================================================
+
+/// POST /api/agents — create a new agent
+pub async fn create_agent(
+    State(state): State<AppState>,
+    Json(mut agent): Json<AgentArtifact>,
+) -> Result<(StatusCode, Json<AgentArtifact>), (StatusCode, String)> {
+    if agent.id.is_empty() {
+        agent.id = Uuid::new_v4().to_string();
+    }
+    agent.kind = "agent".to_string();
+
+    let persistence = state
+        .persistence
+        .as_ref()
+        .ok_or((StatusCode::SERVICE_UNAVAILABLE, "No persistence layer".to_string()))?;
+
+    persistence
+        .save_agent(&agent)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok((StatusCode::CREATED, Json(agent)))
+}
+
+/// PUT /api/agents/{id} — full replacement update
+pub async fn update_agent_full(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(mut agent): Json<AgentArtifact>,
+) -> Result<Json<AgentArtifact>, (StatusCode, String)> {
+    agent.id = id;
+
+    let persistence = state
+        .persistence
+        .as_ref()
+        .ok_or((StatusCode::SERVICE_UNAVAILABLE, "No persistence layer".to_string()))?;
+
+    persistence
+        .save_agent(&agent)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(agent))
+}
+
+/// PATCH /api/agents/{id} — partial update (merge fields into existing agent)
+pub async fn patch_agent(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(patch): Json<serde_json::Value>,
+) -> Result<Json<AgentArtifact>, (StatusCode, String)> {
+    let persistence = state
+        .persistence
+        .as_ref()
+        .ok_or((StatusCode::SERVICE_UNAVAILABLE, "No persistence layer".to_string()))?;
+
+    let existing = persistence
+        .load_agent(&id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((StatusCode::NOT_FOUND, format!("Agent '{id}' not found")))?;
+
+    let mut base = serde_json::to_value(&existing)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    json_merge(&mut base, &patch);
+
+    let mut agent: AgentArtifact = serde_json::from_value(base)
+        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid agent after merge: {e}")))?;
+    agent.id = id;
+
+    persistence
+        .save_agent(&agent)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(agent))
+}
+
+/// DELETE /api/agents/{id}
+pub async fn delete_agent(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    let persistence = state
+        .persistence
+        .as_ref()
+        .ok_or((StatusCode::SERVICE_UNAVAILABLE, "No persistence layer".to_string()))?;
+
+    persistence
+        .delete_agent(&id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// RFC 7396 JSON Merge Patch: recursively merge `patch` into `target`.
+fn json_merge(target: &mut serde_json::Value, patch: &serde_json::Value) {
+    if let serde_json::Value::Object(patch_map) = patch {
+        if !target.is_object() {
+            *target = serde_json::Value::Object(serde_json::Map::new());
+        }
+        let target_map = target.as_object_mut().unwrap();
+        for (key, value) in patch_map {
+            if value.is_null() {
+                target_map.remove(key);
+            } else if value.is_object() {
+                let entry = target_map
+                    .entry(key.clone())
+                    .or_insert(serde_json::Value::Object(serde_json::Map::new()));
+                json_merge(entry, value);
+            } else {
+                target_map.insert(key.clone(), value.clone());
+            }
+        }
+    } else {
+        *target = patch.clone();
+    }
+}

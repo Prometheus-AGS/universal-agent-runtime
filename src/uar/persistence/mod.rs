@@ -128,6 +128,11 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     ) -> Result<Option<crate::uar::domain::artifact::AgentArtifact>>;
     async fn list_agents(&self) -> Result<Vec<crate::uar::domain::artifact::AgentArtifact>>;
 
+    /// Delete an agent by ID.
+    async fn delete_agent(&self, _id: &str) -> Result<()> {
+        Ok(())
+    }
+
     // =========================================================================
     // Memory System
     // =========================================================================

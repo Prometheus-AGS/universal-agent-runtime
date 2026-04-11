@@ -7,7 +7,7 @@ use axum::{
         IntoResponse, Response,
         sse::{Event, KeepAlive, Sse},
     },
-    routing::{any, get, post},
+    routing::{any, get, post, put},
 };
 use chrono::Utc;
 use futures::StreamExt as _;
@@ -111,7 +111,13 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             config.persistence.surreal_pass.as_deref(),
         )
         .await
-        .expect("Failed to initialize SurrealDB");
+        .map_err(|e| {
+            anyhow::anyhow!(
+                "Failed to initialize SurrealDB at '{}': {e}\n\
+                Hint: another instance may already be running and holding the database lock.",
+                config.persistence.database_url
+            )
+        })?;
 
         // Create compiler storage sharing the same DB connection
         let db = provider.client();
@@ -737,7 +743,13 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         // Discovery catalog endpoints: GET /api/agents (list), GET /api/tools
         // The agents router above handles /api/agents/{id}/skills CRUD;
         // the discovery handlers provide the flat catalog list.
-        .route("/api/agents", get(uar::api::discovery::list_agents))
+        .route("/api/agents", get(uar::api::discovery::list_agents).post(uar::api::discovery::create_agent))
+        .route(
+            "/api/agents/{id}",
+            put(uar::api::discovery::update_agent_full)
+                .patch(uar::api::discovery::patch_agent)
+                .delete(uar::api::discovery::delete_agent),
+        )
         .route("/api/tools", get(uar::api::discovery::list_tools))
         .route("/api/uar/mcp/health", get(api_mcp_health))
         .route(

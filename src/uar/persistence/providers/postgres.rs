@@ -346,6 +346,14 @@ impl PersistenceLayer for PostgresProvider {
         Ok(agents)
     }
 
+    async fn delete_agent(&self, id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM agents WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
     // Memory System — delegates to MemoryService (backed by surreal-memory library)
     // These stubs satisfy the PersistenceLayer trait. Real memory operations should
     // go through `AppState::memory_service`.
