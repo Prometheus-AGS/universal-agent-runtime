@@ -115,6 +115,10 @@ fn minimal_config() -> AppConfig {
         providers: vec![],
         memory: MemoryConfig::default(),
         sandbox: universal_agent_runtime::config::SandboxRuntimeConfig::default(),
+        failover: Default::default(),
+        native_tools: Default::default(),
+        skill_evolution: Default::default(),
+        acp: Default::default(),
     }
 }
 

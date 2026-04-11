@@ -208,12 +208,11 @@ impl LlmDriver for LiterLlmDriver {
                     let (provider, model_name) = metrics_model
                         .split_once('/')
                         .unwrap_or(("unknown", &metrics_model));
-                    #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
                     telemetry_metrics::record_llm_tokens(
                         provider,
                         model_name,
-                        usage.prompt_tokens as u64,
-                        usage.completion_tokens as u64,
+                        usage.prompt_tokens,
+                        usage.completion_tokens,
                     );
                 }
             }

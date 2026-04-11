@@ -443,3 +443,196 @@ intent_classifier:
   # The component must implement the intent:classifier WIT interface.
   # Env: UAR_INTENT_CLASSIFIER__WASM_COMPONENT_PATH
   # wasm_component_path: "/path/to/classifier.wasm"
+
+# =============================================================================
+# LLM FAILOVER (Runtime Model Failover)
+# =============================================================================
+# When enabled, UAR automatically switches to a fallback driver if the primary
+# LLM driver returns an error. The fallback is configured via the provider
+# registry (see `providers:` above).
+
+failover:
+  # Enable automatic failover to the fallback model.
+  # Default: false
+  # Env: UAR_FAILOVER__ENABLED
+  enabled: false
+
+  # Strategy to use when selecting among fallback models.
+  # Options:
+  #   - "priority"        – try fallbacks in order, stop on first success
+  #   - "round_robin"     – distribute requests across fallbacks evenly
+  #   - "cost_optimized"  – prefer cheapest model that hasn't errored recently
+  # Default: "priority"
+  # Env: UAR_FAILOVER__STRATEGY
+  strategy: "priority"
+
+  # Number of consecutive errors before switching to the fallback driver.
+  # Default: 3
+  # Env: UAR_FAILOVER__ERROR_THRESHOLD
+  error_threshold: 3
+
+  # Seconds to wait before retrying the primary driver after a failover.
+  # Set to 0 to keep using the fallback indefinitely.
+  # Default: 60
+  # Env: UAR_FAILOVER__COOLDOWN_SECS
+  cooldown_secs: 60
+
+  # Ordered list of fallback models (used by "priority" strategy).
+  # Each entry is a "provider/model" string matching a configured provider.
+  # Env: UAR_FAILOVER__FALLBACK_MODELS (comma-separated)
+  # fallback_models:
+  #   - "anthropic/claude-3-5-haiku-20241022"
+  #   - "groq/llama-3.3-70b-versatile"
+
+# =============================================================================
+# NATIVE TOOLS (In-Process Tool Execution)
+# =============================================================================
+# Built-in tools that run directly inside the UAR process without an MCP server.
+# Native tools are registered automatically on startup; enable/disable categories
+# below to control which tools are exposed to agents.
+
+native_tools:
+  # Enable the native tool subsystem.
+  # Default: true
+  # Env: UAR_NATIVE_TOOLS__ENABLED
+  enabled: true
+
+  # ── File system tools ────────────────────────────────────────────────────
+  file_read_enabled: true
+  file_write_enabled: false   # Opt-in — writes to the host filesystem
+
+  # Maximum file size the read tool will return (KB).
+  # Default: 1024 (1 MB)
+  # Env: UAR_NATIVE_TOOLS__FILE_MAX_SIZE_KB
+  file_max_size_kb: 1024
+
+  # Maximum bytes the file write tool will accept per call (KB).
+  # Default: 512
+  # Env: UAR_NATIVE_TOOLS__FILE_WRITE_MAX_KB
+  file_write_max_kb: 512
+
+  # ── Web fetch tool ───────────────────────────────────────────────────────
+  web_fetch_enabled: true
+
+  # Request timeout for the web fetch tool (seconds).
+  # Default: 30
+  # Env: UAR_NATIVE_TOOLS__WEB_FETCH_TIMEOUT_SECS
+  web_fetch_timeout_secs: 30
+
+  # Maximum response body size the web fetch tool will return (KB).
+  # Default: 2048 (2 MB)
+  # Env: UAR_NATIVE_TOOLS__WEB_FETCH_MAX_SIZE_KB
+  web_fetch_max_size_kb: 2048
+
+  # ── Terminal / shell tool ────────────────────────────────────────────────
+  # WARNING: Exposing a shell to an LLM is a significant security risk.
+  # Only enable in trusted, sandboxed environments.
+  terminal_enabled: false
+
+  # Shell binary to use for the terminal tool.
+  # Default: "/bin/sh"
+  # Env: UAR_NATIVE_TOOLS__TERMINAL_SHELL
+  terminal_shell: "/bin/sh"
+
+  # Maximum wall-clock time the terminal tool will wait for a command (seconds).
+  # Default: 30
+  # Env: UAR_NATIVE_TOOLS__TERMINAL_TIMEOUT_SECS
+  terminal_timeout_secs: 30
+
+  # Run terminal commands inside a container/nsjail sandbox.
+  # Requires Docker or nsjail to be available on the host.
+  # Default: false
+  # Env: UAR_NATIVE_TOOLS__TERMINAL_USE_SANDBOX
+  terminal_use_sandbox: false
+
+  # ── Session search tool ──────────────────────────────────────────────────
+  session_search_enabled: true
+
+  # Maximum results returned by the session search tool per call.
+  # Default: 10
+  # Env: UAR_NATIVE_TOOLS__SESSION_SEARCH_MAX_RESULTS
+  session_search_max_results: 10
+
+# =============================================================================
+# SKILL EVOLUTION (Hermes Learning Cycle)
+# =============================================================================
+# After a qualifying run completes, UAR fires a reflection prompt against the
+# run transcript. The LLM analyses the tool calls and suggests new skills (or
+# updates/deletions) to codify the learned behaviour for future runs.
+#
+# This is opt-in and disabled by default — enable it only when you have a
+# SkillService configured with at least one writable storage provider.
+
+skill_evolution:
+  # Enable the post-run reflection hook.
+  # Default: false
+  # Env: UAR_SKILL_EVOLUTION__ENABLED | --skill-evolution-enabled
+  enabled: false
+
+  # Model to use for the reflection call ("provider/model" format).
+  # Falls back to the run's primary model when unset.
+  # Env: UAR_SKILL_EVOLUTION__TRIGGER_MODEL | --skill-evolution-model
+  # trigger_model: "openai/gpt-4o-mini"
+
+  # Minimum number of tool completions in a run before evolution is considered.
+  # Prevents trivial single-turn interactions from spawning skills.
+  # Default: 2
+  # Env: UAR_SKILL_EVOLUTION__MIN_TOOL_CALLS
+  min_tool_calls: 2
+
+  # Maximum new skills that can be created from a single run.
+  # Default: 1
+  # Env: UAR_SKILL_EVOLUTION__MAX_SKILLS_PER_RUN
+  max_skills_per_run: 1
+
+  # Allow the reflection system to update (patch) existing skills.
+  # Default: false
+  # Env: UAR_SKILL_EVOLUTION__ALLOW_UPDATE
+  allow_update: false
+
+  # Allow the reflection system to delete under-used skills.
+  # Default: false
+  # Env: UAR_SKILL_EVOLUTION__ALLOW_DELETION
+  allow_deletion: false
+
+  # Minimum times a skill must have executed before deletion is permitted.
+  # Default: 5
+  # Env: UAR_SKILL_EVOLUTION__MIN_EXECUTIONS_BEFORE_DELETE
+  min_executions_before_delete: 5
+
+  # Custom system-prompt for the reflection call.
+  # Uses the built-in Hermes prompt when unset.
+  # Env: UAR_SKILL_EVOLUTION__REFLECTION_PROMPT
+  # reflection_prompt: |
+  #   You are Hermes, the UAR skill librarian. Analyse the run transcript …
+
+# =============================================================================
+# ACP SERVER (Agent Communication Protocol)
+# =============================================================================
+# Exposes a BeeAI / IBM Research ACP endpoint alongside the main HTTP API.
+# ACP provides JSON-RPC 2.0 agent introspection, session management, and
+# streaming run execution — used by IDEs, debuggers, and the BeeAI platform.
+#
+# Spec: https://agentcommunicationprotocol.dev
+
+acp:
+  # Enable the ACP endpoint.
+  # Default: false
+  # Env: UAR_ACP__ENABLED
+  enabled: false
+
+  # URL path prefix for ACP routes.
+  # Default: "/acp"
+  # Env: UAR_ACP__PATH
+  path: "/acp"
+
+  # Require JWT authentication for ACP requests.
+  # Inherits from security.jwt_required when not set.
+  # Default: true
+  # Env: UAR_ACP__AUTH_REQUIRED
+  auth_required: true
+
+  # Session TTL in seconds — ACP sessions are garbage-collected after this.
+  # Default: 3600 (1 hour)
+  # Env: UAR_ACP__SESSION_TTL_SECS
+  session_ttl_secs: 3600

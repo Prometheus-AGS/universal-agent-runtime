@@ -1,4 +1,4 @@
-use crate::config::LlmConfig;
+use crate::config::{LlmConfig, SkillEvolutionConfig};
 use crate::llm::{Message, MessageRole, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::session::SessionStore;
@@ -90,6 +90,8 @@ pub struct RunManager {
     pub persistence: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
     /// Skill service for coordinated skill management
     skill_service: Option<Arc<SkillService>>,
+    /// Configuration for the Hermes skill auto-creation/evolution post-run hook.
+    skill_evolution_config: SkillEvolutionConfig,
     /// Provider registry for per-agent LLM provider resolution
     provider_registry: Option<Arc<crate::llm::ProviderRegistry>>,
     /// Native skill registry for in-process tool execution
@@ -263,6 +265,7 @@ impl RunManager {
             classifier_config,
             persistence,
             skill_service: None,
+            skill_evolution_config: SkillEvolutionConfig::default(),
             provider_registry: None,
             native_skills,
             pending_approvals: Arc::new(Mutex::new(HashMap::new())),
@@ -272,6 +275,12 @@ impl RunManager {
     /// Set the skill service for coordinated skill management.
     pub fn with_skill_service(mut self, service: Arc<SkillService>) -> Self {
         self.skill_service = Some(service);
+        self
+    }
+
+    /// Configure the Hermes skill evolution post-run hook.
+    pub fn with_skill_evolution_config(mut self, cfg: SkillEvolutionConfig) -> Self {
+        self.skill_evolution_config = cfg;
         self
     }
 
@@ -714,6 +723,8 @@ impl RunManager {
         let execute_agent_id = artifact.id.clone();
         let emitter = emitter.clone();
         let execution_session = session.clone();
+        let skill_service_for_evolution = self.skill_service.clone();
+        let skill_evolution_cfg = self.skill_evolution_config.clone();
 
         tokio::spawn(async move {
             // 1. Run Start
@@ -723,6 +734,9 @@ impl RunManager {
                     agent_id: execute_agent_id,
                 })
                 .await;
+
+            // Counter for skill evolution — tracks tool completions across the full run.
+            let mut tool_call_count: usize = 0;
 
             // 2. Emit pre-call memory recall hits so the client knows what context was injected.
             if !memory_hits.is_empty() {
@@ -924,6 +938,10 @@ impl RunManager {
                         };
 
                         if let Some(evt) = uar_event {
+                            // Track tool completions for the skill evolution hook.
+                            if matches!(evt, NormalizedEvent::ToolEnd { .. }) {
+                                tool_call_count += 1;
+                            }
                             // Derive a memory mutation event before consuming the ToolEnd.
                             let mutation_evt = memory_mutation_from_tool_end(&evt, &execute_run_id);
                             emitter.emit(evt).await;
@@ -951,6 +969,9 @@ impl RunManager {
             let total_tokens = total_input_tokens.saturating_add(total_output_tokens);
             let has_usage = total_input_tokens > 0 || total_output_tokens > 0;
 
+            // Preserve run_id before it is moved into the RunDone event below.
+            let evolution_run_id = execute_run_id.clone();
+
             if has_usage {
                 emitter
                     .emit(NormalizedEvent::RunDoneWithUsage {
@@ -968,6 +989,40 @@ impl RunManager {
                         run_id: execute_run_id,
                     })
                     .await;
+            }
+
+            // ── Skill evolution (Hermes learning cycle) ──────────────────────────
+            // Fire a background reflection task when evolution is enabled and the
+            // run performed enough tool calls to be worth analysing.
+            if skill_evolution_cfg.enabled
+                && tool_call_count >= skill_evolution_cfg.min_tool_calls
+            {
+                if let Some(svc) = skill_service_for_evolution {
+                    let run_id_ev = evolution_run_id.clone();
+                    let cfg_ev = skill_evolution_cfg.clone();
+                    tokio::spawn(async move {
+                        tracing::info!(
+                            run_id = %run_id_ev,
+                            tool_calls = tool_call_count,
+                            "Triggering skill evolution reflection"
+                        );
+                        if let Err(e) = svc
+                            .evolve_from_run(&run_id_ev, tool_call_count, &cfg_ev)
+                            .await
+                        {
+                            tracing::warn!(
+                                run_id = %run_id_ev,
+                                error = %e,
+                                "Skill evolution reflection failed"
+                            );
+                        }
+                    });
+                } else {
+                    tracing::debug!(
+                        run_id = %evolution_run_id,
+                        "Skill evolution enabled but no SkillService configured — skipping"
+                    );
+                }
             }
         });
 

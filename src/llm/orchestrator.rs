@@ -30,7 +30,7 @@ use std::sync::Arc;
 use futures::{Stream, StreamExt};
 use uuid::Uuid;
 
-use crate::config::LlmConfig;
+use crate::config::{FailoverConfig, LlmConfig};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent;
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
@@ -85,6 +85,10 @@ pub struct Orchestrator {
     llm_config: LlmConfig,
     mcp: Arc<McpRegistry>,
     driver: Arc<dyn LlmDriver>,
+    /// Optional fallback driver activated when the primary driver errors.
+    fallback_driver: Option<Arc<dyn LlmDriver>>,
+    /// Controls when/how to switch to the fallback driver.
+    failover_config: FailoverConfig,
     native_skills: Arc<NativeSkillRegistry>,
     /// Optional gate that is consulted before each tool call execution.
     /// If `None`, all tool calls are approved automatically.
@@ -126,9 +130,26 @@ impl Orchestrator {
             llm_config,
             mcp,
             driver,
+            fallback_driver: None,
+            failover_config: FailoverConfig::default(),
             native_skills,
             tool_approval_gate: None,
         })
+    }
+
+    /// Attach a fallback driver and failover configuration.
+    ///
+    /// When `failover_config.enabled` is `true` and the primary driver fails,
+    /// the orchestrator will re-try the same request against `fallback_driver`.
+    #[must_use]
+    pub fn with_failover(
+        mut self,
+        fallback_driver: Arc<dyn LlmDriver>,
+        failover_config: FailoverConfig,
+    ) -> Self {
+        self.fallback_driver = Some(fallback_driver);
+        self.failover_config = failover_config;
+        self
     }
 
     /// Get the LLM configuration.
@@ -268,28 +289,71 @@ impl Orchestrator {
                     "Sending request to LLM driver"
                 );
 
-                // Stream from the driver
-                let driver_stream = match orchestrator.driver.stream(req).await {
-                    Ok(s) => {
-                        tracing::debug!(
-                            request_id = %request_id,
-                            iteration = iteration,
-                            "Driver stream created successfully"
-                        );
-                        s
-                    }
-                    Err(e) => {
-                        tracing::error!(
-                            request_id = %request_id,
-                            iteration = iteration,
-                            error = %e,
-                            "Failed to create driver stream"
-                        );
-                        yield NormalizedEvent::Error {
-                            message: e.to_string(),
-                            code: None,
-                        };
-                        break;
+                // Stream from the driver (with automatic failover if configured)
+                let driver_stream = {
+                    let primary = orchestrator.driver.stream(req.clone()).await;
+                    match primary {
+                        Ok(s) => {
+                            tracing::debug!(
+                                request_id = %request_id,
+                                iteration = iteration,
+                                "Driver stream created successfully"
+                            );
+                            s
+                        }
+                        Err(e) if orchestrator.failover_config.enabled => {
+                            if let Some(ref fallback) = orchestrator.fallback_driver {
+                                tracing::warn!(
+                                    request_id = %request_id,
+                                    iteration = iteration,
+                                    primary_error = %e,
+                                    "Primary LLM driver failed; attempting failover",
+                                );
+                                match fallback.stream(req).await {
+                                    Ok(s) => s,
+                                    Err(fe) => {
+                                        tracing::error!(
+                                            request_id = %request_id,
+                                            primary_error = %e,
+                                            fallback_error = %fe,
+                                            "Fallback driver also failed",
+                                        );
+                                        yield NormalizedEvent::Error {
+                                            message: format!(
+                                                "primary: {e}; fallback: {fe}"
+                                            ),
+                                            code: None,
+                                        };
+                                        break;
+                                    }
+                                }
+                            } else {
+                                tracing::error!(
+                                    request_id = %request_id,
+                                    iteration = iteration,
+                                    error = %e,
+                                    "Primary driver failed; no fallback configured",
+                                );
+                                yield NormalizedEvent::Error {
+                                    message: e.to_string(),
+                                    code: None,
+                                };
+                                break;
+                            }
+                        }
+                        Err(e) => {
+                            tracing::error!(
+                                request_id = %request_id,
+                                iteration = iteration,
+                                error = %e,
+                                "Failed to create driver stream"
+                            );
+                            yield NormalizedEvent::Error {
+                                message: e.to_string(),
+                                code: None,
+                            };
+                            break;
+                        }
                     }
                 };
 

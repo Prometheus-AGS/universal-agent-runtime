@@ -169,6 +169,35 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
             "/memory",
             put(|s, q, h, b| update_namespace(s, q, h, b, "memory")),
         )
+        .route(
+            "/llm-failover",
+            get(|s, q, h| list_namespace(s, q, h, "llm_failover")),
+        )
+        .route(
+            "/llm-failover",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "llm_failover")),
+        )
+        .route(
+            "/native-tools",
+            get(|s, q, h| list_namespace(s, q, h, "native_tools")),
+        )
+        .route(
+            "/native-tools",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "native_tools")),
+        )
+        .route(
+            "/skill-evolution",
+            get(|s, q, h| list_namespace(s, q, h, "skill_evolution")),
+        )
+        .route(
+            "/skill-evolution",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "skill_evolution")),
+        )
+        .route("/acp", get(|s, q, h| list_namespace(s, q, h, "acp")))
+        .route(
+            "/acp",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "acp")),
+        )
 }
 
 // =============================================================================

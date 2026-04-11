@@ -1537,6 +1537,261 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
         result.push((st, settings));
     }
 
+    // -------------------------------------------------------------------------
+    // llm_failover — runtime model failover configuration
+    // -------------------------------------------------------------------------
+    {
+        let fo = &config.failover;
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "LLM Failover",
+            "x-uar-ui": { "category": "AI & LLM", "icon": "shield", "order": 15, "display_mode": "form" },
+            "type": "object",
+            "properties": {
+                "enabled": { "type": "boolean", "title": "Enabled", "x-control": "toggle" },
+                "strategy": {
+                    "type": "string", "title": "Strategy",
+                    "enum": ["priority", "round_robin", "cost_optimized"],
+                    "default": "priority", "x-control": "select"
+                },
+                "error_threshold": {
+                    "type": "integer", "title": "Error Threshold",
+                    "minimum": 1, "x-control": "slider",
+                    "x-slider-min": 1, "x-slider-max": 20
+                },
+                "cooldown_secs": {
+                    "type": "integer", "title": "Cooldown (seconds)",
+                    "minimum": 0, "x-control": "number"
+                }
+            }
+        });
+        let st = make_type("LLM Failover", "llm_failover", schema);
+        let settings = vec![
+            make_setting(&st, "llm_failover.enabled", "Enabled", json!(fo.enabled)),
+            make_setting(
+                &st,
+                "llm_failover.strategy",
+                "Strategy",
+                serde_json::to_value(&fo.strategy).unwrap_or(json!("priority")),
+            ),
+            make_setting(
+                &st,
+                "llm_failover.error_threshold",
+                "Error Threshold",
+                json!(fo.error_threshold),
+            ),
+            make_setting(
+                &st,
+                "llm_failover.cooldown_secs",
+                "Cooldown (seconds)",
+                json!(fo.cooldown_secs),
+            ),
+        ];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
+    // native_tools — file, web-fetch, terminal, session-search tools
+    // -------------------------------------------------------------------------
+    {
+        let nt = &config.native_tools;
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Native Tools",
+            "x-uar-ui": { "category": "Runtime", "icon": "tool", "order": 16, "display_mode": "form" },
+            "type": "object",
+            "properties": {
+                "file_tools_enabled": {
+                    "type": "boolean", "title": "File Tools Enabled", "x-control": "toggle"
+                },
+                "file_allowed_paths": {
+                    "type": "array", "title": "Allowed File Paths",
+                    "items": { "type": "string" }, "x-control": "tag-input"
+                },
+                "file_max_size_kb": {
+                    "type": "integer", "title": "Max Read Size (KB)",
+                    "minimum": 1, "x-control": "number"
+                },
+                "file_write_max_kb": {
+                    "type": "integer", "title": "Max Write Size (KB)",
+                    "minimum": 1, "x-control": "number"
+                },
+                "web_fetch_enabled": {
+                    "type": "boolean", "title": "Web Fetch Enabled", "x-control": "toggle"
+                },
+                "web_fetch_timeout_secs": {
+                    "type": "integer", "title": "Web Fetch Timeout (s)",
+                    "minimum": 1, "x-control": "slider",
+                    "x-slider-min": 5, "x-slider-max": 120
+                },
+                "web_fetch_max_size_kb": {
+                    "type": "integer", "title": "Web Fetch Max Size (KB)",
+                    "minimum": 1, "x-control": "number"
+                },
+                "web_fetch_allowed_domains": {
+                    "type": "array", "title": "Allowed Domains",
+                    "items": { "type": "string" }, "x-control": "tag-input"
+                },
+                "terminal_exec_enabled": {
+                    "type": "boolean", "title": "Terminal Exec Enabled", "x-control": "toggle"
+                },
+                "terminal_shell": {
+                    "type": "string", "title": "Shell", "default": "sh", "x-control": "text"
+                },
+                "terminal_timeout_secs": {
+                    "type": "integer", "title": "Terminal Timeout (s)",
+                    "minimum": 1, "x-control": "number"
+                },
+                "terminal_use_sandbox": {
+                    "type": "boolean", "title": "Use Sandbox", "x-control": "toggle"
+                },
+                "session_search_enabled": {
+                    "type": "boolean", "title": "Session Search Enabled", "x-control": "toggle"
+                },
+                "session_search_max_results": {
+                    "type": "integer", "title": "Max Search Results",
+                    "minimum": 1, "x-control": "slider",
+                    "x-slider-min": 1, "x-slider-max": 50
+                }
+            }
+        });
+        let st = make_type("Native Tools", "native_tools", schema);
+        let settings = vec![
+            make_setting(&st, "native_tools.file_tools_enabled", "File Tools Enabled",
+                json!(nt.file_tools_enabled)),
+            make_setting(&st, "native_tools.file_allowed_paths", "Allowed File Paths",
+                json!(nt.file_allowed_paths)),
+            make_setting(&st, "native_tools.file_max_size_kb", "Max Read Size (KB)",
+                json!(nt.file_max_size_kb)),
+            make_setting(&st, "native_tools.file_write_max_kb", "Max Write Size (KB)",
+                json!(nt.file_write_max_kb)),
+            make_setting(&st, "native_tools.web_fetch_enabled", "Web Fetch Enabled",
+                json!(nt.web_fetch_enabled)),
+            make_setting(&st, "native_tools.web_fetch_timeout_secs", "Web Fetch Timeout (s)",
+                json!(nt.web_fetch_timeout_secs)),
+            make_setting(&st, "native_tools.web_fetch_max_size_kb", "Web Fetch Max Size (KB)",
+                json!(nt.web_fetch_max_size_kb)),
+            make_setting(&st, "native_tools.web_fetch_allowed_domains", "Allowed Domains",
+                json!(nt.web_fetch_allowed_domains)),
+            make_setting(&st, "native_tools.terminal_exec_enabled", "Terminal Exec Enabled",
+                json!(nt.terminal_exec_enabled)),
+            make_setting(&st, "native_tools.terminal_shell", "Shell",
+                json!(nt.terminal_shell)),
+            make_setting(&st, "native_tools.terminal_timeout_secs", "Terminal Timeout (s)",
+                json!(nt.terminal_timeout_secs)),
+            make_setting(&st, "native_tools.terminal_use_sandbox", "Use Sandbox",
+                json!(nt.terminal_use_sandbox)),
+            make_setting(&st, "native_tools.session_search_enabled", "Session Search Enabled",
+                json!(nt.session_search_enabled)),
+            make_setting(&st, "native_tools.session_search_max_results", "Max Search Results",
+                json!(nt.session_search_max_results)),
+        ];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
+    // skill_evolution — Hermes learning cycle / auto-skill creation
+    // -------------------------------------------------------------------------
+    {
+        let se = &config.skill_evolution;
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Skill Evolution",
+            "x-uar-ui": {
+                "category": "Governance & Agents", "icon": "sparkles",
+                "order": 17, "display_mode": "form"
+            },
+            "type": "object",
+            "properties": {
+                "enabled": { "type": "boolean", "title": "Enabled", "x-control": "toggle" },
+                "trigger_model": {
+                    "type": ["string", "null"], "title": "Trigger Model", "x-control": "text"
+                },
+                "min_tool_calls": {
+                    "type": "integer", "title": "Min Tool Calls to Trigger",
+                    "minimum": 1, "x-control": "slider",
+                    "x-slider-min": 1, "x-slider-max": 20
+                },
+                "max_skills_per_run": {
+                    "type": "integer", "title": "Max Skills per Run",
+                    "minimum": 1, "x-control": "number"
+                },
+                "allow_update": {
+                    "type": "boolean", "title": "Allow Updating Skills", "x-control": "toggle"
+                },
+                "allow_deletion": {
+                    "type": "boolean", "title": "Allow Deleting Skills", "x-control": "toggle"
+                },
+                "min_executions_before_delete": {
+                    "type": "integer", "title": "Min Executions Before Delete",
+                    "minimum": 0, "x-control": "number"
+                },
+                "reflection_prompt": {
+                    "type": ["string", "null"], "title": "Reflection Prompt", "x-control": "textarea"
+                }
+            }
+        });
+        let st = make_type("Skill Evolution", "skill_evolution", schema);
+        let settings = vec![
+            make_setting(&st, "skill_evolution.enabled", "Enabled", json!(se.enabled)),
+            make_setting(&st, "skill_evolution.trigger_model", "Trigger Model",
+                json!(se.trigger_model)),
+            make_setting(&st, "skill_evolution.min_tool_calls", "Min Tool Calls to Trigger",
+                json!(se.min_tool_calls)),
+            make_setting(&st, "skill_evolution.max_skills_per_run", "Max Skills per Run",
+                json!(se.max_skills_per_run)),
+            make_setting(&st, "skill_evolution.allow_update", "Allow Updating Skills",
+                json!(se.allow_update)),
+            make_setting(&st, "skill_evolution.allow_deletion", "Allow Deleting Skills",
+                json!(se.allow_deletion)),
+            make_setting(
+                &st,
+                "skill_evolution.min_executions_before_delete",
+                "Min Executions Before Delete",
+                json!(se.min_executions_before_delete),
+            ),
+            make_setting(&st, "skill_evolution.reflection_prompt", "Reflection Prompt",
+                json!(se.reflection_prompt)),
+        ];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
+    // acp — BeeAI Agent Communication Protocol server endpoint
+    // -------------------------------------------------------------------------
+    {
+        let acp = &config.acp;
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "ACP Server",
+            "x-uar-ui": { "category": "Protocols", "icon": "plug", "order": 18, "display_mode": "form" },
+            "type": "object",
+            "properties": {
+                "enabled": { "type": "boolean", "title": "Enabled", "x-control": "toggle" },
+                "path": {
+                    "type": "string", "title": "Mount Path",
+                    "default": "/acp", "x-control": "text"
+                },
+                "auth_required": {
+                    "type": "boolean", "title": "Auth Required", "x-control": "toggle"
+                },
+                "session_ttl_secs": {
+                    "type": "integer", "title": "Session TTL (seconds)",
+                    "minimum": 60, "x-control": "number"
+                }
+            }
+        });
+        let st = make_type("ACP Server", "acp", schema);
+        let settings = vec![
+            make_setting(&st, "acp.enabled", "Enabled", json!(acp.enabled)),
+            make_setting(&st, "acp.path", "Mount Path", json!(acp.path)),
+            make_setting(&st, "acp.auth_required", "Auth Required", json!(acp.auth_required)),
+            make_setting(&st, "acp.session_ttl_secs", "Session TTL (seconds)",
+                json!(acp.session_ttl_secs)),
+        ];
+        result.push((st, settings));
+    }
+
     result
 }
 

@@ -52,6 +52,42 @@ pub struct Cli {
     /// LLM budget limit (USD)
     #[arg(long, env = "UAR_LLM__BUDGET__GLOBAL_LIMIT")]
     pub llm_budget_limit: Option<f64>,
+
+    // --- Model failover ---
+    /// Enable runtime model failover
+    #[arg(long, env = "UAR_FAILOVER__ENABLED")]
+    pub failover_enabled: Option<bool>,
+
+    // --- Native tools ---
+    /// Enable file_read / file_write / file_patch native tools
+    #[arg(long, env = "UAR_NATIVE_TOOLS__FILE_TOOLS_ENABLED")]
+    pub native_file_tools: Option<bool>,
+
+    /// Enable web_fetch native tool
+    #[arg(long, env = "UAR_NATIVE_TOOLS__WEB_FETCH_ENABLED")]
+    pub native_web_fetch: Option<bool>,
+
+    /// Enable terminal_exec native tool
+    #[arg(long, env = "UAR_NATIVE_TOOLS__TERMINAL_EXEC_ENABLED")]
+    pub native_terminal_exec: Option<bool>,
+
+    // --- Skill evolution ---
+    /// Enable post-run skill evolution
+    #[arg(long, env = "UAR_SKILL_EVOLUTION__ENABLED")]
+    pub skill_evolution_enabled: Option<bool>,
+
+    /// Model to use for skill evolution reflection (provider/model format)
+    #[arg(long, env = "UAR_SKILL_EVOLUTION__TRIGGER_MODEL")]
+    pub skill_evolution_model: Option<String>,
+
+    // --- ACP server ---
+    /// Enable ACP server endpoint
+    #[arg(long, env = "UAR_ACP__ENABLED")]
+    pub acp_enabled: Option<bool>,
+
+    /// ACP server path prefix
+    #[arg(long, env = "UAR_ACP__PATH")]
+    pub acp_path: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -90,6 +126,18 @@ pub struct AppConfig {
     /// Sandbox code-execution configuration
     #[serde(default)]
     pub sandbox: SandboxRuntimeConfig,
+    /// Runtime model failover configuration.
+    #[serde(default)]
+    pub failover: FailoverConfig,
+    /// Native (in-process) tool configuration.
+    #[serde(default)]
+    pub native_tools: NativeToolsConfig,
+    /// Post-run skill evolution configuration.
+    #[serde(default)]
+    pub skill_evolution: SkillEvolutionConfig,
+    /// ACP server endpoint configuration.
+    #[serde(default)]
+    pub acp: AcpConfig,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -844,6 +892,38 @@ impl AppConfig {
             builder = builder.set_override("llm.budget.global_limit", budget)?;
         }
 
+        // Failover CLI overrides
+        if let Some(fe) = cli.failover_enabled {
+            builder = builder.set_override("failover.enabled", fe)?;
+        }
+
+        // Native tools CLI overrides
+        if let Some(ft) = cli.native_file_tools {
+            builder = builder.set_override("native_tools.file_tools_enabled", ft)?;
+        }
+        if let Some(wf) = cli.native_web_fetch {
+            builder = builder.set_override("native_tools.web_fetch_enabled", wf)?;
+        }
+        if let Some(te) = cli.native_terminal_exec {
+            builder = builder.set_override("native_tools.terminal_exec_enabled", te)?;
+        }
+
+        // Skill evolution CLI overrides
+        if let Some(se) = cli.skill_evolution_enabled {
+            builder = builder.set_override("skill_evolution.enabled", se)?;
+        }
+        if let Some(ref m) = cli.skill_evolution_model {
+            builder = builder.set_override("skill_evolution.trigger_model", m.clone())?;
+        }
+
+        // ACP CLI overrides
+        if let Some(ae) = cli.acp_enabled {
+            builder = builder.set_override("acp.enabled", ae)?;
+        }
+        if let Some(ref ap) = cli.acp_path {
+            builder = builder.set_override("acp.path", ap.clone())?;
+        }
+
         // 4. Manual Environment Overrides
         // ...
         if let Ok(val) = env::var("UAR_RESILIENCE__RATE_LIMIT_ENABLED")
@@ -1162,6 +1242,14 @@ mod tests {
                 llm_base_url: None,
                 llm_protocol: None,
                 llm_budget_limit: None,
+                failover_enabled: None,
+                native_file_tools: None,
+                native_web_fetch: None,
+                native_terminal_exec: None,
+                skill_evolution_enabled: None,
+                skill_evolution_model: None,
+                acp_enabled: None,
+                acp_path: None,
             },
             cfg_path,
         )
@@ -1204,5 +1292,274 @@ persistence:
         assert!(cfg.resilience.timeout_disabled);
         assert_eq!(cfg.resilience.request_timeout_ms, u64::MAX);
         let _ = fs::remove_file(cfg_path);
+    }
+}
+
+// =============================================================================
+// MODEL FAILOVER CONFIGURATION
+// =============================================================================
+
+/// Selection strategy for picking the next provider when the primary fails.
+#[derive(Debug, Deserialize, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum FailoverStrategy {
+    /// Try each fallback in declared priority order (default).
+    #[default]
+    Priority,
+    /// Distribute load round-robin across providers not in cooldown.
+    RoundRobin,
+    /// Always pick the cheapest available provider that meets capability requirements.
+    CostOptimized,
+}
+
+/// A single entry in the ordered fallback model list.
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub struct FallbackModel {
+    /// Model in `provider/model` format, e.g. `"openrouter/anthropic/claude-3.5-sonnet"`.
+    pub model: String,
+    /// Explicit API key for this provider (overrides env-based key resolution).
+    #[serde(default)]
+    pub api_key: Option<String>,
+    /// Optional base URL override for this provider.
+    #[serde(default)]
+    pub base_url: Option<String>,
+}
+
+/// Runtime model failover configuration.
+///
+/// When the primary model returns a non-retryable error (hard 4xx, provider
+/// outage), the orchestrator attempts each `fallback_models` entry in order.
+/// Failed providers enter a cooldown window and are skipped until recovered.
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub struct FailoverConfig {
+    /// Enable runtime model failover (default: false — opt-in).
+    #[serde(default)]
+    pub enabled: bool,
+    /// Provider selection strategy when multiple fallbacks are available.
+    #[serde(default)]
+    pub strategy: FailoverStrategy,
+    /// Consecutive errors before a provider enters cooldown (default: 3).
+    #[serde(default = "FailoverConfig::default_error_threshold")]
+    pub error_threshold: u32,
+    /// Cooldown duration in seconds after a provider failure (default: 60).
+    #[serde(default = "FailoverConfig::default_cooldown_secs")]
+    pub cooldown_secs: u64,
+    /// Ordered fallback model list tried when the primary fails.
+    #[serde(default)]
+    pub fallback_models: Vec<FallbackModel>,
+}
+
+impl FailoverConfig {
+    fn default_error_threshold() -> u32 { 3 }
+    fn default_cooldown_secs() -> u64 { 60 }
+}
+
+impl Default for FailoverConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            strategy: FailoverStrategy::default(),
+            error_threshold: Self::default_error_threshold(),
+            cooldown_secs: Self::default_cooldown_secs(),
+            fallback_models: Vec::new(),
+        }
+    }
+}
+
+// =============================================================================
+// NATIVE TOOLS CONFIGURATION
+// =============================================================================
+
+/// Configuration for native (in-process) tool implementations.
+///
+/// Native tools bypass MCP serialization for maximum performance. Each category
+/// can be independently enabled/disabled and security-scoped.
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub struct NativeToolsConfig {
+    // --- File system tools ---
+    /// Enable file_read / file_write / file_patch (default: false — opt-in).
+    #[serde(default)]
+    pub file_tools_enabled: bool,
+    /// Directory prefix allowlist for file tools. Empty = deny all.
+    /// Use `["*"]` to allow all paths (not recommended in production).
+    #[serde(default)]
+    pub file_allowed_paths: Vec<String>,
+    /// Maximum file size in KB that file_read may return (default: 1024).
+    #[serde(default = "NativeToolsConfig::default_file_max_size_kb")]
+    pub file_max_size_kb: u64,
+    /// Maximum file size in KB that file_write may create/overwrite (default: 512).
+    #[serde(default = "NativeToolsConfig::default_file_write_max_kb")]
+    pub file_write_max_kb: u64,
+
+    // --- Web fetch tool ---
+    /// Enable the web_fetch native tool (default: false).
+    #[serde(default)]
+    pub web_fetch_enabled: bool,
+    /// Request timeout for web_fetch in seconds (default: 30).
+    #[serde(default = "NativeToolsConfig::default_web_fetch_timeout_secs")]
+    pub web_fetch_timeout_secs: u64,
+    /// Maximum response body size in KB (default: 512).
+    #[serde(default = "NativeToolsConfig::default_web_fetch_max_size_kb")]
+    pub web_fetch_max_size_kb: u64,
+    /// Domain allowlist for web_fetch. Empty = allow all domains.
+    #[serde(default)]
+    pub web_fetch_allowed_domains: Vec<String>,
+
+    // --- Terminal exec tool ---
+    /// Enable terminal_exec (default: false; routes through sandbox when enabled).
+    #[serde(default)]
+    pub terminal_exec_enabled: bool,
+    /// Shell binary for terminal_exec (default: "sh").
+    #[serde(default = "NativeToolsConfig::default_terminal_shell")]
+    pub terminal_shell: String,
+    /// Per-command timeout in seconds for terminal_exec (default: 30).
+    #[serde(default = "NativeToolsConfig::default_terminal_timeout_secs")]
+    pub terminal_timeout_secs: u64,
+    /// Route through the configured sandbox runner (default: true).
+    #[serde(default = "NativeToolsConfig::default_terminal_use_sandbox")]
+    pub terminal_use_sandbox: bool,
+
+    // --- Session search tool ---
+    /// Enable session_search (default: true when persistence is configured).
+    #[serde(default = "NativeToolsConfig::default_session_search_enabled")]
+    pub session_search_enabled: bool,
+    /// Maximum results returned by session_search (default: 10).
+    #[serde(default = "NativeToolsConfig::default_session_search_max_results")]
+    pub session_search_max_results: usize,
+}
+
+impl NativeToolsConfig {
+    fn default_file_max_size_kb() -> u64 { 1024 }
+    fn default_file_write_max_kb() -> u64 { 512 }
+    fn default_web_fetch_timeout_secs() -> u64 { 30 }
+    fn default_web_fetch_max_size_kb() -> u64 { 512 }
+    fn default_terminal_shell() -> String { "sh".to_string() }
+    fn default_terminal_timeout_secs() -> u64 { 30 }
+    fn default_terminal_use_sandbox() -> bool { true }
+    fn default_session_search_enabled() -> bool { true }
+    fn default_session_search_max_results() -> usize { 10 }
+}
+
+impl Default for NativeToolsConfig {
+    fn default() -> Self {
+        Self {
+            file_tools_enabled: false,
+            file_allowed_paths: Vec::new(),
+            file_max_size_kb: Self::default_file_max_size_kb(),
+            file_write_max_kb: Self::default_file_write_max_kb(),
+            web_fetch_enabled: false,
+            web_fetch_timeout_secs: Self::default_web_fetch_timeout_secs(),
+            web_fetch_max_size_kb: Self::default_web_fetch_max_size_kb(),
+            web_fetch_allowed_domains: Vec::new(),
+            terminal_exec_enabled: false,
+            terminal_shell: Self::default_terminal_shell(),
+            terminal_timeout_secs: Self::default_terminal_timeout_secs(),
+            terminal_use_sandbox: Self::default_terminal_use_sandbox(),
+            session_search_enabled: Self::default_session_search_enabled(),
+            session_search_max_results: Self::default_session_search_max_results(),
+        }
+    }
+}
+
+// =============================================================================
+// SKILL EVOLUTION CONFIGURATION
+// =============================================================================
+
+/// Configuration for the post-run skill evolution system.
+///
+/// After each successful run, the orchestrator can prompt the agent to reflect
+/// on whether a reusable skill should be extracted from the interaction. Agent
+/// responses containing a `skill_create` tool call are automatically registered
+/// in the `SkillService`.
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub struct SkillEvolutionConfig {
+    /// Enable the skill evolution loop (default: false — opt-in).
+    #[serde(default)]
+    pub enabled: bool,
+    /// Model to use for the post-run reflection call (`provider/model` format).
+    /// Falls back to the run's primary model when `None`.
+    #[serde(default)]
+    pub trigger_model: Option<String>,
+    /// Minimum number of tool calls in a run before evolution is considered (default: 2).
+    /// Prevents trivial single-turn interactions from spawning skills.
+    #[serde(default = "SkillEvolutionConfig::default_min_tool_calls")]
+    pub min_tool_calls: usize,
+    /// Maximum new skills that can be created from a single run (default: 1).
+    #[serde(default = "SkillEvolutionConfig::default_max_skills_per_run")]
+    pub max_skills_per_run: usize,
+    /// Allow the evolution system to update (patch) existing skills (default: false).
+    #[serde(default)]
+    pub allow_update: bool,
+    /// Allow the evolution system to delete under-used skills (default: false).
+    #[serde(default)]
+    pub allow_deletion: bool,
+    /// Minimum times a skill must have executed before deletion is permitted (default: 5).
+    #[serde(default = "SkillEvolutionConfig::default_min_executions_before_delete")]
+    pub min_executions_before_delete: u32,
+    /// Custom reflection system-prompt override. Uses built-in prompt when `None`.
+    #[serde(default)]
+    pub reflection_prompt: Option<String>,
+}
+
+impl SkillEvolutionConfig {
+    fn default_min_tool_calls() -> usize { 2 }
+    fn default_max_skills_per_run() -> usize { 1 }
+    fn default_min_executions_before_delete() -> u32 { 5 }
+}
+
+impl Default for SkillEvolutionConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            trigger_model: None,
+            min_tool_calls: Self::default_min_tool_calls(),
+            max_skills_per_run: Self::default_max_skills_per_run(),
+            allow_update: false,
+            allow_deletion: false,
+            min_executions_before_delete: Self::default_min_executions_before_delete(),
+            reflection_prompt: None,
+        }
+    }
+}
+
+// =============================================================================
+// ACP SERVER CONFIGURATION
+// =============================================================================
+
+/// Configuration for the ACP (Agent Communication Protocol) server endpoint.
+///
+/// ACP is the BeeAI / IBM Research protocol that provides a JSON-RPC 2.0
+/// interface for agent introspection, session management, and streaming run
+/// execution — used by IDEs, debuggers, and the BeeAI platform.
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub struct AcpConfig {
+    /// Enable the ACP endpoint (default: false — opt-in).
+    #[serde(default)]
+    pub enabled: bool,
+    /// HTTP path prefix for the ACP endpoint (default: "/acp").
+    #[serde(default = "AcpConfig::default_path")]
+    pub path: String,
+    /// Require JWT authentication on ACP endpoints (default: true).
+    #[serde(default = "AcpConfig::default_auth_required")]
+    pub auth_required: bool,
+    /// Session idle TTL in seconds before ACP sessions are evicted (default: 3600).
+    #[serde(default = "AcpConfig::default_session_ttl_secs")]
+    pub session_ttl_secs: u64,
+}
+
+impl AcpConfig {
+    fn default_path() -> String { "/acp".to_string() }
+    fn default_auth_required() -> bool { true }
+    fn default_session_ttl_secs() -> u64 { 3600 }
+}
+
+impl Default for AcpConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            path: Self::default_path(),
+            auth_required: Self::default_auth_required(),
+            session_ttl_secs: Self::default_session_ttl_secs(),
+        }
     }
 }

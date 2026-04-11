@@ -254,7 +254,12 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
 
     // Initialize Native Skill Registry and register built-in skills
     let native_skill_registry = Arc::new(NativeSkillRegistry::new());
-    uar::runtime::native_skills::register_builtins(&native_skill_registry).await;
+    uar::runtime::native_skills::register_builtins(
+        &native_skill_registry,
+        &config.native_tools,
+        persistence.clone(),
+    )
+    .await;
     info!(
         "Native skill registry initialized with {} skills",
         native_skill_registry.len().await
@@ -755,6 +760,18 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         // Apply Timeout Layer if not disabled
         // We use a large timeout if disabled instead of conditional layering to keep types consistent
         .layer(TraceLayer::new_for_http());
+
+    // ── ACP (Agent Communication Protocol) endpoint ──────────────────────────
+    // Mounted conditionally so zero overhead is incurred when disabled.
+    let app = if config.acp.enabled {
+        info!(path = %config.acp.path, "ACP server enabled");
+        app.nest_service(
+            &config.acp.path,
+            uar::api::acp::routes::AcpRouter::new().into_router(Arc::new(state.clone())),
+        )
+    } else {
+        app
+    };
 
     // We can't easily conditionally apply a layer in the chain if types differ.
     // Standard pattern:
@@ -2754,7 +2771,7 @@ impl StreamMode {
 
 /// OpenAI-compatible completion request with UAR extensions.
 #[derive(Debug, Deserialize)]
-struct ChatCompletionRequest {
+pub(crate) struct ChatCompletionRequest {
     /// Model name (`gpt-5.2`) or provider-scoped (`openai/gpt-5.2`).
     #[serde(default)]
     model: Option<String>,

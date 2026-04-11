@@ -254,7 +254,7 @@ pub struct ToolCallFunction {
 }
 
 /// Request to an LLM driver.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LlmRequest {
     /// Conversation messages.
     pub messages: Vec<serde_json::Value>,

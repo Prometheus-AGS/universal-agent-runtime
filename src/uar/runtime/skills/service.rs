@@ -512,6 +512,34 @@ impl SkillService {
     pub fn providers(&self) -> &[Arc<dyn SkillStorageProvider>] {
         &self.providers
     }
+
+    /// Post-run skill evolution hook (Hermes learning cycle).
+    ///
+    /// Called after a run completes when `SkillEvolutionConfig::enabled` is true
+    /// and the run performed at least `min_tool_calls` tool completions.
+    ///
+    /// Currently this is a no-op stub — a future implementation will:
+    /// 1. Retrieve the run transcript / tool call log.
+    /// 2. Fire a reflection prompt via the configured LLM.
+    /// 3. Parse suggested skill CRUD operations from the response.
+    /// 4. Apply them subject to `allow_update` / `allow_deletion` guards.
+    pub async fn evolve_from_run(
+        &self,
+        run_id: &str,
+        tool_call_count: usize,
+        cfg: &crate::config::SkillEvolutionConfig,
+    ) -> anyhow::Result<()> {
+        tracing::debug!(
+            run_id = %run_id,
+            tool_calls = tool_call_count,
+            max_skills = cfg.max_skills_per_run,
+            allow_update = cfg.allow_update,
+            allow_deletion = cfg.allow_deletion,
+            "skill evolution hook invoked (stub — reflection not yet implemented)"
+        );
+        // TODO: implement reflection prompt → skill CRUD pipeline.
+        Ok(())
+    }
 }
 
 #[cfg(test)]
