@@ -252,9 +252,12 @@ export const AgentsPage: FC = () => {
   return (
     <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
       {/* Agent list */}
-      <div className={cn("flex shrink-0 flex-col border-b border-border bg-background md:w-64 md:border-b-0 md:border-r", selected ? "hidden md:flex" : "flex flex-1 md:flex-initial")}>
+      <div className={cn("flex shrink-0 flex-col border-b border-border bg-background md:w-72 md:border-b-0 md:border-r", selected ? "hidden md:flex" : "flex flex-1 md:flex-initial")}>
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Agents</p>
+          <div>
+            <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Agents</p>
+            <p className="font-mono text-xs text-muted-foreground">{agents.length} configured</p>
+          </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" className="h-6 gap-1 px-1.5" onClick={() => setShowAiBuilder(true)} aria-label="Create with AI">
               <Sparkles size={12} />
@@ -273,7 +276,7 @@ export const AgentsPage: FC = () => {
             {loading && agents.length === 0 && <AdminSidebarSkeleton rows={4} />}
             {error && <div className="px-3 py-2"><AdminError error={error} /></div>}
             {!loading && agents.length === 0 && !error && (
-              <AdminEmptyInline>No agents configured</AdminEmptyInline>
+              <AdminEmptyInline>No agents configured. Click + to create one.</AdminEmptyInline>
             )}
             {agents.map((a) => (
               <Button
@@ -367,8 +370,16 @@ export const AgentsPage: FC = () => {
             </div>
           </ScrollArea>
         ) : (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="font-mono text-xs text-muted-foreground">Select an agent from the list to configure it</p>
+          <div className="flex flex-1 items-center justify-center p-6">
+            <div className="max-w-sm text-center">
+              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10">
+                <Bot size={20} className="text-primary" />
+              </div>
+              <p className="font-display text-sm font-semibold text-foreground">Select an agent</p>
+              <p className="mt-2 font-body text-xs text-muted-foreground">
+                Choose an agent from the list to view its configuration, skills, and memory settings.
+              </p>
+            </div>
           </div>
         )}
       </div>

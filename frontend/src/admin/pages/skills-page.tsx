@@ -190,11 +190,11 @@ export const SkillsPage: FC = () => {
           <p className="font-mono text-xs text-muted-foreground">{skills.length} skills</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => void load()} className="gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => void load()} className="gap-1.5" aria-label="Refresh skills">
             <RefreshCw size={13} className={cn(loading && "animate-spin")} />
             Refresh
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)} className="gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)} className="gap-1.5" aria-label="Import skills">
             <FolderOpen size={13} />
             Import
           </Button>
@@ -254,6 +254,7 @@ export const SkillsPage: FC = () => {
                     size="sm"
                     className="h-7 cursor-pointer px-2 text-xs"
                     onClick={() => openEdit(skill)}
+                    aria-label={`Edit ${skill.title || skill.skill_id}`}
                   >
                     <Pencil size={12} className="mr-1" />
                     Edit
@@ -263,6 +264,7 @@ export const SkillsPage: FC = () => {
                     size="sm"
                     className="h-7 cursor-pointer border-destructive/50 px-2 text-xs text-destructive hover:bg-destructive/10"
                     onClick={() => setDeleteTarget(skill)}
+                    aria-label={`Delete ${skill.title || skill.skill_id}`}
                   >
                     <Trash2 size={12} className="mr-1" />
                     Delete
@@ -273,6 +275,7 @@ export const SkillsPage: FC = () => {
                     className="h-7 min-w-[82px] cursor-pointer text-xs"
                     disabled={isBusy}
                     onClick={() => void handleToggle(skill, !isEnabled)}
+                    aria-label={`${isEnabled ? "Disable" : "Enable"} ${skill.title || skill.skill_id}`}
                   >
                     {isBusy ? (
                       <Loader2 size={12} className="animate-spin" />

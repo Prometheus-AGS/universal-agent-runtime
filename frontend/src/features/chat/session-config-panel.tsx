@@ -80,7 +80,7 @@ export function SessionConfigPanel({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[400px] sm:max-w-[400px] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="font-mono text-sm">
+          <SheetTitle className="font-display text-lg font-semibold text-foreground">
             Session Configuration
           </SheetTitle>
           <SheetDescription className="text-xs text-muted-foreground">
@@ -101,7 +101,7 @@ export function SessionConfigPanel({
               onChange={(e) => setModelOverride(e.target.value)}
               className="font-mono text-xs"
             />
-            <p className="text-[11px] text-muted-foreground">
+            <p className="font-body text-xs text-muted-foreground">
               Leave empty to use the agent default.
             </p>
           </div>
@@ -110,7 +110,7 @@ export function SessionConfigPanel({
 
           {/* Context Strategy */}
           <div className="flex flex-col gap-4">
-            <h3 className="font-mono text-xs font-medium">Context Strategy</h3>
+            <h3 className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Context Strategy</h3>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="history-window" className="font-mono text-xs">
@@ -130,7 +130,7 @@ export function SessionConfigPanel({
                 }
                 className="font-mono text-xs w-24"
               />
-              <p className="text-[11px] text-muted-foreground">
+              <p className="font-body text-xs text-muted-foreground">
                 Max messages to include in context.
               </p>
             </div>
@@ -191,7 +191,7 @@ export function SessionConfigPanel({
                 <SelectItem value="deny">Deny</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="font-body text-xs text-muted-foreground">
               How tool calls are approved during this session.
             </p>
           </div>

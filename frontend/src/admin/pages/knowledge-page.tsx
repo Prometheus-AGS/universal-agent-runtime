@@ -249,7 +249,7 @@ export const KnowledgePage: FC = () => {
 						<div className="flex size-12 items-center justify-center rounded-xl bg-primary/10">
 							<BookOpen size={20} className="text-primary" />
 						</div>
-						<p className="font-display text-sm font-medium text-foreground">
+						<p className="font-display text-sm font-semibold text-foreground">
 							No knowledge bases yet
 						</p>
 						<p className="max-w-xs font-body text-xs text-muted-foreground">
@@ -456,7 +456,7 @@ export const KnowledgePage: FC = () => {
 						<div className="flex items-start gap-3">
 							<Info size={14} className="mt-0.5 shrink-0 text-primary" />
 							<div className="min-w-0 flex-1">
-								<p className="font-display text-sm font-medium text-foreground">
+								<p className="font-display text-sm font-semibold text-foreground">
 									How documents are processed
 								</p>
 								<div className="mt-2 flex flex-wrap items-center gap-1.5 font-mono text-xs text-muted-foreground">
@@ -499,7 +499,7 @@ export const KnowledgePage: FC = () => {
 					<div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
 						<div className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-primary/50 bg-card p-12">
 							<Upload size={32} className="text-primary" />
-							<p className="font-display text-sm font-medium text-foreground">
+							<p className="font-display text-sm font-semibold text-foreground">
 								Drop files to upload
 							</p>
 						</div>
@@ -567,7 +567,7 @@ export const KnowledgePage: FC = () => {
 									<div className="flex size-12 items-center justify-center rounded-xl bg-muted">
 										<FileText size={20} className="text-muted-foreground" />
 									</div>
-									<p className="font-display text-sm font-medium text-foreground">
+									<p className="font-display text-sm font-semibold text-foreground">
 										No documents yet
 									</p>
 									<p className="max-w-xs font-body text-xs text-muted-foreground">
@@ -595,7 +595,7 @@ export const KnowledgePage: FC = () => {
 											<FileText size={14} className="text-muted-foreground" />
 										</div>
 										<div className="min-w-0 flex-1">
-											<p className="truncate font-display text-sm font-medium text-foreground">
+											<p className="truncate font-display text-sm font-semibold text-foreground">
 												{doc.filename}
 											</p>
 											<div className="mt-1 flex flex-wrap items-center gap-2">

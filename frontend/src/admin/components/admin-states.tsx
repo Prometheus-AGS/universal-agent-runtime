@@ -135,7 +135,7 @@ export const AdminEmptyState: FC<AdminEmptyStateProps> = ({
     <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10">
       <Icon size={20} className="text-primary" />
     </div>
-    <p className="font-display text-sm font-medium text-foreground">{title}</p>
+    <p className="font-display text-sm font-semibold text-foreground">{title}</p>
     <p className="max-w-xs font-body text-xs text-muted-foreground">
       {description}
     </p>

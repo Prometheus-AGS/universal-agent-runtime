@@ -2,7 +2,7 @@ import { type FC, useEffect, useState } from "react";
 import { RefreshCw, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
+import { AdminEmptyState, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { ToolDetailPanel } from "@/admin/components/tool-detail-panel";
 import { cn } from "@/lib/utils";
 import { useToolsDiscovery } from "@/hooks/use-tools-discovery";
@@ -46,7 +46,7 @@ export const ToolsPage: FC = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
-          {loading && tools.length === 0 && <AdminListSkeleton rows={5} />}
+          {loading && tools.length === 0 && <AdminSidebarSkeleton rows={5} />}
           <AdminError error={error} />
           {!loading && Object.keys(groups).length === 0 && (
             <AdminEmptyState
@@ -68,8 +68,9 @@ export const ToolsPage: FC = () => {
                     type="button"
                     key={t._key}
                     onClick={() => setSelectedTool(t)}
+                    aria-label={`View tool ${t._key}`}
                     className={cn(
-                      "flex w-full items-start gap-3 rounded-md border border-border/50 px-3 py-2.5 text-left transition-colors",
+                      "flex w-full items-start gap-3 rounded-md border border-border/50 px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                       selectedTool?._key === t._key ? "bg-accent border-accent" : "bg-card hover:bg-muted/50",
                     )}
                   >

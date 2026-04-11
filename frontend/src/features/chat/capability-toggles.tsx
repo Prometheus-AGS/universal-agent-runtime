@@ -42,6 +42,7 @@ const SimpleToggle: FC<SimpleToggleProps> = ({ icon, label, active, onToggle }) 
     type="button"
     variant="ghost"
     onClick={onToggle}
+    aria-label={`${active ? "Disable" : "Enable"} ${label}`}
     className={cn(
       "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors",
       active
@@ -89,6 +90,7 @@ const ListToggle: FC<ListToggleProps> = ({
         <Button
           type="button"
           variant="ghost"
+          aria-label={`Toggle ${label}`}
           className={cn(
             "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors",
             activeCount > 0
