@@ -13,6 +13,7 @@ use axum::{
     routing::{delete, get, post, put},
 };
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 /// Build the skills API router.
@@ -30,6 +31,7 @@ pub fn build_router() -> Router<Arc<SkillService>> {
         .route("/match", get(match_skills))
         .route("/refresh", post(refresh_skills))
         // Matching configuration
+        .route("/import", post(import_skill_from_disk))
         .route("/config", get(get_config))
         .route("/config", put(set_config))
 }
@@ -127,6 +129,40 @@ struct MatchQuery {
 #[derive(Deserialize)]
 struct AgentSkillsRequest {
     skill_ids: Vec<String>,
+}
+
+// --- Import from disk types ---
+
+#[derive(Debug, Deserialize)]
+pub struct SkillImportRequest {
+    pub path: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SkillImportResponse {
+    pub parsed: ParsedSkillData,
+    pub validation: ImportValidation,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ParsedSkillData {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    pub description: String,
+    pub version: String,
+    pub triggers: SkillTriggers,
+    pub prompt_overlay: String,
+    pub source: String,
+    pub source_path: String,
+    pub references: Vec<String>,
+    pub detected_format: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ImportValidation {
+    pub valid: bool,
+    pub warnings: Vec<String>,
 }
 
 // --- Skills endpoints ---
@@ -252,6 +288,242 @@ async fn refresh_skills(State(service): State<Arc<SkillService>>) -> impl IntoRe
         )
             .into_response(),
     }
+}
+
+// --- Import from disk endpoint ---
+
+async fn import_skill_from_disk(
+    Json(req): Json<SkillImportRequest>,
+) -> impl IntoResponse {
+    let dir_path = PathBuf::from(&req.path);
+
+    // Validate directory exists
+    if !dir_path.is_dir() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "Path is not a directory or does not exist" })),
+        )
+            .into_response();
+    }
+
+    let mut warnings: Vec<String> = Vec::new();
+
+    // Scan for known subdirectories
+    let mut references: Vec<String> = Vec::new();
+    for subdir in &["references", "scripts", "assets"] {
+        let sub = dir_path.join(subdir);
+        if sub.is_dir() {
+            if let Ok(entries) = std::fs::read_dir(&sub) {
+                for entry in entries.flatten() {
+                    if let Some(name) = entry.file_name().to_str() {
+                        references.push(format!("{subdir}/{name}"));
+                    }
+                }
+            }
+        }
+    }
+
+    // Detect format and parse
+    let skill_md = dir_path.join("SKILL.md");
+    let skills_md = dir_path.join("SKILLS.md");
+    let claude_dir = dir_path.join(".claude");
+
+    if skill_md.is_file() {
+        // agentskills.io format
+        match std::fs::read_to_string(&skill_md) {
+            Ok(content) => {
+                let (frontmatter, body) = parse_frontmatter(&content);
+                let name = frontmatter
+                    .get("name")
+                    .cloned()
+                    .unwrap_or_else(|| {
+                        warnings.push("Missing 'name' in frontmatter; using directory name".to_string());
+                        dir_path
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("unknown")
+                            .to_string()
+                    });
+                let description = frontmatter
+                    .get("description")
+                    .cloned()
+                    .unwrap_or_else(|| {
+                        warnings.push("Missing 'description' in frontmatter".to_string());
+                        String::new()
+                    });
+                let version = frontmatter
+                    .get("version")
+                    .cloned()
+                    .unwrap_or_else(|| "1.0.0".to_string());
+
+                // Parse triggers from frontmatter
+                let triggers = parse_triggers_from_frontmatter(&frontmatter);
+
+                let parsed = ParsedSkillData {
+                    name,
+                    title: frontmatter.get("title").cloned(),
+                    description,
+                    version,
+                    triggers,
+                    prompt_overlay: body,
+                    source: "filesystem".to_string(),
+                    source_path: req.path.clone(),
+                    references,
+                    detected_format: "agentskills-io".to_string(),
+                };
+
+                let validation = ImportValidation {
+                    valid: warnings.is_empty() || warnings.iter().all(|w| !w.contains("Missing 'name'")),
+                    warnings,
+                };
+
+                Json(SkillImportResponse { parsed, validation }).into_response()
+            }
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": format!("Failed to read SKILL.md: {e}") })),
+            )
+                .into_response(),
+        }
+    } else if skills_md.is_file() {
+        // Bundle catalog format
+        match std::fs::read_to_string(&skills_md) {
+            Ok(content) => {
+                let (frontmatter, body) = parse_frontmatter(&content);
+                let name = frontmatter
+                    .get("name")
+                    .cloned()
+                    .unwrap_or_else(|| {
+                        dir_path
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("unknown-bundle")
+                            .to_string()
+                    });
+
+                warnings.push("Detected bundle catalog (SKILLS.md); contains multiple skills".to_string());
+
+                let parsed = ParsedSkillData {
+                    name,
+                    title: frontmatter.get("title").cloned(),
+                    description: frontmatter.get("description").cloned().unwrap_or_default(),
+                    version: frontmatter.get("version").cloned().unwrap_or_else(|| "1.0.0".to_string()),
+                    triggers: SkillTriggers::default(),
+                    prompt_overlay: body,
+                    source: "filesystem".to_string(),
+                    source_path: req.path.clone(),
+                    references,
+                    detected_format: "bundle-catalog".to_string(),
+                };
+
+                let validation = ImportValidation {
+                    valid: true,
+                    warnings,
+                };
+
+                Json(SkillImportResponse { parsed, validation }).into_response()
+            }
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": format!("Failed to read SKILLS.md: {e}") })),
+            )
+                .into_response(),
+        }
+    } else if claude_dir.is_dir() {
+        // Claude Code plugin format
+        warnings.push("Detected Claude Code plugin format (.claude/ directory)".to_string());
+
+        let name = dir_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown-plugin")
+            .to_string();
+
+        let parsed = ParsedSkillData {
+            name,
+            title: None,
+            description: "Claude Code plugin (auto-detected)".to_string(),
+            version: "1.0.0".to_string(),
+            triggers: SkillTriggers::default(),
+            prompt_overlay: String::new(),
+            source: "filesystem".to_string(),
+            source_path: req.path.clone(),
+            references,
+            detected_format: "claude-code-plugin".to_string(),
+        };
+
+        let validation = ImportValidation {
+            valid: true,
+            warnings,
+        };
+
+        Json(SkillImportResponse { parsed, validation }).into_response()
+    } else {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "error": "No recognized skill format found. Expected SKILL.md, SKILLS.md, or .claude/ directory."
+            })),
+        )
+            .into_response()
+    }
+}
+
+/// Parse YAML frontmatter from a markdown file delimited by `---` markers.
+///
+/// Returns a map of key-value pairs and the markdown body.
+fn parse_frontmatter(content: &str) -> (std::collections::HashMap<String, String>, String) {
+    let mut map = std::collections::HashMap::new();
+    let parts: Vec<&str> = content.splitn(3, "---").collect();
+
+    if parts.len() < 3 {
+        // No valid frontmatter; treat entire content as body
+        return (map, content.to_string());
+    }
+
+    let yaml_section = parts[1].trim();
+    let body = parts[2].trim().to_string();
+
+    // Simple line-by-line key: value parsing
+    for line in yaml_section.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if let Some((key, value)) = line.split_once(':') {
+            let key = key.trim().to_string();
+            let value = value.trim().trim_matches('"').trim_matches('\'').to_string();
+            if !key.is_empty() {
+                map.insert(key, value);
+            }
+        }
+    }
+
+    (map, body)
+}
+
+/// Extract trigger keywords from frontmatter.
+///
+/// Supports simple comma-separated values in a `triggers` or `keywords` field.
+fn parse_triggers_from_frontmatter(
+    frontmatter: &std::collections::HashMap<String, String>,
+) -> SkillTriggers {
+    let keywords = frontmatter
+        .get("keywords")
+        .or_else(|| frontmatter.get("triggers"))
+        .map(|v| {
+            v.trim_matches('[')
+                .trim_matches(']')
+                .split(',')
+                .map(|s| s.trim().trim_matches('"').trim_matches('\'').to_string())
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+
+    let semantic = frontmatter.get("semantic").cloned();
+
+    SkillTriggers { keywords, semantic }
 }
 
 // --- Config endpoints ---
