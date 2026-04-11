@@ -21,5 +21,6 @@
     }
   },
   "include": ["src"],
+  "exclude": ["**/*.test.ts", "**/*cursor-policy.test.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -181,6 +181,17 @@ pub enum LogFormat {
 pub struct SecurityConfig {
     pub jwt_required: bool,
     pub jwt_secret: String,
+    /// When true (default), `PUT`/`POST`/`DELETE` on `/api/uar/settings` require the
+    /// `X-UAR-Admin-Key` header (value may be any non-empty use of the header today).
+    /// Set to `false` for trusted local development only.
+    #[serde(default = "SecurityConfig::default_settings_mutation_auth_required")]
+    pub settings_mutation_auth_required: bool,
+}
+
+impl SecurityConfig {
+    fn default_settings_mutation_auth_required() -> bool {
+        true
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -779,6 +790,7 @@ impl AppConfig {
             .set_default("server.port", 3000)?
             .set_default("server.host", "0.0.0.0")?
             .set_default("security.jwt_required", true)?
+            .set_default("security.settings_mutation_auth_required", true)?
             .set_default(
                 "security.jwt_secret",
                 "fallback_secret_change_in_production",
@@ -1350,8 +1362,12 @@ pub struct FailoverConfig {
 }
 
 impl FailoverConfig {
-    fn default_error_threshold() -> u32 { 3 }
-    fn default_cooldown_secs() -> u64 { 60 }
+    fn default_error_threshold() -> u32 {
+        3
+    }
+    fn default_cooldown_secs() -> u64 {
+        60
+    }
 }
 
 impl Default for FailoverConfig {
@@ -1429,15 +1445,33 @@ pub struct NativeToolsConfig {
 }
 
 impl NativeToolsConfig {
-    fn default_file_max_size_kb() -> u64 { 1024 }
-    fn default_file_write_max_kb() -> u64 { 512 }
-    fn default_web_fetch_timeout_secs() -> u64 { 30 }
-    fn default_web_fetch_max_size_kb() -> u64 { 512 }
-    fn default_terminal_shell() -> String { "sh".to_string() }
-    fn default_terminal_timeout_secs() -> u64 { 30 }
-    fn default_terminal_use_sandbox() -> bool { true }
-    fn default_session_search_enabled() -> bool { true }
-    fn default_session_search_max_results() -> usize { 10 }
+    fn default_file_max_size_kb() -> u64 {
+        1024
+    }
+    fn default_file_write_max_kb() -> u64 {
+        512
+    }
+    fn default_web_fetch_timeout_secs() -> u64 {
+        30
+    }
+    fn default_web_fetch_max_size_kb() -> u64 {
+        512
+    }
+    fn default_terminal_shell() -> String {
+        "sh".to_string()
+    }
+    fn default_terminal_timeout_secs() -> u64 {
+        30
+    }
+    fn default_terminal_use_sandbox() -> bool {
+        true
+    }
+    fn default_session_search_enabled() -> bool {
+        true
+    }
+    fn default_session_search_max_results() -> usize {
+        10
+    }
 }
 
 impl Default for NativeToolsConfig {
@@ -1502,9 +1536,15 @@ pub struct SkillEvolutionConfig {
 }
 
 impl SkillEvolutionConfig {
-    fn default_min_tool_calls() -> usize { 2 }
-    fn default_max_skills_per_run() -> usize { 1 }
-    fn default_min_executions_before_delete() -> u32 { 5 }
+    fn default_min_tool_calls() -> usize {
+        2
+    }
+    fn default_max_skills_per_run() -> usize {
+        1
+    }
+    fn default_min_executions_before_delete() -> u32 {
+        5
+    }
 }
 
 impl Default for SkillEvolutionConfig {
@@ -1548,9 +1588,15 @@ pub struct AcpConfig {
 }
 
 impl AcpConfig {
-    fn default_path() -> String { "/acp".to_string() }
-    fn default_auth_required() -> bool { true }
-    fn default_session_ttl_secs() -> u64 { 3600 }
+    fn default_path() -> String {
+        "/acp".to_string()
+    }
+    fn default_auth_required() -> bool {
+        true
+    }
+    fn default_session_ttl_secs() -> u64 {
+        3600
+    }
 }
 
 impl Default for AcpConfig {

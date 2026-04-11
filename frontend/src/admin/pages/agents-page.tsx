@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useState } from "react";
 import { ArrowLeft, Bot, Brain, Loader2, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
-import type { AgentsResponse, UarAgent } from "@/types";
+import { useAgentsAdmin } from "@/hooks/use-agents-admin";
+import { useAgentsAdminStore } from "@/stores/agents-admin-store";
+import type { UarAgent } from "@/types";
 
 // ── Agent Memory Section ───────────────────────────────────────────────────
 
@@ -61,6 +63,7 @@ function TriToggle({ value, onChange }: { value: boolean | null; onChange: (v: b
 }
 
 function AgentMemorySection({ agent }: { agent: UarAgent }) {
+  const patchAgent = useAgentsAdminStore((s) => s.patchAgent);
   const [state, setState] = useState<AgentMemoryState>({
     memory_enabled: null,
     auto_capture: null,
@@ -81,12 +84,7 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
       if (state.inject_context !== null) body.memory_inject_context = state.inject_context;
       body.memory_scope = state.memory_scope;
 
-      const r = await fetch(`/api/agents/${agent.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!r.ok) throw new Error(`${r.status}`);
+      await patchAgent(agent.id, body);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
@@ -177,29 +175,8 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
 // ── Main Agents Page ───────────────────────────────────────────────────────
 
 export const AgentsPage: FC = () => {
-  const [agents, setAgents] = useState<UarAgent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { agents, loading, error, load } = useAgentsAdmin();
   const [selected, setSelected] = useState<UarAgent | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/agents");
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json() as AgentsResponse & { data?: AgentsResponse };
-      const r = data.data?.runtime_agents ?? data.runtime_agents ?? [];
-      const f = data.data?.federated_agents ?? data.federated_agents ?? [];
-      setAgents([...r.map((a) => ({ ...a, _type: "runtime" })), ...f.map((a) => ({ ...a, _type: "federated" }))]);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden md:flex-row">

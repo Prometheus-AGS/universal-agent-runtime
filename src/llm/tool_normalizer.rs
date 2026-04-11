@@ -10,11 +10,11 @@ use std::sync::Arc;
 use async_stream::stream;
 use futures::{Stream, StreamExt};
 
-use crate::normalized::NormalizedEvent;
 use super::capability_registry::{ModelCapabilityProfile, ToolCallCapability};
 use super::tool_extractor::ToolCallExtractor;
 use super::xml_tool_injector;
 use super::{LlmDriver, LlmRequest};
+use crate::normalized::NormalizedEvent;
 
 /// Driver wrapper that normalizes tool calls from any backend model
 /// to match Claude Sonnet/Opus 4.6 format.

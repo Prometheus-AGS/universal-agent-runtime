@@ -86,8 +86,13 @@ impl Language {
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum ExecutionMode {
     Ephemeral,
-    Session { session_id: String },
-    Project { session_id: String, repo_url: Option<String> },
+    Session {
+        session_id: String,
+    },
+    Project {
+        session_id: String,
+        repo_url: Option<String>,
+    },
 }
 
 #[derive(Debug, thiserror::Error)]

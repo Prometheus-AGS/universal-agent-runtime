@@ -1,6 +1,5 @@
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useEffect, useState } from "react";
 import {
-    AlertCircle,
     Brain,
     Check,
     ChevronLeft,
@@ -24,33 +23,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminEmptyInline, AdminError, AdminTableSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface MemoryItem {
-    id: string;
-    content: string;
-    categories: string[];
-    scope: string;
-    memory_type: string;
-    user_id?: string;
-    agent_id?: string;
-    session_id?: string;
-    importance: number;
-    created_at: string;
-}
-
-interface MemoryListResponse {
-    total: number;
-    items: MemoryItem[];
-}
-
-interface MemoryStats {
-    total: number;
-    by_scope: Record<string, number>;
-}
+import { useMemoryAdmin } from "@/hooks/use-memory-admin";
+import type { MemoryItem } from "@/services/memory-api";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -88,16 +62,21 @@ export const MemoryPage: FC = () => {
     const [searchQ, setSearchQ] = useState("");
     const [searchMode, setSearchMode] = useState(false);
 
-    // Data state
-    const [items, setItems] = useState<MemoryItem[]>([]);
-    const [stats, setStats] = useState<MemoryStats | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const {
+        items,
+        stats,
+        loading,
+        error,
+        deleting,
+        load,
+        loadStats,
+        deleteOne,
+        bulkDelete,
+    } = useMemoryAdmin();
 
     // Selection / detail
     const [selected, setSelected] = useState<MemoryItem | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-    const [deleting, setDeleting] = useState(false);
     const [showBulkDelete, setShowBulkDelete] = useState(false);
     const [savedFlash, setSavedFlash] = useState(false);
 
@@ -105,86 +84,37 @@ export const MemoryPage: FC = () => {
     const [page, setPage] = useState(0);
     const PAGE_SIZE = 25;
 
-    // -----------------------------------------------------------------------
-    // Data loading
-    // -----------------------------------------------------------------------
+    const runLoad = () => {
+        setPage(0);
+        void load({ userId, agentId, searchQ, searchMode });
+    };
 
-    const loadStats = useCallback(async () => {
+    useEffect(() => {
+        void load({ userId: "", agentId: "", searchQ: "", searchMode: false });
+        void loadStats();
+    }, [load, loadStats]);
+
+    const deleteOneRow = async (id: string) => {
         try {
-            const r = await fetch("/api/admin/memories/stats");
-            if (r.ok) setStats(await r.json() as MemoryStats);
-        } catch { /* non-fatal */ }
-    }, []);
-
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const params = new URLSearchParams();
-            if (userId) params.set("user_id", userId);
-            if (agentId) params.set("agent_id", agentId);
-
-            let url: string;
-            if (searchMode && searchQ) {
-                url = `/api/admin/memories/search?q=${encodeURIComponent(searchQ)}&limit=200${userId ? `&user_id=${userId}` : ""}${agentId ? `&agent_id=${agentId}` : ""}`;
-            } else {
-                url = `/api/admin/memories?${params.toString()}`;
-            }
-
-            const r = await fetch(url);
-            if (!r.ok) throw new Error(`${r.status}`);
-            const data = await r.json() as MemoryListResponse;
-            setItems(data.items ?? []);
-            setPage(0);
-            void loadStats();
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setLoading(false);
-        }
-    }, [userId, agentId, searchQ, searchMode, loadStats]);
-
-    useEffect(() => { void load(); void loadStats(); }, []);
-
-    // -----------------------------------------------------------------------
-    // Actions
-    // -----------------------------------------------------------------------
-
-    const deleteOne = async (id: string) => {
-        setDeleting(true);
-        try {
-            const r = await fetch(`/api/admin/memories/${id}`, { method: "DELETE" });
-            if (!r.ok) throw new Error(`${r.status}`);
-            setItems((prev) => prev.filter((m) => m.id !== id));
+            await deleteOne(id);
             if (selected?.id === id) setSelected(null);
             setSavedFlash(true);
             setTimeout(() => setSavedFlash(false), 2500);
-            void loadStats();
-        } catch (e) {
-            setError((e as Error).message);
+        } catch {
+            /* store sets error */
         } finally {
-            setDeleting(false);
             setDeleteConfirm(null);
         }
     };
 
-    const bulkDelete = async () => {
-        setDeleting(true);
+    const runBulkDelete = async () => {
         try {
-            const params = new URLSearchParams();
-            if (userId) params.set("user_id", userId);
-            if (agentId) params.set("agent_id", agentId);
-            const r = await fetch(`/api/admin/memories?${params.toString()}`, { method: "DELETE" });
-            if (!r.ok) throw new Error(`${r.status}`);
-            setItems([]);
+            await bulkDelete(userId, agentId);
             setSelected(null);
             setSavedFlash(true);
             setTimeout(() => setSavedFlash(false), 2500);
-            void loadStats();
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setDeleting(false);
+        } catch {
+            /* store sets error */
         }
     };
 
@@ -216,7 +146,7 @@ export const MemoryPage: FC = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading} className="gap-1.5">
+                    <Button variant="outline" size="sm" onClick={() => runLoad()} disabled={loading} className="gap-1.5">
                         <RefreshCw size={13} className={cn(loading && "animate-spin")} />
                         Refresh
                     </Button>
@@ -234,7 +164,7 @@ export const MemoryPage: FC = () => {
             </div>
 
             {/* Stats Bar */}
-            {stats && stats.by_scope && Object.keys(stats.by_scope).length > 0 && (
+            {stats?.by_scope != null && Object.keys(stats.by_scope).length > 0 && (
                 <div className="flex items-center gap-3 border-b border-border bg-muted/30 px-6 py-2">
                     {Object.entries(stats.by_scope).map(([scope, count]) => (
                         <div key={scope} className="flex items-center gap-1.5">
@@ -252,14 +182,21 @@ export const MemoryPage: FC = () => {
                     <input
                         value={searchQ}
                         onChange={(e) => setSearchQ(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") { setSearchMode(!!searchQ); void load(); } }}
+                        onKeyDown={(e) => { if (e.key === "Enter") { setSearchMode(!!searchQ); runLoad(); } }}
                         placeholder="Search memories by meaning..."
                         className="flex-1 bg-transparent font-mono text-xs outline-none placeholder:text-muted-foreground/50"
                     />
                     {searchQ && (
-                        <button onClick={() => { setSearchQ(""); setSearchMode(false); void load(); }} className="text-muted-foreground transition-colors hover:text-foreground">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+                            onClick={() => { setSearchQ(""); setSearchMode(false); runLoad(); }}
+                            aria-label="Clear search"
+                        >
                             ×
-                        </button>
+                        </Button>
                     )}
                 </div>
                 <Input
@@ -274,7 +211,7 @@ export const MemoryPage: FC = () => {
                     placeholder="Filter by Agent ID"
                     className="min-w-[140px] max-w-[180px] font-mono text-xs"
                 />
-                <Button size="sm" onClick={() => { setSearchMode(!!searchQ); void load(); }} className="gap-1.5">
+                <Button size="sm" onClick={() => { setSearchMode(!!searchQ); runLoad(); }} className="gap-1.5">
                     Apply
                 </Button>
             </div>
@@ -320,17 +257,18 @@ export const MemoryPage: FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border">
-                                        {pageItems.map((m) => (
+                                        {pageItems.map((m) => {
+                                            const isRowSelected = selected?.id === m.id;
+                                            return (
                                             <tr
                                                 key={m.id}
-                                                onClick={() => setSelected(selected?.id === m.id ? null : m)}
-                                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(selected?.id === m.id ? null : m); } }}
+                                                onClick={() => setSelected(isRowSelected ? null : m)}
+                                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(isRowSelected ? null : m); } }}
                                                 tabIndex={0}
-                                                role="button"
-                                                aria-selected={selected?.id === m.id}
+                                                aria-current={isRowSelected ? "true" : undefined}
                                                 className={cn(
                                                     "cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-                                                    selected?.id === m.id ? "bg-accent" : "hover:bg-muted/40"
+                                                    isRowSelected ? "bg-accent" : "hover:bg-muted/40"
                                                 )}
                                             >
                                                 <td className="px-4 py-2.5"><ScopeBadge scope={m.scope} /></td>
@@ -353,7 +291,7 @@ export const MemoryPage: FC = () => {
                                                                 variant="destructive"
                                                                 className="h-6 px-2 text-xs"
                                                                 disabled={deleting}
-                                                                onClick={(e) => { e.stopPropagation(); void deleteOne(m.id); }}
+                                                                onClick={(e) => { e.stopPropagation(); void deleteOneRow(m.id); }}
                                                             >
                                                                 Confirm
                                                             </Button>
@@ -378,7 +316,8 @@ export const MemoryPage: FC = () => {
                                                     )}
                                                 </td>
                                             </tr>
-                                        ))}
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
@@ -411,7 +350,16 @@ export const MemoryPage: FC = () => {
                             <p className="font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                 Memory Detail
                             </p>
-                            <button onClick={() => setSelected(null)} className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Close detail panel">×</button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                onClick={() => setSelected(null)}
+                                aria-label="Close detail panel"
+                            >
+                                ×
+                            </Button>
                         </div>
                         <div className="space-y-3">
                             <div>
@@ -448,7 +396,7 @@ export const MemoryPage: FC = () => {
                                         size="sm"
                                         className="flex-1"
                                         disabled={deleting}
-                                        onClick={() => void deleteOne(selected.id)}
+                                        onClick={() => void deleteOneRow(selected.id)}
                                     >
                                         {deleting ? <Loader2 size={13} className="animate-spin" /> : "Confirm Delete"}
                                     </Button>
@@ -480,7 +428,7 @@ export const MemoryPage: FC = () => {
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={(e) => { e.preventDefault(); setShowBulkDelete(false); void bulkDelete(); }}
+                            onClick={(e) => { e.preventDefault(); setShowBulkDelete(false); void runBulkDelete(); }}
                             disabled={deleting}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >

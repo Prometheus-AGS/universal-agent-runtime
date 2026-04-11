@@ -1,39 +1,140 @@
 // Use String for ISO8601/RFC3339 to avoid chrono serde feature dominance issues
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use uuid::Uuid;
+
+/// SurrealDB / older clients may persist JSON `null` for string columns. Plain `String`
+/// rejects `null`; these helpers coerce null and empty to defaults so reads stay compatible.
+fn deserialize_kb_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer).map(|o| o.unwrap_or_default())
+}
+
+fn deserialize_kb_rfc3339<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer).map(|o| {
+        o.filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "1970-01-01T00:00:00Z".to_string())
+    })
+}
+
+fn deserialize_embedding_provider<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer).map(|o| match o {
+        None => KbConfig::default_embedding_provider(),
+        Some(s) if s.trim().is_empty() => KbConfig::default_embedding_provider(),
+        Some(s) => s,
+    })
+}
+
+fn deserialize_embedding_model<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer).map(|o| match o {
+        None => KbConfig::default_embedding_model(),
+        Some(s) if s.trim().is_empty() => KbConfig::default_embedding_model(),
+        Some(s) => s,
+    })
+}
+
+fn deserialize_file_processor<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer).map(|o| match o {
+        None => KbConfig::default_file_processor(),
+        Some(s) if s.trim().is_empty() => KbConfig::default_file_processor(),
+        Some(s) => s,
+    })
+}
+
+fn default_chunk_strategy() -> crate::uar::rag::chunking::ChunkingStrategy {
+    crate::uar::rag::chunking::ChunkingStrategy::Recursive { size: 512 }
+}
+
+fn deserialize_chunk_strategy<'de, D>(
+    deserializer: D,
+) -> Result<crate::uar::rag::chunking::ChunkingStrategy, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<crate::uar::rag::chunking::ChunkingStrategy>::deserialize(deserializer)
+        .map(|o| o.unwrap_or_else(default_chunk_strategy))
+}
+
+fn deserialize_kb_config_flex<'de, D>(deserializer: D) -> Result<KbConfig, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<KbConfig>::deserialize(deserializer).map(|o| o.unwrap_or_default())
+}
 
 /// A named knowledge base container for RAG document scoping.
 /// Each KB has its own embedding model, chunking strategy, and document collection.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KnowledgeBase {
+    #[serde(default, deserialize_with = "deserialize_kb_string")]
     pub id: String,
     /// Unique human-readable name (e.g., "default", "technical-docs")
+    #[serde(default, deserialize_with = "deserialize_kb_string")]
     pub name: String,
     /// Optional description of the knowledge base
     #[serde(default)]
     pub description: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_kb_config_flex")]
     pub config: KbConfig,
+    #[serde(
+        default = "default_kb_rfc3339",
+        deserialize_with = "deserialize_kb_rfc3339"
+    )]
     pub created_at: String, // RFC3339
+    #[serde(
+        default = "default_kb_rfc3339",
+        deserialize_with = "deserialize_kb_rfc3339"
+    )]
     pub updated_at: String, // RFC3339
+}
+
+fn default_kb_rfc3339() -> String {
+    "1970-01-01T00:00:00Z".to_string()
 }
 
 /// Configuration for a knowledge base's processing pipeline.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KbConfig {
     /// Embedding provider: "fastembed", "openai", "mistral"
-    #[serde(default = "KbConfig::default_embedding_provider")]
+    #[serde(
+        default = "KbConfig::default_embedding_provider",
+        deserialize_with = "deserialize_embedding_provider"
+    )]
     pub embedding_provider: String,
     /// Model ID for the embedding provider
-    #[serde(default = "KbConfig::default_embedding_model")]
+    #[serde(
+        default = "KbConfig::default_embedding_model",
+        deserialize_with = "deserialize_embedding_model"
+    )]
     pub embedding_model: String,
     /// Vector dimensions (None = use model default)
     #[serde(default)]
     pub vector_dimensions: Option<usize>,
     /// File processor: "auto", "unstructured", "mistral", "kreuzberg"
-    #[serde(default = "KbConfig::default_file_processor")]
+    #[serde(
+        default = "KbConfig::default_file_processor",
+        deserialize_with = "deserialize_file_processor"
+    )]
     pub file_processor: String,
     /// Chunking strategy for document processing
+    #[serde(
+        default = "default_chunk_strategy",
+        deserialize_with = "deserialize_chunk_strategy"
+    )]
     pub chunk_strategy: crate::uar::rag::chunking::ChunkingStrategy,
 }
 

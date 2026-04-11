@@ -144,11 +144,7 @@ impl SandboxRunner for MicrosandboxRunner {
             .map_err(|e| SandboxError::FileError(e.to_string()))
     }
 
-    async fn read_file(
-        &self,
-        handle: &SandboxHandle,
-        path: &str,
-    ) -> Result<Vec<u8>, SandboxError> {
+    async fn read_file(&self, handle: &SandboxHandle, path: &str) -> Result<Vec<u8>, SandboxError> {
         debug!(sandbox_id = %handle.id, path = %path, "Reading file from microsandbox");
         tokio::fs::read(path)
             .await

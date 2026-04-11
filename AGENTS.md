@@ -23,3 +23,14 @@
 - **Config**: `.env` (see `.env.example`), `example.config.yaml`, `mcp.json` for MCP tools.
 - **LLM**: All LLM access goes through [liter-llm](https://github.com/GQAdonis/liter-llm) — 142+ providers via unified `provider/model` addressing. Set `UAR_LLM__MODEL` and `UAR_LLM__API_KEY` (or a provider shortcut like `OPENAI_API_KEY`). See `example.config.yaml` for the full `llm:` section.
 - **Model routing**: Use `POST /api/uar/route` with capability requirements (`needs_tools`, `needs_vision`, `min_context`, etc.) to get the best available model. The catalog is built at compile time from models.dev + liter-llm schemas.
+
+### React frontend (`frontend/`)
+
+Strict layering — do not skip layers:
+
+1. **Components** never call `fetch`, never import Zustand stores directly, and never import `frontend/src/services/`. They only render UI and call **hooks**.
+2. **Hooks** only subscribe to stores and expose store actions; they do not call `fetch` or import service modules. Service calls live inside **stores**.
+3. **Stores** (`frontend/src/stores/`) hold state and call **services** for HTTP/SSE and other I/O.
+4. **Services** (`frontend/src/services/`) are thin wrappers around `fetch` / streams. **Only stores import services** (not hooks or components).
+
+This avoids duplicated data logic, keeps ESLint `react-hooks/*` rules satisfied, and makes testing straightforward.

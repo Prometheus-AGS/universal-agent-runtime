@@ -30,11 +30,7 @@ pub trait SandboxRunner: Send + Sync {
         path: &str,
         content: &[u8],
     ) -> Result<(), SandboxError>;
-    async fn read_file(
-        &self,
-        handle: &SandboxHandle,
-        path: &str,
-    ) -> Result<Vec<u8>, SandboxError>;
+    async fn read_file(&self, handle: &SandboxHandle, path: &str) -> Result<Vec<u8>, SandboxError>;
     async fn destroy(&self, handle: SandboxHandle) -> Result<(), SandboxError>;
     fn capabilities(&self) -> RunnerCapabilities;
 }

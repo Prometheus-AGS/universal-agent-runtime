@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useState } from "react";
 import { ArrowLeft, CheckCircle2, ChevronRight, Circle, Loader2, Plus, RefreshCw, Server, XCircle } from "lucide-react";
 import {
   AlertDialog,
@@ -15,65 +15,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
-import type { CatalogProviderSummary, CatalogResponse, ProvidersResponse, UarProvider } from "@/types";
-
-// ---------------------------------------------------------------------------
-// API helpers
-// ---------------------------------------------------------------------------
-
-async function fetchCatalog(): Promise<CatalogResponse> {
-  const res = await fetch("/api/catalog");
-  if (!res.ok) throw new Error(`Catalog fetch failed: ${res.status}`);
-  return res.json() as Promise<CatalogResponse>;
-}
-
-async function fetchConfiguredProviders(): Promise<ProvidersResponse> {
-  const res = await fetch("/api/uar/providers");
-  if (!res.ok) throw new Error(`Providers fetch failed: ${res.status}`);
-  return res.json() as Promise<ProvidersResponse>;
-}
-
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
+import { useProviderModels } from "@/hooks/use-provider-models";
+import { useProvidersAdmin } from "@/hooks/use-providers-admin";
+import type { CatalogProviderSummary } from "@/types";
 
 export const ProvidersPage: FC = () => {
-  const [catalog, setCatalog] = useState<CatalogProviderSummary[]>([]);
-  const [configured, setConfigured] = useState<UarProvider[]>([]);
-  const [defaultId, setDefaultId] = useState<string | undefined>();
+  const {
+    catalog,
+    configured,
+    defaultId,
+    loading,
+    error,
+    saving,
+    removing,
+    load,
+    configureProvider,
+    setDefault,
+    removeProvider,
+  } = useProvidersAdmin();
+
   const [selected, setSelected] = useState<CatalogProviderSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addTarget, setAddTarget] = useState<CatalogProviderSummary | null>(null);
   const [form, setForm] = useState({ api_key: "", base_url: "" });
-  const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState<"all" | "configured" | "unconfigured">("all");
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
-  const [removing, setRemoving] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [catalogData, providersData] = await Promise.all([
-        fetchCatalog(),
-        fetchConfiguredProviders(),
-      ]);
-      setCatalog(catalogData.providers);
-      setConfigured(providersData.providers ?? []);
-      setDefaultId(providersData.default_id);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
 
   const handleConfigure = (provider: CatalogProviderSummary) => {
     setAddTarget(provider);
@@ -83,47 +52,27 @@ export const ProvidersPage: FC = () => {
 
   const handleSaveConfigure = async () => {
     if (!addTarget) return;
-    setSaving(true);
     try {
-      const body = {
-        id: addTarget.id,
-        display_name: addTarget.display_name,
-        base_url: form.base_url || addTarget.base_url,
-        api_key: form.api_key || undefined,
-        protocol: "auto",
-        enabled: true,
-      };
-      const res = await fetch("/api/uar/providers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      await configureProvider({
+        addTarget,
+        apiKey: form.api_key,
+        baseUrl: form.base_url,
       });
-      if (!res.ok && res.status !== 409) throw new Error(`${res.status}`);
       setShowAddDialog(false);
-      await load();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setSaving(false);
+    } catch {
+      /* error surfaced via store */
     }
   };
 
-  const handleSetDefault = async (id: string) => {
-    try {
-      await fetch(`/api/uar/providers/${id}/default`, { method: "POST" });
-      setDefaultId(id);
-    } catch { /**/ }
+  const handleSetDefault = (id: string) => {
+    void setDefault(id);
   };
 
   const handleDelete = async () => {
     if (!removeTarget) return;
-    setRemoving(true);
-    try {
-      await fetch(`/api/uar/providers/${removeTarget}`, { method: "DELETE" });
-      if (selected?.id === removeTarget) setSelected(null);
-      setRemoveTarget(null);
-      await load();
-    } catch { /**/ } finally { setRemoving(false); }
+    await removeProvider(removeTarget);
+    if (selected?.id === removeTarget) setSelected(null);
+    setRemoveTarget(null);
   };
 
   const visible = catalog.filter((p) => {
@@ -150,6 +99,7 @@ export const ProvidersPage: FC = () => {
         <div className="flex gap-1 border-b border-border px-3 py-2">
           {(["all", "configured", "unconfigured"] as const).map((f) => (
             <button
+              type="button"
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
@@ -202,10 +152,10 @@ export const ProvidersPage: FC = () => {
       <div className={cn("flex flex-1 flex-col overflow-hidden", !selected && "hidden md:flex")}>
         {selected ? (
           <ProviderDetail
+            key={selected.id}
             provider={selected}
-            configured={configured.find((c) => c.id === selected.id)}
             isDefault={selected.id === defaultId}
-            onSetDefault={() => void handleSetDefault(selected.id)}
+            onSetDefault={() => handleSetDefault(selected.id)}
             onConfigure={() => handleConfigure(selected)}
             onDelete={() => setRemoveTarget(selected.id)}
             onBack={() => setSelected(null)}
@@ -250,8 +200,8 @@ export const ProvidersPage: FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={removing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={(e) => { e.preventDefault(); void handleDelete(); }} disabled={removing} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel disabled={removing !== null}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); void handleDelete(); }} disabled={removing !== null} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {removing ? <Loader2 size={12} className="animate-spin" /> : "Remove"}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -263,6 +213,9 @@ export const ProvidersPage: FC = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Configure {addTarget?.display_name ?? "Provider"}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Optional API key and base URL override for this LLM provider.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             {addTarget?.auth_env_var && (
@@ -308,7 +261,6 @@ export const ProvidersPage: FC = () => {
 
 interface ProviderDetailProps {
   provider: CatalogProviderSummary;
-  configured?: UarProvider;
   isDefault: boolean;
   onSetDefault: () => void;
   onConfigure: () => void;
@@ -316,32 +268,8 @@ interface ProviderDetailProps {
   onBack: () => void;
 }
 
-function ProviderDetail({ provider, configured, isDefault, onSetDefault, onConfigure, onDelete, onBack }: ProviderDetailProps) {
-  const [models, setModels] = useState<Array<{ id: string; name: string; tool_call: boolean; reasoning: boolean; context: number }>>([]);
-  const [loadingModels, setLoadingModels] = useState(true);
-
-  useEffect(() => {
-    setLoadingModels(true);
-    fetch("/api/models")
-      .then((r) => r.json())
-      .then((data: Record<string, { models: Record<string, { name: string; tool_call: boolean; reasoning: boolean; limit: { context: number } }> }>) => {
-        const providerData = data[provider.id];
-        if (providerData?.models) {
-          const entries = Object.entries(providerData.models).map(([id, m]) => ({
-            id,
-            name: m.name,
-            tool_call: m.tool_call,
-            reasoning: m.reasoning,
-            context: m.limit.context,
-          }));
-          setModels(entries);
-        } else {
-          setModels([]);
-        }
-      })
-      .catch(() => setModels([]))
-      .finally(() => setLoadingModels(false));
-  }, [provider.id]);
+function ProviderDetail({ provider, isDefault, onSetDefault, onConfigure, onDelete, onBack }: ProviderDetailProps) {
+  const { models, loadingModels } = useProviderModels(provider.id);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">

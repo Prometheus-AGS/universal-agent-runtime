@@ -87,11 +87,13 @@ function DbLoadingScreen({ steps, current, error }: DbLoadingScreenProps) {
   const logRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll log to bottom as steps arrive
+  const stepCount = steps.length;
   useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
-    }
-  }, [steps]);
+    if (stepCount === 0) return;
+    const el = logRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [stepCount]);
 
   // All steps except the very last one (which is the "current" step in progress)
   const completedSteps = steps.slice(0, -1);
@@ -133,10 +135,9 @@ function DbLoadingScreen({ steps, current, error }: DbLoadingScreenProps) {
           aria-live="polite"
         >
           <ul className="flex flex-col gap-1.5">
-            {completedSteps.map((step, i) => (
+            {completedSteps.map((step) => (
               <li
-                // eslint-disable-next-line react/no-array-index-key
-                key={i}
+                key={step}
                 className="flex items-start gap-2 font-mono text-[11px] text-muted-foreground"
               >
                 <span className="mt-px flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-primary/15">

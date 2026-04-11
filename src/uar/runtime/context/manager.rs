@@ -312,8 +312,7 @@ impl ContextManager {
         head.extend(tail);
 
         let removed_count = messages.len() - head.len();
-        let tokens_saved =
-            original_tokens.saturating_sub(TokenService::estimate_messages(&head));
+        let tokens_saved = original_tokens.saturating_sub(TokenService::estimate_messages(&head));
 
         (
             head,

@@ -3,7 +3,6 @@ import {
   BookOpen,
   CheckCircle2,
   ChevronRight,
-  Circle,
   Server,
   SlidersHorizontal,
   X,
@@ -11,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { cn } from "@/lib/utils";
+import { useOnboardingWelcomeStore } from "@/stores/onboarding-welcome-store";
 
 interface SetupStep {
   id: string;
@@ -28,16 +28,7 @@ const SETUP_STEPS: SetupStep[] = [
     description:
       "Connect at least one AI provider (OpenAI, Anthropic, etc.) so agents can generate responses.",
     icon: Server,
-    check: async () => {
-      try {
-        const res = await fetch("/api/uar/providers");
-        if (!res.ok) return false;
-        const data = (await res.json()) as { providers?: unknown[] };
-        return (data.providers?.length ?? 0) > 0;
-      } catch {
-        return false;
-      }
-    },
+    check: () => useOnboardingWelcomeStore.getState().checkConfiguredProviders(),
     navigateTo: "/admin/providers",
   },
   {
@@ -46,19 +37,7 @@ const SETUP_STEPS: SetupStep[] = [
     description:
       "Upload documents so agents can search and reference your content when answering questions.",
     icon: BookOpen,
-    check: async () => {
-      try {
-        const res = await fetch("/api/knowledge");
-        if (!res.ok) return false;
-        const data = await res.json();
-        const list = Array.isArray(data)
-          ? data
-          : data?.knowledge_bases ?? data?.data?.knowledge_bases ?? [];
-        return list.length > 0;
-      } catch {
-        return false;
-      }
-    },
+    check: () => useOnboardingWelcomeStore.getState().checkKnowledgeBases(),
     navigateTo: "/admin/knowledge",
   },
   {
@@ -89,6 +68,7 @@ export const AdminWelcome: FC<AdminWelcomeProps> = ({ onNavigate }) => {
   const [checking, setChecking] = useState(true);
 
   const checkSteps = useCallback(async () => {
+    await Promise.resolve();
     setChecking(true);
     const results: Record<string, boolean> = {};
     for (const step of SETUP_STEPS) {
@@ -99,7 +79,11 @@ export const AdminWelcome: FC<AdminWelcomeProps> = ({ onNavigate }) => {
   }, []);
 
   useEffect(() => {
-    if (!dismissed) void checkSteps();
+    if (dismissed) return;
+    const id = window.setTimeout(() => {
+      void checkSteps();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [dismissed, checkSteps]);
 
   if (dismissed) return null;

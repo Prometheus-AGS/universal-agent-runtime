@@ -28,7 +28,6 @@ use tracing::{info, warn};
 
 use crate::AppState;
 use crate::config::AppConfig;
-use crate::uar::telemetry::metrics as telemetry_metrics;
 use crate::llm::{LlmDriver, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
@@ -37,6 +36,7 @@ use crate::uar::api::sse::to_agui_event;
 use crate::uar::settings::resilience_policy::{
     PolicySource, ResiliencePolicy, resolve_effective_policy,
 };
+use crate::uar::telemetry::metrics as telemetry_metrics;
 use crate::uar::{
     self,
     defaults::ensure_default_knowledge_base,
@@ -402,13 +402,27 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 Arc::clone(p),
             ));
             match mgr.initialize(&config).await {
-                Ok(stats) => info!(
-                    seeded = stats.seeded,
-                    updated = stats.updated,
-                    drift = stats.drift_count,
-                    types = stats.types_upserted,
-                    "Settings bootstrapped from config into DB"
-                ),
+                Ok(stats) => {
+                    info!(
+                        seeded = stats.seeded,
+                        updated = stats.updated,
+                        drift = stats.drift_count,
+                        types = stats.types_upserted,
+                        "Settings bootstrapped from config into DB"
+                    );
+                    // Runtime LLM provider state comes from DB after bootstrap (YAML/env/CLI seeded rows).
+                    if let Err(e) = crate::uar::settings::hydrate_provider_registry_from_settings(
+                        provider_registry.as_ref(),
+                        mgr.as_ref(),
+                    )
+                    .await
+                    {
+                        tracing::error!(
+                            error = ?e,
+                            "Failed to hydrate provider registry from settings database"
+                        );
+                    }
+                }
                 Err(e) => {
                     tracing::error!(error = ?e, "Settings bootstrap failed — continuing without persistent settings")
                 }
@@ -429,7 +443,8 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             }
         };
 
-    let user_settings_store = Arc::new(crate::uar::runtime::user_settings_store::UserSettingsStore::new());
+    let user_settings_store =
+        Arc::new(crate::uar::runtime::user_settings_store::UserSettingsStore::new());
 
     let state = AppState {
         mcp,
@@ -471,6 +486,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         },
     };
 
+    let provider_api_state = uar::api::providers::ProviderApiState {
+        registry: Arc::clone(&state.provider_registry),
+        settings_manager: state.settings_manager.clone(),
+    };
+
     // Build router
     // Memory MCP router — built before the main router so type inference is unambiguous.
     let mem_mcp_router: axum::Router<()> = if let Some(ref svc) = state.memory_service {
@@ -488,10 +508,10 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     );
 
     let app = Router::new()
-        .merge(
-            utoipa_swagger_ui::SwaggerUi::new("/api/docs")
-                .url("/api/openapi.json", crate::uar::api::openapi::build_openapi_spec()),
-        )
+        .merge(utoipa_swagger_ui::SwaggerUi::new("/api/docs").url(
+            "/api/openapi.json",
+            crate::uar::api::openapi::build_openapi_spec(),
+        ))
         .route("/health", get(liveness_handler))
         .route("/healthz", get(liveness_handler))
         .route("/readyz", get(readiness_handler))
@@ -527,7 +547,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         // Providers API
         .nest(
             "/api/uar/providers",
-            uar::api::providers::build_router().with_state(Arc::clone(&state.provider_registry)),
+            uar::api::providers::build_router().with_state(provider_api_state.clone()),
         )
         // Discovery API (agents, sessions, skills, tools catalogs)
         .nest(
@@ -561,6 +581,9 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             uar::api::settings::build_router().with_state(Arc::new(
                 uar::api::settings::SettingsApiState {
                     settings_manager: settings_manager.clone(),
+                    settings_mutation_auth_required: config
+                        .security
+                        .settings_mutation_auth_required,
                 },
             )),
         )
@@ -658,7 +681,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         // Providers: GET/POST /api/providers, GET/PUT/DELETE /api/providers/{id}, etc.
         .nest(
             "/api/providers",
-            uar::api::providers::build_router().with_state(Arc::clone(&state.provider_registry)),
+            uar::api::providers::build_router().with_state(provider_api_state.clone()),
         )
         // Skills: GET /api/skills, GET/DELETE /api/skills/{id}, etc.
         .nest(
@@ -1272,10 +1295,7 @@ async fn api_catalog(State(state): State<AppState>) -> Response {
         .all_providers()
         .iter()
         .map(|p| {
-            let env_var = p
-                .auth
-                .as_ref()
-                .and_then(|a| a.env_var.clone());
+            let env_var = p.auth.as_ref().and_then(|a| a.env_var.clone());
             json!({
                 "id": p.id,
                 "display_name": p.display_name,
@@ -1318,13 +1338,25 @@ async fn api_catalog(State(state): State<AppState>) -> Response {
 /// { "model": "openai/gpt-4o" }
 /// ```
 /// or `404` if no suitable model is available.
-async fn api_route_model(State(state): State<AppState>, Json(req): Json<serde_json::Value>) -> Response {
+async fn api_route_model(
+    State(state): State<AppState>,
+    Json(req): Json<serde_json::Value>,
+) -> Response {
     use crate::llm::router::RouteRequirements;
 
     let requirements = RouteRequirements {
-        needs_tools: req.get("needs_tools").and_then(|v| v.as_bool()).unwrap_or(false),
-        needs_reasoning: req.get("needs_reasoning").and_then(|v| v.as_bool()).unwrap_or(false),
-        needs_vision: req.get("needs_vision").and_then(|v| v.as_bool()).unwrap_or(false),
+        needs_tools: req
+            .get("needs_tools")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        needs_reasoning: req
+            .get("needs_reasoning")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        needs_vision: req
+            .get("needs_vision")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
         needs_structured_output: req
             .get("needs_structured_output")
             .and_then(|v| v.as_bool())
@@ -1339,7 +1371,11 @@ async fn api_route_model(State(state): State<AppState>, Json(req): Json<serde_js
 
     match state.model_router.route(&requirements).await {
         Some(model) => Json(json!({ "model": model })).into_response(),
-        None => (StatusCode::NOT_FOUND, Json(json!({ "error": "No suitable model found" }))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({ "error": "No suitable model found" })),
+        )
+            .into_response(),
     }
 }
 
@@ -1452,7 +1488,10 @@ pub(crate) async fn api_metrics() -> Response {
     let output = handle.render();
     (
         StatusCode::OK,
-        [(header::CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")],
+        [(
+            header::CONTENT_TYPE,
+            "text/plain; version=0.0.4; charset=utf-8",
+        )],
         output,
     )
         .into_response()
@@ -1506,7 +1545,10 @@ async fn api_context_stats(
     match session {
         Some(s) => {
             let messages = s.messages();
-            let token_count = crate::uar::runtime::context::token_service::TokenService::estimate_messages(&messages);
+            let token_count =
+                crate::uar::runtime::context::token_service::TokenService::estimate_messages(
+                    &messages,
+                );
             let model_limit: usize = 128_000; // Default; could be resolved from model catalog
             let threshold = 0.85_f32;
 
@@ -1818,9 +1860,11 @@ fn inject_anthropic_cache_control(req: &mut AnthropicMessagesRequest) {
                 }]);
             }
             AnthropicSystemInput::Blocks(blocks) => {
-                if let Some(last_text) = blocks.iter_mut().rev().find(|b| {
-                    b.block_type == "text" && b.cache_control.is_none()
-                }) {
+                if let Some(last_text) = blocks
+                    .iter_mut()
+                    .rev()
+                    .find(|b| b.block_type == "text" && b.cache_control.is_none())
+                {
                     last_text.cache_control = Some(ephemeral.clone());
                 }
             }
@@ -1829,26 +1873,24 @@ fn inject_anthropic_cache_control(req: &mut AnthropicMessagesRequest) {
     }
 
     // 2. Mark the last text block of the last human-turn message.
-    if let Some(last_human) = req
-        .messages
-        .iter_mut()
-        .rev()
-        .find(|m| m.role == "user")
-    {
+    if let Some(last_human) = req.messages.iter_mut().rev().find(|m| m.role == "user") {
         match &mut last_human.content {
             AnthropicContentInput::Text(text) => {
                 let owned = std::mem::take(text);
-                last_human.content = AnthropicContentInput::Blocks(vec![AnthropicContentBlockInput {
-                    block_type: "text".to_string(),
-                    text: Some(owned),
-                    cache_control: Some(ephemeral),
-                    ..AnthropicContentBlockInput::default()
-                }]);
+                last_human.content =
+                    AnthropicContentInput::Blocks(vec![AnthropicContentBlockInput {
+                        block_type: "text".to_string(),
+                        text: Some(owned),
+                        cache_control: Some(ephemeral),
+                        ..AnthropicContentBlockInput::default()
+                    }]);
             }
             AnthropicContentInput::Blocks(blocks) => {
-                if let Some(last_text) = blocks.iter_mut().rev().find(|b| {
-                    b.block_type == "text" && b.cache_control.is_none()
-                }) {
+                if let Some(last_text) = blocks
+                    .iter_mut()
+                    .rev()
+                    .find(|b| b.block_type == "text" && b.cache_control.is_none())
+                {
                     last_text.cache_control = Some(ephemeral);
                 }
             }
@@ -2274,30 +2316,30 @@ async fn api_messages(
 
     let client_config = crate::config::build_client_config(&resolved_llm_config);
     let model_str = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
-    let driver: std::sync::Arc<dyn LlmDriver> =
-        if crate::llm::detect_provider(&model_str) == "anthropic"
-            && crate::llm::anthropic_native_driver_enabled()
-        {
-            std::sync::Arc::new(crate::llm::anthropic_driver::AnthropicDriver::new(
-                resolved_llm_config.api_key.clone().unwrap_or_default(),
-                model_str.clone(),
-                resolved_llm_config.base_url.clone(),
-                None,
-                Some(crate::llm::anthropic_cache::CacheStrategy::default()),
-                None,
-            ))
-        } else {
-            match crate::llm::LiterLlmDriver::new(client_config, model_str, None) {
-                Ok(d) => std::sync::Arc::new(d),
-                Err(err) => {
-                    tracing::error!(error = %err, "Failed to create LiterLlmDriver");
-                    return anthropic_error_response(
-                        StatusCode::BAD_GATEWAY,
-                        "Failed to initialize upstream model client",
-                    );
-                }
+    let driver: std::sync::Arc<dyn LlmDriver> = if crate::llm::detect_provider(&model_str)
+        == "anthropic"
+        && crate::llm::anthropic_native_driver_enabled()
+    {
+        std::sync::Arc::new(crate::llm::anthropic_driver::AnthropicDriver::new(
+            resolved_llm_config.api_key.clone().unwrap_or_default(),
+            model_str.clone(),
+            resolved_llm_config.base_url.clone(),
+            None,
+            Some(crate::llm::anthropic_cache::CacheStrategy::default()),
+            None,
+        ))
+    } else {
+        match crate::llm::LiterLlmDriver::new(client_config, model_str, None) {
+            Ok(d) => std::sync::Arc::new(d),
+            Err(err) => {
+                tracing::error!(error = %err, "Failed to create LiterLlmDriver");
+                return anthropic_error_response(
+                    StatusCode::BAD_GATEWAY,
+                    "Failed to initialize upstream model client",
+                );
             }
-        };
+        }
+    };
     let driver_stream = match driver.stream(llm_request).await {
         Ok(stream) => stream,
         Err(err) => {

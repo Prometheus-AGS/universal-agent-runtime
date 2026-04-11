@@ -1,53 +1,13 @@
-import { type FC, useCallback, useEffect, useRef, useState } from "react";
+import type { FC } from "react";
 import { RefreshCw, Server, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
-
-interface McpServerHealth {
-  name: string;
-  transport: string;
-  status: "connected" | "disconnected" | "error";
-  tool_count: number;
-  error?: string;
-}
-
-const AUTO_REFRESH_MS = 30_000;
+import { useMcpHealth } from "@/hooks/use-mcp-health";
+import type { McpServerHealth } from "@/stores/mcp-health-store";
 
 export const McpHealthPage: FC = () => {
-  const [servers, setServers] = useState<McpServerHealth[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/uar/mcp/health");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as
-        | { servers?: McpServerHealth[] }
-        | McpServerHealth[];
-      const list = Array.isArray(data) ? data : data.servers ?? [];
-      setServers(list);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Initial load + auto-refresh
-  useEffect(() => {
-    void load();
-    intervalRef.current = setInterval(() => {
-      void load();
-    }, AUTO_REFRESH_MS);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [load]);
+  const { servers, loading, error, load } = useMcpHealth();
 
   const statusDot = (status: McpServerHealth["status"]) => {
     const color =
@@ -58,6 +18,7 @@ export const McpHealthPage: FC = () => {
           : "bg-muted-foreground";
     return (
       <span
+        role="img"
         className={cn("inline-block h-2 w-2 shrink-0 rounded-full", color)}
         aria-label={status}
       />

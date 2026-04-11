@@ -36,34 +36,49 @@ pub async fn register_builtins(
     let key_provider: Arc<dyn KeyProvider> = Arc::new(LocalKeyProvider::ephemeral());
     let session_store = CompilerSessionStore::new();
     registry
-        .register(crate::uar::compiler::CompilerAgentSkill::new(Arc::clone(&key_provider)))
+        .register(crate::uar::compiler::CompilerAgentSkill::new(Arc::clone(
+            &key_provider,
+        )))
         .await;
     registry
-        .register(crate::uar::compiler::UpdateSectionTool::new(session_store.clone()))
+        .register(crate::uar::compiler::UpdateSectionTool::new(
+            session_store.clone(),
+        ))
         .await;
     registry
-        .register(crate::uar::compiler::CheckCompletenessTool::new(session_store.clone()))
+        .register(crate::uar::compiler::CheckCompletenessTool::new(
+            session_store.clone(),
+        ))
         .await;
     registry
-        .register(crate::uar::compiler::CompileSessionTool::new(session_store, key_provider))
+        .register(crate::uar::compiler::CompileSessionTool::new(
+            session_store,
+            key_provider,
+        ))
         .await;
 
     // ── File system tools ─────────────────────────────────────────────────
     if native_cfg.file_tools_enabled {
-        use crate::uar::tools::file_tools::{FileReadTool, FileWriteTool};
         use crate::uar::tools::file_patch::FilePatchTool;
-        registry.register(FileReadTool {
-            allowed_paths: native_cfg.file_allowed_paths.clone(),
-            max_size_kb: native_cfg.file_max_size_kb,
-        }).await;
-        registry.register(FileWriteTool {
-            allowed_paths: native_cfg.file_allowed_paths.clone(),
-            max_size_kb: native_cfg.file_write_max_kb,
-        }).await;
-        registry.register(FilePatchTool {
-            allowed_paths: native_cfg.file_allowed_paths.clone(),
-            max_size_kb: native_cfg.file_max_size_kb,
-        }).await;
+        use crate::uar::tools::file_tools::{FileReadTool, FileWriteTool};
+        registry
+            .register(FileReadTool {
+                allowed_paths: native_cfg.file_allowed_paths.clone(),
+                max_size_kb: native_cfg.file_max_size_kb,
+            })
+            .await;
+        registry
+            .register(FileWriteTool {
+                allowed_paths: native_cfg.file_allowed_paths.clone(),
+                max_size_kb: native_cfg.file_write_max_kb,
+            })
+            .await;
+        registry
+            .register(FilePatchTool {
+                allowed_paths: native_cfg.file_allowed_paths.clone(),
+                max_size_kb: native_cfg.file_max_size_kb,
+            })
+            .await;
         tracing::info!(
             allowed_paths = ?native_cfg.file_allowed_paths,
             "Registered file native tools (file_read, file_write, file_patch)"
@@ -73,22 +88,26 @@ pub async fn register_builtins(
     // ── Web fetch tool ────────────────────────────────────────────────────
     if native_cfg.web_fetch_enabled {
         use crate::uar::tools::web_fetch::WebFetchTool;
-        registry.register(WebFetchTool {
-            timeout_secs: native_cfg.web_fetch_timeout_secs,
-            max_size_kb: native_cfg.web_fetch_max_size_kb,
-            allowed_domains: native_cfg.web_fetch_allowed_domains.clone(),
-        }).await;
+        registry
+            .register(WebFetchTool {
+                timeout_secs: native_cfg.web_fetch_timeout_secs,
+                max_size_kb: native_cfg.web_fetch_max_size_kb,
+                allowed_domains: native_cfg.web_fetch_allowed_domains.clone(),
+            })
+            .await;
         tracing::info!("Registered web_fetch native tool");
     }
 
     // ── Terminal exec tool ────────────────────────────────────────────────
     if native_cfg.terminal_exec_enabled {
         use crate::uar::tools::terminal_exec::TerminalExecTool;
-        registry.register(TerminalExecTool {
-            shell: native_cfg.terminal_shell.clone(),
-            timeout_secs: native_cfg.terminal_timeout_secs,
-            use_sandbox: native_cfg.terminal_use_sandbox,
-        }).await;
+        registry
+            .register(TerminalExecTool {
+                shell: native_cfg.terminal_shell.clone(),
+                timeout_secs: native_cfg.terminal_timeout_secs,
+                use_sandbox: native_cfg.terminal_use_sandbox,
+            })
+            .await;
         tracing::info!(
             shell = %native_cfg.terminal_shell,
             use_sandbox = native_cfg.terminal_use_sandbox,
@@ -100,10 +119,12 @@ pub async fn register_builtins(
     if native_cfg.session_search_enabled {
         if let Some(db) = persistence {
             use crate::uar::tools::session_search::SessionSearchTool;
-            registry.register(SessionSearchTool {
-                persistence: db,
-                max_results: native_cfg.session_search_max_results,
-            }).await;
+            registry
+                .register(SessionSearchTool {
+                    persistence: db,
+                    max_results: native_cfg.session_search_max_results,
+                })
+                .await;
             tracing::info!("Registered session_search native tool");
         } else {
             tracing::debug!(

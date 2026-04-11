@@ -2,8 +2,8 @@
 
 #[cfg(test)]
 mod sandbox_types {
-    use universal_agent_runtime::sandbox::types::*;
     use std::collections::HashMap;
+    use universal_agent_runtime::sandbox::types::*;
 
     #[test]
     fn default_sandbox_config_is_sane() {
@@ -82,10 +82,10 @@ mod sandbox_runner {
 
 #[cfg(test)]
 mod wasmtime_runner {
+    use std::collections::HashMap;
     use universal_agent_runtime::sandbox::runner::{RunnerType, SandboxRunner};
     use universal_agent_runtime::sandbox::types::*;
     use universal_agent_runtime::sandbox::wasmtime_runner::WasmtimeRunner;
-    use std::collections::HashMap;
 
     #[test]
     fn wasmtime_runner_capabilities() {
@@ -124,7 +124,10 @@ mod wasmtime_runner {
         assert!(result.stdout.contains("hello_sandbox"));
         assert!(result.execution_time_ms < 5000);
 
-        runner.destroy(handle).await.expect("destroy should succeed");
+        runner
+            .destroy(handle)
+            .await
+            .expect("destroy should succeed");
     }
 
     /// Test 13.6: Platform fallback — WasmtimeRunner works without microsandbox feature.
@@ -214,9 +217,7 @@ mod session_manager {
             .unwrap();
 
         // Third should fail
-        let result = mgr
-            .get_or_create("s3", SandboxConfig::default())
-            .await;
+        let result = mgr.get_or_create("s3", SandboxConfig::default()).await;
         assert!(result.is_err());
     }
 

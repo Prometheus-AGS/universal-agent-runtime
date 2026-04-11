@@ -377,6 +377,111 @@ impl SettingsManager {
     pub async fn get_type(&self, key: &str) -> Result<Option<SettingsType>> {
         self.persistence.get_settings_type(key).await
     }
+
+    // =========================================================================
+    // Public: LLM provider persistence (`provider.{id}` settings rows)
+    // =========================================================================
+
+    /// Upsert a full provider configuration to `provider.{id}` (insert or update).
+    ///
+    /// Unlike [`Self::set_value`], this does **not** require a pre-existing row: new
+    /// providers created only via the API are inserted on first save.
+    pub async fn upsert_provider_config(
+        &self,
+        config: &crate::llm::registry::ProviderConfig,
+    ) -> Result<()> {
+        let st = self
+            .persistence
+            .get_settings_type("provider")
+            .await?
+            .ok_or_else(|| {
+                anyhow::anyhow!("settings type 'provider' not found; call initialize() first")
+            })?;
+
+        let key = format!("provider.{}", config.id);
+        let data = serde_json::to_value(config).context("serialize ProviderConfig")?;
+
+        let existing = self.persistence.get_setting(&key).await?;
+        let now = Utc::now();
+        let setting = Settings {
+            id: existing.as_ref().map(|e| e.id).unwrap_or_else(Uuid::new_v4),
+            settings_type_id: st.id,
+            name: config.display_name.clone(),
+            key: key.clone(),
+            data,
+            parent_id: None,
+            created_at: existing.as_ref().map(|e| e.created_at).unwrap_or(now),
+            updated_at: Some(now),
+        };
+
+        self.persistence
+            .upsert_setting(&setting)
+            .await
+            .with_context(|| format!("upsert provider setting '{key}'"))?;
+
+        let mut cache = self.cache.write().await;
+        cache.insert(
+            key,
+            CacheEntry {
+                setting,
+                meta: SettingsMeta {
+                    source: SettingSource::Api,
+                    is_drift: false,
+                },
+            },
+        );
+        Ok(())
+    }
+
+    /// Remove `provider.{id}` from the database and cache.
+    pub async fn delete_provider_config(&self, provider_id: &str) -> Result<()> {
+        let key = format!("provider.{provider_id}");
+        self.persistence
+            .delete_setting(&key)
+            .await
+            .with_context(|| format!("delete provider setting '{key}'"))?;
+        let mut cache = self.cache.write().await;
+        cache.remove(&key);
+        Ok(())
+    }
+
+    /// Load all persisted provider configs from the database.
+    pub async fn load_provider_configs_from_db(
+        &self,
+    ) -> Result<Vec<crate::llm::registry::ProviderConfig>> {
+        let rows = self
+            .persistence
+            .list_settings(Some("provider"), None)
+            .await?;
+        let mut out = Vec::with_capacity(rows.len());
+        for s in rows {
+            if !s.key.starts_with("provider.") {
+                continue;
+            }
+            let pc: crate::llm::registry::ProviderConfig = serde_json::from_value(s.data)
+                .with_context(|| format!("deserialize ProviderConfig for setting key {}", s.key))?;
+            out.push(pc);
+        }
+        Ok(out)
+    }
+
+    /// Persist the default provider id (`llm.default_provider`).
+    pub async fn set_default_provider_id(&self, provider_id: &str) -> Result<()> {
+        self.set_value("llm.default_provider", json!(provider_id))
+            .await
+    }
+
+    /// Read the persisted default provider id, if any.
+    pub async fn get_default_provider_id(&self) -> Option<String> {
+        match self.get_value("llm.default_provider").await {
+            Some(Value::String(s)) if !s.is_empty() => Some(s),
+            Some(v) => v
+                .as_str()
+                .map(std::string::ToString::to_string)
+                .filter(|s| !s.is_empty()),
+            None => None,
+        }
+    }
 }
 
 // =============================================================================
@@ -909,7 +1014,13 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
         let settings = if let Some(u) = &config.unstructured {
             vec![
                 make_setting(&st, "unstructured.api_url", "API URL", json!(u.api_url)),
-                make_setting(&st, "unstructured.api_key", "API Key", json!(u.api_key)),
+                // `Option` serializes as null; schema requires a string for this key.
+                make_setting(
+                    &st,
+                    "unstructured.api_key",
+                    "API Key",
+                    json!(u.api_key.as_deref().unwrap_or("")),
+                ),
             ]
         } else {
             vec![]
@@ -934,7 +1045,12 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
         let st = make_type("Mistral OCR", "mistral_ocr", schema);
         let settings = if let Some(m) = &config.mistral_ocr {
             vec![
-                make_setting(&st, "mistral_ocr.api_key", "API Key", json!(m.api_key)),
+                make_setting(
+                    &st,
+                    "mistral_ocr.api_key",
+                    "API Key",
+                    json!(m.api_key.as_deref().unwrap_or("")),
+                ),
                 make_setting(
                     &st,
                     "mistral_ocr.ocr_model",
@@ -1496,18 +1612,39 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                     "title": "Health Check Interval (seconds)",
                     "minimum": 0,
                     "x-control": "number"
+                },
+                "default_provider": {
+                    "type": "string",
+                    "title": "Default LLM Provider ID",
+                    "description": "Which registered provider is default (e.g. openai). Persisted with provider settings.",
+                    "x-control": "text"
                 }
             },
             "required": ["model"]
         });
         let llm = &config.llm;
+        let default_provider_seed = llm
+            .model
+            .split_once('/')
+            .map(|(p, _)| p.to_string())
+            .unwrap_or_else(|| "default".to_string());
         let st = make_type("LLM Configuration", "llm", schema);
         let settings = vec![
             make_setting(&st, "llm.model", "Default Model", json!(llm.model)),
             make_setting(&st, "llm.api_key", "API Key", json!(llm.api_key)),
             make_setting(&st, "llm.base_url", "Base URL", json!(llm.base_url)),
-            make_setting(&st, "llm.timeout_secs", "Timeout (s)", json!(llm.timeout_secs)),
-            make_setting(&st, "llm.max_retries", "Max Retries", json!(llm.max_retries)),
+            make_setting(
+                &st,
+                "llm.timeout_secs",
+                "Timeout (s)",
+                json!(llm.timeout_secs),
+            ),
+            make_setting(
+                &st,
+                "llm.max_retries",
+                "Max Retries",
+                json!(llm.max_retries),
+            ),
             make_setting(
                 &st,
                 "llm.parallel_tool_calls",
@@ -1532,6 +1669,12 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "llm.health_check_secs",
                 "Health Check Interval (s)",
                 json!(llm.health_check_secs),
+            ),
+            make_setting(
+                &st,
+                "llm.default_provider",
+                "Default LLM Provider ID",
+                json!(default_provider_seed),
             ),
         ];
         result.push((st, settings));
@@ -1657,34 +1800,90 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
         });
         let st = make_type("Native Tools", "native_tools", schema);
         let settings = vec![
-            make_setting(&st, "native_tools.file_tools_enabled", "File Tools Enabled",
-                json!(nt.file_tools_enabled)),
-            make_setting(&st, "native_tools.file_allowed_paths", "Allowed File Paths",
-                json!(nt.file_allowed_paths)),
-            make_setting(&st, "native_tools.file_max_size_kb", "Max Read Size (KB)",
-                json!(nt.file_max_size_kb)),
-            make_setting(&st, "native_tools.file_write_max_kb", "Max Write Size (KB)",
-                json!(nt.file_write_max_kb)),
-            make_setting(&st, "native_tools.web_fetch_enabled", "Web Fetch Enabled",
-                json!(nt.web_fetch_enabled)),
-            make_setting(&st, "native_tools.web_fetch_timeout_secs", "Web Fetch Timeout (s)",
-                json!(nt.web_fetch_timeout_secs)),
-            make_setting(&st, "native_tools.web_fetch_max_size_kb", "Web Fetch Max Size (KB)",
-                json!(nt.web_fetch_max_size_kb)),
-            make_setting(&st, "native_tools.web_fetch_allowed_domains", "Allowed Domains",
-                json!(nt.web_fetch_allowed_domains)),
-            make_setting(&st, "native_tools.terminal_exec_enabled", "Terminal Exec Enabled",
-                json!(nt.terminal_exec_enabled)),
-            make_setting(&st, "native_tools.terminal_shell", "Shell",
-                json!(nt.terminal_shell)),
-            make_setting(&st, "native_tools.terminal_timeout_secs", "Terminal Timeout (s)",
-                json!(nt.terminal_timeout_secs)),
-            make_setting(&st, "native_tools.terminal_use_sandbox", "Use Sandbox",
-                json!(nt.terminal_use_sandbox)),
-            make_setting(&st, "native_tools.session_search_enabled", "Session Search Enabled",
-                json!(nt.session_search_enabled)),
-            make_setting(&st, "native_tools.session_search_max_results", "Max Search Results",
-                json!(nt.session_search_max_results)),
+            make_setting(
+                &st,
+                "native_tools.file_tools_enabled",
+                "File Tools Enabled",
+                json!(nt.file_tools_enabled),
+            ),
+            make_setting(
+                &st,
+                "native_tools.file_allowed_paths",
+                "Allowed File Paths",
+                json!(nt.file_allowed_paths),
+            ),
+            make_setting(
+                &st,
+                "native_tools.file_max_size_kb",
+                "Max Read Size (KB)",
+                json!(nt.file_max_size_kb),
+            ),
+            make_setting(
+                &st,
+                "native_tools.file_write_max_kb",
+                "Max Write Size (KB)",
+                json!(nt.file_write_max_kb),
+            ),
+            make_setting(
+                &st,
+                "native_tools.web_fetch_enabled",
+                "Web Fetch Enabled",
+                json!(nt.web_fetch_enabled),
+            ),
+            make_setting(
+                &st,
+                "native_tools.web_fetch_timeout_secs",
+                "Web Fetch Timeout (s)",
+                json!(nt.web_fetch_timeout_secs),
+            ),
+            make_setting(
+                &st,
+                "native_tools.web_fetch_max_size_kb",
+                "Web Fetch Max Size (KB)",
+                json!(nt.web_fetch_max_size_kb),
+            ),
+            make_setting(
+                &st,
+                "native_tools.web_fetch_allowed_domains",
+                "Allowed Domains",
+                json!(nt.web_fetch_allowed_domains),
+            ),
+            make_setting(
+                &st,
+                "native_tools.terminal_exec_enabled",
+                "Terminal Exec Enabled",
+                json!(nt.terminal_exec_enabled),
+            ),
+            make_setting(
+                &st,
+                "native_tools.terminal_shell",
+                "Shell",
+                json!(nt.terminal_shell),
+            ),
+            make_setting(
+                &st,
+                "native_tools.terminal_timeout_secs",
+                "Terminal Timeout (s)",
+                json!(nt.terminal_timeout_secs),
+            ),
+            make_setting(
+                &st,
+                "native_tools.terminal_use_sandbox",
+                "Use Sandbox",
+                json!(nt.terminal_use_sandbox),
+            ),
+            make_setting(
+                &st,
+                "native_tools.session_search_enabled",
+                "Session Search Enabled",
+                json!(nt.session_search_enabled),
+            ),
+            make_setting(
+                &st,
+                "native_tools.session_search_max_results",
+                "Max Search Results",
+                json!(nt.session_search_max_results),
+            ),
         ];
         result.push((st, settings));
     }
@@ -1734,24 +1933,48 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
         let st = make_type("Skill Evolution", "skill_evolution", schema);
         let settings = vec![
             make_setting(&st, "skill_evolution.enabled", "Enabled", json!(se.enabled)),
-            make_setting(&st, "skill_evolution.trigger_model", "Trigger Model",
-                json!(se.trigger_model)),
-            make_setting(&st, "skill_evolution.min_tool_calls", "Min Tool Calls to Trigger",
-                json!(se.min_tool_calls)),
-            make_setting(&st, "skill_evolution.max_skills_per_run", "Max Skills per Run",
-                json!(se.max_skills_per_run)),
-            make_setting(&st, "skill_evolution.allow_update", "Allow Updating Skills",
-                json!(se.allow_update)),
-            make_setting(&st, "skill_evolution.allow_deletion", "Allow Deleting Skills",
-                json!(se.allow_deletion)),
+            make_setting(
+                &st,
+                "skill_evolution.trigger_model",
+                "Trigger Model",
+                json!(se.trigger_model),
+            ),
+            make_setting(
+                &st,
+                "skill_evolution.min_tool_calls",
+                "Min Tool Calls to Trigger",
+                json!(se.min_tool_calls),
+            ),
+            make_setting(
+                &st,
+                "skill_evolution.max_skills_per_run",
+                "Max Skills per Run",
+                json!(se.max_skills_per_run),
+            ),
+            make_setting(
+                &st,
+                "skill_evolution.allow_update",
+                "Allow Updating Skills",
+                json!(se.allow_update),
+            ),
+            make_setting(
+                &st,
+                "skill_evolution.allow_deletion",
+                "Allow Deleting Skills",
+                json!(se.allow_deletion),
+            ),
             make_setting(
                 &st,
                 "skill_evolution.min_executions_before_delete",
                 "Min Executions Before Delete",
                 json!(se.min_executions_before_delete),
             ),
-            make_setting(&st, "skill_evolution.reflection_prompt", "Reflection Prompt",
-                json!(se.reflection_prompt)),
+            make_setting(
+                &st,
+                "skill_evolution.reflection_prompt",
+                "Reflection Prompt",
+                json!(se.reflection_prompt),
+            ),
         ];
         result.push((st, settings));
     }
@@ -1785,9 +2008,18 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
         let settings = vec![
             make_setting(&st, "acp.enabled", "Enabled", json!(acp.enabled)),
             make_setting(&st, "acp.path", "Mount Path", json!(acp.path)),
-            make_setting(&st, "acp.auth_required", "Auth Required", json!(acp.auth_required)),
-            make_setting(&st, "acp.session_ttl_secs", "Session TTL (seconds)",
-                json!(acp.session_ttl_secs)),
+            make_setting(
+                &st,
+                "acp.auth_required",
+                "Auth Required",
+                json!(acp.auth_required),
+            ),
+            make_setting(
+                &st,
+                "acp.session_ttl_secs",
+                "Session TTL (seconds)",
+                json!(acp.session_ttl_secs),
+            ),
         ];
         result.push((st, settings));
     }

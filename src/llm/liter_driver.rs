@@ -56,7 +56,11 @@ impl LiterLlmDriver {
     ///
     /// Returns an error if the `DefaultClient` cannot be constructed (e.g.
     /// invalid headers or provider validation failure).
-    pub fn new(config: ClientConfig, model: String, parallel_tool_calls: Option<bool>) -> anyhow::Result<Self> {
+    pub fn new(
+        config: ClientConfig,
+        model: String,
+        parallel_tool_calls: Option<bool>,
+    ) -> anyhow::Result<Self> {
         let client = Arc::new(DefaultClient::new(config, Some(&model))?);
         Ok(Self {
             client,
@@ -91,9 +95,8 @@ impl LlmDriver for LiterLlmDriver {
     async fn stream(
         &self,
         req: LlmRequest,
-    ) -> anyhow::Result<
-        std::pin::Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>,
-    > {
+    ) -> anyhow::Result<std::pin::Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>>
+    {
         let messages = convert_messages(&req.messages)?;
         let tools = convert_tools(&req.tools);
 
@@ -231,15 +234,12 @@ impl LlmDriver for LiterLlmDriver {
 }
 
 /// Convert UAR's JSON messages to liter-llm's typed `Message` enum.
-fn convert_messages(
-    messages: &[serde_json::Value],
-) -> anyhow::Result<Vec<liter_llm::Message>> {
+fn convert_messages(messages: &[serde_json::Value]) -> anyhow::Result<Vec<liter_llm::Message>> {
     messages
         .iter()
         .map(|msg| {
-            serde_json::from_value::<liter_llm::Message>(msg.clone()).map_err(|e| {
-                anyhow::anyhow!("Failed to convert message to liter-llm format: {e}")
-            })
+            serde_json::from_value::<liter_llm::Message>(msg.clone())
+                .map_err(|e| anyhow::anyhow!("Failed to convert message to liter-llm format: {e}"))
         })
         .collect()
 }
@@ -248,6 +248,8 @@ fn convert_messages(
 fn convert_tools(tools: &[serde_json::Value]) -> Vec<liter_llm::ChatCompletionTool> {
     tools
         .iter()
-        .filter_map(|tool| serde_json::from_value::<liter_llm::ChatCompletionTool>(tool.clone()).ok())
+        .filter_map(|tool| {
+            serde_json::from_value::<liter_llm::ChatCompletionTool>(tool.clone()).ok()
+        })
         .collect()
 }

@@ -211,9 +211,7 @@ impl SkillStorageProvider for FilesystemStorageProvider {
             .insert(skill.skill_id.clone(), skill.clone());
         info!(
             "FilesystemStorageProvider '{}': wrote skill '{}' to {:?}",
-            self.name,
-            skill.skill_id,
-            skill_dir
+            self.name, skill.skill_id, skill_dir
         );
         Ok(())
     }

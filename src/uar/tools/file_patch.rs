@@ -7,9 +7,15 @@ use std::path::{Path, PathBuf};
 use tokio::fs;
 
 fn path_allowed(target: &Path, allowed: &[String]) -> bool {
-    if allowed.is_empty() { return false; }
-    if allowed.iter().any(|p| p == "*") { return true; }
-    allowed.iter().any(|prefix| target.starts_with(PathBuf::from(prefix)))
+    if allowed.is_empty() {
+        return false;
+    }
+    if allowed.iter().any(|p| p == "*") {
+        return true;
+    }
+    allowed
+        .iter()
+        .any(|prefix| target.starts_with(PathBuf::from(prefix)))
 }
 
 #[derive(Debug)]
@@ -20,7 +26,9 @@ pub struct FilePatchTool {
 
 #[async_trait]
 impl NativeSkill for FilePatchTool {
-    fn name(&self) -> &str { "file_patch" }
+    fn name(&self) -> &str {
+        "file_patch"
+    }
     fn description(&self) -> &str {
         "Apply a targeted text replacement to a file — replaces old_string with new_string. \
          Fails if old_string is not found or appears more than once."
@@ -44,20 +52,31 @@ impl NativeSkill for FilePatchTool {
         };
         let old_string = match args.get("old_string").and_then(Value::as_str) {
             Some(s) => s.to_string(),
-            None => return Ok(json!({"ok": false, "error": "Missing required parameter: old_string"})),
+            None => {
+                return Ok(json!({"ok": false, "error": "Missing required parameter: old_string"}));
+            }
         };
         let new_string = match args.get("new_string").and_then(Value::as_str) {
             Some(s) => s.to_string(),
-            None => return Ok(json!({"ok": false, "error": "Missing required parameter: new_string"})),
+            None => {
+                return Ok(json!({"ok": false, "error": "Missing required parameter: new_string"}));
+            }
         };
-        let allow_multiple = args.get("allow_multiple").and_then(Value::as_bool).unwrap_or(false);
+        let allow_multiple = args
+            .get("allow_multiple")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
 
         let canonical = match std::fs::canonicalize(&path_str) {
             Ok(p) => p,
-            Err(e) => return Ok(json!({"ok": false, "error": format!("Cannot resolve path: {}", e)})),
+            Err(e) => {
+                return Ok(json!({"ok": false, "error": format!("Cannot resolve path: {}", e)}));
+            }
         };
         if !path_allowed(&canonical, &self.allowed_paths) {
-            return Ok(json!({"ok": false, "error": format!("Path '{}' is not in the allowed paths list.", path_str)}));
+            return Ok(
+                json!({"ok": false, "error": format!("Path '{}' is not in the allowed paths list.", path_str)}),
+            );
         }
         if let Ok(meta) = fs::metadata(&canonical).await {
             if meta.len() / 1024 > self.max_size_kb {

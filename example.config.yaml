@@ -29,6 +29,11 @@ security:
   # Env: UAR_SECURITY__JWT_SECRET
   jwt_secret: "secret_key_change_me"
 
+  # Require X-UAR-Admin-Key on /api/uar/settings mutations (PUT/POST/DELETE).
+  # Default: true. Set false only on trusted localhost for admin UI without a header.
+  # Env: UAR_SECURITY__SETTINGS_MUTATION_AUTH_REQUIRED
+  settings_mutation_auth_required: true
+
 resilience:
   # Enable rate limiting to prevent abuse.
   # Default: true

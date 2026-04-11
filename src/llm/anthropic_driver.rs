@@ -7,14 +7,14 @@ use std::pin::Pin;
 
 use async_stream::stream;
 use futures::Stream;
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
+use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 use tracing::{debug, warn};
 
-use crate::normalized::NormalizedEvent;
 use super::anthropic_cache::CacheStrategy;
 use super::anthropic_streaming::StreamState;
 use super::anthropic_types::*;
 use super::{LlmDriver, LlmRequest};
+use crate::normalized::NormalizedEvent;
 
 const ANTHROPIC_API_URL: &str = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION: &str = "2023-06-01";
@@ -126,10 +126,7 @@ impl AnthropicDriver {
         let mut anthropic_messages = Vec::new();
 
         for msg in messages {
-            let role = msg
-                .get("role")
-                .and_then(|r| r.as_str())
-                .unwrap_or("user");
+            let role = msg.get("role").and_then(|r| r.as_str()).unwrap_or("user");
 
             match role {
                 "system" => {
@@ -172,8 +169,7 @@ impl AnthropicDriver {
 
                     if let Some(text) = msg.get("content").and_then(|c| c.as_str()) {
                         if !text.is_empty() {
-                            content_blocks
-                                .push(serde_json::json!({"type": "text", "text": text}));
+                            content_blocks.push(serde_json::json!({"type": "text", "text": text}));
                         }
                     }
 
@@ -203,10 +199,7 @@ impl AnthropicDriver {
                     }
 
                     if content_blocks.is_empty() {
-                        let text = msg
-                            .get("content")
-                            .cloned()
-                            .unwrap_or(serde_json::json!(""));
+                        let text = msg.get("content").cloned().unwrap_or(serde_json::json!(""));
                         anthropic_messages.push(AnthropicMessage {
                             role: "assistant".to_string(),
                             content: text,
@@ -220,10 +213,7 @@ impl AnthropicDriver {
                 }
                 _ => {
                     // user or any other role
-                    let content = msg
-                        .get("content")
-                        .cloned()
-                        .unwrap_or(serde_json::json!(""));
+                    let content = msg.get("content").cloned().unwrap_or(serde_json::json!(""));
                     anthropic_messages.push(AnthropicMessage {
                         role: role.to_string(),
                         content,

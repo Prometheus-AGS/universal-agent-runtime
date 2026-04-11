@@ -40,14 +40,23 @@ pub struct JsonRpcError {
 
 impl JsonRpcResponse {
     pub fn ok(id: Option<Value>, result: Value) -> Self {
-        Self { jsonrpc: "2.0".into(), id, result: Some(result), error: None }
+        Self {
+            jsonrpc: "2.0".into(),
+            id,
+            result: Some(result),
+            error: None,
+        }
     }
     pub fn err(id: Option<Value>, code: i32, message: impl Into<String>) -> Self {
         Self {
             jsonrpc: "2.0".into(),
             id,
             result: None,
-            error: Some(JsonRpcError { code, message: message.into(), data: None }),
+            error: Some(JsonRpcError {
+                code,
+                message: message.into(),
+                data: None,
+            }),
         }
     }
 }
@@ -120,10 +129,30 @@ pub struct AcpRunRequest {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case", tag = "event")]
 pub enum AcpRunEvent {
-    RunStart { run_id: String },
-    Delta { run_id: String, text: String },
-    ToolStart { run_id: String, tool: String, input: Value },
-    ToolEnd { run_id: String, tool: String, output: Value, ok: bool },
-    RunDone { run_id: String, output: String },
-    Error { run_id: String, message: String },
+    RunStart {
+        run_id: String,
+    },
+    Delta {
+        run_id: String,
+        text: String,
+    },
+    ToolStart {
+        run_id: String,
+        tool: String,
+        input: Value,
+    },
+    ToolEnd {
+        run_id: String,
+        tool: String,
+        output: Value,
+        ok: bool,
+    },
+    RunDone {
+        run_id: String,
+        output: String,
+    },
+    Error {
+        run_id: String,
+        message: String,
+    },
 }

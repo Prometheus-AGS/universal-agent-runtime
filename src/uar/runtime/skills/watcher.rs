@@ -87,7 +87,10 @@ impl SkillFileWatcher {
             info!("Refreshing skills after filesystem change");
             match skill_service.refresh().await {
                 Ok(skills) => {
-                    info!("Skills refreshed successfully: {} skills loaded", skills.len());
+                    info!(
+                        "Skills refreshed successfully: {} skills loaded",
+                        skills.len()
+                    );
                 }
                 Err(e) => {
                     error!("Failed to refresh skills after file change: {e:?}");
@@ -122,10 +125,7 @@ pub async fn start_skill_watcher(
 ) -> anyhow::Result<SkillFileWatcher> {
     let path = Path::new(skills_dir);
     if !path.exists() {
-        anyhow::bail!(
-            "Skills directory does not exist: {}",
-            path.display()
-        );
+        anyhow::bail!("Skills directory does not exist: {}", path.display());
     }
 
     SkillFileWatcher::new(skill_service, path)

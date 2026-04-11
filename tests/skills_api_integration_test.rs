@@ -70,7 +70,10 @@ async fn list_skills_returns_empty_on_fresh_service() {
 #[tokio::test]
 async fn create_skill_returns_created_and_round_trips_fields() {
     let server = setup();
-    let response = server.post("/skills").json(&skill_payload("My Skill")).await;
+    let response = server
+        .post("/skills")
+        .json(&skill_payload("My Skill"))
+        .await;
     response.assert_status(axum::http::StatusCode::CREATED);
 
     let body: Value = response.json();
@@ -107,7 +110,10 @@ async fn get_skill_returns_skill_after_create() {
     let server = setup();
 
     // Create
-    server.post("/skills").json(&skill_payload("Fetch Me")).await;
+    server
+        .post("/skills")
+        .json(&skill_payload("Fetch Me"))
+        .await;
 
     // Fetch
     let response = server.get("/skills/fetch-me").await;
@@ -133,7 +139,10 @@ async fn update_skill_applies_partial_changes_only() {
     let server = setup();
 
     // Create
-    server.post("/skills").json(&skill_payload("Updatable")).await;
+    server
+        .post("/skills")
+        .json(&skill_payload("Updatable"))
+        .await;
 
     // Update only the description
     let response = server
@@ -161,7 +170,10 @@ async fn update_skill_returns_404_for_missing_id() {
 #[tokio::test]
 async fn update_skill_can_enable_and_disable() {
     let server = setup();
-    server.post("/skills").json(&skill_payload("Toggle Me")).await;
+    server
+        .post("/skills")
+        .json(&skill_payload("Toggle Me"))
+        .await;
 
     // Disable via update
     let resp = server
@@ -187,7 +199,10 @@ async fn update_skill_can_enable_and_disable() {
 #[tokio::test]
 async fn delete_skill_removes_it_and_returns_no_content() {
     let server = setup();
-    server.post("/skills").json(&skill_payload("Delete Me")).await;
+    server
+        .post("/skills")
+        .json(&skill_payload("Delete Me"))
+        .await;
 
     let delete_resp = server.delete("/skills/delete-me").await;
     delete_resp.assert_status(axum::http::StatusCode::NO_CONTENT);
@@ -292,7 +307,10 @@ async fn match_skills_returns_skills_matching_keyword() {
 #[tokio::test]
 async fn match_skills_returns_empty_for_no_matches() {
     let server = setup();
-    server.post("/skills").json(&skill_payload("Unrelated")).await;
+    server
+        .post("/skills")
+        .json(&skill_payload("Unrelated"))
+        .await;
 
     let response = server.get("/skills/match?q=zzz-no-match-zzz").await;
     response.assert_status_ok();

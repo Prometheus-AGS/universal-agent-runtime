@@ -185,10 +185,12 @@ mod tests {
 
         assert_eq!(req.messages.len(), 2);
         assert_eq!(req.messages[0]["role"], "system");
-        assert!(req.messages[0]["content"]
-            .as_str()
-            .unwrap()
-            .contains("<tool_definitions>"));
+        assert!(
+            req.messages[0]["content"]
+                .as_str()
+                .unwrap()
+                .contains("<tool_definitions>")
+        );
         assert!(req.tools.is_empty());
     }
 

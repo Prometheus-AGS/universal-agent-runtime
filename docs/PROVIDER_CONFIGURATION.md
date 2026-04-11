@@ -285,6 +285,18 @@ Manage providers at runtime without restart:
 | `GET` | `/api/uar/providers/{id}/models` | List models for a provider |
 | `POST` | `/api/uar/providers/{id}/default` | Set the default provider |
 
+### Database persistence
+
+When **`persistence`** is enabled in config (`persistence.provider`: `postgres`, or `surreal` / `surrealdb`, plus `persistence.database_url` and optional Surreal credentials), provider configuration is stored in the **application settings database** alongside other UAR settings:
+
+1. **Initial load**: On startup, the settings DB is **seeded from the resolved app configuration** — the same merged sources as everywhere else (YAML `config.yaml`, CLI flags, `UAR_*` / environment variables, in the [precedence order](#configuration-precedence) above). Entries under `providers:` in YAML become rows keyed `provider.{id}`; the default provider id is also stored as `llm.default_provider` (derived from `llm.model`’s provider segment on first boot).
+
+2. **Runtime source of truth**: After that bootstrap step, the running server **loads provider state from the database** into the in-process provider registry so routing and admin APIs match persisted data. Changes made through the Provider REST API (`POST`, `PUT`, `DELETE`, set default) are **written back to the database** and survive process restarts.
+
+3. **Backend selection**: The same `persistence` block chooses **PostgreSQL** vs **SurrealDB** (embedded RocksDB / in-memory / or a remote Surreal server — see `database_url` and `surreal_user` / `surreal_pass` in config). No separate store is used for providers.
+
+If persistence is **disabled**, provider API calls still update the in-memory registry for the lifetime of the process, but **nothing is written to a database**.
+
 ---
 
 ## Model Routing

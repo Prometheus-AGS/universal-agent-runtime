@@ -104,12 +104,12 @@ impl FileProcessor for KreuzbergProvider {
             .images
             .unwrap_or_default()
             .into_iter()
-        .map(|img| ExtractedImage {
+            .map(|img| ExtractedImage {
                 data: img.data.to_vec(),
                 mime_type: format!("image/{}", img.format),
                 description: None,
             })
-        .collect();
+            .collect();
 
         Ok(ProcessingResult {
             content,

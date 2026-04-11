@@ -9,9 +9,9 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use serde_json::json;
 
-use crate::mcp::registry::NativeTool;
 use super::session_manager::SessionManager;
 use super::types::{ExecutionMode, ExecutionRequest, Language, SandboxConfig};
+use crate::mcp::registry::NativeTool;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,7 +45,10 @@ pub struct SandboxCodeExecTool {
 impl SandboxCodeExecTool {
     #[must_use]
     pub fn new(manager: Arc<SessionManager>, default_config: SandboxConfig) -> Self {
-        Self { manager, default_config }
+        Self {
+            manager,
+            default_config,
+        }
     }
 }
 
@@ -110,7 +113,10 @@ impl NativeTool for SandboxCodeExecTool {
             config.timeout_secs = t;
         }
 
-        let handle = self.manager.get_or_create(&session_id, config).await
+        let handle = self
+            .manager
+            .get_or_create(&session_id, config)
+            .await
             .map_err(|e| anyhow::anyhow!("sandbox creation failed: {e}"))?;
 
         let request = ExecutionRequest {
@@ -120,10 +126,16 @@ impl NativeTool for SandboxCodeExecTool {
             env: HashMap::new(),
             cwd: None,
             timeout_seconds,
-            mode: ExecutionMode::Session { session_id: session_id.clone() },
+            mode: ExecutionMode::Session {
+                session_id: session_id.clone(),
+            },
         };
 
-        let result = self.manager.runner().execute(&handle, request).await
+        let result = self
+            .manager
+            .runner()
+            .execute(&handle, request)
+            .await
             .map_err(|e| anyhow::anyhow!("sandbox execution failed: {e}"))?;
 
         Ok(json!({
@@ -150,7 +162,10 @@ pub struct SandboxShellExecTool {
 impl SandboxShellExecTool {
     #[must_use]
     pub fn new(manager: Arc<SessionManager>, default_config: SandboxConfig) -> Self {
-        Self { manager, default_config }
+        Self {
+            manager,
+            default_config,
+        }
     }
 }
 
@@ -204,7 +219,10 @@ impl NativeTool for SandboxShellExecTool {
             config.timeout_secs = t;
         }
 
-        let handle = self.manager.get_or_create(&session_id, config).await
+        let handle = self
+            .manager
+            .get_or_create(&session_id, config)
+            .await
             .map_err(|e| anyhow::anyhow!("sandbox creation failed: {e}"))?;
 
         let request = ExecutionRequest {
@@ -214,10 +232,16 @@ impl NativeTool for SandboxShellExecTool {
             env: HashMap::new(),
             cwd: None,
             timeout_seconds,
-            mode: ExecutionMode::Session { session_id: session_id.clone() },
+            mode: ExecutionMode::Session {
+                session_id: session_id.clone(),
+            },
         };
 
-        let result = self.manager.runner().execute(&handle, request).await
+        let result = self
+            .manager
+            .runner()
+            .execute(&handle, request)
+            .await
             .map_err(|e| anyhow::anyhow!("sandbox execution failed: {e}"))?;
 
         Ok(json!({
@@ -244,7 +268,10 @@ pub struct SandboxFileReadTool {
 impl SandboxFileReadTool {
     #[must_use]
     pub fn new(manager: Arc<SessionManager>, default_config: SandboxConfig) -> Self {
-        Self { manager, default_config }
+        Self {
+            manager,
+            default_config,
+        }
     }
 }
 
@@ -285,10 +312,17 @@ impl NativeTool for SandboxFileReadTool {
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| anyhow::anyhow!("missing required parameter: path"))?;
 
-        let handle = self.manager.get_or_create(session_id, self.default_config.clone()).await
+        let handle = self
+            .manager
+            .get_or_create(session_id, self.default_config.clone())
+            .await
             .map_err(|e| anyhow::anyhow!("sandbox creation failed: {e}"))?;
 
-        let content = self.manager.runner().read_file(&handle, path).await
+        let content = self
+            .manager
+            .runner()
+            .read_file(&handle, path)
+            .await
             .map_err(|e| anyhow::anyhow!("file read failed: {e}"))?;
 
         let text = String::from_utf8_lossy(&content).to_string();
@@ -316,7 +350,10 @@ pub struct SandboxFileWriteTool {
 impl SandboxFileWriteTool {
     #[must_use]
     pub fn new(manager: Arc<SessionManager>, default_config: SandboxConfig) -> Self {
-        Self { manager, default_config }
+        Self {
+            manager,
+            default_config,
+        }
     }
 }
 
@@ -365,10 +402,16 @@ impl NativeTool for SandboxFileWriteTool {
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| anyhow::anyhow!("missing required parameter: content"))?;
 
-        let handle = self.manager.get_or_create(session_id, self.default_config.clone()).await
+        let handle = self
+            .manager
+            .get_or_create(session_id, self.default_config.clone())
+            .await
             .map_err(|e| anyhow::anyhow!("sandbox creation failed: {e}"))?;
 
-        self.manager.runner().write_file(&handle, path, content.as_bytes()).await
+        self.manager
+            .runner()
+            .write_file(&handle, path, content.as_bytes())
+            .await
             .map_err(|e| anyhow::anyhow!("file write failed: {e}"))?;
 
         Ok(json!({

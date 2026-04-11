@@ -1,10 +1,12 @@
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useEffect, useState } from "react";
 import { FileJson, RefreshCw, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
+import { useA2uiSchemas } from "@/hooks/use-a2ui-schemas";
 
 interface A2uiSchema {
   id: string;
@@ -32,33 +34,16 @@ interface A2uiOption {
 }
 
 export const A2uiTestingPage: FC = () => {
-  const [schemas, setSchemas] = useState<A2uiSchema[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { schemas: schemasRaw, loading, error, load } = useA2uiSchemas();
+  const schemas = schemasRaw as A2uiSchema[];
   const [selected, setSelected] = useState<A2uiSchema | null>(null);
   const [customJson, setCustomJson] = useState("");
   const [customError, setCustomError] = useState<string | null>(null);
   const [response, setResponse] = useState<Record<string, unknown> | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/uar/a2ui/schemas");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { schemas?: A2uiSchema[] } & A2uiSchema[];
-      const list = Array.isArray(data) ? data : data.schemas ?? [];
-      setSchemas(list);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (schemas.length > 0 && !selected) setSelected(schemas[0] ?? null);
+  }, [schemas, selected]);
 
   const handlePreviewCustom = () => {
     setCustomError(null);
@@ -89,6 +74,7 @@ export const A2uiTestingPage: FC = () => {
           </p>
         </div>
         <Button
+          type="button"
           variant="outline"
           size="sm"
           onClick={() => void load()}
@@ -113,16 +99,18 @@ export const A2uiTestingPage: FC = () => {
             )}
             <div className="flex flex-col gap-1">
               {schemas.map((schema) => (
-                <button
+                <Button
                   key={schema.id}
+                  type="button"
+                  variant="ghost"
                   onClick={() => {
                     setSelected(schema);
                     setResponse(null);
                   }}
                   className={cn(
-                    "flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                    "h-auto w-full justify-start gap-2 px-3 py-2 text-left text-sm font-normal",
                     selected?.id === schema.id
-                      ? "bg-accent text-foreground"
+                      ? "bg-accent text-foreground hover:bg-accent"
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                   )}
                 >
@@ -134,7 +122,7 @@ export const A2uiTestingPage: FC = () => {
                         : "text-muted-foreground",
                     )}
                   />
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 text-left">
                     <p className="truncate font-mono text-xs font-medium">
                       {schema.id}
                     </p>
@@ -142,7 +130,7 @@ export const A2uiTestingPage: FC = () => {
                       {schema.type}
                     </p>
                   </div>
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -164,6 +152,7 @@ export const A2uiTestingPage: FC = () => {
               </p>
             )}
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={handlePreviewCustom}
@@ -241,18 +230,22 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
     case "form":
       return (
         <div className="space-y-3 rounded-lg border border-border bg-card p-4">
-          {schema.fields?.map((field) => (
+          {schema.fields?.map((field) => {
+            const fieldId = `a2ui-field-${field.name}`;
+            return (
             <div key={field.name}>
-              <label className="mb-1 block font-mono text-xs font-medium text-foreground">
+              <Label htmlFor={fieldId} className="mb-1 block font-mono text-xs font-medium text-foreground">
                 {field.label ?? field.name}
                 {field.required && (
                   <span className="ml-1 text-destructive">*</span>
                 )}
-              </label>
+              </Label>
               {field.type === "select" && field.options ? (
                 <select
+                  id={fieldId}
                   value={values[field.name] ?? ""}
                   onChange={(e) => handleChange(field.name, e.target.value)}
+                  aria-label={field.label ?? field.name}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm text-foreground"
                 >
                   <option value="">Select...</option>
@@ -264,6 +257,7 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
                 </select>
               ) : field.type === "textarea" ? (
                 <Textarea
+                  id={fieldId}
                   value={values[field.name] ?? ""}
                   onChange={(e) => handleChange(field.name, e.target.value)}
                   placeholder={field.placeholder}
@@ -271,6 +265,7 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
                 />
               ) : (
                 <Input
+                  id={fieldId}
                   type={field.type ?? "text"}
                   value={values[field.name] ?? ""}
                   onChange={(e) => handleChange(field.name, e.target.value)}
@@ -279,8 +274,10 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
                 />
               )}
             </div>
-          ))}
+            );
+          })}
           <Button
+            type="button"
             size="sm"
             onClick={() => onSubmit(values)}
             className="gap-1.5"
@@ -299,6 +296,7 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
           </p>
           <div className="flex gap-2">
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={() => onSubmit({ confirmed: false })}
@@ -306,6 +304,7 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
               Cancel
             </Button>
             <Button
+              type="button"
               size="sm"
               onClick={() => onSubmit({ confirmed: true })}
             >
@@ -319,13 +318,15 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
       return (
         <div className="space-y-2 rounded-lg border border-border bg-card p-4">
           {schema.options?.map((opt) => (
-            <button
+            <Button
               key={opt.value}
+              type="button"
+              variant="outline"
               onClick={() => onSubmit({ selected: opt.value })}
-              className="flex w-full items-center gap-2 rounded-md border border-border/50 px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-muted/50"
+              className="h-auto w-full justify-start border-border/50 py-2.5 text-left text-sm font-normal text-foreground hover:bg-muted/50"
             >
               {opt.label}
-            </button>
+            </Button>
           ))}
         </div>
       );
@@ -340,6 +341,7 @@ const SchemaPreview: FC<SchemaPreviewProps> = ({ schema, onSubmit }) => {
             className="h-8 text-xs"
           />
           <Button
+            type="button"
             size="sm"
             onClick={() => onSubmit({ text: values._text ?? "" })}
             className="gap-1.5"

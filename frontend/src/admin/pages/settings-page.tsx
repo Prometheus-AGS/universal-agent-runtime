@@ -43,7 +43,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { cn, friendlyError } from "@/lib/utils";
 import { useSettings } from "@/hooks/use-settings";
 import { useOnboarding } from "@/hooks/use-onboarding";
-import type { SettingsType } from "@/types";
+import { useSettingsTypesMeta } from "@/hooks/use-settings-types-meta";
+import { useUserJwtSettings } from "@/hooks/use-user-jwt-settings";
 
 // =============================================================================
 // Namespace definition — the sidebar nav
@@ -126,9 +127,10 @@ const AdvancedSection: FC<{
     return (
         <Collapsible open={open} onOpenChange={setOpen}>
             <CollapsibleTrigger asChild>
-                <button
+                <Button
                     type="button"
-                    className="flex w-full items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-left transition-colors hover:bg-muted/50"
+                    variant="ghost"
+                    className="h-auto w-full justify-start gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-left font-normal hover:bg-muted/50"
                 >
                     <ChevronDown
                         size={13}
@@ -140,7 +142,7 @@ const AdvancedSection: FC<{
                     <span className="font-mono text-xs font-medium text-muted-foreground">
                         {label}
                     </span>
-                </button>
+                </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
                 <div className="mt-4 space-y-6 border-l-2 border-border/30 pl-4">
@@ -301,13 +303,16 @@ function SettingsHint({ id, children }: { id: string; children: ReactNode }) {
             <p className="flex-1 font-body text-xs leading-relaxed text-muted-foreground">
                 {children}
             </p>
-            <button
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={dismiss}
-                className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                className="h-auto shrink-0 px-1 py-0.5 text-muted-foreground hover:text-foreground"
                 aria-label="Dismiss hint"
             >
                 <span className="text-xs">Got it</span>
-            </button>
+            </Button>
         </div>
     );
 }
@@ -983,12 +988,15 @@ function ResiliencePanel() {
     const valueFor = (key: string): unknown => values[`resilience.${key}`];
     const setField = (key: string, value: unknown) => setSetting(`resilience.${key}`, value);
 
+    const retryableHttpStatuses = values["resilience.retryable_http_statuses"];
+
     useEffect(() => {
-        const statuses = valueFor("retryable_http_statuses");
-        if (!Array.isArray(statuses)) return;
-        setStatusListInput(statuses.join(", "));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [values["resilience.retryable_http_statuses"]]);
+        if (!Array.isArray(retryableHttpStatuses)) return;
+        const text = retryableHttpStatuses.join(", ");
+        queueMicrotask(() => {
+            setStatusListInput(text);
+        });
+    }, [retryableHttpStatuses]);
 
     const parsedStatuses = statusListInput
         .split(",")
@@ -1058,11 +1066,10 @@ function ResiliencePanel() {
 
     const resetRecommendedDefaults = useCallback(() => {
         Object.entries(RESILIENCE_RECOMMENDED_DEFAULTS).forEach(([key, value]) => {
-            setField(key, value);
+            setSetting(`resilience.${key}`, value);
         });
         setStatusListInput(RESILIENCE_RECOMMENDED_DEFAULTS.retryable_http_statuses.join(", "));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [setSetting]);
 
     const renderError = (key: string) => validationErrors[key]
         ? <p className="font-mono text-xs text-destructive">{validationErrors[key]}</p>
@@ -1972,65 +1979,33 @@ interface UarUserSettings {
 }
 
 function UserSettingsPanel() {
-    const [settings, setSettings] = useState<UarUserSettings | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [saved, setSaved] = useState(false);
-    const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
     const apiKey = ((import.meta as unknown as { env: Record<string, string> }).env.VITE_UAR_API_KEY) ?? "";
     const isJwt = apiKey.startsWith("ey");
 
-    const fetchSettings = useCallback(async () => {
-        if (!isJwt) return;
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await fetch("/api/uar/user/settings", {
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${apiKey}`,
-                },
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json() as UarUserSettings;
-            setSettings(data);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : "Failed to load user settings");
-        } finally {
-            setLoading(false);
-        }
-    }, [apiKey, isJwt]);
+    const { settings, loading, saving, error, load, save: saveRemote } = useUserJwtSettings();
+    const [draft, setDraft] = useState<UarUserSettings | null>(null);
+    const [saved, setSaved] = useState(false);
+    const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    useEffect(() => { void fetchSettings(); }, [fetchSettings]);
+    useEffect(() => {
+        if (!settings) return;
+        queueMicrotask(() => {
+            setDraft(settings as UarUserSettings);
+        });
+    }, [settings]);
 
     const save = async () => {
-        if (!settings || !isJwt) return;
-        setSaving(true);
-        setError(null);
+        if (!draft || !isJwt) return;
         try {
-            const res = await fetch("/api/uar/user/settings", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${apiKey}`,
-                },
-                body: JSON.stringify({
-                    prompt_caching_enabled: settings.prompt_caching_enabled,
-                    preferred_scope: settings.preferred_scope,
-                }),
+            await saveRemote({
+                prompt_caching_enabled: draft.prompt_caching_enabled,
+                preferred_scope: draft.preferred_scope,
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json() as UarUserSettings;
-            setSettings(data);
             setSaved(true);
             if (savedTimer.current) clearTimeout(savedTimer.current);
             savedTimer.current = setTimeout(() => setSaved(false), 2000);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : "Failed to save user settings");
-        } finally {
-            setSaving(false);
+        } catch {
+            /* error from store */
         }
     };
 
@@ -2064,7 +2039,7 @@ function UserSettingsPanel() {
                     <h2 className="font-mono text-sm font-semibold text-foreground">User Settings</h2>
                     <p className="font-mono text-xs text-muted-foreground">
                         Per-user prompt-caching preferences for{" "}
-                        <span className="font-medium text-foreground">{settings?.user_id ?? "…"}</span>
+                        <span className="font-medium text-foreground">{draft?.user_id ?? settings?.user_id ?? "…"}</span>
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -2072,7 +2047,7 @@ function UserSettingsPanel() {
                         variant="ghost"
                         size="sm"
                         className="font-mono text-xs"
-                        onClick={() => { void fetchSettings(); }}
+                        onClick={() => { void load(); }}
                         disabled={loading}
                     >
                         {loading ? <Loader2 size={12} className="animate-spin mr-1" /> : <RefreshCw size={12} className="mr-1" />}
@@ -2082,7 +2057,7 @@ function UserSettingsPanel() {
                         size="sm"
                         className="font-mono text-xs"
                         onClick={() => { void save(); }}
-                        disabled={saving || loading || !settings}
+                        disabled={saving || loading || !draft}
                     >
                         {saved
                             ? <><Check size={12} className="mr-1" /> Saved</>
@@ -2111,40 +2086,41 @@ function UserSettingsPanel() {
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button
+                        <Button
                             type="button"
-                            className="font-mono text-xs text-muted-foreground underline"
-                            onClick={() => setSettings(s => s ? { ...s, prompt_caching_enabled: null } : s)}
+                            variant="link"
+                            className="h-auto p-0 font-mono text-xs text-muted-foreground"
+                            onClick={() => setDraft(s => s ? { ...s, prompt_caching_enabled: null } : s)}
                         >
                             reset
-                        </button>
+                        </Button>
                         <Toggle
-                            value={settings?.prompt_caching_enabled ?? false}
-                            onChange={(v) => setSettings(s => s ? { ...s, prompt_caching_enabled: v } : s)}
-                            disabled={!settings}
+                            value={draft?.prompt_caching_enabled ?? false}
+                            onChange={(v) => setDraft(s => s ? { ...s, prompt_caching_enabled: v } : s)}
+                            disabled={!draft}
                         />
                     </div>
                 </div>
 
                 <Field label="Preferred Scope" hint="Which level of settings takes precedence when no session override is present.">
                     <SettingSelect
-                        value={settings?.preferred_scope ?? "session"}
+                        value={draft?.preferred_scope ?? "session"}
                         options={[
                             { value: "session", label: "Session (per-conversation)" },
                             { value: "user", label: "User (account-wide)" },
                             { value: "agent", label: "Agent (per-agent default)" },
                         ]}
                         onChange={(v) =>
-                            setSettings(s =>
+                            setDraft(s =>
                                 s ? { ...s, preferred_scope: v as "session" | "user" | "agent" } : s,
                             )
                         }
                     />
                 </Field>
 
-                {settings?.updated_at && (
+                {(draft?.updated_at ?? settings?.updated_at) && (
                     <p className="font-mono text-xs text-muted-foreground">
-                        Last updated: {new Date(settings.updated_at).toLocaleString()}
+                        Last updated: {new Date((draft?.updated_at ?? settings?.updated_at) as string).toLocaleString()}
                     </p>
                 )}
             </div>
@@ -2174,15 +2150,7 @@ const PANEL_MAP: Record<string, () => ReactNode> = {
 
 export const SettingsPage: FC = () => {
     const [active, setActive] = useState<string>("provider");
-    const [types, setTypes] = useState<SettingsType[]>([]);
-
-    // Fetch registered types to know which namespaces are available at runtime
-    useEffect(() => {
-        fetch("/api/uar/settings/types")
-            .then((r) => r.json())
-            .then((d) => setTypes(Array.isArray(d) ? d : []))
-            .catch(() => {/* non-fatal */ });
-    }, []);
+    const types = useSettingsTypesMeta();
 
     const availableKeys = new Set(types.map((t) => t.key));
 

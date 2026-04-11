@@ -35,8 +35,7 @@ pub fn record_request(method: &str, path: &str, status: u16, duration: std::time
         ("status", status.to_string()),
     ];
     counter!("uar_requests_total", &labels).increment(1);
-    histogram!("uar_request_duration_seconds", &labels)
-        .record(duration.as_secs_f64());
+    histogram!("uar_request_duration_seconds", &labels).record(duration.as_secs_f64());
 }
 
 /// Create a request timer. Call `.finish()` on the returned value when done.

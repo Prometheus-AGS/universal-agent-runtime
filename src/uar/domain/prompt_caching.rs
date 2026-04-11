@@ -82,14 +82,34 @@ mod tests {
 
     #[test]
     fn session_override_takes_highest_priority() {
-        assert!(resolve_effective_caching(Some(true), Some(false), Some(false), false));
-        assert!(!resolve_effective_caching(Some(false), Some(true), Some(true), true));
+        assert!(resolve_effective_caching(
+            Some(true),
+            Some(false),
+            Some(false),
+            false
+        ));
+        assert!(!resolve_effective_caching(
+            Some(false),
+            Some(true),
+            Some(true),
+            true
+        ));
     }
 
     #[test]
     fn user_setting_used_when_no_session_override() {
-        assert!(resolve_effective_caching(None, Some(true), Some(false), false));
-        assert!(!resolve_effective_caching(None, Some(false), Some(true), true));
+        assert!(resolve_effective_caching(
+            None,
+            Some(true),
+            Some(false),
+            false
+        ));
+        assert!(!resolve_effective_caching(
+            None,
+            Some(false),
+            Some(true),
+            true
+        ));
     }
 
     #[test]

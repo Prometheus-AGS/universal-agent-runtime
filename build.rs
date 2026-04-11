@@ -144,12 +144,18 @@ fn build_provider_catalog() {
 
     // --- Load liter-llm provider registry ---
     let liter_providers: serde_json::Value = if let Some(ref path) = liter_llm_providers_path {
-        let contents = fs::read_to_string(path)
-            .unwrap_or_else(|e| panic!("Failed to read liter-llm providers.json at {}: {e}", path.display()));
+        let contents = fs::read_to_string(path).unwrap_or_else(|e| {
+            panic!(
+                "Failed to read liter-llm providers.json at {}: {e}",
+                path.display()
+            )
+        });
         serde_json::from_str(&contents)
             .unwrap_or_else(|e| panic!("Failed to parse liter-llm providers.json: {e}"))
     } else {
-        println!("cargo:warning=liter-llm providers.json not found — catalog will have models.dev data only");
+        println!(
+            "cargo:warning=liter-llm providers.json not found — catalog will have models.dev data only"
+        );
         serde_json::json!({ "providers": [], "complex_providers": [] })
     };
 
@@ -159,8 +165,8 @@ fn build_provider_catalog() {
     // --- Merge ---
     let catalog = merge_catalogs(&liter_providers, &models_dev_data);
 
-    let json_output = serde_json::to_string(&catalog)
-        .expect("Failed to serialize provider catalog");
+    let json_output =
+        serde_json::to_string(&catalog).expect("Failed to serialize provider catalog");
     fs::write(&catalog_path, &json_output)
         .unwrap_or_else(|e| panic!("Failed to write catalog to {}: {e}", catalog_path.display()));
 
@@ -222,12 +228,10 @@ fn fetch_models_dev_catalog() -> serde_json::Value {
         Ok(resp) => {
             let mut body = resp.into_body();
             match body.read_to_string() {
-                Ok(text) => {
-                    serde_json::from_str(&text).unwrap_or_else(|e| {
-                        println!("cargo:warning=Failed to parse models.dev JSON: {e}");
-                        serde_json::json!({})
-                    })
-                }
+                Ok(text) => serde_json::from_str(&text).unwrap_or_else(|e| {
+                    println!("cargo:warning=Failed to parse models.dev JSON: {e}");
+                    serde_json::json!({})
+                }),
                 Err(e) => {
                     println!("cargo:warning=Failed to read models.dev response: {e}");
                     serde_json::json!({})
@@ -235,7 +239,9 @@ fn fetch_models_dev_catalog() -> serde_json::Value {
             }
         }
         Err(e) => {
-            println!("cargo:warning=Failed to fetch models.dev/api.json: {e} — using empty catalog");
+            println!(
+                "cargo:warning=Failed to fetch models.dev/api.json: {e} — using empty catalog"
+            );
             serde_json::json!({})
         }
     }
@@ -263,10 +269,7 @@ fn merge_catalogs(
     let models_dev_obj = models_dev.as_object();
 
     for provider in &providers {
-        let name = provider
-            .get("name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let name = provider.get("name").and_then(|v| v.as_str()).unwrap_or("");
 
         let mut entry = serde_json::json!({
             "id": name,
@@ -283,12 +286,15 @@ fn merge_catalogs(
         if let Some(dev_obj) = models_dev_obj {
             // models.dev uses provider IDs that may differ slightly from liter-llm names
             // Try exact match first, then common aliases
-            let dev_entry = dev_obj.get(name)
+            let dev_entry = dev_obj
+                .get(name)
                 .or_else(|| dev_obj.get(&name.replace('_', "-")))
                 .or_else(|| dev_obj.get(&name.replace('-', "_")));
 
             if let Some(provider_data) = dev_entry {
-                if let Some(provider_models) = provider_data.get("models").and_then(|m| m.as_object()) {
+                if let Some(provider_models) =
+                    provider_data.get("models").and_then(|m| m.as_object())
+                {
                     for (_model_id, model_data) in provider_models {
                         let model_entry = serde_json::json!({
                             "id": model_data.get("id").and_then(serde_json::Value::as_str).unwrap_or(""),
@@ -317,7 +323,9 @@ fn merge_catalogs(
 
                 // Capture the auth env var from models.dev if liter-llm didn't have one
                 if (entry.get("auth").is_none() || entry["auth"].is_null())
-                    && let Some(env_vars) = provider_data.get("env").and_then(serde_json::Value::as_array)
+                    && let Some(env_vars) = provider_data
+                        .get("env")
+                        .and_then(serde_json::Value::as_array)
                     && let Some(first) = env_vars.first().and_then(serde_json::Value::as_str)
                 {
                     entry["auth"] = serde_json::json!({
@@ -376,11 +384,14 @@ fn merge_catalogs(
                 }
             }
 
-            let auth = provider_data.get("env").and_then(serde_json::Value::as_array).and_then(|arr| {
-                arr.first().and_then(serde_json::Value::as_str).map(|env_var| {
-                    serde_json::json!({ "type": "bearer", "env_var": env_var })
-                })
-            });
+            let auth = provider_data
+                .get("env")
+                .and_then(serde_json::Value::as_array)
+                .and_then(|arr| {
+                    arr.first()
+                        .and_then(serde_json::Value::as_str)
+                        .map(|env_var| serde_json::json!({ "type": "bearer", "env_var": env_var }))
+                });
 
             let entry = serde_json::json!({
                 "id": dev_id,

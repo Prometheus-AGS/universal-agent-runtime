@@ -13,11 +13,10 @@ const CATALOG_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/provider_cata
 
 /// Lazily-parsed catalog singleton.
 static CATALOG: LazyLock<ModelCatalog> = LazyLock::new(|| {
-    let providers: Vec<ProviderInfo> =
-        serde_json::from_str(CATALOG_JSON).unwrap_or_else(|e| {
-            tracing::error!(error = %e, "Failed to parse embedded provider catalog");
-            Vec::new()
-        });
+    let providers: Vec<ProviderInfo> = serde_json::from_str(CATALOG_JSON).unwrap_or_else(|e| {
+        tracing::error!(error = %e, "Failed to parse embedded provider catalog");
+        Vec::new()
+    });
     ModelCatalog { providers }
 });
 

@@ -54,12 +54,8 @@ impl ModelRouter {
 
         // Apply cost filter
         if let Some(max_cost) = requirements.max_cost_per_1m_input {
-            candidates.retain(|(_, model)| {
-                model
-                    .cost
-                    .as_ref()
-                    .map_or(true, |c| c.input <= max_cost)
-            });
+            candidates
+                .retain(|(_, model)| model.cost.as_ref().map_or(true, |c| c.input <= max_cost));
         }
 
         // Prefer the requested provider if specified
@@ -81,11 +77,7 @@ impl ModelRouter {
             cost_a
                 .partial_cmp(&cost_b)
                 .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| {
-                    b.limits
-                        .context_window
-                        .cmp(&a.limits.context_window)
-                })
+                .then_with(|| b.limits.context_window.cmp(&a.limits.context_window))
         });
 
         candidates

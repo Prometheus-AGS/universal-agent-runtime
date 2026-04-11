@@ -5,12 +5,21 @@
 //! fallback chains. It integrates with `LlmConfig` for the liter-llm client
 //! and enriches provider records with data from the compile-time [`ModelCatalog`].
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 use tokio::sync::RwLock;
 
-use crate::config::LlmConfig;
 use super::catalog::{ModelCatalog, ProviderInfo};
+use crate::config::LlmConfig;
+
+/// JSON `null` or absent field → empty string (admin UI may send `base_url: null` when the
+/// catalog has no default URL and the user leaves the override blank).
+fn deserialize_string_default<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer).map(|o| o.unwrap_or_default())
+}
 
 // =============================================================================
 // PROVIDER CONFIGURATION TYPES
@@ -25,9 +34,13 @@ pub struct ProviderConfig {
     /// Unique identifier (e.g., "openai", "groq-fast", "azure-prod").
     pub id: String,
     /// Human-friendly display name.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_string_default")]
     pub display_name: String,
     /// Base URL for the API (e.g., `https://api.openai.com`).
+    ///
+    /// May be omitted in API requests; [`enrich_provider_config`] fills this from the
+    /// embedded catalog or a built-in fallback per provider id.
+    #[serde(default, deserialize_with = "deserialize_string_default")]
     pub base_url: String,
     /// Optional API key for authentication.
     #[serde(default)]
@@ -133,9 +146,7 @@ impl ProviderRegistry {
         let base_url = config
             .base_url
             .clone()
-            .or_else(|| {
-                catalog_provider.and_then(|p| p.base_url.clone())
-            })
+            .or_else(|| catalog_provider.and_then(|p| p.base_url.clone()))
             .unwrap_or_default();
 
         let pc = ProviderConfig {
@@ -194,28 +205,7 @@ impl ProviderRegistry {
             anyhow::bail!("Custom provider ID must not be empty");
         }
 
-        // Auto-enrich from catalog when the caller didn't specify models.
-        if config.models.is_empty() {
-            let catalog = ModelCatalog::global();
-            if let Some(catalog_provider) = catalog.provider(&config.id) {
-                config.models = models_from_catalog(catalog_provider);
-
-                if config.display_name.is_empty() {
-                    config.display_name = catalog_provider.display_name.clone();
-                }
-                if config.base_url.is_empty() {
-                    if let Some(ref url) = catalog_provider.base_url {
-                        config.base_url = url.clone();
-                    }
-                }
-
-                tracing::debug!(
-                    provider_id = %config.id,
-                    catalog_models = config.models.len(),
-                    "Auto-enriched custom provider from catalog"
-                );
-            }
-        }
+        enrich_provider_config(&mut config);
 
         tracing::info!(
             provider_id = %config.id,
@@ -289,11 +279,7 @@ impl ProviderRegistry {
     }
 
     /// Resolve a provider/model pair into an `LlmConfig` for the liter-llm driver.
-    pub async fn resolve_to_llm_config(
-        &self,
-        provider_id: &str,
-        model: &str,
-    ) -> Option<LlmConfig> {
+    pub async fn resolve_to_llm_config(&self, provider_id: &str, model: &str) -> Option<LlmConfig> {
         let providers = self.providers.read().await;
         let config = providers.get(provider_id)?;
 
@@ -381,6 +367,58 @@ impl Default for ProviderRegistry {
 // =============================================================================
 // HELPERS
 // =============================================================================
+
+/// Default API base URL when the catalog omits `base_url` (common for OpenAI-compatible hosts).
+#[must_use]
+pub(crate) fn fallback_base_url(provider_id: &str) -> Option<&'static str> {
+    match provider_id {
+        "openai" => Some("https://api.openai.com"),
+        "anthropic" => Some("https://api.anthropic.com"),
+        "groq" => Some("https://api.groq.com/openai/v1"),
+        "together" => Some("https://api.together.xyz/v1"),
+        "openrouter" => Some("https://openrouter.ai/api/v1"),
+        "google" | "gemini" => Some("https://generativelanguage.googleapis.com/v1beta/openai"),
+        "mistral" => Some("https://api.mistral.ai/v1"),
+        "cohere" => Some("https://api.cohere.com/v2"),
+        "deepseek" => Some("https://api.deepseek.com"),
+        "xai" | "x-ai" => Some("https://api.x.ai/v1"),
+        "perplexity" => Some("https://api.perplexity.ai"),
+        _ => None,
+    }
+}
+
+/// Fill display name, models, and `base_url` from the embedded catalog and known fallbacks.
+///
+/// Used by the admin API when clients omit `base_url` or model lists.
+pub(crate) fn enrich_provider_config(config: &mut ProviderConfig) {
+    let catalog = ModelCatalog::global();
+    if config.models.is_empty() {
+        if let Some(catalog_provider) = catalog.provider(&config.id) {
+            config.models = models_from_catalog(catalog_provider);
+
+            if config.display_name.is_empty() {
+                config.display_name = catalog_provider.display_name.clone();
+            }
+            if config.base_url.is_empty() {
+                if let Some(ref url) = catalog_provider.base_url {
+                    config.base_url.clone_from(url);
+                }
+            }
+
+            tracing::debug!(
+                provider_id = %config.id,
+                catalog_models = config.models.len(),
+                "Auto-enriched provider from catalog"
+            );
+        }
+    }
+
+    if config.base_url.is_empty() {
+        if let Some(url) = fallback_base_url(&config.id) {
+            config.base_url = url.to_string();
+        }
+    }
+}
 
 /// Convert a catalog [`ProviderInfo`] model list into the registry's [`ModelConfig`] format.
 fn models_from_catalog(provider: &ProviderInfo) -> Vec<ModelConfig> {
@@ -510,18 +548,14 @@ mod tests {
         config.enabled = false;
         registry.register(config).await.unwrap();
 
-        let llm = registry
-            .resolve_to_llm_config("disabled", "model")
-            .await;
+        let llm = registry.resolve_to_llm_config("disabled", "model").await;
         assert!(llm.is_none());
     }
 
     #[tokio::test]
     async fn test_resolve_unknown_provider() {
         let registry = ProviderRegistry::new();
-        let llm = registry
-            .resolve_to_llm_config("nonexistent", "model")
-            .await;
+        let llm = registry.resolve_to_llm_config("nonexistent", "model").await;
         assert!(llm.is_none());
     }
 
@@ -573,6 +607,26 @@ mod tests {
     }
 
     #[test]
+    fn test_enrich_fills_base_url_when_missing() {
+        let mut config = ProviderConfig {
+            id: "openai".to_string(),
+            display_name: "OpenAI".to_string(),
+            base_url: String::new(),
+            api_key: None,
+            protocol: ProtocolSetting::Auto,
+            default_model: None,
+            models: vec![],
+            enabled: true,
+        };
+        enrich_provider_config(&mut config);
+        assert_eq!(config.base_url, "https://api.openai.com");
+        assert!(
+            !config.models.is_empty(),
+            "catalog should hydrate models for openai"
+        );
+    }
+
+    #[test]
     fn test_split_model_string() {
         let (p, m) = split_model_string("openai/gpt-4o");
         assert_eq!(p, "openai");
@@ -581,5 +635,14 @@ mod tests {
         let (p, m) = split_model_string("llama3");
         assert_eq!(p, "default");
         assert_eq!(m, "llama3");
+    }
+
+    #[test]
+    fn provider_config_deserializes_null_base_url_and_display_name() {
+        let j = r#"{"id":"openai","display_name":null,"base_url":null,"protocol":"auto","enabled":true}"#;
+        let c: ProviderConfig = serde_json::from_str(j).expect("deserialize");
+        assert_eq!(c.id, "openai");
+        assert_eq!(c.display_name, "");
+        assert_eq!(c.base_url, "");
     }
 }

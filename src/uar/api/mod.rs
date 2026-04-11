@@ -1,6 +1,5 @@
 pub mod a2a;
 pub mod acp;
-pub mod openapi;
 pub mod actors;
 pub mod adapters;
 pub mod auth;
@@ -11,6 +10,7 @@ pub mod knowledge;
 pub mod memory;
 pub mod memory_admin;
 pub mod openai;
+pub mod openapi;
 pub mod providers;
 pub mod routes;
 pub mod settings;

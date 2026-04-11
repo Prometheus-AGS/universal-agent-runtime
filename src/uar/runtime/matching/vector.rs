@@ -86,7 +86,7 @@ impl VectorMatcher {
         let mut tok_guard = self.tokenizer.lock().await;
         if tok_guard.is_none() {
             info!("Initializing Tokenizer...");
-            
+
             // Try multiple potential tokenizer paths
             let tokenizer_paths = vec![
                 // Environment variable override (highest priority)
@@ -98,13 +98,20 @@ impl VectorMatcher {
                 // Docker/production path (fallback)
                 Some(std::path::PathBuf::from("/app/models/tokenizer.json")),
                 // Development paths (fallbacks)
-                Some(std::path::PathBuf::from("src/uar/runtime/matching/models/tokenizer.json")),
-                Some(std::path::PathBuf::from("./src/uar/runtime/matching/models/tokenizer.json")),
-            ].into_iter().flatten().collect::<Vec<_>>();
-            
+                Some(std::path::PathBuf::from(
+                    "src/uar/runtime/matching/models/tokenizer.json",
+                )),
+                Some(std::path::PathBuf::from(
+                    "./src/uar/runtime/matching/models/tokenizer.json",
+                )),
+            ]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>();
+
             let mut tokenizer = None;
             let mut last_error = None;
-            
+
             for path in &tokenizer_paths {
                 if path.exists() {
                     match Tokenizer::from_file(path) {
@@ -120,7 +127,7 @@ impl VectorMatcher {
                     }
                 }
             }
-            
+
             if let Some(tokenizer) = tokenizer {
                 *tok_guard = Some(tokenizer);
             } else {

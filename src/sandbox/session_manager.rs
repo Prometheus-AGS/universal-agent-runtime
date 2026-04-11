@@ -126,7 +126,10 @@ impl SessionManager {
             return;
         }
 
-        info!(count = expired.len(), "Cleaning up expired sandbox sessions");
+        info!(
+            count = expired.len(),
+            "Cleaning up expired sandbox sessions"
+        );
 
         for (id, handle) in expired {
             if let Err(e) = self.runner.destroy(handle).await {

@@ -654,63 +654,67 @@ impl RunManager {
                 let approval_run_id = run_id.clone();
                 let approval_emitter = emitter.clone();
                 let approval_pending = Arc::clone(&self.pending_approvals);
-                let gate: crate::llm::ToolApprovalGate = Arc::new(move |tool_call_id, tool_name, arguments_json, call_index| {
-                    let run_id = approval_run_id.clone();
-                    let emitter = approval_emitter.clone();
-                    let pending = Arc::clone(&approval_pending);
-                    Box::pin(async move {
-                        if !tool_requires_approval(&tool_name) {
-                            return crate::llm::ToolApprovalResult::Approved;
-                        }
-                        let risk_reason = format!(
-                            "Tool '{}' may perform a destructive or write operation",
-                            tool_name
-                        );
-                        // Emit approval-required event to the client
-                        emitter.emit(NormalizedEvent::ToolCallApprovalRequired {
-                            run_id: run_id.clone(),
-                            call_index,
-                            tool_call_id: tool_call_id.clone(),
-                            name: tool_name.clone(),
-                            arguments_json: arguments_json.clone(),
-                            risk_reason: risk_reason.clone(),
-                        }).await;
-                        // Create oneshot channel and wait for approval
-                        let (tx, rx) = oneshot::channel();
-                        {
-                            let mut approvals = pending.lock().await;
-                            approvals.insert(run_id.clone(), tx);
-                        }
-                        // Wait with 5-minute timeout; auto-reject on timeout or channel error
-                        match tokio::time::timeout(Duration::from_secs(300), rx).await {
-                            Ok(Ok(true)) => {
-                                tracing::info!(run_id = %run_id, tool = %tool_name, "Tool call approved by user");
-                                crate::llm::ToolApprovalResult::Approved
+                let gate: crate::llm::ToolApprovalGate = Arc::new(
+                    move |tool_call_id, tool_name, arguments_json, call_index| {
+                        let run_id = approval_run_id.clone();
+                        let emitter = approval_emitter.clone();
+                        let pending = Arc::clone(&approval_pending);
+                        Box::pin(async move {
+                            if !tool_requires_approval(&tool_name) {
+                                return crate::llm::ToolApprovalResult::Approved;
                             }
-                            Ok(Ok(false)) => {
-                                tracing::info!(run_id = %run_id, tool = %tool_name, "Tool call rejected by user");
-                                crate::llm::ToolApprovalResult::Rejected {
-                                    reason: "Rejected by user".to_string(),
-                                }
-                            }
-                            Ok(Err(_)) => {
-                                tracing::warn!(run_id = %run_id, tool = %tool_name, "Approval channel dropped");
-                                crate::llm::ToolApprovalResult::Rejected {
-                                    reason: "Approval channel closed".to_string(),
-                                }
-                            }
-                            Err(_) => {
-                                // Timeout — clean up the pending entry
+                            let risk_reason = format!(
+                                "Tool '{}' may perform a destructive or write operation",
+                                tool_name
+                            );
+                            // Emit approval-required event to the client
+                            emitter
+                                .emit(NormalizedEvent::ToolCallApprovalRequired {
+                                    run_id: run_id.clone(),
+                                    call_index,
+                                    tool_call_id: tool_call_id.clone(),
+                                    name: tool_name.clone(),
+                                    arguments_json: arguments_json.clone(),
+                                    risk_reason: risk_reason.clone(),
+                                })
+                                .await;
+                            // Create oneshot channel and wait for approval
+                            let (tx, rx) = oneshot::channel();
+                            {
                                 let mut approvals = pending.lock().await;
-                                approvals.remove(&run_id);
-                                tracing::warn!(run_id = %run_id, tool = %tool_name, "Tool approval timed out after 5 minutes");
-                                crate::llm::ToolApprovalResult::Rejected {
-                                    reason: "Approval timed out after 5 minutes".to_string(),
+                                approvals.insert(run_id.clone(), tx);
+                            }
+                            // Wait with 5-minute timeout; auto-reject on timeout or channel error
+                            match tokio::time::timeout(Duration::from_secs(300), rx).await {
+                                Ok(Ok(true)) => {
+                                    tracing::info!(run_id = %run_id, tool = %tool_name, "Tool call approved by user");
+                                    crate::llm::ToolApprovalResult::Approved
+                                }
+                                Ok(Ok(false)) => {
+                                    tracing::info!(run_id = %run_id, tool = %tool_name, "Tool call rejected by user");
+                                    crate::llm::ToolApprovalResult::Rejected {
+                                        reason: "Rejected by user".to_string(),
+                                    }
+                                }
+                                Ok(Err(_)) => {
+                                    tracing::warn!(run_id = %run_id, tool = %tool_name, "Approval channel dropped");
+                                    crate::llm::ToolApprovalResult::Rejected {
+                                        reason: "Approval channel closed".to_string(),
+                                    }
+                                }
+                                Err(_) => {
+                                    // Timeout — clean up the pending entry
+                                    let mut approvals = pending.lock().await;
+                                    approvals.remove(&run_id);
+                                    tracing::warn!(run_id = %run_id, tool = %tool_name, "Tool approval timed out after 5 minutes");
+                                    crate::llm::ToolApprovalResult::Rejected {
+                                        reason: "Approval timed out after 5 minutes".to_string(),
+                                    }
                                 }
                             }
-                        }
-                    })
-                });
+                        })
+                    },
+                );
                 Arc::new(o.with_tool_approval_gate(gate))
             }
             Err(e) => {
@@ -994,8 +998,7 @@ impl RunManager {
             // ── Skill evolution (Hermes learning cycle) ──────────────────────────
             // Fire a background reflection task when evolution is enabled and the
             // run performed enough tool calls to be worth analysing.
-            if skill_evolution_cfg.enabled
-                && tool_call_count >= skill_evolution_cfg.min_tool_calls
+            if skill_evolution_cfg.enabled && tool_call_count >= skill_evolution_cfg.min_tool_calls
             {
                 if let Some(svc) = skill_service_for_evolution {
                     let run_id_ev = evolution_run_id.clone();

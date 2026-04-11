@@ -18,7 +18,9 @@ pub struct SessionSearchTool {
 
 #[async_trait]
 impl NativeSkill for SessionSearchTool {
-    fn name(&self) -> &str { "session_search" }
+    fn name(&self) -> &str {
+        "session_search"
+    }
 
     fn description(&self) -> &str {
         "Search within a conversation session for messages matching a query. \
@@ -61,7 +63,7 @@ impl NativeSkill for SessionSearchTool {
                     "ok": false,
                     "error": "Missing required parameter: session_id. \
                               Provide a session ID to search within a specific conversation."
-                }))
+                }));
             }
         };
         let limit = args
@@ -74,7 +76,9 @@ impl NativeSkill for SessionSearchTool {
         let session = match self.persistence.load_session(&session_id).await {
             Ok(Some(s)) => s,
             Ok(None) => {
-                return Ok(json!({"ok": false, "error": format!("Session '{}' not found", session_id)}))
+                return Ok(
+                    json!({"ok": false, "error": format!("Session '{}' not found", session_id)}),
+                );
             }
             Err(e) => return Ok(json!({"ok": false, "error": format!("Load failed: {}", e)})),
         };
@@ -90,11 +94,13 @@ impl NativeSkill for SessionSearchTool {
                     .unwrap_or(false)
             })
             .take(limit)
-            .map(|m| json!({
-                "session_id": session_id,
-                "role": format!("{:?}", m.role),
-                "excerpt": m.content.as_text().unwrap_or(""),
-            }))
+            .map(|m| {
+                json!({
+                    "session_id": session_id,
+                    "role": format!("{:?}", m.role),
+                    "excerpt": m.content.as_text().unwrap_or(""),
+                })
+            })
             .collect();
 
         Ok(json!({

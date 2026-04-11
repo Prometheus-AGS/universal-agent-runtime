@@ -16,7 +16,9 @@ pub struct TerminalExecTool {
 
 #[async_trait]
 impl NativeSkill for TerminalExecTool {
-    fn name(&self) -> &str { "terminal_exec" }
+    fn name(&self) -> &str {
+        "terminal_exec"
+    }
     fn description(&self) -> &str {
         "Execute a shell command and return its stdout, stderr, and exit code."
     }
@@ -38,7 +40,9 @@ impl NativeSkill for TerminalExecTool {
     async fn execute(&self, args: Value) -> anyhow::Result<Value> {
         let command = match args.get("command").and_then(Value::as_str) {
             Some(c) => c.to_string(),
-            None => return Ok(json!({"ok": false, "error": "Missing required parameter: command"})),
+            None => {
+                return Ok(json!({"ok": false, "error": "Missing required parameter: command"}));
+            }
         };
         let cmd_timeout = args
             .get("timeout_secs")

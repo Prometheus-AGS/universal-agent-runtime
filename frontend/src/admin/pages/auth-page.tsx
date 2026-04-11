@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useState } from "react";
 import { Eye, EyeOff, Key, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import {
   AlertDialog,
@@ -12,62 +12,34 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
+import { useAuthKeys } from "@/hooks/use-auth-keys";
 import type { UarApiKey } from "@/types";
 
 export const AuthPage: FC = () => {
-  const [keys, setKeys] = useState<UarApiKey[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { keys, loading, error, saving, revoking, load, createKey, revokeKey } = useAuthKeys();
   const [showAdd, setShowAdd] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
   const [createdKey, setCreatedKey] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const [showKey, setShowKey] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<UarApiKey | null>(null);
-  const [revoking, setRevoking] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/auth/keys");
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json() as { keys?: UarApiKey[]; data?: { keys?: UarApiKey[] } } | UarApiKey[];
-      const list = Array.isArray(data) ? data : (data.data?.keys ?? (data as { keys?: UarApiKey[] }).keys ?? []);
-      setKeys(list);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
 
   const handleCreate = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/auth/keys", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newKeyName }) });
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json() as { key?: string; raw_key?: string };
+    const data = await createKey(newKeyName);
+    if (data) {
       setCreatedKey(data.key ?? data.raw_key ?? null);
       setShowAdd(false);
       setNewKeyName("");
-      await load();
-    } catch (e) { setError((e as Error).message); } finally { setSaving(false); }
+    }
   };
 
   const handleRevoke = async () => {
     if (!revokeTarget) return;
-    setRevoking(true);
-    try {
-      await fetch(`/api/auth/keys/${revokeTarget.id}`, { method: "DELETE" });
-      setKeys((prev) => prev.filter((k) => k.id !== revokeTarget.id));
-      setRevokeTarget(null);
-    } catch { /**/ } finally { setRevoking(false); }
+    await revokeKey(revokeTarget.id);
+    setRevokeTarget(null);
   };
 
   return (
@@ -89,7 +61,7 @@ export const AuthPage: FC = () => {
         <AdminError error={error} />
         {createdKey && (
           <div className="mb-4 rounded-lg border border-success/40 bg-success/10 p-4">
-            <p className="mb-2 font-mono text-xs text-success font-medium">New API key — copy it now, it won't be shown again</p>
+            <p className="mb-2 font-mono text-xs text-success font-medium">New API key — copy it now, it won&apos;t be shown again</p>
             <div className="flex items-center gap-2">
               <code className="flex-1 font-mono text-xs text-foreground break-all">{showKey === "created" ? createdKey : createdKey.replace(/./g, "•")}</code>
               <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setShowKey(showKey === "created" ? null : "created")} aria-label={showKey === "created" ? "Hide API key" : "Show API key"}>{showKey === "created" ? <EyeOff size={12} /> : <Eye size={12} />}</Button>
@@ -124,7 +96,17 @@ export const AuthPage: FC = () => {
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent>
           <DialogHeader><DialogTitle>Create API Key</DialogTitle></DialogHeader>
-          <div><label className="mb-1 block font-mono text-xs text-muted-foreground">Key name</label><Input value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)} placeholder="My App" /></div>
+          <div>
+            <Label htmlFor="auth-new-api-key-name" className="mb-1 block font-mono text-xs text-muted-foreground">
+              Key name
+            </Label>
+            <Input
+              id="auth-new-api-key-name"
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              placeholder="My App"
+            />
+          </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
             <Button onClick={() => void handleCreate()} disabled={saving || !newKeyName}>

@@ -6,7 +6,7 @@ import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { useDb } from "@/lib/db-context";
 import { useChatMessages } from "./use-chat-messages";
 import { useMessageStream } from "./use-message-stream";
-import { generateThreadTitle } from "./use-thread-naming";
+import { useThreadTitleStore } from "@/stores/thread-title-store";
 import type { RichMessage, ContentBlock } from "@/types/chat-content";
 import { useAttachmentManager } from "./use-attachment-manager";
 import type { AttachmentManager } from "./use-attachment-manager";
@@ -101,7 +101,7 @@ export function useChatRuntime(threadId: string): {
       const firstAssistant = storeMessages.find((m) => m.role === "assistant" && m.status === "complete");
       const assistantText = firstAssistant ? extractText(firstAssistant) : "";
       if (!assistantText.trim()) return;
-      const title = await generateThreadTitle(userMsgText, assistantText);
+      const title = await useThreadTitleStore.getState().generateTitle(userMsgText, assistantText);
       setTitle(threadId, title);
     },
     [threadId, markPersisted, touch, setTitle],

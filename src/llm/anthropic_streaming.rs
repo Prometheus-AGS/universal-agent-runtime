@@ -174,10 +174,7 @@ impl StreamState {
                         arguments_delta: Some(partial_json),
                     }]
                 } else {
-                    warn!(
-                        index,
-                        "Received input_json_delta for unknown tool block"
-                    );
+                    warn!(index, "Received input_json_delta for unknown tool block");
                     Vec::new()
                 }
             }

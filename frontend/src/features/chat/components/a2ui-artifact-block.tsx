@@ -1,7 +1,16 @@
 import { CheckCircle2Icon, Loader2Icon, PanelTopOpenIcon, SendIcon } from "lucide-react";
-import { type FC, useMemo, useState } from "react";
+import { type FC, useId, useMemo, useState } from "react";
+import { useToolApprovalActions } from "@/hooks/use-tool-approval";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -43,6 +52,7 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
   status,
   result,
 }) => {
+  const { submitArtifactResponse } = useToolApprovalActions();
   const contentObj = useMemo(() => parseJsonObject(content), [content]);
   const inputObj = contentObj ?? metadata;
 
@@ -52,6 +62,10 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const baseId = useId();
+  const selectFieldId = `${baseId}-select`;
+  const textFieldId = `${baseId}-text`;
 
   const options = useMemo(() => {
     const raw = inputObj.options;
@@ -78,13 +92,9 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const res = await fetch(`/api/uar/runs/${encodeURIComponent(runId)}/artifact-response`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          artifact_id: artifactId,
-          response,
-        }),
+      const res = await submitArtifactResponse(runId, {
+        artifact_id: artifactId,
+        response,
       });
       if (!res.ok) {
         const body = await res.text().catch(() => "Failed to submit artifact response");
@@ -139,22 +149,29 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
 
       {artifactType === "select" && (
         <div className="mt-2 space-y-2">
-          <p className="font-body text-sm text-muted-foreground">{prompt}</p>
-          <select
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-            value={selectValue}
-            onChange={(e) => setSelectValue(e.target.value)}
-            disabled={submitting || resolved}
-          >
-            <option value="" disabled>
-              Choose an option
-            </option>
-            {options.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <Label htmlFor={selectFieldId} className="font-body text-sm font-normal text-muted-foreground">
+            {prompt}
+          </Label>
+          {options.length > 0 ? (
+            <Select
+              value={selectValue === "" ? undefined : selectValue}
+              onValueChange={setSelectValue}
+              disabled={submitting || resolved}
+            >
+              <SelectTrigger id={selectFieldId} className="h-9 w-full">
+                <SelectValue placeholder="Choose an option" />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="font-mono text-xs text-muted-foreground">No options defined for this select.</p>
+          )}
           <Button
             type="button"
             size="sm"
@@ -169,9 +186,12 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
 
       {artifactType === "text_input" && (
         <div className="mt-2 space-y-2">
-          <p className="font-body text-sm text-muted-foreground">{prompt}</p>
+          <Label htmlFor={textFieldId} className="font-body text-sm font-normal text-muted-foreground">
+            {prompt}
+          </Label>
           {multiline ? (
             <Textarea
+              id={textFieldId}
               value={textValue}
               onChange={(e) => setTextValue(e.target.value)}
               placeholder={placeholder}
@@ -180,6 +200,7 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
             />
           ) : (
             <Input
+              id={textFieldId}
               value={textValue}
               onChange={(e) => setTextValue(e.target.value)}
               placeholder={placeholder}

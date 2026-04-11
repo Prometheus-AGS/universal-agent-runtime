@@ -116,10 +116,7 @@ impl ToolCallExtractor {
                         remaining = "";
                     }
                 }
-                ExtractorState::InToolCallTag {
-                    buffer,
-                    call_index,
-                } => {
+                ExtractorState::InToolCallTag { buffer, call_index } => {
                     let call_index = *call_index;
                     // Check for the close tag.
                     if let Some(tag_start) = remaining.find(CLOSE_TAG) {
@@ -289,7 +286,9 @@ mod tests {
         let mut extractor = ToolCallExtractor::new();
         let events = extractor.process_delta("Hello, world!");
         assert_eq!(events.len(), 1);
-        assert!(matches!(&events[0], NormalizedEvent::MessageDelta { text } if text == "Hello, world!"));
+        assert!(
+            matches!(&events[0], NormalizedEvent::MessageDelta { text } if text == "Hello, world!")
+        );
     }
 
     #[test]
@@ -299,9 +298,9 @@ mod tests {
             .process_delta("<tool_call>\n{\"name\": \"get_weather\", \"input\": {\"location\": \"NYC\"}}\n</tool_call>");
 
         // Should have a ToolCallComplete event.
-        let complete = events.iter().find(|e| {
-            matches!(e, NormalizedEvent::ToolCallComplete { .. })
-        });
+        let complete = events
+            .iter()
+            .find(|e| matches!(e, NormalizedEvent::ToolCallComplete { .. }));
         assert!(complete.is_some());
 
         if let Some(NormalizedEvent::ToolCallComplete {
@@ -332,9 +331,13 @@ mod tests {
         assert!(text_events.len() >= 2);
 
         // First text should be "Let me check. "
-        assert!(matches!(&text_events[0], NormalizedEvent::MessageDelta { text } if text == "Let me check. "));
+        assert!(
+            matches!(&text_events[0], NormalizedEvent::MessageDelta { text } if text == "Let me check. ")
+        );
         // Last text should be " Done!"
-        assert!(matches!(text_events.last().unwrap(), NormalizedEvent::MessageDelta { text } if text == " Done!"));
+        assert!(
+            matches!(text_events.last().unwrap(), NormalizedEvent::MessageDelta { text } if text == " Done!")
+        );
     }
 
     #[test]
@@ -350,8 +353,8 @@ mod tests {
             .collect();
         assert!(!text_events.is_empty());
 
-        let events2 = extractor
-            .process_delta("call>\n{\"name\": \"test\", \"input\": {}}\n</tool_call>");
+        let events2 =
+            extractor.process_delta("call>\n{\"name\": \"test\", \"input\": {}}\n</tool_call>");
         let complete = events2
             .iter()
             .find(|e| matches!(e, NormalizedEvent::ToolCallComplete { .. }));
@@ -385,11 +388,17 @@ mod tests {
             .collect();
         assert_eq!(completes.len(), 2);
 
-        if let NormalizedEvent::ToolCallComplete { call_index, name, .. } = &completes[0] {
+        if let NormalizedEvent::ToolCallComplete {
+            call_index, name, ..
+        } = &completes[0]
+        {
             assert_eq!(*call_index, 0);
             assert_eq!(name, "a");
         }
-        if let NormalizedEvent::ToolCallComplete { call_index, name, .. } = &completes[1] {
+        if let NormalizedEvent::ToolCallComplete {
+            call_index, name, ..
+        } = &completes[1]
+        {
             assert_eq!(*call_index, 1);
             assert_eq!(name, "b");
         }
@@ -412,15 +421,19 @@ mod tests {
         let mut extractor = ToolCallExtractor::new();
         let events1 = extractor.process_delta("Hello <tool_");
         // Should buffer the partial tag.
-        assert!(events1
-            .iter()
-            .any(|e| matches!(e, NormalizedEvent::MessageDelta { text } if text == "Hello ")));
+        assert!(
+            events1
+                .iter()
+                .any(|e| matches!(e, NormalizedEvent::MessageDelta { text } if text == "Hello "))
+        );
 
         let events2 = extractor.flush();
         // The partial tag should be emitted as text since it wasn't completed.
-        assert!(events2
-            .iter()
-            .any(|e| matches!(e, NormalizedEvent::MessageDelta { text } if text == "<tool_")));
+        assert!(
+            events2
+                .iter()
+                .any(|e| matches!(e, NormalizedEvent::MessageDelta { text } if text == "<tool_"))
+        );
     }
 
     #[test]
@@ -444,10 +457,7 @@ mod tests {
             .iter()
             .find(|e| matches!(e, NormalizedEvent::ToolCallComplete { .. }));
         assert!(complete.is_some());
-        if let Some(NormalizedEvent::ToolCallComplete {
-            arguments_json, ..
-        }) = complete
-        {
+        if let Some(NormalizedEvent::ToolCallComplete { arguments_json, .. }) = complete {
             let args: serde_json::Value = serde_json::from_str(arguments_json).unwrap();
             assert_eq!(args["key"], "val");
         }

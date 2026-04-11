@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { type FC, useMemo, useState } from "react";
 import { Loader2, Pencil, Plus, RefreshCw, Trash2, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
+import { useSkillsAdmin } from "@/hooks/use-skills-admin";
 import type { UarSkill } from "@/types";
 import {
   buildCreateSkillRequest,
@@ -29,13 +30,6 @@ import {
   joinCommaSeparated,
   type SkillEditorFormState,
 } from "./skills-page.utils";
-
-type SkillsResponse = { skills?: UarSkill[]; data?: { skills?: UarSkill[] } } | UarSkill[];
-
-function skillsFromResponse(data: SkillsResponse): UarSkill[] {
-  if (Array.isArray(data)) return data;
-  return data.data?.skills ?? data.skills ?? [];
-}
 
 interface MarkdownEditorFieldProps {
   id: string;
@@ -93,37 +87,25 @@ const MarkdownEditorField: FC<MarkdownEditorFieldProps> = ({
 };
 
 export const SkillsPage: FC = () => {
-  const [skills, setSkills] = useState<UarSkill[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    skills,
+    loading,
+    error,
+    actionSkillId,
+    saving,
+    deleting,
+    load,
+    setError,
+    toggle,
+    remove,
+    save,
+  } = useSkillsAdmin();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
   const [form, setForm] = useState<SkillEditorFormState>(DEFAULT_SKILL_FORM);
-  const [saving, setSaving] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<UarSkill | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [actionSkillId, setActionSkillId] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/skills");
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = (await res.json()) as SkillsResponse;
-      setSkills(skillsFromResponse(data));
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   const resetDialogState = () => {
     setForm(DEFAULT_SKILL_FORM);
@@ -149,37 +131,17 @@ export const SkillsPage: FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleToggle = async (skill: UarSkill, enabled: boolean) => {
-    setActionSkillId(skill.skill_id);
-    try {
-      const res = await fetch(`/api/skills/${encodeURIComponent(skill.skill_id)}/toggle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled }),
-      });
-      if (!res.ok) throw new Error(`${res.status}`);
-      setSkills((prev) => prev.map((s) => (s.skill_id === skill.skill_id ? { ...s, enabled } : s)));
-    } catch (e) {
-      setError(`Failed to toggle skill: ${(e as Error).message}`);
-    } finally {
-      setActionSkillId(null);
-    }
+  const handleToggle = (skill: UarSkill, enabled: boolean) => {
+    void toggle(skill, enabled);
   };
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
     try {
-      const res = await fetch(`/api/skills/${encodeURIComponent(deleteTarget.skill_id)}`, {
-        method: "DELETE",
-      });
-      if (!res.ok && res.status !== 404) throw new Error(`${res.status}`);
-      setSkills((prev) => prev.filter((s) => s.skill_id !== deleteTarget.skill_id));
+      await remove(deleteTarget);
       setDeleteTarget(null);
-    } catch (e) {
-      setError(`Failed to delete skill: ${(e as Error).message}`);
-    } finally {
-      setDeleting(false);
+    } catch {
+      /* error surfaced via store */
     }
   };
 
@@ -190,32 +152,17 @@ export const SkillsPage: FC = () => {
       return;
     }
 
-    setSaving(true);
     setError(null);
     try {
-      if (editingSkillId) {
-        const res = await fetch(`/api/skills/${encodeURIComponent(editingSkillId)}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buildUpdateSkillRequest(form)),
-        });
-        if (!res.ok) throw new Error(`${res.status}`);
-      } else {
-        const res = await fetch("/api/skills", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buildCreateSkillRequest(form)),
-        });
-        if (!res.ok) throw new Error(`${res.status}`);
-      }
-
+      await save(
+        editingSkillId,
+        buildCreateSkillRequest(form),
+        buildUpdateSkillRequest(form),
+      );
       setIsDialogOpen(false);
       resetDialogState();
-      await load();
-    } catch (e) {
-      setError(`Failed to save skill: ${(e as Error).message}`);
-    } finally {
-      setSaving(false);
+    } catch {
+      /* error surfaced via store */
     }
   };
 

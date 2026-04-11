@@ -1,46 +1,15 @@
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useState } from "react";
 import { RefreshCw, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
-import type { DiscoveryResponse, UarTool } from "@/types";
-
-interface ToolWithNs extends UarTool { _ns: string; _key: string }
+import { useToolsDiscovery } from "@/hooks/use-tools-discovery";
+import type { ToolWithNs } from "@/stores/tools-discovery-store";
 
 export const ToolsPage: FC = () => {
-  const [tools, setTools] = useState<ToolWithNs[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { tools, loading, error, load } = useToolsDiscovery();
   const [search, setSearch] = useState("");
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/tools");
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json() as DiscoveryResponse & { data?: DiscoveryResponse };
-      const d = data.data ?? data;
-      const all: ToolWithNs[] = [
-        ...(d.tools ?? []).map((t) => addNs(t, false)),
-        ...(d.built_in_tools ?? []).map((t) => addNs(t, true)),
-      ];
-      setTools(all);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
-
-  function addNs(t: UarTool, builtin: boolean): ToolWithNs {
-    const fullName = t.namespaced_name ?? t.name;
-    const parts = fullName.split("::");
-    return { ...t, _ns: parts.length > 1 ? parts[0] : (builtin ? "built-in" : "global"), _key: fullName };
-  }
 
   const groups = tools
     .filter((t) => search === "" || t._key.toLowerCase().includes(search.toLowerCase()) || (t.description ?? "").toLowerCase().includes(search.toLowerCase()))

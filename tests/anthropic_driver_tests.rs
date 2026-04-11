@@ -2,14 +2,15 @@
 
 #[cfg(test)]
 mod driver_dispatch {
-    use universal_agent_runtime::llm::{
-        anthropic_native_driver_enabled, detect_provider,
-    };
+    use universal_agent_runtime::llm::{anthropic_native_driver_enabled, detect_provider};
 
     /// Test 10.8: Verify provider detection correctly identifies Anthropic models.
     #[test]
     fn detect_anthropic_provider() {
-        assert_eq!(detect_provider("anthropic/claude-sonnet-4-20250514"), "anthropic");
+        assert_eq!(
+            detect_provider("anthropic/claude-sonnet-4-20250514"),
+            "anthropic"
+        );
         assert_eq!(detect_provider("anthropic/claude-opus-4"), "anthropic");
         assert_eq!(detect_provider("openai/gpt-4o"), "openai");
         assert_eq!(detect_provider("groq/llama-3-70b"), "groq");
@@ -84,13 +85,20 @@ mod tool_extraction {
 
         // Simulate streaming text with an embedded tool call
         let events1 = extractor.process_delta("I'll search for that. ");
-        assert!(events1.iter().any(|e| matches!(e, NormalizedEvent::MessageDelta { .. })));
+        assert!(
+            events1
+                .iter()
+                .any(|e| matches!(e, NormalizedEvent::MessageDelta { .. }))
+        );
 
-        let events2 = extractor
-            .process_delta("<tool_call>\n{\"name\": \"search\", \"input\": {\"query\": \"test\"}}\n</tool_call>");
-        assert!(events2
-            .iter()
-            .any(|e| matches!(e, NormalizedEvent::ToolCallComplete { .. })));
+        let events2 = extractor.process_delta(
+            "<tool_call>\n{\"name\": \"search\", \"input\": {\"query\": \"test\"}}\n</tool_call>",
+        );
+        assert!(
+            events2
+                .iter()
+                .any(|e| matches!(e, NormalizedEvent::ToolCallComplete { .. }))
+        );
     }
 
     #[test]
@@ -98,7 +106,9 @@ mod tool_extraction {
         let mut extractor = ToolCallExtractor::new();
         let events = extractor.process_delta("Hello, this is just text with no tool calls.");
         assert_eq!(events.len(), 1);
-        assert!(matches!(&events[0], NormalizedEvent::MessageDelta { text } if text == "Hello, this is just text with no tool calls."));
+        assert!(
+            matches!(&events[0], NormalizedEvent::MessageDelta { text } if text == "Hello, this is just text with no tool calls.")
+        );
     }
 }
 

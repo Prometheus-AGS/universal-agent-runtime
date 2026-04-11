@@ -1,21 +1,8 @@
 import { Bot, Code2, Database, Globe, Layers, Shield, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
-
-interface HealthData {
-  status?: string;
-  version?: string;
-  uptime?: number;
-}
+import { useHealthz } from "@/hooks/use-healthz";
 
 export function AboutPage() {
-  const [health, setHealth] = useState<HealthData | null>(null);
-
-  useEffect(() => {
-    fetch("/healthz")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: HealthData | null) => setHealth(d))
-      .catch(() => setHealth(null));
-  }, []);
+  const { health } = useHealthz();
 
   const features = [
     { icon: Zap, title: "Streaming Agent Runtime", desc: "Real-time SSE streaming with AG-UI dual-mode event protocol and full tool-call visibility." },

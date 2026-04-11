@@ -24,6 +24,8 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub struct SettingsApiState {
     pub settings_manager: Option<Arc<SettingsManager>>,
+    /// When false, mutation handlers do not require `X-UAR-Admin-Key` (local dev only).
+    pub settings_mutation_auth_required: bool,
 }
 
 // =============================================================================
@@ -228,7 +230,7 @@ impl IntoResponse for ApiError {
             ).into_response(),
             ApiError::Forbidden => (
                 StatusCode::FORBIDDEN,
-                Json(json!({"error": "X-UAR-Admin-Key header is required for mutation endpoints"})),
+                Json(json!({"error": "X-UAR-Admin-Key header is required for mutation endpoints (set security.settings_mutation_auth_required: false in config for trusted local use)"})),
             ).into_response(),
             ApiError::Internal(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -238,8 +240,12 @@ impl IntoResponse for ApiError {
     }
 }
 
-/// Validate admin key header for mutation endpoints.
-fn require_admin_key(headers: &HeaderMap) -> Result<(), ApiError> {
+/// Validate admin key header for mutation endpoints (skipped when
+/// `settings_mutation_auth_required` is false).
+fn require_admin_key(state: &SettingsApiState, headers: &HeaderMap) -> Result<(), ApiError> {
+    if !state.settings_mutation_auth_required {
+        return Ok(());
+    }
     if headers.contains_key("x-uar-admin-key") {
         Ok(())
     } else {
@@ -369,7 +375,7 @@ async fn create_type(
     headers: HeaderMap,
     Json(payload): Json<CreateTypePayload>,
 ) -> Result<Json<Value>, ApiError> {
-    require_admin_key(&headers)?;
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     let st = SettingsType {
         id: uuid::Uuid::new_v4(),
@@ -426,7 +432,7 @@ async fn update_setting(
     headers: HeaderMap,
     Json(payload): Json<UpdateSettingPayload>,
 ) -> Result<Json<Value>, ApiError> {
-    require_admin_key(&headers)?;
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     mgr.set_value(&key, payload.value)
         .await
@@ -439,7 +445,7 @@ async fn reset_setting(
     Path(key): Path<String>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, ApiError> {
-    require_admin_key(&headers)?;
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     mgr.reset_to_default(&key)
         .await
@@ -494,7 +500,7 @@ async fn update_namespace(
     Json(payload): Json<BulkUpdatePayload>,
     type_key: &str,
 ) -> Result<Json<Value>, ApiError> {
-    require_admin_key(&headers)?;
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
 
     let mut updated = Vec::new();

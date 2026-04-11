@@ -135,11 +135,7 @@ impl SandboxRunner for RemoteRunner {
         Ok(())
     }
 
-    async fn read_file(
-        &self,
-        handle: &SandboxHandle,
-        path: &str,
-    ) -> Result<Vec<u8>, SandboxError> {
+    async fn read_file(&self, handle: &SandboxHandle, path: &str) -> Result<Vec<u8>, SandboxError> {
         #[derive(serde::Serialize)]
         struct ReadPayload {
             sandbox_id: String,

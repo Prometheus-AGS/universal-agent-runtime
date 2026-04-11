@@ -110,12 +110,8 @@ impl CacheStrategy {
         while i >= 2 && turns_marked < self.cache_conversation_turns {
             i -= 1;
 
-            let current_role = req.messages[i]
-                .role
-                .as_str();
-            let prev_role = req.messages[i - 1]
-                .role
-                .as_str();
+            let current_role = req.messages[i].role.as_str();
+            let prev_role = req.messages[i - 1].role.as_str();
 
             // Mark turn boundaries: where an assistant message is followed by a user message.
             if prev_role == "assistant" && current_role == "user" {

@@ -76,6 +76,7 @@ fn minimal_config() -> AppConfig {
         security: SecurityConfig {
             jwt_required: false,
             jwt_secret: "test-secret".to_string(),
+            settings_mutation_auth_required: true,
         },
         resilience: ResilienceConfig {
             rate_limit_enabled: false,
@@ -724,5 +725,50 @@ async fn mgr_concurrent_reads_are_safe() -> Result<()> {
     let (r1, r2) = tokio::join!(t1, t2);
     assert_eq!(r1?, Some(json!(3000)));
     assert!(r2?.is_some());
+    Ok(())
+}
+
+#[tokio::test]
+async fn mgr_provider_upsert_load_and_hydrate_registry() -> Result<()> {
+    use universal_agent_runtime::llm::registry::{
+        ProtocolSetting, ProviderConfig, ProviderRegistry,
+    };
+    use universal_agent_runtime::uar::settings::hydrate_provider_registry_from_settings;
+
+    let (p, _dir) = make_surreal().await;
+    let mgr = Arc::new(SettingsManager::new(p));
+    mgr.initialize(&minimal_config()).await?;
+
+    let pc = ProviderConfig {
+        id: "acme".to_string(),
+        display_name: "Acme".to_string(),
+        base_url: "https://api.acme.test/v1".to_string(),
+        api_key: Some("secret".to_string()),
+        protocol: ProtocolSetting::Auto,
+        default_model: None,
+        models: vec![],
+        enabled: true,
+    };
+    mgr.upsert_provider_config(&pc).await?;
+
+    let loaded = mgr.load_provider_configs_from_db().await?;
+    assert!(
+        loaded.iter().any(|x| x.id == "acme"),
+        "load_provider_configs_from_db should include acme"
+    );
+
+    let registry = ProviderRegistry::new();
+    hydrate_provider_registry_from_settings(&registry, mgr.as_ref()).await?;
+    let got = registry
+        .get("acme")
+        .await
+        .expect("hydrated registry should contain acme");
+    assert_eq!(got.base_url, "https://api.acme.test/v1");
+    assert_eq!(got.api_key.as_deref(), Some("secret"));
+
+    mgr.set_default_provider_id("acme").await?;
+    hydrate_provider_registry_from_settings(&registry, mgr.as_ref()).await?;
+    assert_eq!(registry.default_id().await.as_deref(), Some("acme"));
+
     Ok(())
 }

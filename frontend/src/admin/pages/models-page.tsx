@@ -1,11 +1,12 @@
-import { type FC, useCallback, useEffect, useMemo, useState } from "react";
+import { type FC, useMemo, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AdminEmptyInline, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
-import type { CatalogModel, CatalogModelsResponse } from "@/types";
+import { useModelsBrowse } from "@/hooks/use-models-browse";
+import type { CatalogModel } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,43 +22,16 @@ interface FlatModel {
 }
 
 // ---------------------------------------------------------------------------
-// API helpers
-// ---------------------------------------------------------------------------
-
-async function fetchModels(): Promise<CatalogModelsResponse> {
-  const res = await fetch("/api/models");
-  if (!res.ok) throw new Error(`Models fetch failed: ${res.status}`);
-  return res.json() as Promise<CatalogModelsResponse>;
-}
-
-// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
 export const ModelsPage: FC = () => {
-  const [response, setResponse] = useState<CatalogModelsResponse>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { response, loading, error, load } = useModelsBrowse();
   const [selectedProvider, setSelectedProvider] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [capabilities, setCapabilities] = useState<{ tools: boolean; reasoning: boolean; vision: boolean }>({
     tools: false, reasoning: false, vision: false,
   });
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchModels();
-      setResponse(data);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
 
   // Flatten into a filterable list
   const allModels: FlatModel[] = useMemo(() => {
@@ -106,7 +80,7 @@ export const ModelsPage: FC = () => {
             {filtered.length} of {allModels.length} models · {providers.length} providers
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => void load()} className="gap-1.5">
+        <Button type="button" variant="outline" size="sm" onClick={() => void load()} className="gap-1.5">
           <RefreshCw size={13} className={cn(loading && "animate-spin")} />Refresh
         </Button>
       </div>
@@ -126,45 +100,54 @@ export const ModelsPage: FC = () => {
 
         {/* Provider filter pills */}
         <div className="flex flex-wrap gap-1">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setSelectedProvider("all")}
             className={cn(
-              "rounded-full px-2.5 py-0.5 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-              selectedProvider === "all" ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground",
+              "h-7 rounded-full px-2.5 py-0.5 font-mono text-xs",
+              selectedProvider === "all" ? "bg-primary/20 text-primary hover:bg-primary/25" : "text-muted-foreground hover:text-foreground",
             )}
           >
             All
-          </button>
+          </Button>
           {providers.map((p) => (
-            <button
+            <Button
               key={p.id}
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setSelectedProvider(p.id)}
               className={cn(
-                "rounded-full px-2.5 py-0.5 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-                selectedProvider === p.id ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground",
+                "h-7 rounded-full px-2.5 py-0.5 font-mono text-xs",
+                selectedProvider === p.id ? "bg-primary/20 text-primary hover:bg-primary/25" : "text-muted-foreground hover:text-foreground",
                 !p.configured && "opacity-50",
               )}
             >
               {p.name}
-            </button>
+            </Button>
           ))}
         </div>
 
         {/* Capability filters */}
         <div className="flex gap-1">
           {(["tools", "reasoning", "vision"] as const).map((cap) => (
-            <button
+            <Button
               key={cap}
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => toggleCap(cap)}
               className={cn(
-                "rounded border px-2 py-0.5 font-mono text-xs transition-colors capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                "h-7 rounded border px-2 py-0.5 font-mono text-xs capitalize",
                 capabilities[cap]
-                  ? "border-primary/40 bg-primary/10 text-primary"
+                  ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
                   : "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground",
               )}
             >
               {cap}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

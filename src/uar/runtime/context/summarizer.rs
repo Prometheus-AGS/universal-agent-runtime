@@ -14,10 +14,7 @@ Be concise but comprehensive. Output only the summary, no preamble."#;
 
 /// Summarize a slice of conversation messages into a single summary string
 /// using an LLM call.
-pub async fn summarize_messages(
-    messages: &[Message],
-    driver: &dyn LlmDriver,
-) -> Result<String> {
+pub async fn summarize_messages(messages: &[Message], driver: &dyn LlmDriver) -> Result<String> {
     if messages.is_empty() {
         return Ok(String::new());
     }

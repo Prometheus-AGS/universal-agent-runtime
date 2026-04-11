@@ -36,8 +36,8 @@ use crate::normalized::NormalizedEvent;
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
 
 use super::{
-    LiterLlmDriver, LlmDriver, LlmRequest, Message,
-    MessageContent, MessageRole, ToolCall, ToolCallFunction,
+    LiterLlmDriver, LlmDriver, LlmRequest, Message, MessageContent, MessageRole, ToolCall,
+    ToolCallFunction,
 };
 
 /// Result of a tool approval gate check.
@@ -53,10 +53,10 @@ pub enum ToolApprovalResult {
 /// Returns `Approved` to proceed or `Rejected` to skip the tool call.
 pub type ToolApprovalGate = Arc<
     dyn Fn(
-            String,              // tool_call_id
-            String,              // tool_name
-            String,              // arguments_json
-            usize,               // call_index
+            String, // tool_call_id
+            String, // tool_name
+            String, // arguments_json
+            usize,  // call_index
         ) -> Pin<Box<dyn Future<Output = ToolApprovalResult> + Send>>
         + Send
         + Sync,
