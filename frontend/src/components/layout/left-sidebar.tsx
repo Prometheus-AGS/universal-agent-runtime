@@ -26,6 +26,25 @@ import { useChatMessageStore } from "@/stores/chat-message-store";
 import { useUiStore } from "@/stores/ui-store";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import type { LocalThread } from "@/types";
+import type { RichMessage } from "@/types/chat-content";
+
+/** Extract a plain-text preview (up to ~50 chars) from the last message in a thread. */
+function getLastMessagePreview(messages: RichMessage[] | undefined): string {
+  if (!messages || messages.length === 0) return "";
+  const last = messages[messages.length - 1];
+  for (const block of last.content) {
+    if (block.type === "text" && block.text.trim()) {
+      const text = block.text.trim();
+      return text.length > 50 ? `${text.slice(0, 50)}...` : text;
+    }
+  }
+  if (last.role === "assistant") {
+    for (const block of last.content) {
+      if (block.type === "tool-call") return `Used ${block.toolName}`;
+    }
+  }
+  return "";
+}
 
 interface LeftSidebarProps { className?: string }
 
@@ -42,6 +61,8 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
   const setTitle = useThreadRegistryStore((s) => s.setTitle);
   const setActive = useThreadRegistryStore((s) => s.setActive);
   const removeThread = useThreadRegistryStore((s) => s.removeThread);
+
+  const messagesByThread = useChatMessageStore((s) => s.messagesByThread);
 
   const visibleThreads: LocalThread[] = Object.values(threads)
     .filter((t) => !t.isEphemeral)
@@ -116,7 +137,9 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
             <p className="mt-1 font-body text-xs text-muted-foreground">Start a new thread above</p>
           </div>
         ) : (
-          visibleThreads.map((thread) => (
+          visibleThreads.map((thread) => {
+            const preview = getLastMessagePreview(messagesByThread[thread.id]);
+            return (
             <div key={thread.id} className="group relative">
               <Button
                 variant="ghost"
@@ -131,8 +154,14 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
               >
                 <MessageSquare size={14} className="mt-0.5 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-sm font-semibold text-foreground">{thread.title}</p>
-                  <span className="font-mono text-[10px] text-muted-foreground">{formatRelativeTime(thread.updatedAt)}</span>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="truncate font-display text-sm font-semibold text-foreground">{thread.title}</p>
+                    <span className="shrink-0 text-xs text-muted-foreground">{formatRelativeTime(thread.updatedAt)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-1">
+                    <span className="font-mono">Default Assistant</span>
+                    {preview && <>{" \u00B7 "}{preview}</>}
+                  </p>
                 </div>
               </Button>
               <DropdownMenu>
@@ -164,7 +193,8 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          ))
+            );
+          })
         )}
       </div>
       </aside>
