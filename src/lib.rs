@@ -44,6 +44,7 @@ use crate::uar::security::rate_limit::AppRateLimiter;
 use llm::orchestrator::Orchestrator;
 use mcp::registry::McpRegistry;
 use session::SessionStore;
+use std::collections::HashMap;
 use std::sync::Arc;
 use uar::api::a2a::AgentRegistry;
 use uar::compiler::CompilerService;
@@ -111,6 +112,9 @@ pub struct AppState {
     pub a2ui_registry: Arc<uar::a2ui::registry::A2uiRegistry>,
     /// Model router — selects optimal model based on capability requirements from the catalog.
     pub model_router: Arc<llm::ModelRouter>,
+    /// Per-session agent configuration overrides (in-memory).
+    pub agent_sessions:
+        Arc<tokio::sync::RwLock<HashMap<String, uar::api::discovery::AgentSessionConfig>>>,
     /// Wasm sandbox runtime for executing Wasm agents (feature-gated)
     #[cfg(feature = "wasm-runtime")]
     pub wasm_sandbox: Option<Arc<uar::runtime::wasm::sandbox::WasmSandbox>>,

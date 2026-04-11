@@ -476,6 +476,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         prompt_cache_provider,
         user_settings_store: Arc::clone(&user_settings_store),
         a2ui_registry: uar::a2ui::registry::A2uiRegistry::with_builtins(),
+        agent_sessions: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
         #[cfg(feature = "wasm-runtime")]
         wasm_sandbox: {
             use crate::uar::runtime::wasm::{config::WasmConfig, sandbox::WasmSandbox};
@@ -756,6 +757,16 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .route(
             "/api/uar/sessions/{id}/context-stats",
             get(api_context_stats),
+        )
+        // Agent session config: per-conversation overrides of agent defaults
+        .route(
+            "/api/uar/sessions/{id}/agent-config",
+            get(uar::api::discovery::get_agent_session_config)
+                .post(uar::api::discovery::save_agent_session_config),
+        )
+        .route(
+            "/api/uar/sessions/{id}/effective-config",
+            get(uar::api::discovery::get_effective_config),
         )
         .route("/api/uar/skills/reload", post(api_skills_reload))
         // ────────────────────────────────────────────────────────────────────────────

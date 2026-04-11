@@ -13,6 +13,7 @@ use axum::{
     routing::get,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use uuid::Uuid;
 
 pub fn build_router() -> Router<AppState> {
@@ -424,6 +425,111 @@ pub async fn execute_tool(
                 .into_response()
         }
     }
+}
+
+// =========================================================================
+// Agent session config endpoints
+// =========================================================================
+
+/// Per-session agent configuration overrides.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentSessionConfig {
+    /// The agent definition this session is based on.
+    pub agent_id: String,
+    /// Override the model used by this agent for this session.
+    #[serde(default)]
+    pub model: Option<String>,
+    /// Override the set of tools available to this agent.
+    #[serde(default)]
+    pub tools: Option<Vec<String>>,
+    /// Override the set of skills available to this agent.
+    #[serde(default)]
+    pub skills: Option<Vec<String>>,
+    /// Override the knowledge bases attached to this agent.
+    #[serde(default)]
+    pub knowledge_bases: Option<Vec<String>>,
+    /// Override the MCP servers available to this agent.
+    #[serde(default)]
+    pub mcp_servers: Option<Vec<String>>,
+    /// Tool approval policy: "auto" | "ask" | "deny".
+    #[serde(default)]
+    pub tool_approval: Option<String>,
+}
+
+/// POST /api/sessions/{id}/agent-config
+pub async fn save_agent_session_config(
+    State(state): State<AppState>,
+    Path(session_id): Path<String>,
+    Json(config): Json<AgentSessionConfig>,
+) -> impl IntoResponse {
+    state
+        .agent_sessions
+        .write()
+        .await
+        .insert(session_id, config.clone());
+    (StatusCode::OK, Json(config))
+}
+
+/// GET /api/sessions/{id}/agent-config
+pub async fn get_agent_session_config(
+    State(state): State<AppState>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    let sessions = state.agent_sessions.read().await;
+    match sessions.get(&session_id) {
+        Some(config) => (StatusCode::OK, Json(serde_json::to_value(config).unwrap())).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "No agent session config found for this session"})),
+        )
+            .into_response(),
+    }
+}
+
+/// GET /api/sessions/{id}/effective-config
+///
+/// Returns the agent definition merged with any per-session overrides.
+pub async fn get_effective_config(
+    State(state): State<AppState>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    let sessions = state.agent_sessions.read().await;
+    let Some(config) = sessions.get(&session_id) else {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "No agent session config found for this session"})),
+        )
+            .into_response();
+    };
+
+    // Load the base agent definition from persistence (or built-in defaults).
+    let agent = resolve_agent_artifact(&state, &config.agent_id).await;
+
+    // Build effective config: agent defaults + session overrides.
+    let mut effective =
+        serde_json::to_value(&agent).unwrap_or_else(|_| serde_json::json!({}));
+    if let Some(model) = &config.model {
+        effective["model_override"] = json!(model);
+    }
+    if let Some(tools) = &config.tools {
+        effective["tools_override"] = json!(tools);
+    }
+    if let Some(skills) = &config.skills {
+        effective["skills_override"] = json!(skills);
+    }
+    if let Some(kbs) = &config.knowledge_bases {
+        effective["knowledge_bases_override"] = json!(kbs);
+    }
+    if let Some(mcp_servers) = &config.mcp_servers {
+        effective["mcp_servers_override"] = json!(mcp_servers);
+    }
+    if let Some(tool_approval) = &config.tool_approval {
+        effective["tool_approval_override"] = json!(tool_approval);
+    }
+    effective["session_id"] = json!(session_id);
+    effective["agent_id"] = json!(config.agent_id);
+
+    (StatusCode::OK, Json(effective)).into_response()
 }
 
 /// RFC 7396 JSON Merge Patch: recursively merge `patch` into `target`.
