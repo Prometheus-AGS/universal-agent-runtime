@@ -1,5 +1,5 @@
 import { type FC, useMemo, useState } from "react";
-import { Loader2, Pencil, Plus, RefreshCw, Trash2, Zap } from "lucide-react";
+import { FolderOpen, Loader2, Pencil, Plus, RefreshCw, Trash2, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
+import { SkillImportDialog } from "@/admin/components/skill-import-dialog";
 import { cn } from "@/lib/utils";
 import { useSkillsAdmin } from "@/hooks/use-skills-admin";
 import type { UarSkill } from "@/types";
@@ -105,6 +106,7 @@ export const SkillsPage: FC = () => {
   const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
   const [form, setForm] = useState<SkillEditorFormState>(DEFAULT_SKILL_FORM);
 
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UarSkill | null>(null);
 
   const resetDialogState = () => {
@@ -185,6 +187,10 @@ export const SkillsPage: FC = () => {
           <Button variant="outline" size="sm" onClick={() => void load()} className="gap-1.5">
             <RefreshCw size={13} className={cn(loading && "animate-spin")} />
             Refresh
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)} className="gap-1.5">
+            <FolderOpen size={13} />
+            Import
           </Button>
           <Button size="sm" onClick={openCreate} className="gap-1.5">
             <Plus size={13} />
@@ -389,6 +395,12 @@ export const SkillsPage: FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SkillImportDialog
+        open={isImportOpen}
+        onOpenChange={setIsImportOpen}
+        onImported={() => void load()}
+      />
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>

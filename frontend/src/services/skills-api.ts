@@ -41,6 +41,39 @@ export async function updateSkillApi(skillId: string, body: unknown): Promise<vo
   if (!res.ok) throw new Error(`${res.status}`);
 }
 
+export interface ImportedSkillParsed {
+  name: string;
+  title: string;
+  description: string;
+  version: string;
+  triggers: { keywords: string[] };
+  prompt_overlay: string;
+  source: string;
+  source_path: string;
+  references: string[];
+  detected_format: string;
+}
+
+export interface ImportedSkillValidation {
+  valid: boolean;
+  warnings: string[];
+}
+
+export interface ImportSkillResult {
+  parsed: ImportedSkillParsed;
+  validation: ImportedSkillValidation;
+}
+
+export async function importSkillFromDisk(path: string): Promise<ImportSkillResult> {
+  const res = await fetch("/api/uar/skills/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path }),
+  });
+  if (!res.ok) throw new Error(`Import failed: ${res.status}`);
+  return res.json() as Promise<ImportSkillResult>;
+}
+
 export async function createSkillApi(body: unknown): Promise<void> {
   const res = await fetch("/api/skills", {
     method: "POST",
