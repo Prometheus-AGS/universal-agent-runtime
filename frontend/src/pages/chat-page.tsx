@@ -5,6 +5,7 @@ import { useUiStore } from "@/stores/ui-store";
 import { useChatRuntime } from "@/features/chat/use-chat-runtime";
 import { AttachmentContext } from "@/features/chat/attachment-context";
 import { MemoryContextProvider } from "@/features/chat/memory-context";
+import { AgentSelector } from "@/features/chat/agent-selector";
 import { useEffect } from "react";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { cn } from "@/lib/utils";
@@ -85,7 +86,16 @@ export function ChatPage() {
 
       {/* Main chat area */}
       <main className="flex flex-1 flex-col overflow-hidden min-w-0">
-        {activeThreadId ? <ThreadView threadId={activeThreadId} /> : <NoThreadSelected />}
+        {activeThreadId ? (
+          <>
+            <div className="border-b border-border px-4 py-2">
+              <AgentSelector threadId={activeThreadId} />
+            </div>
+            <ThreadView threadId={activeThreadId} />
+          </>
+        ) : (
+          <NoThreadSelected />
+        )}
       </main>
     </div>
   );
