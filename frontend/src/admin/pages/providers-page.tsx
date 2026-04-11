@@ -1,5 +1,5 @@
 import { type FC, useState } from "react";
-import { ArrowLeft, CheckCircle2, ChevronRight, Circle, Loader2, Plus, RefreshCw, Server, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronRight, Circle, Loader2, Plus, RefreshCw, Search, Server, XCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +42,7 @@ export const ProvidersPage: FC = () => {
   const [addTarget, setAddTarget] = useState<CatalogProviderSummary | null>(null);
   const [form, setForm] = useState({ api_key: "", base_url: "" });
   const [filter, setFilter] = useState<"all" | "configured" | "unconfigured">("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
 
   const handleConfigure = (provider: CatalogProviderSummary) => {
@@ -75,11 +76,23 @@ export const ProvidersPage: FC = () => {
     setRemoveTarget(null);
   };
 
-  const visible = catalog.filter((p) => {
-    if (filter === "configured") return p.configured;
-    if (filter === "unconfigured") return !p.configured;
-    return true;
-  });
+  const visible = catalog
+    .filter((p) => {
+      if (filter === "configured") return p.configured;
+      if (filter === "unconfigured") return !p.configured;
+      return true;
+    })
+    .filter((p) => {
+      if (!searchTerm.trim()) return true;
+      const q = searchTerm.toLowerCase();
+      return p.display_name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+    })
+    .sort((a, b) => {
+      // Configured first
+      if (a.configured !== b.configured) return a.configured ? -1 : 1;
+      // Then alphabetical
+      return a.display_name.localeCompare(b.display_name);
+    });
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
@@ -93,6 +106,19 @@ export const ProvidersPage: FC = () => {
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => void load()} aria-label="Refresh">
             <RefreshCw size={12} className={cn(loading && "animate-spin")} />
           </Button>
+        </div>
+
+        {/* Search */}
+        <div className="border-b border-border px-3 py-2">
+          <div className="relative">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search providers..."
+              className="h-8 pl-8 font-mono text-xs"
+            />
+          </div>
         </div>
 
         {/* Filter tabs */}
