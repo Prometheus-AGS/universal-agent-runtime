@@ -1,5 +1,5 @@
-import { type FC, useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { type FC, useState, useEffect, useCallback } from "react";
+import { Loader2, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,22 +10,43 @@ import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ModelSelector } from "@/components/model-selector";
 import { createAgent, updateAgentFull } from "@/services/agents-api";
-import type { UarAgent } from "@/types";
+import { fetchSkillsList } from "@/services/skills-api";
+import { fetchToolsDiscovery } from "@/services/tools-api";
+import { fetchKnowledgeBases } from "@/services/knowledge-api";
+import type { UarAgent, UarSkill, UarTool, UarKnowledgeBase } from "@/types";
 
 // ── Form state type ──────────────────────────────────────────────────────────
 
 interface AgentFormState {
+  // Identity
   title: string;
   description: string;
   status: string;
+  default_model: string;
+  fallback_model: string;
+
+  // Prompt
   system_prompt: string;
-  skills: string;
-  tools: string;
+
+  // Capabilities
+  skills: string[];
+  skill_selection_method: string;
+  tools: string[];
+  knowledge_bases: string[];
+  kb_citation_required: boolean;
+
+  // Memory
   memory_enabled: boolean;
   auto_capture: boolean;
   inject_context: boolean;
   memory_scope: string;
+
+  // Governance
   tool_approval: string;
 }
 
@@ -34,9 +55,14 @@ function defaultFormState(): AgentFormState {
     title: "",
     description: "",
     status: "draft",
+    default_model: "",
+    fallback_model: "",
     system_prompt: "",
-    skills: "",
-    tools: "",
+    skills: [],
+    skill_selection_method: "auto",
+    tools: [],
+    knowledge_bases: [],
+    kb_citation_required: false,
     memory_enabled: true,
     auto_capture: false,
     inject_context: false,
@@ -45,20 +71,50 @@ function defaultFormState(): AgentFormState {
   };
 }
 
+function parseModelString(modelStr: string): { provider: string; model: string } {
+  const slash = modelStr.indexOf("/");
+  if (slash > 0) {
+    return { provider: modelStr.slice(0, slash), model: modelStr.slice(slash + 1) };
+  }
+  return { provider: "openai", model: modelStr || "gpt-4o" };
+}
+
 function formStateFromAgent(agent: UarAgent): AgentFormState {
   const raw = agent as unknown as Record<string, unknown>;
+  const policy = (raw.policy as Record<string, unknown>) ?? {};
+  const providerPolicy = (policy.provider as Record<string, unknown>) ?? {};
+  const providerDefault = (providerPolicy.default as Record<string, unknown>) ?? {};
+  const fallbacks = (providerPolicy.fallbacks as Array<Record<string, unknown>>) ?? [];
+  const skillsPolicy = (policy.skills as Record<string, unknown>) ?? {};
+  const toolsPolicy = (policy.tools as Record<string, unknown>) ?? {};
+  const memory = (raw.memory as Record<string, unknown>) ?? {};
+  const kb = (memory.kb as Record<string, unknown>) ?? {};
+  const conversation = (memory.conversation as Record<string, unknown>) ?? {};
+  const extensions = (raw.extensions as Record<string, unknown>) ?? {};
+
   return {
     title: agent.metadata?.title ?? agent.id,
     description: agent.metadata?.description ?? "",
-    status: (raw.status as string) ?? "active",
-    system_prompt: (raw.system_prompt as string) ?? ((raw.prompt as Record<string, unknown>)?.system as string) ?? "",
-    skills: agent.skills?.map((s) => s.skill_id ?? s.title).join(", ") ?? "",
-    tools: (raw.tools as string) ?? "",
-    memory_enabled: (raw.memory_enabled as boolean) ?? true,
-    auto_capture: (raw.memory_auto_capture as boolean) ?? false,
-    inject_context: (raw.memory_inject_context as boolean) ?? false,
-    memory_scope: (raw.memory_scope as string) ?? "agent",
-    tool_approval: (raw.tool_approval as string) ?? "auto",
+    status: (raw.status as string) ?? (extensions.status as string) ?? "active",
+    default_model:
+      providerDefault.provider && providerDefault.model
+        ? `${providerDefault.provider as string}/${providerDefault.model as string}`
+        : "",
+    fallback_model:
+      fallbacks[0]?.provider && fallbacks[0]?.model
+        ? `${fallbacks[0].provider as string}/${fallbacks[0].model as string}`
+        : "",
+    system_prompt: ((raw.prompt as Record<string, unknown>)?.system as string) ?? "",
+    skills: (skillsPolicy.prefer as string[]) ?? [],
+    skill_selection_method: (skillsPolicy.selection_method as string) ?? "auto",
+    tools: (toolsPolicy.allow as string[]) ?? [],
+    knowledge_bases: (kb.knowledge_bases as string[]) ?? [],
+    kb_citation_required: (kb.citation_required as boolean) ?? false,
+    memory_enabled: (conversation.enabled as boolean) ?? true,
+    auto_capture: (extensions.memory_auto_capture as boolean) ?? false,
+    inject_context: (extensions.memory_inject_context as boolean) ?? false,
+    memory_scope: (extensions.memory_scope as string) ?? "agent",
+    tool_approval: (extensions.tool_approval as string) ?? "auto",
   };
 }
 
@@ -78,15 +134,21 @@ function buildArtifactPayload(form: AgentFormState, existingId?: string) {
       protocols: {},
     },
     policy: {
-      provider: { default: { provider: "openai", model: "gpt-4o" }, fallbacks: [] },
+      provider: {
+        default: parseModelString(form.default_model),
+        fallbacks: form.fallback_model
+          ? [parseModelString(form.fallback_model)]
+          : [],
+      },
       tools: {
-        allow: form.tools ? form.tools.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        allow: form.tools,
         deny: [],
         max_concurrent: 1,
       },
       skills: {
-        prefer: form.skills ? form.skills.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        prefer: form.skills,
         max_active: 3,
+        selection_method: form.skill_selection_method,
       },
     },
     schemas: { inputs: null, outputs: null, state: null },
@@ -96,7 +158,11 @@ function buildArtifactPayload(form: AgentFormState, existingId?: string) {
     },
     memory: {
       conversation: { enabled: form.memory_enabled },
-      kb: { enabled: false, knowledge_bases: [], citation_required: false },
+      kb: {
+        enabled: form.knowledge_bases.length > 0,
+        knowledge_bases: form.knowledge_bases,
+        citation_required: form.kb_citation_required,
+      },
     },
     tools: { bundles: [] },
     ui: {
@@ -137,6 +203,14 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Available items for chip selectors
+  const [availableSkills, setAvailableSkills] = useState<UarSkill[]>([]);
+  const [availableTools, setAvailableTools] = useState<UarTool[]>([]);
+  const [availableKbs, setAvailableKbs] = useState<UarKnowledgeBase[]>([]);
+  const [skillsLoading, setSkillsLoading] = useState(false);
+  const [toolsLoading, setToolsLoading] = useState(false);
+  const [kbsLoading, setKbsLoading] = useState(false);
+
   useEffect(() => {
     if (open) {
       setForm(agent ? formStateFromAgent(agent) : defaultFormState());
@@ -147,6 +221,92 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
   const update = <K extends keyof AgentFormState>(key: K, value: AgentFormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  // ── Fetch helpers (called when popovers open) ─────────────────────────────
+
+  const loadSkills = useCallback(() => {
+    if (availableSkills.length > 0 || skillsLoading) return;
+    setSkillsLoading(true);
+    fetchSkillsList()
+      .then(setAvailableSkills)
+      .catch(() => {/* silent */})
+      .finally(() => setSkillsLoading(false));
+  }, [availableSkills.length, skillsLoading]);
+
+  const loadTools = useCallback(() => {
+    if (availableTools.length > 0 || toolsLoading) return;
+    setToolsLoading(true);
+    fetchToolsDiscovery()
+      .then((res) => {
+        const data = res.data ?? res;
+        const all = [...(data.tools ?? []), ...(data.built_in_tools ?? [])];
+        setAvailableTools(all);
+      })
+      .catch(() => {/* silent */})
+      .finally(() => setToolsLoading(false));
+  }, [availableTools.length, toolsLoading]);
+
+  const loadKbs = useCallback(() => {
+    if (availableKbs.length > 0 || kbsLoading) return;
+    setKbsLoading(true);
+    fetchKnowledgeBases()
+      .then(setAvailableKbs)
+      .catch(() => {/* silent */})
+      .finally(() => setKbsLoading(false));
+  }, [availableKbs.length, kbsLoading]);
+
+  // ── Array helpers ─────────────────────────────────────────────────────────
+
+  const addSkill = (id: string) => {
+    if (!form.skills.includes(id)) update("skills", [...form.skills, id]);
+  };
+  const removeSkill = (id: string) => {
+    update("skills", form.skills.filter((s) => s !== id));
+  };
+  const skillTitle = (id: string) => {
+    const found = availableSkills.find((s) => s.skill_id === id);
+    return found?.title ?? id;
+  };
+
+  const toolName = (t: UarTool) => t.namespaced_name ?? t.name;
+  const addTool = (name: string) => {
+    if (!form.tools.includes(name)) update("tools", [...form.tools, name]);
+  };
+  const removeTool = (name: string) => {
+    update("tools", form.tools.filter((t) => t !== name));
+  };
+
+  const addKb = (id: string) => {
+    if (!form.knowledge_bases.includes(id)) update("knowledge_bases", [...form.knowledge_bases, id]);
+  };
+  const removeKb = (id: string) => {
+    update("knowledge_bases", form.knowledge_bases.filter((k) => k !== id));
+  };
+  const kbLabel = (id: string) => {
+    const found = availableKbs.find((k) => k.id === id);
+    return found ? found.name : id;
+  };
+  const kbDocCount = (id: string) => {
+    const found = availableKbs.find((k) => k.id === id);
+    return found?.document_count ?? 0;
+  };
+
+  // ── Group tools by namespace ──────────────────────────────────────────────
+
+  const toolsByNamespace = (): Map<string, UarTool[]> => {
+    const groups = new Map<string, UarTool[]>();
+    for (const t of availableTools) {
+      const name = toolName(t);
+      const sep = name.indexOf("__");
+      const ns = sep > 0 ? name.slice(0, sep) : (t.server ?? "built-in");
+      const arr = groups.get(ns) ?? [];
+      arr.push(t);
+      groups.set(ns, arr);
+    }
+    return groups;
+  };
+
+  // ── Save ──────────────────────────────────────────────────────────────────
 
   const handleSave = async () => {
     setSaving(true);
@@ -223,6 +383,23 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
                 </SelectContent>
               </Select>
             </div>
+            <Separator />
+            <div className="space-y-2">
+              <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Default Model</Label>
+              <ModelSelector
+                value={form.default_model}
+                onChange={(v) => update("default_model", v)}
+                placeholder="Select default model..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Fallback Model</Label>
+              <ModelSelector
+                value={form.fallback_model}
+                onChange={(v) => update("fallback_model", v)}
+                placeholder="Select fallback model (optional)..."
+              />
+            </div>
           </TabsContent>
 
           {/* ── Prompt ───────────────────────────────────────────────── */}
@@ -241,28 +418,208 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
 
           {/* ── Capabilities ─────────────────────────────────────────── */}
           <TabsContent value="capabilities" className="flex-1 space-y-4 overflow-y-auto pr-1">
+            {/* Skills Section */}
             <div className="space-y-2">
-              <Label htmlFor="agent-skills" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Skills</Label>
-              <p className="font-mono text-xs text-muted-foreground">Comma-separated skill identifiers</p>
-              <Input
-                id="agent-skills"
-                value={form.skills}
-                onChange={(e) => update("skills", e.target.value)}
-                placeholder="search, summarize, translate"
-                className="font-mono text-xs"
-              />
+              <div className="flex items-center justify-between">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Skills</Label>
+                <Popover onOpenChange={(o) => { if (o) loadSkills(); }}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
+                      <Plus size={12} /> Add
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0" align="end">
+                    <Command>
+                      <CommandInput placeholder="Search skills..." className="font-mono text-xs" />
+                      <CommandList>
+                        {skillsLoading && (
+                          <div className="py-3 text-center font-mono text-xs text-muted-foreground">Loading...</div>
+                        )}
+                        <CommandEmpty className="py-3 text-center font-mono text-xs text-muted-foreground">No skills found</CommandEmpty>
+                        <CommandGroup>
+                          {availableSkills
+                            .filter((s) => !form.skills.includes(s.skill_id))
+                            .map((s) => (
+                              <CommandItem
+                                key={s.skill_id}
+                                value={`${s.title} ${s.skill_id}`}
+                                onSelect={() => addSkill(s.skill_id)}
+                                className="font-mono text-xs"
+                              >
+                                {s.title}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {form.skills.map((id) => (
+                  <Badge key={id} variant="secondary" className="gap-1 font-mono text-xs">
+                    {skillTitle(id)}
+                    <button type="button" onClick={() => removeSkill(id)} className="ml-0.5 rounded-full hover:bg-muted">
+                      <X size={10} />
+                    </button>
+                  </Badge>
+                ))}
+                {form.skills.length === 0 && (
+                  <p className="font-mono text-xs text-muted-foreground">No skills selected</p>
+                )}
+              </div>
+              <div className="space-y-1 pt-1">
+                <Label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Selection Method</Label>
+                <Select value={form.skill_selection_method} onValueChange={(v) => update("skill_selection_method", v)}>
+                  <SelectTrigger className="h-8 font-mono text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto" className="font-mono text-xs">Auto</SelectItem>
+                    <SelectItem value="keyword" className="font-mono text-xs">Keyword</SelectItem>
+                    <SelectItem value="embedding" className="font-mono text-xs">Embedding</SelectItem>
+                    <SelectItem value="hybrid" className="font-mono text-xs">Hybrid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
             <Separator />
+
+            {/* Tools Section */}
             <div className="space-y-2">
-              <Label htmlFor="agent-tools" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Tools (allow list)</Label>
-              <p className="font-mono text-xs text-muted-foreground">Comma-separated tool names</p>
-              <Input
-                id="agent-tools"
-                value={form.tools}
-                onChange={(e) => update("tools", e.target.value)}
-                placeholder="tavily::search, time::now"
-                className="font-mono text-xs"
-              />
+              <div className="flex items-center justify-between">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Tools (allow list)</Label>
+                <Popover onOpenChange={(o) => { if (o) loadTools(); }}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
+                      <Plus size={12} /> Add
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0" align="end">
+                    <Command>
+                      <CommandInput placeholder="Search tools..." className="font-mono text-xs" />
+                      <CommandList>
+                        {toolsLoading && (
+                          <div className="py-3 text-center font-mono text-xs text-muted-foreground">Loading...</div>
+                        )}
+                        <CommandEmpty className="py-3 text-center font-mono text-xs text-muted-foreground">No tools found</CommandEmpty>
+                        {[...toolsByNamespace().entries()].map(([ns, tools]) => (
+                          <CommandGroup
+                            key={ns}
+                            heading={
+                              <span className="font-mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+                                {ns}
+                              </span>
+                            }
+                          >
+                            {tools
+                              .filter((t) => !form.tools.includes(toolName(t)))
+                              .map((t) => {
+                                const name = toolName(t);
+                                return (
+                                  <CommandItem
+                                    key={name}
+                                    value={`${ns} ${name} ${t.description ?? ""}`}
+                                    onSelect={() => addTool(name)}
+                                    className="font-mono text-xs"
+                                  >
+                                    <span className="truncate">{name}</span>
+                                  </CommandItem>
+                                );
+                              })}
+                          </CommandGroup>
+                        ))}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {form.tools.map((name) => (
+                  <Badge key={name} variant="secondary" className="gap-1 font-mono text-xs">
+                    {name}
+                    <button type="button" onClick={() => removeTool(name)} className="ml-0.5 rounded-full hover:bg-muted">
+                      <X size={10} />
+                    </button>
+                  </Badge>
+                ))}
+                {form.tools.length === 0 && (
+                  <p className="font-mono text-xs text-muted-foreground">No tools selected</p>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Knowledge Bases Section */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Knowledge Bases</Label>
+                <Popover onOpenChange={(o) => { if (o) loadKbs(); }}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
+                      <Plus size={12} /> Add
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0" align="end">
+                    <Command>
+                      <CommandInput placeholder="Search knowledge bases..." className="font-mono text-xs" />
+                      <CommandList>
+                        {kbsLoading && (
+                          <div className="py-3 text-center font-mono text-xs text-muted-foreground">Loading...</div>
+                        )}
+                        <CommandEmpty className="py-3 text-center font-mono text-xs text-muted-foreground">No knowledge bases found</CommandEmpty>
+                        <CommandGroup>
+                          {availableKbs
+                            .filter((k) => !form.knowledge_bases.includes(k.id))
+                            .map((k) => (
+                              <CommandItem
+                                key={k.id}
+                                value={`${k.name} ${k.id}`}
+                                onSelect={() => addKb(k.id)}
+                                className="font-mono text-xs"
+                              >
+                                <span className="truncate">{k.name}</span>
+                                {(k.document_count ?? 0) > 0 && (
+                                  <span className="ml-auto shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                                    {k.document_count} docs
+                                  </span>
+                                )}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {form.knowledge_bases.map((id) => (
+                  <Badge key={id} variant="secondary" className="gap-1 font-mono text-xs">
+                    {kbLabel(id)}
+                    {kbDocCount(id) > 0 && (
+                      <span className="rounded bg-muted-foreground/20 px-1 text-[10px]">{kbDocCount(id)}</span>
+                    )}
+                    <button type="button" onClick={() => removeKb(id)} className="ml-0.5 rounded-full hover:bg-muted">
+                      <X size={10} />
+                    </button>
+                  </Badge>
+                ))}
+                {form.knowledge_bases.length === 0 && (
+                  <p className="font-mono text-xs text-muted-foreground">No knowledge bases selected</p>
+                )}
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <div>
+                  <p className="font-mono text-xs font-medium text-foreground">Citation Required</p>
+                  <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">Require citations from KB in responses.</p>
+                </div>
+                <Switch
+                  checked={form.kb_citation_required}
+                  onCheckedChange={(v) => update("kb_citation_required", v)}
+                />
+              </div>
             </div>
           </TabsContent>
 
