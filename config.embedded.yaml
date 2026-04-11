@@ -1,3 +1,16 @@
+# =============================================================================
+# UAR — Embedded persistence (development / single-machine)
+# =============================================================================
+# SurrealDB embedded engine (RocksDB on disk). No separate database process.
+# Usage:
+#   CONFIG_FILE=config.embedded.yaml cargo run
+# Or merge ideas into your own `config.yaml`.
+#
+# For remote SurrealDB or Postgres, see:
+#   - config.remote.surreal.yaml
+#   - config.remote.postgres.yaml
+# =============================================================================
+
 server:
   port: 1906
   host: "127.0.0.1"
@@ -42,7 +55,30 @@ providers:
   - id: openai
     display_name: "OpenAI"
     base_url: "https://api.openai.com"
-    api_key: "${LLM_API_KEY}" # set via environment variable or run-dev.sh
+    api_key: "${LLM_API_KEY}"
     protocol: "auto"
     enabled: true
     default_model: "gpt-5.2"
+
+# ── Optional: same defaults as code; omit to use defaults ─────────────────────
+failover:
+  enabled: false
+  strategy: "priority"
+  error_threshold: 3
+  cooldown_secs: 60
+
+native_tools:
+  file_tools_enabled: false
+  file_allowed_paths: []
+  web_fetch_enabled: false
+  terminal_exec_enabled: false
+  session_search_enabled: true
+
+skill_evolution:
+  enabled: false
+
+acp:
+  enabled: false
+  path: "/acp"
+  auth_required: true
+  session_ttl_secs: 3600

@@ -1,0 +1,153 @@
+# =============================================================================
+# UAR — ~/.uar/config.yaml template (embedded SurrealDB + OpenAI)
+# =============================================================================
+# Copy to your home config (adjust paths if not on this machine):
+#   mkdir -p ~/.uar/data ~/.uar/uploads
+#   cp docs/config/home.uar.embedded-openai.example.yaml ~/.uar/config.yaml
+#
+# Required secret (no API keys in this file):
+#   export OPENAI_API_KEY="sk-..."
+# UAR maps OPENAI_API_KEY to the default LLM and to OpenAI embeddings (memory + KB).
+#
+# Persistence + vectors: embedded SurrealDB (RocksDB files under ~/.uar/data).
+# Default chat model: openai/gpt-5.4
+# Default embeddings: OpenAI text-embedding-3-small (1536 dims)
+#
+# Load order: CLI > env (UAR_*) > this file > compiled defaults
+# =============================================================================
+
+server:
+  port: 3002
+  host: "0.0.0.0"
+
+security:
+  jwt_required: false
+  jwt_secret: "secret_key_change_me"
+
+resilience:
+  rate_limit_enabled: false
+  timeout_disabled: false
+  requests_per_second: 5.0
+  burst_size: 10.0
+  request_timeout_ms: 30000
+  stream_start_timeout_ms: 15000
+  retries_enabled: true
+  retry_max_attempts: 3
+  retry_base_delay_ms: 1000
+  retry_backoff_multiplier: 2.0
+  retry_max_delay_ms: 10000
+  retry_jitter_mode: "full"
+  retry_respect_retry_after: true
+  retryable_http_statuses: [408, 425, 429, 500, 502, 503, 504]
+  retryable_transport_errors: true
+  retry_budget_ms: 20000
+
+persistence:
+  provider: "surreal"
+  # Embedded SurrealDB (RocksDB). Create directory first: mkdir -p ~/.uar/data
+  database_url: "rocksdb:///Users/gqadonis/.uar/data/uar.db"
+  vector_dimension: 1536
+  external_cache_enabled: false
+
+llm:
+  model: "openai/gpt-5.4"
+  protocol: "auto"
+  timeout_secs: 60
+  max_retries: 3
+  cost_tracking: false
+  tracing: true
+  # Do not set api_key here — use environment OPENAI_API_KEY or UAR_LLM__API_KEY
+
+providers: []
+
+sandbox:
+  runner: "auto"
+
+failover:
+  enabled: false
+  strategy: "priority"
+  error_threshold: 3
+  cooldown_secs: 60
+
+native_tools:
+  file_tools_enabled: false
+  file_allowed_paths: []
+  web_fetch_enabled: false
+  terminal_exec_enabled: false
+  session_search_enabled: true
+
+skill_evolution:
+  enabled: false
+
+acp:
+  enabled: false
+  path: "/acp"
+  auth_required: true
+  session_ttl_secs: 3600
+
+file_processing:
+  provider: "auto"
+  upload_dir: "/Users/gqadonis/.uar/uploads"
+  max_files_per_prompt: 10
+  max_file_size: 52428800
+  max_total_size: 104857600
+  allowed_mime_types: []
+
+unstructured:
+  api_url: "https://api.unstructured.io/general/v0/general"
+
+mistral_ocr:
+  ocr_model: "mistral-ocr-latest"
+
+kreuzberg:
+  ocr_enabled: true
+  force_ocr: false
+  ocr_backend: "tesseract"
+  ocr_language: "eng"
+  pdf_dpi: 300
+  extract_tables: true
+  extract_metadata: true
+  output_format: "markdown"
+
+vision:
+  auto_detect: true
+
+models:
+  # Tokenizer / classifier assets; clone or symlink repo `src/uar/runtime/matching/models` here if needed
+  models_dir: "/Users/gqadonis/.uar/runtime/matching/models"
+  vector_threshold: 0.75
+
+knowledge_bases:
+  default:
+    name: "default"
+    description: "Default knowledge base for general documents"
+    embedding_provider: "openai"
+    embedding_model: "text-embedding-3-small"
+    vector_dimensions: 1536
+    file_processor: "auto"
+    chunking:
+      strategy: "recursive"
+      chunk_size: 512
+
+intent_classifier:
+  backend: "tfidf"
+  topk: 5
+  accept_threshold: 0.5
+  margin_threshold: 0.05
+
+memory:
+  enabled: true
+  db_path: "/Users/gqadonis/.uar/data/memory.db"
+  embedding_provider: "openai"
+  embedding_model: "text-embedding-3-small"
+  auto_capture: true
+  vector_weight: 0.7
+  bm25_weight: 0.3
+  inject_context: true
+  max_context_tokens: 2000
+  mcp_http_enabled: true
+  mcp_http_path: "/mcp/memory"
+  namespace: "uar"
+  database: "memory"
+  # Embedded mode — do not set surreal_endpoint / surreal_user / surreal_pass
+  # API key: use OPENAI_API_KEY in the environment (optional explicit: UAR_MEMORY__OPENAI_API_KEY)

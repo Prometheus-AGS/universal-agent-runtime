@@ -1,22 +1,25 @@
 ##############################################################################
-# UAR Production Docker Compose Stack
+# UAR Production Docker Compose — PostgreSQL persistence (+ pgvector)
 #
-# Replicates the complete OpenTofu GKE deployment locally so you can run the
-# full production stack with a single command:
+# Primary application persistence is **PostgreSQL** (`UAR_PERSISTENCE__PROVIDER=postgres`).
+# **SurrealDB** runs as a separate service for agent memory / graph (`UAR_MEMORY__SURREAL_*`).
 #
-#   ./start.sh
+#   docker compose -f docker-compose.prod.postgres.yaml --env-file .env up -d
+#
+# For **Surreal-backed persistence** instead, use:
+#   docker-compose.prod.yaml
 #
 # Services:
-#   postgres   — PostgreSQL 17 with pgvector + pgmq + all UAR migrations
+#   postgres   — PostgreSQL 17 with pgvector + pgmq + UAR migrations
 #   redis      — Redis 7 with AOF persistence
-#   surreal    — SurrealDB v3 with RocksDB backend
+#   surreal    — SurrealDB v2 (memory / knowledge-graph backend for UAR memory)
 #   surrealist — SurrealDB web UI (http://localhost:8080)
-#   dbgate     — Database admin UI (http://localhost:5050)
+#   dbgate     — DB admin UI for Postgres (http://localhost:5050)
 #   uar        — Universal Agent Runtime (http://localhost:3000)
 #
 # Prerequisites:
 #   - Docker Desktop or Docker Engine + Compose v2
-#   - Copy .env.example to .env and fill in your secrets
+#   - Copy .env.example to .env and fill in secrets (JWT, LLM keys, etc.)
 ##############################################################################
 
 name: uar-prod
@@ -64,7 +67,7 @@ services:
     networks:
       - uar-net
 
-  # ── SurrealDB v3 ─────────────────────────────────────────────────────────────
+  # ── SurrealDB v2 (agent memory / graph — not primary UAR persistence here) ───
   surreal:
     image: surrealdb/surrealdb:v2
     container_name: uar-surreal
@@ -89,8 +92,6 @@ services:
       - uar-net
 
   # ── Surrealist UI ────────────────────────────────────────────────────────────
-  # Web-based GUI for browsing SurrealDB, including the knowledge graph.
-  # Access at http://localhost:8080
   surrealist:
     image: ghcr.io/surrealdb/surrealist:latest
     container_name: uar-surrealist
@@ -103,10 +104,7 @@ services:
     networks:
       - uar-net
 
-  # ── DbGate ───────────────────────────────────────────────────────────────────
-  # Database admin UI for PostgreSQL (and other DBs).
-  # Access at http://localhost:5050
-  # Note: remapped from 3000 (GKE) to 5050 to avoid conflict with UAR.
+  # ── DbGate — PostgreSQL admin ───────────────────────────────────────────────
   dbgate:
     image: dbgate/dbgate:latest
     container_name: uar-dbgate
@@ -129,8 +127,6 @@ services:
       - uar-net
 
   # ── Universal Agent Runtime ──────────────────────────────────────────────────
-  # The main UAR application.
-  # Access at http://localhost:3000
   uar:
     image: tribehealth/universal-agent-runtime:latest
     container_name: uar-app
@@ -141,15 +137,19 @@ services:
       UAR_SERVER__PORT: "3000"
       UAR_SERVER__HOST: "0.0.0.0"
 
-      # ── Database (use Docker Compose service names for hostnames) ──────────
-      DATABASE_URL: postgres://${POSTGRES_USER:-uar}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-uar}
+      # ── Persistence: Postgres (primary) ───────────────────────────────────
       UAR_PERSISTENCE__PROVIDER: "postgres"
+      UAR_PERSISTENCE__DATABASE_URL: postgres://${POSTGRES_USER:-uar}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-uar}
+      UAR_PERSISTENCE__VECTOR_DIMENSION: "1536"
       UAR_PERSISTENCE__EXTERNAL_CACHE_ENABLED: "true"
 
-      # ── Redis ───────────────────────────────────────────────────────────────
+      # Legacy / tooling — some scripts still read DATABASE_URL
+      DATABASE_URL: postgres://${POSTGRES_USER:-uar}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-uar}
+
+      # ── Redis (session / cache when external_cache_enabled) ─────────────────
       REDIS_URL: redis://redis:6379
 
-      # ── Memory / SurrealDB ──────────────────────────────────────────────────
+      # ── Agent memory — SurrealDB over the network (same surreal service) ──
       UAR_MEMORY__ENABLED: "true"
       UAR_MEMORY__EMBEDDING_PROVIDER: "openai"
       UAR_MEMORY__EMBEDDING_MODEL: "text-embedding-3-small"
@@ -160,8 +160,8 @@ services:
       UAR_MEMORY__SURREAL_USER: ${SURREAL_USER:-root}
       UAR_MEMORY__SURREAL_PASS: ${SURREAL_PASS:-changeme}
 
-      # ── Security ────────────────────────────────────────────────────────────
-      UAR_SECURITY__JWT_REQUIRED: "false"   # Set to "true" in production
+      # ── Security ───────────────────────────────────────────────────────────
+      UAR_SECURITY__JWT_REQUIRED: "false"
 
       # ── File processing ─────────────────────────────────────────────────────
       UAR_FILE_PROCESSING__PROVIDER: "unstructured"
@@ -171,7 +171,7 @@ services:
       # ── LLM ─────────────────────────────────────────────────────────────────
       LLM_PROTOCOL: "auto"
 
-      # ── Observability ────────────────────────────────────────────────────────
+      # ── Observability ───────────────────────────────────────────────────────
       RUST_LOG: "info"
     volumes:
       - uar-uploads:/uploads
@@ -194,7 +194,6 @@ services:
     networks:
       - uar-net
 
-# ── Named volumes ─────────────────────────────────────────────────────────────
 volumes:
   postgres-data:
     driver: local
@@ -207,7 +206,6 @@ volumes:
   uar-data:
     driver: local
 
-# ── Internal network ──────────────────────────────────────────────────────────
 networks:
   uar-net:
     driver: bridge

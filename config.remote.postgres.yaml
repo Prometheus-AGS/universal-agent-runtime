@@ -1,0 +1,83 @@
+# =============================================================================
+# UAR — PostgreSQL persistence (+ pgvector)
+# =============================================================================
+# Use when `persistence.provider` is `postgres`. Ensure the database exists and
+# migrations have been applied (see project docs / deploy scripts).
+#
+#   export UAR_PERSISTENCE__DATABASE_URL="postgres://uar:changeme@localhost:5432/uar"
+#   CONFIG_FILE=config.remote.postgres.yaml cargo run --bin universal-agent-runtime
+#
+# Docker-style URL (matches `.env.example` POSTGRES_* defaults):
+#   postgres://uar:changeme@localhost:5432/uar
+#
+# `vector_dimension` must match your embedding model (e.g. 1536 for OpenAI
+# text-embedding-3-small, 384 for BGE-small).
+# =============================================================================
+
+server:
+  port: 3000
+  host: "0.0.0.0"
+
+security:
+  jwt_required: true
+  jwt_secret: "change_me_use_UAR_SECURITY__JWT_SECRET_in_production"
+
+resilience:
+  rate_limit_enabled: true
+  timeout_disabled: false
+  requests_per_second: 20.0
+  burst_size: 40.0
+
+persistence:
+  provider: "postgres"
+  database_url: "postgres://uar:changeme@localhost:5432/uar"
+  vector_dimension: 1536
+  external_cache_enabled: false
+
+file_processing:
+  provider: "auto"
+  upload_dir: "/tmp/uar-uploads"
+  max_files_per_prompt: 10
+  max_file_size: 52428800
+  max_total_size: 104857600
+
+vision:
+  auto_detect: true
+
+knowledge_bases:
+  named: {}
+
+intent_classifier:
+  backend: "tfidf"
+  topk: 5
+  accept_threshold: 0.5
+  margin_threshold: 0.05
+
+llm:
+  model: "openai/gpt-4o"
+  timeout_secs: 60
+  max_retries: 3
+  cost_tracking: false
+  tracing: true
+
+providers: []
+
+failover:
+  enabled: false
+  strategy: "priority"
+
+native_tools:
+  file_tools_enabled: false
+  file_allowed_paths: []
+  web_fetch_enabled: false
+  terminal_exec_enabled: false
+  session_search_enabled: true
+
+skill_evolution:
+  enabled: false
+
+acp:
+  enabled: false
+  path: "/acp"
+  auth_required: true
+  session_ttl_secs: 3600

@@ -1,3 +1,25 @@
+##############################################################################
+# UAR Production Docker Compose — SurrealDB persistence (external from app POV)
+#
+# **Primary persistence** is SurrealDB reached over the network (`http://surreal:8000`).
+# The Surreal container stores data with RocksDB; UAR does not embed RocksDB for app state.
+#
+# Contrast with `docker-compose.prod.postgres.yaml`, which uses **PostgreSQL** for
+# persistence and Surreal only for optional agent memory.
+#
+#   docker compose -f docker-compose.prod.yaml --env-file .env up -d
+#
+# Services:
+#   surreal — SurrealDB v2 (application persistence + optional memory endpoint)
+#   redis   — Redis (caching / sessions when external cache is enabled)
+#   app     — Universal Agent Runtime (http://localhost:${APP_PORT:-3000})
+#
+# Prerequisites:
+#   - Copy .env.example to .env; set UAR_SECURITY__JWT_SECRET, UAR_LLM__API_KEY, etc.
+##############################################################################
+
+name: uar-prod-surreal
+
 services:
   app:
     build:
@@ -5,68 +27,83 @@ services:
       dockerfile: Dockerfile
       args:
         SKIP_MODEL_BUILD: "1"
+    image: tribehealth/universal-agent-runtime:latest
     restart: always
+    env_file: .env
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
-      # Database
-      - DATABASE_URL=${DATABASE_URL}
-      - SURREAL_URL=${SURREAL_URL}
-      - REDIS_URL=${REDIS_URL}
-      # Persistence
-      - UAR_PERSISTENCE__PROVIDER=${UAR_PERSISTENCE__PROVIDER:-postgres}
-      - UAR_PERSISTENCE__DATABASE_URL=${DATABASE_URL}
-      # LLM
-      - LLM_PROTOCOL=${LLM_PROTOCOL:-auto}
-      - LLM_BASE_URL=${LLM_BASE_URL}
-      - LLM_API_KEY=${LLM_API_KEY}
-      - LLM_MODEL=${LLM_MODEL}
-      # MCP tools
-      - TAVILY_API_KEY=${TAVILY_API_KEY}
-      # Logging
-      - RUST_LOG=info
+      # ── Server ───────────────────────────────────────────────────────────────
+      UAR_SERVER__PORT: "3000"
+      UAR_SERVER__HOST: "0.0.0.0"
+
+      # ── Persistence: SurrealDB (HTTP RPC — use Docker service hostname) ─────
+      UAR_PERSISTENCE__PROVIDER: surreal
+      UAR_PERSISTENCE__DATABASE_URL: http://surreal:8000
+      UAR_PERSISTENCE__VECTOR_DIMENSION: "${UAR_PERSISTENCE__VECTOR_DIMENSION:-1536}"
+      UAR_PERSISTENCE__EXTERNAL_CACHE_ENABLED: "${UAR_PERSISTENCE__EXTERNAL_CACHE_ENABLED:-true}"
+      UAR_PERSISTENCE__SURREAL_USER: ${SURREAL_USER:-root}
+      UAR_PERSISTENCE__SURREAL_PASS: ${SURREAL_PASS:-changeme}
+
+      # ── Redis ────────────────────────────────────────────────────────────────
+      REDIS_URL: redis://redis:6379
+
+      # ── Agent memory — same Surreal cluster (optional; disable if unused) ─────
+      UAR_MEMORY__ENABLED: "${UAR_MEMORY__ENABLED:-true}"
+      UAR_MEMORY__EMBEDDING_PROVIDER: "${UAR_MEMORY__EMBEDDING_PROVIDER:-openai}"
+      UAR_MEMORY__EMBEDDING_MODEL: "${UAR_MEMORY__EMBEDDING_MODEL:-text-embedding-3-small}"
+      UAR_MEMORY__SURREAL_ENDPOINT: ws://surreal:8000
+      UAR_MEMORY__SURREAL_USER: ${SURREAL_USER:-root}
+      UAR_MEMORY__SURREAL_PASS: ${SURREAL_PASS:-changeme}
+
+      # ── LLM (override in .env) ─────────────────────────────────────────────────
+      LLM_PROTOCOL: ${LLM_PROTOCOL:-auto}
+      UAR_LLM__MODEL: ${UAR_LLM__MODEL:-openai/gpt-4o}
+      UAR_LLM__API_KEY: ${UAR_LLM__API_KEY:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+
+      # ── Tools / misc ─────────────────────────────────────────────────────────
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+
+      # ── Security ───────────────────────────────────────────────────────────────
+      UAR_SECURITY__JWT_REQUIRED: "${UAR_SECURITY__JWT_REQUIRED:-false}"
+
+      # ── File uploads (volume mount) ───────────────────────────────────────────
+      UAR_FILE_PROCESSING__UPLOAD_DIR: /uploads
+
+      # ── Observability ──────────────────────────────────────────────────────────
+      RUST_LOG: ${RUST_LOG:-info}
     depends_on:
-      postgres:
-        condition: service_healthy
       surreal:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/healthz || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 30s
     volumes:
       - uar_data_prod:/data
-    networks:
-      - uar-prod-net
-
-  postgres:
-    image: pgvector/pgvector:pg17
-    restart: always
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-    volumes:
-      - postgres_data_prod:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      - uar_uploads_prod:/uploads
     networks:
       - uar-prod-net
 
   surreal:
-    image: surrealdb/surrealdb:latest
+    image: surrealdb/surrealdb:v2
     restart: always
+    env_file: .env
     ports:
       - "${SURREAL_PORT:-8000}:8000"
-    command: start --log info --user ${SURREAL_USER} --pass ${SURREAL_PASS} --bind 0.0.0.0:8000 file://data/surreal.db
+    command:
+      - start
+      - --user=${SURREAL_USER:-root}
+      - --pass=${SURREAL_PASS:-changeme}
+      - --bind=0.0.0.0:8000
+      - rocksdb:/data/surreal.db
     volumes:
       - surreal_data_prod:/data
     healthcheck:
@@ -74,13 +111,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 20s
     networks:
       - uar-prod-net
 
   redis:
-    image: redis/redis-stack:latest
+    image: redis:7-alpine
     restart: always
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data_prod:/data
     healthcheck:
@@ -98,6 +136,6 @@ networks:
 
 volumes:
   uar_data_prod:
-  postgres_data_prod:
+  uar_uploads_prod:
   surreal_data_prod:
   redis_data_prod:
