@@ -45,9 +45,34 @@ export const useProvidersAdminStore = create<ProvidersAdminStore>((set, get) => 
         fetchCatalog(),
         fetchConfiguredProviders(),
       ]);
+
+      const configuredProviders = providersData.providers ?? [];
+      const configuredIds = new Set(configuredProviders.map((p) => p.id));
+
+      // Merge configured status into catalog entries
+      const mergedCatalog = catalogData.providers.map((entry) =>
+        configuredIds.has(entry.id)
+          ? { ...entry, configured: true }
+          : entry,
+      );
+
+      // Add any configured providers not present in the catalog
+      for (const cp of configuredProviders) {
+        if (!mergedCatalog.some((c) => c.id === cp.id)) {
+          mergedCatalog.push({
+            id: cp.id,
+            display_name: cp.display_name ?? cp.id,
+            base_url: cp.base_url,
+            model_count: cp.models?.length ?? 0,
+            configured: true,
+            endpoints: [],
+          });
+        }
+      }
+
       set({
-        catalog: catalogData.providers,
-        configured: providersData.providers ?? [],
+        catalog: mergedCatalog,
+        configured: configuredProviders,
         defaultId: providersData.default_id,
         loading: false,
       });

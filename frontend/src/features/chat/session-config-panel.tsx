@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ModelSelector } from "@/components/model-selector";
 
 interface SessionConfigPanelProps {
   threadId: string;
@@ -94,12 +95,11 @@ export function SessionConfigPanel({
             <Label htmlFor="model-override" className="font-mono text-xs">
               Model Override
             </Label>
-            <Input
-              id="model-override"
-              placeholder="e.g. anthropic/claude-sonnet-4-5-20250514"
+            <ModelSelector
               value={modelOverride}
-              onChange={(e) => setModelOverride(e.target.value)}
-              className="font-mono text-xs"
+              onChange={setModelOverride}
+              defaultLabel="Agent default"
+              placeholder="Select model override..."
             />
             <p className="font-body text-xs text-muted-foreground">
               Leave empty to use the agent default.
