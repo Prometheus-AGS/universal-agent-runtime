@@ -73,6 +73,66 @@ struct ToolCallAccumulator {
     arguments: String,
 }
 
+/// Returns `true` if the tool name looks like a code-execution tool.
+///
+/// Used by the `Auto` execution mode to decide whether to sandbox a tool call.
+fn is_code_execution_tool(name: &str) -> bool {
+    let n = name.to_lowercase();
+    // Strip namespace prefix (e.g. "mcp::execute_code" → "execute_code")
+    let local = n.rsplit("::").next().unwrap_or(&n);
+    matches!(
+        local,
+        "execute_code"
+            | "run_code"
+            | "eval_code"
+            | "code_interpreter"
+            | "python_repl"
+            | "bash"
+            | "shell"
+            | "run_bash"
+            | "run_python"
+            | "run_script"
+            | "computer"
+    ) || local.starts_with("execute_")
+        || local.ends_with("_repl")
+}
+
+/// Extract (`code`, `language`) from a tool-call's argument JSON, if present.
+fn extract_code_from_arguments(
+    tool_name: &str,
+    args: &serde_json::Value,
+) -> Option<(String, crate::sandbox::Language)> {
+    let code = args
+        .get("code")
+        .or_else(|| args.get("command"))
+        .or_else(|| args.get("script"))
+        .and_then(serde_json::Value::as_str)
+        .map(String::from)?;
+
+    let lang_str = args
+        .get("language")
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_lowercase);
+
+    let language = match lang_str.as_deref() {
+        Some("python" | "python3" | "py") => crate::sandbox::Language::Python,
+        Some("node" | "nodejs" | "javascript" | "js") => crate::sandbox::Language::Node,
+        _ => {
+            // Infer from tool name
+            let n = tool_name.to_lowercase();
+            if n.contains("python") {
+                crate::sandbox::Language::Python
+            } else if n.contains("node") || n.contains("js") {
+                crate::sandbox::Language::Node
+            } else {
+                crate::sandbox::Language::Bash
+            }
+        }
+    };
+
+    Some((code, language))
+}
+
 /// LLM orchestrator with tool loop execution.
 ///
 /// The orchestrator wraps an [`LlmDriver`] and adds:
@@ -93,6 +153,10 @@ pub struct Orchestrator {
     /// Optional gate that is consulted before each tool call execution.
     /// If `None`, all tool calls are approved automatically.
     tool_approval_gate: Option<ToolApprovalGate>,
+    /// Optional sandbox runner for isolated code execution.
+    sandbox_runner: Option<Arc<dyn crate::sandbox::SandboxRunner>>,
+    /// Controls which tool calls are routed to the sandbox runner.
+    tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode,
 }
 
 #[allow(clippy::missing_fields_in_debug)]
@@ -134,6 +198,8 @@ impl Orchestrator {
             failover_config: FailoverConfig::default(),
             native_skills,
             tool_approval_gate: None,
+            sandbox_runner: None,
+            tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode::default(),
         })
     }
 
@@ -170,6 +236,22 @@ impl Orchestrator {
     #[must_use]
     pub fn with_tool_approval_gate(mut self, gate: ToolApprovalGate) -> Self {
         self.tool_approval_gate = Some(gate);
+        self
+    }
+
+    /// Attach a sandbox runner and execution mode for tool isolation.
+    ///
+    /// When `mode` is [`ToolExecutionMode::Sandboxed`] or [`ToolExecutionMode::Auto`],
+    /// code-execution tool calls will be routed through the provided sandbox runner
+    /// instead of being executed directly via MCP.
+    #[must_use]
+    pub fn with_sandbox(
+        mut self,
+        runner: Arc<dyn crate::sandbox::SandboxRunner>,
+        mode: crate::uar::domain::artifact::ToolExecutionMode,
+    ) -> Self {
+        self.sandbox_runner = Some(runner);
+        self.tool_execution_mode = mode;
         self
     }
 
@@ -561,7 +643,97 @@ impl Orchestrator {
                         }
                     }
 
-                    let (content, success) = {
+                    // Determine sandbox routing
+                    let sandbox_attempt: Option<Arc<dyn crate::sandbox::SandboxRunner>> = {
+                        use crate::uar::domain::artifact::ToolExecutionMode;
+                        let should_sandbox = match &orchestrator.tool_execution_mode {
+                            ToolExecutionMode::Direct => false,
+                            ToolExecutionMode::Sandboxed | ToolExecutionMode::Auto => {
+                                is_code_execution_tool(tool_name)
+                            }
+                        };
+                        if should_sandbox {
+                            orchestrator.sandbox_runner.clone()
+                        } else {
+                            None
+                        }
+                    };
+
+                    let (content, success) = if let Some(runner) = sandbox_attempt {
+                        // Route to sandbox if we can extract code from the arguments
+                        if let Some((code, lang)) = extract_code_from_arguments(tool_name, &arguments) {
+                            tracing::info!(
+                                request_id = %request_id,
+                                iteration = iteration,
+                                tool_id = %tool_call.id,
+                                tool_name = %tool_name,
+                                language = ?lang,
+                                "Executing tool in microsandbox"
+                            );
+                            let sandbox_cfg = crate::sandbox::SandboxConfig::default();
+                            match runner.create(sandbox_cfg).await {
+                                Ok(handle) => {
+                                    let exec_req = crate::sandbox::ExecutionRequest {
+                                        language: lang,
+                                        code,
+                                        stdin: None,
+                                        env: std::collections::HashMap::new(),
+                                        cwd: None,
+                                        timeout_seconds: Some(30),
+                                        mode: crate::sandbox::ExecutionMode::Ephemeral,
+                                    };
+                                    match runner.execute(&handle, exec_req).await {
+                                        Ok(result) => {
+                                            let _ = runner.destroy(handle).await;
+                                            let out = format!(
+                                                "exit_code: {}\nstdout:\n{}\nstderr:\n{}",
+                                                result.exit_code, result.stdout, result.stderr
+                                            );
+                                            tracing::info!(
+                                                request_id = %request_id,
+                                                tool_name = %tool_name,
+                                                exit_code = result.exit_code,
+                                                "Sandbox execution completed"
+                                            );
+                                            (out, result.exit_code == 0)
+                                        }
+                                        Err(e) => {
+                                            let _ = runner.destroy(handle).await;
+                                            tracing::error!(
+                                                request_id = %request_id,
+                                                tool_name = %tool_name,
+                                                error = %e,
+                                                "Sandbox execution failed"
+                                            );
+                                            (format!("Sandbox execution error: {e}"), false)
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    tracing::error!(
+                                        request_id = %request_id,
+                                        tool_name = %tool_name,
+                                        error = %e,
+                                        "Sandbox creation failed"
+                                    );
+                                    (format!("Sandbox creation error: {e}"), false)
+                                }
+                            }
+                        } else {
+                            // No code to extract — fall through to native/MCP
+                            if let Some(native_skill) = orchestrator.native_skills.get(tool_name).await {
+                                match native_skill.execute(arguments.clone()).await {
+                                    Ok(r) => (serde_json::to_string(&r).unwrap_or_default(), true),
+                                    Err(e) => (format!("Native skill error: {e}"), false),
+                                }
+                            } else {
+                                match orchestrator.mcp.call_namespaced_tool(tool_name, arguments.clone()).await {
+                                    Ok(r) => (serde_json::to_string(&r).unwrap_or_default(), true),
+                                    Err(e) => (format!("Error: {e}"), false),
+                                }
+                            }
+                        }
+                    } else {
                         // Priority: check native skills first, then fall back to MCP
                         if let Some(native_skill) = orchestrator.native_skills.get(tool_name).await {
                             tracing::info!(

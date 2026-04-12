@@ -34,6 +34,7 @@ pub fn default_agent() -> AgentArtifact {
                 allow: vec!["*".to_string()],
                 deny: vec![],
                 max_concurrent: 1,
+                execution_mode: crate::uar::domain::artifact::ToolExecutionMode::Direct,
             },
             skills: SkillPolicy {
                 prefer: vec![],

@@ -70,10 +70,26 @@ pub struct ToolPolicy {
     pub deny: Vec<String>,
     #[serde(default = "default_max_concurrent")]
     pub max_concurrent: u32,
+    /// How tool calls should be executed: directly via MCP, sandboxed in a VM, or auto-detect.
+    #[serde(default)]
+    pub execution_mode: ToolExecutionMode,
 }
 
 fn default_max_concurrent() -> u32 {
     1
+}
+
+/// Controls how tool calls are routed during execution.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ToolExecutionMode {
+    /// Execute tools directly via MCP (default).
+    #[default]
+    Direct,
+    /// Execute all tool calls inside a microsandbox VM.
+    Sandboxed,
+    /// Automatically sandbox code-execution tools; use direct MCP for data/API tools.
+    Auto,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
