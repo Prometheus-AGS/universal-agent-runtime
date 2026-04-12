@@ -20,6 +20,7 @@ pub mod anthropic_types;
 pub mod capability_registry;
 pub mod catalog;
 pub mod liter_driver;
+pub mod mock_driver;
 pub mod orchestrator;
 pub mod registry;
 pub mod router;
