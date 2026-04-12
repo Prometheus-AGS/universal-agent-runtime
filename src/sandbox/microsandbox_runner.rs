@@ -26,7 +26,6 @@ type SandboxMap = Arc<Mutex<HashMap<String, Arc<Sandbox>>>>;
 /// Microsandbox runner backed by libkrun hardware VMs.
 pub struct MicrosandboxRunner {
     default_memory_mib: u32,
-    default_cpus: u8,
     network_enabled: bool,
     /// Live sandbox registry: handle_id → Sandbox.
     sandboxes: SandboxMap,
@@ -36,7 +35,6 @@ impl MicrosandboxRunner {
     pub fn new(config: &crate::config::AppConfig) -> Self {
         Self {
             default_memory_mib: config.sandbox.default_memory_mib,
-            default_cpus: 1,
             network_enabled: config.sandbox.network_enabled,
             sandboxes: Arc::new(Mutex::new(HashMap::new())),
         }
@@ -46,8 +44,8 @@ impl MicrosandboxRunner {
 impl std::fmt::Debug for MicrosandboxRunner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MicrosandboxRunner")
-            .field("memory_mib", &self.default_memory_mib)
-            .field("network", &self.network_enabled)
+            .field("default_memory_mib", &self.default_memory_mib)
+            .field("network_enabled", &self.network_enabled)
             .finish()
     }
 }

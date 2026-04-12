@@ -10,7 +10,7 @@ use super::runner::SandboxRunner;
 /// 2. Auto-detect: KVM on Linux or HVF on macOS (if `sandbox-microsandbox` feature enabled)
 /// 3. Remote runner if `UAR_SANDBOX_REMOTE_URL` is set
 /// 4. Wasmtime fallback (process-based, limited isolation)
-#[allow(unused_variables)]
+#[allow(unused_variables, unreachable_code)]
 pub fn build_runner(config: &crate::config::AppConfig) -> Arc<dyn SandboxRunner> {
     let forced = std::env::var("UAR_SANDBOX_RUNNER").ok();
 
