@@ -217,9 +217,17 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
 
     // MCP: connect once at startup
     // We update this to include native tools if persistence is present
-    let mut mcp_registry = McpRegistry::load_from_file("mcp.json")
-        .await
-        .unwrap_or_else(|e| panic!("Failed to load MCP servers: {e:?}"));
+    let mut mcp_registry = match McpRegistry::load_from_file("mcp.json").await {
+        Ok(registry) => registry,
+        Err(e) => {
+            tracing::warn!(
+                error = %e,
+                "Could not load mcp.json — starting with empty MCP registry. \
+                 Tools from mcp.json will not be available until the file is created."
+            );
+            McpRegistry::empty()
+        }
+    };
 
     // Register memory tools — live service if enabled, no-op shims otherwise.
     let save_tool = Arc::new(crate::uar::tools::memory::MemorySaveTool::new(
@@ -3319,12 +3327,37 @@ async fn resolve_requested_model(
     let requested_model = requested_model.unwrap_or("").trim();
 
     if requested_model.is_empty() {
+        // 1. Use the provider's configured default model
         if let Some(model_id) = default_provider.default_model.clone() {
             return Ok(ResolvedModel {
                 provider_id: default_provider_id,
                 model_id,
             });
         }
+        // 2. Use the global LLM config model (from .env / config.yaml)
+        let (_, global_model) = crate::llm::registry::split_model_string_pub(&state.config.llm.model);
+        if !global_model.is_empty() {
+            tracing::debug!(
+                fallback_model = %global_model,
+                "No provider default_model set, falling back to global LLM config model"
+            );
+            return Ok(ResolvedModel {
+                provider_id: default_provider_id,
+                model_id: global_model,
+            });
+        }
+        // 3. Pick a chat-capable model from the provider's model list (skip image/embedding models)
+        let chat_model = default_provider
+            .models
+            .iter()
+            .find(|m| !m.id.contains("image") && !m.id.contains("embedding") && !m.id.contains("tts") && !m.id.contains("whisper") && !m.id.contains("dall-e") && !m.id.contains("moderation"));
+        if let Some(model) = chat_model {
+            return Ok(ResolvedModel {
+                provider_id: default_provider_id,
+                model_id: model.id.clone(),
+            });
+        }
+        // 4. Last resort: first model
         if let Some(model) = default_provider.models.first() {
             return Ok(ResolvedModel {
                 provider_id: default_provider_id,
@@ -3333,7 +3366,7 @@ async fn resolve_requested_model(
         }
         return Err(openai_error_response(
             StatusCode::NOT_FOUND,
-            "Unknown model",
+            "No chat-capable model found for the default provider. Configure a default model in Settings > LLM Configuration.",
             Some("model_not_found"),
         ));
     }

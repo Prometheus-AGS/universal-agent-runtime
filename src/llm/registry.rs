@@ -207,14 +207,38 @@ impl ProviderRegistry {
 
         enrich_provider_config(&mut config);
 
+        let mut providers = self.providers.write().await;
+
+        // Preserve existing default_model if the new config doesn't specify one.
+        // This prevents UI-driven re-registration from losing the model set at startup.
+        if config.default_model.is_none() {
+            if let Some(existing) = providers.get(&config.id) {
+                if existing.default_model.is_some() {
+                    tracing::debug!(
+                        provider_id = %config.id,
+                        preserved_model = ?existing.default_model,
+                        "Preserving existing default_model during re-registration"
+                    );
+                    config.default_model = existing.default_model.clone();
+                }
+            }
+        }
+
+        // Preserve existing API key if the new config doesn't have one.
+        if config.api_key.is_none() {
+            if let Some(existing) = providers.get(&config.id) {
+                config.api_key = existing.api_key.clone();
+            }
+        }
+
         tracing::info!(
             provider_id = %config.id,
             base_url = %config.base_url,
             models = config.models.len(),
+            default_model = ?config.default_model,
             "Registering custom provider"
         );
 
-        let mut providers = self.providers.write().await;
         providers.insert(config.id.clone(), config);
         Ok(())
     }
@@ -297,10 +321,18 @@ impl ProviderRegistry {
             model.to_string()
         };
 
-        let full_model = format!("{provider_id}/{resolved_model}");
+        // When base_url is explicitly set, the provider routing is already handled
+        // and the API expects just the model ID (e.g., "gpt-4o" not "openai/gpt-4o").
+        // Only use provider/model format when liter-llm needs to auto-detect the provider.
+        let has_explicit_base_url = !config.base_url.is_empty();
+        let model_for_driver = if has_explicit_base_url {
+            resolved_model
+        } else {
+            format!("{provider_id}/{resolved_model}")
+        };
 
         Some(LlmConfig {
-            model: full_model,
+            model: model_for_driver,
             api_key: config.api_key.clone(),
             base_url: if config.base_url.is_empty() {
                 None
@@ -477,6 +509,11 @@ fn split_model_string(model: &str) -> (String, String) {
         );
         (inferred.to_string(), model.to_string())
     }
+}
+
+/// Public wrapper for `split_model_string` (used by `resolve_requested_model` in `server.rs`).
+pub fn split_model_string_pub(model: &str) -> (String, String) {
+    split_model_string(model)
 }
 
 /// Detect a short provider ID from a base URL.

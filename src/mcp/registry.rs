@@ -48,6 +48,16 @@ impl std::fmt::Debug for McpRegistry {
 }
 
 impl McpRegistry {
+    /// Create an empty registry with no MCP servers or tools.
+    pub fn empty() -> Self {
+        Self {
+            services: Arc::new(HashMap::new()),
+            tool_index: Arc::new(HashMap::new()),
+            tools: Arc::new(Vec::new()),
+            native_tools: Arc::new(HashMap::new()),
+        }
+    }
+
     pub async fn load_from_file(path: &str) -> anyhow::Result<Self> {
         let resolved = resolve_mcp_config_path(path);
         let cfg = load_mcp_config(resolved)?;
