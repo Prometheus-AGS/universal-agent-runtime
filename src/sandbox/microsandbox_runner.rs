@@ -9,27 +9,27 @@
 
 use async_trait::async_trait;
 use microsandbox::Sandbox;
-use std::time::Instant;
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+use tokio::sync::Mutex;
 use tracing::{debug, info, warn};
 
 use super::runner::{RunnerCapabilities, RunnerType, SandboxRunner};
 use super::types::*;
 
-/// Default OCI images for each language runtime.
-fn default_image(language: &Language) -> &'static str {
-    match language {
-        Language::Bash => "ubuntu:22.04",
-        Language::Python => "python:3.12-slim",
-        Language::Rust => "rust:1.87-slim",
-        Language::Node => "node:22-slim",
-    }
-}
+/// Registry of running microsandbox VMs, keyed by the UAR sandbox handle ID.
+type SandboxMap = Arc<Mutex<HashMap<String, Arc<Sandbox>>>>;
 
 /// Microsandbox runner backed by libkrun hardware VMs.
 pub struct MicrosandboxRunner {
     default_memory_mib: u32,
-    default_cpus: u32,
+    default_cpus: u8,
     network_enabled: bool,
+    /// Live sandbox registry: handle_id → Sandbox.
+    sandboxes: SandboxMap,
 }
 
 impl MicrosandboxRunner {
@@ -38,6 +38,7 @@ impl MicrosandboxRunner {
             default_memory_mib: config.sandbox.default_memory_mib,
             default_cpus: 1,
             network_enabled: config.sandbox.network_enabled,
+            sandboxes: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -63,29 +64,24 @@ impl SandboxRunner for MicrosandboxRunner {
             "Creating microsandbox VM"
         );
 
-        // Build the sandbox via microsandbox API
-        let mut builder = Sandbox::builder()
-            .image(&config.image)
-            .memory(config.memory_mib as u64)
-            .cpus(config.cpus as u64);
-
-        // Add named volumes
-        for (name, mount_path) in &config.volumes {
-            builder = builder.volume(name, mount_path);
-        }
-
-        let sandbox = builder
+        // Microsandbox names must be filesystem-safe; use the UUID directly.
+        let msb_config = Sandbox::builder(&id)
+            .image(config.image.clone())
+            .memory(config.memory_mib)
+            .cpus(config.cpus as u8)
             .build()
-            .await
-            .map_err(|e| SandboxError::CreationFailed(format!("microsandbox build failed: {e}")))?;
+            .map_err(|e| SandboxError::CreationFailed(format!("sandbox config build failed: {e}")))?;
 
-        // Start the sandbox
-        sandbox
-            .start()
+        let sandbox = Sandbox::create(msb_config)
             .await
-            .map_err(|e| SandboxError::CreationFailed(format!("microsandbox start failed: {e}")))?;
+            .map_err(|e| SandboxError::CreationFailed(format!("microsandbox create failed: {e}")))?;
 
         debug!(sandbox_id = %id, "Microsandbox VM started");
+
+        self.sandboxes
+            .lock()
+            .await
+            .insert(id.clone(), Arc::new(sandbox));
 
         Ok(SandboxHandle {
             id,
@@ -100,7 +96,14 @@ impl SandboxRunner for MicrosandboxRunner {
     ) -> Result<ExecutionResult, SandboxError> {
         let start = Instant::now();
 
-        let cmd = request.language.command();
+        let sandbox = {
+            let map = self.sandboxes.lock().await;
+            map.get(&handle.id)
+                .cloned()
+                .ok_or_else(|| SandboxError::NotFound(handle.id.clone()))?
+        };
+
+        let cmd = request.language.command().to_string();
         let args = request.language.exec_args(&request.code);
 
         debug!(
@@ -109,24 +112,35 @@ impl SandboxRunner for MicrosandboxRunner {
             "Executing in microsandbox"
         );
 
-        // Get the sandbox handle and execute command
-        // Note: In a real implementation, we'd store the Sandbox object in the handle.
-        // For now, we use tokio::process::Command as a placeholder when the
-        // microsandbox API for command execution is accessed.
-        let output = tokio::process::Command::new(cmd)
-            .args(&args)
-            .env_clear()
-            .envs(&request.env)
-            .output()
+        let timeout = request
+            .timeout_seconds
+            .map(Duration::from_secs);
+        let env_pairs: Vec<(String, String)> = request.env.into_iter().collect();
+
+        let output = sandbox
+            .exec_with(&cmd, |mut e| {
+                e = e.args(args);
+                for (k, v) in &env_pairs {
+                    e = e.env(k, v);
+                }
+                if let Some(t) = timeout {
+                    e = e.timeout(t);
+                }
+                e
+            })
             .await
             .map_err(|e| SandboxError::ExecutionFailed(e.to_string()))?;
 
         let elapsed = start.elapsed();
 
         Ok(ExecutionResult {
-            exit_code: output.status.code().unwrap_or(-1),
-            stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-            stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+            exit_code: output.status().code,
+            stdout: output
+                .stdout()
+                .unwrap_or_else(|_| String::from("[invalid utf-8]")),
+            stderr: output
+                .stderr()
+                .unwrap_or_else(|_| String::from("[invalid utf-8]")),
             execution_time_ms: elapsed.as_millis() as u64,
         })
     }
@@ -138,22 +152,62 @@ impl SandboxRunner for MicrosandboxRunner {
         content: &[u8],
     ) -> Result<(), SandboxError> {
         debug!(sandbox_id = %handle.id, path = %path, "Writing file to microsandbox");
-        // Use microsandbox filesystem API
-        tokio::fs::write(path, content)
+
+        let sandbox = {
+            let map = self.sandboxes.lock().await;
+            map.get(&handle.id)
+                .cloned()
+                .ok_or_else(|| SandboxError::NotFound(handle.id.clone()))?
+        };
+
+        // Write via stdin pipe into a `cat > path` shell command.
+        let cmd = format!("cat > {path}");
+        sandbox
+            .exec_with("bash", |e| e.args(["-c", &cmd]).stdin_bytes(content.to_vec()))
             .await
-            .map_err(|e| SandboxError::FileError(e.to_string()))
+            .map_err(|e| SandboxError::FileError(e.to_string()))?;
+
+        Ok(())
     }
 
     async fn read_file(&self, handle: &SandboxHandle, path: &str) -> Result<Vec<u8>, SandboxError> {
         debug!(sandbox_id = %handle.id, path = %path, "Reading file from microsandbox");
-        tokio::fs::read(path)
+
+        let sandbox = {
+            let map = self.sandboxes.lock().await;
+            map.get(&handle.id)
+                .cloned()
+                .ok_or_else(|| SandboxError::NotFound(handle.id.clone()))?
+        };
+
+        let output = sandbox
+            .exec("cat", [path])
             .await
-            .map_err(|e| SandboxError::FileError(e.to_string()))
+            .map_err(|e| SandboxError::FileError(e.to_string()))?;
+
+        Ok(output.stdout_bytes().to_vec())
     }
 
     async fn destroy(&self, handle: SandboxHandle) -> Result<(), SandboxError> {
         info!(sandbox_id = %handle.id, "Destroying microsandbox VM");
-        // In full implementation, call sandbox.stop() + sandbox.remove()
+
+        let sandbox = self
+            .sandboxes
+            .lock()
+            .await
+            .remove(&handle.id)
+            .ok_or_else(|| SandboxError::NotFound(handle.id.clone()))?;
+
+        sandbox
+            .stop_and_wait()
+            .await
+            .map_err(|e| SandboxError::ExecutionFailed(format!("stop failed: {e}")))?;
+
+        // Remove persisted state from disk.
+        if let Err(e) = Sandbox::remove(&handle.id).await {
+            warn!(sandbox_id = %handle.id, error = %e, "Failed to remove sandbox artifacts");
+        }
+
         Ok(())
     }
 
