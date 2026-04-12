@@ -138,6 +138,11 @@ pub struct AppConfig {
     /// ACP server endpoint configuration.
     #[serde(default)]
     pub acp: AcpConfig,
+    /// Global default context strategy for trimming conversation history before LLM calls.
+    /// Defaults to `SlidingWindow { max_messages: 20 }`.
+    /// Can be overridden per-agent via agent policy extensions.
+    #[serde(default)]
+    pub context_strategy: crate::uar::context::ContextStrategy,
 }
 
 #[derive(Debug, Deserialize, Clone)]

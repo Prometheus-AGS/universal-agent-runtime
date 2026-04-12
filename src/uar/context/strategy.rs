@@ -89,6 +89,50 @@ pub fn estimate_tokens(text: &str) -> usize {
     (text.len() + 3) / 4
 }
 
+/// Apply a [`ContextStrategy`] to any cloneable list, trimming by count/position.
+///
+/// This is the typed counterpart to [`apply_strategy`] — useful when messages are
+/// already strongly typed (e.g. `Vec<crate::llm::Message>`) and you want to avoid
+/// round-tripping through `serde_json::Value`.
+#[must_use]
+pub fn trim_count<T: Clone>(items: Vec<T>, strategy: &ContextStrategy) -> Vec<T> {
+    match strategy {
+        ContextStrategy::None => items,
+
+        ContextStrategy::SlidingWindow { max_messages } => {
+            let n = *max_messages;
+            if items.len() <= n {
+                items
+            } else {
+                items[items.len() - n..].to_vec()
+            }
+        }
+
+        ContextStrategy::TruncateMiddle {
+            keep_first,
+            keep_last,
+        } => {
+            let total = keep_first + keep_last;
+            if items.len() <= total {
+                items
+            } else {
+                let mut result = items[..*keep_first].to_vec();
+                result.extend_from_slice(&items[items.len() - keep_last..]);
+                result
+            }
+        }
+
+        ContextStrategy::Summarize { .. } | ContextStrategy::Hierarchical { .. } => {
+            const FALLBACK: usize = 50;
+            if items.len() <= FALLBACK {
+                items
+            } else {
+                items[items.len() - FALLBACK..].to_vec()
+            }
+        }
+    }
+}
+
 /// Apply a [`ContextStrategy`] to a message list and return the filtered list.
 ///
 /// Messages are `serde_json::Value` objects with at minimum a `"role"` and

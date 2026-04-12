@@ -336,7 +336,8 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .await
         .with_skill_service(Arc::clone(&skill_service))
         .with_provider_registry(Arc::clone(&provider_registry))
-        .with_native_skills(Arc::clone(&native_skill_registry)),
+        .with_native_skills(Arc::clone(&native_skill_registry))
+        .with_message_context_strategy(config.context_strategy.clone()),
     );
 
     // Initialize Global Rate Limiter

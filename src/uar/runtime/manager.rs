@@ -100,6 +100,8 @@ pub struct RunManager {
     /// When a tool call requires approval, a oneshot channel is inserted here.
     /// The approval endpoint sends `true` (approved) or `false` (rejected) through it.
     pending_approvals: Arc<Mutex<HashMap<String, oneshot::Sender<bool>>>>,
+    /// Message-count based context strategy applied to session history before LLM calls.
+    message_context_strategy: crate::uar::context::ContextStrategy,
 }
 
 /// Memory mutation tool name sets — used to detect side effects in ToolEnd events.
@@ -269,7 +271,18 @@ impl RunManager {
             provider_registry: None,
             native_skills,
             pending_approvals: Arc::new(Mutex::new(HashMap::new())),
+            message_context_strategy: crate::uar::context::ContextStrategy::default(),
         }
+    }
+
+    /// Set the message-count based context strategy from global config.
+    #[must_use]
+    pub fn with_message_context_strategy(
+        mut self,
+        strategy: crate::uar::context::ContextStrategy,
+    ) -> Self {
+        self.message_context_strategy = strategy;
+        self
     }
 
     /// Set the skill service for coordinated skill management.
@@ -593,7 +606,10 @@ impl RunManager {
         });
         messages.extend(session.messages());
 
-        // Context Management
+        // Message-count context strategy (trim history before token-budget management).
+        let messages = crate::uar::context::trim_count(messages, &self.message_context_strategy);
+
+        // Token-budget context management (summarization, etc.)
         let (optimized_messages, context_action) =
             self.context_manager.apply(messages, 128_000).await;
         let messages = optimized_messages;
