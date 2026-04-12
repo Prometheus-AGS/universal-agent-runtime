@@ -1,0 +1,27 @@
+{
+  "lifecycle": {
+    "on_activate": "scripts/state-init.sh",
+    "on_detect_orchestrator": "scripts/detect-orchestrators.sh"
+  },
+  "triggers": {
+    "file_patterns": [
+      "**/realtime*.ts",
+      "**/realtime-manager.ts",
+      "**/realtime-adapters.ts",
+      "**/electricsql.ts"
+    ],
+    "keywords": [
+      "RealtimeManager",
+      "createWebSocketAdapter",
+      "createSupabaseRealtimeAdapter",
+      "createConvexAdapter",
+      "createGraphQLSubscriptionAdapter",
+      "createElectricAdapter",
+      "ChangeSet",
+      "EntityChange",
+      "@prometheus-ags/prometheus-entity-management",
+      "PGlite",
+      "ElectricSQL"
+    ]
+  }
+}

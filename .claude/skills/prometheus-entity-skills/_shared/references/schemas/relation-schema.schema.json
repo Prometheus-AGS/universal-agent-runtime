@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prometheus-entity-management.local/schemas/relation-schema.schema.json",
+  "title": "EntitySchema registration",
+  "description": "JSON representation of registerSchema(EntitySchema) from src/crud/relations.ts. listKeyPrefix is described structurally (agents generate TS functions at execute time).",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "EntityType this schema describes."
+    },
+    "globalListKeys": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "String prefixes or keys matched by invalidateLists after any mutation on this type."
+    },
+    "relations": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "$ref": "#/$defs/belongsTo" },
+          { "$ref": "#/$defs/hasMany" },
+          { "$ref": "#/$defs/manyToMany" }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "listKeyPrefixPattern": {
+      "type": "object",
+      "description": "Serializable hint for code gen: how to build listKeyPrefix(parentId or relatedId).",
+      "required": ["segments"],
+      "properties": {
+        "segments": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "required": ["param", "placeholder"],
+                "properties": {
+                  "param": { "const": "parentId" },
+                  "placeholder": { "type": "boolean" }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "belongsTo": {
+      "type": "object",
+      "required": ["cardinality", "foreignKey", "targetType"],
+      "properties": {
+        "cardinality": { "const": "belongsTo" },
+        "foreignKey": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Property on this entity holding the parent's EntityId."
+        },
+        "targetType": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Parent EntityType."
+        },
+        "invalidateTargetLists": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Prefix strings for list keys to invalidate when FK changes."
+        }
+      },
+      "additionalProperties": false
+    },
+    "hasMany": {
+      "type": "object",
+      "required": ["cardinality", "targetType", "foreignKey", "listKeyPrefixPattern"],
+      "properties": {
+        "cardinality": { "const": "hasMany" },
+        "targetType": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Child EntityType."
+        },
+        "foreignKey": {
+          "type": "string",
+          "minLength": 1,
+          "description": "On the child row, field pointing back to this entity's id."
+        },
+        "listKeyPrefixPattern": { "$ref": "#/$defs/listKeyPrefixPattern" }
+      },
+      "additionalProperties": false
+    },
+    "manyToMany": {
+      "type": "object",
+      "required": ["cardinality", "targetType", "listKeyPrefixPattern"],
+      "properties": {
+        "cardinality": { "const": "manyToMany" },
+        "targetType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "localArrayField": {
+          "type": "string",
+          "description": "Field on this entity holding EntityId[] of partners; defaults to \"\" in TS if omitted for some patterns."
+        },
+        "listKeyPrefixPattern": { "$ref": "#/$defs/listKeyPrefixPattern" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

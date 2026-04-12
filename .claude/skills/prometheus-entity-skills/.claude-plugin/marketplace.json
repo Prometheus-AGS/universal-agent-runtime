@@ -1,0 +1,54 @@
+{
+  "name": "prometheus-entity-skills",
+  "owner": {
+    "name": "Prometheus AGS",
+    "email": "travis@prometheus.dev"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for @prometheus-ags/prometheus-entity-management — entity graph setup, CRUD, GraphQL, realtime, Prisma, and optimization."
+  },
+  "plugins": [
+    {
+      "name": "prometheus-entity-graph-setup",
+      "source": "./entity-graph-setup",
+      "description": "Introduce the entity graph into React/Vite/Next apps; detect legacy data layers and plan migrations.",
+      "license": "MIT",
+      "repository": "https://github.com/prometheus/prometheus-entity-management"
+    },
+    {
+      "name": "prometheus-entity-graph-crud",
+      "source": "./entity-graph-crud",
+      "description": "Generate CRUD surfaces with useEntityCRUD, EntityTable, forms, and registerSchema.",
+      "license": "MIT",
+      "repository": "https://github.com/prometheus/prometheus-entity-management"
+    },
+    {
+      "name": "prometheus-entity-graph-graphql",
+      "source": "./entity-graph-graphql",
+      "description": "GraphQL hooks, EntityDescriptor normalization, and subscription adapters.",
+      "license": "MIT",
+      "repository": "https://github.com/prometheus/prometheus-entity-management"
+    },
+    {
+      "name": "prometheus-entity-graph-realtime",
+      "source": "./entity-graph-realtime",
+      "description": "RealtimeManager, WebSocket and hosted adapters, ElectricSQL / local-first patterns.",
+      "license": "MIT",
+      "repository": "https://github.com/prometheus/prometheus-entity-management"
+    },
+    {
+      "name": "prometheus-entity-graph-prisma",
+      "source": "./entity-graph-prisma",
+      "description": "Prisma schema mapping, REST/Next routes, and optional codegen.",
+      "license": "MIT",
+      "repository": "https://github.com/prometheus/prometheus-entity-management"
+    },
+    {
+      "name": "prometheus-entity-graph-optimize",
+      "source": "./entity-graph-optimize",
+      "description": "Architecture audits, performance tuning, and graph GC.",
+      "license": "MIT",
+      "repository": "https://github.com/prometheus/prometheus-entity-management"
+    }
+  ]
+}

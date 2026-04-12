@@ -1,0 +1,29 @@
+{
+  "name": "prometheus-entity-graph-realtime",
+  "version": "1.0.0",
+  "description": "Add realtime sync to prometheus-entity-management: RealtimeManager, adapters (WebSocket, Supabase, Convex, GraphQL-WS), and ElectricSQL/PGlite local-first.",
+  "author": "Prometheus AGS",
+  "repository": "prometheus/prometheus-entity-management",
+  "skills": [
+    "SKILL.md",
+    "skills/entity-realtime-setup/SKILL.md",
+    "skills/entity-realtime-channel/SKILL.md",
+    "skills/entity-realtime-local-first/SKILL.md"
+  ],
+  "keywords": [
+    "@prometheus-ags/prometheus-entity-management",
+    "realtime",
+    "websocket",
+    "supabase",
+    "convex",
+    "graphql-subscription",
+    "electricsql",
+    "pglite",
+    "RealtimeManager"
+  ],
+  "compatibility": {
+    "platforms": ["claude-code", "cursor", "opencode", "codex"],
+    "languages": ["typescript", "javascript"],
+    "frameworks": ["react", "next.js", "vite"]
+  }
+}

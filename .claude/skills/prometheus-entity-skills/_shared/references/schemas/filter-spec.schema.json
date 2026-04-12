@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prometheus-entity-management.local/schemas/filter-spec.schema.json",
+  "title": "FilterSpec",
+  "description": "Transport-agnostic filter: either a conjunction of FilterClause or a nested FilterGroup. Aligns with src/view/types.ts.",
+  "$defs": {
+    "filterOperator": {
+      "type": "string",
+      "enum": [
+        "eq",
+        "neq",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "in",
+        "nin",
+        "contains",
+        "startsWith",
+        "endsWith",
+        "isNull",
+        "isNotNull",
+        "between",
+        "arrayContains",
+        "arrayOverlaps",
+        "matches",
+        "custom"
+      ]
+    },
+    "filterClause": {
+      "type": "object",
+      "required": ["field", "op"],
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dot path or simple field name evaluated against entity records."
+        },
+        "op": { "$ref": "#/$defs/filterOperator" },
+        "value": {
+          "description": "Right-hand value; omitted for isNull/isNotNull; tuple for between; array for in/nin."
+        },
+        "predicate": {
+          "type": "string",
+          "description": "Placeholder: in TS this is a function; JSON specs cannot embed functions. Mark op=custom and describe predicate logic in prose elsewhere."
+        }
+      },
+      "additionalProperties": false
+    },
+    "filterGroup": {
+      "type": "object",
+      "required": ["logic", "clauses"],
+      "properties": {
+        "logic": {
+          "type": "string",
+          "enum": ["and", "or"]
+        },
+        "clauses": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              { "$ref": "#/$defs/filterClause" },
+              { "$ref": "#/$defs/filterGroup" }
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "type": "array",
+      "items": { "$ref": "#/$defs/filterClause" }
+    },
+    { "$ref": "#/$defs/filterGroup" }
+  ]
+}

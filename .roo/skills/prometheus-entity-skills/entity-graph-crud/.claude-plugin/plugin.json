@@ -1,0 +1,29 @@
+{
+  "name": "prometheus-entity-graph-crud",
+  "version": "1.0.0",
+  "description": "Generate CRUD screens for prometheus-entity-management: useEntityCRUD, EntityTable, EntityFormSheet, registerSchema, and strict Components → Hooks → Stores flow.",
+  "author": "Prometheus AGS",
+  "repository": "prometheus/prometheus-entity-management",
+  "skills": [
+    "SKILL.md",
+    "skills/entity-crud-page/SKILL.md",
+    "skills/entity-crud-form/SKILL.md",
+    "skills/entity-crud-table/SKILL.md",
+    "skills/entity-crud-relations/SKILL.md"
+  ],
+  "keywords": [
+    "@prometheus-ags/prometheus-entity-management",
+    "entity-graph",
+    "crud",
+    "react",
+    "zustand",
+    "admin",
+    "tanstack-table",
+    "useEntityCRUD"
+  ],
+  "compatibility": {
+    "platforms": ["claude-code", "cursor", "opencode", "codex"],
+    "languages": ["typescript", "javascript"],
+    "frameworks": ["react", "next.js", "vite"]
+  }
+}

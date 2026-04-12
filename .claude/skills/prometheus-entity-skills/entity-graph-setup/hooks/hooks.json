@@ -1,0 +1,13 @@
+{
+  "hooks": [
+    {
+      "event": "Stop",
+      "steps": [
+        {
+          "type": "command",
+          "command": "bash \"${CLAUDE_PLUGIN_ROOT:-${PWD}}/scripts/detect-orchestrators.sh\" 2>/dev/null || true"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "prometheus-entity-graph-graphql",
+  "version": "1.0.0",
+  "description": "GraphQL layer for prometheus-entity-management: GQLClient, EntityDescriptor normalization, useGQLEntity/useGQLList/useGQLMutation/useGQLSubscription, and RealtimeManager integration via createGraphQLSubscriptionAdapter.",
+  "author": "Prometheus AGS",
+  "repository": "prometheus/prometheus-entity-management",
+  "skills": [
+    "SKILL.md",
+    "skills/entity-gql-setup/SKILL.md",
+    "skills/entity-gql-hooks/SKILL.md",
+    "skills/entity-gql-subscription/SKILL.md"
+  ],
+  "keywords": [
+    "@prometheus-ags/prometheus-entity-management",
+    "entity-management",
+    "zustand",
+    "react",
+    "graphql",
+    "normalization",
+    "subscriptions",
+    "graphql-ws",
+    "typescript"
+  ],
+  "compatibility": {
+    "platforms": ["claude-code", "cursor", "opencode", "codex"],
+    "languages": ["typescript", "javascript"],
+    "frameworks": ["react", "next.js", "vite"]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "prometheus-entity-graph-optimize",
+  "version": "1.0.0",
+  "description": "Audit and optimize prometheus-entity-management apps: CLAUDE.md layering, Zustand selectors, engine subscribers, list keys, realtime batching, GraphQL dedupe keys, and application-level entity eviction.",
+  "author": "Prometheus AGS",
+  "repository": "prometheus/prometheus-entity-management",
+  "skills": [
+    "SKILL.md",
+    "skills/entity-audit/SKILL.md",
+    "skills/entity-perf/SKILL.md",
+    "skills/entity-gc/SKILL.md"
+  ],
+  "keywords": [
+    "@prometheus-ags/prometheus-entity-management",
+    "entity-management",
+    "zustand",
+    "react",
+    "performance",
+    "audit",
+    "optimization",
+    "memory",
+    "typescript"
+  ],
+  "compatibility": {
+    "platforms": ["claude-code", "cursor", "opencode", "codex"],
+    "languages": ["typescript", "javascript"],
+    "frameworks": ["react", "next.js", "vite"]
+  }
+}

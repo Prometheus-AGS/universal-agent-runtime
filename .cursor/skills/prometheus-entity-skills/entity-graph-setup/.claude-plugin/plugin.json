@@ -1,0 +1,26 @@
+{
+  "name": "prometheus-entity-graph-setup",
+  "version": "1.0.0",
+  "description": "Set up prometheus-entity-management in any React project with automatic entity detection and migration",
+  "author": "Prometheus AGS",
+  "repository": "prometheus/prometheus-entity-management",
+  "skills": [
+    "SKILL.md",
+    "skills/entity-graph-init/SKILL.md",
+    "skills/entity-graph-detect/SKILL.md",
+    "skills/entity-graph-migrate/SKILL.md"
+  ],
+  "keywords": [
+    "entity-management",
+    "zustand",
+    "react",
+    "normalized-cache",
+    "migration",
+    "setup"
+  ],
+  "compatibility": {
+    "platforms": ["claude-code", "cursor", "opencode", "codex"],
+    "languages": ["typescript", "javascript"],
+    "frameworks": ["react", "next.js", "vite"]
+  }
+}

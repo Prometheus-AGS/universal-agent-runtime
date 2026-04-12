@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prometheus-entity-management.local/schemas/entity-types.schema.json",
+  "title": "Entity type definition (graph contract)",
+  "description": "Describes how a domain entity maps into prometheus-entity-management: graph key, id field, and optional metadata for code generation and validation. This is a skills/consuming-app contract, not a runtime Zustand schema.",
+  "type": "object",
+  "required": ["entityType", "idField"],
+  "properties": {
+    "entityType": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Graph partition key (EntityType), e.g. \"Task\", \"User\"."
+    },
+    "idField": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Property name on the wire object that holds EntityId (commonly \"id\" or \"uuid\")."
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human label for UI and logging."
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional documentation for agents and developers."
+    },
+    "fields": {
+      "type": "array",
+      "description": "Known fields on the normalized entity record (server-shaped keys).",
+      "items": {
+        "type": "object",
+        "required": ["name", "valueType"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Object key on the entity payload."
+          },
+          "valueType": {
+            "type": "string",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "integer",
+              "date",
+              "datetime",
+              "enum",
+              "json",
+              "relationId",
+              "relationIdArray",
+              "unknown"
+            ],
+            "description": "Semantic type for forms, columns, and filters."
+          },
+          "enumValues": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Allowed values when valueType is enum."
+          },
+          "requiredOnCreate": { "type": "boolean", "default": false },
+          "readOnly": { "type": "boolean", "default": false },
+          "pii": { "type": "boolean", "default": false },
+          "relationTargetType": {
+            "type": "string",
+            "description": "If valueType is relationId or relationIdArray, the target EntityType."
+          },
+          "nullable": { "type": "boolean", "default": true }
+        },
+        "additionalProperties": false
+      }
+    },
+    "listQueryKeyTemplate": {
+      "type": "array",
+      "description": "Example query key array pattern for useEntityList (stringifiable segments).",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "null" }
+        ]
+      }
+    },
+    "normalizerNotes": {
+      "type": "string",
+      "description": "Hints for mapping API/GQL shape to flat Record<string, unknown> graph rows."
+    }
+  },
+  "additionalProperties": false
+}
