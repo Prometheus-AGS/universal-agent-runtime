@@ -214,4 +214,32 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn list_attachments_for_session(&self, _session_id: &str) -> Result<Vec<AttachmentMeta>> {
         Ok(Vec::new())
     }
+
+    // =========================================================================
+    // Checkpoint Persistence
+    // =========================================================================
+
+    /// Persist a graph execution checkpoint.
+    async fn save_checkpoint(
+        &self,
+        _checkpoint: &crate::uar::runtime::checkpoint::Checkpoint,
+    ) -> Result<()> {
+        Ok(())
+    }
+
+    /// Load a single checkpoint by its unique ID.
+    async fn load_checkpoint(
+        &self,
+        _id: &str,
+    ) -> Result<Option<crate::uar::runtime::checkpoint::Checkpoint>> {
+        Ok(None)
+    }
+
+    /// List all checkpoints recorded for a given run, ordered by creation time.
+    async fn list_checkpoints(
+        &self,
+        _run_id: &str,
+    ) -> Result<Vec<crate::uar::runtime::checkpoint::Checkpoint>> {
+        Ok(Vec::new())
+    }
 }

@@ -1,5 +1,5 @@
 import { type FC, useState, useEffect, useCallback } from "react";
-import { Loader2, Plus, X } from "lucide-react";
+import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -391,6 +391,14 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
                 onChange={(v) => update("default_model", v)}
                 placeholder="Select default model..."
               />
+              {!form.default_model && (
+                <div className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2.5 py-1.5">
+                  <AlertTriangle size={12} className="shrink-0 text-amber-500" />
+                  <p className="font-mono text-[10px] text-amber-600 dark:text-amber-400">
+                    No model set — agent will use the global default or fail if none is configured.
+                  </p>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Fallback Model</Label>

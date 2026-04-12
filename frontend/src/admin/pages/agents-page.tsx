@@ -1,5 +1,5 @@
 import { type FC, useEffect, useState } from "react";
-import { ArrowLeft, Bot, Brain, Loader2, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Bot, Brain, Loader2, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -186,6 +186,15 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
   );
 }
 
+/** Returns true if an agent has no model configured in its policy. */
+function agentLacksModel(a: UarAgent): boolean {
+  const raw = a as unknown as Record<string, unknown>;
+  const policy = (raw.policy as Record<string, unknown>) ?? {};
+  const providerPolicy = (policy.provider as Record<string, unknown>) ?? {};
+  const def = (providerPolicy.default as Record<string, unknown>) ?? {};
+  return !def.provider || !def.model;
+}
+
 // ── Main Agents Page ───────────────────────────────────────────────────────
 
 export const AgentsPage: FC = () => {
@@ -297,6 +306,14 @@ export const AgentsPage: FC = () => {
                   </p>
                   <p className="font-mono text-xs text-muted-foreground">{a.kind ?? "agent"}</p>
                 </div>
+                {agentLacksModel(a) && (
+                  <AlertTriangle
+                    size={13}
+                    className="shrink-0 text-amber-500"
+                    title="No model configured"
+                    aria-label="No model configured"
+                  />
+                )}
               </Button>
             ))}
           </div>

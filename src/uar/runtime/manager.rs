@@ -1,5 +1,5 @@
 use crate::config::{LlmConfig, SkillEvolutionConfig};
-use crate::llm::{Message, MessageRole, Orchestrator};
+use crate::llm::{LiterLlmDriver, Message, MessageRole, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::session::SessionStore;
 use crate::uar::domain::{
@@ -102,6 +102,9 @@ pub struct RunManager {
     pending_approvals: Arc<Mutex<HashMap<String, oneshot::Sender<bool>>>>,
     /// Message-count based context strategy applied to session history before LLM calls.
     message_context_strategy: crate::uar::context::ContextStrategy,
+    /// Optional agent graph for graph-based execution. When set, `start_run` uses
+    /// graph-driven orchestration instead of the simple tool loop.
+    agent_graph: Option<std::sync::Arc<crate::uar::runtime::graph::AgentGraph>>,
 }
 
 /// Memory mutation tool name sets — used to detect side effects in ToolEnd events.
@@ -272,7 +275,17 @@ impl RunManager {
             native_skills,
             pending_approvals: Arc::new(Mutex::new(HashMap::new())),
             message_context_strategy: crate::uar::context::ContextStrategy::default(),
+            agent_graph: None,
         }
+    }
+
+    /// Attach an agent graph for graph-driven execution.
+    ///
+    /// When set, `start_run` executes the graph instead of the simple tool loop.
+    #[must_use]
+    pub fn with_agent_graph(mut self, graph: crate::uar::runtime::graph::AgentGraph) -> Self {
+        self.agent_graph = Some(std::sync::Arc::new(graph));
+        self
     }
 
     /// Set the message-count based context strategy from global config.
@@ -660,6 +673,28 @@ impl RunManager {
             self.llm_config.clone()
         };
 
+        // Apply per-skill LLM execution overrides (first matched skill wins).
+        let run_llm_config = {
+            let mut cfg = run_llm_config;
+            for skill in &matched_skills {
+                let ec = &skill.execution_config;
+                if let Some(ref model) = ec.preferred_model {
+                    tracing::info!(
+                        skill_id = %skill.skill_id,
+                        model = %model,
+                        "Skill overrides LLM model"
+                    );
+                    cfg.model = model.clone();
+                    break;
+                }
+            }
+            cfg
+        };
+
+        // Clone for graph context before values are moved into Orchestrator
+        let llm_config_for_graph = run_llm_config.clone();
+        let mcp_for_graph = Arc::clone(&mcp);
+
         let orchestrator = match Orchestrator::new(
             run_llm_config,
             mcp,
@@ -745,6 +780,8 @@ impl RunManager {
         let execution_session = session.clone();
         let skill_service_for_evolution = self.skill_service.clone();
         let skill_evolution_cfg = self.skill_evolution_config.clone();
+        let graph_for_run = self.agent_graph.clone();
+        let persistence_for_run = self.persistence.clone();
 
         tokio::spawn(async move {
             // 1. Run Start
@@ -787,6 +824,68 @@ impl RunManager {
                     }],
                 })
                 .await;
+
+            // Graph execution branch — runs instead of the simple tool loop when a
+            // graph is attached. On completion we emit RunEnd and return early.
+            if let Some(graph) = graph_for_run {
+                let graph_driver: std::sync::Arc<dyn crate::llm::LlmDriver> = {
+                    let client_cfg =
+                        crate::config::build_client_config(&llm_config_for_graph);
+                    match LiterLlmDriver::new(
+                        client_cfg,
+                        llm_config_for_graph.model.clone(),
+                        llm_config_for_graph.parallel_tool_calls,
+                    ) {
+                        Ok(d) => std::sync::Arc::new(d),
+                        Err(e) => {
+                            tracing::error!(
+                                run_id = %execute_run_id,
+                                error = %e,
+                                "Failed to create LLM driver for graph execution"
+                            );
+                            emitter
+                                .emit(NormalizedEvent::RunDone {
+                                    run_id: execute_run_id.clone(),
+                                })
+                                .await;
+                            return;
+                        }
+                    }
+                };
+
+                let graph_ctx = crate::uar::runtime::graph::GraphContext {
+                    run_id: execute_run_id.clone(),
+                    session_id: Some(execution_session.id().to_string()),
+                    mcp: mcp_for_graph,
+                    llm_config: llm_config_for_graph,
+                    driver: graph_driver,
+                    persistence: persistence_for_run.clone(),
+                };
+
+                let mut initial_state = crate::uar::runtime::graph::GraphState::default();
+                // Seed state with the incoming messages so LlmNode can use them.
+                for msg in &messages {
+                    initial_state.messages.push(serde_json::to_value(msg).unwrap_or_default());
+                }
+
+                let final_state = graph.execute(initial_state, &graph_ctx).await;
+
+                if let Some(err) = final_state.get::<String>("_error") {
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: execute_run_id.clone(),
+                            message: err,
+                            code: String::new(),
+                        })
+                        .await;
+                }
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: execute_run_id.clone(),
+                    })
+                    .await;
+                return;
+            }
 
             let mut accumulated_content = String::new();
             let mut accumulated_tool_calls: Vec<crate::llm::ToolCall> = Vec::new();
@@ -961,6 +1060,28 @@ impl RunManager {
                             // Track tool completions for the skill evolution hook.
                             if matches!(evt, NormalizedEvent::ToolEnd { .. }) {
                                 tool_call_count += 1;
+
+                                // Asynchronously persist a checkpoint after each tool call.
+                                if let Some(db) = persistence_for_run.clone() {
+                                    let cp = crate::uar::runtime::checkpoint::Checkpoint {
+                                        id: uuid::Uuid::new_v4().to_string(),
+                                        run_id: execute_run_id.clone(),
+                                        thread_id: execution_session.id().to_string(),
+                                        node_id: format!("tool_loop_{tool_call_count}"),
+                                        iteration: tool_call_count as u32,
+                                        state: serde_json::Value::Null,
+                                        messages: vec![],
+                                        created_at: chrono::Utc::now().to_rfc3339(),
+                                    };
+                                    tokio::spawn(async move {
+                                        if let Err(e) = db.save_checkpoint(&cp).await {
+                                            tracing::warn!(
+                                                error = %e,
+                                                "Failed to save tool-loop checkpoint"
+                                            );
+                                        }
+                                    });
+                                }
                             }
                             // Derive a memory mutation event before consuming the ToolEnd.
                             let mutation_evt = memory_mutation_from_tool_end(&evt, &execute_run_id);
@@ -1102,5 +1223,29 @@ impl RunManager {
             session_runs.get(session_id).cloned()
         }?;
         self.get_run(&run_id).await
+    }
+
+    /// Return the resolved default model `(provider_id, model_id)` if one is available,
+    /// or `None` if neither a provider registry entry nor a global `llm_config.model`
+    /// is configured.
+    pub async fn resolve_default_model(&self) -> Option<(String, String)> {
+        // 1. Try the provider registry default.
+        if let Some(registry) = &self.provider_registry {
+            if let Some((provider_id, model_id)) = registry.default_model().await {
+                return Some((provider_id, model_id));
+            }
+        }
+
+        // 2. Fall back to the global llm_config.
+        let model = self.llm_config.model.trim().to_string();
+        if !model.is_empty() {
+            let slash = model.find('/');
+            return Some(match slash {
+                Some(i) => (model[..i].to_string(), model[i + 1..].to_string()),
+                None => ("default".to_string(), model),
+            });
+        }
+
+        None
     }
 }

@@ -3,7 +3,7 @@
 //! REST endpoints for skills CRUD, matching configuration,
 //! and per-agent skill bindings.
 
-use crate::uar::domain::skills::{Skill, SkillTriggers};
+use crate::uar::domain::skills::{Skill, SkillExecutionConfig, SkillTriggers};
 use crate::uar::runtime::skills::service::{SkillMatchingConfig, SkillService, SkillUpdate};
 use axum::{
     Json, Router,
@@ -60,6 +60,7 @@ struct SkillResponse {
     triggers: crate::uar::domain::skills::SkillTriggers,
     preferred_tools: Vec<String>,
     prompt_overlay: String,
+    execution_config: SkillExecutionConfig,
 }
 
 impl From<crate::uar::domain::skills::Skill> for SkillResponse {
@@ -74,6 +75,7 @@ impl From<crate::uar::domain::skills::Skill> for SkillResponse {
             triggers: s.triggers,
             preferred_tools: s.preferred_tools,
             prompt_overlay: s.prompt_overlay,
+            execution_config: s.execution_config,
         }
     }
 }
@@ -94,6 +96,8 @@ struct CreateSkillRequest {
     preferred_tools: Vec<String>,
     #[serde(default = "default_enabled")]
     enabled: bool,
+    #[serde(default)]
+    execution_config: SkillExecutionConfig,
 }
 
 fn default_version() -> String {
@@ -118,6 +122,8 @@ struct UpdateSkillRequest {
     prompt_overlay: Option<String>,
     preferred_tools: Option<Vec<String>>,
     enabled: Option<bool>,
+    #[serde(default)]
+    execution_config: Option<SkillExecutionConfig>,
 }
 
 #[derive(Deserialize)]
@@ -189,6 +195,7 @@ async fn create_skill(
         constraints: Default::default(),
         enabled: req.enabled,
         provider_id: "api".to_string(),
+        execution_config: req.execution_config,
     };
 
     match service.create_skill(skill).await {
@@ -240,6 +247,7 @@ async fn update_skill(
         prompt_overlay: req.prompt_overlay,
         preferred_tools: req.preferred_tools,
         enabled: req.enabled,
+        execution_config: req.execution_config,
     };
 
     match service.update_skill(&id, patch).await {

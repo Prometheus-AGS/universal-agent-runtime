@@ -108,6 +108,7 @@ impl FilesystemStorageProvider {
             constraints: Default::default(),
             enabled: true,
             provider_id: self.id.clone(),
+            execution_config: Default::default(),
         };
 
         info!("Loaded skill from filesystem: {}", skill.title);

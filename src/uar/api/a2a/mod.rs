@@ -16,6 +16,7 @@
 //! | `Artifact` in response | Compiled descriptor.json when `Completed` |
 
 pub mod agent_card;
+pub mod client;
 pub mod discovery;
 // gRPC transport requires proto compilation via tonic-build.
 // Enable once tonic-build prost integration is configured.
@@ -33,6 +34,7 @@ use axum::{
     routing::{get, post},
 };
 
+pub use client::A2AClient;
 pub use discovery::{DiscoveryApiState, build_discovery_router};
 pub use handler::A2AState;
 pub use registry::{

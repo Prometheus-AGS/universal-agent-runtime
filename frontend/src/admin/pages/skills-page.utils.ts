@@ -6,6 +6,12 @@ export interface SkillEditorFormState {
   keywords: string;
   preferredTools: string;
   enabled: boolean;
+  /** "provider/model" string or empty string for no override */
+  preferredModel: string;
+}
+
+export interface SkillExecutionConfigRequest {
+  preferred_model?: string | null;
 }
 
 export interface SkillCreateRequest {
@@ -19,6 +25,7 @@ export interface SkillCreateRequest {
   prompt_overlay: string;
   preferred_tools: string[];
   enabled: boolean;
+  execution_config: SkillExecutionConfigRequest;
 }
 
 export interface SkillUpdateRequest {
@@ -32,6 +39,7 @@ export interface SkillUpdateRequest {
   prompt_overlay: string;
   preferred_tools: string[];
   enabled: boolean;
+  execution_config: SkillExecutionConfigRequest;
 }
 
 export const DEFAULT_SKILL_FORM: SkillEditorFormState = {
@@ -42,6 +50,7 @@ export const DEFAULT_SKILL_FORM: SkillEditorFormState = {
   keywords: "",
   preferredTools: "",
   enabled: true,
+  preferredModel: "",
 };
 
 export function parseCommaSeparated(value: string): string[] {
@@ -56,6 +65,11 @@ export function joinCommaSeparated(values: string[] | undefined): string {
   return values.join(", ");
 }
 
+function buildExecutionConfig(form: SkillEditorFormState): SkillExecutionConfigRequest {
+  const model = form.preferredModel.trim() || null;
+  return { preferred_model: model };
+}
+
 export function buildCreateSkillRequest(form: SkillEditorFormState): SkillCreateRequest {
   return {
     name: form.title.trim(),
@@ -67,6 +81,7 @@ export function buildCreateSkillRequest(form: SkillEditorFormState): SkillCreate
     prompt_overlay: form.promptOverlay,
     preferred_tools: parseCommaSeparated(form.preferredTools),
     enabled: form.enabled,
+    execution_config: buildExecutionConfig(form),
   };
 }
 
@@ -81,5 +96,6 @@ export function buildUpdateSkillRequest(form: SkillEditorFormState): SkillUpdate
     prompt_overlay: form.promptOverlay,
     preferred_tools: parseCommaSeparated(form.preferredTools),
     enabled: form.enabled,
+    execution_config: buildExecutionConfig(form),
   };
 }

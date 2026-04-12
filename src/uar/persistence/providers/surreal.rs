@@ -778,6 +778,86 @@ impl PersistenceLayer for SurrealDbProvider {
             .map(surreal_json_to_attachment_meta)
             .collect()
     }
+
+    // =========================================================================
+    // Checkpoint Persistence
+    // =========================================================================
+
+    async fn save_checkpoint(
+        &self,
+        checkpoint: &crate::uar::runtime::checkpoint::Checkpoint,
+    ) -> Result<()> {
+        let mut payload = to_db_value(checkpoint)?;
+        // Store a redundant `_cp_id` field so list queries can recover the id
+        // even when the SurrealDB driver serializes the RecordId opaquely.
+        if let Some(obj) = payload.as_object_mut() {
+            obj.insert(
+                "_cp_id".to_string(),
+                serde_json::Value::String(checkpoint.id.clone()),
+            );
+        }
+        let _: Option<surrealdb::types::Value> = self
+            .db
+            .upsert(("checkpoints", checkpoint.id.clone()))
+            .content(payload)
+            .await
+            .context("save_checkpoint")?;
+        Ok(())
+    }
+
+    async fn load_checkpoint(
+        &self,
+        id: &str,
+    ) -> Result<Option<crate::uar::runtime::checkpoint::Checkpoint>> {
+        let raw = self.fetch_one("checkpoints", id).await?;
+        match raw {
+            None => Ok(None),
+            Some(mut json) => {
+                // RecordId round-trip may produce null for the id field depending on
+                // the surrealdb driver version — restore it from the query parameter.
+                if json.get("id").map_or(true, |v| v.is_null()) {
+                    json["id"] = serde_json::Value::String(id.to_string());
+                }
+                let cp =
+                    serde_json::from_value(json).context("deserialise checkpoint")?;
+                Ok(Some(cp))
+            }
+        }
+    }
+
+    async fn list_checkpoints(
+        &self,
+        run_id: &str,
+    ) -> Result<Vec<crate::uar::runtime::checkpoint::Checkpoint>> {
+        let run_id_owned = run_id.to_string();
+        let mut res = self
+            .db
+            .query(
+                "SELECT * FROM checkpoints WHERE run_id = $run_id ORDER BY created_at ASC",
+            )
+            .bind(("run_id", run_id_owned))
+            .await
+            .context("list_checkpoints")?;
+        let raw: Vec<surrealdb::types::Value> = res.take(0).or_else(|e| {
+            if e.to_string().contains("does not exist") {
+                Ok(vec![])
+            } else {
+                Err(anyhow::anyhow!(e))
+            }
+        })?;
+        raw.into_iter()
+            .map(|v| {
+                let mut json = surreal_to_json(v)?;
+                // Restore id from the redundant _cp_id field if RecordId extraction returned null.
+                if json.get("id").map_or(true, |v| v.is_null()) {
+                    if let Some(fallback) = json.get("_cp_id").and_then(|v| v.as_str()).map(String::from) {
+                        json["id"] = serde_json::Value::String(fallback);
+                    }
+                }
+                serde_json::from_value(json).map_err(anyhow::Error::from)
+            })
+            .collect()
+    }
 }
 
 /// Convert a `surrealdb::types::Value` to a standard `serde_json::Value`.

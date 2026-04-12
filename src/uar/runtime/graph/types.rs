@@ -57,6 +57,8 @@ pub struct GraphContext {
     pub llm_config: crate::config::LlmConfig,
     /// Shared LLM driver for making inference calls.
     pub driver: Arc<dyn crate::llm::LlmDriver>,
+    /// Optional persistence layer for saving checkpoints.
+    pub persistence: Option<Arc<dyn crate::uar::persistence::PersistenceLayer>>,
 }
 
 // ── Node result ────────────────────────────────────────────────────────────────

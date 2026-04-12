@@ -446,6 +446,7 @@ async fn test_m6_skills_execution() {
                 constraints: SkillConstraints::default(),
                 enabled: true,
                 provider_id: String::new(),
+                execution_config: Default::default(),
             })
             .await;
     }

@@ -1,5 +1,22 @@
 use serde::{Deserialize, Serialize};
 
+/// Per-skill LLM execution configuration.
+///
+/// When a skill is matched and activated, these settings override the global
+/// LLM configuration for the duration of the skill's execution.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SkillExecutionConfig {
+    /// Override the LLM provider (e.g. `"anthropic"`, `"openai"`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preferred_provider: Option<String>,
+    /// Override the model ID (e.g. `"claude-opus-4-6"`, `"gpt-4o"`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preferred_model: Option<String>,
+    /// Override the maximum output token budget.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<usize>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(clippy::struct_field_names)]
 pub struct Skill {
@@ -21,6 +38,9 @@ pub struct Skill {
     /// ID of the storage provider that loaded this skill.
     #[serde(default)]
     pub provider_id: String,
+    /// Optional per-skill LLM execution overrides.
+    #[serde(default)]
+    pub execution_config: SkillExecutionConfig,
 }
 
 /// Represents the YAML frontmatter of a SKILL.md file

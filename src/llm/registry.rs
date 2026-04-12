@@ -289,6 +289,16 @@ impl ProviderRegistry {
         self.default_id.read().await.clone()
     }
 
+    /// Return `(provider_id, model_id)` for the configured default provider,
+    /// or `None` if no default is set or the provider has no `default_model`.
+    pub async fn default_model(&self) -> Option<(String, String)> {
+        let provider_id = self.default_id.read().await.clone()?;
+        let providers = self.providers.read().await;
+        let config = providers.get(&provider_id)?;
+        let model_id = config.default_model.clone()?;
+        Some((provider_id, model_id))
+    }
+
     /// Set the default provider.
     pub async fn set_default(&self, id: &str) -> anyhow::Result<()> {
         let providers = self.providers.read().await;
@@ -583,7 +593,8 @@ mod tests {
             .await;
         assert!(llm.is_some());
         let c = llm.unwrap();
-        assert_eq!(c.model, "groq/llama-3.3-70b");
+        // base_url is set explicitly, so driver gets plain model (no provider prefix)
+        assert_eq!(c.model, "llama-3.3-70b");
     }
 
     #[tokio::test]
@@ -594,7 +605,8 @@ mod tests {
 
         let llm = registry.resolve_to_llm_config("openai", "").await;
         assert!(llm.is_some());
-        assert_eq!(llm.unwrap().model, "openai/test-model");
+        // base_url is set explicitly, so driver gets plain model (no provider prefix)
+        assert_eq!(llm.unwrap().model, "test-model");
     }
 
     #[tokio::test]
@@ -689,7 +701,7 @@ mod tests {
         assert_eq!(m, "gpt-4o");
 
         let (p, m) = split_model_string("llama3");
-        assert_eq!(p, "default");
+        assert_eq!(p, "groq");
         assert_eq!(m, "llama3");
     }
 

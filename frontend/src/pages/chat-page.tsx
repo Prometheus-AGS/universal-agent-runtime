@@ -14,7 +14,7 @@ import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Settings2 } from "lucide-react";
-import { fetchConfiguredProviders } from "@/services/providers-api";
+import { fetchResolveModel } from "@/services/models-api";
 
 /** Thread detail view — wraps chat runtime for the store-selected thread. */
 function ThreadView({ threadId }: { threadId: string }) {
@@ -62,21 +62,18 @@ export function ChatPage() {
   const setMobileSidebarOpen = useUiStore((s) => s.setMobileSidebarOpen);
   const [configOpen, setConfigOpen] = useState(false);
   const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
-  const [providerCheck, setProviderCheck] = useState<{ loading: boolean; hasConfigured: boolean }>({ loading: true, hasConfigured: true });
+  const [modelCheck, setModelCheck] = useState<{ loading: boolean; ok: boolean; error?: string }>({ loading: true, ok: true });
   const navigate = useNavigate();
 
-  // Check if at least one provider is configured
+  // Check if a model is resolvable before allowing chat
   useEffect(() => {
     let cancelled = false;
-    fetchConfiguredProviders()
-      .then((data) => {
-        if (!cancelled) {
-          const hasConfigured = (data.providers ?? []).length > 0;
-          setProviderCheck({ loading: false, hasConfigured });
-        }
+    fetchResolveModel()
+      .then((res) => {
+        if (!cancelled) setModelCheck({ loading: false, ok: res.ok });
       })
       .catch(() => {
-        if (!cancelled) setProviderCheck({ loading: false, hasConfigured: false });
+        if (!cancelled) setModelCheck({ loading: false, ok: false, error: "Could not verify model configuration." });
       });
     return () => { cancelled = true; };
   }, []);
@@ -91,8 +88,8 @@ export function ChatPage() {
     setAgentConfig(config);
   }, []);
 
-  // No-default guard: block chat if no provider is configured
-  if (!providerCheck.loading && !providerCheck.hasConfigured) {
+  // No-model guard: block chat if no model is resolvable
+  if (!modelCheck.loading && !modelCheck.ok) {
     return (
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="max-w-md text-center">
@@ -100,11 +97,10 @@ export function ChatPage() {
             <AlertTriangle size={24} className="text-amber-400" />
           </div>
           <h2 className="font-display text-lg font-semibold text-foreground">
-            No LLM Provider Configured
+            No Model Configured
           </h2>
           <p className="mt-2 font-body text-sm text-muted-foreground">
-            You need to configure at least one LLM provider before you can chat.
-            Add your API key for OpenAI, Anthropic, or another provider.
+            {modelCheck.error ?? "No default model is configured. Add a provider and set a default model before chatting."}
           </p>
           <Button
             className="mt-4"

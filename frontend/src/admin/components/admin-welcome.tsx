@@ -1,6 +1,7 @@
 import { type FC, useCallback, useEffect, useState } from "react";
 import {
   BookOpen,
+  Bot,
   CheckCircle2,
   ChevronRight,
   Server,
@@ -29,6 +30,15 @@ const SETUP_STEPS: SetupStep[] = [
       "Connect at least one AI provider (OpenAI, Anthropic, etc.) so agents can generate responses.",
     icon: Server,
     check: () => useOnboardingWelcomeStore.getState().checkConfiguredProviders(),
+    navigateTo: "/admin/providers",
+  },
+  {
+    id: "default-model",
+    label: "Set a default model",
+    description:
+      "Choose a default model for your provider. Chat will not work until a model is selected.",
+    icon: Bot,
+    check: () => useOnboardingWelcomeStore.getState().checkDefaultModel(),
     navigateTo: "/admin/providers",
   },
   {

@@ -248,6 +248,7 @@ mod tests {
             constraints: SkillConstraints::default(),
             enabled: true,
             provider_id: String::new(),
+            execution_config: Default::default(),
         }
     }
 

@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { SkillImportDialog } from "@/admin/components/skill-import-dialog";
+import { ModelSelector } from "@/components/model-selector";
 import { cn } from "@/lib/utils";
 import { useSkillsAdmin } from "@/hooks/use-skills-admin";
 import { loadSkillsIntoGraph } from "@/entities/fetchers/skills";
@@ -135,6 +136,7 @@ export const SkillsPage: FC = () => {
       keywords: joinCommaSeparated(skill.triggers?.keywords),
       preferredTools: joinCommaSeparated(skill.preferred_tools),
       enabled: skill.enabled !== false,
+      preferredModel: skill.execution_config?.preferred_model ?? "",
     });
     setIsDialogOpen(true);
   };
@@ -355,6 +357,21 @@ export const SkillsPage: FC = () => {
                   placeholder="search, memory, compiler"
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="font-mono text-xs text-muted-foreground">
+                Model override (optional)
+              </Label>
+              <ModelSelector
+                value={form.preferredModel}
+                onChange={(value) => setForm((prev) => ({ ...prev, preferredModel: value }))}
+                defaultLabel="Use agent / global default"
+                placeholder="Search models…"
+              />
+              <p className="font-mono text-[10px] text-muted-foreground">
+                When set, this skill overrides the agent's model for its duration.
+              </p>
             </div>
 
             <div className="flex items-center justify-between rounded-md border border-border bg-muted/20 px-3 py-2">

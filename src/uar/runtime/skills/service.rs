@@ -85,6 +85,7 @@ pub struct SkillUpdate {
     pub prompt_overlay: Option<String>,
     pub preferred_tools: Option<Vec<String>>,
     pub enabled: Option<bool>,
+    pub execution_config: Option<crate::uar::domain::skills::SkillExecutionConfig>,
 }
 
 /// Central skill service coordinating storage + matching.
@@ -283,6 +284,9 @@ impl SkillService {
         }
         if let Some(enabled) = update.enabled {
             skill.enabled = enabled;
+        }
+        if let Some(execution_config) = update.execution_config {
+            skill.execution_config = execution_config;
         }
 
         self.registry.write().await.register(skill.clone()).await;
@@ -563,6 +567,7 @@ mod tests {
             constraints: SkillConstraints::default(),
             enabled: true,
             provider_id: "api".to_string(),
+            execution_config: Default::default(),
         }
     }
 

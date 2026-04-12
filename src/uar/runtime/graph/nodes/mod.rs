@@ -9,11 +9,13 @@
 //! | [`RouterNode`] | Ask the LLM to choose a routing option |
 //! | [`CheckpointNode`] | Record a named checkpoint in the execution flow |
 
+pub mod agent_node;
 pub mod checkpoint_node;
 pub mod llm_node;
 pub mod router_node;
 pub mod tool_node;
 
+pub use agent_node::AgentNode;
 pub use checkpoint_node::CheckpointNode;
 pub use llm_node::LlmNode;
 pub use router_node::RouterNode;

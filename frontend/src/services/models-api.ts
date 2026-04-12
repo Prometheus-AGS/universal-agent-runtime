@@ -14,6 +14,20 @@ export interface ProviderModelRow {
   context: number;
 }
 
+export interface ResolveModelResult {
+  ok: boolean;
+  provider_id?: string;
+  model_id?: string;
+  error?: string;
+}
+
+/** Check whether a default model is configured and resolvable. */
+export async function fetchResolveModel(): Promise<ResolveModelResult> {
+  const res = await fetch("/api/uar/resolve-model");
+  const body = await res.json() as ResolveModelResult;
+  return { ...body, ok: res.ok };
+}
+
 /** Map /api/models payload to a flat list for one provider id. */
 export function modelsRowsForProvider(
   data: CatalogModelsResponse,

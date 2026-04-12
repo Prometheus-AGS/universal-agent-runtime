@@ -120,6 +120,7 @@ fn minimal_config() -> AppConfig {
         native_tools: Default::default(),
         skill_evolution: Default::default(),
         acp: Default::default(),
+        context_strategy: Default::default(),
     }
 }
 

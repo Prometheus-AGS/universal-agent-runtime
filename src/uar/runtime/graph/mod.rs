@@ -21,4 +21,5 @@ pub mod nodes;
 pub mod types;
 
 pub use engine::{AgentGraph, AgentGraphBuilder};
+pub use nodes::{AgentNode, CheckpointNode, LlmNode, RouterNode, ToolNode};
 pub use types::{GraphContext, GraphEdge, GraphNode, GraphState, NodeResult};

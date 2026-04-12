@@ -111,6 +111,13 @@ export interface CatalogResponse {
   providers: CatalogProviderSummary[];
 }
 
+/** UAR API — SkillExecutionConfig */
+export interface UarSkillExecutionConfig {
+  preferred_provider?: string | null;
+  preferred_model?: string | null;
+  max_tokens?: number | null;
+}
+
 /** UAR API — SkillConfig */
 export interface UarSkill {
   skill_id: string;
@@ -125,6 +132,7 @@ export interface UarSkill {
   };
   preferred_tools?: string[];
   prompt_overlay?: string;
+  execution_config?: UarSkillExecutionConfig;
 }
 
 /** UAR API — AgentMetadata */
