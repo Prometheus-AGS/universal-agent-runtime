@@ -1,6 +1,7 @@
 pub mod a2ui;
 pub mod api;
 pub mod compiler;
+pub mod context;
 pub mod defaults;
 pub mod domain;
 pub mod file_processing;
