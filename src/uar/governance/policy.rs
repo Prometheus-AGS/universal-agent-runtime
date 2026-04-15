@@ -24,6 +24,11 @@ fn tool_type() -> EntityTypeName {
     "Tool".parse().expect("valid entity type")
 }
 
+/// Get the Cedar entity type for a skill resource.
+fn skill_type() -> EntityTypeName {
+    "Skill".parse().expect("valid entity type")
+}
+
 // ---------------------------------------------------------------------------
 // Request builders
 // ---------------------------------------------------------------------------
@@ -41,6 +46,11 @@ pub fn action_uid(action_name: &str) -> EntityUid {
 /// Build a Cedar entity UID for a tool resource.
 pub fn tool_uid(tool_name: &str) -> EntityUid {
     EntityUid::from_type_name_and_id(tool_type(), EntityId::new(tool_name))
+}
+
+/// Build a Cedar entity UID for a skill resource.
+pub fn skill_uid(skill_id: &str) -> EntityUid {
+    EntityUid::from_type_name_and_id(skill_type(), EntityId::new(skill_id))
 }
 
 /// Build a Cedar authorization request for a tool execution.
@@ -73,6 +83,38 @@ pub fn tool_execution_request(
     .map_err(|e| anyhow::anyhow!("Failed to create Cedar request: {e}"))
 }
 
+/// Build a Cedar authorization request for a skill mutation.
+///
+/// Unlike tool execution requests, skill mutations carry context (environment,
+/// confidence score, validation status) that Cedar policies evaluate against.
+///
+/// # Arguments
+///
+/// * `agent_id` — The agent attempting the mutation.
+/// * `action` — The mutation action (e.g., `"skill.mutate"`, `"skill.promote"`).
+/// * `skill_id` — The skill being mutated.
+/// * `context_json` — JSON object with mutation context (environment, scores, etc.).
+pub fn skill_mutation_request(
+    agent_id: &str,
+    action: &str,
+    skill_id: &str,
+    context_json: &str,
+) -> anyhow::Result<Request> {
+    let principal = agent_uid(agent_id);
+    let action = action_uid(action);
+    let resource = skill_uid(skill_id);
+
+    let context = if context_json.is_empty() {
+        Context::empty()
+    } else {
+        Context::from_json_str(context_json, None)
+            .map_err(|e| anyhow::anyhow!("Invalid Cedar context JSON: {e}"))?
+    };
+
+    Request::new(principal, action, resource, context, None)
+        .map_err(|e| anyhow::anyhow!("Failed to create Cedar skill mutation request: {e}"))
+}
+
 /// Common action names used in policy evaluation.
 pub mod actions {
     /// Executing a tool (MCP or native).
@@ -85,4 +127,15 @@ pub mod actions {
     pub const COLLABORATE: &str = "collaborate";
     /// Accessing a knowledge base.
     pub const ACCESS_KNOWLEDGE: &str = "access_knowledge";
+
+    // ── Skill mutation actions (self-learning pipeline) ──────────────
+
+    /// Optimizing a skill's prompt (dspy-rs writes back to SKILL.md).
+    pub const SKILL_MUTATE: &str = "skill.mutate";
+    /// Generating a new skill from gap detection (PMPO pipeline).
+    pub const SKILL_GENERATE: &str = "skill.generate";
+    /// Promoting a generated skill from staging to active.
+    pub const SKILL_PROMOTE: &str = "skill.promote";
+    /// Capturing execution traces for the learning pipeline.
+    pub const TRACE_CAPTURE: &str = "trace.capture";
 }
