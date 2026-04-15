@@ -135,6 +135,9 @@ pub struct AppConfig {
     /// Post-run skill evolution configuration.
     #[serde(default)]
     pub skill_evolution: SkillEvolutionConfig,
+    /// Sycophancy detection configuration for LLM response quality.
+    #[serde(default)]
+    pub sycophancy: SycophancyConfig,
     /// ACP server endpoint configuration.
     #[serde(default)]
     pub acp: AcpConfig,
@@ -1574,6 +1577,48 @@ impl Default for SkillEvolutionConfig {
 /// Configuration for the ACP (Agent Communication Protocol) server endpoint.
 ///
 /// ACP is the BeeAI / IBM Research protocol that provides a JSON-RPC 2.0
+/// Sycophancy detection configuration.
+///
+/// Controls whether LLM responses are checked for sycophantic patterns and
+/// at what threshold corrections are applied.
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub struct SycophancyConfig {
+    /// Enable sycophancy detection on LLM responses (default: true).
+    #[serde(default = "SycophancyConfig::default_enabled")]
+    pub enabled: bool,
+    /// Strictness level: "permissive", "standard", "strict", "adversarial".
+    #[serde(default = "SycophancyConfig::default_strictness")]
+    pub strictness: String,
+    /// Score threshold for auto-correction (default: 0.5). Configurable per-context.
+    #[serde(default = "SycophancyConfig::default_auto_correct_threshold")]
+    pub auto_correct_threshold: f32,
+    /// Score threshold for reflect-phase outputs (lower — more sensitive).
+    #[serde(default = "SycophancyConfig::default_reflect_threshold")]
+    pub reflect_threshold: f32,
+    /// Log detections without blocking (default: false).
+    #[serde(default)]
+    pub log_only: bool,
+}
+
+impl SycophancyConfig {
+    fn default_enabled() -> bool { true }
+    fn default_strictness() -> String { "standard".to_string() }
+    fn default_auto_correct_threshold() -> f32 { 0.5 }
+    fn default_reflect_threshold() -> f32 { 0.3 }
+}
+
+impl Default for SycophancyConfig {
+    fn default() -> Self {
+        Self {
+            enabled: Self::default_enabled(),
+            strictness: Self::default_strictness(),
+            auto_correct_threshold: Self::default_auto_correct_threshold(),
+            reflect_threshold: Self::default_reflect_threshold(),
+            log_only: false,
+        }
+    }
+}
+
 /// interface for agent introspection, session management, and streaming run
 /// execution — used by IDEs, debuggers, and the BeeAI platform.
 #[derive(Debug, Deserialize, Clone, Serialize)]

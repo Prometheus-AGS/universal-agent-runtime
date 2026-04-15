@@ -76,6 +76,9 @@ ractor = "0.15.12"
 # Governance policy engine
 cedar-policy = "4.9.1"
 
+# Sycophancy detection and correction (runtime quality gate)
+sycophancy-core = { git = "https://github.com/Know-Me-Tools/sycophancy-correction-skill.git", package = "sycophancy-core" }
+
 # Wasm runtime (feature-gated)
 wasmtime = { version = "41.0.3", optional = true }
 wasmtime-wasi = { version = "41.0.3", optional = true }
