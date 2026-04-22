@@ -89,6 +89,11 @@ pub struct SkillUpdate {
 }
 
 /// Central skill service coordinating storage + matching.
+///
+/// When a [`GovernanceEngine`] is attached, all skill mutations (updates,
+/// prompt overlays) are gated through Cedar policy evaluation before
+/// being applied. This enforces the Skill Mutation PEP for the
+/// self-learning pipeline.
 pub struct SkillService {
     /// In-memory skill index
     registry: Arc<RwLock<SkillRegistry>>,
@@ -98,6 +103,8 @@ pub struct SkillService {
     matching_config: RwLock<SkillMatchingConfig>,
     /// Per-agent skill bindings: agent_id -> Vec<skill_id>
     agent_skills: RwLock<HashMap<String, Vec<String>>>,
+    /// Optional governance engine for Cedar policy enforcement on skill mutations.
+    governance: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
 }
 
 impl std::fmt::Debug for SkillService {
@@ -119,7 +126,17 @@ impl SkillService {
             providers: Vec::new(),
             matching_config: RwLock::new(SkillMatchingConfig::default()),
             agent_skills: RwLock::new(HashMap::new()),
+            governance: None,
         }
+    }
+
+    /// Attach a governance engine for Cedar policy enforcement on skill mutations.
+    ///
+    /// When attached, `update_skill` checks `is_skill_mutation_allowed` before
+    /// applying changes. Without governance, all mutations are permitted.
+    pub fn with_governance(mut self, engine: Arc<crate::uar::governance::engine::GovernanceEngine>) -> Self {
+        self.governance = Some(engine);
+        self
     }
 
     /// Add a storage provider.
@@ -254,11 +271,36 @@ impl SkillService {
     /// Update an existing skill by ID.
     ///
     /// Returns `Ok(None)` if the skill does not exist.
+    ///
+    /// When a [`GovernanceEngine`] is attached, the mutation is checked against
+    /// Cedar policies before being applied. The default environment is
+    /// `"development"` (all mutations permitted). Set `PROMETHEUS_ENVIRONMENT`
+    /// to `"staging"` or `"production"` for stricter enforcement.
     pub async fn update_skill(
         &self,
         id: &str,
         update: SkillUpdate,
     ) -> anyhow::Result<Option<Skill>> {
+        // Cedar governance gate: check if this mutation is allowed
+        if let Some(ref engine) = self.governance {
+            let environment = std::env::var("PROMETHEUS_ENVIRONMENT")
+                .unwrap_or_else(|_| "development".to_string());
+            let context = format!(
+                r#"{{"environment": "{}", "validation_passed": true}}"#,
+                environment
+            );
+            let allowed = engine
+                .is_skill_mutation_allowed("uar-runtime", "skill.mutate", id, &context)
+                .await;
+            if !allowed {
+                anyhow::bail!(
+                    "Cedar policy denied skill mutation for '{}' in {} environment",
+                    id,
+                    environment
+                );
+            }
+        }
+
         let existing = { self.registry.read().await.get(id).cloned() };
         let Some(mut skill) = existing else {
             return Ok(None);

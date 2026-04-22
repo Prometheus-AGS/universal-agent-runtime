@@ -164,6 +164,68 @@ impl GovernanceEngine {
         }
     }
 
+    /// Check whether a skill mutation is allowed.
+    ///
+    /// Skill mutations carry rich context (environment, confidence scores,
+    /// validation status) that Cedar policies evaluate against. Used by the
+    /// self-learning pipeline to gate prompt optimization, skill generation,
+    /// and skill promotion.
+    ///
+    /// # Arguments
+    ///
+    /// * `agent_id` — The agent/optimizer attempting the mutation.
+    /// * `action` — One of: `skill.mutate`, `skill.generate`, `skill.promote`, `trace.capture`.
+    /// * `skill_id` — The skill being operated on.
+    /// * `context_json` — JSON object with mutation context. Policies evaluate
+    ///   fields like `environment`, `confidence_score`, `validation_passed`,
+    ///   `human_approved`, `test_pass_rate`, `governance_consent`.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// let allowed = engine.is_skill_mutation_allowed(
+    ///     "pmpo-optimizer",
+    ///     "skill.mutate",
+    ///     "iterative-evolver",
+    ///     r#"{"environment": "staging", "validation_passed": true}"#,
+    /// ).await;
+    /// ```
+    pub async fn is_skill_mutation_allowed(
+        &self,
+        agent_id: &str,
+        action: &str,
+        skill_id: &str,
+        context_json: &str,
+    ) -> bool {
+        match policy::skill_mutation_request(agent_id, action, skill_id, context_json) {
+            Ok(request) => {
+                let response = self.evaluate_full(&request).await;
+                let decision = response.decision();
+
+                if decision == Decision::Deny {
+                    info!(
+                        agent_id = %agent_id,
+                        action = %action,
+                        skill_id = %skill_id,
+                        "Skill mutation DENIED by Cedar policy"
+                    );
+                }
+
+                decision == Decision::Allow
+            }
+            Err(e) => {
+                error!(
+                    agent_id = %agent_id,
+                    action = %action,
+                    skill_id = %skill_id,
+                    error = %e,
+                    "Failed to build skill mutation request — denying by default"
+                );
+                false
+            }
+        }
+    }
+
     /// Evaluate a Cedar request against the current policy set.
     ///
     /// Returns the full [`Response`] for detailed diagnostics.
