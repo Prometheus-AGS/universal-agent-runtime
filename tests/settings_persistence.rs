@@ -121,6 +121,7 @@ fn minimal_config() -> AppConfig {
         skill_evolution: Default::default(),
         acp: Default::default(),
         context_strategy: Default::default(),
+        sycophancy: Default::default(),
     }
 }
 
