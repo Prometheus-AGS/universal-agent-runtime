@@ -34,9 +34,35 @@ serde_json = "1.0"
 serde = { version = "1", features = ["derive"] }
 
 [features]
-default = []
+## Default backend stack: SurrealDB embedded only (RocksDB), no Postgres/SQLite.
+## This keeps UAR self-contained and avoids the libsqlite3-sys version conflict
+## that arises when downstream consumers (e.g. librefang) link rusqlite >= 0.33
+## (libsqlite3-sys 0.37) while sqlx 0.8 transitively links libsqlite3-sys 0.30.
+default = ["surreal-backend"]
+
+## SurrealDB-only persistence + compiler storage + A2A registry. RocksDB-backed,
+## fully embedded — no external services required. Required for UAR to function
+## at all when `postgres-backend` is disabled.
+surreal-backend = []
+
+## Optional Postgres/sqlx persistence + compiler storage + A2A registry. Pulls
+## in `sqlx` (with the `postgres` driver) and `pgvector`. When OFF, all
+## Postgres-specific code paths are excluded from the build and the resulting
+## artifact does not link `libsqlite3-sys` from sqlx's transitive closure.
+postgres-backend = ["sqlx", "dep:pgvector"]
+
+## Toggles `#[derive(sqlx::FromRow)]` on shared schema types. Implied by
+## `postgres-backend` so existing `#[cfg_attr(feature = "sqlx", ...)]` derives
+## continue to work whenever the Postgres backend is enabled.
+sqlx = ["dep:sqlx"]
+
+## Enable the MemPalace knowledge-graph layer of `surreal-memory`. Off by
+## default because it pulls in `mempalace-core` → `rusqlite` (bundled SQLite),
+## which conflicts with newer `libsqlite3-sys` consumers. UAR itself does not
+## reference any palace APIs today; opt in only if your application does.
+memory-palace = ["surreal-memory/palace"]
+
 model-build = ["dep:burn-import"]
-sqlx = []
 tauri = []
 wasm-runtime = ["dep:wasmtime", "dep:wasmtime-wasi"]
 sandbox-microsandbox = ["dep:microsandbox"]
@@ -101,9 +127,14 @@ rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", rev = "085470
   "transport-streamable-http-server-session",
 ] }
 
-# Memory system — surreal-memory library
-# Memory system — surreal-memory library with mempalace knowledge graph
-surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server.git", branch = "main", package = "surreal-memory", features = ["embedded", "palace"] }
+# Memory system — surreal-memory library backed by embedded SurrealDB (RocksDB).
+#
+# `palace` is intentionally NOT enabled by default because it pulls in
+# `mempalace-core` → `rusqlite 0.31` (with `bundled`) → `libsqlite3-sys`,
+# which conflicts with downstream consumers (e.g. librefang) that link a
+# newer `rusqlite`/`libsqlite3-sys`. Opt in via the `memory-palace` feature
+# below if you need the MemPalace knowledge-graph layer.
+surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server.git", branch = "main", package = "surreal-memory", default-features = false, features = ["embedded"] }
 
 # Utilities
 url = "2.5.7"
@@ -135,7 +166,10 @@ tokenizers = { version = "0.22.2", default-features = false, features = [
   "esaxx_fast",
 ] }
 tiktoken-rs = "0.9.1"
-sqlx = { version = "0.8.6", default-features = false, features = [
+# Postgres stack — optional, gated by the `postgres-backend` feature. The empty
+# `sqlx` feature flag (above) wires this dependency in for any code that needs
+# `sqlx::FromRow` derives without enabling the full `postgres-backend` stack.
+sqlx = { version = "0.8.6", default-features = false, optional = true, features = [
   "runtime-tokio-native-tls",
   "postgres",
   "macros",
@@ -144,7 +178,7 @@ sqlx = { version = "0.8.6", default-features = false, features = [
   "json",
   "migrate",
 ] }
-pgvector = { version = "0.4.1", features = ["sqlx"] }
+pgvector = { version = "0.4.1", optional = true, features = ["sqlx"] }
 text-splitter = "0.29.3"
 chrono = { version = "0.4.44", features = ["serde"] }
 walkdir = "2.5.0"
@@ -156,7 +190,10 @@ opentelemetry_sdk = { version = "0.31.0", features = ["rt-tokio"] }
 metrics = "0.24.3"
 metrics-exporter-prometheus = "0.18.1"
 config = "0.15.22"
-surrealdb = { version = "3.0.5", features = ["kv-rocksdb"] }
+## Pinned to =3.0.5 (exact) so UAR, librefang, and surreal-memory all link
+## the same SurrealDB client crate. See Phase 4b of the
+## librefang `surrealdb-storage-swap` plan for the matching workspace pin.
+surrealdb = { version = "=3.0.5", features = ["kv-rocksdb"] }
 jsonschema = { version = "0.45.0", default-features = false }
 governor = { version = "0.10.4", features = ["std", "jitter", "quanta"] }
 nonzero_ext = "0.3.0"

@@ -23,6 +23,7 @@ pub mod discovery;
 // pub mod grpc;
 pub mod handler;
 pub mod registry;
+#[cfg(feature = "postgres-backend")]
 pub mod registry_postgres;
 pub mod task_store;
 pub mod types;
@@ -40,6 +41,7 @@ pub use handler::A2AState;
 pub use registry::{
     AgentInfo, AgentRegistry, ExternalSkill, InMemoryAgentRegistry, SurrealAgentRegistry,
 };
+#[cfg(feature = "postgres-backend")]
 pub use registry_postgres::PostgresAgentRegistry;
 pub use task_store::TaskStore;
 
