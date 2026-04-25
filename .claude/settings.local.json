@@ -72,7 +72,8 @@
       "Bash(cargo doc:*)",
       "Bash(bunx playwright:*)",
       "Bash(git stash:*)",
-      "Bash(UAR__SECURITY__JWT_SECRET=test UAR__PERSISTENCE__PROVIDER=postgres UAR__PERSISTENCE__DATABASE_URL=\"postgres://user:pass@localhost/db\" UAR__PERSISTENCE__VECTOR_DIMENSION=384 cargo test --test config_integration)"
+      "Bash(UAR__SECURITY__JWT_SECRET=test UAR__PERSISTENCE__PROVIDER=postgres UAR__PERSISTENCE__DATABASE_URL=\"postgres://user:pass@localhost/db\" UAR__PERSISTENCE__VECTOR_DIMENSION=384 cargo test --test config_integration)",
+      "Bash(find /Users/gqadonis/Projects/prometheus/universal-agent-runtime -type f -name \"*.rs\" ! -path \"*/target/*\" ! -path \"*/node_modules/*\" -exec grep -l \"anthropic.*auth\\\\|complete.*oauth\\\\|oauth.*anthropic\\\\|proxy.*oauth\" {} \\\\;)"
     ]
   }
 }
