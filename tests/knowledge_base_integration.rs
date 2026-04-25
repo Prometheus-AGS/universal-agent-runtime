@@ -15,8 +15,10 @@ use universal_agent_runtime::uar::{
     domain::knowledge::{
         DocumentStatus, KbConfig, KnowledgeBase, KnowledgeChunk, KnowledgeDocument,
     },
-    persistence::{PersistenceLayer, providers::postgres::PostgresProvider},
+    persistence::PersistenceLayer,
 };
+#[cfg(feature = "postgres-backend")]
+use universal_agent_runtime::uar::persistence::providers::postgres::PostgresProvider;
 use uuid::Uuid;
 
 // =============================================================================
@@ -24,15 +26,21 @@ use uuid::Uuid;
 // =============================================================================
 
 /// Get the database URL from environment, or skip test if not set.
+#[cfg_attr(not(feature = "postgres-backend"), allow(dead_code))]
 fn get_database_url() -> Option<String> {
     std::env::var("DATABASE_URL").ok()
 }
 
 /// Create a test persistence layer.
 async fn setup_persistence() -> Option<Arc<dyn PersistenceLayer>> {
-    let url = get_database_url()?;
-    let provider = PostgresProvider::new(&url).await.ok()?;
-    Some(Arc::new(provider))
+    #[cfg(feature = "postgres-backend")]
+    {
+        let url = get_database_url()?;
+        let provider = PostgresProvider::new(&url).await.ok()?;
+        return Some(Arc::new(provider));
+    }
+    #[cfg(not(feature = "postgres-backend"))]
+    None
 }
 
 /// Create a test knowledge base with a random name.

@@ -47,10 +47,7 @@ use crate::uar::{
         auto_capture::{self, ConversationMessage},
         context_builder,
     },
-    persistence::{
-        PersistenceLayer,
-        providers::{postgres::PostgresProvider, surreal::SurrealDbProvider},
-    },
+    persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
     prompt_cache::{CachedEntry, PromptCacheProvider, SurrealMemPromptCacheProvider},
     rag::{
         chunking::ChunkingStrategy, ingest::IngestService, ingestion_worker::IngestionWorkerPool,
@@ -70,6 +67,9 @@ use crate::uar::{
         claims::UserContext,
     },
 };
+
+#[cfg(feature = "postgres-backend")]
+use crate::uar::persistence::providers::postgres::PostgresProvider;
 
 /// Start the Axum server with the provided configuration.
 pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
@@ -137,26 +137,44 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             Some(registry),
         )
     } else {
-        let provider = PostgresProvider::new(&config.persistence.database_url)
-            .await
-            .expect("Failed to initialize Postgres");
-        let pool = provider.get_pool().clone();
+        // Non-surreal persistence requested. Only available when the
+        // `postgres-backend` Cargo feature is enabled at build time.
+        #[cfg(feature = "postgres-backend")]
+        {
+            let provider = PostgresProvider::new(&config.persistence.database_url)
+                .await
+                .expect("Failed to initialize Postgres");
+            let pool = provider.get_pool().clone();
 
-        let compiler_store = Arc::new(
-            crate::uar::compiler::storage::postgres::PostgresCompilerStorage::new(pool.clone()),
-        );
-        let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
-            Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
-        let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
-            compiler_store as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
-        let registry = Arc::new(crate::uar::api::a2a::PostgresAgentRegistry::new(pool))
-            as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
+            let compiler_store = Arc::new(
+                crate::uar::compiler::storage::postgres::PostgresCompilerStorage::new(pool.clone()),
+            );
+            let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> = Arc::clone(
+                &compiler_store,
+            )
+                as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
+            let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
+                compiler_store
+                    as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
+            let registry = Arc::new(crate::uar::api::a2a::PostgresAgentRegistry::new(pool))
+                as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
 
-        (
-            Arc::new(provider) as Arc<dyn PersistenceLayer>,
-            Some((spec, sess)),
-            Some(registry),
-        )
+            (
+                Arc::new(provider) as Arc<dyn PersistenceLayer>,
+                Some((spec, sess)),
+                Some(registry),
+            )
+        }
+        #[cfg(not(feature = "postgres-backend"))]
+        {
+            anyhow::bail!(
+                "persistence.provider = '{}' requires the `postgres-backend` Cargo \
+                 feature to be enabled at build time. This build of UAR was compiled \
+                 with embedded SurrealDB only — set persistence.provider = \"surreal\" \
+                 in your config or rebuild with --features postgres-backend.",
+                config.persistence.provider
+            );
+        }
     };
     let persistence = Some(persistence_layer);
 
