@@ -69,6 +69,8 @@ export function registerAllSchemas() {
 
   registerSchema({ type: "Skill" });
   registerSchema({ type: "Tool" });
+  registerSchema({ type: "Setting" });
+  registerSchema({ type: "SettingsType" });
 
   registerSchema({
     type: "KnowledgeBase",

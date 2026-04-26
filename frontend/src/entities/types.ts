@@ -87,6 +87,23 @@ export interface ToolEntity extends Record<string, unknown> {
   built_in: boolean;
 }
 
+export interface SettingEntity extends Record<string, unknown> {
+  id: string;
+  key: string;
+  name: string;
+  data: unknown;
+  settings_type_id: string;
+  updated_at?: string;
+}
+
+export interface SettingsTypeEntity extends Record<string, unknown> {
+  id: string;
+  key: string;
+  name: string;
+  schema: Record<string, unknown>;
+  updated_at?: string;
+}
+
 export interface KnowledgeBaseEntity extends Record<string, unknown> {
   id: string;
   name: string;

@@ -24,5 +24,5 @@
 ## Validation
 - [x] Run `openspec validate runtime-console-entity-workflow`.
 - [x] Run frontend typecheck.
-- [ ] Run frontend lint/tests cleanly.
+- [x] Run frontend lint/tests cleanly.
 - [x] Run backend tests relevant to Anthropic/OpenAI compatibility and knowledge search persistence.

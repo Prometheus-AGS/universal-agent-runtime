@@ -1,6 +1,11 @@
 import { create } from "zustand";
 
-import { fetchModelsCatalog, modelsRowsForProvider, type ProviderModelRow } from "@/services/models-api";
+import {
+  fetchModelsCatalog,
+  modelsRowsForProvider,
+  type ProviderModelRow,
+} from "@/services/models-api";
+import { onSettingsChanged } from "@/services/settings-change-bus";
 
 interface ProviderModelsState {
   /** Models shown for the last completed load for this provider id */
@@ -35,3 +40,14 @@ export const useProviderModelsStore = create<ProviderModelsStore>((set) => ({
     }
   },
 }));
+
+if (typeof window !== "undefined") {
+  onSettingsChanged((detail) => {
+    if (detail.impact !== "providers" && detail.impact !== "llm") return;
+    for (const providerId of Object.keys(
+      useProviderModelsStore.getState().rowsByProvider,
+    )) {
+      void useProviderModelsStore.getState().loadForProvider(providerId);
+    }
+  });
+}

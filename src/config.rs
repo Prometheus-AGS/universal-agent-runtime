@@ -304,7 +304,7 @@ pub struct PersistenceConfig {
 /// Configuration for file processing and uploads.
 #[derive(Debug, Deserialize, Clone)]
 pub struct FileProcessingConfig {
-    /// Provider to use: "unstructured", "mistral", "kreuzberg" (local), "auto"
+    /// Provider to use: "kreuzberg" (local), "auto", "unstructured", "mistral", "local"
     pub provider: String,
     /// Directory where uploaded files are saved before processing
     pub upload_dir: String,
@@ -322,7 +322,7 @@ pub struct FileProcessingConfig {
 impl Default for FileProcessingConfig {
     fn default() -> Self {
         Self {
-            provider: "auto".to_string(),
+            provider: "kreuzberg".to_string(),
             upload_dir: std::env::temp_dir()
                 .join("uar-uploads")
                 .to_string_lossy()
@@ -418,7 +418,7 @@ pub struct KreuzbergConfig {
 
 impl KreuzbergConfig {
     fn default_ocr_enabled() -> bool {
-        true
+        false
     }
     fn default_ocr_backend() -> String {
         "tesseract".to_string()
@@ -543,7 +543,7 @@ pub struct KnowledgeBaseConfig {
     /// Vector dimensions (None = use model default)
     #[serde(default)]
     pub vector_dimensions: Option<usize>,
-    /// File processor: "auto", "unstructured", "mistral", "kreuzberg"
+    /// File processor: "kreuzberg", "auto", "unstructured", "mistral", "local"
     #[serde(default = "KnowledgeBaseConfig::default_file_processor")]
     pub file_processor: String,
     /// Chunking strategy configuration
@@ -561,7 +561,7 @@ impl KnowledgeBaseConfig {
     }
 
     fn default_file_processor() -> String {
-        "auto".to_string()
+        "kreuzberg".to_string()
     }
 }
 
@@ -828,7 +828,7 @@ impl AppConfig {
             // 1536 = text-embedding-3-small; override via UAR_PERSISTENCE__VECTOR_DIMENSION
             .set_default("persistence.vector_dimension", 1536_i64)?
             // File processing defaults
-            .set_default("file_processing.provider", "auto")?
+            .set_default("file_processing.provider", "kreuzberg")?
             .set_default(
                 "file_processing.upload_dir",
                 std::env::temp_dir()
@@ -1300,6 +1300,19 @@ persistence:
         assert_eq!(
             cfg.resilience.retryable_http_statuses,
             vec![408, 425, 429, 500, 502, 503, 504]
+        );
+        let _ = fs::remove_file(cfg_path);
+    }
+
+    #[test]
+    fn document_processing_defaults_to_kreuzberg_without_ocr() {
+        let (cli, cfg_path) = base_cli();
+        let cfg = AppConfig::load_with_cli(cli).expect("config should load");
+        assert_eq!(cfg.file_processing.provider, "kreuzberg");
+        assert!(!cfg.kreuzberg.unwrap_or_default().ocr_enabled);
+        assert_eq!(
+            KnowledgeBaseConfig::default_file_processor(),
+            "kreuzberg".to_string()
         );
         let _ = fs::remove_file(cfg_path);
     }

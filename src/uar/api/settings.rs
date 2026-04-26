@@ -68,6 +68,14 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
             put(|s, q, h, b| update_namespace(s, q, h, b, "resilience")),
         )
         .route(
+            "/persistence",
+            get(|s, q, h| list_namespace(s, q, h, "persistence")),
+        )
+        .route(
+            "/persistence",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "persistence")),
+        )
+        .route(
             "/file-processing",
             get(|s, q, h| list_namespace(s, q, h, "file_processing")),
         )
@@ -79,6 +87,11 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
         .route(
             "/vision",
             put(|s, q, h, b| update_namespace(s, q, h, b, "vision")),
+        )
+        .route("/models", get(|s, q, h| list_namespace(s, q, h, "models")))
+        .route(
+            "/models",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "models")),
         )
         .route(
             "/knowledge-bases",
@@ -104,6 +117,11 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
             "/providers",
             put(|s, q, h, b| update_namespace(s, q, h, b, "provider")),
         )
+        .route("/llm", get(|s, q, h| list_namespace(s, q, h, "llm")))
+        .route(
+            "/llm",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "llm")),
+        )
         .route(
             "/unstructured",
             get(|s, q, h| list_namespace(s, q, h, "unstructured")),
@@ -128,6 +146,14 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
         .route(
             "/context-management",
             put(|s, q, h, b| update_namespace(s, q, h, b, "context_management")),
+        )
+        .route(
+            "/context-strategy",
+            get(|s, q, h| list_namespace(s, q, h, "context_strategy")),
+        )
+        .route(
+            "/context-strategy",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "context_strategy")),
         )
         .route("/rag", get(|s, q, h| list_namespace(s, q, h, "rag")))
         .route(
@@ -180,6 +206,22 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
             put(|s, q, h, b| update_namespace(s, q, h, b, "llm_failover")),
         )
         .route(
+            "/failover",
+            get(|s, q, h| list_namespace(s, q, h, "llm_failover")),
+        )
+        .route(
+            "/failover",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "llm_failover")),
+        )
+        .route(
+            "/sandbox",
+            get(|s, q, h| list_namespace(s, q, h, "sandbox")),
+        )
+        .route(
+            "/sandbox",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "sandbox")),
+        )
+        .route(
             "/native-tools",
             get(|s, q, h| list_namespace(s, q, h, "native_tools")),
         )
@@ -194,6 +236,14 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
         .route(
             "/skill-evolution",
             put(|s, q, h, b| update_namespace(s, q, h, b, "skill_evolution")),
+        )
+        .route(
+            "/sycophancy",
+            get(|s, q, h| list_namespace(s, q, h, "sycophancy")),
+        )
+        .route(
+            "/sycophancy",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "sycophancy")),
         )
         .route("/acp", get(|s, q, h| list_namespace(s, q, h, "acp")))
         .route(
@@ -285,6 +335,7 @@ fn mask_sensitive(data: Value, schema: &Value) -> Value {
 async fn masked_response(swm: SettingsWithMeta, mgr: &SettingsManager) -> SettingsWithMetaResponse {
     // Try to find the schema for this setting type.
     let type_key = swm.setting.key.split('.').next().unwrap_or("");
+    let field_key = swm.setting.key.split_once('.').map(|(_, field)| field);
     let schema = mgr
         .get_type(type_key)
         .await
@@ -293,7 +344,21 @@ async fn masked_response(swm: SettingsWithMeta, mgr: &SettingsManager) -> Settin
         .map(|t| t.schema)
         .unwrap_or(json!({}));
 
-    let masked_data = mask_sensitive(swm.setting.data.clone(), &schema);
+    let scalar_is_sensitive = field_key
+        .and_then(|field| {
+            schema
+                .get("properties")
+                .and_then(Value::as_object)
+                .and_then(|props| props.get(field))
+        })
+        .and_then(|prop| prop.get("x-sensitive"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let masked_data = if scalar_is_sensitive {
+        Value::String("***".to_string())
+    } else {
+        mask_sensitive(swm.setting.data.clone(), &schema)
+    };
     SettingsWithMetaResponse {
         id: swm.setting.id,
         settings_type_id: swm.setting.settings_type_id,
@@ -434,10 +499,21 @@ async fn update_setting(
 ) -> Result<Json<Value>, ApiError> {
     require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
-    mgr.set_value(&key, payload.value)
+    let namespace = key.split('.').next().unwrap_or("").to_string();
+    let value = preserve_masked_sensitive_value(mgr, &key, payload.value).await?;
+    mgr.set_value(&key, value)
         .await
         .map_err(|e| ApiError::Internal(e.to_string()))?;
-    Ok(Json(json!({"status": "updated", "key": key})))
+    let updated = mgr
+        .get_with_meta(&key)
+        .await
+        .ok_or_else(|| ApiError::NotFound(key.clone()))?;
+    Ok(Json(json!({
+        "status": "updated",
+        "key": key,
+        "namespace": namespace,
+        "setting": masked_response(updated, mgr).await
+    })))
 }
 
 async fn reset_setting(
@@ -508,8 +584,13 @@ async fn update_namespace(
 
     for (field, value) in payload.data {
         let key = format!("{type_key}.{field}");
+        let value = preserve_masked_sensitive_value(mgr, &key, value).await?;
         match mgr.set_value(&key, value).await {
-            Ok(()) => updated.push(key),
+            Ok(()) => {
+                if let Some(row) = mgr.get_with_meta(&key).await {
+                    updated.push(masked_response(row, mgr).await);
+                }
+            }
             Err(e) => errors.push(json!({"key": key, "error": e.to_string()})),
         }
     }
@@ -522,5 +603,42 @@ async fn update_namespace(
         })));
     }
 
-    Ok(Json(json!({"status": "updated", "keys": updated})))
+    Ok(Json(json!({"status": "updated", "updated": updated})))
+}
+
+async fn preserve_masked_sensitive_value(
+    mgr: &SettingsManager,
+    key: &str,
+    value: Value,
+) -> Result<Value, ApiError> {
+    if !is_sensitive_setting(mgr, key).await {
+        return Ok(value);
+    }
+
+    let should_preserve = matches!(&value, Value::String(s) if s.is_empty() || s == "***");
+    if !should_preserve {
+        return Ok(value);
+    }
+
+    let existing = mgr
+        .get_with_meta(key)
+        .await
+        .ok_or_else(|| ApiError::NotFound(key.to_string()))?;
+    Ok(existing.setting.data)
+}
+
+async fn is_sensitive_setting(mgr: &SettingsManager, key: &str) -> bool {
+    let Some((type_key, field)) = key.split_once('.') else {
+        return false;
+    };
+    let Ok(Some(st)) = mgr.get_type(type_key).await else {
+        return false;
+    };
+    st.schema
+        .get("properties")
+        .and_then(Value::as_object)
+        .and_then(|props| props.get(field))
+        .and_then(|prop| prop.get("x-sensitive"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
 }

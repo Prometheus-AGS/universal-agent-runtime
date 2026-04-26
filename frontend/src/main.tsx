@@ -5,11 +5,19 @@ import { App } from "./App";
 import { DbProvider } from "@/lib/db-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { bootstrapEntityGraph } from "@/entities/bootstrap";
+import { initSettingsRealtimeBridge } from "@/stores/settings-store";
 
 // Bootstrap the entity graph engine before rendering
 bootstrapEntityGraph().catch((err) =>
   console.error("[entity-graph] bootstrap failed:", err),
 );
+initSettingsRealtimeBridge();
+
+if (import.meta.env.DEV) {
+  void import("@/entities/runtime-replay-test-helper").then(({ installRuntimeReplayTestHelper }) => {
+    installRuntimeReplayTestHelper();
+  });
+}
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Root element not found");

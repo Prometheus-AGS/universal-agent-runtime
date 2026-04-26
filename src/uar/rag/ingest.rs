@@ -112,6 +112,19 @@ impl IngestService {
         kb_id: &str,
         document_id: String,
     ) -> Result<usize> {
+        self.ingest_text_with_metadata(content, kb_id, document_id, HashMap::new())
+            .await
+    }
+
+    /// Ingest text content directly with additional metadata copied to each chunk.
+    /// Returns the number of chunks created.
+    pub async fn ingest_text_with_metadata(
+        &self,
+        content: &str,
+        kb_id: &str,
+        document_id: String,
+        extra_metadata: HashMap<String, serde_json::Value>,
+    ) -> Result<usize> {
         // 1. Chunking
         let chunks = self.chunker.chunk(content).await?;
 
@@ -134,6 +147,7 @@ impl IngestService {
                 serde_json::Value::String(document_id.clone()),
             );
             metadata.insert("index".to_string(), serde_json::json!(i));
+            metadata.extend(extra_metadata.clone());
 
             let chunk_id = Uuid::new_v4();
 

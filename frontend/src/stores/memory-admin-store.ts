@@ -1,6 +1,11 @@
 import { create } from "zustand";
 
-import type { MemoryItem, MemoryListQuery, MemoryStats } from "@/services/memory-api";
+import type {
+  MemoryItem,
+  MemoryListQuery,
+  MemoryStats,
+} from "@/services/memory-api";
+import { onSettingsChanged } from "@/services/settings-change-bus";
 import {
   bulkDeleteMemoriesApi,
   deleteMemoryApi,
@@ -25,7 +30,9 @@ interface MemoryAdminActions {
   clearItems: () => void;
 }
 
-export const useMemoryAdminStore = create<MemoryAdminState & MemoryAdminActions>((set, get) => ({
+export const useMemoryAdminStore = create<
+  MemoryAdminState & MemoryAdminActions
+>((set, get) => ({
   items: [],
   stats: null,
   loading: false,
@@ -81,3 +88,11 @@ export const useMemoryAdminStore = create<MemoryAdminState & MemoryAdminActions>
 
   clearItems: () => set({ items: [] }),
 }));
+
+if (typeof window !== "undefined") {
+  onSettingsChanged((detail) => {
+    if (detail.impact === "memory") {
+      void useMemoryAdminStore.getState().loadStats();
+    }
+  });
+}

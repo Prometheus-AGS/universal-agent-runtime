@@ -6,6 +6,8 @@ import type { SettingWithMeta } from "@/types";
 export interface UseSettingsReturn {
   values: Record<string, unknown>;
   settings: Record<string, SettingWithMeta>;
+  dirty: Record<string, unknown>;
+  conflicts: Record<string, unknown>;
   loading: boolean;
   saving: boolean;
   error: string | null;
@@ -25,7 +27,8 @@ export function useSettings(namespace: string): UseSettingsReturn {
   }, [namespace, load]);
 
   const setSetting = useMemo(
-    () => (key: string, value: unknown) => setSettingStore(namespace, key, value),
+    () => (key: string, value: unknown) =>
+      setSettingStore(namespace, key, value),
     [namespace, setSettingStore],
   );
 
@@ -39,6 +42,8 @@ export function useSettings(namespace: string): UseSettingsReturn {
   return {
     values: slice?.values ?? {},
     settings: slice?.settings ?? {},
+    dirty: slice?.dirty ?? {},
+    conflicts: slice?.conflicts ?? {},
     loading: slice?.loading ?? true,
     saving: slice?.saving ?? false,
     error: slice?.error ?? null,

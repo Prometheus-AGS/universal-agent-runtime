@@ -1,9 +1,11 @@
 {
-  "phase": "runtime-console-validation-hardening",
-  "change": "runtime-console-entity-workflow",
-  "status": "pending_assessment",
-  "currentTask": null,
+  "phase": "runtime-provider-protocol-hardening",
+  "change": null,
+  "status": "assessment_ready",
+  "previousPhase": "runtime-console-validation-hardening",
+  "currentTask": "run KBD assessment for runtime-provider-protocol-hardening",
+  "nextPendingChange": null,
   "sourceTool": "codex",
-  "exactNextCommand": "/kbd-assess runtime-console-validation-hardening",
-  "updatedAt": "2026-04-26T00:00:00-05:00"
+  "exactNextCommand": "/kbd-assess runtime-provider-protocol-hardening",
+  "updatedAt": "2026-04-26T04:44:28-05:00"
 }

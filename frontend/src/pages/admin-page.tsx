@@ -45,7 +45,10 @@ export function AdminPage() {
 
   function renderAdminContent(section: AdminSection) {
     return (
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div
+        className="flex flex-1 flex-col overflow-hidden"
+        data-testid={`admin-section-${section}`}
+      >
         {/* Welcome banner — keep provider onboarding on that page only. */}
         {section === "providers" && (
           <AdminWelcome onNavigate={(path) => navigate(path)} />

@@ -47,7 +47,7 @@ llm:
   api_key: "test-key"
 
 file_processing:
-  provider: "auto"
+  provider: "kreuzberg"
   upload_dir: "/tmp/uar-test-uploads"
   max_files_per_prompt: 5
   max_file_size: 10485760

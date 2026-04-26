@@ -176,6 +176,7 @@ export function AdminShell({ renderContent }: AdminShellProps) {
                 <button
                   key={id}
                   onClick={() => goTo(id)}
+                  data-testid={`admin-nav-${id}`}
                   className={cn(
                     "grid cursor-pointer grid-cols-[16px_1fr] items-center gap-x-2.5 rounded-md px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                     active === id
@@ -207,7 +208,7 @@ export function AdminShell({ renderContent }: AdminShellProps) {
   );
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex flex-1 overflow-hidden" data-testid="admin-shell">
       <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
         <CommandInput placeholder="Search runtime, providers, protocols..." />
         <CommandList>
@@ -236,6 +237,7 @@ export function AdminShell({ renderContent }: AdminShellProps) {
       {/* Mobile overlay */}
       {mobileNavOpen && (
         <div
+          data-testid="admin-mobile-nav-overlay"
           className="fixed inset-0 z-40 bg-background/60 md:hidden"
           onClick={() => setMobileNavOpen(false)}
           onKeyDown={(e) => {
@@ -249,6 +251,7 @@ export function AdminShell({ renderContent }: AdminShellProps) {
 
       {/* Sidebar — desktop: always visible, mobile: slide-over */}
       <aside
+        data-testid="admin-navigation"
         className={cn(
           "flex shrink-0 flex-col border-r border-border bg-card transition-transform duration-200",
           // Desktop
@@ -265,7 +268,10 @@ export function AdminShell({ renderContent }: AdminShellProps) {
 
       {/* Content area */}
       <main className="flex flex-1 flex-col overflow-hidden min-w-0">
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur">
+        <div
+          className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur"
+          data-testid="admin-topbar"
+        >
           <div className="flex min-w-0 items-center gap-3">
             <Button
               variant="ghost"
@@ -273,6 +279,7 @@ export function AdminShell({ renderContent }: AdminShellProps) {
               className="h-8 w-8 shrink-0 md:hidden"
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
               aria-label={mobileNavOpen ? "Close admin navigation" : "Open admin navigation"}
+              data-testid="admin-mobile-nav-trigger"
             >
               {mobileNavOpen ? <X size={16} /> : <Menu size={16} />}
             </Button>
@@ -292,6 +299,7 @@ export function AdminShell({ renderContent }: AdminShellProps) {
             size="sm"
             className="hidden h-8 gap-2 sm:inline-flex"
             onClick={() => setCommandOpen(true)}
+            data-testid="admin-command-trigger"
           >
             <Search size={14} />
             Command

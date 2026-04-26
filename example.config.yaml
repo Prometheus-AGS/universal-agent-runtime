@@ -220,11 +220,11 @@ providers: []
 
 file_processing:
   # Provider for document text extraction.
-  # Options: "unstructured", "mistral", "kreuzberg" (local), "auto"
-  # "auto" tries providers in order: unstructured > mistral > kreuzberg
-  # Default: "auto"
+  # Options: "kreuzberg" (local), "auto", "unstructured", "mistral", "local"
+  # "auto" tries providers in order: kreuzberg > unstructured > mistral > local
+  # Default: "kreuzberg"
   # Env: UAR_FILE_PROCESSING__PROVIDER
-  provider: "auto"
+  provider: "kreuzberg"
 
   # Directory for storing uploaded files before processing.
   # Default: System temp directory + "uar-uploads"
@@ -285,9 +285,9 @@ mistral_ocr:
 kreuzberg:
   # Enable OCR for scanned documents and images.
   # Requires Tesseract installed on the system (brew install tesseract / apt-get install tesseract-ocr)
-  # Default: true
+  # Default: false
   # Env: UAR_KREUZBERG__OCR_ENABLED
-  ocr_enabled: true
+  ocr_enabled: false
 
   # Force OCR even if text layer exists in PDFs.
   # Useful for PDFs with garbled or low-quality text layers.
@@ -379,7 +379,7 @@ knowledge_bases:
     embedding_provider: "fastembed"
     embedding_model: "BAAI/bge-small-en-v1.5"
     # vector_dimensions: 384  # Automatically determined from model
-    file_processor: "auto"
+    file_processor: "kreuzberg"
     chunking:
       strategy: "recursive"
       chunk_size: 512

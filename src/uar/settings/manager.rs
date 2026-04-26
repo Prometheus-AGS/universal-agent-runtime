@@ -517,6 +517,18 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "host": {
                     "type": "string", "title": "Host",
                     "x-control": "text", "x-order": 2
+                },
+                "shutdown_timeout_secs": {
+                    "type": "integer", "minimum": 1, "title": "Shutdown Timeout (s)",
+                    "x-control": "number", "x-order": 3
+                },
+                "log_format": {
+                    "type": "string", "title": "Log Format",
+                    "enum": ["json", "compact", "pretty"], "x-control": "select", "x-order": 4
+                },
+                "grpc_port": {
+                    "type": "integer", "minimum": 1, "maximum": 65535,
+                    "title": "A2A gRPC Port", "x-order": 5
                 }
             }
         });
@@ -524,6 +536,28 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
         let settings = vec![
             make_setting(&st, "server.port", "Port", json!(config.server.port)),
             make_setting(&st, "server.host", "Host", json!(config.server.host)),
+            make_setting(
+                &st,
+                "server.shutdown_timeout_secs",
+                "Shutdown Timeout (s)",
+                json!(config.server.shutdown_timeout_secs),
+            ),
+            make_setting(
+                &st,
+                "server.log_format",
+                "Log Format",
+                json!(match config.server.log_format {
+                    crate::config::LogFormat::Json => "json",
+                    crate::config::LogFormat::Compact => "compact",
+                    crate::config::LogFormat::Pretty => "pretty",
+                }),
+            ),
+            make_setting(
+                &st,
+                "server.grpc_port",
+                "A2A gRPC Port",
+                json!(config.server.grpc_port),
+            ),
         ];
         result.push((st, settings));
     }
@@ -546,6 +580,10 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "jwt_secret": {
                     "type": "string", "title": "JWT Secret",
                     "x-sensitive": true, "x-control": "password", "x-order": 2
+                },
+                "settings_mutation_auth_required": {
+                    "type": "boolean", "title": "Require Admin Key for Settings Mutation",
+                    "x-control": "toggle", "x-order": 3
                 }
             }
         });
@@ -562,6 +600,12 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "security.jwt_secret",
                 "JWT Secret",
                 json!(config.security.jwt_secret),
+            ),
+            make_setting(
+                &st,
+                "security.settings_mutation_auth_required",
+                "Require Admin Key for Settings Mutation",
+                json!(config.security.settings_mutation_auth_required),
             ),
         ];
         result.push((st, settings));
@@ -731,6 +775,65 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
     }
 
     // -------------------------------------------------------------------------
+    // persistence
+    // -------------------------------------------------------------------------
+    {
+        let p = &config.persistence;
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Persistence",
+            "x-uar-ui": { "category": "Infrastructure", "icon": "database", "order": 4 },
+            "type": "object",
+            "properties": {
+                "provider": {
+                    "type": "string", "title": "Provider",
+                    "enum": ["surreal", "surrealdb", "postgres"], "x-control": "select"
+                },
+                "database_url": { "type": "string", "title": "Database URL", "x-control": "text" },
+                "vector_dimension": { "type": "integer", "minimum": 1, "title": "Vector Dimension" },
+                "external_cache_enabled": { "type": "boolean", "title": "External Cache Enabled", "x-control": "toggle" },
+                "surreal_user": { "type": ["string", "null"], "title": "SurrealDB User", "x-control": "text" },
+                "surreal_pass": { "type": ["string", "null"], "title": "SurrealDB Password", "x-sensitive": true, "x-control": "password" }
+            }
+        });
+        let st = make_type("Persistence", "persistence", schema);
+        let settings = vec![
+            make_setting(&st, "persistence.provider", "Provider", json!(p.provider)),
+            make_setting(
+                &st,
+                "persistence.database_url",
+                "Database URL",
+                json!(p.database_url),
+            ),
+            make_setting(
+                &st,
+                "persistence.vector_dimension",
+                "Vector Dimension",
+                json!(p.vector_dimension),
+            ),
+            make_setting(
+                &st,
+                "persistence.external_cache_enabled",
+                "External Cache Enabled",
+                json!(p.external_cache_enabled),
+            ),
+            make_setting(
+                &st,
+                "persistence.surreal_user",
+                "SurrealDB User",
+                json!(p.surreal_user),
+            ),
+            make_setting(
+                &st,
+                "persistence.surreal_pass",
+                "SurrealDB Password",
+                json!(p.surreal_pass.as_deref().unwrap_or("")),
+            ),
+        ];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
     // file_processing
     // -------------------------------------------------------------------------
     {
@@ -740,8 +843,8 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             "x-uar-ui": { "category": "Integrations", "icon": "file-text", "order": 4 },
             "type": "object",
             "properties": {
-                "provider": { "type": "string", "title": "Provider",
-                    "enum": ["auto", "unstructured", "mistral", "kreuzberg"],
+                "provider": { "type": "string", "title": "Provider", "default": "kreuzberg",
+                    "enum": ["kreuzberg", "auto", "unstructured", "mistral", "local"],
                     "x-control": "select" },
                 "upload_dir": { "type": "string", "title": "Upload Directory" },
                 "max_files_per_prompt": { "type": "integer", "minimum": 1, "title": "Max Files Per Prompt" },
@@ -823,6 +926,39 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
     }
 
     // -------------------------------------------------------------------------
+    // models
+    // -------------------------------------------------------------------------
+    {
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Model Files",
+            "x-uar-ui": { "category": "AI & LLM", "icon": "box", "order": 5 },
+            "type": "object",
+            "properties": {
+                "models_dir": { "type": "string", "title": "Models Directory", "x-control": "text" },
+                "vector_threshold": { "type": "number", "minimum": 0.0, "maximum": 1.0,
+                    "title": "Vector Match Threshold", "x-control": "slider" }
+            }
+        });
+        let st = make_type("Model Files", "models", schema);
+        let settings = vec![
+            make_setting(
+                &st,
+                "models.models_dir",
+                "Models Directory",
+                json!(config.models.models_dir),
+            ),
+            make_setting(
+                &st,
+                "models.vector_threshold",
+                "Vector Match Threshold",
+                json!(config.models.vector_threshold),
+            ),
+        ];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
     // knowledge_bases (global defaults)
     // -------------------------------------------------------------------------
     {
@@ -848,16 +984,43 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             .as_ref()
             .map(|d| {
                 json!({
+                    "name": d.name,
+                    "description": d.description,
                     "embedding_provider": d.embedding_provider,
                     "embedding_model": d.embedding_model,
+                    "vector_dimensions": d.vector_dimensions,
+                    "file_processor": d.file_processor,
                     "chunking_strategy": d.chunking.strategy,
                     "chunk_size": d.chunking.chunk_size,
+                    "semantic_threshold": d.chunking.semantic_threshold,
                 })
             })
             .unwrap_or(serde_json::Value::Null);
+        let named_value = serde_json::Value::Object(
+            kb.named
+                .iter()
+                .map(|(name, cfg)| {
+                    (
+                        name.clone(),
+                        json!({
+                            "name": cfg.name,
+                            "description": cfg.description,
+                            "embedding_provider": cfg.embedding_provider,
+                            "embedding_model": cfg.embedding_model,
+                            "vector_dimensions": cfg.vector_dimensions,
+                            "file_processor": cfg.file_processor,
+                            "chunking_strategy": cfg.chunking.strategy,
+                            "chunk_size": cfg.chunking.chunk_size,
+                            "semantic_threshold": cfg.chunking.semantic_threshold,
+                        }),
+                    )
+                })
+                .collect(),
+        );
         let named_keys: Vec<&str> = kb.named.keys().map(String::as_str).collect();
         let settings = vec![
             make_setting(&st, "knowledge_bases.default", "Default KB", default_value),
+            make_setting(&st, "knowledge_bases.named", "Named KBs", named_value),
             make_setting(
                 &st,
                 "knowledge_bases.named_keys",
@@ -1011,20 +1174,17 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             }
         });
         let st = make_type("Unstructured API", "unstructured", schema);
-        let settings = if let Some(u) = &config.unstructured {
-            vec![
-                make_setting(&st, "unstructured.api_url", "API URL", json!(u.api_url)),
-                // `Option` serializes as null; schema requires a string for this key.
-                make_setting(
-                    &st,
-                    "unstructured.api_key",
-                    "API Key",
-                    json!(u.api_key.as_deref().unwrap_or("")),
-                ),
-            ]
-        } else {
-            vec![]
-        };
+        let u = config.unstructured.clone().unwrap_or_default();
+        let settings = vec![
+            make_setting(&st, "unstructured.api_url", "API URL", json!(u.api_url)),
+            // `Option` serializes as null; schema requires a string for this key.
+            make_setting(
+                &st,
+                "unstructured.api_key",
+                "API Key",
+                json!(u.api_key.as_deref().unwrap_or("")),
+            ),
+        ];
         result.push((st, settings));
     }
 
@@ -1043,24 +1203,21 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             }
         });
         let st = make_type("Mistral OCR", "mistral_ocr", schema);
-        let settings = if let Some(m) = &config.mistral_ocr {
-            vec![
-                make_setting(
-                    &st,
-                    "mistral_ocr.api_key",
-                    "API Key",
-                    json!(m.api_key.as_deref().unwrap_or("")),
-                ),
-                make_setting(
-                    &st,
-                    "mistral_ocr.ocr_model",
-                    "OCR Model",
-                    json!(m.ocr_model),
-                ),
-            ]
-        } else {
-            vec![]
-        };
+        let m = config.mistral_ocr.clone().unwrap_or_default();
+        let settings = vec![
+            make_setting(
+                &st,
+                "mistral_ocr.api_key",
+                "API Key",
+                json!(m.api_key.as_deref().unwrap_or("")),
+            ),
+            make_setting(
+                &st,
+                "mistral_ocr.ocr_model",
+                "OCR Model",
+                json!(m.ocr_model),
+            ),
+        ];
         result.push((st, settings));
     }
 
@@ -1076,37 +1233,59 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             "properties": {
                 "ocr_enabled": { "type": "boolean", "title": "OCR Enabled", "x-control": "toggle" },
                 "force_ocr": { "type": "boolean", "title": "Force OCR", "x-control": "toggle" },
-                "ocr_backend": { "type": "string", "title": "OCR Backend", "x-control": "select" },
+                "ocr_backend": { "type": "string", "title": "OCR Backend",
+                    "enum": ["tesseract", "paddleocr", "easyocr"], "x-control": "select" },
+                "ocr_language": { "type": "string", "title": "OCR Language", "x-control": "text" },
+                "pdf_dpi": { "type": "integer", "minimum": 72, "maximum": 600,
+                    "title": "PDF DPI", "x-control": "slider" },
+                "extract_tables": { "type": "boolean", "title": "Extract Tables", "x-control": "toggle" },
+                "extract_metadata": { "type": "boolean", "title": "Extract Metadata", "x-control": "toggle" },
                 "output_format": { "type": "string", "title": "Output Format",
-                    "enum": ["markdown", "plain", "html"], "x-control": "select" }
+                    "enum": ["markdown", "text", "html"], "x-control": "select" }
             }
         });
         let st = make_type("Kreuzberg OCR", "kreuzberg", schema);
-        let settings = if let Some(k) = &config.kreuzberg {
-            vec![
-                make_setting(
-                    &st,
-                    "kreuzberg.ocr_enabled",
-                    "OCR Enabled",
-                    json!(k.ocr_enabled),
-                ),
-                make_setting(&st, "kreuzberg.force_ocr", "Force OCR", json!(k.force_ocr)),
-                make_setting(
-                    &st,
-                    "kreuzberg.ocr_backend",
-                    "OCR Backend",
-                    json!(k.ocr_backend),
-                ),
-                make_setting(
-                    &st,
-                    "kreuzberg.output_format",
-                    "Output Format",
-                    json!(k.output_format),
-                ),
-            ]
-        } else {
-            vec![]
-        };
+        let k = config.kreuzberg.clone().unwrap_or_default();
+        let settings = vec![
+            make_setting(
+                &st,
+                "kreuzberg.ocr_enabled",
+                "OCR Enabled",
+                json!(k.ocr_enabled),
+            ),
+            make_setting(&st, "kreuzberg.force_ocr", "Force OCR", json!(k.force_ocr)),
+            make_setting(
+                &st,
+                "kreuzberg.ocr_backend",
+                "OCR Backend",
+                json!(k.ocr_backend),
+            ),
+            make_setting(
+                &st,
+                "kreuzberg.ocr_language",
+                "OCR Language",
+                json!(k.ocr_language),
+            ),
+            make_setting(&st, "kreuzberg.pdf_dpi", "PDF DPI", json!(k.pdf_dpi)),
+            make_setting(
+                &st,
+                "kreuzberg.extract_tables",
+                "Extract Tables",
+                json!(k.extract_tables),
+            ),
+            make_setting(
+                &st,
+                "kreuzberg.extract_metadata",
+                "Extract Metadata",
+                json!(k.extract_metadata),
+            ),
+            make_setting(
+                &st,
+                "kreuzberg.output_format",
+                "Output Format",
+                json!(k.output_format),
+            ),
+        ];
         result.push((st, settings));
     }
 
@@ -1169,6 +1348,50 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "context_management.summarization_model",
                 "Summarization Model",
                 serde_json::Value::Null,
+            ),
+        ];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
+    // context_strategy — typed global conversation trimming strategy
+    // -------------------------------------------------------------------------
+    {
+        let strategy_json = serde_json::to_value(&config.context_strategy).unwrap_or(json!({
+            "type": "sliding_window",
+            "max_messages": 20
+        }));
+        let strategy_type = strategy_json
+            .get("type")
+            .and_then(Value::as_str)
+            .unwrap_or("sliding_window");
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Context Strategy",
+            "x-uar-ui": { "category": "AI & LLM", "icon": "layers", "order": 9, "display_mode": "form" },
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string", "title": "Strategy",
+                    "enum": ["none", "sliding_window", "summarize", "truncate_middle", "hierarchical"],
+                    "x-control": "select"
+                },
+                "config": { "type": "object", "title": "Strategy Config", "x-control": "json" }
+            }
+        });
+        let st = make_type("Context Strategy", "context_strategy", schema);
+        let settings = vec![
+            make_setting(
+                &st,
+                "context_strategy.type",
+                "Strategy",
+                json!(strategy_type),
+            ),
+            make_setting(
+                &st,
+                "context_strategy.config",
+                "Strategy Config",
+                strategy_json,
             ),
         ];
         result.push((st, settings));
@@ -1440,6 +1663,10 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                     "enum": ["openai", "cohere"], "x-control": "select" },
                 "embedding_model": { "type": "string", "title": "Embedding Model",
                     "x-control": "text" },
+                "openai_api_key": { "type": ["string", "null"], "title": "OpenAI API Key",
+                    "x-sensitive": true, "x-control": "password" },
+                "cohere_api_key": { "type": ["string", "null"], "title": "Cohere API Key",
+                    "x-sensitive": true, "x-control": "password" },
                 "max_context_tokens": { "type": "integer", "minimum": 0,
                     "title": "Max Context Tokens" },
                 "vector_weight": { "type": "number", "minimum": 0.0, "maximum": 1.0,
@@ -1456,7 +1683,9 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "surreal_endpoint": { "type": ["string", "null"], "title": "SurrealDB Endpoint",
                     "x-control": "url" },
                 "surreal_user": { "type": ["string", "null"], "title": "SurrealDB User",
-                    "x-control": "text" }
+                    "x-control": "text" },
+                "surreal_pass": { "type": ["string", "null"], "title": "SurrealDB Password",
+                    "x-sensitive": true, "x-control": "password" }
             }
         });
         let st = make_type("Agent Memory", "memory", schema);
@@ -1486,6 +1715,18 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "memory.embedding_model",
                 "Embedding Model",
                 json!(m.embedding_model),
+            ),
+            make_setting(
+                &st,
+                "memory.openai_api_key",
+                "OpenAI API Key",
+                json!(m.openai_api_key.as_deref().unwrap_or("")),
+            ),
+            make_setting(
+                &st,
+                "memory.cohere_api_key",
+                "Cohere API Key",
+                json!(m.cohere_api_key.as_deref().unwrap_or("")),
             ),
             make_setting(
                 &st,
@@ -1532,6 +1773,12 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "SurrealDB User",
                 json!(m.surreal_user),
             ),
+            make_setting(
+                &st,
+                "memory.surreal_pass",
+                "SurrealDB Password",
+                json!(m.surreal_pass.as_deref().unwrap_or("")),
+            ),
         ];
         result.push((st, settings));
     }
@@ -1568,6 +1815,12 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                     "title": "Base URL Override",
                     "description": "Override provider base URL (e.g. for Ollama or a custom proxy).",
                     "x-control": "url"
+                },
+                "protocol": {
+                    "type": "string",
+                    "title": "Protocol",
+                    "enum": ["auto", "chat", "responses"],
+                    "x-control": "select"
                 },
                 "timeout_secs": {
                     "type": "integer",
@@ -1613,6 +1866,37 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                     "minimum": 0,
                     "x-control": "number"
                 },
+                "thinking_budget": {
+                    "type": ["integer", "null"],
+                    "title": "Thinking Budget",
+                    "minimum": 0,
+                    "x-control": "number"
+                },
+                "cache": {
+                    "type": ["object", "null"],
+                    "title": "Response Cache",
+                    "properties": {
+                        "max_entries": { "type": "integer", "minimum": 1 },
+                        "ttl_secs": { "type": "integer", "minimum": 1 }
+                    }
+                },
+                "budget": {
+                    "type": ["object", "null"],
+                    "title": "Budget",
+                    "properties": {
+                        "global_limit": { "type": "number", "minimum": 0 },
+                        "model_limits": { "type": "object" },
+                        "enforcement": { "type": "string", "enum": ["hard", "soft"] }
+                    }
+                },
+                "rate_limit": {
+                    "type": ["object", "null"],
+                    "title": "Rate Limit",
+                    "properties": {
+                        "rpm": { "type": ["integer", "null"], "minimum": 1 },
+                        "tpm": { "type": ["integer", "null"], "minimum": 1 }
+                    }
+                },
                 "default_provider": {
                     "type": "string",
                     "title": "Default LLM Provider ID",
@@ -1633,6 +1917,7 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             make_setting(&st, "llm.model", "Default Model", json!(llm.model)),
             make_setting(&st, "llm.api_key", "API Key", json!(llm.api_key)),
             make_setting(&st, "llm.base_url", "Base URL", json!(llm.base_url)),
+            make_setting(&st, "llm.protocol", "Protocol", json!(llm.protocol)),
             make_setting(
                 &st,
                 "llm.timeout_secs",
@@ -1672,6 +1957,15 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             ),
             make_setting(
                 &st,
+                "llm.thinking_budget",
+                "Thinking Budget",
+                json!(llm.thinking_budget),
+            ),
+            make_setting(&st, "llm.cache", "Response Cache", json!(llm.cache)),
+            make_setting(&st, "llm.budget", "Budget", json!(llm.budget)),
+            make_setting(&st, "llm.rate_limit", "Rate Limit", json!(llm.rate_limit)),
+            make_setting(
+                &st,
                 "llm.default_provider",
                 "Default LLM Provider ID",
                 json!(default_provider_seed),
@@ -1705,6 +1999,19 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "cooldown_secs": {
                     "type": "integer", "title": "Cooldown (seconds)",
                     "minimum": 0, "x-control": "number"
+                },
+                "fallback_models": {
+                    "type": "array", "title": "Fallback Models",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "model": { "type": "string" },
+                            "api_key": { "type": ["string", "null"], "x-sensitive": true },
+                            "base_url": { "type": ["string", "null"] }
+                        },
+                        "required": ["model"]
+                    },
+                    "x-control": "json"
                 }
             }
         });
@@ -1729,6 +2036,118 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "Cooldown (seconds)",
                 json!(fo.cooldown_secs),
             ),
+            make_setting(
+                &st,
+                "llm_failover.fallback_models",
+                "Fallback Models",
+                json!(fo.fallback_models),
+            ),
+        ];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
+    // sandbox — code execution runtime configuration
+    // -------------------------------------------------------------------------
+    {
+        let sb = &config.sandbox;
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Sandbox Runtime",
+            "x-uar-ui": { "category": "Runtime", "icon": "terminal", "order": 15, "display_mode": "form" },
+            "type": "object",
+            "properties": {
+                "runner": {
+                    "type": "string", "title": "Runner",
+                    "enum": ["auto", "microsandbox", "wasmtime", "remote"], "x-control": "select"
+                },
+                "remote_url": { "type": ["string", "null"], "title": "Remote URL", "x-control": "url" },
+                "default_memory_mib": { "type": "integer", "minimum": 16, "title": "Default Memory (MiB)", "x-control": "number" },
+                "default_timeout_secs": { "type": "integer", "minimum": 1, "title": "Default Timeout (s)", "x-control": "number" },
+                "network_enabled": { "type": "boolean", "title": "Network Enabled", "x-control": "toggle" },
+                "max_concurrent": { "type": "integer", "minimum": 1, "title": "Max Concurrent Sessions", "x-control": "number" }
+            }
+        });
+        let st = make_type("Sandbox Runtime", "sandbox", schema);
+        let settings = vec![
+            make_setting(&st, "sandbox.runner", "Runner", json!(sb.runner)),
+            make_setting(
+                &st,
+                "sandbox.remote_url",
+                "Remote URL",
+                json!(sb.remote_url),
+            ),
+            make_setting(
+                &st,
+                "sandbox.default_memory_mib",
+                "Default Memory (MiB)",
+                json!(sb.default_memory_mib),
+            ),
+            make_setting(
+                &st,
+                "sandbox.default_timeout_secs",
+                "Default Timeout (s)",
+                json!(sb.default_timeout_secs),
+            ),
+            make_setting(
+                &st,
+                "sandbox.network_enabled",
+                "Network Enabled",
+                json!(sb.network_enabled),
+            ),
+            make_setting(
+                &st,
+                "sandbox.max_concurrent",
+                "Max Concurrent Sessions",
+                json!(sb.max_concurrent),
+            ),
+        ];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
+    // sycophancy — response quality guardrail
+    // -------------------------------------------------------------------------
+    {
+        let sy = &config.sycophancy;
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "Sycophancy Detection",
+            "x-uar-ui": { "category": "Governance & Agents", "icon": "shield", "order": 16, "display_mode": "form" },
+            "type": "object",
+            "properties": {
+                "enabled": { "type": "boolean", "title": "Enabled", "x-control": "toggle" },
+                "strictness": {
+                    "type": "string", "title": "Strictness",
+                    "enum": ["permissive", "standard", "strict", "adversarial"], "x-control": "select"
+                },
+                "auto_correct_threshold": { "type": "number", "minimum": 0.0, "maximum": 1.0, "title": "Auto-correct Threshold", "x-control": "slider" },
+                "reflect_threshold": { "type": "number", "minimum": 0.0, "maximum": 1.0, "title": "Reflect Threshold", "x-control": "slider" },
+                "log_only": { "type": "boolean", "title": "Log Only", "x-control": "toggle" }
+            }
+        });
+        let st = make_type("Sycophancy Detection", "sycophancy", schema);
+        let settings = vec![
+            make_setting(&st, "sycophancy.enabled", "Enabled", json!(sy.enabled)),
+            make_setting(
+                &st,
+                "sycophancy.strictness",
+                "Strictness",
+                json!(sy.strictness),
+            ),
+            make_setting(
+                &st,
+                "sycophancy.auto_correct_threshold",
+                "Auto-correct Threshold",
+                json!(sy.auto_correct_threshold),
+            ),
+            make_setting(
+                &st,
+                "sycophancy.reflect_threshold",
+                "Reflect Threshold",
+                json!(sy.reflect_threshold),
+            ),
+            make_setting(&st, "sycophancy.log_only", "Log Only", json!(sy.log_only)),
         ];
         result.push((st, settings));
     }

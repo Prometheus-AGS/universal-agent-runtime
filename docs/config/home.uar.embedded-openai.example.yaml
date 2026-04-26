@@ -86,7 +86,7 @@ acp:
   session_ttl_secs: 3600
 
 file_processing:
-  provider: "auto"
+  provider: "kreuzberg"
   upload_dir: "/Users/gqadonis/.uar/uploads"
   max_files_per_prompt: 10
   max_file_size: 52428800
@@ -100,7 +100,7 @@ mistral_ocr:
   ocr_model: "mistral-ocr-latest"
 
 kreuzberg:
-  ocr_enabled: true
+  ocr_enabled: false
   force_ocr: false
   ocr_backend: "tesseract"
   ocr_language: "eng"
@@ -124,7 +124,7 @@ knowledge_bases:
     embedding_provider: "openai"
     embedding_model: "text-embedding-3-small"
     vector_dimensions: 1536
-    file_processor: "auto"
+    file_processor: "kreuzberg"
     chunking:
       strategy: "recursive"
       chunk_size: 512

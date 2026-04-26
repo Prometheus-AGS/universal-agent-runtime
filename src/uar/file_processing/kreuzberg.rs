@@ -120,6 +120,10 @@ impl FileProcessor for KreuzbergProvider {
     }
 
     fn supports_mime_type(&self, mime_type: &str) -> bool {
+        if mime_type.starts_with("image/") && !self.config.ocr_enabled {
+            return false;
+        }
+
         // Kreuzberg supports 56+ file formats
         matches!(
             mime_type,
@@ -267,9 +271,14 @@ mod tests {
         // PDFs should be supported
         assert!(provider.supports_mime_type("application/pdf"));
 
-        // Images should be supported (for OCR)
-        assert!(provider.supports_mime_type("image/png"));
-        assert!(provider.supports_mime_type("image/jpeg"));
+        // Images require OCR to be enabled.
+        assert!(!provider.supports_mime_type("image/png"));
+        let ocr_provider = KreuzbergProvider::new(KreuzbergConfig {
+            ocr_enabled: true,
+            ..KreuzbergConfig::default()
+        });
+        assert!(ocr_provider.supports_mime_type("image/png"));
+        assert!(ocr_provider.supports_mime_type("image/jpeg"));
 
         // Office documents
         assert!(provider.supports_mime_type(

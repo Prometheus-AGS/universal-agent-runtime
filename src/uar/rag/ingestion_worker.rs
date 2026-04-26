@@ -5,9 +5,11 @@
 
 use crate::uar::{
     domain::knowledge::{DocumentStatus, KnowledgeDocument},
+    file_processing::{FileProcessor, FileProcessorFactory, KreuzbergProvider, process_bytes},
     persistence::PersistenceLayer,
     rag::ingest::IngestService,
 };
+use crate::{AppConfig, config::FileProcessingConfig};
 use anyhow::Result;
 use async_trait::async_trait;
 use prometheus_parking_lot::{
@@ -15,7 +17,7 @@ use prometheus_parking_lot::{
     core::{PoolError, TaskMetadata, WorkerExecutor, WorkerPool},
     util::serde::{MailboxKey, Priority, ResourceCost, ResourceKind},
 };
-use std::sync::Arc;
+use std::{collections::HashMap, path::Path, sync::Arc};
 use tracing::{error, info, warn};
 
 // =============================================================================
@@ -55,14 +57,21 @@ pub struct DocumentIngestionExecutor {
     ingest_service: Arc<IngestService>,
     /// Persistence layer for status updates
     persistence: Arc<dyn PersistenceLayer>,
+    /// Application configuration for file-processing provider selection
+    config: Arc<AppConfig>,
 }
 
 impl DocumentIngestionExecutor {
     /// Create a new document ingestion executor.
-    pub fn new(ingest_service: Arc<IngestService>, persistence: Arc<dyn PersistenceLayer>) -> Self {
+    pub fn new(
+        ingest_service: Arc<IngestService>,
+        persistence: Arc<dyn PersistenceLayer>,
+        config: Arc<AppConfig>,
+    ) -> Self {
         Self {
             ingest_service,
             persistence,
+            config,
         }
     }
 }
@@ -129,18 +138,172 @@ impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestion
 impl DocumentIngestionExecutor {
     /// Process a document and return chunk count.
     async fn process_document(&self, job: &DocumentIngestionJob) -> Result<usize> {
-        // Convert file content to text (for now, assume text files)
-        // In production, this would use file processors (Kreuzberg, etc.)
-        let text = String::from_utf8_lossy(&job.file_content);
+        let file_config = self.resolve_file_processing_config(job).await?;
+        let mime_type = job
+            .document
+            .mime_type
+            .clone()
+            .unwrap_or_else(|| guess_mime_type(&job.document.filename));
+        let result = self.extract_document(job, &file_config, &mime_type).await?;
+        let provider_name = result.provider_name.clone();
+
+        let metadata = build_chunk_metadata(&job.document, &result, provider_name);
 
         // Use the ingest service to chunk, embed, and store
         let chunks = self
             .ingest_service
-            .ingest_text(&text, &job.kb_id, job.document.id.clone())
+            .ingest_text_with_metadata(
+                &result.content,
+                &job.kb_id,
+                job.document.id.clone(),
+                metadata,
+            )
             .await?;
 
         Ok(chunks)
     }
+
+    async fn resolve_file_processing_config(
+        &self,
+        job: &DocumentIngestionJob,
+    ) -> Result<FileProcessingConfig> {
+        let mut file_config = self.config.file_processing.clone();
+        if let Some(kb) = self.persistence.get_knowledge_base(&job.kb_id).await?
+            && !kb.config.file_processor.trim().is_empty()
+        {
+            file_config.provider = kb.config.file_processor;
+        }
+        Ok(file_config)
+    }
+
+    async fn extract_document(
+        &self,
+        job: &DocumentIngestionJob,
+        file_config: &FileProcessingConfig,
+        mime_type: &str,
+    ) -> Result<ProcessedDocument> {
+        if should_use_kreuzberg_bytes(file_config, self.config.kreuzberg.as_ref(), mime_type) {
+            let kreuzberg_config = self.config.kreuzberg.clone().unwrap_or_default();
+            let result = process_bytes(&job.file_content, mime_type, &kreuzberg_config).await?;
+            return Ok(ProcessedDocument {
+                provider_name: "Kreuzberg".to_string(),
+                content: result.content,
+                mime_type: result.mime_type,
+                metadata: result.metadata,
+            });
+        }
+
+        let temp_path = write_temp_document(&job.document.filename, &job.file_content).await?;
+        let processor = FileProcessorFactory::create_for_file(
+            &temp_path,
+            file_config,
+            self.config.unstructured.as_ref(),
+            self.config.mistral_ocr.as_ref(),
+            self.config.kreuzberg.as_ref(),
+        )?;
+        let provider_name = processor.provider_name().to_string();
+        let result = processor.process(&temp_path).await;
+        let cleanup_result = tokio::fs::remove_file(&temp_path).await;
+        if let Err(err) = cleanup_result {
+            warn!(
+                path = %temp_path.display(),
+                error = %err,
+                "Failed to remove temporary ingestion file"
+            );
+        }
+
+        let result = result?;
+        Ok(ProcessedDocument {
+            provider_name,
+            content: result.content,
+            mime_type: result.mime_type,
+            metadata: result.metadata,
+        })
+    }
+}
+
+#[derive(Debug)]
+struct ProcessedDocument {
+    provider_name: String,
+    content: String,
+    mime_type: String,
+    metadata: Option<serde_json::Value>,
+}
+
+fn should_use_kreuzberg_bytes(
+    file_config: &FileProcessingConfig,
+    kreuzberg_config: Option<&crate::config::KreuzbergConfig>,
+    mime_type: &str,
+) -> bool {
+    let provider = file_config.provider.as_str();
+    if provider != "kreuzberg" && provider != "auto" {
+        return false;
+    }
+
+    let provider = KreuzbergProvider::new(kreuzberg_config.cloned().unwrap_or_default());
+    provider.supports_mime_type(mime_type)
+}
+
+async fn write_temp_document(filename: &str, data: &[u8]) -> Result<std::path::PathBuf> {
+    let safe_name = Path::new(filename)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("document.bin");
+    let path =
+        std::env::temp_dir().join(format!("uar_ingest_{}_{}", uuid::Uuid::new_v4(), safe_name));
+    tokio::fs::write(&path, data).await?;
+    Ok(path)
+}
+
+fn guess_mime_type(filename: &str) -> String {
+    mime_guess::from_path(filename)
+        .first_or_octet_stream()
+        .to_string()
+}
+
+fn copy_metadata_field(
+    metadata: &mut HashMap<String, serde_json::Value>,
+    extraction_metadata: &serde_json::Value,
+    field: &str,
+) {
+    if let Some(value) = extraction_metadata.get(field)
+        && !value.is_null()
+    {
+        metadata.insert(field.to_string(), value.clone());
+    }
+}
+
+fn build_chunk_metadata(
+    document: &KnowledgeDocument,
+    result: &ProcessedDocument,
+    provider_name: String,
+) -> HashMap<String, serde_json::Value> {
+    let mut metadata = HashMap::new();
+    metadata.insert(
+        "filename".to_string(),
+        serde_json::Value::String(document.filename.clone()),
+    );
+    metadata.insert(
+        "mime_type".to_string(),
+        serde_json::Value::String(result.mime_type.clone()),
+    );
+    metadata.insert(
+        "processor".to_string(),
+        serde_json::Value::String(provider_name),
+    );
+    metadata.insert(
+        "source".to_string(),
+        serde_json::Value::String("knowledge_upload".to_string()),
+    );
+
+    if let Some(extraction_metadata) = &result.metadata {
+        copy_metadata_field(&mut metadata, extraction_metadata, "title");
+        copy_metadata_field(&mut metadata, extraction_metadata, "language");
+        copy_metadata_field(&mut metadata, extraction_metadata, "pages");
+        metadata.insert("extraction".to_string(), extraction_metadata.clone());
+    }
+
+    metadata
 }
 
 // =============================================================================
@@ -173,6 +336,7 @@ impl IngestionWorkerPool {
         max_queue_depth: usize,
         ingest_service: Arc<IngestService>,
         persistence: Arc<dyn PersistenceLayer>,
+        config: Arc<AppConfig>,
     ) -> Result<Self, PoolError> {
         let worker_count = if worker_count == 0 {
             num_cpus::get()
@@ -180,13 +344,13 @@ impl IngestionWorkerPool {
             worker_count
         };
 
-        let config = WorkerPoolConfig::new()
+        let pool_config = WorkerPoolConfig::new()
             .with_worker_count(worker_count)
             .with_max_units(1000) // Resource capacity
             .with_max_queue_depth(max_queue_depth);
 
-        let executor = DocumentIngestionExecutor::new(ingest_service, persistence);
-        let pool = WorkerPool::new(config, executor)?;
+        let executor = DocumentIngestionExecutor::new(ingest_service, persistence, config);
+        let pool = WorkerPool::new(pool_config, executor)?;
 
         info!(
             worker_count,
@@ -240,5 +404,69 @@ impl IngestionWorkerPool {
     /// Shutdown the worker pool gracefully.
     pub fn shutdown(self) {
         drop(self.pool);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::KreuzbergConfig;
+
+    fn test_document() -> KnowledgeDocument {
+        KnowledgeDocument {
+            id: "doc-1".to_string(),
+            kb_id: "kb-1".to_string(),
+            filename: "report.pdf".to_string(),
+            file_path: None,
+            mime_type: Some("application/pdf".to_string()),
+            chunk_count: 0,
+            status: DocumentStatus::Pending,
+            created_at: "2026-04-26T00:00:00Z".to_string(),
+            updated_at: "2026-04-26T00:00:00Z".to_string(),
+        }
+    }
+
+    #[test]
+    fn ingestion_worker_prefers_kreuzberg_bytes_for_default_documents() {
+        let file_config = FileProcessingConfig::default();
+        assert!(should_use_kreuzberg_bytes(
+            &file_config,
+            Some(&KreuzbergConfig::default()),
+            "application/pdf"
+        ));
+    }
+
+    #[test]
+    fn ingestion_worker_does_not_route_images_to_kreuzberg_when_ocr_is_disabled() {
+        let file_config = FileProcessingConfig::default();
+        assert!(!should_use_kreuzberg_bytes(
+            &file_config,
+            Some(&KreuzbergConfig::default()),
+            "image/png"
+        ));
+    }
+
+    #[test]
+    fn ingestion_worker_chunk_metadata_includes_extraction_citation_fields() {
+        let result = ProcessedDocument {
+            provider_name: "Kreuzberg".to_string(),
+            content: "extracted text".to_string(),
+            mime_type: "application/pdf".to_string(),
+            metadata: Some(serde_json::json!({
+                "title": "Quarterly Report",
+                "language": "en",
+                "pages": 12
+            })),
+        };
+
+        let metadata =
+            build_chunk_metadata(&test_document(), &result, result.provider_name.clone());
+        assert_eq!(metadata["filename"], "report.pdf");
+        assert_eq!(metadata["mime_type"], "application/pdf");
+        assert_eq!(metadata["processor"], "Kreuzberg");
+        assert_eq!(metadata["title"], "Quarterly Report");
+        assert_eq!(metadata["language"], "en");
+        assert_eq!(metadata["pages"], 12);
+        assert!(metadata.get("extraction").is_some());
     }
 }

@@ -189,7 +189,7 @@ impl KbConfig {
 
     /// Default file processor
     pub fn default_file_processor() -> String {
-        "auto".to_string()
+        "kreuzberg".to_string()
     }
 }
 

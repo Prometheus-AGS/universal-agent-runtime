@@ -214,7 +214,11 @@ mime_guess = "2.0"
 base64 = "0.22"
 
 # Kreuzberg - document intelligence framework with Rust core
-kreuzberg = "4.6"
+kreuzberg = { git = "ssh://git@github.com/GQAdonis/kreuzberg.git", branch = "main", default-features = false, features = [
+    "tokio-runtime",
+    "formats",
+    "analysis",
+] }
 
 # Worker pool for scalable document ingestion
 # Dependency Upgrade Process:

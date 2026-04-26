@@ -45,6 +45,11 @@ function eventId(event: RuntimeEventEnvelope, entityType: EntityType) {
   return `${entityType}:${event.run_id ?? "global"}:${event.sequence ?? Date.now()}`;
 }
 
+function eventUpdatedAt(event: RuntimeEventEnvelope) {
+  const updatedAt = event.data?.updated_at ?? event.payload?.updated_at;
+  return typeof updatedAt === "string" ? updatedAt : now();
+}
+
 export function ingestRuntimeEvent(raw: unknown) {
   if (!raw || typeof raw !== "object") return;
   const event = raw as RuntimeEventEnvelope;
@@ -60,7 +65,7 @@ export function ingestRuntimeEvent(raw: unknown) {
     run_id: event.run_id ?? event.data?.run_id ?? event.payload?.run_id,
     event_type: eventType,
     sequence: event.sequence,
-    updated_at: now(),
+    updated_at: eventUpdatedAt(event),
   };
 
   useGraphStore.getState().upsertEntity(entityType, id, data);

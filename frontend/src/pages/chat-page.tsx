@@ -61,9 +61,15 @@ export function ChatPage() {
   const mobileSidebarOpen = useUiStore((s) => s.mobileSidebarOpen);
   const setMobileSidebarOpen = useUiStore((s) => s.setMobileSidebarOpen);
   const [configOpen, setConfigOpen] = useState(false);
-  const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
+  const [agentConfigState, setAgentConfigState] = useState<{
+    threadId: string | null;
+    config: AgentConfig | null;
+  }>({ threadId: null, config: null });
   const [modelCheck, setModelCheck] = useState<{ loading: boolean; ok: boolean; error?: string }>({ loading: true, ok: true });
   const navigate = useNavigate();
+  const agentConfig = agentConfigState.threadId === activeThreadId
+    ? agentConfigState.config
+    : null;
 
   // Check if a model is resolvable before allowing chat
   useEffect(() => {
@@ -81,12 +87,9 @@ export function ChatPage() {
   // Close mobile sidebar when active thread changes
   useEffect(() => { setMobileSidebarOpen(false); }, [activeThreadId, setMobileSidebarOpen]);
 
-  // Reset agent config when thread changes
-  useEffect(() => { setAgentConfig(null); }, [activeThreadId]);
-
   const handleAgentConfigChange = useCallback((config: AgentConfig | null) => {
-    setAgentConfig(config);
-  }, []);
+    setAgentConfigState({ threadId: activeThreadId, config });
+  }, [activeThreadId]);
 
   // No-model guard: block chat if no model is resolvable
   if (!modelCheck.loading && !modelCheck.ok) {

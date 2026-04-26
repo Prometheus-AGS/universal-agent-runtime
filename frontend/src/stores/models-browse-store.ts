@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { fetchModelsCatalog } from "@/services/models-api";
+import { onSettingsChanged } from "@/services/settings-change-bus";
 import type { CatalogModelsResponse } from "@/types";
 
 interface ModelsBrowseState {
@@ -13,7 +14,9 @@ interface ModelsBrowseActions {
   load: () => Promise<void>;
 }
 
-export const useModelsBrowseStore = create<ModelsBrowseState & ModelsBrowseActions>((set) => ({
+export const useModelsBrowseStore = create<
+  ModelsBrowseState & ModelsBrowseActions
+>((set) => ({
   response: {},
   loading: true,
   error: null,
@@ -28,3 +31,11 @@ export const useModelsBrowseStore = create<ModelsBrowseState & ModelsBrowseActio
     }
   },
 }));
+
+if (typeof window !== "undefined") {
+  onSettingsChanged((detail) => {
+    if (detail.impact === "providers" || detail.impact === "llm") {
+      void useModelsBrowseStore.getState().load();
+    }
+  });
+}

@@ -43,6 +43,7 @@ pub mod context_builder;
 pub mod mcp_server;
 pub mod scopes;
 pub mod service;
+pub mod workflow_mirror;
 
 pub use service::MemoryService;
 pub use surreal_memory::{Memory, MemoryHistory, MemoryScope, MemoryType};

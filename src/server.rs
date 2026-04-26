@@ -683,6 +683,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                         100, // max queue depth
                         Arc::clone(ingest),
                         Arc::clone(p),
+                        Arc::clone(&config),
                     ) {
                         Ok(pool) => {
                             info!("Ingestion worker pool initialized");
@@ -747,7 +748,13 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .nest("/api/knowledge", {
             let ingestion_pool = if let Some(p) = &persistence {
                 if let Some(ingest) = &state.ingest_service {
-                    match IngestionWorkerPool::new(0, 100, Arc::clone(ingest), Arc::clone(p)) {
+                    match IngestionWorkerPool::new(
+                        0,
+                        100,
+                        Arc::clone(ingest),
+                        Arc::clone(p),
+                        Arc::clone(&config),
+                    ) {
                         Ok(pool) => Some(Arc::new(pool)),
                         Err(_) => None,
                     }
@@ -1384,13 +1391,18 @@ async fn api_catalog(State(state): State<AppState>) -> Response {
         .iter()
         .map(|p| {
             let env_var = p.auth.as_ref().and_then(|a| a.env_var.clone());
+            let configured = configured_ids.contains(&p.id);
+            let (status, status_detail) =
+                provider_catalog_status(&p.id, configured, env_var.as_deref());
             json!({
                 "id": p.id,
                 "display_name": p.display_name,
                 "base_url": p.base_url,
                 "model_count": p.models.len(),
-                "configured": configured_ids.contains(&p.id),
+                "configured": configured,
                 "auth_env_var": env_var,
+                "status": status,
+                "status_detail": status_detail,
                 "endpoints": p.endpoints,
             })
         })
@@ -1402,6 +1414,31 @@ async fn api_catalog(State(state): State<AppState>) -> Response {
         "providers": providers
     }))
     .into_response()
+}
+
+fn provider_catalog_status(
+    provider_id: &str,
+    configured: bool,
+    auth_env_var: Option<&str>,
+) -> (&'static str, String) {
+    if configured {
+        return (
+            "configured",
+            format!("{provider_id} is configured and enabled in the provider registry."),
+        );
+    }
+
+    if let Some(env_var) = auth_env_var.filter(|v| !v.trim().is_empty()) {
+        return (
+            "credential-blocked",
+            format!("{provider_id} requires a configured credential such as {env_var}."),
+        );
+    }
+
+    (
+        "available",
+        format!("{provider_id} is available in the catalog but is not configured."),
+    )
 }
 
 /// POST /api/uar/route
@@ -4410,5 +4447,24 @@ mod tests {
             config.base_url.as_deref(),
             Some("https://api.openai.com/v1")
         );
+    }
+
+    #[test]
+    fn provider_catalog_status_marks_moonshot_credential_blocked() {
+        let (status, detail) =
+            provider_catalog_status("moonshotai", false, Some("MOONSHOT_API_KEY"));
+
+        assert_eq!(status, "credential-blocked");
+        assert!(detail.contains("MOONSHOT_API_KEY"));
+        assert!(!detail.contains("sk-"));
+    }
+
+    #[test]
+    fn provider_catalog_status_prefers_configured_over_missing_credential() {
+        let (status, detail) =
+            provider_catalog_status("moonshotai", true, Some("MOONSHOT_API_KEY"));
+
+        assert_eq!(status, "configured");
+        assert!(detail.contains("configured"));
     }
 }

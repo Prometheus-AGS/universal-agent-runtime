@@ -32,6 +32,26 @@ export async function putSettingValue(key: string, value: unknown): Promise<void
   if (!res.ok) throw new Error(`Save ${key} failed: ${res.status}`);
 }
 
+export interface BulkSettingsUpdateResponse {
+  status: "updated" | "partial";
+  updated?: SettingWithMeta[];
+  errors?: Array<{ key: string; error: string }>;
+}
+
+export async function putSettingsNamespace(
+  namespace: string,
+  data: Record<string, unknown>,
+): Promise<BulkSettingsUpdateResponse> {
+  const slug = namespaceToSlug(namespace);
+  const res = await fetch(`${BASE}/${slug}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data }),
+  });
+  if (!res.ok) throw new Error(`Save ${namespace} failed: ${res.status}`);
+  return res.json() as Promise<BulkSettingsUpdateResponse>;
+}
+
 export async function fetchSettingTypes(): Promise<unknown> {
   const res = await fetch(`${BASE}/types`);
   if (!res.ok) throw new Error(`${res.status}`);

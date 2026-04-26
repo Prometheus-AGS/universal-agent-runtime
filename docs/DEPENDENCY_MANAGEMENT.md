@@ -10,10 +10,10 @@ UAR uses several crates sourced directly from Git repositories rather than crate
 |-------|-----------|--------|
 | `rmcp` | `modelcontextprotocol/rust-sdk` | MCP Rust SDK is pre-release; no stable crates.io version |
 | `surreal-memory` | `Prometheus-AGS/surreal-memory-server` | Internal library, not published |
-| `kreuzberg` | `kreuzberg-dev/kreuzberg` | Uses RC release not yet on crates.io stable |
+| `kreuzberg` | `GQAdonis/kreuzberg` | Default local document intelligence provider; follows the fork's main branch |
 | `prometheus_parking_lot` | `Prometheus-AGS/prometheus-parking-lot-rs` | Internal library, not published |
 
-All git dependencies are **pinned to a specific commit SHA** via `rev = "..."` in `Cargo.toml`. This ensures:
+Most git dependencies are **pinned to a specific commit SHA** via `rev = "..."` in `Cargo.toml`. `kreuzberg` intentionally tracks `branch = "main"` so UAR can consume the active document-intelligence fork. Pinning ensures:
 
 - **Reproducible builds**: The same SHA is resolved every time regardless of upstream changes
 - **CI stability**: The CI pipeline does not break due to unexpected upstream commits
@@ -24,7 +24,7 @@ All git dependencies are **pinned to a specific commit SHA** via `rev = "..."` i
 ```toml
 rmcp          = rev "085470025f690050e8776ffa939e7ba71d3abc01"
 surreal-memory = rev "c6f95c905c16907ad58ef9049f32dcc9531d40eb"
-kreuzberg     = tag "v4.0.0-rc.17", rev "000244987eb93fdcaeb228c8c10e4fe1f44d699c"
+kreuzberg     = branch "main" on GQAdonis/kreuzberg
 prometheus_parking_lot = rev "32b481d6c5694545d35789894f6feecf5ac4ca3e"
 ```
 

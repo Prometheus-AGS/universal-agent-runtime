@@ -35,7 +35,6 @@ test.describe("Chat — Agent selection", () => {
       return;
     }
 
-    const initialUrl = page.url();
     const newConv = page.locator("button:has-text('New conversation'), [aria-label='New thread']").first();
     if (await newConv.isVisible({ timeout: 3000 }).catch(() => false)) {
       await newConv.click();

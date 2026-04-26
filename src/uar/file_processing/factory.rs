@@ -17,11 +17,9 @@ impl FileProcessorFactory {
     ///
     /// # Provider Selection
     ///
-    /// For "auto" mode, returns the first available provider in order:
-    /// 1. Kreuzberg (if configured, high-performance local processing)
-    /// 2. Unstructured.io (if API key configured or self-hosted URL)
-    /// 3. Mistral OCR (if API key configured)
-    /// 4. Local (always available, text files only)
+    /// For "auto" mode without file context, returns Kreuzberg with default
+    /// local configuration. Use [`Self::create_for_file`] when provider
+    /// fallback should consider MIME type support.
     ///
     /// # Arguments
     ///
@@ -99,61 +97,55 @@ impl FileProcessorFactory {
             .first_or_octet_stream()
             .to_string();
 
-        // For complex documents, prefer Kreuzberg (if available)
-        if let Some(cfg) = kreuzberg {
-            let provider = KreuzbergProvider::new(cfg.clone());
-            if provider.supports_mime_type(&mime_type) {
-                return Ok(Arc::new(provider));
-            }
+        if config.provider != "auto" {
+            return Self::create(config, unstructured, mistral, kreuzberg);
         }
 
-        // For images, prefer Mistral OCR (if API key available)
-        if mime_type.starts_with("image/")
-            && let Some(cfg) = mistral
-        {
-            let provider = MistralProvider::new(cfg.clone());
-            if provider.is_configured() && provider.supports_mime_type(&mime_type) {
-                return Ok(Arc::new(provider));
-            }
+        let kreuzberg_provider = KreuzbergProvider::new(kreuzberg.cloned().unwrap_or_default());
+        if kreuzberg_provider.supports_mime_type(&mime_type) {
+            return Ok(Arc::new(kreuzberg_provider));
         }
 
-        // For PDFs and complex documents, prefer Unstructured
-        if matches!(
-            mime_type.as_str(),
-            "application/pdf"
-                | "application/msword"
-                | "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                | "application/vnd.ms-excel"
-                | "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ) && let Some(cfg) = unstructured
-        {
+        if let Some(cfg) = unstructured {
             let provider = UnstructuredProvider::new(cfg.clone());
             if provider.is_configured() && provider.supports_mime_type(&mime_type) {
                 return Ok(Arc::new(provider));
             }
         }
 
-        // Fall back to default provider selection
-        Self::create(config, unstructured, mistral, kreuzberg)
+        if let Some(cfg) = mistral {
+            let provider = MistralProvider::new(cfg.clone());
+            if provider.is_configured() && provider.supports_mime_type(&mime_type) {
+                return Ok(Arc::new(provider));
+            }
+        }
+
+        Ok(Self::create_cloud_or_local_fallback(unstructured, mistral))
     }
 
     fn create_auto(
-        unstructured: Option<&UnstructuredConfig>,
-        mistral: Option<&MistralConfig>,
+        _unstructured: Option<&UnstructuredConfig>,
+        _mistral: Option<&MistralConfig>,
         kreuzberg: Option<&KreuzbergConfig>,
     ) -> Arc<dyn FileProcessor> {
         // Try providers in order of preference
 
         // 1. Kreuzberg (high-performance local processing)
-        if let Some(cfg) = kreuzberg {
-            tracing::info!(
-                "Using Kreuzberg for file processing (OCR backend: {})",
-                cfg.ocr_backend
-            );
-            return Arc::new(KreuzbergProvider::new(cfg.clone()));
-        }
+        let cfg = kreuzberg.cloned().unwrap_or_default();
+        tracing::info!(
+            "Using Kreuzberg for file processing (OCR enabled: {}, backend: {})",
+            cfg.ocr_enabled,
+            cfg.ocr_backend
+        );
+        Arc::new(KreuzbergProvider::new(cfg))
+    }
 
-        // 2. Unstructured.io
+    fn create_cloud_or_local_fallback(
+        unstructured: Option<&UnstructuredConfig>,
+        mistral: Option<&MistralConfig>,
+    ) -> Arc<dyn FileProcessor> {
+        // Try cloud providers before falling back to local text processing.
+
         if let Some(cfg) = unstructured {
             let provider = UnstructuredProvider::new(cfg.clone());
             if provider.is_configured() {
@@ -162,7 +154,6 @@ impl FileProcessorFactory {
             }
         }
 
-        // 3. Mistral OCR
         if let Some(cfg) = mistral {
             let provider = MistralProvider::new(cfg.clone());
             if provider.is_configured() {
@@ -171,7 +162,6 @@ impl FileProcessorFactory {
             }
         }
 
-        // 4. Fall back to local processing
         tracing::info!("Using local file processing (text files only)");
         Arc::new(LocalProvider::new())
     }
@@ -205,14 +195,14 @@ mod tests {
     }
 
     #[test]
-    fn test_create_auto_fallback_to_local() {
+    fn test_create_auto_defaults_to_kreuzberg() {
         let config = FileProcessingConfig {
             provider: "auto".to_string(),
             ..Default::default()
         };
         let result = FileProcessorFactory::create(&config, None, None, None);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().provider_name(), "Local");
+        assert_eq!(result.unwrap().provider_name(), "Kreuzberg");
     }
 
     #[test]
@@ -226,6 +216,28 @@ mod tests {
         assert!(result.is_ok());
         // When kreuzberg config is present, auto mode should prefer it
         assert_eq!(result.unwrap().provider_name(), "Kreuzberg");
+    }
+
+    #[test]
+    fn test_create_for_file_respects_explicit_unstructured() {
+        let config = FileProcessingConfig {
+            provider: "unstructured".to_string(),
+            ..Default::default()
+        };
+        let unstructured_config = UnstructuredConfig {
+            api_url: "http://localhost:8000".to_string(),
+            api_key: Some("test-key".to_string()),
+        };
+        let kreuzberg_config = KreuzbergConfig::default();
+        let result = FileProcessorFactory::create_for_file(
+            std::path::Path::new("document.pdf"),
+            &config,
+            Some(&unstructured_config),
+            None,
+            Some(&kreuzberg_config),
+        );
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().provider_name(), "Unstructured.io");
     }
 
     #[test]

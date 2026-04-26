@@ -26,7 +26,7 @@
 
 use anyhow::Result;
 use serde_json::json;
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 use uuid::Uuid;
 
 use universal_agent_runtime::uar::runtime::matching::ClassifierConfig;
@@ -397,6 +397,69 @@ async fn mgr_first_boot_seeds_all_core_namespaces() -> Result<()> {
 
     assert_eq!(mgr.get_value("server.port").await, Some(json!(3000)));
     assert_eq!(mgr.get_value("server.host").await, Some(json!("127.0.0.1")));
+    Ok(())
+}
+
+#[tokio::test]
+async fn mgr_core_schema_covers_app_config_namespaces_and_document_defaults() -> Result<()> {
+    let (mgr, _dir) = make_manager().await;
+    mgr.initialize(&minimal_config()).await?;
+
+    let type_keys: HashSet<String> = mgr.list_types().await?.into_iter().map(|t| t.key).collect();
+    for expected in [
+        "server",
+        "security",
+        "resilience",
+        "persistence",
+        "file_processing",
+        "unstructured",
+        "mistral_ocr",
+        "kreuzberg",
+        "vision",
+        "models",
+        "knowledge_bases",
+        "intent_classifier",
+        "llm",
+        "provider",
+        "memory",
+        "sandbox",
+        "llm_failover",
+        "native_tools",
+        "skill_evolution",
+        "sycophancy",
+        "acp",
+        "context_strategy",
+    ] {
+        assert!(
+            type_keys.contains(expected),
+            "missing settings namespace {expected}; registered: {type_keys:?}"
+        );
+    }
+
+    assert_eq!(
+        mgr.get_value("file_processing.provider").await,
+        Some(json!("kreuzberg")),
+        "Kreuzberg should be the default document processor"
+    );
+    assert_eq!(
+        mgr.get_value("kreuzberg.ocr_enabled").await,
+        Some(json!(false)),
+        "Kreuzberg OCR should be opt-in"
+    );
+    assert!(
+        mgr.get_value("file_processing.allowed_mime_types")
+            .await
+            .is_some(),
+        "document processing MIME allow-list must be editable"
+    );
+
+    for namespace in ["unstructured", "mistral_ocr", "kreuzberg"] {
+        assert!(
+            !mgr.list_namespace_with_meta(namespace).await.is_empty(),
+            "optional namespace {namespace} should be seeded for the settings UI"
+        );
+    }
+
     Ok(())
 }
 

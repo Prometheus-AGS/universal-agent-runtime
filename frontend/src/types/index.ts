@@ -101,6 +101,8 @@ export interface CatalogProviderSummary {
   model_count: number;
   configured: boolean;
   auth_env_var?: string;
+  status?: "configured" | "credential-blocked" | "available";
+  status_detail?: string;
   endpoints: string[];
 }
 

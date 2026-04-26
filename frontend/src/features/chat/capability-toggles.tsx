@@ -1,4 +1,4 @@
-import { type FC, useState, useCallback, useEffect } from "react";
+import { type FC, useState, useCallback, useMemo } from "react";
 import {
   Brain,
   Wrench,
@@ -155,60 +155,88 @@ const ListToggle: FC<ListToggleProps> = ({
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
-// Placeholder data for V1 — will be wired to real APIs later
-const INITIAL_KBS: ListItem[] = [];
-const INITIAL_TOOLS: ListItem[] = [];
-const INITIAL_SKILLS: ListItem[] = [];
+type CapabilityKind = "knowledgeBases" | "tools" | "skills";
+
+type DisabledByKind = Record<CapabilityKind, string[]>;
+
+const EMPTY_DISABLED: DisabledByKind = {
+  knowledgeBases: [],
+  tools: [],
+  skills: [],
+};
+
+function toListItems(ids: string[] | undefined, disabled: string[]): ListItem[] {
+  const disabledSet = new Set(disabled);
+  return (ids ?? []).map((id) => ({
+    id,
+    label: id,
+    enabled: !disabledSet.has(id),
+  }));
+}
 
 export const CapabilityToggles: FC<CapabilityTogglesProps> = ({
-  threadId: _threadId,
   agentConfig,
   className,
 }) => {
-  // ── Local state ──
-  const [knowledgeBases, setKnowledgeBases] = useState<ListItem[]>(INITIAL_KBS);
-  const [tools, setTools] = useState<ListItem[]>(INITIAL_TOOLS);
-  const [skills, setSkills] = useState<ListItem[]>(INITIAL_SKILLS);
+  const configSignature = useMemo(
+    () => JSON.stringify({
+      knowledgeBases: agentConfig?.knowledge_bases ?? [],
+      skills: agentConfig?.skills ?? [],
+      tools: agentConfig?.tools ?? [],
+    }),
+    [agentConfig],
+  );
+  const [disabledBySignature, setDisabledBySignature] = useState<Record<string, DisabledByKind>>({});
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(true);
 
-  // ── Sync toggles when agent config changes ──
-  useEffect(() => {
-    if (agentConfig) {
-      setSkills(
-        agentConfig.skills.map((s) => ({ id: s, label: s, enabled: true })),
-      );
-      setTools(
-        agentConfig.tools.map((t) => ({ id: t, label: t, enabled: true })),
-      );
-      setKnowledgeBases(
-        agentConfig.knowledge_bases.map((kb) => ({ id: kb, label: kb, enabled: true })),
-      );
-    } else {
-      // Reset to empty defaults when no agent selected
-      setSkills(INITIAL_SKILLS);
-      setTools(INITIAL_TOOLS);
-      setKnowledgeBases(INITIAL_KBS);
-    }
-  }, [agentConfig]);
+  const disabled = disabledBySignature[configSignature] ?? EMPTY_DISABLED;
+  const knowledgeBases = useMemo(
+    () => toListItems(agentConfig?.knowledge_bases, disabled.knowledgeBases),
+    [agentConfig?.knowledge_bases, disabled.knowledgeBases],
+  );
+  const tools = useMemo(
+    () => toListItems(agentConfig?.tools, disabled.tools),
+    [agentConfig?.tools, disabled.tools],
+  );
+  const skills = useMemo(
+    () => toListItems(agentConfig?.skills, disabled.skills),
+    [agentConfig?.skills, disabled.skills],
+  );
 
   // ── List toggle helpers ──
+  const updateDisabled = useCallback(
+    (kind: CapabilityKind, updater: (current: string[]) => string[]) => {
+      setDisabledBySignature((prev) => {
+        const current = prev[configSignature] ?? EMPTY_DISABLED;
+        return {
+          ...prev,
+          [configSignature]: {
+            ...current,
+            [kind]: updater(current[kind]),
+          },
+        };
+      });
+    },
+    [configSignature],
+  );
+
   const toggleItem = useCallback(
-    (setter: React.Dispatch<React.SetStateAction<ListItem[]>>, id: string) => {
-      setter((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, enabled: !item.enabled } : item,
-        ),
+    (kind: CapabilityKind, id: string) => {
+      updateDisabled(kind, (current) =>
+        current.includes(id)
+          ? current.filter((itemId) => itemId !== id)
+          : [...current, id],
       );
     },
-    [],
+    [updateDisabled],
   );
 
   const toggleAll = useCallback(
-    (setter: React.Dispatch<React.SetStateAction<ListItem[]>>, enabled: boolean) => {
-      setter((prev) => prev.map((item) => ({ ...item, enabled })));
+    (kind: CapabilityKind, items: ListItem[], enabled: boolean) => {
+      updateDisabled(kind, () => enabled ? [] : items.map((item) => item.id));
     },
-    [],
+    [updateDisabled],
   );
 
   return (
@@ -222,24 +250,24 @@ export const CapabilityToggles: FC<CapabilityTogglesProps> = ({
         icon={<Brain className="size-3.5" />}
         label="Knowledge"
         items={knowledgeBases}
-        onToggleItem={(id) => toggleItem(setKnowledgeBases, id)}
-        onToggleAll={(enabled) => toggleAll(setKnowledgeBases, enabled)}
+        onToggleItem={(id) => toggleItem("knowledgeBases", id)}
+        onToggleAll={(enabled) => toggleAll("knowledgeBases", knowledgeBases, enabled)}
       />
 
       <ListToggle
         icon={<Wrench className="size-3.5" />}
         label="Tools"
         items={tools}
-        onToggleItem={(id) => toggleItem(setTools, id)}
-        onToggleAll={(enabled) => toggleAll(setTools, enabled)}
+        onToggleItem={(id) => toggleItem("tools", id)}
+        onToggleAll={(enabled) => toggleAll("tools", tools, enabled)}
       />
 
       <ListToggle
         icon={<Zap className="size-3.5" />}
         label="Skills"
         items={skills}
-        onToggleItem={(id) => toggleItem(setSkills, id)}
-        onToggleAll={(enabled) => toggleAll(setSkills, enabled)}
+        onToggleItem={(id) => toggleItem("skills", id)}
+        onToggleAll={(enabled) => toggleAll("skills", skills, enabled)}
       />
 
       <SimpleToggle

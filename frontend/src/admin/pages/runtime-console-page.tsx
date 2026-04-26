@@ -25,6 +25,7 @@ import type {
   RuntimeAgUiEventEntity,
   RuntimeApprovalEntity,
   RuntimeArtifactEntity,
+  RuntimeA2uiSurfaceEntity,
   RuntimeMemoryEventEntity,
   RuntimeModelRouteDecisionEntity,
   RuntimeProviderHealthEntity,
@@ -250,6 +251,20 @@ export function RuntimeCockpitPage() {
               ))}
             </div>
           </SectionFrame>
+
+          <SectionFrame title="Memory Activity" eyebrow={`${memory.length} events`}>
+            {memory.length > 0 ? memory.slice(0, 6).map((event) => (
+              <div key={event.id} className="border-b border-border px-4 py-3 last:border-b-0">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="truncate text-sm font-medium text-foreground">{event.action}</p>
+                  <span className="font-mono text-xs text-muted-foreground">{event.source_tool ?? "runtime"}</span>
+                </div>
+                <p className="truncate text-xs text-muted-foreground">{event.summary}</p>
+              </div>
+            )) : (
+              <EmptyRuntimeState label="No memory activity observed" />
+            )}
+          </SectionFrame>
         </aside>
       </div>
     </ScrollArea>
@@ -355,7 +370,7 @@ export function RuntimeApprovalsPage() {
 export function RuntimeProtocolsPage() {
   const agUi = useEntities<RuntimeAgUiEventEntity>("RuntimeAgUiEvent");
   const routes = useEntities<RuntimeModelRouteDecisionEntity>("RuntimeModelRouteDecision");
-  const surfaces = useEntities("RuntimeA2uiSurface");
+  const surfaces = useEntities<RuntimeA2uiSurfaceEntity>("RuntimeA2uiSurface");
 
   const protocolCards = [
     { label: "Anthropic REST", value: "/v1/messages", icon: Bot, detail: "Prompt caching and Claude Code compatibility diagnostics" },
@@ -411,6 +426,21 @@ export function RuntimeProtocolsPage() {
               </div>
             )) : (
               <EmptyRuntimeState label="No route decisions recorded" />
+            )}
+          </SectionFrame>
+          <SectionFrame title="A2UI Surfaces" eyebrow="Protocol UI">
+            {surfaces.length > 0 ? surfaces.slice(0, 8).map((surface) => (
+              <div key={surface.id} className="border-b border-border px-4 py-3 last:border-b-0">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="truncate text-sm font-medium text-foreground">{surface.title}</p>
+                  <Badge variant="outline" className={cn(statusTone(surface.status))}>{surface.status}</Badge>
+                </div>
+                <p className="truncate text-xs text-muted-foreground">
+                  {surface.schema_id ?? "schema:auto"} · {String(surface.payload?.body ?? "payload pending")}
+                </p>
+              </div>
+            )) : (
+              <EmptyRuntimeState label="No A2UI surfaces recorded" />
             )}
           </SectionFrame>
         </aside>

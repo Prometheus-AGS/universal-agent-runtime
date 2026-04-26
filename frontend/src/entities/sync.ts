@@ -15,6 +15,7 @@ import type {
 } from "@prometheus-ags/prometheus-entity-management";
 import { PGlite } from "@electric-sql/pglite";
 import { loadPgliteFsBundle } from "@/lib/pglite-assets";
+import { emitSettingsChanged } from "@/services/settings-change-bus";
 
 /**
  * Mirror of the library-internal ShapeMessage type.
@@ -74,8 +75,13 @@ const ENTITY_TABLES: EntityTableDef[] = [
   { table: "runtime_memory_events", entityType: "RuntimeMemoryEvent" },
   { table: "runtime_ag_ui_events", entityType: "RuntimeAgUiEvent" },
   { table: "runtime_a2ui_surfaces", entityType: "RuntimeA2uiSurface" },
-  { table: "runtime_model_route_decisions", entityType: "RuntimeModelRouteDecision" },
+  {
+    table: "runtime_model_route_decisions",
+    entityType: "RuntimeModelRouteDecision",
+  },
   { table: "runtime_provider_health", entityType: "RuntimeProviderHealth" },
+  { table: "settings", entityType: "Setting" },
+  { table: "settings_types", entityType: "SettingsType" },
 ];
 
 /**
@@ -279,12 +285,28 @@ function createSSEAdapter(url: string): RealtimeAdapter {
             delete: "delete",
           };
           const op = opMap[raw.action ?? ""] ?? "upsert";
+          const type = normalizeEntityType(raw.entity_type ?? "unknown");
+          if (type === "Setting") {
+            const key =
+              typeof raw.data?.key === "string" ? raw.data.key : (raw.id ?? "");
+            const namespace = key.split(".")[0] ?? "";
+            emitSettingsChanged({
+              namespace,
+              key,
+              value: raw.data?.data,
+              source: "remote",
+              updated_at:
+                typeof raw.data?.updated_at === "string"
+                  ? raw.data.updated_at
+                  : undefined,
+            });
+          }
 
           handler({
             changes: [
               {
                 op,
-                type: raw.entity_type ?? "unknown",
+                type,
                 id: raw.id ?? "",
                 data: raw.data,
               },
@@ -298,6 +320,16 @@ function createSSEAdapter(url: string): RealtimeAdapter {
       return () => eventSource.close();
     },
   };
+}
+
+function normalizeEntityType(rawType: string): string {
+  const map: Record<string, string> = {
+    settings: "Setting",
+    setting: "Setting",
+    settings_types: "SettingsType",
+    settings_type: "SettingsType",
+  };
+  return map[rawType] ?? rawType;
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -333,13 +365,14 @@ export async function initSyncTransport(): Promise<() => void> {
   if (info.provider === "postgres") {
     try {
       // Derive ElectricSQL URL: same host, default port 3000
-      const electricUrl =
-        `${window.location.protocol}//${window.location.hostname}:3000`;
+      const electricUrl = `${window.location.protocol}//${window.location.hostname}:3000`;
 
       // PGlite runs in-browser as the local replica for Electric sync
       const fsBundle = await loadPgliteFsBundle();
       const pg = new PGlite({ fsBundle });
-      const pglite = pg as unknown as Parameters<typeof createElectricAdapter>[0]["pglite"];
+      const pglite = pg as unknown as Parameters<
+        typeof createElectricAdapter
+      >[0]["pglite"];
 
       const tables = buildElectricTableConfigs(electricUrl);
 
@@ -360,13 +393,20 @@ export async function initSyncTransport(): Promise<() => void> {
         // if it does in a future version, call pg.close() here.
       };
     } catch (err) {
-      console.warn("[sync] ElectricSQL adapter unavailable, falling back to REST polling", err);
+      console.warn(
+        "[sync] ElectricSQL adapter unavailable, falling back to REST polling",
+        err,
+      );
       return () => {};
     }
   }
 
   // ── SurrealDB remote -> WebSocket ────────────────────────────────
-  if (info.provider === "surreal" && info.mode === "remote" && info.database_url) {
+  if (
+    info.provider === "surreal" &&
+    info.mode === "remote" &&
+    info.database_url
+  ) {
     try {
       // Convert http(s) URL to ws(s) for SurrealDB RPC endpoint
       const wsUrl = info.database_url.replace(/^http/, "ws") + "/rpc";
@@ -386,7 +426,10 @@ export async function initSyncTransport(): Promise<() => void> {
       const unregister = manager.register(adapter, channels);
       return unregister;
     } catch (err) {
-      console.warn("[sync] WebSocket adapter failed, falling back to REST polling", err);
+      console.warn(
+        "[sync] WebSocket adapter failed, falling back to REST polling",
+        err,
+      );
       return () => {};
     }
   }

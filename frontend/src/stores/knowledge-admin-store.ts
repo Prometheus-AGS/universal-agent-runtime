@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import type { KbSearchResult } from "@/types";
+import { onSettingsChanged } from "@/services/settings-change-bus";
 import {
   createKnowledgeBase,
   deleteDocument,
@@ -158,3 +159,14 @@ export const useKnowledgeAdminStore = create<
     }
   },
 }));
+
+if (typeof window !== "undefined") {
+  onSettingsChanged((detail) => {
+    if (detail.impact !== "rag") return;
+    const state = useKnowledgeAdminStore.getState();
+    void state.loadBases();
+    if (state.docsKbId) {
+      void state.loadDocs(state.docsKbId);
+    }
+  });
+}

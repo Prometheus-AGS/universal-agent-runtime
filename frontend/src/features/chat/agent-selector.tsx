@@ -59,7 +59,6 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetchAgentsList()
       .then((list) => {
         if (!cancelled) setAgents(list as AgentWithType[]);

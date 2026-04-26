@@ -21,6 +21,10 @@ use surreal_memory::{
 use crate::config::MemoryConfig;
 use crate::uar::security::claims::UserContext;
 
+use super::workflow_mirror::{
+    WorkflowMirrorCandidate, WorkflowMirrorRecord, workflow_candidate_from_memory,
+};
+
 /// Facade over `SurrealStorage` with scope-aware helpers.
 #[derive(Clone)]
 pub struct MemoryService {
@@ -256,6 +260,39 @@ impl MemoryService {
             .get_all_memories(user_id, agent_id, session_id)
             .await
             .context("get_all_memories failed")
+    }
+
+    /// Add a KBD/OpenSpec workflow mirror record through the memory service boundary.
+    pub async fn add_workflow_mirror_record(
+        &self,
+        record: WorkflowMirrorRecord,
+        user_ctx: &UserContext,
+    ) -> Result<Memory> {
+        let write = record.to_memory_write();
+        self.add(
+            write.content,
+            write.scope,
+            write.memory_type,
+            user_ctx,
+            None,
+            None,
+            write.categories,
+            Some(write.metadata),
+            write.importance,
+        )
+        .await
+    }
+
+    /// List workflow mirror recovery candidates from scoped memory records.
+    pub async fn list_workflow_mirror_candidates(
+        &self,
+        user_ctx: &UserContext,
+    ) -> Result<Vec<WorkflowMirrorCandidate>> {
+        let memories = self.list(user_ctx, None, None).await?;
+        Ok(memories
+            .iter()
+            .filter_map(|memory| workflow_candidate_from_memory(memory).ok())
+            .collect())
     }
 
     /// Retrieve a single memory by its record ID string (e.g. `"memory:abc123"`).

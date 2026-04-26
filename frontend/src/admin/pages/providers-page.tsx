@@ -106,7 +106,12 @@ export const ProvidersPage: FC = () => {
       <div className={cn("flex shrink-0 flex-col border-b border-border bg-background md:w-72 md:border-b-0 md:border-r", selected ? "hidden md:flex" : "flex flex-1 md:flex-initial")}>
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div>
-            <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Providers</p>
+            <h2
+              className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground"
+              data-testid="providers-heading"
+            >
+              Providers
+            </h2>
             <p className="font-mono text-xs text-muted-foreground">{catalog.length} available · {configured.length} configured</p>
           </div>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => void load()} aria-label="Refresh">
@@ -162,17 +167,21 @@ export const ProvidersPage: FC = () => {
               aria-current={selected?.id === p.id ? "true" : undefined}
             >
               <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                {p.configured
-                  ? <CheckCircle2 size={14} className="text-success" />
-                  : <Server size={14} className="text-muted-foreground" />
-                }
+                {p.configured ? (
+                  <CheckCircle2 size={14} className="text-success" />
+                ) : p.status === "credential-blocked" ? (
+                  <AlertTriangle size={14} className="text-amber-500" />
+                ) : (
+                  <Server size={14} className="text-muted-foreground" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-display text-sm font-semibold text-foreground">{p.display_name}</p>
                 <p className="font-mono text-xs text-muted-foreground">{p.model_count} models</p>
               </div>
-              {p.id === defaultId && (
-                <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 font-mono text-xs text-primary">default</span>
+              {p.id === defaultId && <ProviderStatusPill tone="primary" label="default" />}
+              {!p.configured && p.status === "credential-blocked" && (
+                <ProviderStatusPill tone="warning" label="credential" />
               )}
               <ChevronRight size={13} className="shrink-0 text-muted-foreground/40" />
             </Button>
@@ -187,8 +196,6 @@ export const ProvidersPage: FC = () => {
             key={selected.id}
             provider={selected}
             isDefault={selected.id === defaultId}
-            defaultId={defaultId}
-            catalog={catalog}
             onSetDefault={() => handleSetDefault(selected.id)}
             onConfigure={() => handleConfigure(selected)}
             onDelete={() => setRemoveTarget(selected.id)}
@@ -343,16 +350,15 @@ function DefaultModelBanner({
 interface ProviderDetailProps {
   provider: CatalogProviderSummary;
   isDefault: boolean;
-  defaultId: string | undefined;
-  catalog: CatalogProviderSummary[];
   onSetDefault: () => void;
   onConfigure: () => void;
   onDelete: () => void;
   onBack: () => void;
 }
 
-function ProviderDetail({ provider, isDefault, defaultId, catalog, onSetDefault, onConfigure, onDelete, onBack }: ProviderDetailProps) {
+function ProviderDetail({ provider, isDefault, onSetDefault, onConfigure, onDelete, onBack }: ProviderDetailProps) {
   const { models, loadingModels } = useProviderModels(provider.id);
+  const statusCopy = getProviderStatusCopy(provider);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -384,6 +390,11 @@ function ProviderDetail({ provider, isDefault, defaultId, catalog, onSetDefault,
                 ? <Badge variant="outline" className="gap-1 border-success/40 text-success text-xs"><CheckCircle2 size={10} />Configured</Badge>
                 : <Badge variant="outline" className="gap-1 text-muted-foreground text-xs"><XCircle size={10} />Not Configured</Badge>
               }
+              {provider.status === "credential-blocked" && (
+                <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-600 text-xs">
+                  <AlertTriangle size={10} />Credential blocked
+                </Badge>
+              )}
               {isDefault && <Badge className="text-xs">Default</Badge>}
             </div>
             <p className="mt-0.5 font-mono text-xs text-muted-foreground">{provider.base_url ?? "Default API endpoint"}</p>
@@ -392,6 +403,7 @@ function ProviderDetail({ provider, isDefault, defaultId, catalog, onSetDefault,
                 Auth: <code className="text-foreground">{provider.auth_env_var}</code>
               </p>
             )}
+            <p className="mt-1 font-body text-xs text-muted-foreground">{statusCopy}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={onConfigure}>
@@ -452,4 +464,24 @@ function ProviderDetail({ provider, isDefault, defaultId, catalog, onSetDefault,
       </div>
     </div>
   );
+}
+
+function ProviderStatusPill({ tone, label }: { tone: "primary" | "warning"; label: string }) {
+  return (
+    <span
+      className={cn(
+        "shrink-0 rounded-full px-1.5 py-0.5 font-mono text-xs",
+        tone === "primary" ? "bg-primary/15 text-primary" : "bg-amber-500/10 text-amber-600",
+      )}
+    >
+      {label}
+    </span>
+  );
+}
+
+function getProviderStatusCopy(provider: CatalogProviderSummary): string {
+  if (provider.status_detail) return provider.status_detail;
+  if (provider.configured) return `${provider.display_name} is configured and enabled.`;
+  if (provider.auth_env_var) return `${provider.display_name} requires ${provider.auth_env_var} before live requests can be tested.`;
+  return `${provider.display_name} is available in the catalog but is not configured.`;
 }

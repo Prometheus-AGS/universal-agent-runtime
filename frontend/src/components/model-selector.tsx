@@ -56,13 +56,11 @@ export function ModelSelector({
 }: ModelSelectorProps) {
   const [open, setOpen] = useState(false);
   const [catalog, setCatalog] = useState<CatalogModelsResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
     fetchModelsCatalog()
       .then((data) => {
         if (!cancelled) setCatalog(data);

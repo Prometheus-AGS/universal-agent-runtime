@@ -28,7 +28,7 @@ mod provider;
 mod unstructured;
 
 pub use factory::FileProcessorFactory;
-pub use kreuzberg::KreuzbergProvider;
+pub use kreuzberg::{KreuzbergProvider, process_bytes};
 pub use local::LocalProvider;
 pub use mistral::MistralProvider;
 pub use provider::{ExtractedImage, FileProcessor, ProcessingError, ProcessingResult};

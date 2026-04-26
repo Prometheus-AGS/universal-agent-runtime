@@ -1,12 +1,21 @@
 import { create } from "zustand";
 
-import { fetchSettingsNamespace, namespaceToSlug, putSettingValue } from "@/services/settings-api";
+import {
+  fetchSettingsNamespace,
+  namespaceToSlug,
+  putSettingsNamespace,
+} from "@/services/settings-api";
+import {
+  emitSettingsChanged,
+  onSettingsChanged,
+} from "@/services/settings-change-bus";
 import type { SettingWithMeta } from "@/types";
 
 export interface NamespaceSettingsSlice {
   settings: Record<string, SettingWithMeta>;
   values: Record<string, unknown>;
   dirty: Record<string, unknown>;
+  conflicts: Record<string, unknown>;
   loading: boolean;
   saving: boolean;
   error: string | null;
@@ -17,6 +26,7 @@ function emptySlice(): NamespaceSettingsSlice {
     settings: {},
     values: {},
     dirty: {},
+    conflicts: {},
     loading: true,
     saving: false,
     error: null,
@@ -31,6 +41,7 @@ interface SettingsStoreActions {
   load: (namespace: string) => Promise<void>;
   setSetting: (namespace: string, key: string, value: unknown) => void;
   saveAll: (namespace: string) => Promise<void>;
+  applyRemoteSetting: (setting: SettingWithMeta) => void;
 }
 
 type SettingsStore = SettingsStoreState & SettingsStoreActions;
@@ -65,6 +76,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
             settings: byKey,
             values: vals,
             dirty: {},
+            conflicts: {},
             loading: false,
             saving: false,
             error: null,
@@ -105,6 +117,12 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     const slice = get().namespaces[namespace];
     if (!slice || Object.keys(slice.dirty).length === 0) return;
     const dirty = slice.dirty;
+    const payload: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(dirty)) {
+      payload[
+        key.startsWith(`${namespace}.`) ? key.slice(namespace.length + 1) : key
+      ] = value;
+    }
     set((s) => {
       const cur = s.namespaces[namespace];
       if (!cur) return s;
@@ -116,19 +134,45 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
       };
     });
     try {
-      await Promise.all(
-        Object.entries(dirty).map(([key, value]) => putSettingValue(key, value)),
-      );
+      const response = await putSettingsNamespace(namespace, payload);
+      if (response.errors?.length) {
+        throw new Error(
+          response.errors.map((e) => `${e.key}: ${e.error}`).join("; "),
+        );
+      }
       set((s) => {
         const cur = s.namespaces[namespace];
         if (!cur) return s;
+        const settings = { ...cur.settings };
+        const values = { ...cur.values };
+        for (const row of response.updated ?? []) {
+          settings[row.key] = row;
+          values[row.key] = row.data;
+        }
         return {
           namespaces: {
             ...s.namespaces,
-            [namespace]: { ...cur, dirty: {}, saving: false, error: null },
+            [namespace]: {
+              ...cur,
+              settings,
+              values,
+              dirty: {},
+              conflicts: {},
+              saving: false,
+              error: null,
+            },
           },
         };
       });
+      for (const row of response.updated ?? []) {
+        emitSettingsChanged({
+          namespace,
+          key: row.key,
+          value: row.data,
+          source: "local",
+          updated_at: row.updated_at,
+        });
+      }
     } catch (e) {
       set((s) => {
         const cur = s.namespaces[namespace];
@@ -140,6 +184,59 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
           },
         };
       });
+      throw e;
     }
   },
+
+  applyRemoteSetting: (setting: SettingWithMeta) => {
+    const namespace = setting.key.split(".")[0] ?? "";
+    if (!namespace) return;
+    set((s) => {
+      const cur = s.namespaces[namespace];
+      if (!cur) return s;
+      const isDirty = Object.prototype.hasOwnProperty.call(
+        cur.dirty,
+        setting.key,
+      );
+      return {
+        namespaces: {
+          ...s.namespaces,
+          [namespace]: {
+            ...cur,
+            settings: { ...cur.settings, [setting.key]: setting },
+            values: isDirty
+              ? cur.values
+              : { ...cur.values, [setting.key]: setting.data },
+            conflicts: isDirty
+              ? { ...cur.conflicts, [setting.key]: setting.data }
+              : cur.conflicts,
+          },
+        },
+      };
+    });
+  },
 }));
+
+let realtimeBridgeStarted = false;
+
+export function initSettingsRealtimeBridge() {
+  if (realtimeBridgeStarted) return;
+  realtimeBridgeStarted = true;
+  onSettingsChanged((detail) => {
+    if (detail.source !== "remote") return;
+    const row = {
+      id: detail.key,
+      settings_type_id: detail.namespace,
+      key: detail.key,
+      name: detail.key,
+      data: detail.value,
+      created_at: detail.updated_at ?? new Date().toISOString(),
+      updated_at: detail.updated_at,
+      meta: {
+        source: "Api",
+        is_drift: true,
+      },
+    } satisfies SettingWithMeta;
+    useSettingsStore.getState().applyRemoteSetting(row);
+  });
+}
