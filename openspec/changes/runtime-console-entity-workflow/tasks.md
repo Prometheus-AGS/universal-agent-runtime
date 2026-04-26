@@ -22,6 +22,7 @@
 - [x] Verify desktop and mobile rendering in browser.
 
 ## Validation
-- [x] Run `openspec validate`.
-- [x] Run frontend typecheck/lint/tests.
-- [ ] Run backend tests relevant to Anthropic/OpenAI compatibility and memory MCP.
+- [x] Run `openspec validate runtime-console-entity-workflow`.
+- [x] Run frontend typecheck.
+- [ ] Run frontend lint/tests cleanly.
+- [x] Run backend tests relevant to Anthropic/OpenAI compatibility and knowledge search persistence.

@@ -4,7 +4,7 @@
   "sourceOfTruth": ".kbd-orchestrator",
   "specSystem": "openspec",
   "activeChange": "runtime-console-entity-workflow",
-  "activePhase": "runtime-console-ux",
+  "activePhase": "runtime-console-validation-hardening",
   "memoryMirror": {
     "provider": "surreal_memory",
     "mcpServer": "surreal_memory",
@@ -12,5 +12,5 @@
     "authoritative": false
   },
   "tools": ["codex", "claude-code", "cursor", "opencode"],
-  "updatedAt": "2026-04-25T00:00:00-05:00"
+  "updatedAt": "2026-04-26T00:00:00-05:00"
 }
