@@ -818,8 +818,7 @@ impl PersistenceLayer for SurrealDbProvider {
                 if json.get("id").map_or(true, |v| v.is_null()) {
                     json["id"] = serde_json::Value::String(id.to_string());
                 }
-                let cp =
-                    serde_json::from_value(json).context("deserialise checkpoint")?;
+                let cp = serde_json::from_value(json).context("deserialise checkpoint")?;
                 Ok(Some(cp))
             }
         }
@@ -832,9 +831,7 @@ impl PersistenceLayer for SurrealDbProvider {
         let run_id_owned = run_id.to_string();
         let mut res = self
             .db
-            .query(
-                "SELECT * FROM checkpoints WHERE run_id = $run_id ORDER BY created_at ASC",
-            )
+            .query("SELECT * FROM checkpoints WHERE run_id = $run_id ORDER BY created_at ASC")
             .bind(("run_id", run_id_owned))
             .await
             .context("list_checkpoints")?;
@@ -850,7 +847,11 @@ impl PersistenceLayer for SurrealDbProvider {
                 let mut json = surreal_to_json(v)?;
                 // Restore id from the redundant _cp_id field if RecordId extraction returned null.
                 if json.get("id").map_or(true, |v| v.is_null()) {
-                    if let Some(fallback) = json.get("_cp_id").and_then(|v| v.as_str()).map(String::from) {
+                    if let Some(fallback) = json
+                        .get("_cp_id")
+                        .and_then(|v| v.as_str())
+                        .map(String::from)
+                    {
                         json["id"] = serde_json::Value::String(fallback);
                     }
                 }
@@ -921,12 +922,14 @@ fn unwrap_surreal_value(v: serde_json::Value) -> serde_json::Value {
                             unwrap_surreal_value(inner)
                         }
                     }
-                    // RecordId: {"tb": "<table>", "id": <wrapped-id>}
+                    // RecordId: {"tb": "<table>", "id": <wrapped-id>} or
+                    // {"table": "<table>", "key": <wrapped-id>} depending on
+                    // surrealdb crate version.
                     // Extract the inner `id` field so that record IDs round-trip
                     // back to their original string/number value.
                     "RecordId" => {
                         if let J::Object(ref fields) = inner {
-                            if let Some(id_val) = fields.get("id") {
+                            if let Some(id_val) = fields.get("id").or_else(|| fields.get("key")) {
                                 let extracted = unwrap_surreal_value(id_val.clone());
                                 if !matches!(extracted, J::Null) {
                                     return extracted;
@@ -1113,4 +1116,22 @@ fn surreal_json_to_attachment_meta(
         text_content,
         created_at,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::unwrap_surreal_value;
+    use serde_json::json;
+
+    #[test]
+    fn unwrap_record_id_supports_table_key_shape() {
+        let value = json!({
+            "RecordId": {
+                "table": "knowledge_documents",
+                "key": { "String": "doc-123" }
+            }
+        });
+
+        assert_eq!(unwrap_surreal_value(value), json!("doc-123"));
+    }
 }

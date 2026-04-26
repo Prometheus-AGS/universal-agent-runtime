@@ -19,8 +19,14 @@ fn sliding_window_trims_old_messages() {
     let result = apply_strategy(&msgs, &strategy);
 
     assert_eq!(result.len(), 10, "should keep only the last 10 messages");
-    assert_eq!(result[0]["content"], "msg-20", "first kept message should be msg-20");
-    assert_eq!(result[9]["content"], "msg-29", "last kept message should be msg-29");
+    assert_eq!(
+        result[0]["content"], "msg-20",
+        "first kept message should be msg-20"
+    );
+    assert_eq!(
+        result[9]["content"], "msg-29",
+        "last kept message should be msg-29"
+    );
 }
 
 #[test]

@@ -1601,10 +1601,18 @@ pub struct SycophancyConfig {
 }
 
 impl SycophancyConfig {
-    fn default_enabled() -> bool { true }
-    fn default_strictness() -> String { "standard".to_string() }
-    fn default_auto_correct_threshold() -> f32 { 0.5 }
-    fn default_reflect_threshold() -> f32 { 0.3 }
+    fn default_enabled() -> bool {
+        true
+    }
+    fn default_strictness() -> String {
+        "standard".to_string()
+    }
+    fn default_auto_correct_threshold() -> f32 {
+        0.5
+    }
+    fn default_reflect_threshold() -> f32 {
+        0.3
+    }
 }
 
 impl Default for SycophancyConfig {

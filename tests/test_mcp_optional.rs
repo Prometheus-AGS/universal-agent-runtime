@@ -1,6 +1,5 @@
 /// Tests that verify the server and orchestrator function correctly without
 /// an `mcp.json` file (MCP is purely optional).
-
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use universal_agent_runtime::config::LlmConfig;

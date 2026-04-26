@@ -1,6 +1,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import type { ContentBlock, RichMessage } from "@/types/chat-content";
 import type { LocalThread } from "@/types";
+import { loadPgliteFsBundle } from "@/lib/pglite-assets";
 
 // ---------------------------------------------------------------------------
 // Status callback type — emitted during open() for loading-screen feedback
@@ -13,6 +14,7 @@ export type OnStatusFn = (msg: string) => void;
 // ---------------------------------------------------------------------------
 
 let _instance: UarDb | null = null;
+let _openPromise: Promise<UarDb> | null = null;
 
 export function setDbInstance(db: UarDb): void {
   _instance = db;
@@ -93,13 +95,28 @@ export class UarDb {
   // ---- lifecycle ----------------------------------------------------------
 
   static async open(onStatus?: OnStatusFn): Promise<UarDb> {
+    if (_instance) return _instance;
+    if (_openPromise) {
+      onStatus?.("Waiting for local database…");
+      return _openPromise;
+    }
+
     onStatus?.("Opening local database…");
-    const db = new PGlite("idb://uar-threads");
-    const instance = new UarDb(db);
-    await instance.runMigrations(onStatus);
-    await instance.migrateFromLocalStorage(onStatus);
-    onStatus?.("Database ready");
-    return instance;
+    _openPromise = (async () => {
+      const fsBundle = await loadPgliteFsBundle();
+      const db = new PGlite("idb://uar-threads", { fsBundle });
+      const instance = new UarDb(db);
+      await instance.runMigrations(onStatus);
+      await instance.migrateFromLocalStorage(onStatus);
+      onStatus?.("Database ready");
+      _instance = instance;
+      return instance;
+    })().catch((err: unknown) => {
+      _openPromise = null;
+      throw err;
+    });
+
+    return _openPromise;
   }
 
   private async runMigrations(onStatus?: OnStatusFn): Promise<void> {

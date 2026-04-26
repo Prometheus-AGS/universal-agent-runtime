@@ -310,7 +310,6 @@ export const AgentsPage: FC = () => {
                   <AlertTriangle
                     size={13}
                     className="shrink-0 text-amber-500"
-                    title="No model configured"
                     aria-label="No model configured"
                   />
                 )}

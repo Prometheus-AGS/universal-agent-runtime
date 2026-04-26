@@ -68,11 +68,13 @@ impl SandboxRunner for MicrosandboxRunner {
             .memory(config.memory_mib)
             .cpus(config.cpus as u8)
             .build()
-            .map_err(|e| SandboxError::CreationFailed(format!("sandbox config build failed: {e}")))?;
+            .map_err(|e| {
+                SandboxError::CreationFailed(format!("sandbox config build failed: {e}"))
+            })?;
 
-        let sandbox = Sandbox::create(msb_config)
-            .await
-            .map_err(|e| SandboxError::CreationFailed(format!("microsandbox create failed: {e}")))?;
+        let sandbox = Sandbox::create(msb_config).await.map_err(|e| {
+            SandboxError::CreationFailed(format!("microsandbox create failed: {e}"))
+        })?;
 
         debug!(sandbox_id = %id, "Microsandbox VM started");
 
@@ -110,9 +112,7 @@ impl SandboxRunner for MicrosandboxRunner {
             "Executing in microsandbox"
         );
 
-        let timeout = request
-            .timeout_seconds
-            .map(Duration::from_secs);
+        let timeout = request.timeout_seconds.map(Duration::from_secs);
         let env_pairs: Vec<(String, String)> = request.env.into_iter().collect();
 
         let output = sandbox
@@ -161,7 +161,9 @@ impl SandboxRunner for MicrosandboxRunner {
         // Write via stdin pipe into a `cat > path` shell command.
         let cmd = format!("cat > {path}");
         sandbox
-            .exec_with("bash", |e| e.args(["-c", &cmd]).stdin_bytes(content.to_vec()))
+            .exec_with("bash", |e| {
+                e.args(["-c", &cmd]).stdin_bytes(content.to_vec())
+            })
             .await
             .map_err(|e| SandboxError::FileError(e.to_string()))?;
 

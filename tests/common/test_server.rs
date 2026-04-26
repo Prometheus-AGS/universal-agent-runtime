@@ -2,6 +2,10 @@ use std::net::TcpListener;
 use universal_agent_runtime::config::AppConfig;
 
 /// Find an available port for test server.
+#[expect(
+    dead_code,
+    reason = "shared test helper used by selected integration tests"
+)]
 pub fn find_free_port() -> u16 {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     listener.local_addr().unwrap().port()
@@ -11,6 +15,10 @@ pub fn find_free_port() -> u16 {
 ///
 /// Uses in-memory SurrealDB (`mem://test`) and a random free port.
 /// No MCP, no JWT, rate-limiting disabled, timeouts disabled.
+#[expect(
+    dead_code,
+    reason = "shared test helper used by selected integration tests"
+)]
 pub fn test_config(port: u16) -> AppConfig {
     let yaml = format!(
         r#"

@@ -76,6 +76,44 @@ where
     Option::<KbConfig>::deserialize(deserializer).map(|o| o.unwrap_or_default())
 }
 
+fn deserialize_document_status_flex<'de, D>(deserializer: D) -> Result<DocumentStatus, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error as _;
+
+    let value = serde_json::Value::deserialize(deserializer)?;
+    if value.is_null() {
+        return Ok(DocumentStatus::Pending);
+    }
+
+    if let Ok(status) = serde_json::from_value::<DocumentStatus>(value.clone()) {
+        return Ok(status);
+    }
+
+    let label = value
+        .as_str()
+        .or_else(|| value.get("status").and_then(serde_json::Value::as_str))
+        .unwrap_or_default();
+
+    match label {
+        "pending" | "Pending" => Ok(DocumentStatus::Pending),
+        "processing" | "Processing" => Ok(DocumentStatus::Processing),
+        "indexed" | "Indexed" => Ok(DocumentStatus::Indexed),
+        "failed" | "Failed" => {
+            let error = value
+                .get("error")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            Ok(DocumentStatus::Failed { error })
+        }
+        other => Err(D::Error::custom(format!(
+            "unknown document status '{other}'"
+        ))),
+    }
+}
+
 /// A named knowledge base container for RAG document scoping.
 /// Each KB has its own embedding model, chunking strategy, and document collection.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -177,8 +215,7 @@ pub struct KnowledgeChunk {
     pub document_id: Option<String>,
     pub content: String,
     pub metadata: Option<serde_json::Value>,
-    // Embedding is not typically serialized to frontend, but good to have
-    #[serde(skip)]
+    #[serde(default)]
     pub embedding: Vec<f32>,
     pub created_at: String, // RFC3339
 }
@@ -201,6 +238,7 @@ pub struct KnowledgeDocument {
     pub mime_type: Option<String>,
     #[serde(default)]
     pub chunk_count: usize,
+    #[serde(default, deserialize_with = "deserialize_document_status_flex")]
     pub status: DocumentStatus,
     pub created_at: String, // RFC3339
     pub updated_at: String, // RFC3339

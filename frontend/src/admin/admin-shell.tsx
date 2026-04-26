@@ -1,25 +1,44 @@
-import { type FC, useState } from "react";
+import { type FC, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
+  BadgeCheck,
   Bot,
   BookOpen,
   Brain,
   Code2,
+  Compass,
+  FileClock,
   Key,
   Layers,
   LayoutGrid,
   Menu,
+  RadioTower,
+  Search,
   Server,
   SlidersHorizontal,
+  SquareActivity,
   Wrench,
   X,
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandShortcut,
+} from "@/components/ui/command";
 
 export type AdminSection =
+  | "runtime"
+  | "runs"
+  | "approvals"
+  | "protocols"
   | "providers"
   | "models"
   | "skills"
@@ -44,6 +63,15 @@ interface NavGroup {
 }
 
 const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Runtime",
+    items: [
+      { id: "runtime", label: "Cockpit", subtitle: "Live runtime state", icon: SquareActivity },
+      { id: "runs", label: "Runs", subtitle: "Steps, tools, artifacts", icon: FileClock },
+      { id: "approvals", label: "Approvals", subtitle: "Human interrupts", icon: BadgeCheck },
+      { id: "protocols", label: "Protocols", subtitle: "AG-UI, A2UI, REST", icon: RadioTower },
+    ],
+  },
   {
     label: "AI & Models",
     items: [
@@ -84,7 +112,7 @@ const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 function sectionFromPath(pathname: string): AdminSection {
   const segment = pathname.replace(/^\/admin\/?/, "").split("/")[0];
   const match = ALL_ITEMS.find((item) => item.id === segment);
-  return match ? match.id : "providers";
+  return match ? match.id : "runtime";
 }
 
 interface AdminShellProps {
@@ -96,18 +124,46 @@ export function AdminShell({ renderContent }: AdminShellProps) {
   const navigate = useNavigate();
   const active = sectionFromPath(location.pathname);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+
+  const activeItem = useMemo(
+    () => ALL_ITEMS.find((item) => item.id === active),
+    [active],
+  );
 
   const goTo = (id: AdminSection) => {
     navigate(`/admin/${id}`);
     setMobileNavOpen(false);
+    setCommandOpen(false);
   };
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const navContent = (
     <>
       <div className="border-b border-border px-4 py-3">
-        <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          Administration
-        </p>
+        <div className="flex items-center gap-2">
+          <div className="flex size-7 items-center justify-center rounded-md border border-primary/25 bg-primary/10">
+            <Compass size={14} className="text-primary" />
+          </div>
+          <div>
+            <p className="font-display text-sm font-semibold text-foreground">
+              Runtime Console
+            </p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              UAR operations
+            </p>
+          </div>
+        </div>
       </div>
       <nav className="flex flex-col gap-3 overflow-y-auto p-2">
         {NAV_GROUPS.map((group) => (
@@ -116,12 +172,12 @@ export function AdminShell({ renderContent }: AdminShellProps) {
               {group.label}
             </p>
             <div className="flex flex-col gap-0.5">
-              {group.items.map(({ id, label, icon: Icon }) => (
+              {group.items.map(({ id, label, subtitle, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => goTo(id)}
                   className={cn(
-                    "flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                    "grid cursor-pointer grid-cols-[16px_1fr] items-center gap-x-2.5 rounded-md px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                     active === id
                       ? "bg-accent text-foreground"
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
@@ -130,11 +186,17 @@ export function AdminShell({ renderContent }: AdminShellProps) {
                 >
                   <Icon
                     size={15}
-                    className={
+                    className={cn(
+                      "mt-0.5",
                       active === id ? "text-primary" : "text-muted-foreground"
-                    }
+                    )}
                   />
-                  {label}
+                  <span>
+                    <span className="block text-sm font-medium leading-5">{label}</span>
+                    <span className="block truncate text-[11px] leading-4 text-muted-foreground">
+                      {subtitle}
+                    </span>
+                  </span>
                 </button>
               ))}
             </div>
@@ -146,18 +208,30 @@ export function AdminShell({ renderContent }: AdminShellProps) {
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      {/* Mobile nav toggle */}
-      <div className="flex items-center border-b border-border bg-card px-3 py-2 md:hidden absolute top-0 left-0 z-30">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setMobileNavOpen(!mobileNavOpen)}
-          aria-label={mobileNavOpen ? "Close admin navigation" : "Open admin navigation"}
-        >
-          {mobileNavOpen ? <X size={16} /> : <Menu size={16} />}
-        </Button>
-      </div>
+      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
+        <CommandInput placeholder="Search runtime, providers, protocols..." />
+        <CommandList>
+          <CommandEmpty>No runtime surface found.</CommandEmpty>
+          {NAV_GROUPS.map((group) => (
+            <CommandGroup key={group.label} heading={group.label}>
+              {group.items.map(({ id, label, subtitle, icon: Icon }) => (
+                <CommandItem
+                  key={id}
+                  value={`${label} ${subtitle}`}
+                  onSelect={() => goTo(id)}
+                >
+                  <Icon size={15} />
+                  <div className="min-w-0">
+                    <p className="text-sm">{label}</p>
+                    <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+                  </div>
+                  <CommandShortcut>{id}</CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ))}
+        </CommandList>
+      </CommandDialog>
 
       {/* Mobile overlay */}
       {mobileNavOpen && (
@@ -191,7 +265,44 @@ export function AdminShell({ renderContent }: AdminShellProps) {
 
       {/* Content area */}
       <main className="flex flex-1 flex-col overflow-hidden min-w-0">
-        {renderContent(active)}
+        <div className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 md:hidden"
+              onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              aria-label={mobileNavOpen ? "Close admin navigation" : "Open admin navigation"}
+            >
+              {mobileNavOpen ? <X size={16} /> : <Menu size={16} />}
+            </Button>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Console</span>
+                <span>/</span>
+                <span className="truncate text-foreground">{activeItem?.label ?? active}</span>
+              </div>
+              <p className="truncate text-xs text-muted-foreground">
+                {activeItem?.subtitle ?? "Runtime operations"}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden h-8 gap-2 sm:inline-flex"
+            onClick={() => setCommandOpen(true)}
+          >
+            <Search size={14} />
+            Command
+            <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+              ⌘K
+            </kbd>
+          </Button>
+        </div>
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          {renderContent(active)}
+        </div>
       </main>
     </div>
   );

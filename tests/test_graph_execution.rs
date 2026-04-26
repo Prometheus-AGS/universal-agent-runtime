@@ -3,16 +3,13 @@
 /// Verifies that `AgentGraph` correctly routes state through nodes and
 /// terminates with the expected final state.  Uses `MockLlmDriver` for
 /// deterministic LLM responses so no network is required.
-
 use std::sync::Arc;
 
 use universal_agent_runtime::{
     llm::mock_driver::MockLlmDriver,
     mcp::registry::McpRegistry,
     normalized::NormalizedEvent,
-    uar::runtime::graph::{
-        AgentGraph, GraphContext, GraphNode, GraphState, NodeResult,
-    },
+    uar::runtime::graph::{AgentGraph, GraphContext, GraphNode, GraphState, NodeResult},
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

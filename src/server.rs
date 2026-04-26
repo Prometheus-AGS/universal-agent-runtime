@@ -73,7 +73,8 @@ use crate::uar::persistence::providers::postgres::PostgresProvider;
 
 /// Start the Axum server with the provided configuration.
 pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
-    let llm_config = config.llm.clone();
+    let mut llm_config = config.llm.clone();
+    normalize_legacy_openai_base_url(&mut llm_config);
     info!(
         name: "llm.config.loaded",
         model = %llm_config.model,
@@ -149,10 +150,8 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             let compiler_store = Arc::new(
                 crate::uar::compiler::storage::postgres::PostgresCompilerStorage::new(pool.clone()),
             );
-            let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> = Arc::clone(
-                &compiler_store,
-            )
-                as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
+            let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
+                Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
             let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
                 compiler_store
                     as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
@@ -771,7 +770,10 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         // Discovery catalog endpoints: GET /api/agents (list), GET /api/tools
         // The agents router above handles /api/agents/{id}/skills CRUD;
         // the discovery handlers provide the flat catalog list.
-        .route("/api/agents", get(uar::api::discovery::list_agents).post(uar::api::discovery::create_agent))
+        .route(
+            "/api/agents",
+            get(uar::api::discovery::list_agents).post(uar::api::discovery::create_agent),
+        )
         .route(
             "/api/agents/{id}",
             put(uar::api::discovery::update_agent_full)
@@ -779,7 +781,10 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 .delete(uar::api::discovery::delete_agent),
         )
         .route("/api/tools", get(uar::api::discovery::list_tools))
-        .route("/api/tools/{name}/execute", post(uar::api::discovery::execute_tool))
+        .route(
+            "/api/tools/{name}/execute",
+            post(uar::api::discovery::execute_tool),
+        )
         .route("/api/uar/mcp/health", get(api_mcp_health))
         .route(
             "/api/uar/sessions/{id}/context-stats",
@@ -974,6 +979,35 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
 
     info!(name: "server.stopped", "Server shut down gracefully");
     Ok(())
+}
+
+fn normalize_legacy_openai_base_url(llm_config: &mut crate::config::LlmConfig) {
+    let Some(base_url) = llm_config.base_url.as_deref() else {
+        return;
+    };
+    let normalized = base_url.trim().trim_end_matches('/');
+    if normalized != "https://api.openai.com" && normalized != "https://api.openai.com/v1" {
+        return;
+    }
+
+    let (provider_id, _) = crate::llm::registry::split_model_string_pub(&llm_config.model);
+    if provider_id == "openai" && normalized == "https://api.openai.com" {
+        llm_config.base_url = Some("https://api.openai.com/v1".to_string());
+        return;
+    }
+    if provider_id == "openai" {
+        return;
+    }
+
+    if let Some(provider_base_url) = crate::llm::registry::fallback_base_url(&provider_id) {
+        tracing::warn!(
+            provider_id = %provider_id,
+            old_base_url = %base_url,
+            new_base_url = %provider_base_url,
+            "Replacing legacy OpenAI base URL for non-OpenAI provider model"
+        );
+        llm_config.base_url = Some(provider_base_url.to_string());
+    }
 }
 
 /// Wait for SIGTERM or SIGINT, then allow a grace period for in-flight requests.
@@ -2476,20 +2510,21 @@ async fn api_messages(
 
     let client_config = crate::config::build_client_config(&resolved_llm_config);
     let model_str = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
+    let driver_model = resolved_llm_config.model.clone();
     let driver: std::sync::Arc<dyn LlmDriver> = if crate::llm::detect_provider(&model_str)
         == "anthropic"
         && crate::llm::anthropic_native_driver_enabled()
     {
         std::sync::Arc::new(crate::llm::anthropic_driver::AnthropicDriver::new(
             resolved_llm_config.api_key.clone().unwrap_or_default(),
-            model_str.clone(),
+            driver_model.clone(),
             resolved_llm_config.base_url.clone(),
             None,
             Some(crate::llm::anthropic_cache::CacheStrategy::default()),
             None,
         ))
     } else {
-        match crate::llm::LiterLlmDriver::new(client_config, model_str, None) {
+        match crate::llm::LiterLlmDriver::new(client_config, driver_model, None) {
             Ok(d) => std::sync::Arc::new(d),
             Err(err) => {
                 tracing::error!(error = %err, "Failed to create LiterLlmDriver");
@@ -3354,7 +3389,8 @@ async fn resolve_requested_model(
             });
         }
         // 2. Use the global LLM config model (from .env / config.yaml)
-        let (_, global_model) = crate::llm::registry::split_model_string_pub(&state.config.llm.model);
+        let (_, global_model) =
+            crate::llm::registry::split_model_string_pub(&state.config.llm.model);
         if !global_model.is_empty() {
             tracing::debug!(
                 fallback_model = %global_model,
@@ -3366,10 +3402,14 @@ async fn resolve_requested_model(
             });
         }
         // 3. Pick a chat-capable model from the provider's model list (skip image/embedding models)
-        let chat_model = default_provider
-            .models
-            .iter()
-            .find(|m| !m.id.contains("image") && !m.id.contains("embedding") && !m.id.contains("tts") && !m.id.contains("whisper") && !m.id.contains("dall-e") && !m.id.contains("moderation"));
+        let chat_model = default_provider.models.iter().find(|m| {
+            !m.id.contains("image")
+                && !m.id.contains("embedding")
+                && !m.id.contains("tts")
+                && !m.id.contains("whisper")
+                && !m.id.contains("dall-e")
+                && !m.id.contains("moderation")
+        });
         if let Some(model) = chat_model {
             return Ok(ResolvedModel {
                 provider_id: default_provider_id,
@@ -3939,7 +3979,8 @@ pub(crate) async fn api_chat_completion(
                                 yield Ok(Event::default().data(json));
                             }
                         }
-                        uar::domain::events::NormalizedEvent::RunDone { .. } => {
+                        uar::domain::events::NormalizedEvent::RunDone { .. }
+                        | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
                             // --- Memory: auto-capture (fire-and-forget, post-stream) ---
                             if req_memory_enabled {
                                 if let Some(ref svc) = stream_memory_service {
@@ -4062,29 +4103,57 @@ pub(crate) async fn api_chat_completion(
     }
 
     let mut assistant_text = String::new();
-    let wait_result = timeout(
-        Duration::from_millis(effective_resilience_policy.request_timeout_ms),
-        async {
-            loop {
-                match rx.recv().await {
-                    Ok(event) => match event.event {
-                        uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
-                            assistant_text.push_str(&text_delta);
-                        }
-                        uar::domain::events::NormalizedEvent::RunDone { .. } => {
-                            break Ok::<(), String>(());
-                        }
-                        uar::domain::events::NormalizedEvent::Error { message, .. } => {
-                            break Err(message);
-                        }
-                        _ => {}
-                    },
-                    Err(e) => break Err(format!("Stream closed: {e}")),
+    let mut replay_result: Option<Result<(), String>> = None;
+    if let Some(replay) = state.run_manager.history_since(&run_id, None).await {
+        for event in replay {
+            match event.event {
+                uar::domain::events::NormalizedEvent::ChatDelta { text_delta, .. } => {
+                    assistant_text.push_str(&text_delta);
                 }
+                uar::domain::events::NormalizedEvent::RunDone { .. }
+                | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
+                    replay_result = Some(Ok(()));
+                    break;
+                }
+                uar::domain::events::NormalizedEvent::Error { message, .. } => {
+                    replay_result = Some(Err(message));
+                    break;
+                }
+                _ => {}
             }
-        },
-    )
-    .await;
+        }
+    }
+
+    let wait_result = if let Some(result) = replay_result {
+        Ok(result)
+    } else {
+        timeout(
+            Duration::from_millis(effective_resilience_policy.request_timeout_ms),
+            async {
+                loop {
+                    match rx.recv().await {
+                        Ok(event) => match event.event {
+                            uar::domain::events::NormalizedEvent::ChatDelta {
+                                text_delta, ..
+                            } => {
+                                assistant_text.push_str(&text_delta);
+                            }
+                            uar::domain::events::NormalizedEvent::RunDone { .. }
+                            | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
+                                break Ok::<(), String>(());
+                            }
+                            uar::domain::events::NormalizedEvent::Error { message, .. } => {
+                                break Err(message);
+                            }
+                            _ => {}
+                        },
+                        Err(e) => break Err(format!("Stream closed: {e}")),
+                    }
+                }
+            },
+        )
+        .await
+    };
 
     match wait_result {
         Ok(Ok(())) => {}
@@ -4309,5 +4378,37 @@ mod tests {
         assert_eq!(second.input_tokens, 0);
         assert_eq!(second.cache_creation_input_tokens, 0);
         assert!(second.cache_read_input_tokens > 0);
+    }
+
+    #[test]
+    fn normalize_legacy_openai_base_url_rewrites_known_non_openai_provider() {
+        let mut config = crate::config::LlmConfig {
+            model: "alibaba/qwen3.6-plus".to_string(),
+            base_url: Some("https://api.openai.com".to_string()),
+            ..crate::config::LlmConfig::default()
+        };
+
+        normalize_legacy_openai_base_url(&mut config);
+
+        assert_eq!(
+            config.base_url.as_deref(),
+            Some("https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
+        );
+    }
+
+    #[test]
+    fn normalize_legacy_openai_base_url_adds_openai_v1_path() {
+        let mut config = crate::config::LlmConfig {
+            model: "openai/gpt-5.4".to_string(),
+            base_url: Some("https://api.openai.com".to_string()),
+            ..crate::config::LlmConfig::default()
+        };
+
+        normalize_legacy_openai_base_url(&mut config);
+
+        assert_eq!(
+            config.base_url.as_deref(),
+            Some("https://api.openai.com/v1")
+        );
     }
 }

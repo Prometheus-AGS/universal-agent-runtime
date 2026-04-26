@@ -1,11 +1,10 @@
 /// Integration tests for provider registration and model resolution.
 ///
 /// Tests `ProviderRegistry::default_model()` and `RunManager::resolve_default_model()`.
-
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use universal_agent_runtime::config::LlmConfig;
-use universal_agent_runtime::llm::{registry::ProviderConfig, ProviderRegistry};
+use universal_agent_runtime::llm::{ProviderRegistry, registry::ProviderConfig};
 use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar::runtime::manager::RunManager;
@@ -59,8 +58,14 @@ async fn test_default_model_roundtrip_via_register() {
         models: vec![],
     };
 
-    registry.register(config).await.expect("register should succeed");
-    registry.set_default("openai").await.expect("set_default should succeed");
+    registry
+        .register(config)
+        .await
+        .expect("register should succeed");
+    registry
+        .set_default("openai")
+        .await
+        .expect("set_default should succeed");
 
     let result = registry.default_model().await;
     assert_eq!(
@@ -85,8 +90,14 @@ async fn test_default_model_returns_none_when_provider_has_no_default_model() {
         models: vec![],
     };
 
-    registry.register(config).await.expect("register should succeed");
-    registry.set_default("groq").await.expect("set_default should succeed");
+    registry
+        .register(config)
+        .await
+        .expect("register should succeed");
+    registry
+        .set_default("groq")
+        .await
+        .expect("set_default should succeed");
 
     let result = registry.default_model().await;
     assert!(
@@ -133,7 +144,10 @@ async fn test_run_manager_resolve_returns_none_when_empty() {
     let manager = RunManager::new(llm_config, mcp, sessions, skills, vm, None).await;
 
     let resolved = manager.resolve_default_model().await;
-    assert!(resolved.is_none(), "empty model string should resolve to None");
+    assert!(
+        resolved.is_none(),
+        "empty model string should resolve to None"
+    );
 }
 
 #[tokio::test]
@@ -152,8 +166,14 @@ async fn test_run_manager_prefers_registry_over_llm_config() {
         protocol: universal_agent_runtime::llm::registry::ProtocolSetting::Auto,
         models: vec![],
     };
-    registry.register(config).await.expect("register should succeed");
-    registry.set_default("anthropic").await.expect("set_default should succeed");
+    registry
+        .register(config)
+        .await
+        .expect("register should succeed");
+    registry
+        .set_default("anthropic")
+        .await
+        .expect("set_default should succeed");
 
     let manager = manager.with_provider_registry(registry);
 

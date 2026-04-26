@@ -28,11 +28,7 @@ pub struct RouterNode {
 impl RouterNode {
     /// Create a router node with the given ID, question prompt, and options.
     #[must_use]
-    pub fn new(
-        id: impl Into<String>,
-        prompt: impl Into<String>,
-        options: Vec<String>,
-    ) -> Self {
+    pub fn new(id: impl Into<String>, prompt: impl Into<String>, options: Vec<String>) -> Self {
         Self {
             id: id.into(),
             prompt: prompt.into(),
@@ -116,10 +112,7 @@ impl GraphNode for RouterNode {
                 }
                 Ok(NormalizedEvent::Done) => break,
                 Ok(NormalizedEvent::Error { message, .. }) => {
-                    return NodeResult::Error(
-                        state,
-                        format!("RouterNode stream error: {message}"),
-                    );
+                    return NodeResult::Error(state, format!("RouterNode stream error: {message}"));
                 }
                 Ok(_) => {}
                 Err(e) => {

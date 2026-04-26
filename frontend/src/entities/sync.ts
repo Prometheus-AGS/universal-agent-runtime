@@ -14,6 +14,7 @@ import type {
   EntityChange,
 } from "@prometheus-ags/prometheus-entity-management";
 import { PGlite } from "@electric-sql/pglite";
+import { loadPgliteFsBundle } from "@/lib/pglite-assets";
 
 /**
  * Mirror of the library-internal ShapeMessage type.
@@ -65,6 +66,16 @@ const ENTITY_TABLES: EntityTableDef[] = [
   { table: "skills", entityType: "Skill" },
   { table: "knowledge_bases", entityType: "KnowledgeBase" },
   { table: "knowledge_documents", entityType: "Document" },
+  { table: "runtime_runs", entityType: "RuntimeRun" },
+  { table: "runtime_run_steps", entityType: "RuntimeRunStep" },
+  { table: "runtime_tool_calls", entityType: "RuntimeToolCall" },
+  { table: "runtime_approvals", entityType: "RuntimeApproval" },
+  { table: "runtime_artifacts", entityType: "RuntimeArtifact" },
+  { table: "runtime_memory_events", entityType: "RuntimeMemoryEvent" },
+  { table: "runtime_ag_ui_events", entityType: "RuntimeAgUiEvent" },
+  { table: "runtime_a2ui_surfaces", entityType: "RuntimeA2uiSurface" },
+  { table: "runtime_model_route_decisions", entityType: "RuntimeModelRouteDecision" },
+  { table: "runtime_provider_health", entityType: "RuntimeProviderHealth" },
 ];
 
 /**
@@ -326,12 +337,14 @@ export async function initSyncTransport(): Promise<() => void> {
         `${window.location.protocol}//${window.location.hostname}:3000`;
 
       // PGlite runs in-browser as the local replica for Electric sync
-      const pg = new PGlite();
+      const fsBundle = await loadPgliteFsBundle();
+      const pg = new PGlite({ fsBundle });
+      const pglite = pg as unknown as Parameters<typeof createElectricAdapter>[0]["pglite"];
 
       const tables = buildElectricTableConfigs(electricUrl);
 
       const adapter = createElectricAdapter({
-        pglite: pg,
+        pglite,
         tables,
         onSynced: () => {
           console.info("[sync] ElectricSQL initial sync complete");

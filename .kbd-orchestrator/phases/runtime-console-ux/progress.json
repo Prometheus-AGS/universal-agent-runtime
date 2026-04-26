@@ -1,0 +1,20 @@
+{
+  "phase": "runtime-console-ux",
+  "change": "runtime-console-entity-workflow",
+  "status": "in_progress",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execution_started": true,
+  "tasks": {
+    "openspec_refresh": "complete",
+    "project_context": "complete",
+    "kbd_skill_install": "complete",
+    "surreal_memory_mcp_registration": "complete",
+    "frontend_typecheck_repairs": "complete",
+    "runtime_entities": "complete",
+    "runtime_console_shell": "complete",
+    "validation": "partial"
+  },
+  "sourceTool": "codex",
+  "updatedAt": "2026-04-25T00:00:00-05:00"
+}

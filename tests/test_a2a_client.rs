@@ -2,17 +2,13 @@
 ///
 /// Spins up a minimal Axum mock server that returns canned JSON-RPC responses,
 /// then verifies A2AClient parses them correctly.
-
 use std::net::TcpListener;
 use std::sync::Arc;
 
 use axum::{Json, Router, extract::State, routing::post};
 use serde_json::json;
 use tokio::net::TcpListener as TokioListener;
-use universal_agent_runtime::uar::api::a2a::{
-    A2AClient,
-    types::TaskState,
-};
+use universal_agent_runtime::uar::api::a2a::{A2AClient, types::TaskState};
 
 // ── Mock server helpers ───────────────────────────────────────────────────────
 
@@ -134,5 +130,8 @@ async fn test_rpc_error_propagated() {
     let err = client.send_message(&url, &msg).await;
     assert!(err.is_err(), "should propagate JSON-RPC error");
     let msg = err.unwrap_err().to_string();
-    assert!(msg.contains("-32601") || msg.contains("Method not found"), "error: {msg}");
+    assert!(
+        msg.contains("-32601") || msg.contains("Method not found"),
+        "error: {msg}"
+    );
 }

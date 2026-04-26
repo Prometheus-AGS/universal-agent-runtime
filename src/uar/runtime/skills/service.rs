@@ -134,7 +134,10 @@ impl SkillService {
     ///
     /// When attached, `update_skill` checks `is_skill_mutation_allowed` before
     /// applying changes. Without governance, all mutations are permitted.
-    pub fn with_governance(mut self, engine: Arc<crate::uar::governance::engine::GovernanceEngine>) -> Self {
+    pub fn with_governance(
+        mut self,
+        engine: Arc<crate::uar::governance::engine::GovernanceEngine>,
+    ) -> Self {
         self.governance = Some(engine);
         self
     }

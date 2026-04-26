@@ -109,7 +109,9 @@ impl NativeSkill for WebFetchTool {
         let bytes = match response.bytes().await {
             Ok(b) => b,
             Err(e) => {
-                return Ok(json!({"ok": false, "error": format!("Failed to read response: {}", e)}));
+                return Ok(
+                    json!({"ok": false, "error": format!("Failed to read response: {}", e)}),
+                );
             }
         };
         let size_kb = bytes.len() as u64 / 1024;

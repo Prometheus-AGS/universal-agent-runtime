@@ -149,7 +149,7 @@ impl ProviderRegistry {
             .or_else(|| catalog_provider.and_then(|p| p.base_url.clone()))
             .unwrap_or_default();
 
-        let pc = ProviderConfig {
+        let mut pc = ProviderConfig {
             id: provider_id.clone(),
             display_name,
             base_url,
@@ -159,6 +159,7 @@ impl ProviderRegistry {
             models,
             enabled: true,
         };
+        enrich_provider_config(&mut pc);
 
         let mut providers = self.providers.write().await;
         providers.insert(provider_id.clone(), pc);
@@ -414,7 +415,7 @@ impl Default for ProviderRegistry {
 #[must_use]
 pub(crate) fn fallback_base_url(provider_id: &str) -> Option<&'static str> {
     match provider_id {
-        "openai" => Some("https://api.openai.com"),
+        "openai" => Some("https://api.openai.com/v1"),
         "anthropic" => Some("https://api.anthropic.com"),
         "groq" => Some("https://api.groq.com/openai/v1"),
         "together" => Some("https://api.together.xyz/v1"),
@@ -422,7 +423,12 @@ pub(crate) fn fallback_base_url(provider_id: &str) -> Option<&'static str> {
         "google" | "gemini" => Some("https://generativelanguage.googleapis.com/v1beta/openai"),
         "mistral" => Some("https://api.mistral.ai/v1"),
         "cohere" => Some("https://api.cohere.com/v2"),
-        "deepseek" => Some("https://api.deepseek.com"),
+        "deepseek" => Some("https://api.deepseek.com/v1"),
+        "moonshot" | "moonshotai" => Some("https://api.moonshot.cn/v1"),
+        "alibaba" => Some("https://dashscope-intl.aliyuncs.com/compatible-mode/v1"),
+        "alibaba-cn" => Some("https://dashscope.aliyuncs.com/compatible-mode/v1"),
+        "fireworks-ai" | "fireworks_ai" => Some("https://api.fireworks.ai/inference/v1"),
+        "minimax" => Some("https://api.minimax.io/v1"),
         "xai" | "x-ai" => Some("https://api.x.ai/v1"),
         "perplexity" => Some("https://api.perplexity.ai"),
         _ => None,
@@ -500,13 +506,21 @@ fn split_model_string(model: &str) -> (String, String) {
     } else {
         // No provider prefix — infer from model name patterns.
         // liter-llm requires "provider/model" format; "default" is not a valid provider.
-        let inferred = if model.starts_with("gpt-") || model.starts_with("o1") || model.starts_with("o3") || model.starts_with("o4") || model.starts_with("chatgpt-") {
+        let inferred = if model.starts_with("gpt-")
+            || model.starts_with("o1")
+            || model.starts_with("o3")
+            || model.starts_with("o4")
+            || model.starts_with("chatgpt-")
+        {
             "openai"
         } else if model.starts_with("claude-") {
             "anthropic"
         } else if model.starts_with("gemini-") || model.starts_with("gemma-") {
             "google"
-        } else if model.starts_with("llama") || model.starts_with("mixtral") || model.starts_with("mistral") {
+        } else if model.starts_with("llama")
+            || model.starts_with("mixtral")
+            || model.starts_with("mistral")
+        {
             "groq"
         } else {
             // Fall back to openai-compatible as the most common default
@@ -643,6 +657,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_seed_from_llm_config_enriches_provider_base_url() {
+        let config = LlmConfig {
+            model: "alibaba/qwen3.6-plus".to_string(),
+            api_key: Some("test-key".to_string()),
+            ..LlmConfig::default()
+        };
+
+        let registry = ProviderRegistry::new();
+        registry.seed_from_llm_config(&config).await;
+
+        let provider = registry.get("alibaba").await.expect("provider seeded");
+        assert_eq!(
+            provider.base_url,
+            "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+        );
+
+        let llm = registry
+            .resolve_to_llm_config("alibaba", "qwen3.6-plus")
+            .await
+            .expect("provider resolves");
+        assert_eq!(llm.model, "qwen3.6-plus");
+        assert_eq!(
+            llm.base_url.as_deref(),
+            Some("https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
+        );
+    }
+
+    #[tokio::test]
     async fn test_list_and_remove() {
         let registry = ProviderRegistry::new();
         registry
@@ -687,10 +729,38 @@ mod tests {
             enabled: true,
         };
         enrich_provider_config(&mut config);
-        assert_eq!(config.base_url, "https://api.openai.com");
+        assert_eq!(config.base_url, "https://api.openai.com/v1");
         assert!(
             !config.models.is_empty(),
             "catalog should hydrate models for openai"
+        );
+    }
+
+    #[test]
+    fn test_fallback_base_urls_for_catalog_aliases() {
+        assert_eq!(
+            fallback_base_url("moonshotai"),
+            Some("https://api.moonshot.cn/v1")
+        );
+        assert_eq!(
+            fallback_base_url("alibaba"),
+            Some("https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
+        );
+        assert_eq!(
+            fallback_base_url("alibaba-cn"),
+            Some("https://dashscope.aliyuncs.com/compatible-mode/v1")
+        );
+        assert_eq!(
+            fallback_base_url("fireworks-ai"),
+            Some("https://api.fireworks.ai/inference/v1")
+        );
+        assert_eq!(
+            fallback_base_url("minimax"),
+            Some("https://api.minimax.io/v1")
+        );
+        assert_eq!(
+            fallback_base_url("deepseek"),
+            Some("https://api.deepseek.com/v1")
         );
     }
 

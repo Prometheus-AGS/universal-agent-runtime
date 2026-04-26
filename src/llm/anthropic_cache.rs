@@ -154,7 +154,7 @@ impl CacheStrategy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::llm::anthropic_types::{AnthropicMessage, MessagesRequest, SystemBlock};
+    use crate::llm::anthropic_types::{AnthropicMessage, SystemBlock};
 
     fn make_request() -> MessagesRequest {
         MessagesRequest {

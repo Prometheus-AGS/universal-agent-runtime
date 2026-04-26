@@ -3,7 +3,6 @@
 /// Tests run lifecycle (start, subscribe, history) without requiring
 /// a real LLM API key. LLM driver tests are in test_graph_execution.rs
 /// (via MockLlmDriver + AgentGraph).
-
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use universal_agent_runtime::config::LlmConfig;
@@ -71,7 +70,10 @@ async fn test_start_run_returns_non_empty_run_id() {
     let run_id = manager
         .start_run(minimal_artifact(), "Hello".to_string(), None, None, vec![])
         .await;
-    assert!(!run_id.is_empty(), "start_run should return a non-empty run_id");
+    assert!(
+        !run_id.is_empty(),
+        "start_run should return a non-empty run_id"
+    );
 }
 
 #[tokio::test]
@@ -107,7 +109,10 @@ async fn test_subscribe_returns_receiver_for_active_run() {
 async fn test_subscribe_returns_none_for_unknown_run() {
     let manager = make_manager().await;
     let rx = manager.subscribe("nonexistent-run-id").await;
-    assert!(rx.is_none(), "subscribe should return None for an unknown run");
+    assert!(
+        rx.is_none(),
+        "subscribe should return None for an unknown run"
+    );
 }
 
 #[tokio::test]

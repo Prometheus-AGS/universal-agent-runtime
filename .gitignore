@@ -66,6 +66,7 @@ Thumbs.db
 .fastembed_cache/
 
 config.yaml
+!openspec/config.yaml
 
 # Testing artifacts
 tests/coverage/

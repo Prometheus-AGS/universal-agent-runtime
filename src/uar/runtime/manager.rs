@@ -829,8 +829,7 @@ impl RunManager {
             // graph is attached. On completion we emit RunEnd and return early.
             if let Some(graph) = graph_for_run {
                 let graph_driver: std::sync::Arc<dyn crate::llm::LlmDriver> = {
-                    let client_cfg =
-                        crate::config::build_client_config(&llm_config_for_graph);
+                    let client_cfg = crate::config::build_client_config(&llm_config_for_graph);
                     match LiterLlmDriver::new(
                         client_cfg,
                         llm_config_for_graph.model.clone(),
@@ -865,7 +864,9 @@ impl RunManager {
                 let mut initial_state = crate::uar::runtime::graph::GraphState::default();
                 // Seed state with the incoming messages so LlmNode can use them.
                 for msg in &messages {
-                    initial_state.messages.push(serde_json::to_value(msg).unwrap_or_default());
+                    initial_state
+                        .messages
+                        .push(serde_json::to_value(msg).unwrap_or_default());
                 }
 
                 let final_state = graph.execute(initial_state, &graph_ctx).await;

@@ -1,0 +1,16 @@
+{
+  "project": "universal-agent-runtime",
+  "displayName": "Universal Agent Runtime",
+  "sourceOfTruth": ".kbd-orchestrator",
+  "specSystem": "openspec",
+  "activeChange": "runtime-console-entity-workflow",
+  "activePhase": "runtime-console-ux",
+  "memoryMirror": {
+    "provider": "surreal_memory",
+    "mcpServer": "surreal_memory",
+    "endpoint": "${UAR_MEMORY_MCP_URL:-http://127.0.0.1:3000/mcp/memory}",
+    "authoritative": false
+  },
+  "tools": ["codex", "claude-code", "cursor", "opencode"],
+  "updatedAt": "2026-04-25T00:00:00-05:00"
+}

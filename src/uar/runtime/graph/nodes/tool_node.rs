@@ -81,10 +81,9 @@ impl GraphNode for ToolNode {
                 state.set(&self.output_key, &content);
                 NodeResult::Continue(state)
             }
-            Err(e) => NodeResult::Error(
-                state,
-                format!("ToolNode '{}' failed: {e}", self.tool_name),
-            ),
+            Err(e) => {
+                NodeResult::Error(state, format!("ToolNode '{}' failed: {e}", self.tool_name))
+            }
         }
     }
 }

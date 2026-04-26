@@ -109,10 +109,7 @@ impl AgentGraph {
                 GraphEdge::Direct { from: f, to } if f.as_str() == from => {
                     return Some(to.clone());
                 }
-                GraphEdge::Conditional {
-                    from: f,
-                    condition,
-                } if f.as_str() == from => {
+                GraphEdge::Conditional { from: f, condition } if f.as_str() == from => {
                     return Some(condition(state));
                 }
                 _ => {}

@@ -2,7 +2,6 @@
 ///
 /// Spins up a minimal mock A2A server and verifies that an AgentNode with a
 /// remote URL successfully delegates and stores the task result in state.
-
 use std::net::TcpListener;
 use std::sync::Arc;
 
@@ -13,9 +12,7 @@ use universal_agent_runtime::{
     llm::mock_driver::MockLlmDriver,
     mcp::registry::McpRegistry,
     normalized::NormalizedEvent,
-    uar::runtime::graph::{
-        AgentGraph, AgentNode, GraphContext, GraphState,
-    },
+    uar::runtime::graph::{AgentGraph, AgentNode, GraphContext, GraphState},
 };
 
 fn find_free_port() -> u16 {
@@ -62,9 +59,11 @@ async fn start_a2a_mock() -> String {
 }
 
 fn make_ctx(run_id: &str) -> GraphContext {
-    let driver = Arc::new(MockLlmDriver::new(vec![vec![NormalizedEvent::MessageDelta {
-        text: "delegated".to_string(),
-    }]]));
+    let driver = Arc::new(MockLlmDriver::new(vec![vec![
+        NormalizedEvent::MessageDelta {
+            text: "delegated".to_string(),
+        },
+    ]]));
 
     GraphContext {
         run_id: run_id.to_string(),
@@ -132,7 +131,9 @@ async fn test_agent_node_falls_back_to_last_message() {
 
     // No _agent_input — should use the last message from state.messages
     let mut initial = GraphState::default();
-    initial.messages.push(json!({"role": "user", "content": "from messages"}));
+    initial
+        .messages
+        .push(json!({"role": "user", "content": "from messages"}));
 
     let ctx = make_ctx("run-agent-node-2");
     let final_state = graph.execute(initial, &ctx).await;

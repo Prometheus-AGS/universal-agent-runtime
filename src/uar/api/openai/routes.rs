@@ -145,7 +145,7 @@ pub async fn chat_completions(
                     };
                     yield Ok(Event::default().json_data(chunk).unwrap());
                 }
-                NormalizedEvent::RunDone { .. } => {
+                NormalizedEvent::RunDone { .. } | NormalizedEvent::RunDoneWithUsage { .. } => {
                      let chunk = ChatCompletionChunk {
                         id: id.clone(),
                         object: "chat.completion.chunk".to_string(),

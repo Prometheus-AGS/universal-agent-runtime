@@ -44,8 +44,7 @@ impl AgentNode {
     }
 
     fn is_remote(&self) -> bool {
-        self.agent_id_or_url.starts_with("http://")
-            || self.agent_id_or_url.starts_with("https://")
+        self.agent_id_or_url.starts_with("http://") || self.agent_id_or_url.starts_with("https://")
     }
 
     /// Resolve the A2A endpoint URL.
@@ -56,7 +55,11 @@ impl AgentNode {
             // Local agent — resolve via UAR_LOCAL_A2A_URL env var or default.
             let base = std::env::var("UAR_LOCAL_A2A_URL")
                 .unwrap_or_else(|_| "http://127.0.0.1:3000".to_string());
-            format!("{}/a2a/{}", base.trim_end_matches('/'), self.agent_id_or_url)
+            format!(
+                "{}/a2a/{}",
+                base.trim_end_matches('/'),
+                self.agent_id_or_url
+            )
         }
     }
 }
@@ -83,9 +86,10 @@ impl GraphNode for AgentNode {
         let input_text: String = state
             .get::<String>("_agent_input")
             .or_else(|| {
-                state.messages.last().and_then(|m| {
-                    m.get("content").and_then(|c| c.as_str()).map(String::from)
-                })
+                state
+                    .messages
+                    .last()
+                    .and_then(|m| m.get("content").and_then(|c| c.as_str()).map(String::from))
             })
             .unwrap_or_default();
 
@@ -105,14 +109,8 @@ impl GraphNode for AgentNode {
                 // Store the full task JSON and convenience task_id in state.
                 let task_id = task.id.clone();
                 let task_json = serde_json::to_value(&task).unwrap_or_default();
-                state.set(
-                    &format!("_agent_result_{}", self.id),
-                    task_json,
-                );
-                state.set(
-                    &format!("_agent_task_id_{}", self.id),
-                    task_id,
-                );
+                state.set(&format!("_agent_result_{}", self.id), task_json);
+                state.set(&format!("_agent_task_id_{}", self.id), task_id);
                 NodeResult::Continue(state)
             }
             Err(e) => {

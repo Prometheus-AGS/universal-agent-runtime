@@ -2,7 +2,7 @@
 // Canonical entity types for the normalized graph.
 // These mirror backend API response shapes.
 
-export interface ProviderEntity {
+export interface ProviderEntity extends Record<string, unknown> {
   id: string;
   display_name: string;
   base_url?: string;
@@ -12,7 +12,7 @@ export interface ProviderEntity {
   model_count: number;
 }
 
-export interface ModelEntity {
+export interface ModelEntity extends Record<string, unknown> {
   id: string;
   name: string;
   provider_id: string;
@@ -22,7 +22,7 @@ export interface ModelEntity {
   vision: boolean;
 }
 
-export interface AgentEntity {
+export interface AgentEntity extends Record<string, unknown> {
   id: string;
   name: string;
   description: string;
@@ -41,7 +41,7 @@ export interface AgentEntity {
   updated_at: string;
 }
 
-export interface ContextStrategy {
+export interface ContextStrategy extends Record<string, unknown> {
   max_history_messages: number;
   inject_memory: boolean;
   inject_knowledge: boolean;
@@ -49,7 +49,7 @@ export interface ContextStrategy {
   auto_capture: boolean;
 }
 
-export interface AgentSessionEntity {
+export interface AgentSessionEntity extends Record<string, unknown> {
   id: string;
   agent_id: string;
   session_id: string;
@@ -62,7 +62,7 @@ export interface AgentSessionEntity {
   tool_approval?: "auto" | "ask" | "deny";
 }
 
-export interface SkillEntity {
+export interface SkillEntity extends Record<string, unknown> {
   id: string;
   title: string;
   version: string;
@@ -76,7 +76,7 @@ export interface SkillEntity {
   source_path?: string;
 }
 
-export interface ToolEntity {
+export interface ToolEntity extends Record<string, unknown> {
   id: string;
   name: string;
   description: string;
@@ -87,7 +87,7 @@ export interface ToolEntity {
   built_in: boolean;
 }
 
-export interface KnowledgeBaseEntity {
+export interface KnowledgeBaseEntity extends Record<string, unknown> {
   id: string;
   name: string;
   description?: string;
@@ -97,7 +97,7 @@ export interface KnowledgeBaseEntity {
   updated_at: string;
 }
 
-export interface DocumentEntity {
+export interface DocumentEntity extends Record<string, unknown> {
   id: string;
   kb_id: string;
   filename: string;
@@ -109,12 +109,127 @@ export interface DocumentEntity {
   updated_at: string;
 }
 
-export interface ThreadEntity {
+export interface ThreadEntity extends Record<string, unknown> {
   id: string;
   title: string;
   agent_id?: string;
   agent_name?: string;
   last_message_preview?: string;
   created_at: string;
+  updated_at: string;
+}
+
+export type RuntimeStatus =
+  | "queued"
+  | "running"
+  | "waiting"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface RuntimeRunEntity extends Record<string, unknown> {
+  id: string;
+  thread_id?: string;
+  agent_id?: string;
+  model?: string;
+  provider_id?: string;
+  status: RuntimeStatus;
+  title?: string;
+  started_at?: string;
+  completed_at?: string;
+  updated_at: string;
+}
+
+export interface RuntimeRunStepEntity extends Record<string, unknown> {
+  id: string;
+  run_id: string;
+  kind: "message" | "reasoning" | "tool" | "approval" | "artifact" | "state" | "error";
+  status: RuntimeStatus;
+  title: string;
+  summary?: string;
+  started_at?: string;
+  completed_at?: string;
+  updated_at: string;
+}
+
+export interface RuntimeToolCallEntity extends Record<string, unknown> {
+  id: string;
+  run_id: string;
+  step_id?: string;
+  tool_name: string;
+  namespace?: string;
+  status: RuntimeStatus;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  error?: string;
+  updated_at: string;
+}
+
+export interface RuntimeApprovalEntity extends Record<string, unknown> {
+  id: string;
+  run_id: string;
+  tool_call_id?: string;
+  status: "pending" | "approved" | "denied" | "expired";
+  reason?: string;
+  updated_at: string;
+}
+
+export interface RuntimeArtifactEntity extends Record<string, unknown> {
+  id: string;
+  run_id: string;
+  kind: "file" | "image" | "html" | "json" | "text" | "a2ui";
+  title: string;
+  uri?: string;
+  mime_type?: string;
+  updated_at: string;
+}
+
+export interface RuntimeMemoryEventEntity extends Record<string, unknown> {
+  id: string;
+  run_id?: string;
+  memory_id?: string;
+  action: "recall" | "write" | "update" | "delete" | "workflow_mirror";
+  summary: string;
+  source_tool?: string;
+  updated_at: string;
+}
+
+export interface RuntimeAgUiEventEntity extends Record<string, unknown> {
+  id: string;
+  run_id: string;
+  event_type: string;
+  sequence: number;
+  payload: Record<string, unknown>;
+  updated_at: string;
+}
+
+export interface RuntimeA2uiSurfaceEntity extends Record<string, unknown> {
+  id: string;
+  run_id?: string;
+  schema_id?: string;
+  title: string;
+  status: "draft" | "rendered" | "error";
+  payload?: Record<string, unknown>;
+  updated_at: string;
+}
+
+export interface RuntimeModelRouteDecisionEntity extends Record<string, unknown> {
+  id: string;
+  run_id?: string;
+  selected_model: string;
+  selected_provider?: string;
+  needs_tools?: boolean;
+  needs_vision?: boolean;
+  min_context?: number;
+  reason?: string;
+  updated_at: string;
+}
+
+export interface RuntimeProviderHealthEntity extends Record<string, unknown> {
+  id: string;
+  provider_id: string;
+  status: "healthy" | "degraded" | "offline" | "unknown";
+  latency_ms?: number;
+  error?: string;
   updated_at: string;
 }

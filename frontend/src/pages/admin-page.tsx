@@ -14,8 +14,18 @@ import { CompilerPage } from "@/admin/pages/compiler-page";
 import { SettingsPage } from "@/admin/pages/settings-page";
 import { A2uiTestingPage } from "@/admin/A2uiTestingPage";
 import { McpHealthPage } from "@/admin/McpHealthPage";
+import {
+  RuntimeApprovalsPage,
+  RuntimeCockpitPage,
+  RuntimeProtocolsPage,
+  RuntimeRunsPage,
+} from "@/admin/pages/runtime-console-page";
 
 const PAGE_MAP: Record<AdminSection, () => ReactNode> = {
+  runtime: () => <RuntimeCockpitPage />,
+  runs: () => <RuntimeRunsPage />,
+  approvals: () => <RuntimeApprovalsPage />,
+  protocols: () => <RuntimeProtocolsPage />,
   providers: () => <ProvidersPage />,
   models: () => <ModelsPage />,
   skills: () => <SkillsPage />,
@@ -36,7 +46,7 @@ export function AdminPage() {
   function renderAdminContent(section: AdminSection) {
     return (
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Welcome banner — only on the providers page (the default landing) */}
+        {/* Welcome banner — keep provider onboarding on that page only. */}
         {section === "providers" && (
           <AdminWelcome onNavigate={(path) => navigate(path)} />
         )}

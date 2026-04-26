@@ -72,7 +72,9 @@ impl A2AClient {
                 return Err(anyhow!(
                     "A2A error {}: {}",
                     err.get("code").and_then(|c| c.as_i64()).unwrap_or(-1),
-                    err.get("message").and_then(|m| m.as_str()).unwrap_or("unknown")
+                    err.get("message")
+                        .and_then(|m| m.as_str())
+                        .unwrap_or("unknown")
                 ));
             }
             return Err(anyhow!("A2A request failed with HTTP {status}"));
@@ -82,7 +84,9 @@ impl A2AClient {
             return Err(anyhow!(
                 "A2A JSON-RPC error {}: {}",
                 err.get("code").and_then(|c| c.as_i64()).unwrap_or(-1),
-                err.get("message").and_then(|m| m.as_str()).unwrap_or("unknown")
+                err.get("message")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("unknown")
             ));
         }
 

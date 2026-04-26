@@ -1,0 +1,40 @@
+schema: spec-driven
+
+context: |
+  Universal Agent Runtime (UAR) is a Rust/Axum agent runtime with a React
+  frontend. It exposes OpenAI-compatible and Anthropic-compatible REST
+  interfaces, AG-UI/A2UI event surfaces, MCP integrations, and a SurrealDB-backed
+  memory subsystem.
+
+  Tech stack:
+  - Rust backend using Axum, Leptos SSR-adjacent server structure, anyhow, and tracing.
+  - React/TypeScript frontend under frontend/ with Vite/Bun, Zustand stores, shadcn-style
+    components, lucide icons, assistant-ui, and @prometheus-ags/prometheus-entity-management.
+  - All LLM access should go through liter-llm provider/model routing.
+  - Memory is available through the in-process MCP endpoint at /mcp/memory.
+
+  Frontend layering rules:
+  - Components render only and call hooks.
+  - Hooks subscribe to stores and expose store actions.
+  - Stores own state and call services.
+  - Services are thin HTTP/SSE/stream wrappers.
+  - Components and hooks must not import service modules directly.
+
+  Product direction:
+  - The frontend should become a compact live runtime operations console inspired by
+    the librefang structure: command palette, dense registries, detail panes, breadcrumbs,
+    sticky context, and tokenized light/dark themes.
+  - Runtime state must update live from the entity graph: runs, steps, tool calls,
+    approvals, artifacts, memory activity, provider health, model routing, AG-UI events,
+    and A2UI surfaces.
+  - Workflow planning state is coordinated through OpenSpec plus the KBD orchestrator.
+    .kbd-orchestrator/ is the source of truth; Surreal Memory MCP mirrors state for
+    recovery and cross-tool lookup.
+
+rules:
+  proposal:
+    - Include explicit impact on runtime UX, provider compatibility, and realtime state.
+    - Call out whether KBD workflow state must be updated.
+  tasks:
+    - Put workflow/bootstrap tasks before application code tasks.
+    - Include validation for Codex, Claude Code, Cursor, and OpenCode when tool workflows change.

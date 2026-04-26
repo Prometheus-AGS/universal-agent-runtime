@@ -3,6 +3,9 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 export default defineConfig({
     plugins: [react()],
+    optimizeDeps: {
+        exclude: ["@electric-sql/pglite"],
+    },
     build: {
         outDir: "../static",
         emptyOutDir: true,

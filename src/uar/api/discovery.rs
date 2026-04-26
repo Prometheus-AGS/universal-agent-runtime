@@ -266,10 +266,10 @@ pub async fn create_agent(
     }
     agent.kind = "agent".to_string();
 
-    let persistence = state
-        .persistence
-        .as_ref()
-        .ok_or((StatusCode::SERVICE_UNAVAILABLE, "No persistence layer".to_string()))?;
+    let persistence = state.persistence.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "No persistence layer".to_string(),
+    ))?;
 
     persistence
         .save_agent(&agent)
@@ -287,10 +287,10 @@ pub async fn update_agent_full(
 ) -> Result<Json<AgentArtifact>, (StatusCode, String)> {
     agent.id = id;
 
-    let persistence = state
-        .persistence
-        .as_ref()
-        .ok_or((StatusCode::SERVICE_UNAVAILABLE, "No persistence layer".to_string()))?;
+    let persistence = state.persistence.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "No persistence layer".to_string(),
+    ))?;
 
     persistence
         .save_agent(&agent)
@@ -306,10 +306,10 @@ pub async fn patch_agent(
     Path(id): Path<String>,
     Json(patch): Json<serde_json::Value>,
 ) -> Result<Json<AgentArtifact>, (StatusCode, String)> {
-    let persistence = state
-        .persistence
-        .as_ref()
-        .ok_or((StatusCode::SERVICE_UNAVAILABLE, "No persistence layer".to_string()))?;
+    let persistence = state.persistence.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "No persistence layer".to_string(),
+    ))?;
 
     let existing = persistence
         .load_agent(&id)
@@ -321,8 +321,12 @@ pub async fn patch_agent(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     json_merge(&mut base, &patch);
 
-    let mut agent: AgentArtifact = serde_json::from_value(base)
-        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid agent after merge: {e}")))?;
+    let mut agent: AgentArtifact = serde_json::from_value(base).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Invalid agent after merge: {e}"),
+        )
+    })?;
     agent.id = id;
 
     persistence
@@ -338,10 +342,10 @@ pub async fn delete_agent(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let persistence = state
-        .persistence
-        .as_ref()
-        .ok_or((StatusCode::SERVICE_UNAVAILABLE, "No persistence layer".to_string()))?;
+    let persistence = state.persistence.as_ref().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "No persistence layer".to_string(),
+    ))?;
 
     persistence
         .delete_agent(&id)
@@ -477,7 +481,9 @@ pub async fn get_agent_session_config(
 ) -> impl IntoResponse {
     let sessions = state.agent_sessions.read().await;
     match sessions.get(&session_id) {
-        Some(config) => (StatusCode::OK, Json(serde_json::to_value(config).unwrap())).into_response(),
+        Some(config) => {
+            (StatusCode::OK, Json(serde_json::to_value(config).unwrap())).into_response()
+        }
         None => (
             StatusCode::NOT_FOUND,
             Json(json!({"error": "No agent session config found for this session"})),
@@ -506,8 +512,7 @@ pub async fn get_effective_config(
     let agent = resolve_agent_artifact(&state, &config.agent_id).await;
 
     // Build effective config: agent defaults + session overrides.
-    let mut effective =
-        serde_json::to_value(&agent).unwrap_or_else(|_| serde_json::json!({}));
+    let mut effective = serde_json::to_value(&agent).unwrap_or_else(|_| serde_json::json!({}));
     if let Some(model) = &config.model {
         effective["model_override"] = json!(model);
     }

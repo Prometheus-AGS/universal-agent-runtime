@@ -10,6 +10,8 @@
 
 use serial_test::serial;
 use std::sync::Arc;
+#[cfg(feature = "postgres-backend")]
+use universal_agent_runtime::uar::persistence::providers::postgres::PostgresProvider;
 use universal_agent_runtime::uar::{
     defaults::ensure_default_knowledge_base,
     domain::knowledge::{
@@ -17,8 +19,6 @@ use universal_agent_runtime::uar::{
     },
     persistence::PersistenceLayer,
 };
-#[cfg(feature = "postgres-backend")]
-use universal_agent_runtime::uar::persistence::providers::postgres::PostgresProvider;
 use uuid::Uuid;
 
 // =============================================================================

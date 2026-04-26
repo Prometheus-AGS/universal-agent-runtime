@@ -300,9 +300,7 @@ async fn refresh_skills(State(service): State<Arc<SkillService>>) -> impl IntoRe
 
 // --- Import from disk endpoint ---
 
-async fn import_skill_from_disk(
-    Json(req): Json<SkillImportRequest>,
-) -> impl IntoResponse {
+async fn import_skill_from_disk(Json(req): Json<SkillImportRequest>) -> impl IntoResponse {
     let dir_path = PathBuf::from(&req.path);
 
     // Validate directory exists
@@ -341,24 +339,19 @@ async fn import_skill_from_disk(
         match std::fs::read_to_string(&skill_md) {
             Ok(content) => {
                 let (frontmatter, body) = parse_frontmatter(&content);
-                let name = frontmatter
-                    .get("name")
-                    .cloned()
-                    .unwrap_or_else(|| {
-                        warnings.push("Missing 'name' in frontmatter; using directory name".to_string());
-                        dir_path
-                            .file_name()
-                            .and_then(|n| n.to_str())
-                            .unwrap_or("unknown")
-                            .to_string()
-                    });
-                let description = frontmatter
-                    .get("description")
-                    .cloned()
-                    .unwrap_or_else(|| {
-                        warnings.push("Missing 'description' in frontmatter".to_string());
-                        String::new()
-                    });
+                let name = frontmatter.get("name").cloned().unwrap_or_else(|| {
+                    warnings
+                        .push("Missing 'name' in frontmatter; using directory name".to_string());
+                    dir_path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("unknown")
+                        .to_string()
+                });
+                let description = frontmatter.get("description").cloned().unwrap_or_else(|| {
+                    warnings.push("Missing 'description' in frontmatter".to_string());
+                    String::new()
+                });
                 let version = frontmatter
                     .get("version")
                     .cloned()
@@ -381,7 +374,8 @@ async fn import_skill_from_disk(
                 };
 
                 let validation = ImportValidation {
-                    valid: warnings.is_empty() || warnings.iter().all(|w| !w.contains("Missing 'name'")),
+                    valid: warnings.is_empty()
+                        || warnings.iter().all(|w| !w.contains("Missing 'name'")),
                     warnings,
                 };
 
@@ -398,24 +392,26 @@ async fn import_skill_from_disk(
         match std::fs::read_to_string(&skills_md) {
             Ok(content) => {
                 let (frontmatter, body) = parse_frontmatter(&content);
-                let name = frontmatter
-                    .get("name")
-                    .cloned()
-                    .unwrap_or_else(|| {
-                        dir_path
-                            .file_name()
-                            .and_then(|n| n.to_str())
-                            .unwrap_or("unknown-bundle")
-                            .to_string()
-                    });
+                let name = frontmatter.get("name").cloned().unwrap_or_else(|| {
+                    dir_path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("unknown-bundle")
+                        .to_string()
+                });
 
-                warnings.push("Detected bundle catalog (SKILLS.md); contains multiple skills".to_string());
+                warnings.push(
+                    "Detected bundle catalog (SKILLS.md); contains multiple skills".to_string(),
+                );
 
                 let parsed = ParsedSkillData {
                     name,
                     title: frontmatter.get("title").cloned(),
                     description: frontmatter.get("description").cloned().unwrap_or_default(),
-                    version: frontmatter.get("version").cloned().unwrap_or_else(|| "1.0.0".to_string()),
+                    version: frontmatter
+                        .get("version")
+                        .cloned()
+                        .unwrap_or_else(|| "1.0.0".to_string()),
                     triggers: SkillTriggers::default(),
                     prompt_overlay: body,
                     source: "filesystem".to_string(),
@@ -500,7 +496,11 @@ fn parse_frontmatter(content: &str) -> (std::collections::HashMap<String, String
         }
         if let Some((key, value)) = line.split_once(':') {
             let key = key.trim().to_string();
-            let value = value.trim().trim_matches('"').trim_matches('\'').to_string();
+            let value = value
+                .trim()
+                .trim_matches('"')
+                .trim_matches('\'')
+                .to_string();
             if !key.is_empty() {
                 map.insert(key, value);
             }

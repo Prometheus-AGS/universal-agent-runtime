@@ -135,9 +135,9 @@ function DbLoadingScreen({ steps, current, error }: DbLoadingScreenProps) {
           aria-live="polite"
         >
           <ul className="flex flex-col gap-1.5">
-            {completedSteps.map((step) => (
+            {completedSteps.map((step, index) => (
               <li
-                key={step}
+                key={`${index}-${step}`}
                 className="flex items-start gap-2 font-mono text-[11px] text-muted-foreground"
               >
                 <span className="mt-px flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-primary/15">
@@ -174,7 +174,7 @@ interface DbProviderProps {
 
 export function DbProvider({ children }: DbProviderProps) {
   const [value, setValue] = useState<DbContextValue>({ ready: false, db: null });
-  const [steps, setSteps] = useState<string[]>(["Opening local database…"]);
+  const [steps, setSteps] = useState<string[]>([]);
   const [current, setCurrent] = useState("Opening local database…");
   const [error, setError] = useState<string | null>(null);
 

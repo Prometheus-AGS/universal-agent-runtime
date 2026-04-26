@@ -330,7 +330,6 @@ impl ContextManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::llm::MessageContent;
 
     fn make_msg(content: &str, role: MessageRole) -> Message {
         Message {

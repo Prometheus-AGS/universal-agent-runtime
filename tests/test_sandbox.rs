@@ -8,11 +8,11 @@
 
 #[cfg(feature = "sandbox-microsandbox")]
 mod microsandbox_tests {
+    use universal_agent_runtime::sandbox::microsandbox_runner::MicrosandboxRunner;
     use universal_agent_runtime::sandbox::{
         runner::SandboxRunner,
         types::{ExecutionMode, ExecutionRequest, Language, SandboxConfig},
     };
-    use universal_agent_runtime::sandbox::microsandbox_runner::MicrosandboxRunner;
 
     #[tokio::test]
     #[ignore = "requires hypervisor and microsandbox daemon"]

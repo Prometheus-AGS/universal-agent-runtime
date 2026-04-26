@@ -1,15 +1,9 @@
 /// Integration tests for checkpoint save / load / list via SurrealDB in-process.
-
 use std::sync::Arc;
 
-use universal_agent_runtime::{
-    uar::{
-        persistence::{providers::surreal::SurrealDbProvider, PersistenceLayer},
-        runtime::{
-            checkpoint::Checkpoint,
-            graph::GraphState,
-        },
-    },
+use universal_agent_runtime::uar::{
+    persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
+    runtime::{checkpoint::Checkpoint, graph::GraphState},
 };
 
 async fn make_db() -> (Arc<dyn PersistenceLayer>, tempfile::TempDir) {
@@ -27,7 +21,9 @@ fn make_state(iter: u32) -> GraphState {
     let mut state = GraphState::default();
     state.iteration = iter;
     state.set("key", format!("value-{iter}"));
-    state.messages.push(serde_json::json!({"role": "user", "content": "hello"}));
+    state
+        .messages
+        .push(serde_json::json!({"role": "user", "content": "hello"}));
     state
 }
 
@@ -39,7 +35,9 @@ async fn test_save_and_load_checkpoint() {
     let cp = Checkpoint::new("run-1", "thread-1", "node-a", &state);
     let cp_id = cp.id.clone();
 
-    db.save_checkpoint(&cp).await.expect("save_checkpoint failed");
+    db.save_checkpoint(&cp)
+        .await
+        .expect("save_checkpoint failed");
 
     let loaded = db
         .load_checkpoint(&cp_id)
@@ -55,10 +53,7 @@ async fn test_save_and_load_checkpoint() {
 
     let restored = loaded.restore_state();
     assert_eq!(restored.iteration, 3);
-    assert_eq!(
-        restored.get::<String>("key").as_deref(),
-        Some("value-3")
-    );
+    assert_eq!(restored.get::<String>("key").as_deref(), Some("value-3"));
 }
 
 #[tokio::test]
@@ -89,7 +84,11 @@ async fn test_list_checkpoints_for_run() {
         .await
         .expect("list_checkpoints");
 
-    assert_eq!(checkpoints.len(), 3, "should list exactly 3 checkpoints for run-multi");
+    assert_eq!(
+        checkpoints.len(),
+        3,
+        "should list exactly 3 checkpoints for run-multi"
+    );
     for cp in &checkpoints {
         assert_eq!(cp.run_id, "run-multi");
     }
@@ -108,12 +107,16 @@ async fn test_checkpoint_node_persists_via_graph_context() {
 
     // Build a simple graph with a CheckpointNode
     let graph = AgentGraph::builder("entry")
-        .add_node(universal_agent_runtime::uar::runtime::graph::CheckpointNode::new("entry", "start"))
+        .add_node(
+            universal_agent_runtime::uar::runtime::graph::CheckpointNode::new("entry", "start"),
+        )
         .build();
 
-    let driver = Arc::new(MockLlmDriver::new(vec![
-        vec![NormalizedEvent::MessageDelta { text: "hi".to_string() }],
-    ]));
+    let driver = Arc::new(MockLlmDriver::new(vec![vec![
+        NormalizedEvent::MessageDelta {
+            text: "hi".to_string(),
+        },
+    ]]));
 
     let ctx = GraphContext {
         run_id: "run-cp-test".to_string(),
@@ -133,7 +136,11 @@ async fn test_checkpoint_node_persists_via_graph_context() {
         .await
         .expect("list_checkpoints");
 
-    assert_eq!(checkpoints.len(), 1, "CheckpointNode should have saved one checkpoint");
+    assert_eq!(
+        checkpoints.len(),
+        1,
+        "CheckpointNode should have saved one checkpoint"
+    );
     assert_eq!(checkpoints[0].run_id, "run-cp-test");
     assert_eq!(checkpoints[0].node_id, "entry");
 }

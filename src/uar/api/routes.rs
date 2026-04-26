@@ -22,7 +22,10 @@ pub fn build_router() -> Router<Arc<RunManager>> {
         .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
         .route("/runs/{run_id}/checkpoints", get(list_checkpoints))
         .route("/runs/{run_id}/resume", post(resume_run))
-        .route("/runs/{run_id}/resume/{checkpoint_id}", post(resume_run_from_checkpoint))
+        .route(
+            "/runs/{run_id}/resume/{checkpoint_id}",
+            post(resume_run_from_checkpoint),
+        )
         .route("/resolve-model", get(resolve_model))
 }
 
@@ -218,7 +221,10 @@ async fn resume_run_from_checkpoint(
     };
 
     let input = req.input.unwrap_or_else(|| {
-        format!("Resuming run {run_id} from checkpoint {} (node: {})", checkpoint.id, checkpoint.node_id)
+        format!(
+            "Resuming run {run_id} from checkpoint {} (node: {})",
+            checkpoint.id, checkpoint.node_id
+        )
     });
 
     let new_run_id = manager

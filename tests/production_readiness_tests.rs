@@ -9,8 +9,6 @@
 
 #[cfg(test)]
 mod health_probes {
-    use serde_json::Value;
-
     /// Test 2.5: Verify `/readyz` returns structured JSON.
     #[test]
     fn readyz_response_has_expected_structure() {
@@ -46,8 +44,6 @@ mod health_probes {
 
 #[cfg(test)]
 mod v1_models {
-    use serde_json::Value;
-
     /// Test 5.5: Verify `/v1/models` returns OpenAI-compatible structure.
     #[test]
     fn models_list_has_openai_format() {
