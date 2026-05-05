@@ -1911,7 +1911,8 @@ fn anthropic_error_response(status: StatusCode, message: &str) -> Response {
 /// GET /api/config/persistence — returns the configured persistence provider info.
 async fn persistence_info_handler(State(state): State<AppState>) -> impl IntoResponse {
     let config = &state.config.persistence;
-    let mode = if config.database_url.starts_with("rocksdb://")
+    let mode = if config.database_url.starts_with("surrealkv://")
+        || config.database_url.starts_with("rocksdb://")
         || config.database_url.starts_with("mem://")
         || config.database_url.starts_with("file://")
     {
@@ -1931,7 +1932,8 @@ async fn persistence_info_handler(State(state): State<AppState>) -> impl IntoRes
 /// V1: sends periodic heartbeats; real LIVE SELECT integration will come later.
 async fn sync_stream_handler(State(state): State<AppState>) -> Response {
     let config = &state.config.persistence;
-    let is_embedded = config.database_url.starts_with("rocksdb://")
+    let is_embedded = config.database_url.starts_with("surrealkv://")
+        || config.database_url.starts_with("rocksdb://")
         || config.database_url.starts_with("mem://")
         || config.database_url.starts_with("file://");
 

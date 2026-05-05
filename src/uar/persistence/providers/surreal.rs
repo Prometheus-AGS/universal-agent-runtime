@@ -22,7 +22,7 @@ impl SurrealDbProvider {
     /// For server endpoints (`ws://`, `wss://`, `http://`, `https://`) the
     /// caller may supply optional root credentials.  When credentials are
     /// absent the defaults `root` / `root` are used, which matches a
-    /// freshly-started SurrealDB server.  For embedded endpoints (RocksDB,
+    /// freshly-started SurrealDB server.  For embedded endpoints (SurrealKV,
     /// in-memory) authentication is not performed.
     pub async fn new(
         connection_string: &str,
@@ -71,7 +71,9 @@ fn is_server_endpoint(endpoint: &str) -> bool {
 fn normalize_endpoint(connection_string: &str) -> String {
     let trimmed = connection_string.trim();
     let lower = trimmed.to_ascii_lowercase();
-    if trimmed.contains("://")
+    if lower.starts_with("rocksdb://") {
+        trimmed.replacen("rocksdb://", "surrealkv://", 1)
+    } else if trimmed.contains("://")
         || lower == "memory"
         || lower == "mem"
         || lower == "surrealkv"
@@ -82,12 +84,12 @@ fn normalize_endpoint(connection_string: &str) -> String {
         } else if lower == "surrealkv" {
             "surrealkv://".to_string()
         } else if lower == "rocksdb" {
-            "rocksdb://./data/uar.db".to_string()
+            "surrealkv://./data/uar.db".to_string()
         } else {
             trimmed.to_string()
         }
     } else {
-        format!("rocksdb://{trimmed}")
+        format!("surrealkv://{trimmed}")
     }
 }
 
@@ -327,7 +329,7 @@ impl PersistenceLayer for SurrealDbProvider {
     // Memory System — delegates to MemoryService (backed by surreal-memory library)
     // These stubs satisfy the PersistenceLayer trait. Real memory operations should
     // use `AppState::memory_service` (a MemoryService wrapping SurrealStorage from
-    // the surreal-memory library in its own embedded RocksDB store).
+    // the surreal-memory library in its own embedded SurrealKV store).
     async fn save_memory(&self, memory: &crate::uar::domain::memory::Memory) -> Result<()> {
         // The surreal-memory library owns memory persistence in its own SurrealDB instance.
         // This stub is a no-op; callers should use AppState::memory_service.

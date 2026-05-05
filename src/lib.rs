@@ -98,7 +98,7 @@ pub struct AppState {
     pub governance_engine: Arc<GovernanceEngine>,
     /// API key service for PAT-based authentication
     pub api_key_service: Option<Arc<ApiKeyService>>,
-    /// Memory service backed by surreal-memory + SurrealDB/RocksDB (None if memory.enabled=false).
+    /// Memory service backed by surreal-memory + SurrealDB/SurrealKV (None if memory.enabled=false).
     pub memory_service: Option<Arc<MemoryService>>,
     /// Compiler service for spec management and pipeline execution
     pub compiler_service: Option<Arc<CompilerService>>,

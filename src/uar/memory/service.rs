@@ -88,7 +88,7 @@ impl MemoryService {
             "Memory embedding service ready"
         );
 
-        // Connect to SurrealDB — external server when `surreal_endpoint` is set, otherwise embedded.
+        // Connect to SurrealDB — external server when `surreal_endpoint` is set, otherwise embedded SurrealKV.
         let surreal_config = if let Some(ref endpoint) = config.surreal_endpoint {
             tracing::info!(
                 endpoint = %endpoint,
@@ -107,12 +107,15 @@ impl MemoryService {
         } else {
             tracing::info!(
                 db_path = %config.db_path,
-                "Memory: using embedded SurrealDB/RocksDB"
+                "Memory: using embedded SurrealDB/SurrealKV"
             );
             SurrealConfig {
-                mode: SurrealMode::Embedded,
-                embedded_path: Some(config.db_path.clone()),
-                endpoint: None,
+                // surreal-memory's Embedded mode currently hardcodes rocksdb://.
+                // Use Server mode with a local surrealkv:// endpoint and no auth
+                // so the shared SurrealDB crate only needs kv-surrealkv.
+                mode: SurrealMode::Server,
+                embedded_path: None,
+                endpoint: Some(format!("surrealkv://{}", config.db_path)),
                 username: None,
                 password: None,
                 namespace: config.namespace.clone(),

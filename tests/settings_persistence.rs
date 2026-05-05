@@ -1,6 +1,6 @@
 //! Integration tests for settings persistence.
 //!
-//! All tests run against **SurrealDB `rocksdb://`** — an embedded store backed
+//! All tests run against **SurrealDB `surrealkv://`** — an embedded store backed
 //! by a unique temporary directory per test, so tests are fully isolated and
 //! can run in parallel. The temp dir is auto-deleted when the test _dir guard
 //! goes out of scope.
@@ -49,12 +49,12 @@ use universal_agent_runtime::{
 // =============================================================================
 
 /// Create a fresh embedded SurrealDB connection backed by a unique temp
-/// RocksDB directory.  Returns both the provider and the `TempDir` guard so
+/// SurrealKV directory.  Returns both the provider and the `TempDir` guard so
 /// the directory lives as long as the test.
 async fn make_surreal() -> (Arc<dyn PersistenceLayer>, tempfile::TempDir) {
     let dir = tempfile::tempdir().expect("tempdir should be creatable");
     let db_path = dir.path().to_str().expect("tempdir path must be utf-8");
-    let url = format!("rocksdb://{}", db_path);
+    let url = format!("surrealkv://{}", db_path);
     let provider = Arc::new(
         SurrealDbProvider::new(&url, None, None)
             .await
@@ -98,7 +98,7 @@ fn minimal_config() -> AppConfig {
         },
         persistence: PersistenceConfig {
             provider: "surreal".to_string(),
-            database_url: "rocksdb://test".to_string(),
+            database_url: "surrealkv://test".to_string(),
             vector_dimension: 384,
             external_cache_enabled: false,
             surreal_user: None,
@@ -750,7 +750,7 @@ async fn mgr_register_extension() -> Result<()> {
 
 #[tokio::test]
 async fn mgr_set_value_updates_db_not_just_cache() -> Result<()> {
-    // Two SettingsManager instances share the same on-disk RocksDB store.
+    // Two SettingsManager instances share the same on-disk SurrealKV store.
     // Value written by mgr1 must be visible to mgr2 after re-initialize.
     let (provider, _dir) = make_surreal().await;
     let provider = Arc::clone(&provider);

@@ -1,7 +1,7 @@
 # =============================================================================
 # UAR — Embedded persistence (development / single-machine)
 # =============================================================================
-# SurrealDB embedded engine (RocksDB on disk). No separate database process.
+# SurrealDB embedded engine (SurrealKV on disk). No separate database process.
 # Usage:
 #   CONFIG_FILE=config.embedded.yaml cargo run
 # Or merge ideas into your own `config.yaml`.
@@ -27,7 +27,7 @@ resilience:
 
 persistence:
   provider: "surreal"
-  database_url: "rocksdb://./data/uar-dev-db"
+  database_url: "surrealkv://./data/uar-dev-db"
   external_cache_enabled: false
   vector_dimension: 384
 

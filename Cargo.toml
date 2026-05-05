@@ -34,13 +34,13 @@ serde_json = "1.0"
 serde = { version = "1", features = ["derive"] }
 
 [features]
-## Default backend stack: SurrealDB embedded only (RocksDB), no Postgres/SQLite.
+## Default backend stack: SurrealDB embedded only (SurrealKV), no Postgres/SQLite.
 ## This keeps UAR self-contained and avoids the libsqlite3-sys version conflict
 ## that arises when downstream consumers (e.g. librefang) link rusqlite >= 0.33
 ## (libsqlite3-sys 0.37) while sqlx 0.8 transitively links libsqlite3-sys 0.30.
 default = ["surreal-backend"]
 
-## SurrealDB-only persistence + compiler storage + A2A registry. RocksDB-backed,
+## SurrealDB-only persistence + compiler storage + A2A registry. SurrealKV-backed,
 ## fully embedded — no external services required. Required for UAR to function
 ## at all when `postgres-backend` is disabled.
 surreal-backend = []
@@ -130,14 +130,14 @@ rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", rev = "085470
   "transport-streamable-http-server-session",
 ] }
 
-# Memory system — surreal-memory library backed by embedded SurrealDB (RocksDB).
+# Memory system — surreal-memory library backed by embedded SurrealDB (SurrealKV).
 #
 # `palace` is intentionally NOT enabled by default because it pulls in
 # `mempalace-core` → `rusqlite 0.31` (with `bundled`) → `libsqlite3-sys`,
 # which conflicts with downstream consumers (e.g. librefang) that link a
 # newer `rusqlite`/`libsqlite3-sys`. Opt in via the `memory-palace` feature
 # below if you need the MemPalace knowledge-graph layer.
-surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server.git", branch = "main", package = "surreal-memory", default-features = false, features = ["embedded"] }
+surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server.git", branch = "main", package = "surreal-memory", default-features = false }
 
 # Utilities
 url = "2.5.7"
@@ -196,7 +196,7 @@ config = "0.15.22"
 ## Pinned to =3.0.5 (exact) so UAR, librefang, and surreal-memory all link
 ## the same SurrealDB client crate. See Phase 4b of the
 ## librefang `surrealdb-storage-swap` plan for the matching workspace pin.
-surrealdb = { version = "=3.0.5", features = ["kv-rocksdb"] }
+surrealdb = { version = "=3.0.5", features = ["kv-surrealkv"] }
 jsonschema = { version = "0.45.0", default-features = false }
 governor = { version = "0.10.4", features = ["std", "jitter", "quanta"] }
 nonzero_ext = "0.3.0"

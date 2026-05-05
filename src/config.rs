@@ -603,13 +603,13 @@ impl Default for ChunkingConfig {
 // MEMORY CONFIGURATION
 // =============================================================================
 
-/// Configuration for the in-process agent memory system, backed by surreal-memory + SurrealDB/RocksDB.
+/// Configuration for the in-process agent memory system, backed by surreal-memory + SurrealDB/SurrealKV.
 #[derive(Debug, Deserialize, Clone)]
 pub struct MemoryConfig {
     /// Enable the memory system (default: false — opt-in).
     #[serde(default)]
     pub enabled: bool,
-    /// Path to the RocksDB data directory for embedded mode.
+    /// Path to the SurrealKV data directory for embedded mode.
     #[serde(default = "MemoryConfig::default_db_path")]
     pub db_path: String,
     /// Embedding provider: "openai" | "cohere" | "local"
@@ -1283,7 +1283,7 @@ security:
   jwt_secret: "test-secret"
 persistence:
   provider: "surreal"
-  database_url: "rocksdb://./data/test-config"
+  database_url: "surrealkv://./data/test-config"
 "#;
         fs::write(&path, yaml).expect("test config should be writable");
         path

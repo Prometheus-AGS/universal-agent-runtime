@@ -8,7 +8,7 @@ use universal_agent_runtime::uar::{
 
 async fn make_db() -> (Arc<dyn PersistenceLayer>, tempfile::TempDir) {
     let dir = tempfile::tempdir().expect("tempdir");
-    let url = format!("rocksdb://{}", dir.path().to_str().unwrap());
+    let url = format!("surrealkv://{}", dir.path().to_str().unwrap());
     let provider = Arc::new(
         SurrealDbProvider::new(&url, None, None)
             .await
