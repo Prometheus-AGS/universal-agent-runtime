@@ -279,6 +279,10 @@ impl GetRelatedParams {
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 pub struct TaskStreamNameParams {
     pub name: String,
+    #[serde(default)]
+    pub user_id: Option<String>,
+    #[serde(default)]
+    pub agent_id: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -298,6 +302,10 @@ pub struct AddToTaskStreamParams {
     pub content: String,
     #[serde(default)]
     pub categories: Vec<String>,
+    #[serde(default)]
+    pub user_id: Option<String>,
+    #[serde(default)]
+    pub agent_id: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -306,6 +314,10 @@ pub struct GetContextParams {
     pub model_name: String,
     #[serde(default)]
     pub max_tokens: Option<u64>,
+    #[serde(default)]
+    pub user_id: Option<String>,
+    #[serde(default)]
+    pub agent_id: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -715,7 +727,7 @@ impl UarMemoryMcpServer {
     ) -> Result<CallToolResult, McpError> {
         let result = self
             .storage
-            .get_task_stream(&p.name)
+            .get_task_stream(&p.name, p.user_id.as_deref(), p.agent_id.as_deref())
             .await
             .map_err(err_mcp)?;
         Ok(ok_json(&result))
@@ -729,7 +741,12 @@ impl UarMemoryMcpServer {
         let mem = Memory::new(p.content, None, None, None, p.categories);
         let result = self
             .storage
-            .add_to_task_stream(&p.stream_name, mem)
+            .add_to_task_stream(
+                &p.stream_name,
+                p.user_id.as_deref(),
+                p.agent_id.as_deref(),
+                mem,
+            )
             .await
             .map_err(err_mcp)?;
         Ok(ok_json(&result))
@@ -744,7 +761,13 @@ impl UarMemoryMcpServer {
     ) -> Result<CallToolResult, McpError> {
         let result = self
             .storage
-            .get_context_for_task(&p.stream_name, &p.model_name, p.max_tokens)
+            .get_context_for_task(
+                &p.stream_name,
+                p.user_id.as_deref(),
+                p.agent_id.as_deref(),
+                &p.model_name,
+                p.max_tokens,
+            )
             .await
             .map_err(err_mcp)?;
         Ok(ok_json(&result))
@@ -770,7 +793,7 @@ impl UarMemoryMcpServer {
     ) -> Result<CallToolResult, McpError> {
         let result = self
             .storage
-            .archive_task_stream(&p.name)
+            .archive_task_stream(&p.name, p.user_id.as_deref(), p.agent_id.as_deref())
             .await
             .map_err(err_mcp)?;
         Ok(ok_json(&result))

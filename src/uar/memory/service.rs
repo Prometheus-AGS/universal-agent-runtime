@@ -511,16 +511,27 @@ impl MemoryService {
             .context("create_task_stream failed")
     }
 
-    pub async fn get_task_stream(&self, name: &str) -> Result<Option<TaskStream>> {
+    pub async fn get_task_stream(
+        &self,
+        name: &str,
+        user_id: Option<&str>,
+        agent_id: Option<&str>,
+    ) -> Result<Option<TaskStream>> {
         self.storage
-            .get_task_stream(name)
+            .get_task_stream(name, user_id, agent_id)
             .await
             .context("get_task_stream failed")
     }
 
-    pub async fn add_to_task_stream(&self, stream_name: &str, memory: Memory) -> Result<Memory> {
+    pub async fn add_to_task_stream(
+        &self,
+        stream_name: &str,
+        user_id: Option<&str>,
+        agent_id: Option<&str>,
+        memory: Memory,
+    ) -> Result<Memory> {
         self.storage
-            .add_to_task_stream(stream_name, memory)
+            .add_to_task_stream(stream_name, user_id, agent_id, memory)
             .await
             .context("add_to_task_stream failed")
     }
@@ -529,11 +540,13 @@ impl MemoryService {
     pub async fn task_stream_context(
         &self,
         stream_name: &str,
+        user_id: Option<&str>,
+        agent_id: Option<&str>,
         model_id: &str,
         max_tokens: Option<u64>,
     ) -> Result<ContextWindow> {
         self.storage
-            .get_context_for_task(stream_name, model_id, max_tokens)
+            .get_context_for_task(stream_name, user_id, agent_id, model_id, max_tokens)
             .await
             .context("get_context_for_task failed")
     }
@@ -549,9 +562,14 @@ impl MemoryService {
             .context("list_task_streams failed")
     }
 
-    pub async fn archive_task_stream(&self, name: &str) -> Result<TaskStream> {
+    pub async fn archive_task_stream(
+        &self,
+        name: &str,
+        user_id: Option<&str>,
+        agent_id: Option<&str>,
+    ) -> Result<TaskStream> {
         self.storage
-            .archive_task_stream(name)
+            .archive_task_stream(name, user_id, agent_id)
             .await
             .context("archive_task_stream failed")
     }
