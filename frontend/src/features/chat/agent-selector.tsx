@@ -153,23 +153,25 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-left transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-            className,
-          )}
-          aria-label="Select agent"
-        >
-          <div className="min-w-0 flex-1">
-            <span className="block truncate max-w-[200px] font-mono text-xs text-muted-foreground">{displayName}</span>
-            {modelLabel && (
-              <span className="block truncate max-w-[200px] font-mono text-[11px] text-muted-foreground/70">{modelLabel}</span>
+      <PopoverTrigger
+        render={
+          <button
+            type="button"
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-left transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+              className,
             )}
-          </div>
-          <ChevronDownIcon size={12} className={cn("shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
-        </button>
+            aria-label="Select agent"
+          />
+        }
+      >
+        <div className="min-w-0 flex-1">
+          <span className="block truncate max-w-[200px] font-mono text-xs text-muted-foreground">{displayName}</span>
+          {modelLabel && (
+            <span className="block truncate max-w-[200px] font-mono text-[11px] text-muted-foreground/70">{modelLabel}</span>
+          )}
+        </div>
+        <ChevronDownIcon size={12} className={cn("shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
       </PopoverTrigger>
       <PopoverContent className="w-[300px] p-0" align="start">
         <Command>

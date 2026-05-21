@@ -50,7 +50,7 @@ export function TopNav() {
         {NAV_ITEMS.map(({ path, label, icon: Icon, exactMatch }) => (
           <Button
             key={path}
-            asChild
+            render={<Link to={path} />}
             variant="ghost"
             size="sm"
             className={cn(
@@ -61,10 +61,8 @@ export function TopNav() {
             )}
             aria-current={isActive(path, exactMatch) ? "page" : undefined}
           >
-            <Link to={path}>
-              <Icon size={14} />
-              {label}
-            </Link>
+            <Icon size={14} />
+            {label}
           </Button>
         ))}
       </nav>

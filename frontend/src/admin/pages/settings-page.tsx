@@ -322,23 +322,25 @@ const AdvancedSection: FC<{
   const [open, setOpen] = useState(defaultOpen);
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-auto w-full justify-start gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-left font-normal hover:bg-muted/50"
-        >
-          <ChevronDown
-            size={13}
-            className={cn(
-              "shrink-0 text-muted-foreground transition-transform duration-200",
-              !open && "-rotate-90",
-            )}
+      <CollapsibleTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-auto w-full justify-start gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-left font-normal hover:bg-muted/50"
           />
-          <span className="font-mono text-xs font-medium text-muted-foreground">
-            {label}
-          </span>
-        </Button>
+        }
+      >
+        <ChevronDown
+          size={13}
+          className={cn(
+            "shrink-0 text-muted-foreground transition-transform duration-200",
+            !open && "-rotate-90",
+          )}
+        />
+        <span className="font-mono text-xs font-medium text-muted-foreground">
+          {label}
+        </span>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="mt-4 space-y-6 border-l-2 border-border/30 pl-4">

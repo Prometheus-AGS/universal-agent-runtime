@@ -165,15 +165,17 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
                 </div>
               </Button>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 z-10 flex size-6 -translate-y-1/2 opacity-0 pointer-events-none text-muted-foreground transition-opacity hover:text-foreground group-hover:opacity-100 group-hover:pointer-events-auto data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto"
-                    aria-label={`Actions for ${thread.title}`}
-                  >
-                    <MoreHorizontal size={14} />
-                  </Button>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 z-10 flex size-6 -translate-y-1/2 opacity-0 pointer-events-none text-muted-foreground transition-opacity hover:text-foreground group-hover:opacity-100 group-hover:pointer-events-auto data-[state=open]:opacity-100 data-[state=open]:pointer-events-auto"
+                      aria-label={`Actions for ${thread.title}`}
+                    />
+                  }
+                >
+                  <MoreHorizontal size={14} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" sideOffset={6}>
                   <DropdownMenuItem

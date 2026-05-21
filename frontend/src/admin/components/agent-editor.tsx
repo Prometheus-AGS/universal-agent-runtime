@@ -431,10 +431,8 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
               <div className="flex items-center justify-between">
                 <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Skills</Label>
                 <Popover onOpenChange={(o) => { if (o) loadSkills(); }}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
-                      <Plus size={12} /> Add
-                    </Button>
+                  <PopoverTrigger render={<Button variant="outline" size="sm" className="h-7 gap-1 text-xs" />}>
+                    <Plus size={12} /> Add
                   </PopoverTrigger>
                   <PopoverContent className="w-[300px] p-0" align="end">
                     <Command>
@@ -499,10 +497,8 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
               <div className="flex items-center justify-between">
                 <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Tools (allow list)</Label>
                 <Popover onOpenChange={(o) => { if (o) loadTools(); }}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
-                      <Plus size={12} /> Add
-                    </Button>
+                  <PopoverTrigger render={<Button variant="outline" size="sm" className="h-7 gap-1 text-xs" />}>
+                    <Plus size={12} /> Add
                   </PopoverTrigger>
                   <PopoverContent className="w-[300px] p-0" align="end">
                     <Command>
@@ -565,10 +561,8 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
               <div className="flex items-center justify-between">
                 <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Knowledge Bases</Label>
                 <Popover onOpenChange={(o) => { if (o) loadKbs(); }}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
-                      <Plus size={12} /> Add
-                    </Button>
+                  <PopoverTrigger render={<Button variant="outline" size="sm" className="h-7 gap-1 text-xs" />}>
+                    <Plus size={12} /> Add
                   </PopoverTrigger>
                   <PopoverContent className="w-[300px] p-0" align="end">
                     <Command>

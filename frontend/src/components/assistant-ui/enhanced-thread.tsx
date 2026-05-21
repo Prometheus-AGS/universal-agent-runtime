@@ -426,30 +426,32 @@ const ReasoningPart: FC = () => {
   return (
     <Card className="my-2 overflow-hidden rounded-lg border-border/50 bg-muted/20 shadow-none">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            className="flex h-auto w-full items-center justify-start gap-2 rounded-none px-3 py-2 hover:bg-muted/30"
-            aria-expanded={isOpen}
-          >
-            <BrainIcon size={13} className="shrink-0 text-muted-foreground" />
-            <span className="flex-1 font-mono text-[11px] text-muted-foreground">
-              {isStreaming ? (
-                <span className="flex items-center gap-2">
-                  {"// Reasoning"}
-                  <span className="inline-flex gap-0.5">
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60" />
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60 [animation-delay:0.2s]" />
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60 [animation-delay:0.4s]" />
-                  </span>
-                </span>
-              ) : "// Reasoning"}
-            </span>
-            <ChevronDownIcon
-              size={13}
-              className={cn("shrink-0 text-muted-foreground transition-transform duration-150", isOpen && "rotate-180")}
+        <CollapsibleTrigger
+          render={
+            <Button
+              variant="ghost"
+              className="flex h-auto w-full items-center justify-start gap-2 rounded-none px-3 py-2 hover:bg-muted/30"
+              aria-expanded={isOpen}
             />
-          </Button>
+          }
+        >
+          <BrainIcon size={13} className="shrink-0 text-muted-foreground" />
+          <span className="flex-1 font-mono text-[11px] text-muted-foreground">
+            {isStreaming ? (
+              <span className="flex items-center gap-2">
+                {"// Reasoning"}
+                <span className="inline-flex gap-0.5">
+                  <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60" />
+                  <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60 [animation-delay:0.2s]" />
+                  <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60 [animation-delay:0.4s]" />
+                </span>
+              </span>
+            ) : "// Reasoning"}
+          </span>
+          <ChevronDownIcon
+            size={13}
+            className={cn("shrink-0 text-muted-foreground transition-transform duration-150", isOpen && "rotate-180")}
+          />
         </CollapsibleTrigger>
         <CollapsibleContent>
           <Separator className="opacity-30" />
@@ -577,16 +579,18 @@ const MessageError: FC = () => {
           <span className="flex-1 font-mono text-[11px] font-semibold uppercase tracking-widest text-destructive">
             Agent Error
           </span>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex h-auto items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
-              aria-label={isOpen ? "Collapse error" : "Expand error"}
-            >
-              {isOpen ? "collapse" : "expand"}
-              <ChevronDownIcon size={11} className={cn("transition-transform", isOpen && "rotate-180")} />
-            </Button>
+          <CollapsibleTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex h-auto items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
+                aria-label={isOpen ? "Collapse error" : "Expand error"}
+              />
+            }
+          >
+            {isOpen ? "collapse" : "expand"}
+            <ChevronDownIcon size={11} className={cn("transition-transform", isOpen && "rotate-180")} />
           </CollapsibleTrigger>
           <Button
             variant="ghost"

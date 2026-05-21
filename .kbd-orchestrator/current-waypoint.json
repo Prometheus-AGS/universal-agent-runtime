@@ -1,11 +1,11 @@
 {
-  "phase": "runtime-provider-protocol-hardening",
-  "change": null,
-  "status": "assessment_ready",
-  "previousPhase": "runtime-console-validation-hardening",
-  "currentTask": "run KBD assessment for runtime-provider-protocol-hardening",
-  "nextPendingChange": null,
-  "sourceTool": "codex",
-  "exactNextCommand": "/kbd-assess runtime-provider-protocol-hardening",
-  "updatedAt": "2026-04-26T04:44:28-05:00"
+  "phase": "ui-base-ui-migration",
+  "change": "base-ui-icon-migration",
+  "status": "executing",
+  "previousPhase": "runtime-provider-protocol-hardening",
+  "currentTask": "execute base-ui-icon-migration: replace @radix-ui/react-icons with lucide-react",
+  "nextPendingChange": "base-ui-composition-patterns",
+  "sourceTool": "claude-code",
+  "exactNextCommand": "/kbd-execute base-ui-icon-migration",
+  "updatedAt": "2026-05-20T00:00:00-05:00"
 }

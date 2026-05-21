@@ -88,22 +88,24 @@ const ListToggle: FC<ListToggleProps> = ({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          aria-label={`Toggle ${label}`}
-          className={cn(
-            "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors",
-            activeCount > 0
-              ? "bg-primary/15 text-primary hover:bg-primary/20"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-        >
-          {icon}
-          <span>{label}</span>
-          <CountBadge count={activeCount} />
-        </Button>
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            aria-label={`Toggle ${label}`}
+            className={cn(
+              "h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium transition-colors",
+              activeCount > 0
+                ? "bg-primary/15 text-primary hover:bg-primary/20"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          />
+        }
+      >
+        {icon}
+        <span>{label}</span>
+        <CountBadge count={activeCount} />
       </PopoverTrigger>
       <PopoverContent
         side="top"

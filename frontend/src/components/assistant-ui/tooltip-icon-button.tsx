@@ -11,11 +11,9 @@ export type TooltipIconButtonProps = ComponentPropsWithRef<typeof Button> & {
 export const TooltipIconButton = forwardRef<HTMLButtonElement, TooltipIconButtonProps>(
   ({ children, tooltip, side = "bottom", className, ...rest }, ref) => (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button variant="ghost" size="icon" {...rest} className={cn("aui-button-icon size-6 p-1", className)} ref={ref}>
-          {children}
-          <span className="sr-only">{tooltip}</span>
-        </Button>
+      <TooltipTrigger render={<Button variant="ghost" size="icon" {...rest} className={cn("aui-button-icon size-6 p-1", className)} ref={ref} />}>
+        {children}
+        <span className="sr-only">{tooltip}</span>
       </TooltipTrigger>
       <TooltipContent side={side}>{tooltip}</TooltipContent>
     </Tooltip>

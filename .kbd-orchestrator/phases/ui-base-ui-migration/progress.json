@@ -1,0 +1,12 @@
+{
+  "phase": "ui-base-ui-migration",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "batches": {
+    "batch-1-foundation": "done",
+    "batch-2-icons": "pending",
+    "batch-3-asChild-slot": "pending",
+    "batch-4-verification": "pending"
+  },
+  "updatedAt": "2026-05-20T00:00:00-05:00"
+}

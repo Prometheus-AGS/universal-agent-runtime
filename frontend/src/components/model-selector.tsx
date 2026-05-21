@@ -125,41 +125,43 @@ export function ModelSelector({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "h-9 w-full justify-between font-mono text-xs",
-            !selectedLabel && !defaultLabel && "text-muted-foreground",
-            className,
-          )}
-        >
-          <span className="truncate">{triggerLabel}</span>
-          <div className="flex items-center gap-1 shrink-0">
-            {value && (
-              <span
-                role="button"
-                tabIndex={0}
-                className="rounded-sm p-0.5 hover:bg-accent"
-                onClick={(e) => {
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              "h-9 w-full justify-between font-mono text-xs",
+              !selectedLabel && !defaultLabel && "text-muted-foreground",
+              className,
+            )}
+          />
+        }
+      >
+        <span className="truncate">{triggerLabel}</span>
+        <div className="flex items-center gap-1 shrink-0">
+          {value && (
+            <span
+              role="button"
+              tabIndex={0}
+              className="rounded-sm p-0.5 hover:bg-accent"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
                   e.stopPropagation();
                   onChange("");
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.stopPropagation();
-                    onChange("");
-                  }
-                }}
-              >
-                <X className="h-3 w-3 text-muted-foreground" />
-              </span>
-            )}
-            <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-          </div>
-        </Button>
+                }
+              }}
+            >
+              <X className="h-3 w-3 text-muted-foreground" />
+            </span>
+          )}
+          <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
       </PopoverTrigger>
       <PopoverContent className="w-[400px] p-0" align="start">
         <Command>
