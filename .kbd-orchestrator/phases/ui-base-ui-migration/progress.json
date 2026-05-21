@@ -4,9 +4,9 @@
   "plan_complete": true,
   "batches": {
     "batch-1-foundation": "done",
-    "batch-2-icons": "pending",
-    "batch-3-asChild-slot": "pending",
-    "batch-4-verification": "pending"
+    "batch-2-icons": "done",
+    "batch-3-asChild-slot": "done",
+    "batch-4-verification": "in_progress"
   },
-  "updatedAt": "2026-05-20T00:00:00-05:00"
+  "updatedAt": "2026-05-21T00:00:00-05:00"
 }

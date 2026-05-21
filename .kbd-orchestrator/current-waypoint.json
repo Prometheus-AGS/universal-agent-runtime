@@ -1,11 +1,11 @@
 {
   "phase": "ui-base-ui-migration",
-  "change": "base-ui-icon-migration",
+  "change": "base-ui-verification",
   "status": "executing",
   "previousPhase": "runtime-provider-protocol-hardening",
-  "currentTask": "execute base-ui-icon-migration: replace @radix-ui/react-icons with lucide-react",
-  "nextPendingChange": "base-ui-composition-patterns",
+  "currentTask": "execute base-ui-verification: audit transitive Radix, smoke test, delete backup",
+  "nextPendingChange": null,
   "sourceTool": "claude-code",
   "exactNextCommand": "/kbd-execute base-ui-icon-migration",
-  "updatedAt": "2026-05-20T00:00:00-05:00"
+  "updatedAt": "2026-05-21T00:00:00-05:00"
 }
