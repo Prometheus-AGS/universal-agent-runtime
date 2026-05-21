@@ -172,7 +172,7 @@ export function SessionConfigPanel({
               <Label htmlFor="memory-scope" className="font-mono text-xs">
                 Memory Scope
               </Label>
-              <Select value={memoryScope} onValueChange={setMemoryScope}>
+              <Select value={memoryScope} onValueChange={(v) => v != null && setMemoryScope(v)}>
                 <SelectTrigger id="memory-scope" className="font-mono text-xs w-40">
                   <SelectValue />
                 </SelectTrigger>
@@ -192,7 +192,7 @@ export function SessionConfigPanel({
             <Label htmlFor="tool-approval" className="font-mono text-xs">
               Tool Approval
             </Label>
-            <Select value={toolApproval} onValueChange={setToolApproval}>
+            <Select value={toolApproval} onValueChange={(v) => v != null && setToolApproval(v)}>
               <SelectTrigger id="tool-approval" className="font-mono text-xs w-40">
                 <SelectValue />
               </SelectTrigger>

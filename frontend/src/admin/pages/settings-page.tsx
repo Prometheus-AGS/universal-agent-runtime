@@ -391,7 +391,7 @@ const SettingSelect: FC<{
   options: { value: string; label: string }[];
   onChange: (v: string) => void;
 }> = ({ value, options, onChange }) => (
-  <Select value={value ?? ""} onValueChange={onChange}>
+  <Select value={value ?? ""} onValueChange={(v) => v != null && onChange(v)}>
     <SelectTrigger className="font-mono text-xs">
       <SelectValue />
     </SelectTrigger>

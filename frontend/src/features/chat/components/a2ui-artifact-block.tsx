@@ -155,7 +155,7 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
           {options.length > 0 ? (
             <Select
               value={selectValue === "" ? undefined : selectValue}
-              onValueChange={setSelectValue}
+              onValueChange={(v) => v != null && setSelectValue(v)}
               disabled={submitting || resolved}
             >
               <SelectTrigger id={selectFieldId} className="h-9 w-full">

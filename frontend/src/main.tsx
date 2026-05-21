@@ -25,7 +25,7 @@ if (!rootElement) throw new Error("Root element not found");
 createRoot(rootElement).render(
   <StrictMode>
     <DbProvider>
-      <TooltipProvider delayDuration={200}>
+      <TooltipProvider delay={200}>
         <App />
       </TooltipProvider>
     </DbProvider>

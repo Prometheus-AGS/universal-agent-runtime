@@ -109,7 +109,6 @@ const ListToggle: FC<ListToggleProps> = ({
         side="top"
         align="start"
         className="w-64 p-0"
-        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         {/* Header with toggle-all */}
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
