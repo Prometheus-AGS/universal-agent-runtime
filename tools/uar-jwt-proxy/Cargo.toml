@@ -1,0 +1,27 @@
+[package]
+name = "uar-jwt-proxy"
+version = "0.1.0"
+edition = "2024"
+license = "AGPL-3.0-only"
+description = "Local dev reverse proxy that mints and injects an HS256 JWT for UAR."
+
+[[bin]]
+name = "uar-jwt-proxy"
+path = "src/main.rs"
+
+[dependencies]
+axum = { version = "0.8", features = ["http2", "ws"] }
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "http2"] }
+tokio-tungstenite = { version = "0.24", default-features = false, features = ["connect", "rustls-tls-native-roots"] }
+jsonwebtoken = "9"
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+clap = { version = "4", features = ["derive", "env"] }
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+futures-util = "0.3"
+http = "1"
+dirs = "5"
