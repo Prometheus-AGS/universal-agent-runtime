@@ -148,7 +148,13 @@
       "Bash(git -C /Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/packages/prometheus-entity-management log --oneline -3)",
       "Bash(git diff *)",
       "Bash(awk '{print $2}')",
-      "Bash(xargs -I{} sh -c 'if [ -f \"{}\" ]; then grep -lE \"\\(sk-[A-Za-z0-9]{20,}|BEGIN \\(RSA|EC|OPENSSH|PGP\\) PRIVATE|AKIA[0-9A-Z]{16}|ghp_[a-zA-Z0-9]{36}|JWT_SECRET=.{20,}\\)\" \"{}\" 2>/dev/null; fi')"
+      "Bash(xargs -I{} sh -c 'if [ -f \"{}\" ]; then grep -lE \"\\(sk-[A-Za-z0-9]{20,}|BEGIN \\(RSA|EC|OPENSSH|PGP\\) PRIVATE|AKIA[0-9A-Z]{16}|ghp_[a-zA-Z0-9]{36}|JWT_SECRET=.{20,}\\)\" \"{}\" 2>/dev/null; fi')",
+      "Bash(git -C crates/prometheus-skill-system/tools/liter-llm log --oneline -5)",
+      "Bash(git -C crates/prometheus-skill-system/tools/liter-llm tag --list)",
+      "Bash(git -C crates/prometheus-skill-system/tools/liter-llm remote -v)",
+      "Bash(git -C crates/prometheus-skill-system/tools/liter-llm status)",
+      "Bash(git -C crates/prometheus-skill-system/tools/liter-llm log --oneline origin/main -3)",
+      "Bash(git -C crates/prometheus-skill-system/tools/liter-llm fetch origin)"
     ]
   }
 }
