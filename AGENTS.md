@@ -3,6 +3,7 @@
 
 ## Build, Lint & Test
 
+- **Rust toolchain**: pinned via `rust-toolchain.toml` to `nightly-2026-05-01` with `wasm32-unknown-unknown`, `wasm32-wasip1`, `wasm32-wasip2` targets pre-added. `rustup` auto-installs on first `cargo` invocation. The Dockerfile `toolchain` stage uses the same `ARG RUST_TOOLCHAIN`. Bump both together via a new KBD change.
 - **Rust**: `cargo build`, `cargo clippy --all-targets --all-features`, `cargo fmt`
 - **Web**: `bun install`, `bun run build`, `bun run lint`, `bun run format`
 - **Test All**: `cargo test`, `bun test web/tests`
@@ -34,3 +35,20 @@ Strict layering — do not skip layers:
 4. **Services** (`frontend/src/services/`) are thin wrappers around `fetch` / streams. **Only stores import services** (not hooks or components).
 
 This avoids duplicated data logic, keeps ESLint `react-hooks/*` rules satisfied, and makes testing straightforward.
+
+### Realtime freshness contract — no stale data anywhere
+
+Every entity that flows through REST is mirrored via SurrealDB live queries → SSE on `/api/live/{topic}` → the entity-graph store (`@prometheus-ags/prometheus-entity-management`). The 10 enrolled topics are listed in `src/uar/realtime/mod.rs::EntityTopic::ALL` and `frontend/src/lib/realtime/topics.ts::UAR_TOPICS` (CamelCase must match the entity types registered in `frontend/src/entities/schemas.ts`).
+
+Each Zustand admin hook uses [`useGraphBridge`](frontend/src/lib/realtime/use-graph-bridge.ts) to refresh its store whenever the graph mutates. The flow:
+
+```
+DB write → SurrealDB live event → LiveQueryBus → SSE → entity-graph upsert → bridge fires → store.load() → component re-render
+```
+
+When adding a new entity surface:
+1. Add the topic to `EntityTopic` + register the schema in `entities/schemas.ts`.
+2. Either consume directly via `useEntity` / `useEntityList`, **or** keep a Zustand store and call `useGraphBridge(["EntityType"], load)` inside its admin hook.
+3. Update [`docs/migration-stale-data-audit.md`](docs/migration-stale-data-audit.md).
+
+High-frequency mutations (skill toggle, agent enable, provider set-default) use **optimistic patches**: the store applies the change instantly and rolls back on server rejection; the SSE bridge reconciles the authoritative state afterward.
