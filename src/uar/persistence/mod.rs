@@ -107,6 +107,12 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     /// List documents in a knowledge base.
     async fn list_documents(&self, kb_id: &str) -> Result<Vec<KnowledgeDocument>>;
 
+    /// Count documents in a knowledge base. Default impl uses `list_documents`;
+    /// providers should override with a backend-native COUNT query for efficiency.
+    async fn count_documents(&self, kb_id: &str) -> Result<usize> {
+        Ok(self.list_documents(kb_id).await?.len())
+    }
+
     /// Update document processing status.
     async fn update_document_status(&self, doc_id: &str, status: &DocumentStatus) -> Result<()>;
 

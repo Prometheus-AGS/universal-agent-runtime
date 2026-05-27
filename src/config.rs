@@ -299,6 +299,14 @@ pub struct PersistenceConfig {
     /// Ignored for embedded (file/rocksdb) endpoints.
     #[serde(default)]
     pub surreal_pass: Option<String>,
+    /// Optional SurrealDB namespace for UAR persistence (default `uar`).
+    /// Set this to share a namespace with another Surreal-backed service
+    /// (e.g. surreal-memory-server uses `memory`).
+    #[serde(default)]
+    pub surreal_ns: Option<String>,
+    /// Optional SurrealDB database name for UAR persistence (default `uar`).
+    #[serde(default)]
+    pub surreal_db: Option<String>,
 }
 
 /// Configuration for file processing and uploads.

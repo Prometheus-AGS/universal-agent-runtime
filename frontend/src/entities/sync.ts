@@ -1,7 +1,6 @@
 // frontend/src/entities/sync.ts
 import {
   getRealtimeManager,
-  createWebSocketAdapter,
   createElectricAdapter,
 } from "@prometheus-ags/prometheus-entity-management";
 import type {
@@ -401,33 +400,27 @@ export async function initSyncTransport(): Promise<() => void> {
     }
   }
 
-  // ── SurrealDB remote -> WebSocket ────────────────────────────────
+  // ── SurrealDB remote -> UAR LiveQueryBus over SSE ─────────────────
+  //
+  // UAR fronts the SurrealDB live-query feed with per-topic SSE endpoints
+  // at /api/live/{topic}. This keeps the JWT auth gate intact (vs. a direct
+  // WebSocket to Surreal, which would need its own auth) and gives us one
+  // adapter per entity topic so subscribers don't share a single channel.
   if (
     info.provider === "surreal" &&
-    info.mode === "remote" &&
-    info.database_url
+    info.mode === "remote"
   ) {
     try {
-      // Convert http(s) URL to ws(s) for SurrealDB RPC endpoint
-      const wsUrl = info.database_url.replace(/^http/, "ws") + "/rpc";
-
-      const adapter = createWebSocketAdapter({
-        url: wsUrl,
-        parseMessage: parseSurrealMessage,
-        // TODO: If SurrealDB requires authentication, add a protocols or
-        // custom header-based auth mechanism here once the backend exposes
-        // a sync token endpoint.
-        reconnectBaseDelay: 1000,
-        maxReconnectAttempts: 10,
-        pingInterval: 30_000,
-        pingMessage: JSON.stringify({ method: "ping" }),
-      });
-
-      const unregister = manager.register(adapter, channels);
-      return unregister;
+      const { createAllUarAdapters } = await import("@/lib/realtime/topics");
+      const unregisters = createAllUarAdapters().map((adapter) =>
+        manager.register(adapter, channels),
+      );
+      return () => {
+        for (const u of unregisters) u();
+      };
     } catch (err) {
       console.warn(
-        "[sync] WebSocket adapter failed, falling back to REST polling",
+        "[sync] UAR SSE adapters failed, falling back to REST polling",
         err,
       );
       return () => {};

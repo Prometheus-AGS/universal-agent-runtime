@@ -1,11 +1,41 @@
 {
-  "phase": "runtime-provider-protocol-hardening",
+  "phase": null,
   "change": null,
-  "status": "assessment_ready",
-  "previousPhase": "runtime-console-validation-hardening",
-  "currentTask": "run KBD assessment for runtime-provider-protocol-hardening",
+  "status": "awaiting_new_phase",
+  "previousPhase": "readme-architecture-diagram",
+  "currentTask": "select next phase via /kbd-new-phase",
   "nextPendingChange": null,
-  "sourceTool": "codex",
-  "exactNextCommand": "/kbd-assess runtime-provider-protocol-hardening",
-  "updatedAt": "2026-04-26T04:44:28-05:00"
+  "sourceTool": "claude-code",
+  "exactNextCommand": "/kbd-new-phase",
+  "entity_migration_status": "COMPLETE — implemented, guarded, documented",
+  "bridge_pattern_status": "PERMANENTLY RETIRED 2026-05-27 (grep-gate enforced)",
+  "ci_gates_status": "informational; promote to required after one clean week",
+  "documentation_status": "README architecture section authored; symmetric links to audit doc; canonical patterns documented",
+  "session_arc": [
+    "settings-store-retirement (100%)",
+    "add-push-channels-backend (100%)",
+    "thread-topic-chat-sidebar (100%)",
+    "ci-frontend-tests (100%)",
+    "readme-architecture-diagram (100%)"
+  ],
+  "session_arc_outcome": "Five sequential phases, all 100% MET. Entity migration project structurally complete, CI-guarded, and documented at top-of-funnel.",
+  "carryOver": {
+    "browser_smoke": "still owed — manual two-tab walkthrough covering 8+ migrated pages",
+    "knowledge_page_aesthetic": "deferred",
+    "skill_plugin_installs": "user-interactive",
+    "playwright_screenshots": "needs live dev server",
+    "ci_gates_promote_to_required": "after one clean merge cycle on main"
+  },
+  "recommendedNext": [
+    "browser-smoke-walkthrough (manual, requires user)",
+    "knowledge-page-aesthetic-pass (visual-only)",
+    "runs-checkpoint-persistence-realtime (net-new feature)",
+    "promote-ci-gates-to-required (manual settings change after 1 week)"
+  ],
+  "nextPhaseSeeds": [
+    "browser-smoke-walkthrough-second-pass",
+    "knowledge-page-aesthetic-pass",
+    "runs-checkpoint-persistence-realtime"
+  ],
+  "updatedAt": "2026-05-27T13:55:00-05:00"
 }

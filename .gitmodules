@@ -1,3 +1,9 @@
 [submodule "models.dev"]
 	path = models.dev
 	url = https://github.com/Know-Me-Tools/models.dev.git
+[submodule "crates/prometheus-skill-system"]
+	path = crates/prometheus-skill-system
+	url = git@github.com:Prometheus-AGS/prometheus-skill-system.git
+[submodule "frontend/packages/prometheus-entity-management"]
+	path = frontend/packages/prometheus-entity-management
+	url = git@github.com:Prometheus-AGS/prometheus-entity-management.git

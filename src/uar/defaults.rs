@@ -55,7 +55,14 @@ pub fn default_agent() -> AgentArtifact {
         },
         memory: AgentMemoryConfig {
             conversation: ConversationMemory { enabled: true },
-            kb: KbMemory::default(),
+            // Enable the default knowledge base so freshly-uploaded documents are
+            // discoverable in the chat KB panel without manual wiring. An empty
+            // `knowledge_bases` list resolves to the system-default KB.
+            kb: KbMemory {
+                enabled: true,
+                knowledge_bases: vec![],
+                citation_required: false,
+            },
         },
         tools: AgentToolConfig { bundles: vec![] },
         ui: AgentUiConfig {

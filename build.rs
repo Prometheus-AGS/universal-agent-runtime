@@ -450,15 +450,19 @@ fn build_frontend() {
     println!("cargo:rerun-if-changed=frontend/src");
     println!("cargo:rerun-if-changed=frontend/public");
 
-    let pm = if which("bun") { "bun" } else { "npm" };
+    // Frontend toolchain preference: pnpm (canonical, supports workspaces) →
+    // bun (legacy) → npm. The frontend was migrated to pnpm-workspaces to
+    // embed `@prometheus-ags/prometheus-entity-management` as a submodule
+    // under `frontend/packages/`.
+    let (pm, install_args, build_args): (&str, &[&str], &[&str]) = if which("pnpm") {
+        ("pnpm", &["install", "--frozen-lockfile"], &["run", "build"])
+    } else if which("bun") {
+        ("bun", &["install", "--frozen-lockfile"], &["run", "build"])
+    } else {
+        ("npm", &["ci", "--prefer-offline"], &["run", "build"])
+    };
 
     println!("cargo:warning=Installing frontend dependencies with {pm}…");
-
-    let install_args: &[&str] = if pm == "bun" {
-        &["install", "--frozen-lockfile"]
-    } else {
-        &["ci", "--prefer-offline"]
-    };
 
     let install_status = Command::new(pm)
         .args(install_args)
@@ -474,7 +478,7 @@ fn build_frontend() {
     println!("cargo:warning=Building frontend assets with {pm} run build…");
 
     let build_status = Command::new(pm)
-        .args(["run", "build"])
+        .args(build_args)
         .current_dir(&frontend_dir)
         .status()
         .unwrap_or_else(|e| panic!("Failed to run `{pm} run build`: {e}"));

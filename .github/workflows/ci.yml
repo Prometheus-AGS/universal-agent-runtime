@@ -110,17 +110,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: latest
-      
-      - name: Install dependencies
-        run: bun install
-      
+          version: 10.33.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install workspace
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
       - name: Type check
-        run: bun run check
-      
-      - name: Build assets
-        run: bun run build
+        run: pnpm --filter ./frontend typecheck
+
+      - name: Vitest contract tests
+        run: pnpm --filter ./frontend test
+
+      - name: Build frontend
+        run: pnpm --filter ./frontend build
+
+      - name: CI grep gates (architectural invariants + aesthetic contract)
+        run: bash scripts/ci-grep-gates.sh

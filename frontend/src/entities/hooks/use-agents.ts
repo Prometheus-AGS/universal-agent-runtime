@@ -66,7 +66,7 @@ export function useAgent(id: string | undefined): AgentEntity | null {
  * infinite-render bug).
  */
 export function useAgentsByStatus(
-  status: AgentEntity["status"],
+  status: string,
 ): AgentEntity[] {
   return useGraphStore((state) => {
     const agentMap = state.entities["Agent"];

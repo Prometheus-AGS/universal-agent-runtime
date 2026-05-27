@@ -1,15 +1,48 @@
-import type { FC } from "react";
+import { type FC, useEffect, useRef, useState } from "react";
 import { RefreshCw, Server, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
-import { useMcpHealth } from "@/hooks/use-mcp-health";
-import type { McpServerHealth } from "@/stores/mcp-health-store";
+import { useMcpStatus } from "@/entities/hooks/use-mcp-status";
+import { loadMcpStatusIntoGraph, type McpStatusRow } from "@/entities/fetchers/mcp-status";
+
+const AUTO_REFRESH_MS = 30_000;
 
 export const McpHealthPage: FC = () => {
-  const { servers, loading, error, load } = useMcpHealth();
+  const view = useMcpStatus();
+  const servers = view.items as McpStatusRow[];
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const statusDot = (status: McpServerHealth["status"]) => {
+  const load = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      await loadMcpStatusIntoGraph();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Mount: initial fetch + 30 s polling (no SSE; health probes are
+  // server-process-local).
+  useEffect(() => {
+    void load();
+    intervalRef.current = setInterval(() => {
+      void load();
+    }, AUTO_REFRESH_MS);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const loading = refreshing && servers.length === 0;
+
+  const statusDot = (status: McpStatusRow["status"]) => {
     const color =
       status === "connected"
         ? "bg-success"
@@ -33,7 +66,7 @@ export const McpHealthPage: FC = () => {
             Tool Server Health
           </h2>
           <p className="font-mono text-xs text-muted-foreground">
-            {servers.length} servers &middot; auto-refresh 30s
+            {servers.length} servers · auto-refresh 30s
           </p>
         </div>
         <Button
@@ -42,7 +75,7 @@ export const McpHealthPage: FC = () => {
           onClick={() => void load()}
           className="gap-1.5"
         >
-          <RefreshCw size={13} className={cn(loading && "animate-spin")} />
+          <RefreshCw size={13} className={cn(refreshing && "animate-spin")} />
           Refresh
         </Button>
       </div>

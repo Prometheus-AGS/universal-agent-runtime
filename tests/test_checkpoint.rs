@@ -10,7 +10,7 @@ async fn make_db() -> (Arc<dyn PersistenceLayer>, tempfile::TempDir) {
     let dir = tempfile::tempdir().expect("tempdir");
     let url = format!("surrealkv://{}", dir.path().to_str().unwrap());
     let provider = Arc::new(
-        SurrealDbProvider::new(&url, None, None)
+        SurrealDbProvider::new(&url, None, None, None, None)
             .await
             .expect("SurrealDB init failed"),
     );

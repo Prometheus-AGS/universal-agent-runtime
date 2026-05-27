@@ -3,6 +3,69 @@
 @tailwind utilities;
 
 @layer base {
+  /* ──────────────────────────────────────────────────────────────────────
+   * Admin terminal aesthetic
+   *
+   * Scoped to :root[data-admin-theme="terminal"] so it never bleeds into
+   * the chat surface. See docs/admin-aesthetic-spec.md for the full contract.
+   * ────────────────────────────────────────────────────────────────────── */
+  :root[data-admin-theme="terminal"] {
+    /* Surfaces */
+    --terminal-bg: 165 18% 5%;
+    --terminal-surface: 168 14% 8%;
+    --terminal-fg: 155 14% 80%;
+    --terminal-fg-dim: 155 10% 55%;
+
+    /* Accents — CRT phosphor */
+    --phosphor: 140 100% 75%;
+    --phosphor-glow: 140 100% 65%;
+    --amber: 35 100% 64%;
+    --signal-red: 0 100% 68%;
+
+    /* Lines */
+    --terminal-line: 155 14% 80% / 0.18;
+    --terminal-line-strong: 155 14% 80% / 0.34;
+
+    /* Type */
+    --font-mono-display: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+    --font-mono-body: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
+
+    /* Density */
+    --size-body: 13px;
+    --size-chip: 12px;
+    --size-headline: 20px;
+    --leading-body: 1.5;
+    --leading-headline: 1.2;
+  }
+
+  /* Loading cursor flicker — used by <LoadingCursor> */
+  @keyframes terminal-cursor-blink {
+    0%, 41% { opacity: 1; }
+    42%, 100% { opacity: 0; }
+  }
+
+  /* Scanline overlay — optional, applied via .terminal-scanlines on a container */
+  .terminal-scanlines {
+    position: relative;
+  }
+  .terminal-scanlines::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 1px,
+      hsl(var(--terminal-fg) / 0.06) 1px,
+      hsl(var(--terminal-fg) / 0.06) 2px
+    );
+    mix-blend-mode: overlay;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .terminal-scanlines::after { display: none; }
+  }
+
   :root {
     /* UAR Dark Theme (Flat 2.0 — travisjames.ai brand) */
     --background: 214 28% 10%;         /* #0F1923 deep navy */

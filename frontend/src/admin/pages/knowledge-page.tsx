@@ -36,8 +36,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { loadKnowledgeBasesIntoGraph } from "@/entities/fetchers/knowledge";
-import { useKnowledgeAdmin } from "@/hooks/use-knowledge-admin";
+import { ErrorBar } from "@/components/admin/error-bar";
+import { LoadingCursor } from "@/components/admin/loading-cursor";
+import { useKnowledgePage } from "@/entities/hooks/use-knowledge-page";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { cn, friendlyError } from "@/lib/utils";
 import type { UarKnowledgeBase, UarKnowledgeDocument } from "@/types";
@@ -78,12 +79,7 @@ export const KnowledgePage: FC = () => {
 		clearSearch,
 		clearDocView,
 		setUploadProgress,
-	} = useKnowledgeAdmin();
-
-	// Populate the entity graph alongside the legacy store.
-	useEffect(() => {
-		void loadKnowledgeBasesIntoGraph();
-	}, []);
+	} = useKnowledgePage();
 
 	const [showAdd, setShowAdd] = useState(false);
 	const [form, setForm] = useState({ name: "", description: "" });

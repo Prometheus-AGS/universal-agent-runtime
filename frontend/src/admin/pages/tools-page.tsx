@@ -4,19 +4,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminEmptyState, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { ToolDetailPanel } from "@/admin/components/tool-detail-panel";
+import { useEntityList } from "@prometheus-ags/prometheus-entity-management";
 import { cn } from "@/lib/utils";
-import { useToolsDiscovery } from "@/hooks/use-tools-discovery";
-import { loadToolsIntoGraph } from "@/entities/fetchers/tools";
-import type { ToolWithNs } from "@/stores/tools-discovery-store";
+import { loadToolsIntoGraph, type ToolGraphRow } from "@/entities/fetchers/tools";
+
+// Page consumes the loose graph row shape with `_ns`/`_key`/`_builtin`.
+type ToolWithNs = ToolGraphRow;
 
 export const ToolsPage: FC = () => {
-  const { tools, loading, error, load } = useToolsDiscovery();
+  const view = useEntityList<ToolGraphRow>("Tool");
+  const tools = view.items as ToolWithNs[];
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  // Populate the entity graph alongside the legacy store.
+  const load = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      await loadToolsIntoGraph();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Tool registry is static after server startup — one-time fetch on mount.
   useEffect(() => {
-    void loadToolsIntoGraph();
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loading = refreshing && tools.length === 0;
   const [selectedTool, setSelectedTool] = useState<ToolWithNs | null>(null);
 
   const groups = tools

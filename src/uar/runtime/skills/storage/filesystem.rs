@@ -109,6 +109,8 @@ impl FilesystemStorageProvider {
             enabled: true,
             provider_id: self.id.clone(),
             execution_config: Default::default(),
+            kind: crate::uar::domain::skills::SkillKind::Manifest,
+            origin: Default::default(),
         };
 
         info!("Loaded skill from filesystem: {}", skill.title);

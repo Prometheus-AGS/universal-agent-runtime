@@ -1,0 +1,19 @@
+{
+  "phase": "tool-mcp-status-push-channels",
+  "createdAt": "2026-05-27T12:10:00-05:00",
+  "updatedAt": "2026-05-27T12:10:00-05:00",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": false,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "scope_note": "spans backend (Rust: EntityTopic enum, LiveQueryBus.publish, MCP registry hooks, health prober hooks) AND frontend (Tool/McpStatus direct migration + bridge deletion). Substantial — consider splitting into two phases.",
+  "open_questions_pending": false,
+  "superseded_by": [
+    "add-push-channels-backend",
+    "migrate-tools-and-mcp-frontend"
+  ],
+  "superseded_at": "2026-05-27T12:15:00-05:00",
+  "superseded_reason": "user opted to split into smaller backend-then-frontend phases (assessment q1)",
+  "recommended_split": "Optional: split into add-push-channels-backend + migrate-tools-and-mcp-frontend"
+}

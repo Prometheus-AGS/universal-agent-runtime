@@ -4,7 +4,6 @@ import {
     Check,
     ChevronLeft,
     ChevronRight,
-    Loader2,
     RefreshCw,
     Search,
     Trash2,
@@ -21,27 +20,33 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AdminEmptyInline, AdminError, AdminTableSkeleton } from "@/admin/components/admin-states";
+import { LoadingCursor } from "@/components/admin/loading-cursor";
+import { EmptyFrame } from "@/components/admin/empty-frame";
+import { ErrorBar } from "@/components/admin/error-bar";
 import { cn } from "@/lib/utils";
-import { useMemoryAdmin } from "@/hooks/use-memory-admin";
-import type { MemoryItem } from "@/services/memory-api";
+import { useMemory, useMemoryStats } from "@/entities/hooks/use-memory";
+import { loadMemoryIntoGraph, loadMemoryStatsIntoGraph } from "@/entities/fetchers/memory";
+import { optimisticRemove } from "@/lib/realtime/optimistic";
+import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
+import { bulkDeleteMemoriesApi, deleteMemoryApi, type MemoryItem } from "@/services/memory-api";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-const SCOPE_COLORS: Record<string, string> = {
-    Global: "bg-purple-500/15 text-purple-400 border-purple-500/30",
-    Agent: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-    User: "bg-green-500/15 text-green-400 border-green-500/30",
-    Session: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-    Task: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+// Terminal-styled scope chips — single palette, accent variants.
+const SCOPE_TONE: Record<string, string> = {
+    Global: "border-[hsl(var(--phosphor)/0.5)] text-[hsl(var(--phosphor))]",
+    Agent: "border-[hsl(var(--phosphor)/0.5)] text-[hsl(var(--phosphor))]",
+    User: "border-[hsl(var(--terminal-fg)/0.4)] text-[hsl(var(--terminal-fg))]",
+    Session: "border-[hsl(var(--amber)/0.5)] text-[hsl(var(--amber))]",
+    Task: "border-[hsl(var(--signal-red)/0.5)] text-[hsl(var(--signal-red))]",
 };
 
 function ScopeBadge({ scope }: { scope: string }) {
-    const cls = SCOPE_COLORS[scope] ?? "bg-muted text-muted-foreground border-border";
+    const tone = SCOPE_TONE[scope] ?? "border-[hsl(var(--terminal-line-strong))] text-[hsl(var(--terminal-fg-dim))]";
     return (
-        <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-xs font-medium", cls)}>
+        <span className={cn("inline-flex items-center rounded border bg-transparent px-2 py-0.5 font-mono text-xs lowercase tracking-tight", tone)}>
             {scope}
         </span>
     );
@@ -62,19 +67,15 @@ export const MemoryPage: FC = () => {
     const [searchQ, setSearchQ] = useState("");
     const [searchMode, setSearchMode] = useState(false);
 
-    const {
-        items,
-        stats,
-        loading,
-        error,
-        deleting,
-        load,
-        loadStats,
-        deleteOne,
-        bulkDelete,
-    } = useMemoryAdmin();
+    // Reads from the entity graph (hydrated by loadMemoryIntoGraph; SSE keeps fresh).
+    const view = useMemory();
+    const items = view.items as MemoryItem[];
+    const stats = useMemoryStats();
 
-    // Selection / detail
+    // Local UI state
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
     const [selected, setSelected] = useState<MemoryItem | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [showBulkDelete, setShowBulkDelete] = useState(false);
@@ -84,115 +85,139 @@ export const MemoryPage: FC = () => {
     const [page, setPage] = useState(0);
     const PAGE_SIZE = 25;
 
-    const runLoad = () => {
+    const runLoad = async () => {
         setPage(0);
-        void load({ userId, agentId, searchQ, searchMode });
+        setLoading(true);
+        setError(null);
+        try {
+            await loadMemoryIntoGraph({ userId, agentId, searchQ, searchMode });
+            void loadMemoryStatsIntoGraph();
+        } catch (e) {
+            setError((e as Error).message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
-        void load({ userId: "", agentId: "", searchQ: "", searchMode: false });
-        void loadStats();
-    }, [load, loadStats]);
+        void runLoad();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const deleteOneRow = async (id: string) => {
+        setDeleting(true);
+        setError(null);
         try {
-            await deleteOne(id);
+            await optimisticRemove("Memory", id, async () => {
+                await deleteMemoryApi(id);
+            });
             if (selected?.id === id) setSelected(null);
             setSavedFlash(true);
             setTimeout(() => setSavedFlash(false), 2500);
-        } catch {
-            /* store sets error */
+            void loadMemoryStatsIntoGraph();
+        } catch (e) {
+            setError((e as Error).message);
         } finally {
+            setDeleting(false);
             setDeleteConfirm(null);
         }
     };
 
     const runBulkDelete = async () => {
+        setDeleting(true);
+        setError(null);
+        // Snapshot all visible items for rollback on failure.
+        const snapshots: MemoryItem[] = [...items];
+        const graph = useGraphStore.getState();
+        for (const s of snapshots) graph.removeEntity("Memory", s.id);
         try {
-            await bulkDelete(userId, agentId);
+            await bulkDeleteMemoriesApi(userId, agentId);
             setSelected(null);
             setSavedFlash(true);
             setTimeout(() => setSavedFlash(false), 2500);
-        } catch {
-            /* store sets error */
+            void loadMemoryStatsIntoGraph();
+        } catch (e) {
+            // Rollback all snapshots.
+            const restore = useGraphStore.getState();
+            for (const s of snapshots) restore.upsertEntity("Memory", s.id, s as unknown as Record<string, unknown>);
+            setError((e as Error).message);
+        } finally {
+            setDeleting(false);
         }
     };
 
-    // -----------------------------------------------------------------------
-    // Pagination slice
-    // -----------------------------------------------------------------------
     const start = page * PAGE_SIZE;
     const end = start + PAGE_SIZE;
     const pageItems = items.slice(start, end);
     const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
 
-    // -----------------------------------------------------------------------
-    // Render
-    // -----------------------------------------------------------------------
-
     return (
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden font-mono text-[13px] text-[hsl(var(--terminal-fg))]">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+            <div className="flex items-center justify-between border-b border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-surface))] px-6 py-4">
                 <div className="flex items-center gap-3">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15">
-                        <Brain size={16} className="text-primary" />
+                    <div className="flex size-8 items-center justify-center border border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-bg))]">
+                        <Brain size={16} className="text-[hsl(var(--phosphor))]" />
                     </div>
                     <div>
-                        <h2 className="font-display text-lg font-semibold text-foreground">Memory Browser</h2>
-                        <p className="font-mono text-xs text-muted-foreground">
-                            {stats ? `${stats.total} total memories` : "Loading stats…"}
+                        <h2 className="text-[20px] font-medium tracking-tight">memory browser</h2>
+                        <p className="text-xs text-[hsl(var(--terminal-fg-dim))]">
+                            {stats ? `${stats.total} total memories` : "loading stats"}
+                            {loading && <LoadingCursor className="ml-2" />}
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => runLoad()} disabled={loading} className="gap-1.5">
-                        <RefreshCw size={13} className={cn(loading && "animate-spin")} />
-                        Refresh
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void runLoad()}
+                        disabled={loading}
+                        className="gap-1.5 border border-[hsl(var(--terminal-line-strong))] bg-transparent text-[hsl(var(--terminal-fg))] hover:bg-[hsl(var(--phosphor)/0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--phosphor-glow))]"
+                    >
+                        <RefreshCw size={13} className={cn(loading && "animate-spin")} />refresh
                     </Button>
                     <Button
-                        variant="destructive"
                         size="sm"
                         onClick={() => setShowBulkDelete(true)}
                         disabled={deleting || items.length === 0}
-                        className="gap-1.5"
+                        className="gap-1.5 border border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.12)] text-[hsl(var(--signal-red))] hover:bg-[hsl(var(--signal-red)/0.18)]"
                     >
-                        <Trash2 size={13} />
-                        Delete All Visible
+                        <Trash2 size={13} />delete all visible
                     </Button>
                 </div>
             </div>
 
             {/* Stats Bar */}
             {stats?.by_scope != null && Object.keys(stats.by_scope).length > 0 && (
-                <div className="flex items-center gap-3 border-b border-border bg-muted/30 px-6 py-2">
+                <div className="flex items-center gap-3 border-b border-[hsl(var(--terminal-line))] bg-[hsl(var(--terminal-bg))] px-6 py-2">
                     {Object.entries(stats.by_scope).map(([scope, count]) => (
                         <div key={scope} className="flex items-center gap-1.5">
                             <ScopeBadge scope={scope} />
-                            <span className="font-mono text-xs text-muted-foreground">{count}</span>
+                            <span className="text-xs text-[hsl(var(--terminal-fg-dim))]">{count}</span>
                         </div>
                     ))}
                 </div>
             )}
 
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3 sm:gap-3 sm:px-6">
-                <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 flex-1 min-w-[200px] max-w-xs">
-                    <Search size={13} className="shrink-0 text-muted-foreground" />
+            <div className="flex flex-wrap items-center gap-2 border-b border-[hsl(var(--terminal-line))] bg-[hsl(var(--terminal-bg))] px-4 py-3 sm:gap-3 sm:px-6">
+                <div className="flex flex-1 min-w-[200px] max-w-xs items-center gap-2 border border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-surface))] px-3 py-1.5">
+                    <Search size={13} className="shrink-0 text-[hsl(var(--terminal-fg-dim))]" />
                     <input
                         value={searchQ}
                         onChange={(e) => setSearchQ(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") { setSearchMode(!!searchQ); runLoad(); } }}
-                        placeholder="Search memories by meaning..."
-                        className="flex-1 bg-transparent font-mono text-xs outline-none placeholder:text-muted-foreground/50"
+                        onKeyDown={(e) => { if (e.key === "Enter") { setSearchMode(!!searchQ); void runLoad(); } }}
+                        placeholder="search memories by meaning…"
+                        className="flex-1 bg-transparent font-mono text-xs text-[hsl(var(--terminal-fg))] outline-none placeholder:text-[hsl(var(--terminal-fg-dim))]"
                     />
                     {searchQ && (
                         <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
-                            onClick={() => { setSearchQ(""); setSearchMode(false); runLoad(); }}
+                            className="h-6 w-6 shrink-0 text-[hsl(var(--terminal-fg-dim))] hover:text-[hsl(var(--terminal-fg))]"
+                            onClick={() => { setSearchQ(""); setSearchMode(false); void runLoad(); }}
                             aria-label="Clear search"
                         >
                             ×
@@ -202,139 +227,116 @@ export const MemoryPage: FC = () => {
                 <Input
                     value={userId}
                     onChange={(e) => setUserId(e.target.value)}
-                    placeholder="Filter by User ID"
-                    className="min-w-[140px] max-w-[180px] font-mono text-xs"
+                    placeholder="filter by user id"
+                    className="min-w-[140px] max-w-[180px] border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-surface))] font-mono text-xs text-[hsl(var(--terminal-fg))] placeholder:text-[hsl(var(--terminal-fg-dim))]"
                 />
                 <Input
                     value={agentId}
                     onChange={(e) => setAgentId(e.target.value)}
-                    placeholder="Filter by Agent ID"
-                    className="min-w-[140px] max-w-[180px] font-mono text-xs"
+                    placeholder="filter by agent id"
+                    className="min-w-[140px] max-w-[180px] border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-surface))] font-mono text-xs text-[hsl(var(--terminal-fg))] placeholder:text-[hsl(var(--terminal-fg-dim))]"
                 />
-                <Button size="sm" onClick={() => { setSearchMode(!!searchQ); runLoad(); }} className="gap-1.5">
-                    Apply
+                <Button
+                    size="sm"
+                    onClick={() => { setSearchMode(!!searchQ); void runLoad(); }}
+                    className="gap-1.5 border border-[hsl(var(--phosphor))] bg-[hsl(var(--phosphor)/0.12)] text-[hsl(var(--phosphor))] hover:bg-[hsl(var(--phosphor)/0.18)]"
+                >
+                    apply
                 </Button>
             </div>
 
             {/* Banners */}
             {savedFlash && (
-                <div className="mx-6 mt-3 flex items-center gap-2 rounded-lg border border-success/40 bg-success/10 px-4 py-2">
-                    <Check size={13} className="text-success" />
-                    <span className="font-mono text-xs text-success">Deleted successfully</span>
+                <div className="mx-6 mt-3 flex items-center gap-2 border border-[hsl(var(--phosphor)/0.4)] bg-[hsl(var(--phosphor)/0.08)] px-4 py-2 text-xs text-[hsl(var(--phosphor))]">
+                    <Check size={13} />deleted successfully
                 </div>
             )}
-            {error && (
-                <div className="mx-6 mt-3"><AdminError error={error} /></div>
-            )}
+            {error && <ErrorBar code="MEMORY" message={error} onDismiss={() => setError(null)} className="mx-6 mt-3" />}
 
             {/* Content: table + detail panel */}
             <div className="flex flex-1 overflow-hidden">
-                {/* Table */}
                 <div className="flex flex-1 flex-col overflow-hidden">
                     {loading && items.length === 0 ? (
-                        <div className="p-6">
-                            <AdminTableSkeleton rows={6} cols={6} />
-                        </div>
+                        <div className="p-6"><LoadingCursor label="loading memories" /></div>
                     ) : pageItems.length === 0 ? (
                         <div className="flex flex-1 items-center justify-center">
-                            <AdminEmptyInline>
-                                {items.length === 0 ? "No memories found" : "No items on this page"}
-                            </AdminEmptyInline>
+                            <EmptyFrame
+                                title={items.length === 0 ? "no memories found" : "no items on this page"}
+                                hint={items.length === 0 ? "adjust filters above or wait for agents to write memories" : "navigate back to a populated page"}
+                            />
                         </div>
                     ) : (
                         <>
                             <div className="flex-1 overflow-auto">
                                 <table className="min-w-[700px] w-full text-left">
-                                    <thead className="sticky top-0 bg-card border-b border-border">
+                                    <thead className="sticky top-0 border-b border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-surface))]">
                                         <tr>
-                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">Scope</th>
-                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">Content</th>
-                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">Agent</th>
-                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</th>
-                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">Importance</th>
-                                            <th className="px-4 py-2 font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">Created</th>
-                                            <th className="px-4 py-2" />
+                                            {["scope", "content", "agent", "user", "importance", "created", ""].map((h, i) => (
+                                                <th key={i} className="px-4 py-2 font-mono text-xs font-medium uppercase tracking-wider text-[hsl(var(--terminal-fg-dim))]">{h}</th>
+                                            ))}
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-border">
+                                    <tbody className="divide-y divide-[hsl(var(--terminal-line))]">
                                         {pageItems.map((m) => {
                                             const isRowSelected = selected?.id === m.id;
                                             return (
-                                            <tr
-                                                key={m.id}
-                                                onClick={() => setSelected(isRowSelected ? null : m)}
-                                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(isRowSelected ? null : m); } }}
-                                                tabIndex={0}
-                                                aria-current={isRowSelected ? "true" : undefined}
-                                                className={cn(
-                                                    "cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-                                                    isRowSelected ? "bg-accent" : "hover:bg-muted/40"
-                                                )}
-                                            >
-                                                <td className="px-4 py-2.5"><ScopeBadge scope={m.scope} /></td>
-                                                <td className="px-4 py-2.5 font-body text-sm text-foreground max-w-xs">
-                                                    {truncate(m.content, 80)}
-                                                </td>
-                                                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{m.agent_id ?? "—"}</td>
-                                                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{m.user_id ?? "—"}</td>
-                                                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
-                                                    {m.importance.toFixed(2)}
-                                                </td>
-                                                <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                                                    {new Date(m.created_at).toLocaleDateString()}
-                                                </td>
-                                                <td className="px-4 py-2.5">
-                                                    {deleteConfirm === m.id ? (
-                                                        <div className="flex items-center gap-1">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="destructive"
-                                                                className="h-6 px-2 text-xs"
-                                                                disabled={deleting}
-                                                                onClick={(e) => { e.stopPropagation(); void deleteOneRow(m.id); }}
-                                                            >
-                                                                Confirm
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                className="h-6 px-2 text-xs"
-                                                                onClick={(e) => { e.stopPropagation(); setDeleteConfirm(null); }}
-                                                            >
-                                                                Cancel
-                                                            </Button>
-                                                        </div>
-                                                    ) : (
-                                                        <Button
-                                                            size="icon"
-                                                            variant="ghost"
-                                                            className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-                                                            onClick={(e) => { e.stopPropagation(); setDeleteConfirm(m.id); }}
-                                                        >
-                                                            <Trash2 size={13} />
-                                                        </Button>
+                                                <tr
+                                                    key={m.id}
+                                                    onClick={() => setSelected(isRowSelected ? null : m)}
+                                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(isRowSelected ? null : m); } }}
+                                                    tabIndex={0}
+                                                    aria-current={isRowSelected ? "true" : undefined}
+                                                    className={cn(
+                                                        "cursor-pointer transition-colors duration-[160ms] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[hsl(var(--phosphor-glow))]",
+                                                        isRowSelected ? "bg-[hsl(var(--phosphor)/0.08)]" : "hover:bg-[hsl(var(--terminal-fg)/0.04)]",
                                                     )}
-                                                </td>
-                                            </tr>
+                                                >
+                                                    <td className="px-4 py-2.5"><ScopeBadge scope={m.scope} /></td>
+                                                    <td className="max-w-xs px-4 py-2.5 text-sm text-[hsl(var(--terminal-fg))]">{truncate(m.content, 80)}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-[hsl(var(--terminal-fg-dim))]">{m.agent_id ?? "—"}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-[hsl(var(--terminal-fg-dim))]">{m.user_id ?? "—"}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-[hsl(var(--terminal-fg-dim))]">{m.importance.toFixed(2)}</td>
+                                                    <td className="whitespace-nowrap px-4 py-2.5 text-xs text-[hsl(var(--terminal-fg-dim))]">{new Date(m.created_at).toLocaleDateString()}</td>
+                                                    <td className="px-4 py-2.5">
+                                                        {deleteConfirm === m.id ? (
+                                                            <div className="flex items-center gap-1">
+                                                                <Button
+                                                                    size="sm"
+                                                                    className="h-6 border border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.12)] px-2 text-xs text-[hsl(var(--signal-red))]"
+                                                                    disabled={deleting}
+                                                                    onClick={(e) => { e.stopPropagation(); void deleteOneRow(m.id); }}
+                                                                >
+                                                                    confirm
+                                                                </Button>
+                                                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs text-[hsl(var(--terminal-fg-dim))]" onClick={(e) => { e.stopPropagation(); setDeleteConfirm(null); }}>cancel</Button>
+                                                            </div>
+                                                        ) : (
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                className="h-7 w-7 text-[hsl(var(--terminal-fg-dim))] hover:text-[hsl(var(--signal-red))]"
+                                                                onClick={(e) => { e.stopPropagation(); setDeleteConfirm(m.id); }}
+                                                                aria-label="Delete memory"
+                                                            >
+                                                                <Trash2 size={13} />
+                                                            </Button>
+                                                        )}
+                                                    </td>
+                                                </tr>
                                             );
                                         })}
                                     </tbody>
                                 </table>
                             </div>
 
-                            {/* Pagination */}
-                            <div className="flex items-center justify-between border-t border-border px-4 py-2">
-                                <span className="font-mono text-xs text-muted-foreground">
-                                    {start + 1}–{Math.min(end, items.length)} of {items.length}
-                                </span>
+                            <div className="flex items-center justify-between border-t border-[hsl(var(--terminal-line))] px-4 py-2">
+                                <span className="text-xs text-[hsl(var(--terminal-fg-dim))]">{start + 1}–{Math.min(end, items.length)} of {items.length}</span>
                                 <div className="flex items-center gap-1">
-                                    <Button size="icon" variant="ghost" className="h-7 w-7" disabled={page === 0} onClick={() => setPage((p) => p - 1)} aria-label="Previous page">
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-[hsl(var(--terminal-fg-dim))]" disabled={page === 0} onClick={() => setPage((p) => p - 1)} aria-label="Previous page">
                                         <ChevronLeft size={13} />
                                     </Button>
-                                    <span className="font-mono text-xs text-muted-foreground px-2">
-                                        {page + 1} / {totalPages}
-                                    </span>
-                                    <Button size="icon" variant="ghost" className="h-7 w-7" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)} aria-label="Next page">
+                                    <span className="px-2 text-xs text-[hsl(var(--terminal-fg-dim))]">{page + 1} / {totalPages}</span>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-[hsl(var(--terminal-fg-dim))]" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)} aria-label="Next page">
                                         <ChevronRight size={13} />
                                     </Button>
                                 </div>
@@ -345,78 +347,65 @@ export const MemoryPage: FC = () => {
 
                 {/* Detail panel */}
                 {selected && (
-                    <div className="w-80 shrink-0 overflow-y-auto border-l border-border bg-card p-5">
-                        <div className="flex items-start justify-between mb-4">
-                            <p className="font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                Memory Detail
-                            </p>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                                onClick={() => setSelected(null)}
-                                aria-label="Close detail panel"
-                            >
-                                ×
-                            </Button>
+                    <div className="w-80 shrink-0 overflow-y-auto border-l border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-surface))] p-5">
+                        <div className="mb-4 flex items-start justify-between">
+                            <p className="font-mono text-xs font-medium uppercase tracking-wider text-[hsl(var(--terminal-fg-dim))]">memory detail</p>
+                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-[hsl(var(--terminal-fg-dim))] hover:text-[hsl(var(--terminal-fg))]" onClick={() => setSelected(null)} aria-label="Close detail panel">×</Button>
                         </div>
                         <div className="space-y-3">
                             <div>
-                                <p className="font-mono text-xs text-muted-foreground uppercase mb-1">Scope</p>
+                                <p className="mb-1 font-mono text-xs uppercase text-[hsl(var(--terminal-fg-dim))]">scope</p>
                                 <ScopeBadge scope={selected.scope} />
                             </div>
                             <div>
-                                <p className="font-mono text-xs text-muted-foreground uppercase mb-1">Content</p>
-                                <p className="font-body text-sm text-foreground whitespace-pre-wrap">{selected.content}</p>
+                                <p className="mb-1 font-mono text-xs uppercase text-[hsl(var(--terminal-fg-dim))]">content</p>
+                                <p className="whitespace-pre-wrap text-sm text-[hsl(var(--terminal-fg))]">{selected.content}</p>
                             </div>
                             {selected.categories.length > 0 && (
                                 <div>
-                                    <p className="font-mono text-xs text-muted-foreground uppercase mb-1">Categories</p>
+                                    <p className="mb-1 font-mono text-xs uppercase text-[hsl(var(--terminal-fg-dim))]">categories</p>
                                     <div className="flex flex-wrap gap-1">
                                         {selected.categories.map((c) => (
-                                            <span key={c} className="rounded-full bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground">{c}</span>
+                                            <span key={c} className="rounded border border-[hsl(var(--terminal-line-strong))] bg-transparent px-2 py-0.5 font-mono text-xs text-[hsl(var(--terminal-fg-dim))]">{c}</span>
                                         ))}
                                     </div>
                                 </div>
                             )}
-                            {selected.agent_id && <InfoRow label="Agent ID" value={selected.agent_id} />}
-                            {selected.user_id && <InfoRow label="User ID" value={selected.user_id} />}
-                            {selected.session_id && <InfoRow label="Session ID" value={selected.session_id} />}
-                            <InfoRow label="Importance" value={selected.importance.toFixed(3)} />
-                            <InfoRow label="Type" value={selected.memory_type} />
-                            <InfoRow label="Created" value={new Date(selected.created_at).toLocaleString()} />
-                            <InfoRow label="ID" value={selected.id} mono />
+                            {selected.agent_id && <InfoRow label="agent id" value={selected.agent_id} />}
+                            {selected.user_id && <InfoRow label="user id" value={selected.user_id} />}
+                            {selected.session_id && <InfoRow label="session id" value={selected.session_id} />}
+                            <InfoRow label="importance" value={selected.importance.toFixed(3)} />
+                            <InfoRow label="type" value={selected.memory_type} />
+                            <InfoRow label="created" value={new Date(selected.created_at).toLocaleString()} />
+                            <InfoRow label="id" value={selected.id} mono />
                         </div>
                         <div className="mt-6">
                             {deleteConfirm === selected.id ? (
                                 <div className="flex gap-2">
                                     <Button
-                                        variant="destructive"
                                         size="sm"
-                                        className="flex-1"
+                                        className="flex-1 border border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.12)] text-[hsl(var(--signal-red))]"
                                         disabled={deleting}
                                         onClick={() => void deleteOneRow(selected.id)}
                                     >
-                                        {deleting ? <Loader2 size={13} className="animate-spin" /> : "Confirm Delete"}
+                                        {deleting ? <LoadingCursor /> : "confirm delete"}
                                     </Button>
-                                    <Button variant="outline" size="sm" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+                                    <Button variant="ghost" size="sm" className="border border-[hsl(var(--terminal-line-strong))] text-[hsl(var(--terminal-fg))]" onClick={() => setDeleteConfirm(null)}>cancel</Button>
                                 </div>
                             ) : (
                                 <Button
-                                    variant="destructive"
                                     size="sm"
-                                    className="w-full gap-1.5"
+                                    className="w-full gap-1.5 border border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.12)] text-[hsl(var(--signal-red))] hover:bg-[hsl(var(--signal-red)/0.18)]"
                                     onClick={() => setDeleteConfirm(selected.id)}
                                 >
-                                    <Trash2 size={13} />
-                                    Delete Memory
+                                    <Trash2 size={13} />delete memory
                                 </Button>
                             )}
                         </div>
                     </div>
                 )}
             </div>
+
             <AlertDialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -430,9 +419,9 @@ export const MemoryPage: FC = () => {
                         <AlertDialogAction
                             onClick={(e) => { e.preventDefault(); setShowBulkDelete(false); void runBulkDelete(); }}
                             disabled={deleting}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="border border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.12)] text-[hsl(var(--signal-red))] hover:bg-[hsl(var(--signal-red)/0.18)]"
                         >
-                            {deleting ? <Loader2 size={12} className="animate-spin" /> : "Delete All"}
+                            {deleting ? <LoadingCursor /> : "delete all"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -444,8 +433,8 @@ export const MemoryPage: FC = () => {
 function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
     return (
         <div>
-            <p className="font-mono text-xs text-muted-foreground uppercase mb-0.5">{label}</p>
-            <p className={cn("text-xs text-foreground break-all", mono ? "font-mono" : "font-body")}>{value}</p>
+            <p className="mb-0.5 font-mono text-xs uppercase text-[hsl(var(--terminal-fg-dim))]">{label}</p>
+            <p className={cn("break-all text-xs text-[hsl(var(--terminal-fg))]", mono && "font-mono")}>{value}</p>
         </div>
     );
 }
