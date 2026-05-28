@@ -250,7 +250,7 @@ notify = "7"
 microsandbox = { version = "0.3", optional = true }
 
 # Universal LLM client — 142+ providers, streaming, tool calling
-liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", rev = "f5e6ec34d1e0fb669a9b550b75129ac5802802cc", features = ["full"] }
+liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", rev = "6e51609797f831837ce0bfad2b43abe54ebac31c", features = ["full"] }
 secrecy = { version = "0.10", features = ["serde"] }
 
 # OpenAPI / Swagger documentation
