@@ -1,0 +1,109 @@
+name: Publish UAR Toolchain Image
+
+# Publishes the polyglot UAR toolchain image (the existing root `Dockerfile`,
+# which embeds Rust nightly + Node 24 + Python 3.13 + Go + wasmtime + the
+# WASM build toolchain) to GHCR so developers, CI runs, and downstream
+# consumers can pull a prebuilt image instead of rebuilding the ~3 GB
+# polyglot stack every time.
+#
+# Authored by KBD phase `runtime-image-polyglot-toolchain-completion`,
+# change `ci-publish-uar-toolchain-image`. See
+# `.kbd-orchestrator/phases/runtime-image-polyglot-toolchain-completion/`
+# for assessment + plan rationale.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "rust-toolchain.toml"
+      - ".github/workflows/image-uar-toolchain.yml"
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: "Comma-separated buildx platforms (default linux/amd64,linux/arm64)"
+        required: false
+        default: "linux/amd64,linux/arm64"
+        type: string
+  schedule:
+    # Weekly rebuild so floating tag dependencies (Node LTS, deadsnakes
+    # Python 3.13 patch level, latest rustup nightly) stay reasonably fresh.
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+  packages: write   # Required to push to GHCR
+  id-token: write   # Reserved for future cosign signing
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/uar-toolchain
+
+concurrency:
+  group: image-uar-toolchain-${{ github.ref }}
+  cancel-in-progress: false   # Sequential publishes — never abort a half-pushed manifest
+
+jobs:
+  build-and-push:
+    name: Build & Push Toolchain Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 90   # Cold polyglot build can run 25–40 min
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Set up QEMU (multi-arch emulation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute date tag
+        id: meta_date
+        run: echo "date=$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+            type=raw,value=nightly-${{ steps.meta_date.outputs.date }},enable={{is_default_branch}}
+            type=ref,event=branch
+          labels: |
+            org.opencontainers.image.title=UAR Polyglot Toolchain
+            org.opencontainers.image.description=Universal Agent Runtime build/dev toolchain (Rust nightly + Node 24 + Python 3.13 + Go + wasmtime + WASM toolchain).
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.documentation=https://github.com/${{ github.repository }}/blob/main/.kbd-orchestrator/phases/runtime-image-polyglot-toolchain-completion/assessment.md
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: toolchain        # publish the toolchain stage, not the app stage
+          platforms: ${{ github.event.inputs.platforms || 'linux/amd64,linux/arm64' }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=uar-toolchain
+          cache-to: type=gha,scope=uar-toolchain,mode=max
+          provenance: false   # GHCR provenance attestations are noisy for toolchain images; opt in later if needed.
+
+      - name: Image digest
+        run: echo "Pushed digest ${{ steps.meta.outputs.version }}"

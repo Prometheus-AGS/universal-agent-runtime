@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
         "surreal" | "surrealdb"
     ) {
         Arc::new(
-            SurrealDbProvider::new(&config.persistence.database_url, None, None)
+            SurrealDbProvider::new(&config.persistence.database_url, None, None, None, None)
                 .await
                 .context("failed to initialize SurrealDB")?,
         )

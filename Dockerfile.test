@@ -1,21 +1,24 @@
 # Multi-stage Docker build for testing environment
 # This Dockerfile creates a comprehensive testing environment with all necessary tools
 
-FROM node:20-bookworm AS node-deps
+FROM node:24-bookworm AS node-deps
 WORKDIR /app
 COPY package.json bun.lock* ./
 RUN npm install -g bun && bun install --frozen-lockfile
 
-FROM rust:1.85-bookworm AS rust-deps
+# Use rustup nightly directly so the cached deps build matches the
+# nightly pinned in rust-toolchain.toml (otherwise stable rust builds
+# the dummy crate and the real build re-fetches nightly, busting cache).
+FROM rust:1.93-slim-bookworm AS rust-deps
 WORKDIR /app
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
 ARG SKIP_MODEL_BUILD=1
 ENV SKIP_MODEL_BUILD=${SKIP_MODEL_BUILD}
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 RUN cargo build --release && rm -rf src
 
-# Test execution environment
-FROM rust:1.85-bookworm
+# Test execution environment — aligned with production polyglot Dockerfile.
+FROM rust:1.93-slim-bookworm
 
 # Install system dependencies for testing
 RUN apt-get update && apt-get install -y \
@@ -32,8 +35,9 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js and Bun for TypeScript testing
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+# Install Node.js 24 LTS and Bun for TypeScript testing (aligned with
+# production Dockerfile's `NODE_MAJOR=24`).
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g bun
 

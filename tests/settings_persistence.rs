@@ -56,7 +56,7 @@ async fn make_surreal() -> (Arc<dyn PersistenceLayer>, tempfile::TempDir) {
     let db_path = dir.path().to_str().expect("tempdir path must be utf-8");
     let url = format!("surrealkv://{}", db_path);
     let provider = Arc::new(
-        SurrealDbProvider::new(&url, None, None)
+        SurrealDbProvider::new(&url, None, None, None, None)
             .await
             .unwrap_or_else(|e| panic!("embedded SurrealDB failed to start: {e}")),
     );

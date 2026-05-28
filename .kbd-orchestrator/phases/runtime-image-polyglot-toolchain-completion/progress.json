@@ -1,0 +1,117 @@
+{
+  "phase": "runtime-image-polyglot-toolchain-completion",
+  "status": "executed",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execution_started": true,
+  "execution_started_at": "2026-05-27",
+  "execution_completed_at": "2026-05-27",
+  "execution_backend": "openspec",
+  "canonical_backend": "openspec",
+  "source_tool": "claude-code",
+  "supersedes": "runtime-image-multi-language-toolchain (worktree-only, never merged)",
+  "worktree_artifacts_location": "/Users/gqadonis/.claude/worktrees/musing-sinoussi-09cea6/ (branch claude/musing-sinoussi-09cea6)",
+  "active_waypoint_phase": "use-optimistic-patch-helper-extraction (NOT changed)",
+  "changes_total": 6,
+  "changes_completed": 6,
+  "changes_ordered": [
+    "pin-rust-nightly-and-bump-go",
+    "add-missing-wasm-toolchains-to-image",
+    "dockerfile-multi-arch-toolchain",
+    "dockerfile-test-rebase-to-polyglot",
+    "ci-publish-uar-toolchain-image",
+    "plugin-loader-strategy-enum"
+  ],
+  "changes": {
+    "pin-rust-nightly-and-bump-go": {
+      "status": "DONE",
+      "agent": "claude-code",
+      "addresses": ["G1", "G2"],
+      "files_touched": ["rust-toolchain.toml", "Dockerfile", "AGENTS.md"],
+      "verification": { "buildx_check": "PASS_NO_WARNINGS" },
+      "qa_gate": "SKIPPED_TRIVIAL"
+    },
+    "add-missing-wasm-toolchains-to-image": {
+      "status": "DONE",
+      "agent": "claude-code",
+      "addresses": ["G3", "G4", "G5", "G7"],
+      "files_touched": ["Dockerfile"],
+      "added_tools": {
+        "apt": ["binaryen (wasm-opt)", "wabt", "libffi-dev", "patchelf"],
+        "python": ["componentize-py", "wasmtime (embedder)"],
+        "cargo_binstall": ["wasm-tools", "wit-bindgen-cli", "wasm-bindgen-cli", "cargo-wasi", "twiggy"],
+        "npm_global": ["typescript@6", "@bytecodealliance/jco", "@bytecodealliance/componentize-js", "assemblyscript", "javy-cli"],
+        "binary_install": ["tinygo (deb)"]
+      },
+      "verification": { "buildx_check": "PASS_NO_WARNINGS" },
+      "qa_gate": "SKIPPED_SINGLE_FILE_CHANGE"
+    },
+    "dockerfile-multi-arch-toolchain": {
+      "status": "DONE",
+      "agent": "claude-code",
+      "addresses": ["G6"],
+      "files_touched": ["Dockerfile", ".github/workflows/image-uar-toolchain.yml"],
+      "multiarch_branches_added": ["go (amd64|arm64)", "tinygo (amd64|arm64)", "wasmtime (x86_64|aarch64)"],
+      "verification": { "buildx_check": "PASS_NO_WARNINGS" },
+      "qa_gate": "SKIPPED_SMALL_CHANGE"
+    },
+    "dockerfile-test-rebase-to-polyglot": {
+      "status": "DONE",
+      "agent": "claude-code",
+      "addresses": ["G9"],
+      "files_touched": ["Dockerfile.test"],
+      "drift_reconciled": { "rust": "1.85 -> 1.93-slim", "node": "20 -> 24" },
+      "verification": { "buildx_check": "PASS_NO_WARNINGS" },
+      "qa_gate": "SKIPPED_SINGLE_FILE_CHANGE"
+    },
+    "ci-publish-uar-toolchain-image": {
+      "status": "DONE",
+      "agent": "claude-code",
+      "addresses": ["G10"],
+      "files_touched": [".github/workflows/image-uar-toolchain.yml"],
+      "verification": { "yaml_visual": "PASS", "actionlint": "DEFERRED_NOT_INSTALLED", "first_run": "PENDING_PUSH_TO_MAIN" },
+      "qa_gate": "SKIPPED_SINGLE_FILE_CHANGE",
+      "registry": "ghcr.io/${owner}/uar-toolchain",
+      "tags": ["latest", "sha-<short>", "nightly-<YYYYMMDD>"],
+      "multiarch": ["linux/amd64", "linux/arm64"]
+    },
+    "plugin-loader-strategy-enum": {
+      "status": "DONE",
+      "agent": "claude-code",
+      "addresses": ["G11"],
+      "source": "ported from /Users/gqadonis/.claude/worktrees/musing-sinoussi-09cea6/",
+      "files_touched": [
+        "src/uar/runtime/wasm/plugin_loader.rs",
+        "wit/uar-plugin.wit",
+        "src/uar/runtime/wasm/mod.rs",
+        "openspec/changes/plugin-loader-wit-contract/proposal.md",
+        "openspec/changes/plugin-loader-wit-contract/tasks.md",
+        "openspec/changes/plugin-loader-wit-contract/design.md",
+        "openspec/changes/plugin-loader-wit-contract/specs/plugin-model/spec.md"
+      ],
+      "verification": {
+        "thiserror_dep_present": "PASS (workspace dep)",
+        "cargo_check_wasm_runtime": "DEFERRED_UNSTAGED_REPO_DRIFT",
+        "openspec_validate_strict": "DEFERRED_NO_LOCAL_CLI",
+        "wit_bindgen_rust": "DEFERRED_UNTIL_FIRST_IMAGE_BUILD"
+      },
+      "qa_gate": "MANUAL_REVIEW_RECOMMENDED",
+      "qa_skip_reason": "/refine-validate skill not registered in session; 7 files modified above skip threshold"
+    }
+  },
+  "followups": [
+    "plugin-loader-instantiation: wire PluginLoader impl against wasmtime::component::Linker",
+    "plugin-loader-dispatcher: register loaded plugins with skill/tool dispatcher",
+    "secondary-wasm-runtimes: add WAMR + WasmEdge to toolchain image (G8)",
+    "cosign-toolchain-image: wire sigstore signing using id-token: write already in workflow"
+  ],
+  "defaults_applied": {
+    "nightly_pin": "nightly-2026-05-01",
+    "go_version": "1.26.3",
+    "tinygo_version": "0.34.0",
+    "wasmtime_version": "27.0.0 (kept from origin baseline)",
+    "registry": "ghcr.io/${owner}/uar-toolchain",
+    "multiarch": ["linux/amd64", "linux/arm64"],
+    "secondary_runtimes": "DEFERRED"
+  }
+}

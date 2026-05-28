@@ -67,6 +67,8 @@ pub struct KnowledgeBaseResponse {
     pub config: KbConfigResponse,
     pub created_at: String,
     pub updated_at: String,
+    /// Number of documents currently stored in this KB (regardless of indexing status).
+    pub document_count: usize,
 }
 
 #[derive(Debug, Serialize)]
@@ -172,7 +174,18 @@ async fn list_knowledge_bases(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let responses: Vec<KnowledgeBaseResponse> = kbs.into_iter().map(kb_to_response).collect();
+    let mut responses: Vec<KnowledgeBaseResponse> = Vec::with_capacity(kbs.len());
+    for kb in kbs {
+        let count = state
+            .persistence
+            .count_documents(&kb.id)
+            .await
+            .unwrap_or_else(|err| {
+                tracing::warn!(kb_id = %kb.id, error = %err, "count_documents failed; reporting 0");
+                0
+            });
+        responses.push(kb_to_response(kb, count));
+    }
     Ok(Json(responses))
 }
 
@@ -215,7 +228,7 @@ async fn create_knowledge_base(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     tracing::info!("Created knowledge base: {} ({})", kb.name, kb.id);
-    Ok((StatusCode::CREATED, Json(kb_to_response(kb))))
+    Ok((StatusCode::CREATED, Json(kb_to_response(kb, 0))))
 }
 
 /// GET /{id} - Get a knowledge base by ID
@@ -233,7 +246,12 @@ async fn get_knowledge_base(
             format!("Knowledge base '{id}' not found"),
         ))?;
 
-    Ok(Json(kb_to_response(kb)))
+    let count = state
+        .persistence
+        .count_documents(&kb.id)
+        .await
+        .unwrap_or(0);
+    Ok(Json(kb_to_response(kb, count)))
 }
 
 /// PUT /{id} - Update a knowledge base
@@ -279,7 +297,12 @@ async fn update_knowledge_base(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(Json(kb_to_response(kb)))
+    let count = state
+        .persistence
+        .count_documents(&kb.id)
+        .await
+        .unwrap_or(0);
+    Ok(Json(kb_to_response(kb, count)))
 }
 
 /// DELETE /{id} - Delete a knowledge base
@@ -565,7 +588,7 @@ async fn search_knowledge_base(
 // Helper Functions
 // =============================================================================
 
-fn kb_to_response(kb: KnowledgeBase) -> KnowledgeBaseResponse {
+fn kb_to_response(kb: KnowledgeBase, document_count: usize) -> KnowledgeBaseResponse {
     KnowledgeBaseResponse {
         id: kb.id,
         name: kb.name,
@@ -579,6 +602,7 @@ fn kb_to_response(kb: KnowledgeBase) -> KnowledgeBaseResponse {
         },
         created_at: kb.created_at,
         updated_at: kb.updated_at,
+        document_count,
     }
 }
 

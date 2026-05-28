@@ -30,6 +30,8 @@ export async function loadProvidersIntoGraph(): Promise<void> {
       auth_env_var: p.auth_env_var,
       endpoints: p.endpoints,
       model_count: p.model_count,
+      status: p.status,
+      status_detail: p.status_detail,
     };
     upsertEntity("Provider", p.id, entity as unknown as Record<string, unknown>);
   }
@@ -49,6 +51,13 @@ export async function loadProvidersIntoGraph(): Promise<void> {
       upsertEntity("Provider", p.id, entity as unknown as Record<string, unknown>);
     }
   }
+
+  // Upsert the singleton ProviderMeta entity (id "current") with the
+  // currently-default provider id. Consumers read this via useProviderDefault().
+  upsertEntity("ProviderMeta", "current", {
+    id: "current",
+    default_id: configured.default_id ?? null,
+  });
 }
 
 /**

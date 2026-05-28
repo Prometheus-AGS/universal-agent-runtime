@@ -19,29 +19,107 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
 import { useProviderModels } from "@/hooks/use-provider-models";
-import { useProvidersAdmin } from "@/hooks/use-providers-admin";
+import { useProviders } from "@/entities/hooks/use-providers";
+import { useProviderDefault } from "@/entities/hooks/use-provider-default";
 import type { CatalogProviderSummary } from "@/types";
 import { loadProvidersIntoGraph } from "@/entities/fetchers/providers";
+import { optimisticUpsert, optimisticRemove } from "@/lib/realtime/optimistic";
+import {
+  createProvider as createProviderApi,
+  deleteProvider as deleteProviderApi,
+  setDefaultProvider as setDefaultProviderApi,
+} from "@/services/providers-api";
 
 export const ProvidersPage: FC = () => {
-  const {
-    catalog,
-    configured,
-    defaultId,
-    loading,
-    error,
-    saving,
-    removing,
-    load,
-    configureProvider,
-    setDefault,
-    removeProvider,
-  } = useProvidersAdmin();
+  // Reads come from the entity graph (hydrated by loadProvidersIntoGraph and
+  // kept fresh by SSE realtime).
+  const providersView = useProviders();
+  const defaultId = useProviderDefault() ?? undefined;
 
-  // Populate the entity graph alongside the legacy store.
+  // Local UI state — no longer routed through a Zustand store.
+  const [saving, setSaving] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const clearError = () => setError(null);
+
+  // The graph stores rich ProviderEntity rows that are a superset of
+  // CatalogProviderSummary; cast for the legacy render code below.
+  const catalog = providersView.items as unknown as CatalogProviderSummary[];
+  const configured = catalog.filter((p) => p.configured);
+  const loading = providersView.items.length === 0;
+
+  // Populate the entity graph on mount and provide a manual refresh.
   useEffect(() => {
     void loadProvidersIntoGraph();
   }, []);
+  const load = () => loadProvidersIntoGraph();
+
+  // ── Mutations ────────────────────────────────────────────────────────────
+  //
+  // - configureProvider: non-optimistic per the global rule for creates; on
+  //   success we re-run loadProvidersIntoGraph so the new row + ProviderMeta
+  //   reach the graph.
+  // - setDefault: optimistic — flip ProviderMeta singleton immediately;
+  //   rollback the singleton's default_id on failure.
+  // - removeProvider: capture the entity snapshot, optimistically remove from
+  //   the graph, and on failure re-upsert the snapshot.
+
+  const configureProvider = async (args: {
+    addTarget: CatalogProviderSummary;
+    apiKey: string;
+    baseUrl: string;
+  }) => {
+    const { addTarget, apiKey, baseUrl } = args;
+    setSaving(true);
+    setError(null);
+    try {
+      const resolvedBase = (baseUrl.trim() || addTarget.base_url) ?? "";
+      const res = await createProviderApi({
+        id: addTarget.id,
+        display_name: addTarget.display_name ?? "",
+        base_url: resolvedBase,
+        api_key: apiKey || undefined,
+        protocol: "auto",
+        enabled: true,
+      });
+      if (!res.ok && res.status !== 409) throw new Error(`${res.status}`);
+      await loadProvidersIntoGraph();
+    } catch (e) {
+      setError((e as Error).message);
+      throw e;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const setDefault = async (id: string) => {
+    try {
+      await optimisticUpsert(
+        "ProviderMeta",
+        "current",
+        { id: "current", default_id: id },
+        async () => {
+          await setDefaultProviderApi(id);
+        },
+      );
+    } catch (e) {
+      setError(`Failed to set default: ${(e as Error).message}`);
+    }
+  };
+
+  const removeProvider = async (id: string) => {
+    setRemoving(id);
+    setError(null);
+    try {
+      await optimisticRemove("Provider", id, async () => {
+        await deleteProviderApi(id);
+      });
+    } catch (e) {
+      setError(`Failed to remove provider: ${(e as Error).message}`);
+    } finally {
+      setRemoving(null);
+    }
+  };
 
   const [selected, setSelected] = useState<CatalogProviderSummary | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);

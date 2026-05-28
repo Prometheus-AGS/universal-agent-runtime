@@ -5,13 +5,13 @@ import { App } from "./App";
 import { DbProvider } from "@/lib/db-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { bootstrapEntityGraph } from "@/entities/bootstrap";
-import { initSettingsRealtimeBridge } from "@/stores/settings-store";
 
-// Bootstrap the entity graph engine before rendering
+// Bootstrap the entity graph engine before rendering. The settings
+// change-bus is now driven directly by the SSE adapter in
+// `entities/sync.ts` — no separate bridge initialization is needed.
 bootstrapEntityGraph().catch((err) =>
   console.error("[entity-graph] bootstrap failed:", err),
 );
-initSettingsRealtimeBridge();
 
 if (import.meta.env.DEV) {
   void import("@/entities/runtime-replay-test-helper").then(({ installRuntimeReplayTestHelper }) => {

@@ -1,5 +1,30 @@
 use serde::{Deserialize, Serialize};
 
+/// Execution model of a Skill. Determines which runtime is used to invoke it.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum SkillKind {
+    /// In-process Rust / native code path. Default for legacy rows.
+    #[default]
+    Native,
+    /// SKILL.md manifest (YAML frontmatter + Markdown) used as prompt-context.
+    Manifest,
+    /// WebAssembly Component Model artifact loaded via wasmtime::component.
+    Wasm,
+}
+
+/// Provenance flag — system-shipped skills are immutable; user-defined ones can be edited/deleted.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum SkillOrigin {
+    /// Loaded at startup from the embedded `prometheus-skill-system` submodule
+    /// or another system-managed location. Cannot be deleted via the API.
+    Builtin,
+    /// Created by a user via the Skills admin UI or REST API.
+    #[default]
+    User,
+}
+
 /// Per-skill LLM execution configuration.
 ///
 /// When a skill is matched and activated, these settings override the global
@@ -41,6 +66,12 @@ pub struct Skill {
     /// Optional per-skill LLM execution overrides.
     #[serde(default)]
     pub execution_config: SkillExecutionConfig,
+    /// Execution model — Native (default), Manifest (SKILL.md), or Wasm.
+    #[serde(default)]
+    pub kind: SkillKind,
+    /// Provenance — Builtin (system-shipped, immutable) or User (default).
+    #[serde(default)]
+    pub origin: SkillOrigin,
 }
 
 /// Represents the YAML frontmatter of a SKILL.md file

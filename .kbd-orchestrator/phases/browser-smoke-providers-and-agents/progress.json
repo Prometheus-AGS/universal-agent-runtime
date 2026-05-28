@@ -1,0 +1,31 @@
+{
+  "phase": "browser-smoke-providers-and-agents",
+  "createdAt": "2026-05-27T08:45:00-05:00",
+  "updatedAt": "2026-05-27T09:30:00-05:00",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execute_complete": false,
+  "reflect_complete": true,
+  "reflection_path": ".kbd-orchestrator/phases/browser-smoke-providers-and-agents/reflection.md",
+  "goal_achievement_percent": 35,
+  "reflection_caveat": "Partial reflect — deployment shipped, manual walkthrough not run. Re-reflect after smoke completes.",
+  "decisions": {
+    "browser": "Chrome",
+    "force_failure_technique": "natural API rejection (DevTools fallback)",
+    "smoke_output": "separate smoke-log.md",
+    "regression_triage": "finish all 8 then batch-triage; escalate if <6/8 pass"
+  },
+  "changes_total": 2,
+  "changes_completed": 1,
+  "execute_partial_reason": "Change 2 (smoke walkthrough) requires human-driven Chrome; MCP can't reach localhost from connected browser. Smoke-log template ready to fill in.",
+  "changes_ordered": [
+    "refresh-deployed-bundle-for-smoke",
+    "run-providers-and-agents-smoke-checklist"
+  ],
+  "change_status": {
+    "refresh-deployed-bundle-for-smoke": "DONE",
+    "run-providers-and-agents-smoke-checklist": "AWAITING_HUMAN — Preview MCP harness ran a partial pre-flight (SPA loads, backend reachable) but cannot drive cross-tab scenarios; template + observations recorded in smoke-log.md"
+  },
+  "next_change": "run-providers-and-agents-smoke-checklist"
+}

@@ -95,13 +95,14 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
 
     // Initialize persistence based on config.
     // All three branches produce trait-object arcs so the types unify across arms.
-    let (persistence_layer, compiler_storage, agent_registry): (
+    let (persistence_layer, compiler_storage, agent_registry, live_bus): (
         Arc<dyn PersistenceLayer>,
         Option<(
             Arc<dyn crate::uar::compiler::storage::SpecStorage>,
             Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>,
         )>,
         Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
+        Option<Arc<crate::uar::realtime::surreal_bus::LiveQueryBus>>,
     ) = if matches!(
         config.persistence.provider.as_str(),
         "surreal" | "surrealdb"
@@ -110,6 +111,8 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             &config.persistence.database_url,
             config.persistence.surreal_user.as_deref(),
             config.persistence.surreal_pass.as_deref(),
+            config.persistence.surreal_ns.as_deref(),
+            config.persistence.surreal_db.as_deref(),
         )
         .await
         .map_err(|e| {
@@ -129,13 +132,19 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
         let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
             compiler_store as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
-        let registry = Arc::new(crate::uar::api::a2a::SurrealAgentRegistry::new(db))
+        let registry = Arc::new(crate::uar::api::a2a::SurrealAgentRegistry::new(db.clone()))
             as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
+
+        // Start the live-query bus on the same DB connection.
+        let live_bus = Some(Arc::new(
+            crate::uar::realtime::surreal_bus::LiveQueryBus::start(db),
+        ));
 
         (
             Arc::new(provider) as Arc<dyn PersistenceLayer>,
             Some((spec, sess)),
             Some(registry),
+            live_bus,
         )
     } else {
         // Non-surreal persistence requested. Only available when the
@@ -162,6 +171,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 Arc::new(provider) as Arc<dyn PersistenceLayer>,
                 Some((spec, sess)),
                 Some(registry),
+                None,
             )
         }
         #[cfg(not(feature = "postgres-backend"))]
@@ -332,6 +342,15 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     let skills = skill_service.registry().clone();
     let skill_service = Arc::new(skill_service);
 
+    // Load built-in (Manifest-kind, Builtin-origin) skills from the embedded
+    // prometheus-skill-system submodule. Failure here is non-fatal.
+    {
+        let builtins = uar::runtime::skills::builtin_loader::discover_builtin_skills();
+        if !builtins.is_empty() {
+            skill_service.register_builtins(builtins).await;
+        }
+    }
+
     // Initialize Provider Registry
     let provider_registry = Arc::new(crate::llm::ProviderRegistry::new());
     provider_registry.seed_from_llm_config(&llm_config).await;
@@ -499,6 +518,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         compiler_service: Some(Arc::clone(&compiler_service)),
         settings_manager: settings_manager.clone(),
         memory_service: memory_service.clone(),
+        live_bus: live_bus.clone(),
         prompt_cache_provider,
         user_settings_store: Arc::clone(&user_settings_store),
         a2ui_registry: uar::a2ui::registry::A2uiRegistry::with_builtins(),
@@ -554,6 +574,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .route("/api/generate-title", post(api_generate_title))
         .route("/api/chat/completion", post(api_chat_completion))
         .route("/api/upload", post(uar::api::upload::upload_handler))
+        .route("/api/live/{topic}", get(uar::api::live::live_stream))
         .route(
             "/api/attachments/{id}",
             get(uar::api::upload::serve_attachment_handler),
@@ -839,9 +860,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         // Serve the React SPA from static/.
         // ServeDir serves /assets/*, /favicon.svg, /manifest.json etc. with correct MIME types.
         // The not_found_service fallback delivers index.html for any other unknown paths.
-        .fallback_service(
-            ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")),
-        )
+        .fallback_service({
+            let dir = resolve_static_dir();
+            let index = dir.join("index.html");
+            ServeDir::new(dir).not_found_service(ServeFile::new(index))
+        })
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             uar::security::middleware::auth_middleware,
@@ -1744,8 +1767,33 @@ async fn legacy_sessions_route_disabled() -> Response {
 /// Serves `static/index.html` for SPA client-side routes that need to survive
 /// a hard-refresh or direct-URL navigation. The file is read fresh each call so
 /// that a rolling update swaps content without a server restart.
+/// Resolves the directory containing the built React SPA. Checked in order:
+/// 1. `UAR_STATIC_DIR` environment variable.
+/// 2. `./static` relative to the current working directory (dev/repo runs).
+/// 3. `~/.uar/static` (the canonical location for installed binaries).
+fn resolve_static_dir() -> std::path::PathBuf {
+    if let Ok(p) = std::env::var("UAR_STATIC_DIR") {
+        let pb = std::path::PathBuf::from(p);
+        if pb.exists() {
+            return pb;
+        }
+    }
+    let cwd = std::path::PathBuf::from("static");
+    if cwd.exists() {
+        return cwd;
+    }
+    if let Some(home) = dirs::home_dir() {
+        let pb = home.join(".uar").join("static");
+        if pb.exists() {
+            return pb;
+        }
+    }
+    cwd
+}
+
 async fn spa_index_handler() -> Response {
-    match tokio::fs::read("static/index.html").await {
+    let index = resolve_static_dir().join("index.html");
+    match tokio::fs::read(&index).await {
         Ok(bytes) => (
             StatusCode::OK,
             [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],

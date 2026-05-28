@@ -6,7 +6,10 @@
 //! - Per-agent skill bindings
 //! - SKILL.md parsing with MCP server configuration
 
+pub mod builtin_loader;
 pub mod registry;
+#[cfg(feature = "wasm-runtime")]
+pub mod wasm_runtime;
 pub mod service;
 pub mod storage;
 pub mod watcher;

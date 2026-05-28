@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "vitest";
 import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
 import type { EntityType } from "@prometheus-ags/prometheus-entity-management";
 import { ingestRuntimeEvent } from "./runtime-ingest";

@@ -1,3 +1,8 @@
+[workspace]
+members = [".", "tools/uar-jwt-proxy"]
+exclude = ["crates/prometheus-skill-system", ".claude/worktrees"]
+resolver = "2"
+
 [package]
 name = "universal-agent-runtime"
 version = "0.1.0"
@@ -185,6 +190,7 @@ pgvector = { version = "0.4.1", optional = true, features = ["sqlx"] }
 text-splitter = "0.29.3"
 chrono = { version = "0.4.44", features = ["serde"] }
 walkdir = "2.5.0"
+serde_yaml = "0.9"
 jsonwebtoken = "10.2.0"
 tracing-opentelemetry = "0.32.0"
 opentelemetry = "0.31.0"
@@ -244,7 +250,7 @@ notify = "7"
 microsandbox = { version = "0.3", optional = true }
 
 # Universal LLM client — 142+ providers, streaming, tool calling
-liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", features = ["full"] }
+liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", rev = "f5e6ec34d1e0fb669a9b550b75129ac5802802cc", features = ["full"] }
 secrecy = { version = "0.10", features = ["serde"] }
 
 # OpenAPI / Swagger documentation

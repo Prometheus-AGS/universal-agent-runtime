@@ -196,6 +196,8 @@ async fn create_skill(
         enabled: req.enabled,
         provider_id: "api".to_string(),
         execution_config: req.execution_config,
+        kind: Default::default(),
+        origin: Default::default(),
     };
 
     match service.create_skill(skill).await {
@@ -226,11 +228,25 @@ async fn delete_skill(
     match service.delete_skill_permanent(&id).await {
         Ok(true) => StatusCode::NO_CONTENT.into_response(),
         Ok(false) => StatusCode::NOT_FOUND.into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({ "error": format!("{e:?}") })),
-        )
-            .into_response(),
+        Err(e) => {
+            let msg = format!("{e}");
+            if msg.contains("system_skill_immutable") {
+                (
+                    StatusCode::CONFLICT,
+                    Json(serde_json::json!({
+                        "error": "system_skill_immutable",
+                        "message": "System skill cannot be removed.",
+                    })),
+                )
+                    .into_response()
+            } else {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": format!("{e:?}") })),
+                )
+                    .into_response()
+            }
+        }
     }
 }
 

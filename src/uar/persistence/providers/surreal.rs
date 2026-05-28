@@ -28,6 +28,8 @@ impl SurrealDbProvider {
         connection_string: &str,
         surreal_user: Option<&str>,
         surreal_pass: Option<&str>,
+        surreal_ns: Option<&str>,
+        surreal_db: Option<&str>,
     ) -> Result<Self> {
         let endpoint = normalize_endpoint(connection_string);
         tracing::info!("Connecting to SurrealDB: {}", endpoint);
@@ -46,7 +48,10 @@ impl SurrealDbProvider {
             tracing::info!("SurrealDB server signin completed as '{}'", username);
         }
 
-        db.use_ns("uar").use_db("uar").await?;
+        let ns = surreal_ns.unwrap_or("uar");
+        let database = surreal_db.unwrap_or("uar");
+        db.use_ns(ns).use_db(database).await?;
+        tracing::info!("SurrealDB using ns='{}' db='{}'", ns, database);
 
         tracing::info!("SurrealDB connected successfully");
 
@@ -487,8 +492,36 @@ impl PersistenceLayer for SurrealDbProvider {
         from_db_vec(docs_json)
     }
 
+    async fn count_documents(&self, kb_id: &str) -> Result<usize> {
+        let sql = "SELECT count() AS c FROM knowledge_documents WHERE kb_id = $kb_id GROUP ALL";
+        let mut res = self
+            .db
+            .query(sql)
+            .bind(("kb_id", kb_id.to_string()))
+            .await?;
+        let rows: Vec<surrealdb::types::Value> = res.take(0).or_else(|e| {
+            if e.to_string().contains("does not exist") {
+                Ok(vec![])
+            } else {
+                Err(anyhow::anyhow!(e))
+            }
+        })?;
+        let count = rows
+            .into_iter()
+            .next()
+            .and_then(|v| {
+                let j = surreal_to_json(v).ok()?;
+                j.get("c").and_then(|c| c.as_u64()).map(|n| n as usize)
+            })
+            .unwrap_or(0);
+        Ok(count)
+    }
+
     async fn update_document_status(&self, doc_id: &str, status: &DocumentStatus) -> Result<()> {
-        let sql = "UPDATE knowledge_documents SET status = $status, updated_at = time::now() WHERE id = $id";
+        // `knowledge_documents.id` is a record id (e.g. knowledge_documents:`<uuid>`),
+        // not a plain string — match it via type::thing() so the bound UUID resolves
+        // to the correct row.
+        let sql = "UPDATE type::thing('knowledge_documents', $id) SET status = $status, updated_at = time::now()";
         self.db
             .query(sql)
             .bind(("id", doc_id.to_string()))
@@ -868,6 +901,12 @@ impl PersistenceLayer for SurrealDbProvider {
 /// `surrealdb_types::Value` implements `Serialize` but uses enum-variant JSON:
 /// `{"Object": {"name": {"String": "Server"}, ...}}`, `{"Array": [...]}`, `"Null"`.
 /// This function recursively unwraps those variants into flat standard JSON.
+/// Convert a SurrealDB value into a JSON value. Public so the live-bus can
+/// reuse the same serialization path used by every other persistence method.
+pub fn value_to_json(v: surrealdb::types::Value) -> Result<serde_json::Value> {
+    surreal_to_json(v)
+}
+
 fn surreal_to_json(v: surrealdb::types::Value) -> Result<serde_json::Value> {
     let raw = serde_json::to_value(&v).context("serialising surrealdb Value")?;
     Ok(unwrap_surreal_value(raw))

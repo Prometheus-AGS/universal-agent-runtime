@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminShell, type AdminSection } from "@/admin/admin-shell";
 import { AdminWelcome } from "@/admin/components/admin-welcome";
@@ -42,6 +42,18 @@ const PAGE_MAP: Record<AdminSection, () => ReactNode> = {
 
 export function AdminPage() {
   const navigate = useNavigate();
+
+  // Apply terminal aesthetic theme only while on an /admin route.
+  // See docs/admin-aesthetic-spec.md for the contract.
+  useEffect(() => {
+    const root = document.documentElement;
+    const prev = root.getAttribute("data-admin-theme");
+    root.setAttribute("data-admin-theme", "terminal");
+    return () => {
+      if (prev) root.setAttribute("data-admin-theme", prev);
+      else root.removeAttribute("data-admin-theme");
+    };
+  }, []);
 
   function renderAdminContent(section: AdminSection) {
     return (
