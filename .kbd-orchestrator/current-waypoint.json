@@ -1,41 +1,28 @@
 {
-  "phase": "submodule-entity-management-implementation",
+  "phase": null,
   "change": null,
-  "status": "execute_complete",
-  "previousPhase": "submodule-skills-and-entity-devtools-expansion",
-  "currentTask": "all 11 changes complete — begin reflect phase",
+  "status": "awaiting_new_phase",
+  "previousPhase": "submodule-entity-management-implementation",
+  "currentTask": "select next phase via /kbd-new-phase",
   "nextPendingChange": null,
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-reflect",
+  "exactNextCommand": "/kbd-new-phase",
   "parentPhase": null,
   "childPhases": [],
   "childPointer": null,
   "backend": "openspec",
-  "wave": "W8",
-  "lastCompletedChange": "seim-em-extension-scaffold",
-  "changesCompleted": 11,
-  "changesTotal": 11,
-  "entityManagementWorktree": {
-    "path": "~/.claude/worktrees/seim-entity-management",
-    "branch": "feat/seim-entity-management-impl",
-    "tip": "f37faed",
-    "pushed": true
-  },
-  "mergedPrs": [
-    {
-      "repo": "prometheus-entity-management",
-      "pr": 1,
-      "url": "https://github.com/Prometheus-AGS/prometheus-entity-management/pull/1",
-      "mergedAt": "2026-05-28"
-    }
+  "session_arc_outcome": "submodule-entity-management-implementation: 5/5 goals MET, 11/11 changes merged, 159/159 tests passing.",
+  "carryOver": [
+    "entity-realtime-surreal-live/SKILL.md correction (prometheus-skill-system PR)",
+    "EntitiesTab virtualizer wiring",
+    "Subscriptions tab implementation",
+    "Extension unpacked load test (manual)"
   ],
-  "pendingPrs": [
-    {
-      "repo": "prometheus-entity-management",
-      "branch": "feat/seim-entity-management-impl",
-      "commits": ["bc51bfa", "3af47b2", "3d2c147", "ddb4c44", "5a1f388", "f37faed"],
-      "note": "W4-W8 pushed; PR not yet opened"
-    }
+  "recommendedNextPhaseSeeds": [
+    "uar-runs-checkpoint-persistence",
+    "uar-entity-explorer-tabs-complete",
+    "seim-skill-system-surreal-live-correction",
+    "uar-promote-ci-gates"
   ],
-  "updatedAt": "2026-05-28T07:55:00Z"
+  "updatedAt": "2026-05-28T08:10:00Z"
 }

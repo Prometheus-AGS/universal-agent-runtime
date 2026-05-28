@@ -6,7 +6,7 @@
   "assessment_complete": true,
   "plan_complete": true,
   "execute_complete": true,
-  "reflect_complete": false,
+  "reflect_complete": true,
   "backend": "openspec",
   "changes_total": 11,
   "changes_completed": 11,
@@ -46,10 +46,10 @@
     },
     {
       "sha": "bc51bfa",
-      "subject": "docs(explorer): preflight research notes — UI/UX routing discipline W4",
+      "subject": "docs(explorer): preflight research notes \u2014 UI/UX routing discipline W4",
       "files": 1,
       "insertions": 373,
-      "tests": "docs-only — no test delta",
+      "tests": "docs-only \u2014 no test delta",
       "pushed": true,
       "change": "seim-em-explorer-preflight-research"
     },
@@ -106,8 +106,14 @@
       "pr_url": "https://github.com/Prometheus-AGS/prometheus-entity-management/pull/1",
       "pr_number": 1,
       "branch": "feat/seim-entity-management-impl",
-      "commits": ["9f314ba", "b65e74f"],
-      "changes": ["seim-em-surreal-live-adapter-impl", "seim-em-engine-devtools-tap"],
+      "commits": [
+        "9f314ba",
+        "b65e74f"
+      ],
+      "changes": [
+        "seim-em-surreal-live-adapter-impl",
+        "seim-em-engine-devtools-tap"
+      ],
       "title": "feat(entity): SurrealDB live adapter + engine devtools tap (W3)",
       "merged_at": "2026-05-28"
     }
@@ -116,19 +122,23 @@
   "deferred_tasks": [
     {
       "change": "seim-surreal-live-spec-correction",
-      "tasks": ["§2.4 — companion-skill correction"],
-      "reason": "Shipped entity-realtime-surreal-live/SKILL.md uses registerAdapter — the same incorrect API the spec was using. Requires follow-up skill-system PR."
+      "tasks": [
+        "\u00a72.4 \u2014 companion-skill correction"
+      ],
+      "reason": "Shipped entity-realtime-surreal-live/SKILL.md uses registerAdapter \u2014 the same incorrect API the spec was using. Requires follow-up skill-system PR."
     },
     {
       "change": "seim-em-worktree-setup",
-      "tasks": ["§6.2 — orchestrator SKILL.md phase-sidecar doc"],
+      "tasks": [
+        "\u00a76.2 \u2014 orchestrator SKILL.md phase-sidecar doc"
+      ],
       "reason": "worktrees.json convention introduced here is not yet documented in orchestrator SKILL.md. Filed for a future change."
     }
   ],
   "lessons_learned": [
     {
       "id": "bash-cwd-tracking",
-      "summary": "Bash tool shell cwd does not always reset after a previous invocation's cd. For cross-worktree writes, every bash invocation that writes files MUST start with an explicit cd <abs-path>. Surfaced during seim-em-worktree-setup §3; recovered cleanly via mv + rmdir."
+      "summary": "Bash tool shell cwd does not always reset after a previous invocation's cd. For cross-worktree writes, every bash invocation that writes files MUST start with an explicit cd <abs-path>. Surfaced during seim-em-worktree-setup \u00a73; recovered cleanly via mv + rmdir."
     },
     {
       "id": "bash-relative-path-failures-during-archive",
@@ -167,17 +177,37 @@
     "treeshake_gate": "hard fail in prepublishOnly"
   },
   "waves": {
-    "W0": ["seim-skill-system-pr-bundle"],
-    "W1": ["seim-surreal-live-spec-correction"],
-    "W2": ["seim-em-worktree-setup"],
-    "W3": ["seim-em-surreal-live-adapter-impl", "seim-em-engine-devtools-tap"],
-    "W4": ["seim-em-explorer-preflight-research"],
-    "W5": ["seim-em-explorer-event-bus-registry"],
-    "W6": ["seim-em-explorer-panel-components"],
-    "W7": ["seim-em-explorer-production-treeshake-check", "seim-em-extension-architecture-notes"],
-    "W8": ["seim-em-extension-scaffold"]
+    "W0": [
+      "seim-skill-system-pr-bundle"
+    ],
+    "W1": [
+      "seim-surreal-live-spec-correction"
+    ],
+    "W2": [
+      "seim-em-worktree-setup"
+    ],
+    "W3": [
+      "seim-em-surreal-live-adapter-impl",
+      "seim-em-engine-devtools-tap"
+    ],
+    "W4": [
+      "seim-em-explorer-preflight-research"
+    ],
+    "W5": [
+      "seim-em-explorer-event-bus-registry"
+    ],
+    "W6": [
+      "seim-em-explorer-panel-components"
+    ],
+    "W7": [
+      "seim-em-explorer-production-treeshake-check",
+      "seim-em-extension-architecture-notes"
+    ],
+    "W8": [
+      "seim-em-extension-scaffold"
+    ]
   },
   "sourceTool": "claude-code",
-  "notes": "All 11 changes complete. PR #1 (W3) merged. W4-W8 pushed to feat/seim-entity-management-impl. All commits pushed. Reflect phase next.",
-  "updatedAt": "2026-05-28T07:52:00Z"
+  "notes": "Phase complete. All 11 changes merged. Reflection written.",
+  "updatedAt": "2026-05-28T08:10:00Z"
 }
