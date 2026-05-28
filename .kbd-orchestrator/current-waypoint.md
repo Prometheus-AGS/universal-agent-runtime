@@ -1,36 +1,37 @@
 # Current Waypoint
 
-- Phase: `full-frontend-entity-mgmt-migration` — **reflect_complete, 70% goal achievement**
-- Previous phase: `prometheus-package-integration` (10/14 changes shipped; remaining 2 superseded by this phase)
-- Source of truth: `.kbd-orchestrator/`
-- Secondary mirror: `surreal_memory` MCP at `/mcp/memory`
-- Status: `reflect_complete`
-- Reflection: [.kbd-orchestrator/phases/full-frontend-entity-mgmt-migration/reflection.md](phases/full-frontend-entity-mgmt-migration/reflection.md)
-- Exact next command: `/kbd-new-phase direct-entity-migration-providers`
-- Updated at: 2026-05-27T04:10:00-05:00
+- Phase: `submodule-entity-management-implementation` **(plan_complete)**
+- Previous phase: `submodule-skills-and-entity-devtools-expansion` *(reflect_complete; 11/11 changes archived)*
+- Backend: OpenSpec
+- Wave: **W0** — kickoff
+- Status: `plan_complete`
+- Progress: **0 / 11 changes** scaffolded
+- Active change: `seim-skill-system-pr-bundle` *(state: ready_for_opsx_new)*
+- Next pending change: same — first OpenSpec change to scaffold
+- Exact next command: `/opsx:new seim-skill-system-pr-bundle`
+- Plan: [plan.md](phases/submodule-entity-management-implementation/plan.md)
+- Assessment: [assessment.md](phases/submodule-entity-management-implementation/assessment.md)
+- Updated at: 2026-05-27T00:00:00Z
 
-## Phase outcome — what shipped
+## Wave shape (recap)
 
-- **Realtime spine live**: 10 SurrealDB-backed live topics streaming to JWT-gated `/api/live/{topic}` SSE endpoints.
-- **Bridge migration**: 8 admin hooks bridged via `useGraphBridge` — Knowledge, Providers, Agents, Skills, Models, Settings, Memory, Tools, Compiler-Sessions. Every Zustand admin store auto-refreshes on SSE delivery.
-- **Optimistic mutations** on 3 high-frequency paths: skill toggle, agent patch, provider set-default.
-- **Docs**: [docs/migration-stale-data-audit.md](../docs/migration-stale-data-audit.md) + [AGENTS.md](../AGENTS.md) "Realtime freshness contract" section.
+| Wave | Changes |
+|---|---|
+| W0 | 1 — commit prior phase's skill-system tree (blocking) |
+| W1 | 2 — surreal-live spec correction |
+| W2 | 3 — new worktree at `~/.claude/worktrees/seim-entity-management` |
+| W3 | 4 surreal-live impl + 5 engine devtools tap *(parallel)* |
+| W4 | 6 preflight UI/UX research *(gating)* |
+| W5 | 7 event bus + multi-store registry |
+| W6 | 8 panel components (the big one) |
+| W7 | 9 tree-shake check + 10 extension architecture notes *(parallel)* |
+| W8 | 11 extension scaffold *(stretch — scaffold-only)* |
 
-## Phase outcome — what deferred (becomes next-phase seeds)
+## Default decisions (in effect unless user overrides)
 
-1. **Direct `useEntity` migration per entity** — retire the bridge + Zustand stores per cross-cutting entity (Providers pilot recommended).
-2. **Vitest contract test** — two-views/one-SSE-event regression guard.
-3. **Push channels for `Tool` + `McpStatus`** — full realtime parity for non-DB-backed entities.
-4. **`runs` topic reconsideration** — only if a non-chat consumer needs run state.
-5. **README architecture diagram** — visual companion to the AGENTS.md section.
+1. Spec reconciliation: delta change preserving historical record.
+2. Worktree: new persistent worktree under `~/.claude/worktrees/seim-entity-management`.
+3. Chrome extension scope this phase: scaffold-only.
+4. Production tree-shake gate: hard fail in `prepublishOnly`.
 
-## Locked decisions (carried forward)
-
-1. `threads` topic aliases the `sessions` table; no `runs` topic.
-2. Bridge pattern is interim. Direct `useEntity` is the destination.
-3. Optimistic mutations: high-frequency only.
-4. `api_keys`: non-realtime; never broadcast secrets.
-5. `chat-message-store` + `chat-stream-store` stay out of scope.
-
-All tools should read this waypoint before planning or execution and update the
-phase progress when work is completed.
+All KBD skills will emit `starting/ending <kind> <name> [i/n]` lines on stderr (default reporter from the hook system); each change emits its own `phase:before` / `phase:after` hooks; memory recall auto-fires on every `assess:before`.
