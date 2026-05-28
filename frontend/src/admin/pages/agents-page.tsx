@@ -20,10 +20,10 @@ import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/comp
 import { AgentAiBuilder } from "@/admin/components/agent-ai-builder";
 import { AgentEditor } from "@/admin/components/agent-editor";
 import { cn } from "@/lib/utils";
-import { useAgentsAdmin } from "@/hooks/use-agents-admin";
-import { useAgentsAdminStore } from "@/stores/agents-admin-store";
-import { deleteAgent } from "@/services/agents-api";
+import { deleteAgent, patchAgent as patchAgentApi } from "@/services/agents-api";
 import { loadAgentsIntoGraph } from "@/entities/fetchers/agents";
+import { useAgents } from "@/entities/hooks/use-agents";
+import { optimisticUpsert, optimisticRemove } from "@/lib/realtime/optimistic";
 import type { UarAgent } from "@/types";
 
 // ── Agent Memory Section ───────────────────────────────────────────────────
@@ -77,7 +77,6 @@ function TriToggle({ value, onChange }: { value: boolean | null; onChange: (v: b
 }
 
 function AgentMemorySection({ agent }: { agent: UarAgent }) {
-  const patchAgent = useAgentsAdminStore((s) => s.patchAgent);
   const [state, setState] = useState<AgentMemoryState>({
     memory_enabled: null,
     auto_capture: null,
@@ -98,7 +97,9 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
       if (state.inject_context !== null) body.memory_inject_context = state.inject_context;
       body.memory_scope = state.memory_scope;
 
-      await patchAgent(agent.id, body);
+      await optimisticUpsert("Agent", agent.id, body, async () => {
+        await patchAgentApi(agent.id, body);
+      });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
@@ -198,10 +199,20 @@ function agentLacksModel(a: UarAgent): boolean {
 // ── Main Agents Page ───────────────────────────────────────────────────────
 
 export const AgentsPage: FC = () => {
-  const { agents, loading, error, load } = useAgentsAdmin();
+  // Reads come from the entity graph (hydrated by loadAgentsIntoGraph and
+  // kept fresh by SSE realtime). Mutations continue through the legacy hook
+  // until the next change in this phase migrates them too.
+  const agentsView = useAgents();
+  const agents = agentsView.items as unknown as UarAgent[];
+  const loading = agents.length === 0;
+  const [error, setError] = useState<string | null>(null);
+  const load = () => {
+    setError(null);
+    return loadAgentsIntoGraph().catch((e) => setError((e as Error).message));
+  };
   const [selected, setSelected] = useState<UarAgent | null>(null);
 
-  // Populate the entity graph alongside the legacy store.
+  // Populate the entity graph on mount.
   useEffect(() => {
     void loadAgentsIntoGraph();
   }, []);
@@ -243,14 +254,15 @@ export const AgentsPage: FC = () => {
     setDeleting(true);
     setDeleteError(null);
     try {
-      const res = await deleteAgent(deleteTarget.id);
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `${res.status}`);
-      }
+      await optimisticRemove("Agent", deleteTarget.id, async () => {
+        const res = await deleteAgent(deleteTarget.id);
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || `${res.status}`);
+        }
+      });
       if (selected?.id === deleteTarget.id) setSelected(null);
       setDeleteTarget(null);
-      void load();
     } catch (e) {
       setDeleteError((e as Error).message);
     } finally {

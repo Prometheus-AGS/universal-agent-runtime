@@ -1,0 +1,77 @@
+// UAR dynamic plugin contract.
+//
+// Defines the WIT world that every UAR plugin (Rust, Go, JS/TS, Python via
+// componentize-*) must satisfy. The host is the universal-agent-runtime
+// process; guests are WebAssembly Components loaded under wasmtime.
+//
+// Pinned wasmtime version controls .cwasm cache compatibility — see
+// `src/uar/runtime/wasm/plugin_loader.rs` for the strategy enum and
+// `.kbd-orchestrator/phases/runtime-image-multi-language-toolchain/`
+// for the design doc.
+
+package uar:plugin@0.1.0;
+
+interface types {
+    /// Opaque plugin identifier minted by the host on load.
+    type plugin-id = u64;
+
+    /// Capability tokens the host grants to a plugin during init. Plugins
+    /// may not perform an operation whose capability they were not granted.
+    record capability-grant {
+        net-outbound: bool,
+        fs-read: bool,
+        fs-write: bool,
+        clock-read: bool,
+        memory-mb-max: u32,
+        cpu-ms-max: u32,
+    }
+
+    /// Result of a single plugin invocation.
+    variant invoke-result {
+        ok(list<u8>),
+        error(string),
+    }
+
+    /// Stable error categories surfaced to the host loader.
+    variant plugin-error {
+        capability-denied(string),
+        resource-exhausted(string),
+        guest-trap(string),
+        host-rejected(string),
+    }
+}
+
+interface host {
+    use types.{plugin-id};
+
+    /// Host-side logging hook the guest may call. Implementation routes
+    /// through `tracing` with plugin-id as a structured field.
+    log: func(plugin-id: plugin-id, level: u8, message: string);
+
+    /// Capability-checked clock read. Returns Unix epoch nanoseconds.
+    /// Fails if the plugin was not granted `clock-read`.
+    now-ns: func(plugin-id: plugin-id) -> result<u64, string>;
+}
+
+interface plugin {
+    use types.{capability-grant, invoke-result, plugin-error};
+
+    /// Called once after the component is instantiated. The guest receives
+    /// its capability grant and may return a static descriptor (name,
+    /// version, declared capabilities) for the host to record.
+    init: func(grant: capability-grant) -> result<string, plugin-error>;
+
+    /// Invoked per request. `request` is an opaque byte payload whose
+    /// schema is owned by the host-side dispatcher.
+    invoke: func(request: list<u8>) -> invoke-result;
+
+    /// Called before the host unloads or recycles the instance. Guests
+    /// should flush state. Hosts MUST tolerate this never being called
+    /// in the trap path.
+    shutdown: func();
+}
+
+world uar-plugin {
+    import host;
+    export plugin;
+}

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { generateThreadTitle } from "./use-thread-naming";
 
 function getHeader(init: RequestInit | undefined, key: string): string | null {
@@ -17,17 +17,17 @@ function getHeader(init: RequestInit | undefined, key: string): string | null {
 
 describe("generateThreadTitle", () => {
   afterEach(() => {
-    mock.restore();
+    vi.restoreAllMocks();
   });
 
   test("sends /api/generate-title request payload without custom session header", async () => {
-    const fetchMock = mock(async () => {
+    const fetchMock = vi.fn(async () => {
       return new Response(JSON.stringify({ title: "Thread title" }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     });
-    globalThis.fetch = fetchMock as typeof fetch;
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     await generateThreadTitle("User says hello", "Assistant replies");
 
@@ -40,7 +40,7 @@ describe("generateThreadTitle", () => {
     expect(sessionIdHeader).toBeNull();
 
     const body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : null;
-    expect(body).toBeObject();
+    expect(body).not.toBeNull();
     expect(typeof body?.message).toBe("string");
     expect(typeof body?.assistant_message).toBe("string");
   });

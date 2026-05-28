@@ -8,7 +8,9 @@
 //! - [`config::WasmConfig`] — Sandbox configuration (memory limits, timeouts, ACLs)
 //! - [`sandbox::WasmSandbox`] — Core execution engine wrapping `wasmtime`
 //! - [`host_functions`] — Custom host functions exposed to Wasm guests
+//! - [`plugin_loader`] — Dynamic plugin loader contract (WIT in `wit/uar-plugin.wit`)
 
 pub mod config;
 pub mod host_functions;
+pub mod plugin_loader;
 pub mod sandbox;

@@ -685,6 +685,15 @@ impl PersistenceLayer for PostgresProvider {
         Ok(docs)
     }
 
+    async fn count_documents(&self, kb_id: &str) -> Result<usize> {
+        let row = sqlx::query("SELECT COUNT(*)::bigint AS c FROM knowledge_documents WHERE kb_id = $1")
+            .bind(kb_id)
+            .fetch_one(&self.pool)
+            .await?;
+        let count: i64 = row.try_get("c")?;
+        Ok(usize::try_from(count.max(0)).unwrap_or(0))
+    }
+
     async fn update_document_status(&self, doc_id: &str, status: &DocumentStatus) -> Result<()> {
         let status_str = match status {
             DocumentStatus::Pending => "pending",

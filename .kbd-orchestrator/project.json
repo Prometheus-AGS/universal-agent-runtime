@@ -4,7 +4,7 @@
   "sourceOfTruth": ".kbd-orchestrator",
   "specSystem": "openspec",
   "activeChange": null,
-  "activePhase": "runtime-provider-protocol-hardening",
+  "activePhase": "submodule-entity-management-implementation",
   "memoryMirror": {
     "provider": "surreal_memory",
     "mcpServer": "surreal_memory",
@@ -12,5 +12,6 @@
     "authoritative": false
   },
   "tools": ["codex", "claude-code", "cursor", "opencode"],
-  "updatedAt": "2026-04-26T04:44:28-05:00"
+  "worktreeRoot": "${HOME}/.claude/worktrees",
+  "updatedAt": "2026-05-27T00:00:00Z"
 }

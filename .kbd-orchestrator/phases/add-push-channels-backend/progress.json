@@ -1,0 +1,34 @@
+{
+  "phase": "add-push-channels-backend",
+  "createdAt": "2026-05-27T12:15:00-05:00",
+  "updatedAt": "2026-05-27T12:25:00-05:00",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execute_complete": true,
+  "reflect_complete": true,
+  "reflection_path": ".kbd-orchestrator/phases/add-push-channels-backend/reflection.md",
+  "goal_achievement_percent": 100,
+  "scope_collapse_note": "phase rescoped from backend-push-channels to frontend-only bridge deletion after discovering Tools is static (registry built once at startup) and McpStatus polling is adequate. Zero Rust changes.",
+  "changes_total": 4,
+  "changes_completed": 4,
+  "changes_ordered": [
+    "add-tools-and-mcp-fetchers",
+    "migrate-tools-page-direct",
+    "migrate-mcp-health-page-direct",
+    "delete-use-graph-bridge-and-update-audit"
+  ],
+  "change_status": {
+    "add-tools-and-mcp-fetchers": "DONE",
+    "migrate-tools-page-direct": "DONE",
+    "migrate-mcp-health-page-direct": "DONE",
+    "delete-use-graph-bridge-and-update-audit": "DONE"
+  },
+  "verification": {
+    "frontend_tests": "37/37 (40 − 3 bridge contract tests deleted with the bridge)",
+    "frontend_build": "clean",
+    "useGraphBridge_grep": "empty",
+    "tools_stores_retired": "tools-discovery-store + mcp-health-store + their admin hooks deleted",
+    "bridge_file_deleted": "frontend/src/lib/realtime/use-graph-bridge.ts removed; contract test removed"
+  }
+}

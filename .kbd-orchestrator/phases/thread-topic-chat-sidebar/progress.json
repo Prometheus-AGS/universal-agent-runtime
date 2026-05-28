@@ -1,0 +1,27 @@
+{
+  "phase": "thread-topic-chat-sidebar",
+  "createdAt": "2026-05-27T12:35:00-05:00",
+  "updatedAt": "2026-05-27T12:50:00-05:00",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execute_complete": true,
+  "reflect_complete": true,
+  "reflection_path": ".kbd-orchestrator/phases/thread-topic-chat-sidebar/reflection.md",
+  "goal_achievement_percent": 100,
+  "changes_total": 2,
+  "changes_completed": 2,
+  "changes_ordered": [
+    "add-thread-graph-sync-hook",
+    "flip-thread-audit-row-to-direct"
+  ],
+  "change_status": {
+    "add-thread-graph-sync-hook": "DONE",
+    "flip-thread-audit-row-to-direct": "DONE"
+  },
+  "verification": {
+    "frontend_tests": "40/40 (37 + 3 new sync contract tests)",
+    "frontend_build": "clean",
+    "new_pattern_documented": "SSE-reconciler (sibling to Direct migration playbook)"
+  }
+}

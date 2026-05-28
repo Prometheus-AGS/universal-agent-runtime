@@ -1,0 +1,14 @@
+{
+  "$comment": "Per-repo worktrees provisioned by this phase. Read by consumer changes; refuse to operate if your repo's entry is absent.",
+  "worktrees": {
+    "prometheus-entity-management": {
+      "path": "${HOME}/.claude/worktrees/seim-entity-management",
+      "expandedPath": "/Users/gqadonis/.claude/worktrees/seim-entity-management",
+      "branch": "feat/seim-entity-management-impl",
+      "baseCommit": "1abae4f74b3c3e2b22a0c2f7ef18e931a89a81fd",
+      "baseSha": "1abae4f74b3c3e2b22a0c2f7ef18e931a89a81fd",
+      "provisionedAt": "2026-05-27T21:37:15Z",
+      "provisionedBy": "seim-em-worktree-setup"
+    }
+  }
+}

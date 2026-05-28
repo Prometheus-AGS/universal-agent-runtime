@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JsonSchemaForm } from "@/components/json-schema-form";
-import type { ToolWithNs } from "@/stores/tools-discovery-store";
+import type { ToolGraphRow as ToolWithNs } from "@/entities/fetchers/tools";
 
 interface ToolDetailPanelProps {
   tool: ToolWithNs;

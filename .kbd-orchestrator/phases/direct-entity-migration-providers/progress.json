@@ -1,0 +1,43 @@
+{
+  "phase": "direct-entity-migration-providers",
+  "createdAt": "2026-05-27T04:30:00-05:00",
+  "updatedAt": "2026-05-27T05:30:00-05:00",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execute_complete": true,
+  "reflect_complete": true,
+  "reflection_path": ".kbd-orchestrator/phases/direct-entity-migration-providers/reflection.md",
+  "goal_achievement_percent": 80,
+  "decisions": {
+    "default_id_storage": "ProviderMeta singleton (id current, field default_id)",
+    "configure_provider_optimistic": "non-optimistic for create",
+    "audit_doc_format": "status-only",
+    "pilot_scope": "stop after Providers; evaluate before planning Agents/Models/Skills/Settings"
+  },
+  "changes_total": 4,
+  "changes_completed": 4,
+  "changes_ordered": [
+    "provider-meta-singleton",
+    "providers-page-direct-reads",
+    "providers-page-direct-mutations",
+    "retire-providers-admin-store"
+  ],
+  "change_status": {
+    "provider-meta-singleton": "DONE",
+    "providers-page-direct-reads": "DONE",
+    "providers-page-direct-mutations": "DONE",
+    "retire-providers-admin-store": "DONE"
+  },
+  "next_change": null,
+  "scope_summary": {
+    "consumer_pages": 1,
+    "files_deleted": [
+      "frontend/src/hooks/use-providers-admin.ts",
+      "frontend/src/stores/providers-admin-store.ts"
+    ],
+    "new_hooks": ["useProviderDefault"],
+    "new_entity_types": ["ProviderMeta"],
+    "loc_net_delta": -50
+  }
+}

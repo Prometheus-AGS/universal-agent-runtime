@@ -1,0 +1,17 @@
+# Pinned per KBD phase `runtime-image-polyglot-toolchain-completion`,
+# change `pin-rust-nightly-and-bump-go`. Host and container (Dockerfile
+# stage `toolchain`) must agree on this channel so polyglot WASM plugin
+# builds are reproducible.
+#
+# Floating `nightly` is intentionally avoided — bumps go through a new
+# KBD change so toolchain drift is auditable.
+
+[toolchain]
+channel = "nightly-2026-05-01"
+components = ["rustfmt", "clippy", "rust-src", "rust-analyzer"]
+targets = [
+    "wasm32-unknown-unknown",
+    "wasm32-wasip1",
+    "wasm32-wasip2",
+]
+profile = "default"

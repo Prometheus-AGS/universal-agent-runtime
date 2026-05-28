@@ -152,6 +152,18 @@ impl SkillService {
         self.providers.push(provider);
     }
 
+    /// Register a batch of `Skill { kind = Manifest, origin = Builtin }` into
+    /// the in-memory registry. Used at startup by the builtin-loader; these
+    /// skills are not persisted via storage providers.
+    pub async fn register_builtins(&self, skills: Vec<crate::uar::domain::skills::Skill>) {
+        let mut registry = self.registry.write().await;
+        let count = skills.len();
+        for s in skills {
+            registry.register(s).await;
+        }
+        info!(count, "registered builtin skills");
+    }
+
     /// Initialize the service by loading skills from all providers.
     pub async fn initialize(&self) -> anyhow::Result<()> {
         let mut registry = self.registry.write().await;
@@ -356,7 +368,23 @@ impl SkillService {
     }
 
     /// Permanently delete a skill from the registry, database, and filesystem.
+    ///
+    /// Skills with `origin = Builtin` are immutable; this method returns
+    /// `Err(SystemSkillImmutable)` for them so the API layer can map to 409.
     pub async fn delete_skill_permanent(&self, id: &str) -> anyhow::Result<bool> {
+        // Block deletion of Builtin skills (system-shipped, immutable).
+        {
+            let registry = self.registry.read().await;
+            if let Some(skill) = registry.get(id) {
+                if matches!(
+                    skill.origin,
+                    crate::uar::domain::skills::SkillOrigin::Builtin
+                ) {
+                    anyhow::bail!("system_skill_immutable");
+                }
+            }
+        }
+
         let removed = self.registry.write().await.remove(id).is_some();
 
         // Delete from all providers that support deletion

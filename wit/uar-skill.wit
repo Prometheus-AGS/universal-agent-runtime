@@ -1,0 +1,16 @@
+// uar:skill@0.1.0 — Universal Agent Runtime plugin world.
+//
+// This is the canonical WIT world UAR-targeted WebAssembly Component Model
+// skills must export. Pinned at 0.1.0 — additive evolution only until 1.0.
+//
+// Author a skill in any language that targets the Component Model
+// (Rust via cargo-component, JS via jco, Python via componentize-py, etc.),
+// implement `run(input: string) -> result<string, string>`, and ship the
+// resulting `.wasm` to UAR's skills-user directory. Optionally AOT-compile
+// to `.cwasm` via `wasmtime compile` for faster cold start.
+
+package uar:skill@0.1.0;
+
+world skill {
+  export run: func(input: string) -> result<string, string>;
+}

@@ -1,11 +1,28 @@
 {
-  "phase": "runtime-provider-protocol-hardening",
+  "phase": null,
   "change": null,
-  "status": "assessment_ready",
-  "previousPhase": "runtime-console-validation-hardening",
-  "currentTask": "run KBD assessment for runtime-provider-protocol-hardening",
+  "status": "awaiting_new_phase",
+  "previousPhase": "submodule-entity-management-implementation",
+  "currentTask": "select next phase via /kbd-new-phase",
   "nextPendingChange": null,
-  "sourceTool": "codex",
-  "exactNextCommand": "/kbd-assess runtime-provider-protocol-hardening",
-  "updatedAt": "2026-04-26T04:44:28-05:00"
+  "sourceTool": "claude-code",
+  "exactNextCommand": "/kbd-new-phase",
+  "parentPhase": null,
+  "childPhases": [],
+  "childPointer": null,
+  "backend": "openspec",
+  "session_arc_outcome": "submodule-entity-management-implementation: 5/5 goals MET, 11/11 changes merged, 159/159 tests passing.",
+  "carryOver": [
+    "entity-realtime-surreal-live/SKILL.md correction (prometheus-skill-system PR)",
+    "EntitiesTab virtualizer wiring",
+    "Subscriptions tab implementation",
+    "Extension unpacked load test (manual)"
+  ],
+  "recommendedNextPhaseSeeds": [
+    "uar-runs-checkpoint-persistence",
+    "uar-entity-explorer-tabs-complete",
+    "seim-skill-system-surreal-live-correction",
+    "uar-promote-ci-gates"
+  ],
+  "updatedAt": "2026-05-28T08:10:00Z"
 }
