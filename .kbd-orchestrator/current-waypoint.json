@@ -1,10 +1,8 @@
 {
-  "phase": "uar-wisc-cli",
+  "phase": null,
   "change": null,
-  "status": "change_archived",
-  "currentTask": "provider-credentials-multitenant: merged (PR #5) + archived (openspec/changes/archive/2026-05-29-provider-credentials-multitenant). Carry-overs: run-level start_run assertion (6.5), manual smokes (9.1/9.2), pre-existing postgres-backend build break.",
-  "exactNextCommand": "/kbd-reflect uar-wisc-cli",
-  "previousPhase": "submodule-entity-management-implementation",
+  "status": "awaiting_new_phase",
+  "previousPhase": "uar-wisc-cli",
   "currentTask": "select next phase via /kbd-new-phase",
   "nextPendingChange": null,
   "sourceTool": "claude-code",
@@ -13,18 +11,18 @@
   "childPhases": [],
   "childPointer": null,
   "backend": "openspec",
-  "session_arc_outcome": "submodule-entity-management-implementation: 5/5 goals MET, 11/11 changes merged, 159/159 tests passing.",
+  "session_arc_outcome": "uar-wisc-cli: 7/7 goals MET. provider-credentials-multitenant implemented, merged (PR #5), archived (PR #6). 13 unit + 6 integration tests; durable Surreal store wired. Both single- and multi-tenant supported from one design.",
   "carryOver": [
-    "entity-realtime-surreal-live/SKILL.md correction (prometheus-skill-system PR)",
-    "EntitiesTab virtualizer wiring",
-    "Subscriptions tab implementation",
-    "Extension unpacked load test (manual)"
+    "Pre-existing postgres-backend build break (pgvector/sqlx) — spawned task",
+    "Run-level start_run credential assertion (tasks 6.5)",
+    "Manual dual-mode smokes (9.1/9.2)",
+    "Finding 1 salvage: WISC scout + composite recipes (low priority)"
   ],
   "recommendedNextPhaseSeeds": [
-    "uar-runs-checkpoint-persistence",
-    "uar-entity-explorer-tabs-complete",
-    "seim-skill-system-surreal-live-correction",
-    "uar-promote-ci-gates"
+    "uar-postgres-backend-repair",
+    "uar-credentials-runtime-tests",
+    "uar-credentials-admin-ui",
+    "seim-wisc-scout-mcp"
   ],
-  "updatedAt": "2026-05-28T08:10:00Z"
+  "updatedAt": "2026-05-29T00:00:00Z"
 }
