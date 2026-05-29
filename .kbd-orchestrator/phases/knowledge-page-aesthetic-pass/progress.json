@@ -1,0 +1,22 @@
+{
+  "phase": "knowledge-page-aesthetic-pass",
+  "createdAt": "2026-05-27T14:10:00-05:00",
+  "updatedAt": "2026-05-27T14:10:00-05:00",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": false,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "decisions_default": {
+    "drag_zone_style": "solid border + inset ASCII frame on dragOver",
+    "processing_status_color": "amber (no blue in palette)",
+    "indeterminate_progress": "LoadingCursor inline",
+    "dialog_primitives": "keep Radix wrappers; restyle contents only",
+    "rewrite_cadence": "region-at-a-time (3 changes)",
+    "playwright_screenshot": "deferred"
+  },
+  "open_questions_pending": false,
+  "page_loc_current": 778,
+  "page_loc_budget": "778 ± 15%",
+  "non_terminal_token_count_today": 71
+}
