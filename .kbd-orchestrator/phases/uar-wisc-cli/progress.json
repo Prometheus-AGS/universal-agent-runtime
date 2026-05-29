@@ -1,0 +1,34 @@
+{
+  "phase": "uar-wisc-cli",
+  "createdAt": "2026-05-29T00:00:00Z",
+  "updatedAt": "2026-05-29T00:00:00Z",
+  "sourceTool": "claude-code",
+  "kind": "salvage-assessment",
+  "subject_branch": "origin/feature/providers",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "decision_resolved": "BOTH single-tenant + multi-tenant; one design (scoped chain ends in env-var fallback)",
+  "execute_complete": false,
+  "reflect_complete": false,
+  "findings": {
+    "wisc_cli": {
+      "achieved_another_way": true,
+      "via": "src/uar/memory/mcp_server.rs (18+ MCP tools)",
+      "genuinely_missing": ["scout (filesystem signature extraction)", "decide/prime/handoff composite recipes"],
+      "salvage_priority": "low-medium"
+    },
+    "provider_credential_system": {
+      "achieved_another_way": "partial",
+      "achieved": ["provider routing via liter-llm", "models.dev catalog via build.rs"],
+      "genuinely_missing": [
+        "per-user AES-256-GCM encrypted BYO credentials (session/encrypted.rs is a stub)",
+        "scoped credential resolution chain (session->agent->user->system->env)",
+        "runtime provider/credential REST API"
+      ],
+      "salvage_priority": "high IF multi-tenant SaaS, n/a IF single-tenant"
+    }
+  },
+  "decision_point": "deployment model: single-tenant (gap covered) vs multi-tenant SaaS (hard gap on encrypted BYO credentials)",
+  "branch_disposition": "DO NOT DELETE origin/feature/providers until decision made; do not merge wholesale (dep drift + catalog conflict)",
+  "self_correction": "earlier dismissal was wrong: liter-llm superseded routing, NOT multi-tenant encrypted credentials"
+}

@@ -1,7 +1,9 @@
 {
-  "phase": null,
-  "change": null,
-  "status": "awaiting_new_phase",
+  "phase": "uar-wisc-cli",
+  "change": "provider-credentials-multitenant",
+  "status": "implemented",
+  "currentTask": "S1-S7 + W1 (durable Surreal store) + W2/W3 (HTTP tests) done; default build green; 13 unit + 6 integration tests pass; clippy clean; docs done. Remaining: run-level start_run assertion (6.5) + manual smokes (9.1/9.2).",
+  "exactNextCommand": "/opsx:archive provider-credentials-multitenant",
   "previousPhase": "submodule-entity-management-implementation",
   "currentTask": "select next phase via /kbd-new-phase",
   "nextPendingChange": null,

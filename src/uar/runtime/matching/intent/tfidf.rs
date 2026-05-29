@@ -249,6 +249,8 @@ mod tests {
             enabled: true,
             provider_id: String::new(),
             execution_config: Default::default(),
+            kind: Default::default(),
+            origin: Default::default(),
         }
     }
 

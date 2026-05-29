@@ -1,4 +1,5 @@
 pub mod api_keys;
 pub mod claims;
+pub mod credentials;
 pub mod middleware;
 pub mod rate_limit;

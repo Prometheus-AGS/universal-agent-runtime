@@ -95,7 +95,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
 
     // Initialize persistence based on config.
     // All three branches produce trait-object arcs so the types unify across arms.
-    let (persistence_layer, compiler_storage, agent_registry, live_bus): (
+    let (persistence_layer, compiler_storage, agent_registry, live_bus, credential_store): (
         Arc<dyn PersistenceLayer>,
         Option<(
             Arc<dyn crate::uar::compiler::storage::SpecStorage>,
@@ -103,6 +103,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         )>,
         Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
         Option<Arc<crate::uar::realtime::surreal_bus::LiveQueryBus>>,
+        Option<Arc<dyn uar::security::credentials::CredentialStore>>,
     ) = if matches!(
         config.persistence.provider.as_str(),
         "surreal" | "surrealdb"
@@ -135,6 +136,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         let registry = Arc::new(crate::uar::api::a2a::SurrealAgentRegistry::new(db.clone()))
             as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
 
+        // Durable per-user credential store on the same DB connection.
+        let credential_store = Some(Arc::new(
+            uar::security::credentials::SurrealCredentialStore::new(db.clone()),
+        ) as Arc<dyn uar::security::credentials::CredentialStore>);
+
         // Start the live-query bus on the same DB connection.
         let live_bus = Some(Arc::new(
             crate::uar::realtime::surreal_bus::LiveQueryBus::start(db),
@@ -145,6 +151,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             Some((spec, sess)),
             Some(registry),
             live_bus,
+            credential_store,
         )
     } else {
         // Non-surreal persistence requested. Only available when the
@@ -171,6 +178,9 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 Arc::new(provider) as Arc<dyn PersistenceLayer>,
                 Some((spec, sess)),
                 Some(registry),
+                None,
+                // Postgres-backed credential store not implemented; falls back
+                // to in-memory below (matches the api_keys precedent).
                 None,
             )
         }
@@ -360,8 +370,30 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             .await;
     }
 
-    let run_manager = Arc::new(
-        RunManager::new(
+    // Multi-tenant provider credentials. Active only when CREDENTIAL_ENCRYPTION_KEY
+    // is set; otherwise `None` ⇒ single-tenant (env/config key path, unchanged).
+    // Uses the durable SurrealDB-backed store when persistence is Surreal;
+    // otherwise falls back to an in-memory store (matches the api_keys precedent).
+    let provider_service: Option<Arc<uar::security::credentials::ProviderService>> = {
+        let store: Arc<dyn uar::security::credentials::CredentialStore> =
+            credential_store.clone().unwrap_or_else(|| {
+                Arc::new(uar::security::credentials::InMemoryCredentialStore::new())
+            });
+        match uar::security::credentials::ProviderService::from_env(store) {
+            Ok(Some(svc)) => {
+                tracing::info!("Multi-tenant provider credentials enabled");
+                Some(Arc::new(svc))
+            }
+            Ok(None) => None,
+            Err(e) => {
+                tracing::error!(error = %e, "CREDENTIAL_ENCRYPTION_KEY invalid; multi-tenant credentials disabled");
+                None
+            }
+        }
+    };
+
+    let run_manager = Arc::new({
+        let mut rm = RunManager::new(
             llm_config.clone(),
             Arc::clone(&mcp),
             sessions.clone(),
@@ -373,8 +405,12 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .with_skill_service(Arc::clone(&skill_service))
         .with_provider_registry(Arc::clone(&provider_registry))
         .with_native_skills(Arc::clone(&native_skill_registry))
-        .with_message_context_strategy(config.context_strategy.clone()),
-    );
+        .with_message_context_strategy(config.context_strategy.clone());
+        if let Some(ref svc) = provider_service {
+            rm = rm.with_provider_service(Arc::clone(svc));
+        }
+        rm
+    });
 
     // Initialize Global Rate Limiter
     #[allow(clippy::cast_sign_loss)]
@@ -515,6 +551,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         actor_system: Arc::clone(&actor_system),
         governance_engine: Arc::clone(&governance_engine),
         api_key_service: Some(Arc::clone(&api_key_service)),
+        provider_service: provider_service.clone(),
         compiler_service: Some(Arc::clone(&compiler_service)),
         settings_manager: settings_manager.clone(),
         memory_service: memory_service.clone(),
@@ -645,6 +682,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .nest(
             "/api/uar/user",
             uar::api::user_settings::build_router().with_state(Arc::clone(&user_settings_store)),
+        )
+        // Per-user provider credential API (multi-tenant BYO keys)
+        .nest(
+            "/api/uar/credentials",
+            uar::api::credentials::build_router().with_state(state.provider_service.clone()),
         )
         // Admin Memory API (CRUD)
         .nest(
