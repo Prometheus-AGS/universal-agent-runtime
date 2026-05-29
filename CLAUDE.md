@@ -138,6 +138,7 @@ Set up the following in `.env` (copy from `.env.example`):
 - `UAR_LLM__API_KEY`: API key for the selected provider.
 - Provider-specific shortcuts: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, etc.
 - `TAVILY_API_KEY`: For web search functionality via MCP.
+- `CREDENTIAL_ENCRYPTION_KEY` (optional): Enables multi-tenant provider credentials. When set (32 ASCII bytes or 64 hex chars), users may store their own provider API keys encrypted at rest (AES-256-GCM); requests resolve per-user keys via the scoped chain `session → agent → user → system → env`. Leave unset for single-tenant: provider keys come from the env/config values only (unchanged behavior).
 - Backward-compatible: `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` (still supported, lower priority).
 
 LLM configuration precedence (highest → lowest):

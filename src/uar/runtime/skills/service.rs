@@ -641,6 +641,8 @@ mod tests {
             enabled: true,
             provider_id: "api".to_string(),
             execution_config: Default::default(),
+            kind: Default::default(),
+            origin: Default::default(),
         }
     }
 

@@ -94,6 +94,9 @@ pub struct RunManager {
     skill_evolution_config: SkillEvolutionConfig,
     /// Provider registry for per-agent LLM provider resolution
     provider_registry: Option<Arc<crate::llm::ProviderRegistry>>,
+    /// Multi-tenant credential service (per-user encrypted provider keys).
+    /// `None` ⇒ single-tenant: the env/config key on `llm_config` is used as-is.
+    provider_service: Option<Arc<crate::uar::security::credentials::ProviderService>>,
     /// Native skill registry for in-process tool execution
     native_skills: Arc<NativeSkillRegistry>,
     /// Pending tool-call approval channels: run_id -> oneshot sender.
@@ -272,6 +275,7 @@ impl RunManager {
             skill_service: None,
             skill_evolution_config: SkillEvolutionConfig::default(),
             provider_registry: None,
+            provider_service: None,
             native_skills,
             pending_approvals: Arc::new(Mutex::new(HashMap::new())),
             message_context_strategy: crate::uar::context::ContextStrategy::default(),
@@ -313,6 +317,18 @@ impl RunManager {
     /// Set the provider registry for per-agent LLM provider resolution.
     pub fn with_provider_registry(mut self, registry: Arc<crate::llm::ProviderRegistry>) -> Self {
         self.provider_registry = Some(registry);
+        self
+    }
+
+    /// Attach the multi-tenant credential service. When set, `start_run`
+    /// resolves a per-user/session/agent provider key and overrides the
+    /// run's `api_key`. When unset, the env/config key is used (single-tenant).
+    #[must_use]
+    pub fn with_provider_service(
+        mut self,
+        service: Arc<crate::uar::security::credentials::ProviderService>,
+    ) -> Self {
+        self.provider_service = Some(service);
         self
     }
 
@@ -378,6 +394,11 @@ impl RunManager {
 
         // 2. Add User Message
         session.add_user_message(&input);
+
+        // Capture identity for credential resolution before `user_id` is moved
+        // into the Run record and the resolved session id is the source of truth.
+        let user_id_for_creds = user_id.clone();
+        let session_id_for_creds = Some(session.id().to_string());
 
         let run = Run {
             run_id: run_id.clone(),
@@ -686,6 +707,57 @@ impl RunManager {
                     );
                     cfg.model = model.clone();
                     break;
+                }
+            }
+            cfg
+        };
+
+        // Apply the multi-tenant credential layer (first match wins:
+        // session → agent → user → system). When no ProviderService is
+        // configured, or no per-scope credential exists, the env/config key on
+        // `cfg.api_key` is left untouched — i.e. single-tenant behavior.
+        let run_llm_config = {
+            let mut cfg = run_llm_config;
+            if let Some(ref provider_service) = self.provider_service {
+                // Provider id is the segment before '/' in `provider/model`.
+                let provider_id = cfg
+                    .model
+                    .split_once('/')
+                    .map_or(cfg.model.as_str(), |(p, _)| p)
+                    .to_string();
+                let resolver = provider_service.resolver();
+                match resolver
+                    .resolve_with_context(
+                        user_id_for_creds.as_deref().unwrap_or("anonymous"),
+                        &provider_id,
+                        session_id_for_creds.as_deref(),
+                        Some(artifact.id.as_str()),
+                    )
+                    .await
+                {
+                    Ok(Some(resolved)) => {
+                        use secrecy::ExposeSecret;
+                        cfg.api_key = Some(resolved.api_key.expose_secret().to_string());
+                        tracing::debug!(
+                            provider = %provider_id,
+                            scope = resolved.scope.as_str(),
+                            "Resolved per-tenant provider credential"
+                        );
+                    }
+                    Ok(None) => {
+                        tracing::trace!(
+                            provider = %provider_id,
+                            "No per-tenant credential; using env/config key"
+                        );
+                    }
+                    Err(e) => {
+                        // Do not leak the key; surface provider/scope only.
+                        tracing::warn!(
+                            provider = %provider_id,
+                            error = %e,
+                            "Credential resolution failed; falling back to env/config key"
+                        );
+                    }
                 }
             }
             cfg

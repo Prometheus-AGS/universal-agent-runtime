@@ -98,7 +98,7 @@ fn normalize_endpoint(connection_string: &str) -> String {
     }
 }
 
-fn to_db_value<T: Serialize>(value: &T) -> Result<serde_json::Value> {
+pub(crate) fn to_db_value<T: Serialize>(value: &T) -> Result<serde_json::Value> {
     serde_json::to_value(value).context("failed to serialize value for SurrealDB")
 }
 
@@ -907,7 +907,7 @@ pub fn value_to_json(v: surrealdb::types::Value) -> Result<serde_json::Value> {
     surreal_to_json(v)
 }
 
-fn surreal_to_json(v: surrealdb::types::Value) -> Result<serde_json::Value> {
+pub(crate) fn surreal_to_json(v: surrealdb::types::Value) -> Result<serde_json::Value> {
     let raw = serde_json::to_value(&v).context("serialising surrealdb Value")?;
     Ok(unwrap_surreal_value(raw))
 }
