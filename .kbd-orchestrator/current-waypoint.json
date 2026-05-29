@@ -1,9 +1,9 @@
 {
   "phase": "uar-wisc-cli",
-  "change": "provider-credentials-multitenant",
-  "status": "implemented",
-  "currentTask": "S1-S7 + W1 (durable Surreal store) + W2/W3 (HTTP tests) done; default build green; 13 unit + 6 integration tests pass; clippy clean; docs done. Remaining: run-level start_run assertion (6.5) + manual smokes (9.1/9.2).",
-  "exactNextCommand": "/opsx:archive provider-credentials-multitenant",
+  "change": null,
+  "status": "change_archived",
+  "currentTask": "provider-credentials-multitenant: merged (PR #5) + archived (openspec/changes/archive/2026-05-29-provider-credentials-multitenant). Carry-overs: run-level start_run assertion (6.5), manual smokes (9.1/9.2), pre-existing postgres-backend build break.",
+  "exactNextCommand": "/kbd-reflect uar-wisc-cli",
   "previousPhase": "submodule-entity-management-implementation",
   "currentTask": "select next phase via /kbd-new-phase",
   "nextPendingChange": null,
