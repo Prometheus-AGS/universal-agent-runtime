@@ -1,7 +1,7 @@
 {
   "phase": "uar-wisc-cli",
   "createdAt": "2026-05-29T00:00:00Z",
-  "updatedAt": "2026-05-29T00:00:00Z",
+  "updatedAt": "2026-05-30T00:00:00Z",
   "sourceTool": "claude-code",
   "kind": "salvage-assessment",
   "subject_branch": "origin/feature/providers",
@@ -43,6 +43,6 @@
     }
   },
   "decision_point": "deployment model: single-tenant (gap covered) vs multi-tenant SaaS (hard gap on encrypted BYO credentials)",
-  "branch_disposition": "origin/feature/providers superseded by feat/provider-credentials-multitenant (merged via PR #5); safe to delete",
+  "branch_disposition": "origin/feature/providers superseded by feat/provider-credentials-multitenant (merged via PR #5); deleted 2026-05-30 after salvage decision. Unsalvaged (low priority): scout filesystem signature extraction, decide/prime/handoff composite recipes.",
   "self_correction": "earlier dismissal was wrong: liter-llm superseded routing, NOT multi-tenant encrypted credentials"
 }
