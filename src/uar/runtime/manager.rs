@@ -119,6 +119,69 @@ const MEMORY_CREATE_TOOLS: &[&str] = &[
 const MEMORY_UPDATE_TOOLS: &[&str] = &["memory_update"];
 const MEMORY_DELETE_TOOLS: &[&str] = &["memory_delete", "memory_delete_all"];
 
+/// Apply the multi-tenant credential layer to a run's LLM config.
+///
+/// When `provider_service` is `Some` and a per-scope credential resolves for the
+/// run's provider (chain: session → agent → user → system), override
+/// `cfg.api_key` with the decrypted per-tenant key. When `provider_service` is
+/// `None`, no credential resolves, or resolution errors, `cfg.api_key` is left
+/// untouched — i.e. the single-tenant env/config key path is preserved.
+///
+/// Extracted from `start_run` so the resolution-and-override behavior is unit
+/// testable without constructing an `Orchestrator` or making LLM calls.
+async fn apply_credential_layer(
+    mut cfg: LlmConfig,
+    provider_service: Option<&Arc<crate::uar::security::credentials::ProviderService>>,
+    user_id: Option<&str>,
+    session_id: Option<&str>,
+    agent_id: &str,
+) -> LlmConfig {
+    let Some(provider_service) = provider_service else {
+        return cfg;
+    };
+    // Provider id is the segment before '/' in `provider/model`.
+    let provider_id = cfg
+        .model
+        .split_once('/')
+        .map_or(cfg.model.as_str(), |(p, _)| p)
+        .to_string();
+    match provider_service
+        .resolver()
+        .resolve_with_context(
+            user_id.unwrap_or("anonymous"),
+            &provider_id,
+            session_id,
+            Some(agent_id),
+        )
+        .await
+    {
+        Ok(Some(resolved)) => {
+            use secrecy::ExposeSecret;
+            cfg.api_key = Some(resolved.api_key.expose_secret().to_string());
+            tracing::debug!(
+                provider = %provider_id,
+                scope = resolved.scope.as_str(),
+                "Resolved per-tenant provider credential"
+            );
+        }
+        Ok(None) => {
+            tracing::trace!(
+                provider = %provider_id,
+                "No per-tenant credential; using env/config key"
+            );
+        }
+        Err(e) => {
+            // Do not leak the key; surface provider/scope only.
+            tracing::warn!(
+                provider = %provider_id,
+                error = %e,
+                "Credential resolution failed; falling back to env/config key"
+            );
+        }
+    }
+    cfg
+}
+
 /// Inspect a `ToolEnd` event and, if it represents a memory mutation, return a
 /// corresponding `MemoryMutation` event. Returns `None` for non-memory tools.
 fn memory_mutation_from_tool_end(evt: &NormalizedEvent, run_id: &str) -> Option<NormalizedEvent> {
@@ -716,52 +779,14 @@ impl RunManager {
         // session → agent → user → system). When no ProviderService is
         // configured, or no per-scope credential exists, the env/config key on
         // `cfg.api_key` is left untouched — i.e. single-tenant behavior.
-        let run_llm_config = {
-            let mut cfg = run_llm_config;
-            if let Some(ref provider_service) = self.provider_service {
-                // Provider id is the segment before '/' in `provider/model`.
-                let provider_id = cfg
-                    .model
-                    .split_once('/')
-                    .map_or(cfg.model.as_str(), |(p, _)| p)
-                    .to_string();
-                let resolver = provider_service.resolver();
-                match resolver
-                    .resolve_with_context(
-                        user_id_for_creds.as_deref().unwrap_or("anonymous"),
-                        &provider_id,
-                        session_id_for_creds.as_deref(),
-                        Some(artifact.id.as_str()),
-                    )
-                    .await
-                {
-                    Ok(Some(resolved)) => {
-                        use secrecy::ExposeSecret;
-                        cfg.api_key = Some(resolved.api_key.expose_secret().to_string());
-                        tracing::debug!(
-                            provider = %provider_id,
-                            scope = resolved.scope.as_str(),
-                            "Resolved per-tenant provider credential"
-                        );
-                    }
-                    Ok(None) => {
-                        tracing::trace!(
-                            provider = %provider_id,
-                            "No per-tenant credential; using env/config key"
-                        );
-                    }
-                    Err(e) => {
-                        // Do not leak the key; surface provider/scope only.
-                        tracing::warn!(
-                            provider = %provider_id,
-                            error = %e,
-                            "Credential resolution failed; falling back to env/config key"
-                        );
-                    }
-                }
-            }
-            cfg
-        };
+        let run_llm_config = apply_credential_layer(
+            run_llm_config,
+            self.provider_service.as_ref(),
+            user_id_for_creds.as_deref(),
+            session_id_for_creds.as_deref(),
+            artifact.id.as_str(),
+        )
+        .await;
 
         // Clone for graph context before values are moved into Orchestrator
         let llm_config_for_graph = run_llm_config.clone();
@@ -1320,5 +1345,102 @@ impl RunManager {
         }
 
         None
+    }
+}
+
+#[cfg(test)]
+mod credential_layer_tests {
+    use super::apply_credential_layer;
+    use crate::config::LlmConfig;
+    use crate::uar::security::credentials::{
+        CredentialEncryption, CredentialRecord, CredentialScope, CredentialStore,
+        InMemoryCredentialStore, ProviderService,
+    };
+    use std::sync::Arc;
+
+    const KEY: &[u8; 32] = b"0123456789abcdef0123456789abcdef";
+
+    fn cfg_with_env_key() -> LlmConfig {
+        LlmConfig {
+            model: "openai/gpt-4o".to_string(),
+            api_key: Some("env-key".to_string()),
+            ..Default::default()
+        }
+    }
+
+    async fn service_with_user_key(
+        user: &str,
+        provider: &str,
+        key: &str,
+    ) -> Arc<ProviderService> {
+        let store = Arc::new(InMemoryCredentialStore::new());
+        let enc = CredentialEncryption::from_key(KEY);
+        let now = chrono::Utc::now();
+        store
+            .put(CredentialRecord {
+                scope: CredentialScope::User,
+                scope_id: user.to_string(),
+                provider_id: provider.to_string(),
+                api_key_encrypted: enc.encrypt(key).expect("encrypt"),
+                api_key_hint: CredentialEncryption::key_hint(key, 4),
+                created_at: now,
+                updated_at: now,
+            })
+            .await
+            .expect("put");
+        Arc::new(ProviderService::new(store, Arc::new(enc)))
+    }
+
+    // Single-tenant: no ProviderService ⇒ env/config key is left untouched.
+    #[tokio::test]
+    async fn single_tenant_no_service_keeps_env_key() {
+        let out = apply_credential_layer(cfg_with_env_key(), None, Some("alice"), None, "agent-1")
+            .await;
+        assert_eq!(out.api_key.as_deref(), Some("env-key"));
+    }
+
+    // Multi-tenant: a stored user key for this provider overrides the env key.
+    #[tokio::test]
+    async fn multi_tenant_user_key_overrides_env_key() {
+        let svc = service_with_user_key("alice", "openai", "sk-alice-USER").await;
+        let out = apply_credential_layer(
+            cfg_with_env_key(),
+            Some(&svc),
+            Some("alice"),
+            None,
+            "agent-1",
+        )
+        .await;
+        assert_eq!(out.api_key.as_deref(), Some("sk-alice-USER"));
+    }
+
+    // Multi-tenant but no credential for this user ⇒ falls back to env key.
+    #[tokio::test]
+    async fn multi_tenant_no_user_credential_falls_back_to_env() {
+        let svc = service_with_user_key("alice", "openai", "sk-alice-USER").await;
+        let out = apply_credential_layer(
+            cfg_with_env_key(),
+            Some(&svc),
+            Some("bob"), // bob has no stored key
+            None,
+            "agent-1",
+        )
+        .await;
+        assert_eq!(out.api_key.as_deref(), Some("env-key"));
+    }
+
+    // A stored key for a *different* provider must not be used.
+    #[tokio::test]
+    async fn provider_isolation_keeps_env_key() {
+        let svc = service_with_user_key("alice", "anthropic", "sk-anthropic").await;
+        let out = apply_credential_layer(
+            cfg_with_env_key(), // model is openai/*
+            Some(&svc),
+            Some("alice"),
+            None,
+            "agent-1",
+        )
+        .await;
+        assert_eq!(out.api_key.as_deref(), Some("env-key"));
     }
 }
