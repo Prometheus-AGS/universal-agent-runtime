@@ -13,10 +13,12 @@
   "backend": "openspec",
   "session_arc_outcome": "uar-wisc-cli: 7/7 goals MET. provider-credentials-multitenant implemented, merged (PR #5), archived (PR #6). 13 unit + 6 integration tests; durable Surreal store wired. Both single- and multi-tenant supported from one design.",
   "carryOver": [
-    "Pre-existing postgres-backend build break (pgvector/sqlx) — spawned task",
-    "Run-level start_run credential assertion (tasks 6.5)",
-    "Manual dual-mode smokes (9.1/9.2)",
-    "Finding 1 salvage: WISC scout + composite recipes (low priority)"
+    "Credentials admin UI — SCOPED (credentials-admin-ui-scope.md); open dedicated phase uar-credentials-admin-ui (UI/UX routing first)"
+  ],
+  "resolvedCarryOver": [
+    "F1: postgres-backend build — RESOLVED (stale lock; builds green on main)",
+    "F2: start_run credential assertion + dual-mode — RESOLVED (apply_credential_layer extracted, +4 tests)",
+    "F3: WISC scout/recipes salvage — DECIDED NO-GO (scout-mcp-go-no-go.md)"
   ],
   "recommendedNextPhaseSeeds": [
     "uar-postgres-backend-repair",

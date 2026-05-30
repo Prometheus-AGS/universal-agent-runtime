@@ -73,12 +73,17 @@ No artifact-refiner logs (`.refiner/`) exist for this phase — QA was code-leve
 
 ## Technical debt / carry-overs
 
-| Item | Severity | Note |
-|------|----------|------|
-| `postgres-backend` feature build broken (`pgvector::Vector: sqlx::Encode/Type`) | medium | **Pre-existing**, unrelated to this change (lock untouched for sqlx/pgvector; no credential file implicated). Spawn-task chip created. Default surreal build unaffected. |
-| Run-level `start_run` credential assertion (tasks 6.5) | low | Resolver logic unit-tested; seam compile-verified; an end-to-end run assertion needs a `start_run` test harness |
-| Manual dual-mode smokes (9.1/9.2) | low | Single-tenant fallback is compile-guaranteed; multi-tenant path is integration-tested at the API layer |
-| Finding 1 salvage (`scout`, WISC `decide`/`prime`/`handoff` recipes) | low | Deferred — only valuable for non-Claude-Code agents; separate change if ever needed |
+| Item | Severity | Note | Status |
+|------|----------|------|--------|
+| `postgres-backend` feature build broken (`pgvector::Vector: sqlx::Encode/Type`) | medium | Was a **stale lockfile** state; the `pgvector =0.4.1` pin (already in Cargo.toml) is the fix, and `cargo update -p surrealdb-core` regenerated the lock. | ✅ **RESOLVED (F1)** — `cargo build --features postgres-backend` green on main |
+| Run-level `start_run` credential assertion (6.5) + dual-mode smokes (9.1/9.2) | low | Extracted the seam into a pure `apply_credential_layer` fn; 4 unit tests cover single-tenant-keeps-env, multi-tenant-override, no-credential-fallback, provider-isolation. | ✅ **RESOLVED (F2)** |
+| Finding 1 salvage (`scout`, WISC `decide`/`prime`/`handoff` recipes) | low | Go/No-Go written (`scout-mcp-go-no-go.md`): **NO-GO** this cycle; `prime` is the first to build if revisited. | ✅ **DECIDED (F3)** |
+| Credentials admin UI (BYO key management) | medium | Scoped + design-routed (`credentials-admin-ui-scope.md`); recommended as its own phase `uar-credentials-admin-ui` (CLAUDE.md UI/UX routing must run first). | 📋 **SCOPED (F4)** — awaiting dedicated phase |
+
+### Follow-up addendum (2026-05-30)
+All four reflection carry-overs were actioned in a post-reflection pass (F1–F4).
+The only open item is the admin UI, intentionally deferred to its own
+design-routed phase. Net new tests this pass: **+4** (`credential_layer_tests`).
 
 ## Lessons learned
 
