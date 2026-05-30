@@ -78,7 +78,7 @@ No artifact-refiner logs (`.refiner/`) exist for this phase — QA was code-leve
 | `postgres-backend` feature build broken (`pgvector::Vector: sqlx::Encode/Type`) | medium | Was a **stale lockfile** state; the `pgvector =0.4.1` pin (already in Cargo.toml) is the fix, and `cargo update -p surrealdb-core` regenerated the lock. | ✅ **RESOLVED (F1)** — `cargo build --features postgres-backend` green on main |
 | Run-level `start_run` credential assertion (6.5) + dual-mode smokes (9.1/9.2) | low | Extracted the seam into a pure `apply_credential_layer` fn; 4 unit tests cover single-tenant-keeps-env, multi-tenant-override, no-credential-fallback, provider-isolation. | ✅ **RESOLVED (F2)** |
 | Finding 1 salvage (`scout`, WISC `decide`/`prime`/`handoff` recipes) | low | Go/No-Go written (`scout-mcp-go-no-go.md`): **NO-GO** this cycle; `prime` is the first to build if revisited. | ✅ **DECIDED (F3)** |
-| Credentials admin UI (BYO key management) | medium | Scoped + design-routed (`credentials-admin-ui-scope.md`); recommended as its own phase `uar-credentials-admin-ui` (CLAUDE.md UI/UX routing must run first). | 📋 **SCOPED (F4)** — awaiting dedicated phase |
+| Credentials admin UI (BYO key management) | medium | Implemented as React admin page matching terminal aesthetic + design system. `CredentialsPage` registered in `AdminSection` registry. Service layer `credentials-api.ts`. Pure helper unit tests. | ✅ **IMPLEMENTED** |
 
 ### Follow-up addendum (2026-05-30)
 All four reflection carry-overs were actioned in a post-reflection pass (F1–F4).

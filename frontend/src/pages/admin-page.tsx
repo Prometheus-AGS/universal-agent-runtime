@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AdminShell, type AdminSection } from "@/admin/admin-shell";
 import { AdminWelcome } from "@/admin/components/admin-welcome";
 import { ProvidersPage } from "@/admin/pages/providers-page";
+import { CredentialsPage } from "@/admin/pages/credentials-page";
 import { ModelsPage } from "@/admin/pages/models-page";
 import { SkillsPage } from "@/admin/pages/skills-page";
 import { AgentsPage } from "@/admin/pages/agents-page";
@@ -27,6 +28,7 @@ const PAGE_MAP: Record<AdminSection, () => ReactNode> = {
   approvals: () => <RuntimeApprovalsPage />,
   protocols: () => <RuntimeProtocolsPage />,
   providers: () => <ProvidersPage />,
+  credentials: () => <CredentialsPage />,
   models: () => <ModelsPage />,
   skills: () => <SkillsPage />,
   agents: () => <AgentsPage />,
