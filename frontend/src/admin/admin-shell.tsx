@@ -10,6 +10,7 @@ import {
   Compass,
   FileClock,
   Key,
+  KeyRound,
   Layers,
   LayoutGrid,
   Menu,
@@ -40,6 +41,7 @@ export type AdminSection =
   | "approvals"
   | "protocols"
   | "providers"
+  | "credentials"
   | "models"
   | "skills"
   | "agents"
@@ -76,6 +78,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "AI & Models",
     items: [
       { id: "providers", label: "Providers", subtitle: "LLM provider config", icon: Server },
+      { id: "credentials", label: "Credentials", subtitle: "Your provider API keys", icon: KeyRound },
       { id: "models", label: "Models", subtitle: "Browse model catalog", icon: Layers },
       { id: "knowledge", label: "Knowledge", subtitle: "Document stores & RAG", icon: BookOpen },
       { id: "memory", label: "Memory", subtitle: "Agent memory items", icon: Brain },
