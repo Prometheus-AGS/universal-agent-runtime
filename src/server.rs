@@ -139,7 +139,8 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         // Durable per-user credential store on the same DB connection.
         let credential_store = Some(Arc::new(
             uar::security::credentials::SurrealCredentialStore::new(db.clone()),
-        ) as Arc<dyn uar::security::credentials::CredentialStore>);
+        )
+            as Arc<dyn uar::security::credentials::CredentialStore>);
 
         // Start the live-query bus on the same DB connection.
         let live_bus = Some(Arc::new(
@@ -658,6 +659,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             uar::api::compiler::build_router().with_state(Arc::new(
                 uar::api::compiler::CompilerApiState {
                     compiler_service: Arc::clone(&compiler_service),
+                    persistence: persistence.clone(),
                 },
             )),
         )
@@ -804,6 +806,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             uar::api::compiler::build_router().with_state(Arc::new(
                 uar::api::compiler::CompilerApiState {
                     compiler_service: Arc::clone(&compiler_service),
+                    persistence: persistence.clone(),
                 },
             )),
         )
