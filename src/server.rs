@@ -498,6 +498,16 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                         types = stats.types_upserted,
                         "Settings bootstrapped from config into DB"
                     );
+                    // Seed the env/YAML/CLI-configured providers (in the in-memory
+                    // registry) into the DB on first boot so they are visible +
+                    // editable in the admin UI and survive restarts. DB-wins-after-
+                    // first-boot: existing rows (e.g. API-edited) are left untouched.
+                    if let Err(e) = mgr
+                        .seed_providers_from_registry(provider_registry.as_ref())
+                        .await
+                    {
+                        tracing::error!(error = ?e, "Failed to seed configured providers into the settings DB");
+                    }
                     // Runtime LLM provider state comes from DB after bootstrap (YAML/env/CLI seeded rows).
                     if let Err(e) = crate::uar::settings::hydrate_provider_registry_from_settings(
                         provider_registry.as_ref(),
