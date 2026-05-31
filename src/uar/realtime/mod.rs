@@ -8,9 +8,27 @@
 
 pub mod surreal_bus;
 
+#[cfg(feature = "postgres-backend")]
+pub mod postgres_bus;
+
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
+
+/// Backend-neutral realtime change bus.
+///
+/// The SSE handler (`live.rs`) depends only on this trait, so the concrete
+/// source — `SurrealDB` live queries ([`surreal_bus::LiveQueryBus`]) or Postgres
+/// `LISTEN/NOTIFY` ([`postgres_bus::PostgresNotifyBus`]) — can be swapped at
+/// startup based on the configured persistence backend.
+pub trait RealtimeBus: Send + Sync + std::fmt::Debug {
+    /// Subscribe to a topic's broadcast stream. `None` when the topic is not
+    /// enrolled on this bus.
+    fn subscribe(&self, topic: EntityTopic) -> Option<tokio::sync::broadcast::Receiver<LiveEvent>>;
+
+    /// Number of active subscribers on a topic (for observability).
+    fn subscriber_count(&self, topic: EntityTopic) -> usize;
+}
 
 /// Topics enrolled with the bus at startup. Each topic backs one Surreal
 /// `.select().live()` stream and one broadcast channel.

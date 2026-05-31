@@ -103,9 +103,11 @@ pub struct AppState {
     pub provider_service: Option<Arc<uar::security::credentials::ProviderService>>,
     /// Memory service backed by surreal-memory + SurrealDB/SurrealKV (None if memory.enabled=false).
     pub memory_service: Option<Arc<MemoryService>>,
-    /// Live-query bus — SurrealDB change notifications fanned out to SSE clients.
-    /// `None` when running against a non-Surreal persistence backend.
-    pub live_bus: Option<Arc<uar::realtime::surreal_bus::LiveQueryBus>>,
+    /// Realtime change bus — backend-neutral change notifications fanned out to
+    /// SSE clients. Backed by SurrealDB live queries or Postgres `LISTEN/NOTIFY`
+    /// depending on the configured persistence backend. `None` when no realtime
+    /// source is available.
+    pub live_bus: Option<Arc<dyn uar::realtime::RealtimeBus>>,
     /// Compiler service for spec management and pipeline execution
     pub compiler_service: Option<Arc<CompilerService>>,
     /// Settings manager — runtime configuration administration + plugin extension point

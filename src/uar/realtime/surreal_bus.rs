@@ -12,12 +12,12 @@ use std::time::Duration;
 
 use anyhow::Result;
 use futures::StreamExt;
-use surrealdb::{Notification, Surreal, engine::any::Any};
 use surrealdb::types::Action;
+use surrealdb::{Notification, Surreal, engine::any::Any};
 use tokio::sync::broadcast;
 use tracing::{debug, info, warn};
 
-use super::{EntityTopic, LiveAction, LiveEvent};
+use super::{EntityTopic, LiveAction, LiveEvent, RealtimeBus};
 
 /// Broadcast channel capacity per topic. Slow consumers get a `Lagged` error
 /// but the publisher never blocks.
@@ -78,11 +78,17 @@ impl LiveQueryBus {
     }
 }
 
-async fn supervise_topic(
-    db: Surreal<Any>,
-    topic: EntityTopic,
-    tx: broadcast::Sender<LiveEvent>,
-) {
+impl RealtimeBus for LiveQueryBus {
+    fn subscribe(&self, topic: EntityTopic) -> Option<broadcast::Receiver<LiveEvent>> {
+        LiveQueryBus::subscribe(self, topic)
+    }
+
+    fn subscriber_count(&self, topic: EntityTopic) -> usize {
+        LiveQueryBus::subscriber_count(self, topic)
+    }
+}
+
+async fn supervise_topic(db: Surreal<Any>, topic: EntityTopic, tx: broadcast::Sender<LiveEvent>) {
     let mut backoff = RECONNECT_INITIAL;
     loop {
         match run_live_stream(&db, topic, &tx).await {

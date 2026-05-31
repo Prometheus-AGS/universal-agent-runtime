@@ -102,7 +102,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>,
         )>,
         Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
-        Option<Arc<crate::uar::realtime::surreal_bus::LiveQueryBus>>,
+        Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
         Option<Arc<dyn uar::security::credentials::CredentialStore>>,
     ) = if matches!(
         config.persistence.provider.as_str(),
@@ -143,9 +143,10 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             as Arc<dyn uar::security::credentials::CredentialStore>);
 
         // Start the live-query bus on the same DB connection.
-        let live_bus = Some(Arc::new(
-            crate::uar::realtime::surreal_bus::LiveQueryBus::start(db),
-        ));
+        let live_bus = Some(
+            Arc::new(crate::uar::realtime::surreal_bus::LiveQueryBus::start(db))
+                as Arc<dyn crate::uar::realtime::RealtimeBus>,
+        );
 
         (
             Arc::new(provider) as Arc<dyn PersistenceLayer>,
@@ -164,6 +165,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 .expect("Failed to initialize Postgres");
             let pool = provider.get_pool().clone();
 
+            // Start the Postgres LISTEN/NOTIFY realtime bus on the same pool.
+            let live_bus = Some(Arc::new(
+                crate::uar::realtime::postgres_bus::PostgresNotifyBus::start(pool.clone()),
+            ) as Arc<dyn crate::uar::realtime::RealtimeBus>);
+
             let compiler_store = Arc::new(
                 crate::uar::compiler::storage::postgres::PostgresCompilerStorage::new(pool.clone()),
             );
@@ -179,7 +185,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 Arc::new(provider) as Arc<dyn PersistenceLayer>,
                 Some((spec, sess)),
                 Some(registry),
-                None,
+                live_bus,
                 // Postgres-backed credential store not implemented; falls back
                 // to in-memory below (matches the api_keys precedent).
                 None,
