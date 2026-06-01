@@ -23,7 +23,9 @@ jobs:
   build:
     name: Build & Push Image
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The image is a ~3GB 5-toolchain build + full Rust release compile; a cold
+    # gha cache needs >30min. cache-to: gha,mode=max makes warm runs much faster.
+    timeout-minutes: 75
 
     # Required for Workload Identity Federation: the job must be allowed to
     # request the GitHub OIDC token that google-github-actions/auth exchanges
