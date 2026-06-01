@@ -130,8 +130,8 @@ pub fn discover_builtin_skills() -> Vec<Skill> {
 }
 
 fn load_one(path: &Path) -> Result<Skill> {
-    let raw = std::fs::read_to_string(path)
-        .with_context(|| format!("reading {}", path.display()))?;
+    let raw =
+        std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
     let (frontmatter, body) = split_frontmatter(&raw)
         .with_context(|| format!("splitting frontmatter in {}", path.display()))?;
     let meta: Frontmatter = serde_yaml::from_str(frontmatter)
@@ -176,9 +176,9 @@ fn load_one(path: &Path) -> Result<Skill> {
 }
 
 fn split_frontmatter(raw: &str) -> Result<(&str, &str)> {
-    let body = raw.strip_prefix("---\n").ok_or_else(|| {
-        anyhow::anyhow!("SKILL.md missing leading `---` frontmatter delimiter")
-    })?;
+    let body = raw
+        .strip_prefix("---\n")
+        .ok_or_else(|| anyhow::anyhow!("SKILL.md missing leading `---` frontmatter delimiter"))?;
     let end = body
         .find("\n---")
         .ok_or_else(|| anyhow::anyhow!("SKILL.md missing trailing `---` frontmatter delimiter"))?;
@@ -219,10 +219,7 @@ mod tests {
         // SAFETY: test-only, single-threaded context.
         unsafe {
             std::env::set_var("UAR_BUILTIN_SKILLS_DIR", "/tmp/__nonexistent_uar_skills__");
-            std::env::set_var(
-                "UAR_EXTRA_BUILTIN_SKILL_DIRS",
-                dir.path().to_str().unwrap(),
-            );
+            std::env::set_var("UAR_EXTRA_BUILTIN_SKILL_DIRS", dir.path().to_str().unwrap());
         }
 
         let skills = discover_builtin_skills();
@@ -235,6 +232,9 @@ mod tests {
 
         assert_eq!(skills.len(), 1);
         assert_eq!(skills[0].title, "my-skill");
-        assert_eq!(skills[0].origin, crate::uar::domain::skills::SkillOrigin::Builtin);
+        assert_eq!(
+            skills[0].origin,
+            crate::uar::domain::skills::SkillOrigin::Builtin
+        );
     }
 }

@@ -5,23 +5,21 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result};
 use axum::{
+    Router,
     body::Body,
     extract::{
-        ws::{Message as AxMessage, WebSocket, WebSocketUpgrade},
         FromRequestParts, Request, State,
+        ws::{Message as AxMessage, WebSocket, WebSocketUpgrade},
     },
     http::{HeaderMap, HeaderName, HeaderValue, Method, StatusCode, Uri},
     response::{IntoResponse, Response},
     routing::any,
-    Router,
 };
 use clap::Parser;
 use futures_util::{SinkExt, StreamExt};
-use jsonwebtoken::{encode, EncodingKey, Header};
+use jsonwebtoken::{EncodingKey, Header, encode};
 use serde::{Deserialize, Serialize};
-use tokio_tungstenite::tungstenite::{
-    client::IntoClientRequest, protocol::Message as WsMessage,
-};
+use tokio_tungstenite::tungstenite::{client::IntoClientRequest, protocol::Message as WsMessage};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser, Debug)]
@@ -180,9 +178,7 @@ async fn main() -> Result<()> {
         "uar-jwt-proxy ready"
     );
 
-    let app = Router::new()
-        .fallback(any(dispatch))
-        .with_state(state);
+    let app = Router::new().fallback(any(dispatch)).with_state(state);
 
     let listener = tokio::net::TcpListener::bind(cli.listen).await?;
     axum::serve(listener, app).await?;
@@ -245,7 +241,10 @@ async fn dispatch(State(state): State<Arc<AppState>>, req: Request) -> Response 
                 return StatusCode::BAD_GATEWAY.into_response();
             }
         };
-        let target = UpstreamTarget { ws_url, subprotocols };
+        let target = UpstreamTarget {
+            ws_url,
+            subprotocols,
+        };
         match WebSocketUpgrade::from_request_parts(&mut parts, &()).await {
             Ok(upgrade) => upgrade.on_upgrade(move |ws| async move {
                 if let Err(err) = bridge_websocket(state, ws, target).await {
@@ -355,7 +354,11 @@ fn is_hop_by_hop(name: &str) -> bool {
     )
 }
 
-async fn bridge_websocket(state: Arc<AppState>, client_ws: WebSocket, target: UpstreamTarget) -> Result<()> {
+async fn bridge_websocket(
+    state: Arc<AppState>,
+    client_ws: WebSocket,
+    target: UpstreamTarget,
+) -> Result<()> {
     let token = state.mint_token()?;
     let mut request = target
         .ws_url
@@ -383,16 +386,18 @@ async fn bridge_websocket(state: Arc<AppState>, client_ws: WebSocket, target: Up
     let client_to_upstream = async {
         while let Some(msg) = client_stream.next().await {
             match msg {
-                Ok(AxMessage::Text(t)) => up_sink.send(WsMessage::Text(t.to_string().into())).await?,
-                Ok(AxMessage::Binary(b)) => up_sink.send(WsMessage::Binary(b.to_vec().into())).await?,
+                Ok(AxMessage::Text(t)) => {
+                    up_sink.send(WsMessage::Text(t.to_string().into())).await?
+                }
+                Ok(AxMessage::Binary(b)) => {
+                    up_sink.send(WsMessage::Binary(b.to_vec().into())).await?
+                }
                 Ok(AxMessage::Ping(p)) => up_sink.send(WsMessage::Ping(p.to_vec().into())).await?,
                 Ok(AxMessage::Pong(p)) => up_sink.send(WsMessage::Pong(p.to_vec().into())).await?,
                 Ok(AxMessage::Close(frame)) => {
-                    let cf = frame.map(|f| {
-                        tokio_tungstenite::tungstenite::protocol::CloseFrame {
-                            code: f.code.into(),
-                            reason: f.reason.to_string().into(),
-                        }
+                    let cf = frame.map(|f| tokio_tungstenite::tungstenite::protocol::CloseFrame {
+                        code: f.code.into(),
+                        reason: f.reason.to_string().into(),
                     });
                     up_sink.send(WsMessage::Close(cf)).await?;
                     break;
@@ -406,10 +411,22 @@ async fn bridge_websocket(state: Arc<AppState>, client_ws: WebSocket, target: Up
     let upstream_to_client = async {
         while let Some(msg) = up_stream.next().await {
             match msg {
-                Ok(WsMessage::Text(t)) => client_sink.send(AxMessage::Text(t.to_string().into())).await?,
-                Ok(WsMessage::Binary(b)) => client_sink.send(AxMessage::Binary(b.to_vec().into())).await?,
-                Ok(WsMessage::Ping(p)) => client_sink.send(AxMessage::Ping(p.to_vec().into())).await?,
-                Ok(WsMessage::Pong(p)) => client_sink.send(AxMessage::Pong(p.to_vec().into())).await?,
+                Ok(WsMessage::Text(t)) => {
+                    client_sink
+                        .send(AxMessage::Text(t.to_string().into()))
+                        .await?
+                }
+                Ok(WsMessage::Binary(b)) => {
+                    client_sink
+                        .send(AxMessage::Binary(b.to_vec().into()))
+                        .await?
+                }
+                Ok(WsMessage::Ping(p)) => {
+                    client_sink.send(AxMessage::Ping(p.to_vec().into())).await?
+                }
+                Ok(WsMessage::Pong(p)) => {
+                    client_sink.send(AxMessage::Pong(p.to_vec().into())).await?
+                }
                 Ok(WsMessage::Close(frame)) => {
                     let cf = frame.map(|f| axum::extract::ws::CloseFrame {
                         code: f.code.into(),

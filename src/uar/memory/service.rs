@@ -54,7 +54,8 @@ impl MemoryService {
                     .openai_api_key
                     .clone()
                     .or_else(|| std::env::var("OPENAI_API_KEY").ok())
-                    .context("Memory: embedding_provider=openai requires OPENAI_API_KEY env var or memory.openai_api_key config")?;
+                    .or_else(|| std::env::var("LLM_API_KEY").ok())
+                    .context("Memory: embedding_provider=openai requires OPENAI_API_KEY, LLM_API_KEY, or memory.openai_api_key config")?;
                 let provider = EmbeddingProvider::OpenAI {
                     api_key,
                     model: config.embedding_model.clone(),

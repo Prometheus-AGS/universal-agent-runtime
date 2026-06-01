@@ -93,8 +93,14 @@ async fn store_then_list_returns_masked_metadata_never_plaintext() {
 
     // The plaintext key must never appear anywhere in the serialized body.
     let raw = list.text();
-    assert!(!raw.contains("sk-secret-TAIL1234"), "plaintext key leaked in response");
-    assert!(!raw.contains("api_key_encrypted"), "ciphertext field leaked in response");
+    assert!(
+        !raw.contains("sk-secret-TAIL1234"),
+        "plaintext key leaked in response"
+    );
+    assert!(
+        !raw.contains("api_key_encrypted"),
+        "ciphertext field leaked in response"
+    );
 }
 
 #[tokio::test]
@@ -155,5 +161,9 @@ async fn second_user_does_not_see_first_users_credentials() {
     let list = bob.get("/credentials").await;
     list.assert_status_ok();
     let body: Value = list.json();
-    assert_eq!(body.as_array().unwrap().len(), 0, "cross-user isolation violated");
+    assert_eq!(
+        body.as_array().unwrap().len(),
+        0,
+        "cross-user isolation violated"
+    );
 }

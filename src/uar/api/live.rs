@@ -14,8 +14,8 @@ use axum::{
     response::{Sse, sse::Event, sse::KeepAlive},
 };
 use futures::Stream;
-use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
+use tokio_stream::wrappers::BroadcastStream;
 
 use crate::AppState;
 use crate::uar::realtime::{EntityTopic, LiveAction, LiveEvent};
@@ -56,7 +56,5 @@ fn sse_event(event: &LiveEvent) -> Event {
         "id": event.id,
         "data": event.data,
     });
-    Event::default()
-        .event(name)
-        .data(payload.to_string())
+    Event::default().event(name).data(payload.to_string())
 }

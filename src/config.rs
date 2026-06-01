@@ -1077,6 +1077,15 @@ impl AppConfig {
                 ResilienceConfig::default_retryable_http_statuses();
         }
 
+        if let Some(api_key_env) = deserialized.llm.api_key_env.as_deref() {
+            let api_key_env = api_key_env.trim();
+            if !api_key_env.is_empty()
+                && let Ok(api_key) = env::var(api_key_env)
+            {
+                deserialized.llm.api_key = Some(api_key);
+            }
+        }
+
         Ok(deserialized)
     }
 
@@ -1121,6 +1130,11 @@ pub fn build_client_config(llm: &LlmConfig) -> liter_llm::ClientConfig {
     let api_key = llm
         .api_key
         .clone()
+        .or_else(|| {
+            llm.api_key_env
+                .as_deref()
+                .and_then(|key| std::env::var(key).ok())
+        })
         .or_else(|| std::env::var("LLM_API_KEY").ok())
         .unwrap_or_default();
 
@@ -1152,6 +1166,12 @@ pub struct LlmConfig {
     /// API key for the default provider.
     #[serde(default)]
     pub api_key: Option<String>,
+    /// Environment variable name that contains the API key for the default provider.
+    ///
+    /// This lets deployments keep provider-specific secrets in `.env` without
+    /// copying the secret value into `config.yaml`.
+    #[serde(default)]
+    pub api_key_env: Option<String>,
     /// Base URL override (bypasses provider auto-detection).
     #[serde(default)]
     pub base_url: Option<String>,
@@ -1217,6 +1237,7 @@ impl Default for LlmConfig {
         Self {
             model: Self::default_model(),
             api_key: None,
+            api_key_env: None,
             base_url: None,
             protocol: Self::default_protocol(),
             parallel_tool_calls: None,

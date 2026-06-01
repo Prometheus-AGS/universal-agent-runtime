@@ -77,13 +77,15 @@ impl CredentialResolver {
                 // key material can leak through the error chain; we surface only
                 // provider/scope.
                 let plaintext =
-                    self.encryption.decrypt(&row.api_key_encrypted).map_err(|_decrypt_err| {
-                        anyhow::anyhow!(
-                            "failed to decrypt {} credential for provider '{}'",
-                            scope.as_str(),
-                            provider_id
-                        )
-                    })?;
+                    self.encryption
+                        .decrypt(&row.api_key_encrypted)
+                        .map_err(|_decrypt_err| {
+                            anyhow::anyhow!(
+                                "failed to decrypt {} credential for provider '{}'",
+                                scope.as_str(),
+                                provider_id
+                            )
+                        })?;
                 return Ok(Some(ResolvedCredential {
                     provider_id: provider_id.to_string(),
                     scope,
@@ -99,9 +101,7 @@ impl CredentialResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::uar::security::credentials::store::{
-        CredentialRecord, InMemoryCredentialStore,
-    };
+    use crate::uar::security::credentials::store::{CredentialRecord, InMemoryCredentialStore};
     use chrono::Utc;
     use secrecy::ExposeSecret;
 
@@ -156,7 +156,11 @@ mod tests {
     #[tokio::test]
     async fn falls_through_to_user() {
         let e = enc();
-        let store = store_with(&e, &[(CredentialScope::User, "userA", "openai", "user-key")]).await;
+        let store = store_with(
+            &e,
+            &[(CredentialScope::User, "userA", "openai", "user-key")],
+        )
+        .await;
         let r = CredentialResolver::new(store, e);
         let got = r
             .resolve_with_context("userA", "openai", Some("sess1"), Some("agent1"))
@@ -172,16 +176,26 @@ mod tests {
         let e = enc();
         let store = store_with(&e, &[]).await;
         let r = CredentialResolver::new(store, e);
-        let got = r.resolve_with_context("userA", "openai", None, None).await.unwrap();
+        let got = r
+            .resolve_with_context("userA", "openai", None, None)
+            .await
+            .unwrap();
         assert!(got.is_none(), "no stored credential => None (env fallback)");
     }
 
     #[tokio::test]
     async fn provider_specific() {
         let e = enc();
-        let store = store_with(&e, &[(CredentialScope::User, "userA", "openai", "user-key")]).await;
+        let store = store_with(
+            &e,
+            &[(CredentialScope::User, "userA", "openai", "user-key")],
+        )
+        .await;
         let r = CredentialResolver::new(store, e);
-        let got = r.resolve_with_context("userA", "anthropic", None, None).await.unwrap();
+        let got = r
+            .resolve_with_context("userA", "anthropic", None, None)
+            .await
+            .unwrap();
         assert!(got.is_none(), "must not return another provider's key");
     }
 }

@@ -146,13 +146,10 @@ impl Supervisor {
 }
 
 async fn probe(host: &str, port: u16, health_url: Option<&str>) -> bool {
-    let tcp_ok = tokio::time::timeout(
-        Duration::from_millis(500),
-        TcpStream::connect((host, port)),
-    )
-    .await
-    .map(|r| r.is_ok())
-    .unwrap_or(false);
+    let tcp_ok = tokio::time::timeout(Duration::from_millis(500), TcpStream::connect((host, port)))
+        .await
+        .map(|r| r.is_ok())
+        .unwrap_or(false);
 
     if !tcp_ok {
         return false;

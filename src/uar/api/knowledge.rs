@@ -246,11 +246,7 @@ async fn get_knowledge_base(
             format!("Knowledge base '{id}' not found"),
         ))?;
 
-    let count = state
-        .persistence
-        .count_documents(&kb.id)
-        .await
-        .unwrap_or(0);
+    let count = state.persistence.count_documents(&kb.id).await.unwrap_or(0);
     Ok(Json(kb_to_response(kb, count)))
 }
 
@@ -297,11 +293,7 @@ async fn update_knowledge_base(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let count = state
-        .persistence
-        .count_documents(&kb.id)
-        .await
-        .unwrap_or(0);
+    let count = state.persistence.count_documents(&kb.id).await.unwrap_or(0);
     Ok(Json(kb_to_response(kb, count)))
 }
 

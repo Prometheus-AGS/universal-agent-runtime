@@ -113,7 +113,11 @@ pub trait CredentialStore: Send + Sync + std::fmt::Debug {
 }
 
 fn key_of(scope: CredentialScope, scope_id: &str, provider_id: &str) -> (String, String, String) {
-    (scope.as_str().to_string(), scope_id.to_string(), provider_id.to_string())
+    (
+        scope.as_str().to_string(),
+        scope_id.to_string(),
+        provider_id.to_string(),
+    )
 }
 
 /// In-memory credential store (used as the wired default and in tests),
@@ -313,8 +317,13 @@ mod tests {
     #[tokio::test]
     async fn store_and_retrieve_user_scoped() {
         let s = InMemoryCredentialStore::new();
-        s.put(rec(CredentialScope::User, "userA", "openai")).await.unwrap();
-        let got = s.get(CredentialScope::User, "userA", "openai").await.unwrap();
+        s.put(rec(CredentialScope::User, "userA", "openai"))
+            .await
+            .unwrap();
+        let got = s
+            .get(CredentialScope::User, "userA", "openai")
+            .await
+            .unwrap();
         assert!(got.is_some());
         assert_eq!(got.unwrap().provider_id, "openai");
     }
@@ -322,25 +331,52 @@ mod tests {
     #[tokio::test]
     async fn cross_user_isolation() {
         let s = InMemoryCredentialStore::new();
-        s.put(rec(CredentialScope::User, "userA", "openai")).await.unwrap();
-        let b = s.get(CredentialScope::User, "userB", "openai").await.unwrap();
+        s.put(rec(CredentialScope::User, "userA", "openai"))
+            .await
+            .unwrap();
+        let b = s
+            .get(CredentialScope::User, "userB", "openai")
+            .await
+            .unwrap();
         assert!(b.is_none(), "user B must not see user A's credential");
     }
 
     #[tokio::test]
     async fn delete_removes() {
         let s = InMemoryCredentialStore::new();
-        s.put(rec(CredentialScope::User, "userA", "openai")).await.unwrap();
-        assert!(s.delete(CredentialScope::User, "userA", "openai").await.unwrap());
-        assert!(s.get(CredentialScope::User, "userA", "openai").await.unwrap().is_none());
+        s.put(rec(CredentialScope::User, "userA", "openai"))
+            .await
+            .unwrap();
+        assert!(
+            s.delete(CredentialScope::User, "userA", "openai")
+                .await
+                .unwrap()
+        );
+        assert!(
+            s.get(CredentialScope::User, "userA", "openai")
+                .await
+                .unwrap()
+                .is_none()
+        );
         // second delete reports nothing removed
-        assert!(!s.delete(CredentialScope::User, "userA", "openai").await.unwrap());
+        assert!(
+            !s.delete(CredentialScope::User, "userA", "openai")
+                .await
+                .unwrap()
+        );
     }
 
     #[tokio::test]
     async fn provider_isolation() {
         let s = InMemoryCredentialStore::new();
-        s.put(rec(CredentialScope::User, "userA", "openai")).await.unwrap();
-        assert!(s.get(CredentialScope::User, "userA", "anthropic").await.unwrap().is_none());
+        s.put(rec(CredentialScope::User, "userA", "openai"))
+            .await
+            .unwrap();
+        assert!(
+            s.get(CredentialScope::User, "userA", "anthropic")
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 }

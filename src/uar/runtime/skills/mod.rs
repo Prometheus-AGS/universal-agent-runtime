@@ -8,10 +8,10 @@
 
 pub mod builtin_loader;
 pub mod registry;
-#[cfg(feature = "wasm-runtime")]
-pub mod wasm_runtime;
 pub mod service;
 pub mod storage;
+#[cfg(feature = "wasm-runtime")]
+pub mod wasm_runtime;
 pub mod watcher;
 
 pub use registry::SkillRegistry;

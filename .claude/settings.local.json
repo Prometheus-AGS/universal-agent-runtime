@@ -154,7 +154,15 @@
       "Bash(git -C crates/prometheus-skill-system/tools/liter-llm remote -v)",
       "Bash(git -C crates/prometheus-skill-system/tools/liter-llm status)",
       "Bash(git -C crates/prometheus-skill-system/tools/liter-llm log --oneline origin/main -3)",
-      "Bash(git -C crates/prometheus-skill-system/tools/liter-llm fetch origin)"
+      "Bash(git -C crates/prometheus-skill-system/tools/liter-llm fetch origin)",
+      "Bash(git ls-remote *)",
+      "Skill(anthropic-skills:radix-to-base-ui-migration)",
+      "Skill(anthropic-skills:radix-to-base-ui-migration:*)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(node -e \"const s = require\\('/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/node_modules/@base-ui/react/select'\\); console.log\\(Object.keys\\(s\\)\\)\")",
+      "Bash(pnpm remove *)",
+      "Bash(pnpm why *)"
     ]
   }
 }

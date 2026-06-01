@@ -112,11 +112,7 @@ async fn list_credentials(
         return service_unavailable();
     };
 
-    match service
-        .store()
-        .list(CredentialScope::User, &user_id)
-        .await
-    {
+    match service.store().list(CredentialScope::User, &user_id).await {
         Ok(rows) => {
             let views: Vec<CredentialView> = rows
                 .iter()
