@@ -41,12 +41,29 @@ struct TriggersFrontmatter {
     semantic: Option<String>,
 }
 
-/// Returns the resolved builtin-skills directory, honouring `UAR_BUILTIN_SKILLS_DIR`.
+/// Returns the primary builtin-skills directory, honouring `UAR_BUILTIN_SKILLS_DIR`.
 pub fn builtin_dir() -> PathBuf {
     if let Ok(s) = std::env::var("UAR_BUILTIN_SKILLS_DIR") {
         return PathBuf::from(s);
     }
     PathBuf::from("crates/prometheus-skill-system/skills")
+}
+
+/// Returns all skill roots: primary dir plus any extras from `UAR_EXTRA_BUILTIN_SKILL_DIRS`
+/// (colon-separated list of additional paths to scan).
+///
+/// Example:
+/// ```text
+/// UAR_EXTRA_BUILTIN_SKILL_DIRS=crates/kreuzberg/skills:/opt/org-skills
+/// ```
+pub fn all_builtin_dirs() -> Vec<PathBuf> {
+    let mut dirs = vec![builtin_dir()];
+    if let Ok(extra) = std::env::var("UAR_EXTRA_BUILTIN_SKILL_DIRS") {
+        for path in extra.split(':').filter(|s| !s.is_empty()) {
+            dirs.push(PathBuf::from(path));
+        }
+    }
+    dirs
 }
 
 fn include_imported() -> bool {
@@ -55,35 +72,60 @@ fn include_imported() -> bool {
         .unwrap_or(false)
 }
 
-/// Scan the builtin skills directory and return parsed [`Skill`] structs.
+/// Scan all builtin skill directories and return parsed [`Skill`] structs.
+///
+/// Scans `UAR_BUILTIN_SKILLS_DIR` (default `crates/prometheus-skill-system/skills`)
+/// plus any directories listed in `UAR_EXTRA_BUILTIN_SKILL_DIRS` (colon-separated).
+/// On name collision across roots, the last-seen skill wins and a warning is logged.
 pub fn discover_builtin_skills() -> Vec<Skill> {
-    let dir = builtin_dir();
-    if !dir.exists() {
-        debug!(
-            path = %dir.display(),
-            "builtin skills directory not found; skipping builtin load"
-        );
-        return Vec::new();
-    }
+    let dirs = all_builtin_dirs();
     let allow_imported = include_imported();
-    let mut out = Vec::new();
-    for entry in WalkDir::new(&dir)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_name() == "SKILL.md")
-    {
-        let path = entry.path();
-        if !allow_imported && path.components().any(|c| c.as_os_str() == "imported") {
+    let mut by_name: std::collections::HashMap<String, Skill> = std::collections::HashMap::new();
+    let mut root_count = 0usize;
+
+    for dir in &dirs {
+        if !dir.exists() {
+            debug!(
+                path = %dir.display(),
+                "builtin skills directory not found; skipping"
+            );
             continue;
         }
-        match load_one(path) {
-            Ok(skill) => out.push(skill),
-            Err(err) => {
-                warn!(path = %path.display(), error = %err, "failed to load builtin skill");
+        root_count += 1;
+        for entry in WalkDir::new(dir)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name() == "SKILL.md")
+        {
+            let path = entry.path();
+            if !allow_imported && path.components().any(|c| c.as_os_str() == "imported") {
+                continue;
+            }
+            match load_one(path) {
+                Ok(skill) => {
+                    if let Some(existing) = by_name.get(&skill.title) {
+                        warn!(
+                            name = %skill.title,
+                            prev_id = %existing.skill_id,
+                            new_id  = %skill.skill_id,
+                            "builtin skill name collision across roots — new entry wins"
+                        );
+                    }
+                    by_name.insert(skill.title.clone(), skill);
+                }
+                Err(err) => {
+                    warn!(path = %path.display(), error = %err, "failed to load builtin skill");
+                }
             }
         }
     }
-    info!(count = out.len(), "discovered builtin manifest skills");
+
+    let out: Vec<Skill> = by_name.into_values().collect();
+    info!(
+        count = out.len(),
+        roots = root_count,
+        "discovered builtin manifest skills"
+    );
     out
 }
 
@@ -150,6 +192,8 @@ fn split_frontmatter(raw: &str) -> Result<(&str, &str)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use tempfile::TempDir;
 
     #[test]
     fn split_frontmatter_works() {
@@ -157,5 +201,40 @@ mod tests {
         let (yaml, body) = split_frontmatter(raw).unwrap();
         assert!(yaml.contains("name: foo"));
         assert_eq!(body, "body text");
+    }
+
+    #[test]
+    fn discover_extra_root_loads_skill() {
+        let dir = TempDir::new().unwrap();
+        let skill_dir = dir.path().join("my-skill");
+        fs::create_dir_all(&skill_dir).unwrap();
+        fs::write(
+            skill_dir.join("SKILL.md"),
+            "---\nname: my-skill\ndescription: test skill\n---\nbody",
+        )
+        .unwrap();
+
+        // Point UAR_EXTRA_BUILTIN_SKILL_DIRS at our temp dir.
+        // UAR_BUILTIN_SKILLS_DIR to a non-existent path so only the extra root fires.
+        // SAFETY: test-only, single-threaded context.
+        unsafe {
+            std::env::set_var("UAR_BUILTIN_SKILLS_DIR", "/tmp/__nonexistent_uar_skills__");
+            std::env::set_var(
+                "UAR_EXTRA_BUILTIN_SKILL_DIRS",
+                dir.path().to_str().unwrap(),
+            );
+        }
+
+        let skills = discover_builtin_skills();
+
+        // SAFETY: test-only cleanup.
+        unsafe {
+            std::env::remove_var("UAR_BUILTIN_SKILLS_DIR");
+            std::env::remove_var("UAR_EXTRA_BUILTIN_SKILL_DIRS");
+        }
+
+        assert_eq!(skills.len(), 1);
+        assert_eq!(skills[0].title, "my-skill");
+        assert_eq!(skills[0].origin, crate::uar::domain::skills::SkillOrigin::Builtin);
     }
 }

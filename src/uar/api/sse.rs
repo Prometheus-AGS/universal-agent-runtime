@@ -27,12 +27,13 @@ where
 
 pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::Value)> {
     match event {
-        NormalizedEvent::RunStart { run_id, .. } => Some((
+        NormalizedEvent::RunStart { run_id, agent_id } => Some((
             "agui.stream.start",
             serde_json::json!({
                 "kind": "stream",
                 "phase": "start",
-                "request_id": run_id
+                "request_id": run_id,
+                "agent_id": agent_id
             }),
         )),
         NormalizedEvent::ChatDelta { run_id, text_delta } => Some((
@@ -362,6 +363,38 @@ mod tests {
         assert_eq!(payload["skill"]["id"], "skills.weather");
         assert_eq!(payload["skill"]["title"], "Weather Skill");
         assert_eq!(payload["selection_method"], "skill_service.keyword");
+    }
+
+    #[test]
+    fn maps_run_start_event_with_agent_id() {
+        let event = NormalizedEvent::RunStart {
+            run_id: "run-1".to_string(),
+            agent_id: "orchestrator-agent".to_string(),
+        };
+
+        let (name, payload) = to_agui_event(&event).expect("run start should map");
+        assert_eq!(name, "agui.stream.start");
+        assert_eq!(payload["request_id"], "run-1");
+        assert_eq!(payload["agent_id"], "orchestrator-agent");
+    }
+
+    #[test]
+    fn maps_run_done_with_usage_includes_model() {
+        let event = NormalizedEvent::RunDoneWithUsage {
+            run_id: "run-1".to_string(),
+            input_tokens: Some(120),
+            output_tokens: Some(45),
+            total_tokens: Some(165),
+            cost_usd_estimate: None,
+            model: Some("qwen3.7-max".to_string()),
+        };
+
+        let (name, payload) = to_agui_event(&event).expect("run done should map");
+        assert_eq!(name, "agui.done");
+        assert_eq!(payload["usage"]["input_tokens"], 120);
+        assert_eq!(payload["usage"]["output_tokens"], 45);
+        assert_eq!(payload["usage"]["total_tokens"], 165);
+        assert_eq!(payload["usage"]["model"], "qwen3.7-max");
     }
 
     #[test]

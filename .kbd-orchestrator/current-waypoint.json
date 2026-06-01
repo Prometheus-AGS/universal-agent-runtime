@@ -1,8 +1,8 @@
 {
-  "phase": null,
-  "change": null,
+  "phase": "uar-kreuzberg-v4-migration",
+  "change": "uar-kreuzberg-v4-bump",
   "status": "awaiting_new_phase",
-  "previousPhase": "uar-wisc-cli",
+  "previousPhase": "uar-kreuzberg-v4-migration",
   "currentTask": "select next phase via /kbd-new-phase",
   "nextPendingChange": null,
   "sourceTool": "claude-code",
@@ -11,7 +11,7 @@
   "childPhases": [],
   "childPointer": null,
   "backend": "openspec",
-  "session_arc_outcome": "uar-wisc-cli: 7/7 goals MET. provider-credentials-multitenant implemented, merged (PR #5), archived (PR #6). 13 unit + 6 integration tests; durable Surreal store wired. Both single- and multi-tenant supported from one design.",
+  "session_arc_outcome": "uar-kreuzberg-v4-migration: 6/6 goals MET. kreuzberg re-pointed to upstream v4.9.8 LTS; OutputFormat/table/chunking API fixed; MCP server wired; kreuzberg SKILL.md auto-loaded as Builtin; multi-root loader shipped. UAR PR #20 + PSS PR #4 merged.",
   "carryOver": [
     "Credentials admin UI — SCOPED (credentials-admin-ui-scope.md); open dedicated phase uar-credentials-admin-ui (UI/UX routing first)"
   ],
@@ -20,11 +20,6 @@
     "F2: start_run credential assertion + dual-mode — RESOLVED (apply_credential_layer extracted, +4 tests)",
     "F3: WISC scout/recipes salvage — DECIDED NO-GO (scout-mcp-go-no-go.md)"
   ],
-  "recommendedNextPhaseSeeds": [
-    "uar-postgres-backend-repair",
-    "uar-credentials-runtime-tests",
-    "uar-credentials-admin-ui",
-    "seim-wisc-scout-mcp"
-  ],
-  "updatedAt": "2026-05-29T00:00:00Z"
+  "recommendedNextPhaseSeeds": [],
+  "updatedAt": "2026-06-01T00:00:00Z"
 }

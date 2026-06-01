@@ -1364,6 +1364,18 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "Output Format",
                 json!(k.output_format),
             ),
+            make_setting(
+                &st,
+                "kreuzberg.chunking.max_characters",
+                "Chunk Max Characters",
+                json!(k.chunking.as_ref().map_or(0usize, |c| c.max_characters)),
+            ),
+            make_setting(
+                &st,
+                "kreuzberg.chunking.overlap",
+                "Chunk Overlap",
+                json!(k.chunking.as_ref().map_or(0usize, |c| c.overlap)),
+            ),
         ];
         result.push((st, settings));
     }

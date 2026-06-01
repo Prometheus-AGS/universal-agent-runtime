@@ -865,12 +865,43 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                   });
                   break;
                 }
-                case "agui.done":
+                case "agui.stream.start": {
+                  const e = agui as { agent_id?: string };
+                  if (e.agent_id)
+                    store.setMessageMeta(threadId, runId, { agentId: e.agent_id });
+                  break;
+                }
+                case "agui.done": {
+                  const e = agui as {
+                    usage?: {
+                      input_tokens?: number;
+                      output_tokens?: number;
+                      total_tokens?: number;
+                      model?: string | null;
+                    };
+                  };
+                  const u = e.usage;
+                  if (u) {
+                    store.setMessageMeta(threadId, runId, {
+                      model: u.model ?? undefined,
+                      usage:
+                        u.input_tokens != null || u.output_tokens != null
+                          ? {
+                              inputTokens: u.input_tokens ?? 0,
+                              outputTokens: u.output_tokens ?? 0,
+                              totalTokens:
+                                u.total_tokens ??
+                                (u.input_tokens ?? 0) + (u.output_tokens ?? 0),
+                            }
+                          : undefined,
+                    });
+                  }
                   clearTimeout(streamStartTimer);
                   store.finishStream(threadId);
                   useAgentStatusStore.getState().setIdle();
                   callbacks?.onComplete?.();
                   return;
+                }
                 default:
                   break;
               }

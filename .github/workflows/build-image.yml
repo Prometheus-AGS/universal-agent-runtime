@@ -1,0 +1,81 @@
+name: Build Image (no deploy)
+
+# Build-only counterpart to deploy.yml: builds and pushes the UAR app image to
+# Artifact Registry WITHOUT running `kubectl apply -k` (which would overwrite the
+# operator-managed live `uar` namespace config). Dispatch this, then bump the live
+# deployment's image tag out-of-band.
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to push (defaults to commit SHA)"
+        required: false
+        type: string
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REPOSITORY: uar
+  IMAGE: universal-agent-runtime
+
+jobs:
+  build:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+
+    permissions:
+      contents: read
+      id-token: write
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-docker.pkg.dev --quiet
+
+      - name: Determine image tag
+        id: meta
+        run: |
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            TAG="${{ inputs.image_tag }}"
+          else
+            TAG="${GITHUB_SHA}"
+          fi
+          echo "image_tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Image tag: ${TAG}"
+
+      - name: Build & push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            us-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.meta.outputs.image_tag }}
+          secrets: |
+            github_token=${{ secrets.SUBMODULES_TOKEN }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image ready
+        run: |
+          echo "Pushed us-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.meta.outputs.image_tag }}"
+          echo "Bump the live deployment with:"
+          echo "  kubectl set image deploy/uar uar=us-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.meta.outputs.image_tag }} -n uar"

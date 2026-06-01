@@ -56,6 +56,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libssl-dev cmake unzip xz-utils \
         software-properties-common gnupg lsb-release \
         protobuf-compiler libprotobuf-dev \
+        # clang + libclang for bindgen (surrealdb-librocksdb-sys FFI bindings).
+        clang libclang-dev \
         # WASM low-level tooling from apt (wasm-opt via binaryen,
         # wat2wasm/wasm2wat/wasm-objdump via wabt). Adding here keeps
         # the cargo install step focused on Rust-source tools only.
@@ -74,11 +76,13 @@ RUN add-apt-repository -y ppa:deadsnakes/ppa \
     && ln -sf /usr/bin/python${PYTHON_VERSION} /usr/local/bin/python
 
 # uv (Astral) and Python helpers + componentize-py for Python→Component path.
+# NOTE: `pyo3-build-config` is a RUST crate (crates.io), not a PyPI package —
+# `uv pip install pyo3-build-config` always fails with "not found in the package
+# registry". `maturin` is the actual pyo3/Rust↔Python build tool and is sufficient.
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && mv /root/.local/bin/uv /usr/local/bin/uv \
     && uv pip install --system --no-cache-dir \
         maturin \
-        pyo3-build-config \
         componentize-py \
         wasmtime
 
@@ -87,7 +91,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
 # pull prebuilt binaries instead of compiling from source where possible.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
         | sh -s -- -y --default-toolchain ${RUST_TOOLCHAIN} --profile minimal \
-                    --component rustfmt clippy rust-src \
+                    --component rustfmt,clippy,rust-src \
     && rustup target add wasm32-wasip2 wasm32-wasip1 wasm32-unknown-unknown \
     && cargo install --locked cargo-binstall \
     && cargo binstall --no-confirm --locked \
@@ -196,14 +200,31 @@ COPY . .
 RUN git config --global --add safe.directory '*' \
     && git submodule update --init --recursive --depth 1 || true
 
-# Frontend: pnpm workspace install + build
-RUN pnpm install --frozen-lockfile || pnpm install
-RUN pnpm --filter ./frontend build
+# Frontend: pnpm workspace install + build. The pnpm workspace root is `frontend/`
+# (it has pnpm-workspace.yaml + pnpm-lock.yaml; the repo root uses bun and has no
+# pnpm lockfile, which caused ERR_PNPM_NO_LOCKFILE when installing from /src).
+RUN cd frontend \
+    && pnpm install --no-frozen-lockfile \
+    && pnpm -r --filter "./packages/*" build \
+    && pnpm build
 
-# Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded)
-RUN cargo +nightly build --release \
+# Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded).
+# The `kreuzberg` dep is an `ssh://git@github.com/...` cargo git dependency; the
+# build has no SSH key, so rewrite SSH→HTTPS using the mounted github_token
+# secret (BuildKit secret, never baked into a layer). Falls back to anonymous if
+# the secret is absent (works for public deps).
+RUN --mount=type=secret,id=github_token \
+    if [ -s /run/secrets/github_token ]; then \
+      tok="$(cat /run/secrets/github_token)"; \
+      git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "ssh://git@github.com/"; \
+      git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "git@github.com:"; \
+      git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"; \
+    fi \
+    && CARGO_NET_GIT_FETCH_WITH_CLI=true cargo +nightly build --release \
         --features "memory-palace,wasm-runtime,surreal-memory/embedded" \
         --bin universal-agent-runtime
+# (The token-bearing gitconfig lives only in this throwaway builder stage — the
+#  runtime image copies only /out/*, so the credential never ships.)
 
 # AOT-precompile any shipped WASM component skills. The skill-system repo
 # doesn't ship .wasm files today; this loop is a no-op until authors add them,
