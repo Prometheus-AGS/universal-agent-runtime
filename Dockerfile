@@ -198,9 +198,12 @@ COPY . .
 RUN git config --global --add safe.directory '*' \
     && git submodule update --init --recursive --depth 1 || true
 
-# Frontend: pnpm workspace install + build
-RUN pnpm install --frozen-lockfile || pnpm install
-RUN pnpm --filter ./frontend build
+# Frontend: pnpm workspace install + build. The pnpm workspace root is `frontend/`
+# (it has pnpm-workspace.yaml + pnpm-lock.yaml; the repo root uses bun and has no
+# pnpm lockfile, which caused ERR_PNPM_NO_LOCKFILE when installing from /src).
+RUN cd frontend \
+    && pnpm install --frozen-lockfile \
+    && pnpm build
 
 # Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded)
 RUN cargo +nightly build --release \
