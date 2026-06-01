@@ -37,6 +37,12 @@ impl KreuzbergProvider {
     fn build_extraction_config(&self) -> kreuzberg::ExtractionConfig {
         let mut config = kreuzberg::ExtractionConfig::default();
 
+        // Map output format string → v4 enum
+        config.output_format = match self.config.output_format.as_str() {
+            "markdown" => kreuzberg::OutputFormat::Markdown,
+            _ => kreuzberg::OutputFormat::Plain,
+        };
+
         // Configure OCR settings
         if self.config.ocr_enabled {
             let ocr_config = kreuzberg::OcrConfig {
@@ -49,6 +55,15 @@ impl KreuzbergProvider {
 
         // Force OCR setting
         config.force_ocr = self.config.force_ocr;
+
+        // Wire chunking config when present
+        if let Some(chunking) = &self.config.chunking {
+            config.chunking = Some(kreuzberg::ChunkingConfig {
+                max_characters: chunking.max_characters,
+                overlap: chunking.overlap,
+                ..kreuzberg::ChunkingConfig::default()
+            });
+        }
 
         config
     }
@@ -82,8 +97,7 @@ impl FileProcessor for KreuzbergProvider {
             content.push_str("\n\n## Extracted Tables\n\n");
             for (i, table) in result.tables.iter().enumerate() {
                 let _ = writeln!(content, "### Table {}\n", i + 1);
-                // Tables are already in structured format from kreuzberg
-                let _ = writeln!(content, "{table:?}\n");
+                let _ = writeln!(content, "{}\n", table.markdown);
             }
         }
 
@@ -190,6 +204,12 @@ pub async fn process_bytes(
 ) -> Result<ProcessingResult, ProcessingError> {
     let mut extraction_config = kreuzberg::ExtractionConfig::default();
 
+    // Map output format string → v4 enum
+    extraction_config.output_format = match config.output_format.as_str() {
+        "markdown" => kreuzberg::OutputFormat::Markdown,
+        _ => kreuzberg::OutputFormat::Plain,
+    };
+
     // Configure OCR
     if config.ocr_enabled {
         let ocr_config = kreuzberg::OcrConfig {
@@ -201,6 +221,15 @@ pub async fn process_bytes(
     }
 
     extraction_config.force_ocr = config.force_ocr;
+
+    // Wire chunking if configured
+    if let Some(chunking) = &config.chunking {
+        extraction_config.chunking = Some(kreuzberg::ChunkingConfig {
+            max_characters: chunking.max_characters,
+            overlap: chunking.overlap,
+            ..kreuzberg::ChunkingConfig::default()
+        });
+    }
 
     let data_owned = data.to_vec();
     let mime_for_extraction = mime_type.to_string();
@@ -220,7 +249,7 @@ pub async fn process_bytes(
         content.push_str("\n\n## Extracted Tables\n\n");
         for (i, table) in result.tables.iter().enumerate() {
             let _ = writeln!(content, "### Table {}\n", i + 1);
-            let _ = writeln!(content, "{table:?}\n");
+            let _ = writeln!(content, "{}\n", table.markdown);
         }
     }
 
@@ -301,6 +330,7 @@ mod tests {
             extract_tables: true,
             extract_metadata: true,
             output_format: "markdown".to_string(),
+            chunking: None,
         };
 
         let provider = KreuzbergProvider::new(config);
