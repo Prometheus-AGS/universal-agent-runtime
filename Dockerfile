@@ -74,11 +74,13 @@ RUN add-apt-repository -y ppa:deadsnakes/ppa \
     && ln -sf /usr/bin/python${PYTHON_VERSION} /usr/local/bin/python
 
 # uv (Astral) and Python helpers + componentize-py for Python→Component path.
+# NOTE: `pyo3-build-config` is a RUST crate (crates.io), not a PyPI package —
+# `uv pip install pyo3-build-config` always fails with "not found in the package
+# registry". `maturin` is the actual pyo3/Rust↔Python build tool and is sufficient.
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && mv /root/.local/bin/uv /usr/local/bin/uv \
     && uv pip install --system --no-cache-dir \
         maturin \
-        pyo3-build-config \
         componentize-py \
         wasmtime
 
