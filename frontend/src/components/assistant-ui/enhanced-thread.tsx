@@ -14,6 +14,8 @@ import {
   AlertTriangleIcon,
   ArrowDownIcon,
   ArrowUpIcon,
+  BookTextIcon,
+  BotIcon,
   BrainIcon,
   CheckIcon,
   ChevronDownIcon,
@@ -27,8 +29,9 @@ import {
   SparklesIcon,
   SquareIcon,
   UserIcon,
+  ZapIcon,
 } from "lucide-react";
-import { type FC, useCallback, useRef, useState } from "react";
+import { type FC, type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { EnhancedMarkdownText } from "@/components/assistant-ui/enhanced-markdown-text";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -48,7 +51,8 @@ import { cn } from "@/lib/utils";
 import { CapabilityToggles } from "@/features/chat/capability-toggles";
 import { useAgentConfig } from "@/features/chat/agent-config-context";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
-import { useChatMessageStore } from "@/stores/chat-message-store";
+import { useChatMessageStore, selectMessageById } from "@/stores/chat-message-store";
+import { useAgent } from "@/entities/hooks/use-agents";
 import { useAgentStatusStore } from "@/stores/agent-status-store";
 import { AgentStatusIndicator } from "@/features/chat/components/AgentStatusIndicator";
 
@@ -612,16 +616,82 @@ const MessageError: FC = () => {
   );
 };
 
+// ─── Per-message metadata chips ───────────────────────────────────────────────
+// Rendered to the right of the Copy button: which agent answered, the model used,
+// token usage (↑in ↓out), and counts of skills activated / citations for this
+// message. Each chip hides when its datum is absent (older messages, no usage).
+
+const MetaChip: FC<{ icon: ReactNode; label: string; title: string }> = ({ icon, label, title }) => (
+  <span title={title} className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+    {icon}
+    {label}
+  </span>
+);
+
+const MessageMetaChips: FC = () => {
+  const messageId = useMessage((m) => m.id);
+  const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
+  // Memoize the selector so its reference is stable across renders — an inline
+  // selector re-fires assistant-ui's Zustand subscription (React error #185).
+  const selector = useMemo(
+    () => (activeThreadId ? selectMessageById(activeThreadId, messageId) : () => null),
+    [activeThreadId, messageId],
+  );
+  const message = useChatMessageStore(selector);
+  const answeringAgent = useAgent(message?.agentId);
+
+  if (!message) return null;
+
+  const agentLabel = message.agentId
+    ? (answeringAgent?.metadata?.title ?? message.agentId)
+    : null;
+  const skillCount = message.content.filter((b) => b.type === "skill-activation").length;
+  const citationCount = message.content.filter((b) => b.type === "citation").length;
+
+  const hasAny =
+    agentLabel || message.model || message.usage || skillCount > 0 || citationCount > 0;
+  if (!hasAny) return null;
+
+  return (
+    <div className="ml-1 flex flex-wrap items-center gap-1">
+      {agentLabel && (
+        <MetaChip icon={<BotIcon className="size-3" />} label={agentLabel} title={`Answered by agent: ${agentLabel}`} />
+      )}
+      {message.model && (
+        <MetaChip icon={<SparklesIcon className="size-3" />} label={message.model} title={`Model: ${message.model}`} />
+      )}
+      {message.usage && (
+        <span
+          title={`Tokens — in: ${message.usage.inputTokens}, out: ${message.usage.outputTokens}, total: ${message.usage.totalTokens}`}
+          className="inline-flex items-center gap-0.5 rounded-md bg-muted/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+        >
+          <ArrowUpIcon className="size-3" />
+          {message.usage.inputTokens}
+          <ArrowDownIcon className="ml-1 size-3" />
+          {message.usage.outputTokens}
+        </span>
+      )}
+      {skillCount > 0 && (
+        <MetaChip icon={<ZapIcon className="size-3" />} label={String(skillCount)} title={`${skillCount} skill${skillCount === 1 ? "" : "s"} activated`} />
+      )}
+      {citationCount > 0 && (
+        <MetaChip icon={<BookTextIcon className="size-3" />} label={String(citationCount)} title={`${citationCount} citation${citationCount === 1 ? "" : "s"}`} />
+      )}
+    </div>
+  );
+};
+
 // ─── Assistant Action Bar ─────────────────────────────────────────────────────
 
 const AssistantActionBar: FC = () => (
-  <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" autohideFloat="single-branch" className="col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground">
+  <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" autohideFloat="single-branch" className="col-start-3 row-start-2 -ml-1 flex items-center gap-1 text-muted-foreground">
     <ActionBarPrimitive.Copy asChild>
       <TooltipIconButton tooltip="Copy">
         <AuiIf condition={condMessageCopied}><CheckIcon /></AuiIf>
         <AuiIf condition={condMessageNotCopied}><CopyIcon /></AuiIf>
       </TooltipIconButton>
     </ActionBarPrimitive.Copy>
+    <MessageMetaChips />
   </ActionBarPrimitive.Root>
 );
 
