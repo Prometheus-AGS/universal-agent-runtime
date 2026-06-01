@@ -203,6 +203,7 @@ RUN git config --global --add safe.directory '*' \
 # pnpm lockfile, which caused ERR_PNPM_NO_LOCKFILE when installing from /src).
 RUN cd frontend \
     && pnpm install --no-frozen-lockfile \
+    && pnpm -r --filter "./packages/*" build \
     && pnpm build
 
 # Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded)
