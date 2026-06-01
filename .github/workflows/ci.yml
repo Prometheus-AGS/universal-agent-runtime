@@ -18,6 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -65,6 +66,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -94,6 +96,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -118,6 +121,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
