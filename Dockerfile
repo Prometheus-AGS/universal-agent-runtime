@@ -206,10 +206,22 @@ RUN cd frontend \
     && pnpm -r --filter "./packages/*" build \
     && pnpm build
 
-# Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded)
-RUN cargo +nightly build --release \
+# Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded).
+# The `kreuzberg` dep is an `ssh://git@github.com/...` cargo git dependency; the
+# build has no SSH key, so rewrite SSH→HTTPS using the mounted github_token
+# secret (BuildKit secret, never baked into a layer). Falls back to anonymous if
+# the secret is absent (works for public deps).
+RUN --mount=type=secret,id=github_token \
+    if [ -s /run/secrets/github_token ]; then \
+      tok="$(cat /run/secrets/github_token)"; \
+      git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "ssh://git@github.com/"; \
+      git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "git@github.com:"; \
+    fi \
+    && cargo +nightly build --release \
         --features "memory-palace,wasm-runtime,surreal-memory/embedded" \
         --bin universal-agent-runtime
+# (The token-bearing gitconfig lives only in this throwaway builder stage — the
+#  runtime image copies only /out/*, so the credential never ships.)
 
 # AOT-precompile any shipped WASM component skills. The skill-system repo
 # doesn't ship .wasm files today; this loop is a no-op until authors add them,

@@ -76,6 +76,10 @@ jobs:
           tags: |
             us-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.meta.outputs.image_tag }}
             us-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:latest
+          # Token for cargo git deps over SSH (kreuzberg) + any private fetches.
+          # The Dockerfile rewrites ssh://git@github.com → https with this token.
+          secrets: |
+            github_token=${{ secrets.SUBMODULES_TOKEN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
