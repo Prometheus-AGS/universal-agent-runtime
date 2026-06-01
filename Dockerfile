@@ -89,7 +89,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
 # pull prebuilt binaries instead of compiling from source where possible.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
         | sh -s -- -y --default-toolchain ${RUST_TOOLCHAIN} --profile minimal \
-                    --component rustfmt clippy rust-src \
+                    --component rustfmt,clippy,rust-src \
     && rustup target add wasm32-wasip2 wasm32-wasip1 wasm32-unknown-unknown \
     && cargo install --locked cargo-binstall \
     && cargo binstall --no-confirm --locked \
