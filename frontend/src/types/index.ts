@@ -14,6 +14,8 @@ export interface UarProvider {
   base_url: string;
   api_key?: string;
   protocol?: string;
+  /** Default model id used when a request omits one. Round-trips through PUT. */
+  default_model?: string;
   enabled?: boolean;
   models?: UarModel[];
 }

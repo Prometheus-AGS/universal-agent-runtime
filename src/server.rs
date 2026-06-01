@@ -102,7 +102,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>,
         )>,
         Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
-        Option<Arc<crate::uar::realtime::surreal_bus::LiveQueryBus>>,
+        Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
         Option<Arc<dyn uar::security::credentials::CredentialStore>>,
     ) = if matches!(
         config.persistence.provider.as_str(),
@@ -139,12 +139,14 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         // Durable per-user credential store on the same DB connection.
         let credential_store = Some(Arc::new(
             uar::security::credentials::SurrealCredentialStore::new(db.clone()),
-        ) as Arc<dyn uar::security::credentials::CredentialStore>);
+        )
+            as Arc<dyn uar::security::credentials::CredentialStore>);
 
         // Start the live-query bus on the same DB connection.
-        let live_bus = Some(Arc::new(
-            crate::uar::realtime::surreal_bus::LiveQueryBus::start(db),
-        ));
+        let live_bus = Some(
+            Arc::new(crate::uar::realtime::surreal_bus::LiveQueryBus::start(db))
+                as Arc<dyn crate::uar::realtime::RealtimeBus>,
+        );
 
         (
             Arc::new(provider) as Arc<dyn PersistenceLayer>,
@@ -163,6 +165,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 .expect("Failed to initialize Postgres");
             let pool = provider.get_pool().clone();
 
+            // Start the Postgres LISTEN/NOTIFY realtime bus on the same pool.
+            let live_bus = Some(Arc::new(
+                crate::uar::realtime::postgres_bus::PostgresNotifyBus::start(pool.clone()),
+            ) as Arc<dyn crate::uar::realtime::RealtimeBus>);
+
             let compiler_store = Arc::new(
                 crate::uar::compiler::storage::postgres::PostgresCompilerStorage::new(pool.clone()),
             );
@@ -178,7 +185,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 Arc::new(provider) as Arc<dyn PersistenceLayer>,
                 Some((spec, sess)),
                 Some(registry),
-                None,
+                live_bus,
                 // Postgres-backed credential store not implemented; falls back
                 // to in-memory below (matches the api_keys precedent).
                 None,
@@ -497,6 +504,16 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                         types = stats.types_upserted,
                         "Settings bootstrapped from config into DB"
                     );
+                    // Seed the env/YAML/CLI-configured providers (in the in-memory
+                    // registry) into the DB on first boot so they are visible +
+                    // editable in the admin UI and survive restarts. DB-wins-after-
+                    // first-boot: existing rows (e.g. API-edited) are left untouched.
+                    if let Err(e) = mgr
+                        .seed_providers_from_registry(provider_registry.as_ref())
+                        .await
+                    {
+                        tracing::error!(error = ?e, "Failed to seed configured providers into the settings DB");
+                    }
                     // Runtime LLM provider state comes from DB after bootstrap (YAML/env/CLI seeded rows).
                     if let Err(e) = crate::uar::settings::hydrate_provider_registry_from_settings(
                         provider_registry.as_ref(),
@@ -658,6 +675,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             uar::api::compiler::build_router().with_state(Arc::new(
                 uar::api::compiler::CompilerApiState {
                     compiler_service: Arc::clone(&compiler_service),
+                    persistence: persistence.clone(),
                 },
             )),
         )
@@ -804,6 +822,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             uar::api::compiler::build_router().with_state(Arc::new(
                 uar::api::compiler::CompilerApiState {
                     compiler_service: Arc::clone(&compiler_service),
+                    persistence: persistence.clone(),
                 },
             )),
         )

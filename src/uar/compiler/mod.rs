@@ -26,6 +26,7 @@ pub mod session;
 pub mod signing;
 pub mod stages;
 pub mod storage;
+pub mod to_artifact;
 
 // Re-exports for convenience
 pub use compiler_skill::CompilerAgentSkill;
