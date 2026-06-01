@@ -45,5 +45,36 @@ and add `GCP_SA_KEY` (the JSON key) as a repo secret. WIF is preferred (no long-
   (`Cannot find module '@prometheus-ags/prometheus-entity-management'`) and the Rust
   build can't see the skill-system crate.
 
+## Second secret required: `SUBMODULES_TOKEN` (private cross-repo submodules)
+
+`submodules: recursive` alone is **not enough** here. Two submodules point at OTHER
+private repos:
+- `crates/prometheus-skill-system` → `Prometheus-AGS/prometheus-skill-system` (+ its
+  own nested submodules: `liter-llm`, `prometheus-knowledge`, `surreal-memory-server`, …)
+- `frontend/packages/prometheus-entity-management` → `Prometheus-AGS/prometheus-entity-management`
+- `models.dev` → `Know-Me-Tools/models.dev`
+
+The default `GITHUB_TOKEN` is scoped to **this repo only**, so the submodule clone fails
+with `remote: Repository not found` / `fatal: clone of '…prometheus-entity-management.git'
+failed`. The checkouts now pass `token: ${{ secrets.SUBMODULES_TOKEN || github.token }}`.
+
+**Operator action:** create a token with **read access to all those repos** and add it as
+the repo secret **`SUBMODULES_TOKEN`**:
+- a **fine-grained PAT** (Contents: Read on `Prometheus-AGS/*` + `Know-Me-Tools/models.dev`),
+  or a **classic PAT** with `repo` scope, or a **GitHub App** installation token.
+
+## Summary — secrets to set on this repo
+| Secret | For |
+| --- | --- |
+| `SUBMODULES_TOKEN` | cloning the private cross-repo submodules (ALL workflows) |
+| `GCP_PROJECT_ID` | `prometheus-461323` (deploy) |
+| `WIF_PROVIDER` | Workload Identity Federation provider (deploy) |
+| `WIF_SERVICE_ACCOUNT` | deployer SA email (deploy) |
+
+> The **Build and Deploy to GKE** workflow is self-contained (`build → deploy →
+> smoke-test`) and does NOT depend on the CI/Tests workflows passing. So once
+> `SUBMODULES_TOKEN` + the 3 GCP secrets are set, it will build + deploy `main` even if
+> the separate test workflows are still being stabilized.
+
 Once the secrets are set, push to `main` (or run the workflow via **Actions →
 Build and Deploy to GKE → Run workflow**) to build + deploy the current `main`.
