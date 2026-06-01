@@ -1,11 +1,25 @@
 {
-  "phase": "ui-base-ui-migration",
-  "change": "base-ui-verification",
-  "status": "executing",
-  "previousPhase": "runtime-provider-protocol-hardening",
-  "currentTask": "execute base-ui-verification: audit transitive Radix, smoke test, delete backup",
+  "phase": "uar-kreuzberg-v4-migration",
+  "change": "uar-kreuzberg-v4-bump",
+  "status": "awaiting_new_phase",
+  "previousPhase": "uar-kreuzberg-v4-migration",
+  "currentTask": "select next phase via /kbd-new-phase",
   "nextPendingChange": null,
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-execute base-ui-icon-migration",
-  "updatedAt": "2026-05-21T00:00:00-05:00"
+  "exactNextCommand": "/kbd-new-phase",
+  "parentPhase": null,
+  "childPhases": [],
+  "childPointer": null,
+  "backend": "openspec",
+  "session_arc_outcome": "uar-kreuzberg-v4-migration: 6/6 goals MET. kreuzberg re-pointed to upstream v4.9.8 LTS; OutputFormat/table/chunking API fixed; MCP server wired; kreuzberg SKILL.md auto-loaded as Builtin; multi-root loader shipped. UAR PR #20 + PSS PR #4 merged.",
+  "carryOver": [
+    "Credentials admin UI — SCOPED (credentials-admin-ui-scope.md); open dedicated phase uar-credentials-admin-ui (UI/UX routing first)"
+  ],
+  "resolvedCarryOver": [
+    "F1: postgres-backend build — RESOLVED (stale lock; builds green on main)",
+    "F2: start_run credential assertion + dual-mode — RESOLVED (apply_credential_layer extracted, +4 tests)",
+    "F3: WISC scout/recipes salvage — DECIDED NO-GO (scout-mcp-go-no-go.md)"
+  ],
+  "recommendedNextPhaseSeeds": [],
+  "updatedAt": "2026-06-01T00:00:00Z"
 }

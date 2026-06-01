@@ -42,12 +42,24 @@ export type ContentBlock =
   | ImageContentBlock
   | ErrorContentBlock;
 
+export interface MessageUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}
+
 export interface RichMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: ContentBlock[];
   createdAt: Date;
   status?: "in_progress" | "complete" | "failed";
+  /** The agent that actually answered (from agui.stream.start; may differ from the selected agent when an orchestrator delegates). */
+  agentId?: string;
+  /** The model that produced the answer (from agui.done usage.model). */
+  model?: string;
+  /** Token usage for this message (from agui.done). */
+  usage?: MessageUsage;
 }
 
 export interface StreamingState {

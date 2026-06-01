@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import {
   buildCreateSkillRequest,
   buildUpdateSkillRequest,
@@ -20,6 +20,7 @@ describe("skills-page utils", () => {
       keywords: "tooling, markdown",
       preferredTools: "search, memory",
       enabled: true,
+      preferredModel: "",
     });
 
     expect(payload.name).toBe("Skill One");
@@ -40,6 +41,7 @@ describe("skills-page utils", () => {
       keywords: "updated,skills",
       preferredTools: "search",
       enabled: false,
+      preferredModel: "",
     });
 
     expect(payload.title).toBe("Updated Title");

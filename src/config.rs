@@ -299,6 +299,14 @@ pub struct PersistenceConfig {
     /// Ignored for embedded (file/rocksdb) endpoints.
     #[serde(default)]
     pub surreal_pass: Option<String>,
+    /// Optional SurrealDB namespace for UAR persistence (default `uar`).
+    /// Set this to share a namespace with another Surreal-backed service
+    /// (e.g. surreal-memory-server uses `memory`).
+    #[serde(default)]
+    pub surreal_ns: Option<String>,
+    /// Optional SurrealDB database name for UAR persistence (default `uar`).
+    #[serde(default)]
+    pub surreal_db: Option<String>,
 }
 
 /// Configuration for file processing and uploads.
@@ -385,6 +393,37 @@ impl Default for MistralConfig {
     }
 }
 
+/// Kreuzberg text-chunking configuration for RAG pipelines.
+/// Field names use Rust conventions (max_characters/overlap) — differs from the
+/// Python SDK (max_chars/max_overlap). See kreuzberg SKILL.md pitfalls.
+#[derive(Debug, Deserialize, Clone)]
+pub struct KreuzbergChunkingConfig {
+    /// Maximum characters per chunk (default: 1000)
+    #[serde(default = "KreuzbergChunkingConfig::default_max_characters")]
+    pub max_characters: usize,
+    /// Overlap between consecutive chunks in characters (default: 200)
+    #[serde(default = "KreuzbergChunkingConfig::default_overlap")]
+    pub overlap: usize,
+}
+
+impl KreuzbergChunkingConfig {
+    fn default_max_characters() -> usize {
+        1000
+    }
+    fn default_overlap() -> usize {
+        200
+    }
+}
+
+impl Default for KreuzbergChunkingConfig {
+    fn default() -> Self {
+        Self {
+            max_characters: Self::default_max_characters(),
+            overlap: Self::default_overlap(),
+        }
+    }
+}
+
 /// Kreuzberg local file processing configuration.
 /// Kreuzberg is a high-performance document intelligence framework with a Rust core.
 #[allow(clippy::struct_excessive_bools)]
@@ -414,6 +453,9 @@ pub struct KreuzbergConfig {
     /// Output format: "markdown" or "text"
     #[serde(default = "KreuzbergConfig::default_output_format")]
     pub output_format: String,
+    /// Optional chunking config for RAG pipelines (kreuzberg v4 feature)
+    #[serde(default)]
+    pub chunking: Option<KreuzbergChunkingConfig>,
 }
 
 impl KreuzbergConfig {
@@ -451,6 +493,7 @@ impl Default for KreuzbergConfig {
             extract_tables: Self::default_extract_tables(),
             extract_metadata: Self::default_extract_metadata(),
             output_format: Self::default_output_format(),
+            chunking: None,
         }
     }
 }

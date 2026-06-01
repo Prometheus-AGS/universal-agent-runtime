@@ -382,6 +382,85 @@ impl SettingsManager {
     // Public: LLM provider persistence (`provider.{id}` settings rows)
     // =========================================================================
 
+    /// Seed the env/YAML/CLI-configured providers (held in the in-memory
+    /// [`ProviderRegistry`] after `seed_from_llm_config` / `seed_from_configs`)
+    /// into the DB on **first boot**, then persist the default provider id.
+    ///
+    /// Source-of-truth rule: **DB-wins-after-first-boot.** A provider whose
+    /// `provider.{id}` row already exists is left untouched — it may have been
+    /// edited via the admin API, and re-seeding would clobber that edit. Only
+    /// rows absent from the DB are inserted, tagged [`SettingSource::ConfigFile`]
+    /// (NOT `Api`, so a later config change can still reconcile them the way
+    /// `initialize()` reconciles scalar settings).
+    ///
+    /// Call this AFTER [`Self::initialize`] (which creates the `provider`
+    /// settings type) and BEFORE `hydrate_provider_registry_from_settings`.
+    pub async fn seed_providers_from_registry(
+        &self,
+        registry: &crate::llm::registry::ProviderRegistry,
+    ) -> Result<usize> {
+        // The `provider` settings type is created by initialize(); bail clearly
+        // if it isn't present rather than silently writing orphan rows.
+        let st = self
+            .persistence
+            .get_settings_type("provider")
+            .await?
+            .ok_or_else(|| {
+                anyhow::anyhow!("settings type 'provider' not found; call initialize() first")
+            })?;
+
+        let configured = registry.list().await;
+        let mut seeded = 0usize;
+        for config in &configured {
+            let key = format!("provider.{}", config.id);
+            // DB-wins-after-first-boot: never overwrite an existing row.
+            if self.persistence.get_setting(&key).await?.is_some() {
+                continue;
+            }
+            let data = serde_json::to_value(config).context("serialize ProviderConfig")?;
+            let now = Utc::now();
+            let setting = Settings {
+                id: Uuid::new_v4(),
+                settings_type_id: st.id,
+                name: config.display_name.clone(),
+                key: key.clone(),
+                data,
+                parent_id: None,
+                created_at: now,
+                updated_at: Some(now),
+            };
+            self.persistence
+                .upsert_setting(&setting)
+                .await
+                .with_context(|| format!("seeding provider setting '{key}'"))?;
+            // Config-sourced (not Api) so config can still reconcile later.
+            let mut cache = self.cache.write().await;
+            cache.insert(
+                key,
+                CacheEntry {
+                    setting,
+                    meta: SettingsMeta::from_config(SettingSource::ConfigFile),
+                },
+            );
+            seeded += 1;
+        }
+
+        // Persist the default provider id (`llm.default_provider`) on first boot
+        // so the UI shows which provider is the default, mirroring the registry's
+        // notion of default. Only set it if not already persisted (DB wins).
+        if self.get_default_provider_id().await.is_none()
+            && let Some(default_id) = registry.default_id().await
+            && let Err(e) = self.set_default_provider_id(&default_id).await
+        {
+            tracing::warn!(error = ?e, "failed to persist default provider id on seed");
+        }
+
+        if seeded > 0 {
+            tracing::info!(seeded, "Seeded configured providers into the settings DB");
+        }
+        Ok(seeded)
+    }
+
     /// Upsert a full provider configuration to `provider.{id}` (insert or update).
     ///
     /// Unlike [`Self::set_value`], this does **not** require a pre-existing row: new
@@ -1284,6 +1363,18 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "kreuzberg.output_format",
                 "Output Format",
                 json!(k.output_format),
+            ),
+            make_setting(
+                &st,
+                "kreuzberg.chunking.max_characters",
+                "Chunk Max Characters",
+                json!(k.chunking.as_ref().map_or(0usize, |c| c.max_characters)),
+            ),
+            make_setting(
+                &st,
+                "kreuzberg.chunking.overlap",
+                "Chunk Overlap",
+                json!(k.chunking.as_ref().map_or(0usize, |c| c.overlap)),
             ),
         ];
         result.push((st, settings));

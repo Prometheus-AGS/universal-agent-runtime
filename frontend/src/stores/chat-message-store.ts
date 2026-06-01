@@ -4,11 +4,19 @@ import { getDbInstance } from "@/lib/db";
 import type {
   ContentBlock,
   ContextUpdateContentBlock,
+  MessageUsage,
   RichMessage,
   SkillActivationContentBlock,
   StreamingState,
   ToolCallContentBlock,
 } from "@/types/chat-content";
+
+/** Per-message metadata surfaced in the action bar (agent that answered, model, usage). */
+export interface MessageMeta {
+  agentId?: string;
+  model?: string;
+  usage?: MessageUsage;
+}
 
 interface ChatMessageState {
   messagesByThread: Record<string, RichMessage[]>;
@@ -29,6 +37,8 @@ interface ChatMessageActions {
   addCitation(threadId: string, runId: string, citation: { source: string; content: string; url?: string }): void;
   addSkillActivation(threadId: string, runId: string, skill: { skillId: string; skillName: string; selectionMethod?: string; status: "active" | "complete" }): void;
   addContextUpdate(threadId: string, runId: string, update: Omit<ContextUpdateContentBlock, "type">): void;
+  /** Attach agent/model/usage metadata to the in-flight streaming message. Must run before finishStream so it is persisted. */
+  setMessageMeta(threadId: string, runId: string, meta: MessageMeta): void;
   finishStream(threadId: string): void;
   setStreamError(threadId: string, error: string): void;
   clearThread(threadId: string): void;
@@ -310,6 +320,21 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         messages[idx].content.push({ type: "context-update", ...update });
       }),
 
+    setMessageMeta: (threadId, runId, meta) =>
+      set((state) => {
+        ensureThread(state, threadId);
+        ensureStreaming(state, threadId);
+        // Resolve (or create) the assistant message this run is producing, so
+        // metadata attaches even if it arrives before the first content chunk.
+        const msg = getOrCreateStreamingMessage(state, threadId, runId);
+        const messages = state.messagesByThread[threadId];
+        const idx = messages.findIndex((m) => m.id === msg.id);
+        if (idx === -1) return;
+        if (meta.agentId !== undefined) messages[idx].agentId = meta.agentId;
+        if (meta.model !== undefined) messages[idx].model = meta.model;
+        if (meta.usage !== undefined) messages[idx].usage = meta.usage;
+      }),
+
     finishStream: (threadId) => {
       let finalMsgSnapshot: RichMessage | null = null;
       set((state) => {
@@ -390,6 +415,11 @@ export const useChatMessageStore = create<ChatMessageStore>()(
 
 export const selectThreadMessages = (threadId: string) => (state: ChatMessageStore) =>
   state.messagesByThread[threadId] ?? [];
+
+/** Look up a single message by id within a thread (for per-message metadata rendering). */
+export const selectMessageById =
+  (threadId: string, messageId: string) => (state: ChatMessageStore) =>
+    state.messagesByThread[threadId]?.find((m) => m.id === messageId) ?? null;
 
 export const selectIsStreaming = (threadId: string) => (state: ChatMessageStore) =>
   state.streamingByThread[threadId]?.isStreaming ?? false;

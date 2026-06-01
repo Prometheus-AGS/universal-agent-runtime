@@ -10,6 +10,7 @@
 //! | `/specs/{id}`                    | DELETE | Delete a stored spec                     |
 //! | `/specs/{id}/compile`            | POST   | Compile a stored spec (single-shot)      |
 //! | `/compile`                       | POST   | Compile inline (no storage)              |
+//! | `/compile-and-register`          | POST   | Compile + register a runtime artifact    |
 //! | `/reports/{id}`                  | GET    | Retrieve a compile report                |
 //! | `/sessions`                      | POST   | Start a conversational session           |
 //! | `/sessions`                      | GET    | List all sessions                        |
@@ -31,6 +32,8 @@ use serde::{Deserialize, Serialize};
 use crate::uar::compiler::completeness::CompletenessAnalyzer;
 use crate::uar::compiler::service::CompilerService;
 use crate::uar::compiler::session::CompilerSession;
+use crate::uar::domain::artifact::AgentArtifact;
+use crate::uar::persistence::PersistenceLayer;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // State
@@ -40,6 +43,9 @@ use crate::uar::compiler::session::CompilerSession;
 #[derive(Debug, Clone)]
 pub struct CompilerApiState {
     pub compiler_service: Arc<CompilerService>,
+    /// Persistence layer used by `compile-and-register` to store the resulting
+    /// runtime artifact. `None` disables that endpoint (503).
+    pub persistence: Option<Arc<dyn PersistenceLayer>>,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -58,6 +64,24 @@ pub struct SubmitSpecRequest {
 pub struct InlineCompileRequest {
     /// The raw UAR-AGENT-MD Markdown content.
     pub content: String,
+}
+
+/// Request body for `POST /compile-and-register`.
+#[derive(Debug, Deserialize)]
+pub struct CompileAndRegisterRequest {
+    /// The raw UAR-AGENT-MD Markdown content.
+    pub content: String,
+}
+
+/// Response body for `POST /compile-and-register`.
+#[derive(Debug, Serialize)]
+pub struct CompileAndRegisterResponse {
+    /// The registered runtime artifact (also persisted via the persistence layer).
+    pub artifact: AgentArtifact,
+    /// The full compile report.
+    pub report: crate::uar::compiler::report::CompileReport,
+    /// Ed25519 signature of the compiled descriptor (hex-encoded).
+    pub signature: String,
 }
 
 /// Session state response (includes completeness analysis).
@@ -91,6 +115,8 @@ pub fn build_router() -> Router<Arc<CompilerApiState>> {
         .route("/specs/{id}/compile", post(compile_spec))
         // Inline compilation (no storage)
         .route("/compile", post(compile_inline))
+        // Compile + register the resulting runtime artifact in one call
+        .route("/compile-and-register", post(compile_and_register))
         // Report retrieval
         .route("/reports/{id}", get(get_report))
         // Conversational sessions
@@ -202,6 +228,57 @@ async fn compile_inline(
         )
             .into_response(),
     }
+}
+
+/// `POST /compile-and-register` — compile raw UAR-AGENT-MD, convert the compiled
+/// descriptor's IR payload into a runtime [`AgentArtifact`], persist it via the
+/// persistence layer (the same `save_agent` call `POST /api/agents` uses), and
+/// return the registered artifact alongside the compile report + signature.
+async fn compile_and_register(
+    State(state): State<Arc<CompilerApiState>>,
+    Json(req): Json<CompileAndRegisterRequest>,
+) -> impl IntoResponse {
+    let Some(persistence) = state.persistence.clone() else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({ "error": "No persistence layer" })),
+        )
+            .into_response();
+    };
+
+    // Compile (parse → 8-stage pipeline). Reuses the same path as `/compile`.
+    let output = match state.compiler_service.compile_content(&req.content).await {
+        Ok(output) => output,
+        Err(e) => {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(serde_json::json!({ "error": e.to_string() })),
+            )
+                .into_response();
+        }
+    };
+
+    // Convert the compiled descriptor's IR payload into a runtime artifact.
+    let artifact = AgentArtifact::from(&output.descriptor.payload);
+
+    // Persist the artifact (same call `create_agent` uses).
+    if let Err(e) = persistence.save_agent(&artifact).await {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        )
+            .into_response();
+    }
+
+    (
+        StatusCode::CREATED,
+        Json(CompileAndRegisterResponse {
+            artifact,
+            report: output.report,
+            signature: output.signature,
+        }),
+    )
+        .into_response()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -12,6 +12,10 @@
     },
     "surreal_memory": {
       "url": "${UAR_MEMORY_MCP_URL:-http://127.0.0.1:3000/mcp/memory}"
+    },
+    "kreuzberg": {
+      "command": "kreuzberg",
+      "args": ["mcp", "--transport", "stdio"]
     }
   }
 }

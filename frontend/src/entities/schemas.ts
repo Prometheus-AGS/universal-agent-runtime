@@ -71,6 +71,7 @@ export function registerAllSchemas() {
   registerSchema({ type: "Tool" });
   registerSchema({ type: "Setting" });
   registerSchema({ type: "SettingsType" });
+  registerSchema({ type: "ProviderMeta" });
 
   registerSchema({
     type: "KnowledgeBase",

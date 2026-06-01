@@ -1,0 +1,63 @@
+{
+  "phase": "prometheus-package-integration",
+  "createdAt": "2026-05-26T22:55:00-05:00",
+  "updatedAt": "2026-05-26T23:55:00-05:00",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "changes_total": 14,
+  "changes_completed": 10,
+  "changes_in_progress": null,
+  "decisions": {
+    "waypoint": "replaces runtime-provider-protocol-hardening (stale)",
+    "frontend_workspace_tool": "pnpm",
+    "skill_model": "extend Skill with kind: Wasm | Manifest | Native plus origin: Builtin | User",
+    "skill_system_submodule_path": "crates/prometheus-skill-system",
+    "default_assistant_skill_binding": "opt-in per agent",
+    "realtime_db_primitive": "surrealdb .select().live() -> LiveQueryBus -> SSE /api/live/{topic}",
+    "plugin_model": "WASM Component Model via wasmtime::component + WIT world uar:skill@0.1.0; Cranelift AOT precompile to .cwasm",
+    "runtime_image": "polyglot - Rust nightly, Node 24+ (npm/pnpm/bun), Python 3.13 (uv, pyo3), Go latest, wasmtime CLI",
+    "binary_supervision": "probe-then-adopt rather than double-spawn for Surreal, MCP servers, liter-llm, forge"
+  },
+  "changes_ordered": [
+    "fix-kb-document-count",
+    "surreal-live-query-bus",
+    "add-skill-kind-and-origin",
+    "binary-instance-discovery",
+    "add-skill-system-submodule",
+    "wasm-component-skill-runtime",
+    "frontend-pnpm-workspace-migration",
+    "add-entity-management-submodule",
+    "configure-entity-engine-and-realtime-bridge",
+    "migrate-admin-knowledge-to-entity-mgmt",
+    "migrate-providers-models-agents-to-entity-mgmt",
+    "builtin-skills-ui-affordance",
+    "dockerfile-multistage-with-submodules",
+    "integration-tests-and-docs"
+  ],
+  "change_status": {
+    "fix-kb-document-count": "DONE",
+    "surreal-live-query-bus": "DONE",
+    "add-skill-kind-and-origin": "DONE",
+    "binary-instance-discovery": "DONE (module + tests; MCP-spawn integration deferred)",
+    "add-skill-system-submodule": "DONE",
+    "wasm-component-skill-runtime": "DONE (WIT world pinned, runtime scaffolded; wit-bindgen dispatch deferred)",
+    "frontend-pnpm-workspace-migration": "DONE",
+    "add-entity-management-submodule": "DONE",
+    "configure-entity-engine-and-realtime-bridge": "DONE (infrastructure shipped; main.tsx wiring deferred to migrations)",
+    "migrate-admin-knowledge-to-entity-mgmt": "DEFERRED — needs RealtimeManager wired in main.tsx; ready to execute next session",
+    "migrate-providers-models-agents-to-entity-mgmt": "DEFERRED — depends on previous; rollout planned per-entity",
+    "builtin-skills-ui-affordance": "DONE",
+    "dockerfile-multistage-with-submodules": "DONE",
+    "integration-tests-and-docs": "PARTIAL — docs/realtime.md + docs/skill-authoring.md shipped; system tests deferred"
+  },
+  "next_change": "migrate-admin-knowledge-to-entity-mgmt",
+  "next_session_priorities": [
+    "Wire RealtimeManager + adapters into main.tsx and add services/entities/*",
+    "Migrate knowledge-page.tsx as the first useEntityList consumer",
+    "Add wit-bindgen integration so WASM Skill run() dispatch is real",
+    "Add integration tests for live-bus latency and builtin-skill 409"
+  ]
+}

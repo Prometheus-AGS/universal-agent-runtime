@@ -98,8 +98,16 @@ pub struct AppState {
     pub governance_engine: Arc<GovernanceEngine>,
     /// API key service for PAT-based authentication
     pub api_key_service: Option<Arc<ApiKeyService>>,
+    /// Multi-tenant provider credential service (per-user encrypted keys).
+    /// `None` ⇒ single-tenant: provider keys come from env/config only.
+    pub provider_service: Option<Arc<uar::security::credentials::ProviderService>>,
     /// Memory service backed by surreal-memory + SurrealDB/SurrealKV (None if memory.enabled=false).
     pub memory_service: Option<Arc<MemoryService>>,
+    /// Realtime change bus — backend-neutral change notifications fanned out to
+    /// SSE clients. Backed by SurrealDB live queries or Postgres `LISTEN/NOTIFY`
+    /// depending on the configured persistence backend. `None` when no realtime
+    /// source is available.
+    pub live_bus: Option<Arc<dyn uar::realtime::RealtimeBus>>,
     /// Compiler service for spec management and pipeline execution
     pub compiler_service: Option<Arc<CompilerService>>,
     /// Settings manager — runtime configuration administration + plugin extension point

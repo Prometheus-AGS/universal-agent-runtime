@@ -95,13 +95,15 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
 
     // Initialize persistence based on config.
     // All three branches produce trait-object arcs so the types unify across arms.
-    let (persistence_layer, compiler_storage, agent_registry): (
+    let (persistence_layer, compiler_storage, agent_registry, live_bus, credential_store): (
         Arc<dyn PersistenceLayer>,
         Option<(
             Arc<dyn crate::uar::compiler::storage::SpecStorage>,
             Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>,
         )>,
         Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
+        Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
+        Option<Arc<dyn uar::security::credentials::CredentialStore>>,
     ) = if matches!(
         config.persistence.provider.as_str(),
         "surreal" | "surrealdb"
@@ -110,6 +112,8 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             &config.persistence.database_url,
             config.persistence.surreal_user.as_deref(),
             config.persistence.surreal_pass.as_deref(),
+            config.persistence.surreal_ns.as_deref(),
+            config.persistence.surreal_db.as_deref(),
         )
         .await
         .map_err(|e| {
@@ -129,13 +133,27 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
         let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
             compiler_store as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
-        let registry = Arc::new(crate::uar::api::a2a::SurrealAgentRegistry::new(db))
+        let registry = Arc::new(crate::uar::api::a2a::SurrealAgentRegistry::new(db.clone()))
             as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
+
+        // Durable per-user credential store on the same DB connection.
+        let credential_store = Some(Arc::new(
+            uar::security::credentials::SurrealCredentialStore::new(db.clone()),
+        )
+            as Arc<dyn uar::security::credentials::CredentialStore>);
+
+        // Start the live-query bus on the same DB connection.
+        let live_bus = Some(
+            Arc::new(crate::uar::realtime::surreal_bus::LiveQueryBus::start(db))
+                as Arc<dyn crate::uar::realtime::RealtimeBus>,
+        );
 
         (
             Arc::new(provider) as Arc<dyn PersistenceLayer>,
             Some((spec, sess)),
             Some(registry),
+            live_bus,
+            credential_store,
         )
     } else {
         // Non-surreal persistence requested. Only available when the
@@ -146,6 +164,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 .await
                 .expect("Failed to initialize Postgres");
             let pool = provider.get_pool().clone();
+
+            // Start the Postgres LISTEN/NOTIFY realtime bus on the same pool.
+            let live_bus = Some(Arc::new(
+                crate::uar::realtime::postgres_bus::PostgresNotifyBus::start(pool.clone()),
+            ) as Arc<dyn crate::uar::realtime::RealtimeBus>);
 
             let compiler_store = Arc::new(
                 crate::uar::compiler::storage::postgres::PostgresCompilerStorage::new(pool.clone()),
@@ -162,6 +185,10 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                 Arc::new(provider) as Arc<dyn PersistenceLayer>,
                 Some((spec, sess)),
                 Some(registry),
+                live_bus,
+                // Postgres-backed credential store not implemented; falls back
+                // to in-memory below (matches the api_keys precedent).
+                None,
             )
         }
         #[cfg(not(feature = "postgres-backend"))]
@@ -332,6 +359,15 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     let skills = skill_service.registry().clone();
     let skill_service = Arc::new(skill_service);
 
+    // Load built-in (Manifest-kind, Builtin-origin) skills from the embedded
+    // prometheus-skill-system submodule. Failure here is non-fatal.
+    {
+        let builtins = uar::runtime::skills::builtin_loader::discover_builtin_skills();
+        if !builtins.is_empty() {
+            skill_service.register_builtins(builtins).await;
+        }
+    }
+
     // Initialize Provider Registry
     let provider_registry = Arc::new(crate::llm::ProviderRegistry::new());
     provider_registry.seed_from_llm_config(&llm_config).await;
@@ -341,8 +377,30 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             .await;
     }
 
-    let run_manager = Arc::new(
-        RunManager::new(
+    // Multi-tenant provider credentials. Active only when CREDENTIAL_ENCRYPTION_KEY
+    // is set; otherwise `None` ⇒ single-tenant (env/config key path, unchanged).
+    // Uses the durable SurrealDB-backed store when persistence is Surreal;
+    // otherwise falls back to an in-memory store (matches the api_keys precedent).
+    let provider_service: Option<Arc<uar::security::credentials::ProviderService>> = {
+        let store: Arc<dyn uar::security::credentials::CredentialStore> =
+            credential_store.clone().unwrap_or_else(|| {
+                Arc::new(uar::security::credentials::InMemoryCredentialStore::new())
+            });
+        match uar::security::credentials::ProviderService::from_env(store) {
+            Ok(Some(svc)) => {
+                tracing::info!("Multi-tenant provider credentials enabled");
+                Some(Arc::new(svc))
+            }
+            Ok(None) => None,
+            Err(e) => {
+                tracing::error!(error = %e, "CREDENTIAL_ENCRYPTION_KEY invalid; multi-tenant credentials disabled");
+                None
+            }
+        }
+    };
+
+    let run_manager = Arc::new({
+        let mut rm = RunManager::new(
             llm_config.clone(),
             Arc::clone(&mcp),
             sessions.clone(),
@@ -354,8 +412,12 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .with_skill_service(Arc::clone(&skill_service))
         .with_provider_registry(Arc::clone(&provider_registry))
         .with_native_skills(Arc::clone(&native_skill_registry))
-        .with_message_context_strategy(config.context_strategy.clone()),
-    );
+        .with_message_context_strategy(config.context_strategy.clone());
+        if let Some(ref svc) = provider_service {
+            rm = rm.with_provider_service(Arc::clone(svc));
+        }
+        rm
+    });
 
     // Initialize Global Rate Limiter
     #[allow(clippy::cast_sign_loss)]
@@ -442,6 +504,16 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
                         types = stats.types_upserted,
                         "Settings bootstrapped from config into DB"
                     );
+                    // Seed the env/YAML/CLI-configured providers (in the in-memory
+                    // registry) into the DB on first boot so they are visible +
+                    // editable in the admin UI and survive restarts. DB-wins-after-
+                    // first-boot: existing rows (e.g. API-edited) are left untouched.
+                    if let Err(e) = mgr
+                        .seed_providers_from_registry(provider_registry.as_ref())
+                        .await
+                    {
+                        tracing::error!(error = ?e, "Failed to seed configured providers into the settings DB");
+                    }
                     // Runtime LLM provider state comes from DB after bootstrap (YAML/env/CLI seeded rows).
                     if let Err(e) = crate::uar::settings::hydrate_provider_registry_from_settings(
                         provider_registry.as_ref(),
@@ -496,9 +568,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         actor_system: Arc::clone(&actor_system),
         governance_engine: Arc::clone(&governance_engine),
         api_key_service: Some(Arc::clone(&api_key_service)),
+        provider_service: provider_service.clone(),
         compiler_service: Some(Arc::clone(&compiler_service)),
         settings_manager: settings_manager.clone(),
         memory_service: memory_service.clone(),
+        live_bus: live_bus.clone(),
         prompt_cache_provider,
         user_settings_store: Arc::clone(&user_settings_store),
         a2ui_registry: uar::a2ui::registry::A2uiRegistry::with_builtins(),
@@ -554,6 +628,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .route("/api/generate-title", post(api_generate_title))
         .route("/api/chat/completion", post(api_chat_completion))
         .route("/api/upload", post(uar::api::upload::upload_handler))
+        .route("/api/live/{topic}", get(uar::api::live::live_stream))
         .route(
             "/api/attachments/{id}",
             get(uar::api::upload::serve_attachment_handler),
@@ -600,6 +675,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             uar::api::compiler::build_router().with_state(Arc::new(
                 uar::api::compiler::CompilerApiState {
                     compiler_service: Arc::clone(&compiler_service),
+                    persistence: persistence.clone(),
                 },
             )),
         )
@@ -624,6 +700,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .nest(
             "/api/uar/user",
             uar::api::user_settings::build_router().with_state(Arc::clone(&user_settings_store)),
+        )
+        // Per-user provider credential API (multi-tenant BYO keys)
+        .nest(
+            "/api/uar/credentials",
+            uar::api::credentials::build_router().with_state(state.provider_service.clone()),
         )
         // Admin Memory API (CRUD)
         .nest(
@@ -741,6 +822,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             uar::api::compiler::build_router().with_state(Arc::new(
                 uar::api::compiler::CompilerApiState {
                     compiler_service: Arc::clone(&compiler_service),
+                    persistence: persistence.clone(),
                 },
             )),
         )
@@ -839,9 +921,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         // Serve the React SPA from static/.
         // ServeDir serves /assets/*, /favicon.svg, /manifest.json etc. with correct MIME types.
         // The not_found_service fallback delivers index.html for any other unknown paths.
-        .fallback_service(
-            ServeDir::new("static").not_found_service(ServeFile::new("static/index.html")),
-        )
+        .fallback_service({
+            let dir = resolve_static_dir();
+            let index = dir.join("index.html");
+            ServeDir::new(dir).not_found_service(ServeFile::new(index))
+        })
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             uar::security::middleware::auth_middleware,
@@ -1744,8 +1828,33 @@ async fn legacy_sessions_route_disabled() -> Response {
 /// Serves `static/index.html` for SPA client-side routes that need to survive
 /// a hard-refresh or direct-URL navigation. The file is read fresh each call so
 /// that a rolling update swaps content without a server restart.
+/// Resolves the directory containing the built React SPA. Checked in order:
+/// 1. `UAR_STATIC_DIR` environment variable.
+/// 2. `./static` relative to the current working directory (dev/repo runs).
+/// 3. `~/.uar/static` (the canonical location for installed binaries).
+fn resolve_static_dir() -> std::path::PathBuf {
+    if let Ok(p) = std::env::var("UAR_STATIC_DIR") {
+        let pb = std::path::PathBuf::from(p);
+        if pb.exists() {
+            return pb;
+        }
+    }
+    let cwd = std::path::PathBuf::from("static");
+    if cwd.exists() {
+        return cwd;
+    }
+    if let Some(home) = dirs::home_dir() {
+        let pb = home.join(".uar").join("static");
+        if pb.exists() {
+            return pb;
+        }
+    }
+    cwd
+}
+
 async fn spa_index_handler() -> Response {
-    match tokio::fs::read("static/index.html").await {
+    let index = resolve_static_dir().join("index.html");
+    match tokio::fs::read(&index).await {
         Ok(bytes) => (
             StatusCode::OK,
             [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],

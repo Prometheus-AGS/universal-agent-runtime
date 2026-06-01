@@ -1,0 +1,48 @@
+{
+  "phase": "uar-wisc-cli",
+  "createdAt": "2026-05-29T00:00:00Z",
+  "updatedAt": "2026-05-30T00:00:00Z",
+  "sourceTool": "claude-code",
+  "kind": "salvage-assessment",
+  "subject_branch": "origin/feature/providers",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execute_complete": true,
+  "reflect_complete": true,
+  "decision_resolved": "BOTH single-tenant + multi-tenant; one design (scoped chain ends in env-var fallback)",
+  "outcome": "provider-credentials-multitenant implemented, merged (PR #5), archived (PR #6). 13 unit + 6 integration tests pass; durable Surreal store wired.",
+  "findings": {
+    "wisc_cli": {
+      "achieved_another_way": true,
+      "via": "src/uar/memory/mcp_server.rs (18+ MCP tools)",
+      "genuinely_missing": [
+        "scout (filesystem signature extraction)",
+        "decide/prime/handoff composite recipes"
+      ],
+      "salvage_priority": "low-medium"
+    },
+    "provider_credential_system": {
+      "achieved_another_way": "partial",
+      "achieved": [
+        "provider routing via liter-llm",
+        "models.dev catalog via build.rs"
+      ],
+      "genuinely_missing_at_start": [
+        "per-user AES-256-GCM encrypted BYO credentials (session/encrypted.rs is a stub)",
+        "scoped credential resolution chain (session->agent->user->system->env)",
+        "runtime provider/credential REST API"
+      ],
+      "delivered": [
+        "AES-256-GCM CredentialEncryption + tests",
+        "CredentialStore trait + InMemory + durable SurrealCredentialStore",
+        "CredentialResolver scoped chain + SecretString + no-leak",
+        "ProviderService + Option wiring on AppState/RunManager",
+        "start_run config-layer seam (orchestrator unchanged)",
+        "/api/uar/credentials JWT-gated CRUD (write-only plaintext, masked reads)"
+      ]
+    }
+  },
+  "decision_point": "deployment model: single-tenant (gap covered) vs multi-tenant SaaS (hard gap on encrypted BYO credentials)",
+  "branch_disposition": "origin/feature/providers superseded by feat/provider-credentials-multitenant (merged via PR #5); deleted 2026-05-30 after salvage decision. Unsalvaged (low priority): scout filesystem signature extraction, decide/prime/handoff composite recipes.",
+  "self_correction": "earlier dismissal was wrong: liter-llm superseded routing, NOT multi-tenant encrypted credentials"
+}

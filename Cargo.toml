@@ -1,3 +1,8 @@
+[workspace]
+members = [".", "tools/uar-jwt-proxy"]
+exclude = ["crates/prometheus-skill-system", ".claude/worktrees"]
+resolver = "2"
+
 [package]
 name = "universal-agent-runtime"
 version = "0.1.0"
@@ -181,10 +186,14 @@ sqlx = { version = "0.8.6", default-features = false, optional = true, features 
   "json",
   "migrate",
 ] }
-pgvector = { version = "0.4.1", optional = true, features = ["sqlx"] }
+# Pinned to =0.4.1: its `sqlx` feature requires sqlx ^0.8, which unifies with
+# our sqlx 0.8.6 pin. pgvector 0.4.2 widened to `>=0.8, <0.10`, causing cargo to
+# resolve a second sqlx 0.9.0 whose Encode/Type impls don't match sqlx 0.8.6.
+pgvector = { version = "=0.4.1", optional = true, features = ["sqlx"] }
 text-splitter = "0.29.3"
 chrono = { version = "0.4.44", features = ["serde"] }
 walkdir = "2.5.0"
+serde_yaml = "0.9"
 jsonwebtoken = "10.2.0"
 tracing-opentelemetry = "0.32.0"
 opentelemetry = "0.31.0"
@@ -213,11 +222,24 @@ thiserror = "2.0"
 mime_guess = "2.0"
 base64 = "0.22"
 
-# Kreuzberg - document intelligence framework with Rust core
-kreuzberg = { git = "ssh://git@github.com/GQAdonis/kreuzberg.git", branch = "main", default-features = false, features = [
-    "tokio-runtime",
-    "formats",
-    "analysis",
+# Credential encryption — AES-256-GCM for per-user provider API keys at rest
+aes-gcm = "0.10"
+
+# Kreuzberg - document intelligence framework with Rust core (v4 upstream)
+# CLI install: cargo install --git https://github.com/kreuzberg-dev/kreuzberg --tag v4.9.8 kreuzberg-cli
+# Or via Homebrew: brew tap kreuzberg-dev/tap && brew install kreuzberg-cli
+kreuzberg = { git = "https://github.com/kreuzberg-dev/kreuzberg.git", tag = "v4.9.8", default-features = false, features = [
+    "tokio-runtime",        # extract_file_sync, batch_extract_file_sync
+    "pdf",                  # PDF extraction via pdf_oxide (replaces "formats")
+    "office",               # docx, odt, pptx, xlsx, odp, ods, etc. (replaces "formats")
+    "excel",                # xlsx/xlsm/xls (replaces "formats")
+    "email",                # .eml, .msg, .pst (replaces "formats")
+    "html",                 # HTML-to-markdown (replaces "formats")
+    "archives",             # zip, tar, 7z (replaces "formats")
+    "ocr",                  # Tesseract OCR backend (replaces "analysis")
+    "language-detection",   # whatlang language detection (replaces "analysis")
+    "chunking",             # RAG text chunking via ChunkingConfig
+    "mcp",                  # Embedded MCP server (kreuzberg mcp --transport stdio)
 ] }
 
 # Worker pool for scalable document ingestion
@@ -244,7 +266,7 @@ notify = "7"
 microsandbox = { version = "0.3", optional = true }
 
 # Universal LLM client — 142+ providers, streaming, tool calling
-liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", features = ["full"] }
+liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", rev = "6e51609797f831837ce0bfad2b43abe54ebac31c", features = ["full"] }
 secrecy = { version = "0.10", features = ["serde"] }
 
 # OpenAPI / Swagger documentation

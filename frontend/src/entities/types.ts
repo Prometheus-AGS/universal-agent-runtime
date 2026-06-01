@@ -10,6 +10,20 @@ export interface ProviderEntity extends Record<string, unknown> {
   auth_env_var?: string;
   endpoints: string[];
   model_count: number;
+  /** Mirrors `CatalogProviderSummary.status` so the Provider page can render
+   *  credential-blocked badges without a separate fetch. */
+  status?: "configured" | "credential-blocked" | "available";
+  status_detail?: string;
+}
+
+/**
+ * Singleton entity holding global provider metadata (currently just the
+ * default provider id). Keyed by the literal string `"current"`. Backed by
+ * the `/api/uar/providers` response's `default_id` field on each fetch.
+ */
+export interface ProviderMetaEntity extends Record<string, unknown> {
+  id: "current";
+  default_id: string | null;
 }
 
 export interface ModelEntity extends Record<string, unknown> {
@@ -22,7 +36,18 @@ export interface ModelEntity extends Record<string, unknown> {
   vision: boolean;
 }
 
-export interface AgentEntity extends Record<string, unknown> {
+// AgentEntity is stored in the graph as the raw `UarAgent` shape from the
+// `/api/agents` response — nested `metadata`, `policy`, `memory`, etc. The
+// flat-field interface that lived here historically was a typed lie that
+// existing consumers worked around by reading nested fields anyway.
+//
+// Aliasing to `UarAgent` makes the typed contract match reality. The legacy
+// flat interface stays below as `LegacyAgentEntityShape` purely for any
+// downstream that references the old declaration; nothing currently does.
+import type { UarAgent } from "@/types";
+export type AgentEntity = UarAgent;
+
+interface LegacyAgentEntityShape extends Record<string, unknown> {
   id: string;
   name: string;
   description: string;

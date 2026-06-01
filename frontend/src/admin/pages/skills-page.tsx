@@ -1,5 +1,5 @@
 import { type FC, useEffect, useMemo, useState } from "react";
-import { FolderOpen, Loader2, Pencil, Plus, RefreshCw, Trash2, Zap } from "lucide-react";
+import { FolderOpen, Loader2, Pencil, Plus, RefreshCw, Shield, Trash2, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -19,12 +19,21 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { SkillImportDialog } from "@/admin/components/skill-import-dialog";
 import { ModelSelector } from "@/components/model-selector";
+import { LoadingCursor } from "@/components/admin/loading-cursor";
+import { EmptyFrame } from "@/components/admin/empty-frame";
+import { ErrorBar } from "@/components/admin/error-bar";
 import { cn } from "@/lib/utils";
-import { useSkillsAdmin } from "@/hooks/use-skills-admin";
+import { useSkills } from "@/entities/hooks/use-skills";
 import { loadSkillsIntoGraph } from "@/entities/fetchers/skills";
+import { optimisticUpsert, optimisticRemove } from "@/lib/realtime/optimistic";
+import {
+  createSkillApi,
+  deleteSkillApi,
+  toggleSkillApi,
+  updateSkillApi,
+} from "@/services/skills-api";
 import type { UarSkill } from "@/types";
 import {
   buildCreateSkillRequest,
@@ -90,24 +99,82 @@ const MarkdownEditorField: FC<MarkdownEditorFieldProps> = ({
 };
 
 export const SkillsPage: FC = () => {
-  const {
-    skills,
-    loading,
-    error,
-    actionSkillId,
-    saving,
-    deleting,
-    load,
-    setError,
-    toggle,
-    remove,
-    save,
-  } = useSkillsAdmin();
+  // Reads from the entity graph (hydrated below; SSE keeps fresh).
+  const view = useSkills();
+  const skills = view.items as unknown as UarSkill[];
 
-  // Populate the entity graph alongside the legacy store.
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [actionSkillId, setActionSkillId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const load = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      await loadSkillsIntoGraph();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    void loadSkillsIntoGraph();
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loading = refreshing && skills.length === 0;
+
+  const toggle = async (skill: UarSkill, enabled: boolean) => {
+    setActionSkillId(skill.skill_id);
+    setError(null);
+    try {
+      await optimisticUpsert("Skill", skill.skill_id, { enabled }, async () => {
+        await toggleSkillApi(skill.skill_id, enabled);
+      });
+    } catch (e) {
+      setError(`Failed to toggle skill: ${(e as Error).message}`);
+    } finally {
+      setActionSkillId(null);
+    }
+  };
+
+  const remove = async (skill: UarSkill) => {
+    setDeleting(true);
+    setError(null);
+    try {
+      await optimisticRemove("Skill", skill.skill_id, async () => {
+        await deleteSkillApi(skill.skill_id);
+      });
+    } catch (e) {
+      setError(`Failed to delete skill: ${(e as Error).message}`);
+      throw e;
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const save = async (
+    editingId: string | null,
+    createBody: unknown,
+    updateBody: unknown,
+  ) => {
+    setSaving(true);
+    setError(null);
+    try {
+      if (editingId) await updateSkillApi(editingId, updateBody);
+      else await createSkillApi(createBody);
+      await loadSkillsIntoGraph();
+    } catch (e) {
+      setError(`Failed to save skill: ${(e as Error).message}`);
+      throw e;
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
@@ -185,37 +252,61 @@ export const SkillsPage: FC = () => {
   );
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+    <div className="flex flex-1 flex-col overflow-hidden font-mono text-[13px] text-[hsl(var(--terminal-fg))]">
+      <div className="flex items-center justify-between border-b border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-surface))] px-6 py-4">
         <div>
-          <h2 className="font-display text-lg font-semibold text-foreground">Skills</h2>
-          <p className="font-mono text-xs text-muted-foreground">{skills.length} skills</p>
+          <h2 className="text-[20px] font-medium tracking-tight">skills</h2>
+          <p className="text-xs text-[hsl(var(--terminal-fg-dim))]">
+            {skills.length} skills
+            {refreshing && <LoadingCursor className="ml-2" />}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => void load()} className="gap-1.5" aria-label="Refresh skills">
-            <RefreshCw size={13} className={cn(loading && "animate-spin")} />
-            Refresh
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void load()}
+            className="gap-1.5 border border-[hsl(var(--terminal-line-strong))] bg-transparent text-[hsl(var(--terminal-fg))] hover:bg-[hsl(var(--phosphor)/0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--phosphor-glow))]"
+            aria-label="Refresh skills"
+          >
+            <RefreshCw size={13} className={cn(refreshing && "animate-spin")} />refresh
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)} className="gap-1.5" aria-label="Import skills">
-            <FolderOpen size={13} />
-            Import
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsImportOpen(true)}
+            className="gap-1.5 border border-[hsl(var(--terminal-line-strong))] bg-transparent text-[hsl(var(--terminal-fg))] hover:bg-[hsl(var(--phosphor)/0.08)]"
+            aria-label="Import skills"
+          >
+            <FolderOpen size={13} />import
           </Button>
-          <Button size="sm" onClick={openCreate} className="gap-1.5">
-            <Plus size={13} />
-            New Skill
+          <Button
+            size="sm"
+            onClick={openCreate}
+            className="gap-1.5 border border-[hsl(var(--phosphor))] bg-[hsl(var(--phosphor)/0.12)] text-[hsl(var(--phosphor))] hover:bg-[hsl(var(--phosphor)/0.18)]"
+          >
+            <Plus size={13} />new skill
           </Button>
         </div>
       </div>
 
+      {error && <ErrorBar code="SKILLS" message={error} onDismiss={() => setError(null)} />}
+
       <div className="flex-1 overflow-y-auto p-6">
-        {loading && sortedSkills.length === 0 && <AdminListSkeleton rows={4} />}
-        <AdminError error={error} />
+        {loading && skills.length === 0 && <LoadingCursor label="loading skills" />}
         {!loading && sortedSkills.length === 0 && !error && (
-          <AdminEmptyState
-            icon={Zap}
-            title="No skills configured"
-            description="Skills give agents specialized capabilities. Create a skill to define custom behaviors and prompts."
-            action={{ label: "New Skill", icon: Plus, onClick: () => { resetDialogState(); setIsDialogOpen(true); } }}
+          <EmptyFrame
+            title="no skills configured"
+            hint="skills give agents specialised capabilities; create one to define custom behaviours"
+            action={
+              <Button
+                size="sm"
+                onClick={() => { resetDialogState(); setIsDialogOpen(true); }}
+                className="gap-1.5 border border-[hsl(var(--phosphor))] bg-[hsl(var(--phosphor)/0.12)] text-[hsl(var(--phosphor))] hover:bg-[hsl(var(--phosphor)/0.18)]"
+              >
+                <Plus size={13} />new skill
+              </Button>
+            }
           />
         )}
 
@@ -223,30 +314,38 @@ export const SkillsPage: FC = () => {
           {sortedSkills.map((skill) => {
             const isEnabled = skill.enabled !== false;
             const isBusy = actionSkillId === skill.skill_id;
+            const isBuiltin = (skill as { origin?: string }).origin === "builtin";
             return (
               <div
                 key={skill.skill_id}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3",
-                  !isEnabled && "opacity-75",
+                  "flex items-center gap-3 border border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-surface))] px-4 py-3 transition-colors duration-[160ms] hover:border-[hsl(var(--phosphor)/0.4)]",
+                  !isEnabled && "opacity-60",
                 )}
               >
                 <div
                   className={cn(
-                    "flex size-8 items-center justify-center rounded-md",
-                    isEnabled ? "bg-primary/15" : "bg-muted",
+                    "flex size-8 items-center justify-center border",
+                    isEnabled
+                      ? "border-[hsl(var(--phosphor))] bg-[hsl(var(--phosphor)/0.12)]"
+                      : "border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-bg))]",
                   )}
                 >
-                  <Zap size={14} className={isEnabled ? "text-primary" : "text-muted-foreground"} />
+                  <Zap size={14} className={isEnabled ? "text-[hsl(var(--phosphor))]" : "text-[hsl(var(--terminal-fg-dim))]"} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-display text-sm font-semibold text-foreground">
+                  <p className="flex items-center gap-2 text-sm font-medium text-[hsl(var(--terminal-fg))]">
                     {skill.title || skill.skill_id}
+                    {isBuiltin && (
+                      <span className="inline-flex items-center gap-1 rounded border border-[hsl(var(--amber)/0.5)] bg-transparent px-2 py-0.5 font-mono text-[9px] uppercase tracking-wide text-[hsl(var(--amber))]">
+                        <Shield size={9} />built-in
+                      </span>
+                    )}
                   </p>
                   {skill.description && (
-                    <p className="line-clamp-1 font-body text-xs text-muted-foreground">{skill.description}</p>
+                    <p className="line-clamp-1 text-xs text-[hsl(var(--terminal-fg-dim))]">{skill.description}</p>
                   )}
-                  <p className="font-mono text-[10px] text-muted-foreground">
+                  <p className="text-[10px] text-[hsl(var(--terminal-fg-dim))]">
                     {skill.provider_id ? `provider: ${skill.provider_id}` : `id: ${skill.skill_id}`}
                   </p>
                 </div>
@@ -257,6 +356,8 @@ export const SkillsPage: FC = () => {
                     className="h-7 cursor-pointer px-2 text-xs"
                     onClick={() => openEdit(skill)}
                     aria-label={`Edit ${skill.title || skill.skill_id}`}
+                    disabled={isBuiltin}
+                    title={isBuiltin ? "System skill — cannot be edited" : undefined}
                   >
                     <Pencil size={12} className="mr-1" />
                     Edit
@@ -267,6 +368,8 @@ export const SkillsPage: FC = () => {
                     className="h-7 cursor-pointer border-destructive/50 px-2 text-xs text-destructive hover:bg-destructive/10"
                     onClick={() => setDeleteTarget(skill)}
                     aria-label={`Delete ${skill.title || skill.skill_id}`}
+                    disabled={isBuiltin}
+                    title={isBuiltin ? "System skill — cannot be removed" : undefined}
                   >
                     <Trash2 size={12} className="mr-1" />
                     Delete

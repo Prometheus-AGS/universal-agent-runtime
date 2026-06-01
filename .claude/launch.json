@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "uar-via-proxy",
+      "runtimeExecutable": "uar-jwt-proxy",
+      "runtimeArgs": ["--listen", "127.0.0.1:8089"],
+      "port": 8089
+    }
+  ]
+}

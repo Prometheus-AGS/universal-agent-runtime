@@ -7,14 +7,18 @@ import { AboutPage } from "@/pages/about-page";
 import { Toaster } from "sonner";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { useThreadHydration } from "@/stores/thread-registry-store";
+import { useThreadGraphSync } from "@/stores/use-thread-graph-sync";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
 });
 
 function AppRoutes() {
-  // Hydrate thread list from PGlite once on mount (DB is guaranteed ready here)
+  // Hydrate thread list from PGlite once on mount (DB is guaranteed ready here).
   useThreadHydration();
+  // Reconcile server-side Thread/sessions events from the realtime graph into
+  // the registry store. See stores/use-thread-graph-sync.ts.
+  useThreadGraphSync();
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       <OfflineBanner />

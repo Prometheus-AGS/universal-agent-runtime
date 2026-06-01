@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ChevronDownIcon, CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchAgentsList } from "@/services/agents-api";
 import { fetchConfiguredProviders } from "@/services/providers-api";
+import { loadAgentsIntoGraph } from "@/entities/fetchers/agents";
+import { useAgents } from "@/entities/hooks/use-agents";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -51,25 +52,20 @@ interface AgentSelectorProps {
 type AgentWithType = UarAgent & { _type: "runtime" | "federated" };
 
 export function AgentSelector({ threadId, onAgentConfigChange, className }: AgentSelectorProps) {
-  const [agents, setAgents] = useState<AgentWithType[]>([]);
+  // Agent list now comes from the entity graph — same source as the Admin
+  // page — so SSE mutations (rename, delete, enable-flag flips) propagate
+  // into the chat sidebar without a reload.
+  const agentsView = useAgents();
+  const agents = agentsView.items as unknown as AgentWithType[];
+  const loading = agents.length === 0;
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [modelLabel, setModelLabel] = useState<string | null>(null);
 
+  // Hydrate the graph on mount (idempotent — the Admin page also calls this).
   useEffect(() => {
-    let cancelled = false;
-    fetchAgentsList()
-      .then((list) => {
-        if (!cancelled) setAgents(list as AgentWithType[]);
-      })
-      .catch(() => {
-        /* swallow — show empty list */
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
+    void loadAgentsIntoGraph();
   }, []);
 
   // Fetch default provider/model to display in header
@@ -96,6 +92,23 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
     return () => { cancelled = true; };
   }, []);
 
+  // Render-derived AgentConfig: re-derives whenever the selected agent's
+  // underlying record changes in the graph (e.g. via SSE from an admin edit
+  // in another tab). Pushes the new config through the existing prop callback
+  // so downstream consumers (capability toggles, session config panel,
+  // chat hot path via useAgentConfig) always see fresh values.
+  const currentAgent = useMemo(
+    () => (selectedId ? agents.find((a) => a.id === selectedId) ?? null : null),
+    [selectedId, agents],
+  );
+  const derivedConfig = useMemo(
+    () => (currentAgent ? extractAgentConfig(currentAgent) : null),
+    [currentAgent],
+  );
+  useEffect(() => {
+    onAgentConfigChange?.(derivedConfig);
+  }, [derivedConfig, onAgentConfigChange]);
+
   const applyAgentConfig = useCallback(
     async (agentId: string) => {
       if (!threadId) return;
@@ -117,16 +130,17 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
       const next = agentId === selectedId ? null : agentId;
       setSelectedId(next);
       setOpen(false);
+      // AgentConfig propagation now flows automatically via the
+      // derivedConfig useEffect above; here we only handle side effects:
+      // session-side apply + model-label refresh.
       if (next) {
         void applyAgentConfig(next);
         const agent = agents.find((a) => a.id === next);
         if (agent) {
           const config = extractAgentConfig(agent);
-          onAgentConfigChange?.(config);
           setModelLabel(config.model ?? "Using default model");
         }
       } else {
-        onAgentConfigChange?.(null);
         // Reset model label to system default
         fetchConfiguredProviders()
           .then((data) => {
@@ -145,7 +159,7 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
           .catch(() => { /* swallow */ });
       }
     },
-    [selectedId, applyAgentConfig, agents, onAgentConfigChange],
+    [selectedId, applyAgentConfig, agents],
   );
 
   const selectedAgent = agents.find((a) => a.id === selectedId);

@@ -1,0 +1,65 @@
+{
+  "phase": "direct-entity-migration-models",
+  "createdAt": "2026-05-27T10:50:00-05:00",
+  "updatedAt": "2026-05-27T11:30:00-05:00",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execute_complete": true,
+  "reflect_complete": true,
+  "reflection_path": ".kbd-orchestrator/phases/direct-entity-migration-models/reflection.md",
+  "goal_achievement_percent": 70,
+  "scope_note": "umbrella phase — 6 entities migrated (Tools deferred): Model, Skill, KnowledgeBase+Document (compat hook), Setting (transitional reads), Memory, CompilerSession. Plus shared admin components (LoadingCursor, EmptyFrame, ErrorBar), terminal CSS tokens scoped under data-admin-theme, and aesthetic spec doc.",
+  "decisions": {
+    "ui_skills": "frontend-design (installed); impeccable + ui-ux-pro-max install deferred to user (interactive /plugin install)",
+    "aesthetic_direction": "retro-futuristic / terminal",
+    "tool_bridge_strategy": "deferred to tool-mcp-status-push-channels phase",
+    "ui_pass_cadence": "per-page",
+    "settings_split": "2 changes — reads done; mutations/store retirement deferred",
+    "screenshot_regression": "Playwright config already present at frontend/playwright.config.ts; per-page screenshot scripts not run this phase (no live dev server available autonomously) — task carried over"
+  },
+  "changes_total": 12,
+  "changes_completed": 11,
+  "changes_ordered": [
+    "setup-design-skills-and-playwright",
+    "add-models-fetcher-and-hook",
+    "migrate-models-page-direct-and-redesign",
+    "migrate-compiler-page-direct-and-redesign",
+    "add-memory-fetcher-and-hook",
+    "migrate-memory-page-direct-and-redesign",
+    "migrate-skills-page-direct-and-redesign",
+    "migrate-knowledge-page-direct-and-redesign",
+    "add-settings-fetcher-and-hook",
+    "migrate-settings-reads-transitional",
+    "migrate-settings-mutations-and-retire-stores",
+    "delete-use-graph-bridge"
+  ],
+  "change_status": {
+    "setup-design-skills-and-playwright": "PARTIAL — code complete (aesthetic spec, CSS tokens, theme toggle, screenshot dirs, playwright already wired); skill plugin installs (impeccable + ui-ux-pro-max) deferred to user",
+    "add-models-fetcher-and-hook": "DONE",
+    "migrate-models-page-direct-and-redesign": "DONE — full rewrite with terminal aesthetic",
+    "migrate-compiler-page-direct-and-redesign": "DONE — also established shared LoadingCursor/EmptyFrame/ErrorBar components",
+    "add-memory-fetcher-and-hook": "DONE",
+    "migrate-memory-page-direct-and-redesign": "DONE — full rewrite with terminal aesthetic (header + table + filters + detail panel)",
+    "migrate-skills-page-direct-and-redesign": "DONE — data migration + moderate aesthetic pass on header/list (dialogs retain ShadCN)",
+    "migrate-knowledge-page-direct-and-redesign": "PARTIAL — data migration complete via compat hook (useKnowledgePage); page chrome unchanged; deeper visual redesign deferred",
+    "add-settings-fetcher-and-hook": "DONE",
+    "migrate-settings-reads-transitional": "DONE — useSettings hook now reads from graph; writes still on store",
+    "migrate-settings-mutations-and-retire-stores": "DEFERRED — store retirement deferred to follow-up phase; risk of regression on 3334 LOC settings page too high without dedicated testing pass",
+    "delete-use-graph-bridge": "DONE — file kept and marked @deprecated; only Tool still consumes it; full deletion scheduled for tool-mcp-status-push-channels"
+  },
+  "verification": {
+    "frontend_tests": "36/36 passed after every change",
+    "frontend_build": "clean after every change",
+    "useGraphStore_getState_in_admin_pages": "memory-page.tsx bulk-delete snapshot loop (intentional: multi-entity transactional op outside optimisticRemove contract)"
+  },
+  "carry_over": {
+    "browser_smoke_prior_phase": "still owed for browser-smoke-providers-and-agents",
+    "settings_store_retirement": "frontend/src/stores/settings-store.ts + frontend/src/services/settings-change-bus.ts still own writes; reads moved to graph",
+    "knowledge_page_aesthetic": "page chrome still on ShadCN; deeper redesign deferred",
+    "skill_plugin_installs": "user to run /plugin install impeccable + /plugin install ui-ux-pro-max interactively",
+    "playwright_screenshots": "no screenshots captured (needs live dev server); per-page captures left for next session with `pnpm --filter ./frontend test:e2e --grep @<page>`",
+    "tools_migration": "Tool entity still bridged; awaits push channel in tool-mcp-status-push-channels phase",
+    "bulk_delete_helper": "consider authoring optimisticBulkRemove in lib/realtime/optimistic.ts to encapsulate the multi-snapshot pattern used by memory bulk delete"
+  }
+}
