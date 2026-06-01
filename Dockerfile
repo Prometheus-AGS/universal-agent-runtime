@@ -56,6 +56,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libssl-dev cmake unzip xz-utils \
         software-properties-common gnupg lsb-release \
         protobuf-compiler libprotobuf-dev \
+        # clang + libclang for bindgen (surrealdb-librocksdb-sys FFI bindings).
+        clang libclang-dev \
         # WASM low-level tooling from apt (wasm-opt via binaryen,
         # wat2wasm/wasm2wat/wasm-objdump via wabt). Adding here keeps
         # the cargo install step focused on Rust-source tools only.
