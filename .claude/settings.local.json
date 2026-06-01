@@ -156,13 +156,30 @@
       "Bash(git -C crates/prometheus-skill-system/tools/liter-llm log --oneline origin/main -3)",
       "Bash(git -C crates/prometheus-skill-system/tools/liter-llm fetch origin)",
       "Bash(git ls-remote *)",
+      "Bash(git fetch *)",
+      "Bash(gh repo *)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh api *)",
       "Skill(anthropic-skills:radix-to-base-ui-migration)",
       "Skill(anthropic-skills:radix-to-base-ui-migration:*)",
       "Bash(pnpm add *)",
       "Bash(pnpm typecheck *)",
       "Bash(node -e \"const s = require\\('/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/node_modules/@base-ui/react/select'\\); console.log\\(Object.keys\\(s\\)\\)\")",
       "Bash(pnpm remove *)",
-      "Bash(pnpm why *)"
+      "Bash(pnpm why *)",
+      "Bash(kreuzberg --version)",
+      "Bash(~/.cargo/bin/kreuzberg --version)",
+      "Bash(cargo fetch *)",
+      "Bash(xcode-select -p)",
+      "Bash(brew install *)",
+      "Bash(cmake --version)",
+      "Bash(SKIP_FRONTEND_BUILD=1 cargo check --message-format short)",
+      "Bash(SKIP_FRONTEND_BUILD=1 cargo test --lib -- uar::runtime::skills::builtin_loader uar::file_processing config::)",
+      "Bash(xargs du -sh)",
+      "Bash(SKIP_FRONTEND_BUILD=1 cargo test --lib -- builtin_loader::tests config::tests)",
+      "Bash(SKIP_FRONTEND_BUILD=1 cargo test --lib -- file_processing::kreuzberg::tests)",
+      "Bash(SKIP_FRONTEND_BUILD=1 cargo test --lib -- file_processing::kreuzberg::tests builtin_loader::tests)",
+      "Bash(SKIP_FRONTEND_BUILD=1 cargo test --lib -- config::)"
     ]
   }
 }
