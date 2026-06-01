@@ -216,8 +216,9 @@ RUN --mount=type=secret,id=github_token \
       tok="$(cat /run/secrets/github_token)"; \
       git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "ssh://git@github.com/"; \
       git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "git@github.com:"; \
+      git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"; \
     fi \
-    && cargo +nightly build --release \
+    && CARGO_NET_GIT_FETCH_WITH_CLI=true cargo +nightly build --release \
         --features "memory-palace,wasm-runtime,surreal-memory/embedded" \
         --bin universal-agent-runtime
 # (The token-bearing gitconfig lives only in this throwaway builder stage — the

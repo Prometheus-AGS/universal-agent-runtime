@@ -792,6 +792,10 @@ impl RunManager {
         let llm_config_for_graph = run_llm_config.clone();
         let mcp_for_graph = Arc::clone(&mcp);
 
+        // Capture the resolved model id so the final RunDoneWithUsage event can
+        // report which model actually answered (moved into the spawned task below).
+        let run_model = run_llm_config.model.clone();
+
         let orchestrator = match Orchestrator::new(
             run_llm_config,
             mcp,
@@ -1219,7 +1223,7 @@ impl RunManager {
                         output_tokens: Some(total_output_tokens),
                         total_tokens: Some(total_tokens),
                         cost_usd_estimate: None, // TODO: add per-model pricing table
-                        model: None,
+                        model: Some(run_model),
                     })
                     .await;
             } else {
@@ -1368,11 +1372,7 @@ mod credential_layer_tests {
         }
     }
 
-    async fn service_with_user_key(
-        user: &str,
-        provider: &str,
-        key: &str,
-    ) -> Arc<ProviderService> {
+    async fn service_with_user_key(user: &str, provider: &str, key: &str) -> Arc<ProviderService> {
         let store = Arc::new(InMemoryCredentialStore::new());
         let enc = CredentialEncryption::from_key(KEY);
         let now = chrono::Utc::now();
@@ -1394,8 +1394,8 @@ mod credential_layer_tests {
     // Single-tenant: no ProviderService ⇒ env/config key is left untouched.
     #[tokio::test]
     async fn single_tenant_no_service_keeps_env_key() {
-        let out = apply_credential_layer(cfg_with_env_key(), None, Some("alice"), None, "agent-1")
-            .await;
+        let out =
+            apply_credential_layer(cfg_with_env_key(), None, Some("alice"), None, "agent-1").await;
         assert_eq!(out.api_key.as_deref(), Some("env-key"));
     }
 
