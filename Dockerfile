@@ -202,7 +202,7 @@ RUN git config --global --add safe.directory '*' \
 # (it has pnpm-workspace.yaml + pnpm-lock.yaml; the repo root uses bun and has no
 # pnpm lockfile, which caused ERR_PNPM_NO_LOCKFILE when installing from /src).
 RUN cd frontend \
-    && pnpm install --frozen-lockfile \
+    && pnpm install --no-frozen-lockfile \
     && pnpm build
 
 # Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded)
