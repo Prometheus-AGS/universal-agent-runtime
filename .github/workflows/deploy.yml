@@ -119,14 +119,24 @@ jobs:
             --zone ${{ env.GKE_ZONE }} \
             --project ${{ env.PROJECT_ID }}
 
-      - name: Update image in kustomization
+      # Surgical image bump only. The live `uar` namespace is operator-managed
+      # (predates this repo): its ConfigMap (Qwen model plane) and Secrets
+      # (uar-app-secrets / uar-db-credentials) must NOT be overwritten, so we do
+      # NOT `kubectl apply -k` here. We bump only the deployment's image.
+      - name: Bump deployment image
         run: |
-          cd k8s/base
-          kustomize edit set image \
-            uar=us-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ needs.build.outputs.image_tag }}
+          kubectl set image deploy/uar \
+            uar=us-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ needs.build.outputs.image_tag }} \
+            -n uar
 
-      - name: Apply production overlay
-        run: kubectl apply -k k8s/overlays/production/
+      # The deployment is single-replica with ReadWriteOnce PVCs; a RollingUpdate
+      # deadlocks on a Multi-Attach error (new pod can't attach the volume the old
+      # pod still holds). Scale to 0 to release the volumes, then back to 1.
+      - name: Roll via scale 0 -> 1 (RWO volumes)
+        run: |
+          kubectl scale deploy/uar -n uar --replicas=0
+          kubectl wait --for=delete pod -l app.kubernetes.io/name=uar -n uar --timeout=120s || true
+          kubectl scale deploy/uar -n uar --replicas=1
 
       - name: Wait for rollout
         run: |
