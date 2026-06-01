@@ -225,11 +225,21 @@ base64 = "0.22"
 # Credential encryption — AES-256-GCM for per-user provider API keys at rest
 aes-gcm = "0.10"
 
-# Kreuzberg - document intelligence framework with Rust core
-kreuzberg = { git = "https://github.com/GQAdonis/kreuzberg.git", branch = "main", default-features = false, features = [
-    "tokio-runtime",
-    "formats",
-    "analysis",
+# Kreuzberg - document intelligence framework with Rust core (v4 upstream)
+# CLI install: cargo install --git https://github.com/kreuzberg-dev/kreuzberg --tag v4.9.8 kreuzberg-cli
+# Or via Homebrew: brew tap kreuzberg-dev/tap && brew install kreuzberg-cli
+kreuzberg = { git = "https://github.com/kreuzberg-dev/kreuzberg.git", tag = "v4.9.8", default-features = false, features = [
+    "tokio-runtime",        # extract_file_sync, batch_extract_file_sync
+    "pdf",                  # PDF extraction via pdf_oxide (replaces "formats")
+    "office",               # docx, odt, pptx, xlsx, odp, ods, etc. (replaces "formats")
+    "excel",                # xlsx/xlsm/xls (replaces "formats")
+    "email",                # .eml, .msg, .pst (replaces "formats")
+    "html",                 # HTML-to-markdown (replaces "formats")
+    "archives",             # zip, tar, 7z (replaces "formats")
+    "ocr",                  # Tesseract OCR backend (replaces "analysis")
+    "language-detection",   # whatlang language detection (replaces "analysis")
+    "chunking",             # RAG text chunking via ChunkingConfig
+    "mcp",                  # Embedded MCP server (kreuzberg mcp --transport stdio)
 ] }
 
 # Worker pool for scalable document ingestion
