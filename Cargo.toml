@@ -226,7 +226,7 @@ base64 = "0.22"
 aes-gcm = "0.10"
 
 # Kreuzberg - document intelligence framework with Rust core
-kreuzberg = { git = "ssh://git@github.com/GQAdonis/kreuzberg.git", branch = "main", default-features = false, features = [
+kreuzberg = { git = "https://github.com/GQAdonis/kreuzberg.git", branch = "main", default-features = false, features = [
     "tokio-runtime",
     "formats",
     "analysis",
