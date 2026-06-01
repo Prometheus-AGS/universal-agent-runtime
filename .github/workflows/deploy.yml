@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -78,6 +80,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
