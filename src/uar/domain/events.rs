@@ -70,6 +70,12 @@ pub enum NormalizedEvent {
     RunDone {
         run_id: String,
     },
+    /// A run was cancelled — explicitly via the cancel endpoint, by the last SSE
+    /// subscriber disconnecting, or by server shutdown. Terminal, distinct from
+    /// `RunDone` (normal completion) and `Error` (failure).
+    Cancelled {
+        run_id: String,
+    },
     StatePatch {
         run_id: String,
         patch: Vec<StatePatchOp>,

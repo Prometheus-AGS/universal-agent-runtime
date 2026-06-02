@@ -426,6 +426,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         rm
     });
 
+    // Root run-cancellation token: cancelling it on shutdown aborts all
+    // in-flight runs (they emit a terminal `Cancelled` event) within the drain
+    // window, instead of being killed abruptly at process teardown.
+    let run_cancellation_root = run_manager.root_cancellation_token();
+
     // Initialize Global Rate Limiter
     #[allow(clippy::cast_sign_loss)]
     let burst_size = config.resilience.burst_size.max(0.0) as u32;
@@ -1079,13 +1084,17 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     //   2. Fire the Axum graceful-shutdown trigger.
     {
         let pool_for_shutdown = ingestion_pool_shared.clone();
+        let run_cancellation_root = run_cancellation_root.clone();
         tokio::spawn(async move {
             prometheus_parking_lot::core::shutdown::wait_for_signal().await;
             info!(
                 name: "server.shutdown",
                 timeout_secs = shutdown_timeout.as_secs(),
-                "Shutdown signal received — draining ingestion pool"
+                "Shutdown signal received — cancelling in-flight runs and draining ingestion pool"
             );
+            // Abort in-flight runs first so they stop calling the LLM / tools and
+            // emit a terminal Cancelled event before connections are drained.
+            run_cancellation_root.cancel();
             // Drain and cancel any wedged ingestion workers before closing sockets.
             if let Some(pool) = pool_for_shutdown {
                 pool.shutdown();
@@ -3909,6 +3918,9 @@ pub(crate) async fn api_chat_completion(
         let stream_session_id = session_id.clone();
         // Keep an extra copy for the response headers (stream_session_id is moved into the closure).
         let response_session_id = session_id.clone();
+        // Expose the server-assigned run_id so clients can target the cancel
+        // endpoint (POST /api/uar/runs/{run_id}/cancel) and resume the stream.
+        let response_run_id = run_id.clone();
         let stream_model_name = model_name.clone();
         let stream_completion_id = completion_id.clone();
         let replay = state
@@ -3922,8 +3934,16 @@ pub(crate) async fn api_chat_completion(
         let stream_memory_service = state.memory_service.clone();
         let stream_agent_id = agent_id_for_policy.clone();
         let _stream_memory_ctx_count = stream_memory_ctx_count;
+        // Last-subscriber-drop guard: owned by the stream generator so a client
+        // disconnect (generator dropped) cancels the run iff no subscriber
+        // remains after a short grace period.
+        let disconnect_guard = uar::runtime::manager::RunDisconnectGuard::new(
+            Arc::clone(&state.run_manager),
+            run_id.clone(),
+        );
 
         let stream = async_stream::stream! {
+            let _disconnect_guard = disconnect_guard;
             // Emit agui.memory.context event so frontend can show indicator.
             if emit_agui_chunks && _stream_memory_ctx_count > 0 {
                 let mem_event = Event::default()
@@ -4325,6 +4345,11 @@ pub(crate) async fn api_chat_completion(
         response.headers_mut().insert(
             HeaderName::from_static("x-uar-session-id"),
             HeaderValue::from_str(&response_session_id)
+                .unwrap_or_else(|_| HeaderValue::from_static("invalid")),
+        );
+        response.headers_mut().insert(
+            HeaderName::from_static("x-uar-run-id"),
+            HeaderValue::from_str(&response_run_id)
                 .unwrap_or_else(|_| HeaderValue::from_static("invalid")),
         );
         if let Ok(cookie) = HeaderValue::from_str(&format!(

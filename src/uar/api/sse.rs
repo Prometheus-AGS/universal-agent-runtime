@@ -253,6 +253,13 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "request_id": run_id
             }),
         )),
+        NormalizedEvent::Cancelled { run_id } => Some((
+            "agui.cancelled",
+            serde_json::json!({
+                "kind": "cancelled",
+                "request_id": run_id
+            }),
+        )),
         NormalizedEvent::RunDoneWithUsage {
             run_id,
             input_tokens,

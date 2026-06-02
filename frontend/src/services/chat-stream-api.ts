@@ -13,3 +13,19 @@ export async function postChatCompletion(
     signal,
   });
 }
+
+/**
+ * POST /api/uar/runs/{runId}/cancel — request server-side cancellation of an
+ * in-flight run. Idempotent; safe to call for unknown/finished runs. Best-effort
+ * (fire-and-forget): aborting the local stream also triggers server cancellation
+ * via the last-subscriber-drop guard, so failures here are non-fatal.
+ */
+export async function cancelRun(runId: string): Promise<void> {
+  try {
+    await fetch(`/api/uar/runs/${encodeURIComponent(runId)}/cancel`, {
+      method: "POST",
+    });
+  } catch {
+    // Non-fatal: the disconnect guard cancels the run when the stream drops.
+  }
+}

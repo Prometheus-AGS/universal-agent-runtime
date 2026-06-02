@@ -20,6 +20,7 @@ pub fn build_router() -> Router<Arc<RunManager>> {
         .route("/runs", post(create_run))
         .route("/runs/{id}/stream", get(stream_run))
         .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
+        .route("/runs/{run_id}/cancel", post(api_cancel_run))
         .route("/runs/{run_id}/checkpoints", get(list_checkpoints))
         .route("/runs/{run_id}/resume", post(resume_run))
         .route(
@@ -88,7 +89,15 @@ async fn stream_run(
         .filter_map(Result::ok)
         .filter(move |event| event.id > replay_max_id);
 
-    let stream = tokio_stream::iter(replay).chain(live_stream);
+    // Last-subscriber-drop guard: tied to the stream's lifetime so that when the
+    // client disconnects (stream dropped), the run is cancelled iff no other
+    // subscriber remains after a short grace period.
+    let disconnect_guard =
+        crate::uar::runtime::manager::RunDisconnectGuard::new(Arc::clone(&manager), run_id.clone());
+    let stream = tokio_stream::iter(replay).chain(live_stream).map(move |event| {
+        let _ = &disconnect_guard;
+        event
+    });
 
     build_sse_response(stream).into_response()
 }
@@ -112,6 +121,20 @@ async fn api_tool_approval(
     } else {
         StatusCode::NOT_FOUND
     }
+}
+
+/// POST /api/uar/runs/{run_id}/cancel
+///
+/// Request cancellation of an in-flight run. Idempotent: always responds 200
+/// with `{ "cancelled": <bool> }` — `true` if a live run was found and
+/// cancelled, `false` for an unknown or already-terminal run (no error, no
+/// duplicate terminal event).
+async fn api_cancel_run(
+    State(manager): State<Arc<RunManager>>,
+    Path(run_id): Path<String>,
+) -> impl IntoResponse {
+    let cancelled = manager.cancel_run(&run_id).await;
+    Json(serde_json::json!({ "cancelled": cancelled }))
 }
 
 // ── Checkpoint endpoints ──────────────────────────────────────────────────────

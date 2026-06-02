@@ -21,6 +21,7 @@ use std::{
     time::Duration,
 };
 use tokio::sync::{Mutex, RwLock, broadcast, oneshot};
+use tokio_util::sync::CancellationToken;
 use tracing::instrument;
 use uuid::Uuid;
 
@@ -103,6 +104,13 @@ pub struct RunManager {
     /// When a tool call requires approval, a oneshot channel is inserted here.
     /// The approval endpoint sends `true` (approved) or `false` (rejected) through it.
     pending_approvals: Arc<Mutex<HashMap<String, oneshot::Sender<bool>>>>,
+    /// Root cancellation token. Every run derives a child token from this, so
+    /// cancelling the root (e.g. on server shutdown) aborts all in-flight runs.
+    root_cancellation: CancellationToken,
+    /// Per-run cancellation tokens: `run_id` -> child token. Populated in
+    /// `start_run` and removed when the run reaches a terminal state, so finished
+    /// runs do not accumulate. `cancel_run` cancels the token found here.
+    run_cancellations: Arc<RwLock<HashMap<String, CancellationToken>>>,
     /// Message-count based context strategy applied to session history before LLM calls.
     message_context_strategy: crate::uar::context::ContextStrategy,
     /// Optional agent graph for graph-based execution. When set, `start_run` uses
@@ -252,6 +260,49 @@ fn tool_requires_approval(tool_name: &str) -> bool {
     RISKY_KEYWORDS.iter().any(|kw| lower.contains(kw))
 }
 
+/// RAII guard tied to the lifetime of an SSE subscription.
+///
+/// When dropped (the SSE client disconnects and its stream is torn down), it
+/// schedules a check after a short grace period: if the run then has no
+/// remaining subscribers, it is cancelled. The grace period absorbs reconnect
+/// races (a client resuming via history replay re-subscribes within the
+/// window), and the no-subscriber check enforces last-subscriber-drop semantics
+/// so a run watched by multiple clients survives any single disconnect.
+#[derive(Debug)]
+pub struct RunDisconnectGuard {
+    manager: Arc<RunManager>,
+    run_id: String,
+}
+
+impl RunDisconnectGuard {
+    /// Grace period before deciding a disconnected run is abandoned.
+    const GRACE: Duration = Duration::from_millis(250);
+
+    #[must_use]
+    pub fn new(manager: Arc<RunManager>, run_id: String) -> Self {
+        Self { manager, run_id }
+    }
+}
+
+impl Drop for RunDisconnectGuard {
+    fn drop(&mut self) {
+        let manager = Arc::clone(&self.manager);
+        let run_id = std::mem::take(&mut self.run_id);
+        if run_id.is_empty() {
+            return;
+        }
+        tokio::spawn(async move {
+            tokio::time::sleep(RunDisconnectGuard::GRACE).await;
+            if manager.cancel_run_if_no_subscribers(&run_id).await {
+                tracing::info!(
+                    run_id = %run_id,
+                    "Run cancelled: last SSE subscriber disconnected"
+                );
+            }
+        });
+    }
+}
+
 impl std::fmt::Debug for RunManager {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RunManager")
@@ -341,6 +392,8 @@ impl RunManager {
             provider_service: None,
             native_skills,
             pending_approvals: Arc::new(Mutex::new(HashMap::new())),
+            root_cancellation: CancellationToken::new(),
+            run_cancellations: Arc::new(RwLock::new(HashMap::new())),
             message_context_strategy: crate::uar::context::ContextStrategy::default(),
             agent_graph: None,
         }
@@ -417,6 +470,43 @@ impl RunManager {
         }
     }
 
+    /// Cancel an in-flight run.
+    ///
+    /// Cancels the run's cancellation token (which aborts the in-flight LLM
+    /// stream and tool execution at the next await point) and resolves any
+    /// pending tool approval as aborted so a run parked on the approval gate
+    /// unblocks promptly. Returns `true` if a live run was found and cancelled,
+    /// `false` for an unknown or already-terminal run (idempotent).
+    pub async fn cancel_run(&self, run_id: &str) -> bool {
+        let token = {
+            let cancels = self.run_cancellations.read().await;
+            cancels.get(run_id).cloned()
+        };
+        let Some(token) = token else {
+            return false;
+        };
+        // Drop any lingering approval sender so the gate future resolves; the
+        // token cancellation below also drops the orchestrator stream.
+        {
+            let mut approvals = self.pending_approvals.lock().await;
+            if let Some(tx) = approvals.remove(run_id) {
+                let _ = tx.send(false);
+            }
+        }
+        token.cancel();
+        tracing::info!(run_id = %run_id, "Run cancellation requested");
+        true
+    }
+
+    /// A clone of the root cancellation token.
+    ///
+    /// Cancelling it aborts ALL in-flight runs at once; used to wire run
+    /// cancellation into the server's graceful-shutdown path.
+    #[must_use]
+    pub fn root_cancellation_token(&self) -> CancellationToken {
+        self.root_cancellation.clone()
+    }
+
     #[instrument(
         skip(self, artifact, input, memory_hits),
         fields(
@@ -486,6 +576,16 @@ impl RunManager {
         {
             let mut session_runs = self.session_current_run.write().await;
             session_runs.insert(session.id().to_string(), run_id.clone());
+        }
+
+        // Per-run cancellation token, derived from the root so that a server
+        // shutdown (which cancels the root) also aborts this run. `cancel_run`
+        // and the client-disconnect guard cancel this token; the spawned task
+        // selects on it and removes it from the map on any terminal state.
+        let run_cancellation = self.root_cancellation.child_token();
+        {
+            let mut cancels = self.run_cancellations.write().await;
+            cancels.insert(run_id.clone(), run_cancellation.clone());
         }
 
         // 3. Prepare Messages
@@ -883,6 +983,11 @@ impl RunManager {
         let skill_evolution_cfg = self.skill_evolution_config.clone();
         let graph_for_run = self.agent_graph.clone();
         let persistence_for_run = self.persistence.clone();
+        // Cancellation: the run's child token (selected on in the consumption loop,
+        // moved into the task below) and the registry used to deregister it on
+        // terminal state.
+        let cancellations_for_cleanup = Arc::clone(&self.run_cancellations);
+        let cleanup_run_id = run_id.clone();
 
         tokio::spawn(async move {
             // 1. Run Start
@@ -970,7 +1075,20 @@ impl RunManager {
                         .push(serde_json::to_value(msg).unwrap_or_default());
                 }
 
-                let final_state = graph.execute(initial_state, &graph_ctx).await;
+                let final_state = tokio::select! {
+                    biased;
+                    () = run_cancellation.cancelled() => {
+                        tracing::info!(run_id = %execute_run_id, "Run cancelled during graph execution");
+                        emitter
+                            .emit(NormalizedEvent::Cancelled {
+                                run_id: execute_run_id.clone(),
+                            })
+                            .await;
+                        cancellations_for_cleanup.write().await.remove(&cleanup_run_id);
+                        return;
+                    }
+                    state = graph.execute(initial_state, &graph_ctx) => state,
+                };
 
                 if let Some(err) = final_state.get::<String>("_error") {
                     emitter
@@ -990,6 +1108,7 @@ impl RunManager {
             }
 
             let mut accumulated_content = String::new();
+            let mut run_cancelled = false;
             let mut accumulated_tool_calls: Vec<crate::llm::ToolCall> = Vec::new();
             let mut tool_call_indices: HashMap<String, usize> = HashMap::new();
             let mut tool_call_names: HashMap<String, String> = HashMap::new();
@@ -1002,7 +1121,23 @@ impl RunManager {
             match orchestrator.chat_with_history(messages).await {
                 Ok(stream) => {
                     futures::pin_mut!(stream);
-                    while let Some(base_event) = stream.next().await {
+                    loop {
+                        // Cancellation seam: selecting the run token against the
+                        // orchestrator stream means a cancel drops the in-flight
+                        // `next()` future — which drops the orchestrator's current
+                        // await (LLM stream, tool call, or approval gate), aborting
+                        // it cooperatively at the next suspension point.
+                        let base_event = tokio::select! {
+                            biased;
+                            () = run_cancellation.cancelled() => {
+                                run_cancelled = true;
+                                break;
+                            }
+                            next = stream.next() => match next {
+                                Some(ev) => ev,
+                                None => break,
+                            },
+                        };
                         // Map base NormalizedEvent to domain NormalizedEvent with run_id
                         let uar_event = match base_event {
                             crate::normalized::NormalizedEvent::MessageDelta { text } => {
@@ -1215,7 +1350,14 @@ impl RunManager {
             // Preserve run_id before it is moved into the RunDone event below.
             let evolution_run_id = execute_run_id.clone();
 
-            if has_usage {
+            if run_cancelled {
+                tracing::info!(run_id = %execute_run_id, "Run cancelled; emitting terminal Cancelled event");
+                emitter
+                    .emit(NormalizedEvent::Cancelled {
+                        run_id: execute_run_id,
+                    })
+                    .await;
+            } else if has_usage {
                 emitter
                     .emit(NormalizedEvent::RunDoneWithUsage {
                         run_id: execute_run_id,
@@ -1233,6 +1375,13 @@ impl RunManager {
                     })
                     .await;
             }
+
+            // Deregister the run's cancellation token now that it is terminal, so
+            // finished runs do not accumulate and a later cancel is a no-op.
+            cancellations_for_cleanup
+                .write()
+                .await
+                .remove(&cleanup_run_id);
 
             // ── Skill evolution (Hermes learning cycle) ──────────────────────────
             // Fire a background reflection task when evolution is enabled and the
@@ -1274,6 +1423,28 @@ impl RunManager {
     pub async fn subscribe(&self, run_id: &str) -> Option<broadcast::Receiver<StreamEvent>> {
         let runs = self.active_runs.read().await;
         runs.get(run_id).map(|state| state.sender.subscribe())
+    }
+
+    /// Number of active subscribers to a run's event stream (SSE clients).
+    pub async fn subscriber_count(&self, run_id: &str) -> usize {
+        let runs = self.active_runs.read().await;
+        runs.get(run_id)
+            .map_or(0, |state| state.sender.receiver_count())
+    }
+
+    /// Cancel a run only if it currently has no subscribers.
+    ///
+    /// Used by the SSE disconnect guard to implement last-subscriber-drop
+    /// semantics: a run is abandoned only when the final viewer leaves, so a
+    /// multi-viewer stream (or a client reconnecting via history replay) is not
+    /// cancelled when one of several subscribers disconnects. Returns `true` if
+    /// the run was cancelled.
+    pub async fn cancel_run_if_no_subscribers(&self, run_id: &str) -> bool {
+        if self.subscriber_count(run_id).await == 0 {
+            self.cancel_run(run_id).await
+        } else {
+            false
+        }
     }
 
     /// Emit an event into an existing run's broadcast channel.
