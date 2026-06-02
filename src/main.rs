@@ -31,7 +31,7 @@ async fn main() {
         })
         .unwrap_or_default();
 
-    uar::telemetry::init(&log_format);
+    let otel_provider = uar::telemetry::init(&log_format);
     uar::telemetry::metrics::init();
 
     let cli = Cli::parse();
@@ -45,7 +45,14 @@ async fn main() {
     };
     tracing::info!("Configuration loaded: {:?}", config);
 
-    if let Err(e) = server::start_server(config).await {
+    let server_result = server::start_server(config).await;
+
+    // Flush buffered OTLP spans before exit.
+    if let Some(provider) = &otel_provider {
+        let _ = provider.shutdown();
+    }
+
+    if let Err(e) = server_result {
         tracing::error!("Server error: {:?}", e);
         std::process::exit(1);
     }

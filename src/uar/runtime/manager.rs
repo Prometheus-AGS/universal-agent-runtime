@@ -22,6 +22,7 @@ use std::{
 };
 use tokio::sync::{Mutex, RwLock, broadcast, oneshot};
 use tokio_util::sync::CancellationToken;
+use tracing::Instrument;
 use tracing::instrument;
 use uuid::Uuid;
 
@@ -895,6 +896,8 @@ impl RunManager {
         // Capture the resolved model id so the final RunDoneWithUsage event can
         // report which model actually answered (moved into the spawned task below).
         let run_model = run_llm_config.model.clone();
+        // Whether to compute per-request cost (captured before run_llm_config moves).
+        let cost_tracking_enabled = run_llm_config.cost_tracking;
 
         let orchestrator = match Orchestrator::new(
             run_llm_config,
@@ -989,7 +992,16 @@ impl RunManager {
         let cancellations_for_cleanup = Arc::clone(&self.run_cancellations);
         let cleanup_run_id = run_id.clone();
 
-        tokio::spawn(async move {
+        // Run-level span: child LLM-call and tool-call spans created within the
+        // task attach under this, producing a run → llm → tool trace tree.
+        let run_span = tracing::info_span!(
+            "run",
+            run_id = %execute_run_id,
+            agent_id = %execute_agent_id,
+        );
+
+        tokio::spawn(
+            async move {
             // 1. Run Start
             emitter
                 .emit(NormalizedEvent::RunStart {
@@ -1358,13 +1370,30 @@ impl RunManager {
                     })
                     .await;
             } else if has_usage {
+                // Compute estimated USD cost from the pricing catalog when cost
+                // tracking is enabled; None when disabled or the model is unpriced.
+                let cost_usd_estimate = if cost_tracking_enabled {
+                    crate::llm::catalog::estimate_cost(
+                        &run_model,
+                        u64::from(total_input_tokens),
+                        u64::from(total_output_tokens),
+                        0, // cache-read totals not separately accumulated at run level yet
+                    )
+                } else {
+                    None
+                };
+                if let Some(cost) = cost_usd_estimate
+                    && let Some((provider, model_id)) = run_model.split_once('/')
+                {
+                    crate::uar::telemetry::metrics::record_llm_cost(provider, model_id, cost);
+                }
                 emitter
                     .emit(NormalizedEvent::RunDoneWithUsage {
                         run_id: execute_run_id,
                         input_tokens: Some(total_input_tokens),
                         output_tokens: Some(total_output_tokens),
                         total_tokens: Some(total_tokens),
-                        cost_usd_estimate: None, // TODO: add per-model pricing table
+                        cost_usd_estimate,
                         model: Some(run_model),
                     })
                     .await;
@@ -1415,7 +1444,9 @@ impl RunManager {
                     );
                 }
             }
-        });
+            }
+            .instrument(run_span),
+        );
 
         run_id
     }

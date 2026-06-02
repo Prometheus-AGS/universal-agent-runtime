@@ -312,6 +312,11 @@ impl McpRegistry {
     }
 
     /// Execute a namespaced tool, e.g. "`time__now`" or "`tavily__search`".
+    #[tracing::instrument(
+        name = "tool.call",
+        skip(self, arguments),
+        fields(tool = %namespaced_tool),
+    )]
     pub async fn call_namespaced_tool(
         &self,
         namespaced_tool: &str,
