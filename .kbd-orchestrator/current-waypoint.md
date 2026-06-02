@@ -1,37 +1,48 @@
 # Current Waypoint
 
-- Phase: `submodule-entity-management-implementation` **(plan_complete)**
-- Previous phase: `submodule-skills-and-entity-devtools-expansion` *(reflect_complete; 11/11 changes archived)*
+- Phase: `uar-harness-parity` **(planned)**
+- Previous phase: `uar-production-readiness-gaps` *(6/7 goals met)*
 - Backend: OpenSpec
-- Wave: **W0** — kickoff
-- Status: `plan_complete`
-- Progress: **0 / 11 changes** scaffolded
-- Active change: `seim-skill-system-pr-bundle` *(state: ready_for_opsx_new)*
-- Next pending change: same — first OpenSpec change to scaffold
-- Exact next command: `/opsx:new seim-skill-system-pr-bundle`
-- Plan: [plan.md](phases/submodule-entity-management-implementation/plan.md)
-- Assessment: [assessment.md](phases/submodule-entity-management-implementation/assessment.md)
-- Updated at: 2026-05-27T00:00:00Z
+- Status: `planned`
+- Progress: **0 / 6 changes** · plan complete
+- Active change: none
+- Exact next command: **Round 0 merge gate** (C2→C1→C3→C4 to `main`), then `/opsx:new add-run-cancellation`
+- Plan: [plan.md](phases/uar-harness-parity/plan.md) · Assessment: [assessment.md](phases/uar-harness-parity/assessment.md)
+- Updated at: 2026-06-02T00:00:00Z
 
-## Wave shape (recap)
+## ⚠️ Round 0 — Merge gate (do first, not an OpenSpec change)
 
-| Wave | Changes |
+Assessment was run against `main` (`8b3c503`), which lacks the prior phase's work. Merge **C2 → C1 → C3 → C4** to `main` and verify `cargo build` + `cargo test` green BEFORE starting Round 1. HP1/HP2/HP3 assume `main` has the ingestion `CancellationToken`, graceful shutdown, and `runtime.*` SSE events.
+
+## Product decisions resolved
+
+| ID | Decision |
 |---|---|
-| W0 | 1 — commit prior phase's skill-system tree (blocking) |
-| W1 | 2 — surreal-live spec correction |
-| W2 | 3 — new worktree at `~/.claude/worktrees/seim-entity-management` |
-| W3 | 4 surreal-live impl + 5 engine devtools tap *(parallel)* |
-| W4 | 6 preflight UI/UX research *(gating)* |
-| W5 | 7 event bus + multi-store registry |
-| W6 | 8 panel components (the big one) |
-| W7 | 9 tree-shake check + 10 extension architecture notes *(parallel)* |
-| W8 | 11 extension scaffold *(stretch — scaffold-only)* |
+| R2 cancel semantics | Cancel on **last-subscriber-drop** + explicit `POST /runs/{id}/cancel` + UI stop button |
+| R3 eval scope | **Deferred** to dedicated `uar-safety-and-evals` phase |
+| R4 guardrails | **In-house heuristics + mount existing Cedar `governance_layer`** (no external service) |
 
-## Default decisions (in effect unless user overrides)
+## Change roster (ordered)
 
-1. Spec reconciliation: delta change preserving historical record.
-2. Worktree: new persistent worktree under `~/.claude/worktrees/seim-entity-management`.
-3. Chrome extension scope this phase: scaffold-only.
-4. Production tree-shake gate: hard fail in `prepublishOnly`.
+| # | Change | Round | Complexity | Model | Value | Agent |
+|---|---|---|---|---|---|---|
+| 1 | `add-run-cancellation` | 1 | L / High | frontier | HIGH | Claude Code |
+| 2 | `wire-otlp-tracing-and-cost` | 2 | L / High | frontier | HIGH | Claude Code |
+| 3 | `emit-runtime-step-events` | 2 | M / Med | medium | MED | Codex |
+| 4 | `wire-sycophancy-detection` | 1 | M / Med | medium | MED | Codex |
+| 5 | `resumable-streaming-client` | 1 | M / Med | medium | MED | Claude Code |
+| 6 | `mount-governance-guardrails` | 1 | L / High | frontier | HIGH | Claude Code |
 
-All KBD skills will emit `starting/ending <kind> <name> [i/n]` lines on stderr (default reporter from the hook system); each change emits its own `phase:before` / `phase:after` hooks; memory recall auto-fires on every `assess:before`.
+## Execution rounds
+
+- **Round 0 (gate):** merge prior-phase branches to `main`.
+- **Round 1 (parallel):** `add-run-cancellation`, `resumable-streaming-client`, `mount-governance-guardrails`, `wire-sycophancy-detection` (HP1 first / isolated — HP4 shares the response path).
+- **Round 2 (after HP1 orchestrator surface):** `emit-runtime-step-events`, then `wire-otlp-tracing-and-cost`.
+
+## Deferred (out of phase)
+
+- HP7 eval harness → `uar-safety-and-evals` phase
+- Tool-approval Cedar migration → fold into `uar-safety-and-evals`
+- Durable workflows / checkpointing → own phase
+- Config write-back to YAML → own change
+- Parking-lot `HookBus` → **will not build** (redundant with `RunEventEmitter`)

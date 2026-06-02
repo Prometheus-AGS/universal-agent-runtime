@@ -1,25 +1,50 @@
 {
-  "phase": "uar-kreuzberg-v4-migration",
-  "change": "uar-kreuzberg-v4-bump",
-  "status": "awaiting_new_phase",
-  "previousPhase": "uar-kreuzberg-v4-migration",
-  "currentTask": "select next phase via /kbd-new-phase",
-  "nextPendingChange": null,
+  "phase": "uar-harness-parity",
+  "change": null,
+  "status": "planned",
+  "previousPhase": "uar-production-readiness-gaps",
+  "currentTask": "Round 0 GATE: merge prior-phase branches C2->C1->C3->C4 to main; THEN /opsx:new add-run-cancellation",
+  "nextPendingChange": "add-run-cancellation",
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-new-phase",
+  "exactNextCommand": "git merge gate (C2->C1->C3->C4 to main), then /opsx:new add-run-cancellation",
+  "plannedChanges": ["add-run-cancellation", "wire-otlp-tracing-and-cost", "emit-runtime-step-events", "wire-sycophancy-detection", "resumable-streaming-client", "mount-governance-guardrails"],
+  "productDecisionsResolved": {
+    "R2": "cancel on last-subscriber-drop + explicit POST /runs/{id}/cancel + UI stop button",
+    "R3": "eval harness deferred to dedicated uar-safety-and-evals phase",
+    "R4": "guardrails in-house heuristics + mount existing Cedar governance_layer (no external service)"
+  },
   "parentPhase": null,
   "childPhases": [],
   "childPointer": null,
   "backend": "openspec",
-  "session_arc_outcome": "uar-kreuzberg-v4-migration: 6/6 goals MET. kreuzberg re-pointed to upstream v4.9.8 LTS; OutputFormat/table/chunking API fixed; MCP server wired; kreuzberg SKILL.md auto-loaded as Builtin; multi-root loader shipped. UAR PR #20 + PSS PR #4 merged.",
+  "session_arc_outcome": "uar-production-readiness-gaps: 6/7 goals MET (G7 partial), 4/4 changes done. Graceful shutdown fixed (parking-lot bump + pool hoist + wait_for_signal); config env/YAML authoritative on boot; builtin agents persisted; Runtime Console wired to live events; HITL Approve/Deny functional. Parity score vs Mastra/Volt: 9 green / 5 yellow / 8 red (was 5/7/11). Deferred: OTel tracing, lifecycle hooks bus, durable workflows, evals/guardrails → uar-harness-parity.",
   "carryOver": [
-    "Credentials admin UI — SCOPED (credentials-admin-ui-scope.md); open dedicated phase uar-credentials-admin-ui (UI/UX routing first)"
+    "Credentials admin UI — SCOPED (prior carryover); open dedicated phase uar-credentials-admin-ui (UI/UX routing first)",
+    "Agent-config POST error surfacing — P3 UX polish (C3)",
+    "Protocols page explicit gating — P3 cleanup (C4)",
+    "Artifact-refiner QA gate automation — missed this phase; automate for next",
+    "Config write-back to YAML — R3 deferred tradeoff (C2)",
+    "CLI vs LLM_* precedence fix — documented known limitation (C2)"
   ],
   "resolvedCarryOver": [
-    "F1: postgres-backend build — RESOLVED (stale lock; builds green on main)",
-    "F2: start_run credential assertion + dual-mode — RESOLVED (apply_credential_layer extracted, +4 tests)",
-    "F3: WISC scout/recipes salvage — DECIDED NO-GO (scout-mcp-go-no-go.md)"
+    "D1 blocking defect: ingestion pool shutdown unreachable — RESOLVED (C1)",
+    "DB-wins-after-first-boot: config changes invisible in UI — RESOLVED (C2)",
+    "OPENAI_API_KEY shortcut dead path — RESOLVED (C2)",
+    "Built-in agents not persisted / unreliable visibility — RESOLVED (C3)",
+    "Runtime Console dead facade / dead buttons — RESOLVED (C4)"
   ],
-  "recommendedNextPhaseSeeds": [],
-  "updatedAt": "2026-06-01T00:00:00Z"
+  "recommendedNextPhaseSeeds": [
+    "P0: OTel/OTLP tracing — wire kreuzberg+tracing crates into OTLP spans",
+    "P1: parking-lot Hook/LifecycleEvent bus — unlocks RuntimeStep, tool-call cancellation",
+    "P1: cancellation through tool calls — extend CancellationToken into LLM orchestrator",
+    "P2: resumable SSE streaming (client reconnect)",
+    "P3: config write-back to YAML",
+    "P3: evals scaffold",
+    "Deferred: durable workflows / checkpoint (own phase)"
+  ],
+  "prStrategy": "C2 → C1 → C3 → C4 (C4 depends on C1 parking-lot bump on main)",
+  "blockingPrerequisite": "C0 — merge prior-phase branches (C1-C4) to main BEFORE executing uar-harness-parity. Assessment run against main (8b3c503) which lacks them.",
+  "parityAssessmentSummary": "uar-harness-parity: 8 goals (H1-H8). Corrections vs reflection seeds: (1) cancellation PROMOTED to P0 — client disconnect orphans runs that keep executing destructive tools + burning tokens (live bug); (2) parking-lot HookBus KILLED — redundant with existing RunEventEmitter broadcast+replay; (3) resumable streaming DOWNGRADED to frontend-only — server already has 512-event buffer + working GET /api/uar/runs/{id}/stream resume endpoint; (4) sycophancy-core is a DEAD dependency (declared, never invoked in src/). OTLP deps present but unused (1 #[instrument] on whole run path); Prometheus /metrics + JSON logging already done. Biggest true gap: evals + guardrails (no injection defense; Cedar governance_layer defined-but-unmounted). Cut C0+HP1-HP4 this phase; HP6+HP7 candidate for own uar-safety-and-evals phase.",
+  "productDecisionsRequired": ["R2 cancel semantics", "R3 eval scope", "R4 guardrail build-vs-buy"],
+  "updatedAt": "2026-06-02T00:00:00Z"
 }

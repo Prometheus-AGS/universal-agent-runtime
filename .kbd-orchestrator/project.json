@@ -4,7 +4,7 @@
   "sourceOfTruth": ".kbd-orchestrator",
   "specSystem": "openspec",
   "activeChange": null,
-  "activePhase": "submodule-entity-management-implementation",
+  "activePhase": "uar-harness-parity",
   "memoryMirror": {
     "provider": "surreal_memory",
     "mcpServer": "surreal_memory",
@@ -13,5 +13,5 @@
   },
   "tools": ["codex", "claude-code", "cursor", "opencode"],
   "worktreeRoot": "${HOME}/.claude/worktrees",
-  "updatedAt": "2026-05-27T00:00:00Z"
+  "updatedAt": "2026-06-02T00:00:00Z"
 }

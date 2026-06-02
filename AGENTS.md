@@ -35,6 +35,24 @@ Strict layering — do not skip layers:
 
 This avoids duplicated data logic, keeps ESLint `react-hooks/*` rules satisfied, and makes testing straightforward.
 
+## OpenSpec workflow
+
+This repo uses **OpenSpec** for spec-driven change management. The `openspec` CLI
+(`@fission-ai/openspec`, v1.4.0) is installed globally and on `PATH`.
+
+- **Specs** live in `openspec/specs/`; **change proposals** in `openspec/changes/<name>/`
+  (`proposal.md` + `tasks.md`, schema `spec-driven`).
+- **Common commands**: `openspec list`, `openspec status --change <name>`,
+  `openspec new change "<name>"`, `openspec instructions <artifact> --change <name>`,
+  `openspec validate <name>`, `openspec archive <name>`.
+- **Tool integrations** (slash commands / skills) are generated per tool — refresh
+  with `openspec update` after a CLI upgrade. First-class tools include Claude Code
+  (`/opsx:*`), Codex, OpenCode, Cursor, Windsurf, Gemini, RooCode, Kilo Code, Antigravity.
+- **Editors without a native integration** (e.g. **Zed**): use the `openspec` CLI in the
+  integrated terminal; this `AGENTS.md` is the agent context.
+- Change-planning is coordinated with the KBD orchestrator — `.kbd-orchestrator/` is the
+  source of truth (see the Agent rules block below).
+
 ## Worktree convention
 
 Git worktrees for this repository are created under **`~/.claude/worktrees/`** — never inside the repo working tree. The repo's own `.claude/` directory holds checked-in tool configuration (`settings.local.json`, `commands/`, `skills/`) that is read by Roo, Cursor, Codex, OpenCode, and Claude Code; putting worktrees alongside that config collides namespaces, confuses tooling, and risks accidental deletion of real configuration during cleanup.
