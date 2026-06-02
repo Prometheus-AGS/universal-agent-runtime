@@ -81,6 +81,33 @@ pub fn orchestrator_agent() -> AgentArtifact {
     agent
 }
 
+/// Seeds the two built-in agents into the persistence layer at startup.
+///
+/// This is an idempotent upsert: if a row with the same `id` already exists,
+/// the definition is overwritten so system updates (e.g. prompt improvements)
+/// are always applied. Because the agents are now persisted, the realtime
+/// entity bus will re-emit them after any `Agent` ChangeSet, making them
+/// reliably visible in the admin list and chat selector without relying on the
+/// `ensure_builtin_agent` shim.
+///
+/// Call this alongside [`ensure_default_knowledge_base`] in server startup.
+pub async fn seed_builtin_agents(
+    persistence: &dyn crate::uar::persistence::PersistenceLayer,
+) -> anyhow::Result<()> {
+    for agent in [default_agent(), orchestrator_agent()] {
+        let id = agent.id.clone();
+        match persistence.save_agent(&agent).await {
+            Ok(()) => {
+                tracing::info!(agent_id = %id, "Built-in agent seeded/refreshed");
+            }
+            Err(e) => {
+                tracing::warn!(agent_id = %id, error = ?e, "Failed to seed built-in agent — continuing");
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Creates the default knowledge base if it doesn't exist.
 /// This should be called on application startup.
 pub async fn ensure_default_knowledge_base(

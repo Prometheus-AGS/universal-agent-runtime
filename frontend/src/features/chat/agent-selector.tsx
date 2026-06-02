@@ -17,6 +17,8 @@ import type { UarAgent } from "@/types";
 
 /** Extracted agent configuration passed downstream to toggles & config panel. */
 export interface AgentConfig {
+  /** The agent's id — included so the chat request can send agent_id explicitly. */
+  agent_id?: string;
   model?: string;
   skills: string[];
   tools: string[];
@@ -40,7 +42,7 @@ export function extractAgentConfig(agent: UarAgent): AgentConfig {
 
   const knowledge_bases = agent.memory?.kb?.knowledge_bases ?? [];
 
-  return { model, skills, tools, knowledge_bases };
+  return { agent_id: agent.id, model, skills, tools, knowledge_bases };
 }
 
 interface AgentSelectorProps {
