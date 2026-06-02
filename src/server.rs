@@ -598,6 +598,38 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         settings_manager: state.settings_manager.clone(),
     };
 
+    // ── Shared ingestion worker pool ─────────────────────────────────────────────
+    // Built once before router assembly. A single `Arc` is cloned into both
+    // knowledge-base router states so there is exactly one pool and one set of
+    // OS threads. The `Arc` is also retained here so we can call
+    // `ingestion_pool_shared.shutdown()` during graceful shutdown after the
+    // signal fires — `shutdown(&self)` is callable through `Arc` in the new
+    // crate revision (CR-02 fix).
+    let ingestion_pool_shared: Option<Arc<IngestionWorkerPool>> = if let (
+        Some(p),
+        Some(ingest),
+    ) = (&persistence, &state.ingest_service)
+    {
+        match IngestionWorkerPool::new(
+            0,   // auto-detect CPU count
+            100, // max queue depth
+            Arc::clone(ingest),
+            Arc::clone(p),
+            Arc::clone(&config),
+        ) {
+            Ok(pool) => {
+                info!("Shared ingestion worker pool initialized (single instance)");
+                Some(Arc::new(pool))
+            }
+            Err(e) => {
+                tracing::error!("Failed to create shared ingestion pool: {:?}", e);
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     // Build router
     // Memory MCP router — built before the main router so type inference is unambiguous.
     let mem_mcp_router: axum::Router<()> = if let Some(ref svc) = state.memory_service {
@@ -756,31 +788,8 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         )
         // Knowledge Base API
         .nest("/api/uar/knowledge-bases", {
-            // Initialize ingestion worker pool if persistence available
-            let ingestion_pool = if let Some(p) = &persistence {
-                if let Some(ingest) = &state.ingest_service {
-                    match IngestionWorkerPool::new(
-                        0,   // auto-detect CPU count
-                        100, // max queue depth
-                        Arc::clone(ingest),
-                        Arc::clone(p),
-                        Arc::clone(&config),
-                    ) {
-                        Ok(pool) => {
-                            info!("Ingestion worker pool initialized");
-                            Some(Arc::new(pool))
-                        }
-                        Err(e) => {
-                            tracing::error!("Failed to create ingestion pool: {:?}", e);
-                            None
-                        }
-                    }
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
+            // Use the shared ingestion pool (single instance, hoisted above).
+            let ingestion_pool = ingestion_pool_shared.clone();
 
             uar::api::knowledge::build_router().with_state(Arc::new(
                 uar::api::knowledge::KnowledgeApiState {
@@ -828,24 +837,8 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         )
         // Knowledge bases: GET/POST /api/knowledge, etc.
         .nest("/api/knowledge", {
-            let ingestion_pool = if let Some(p) = &persistence {
-                if let Some(ingest) = &state.ingest_service {
-                    match IngestionWorkerPool::new(
-                        0,
-                        100,
-                        Arc::clone(ingest),
-                        Arc::clone(p),
-                        Arc::clone(&config),
-                    ) {
-                        Ok(pool) => Some(Arc::new(pool)),
-                        Err(_) => None,
-                    }
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
+            // Use the shared ingestion pool (alias path; same Arc as above).
+            let ingestion_pool = ingestion_pool_shared.clone();
             uar::api::knowledge::build_router().with_state(Arc::new(
                 uar::api::knowledge::KnowledgeApiState {
                     persistence: persistence
@@ -1064,8 +1057,43 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         "Server started"
     );
 
+    // Build a one-shot shutdown channel so the signal handler can notify
+    // the Axum serve loop AND the pool shutdown in a single coordinated
+    // sequence, without spawning extra tasks.
+    let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+
+    // Spawn the signal handler: wait for SIGINT/SIGTERM, then:
+    //   1. Shut down the ingestion worker pool (drains with timeout, detaches wedges).
+    //   2. Fire the Axum graceful-shutdown trigger.
+    {
+        let pool_for_shutdown = ingestion_pool_shared.clone();
+        tokio::spawn(async move {
+            prometheus_parking_lot::core::shutdown::wait_for_signal().await;
+            info!(
+                name: "server.shutdown",
+                timeout_secs = shutdown_timeout.as_secs(),
+                "Shutdown signal received — draining ingestion pool"
+            );
+            // Drain and cancel any wedged ingestion workers before closing sockets.
+            if let Some(pool) = pool_for_shutdown {
+                pool.shutdown();
+            }
+            info!(name: "server.shutdown.pool_drained", "Ingestion pool shut down — closing HTTP connections");
+            // Signal Axum to stop accepting and drain open connections.
+            let _ = shutdown_tx.send(());
+        });
+    }
+
     axum::serve(listener, app.into_make_service())
-        .with_graceful_shutdown(shutdown_signal(shutdown_timeout))
+        .with_graceful_shutdown(async move {
+            let _ = shutdown_rx.await;
+            info!(
+                name: "server.draining",
+                timeout_secs = shutdown_timeout.as_secs(),
+                "Draining in-flight HTTP connections"
+            );
+            tokio::time::sleep(shutdown_timeout).await;
+        })
         .await?;
 
     info!(name: "server.stopped", "Server shut down gracefully");
@@ -1101,44 +1129,6 @@ fn normalize_legacy_openai_base_url(llm_config: &mut crate::config::LlmConfig) {
     }
 }
 
-/// Wait for SIGTERM or SIGINT, then allow a grace period for in-flight requests.
-async fn shutdown_signal(timeout_duration: Duration) {
-    let ctrl_c = async {
-        tokio::signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
-    };
-
-    #[cfg(unix)]
-    let terminate = async {
-        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
-            .expect("failed to install SIGTERM handler")
-            .recv()
-            .await;
-    };
-
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
-
-    tokio::select! {
-        () = ctrl_c => {
-            info!(name: "server.shutdown", signal = "SIGINT", "Received SIGINT, starting graceful shutdown");
-        }
-        () = terminate => {
-            info!(name: "server.shutdown", signal = "SIGTERM", "Received SIGTERM, starting graceful shutdown");
-        }
-    }
-
-    // Allow in-flight requests to drain within the timeout.
-    // Axum's graceful shutdown handles connection draining automatically
-    // once this future completes. The timeout here is a log marker;
-    // the actual enforcement is via K8s terminationGracePeriodSeconds.
-    info!(
-        name: "server.draining",
-        timeout_secs = timeout_duration.as_secs(),
-        "Draining in-flight connections"
-    );
-}
 
 fn build_permissive_cors_layer() -> CorsLayer {
     CorsLayer::new()

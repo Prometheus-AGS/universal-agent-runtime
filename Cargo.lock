@@ -10437,7 +10437,7 @@ dependencies = [
 [[package]]
 name = "prometheus_parking_lot"
 version = "0.1.0"
-source = "git+https://github.com/Prometheus-AGS/prometheus-parking-lot-rs?rev=32b481d6c5694545d35789894f6feecf5ac4ca3e#32b481d6c5694545d35789894f6feecf5ac4ca3e"
+source = "git+https://github.com/Prometheus-AGS/prometheus-parking-lot-rs?rev=ebb7c3ce02f7b925bc2e1b45c87ce8abf402b1f0#ebb7c3ce02f7b925bc2e1b45c87ce8abf402b1f0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -10451,6 +10451,7 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-util",
  "tracing",
  "tracing-subscriber",
  "uuid",
@@ -14614,6 +14615,7 @@ dependencies = [
  "futures-core",
  "futures-io",
  "futures-sink",
+ "futures-util",
  "pin-project-lite",
  "tokio",
 ]

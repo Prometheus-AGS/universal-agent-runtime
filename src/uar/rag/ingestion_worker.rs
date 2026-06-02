@@ -18,6 +18,7 @@ use prometheus_parking_lot::{
     util::serde::{MailboxKey, Priority, ResourceCost, ResourceKind},
 };
 use std::{collections::HashMap, path::Path, sync::Arc};
+use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
 
 // =============================================================================
@@ -59,6 +60,9 @@ pub struct DocumentIngestionExecutor {
     persistence: Arc<dyn PersistenceLayer>,
     /// Application configuration for file-processing provider selection
     config: Arc<AppConfig>,
+    /// Cancellation token — checked between processing stages to honour
+    /// graceful shutdown without leaving documents in `Processing` state.
+    cancellation: CancellationToken,
 }
 
 impl DocumentIngestionExecutor {
@@ -67,19 +71,42 @@ impl DocumentIngestionExecutor {
         ingest_service: Arc<IngestService>,
         persistence: Arc<dyn PersistenceLayer>,
         config: Arc<AppConfig>,
+        cancellation: CancellationToken,
     ) -> Self {
         Self {
             ingest_service,
             persistence,
             config,
+            cancellation,
         }
     }
 }
 
 #[async_trait]
 impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestionExecutor {
-    async fn execute(&self, job: DocumentIngestionJob, _meta: TaskMetadata) -> IngestionResult {
+    async fn execute(&self, job: DocumentIngestionJob, meta: TaskMetadata) -> IngestionResult {
         let doc_id = job.document.id.clone();
+
+        // Honour deadline from task metadata as a secondary cancellation guard.
+        let deadline_exceeded = meta.deadline_ms.map_or(false, |dl_ms| {
+            u128::try_from(chrono::Utc::now().timestamp_millis()).unwrap_or(0) > dl_ms
+        });
+        if self.cancellation.is_cancelled() || deadline_exceeded {
+            warn!(
+                document_id = %doc_id,
+                cancelled = self.cancellation.is_cancelled(),
+                deadline_exceeded,
+                "Ingestion task cancelled before start — leaving status unchanged"
+            );
+            return IngestionResult {
+                document_id: doc_id,
+                chunk_count: 0,
+                status: DocumentStatus::Failed {
+                    error: "cancelled before start".to_string(),
+                },
+            };
+        }
+
         info!(document_id = %doc_id, "Starting document ingestion");
 
         // Update status to Processing
@@ -91,7 +118,7 @@ impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestion
             warn!(document_id = %doc_id, error = %e, "Failed to update status to processing");
         }
 
-        // Attempt to ingest the document
+        // Attempt to ingest the document; check cancellation token between stages
         match self.process_document(&job).await {
             Ok(chunk_count) => {
                 // Update status to Indexed
@@ -144,12 +171,20 @@ impl DocumentIngestionExecutor {
             .mime_type
             .clone()
             .unwrap_or_else(|| guess_mime_type(&job.document.filename));
-        let result = self.extract_document(job, &file_config, &mime_type).await?;
-        let provider_name = result.provider_name.clone();
 
+        // Stage 1 — extraction (CPU/IO bound; may be long)
+        let result = self.extract_document(job, &file_config, &mime_type).await?;
+
+        // Check cancellation between stages so a shutdown during a slow
+        // extraction is caught before we spend time on embedding.
+        if self.cancellation.is_cancelled() {
+            return Err(anyhow::anyhow!("cancelled between extraction and embedding"));
+        }
+
+        let provider_name = result.provider_name.clone();
         let metadata = build_chunk_metadata(&job.document, &result, provider_name);
 
-        // Use the ingest service to chunk, embed, and store
+        // Stage 2 — chunk, embed, and store
         let chunks = self
             .ingest_service
             .ingest_text_with_metadata(
@@ -313,8 +348,13 @@ fn build_chunk_metadata(
 /// High-level wrapper around the `prometheus_parking_lot` `WorkerPool`
 /// for document ingestion.
 pub struct IngestionWorkerPool {
-    /// The underlying worker pool
+    /// The underlying worker pool.
     pool: WorkerPool<DocumentIngestionJob, IngestionResult, DocumentIngestionExecutor>,
+    /// Cancellation token — signalled on graceful shutdown so in-flight
+    /// executors can abort between processing stages.
+    cancellation: CancellationToken,
+    /// Per-task deadline (ms) — `None` means unbounded.
+    task_deadline_ms: Option<u128>,
 }
 
 impl std::fmt::Debug for IngestionWorkerPool {
@@ -331,6 +371,8 @@ impl IngestionWorkerPool {
     /// * `max_queue_depth` - Maximum pending jobs before backpressure
     /// * `ingest_service` - Shared ingest service
     /// * `persistence` - Persistence layer for status updates
+    /// * `config` - Application config (used for file-processing provider selection
+    ///   and, optionally, per-task deadline from `server.shutdown_timeout_secs`)
     pub fn new(
         worker_count: usize,
         max_queue_depth: usize,
@@ -344,12 +386,19 @@ impl IngestionWorkerPool {
             worker_count
         };
 
+        let cancellation = CancellationToken::new();
+
         let pool_config = WorkerPoolConfig::new()
             .with_worker_count(worker_count)
             .with_max_units(1000) // Resource capacity
             .with_max_queue_depth(max_queue_depth);
 
-        let executor = DocumentIngestionExecutor::new(ingest_service, persistence, config);
+        let executor = DocumentIngestionExecutor::new(
+            ingest_service,
+            persistence,
+            Arc::clone(&config),
+            cancellation.clone(),
+        );
         let pool = WorkerPool::new(pool_config, executor)?;
 
         info!(
@@ -357,7 +406,21 @@ impl IngestionWorkerPool {
             max_queue_depth, "Ingestion worker pool initialized"
         );
 
-        Ok(Self { pool })
+        Ok(Self {
+            pool,
+            cancellation,
+            task_deadline_ms: None,
+        })
+    }
+
+    /// Set the per-task deadline in milliseconds from now.
+    ///
+    /// When set, each submitted task receives an absolute deadline. Tasks still
+    /// running when the deadline passes are abandoned after the cancellation
+    /// check between stages.
+    pub fn with_task_deadline_ms(mut self, deadline_ms: Option<u128>) -> Self {
+        self.task_deadline_ms = deadline_ms;
+        self
     }
 
     /// Submit a document for ingestion.
@@ -374,6 +437,9 @@ impl IngestionWorkerPool {
             file_content,
         };
 
+        let now_ms = u128::try_from(chrono::Utc::now().timestamp_millis()).unwrap_or(0);
+        let deadline_ms = self.task_deadline_ms.map(|d| now_ms + d);
+
         let meta = TaskMetadata {
             id: uuid::Uuid::new_v4().as_u128() as u64,
             priority: Priority::Normal,
@@ -381,9 +447,10 @@ impl IngestionWorkerPool {
                 kind: ResourceKind::Cpu, // CPU-bound work
                 units: 10,               // Each document uses 10 resource units
             },
-            created_at_ms: u128::try_from(chrono::Utc::now().timestamp_millis()).unwrap_or(0),
-            deadline_ms: None,
+            created_at_ms: now_ms,
+            deadline_ms,
             mailbox: None,
+            idempotency_key: None,
         };
 
         let key = self.pool.submit_async(job, meta).await?;
@@ -401,9 +468,18 @@ impl IngestionWorkerPool {
         self.pool.retrieve_async(key, timeout).await
     }
 
-    /// Shutdown the worker pool gracefully.
-    pub fn shutdown(self) {
-        drop(self.pool);
+    /// Shut down the worker pool gracefully.
+    ///
+    /// Signals the cancellation token so in-flight executors can abort between
+    /// processing stages, then calls the fixed `WorkerPool::shutdown(&self)`
+    /// which honours a join timeout and detaches wedged workers.
+    ///
+    /// This method takes `&self` so it is callable through an `Arc`.
+    pub fn shutdown(&self) {
+        info!("Signalling ingestion worker pool shutdown");
+        self.cancellation.cancel();
+        self.pool.shutdown();
+        info!("Ingestion worker pool shut down");
     }
 }
 
