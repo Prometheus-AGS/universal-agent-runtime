@@ -103,6 +103,8 @@ fn minimal_config() -> AppConfig {
             external_cache_enabled: false,
             surreal_user: None,
             surreal_pass: None,
+            surreal_ns: None,
+            surreal_db: None,
         },
         file_processing: FileProcessingConfig::default(),
         unstructured: None,

@@ -250,7 +250,7 @@ kreuzberg = { git = "https://github.com/kreuzberg-dev/kreuzberg.git", tag = "v4.
 #   4. Run `cargo build` to verify compilation
 #   5. Run `cargo test` to verify no regressions
 #   6. Commit Cargo.toml + Cargo.lock together
-prometheus_parking_lot = { git = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs", rev = "32b481d6c5694545d35789894f6feecf5ac4ca3e", features = [
+prometheus_parking_lot = { git = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs", rev = "ebb7c3ce02f7b925bc2e1b45c87ce8abf402b1f0", features = [
   "tokio-runtime",
 ] }
 num_cpus = "1.16"
