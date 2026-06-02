@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import {
   postChatCompletion,
+  cancelRun,
   CHAT_COMPLETION_URL,
 } from "@/services/chat-stream-api";
 import { fetchResilienceSettings } from "@/services/settings-api";
@@ -531,6 +532,10 @@ function sleepWithSignal(ms: number, signal: AbortSignal): Promise<void> {
 
 /** Active stream controller — module scope so async stream loop can assign without React. */
 let streamAbortRef: AbortController | null = null;
+// Server-assigned run id (from the `x-uar-run-id` response header). Lets the
+// stop action request deterministic server-side cancellation rather than
+// relying solely on the last-subscriber-drop guard that fires on disconnect.
+let serverRunIdRef: string | null = null;
 
 interface ChatStreamActions {
   startStream: (
@@ -543,6 +548,14 @@ interface ChatStreamActions {
 
 export const useChatStreamStore = create<ChatStreamActions>(() => ({
   cancelStream: () => {
+    // Request explicit server-side cancellation (deterministic, immediate) in
+    // addition to aborting the local stream. The abort alone would also cancel
+    // the run via the server's last-subscriber-drop guard, but the explicit
+    // call avoids the grace-period delay.
+    if (serverRunIdRef) {
+      void cancelRun(serverRunIdRef);
+      serverRunIdRef = null;
+    }
     streamAbortRef?.abort();
     streamAbortRef = null;
   },
@@ -621,6 +634,9 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
         }
         if (!res.body) throw new Error("Response body is null");
 
+        // Capture the server-assigned run id so the stop action can cancel it.
+        serverRunIdRef = res.headers.get("x-uar-run-id");
+
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
@@ -647,7 +663,11 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
               }
 
               const store = useChatMessageStore.getState();
-              if (event !== "agui.error" && event !== "agui.done") {
+              if (
+                event !== "agui.error" &&
+                event !== "agui.done" &&
+                event !== "agui.cancelled"
+              ) {
                 sawFirstStreamChunk = true;
                 clearTimeout(streamStartTimer);
                 store.markStreamStarted(threadId, runId);
@@ -881,6 +901,16 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                   if (e.agent_id)
                     store.setMessageMeta(threadId, runId, { agentId: e.agent_id });
                   break;
+                }
+                case "agui.cancelled": {
+                  // Run was cancelled (explicit stop, last-subscriber drop, or
+                  // server shutdown). Terminal — finalize the stream cleanly,
+                  // distinct from done/error.
+                  clearTimeout(streamStartTimer);
+                  store.finishStream(threadId);
+                  useAgentStatusStore.getState().setIdle();
+                  callbacks?.onComplete?.();
+                  return;
                 }
                 case "agui.done": {
                   const e = agui as {

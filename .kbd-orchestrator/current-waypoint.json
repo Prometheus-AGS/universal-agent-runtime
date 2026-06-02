@@ -1,10 +1,14 @@
 {
   "phase": "uar-harness-parity",
   "change": null,
-  "status": "planned",
+  "status": "executing",
   "previousPhase": "uar-production-readiness-gaps",
-  "currentTask": "Round 0 GATE: merge prior-phase branches C2->C1->C3->C4 to main; THEN /opsx:new add-run-cancellation",
-  "nextPendingChange": "add-run-cancellation",
+  "currentTask": "HP1 add-run-cancellation IMPLEMENTED on branch feat/run-cancellation (Round 0 merged to main). Next: push/PR feat/run-cancellation, then HP2/HP6/HP4/HP5.",
+  "nextPendingChange": "wire-otlp-tracing-and-cost",
+  "roundZeroComplete": true,
+  "changeStatus": {
+    "add-run-cancellation": "implemented (branch feat/run-cancellation, commit a26e33e); validated; manual SIGTERM/multi-tab checks pending live env"
+  },
   "sourceTool": "claude-code",
   "exactNextCommand": "git merge gate (C2->C1->C3->C4 to main), then /opsx:new add-run-cancellation",
   "plannedChanges": ["add-run-cancellation", "wire-otlp-tracing-and-cost", "emit-runtime-step-events", "wire-sycophancy-detection", "resumable-streaming-client", "mount-governance-guardrails"],
