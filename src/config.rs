@@ -1042,23 +1042,36 @@ impl AppConfig {
         if let Ok(val) = env::var("LLM_PROTOCOL") {
             builder = builder.set_override("llm.protocol", val)?;
         }
-        // Provider-specific API key shortcuts — map to llm.api_key if llm.api_key not set
-        // (UAR_LLM__API_KEY or LLM_API_KEY take precedence).
-        for provider_key in &[
-            "OPENAI_API_KEY",
-            "ANTHROPIC_API_KEY",
-            "GROQ_API_KEY",
-            "MISTRAL_API_KEY",
-            "COHERE_API_KEY",
-            "GEMINI_API_KEY",
-            "TOGETHER_API_KEY",
-            "PERPLEXITY_API_KEY",
-        ] {
-            if let Ok(val) = env::var(provider_key) {
-                // Only set as the default api_key if no explicit key is configured yet.
-                // Use a flag to avoid overriding an already-set key.
+        // Provider-specific API key shortcuts.
+        //
+        // Each well-known provider env var (OPENAI_API_KEY, ANTHROPIC_API_KEY, …)
+        // is written to TWO places:
+        //   1. `llm.api_key` (via `set_default`) — so if no explicit key was
+        //      configured, the shortcut supplies one for `build_client_config`.
+        //   2. `llm.provider_keys.<provider_id>` — so per-provider key lookup
+        //      (used by the registry / `configured` status) can find it without
+        //      knowing which provider is the active default.
+        //
+        // `set_default` means UAR_LLM__API_KEY and LLM_API_KEY still win — they
+        // are applied earlier at higher priority tiers.
+        let provider_key_map: &[(&str, &str)] = &[
+            ("OPENAI_API_KEY", "openai"),
+            ("ANTHROPIC_API_KEY", "anthropic"),
+            ("GROQ_API_KEY", "groq"),
+            ("MISTRAL_API_KEY", "mistral"),
+            ("COHERE_API_KEY", "cohere"),
+            ("GEMINI_API_KEY", "google"),
+            ("TOGETHER_API_KEY", "together"),
+            ("PERPLEXITY_API_KEY", "perplexity"),
+        ];
+        for (env_var, provider_id) in provider_key_map {
+            if let Ok(val) = env::var(env_var) {
+                // Fallback api_key for the default client (lower priority than
+                // UAR_LLM__API_KEY / LLM_API_KEY which use set_override).
+                builder = builder.set_default("llm.api_key", val.clone())?;
+                // Per-provider key — read by registry configured-status check.
                 builder = builder.set_default(
-                    &format!("llm._provider_keys.{}", provider_key.to_lowercase()),
+                    &format!("llm.provider_keys.{provider_id}"),
                     val,
                 )?;
             }
@@ -1127,6 +1140,12 @@ pub fn load_llm_config(cli: Cli) -> anyhow::Result<LlmConfig> {
 
 /// Build a `liter_llm::ClientConfig` from the merged `LlmConfig`.
 pub fn build_client_config(llm: &LlmConfig) -> liter_llm::ClientConfig {
+    // Key resolution order (highest priority first):
+    //   1. Explicit `llm.api_key` from config / UAR_LLM__API_KEY / LLM_API_KEY
+    //   2. `api_key_env` indirection (e.g. `api_key_env: "MY_SECRET"`)
+    //   3. `LLM_API_KEY` env (legacy)
+    //   4. Per-provider shortcut stored in `provider_keys` (OPENAI_API_KEY etc.)
+    let (provider_id, _) = crate::llm::registry::split_model_string_pub(&llm.model);
     let api_key = llm
         .api_key
         .clone()
@@ -1136,6 +1155,7 @@ pub fn build_client_config(llm: &LlmConfig) -> liter_llm::ClientConfig {
                 .and_then(|key| std::env::var(key).ok())
         })
         .or_else(|| std::env::var("LLM_API_KEY").ok())
+        .or_else(|| llm.provider_keys.get(&provider_id).cloned())
         .unwrap_or_default();
 
     let mut builder = liter_llm::ClientConfigBuilder::new(api_key)
@@ -1212,6 +1232,16 @@ pub struct LlmConfig {
     /// Anthropic models with the specified token budget.
     #[serde(default)]
     pub thinking_budget: Option<u32>,
+    /// Per-provider API keys loaded from env shortcuts (OPENAI_API_KEY, etc.).
+    ///
+    /// Keyed by provider id (e.g. `"openai"`, `"anthropic"`). Populated at
+    /// config-load time from well-known env vars. Used by the provider registry
+    /// to compute `configured` status (key present → truly configured) and to
+    /// pass the right key when a non-default provider is used.
+    ///
+    /// NOT read from `config.yaml` — always sourced from env at boot.
+    #[serde(default)]
+    pub provider_keys: std::collections::HashMap<String, String>,
 }
 
 impl LlmConfig {
@@ -1251,6 +1281,7 @@ impl Default for LlmConfig {
             cooldown_secs: None,
             health_check_secs: None,
             thinking_budget: None,
+            provider_keys: std::collections::HashMap::new(),
         }
     }
 }
