@@ -143,20 +143,23 @@ export function ChatPage() {
 
       {/* Main chat area */}
       <main className="flex flex-1 flex-col overflow-hidden min-w-0">
+        {/* Agent selector toolbar — always visible so users can pick an agent
+            before starting a thread (threadId null is handled inside the component). */}
+        <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+          <AgentSelector threadId={activeThreadId} onAgentConfigChange={handleAgentConfigChange} className="flex-1" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setConfigOpen(true)}
+            aria-label="Session configuration"
+            disabled={!activeThreadId}
+          >
+            <Settings2 size={14} />
+          </Button>
+        </div>
         {activeThreadId ? (
           <>
-            <div className="flex items-center gap-2 border-b border-border px-4 py-2">
-              <AgentSelector threadId={activeThreadId} onAgentConfigChange={handleAgentConfigChange} className="flex-1" />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={() => setConfigOpen(true)}
-                aria-label="Session configuration"
-              >
-                <Settings2 size={14} />
-              </Button>
-            </div>
             <SessionConfigPanel
               threadId={activeThreadId}
               agentConfig={agentConfig}

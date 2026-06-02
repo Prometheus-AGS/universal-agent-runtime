@@ -16,6 +16,12 @@ export interface UarChatPayload {
   attachments?: AttachmentPayload[];
   /** When false, skips memory context injection and auto-capture for this turn. Defaults server-side to true. */
   memory_enabled?: boolean;
+  /** Agent id to use for this run. When provided, overrides the session-level
+   * agent-config so selection is authoritative on the request, not a prior
+   * best-effort side-channel POST. */
+  agent_id?: string;
+  /** Model override in "provider/model" format. */
+  model?: string;
 }
 export interface StreamCallbacks {
   onComplete?: () => void;
@@ -577,6 +583,10 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
         ? { attachments: payload.attachments }
         : {}),
       ...(payload.memory_enabled === false ? { memory_enabled: false } : {}),
+      // Include agent_id / model if provided so the server uses the correct
+      // agent without depending solely on the session agent-config side-channel.
+      ...(payload.agent_id ? { agent_id: payload.agent_id } : {}),
+      ...(payload.model ? { model: payload.model } : {}),
     });
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {

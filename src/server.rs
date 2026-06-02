@@ -39,7 +39,7 @@ use crate::uar::settings::resilience_policy::{
 use crate::uar::telemetry::metrics as telemetry_metrics;
 use crate::uar::{
     self,
-    defaults::ensure_default_knowledge_base,
+    defaults::{ensure_default_knowledge_base, seed_builtin_agents},
     domain::events::MemoryItem,
     governance::engine::GovernanceEngine,
     memory::{
@@ -232,6 +232,13 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             tracing::error!("Failed to ensure default KB: {:?}", e);
         } else {
             info!("Default knowledge base ensured.");
+        }
+
+        // Seed built-in agents so they are persisted, realtime-backed entities.
+        // They are idempotently upserted on every boot so system prompt updates
+        // take effect without a manual re-seed.
+        if let Err(e) = seed_builtin_agents(&**p).await {
+            tracing::warn!("Failed to seed built-in agents: {:?}", e);
         }
 
         info!("Persistence and RAG enabled.");
@@ -3195,6 +3202,13 @@ pub(crate) struct ChatCompletionRequest {
     /// `null` / absent — inherit from user → agent → global settings.
     #[serde(default)]
     prompt_caching_enabled: Option<bool>,
+    /// Agent id to use for this run.
+    ///
+    /// When present, overrides the session agent-config side-channel so the
+    /// selected agent is authoritative on the request body (not a prior POST).
+    /// Falls through to session → default-agent in the absence of this field.
+    #[serde(default)]
+    agent_id: Option<String>,
 }
 
 #[inline]
@@ -3664,8 +3678,25 @@ pub(crate) async fn api_chat_completion(
         Err(resp) => return resp,
     };
 
-    // Prepare agent with provider/model policy resolved for this request.
-    let mut agent = uar::defaults::default_agent();
+    // Resolve agent: request-body agent_id → session agent-config → default.
+    //
+    // Priority (highest first):
+    //   1. `req.agent_id` — explicit selection from the chat request body.
+    //   2. `agent_sessions[session_id].agent_id` — session side-channel POST.
+    //   3. `default-agent` — fallback.
+    let resolved_agent_id: Option<String> = req.agent_id.clone().or_else(|| {
+        state
+            .agent_sessions
+            .try_read()
+            .ok()
+            .and_then(|sessions| sessions.get(&session_id).map(|cfg| cfg.agent_id.clone()))
+    });
+
+    let mut agent = if let Some(ref aid) = resolved_agent_id {
+        uar::api::discovery::resolve_agent_for_run(&state, aid).await
+    } else {
+        uar::defaults::default_agent()
+    };
     agent.policy.provider.default.provider = resolved_model.provider_id.clone();
     agent.policy.provider.default.model = resolved_model.model_id.clone();
     let agent_id_for_policy = agent.id.clone();

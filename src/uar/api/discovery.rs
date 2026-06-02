@@ -252,6 +252,22 @@ async fn resolve_agent_artifact(state: &AppState, agent_id: &str) -> Option<Agen
     persistence.load_agent(agent_id).await.ok().flatten()
 }
 
+/// Public wrapper used by the chat handler to resolve an agent by id.
+///
+/// Falls back to `default_agent()` if not found so the caller always gets
+/// a valid artifact without an extra error-handling layer.
+pub async fn resolve_agent_for_run(state: &AppState, agent_id: &str) -> AgentArtifact {
+    resolve_agent_artifact(state, agent_id)
+        .await
+        .unwrap_or_else(|| {
+            tracing::warn!(
+                agent_id = %agent_id,
+                "Agent not found — falling back to default-agent"
+            );
+            crate::uar::defaults::default_agent()
+        })
+}
+
 // =========================================================================
 // Agent CRUD handlers
 // =========================================================================
