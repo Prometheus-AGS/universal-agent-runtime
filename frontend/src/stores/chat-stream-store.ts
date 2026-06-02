@@ -10,6 +10,7 @@ import { useChatMessageStore } from "@/stores/chat-message-store";
 import { useAgentStatusStore } from "@/stores/agent-status-store";
 import type { ToolCallContentBlock } from "@/types/chat-content";
 import type { AttachmentPayload } from "@/types";
+import { ingestRuntimeEvent } from "@/entities/runtime-ingest";
 
 export interface UarChatPayload {
   message: string;
@@ -914,6 +915,20 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                 }
                 default:
                   break;
+              }
+              continue;
+            }
+
+            // Runtime entity events — feed the Runtime Console (Cockpit/Runs/Approvals).
+            // These are emitted alongside agui.* events from the backend for run/step/
+            // tool-call/approval lifecycle. ingestRuntimeEvent() upserts into the entity
+            // graph so the Runtime Console panels update in real-time.
+            if (event.startsWith("runtime.")) {
+              try {
+                const payload = JSON.parse(data);
+                ingestRuntimeEvent(payload);
+              } catch {
+                // Malformed runtime event — skip.
               }
               continue;
             }
