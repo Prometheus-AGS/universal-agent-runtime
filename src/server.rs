@@ -32,7 +32,7 @@ use crate::llm::{LlmDriver, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
 use crate::session::SessionStore;
-use crate::uar::api::sse::to_agui_event;
+use crate::uar::api::sse::{to_agui_event, to_runtime_entity_event};
 use crate::uar::settings::resilience_policy::{
     PolicySource, ResiliencePolicy, resolve_effective_policy,
 };
@@ -735,6 +735,11 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             };
             uar::a2ui::routes::build_response_router().with_state(a2ui_state)
         })
+        // Tool-call approval HITL gate: POST /api/uar/runs/{run_id}/approval
+        .route(
+            "/api/uar/runs/{run_id}/approval",
+            post(handle_tool_call_approval),
+        )
         // A2A Compiler Agent — JSON-RPC endpoint
         .nest(
             "/a2a/compiler",
@@ -1145,6 +1150,41 @@ fn build_permissive_cors_layer() -> CorsLayer {
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any)
+}
+
+/// POST /api/uar/runs/{run_id}/approval
+///
+/// Human-in-the-loop gate for pending tool calls.
+///
+/// Body: `{ "approved": true | false }`.
+/// Returns 200 if the run was waiting for this approval and it was resolved.
+/// Returns 404 if no run with that id has a pending approval.
+async fn handle_tool_call_approval(
+    State(state): State<AppState>,
+    axum::extract::Path(run_id): axum::extract::Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> Response {
+    let approved = body.get("approved").and_then(|v| v.as_bool()).unwrap_or(false);
+    let resolved = state.run_manager.resolve_approval(&run_id, approved).await;
+    if resolved {
+        info!(
+            name: "approval.resolved",
+            run_id = %run_id,
+            approved,
+            "Tool-call approval resolved"
+        );
+        Json(serde_json::json!({ "ok": true, "run_id": run_id, "approved": approved }))
+            .into_response()
+    } else {
+        (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "error": "No pending approval found for run",
+                "run_id": run_id
+            })),
+        )
+            .into_response()
+    }
 }
 
 async fn load_global_resilience_policy(state: &AppState) -> ResiliencePolicy {
@@ -3910,6 +3950,22 @@ pub(crate) async fn api_chat_completion(
                             .id(event_id.clone())
                             .data(payload_json);
                         yield Ok(agui_event);
+                    }
+
+                    // Emit runtime entity events alongside agui events.
+                    // These feed the Runtime Console (Cockpit/Runs/Approvals) via
+                    // the frontend's ingestRuntimeEvent() path. Always emitted
+                    // when the event has a runtime entity mapping — independent
+                    // of stream_mode — so the Console is populated even in
+                    // openai-only mode clients.
+                    if let Some((rt_event_name, rt_payload)) = to_runtime_entity_event(&normalized_event) {
+                        let rt_json =
+                            serde_json::to_string(&rt_payload).unwrap_or_else(|_| "{}".to_string());
+                        let rt_event = Event::default()
+                            .event(rt_event_name)
+                            .id(event_id.clone())
+                            .data(rt_json);
+                        yield Ok(rt_event);
                     }
 
                     let mut should_stop = false;

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import {
   Activity,
   Bot,
@@ -328,6 +328,37 @@ export function RuntimeRunsPage() {
 
 export function RuntimeApprovalsPage() {
   const approvals = useEntities<RuntimeApprovalEntity>("RuntimeApproval");
+  const { upsertEntity } = useGraphStore.getState();
+
+  /** Resolve a pending approval: POST to backend, then optimistically update entity. */
+  const resolveApproval = useCallback(async (approval: RuntimeApprovalEntity, approved: boolean) => {
+    if (approval.status !== "pending") return;
+    // Optimistic update in entity graph immediately.
+    upsertEntity("RuntimeApproval", approval.id, {
+      ...approval,
+      status: approved ? "approved" : "denied",
+      updated_at: new Date().toISOString(),
+    });
+    try {
+      const res = await fetch(`/api/uar/runs/${encodeURIComponent(approval.run_id)}/approval`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approved }),
+      });
+      if (!res.ok) {
+        // Revert on failure.
+        upsertEntity("RuntimeApproval", approval.id, {
+          ...approval,
+          status: "pending",
+        });
+      }
+    } catch {
+      upsertEntity("RuntimeApproval", approval.id, {
+        ...approval,
+        status: "pending",
+      });
+    }
+  }, [upsertEntity]);
 
   return (
     <ScrollArea className="flex-1">
@@ -347,15 +378,28 @@ export function RuntimeApprovalsPage() {
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-foreground">{approval.id}</p>
                 <p className="truncate text-xs text-muted-foreground">
-                  run {approval.run_id} · tool {approval.tool_call_id ?? "unknown"}
+                  run {approval.run_id} · tool {(approval as unknown as Record<string, string>)["tool_name"] ?? approval.tool_call_id ?? "unknown"}
                 </p>
               </div>
               <Badge variant="outline" className={cn("w-fit", statusTone(approval.status))}>
                 {approval.status}
               </Badge>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" disabled={approval.status !== "pending"}>Deny</Button>
-                <Button size="sm" disabled={approval.status !== "pending"}>Approve</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={approval.status !== "pending"}
+                  onClick={() => void resolveApproval(approval, false)}
+                >
+                  Deny
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={approval.status !== "pending"}
+                  onClick={() => void resolveApproval(approval, true)}
+                >
+                  Approve
+                </Button>
               </div>
             </div>
           )) : (

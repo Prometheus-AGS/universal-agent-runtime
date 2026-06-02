@@ -338,6 +338,112 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
     }
 }
 
+/// Convert a [`NormalizedEvent`] into a `runtime.*` entity-bus event.
+///
+/// The returned event name + JSON payload are in the shape consumed by
+/// `frontend/src/entities/runtime-ingest.ts` (`ingestRuntimeEvent`).
+/// These are emitted alongside `agui.*` events in the SSE stream when
+/// `stream_mode` is `dual` or when a `runtime` consumer is connected.
+///
+/// Returns `None` for events that don't produce a `Runtime*` entity.
+pub fn to_runtime_entity_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::Value)> {
+    match event {
+        NormalizedEvent::RunStart { run_id, agent_id } => Some((
+            "runtime.run",
+            serde_json::json!({
+                "type": "run_started",
+                "id": run_id,
+                "run_id": run_id,
+                "agent_id": agent_id,
+                "status": "running",
+                "started_at": chrono::Utc::now().to_rfc3339(),
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            }),
+        )),
+        NormalizedEvent::RunDone { run_id } | NormalizedEvent::RunDoneWithUsage { run_id, .. } => {
+            let (input_tokens, output_tokens, total_tokens, cost_usd_estimate) = match event {
+                NormalizedEvent::RunDoneWithUsage { input_tokens, output_tokens, total_tokens, cost_usd_estimate, .. } => {
+                    (*input_tokens, *output_tokens, *total_tokens, *cost_usd_estimate)
+                }
+                _ => (None, None, None, None),
+            };
+            Some((
+                "runtime.run",
+                serde_json::json!({
+                    "type": "run_finished",
+                    "id": run_id,
+                    "run_id": run_id,
+                    "status": "completed",
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "total_tokens": total_tokens,
+                    "cost_usd_estimate": cost_usd_estimate,
+                    "updated_at": chrono::Utc::now().to_rfc3339()
+                }),
+            ))
+        }
+        NormalizedEvent::Error { run_id, code, message } => Some((
+            "runtime.run",
+            serde_json::json!({
+                "type": "run_failed",
+                "id": run_id,
+                "run_id": run_id,
+                "status": "failed",
+                "error_code": code,
+                "error_message": message,
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            }),
+        )),
+        NormalizedEvent::ToolStart { run_id, call_index, tool_call_id, tool, input } => Some((
+            "runtime.tool_call",
+            serde_json::json!({
+                "type": "tool_call_started",
+                "id": tool_call_id,
+                "run_id": run_id,
+                "call_index": call_index,
+                "tool_call_id": tool_call_id,
+                "name": tool,
+                "arguments_json": input.to_string(),
+                "status": "running",
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            }),
+        )),
+        NormalizedEvent::ToolEnd { run_id, call_index, tool_call_id, tool, output, ok } => Some((
+            "runtime.tool_call",
+            serde_json::json!({
+                "type": if *ok { "tool_call_finished" } else { "tool_call_failed" },
+                "id": tool_call_id,
+                "run_id": run_id,
+                "call_index": call_index,
+                "tool_call_id": tool_call_id,
+                "name": tool,
+                "result": output.to_string(),
+                "status": if *ok { "completed" } else { "failed" },
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            }),
+        )),
+        NormalizedEvent::ToolCallApprovalRequired {
+            run_id, call_index, tool_call_id, name, arguments_json, risk_reason
+        } => Some((
+            "runtime.approval",
+            serde_json::json!({
+                "type": "approval_requested",
+                "id": format!("approval:{tool_call_id}"),
+                "run_id": run_id,
+                "call_index": call_index,
+                "tool_call_id": tool_call_id,
+                "tool_name": name,
+                "arguments_json": arguments_json,
+                "risk_reason": risk_reason,
+                "status": "pending",
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            }),
+        )),
+        // All other events don't produce a Runtime entity.
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::to_agui_event;
