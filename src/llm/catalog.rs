@@ -215,6 +215,104 @@ pub struct ModelCost {
     pub cache_write: Option<f64>,
 }
 
+impl ModelCost {
+    /// Compute USD cost for a request given token counts. `cache_read_tokens` is
+    /// the cached (read) portion already included in `input_tokens`; it is billed
+    /// at `cache_read` when priced, otherwise at the regular input rate. Pure and
+    /// catalog-independent so it is unit-testable.
+    #[must_use]
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "token counts are far below f64's 2^52 exact-integer range"
+    )]
+    pub fn compute(&self, input_tokens: u64, output_tokens: u64, cache_read_tokens: u64) -> f64 {
+        const PER_M: f64 = 1_000_000.0;
+        let cached = cache_read_tokens.min(input_tokens);
+        let regular_input = input_tokens.saturating_sub(cached);
+        let cache_rate = self.cache_read.unwrap_or(self.input);
+        (regular_input as f64) * self.input / PER_M
+            + (cached as f64) * cache_rate / PER_M
+            + (output_tokens as f64) * self.output / PER_M
+    }
+}
+
+/// Estimate USD cost for a `provider/model` request from the global pricing
+/// catalog. Returns `None` when the model id is malformed, the model is absent
+/// from the catalog, or the model has no pricing — callers treat `None` as
+/// "cost unknown" (no error).
+#[must_use]
+pub fn estimate_cost(
+    model: &str,
+    input_tokens: u64,
+    output_tokens: u64,
+    cache_read_tokens: u64,
+) -> Option<f64> {
+    let (provider, model_id) = model.split_once('/')?;
+    let cost = ModelCatalog::global()
+        .model(provider, model_id)?
+        .cost
+        .as_ref()?;
+    Some(cost.compute(input_tokens, output_tokens, cache_read_tokens))
+}
+
+#[cfg(test)]
+mod cost_tests {
+    use super::{ModelCost, estimate_cost};
+
+    fn approx(a: f64, b: f64) -> bool {
+        (a - b).abs() < 1e-9
+    }
+
+    #[test]
+    fn compute_input_output_no_cache() {
+        // $3/1M input, $15/1M output.
+        let cost = ModelCost {
+            input: 3.0,
+            output: 15.0,
+            cache_read: None,
+            cache_write: None,
+        };
+        // 1M input + 1M output = 3 + 15 = 18.
+        assert!(approx(cost.compute(1_000_000, 1_000_000, 0), 18.0));
+    }
+
+    #[test]
+    fn compute_applies_cache_read_discount() {
+        let cost = ModelCost {
+            input: 3.0,
+            output: 15.0,
+            cache_read: Some(0.30),
+            cache_write: None,
+        };
+        // 1M input of which 1M cached at $0.30, 0 output = 0.30.
+        assert!(approx(cost.compute(1_000_000, 0, 1_000_000), 0.30));
+        // Half cached: 0.5M*3 + 0.5M*0.30 = 1.5 + 0.15 = 1.65.
+        assert!(approx(cost.compute(1_000_000, 0, 500_000), 1.65));
+    }
+
+    #[test]
+    fn compute_cache_falls_back_to_input_rate_when_unpriced() {
+        let cost = ModelCost {
+            input: 2.0,
+            output: 0.0,
+            cache_read: None,
+            cache_write: None,
+        };
+        // No cache price → cached billed at input rate; 1M total = 2.0.
+        assert!(approx(cost.compute(1_000_000, 0, 1_000_000), 2.0));
+    }
+
+    #[test]
+    fn estimate_cost_unknown_model_is_none() {
+        assert!(estimate_cost("nonexistent-provider/nope-model", 100, 100, 0).is_none());
+    }
+
+    #[test]
+    fn estimate_cost_malformed_id_is_none() {
+        assert!(estimate_cost("no-slash-here", 100, 100, 0).is_none());
+    }
+}
+
 /// Filter for querying models by capability requirements.
 #[derive(Debug, Clone, Default)]
 pub struct CapabilityFilter {

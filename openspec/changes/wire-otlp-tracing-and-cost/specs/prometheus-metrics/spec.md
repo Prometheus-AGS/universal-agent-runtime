@@ -19,19 +19,8 @@ When cost tracking is enabled, the server SHALL record an estimated per-request 
 - **THEN** no cost is recorded and no error is raised
 
 ### Requirement: Cache token metrics
-The server SHALL record provider cache token usage (cache-write/creation and cache-read) when the provider reports it.
+The server SHALL record provider cache-read (cached prompt) token usage when the provider reports it. Cache-write/creation tokens are not separately reported by the provider abstraction and are out of scope.
 
-#### Scenario: Anthropic cache tokens tracked
-- **WHEN** an Anthropic completion reports cache-creation and cache-read input tokens
-- **THEN** `uar_llm_cache_tokens_total{provider="anthropic",model=...,kind="write"}` and `kind="read"` are incremented by the respective counts
-
-### Requirement: Sandbox execution metrics
-The server SHALL record sandbox lifecycle and execution metrics when code-execution tools run in a sandbox.
-
-#### Scenario: Sandbox execution recorded
-- **WHEN** a sandboxed code-execution tool call completes
-- **THEN** `uar_sandbox_executions_total` (labeled by language and exit-code class) is incremented and its duration recorded
-
-#### Scenario: Active sandbox gauge reflects reality
-- **WHEN** sandboxes are created and torn down
-- **THEN** `uar_active_sandboxes` reflects the current count
+#### Scenario: Provider cache tokens tracked
+- **WHEN** an LLM completion reports cached (read) prompt tokens
+- **THEN** `uar_cache_read_tokens_total{provider=...,model=...}` is incremented by the cached-token count

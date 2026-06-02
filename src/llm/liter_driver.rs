@@ -92,6 +92,11 @@ impl LiterLlmDriver {
 
 #[async_trait::async_trait]
 impl LlmDriver for LiterLlmDriver {
+    #[tracing::instrument(
+        name = "llm.call",
+        skip(self, req),
+        fields(model = %self.model),
+    )]
     async fn stream(
         &self,
         req: LlmRequest,
@@ -118,8 +123,21 @@ impl LlmDriver for LiterLlmDriver {
         // and cannot be moved into a 'static stream directly.
         let metrics_model = self.model.clone();
 
+        // Time the full LLM call (request → all chunks collected) and record it as
+        // a per-call latency histogram.
+        let call_start = std::time::Instant::now();
         let chunk_stream = self.client.chat_stream(chat_req).await?;
         let chunks: Vec<Result<ChatCompletionChunk, _>> = chunk_stream.collect().await;
+        {
+            let (provider, model_name) = metrics_model
+                .split_once('/')
+                .unwrap_or(("unknown", &metrics_model));
+            telemetry_metrics::record_llm_call_latency(
+                provider,
+                model_name,
+                call_start.elapsed().as_secs_f64(),
+            );
+        }
 
         let out = async_stream::stream! {
             let mut tool_accum: BTreeMap<u32, ToolAccum> = BTreeMap::new();
@@ -196,13 +214,17 @@ impl LlmDriver for LiterLlmDriver {
 
                 if let Some(ref usage) = chunk.usage {
                     event_count += 1;
+                    let cached_read = usage
+                        .prompt_tokens_details
+                        .as_ref()
+                        .map(|d| d.cached_tokens);
                     #[expect(clippy::cast_possible_truncation, reason = "token counts fit in u32")]
                     {
                         yield Ok(NormalizedEvent::Usage {
                             prompt_tokens: usage.prompt_tokens as u32,
                             completion_tokens: usage.completion_tokens as u32,
                             total_tokens: usage.total_tokens as u32,
-                            cached_tokens: None,
+                            cached_tokens: cached_read.map(|t| t as u32),
                             cache_creation_tokens: None,
                         });
                     }
@@ -217,6 +239,16 @@ impl LlmDriver for LiterLlmDriver {
                         usage.prompt_tokens,
                         usage.completion_tokens,
                     );
+                    // Cache-read tokens only: liter exposes the cached (read)
+                    // portion via prompt_tokens_details; cache-creation/write is
+                    // folded into provider billing and not separately reported.
+                    if let Some(read) = cached_read {
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            reason = "token counts fit in u32"
+                        )]
+                        telemetry_metrics::record_cache_tokens(provider, model_name, 0, read as u32);
+                    }
                 }
             }
 

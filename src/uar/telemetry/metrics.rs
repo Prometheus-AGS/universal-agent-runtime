@@ -47,6 +47,25 @@ pub fn request_timer() -> Instant {
 // LLM Token Metrics
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Record the wall-clock duration of a single LLM driver call.
+pub fn record_llm_call_latency(provider: &str, model: &str, duration_secs: f64) {
+    let labels = [
+        ("provider", provider.to_string()),
+        ("model", model.to_string()),
+    ];
+    histogram!("uar_llm_call_duration_seconds", &labels).record(duration_secs);
+}
+
+/// Record an estimated per-request LLM cost in USD. Recorded as a histogram so
+/// the `_sum` series gives cumulative spend while preserving per-run distribution.
+pub fn record_llm_cost(provider: &str, model: &str, cost_usd: f64) {
+    let labels = [
+        ("provider", provider.to_string()),
+        ("model", model.to_string()),
+    ];
+    histogram!("uar_llm_cost_usd", &labels).record(cost_usd);
+}
+
 /// Record LLM token usage.
 pub fn record_llm_tokens(provider: &str, model: &str, input_tokens: u64, output_tokens: u64) {
     let input_labels = [
