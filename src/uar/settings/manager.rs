@@ -387,14 +387,19 @@ impl SettingsManager {
     /// into the DB on **first boot**, then persist the default provider id.
     ///
     /// Source-of-truth rule: **DB-wins-after-first-boot.** A provider whose
-    /// `provider.{id}` row already exists is left untouched — it may have been
-    /// edited via the admin API, and re-seeding would clobber that edit. Only
-    /// rows absent from the DB are inserted, tagged [`SettingSource::ConfigFile`]
-    /// (NOT `Api`, so a later config change can still reconcile them the way
-    /// `initialize()` reconciles scalar settings).
+    /// Reconcile configured providers from the registry into the settings DB.
     ///
-    /// Call this AFTER [`Self::initialize`] (which creates the `provider`
-    /// settings type) and BEFORE `hydrate_provider_registry_from_settings`.
+    /// **Config-authoritative-on-boot** (R3 decision, 2026-06-02): every boot
+    /// re-seeds `provider.{id}` rows from the live registry, overwriting any
+    /// previously persisted value. This ensures env/YAML edits are immediately
+    /// reflected in the UI without requiring a "re-sync" action.
+    ///
+    /// Trade-off: provider/model config edited via the admin UI does NOT survive
+    /// a server restart unless also written back to env/YAML. A write-back path
+    /// (P3) is deferred to a future phase.
+    ///
+    /// Call this AFTER [`Self::initialize`] and BEFORE
+    /// `hydrate_provider_registry_from_settings`.
     pub async fn seed_providers_from_registry(
         &self,
         registry: &crate::llm::registry::ProviderRegistry,
@@ -413,14 +418,22 @@ impl SettingsManager {
         let mut seeded = 0usize;
         for config in &configured {
             let key = format!("provider.{}", config.id);
-            // DB-wins-after-first-boot: never overwrite an existing row.
-            if self.persistence.get_setting(&key).await?.is_some() {
-                continue;
-            }
+            // Config-authoritative: always upsert from registry (no skip).
+            // The row id is stable (keyed by `key`) so updates don't grow the table.
             let data = serde_json::to_value(config).context("serialize ProviderConfig")?;
             let now = Utc::now();
+            // Preserve the existing row id if the row already exists so that
+            // FK relationships in the DB (if any) are not broken.
+            let existing_id = self
+                .persistence
+                .get_setting(&key)
+                .await
+                .ok()
+                .flatten()
+                .map(|s| s.id)
+                .unwrap_or_else(Uuid::new_v4);
             let setting = Settings {
-                id: Uuid::new_v4(),
+                id: existing_id,
                 settings_type_id: st.id,
                 name: config.display_name.clone(),
                 key: key.clone(),
@@ -432,8 +445,7 @@ impl SettingsManager {
             self.persistence
                 .upsert_setting(&setting)
                 .await
-                .with_context(|| format!("seeding provider setting '{key}'"))?;
-            // Config-sourced (not Api) so config can still reconcile later.
+                .with_context(|| format!("reconciling provider setting '{key}'"))?;
             let mut cache = self.cache.write().await;
             cache.insert(
                 key,
@@ -445,19 +457,18 @@ impl SettingsManager {
             seeded += 1;
         }
 
-        // Persist the default provider id (`llm.default_provider`) on first boot
-        // so the UI shows which provider is the default, mirroring the registry's
-        // notion of default. Only set it if not already persisted (DB wins).
-        if self.get_default_provider_id().await.is_none()
-            && let Some(default_id) = registry.default_id().await
-            && let Err(e) = self.set_default_provider_id(&default_id).await
-        {
-            tracing::warn!(error = ?e, "failed to persist default provider id on seed");
+        // Always reconcile the default provider id from the registry so the UI
+        // reflects the active default even after env/YAML changes.
+        if let Some(default_id) = registry.default_id().await {
+            if let Err(e) = self.set_default_provider_id(&default_id).await {
+                tracing::warn!(error = ?e, "failed to persist default provider id");
+            }
         }
 
-        if seeded > 0 {
-            tracing::info!(seeded, "Seeded configured providers into the settings DB");
-        }
+        tracing::info!(
+            reconciled = seeded,
+            "Reconciled configured providers into the settings DB (config-authoritative)"
+        );
         Ok(seeded)
     }
 

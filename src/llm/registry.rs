@@ -135,9 +135,46 @@ impl ProviderRegistry {
         let catalog = ModelCatalog::global();
         let catalog_provider = catalog.provider(&provider_id);
 
-        let models = catalog_provider
-            .map(|p| models_from_catalog(p))
-            .unwrap_or_default();
+        // Store only the operator-configured model in `models`, not the full
+        // catalog. The full catalog is available via `/api/models` (browse path).
+        // This ensures the admin UI "configured models" section reflects reality.
+        let catalog_model = catalog_provider.and_then(|p| {
+            p.models.iter().find(|m| m.id == model_id).map(|m| ModelConfig {
+                id: m.id.clone(),
+                display_name: if m.name.is_empty() { None } else { Some(m.name.clone()) },
+                context_window: if m.limits.context_window > 0 {
+                    Some(u32::try_from(m.limits.context_window).unwrap_or(u32::MAX))
+                } else {
+                    None
+                },
+                supports_vision: m.modalities.input.iter().any(|s| s == "image"),
+                supports_tools: m.capabilities.tool_call,
+                max_output_tokens: if m.limits.max_output > 0 {
+                    Some(u32::try_from(m.limits.max_output).unwrap_or(u32::MAX))
+                } else {
+                    None
+                },
+            })
+        });
+        let models = if let Some(m) = catalog_model {
+            vec![m]
+        } else {
+            // Model not in catalog (custom/local) — store a minimal entry.
+            vec![ModelConfig {
+                id: model_id.clone(),
+                display_name: None,
+                context_window: None,
+                supports_vision: false,
+                supports_tools: true,
+                max_output_tokens: None,
+            }]
+        };
+
+        // Resolve api_key: explicit config → per-provider shortcut key.
+        let api_key = config
+            .api_key
+            .clone()
+            .or_else(|| config.provider_keys.get(&provider_id).cloned());
 
         let display_name = catalog_provider
             .map(|p| p.display_name.clone())
@@ -153,7 +190,7 @@ impl ProviderRegistry {
             id: provider_id.clone(),
             display_name,
             base_url,
-            api_key: config.api_key.clone(),
+            api_key,
             protocol: ProtocolSetting::Auto,
             default_model: Some(model_id),
             models,
@@ -170,8 +207,15 @@ impl ProviderRegistry {
     }
 
     /// Seed providers from config-file definitions.
+    /// Seed providers from the YAML `providers:` array.
+    ///
+    /// If the array contains exactly one provider that entry becomes the
+    /// registry default (unless `seed_from_llm_config` was already called and
+    /// set a default from `llm.model`). This ensures YAML-only deployments that
+    /// never set `UAR_LLM__MODEL` still surface a correct default in the UI.
     pub async fn seed_from_configs(&self, configs: Vec<ProviderConfig>) {
         let mut providers = self.providers.write().await;
+        let mut first_id: Option<String> = None;
         for config in configs {
             tracing::info!(
                 provider_id = %config.id,
@@ -179,7 +223,21 @@ impl ProviderRegistry {
                 models = config.models.len(),
                 "Registered provider from config"
             );
+            if first_id.is_none() {
+                first_id = Some(config.id.clone());
+            }
             providers.insert(config.id.clone(), config);
+        }
+        drop(providers);
+
+        // Set as default if no default has been established yet (e.g. only
+        // config-file providers, no `llm.model` env var).
+        if let Some(id) = first_id {
+            let mut default = self.default_id.write().await;
+            if default.is_none() {
+                tracing::info!(provider_id = %id, "Setting registry default from config providers array");
+                *default = Some(id);
+            }
         }
     }
 

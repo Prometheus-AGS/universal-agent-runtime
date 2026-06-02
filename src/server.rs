@@ -1461,12 +1461,20 @@ async fn api_models(State(state): State<AppState>) -> Response {
 /// `ModelCatalog` — no API keys exposed, suitable for the admin UI discovery page.
 async fn api_catalog(State(state): State<AppState>) -> Response {
     let catalog = crate::llm::ModelCatalog::global();
+    // "Configured" means: (1) enabled in the registry AND (2) has a usable API
+    // key. A provider that is enabled but has no key will show as
+    // `credential-blocked`, not `configured`, to prevent false positives.
     let configured_ids: std::collections::HashSet<String> = state
         .provider_registry
         .list()
         .await
         .into_iter()
-        .filter(|p| p.enabled)
+        .filter(|p| {
+            p.enabled
+                && p.api_key
+                    .as_deref()
+                    .map_or(false, |k| !k.trim().is_empty())
+        })
         .map(|p| p.id)
         .collect();
 
