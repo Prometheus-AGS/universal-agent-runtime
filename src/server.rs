@@ -406,6 +406,28 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         }
     };
 
+    // Initialize Governance Policy Engine (before RunManager so it can gate the
+    // orchestrator tool loop in addition to the HTTP governance layer).
+    let governance_engine = match GovernanceEngine::load_from_dir("policies").await {
+        Ok(engine) => {
+            info!(
+                policy_count = engine.policy_count().await,
+                "Governance policy engine loaded"
+            );
+            Arc::new(engine)
+        }
+        Err(e) => {
+            warn!(
+                error = %e,
+                "Failed to load policies from directory — using permissive default"
+            );
+            Arc::new(
+                GovernanceEngine::with_default_permit()
+                    .expect("default permit policy should parse"),
+            )
+        }
+    };
+
     let run_manager = Arc::new({
         let mut rm = RunManager::new(
             llm_config.clone(),
@@ -419,7 +441,8 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .with_skill_service(Arc::clone(&skill_service))
         .with_provider_registry(Arc::clone(&provider_registry))
         .with_native_skills(Arc::clone(&native_skill_registry))
-        .with_message_context_strategy(config.context_strategy.clone());
+        .with_message_context_strategy(config.context_strategy.clone())
+        .with_governance_engine(Arc::clone(&governance_engine));
         if let Some(ref svc) = provider_service {
             rm = rm.with_provider_service(Arc::clone(svc));
         }
@@ -446,27 +469,6 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         Arc::clone(&native_skill_registry),
     ));
     info!("Actor collaboration system initialized");
-
-    // Initialize Governance Policy Engine
-    let governance_engine = match GovernanceEngine::load_from_dir("policies").await {
-        Ok(engine) => {
-            info!(
-                policy_count = engine.policy_count().await,
-                "Governance policy engine loaded"
-            );
-            Arc::new(engine)
-        }
-        Err(e) => {
-            warn!(
-                error = %e,
-                "Failed to load policies from directory — using permissive default"
-            );
-            Arc::new(
-                GovernanceEngine::with_default_permit()
-                    .expect("default permit policy should parse"),
-            )
-        }
-    };
 
     // Initialize API Key Service
     let api_key_storage: Arc<dyn uar::security::api_keys::ApiKeyStorage> =
