@@ -937,6 +937,13 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             state.clone(),
             uar::security::middleware::auth_middleware,
         ))
+        // Cedar governance: authorize requests carrying `X-Agent-Id` against the
+        // loaded policy set (permit-all by default; anonymous requests pass
+        // through). Previously defined but never mounted.
+        .layer(axum::middleware::from_fn_with_state(
+            Arc::clone(&state.governance_engine),
+            uar::governance::middleware::governance_layer,
+        ))
         // Apply Timeout Layer if not disabled
         // We use a large timeout if disabled instead of conditional layering to keep types consistent
         .layer(TraceLayer::new_for_http());
@@ -3708,6 +3715,35 @@ pub(crate) async fn api_chat_completion(
             .into_response();
     };
 
+    // Input guardrails: screen for prompt-injection / PII before the LLM call.
+    // Detect-only by default (the finding is emitted on the run stream after it
+    // starts); injection is blocked here only when explicitly enabled. The
+    // finding carries a category + short reason — never the raw input.
+    let input_finding = uar::guardrails::screen_input(&input_message, &state.config.guardrails);
+    if let Some(ref finding) = input_finding {
+        uar::telemetry::metrics::record_guardrail_flagged(finding.category.as_str());
+        tracing::warn!(
+            category = %finding.category.as_str(),
+            reason = %finding.reason,
+            "Chat input flagged by guardrail"
+        );
+        if state.config.guardrails.block_on_injection
+            && finding.category == uar::guardrails::GuardrailCategory::Injection
+        {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": {
+                        "message": "Input rejected by guardrail policy",
+                        "type": "guardrail_blocked",
+                        "code": "guardrail_injection_blocked"
+                    }
+                })),
+            )
+                .into_response();
+        }
+    }
+
     let resolved_model = match resolve_requested_model(&state, req.model.as_deref()).await {
         Ok(m) => m,
         Err(resp) => return resp,
@@ -3879,6 +3915,22 @@ pub(crate) async fn api_chat_completion(
             memory_recall_items,
         )
         .await;
+
+    // Surface a non-blocking input-guardrail finding on the run's event stream
+    // (recorded in history before the client subscribes, so it replays).
+    if let Some(finding) = input_finding {
+        state
+            .run_manager
+            .emit_to_run(
+                &run_id,
+                uar::domain::events::NormalizedEvent::GuardrailFlagged {
+                    run_id: Some(run_id.clone()),
+                    category: finding.category.as_str().to_string(),
+                    reason: finding.reason,
+                },
+            )
+            .await;
+    }
 
     let Some(mut rx) = state.run_manager.subscribe(&run_id).await else {
         return (

@@ -138,6 +138,9 @@ pub struct AppConfig {
     /// Sycophancy detection configuration for LLM response quality.
     #[serde(default)]
     pub sycophancy: SycophancyConfig,
+    /// Input guardrail (injection/PII screening) configuration.
+    #[serde(default)]
+    pub guardrails: GuardrailsConfig,
     /// ACP server endpoint configuration.
     #[serde(default)]
     pub acp: AcpConfig,
@@ -1070,10 +1073,7 @@ impl AppConfig {
                 // UAR_LLM__API_KEY / LLM_API_KEY which use set_override).
                 builder = builder.set_default("llm.api_key", val.clone())?;
                 // Per-provider key — read by registry configured-status check.
-                builder = builder.set_default(
-                    &format!("llm.provider_keys.{provider_id}"),
-                    val,
-                )?;
+                builder = builder.set_default(&format!("llm.provider_keys.{provider_id}"), val)?;
             }
         }
 
@@ -1731,6 +1731,35 @@ impl Default for SycophancyConfig {
             auto_correct_threshold: Self::default_auto_correct_threshold(),
             reflect_threshold: Self::default_reflect_threshold(),
             log_only: false,
+        }
+    }
+}
+
+/// Input guardrail configuration: heuristic prompt-injection and PII/secret
+/// screening of chat input before the LLM call.
+#[derive(Debug, Deserialize, Clone, Serialize)]
+pub struct GuardrailsConfig {
+    /// Screen chat input for injection/PII patterns (default: true). Screening
+    /// is non-blocking by default, so enabling it only adds flag events/metrics.
+    #[serde(default = "GuardrailsConfig::default_input_screening_enabled")]
+    pub input_screening_enabled: bool,
+    /// Reject (block before the LLM call) inputs flagged as prompt-injection
+    /// (default: false — detect-only). PII findings are always flag-only.
+    #[serde(default)]
+    pub block_on_injection: bool,
+}
+
+impl GuardrailsConfig {
+    fn default_input_screening_enabled() -> bool {
+        true
+    }
+}
+
+impl Default for GuardrailsConfig {
+    fn default() -> Self {
+        Self {
+            input_screening_enabled: Self::default_input_screening_enabled(),
+            block_on_injection: false,
         }
     }
 }

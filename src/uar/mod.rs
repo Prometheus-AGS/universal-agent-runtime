@@ -6,6 +6,7 @@ pub mod defaults;
 pub mod domain;
 pub mod file_processing;
 pub mod governance;
+pub mod guardrails;
 pub mod llm;
 pub mod mcp_server;
 pub mod memory;

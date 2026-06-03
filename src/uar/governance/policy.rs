@@ -121,6 +121,8 @@ pub mod actions {
     pub const EXECUTE_TOOL: &str = "execute_tool";
     /// Making an LLM API call.
     pub const CALL_LLM: &str = "call_llm";
+    /// Validating an LLM response before it is returned to the user.
+    pub const VALIDATE_OUTPUT: &str = "validate_output";
     /// Spawning a new agent actor.
     pub const SPAWN_AGENT: &str = "spawn_agent";
     /// Sending inter-agent collaboration messages.
