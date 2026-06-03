@@ -1,6 +1,7 @@
 use metrics::{counter, gauge, histogram};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::Instant;
 
 static METRICS_HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
@@ -165,6 +166,27 @@ pub fn record_sandbox_execution(language: &str, exit_code_class: &str, duration_
 /// Set active sandbox count gauge.
 pub fn set_active_sandboxes(count: f64) {
     gauge!("uar_sandbox_active").set(count);
+}
+
+/// Process-global count of in-flight sandbox executions.
+static ACTIVE_SANDBOXES: AtomicI64 = AtomicI64::new(0);
+
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "concurrent sandbox count is small, far within f64's exact-integer range"
+)]
+fn report_active_sandboxes(n: i64) {
+    set_active_sandboxes(n.max(0) as f64);
+}
+
+/// A sandbox execution started — increment the in-flight gauge.
+pub fn sandbox_active_inc() {
+    report_active_sandboxes(ACTIVE_SANDBOXES.fetch_add(1, Ordering::Relaxed) + 1);
+}
+
+/// A sandbox execution finished — decrement the in-flight gauge.
+pub fn sandbox_active_dec() {
+    report_active_sandboxes(ACTIVE_SANDBOXES.fetch_sub(1, Ordering::Relaxed) - 1);
 }
 
 /// Record sandbox error.
