@@ -7,6 +7,9 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
+mod runner;
+pub use runner::{CompletionProvider, Runner, load_suite};
+
 /// A single evaluation case: an input and an optional expected output.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct EvalCase {
