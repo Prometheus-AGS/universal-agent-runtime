@@ -7,7 +7,12 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
+mod persistence;
 mod runner;
+pub use persistence::{
+    RegressionEntry, RegressionReport, ScoreSummary, compare, load_baseline, save_baseline,
+    save_results, summarize,
+};
 pub use runner::{CompletionProvider, Runner, load_suite};
 
 /// A single evaluation case: an input and an optional expected output.
