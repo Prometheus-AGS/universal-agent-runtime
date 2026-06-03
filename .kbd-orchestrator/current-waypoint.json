@@ -1,22 +1,22 @@
 {
   "phase": "emit-runtime-step-events",
   "change": null,
-  "status": "planned",
+  "status": "reflect_complete",
   "previousPhase": "uar-harness-parity",
-  "currentTask": "Planned (1 change). Decisions: Option 1 orchestrator base marker + started/finished + tool-loop. Next: /opsx:new emit-runtime-step-events.",
-  "nextPendingChange": "emit-runtime-step-events",
+  "currentTask": "H3 closed (PR #29 merged) \u2014 emit-runtime-step-events done. uar-harness-parity goals now fully resolved. Next: /kbd-new-phase (recommend uar-safety-and-evals).",
+  "nextPendingChange": null,
   "roundZeroComplete": true,
   "changeStatus": {
     "HP1-add-run-cancellation": "MERGED #23",
     "HP2-wire-otlp-tracing-and-cost": "MERGED #24",
-    "HP3-emit-runtime-step-events": "NOT BUILT \u2014 skipped during execution (carry-over)",
+    "HP3-emit-runtime-step-events": "MERGED #29 (carry-over closed; H3 MET)",
     "HP4-wire-sycophancy-detection": "MERGED #25",
     "HP5-resumable-streaming-client": "MERGED #26",
     "HP6-mount-governance-guardrails": "MERGED #27",
     "HP7-eval-harness": "deferred by design (uar-safety-and-evals)"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/opsx:new emit-runtime-step-events",
+  "exactNextCommand": "/kbd-new-phase",
   "plannedChanges": [
     "add-run-cancellation",
     "wire-otlp-tracing-and-cost",
