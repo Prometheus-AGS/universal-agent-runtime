@@ -3729,16 +3729,23 @@ pub(crate) async fn api_chat_completion(
             reason = %finding.reason,
             "Chat input flagged by guardrail"
         );
-        if state.config.guardrails.block_on_injection
-            && finding.category == uar::guardrails::GuardrailCategory::Injection
-        {
+        let g = &state.config.guardrails;
+        let should_block = match finding.category {
+            uar::guardrails::GuardrailCategory::Injection => g.block_on_injection,
+            uar::guardrails::GuardrailCategory::Pii => g.block_on_pii,
+        };
+        if should_block {
+            let code = match finding.category {
+                uar::guardrails::GuardrailCategory::Injection => "guardrail_injection_blocked",
+                uar::guardrails::GuardrailCategory::Pii => "guardrail_pii_blocked",
+            };
             return (
                 StatusCode::BAD_REQUEST,
                 Json(json!({
                     "error": {
                         "message": "Input rejected by guardrail policy",
                         "type": "guardrail_blocked",
-                        "code": "guardrail_injection_blocked"
+                        "code": code
                     }
                 })),
             )

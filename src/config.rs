@@ -1744,9 +1744,14 @@ pub struct GuardrailsConfig {
     #[serde(default = "GuardrailsConfig::default_input_screening_enabled")]
     pub input_screening_enabled: bool,
     /// Reject (block before the LLM call) inputs flagged as prompt-injection
-    /// (default: false — detect-only). PII findings are always flag-only.
+    /// (default: false — detect-only).
     #[serde(default)]
     pub block_on_injection: bool,
+    /// Reject (block before the LLM call) inputs flagged as PII/secret
+    /// (default: false — detect-only). Off by default because blocking a user's
+    /// own data is user-hostile; operators opt in.
+    #[serde(default)]
+    pub block_on_pii: bool,
 }
 
 impl GuardrailsConfig {
@@ -1760,6 +1765,7 @@ impl Default for GuardrailsConfig {
         Self {
             input_screening_enabled: Self::default_input_screening_enabled(),
             block_on_injection: false,
+            block_on_pii: false,
         }
     }
 }
