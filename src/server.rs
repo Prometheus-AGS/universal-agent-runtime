@@ -4341,6 +4341,7 @@ pub(crate) async fn api_chat_completion(
                                 let mgr = Arc::clone(&state.run_manager);
                                 let rid = run_id.clone();
                                 let text = assistant_text_for_capture.clone();
+                                let orchestrator = Arc::clone(&state.orchestrator);
                                 tokio::spawn(async move {
                                     let Some(outcome) = uar::quality::detect(&sycophancy_cfg, &text)
                                     else {
@@ -4368,6 +4369,38 @@ pub(crate) async fn api_chat_completion(
                                             },
                                         )
                                         .await;
+
+                                        // Opt-in corrective pass (post-stream, single shot):
+                                        // rewrite the flagged response and emit it as a
+                                        // follow-up. Never delays the original stream.
+                                        if sycophancy_cfg.auto_correct && !sycophancy_cfg.log_only {
+                                            match orchestrator
+                                                .chat_non_streaming(
+                                                    uar::quality::correction_messages(&text),
+                                                )
+                                                .await
+                                            {
+                                                Ok(corrected) if !corrected.trim().is_empty() => {
+                                                    mgr.emit_to_run(
+                                                        &rid,
+                                                        uar::domain::events::NormalizedEvent::SycophancyCorrected {
+                                                            run_id: rid.clone(),
+                                                            corrected_text: corrected,
+                                                        },
+                                                    )
+                                                    .await;
+                                                }
+                                                Ok(_) => tracing::warn!(
+                                                    run_id = %rid,
+                                                    "Sycophancy auto-correct produced empty output"
+                                                ),
+                                                Err(e) => tracing::warn!(
+                                                    run_id = %rid,
+                                                    error = %e,
+                                                    "Sycophancy auto-correct failed"
+                                                ),
+                                            }
+                                        }
                                     }
                                 });
                             }

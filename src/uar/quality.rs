@@ -90,9 +90,36 @@ pub fn detect(config: &SycophancyConfig, text: &str) -> Option<SycophancyOutcome
     })
 }
 
+/// Build the message list for a single corrective LLM pass over a flagged
+/// response: a system instruction to rewrite away sycophancy while preserving
+/// correct, substantive content, plus the flagged text as the user turn.
+#[must_use]
+pub fn correction_messages(flagged_text: &str) -> Vec<crate::llm::Message> {
+    use crate::llm::{Message, MessageContent, MessageRole};
+    vec![
+        Message {
+            role: MessageRole::System,
+            content: MessageContent::text(
+                "You are a response-quality editor. Rewrite the assistant response below to \
+                 remove sycophancy (excessive agreement, flattery, hedging, unwarranted praise) \
+                 while preserving all correct, substantive content and the original intent. Be \
+                 direct and honest. Output ONLY the rewritten response, with no preamble.",
+            ),
+            tool_call_id: None,
+            tool_calls: None,
+        },
+        Message {
+            role: MessageRole::User,
+            content: MessageContent::text(flagged_text),
+            tool_call_id: None,
+            tool_calls: None,
+        },
+    ]
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{should_flag, strictness_from};
+    use super::{correction_messages, should_flag, strictness_from};
     use sycophancy_core::Strictness;
     use sycophancy_core::skill::types::DetectionResult;
 
@@ -131,5 +158,17 @@ mod tests {
     fn critical_always_flags() {
         // Below threshold but critical → still flagged.
         assert!(should_flag(&result(0.1, true), 0.5));
+    }
+
+    #[test]
+    fn correction_messages_shape() {
+        let msgs = correction_messages("You are absolutely right, what a brilliant idea!");
+        assert_eq!(msgs.len(), 2);
+        assert!(matches!(msgs[0].role, crate::llm::MessageRole::System));
+        assert!(matches!(msgs[1].role, crate::llm::MessageRole::User));
+        assert_eq!(
+            msgs[1].content.as_text(),
+            Some("You are absolutely right, what a brilliant idea!")
+        );
     }
 }
