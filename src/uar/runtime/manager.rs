@@ -117,6 +117,10 @@ pub struct RunManager {
     /// Optional agent graph for graph-based execution. When set, `start_run` uses
     /// graph-driven orchestration instead of the simple tool loop.
     agent_graph: Option<std::sync::Arc<crate::uar::runtime::graph::AgentGraph>>,
+    /// Optional Cedar governance engine consulted at the tool-approval gate.
+    /// When set, a tool that policy denies is routed to the HITL approval gate.
+    /// `None` ⇒ tool approval relies solely on the keyword heuristic.
+    governance_engine: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
 }
 
 /// Memory mutation tool name sets — used to detect side effects in ToolEnd events.
@@ -397,6 +401,7 @@ impl RunManager {
             run_cancellations: Arc::new(RwLock::new(HashMap::new())),
             message_context_strategy: crate::uar::context::ContextStrategy::default(),
             agent_graph: None,
+            governance_engine: None,
         }
     }
 
@@ -446,6 +451,16 @@ impl RunManager {
         service: Arc<crate::uar::security::credentials::ProviderService>,
     ) -> Self {
         self.provider_service = Some(service);
+        self
+    }
+
+    /// Attach the Cedar governance engine consulted at the tool-approval gate.
+    #[must_use]
+    pub fn with_governance_engine(
+        mut self,
+        engine: Arc<crate::uar::governance::engine::GovernanceEngine>,
+    ) -> Self {
+        self.governance_engine = Some(engine);
         self
     }
 
@@ -909,19 +924,37 @@ impl RunManager {
                 let approval_run_id = run_id.clone();
                 let approval_emitter = emitter.clone();
                 let approval_pending = Arc::clone(&self.pending_approvals);
+                let approval_agent_id = artifact.id.clone();
+                let approval_governance = self.governance_engine.clone();
                 let gate: crate::llm::ToolApprovalGate = Arc::new(
                     move |tool_call_id, tool_name, arguments_json, call_index| {
                         let run_id = approval_run_id.clone();
                         let emitter = approval_emitter.clone();
                         let pending = Arc::clone(&approval_pending);
+                        let agent_id = approval_agent_id.clone();
+                        let governance = approval_governance.clone();
                         Box::pin(async move {
-                            if !tool_requires_approval(&tool_name) {
+                            // A tool requires approval when the risk heuristic flags it
+                            // OR the governance engine denies it (deny → HITL approval).
+                            let heuristic_flag = tool_requires_approval(&tool_name);
+                            let policy_denies = match &governance {
+                                Some(engine) => {
+                                    !engine.is_tool_allowed(&agent_id, &tool_name).await
+                                }
+                                None => false,
+                            };
+                            if !heuristic_flag && !policy_denies {
                                 return crate::llm::ToolApprovalResult::Approved;
                             }
-                            let risk_reason = format!(
-                                "Tool '{}' may perform a destructive or write operation",
-                                tool_name
-                            );
+                            let risk_reason = if policy_denies && !heuristic_flag {
+                                format!(
+                                    "Tool '{tool_name}' is denied by governance policy and requires approval"
+                                )
+                            } else {
+                                format!(
+                                    "Tool '{tool_name}' may perform a destructive or write operation"
+                                )
+                            };
                             // Emit approval-required event to the client
                             emitter
                                 .emit(NormalizedEvent::ToolCallApprovalRequired {
