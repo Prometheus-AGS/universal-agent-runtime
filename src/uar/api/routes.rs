@@ -94,10 +94,12 @@ async fn stream_run(
     // subscriber remains after a short grace period.
     let disconnect_guard =
         crate::uar::runtime::manager::RunDisconnectGuard::new(Arc::clone(&manager), run_id.clone());
-    let stream = tokio_stream::iter(replay).chain(live_stream).map(move |event| {
-        let _ = &disconnect_guard;
-        event
-    });
+    let stream = tokio_stream::iter(replay)
+        .chain(live_stream)
+        .map(move |event| {
+            let _ = &disconnect_guard;
+            event
+        });
 
     build_sse_response(stream).into_response()
 }
