@@ -133,6 +133,47 @@ fn extract_code_from_arguments(
     Some((code, language))
 }
 
+/// Lowercase metric label for a sandbox language.
+fn sandbox_language_label(lang: &crate::sandbox::Language) -> &'static str {
+    use crate::sandbox::Language;
+    match lang {
+        Language::Bash => "bash",
+        Language::Python => "python",
+        Language::Node => "node",
+        Language::Rust => "rust",
+    }
+}
+
+/// Metric label for a sandbox runner type.
+fn sandbox_runner_type_label(rt: crate::sandbox::runner::RunnerType) -> &'static str {
+    use crate::sandbox::runner::RunnerType;
+    match rt {
+        RunnerType::MicroVm => "microsandbox",
+        RunnerType::Wasmtime => "wasmtime",
+        RunnerType::Remote => "remote",
+    }
+}
+
+/// Classify a sandbox error into a bounded metric label.
+fn sandbox_error_type(e: &crate::sandbox::SandboxError) -> &'static str {
+    use crate::sandbox::SandboxError;
+    match e {
+        SandboxError::CreationFailed(_) => "creation_failed",
+        SandboxError::ExecutionFailed(_) => "execution_failed",
+        SandboxError::FileError(_) => "file_error",
+        SandboxError::NotFound(_) => "not_found",
+        SandboxError::CapacityExceeded(_) => "capacity_exceeded",
+        SandboxError::Timeout(_) => "timeout",
+        SandboxError::RunnerUnavailable(_) => "runner_unavailable",
+    }
+}
+
+/// Sandbox execution duration in seconds.
+#[expect(clippy::cast_precision_loss, reason = "duration ms fits within f64")]
+fn sandbox_duration_secs(ms: u64) -> f64 {
+    ms as f64 / 1000.0
+}
+
 /// LLM orchestrator with tool loop execution.
 ///
 /// The orchestrator wraps an [`LlmDriver`] and adds:
@@ -686,8 +727,14 @@ impl Orchestrator {
                                 "Executing tool in microsandbox"
                             );
                             let sandbox_cfg = crate::sandbox::SandboxConfig::default();
+                            let lang_label = sandbox_language_label(&lang);
                             match runner.create(sandbox_cfg).await {
                                 Ok(handle) => {
+                                    crate::uar::telemetry::metrics::record_sandbox_created(
+                                        sandbox_runner_type_label(runner.capabilities().runner_type),
+                                        lang_label,
+                                    );
+                                    crate::uar::telemetry::metrics::sandbox_active_inc();
                                     let exec_req = crate::sandbox::ExecutionRequest {
                                         language: lang,
                                         code,
@@ -700,6 +747,16 @@ impl Orchestrator {
                                     match runner.execute(&handle, exec_req).await {
                                         Ok(result) => {
                                             let _ = runner.destroy(handle).await;
+                                            crate::uar::telemetry::metrics::record_sandbox_execution(
+                                                lang_label,
+                                                if result.exit_code == 0 {
+                                                    "success"
+                                                } else {
+                                                    "error"
+                                                },
+                                                sandbox_duration_secs(result.execution_time_ms),
+                                            );
+                                            crate::uar::telemetry::metrics::sandbox_active_dec();
                                             let out = format!(
                                                 "exit_code: {}\nstdout:\n{}\nstderr:\n{}",
                                                 result.exit_code, result.stdout, result.stderr
@@ -714,6 +771,10 @@ impl Orchestrator {
                                         }
                                         Err(e) => {
                                             let _ = runner.destroy(handle).await;
+                                            crate::uar::telemetry::metrics::record_sandbox_error(
+                                                sandbox_error_type(&e),
+                                            );
+                                            crate::uar::telemetry::metrics::sandbox_active_dec();
                                             tracing::error!(
                                                 request_id = %request_id,
                                                 tool_name = %tool_name,
@@ -725,6 +786,9 @@ impl Orchestrator {
                                     }
                                 }
                                 Err(e) => {
+                                    crate::uar::telemetry::metrics::record_sandbox_error(
+                                        sandbox_error_type(&e),
+                                    );
                                     tracing::error!(
                                         request_id = %request_id,
                                         tool_name = %tool_name,

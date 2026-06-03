@@ -86,10 +86,18 @@ impl McpRegistry {
                     // rmcp docs show TokioChildProcess + configure pattern for adding args
                     let transport = TokioChildProcess::new(cmd)?;
                     // store as dyn to keep a homogeneous collection
-                    ().into_dyn()
-                        .serve(transport)
-                        .await
-                        .with_context(|| format!("failed to connect stdio MCP server '{name}'"))?
+                    match ().into_dyn().serve(transport).await {
+                        Ok(svc) => {
+                            crate::uar::telemetry::metrics::set_mcp_server_status(name, true);
+                            svc
+                        }
+                        Err(e) => {
+                            crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
+                            return Err(e).with_context(|| {
+                                format!("failed to connect stdio MCP server '{name}'")
+                            });
+                        }
+                    }
                 }
 
                 McpServerEntry::RemoteHttp { url, env } => {
@@ -111,10 +119,18 @@ impl McpRegistry {
 
                     // rmcp streamable http transport from_uri
                     let transport = StreamableHttpClientTransport::from_uri(u.to_string());
-                    ().into_dyn()
-                        .serve(transport)
-                        .await
-                        .with_context(|| format!("failed to connect remote MCP server '{name}'"))?
+                    match ().into_dyn().serve(transport).await {
+                        Ok(svc) => {
+                            crate::uar::telemetry::metrics::set_mcp_server_status(name, true);
+                            svc
+                        }
+                        Err(e) => {
+                            crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
+                            return Err(e).with_context(|| {
+                                format!("failed to connect remote MCP server '{name}'")
+                            });
+                        }
+                    }
                 }
             };
 
