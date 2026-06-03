@@ -99,6 +99,15 @@ pub enum NormalizedEvent {
         /// Short, content-free reason label.
         reason: String,
     },
+    /// A tool-loop iteration boundary — per-step run progress for the Runtime
+    /// Console. Emitted at the start and end of each orchestrator iteration.
+    RuntimeStep {
+        run_id: String,
+        /// Monotonic per-run step index (the orchestrator iteration number).
+        step: u32,
+        /// `started` | `finished`.
+        kind: String,
+    },
     StatePatch {
         run_id: String,
         patch: Vec<StatePatchOp>,

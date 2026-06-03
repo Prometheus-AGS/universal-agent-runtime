@@ -32,7 +32,7 @@ use uuid::Uuid;
 
 use crate::config::{FailoverConfig, LlmConfig};
 use crate::mcp::registry::McpRegistry;
-use crate::normalized::NormalizedEvent;
+use crate::normalized::{NormalizedEvent, RuntimeStepKind};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
 
 use super::{
@@ -346,6 +346,13 @@ impl Orchestrator {
                     break;
                 }
                 iteration += 1;
+                let step = u32::try_from(iteration).unwrap_or(u32::MAX);
+
+                // Per-step run progress: this iteration is beginning.
+                yield NormalizedEvent::RuntimeStep {
+                    step,
+                    kind: RuntimeStepKind::Started,
+                };
 
                 tracing::info!(
                     request_id = %request_id,
@@ -510,6 +517,10 @@ impl Orchestrator {
                         finish_reason = ?finish_reason,
                         "No tool calls to process, completing stream"
                     );
+                    yield NormalizedEvent::RuntimeStep {
+                        step,
+                        kind: RuntimeStepKind::Finished,
+                    };
                     yield NormalizedEvent::Done;
                     break;
                 }
@@ -544,6 +555,10 @@ impl Orchestrator {
                         iteration = iteration,
                         "No valid tool calls built from accumulators"
                     );
+                    yield NormalizedEvent::RuntimeStep {
+                        step,
+                        kind: RuntimeStepKind::Finished,
+                    };
                     yield NormalizedEvent::Done;
                     break;
                 }
@@ -831,6 +846,13 @@ impl Orchestrator {
                     iteration = iteration,
                     "All tool calls executed, continuing to next iteration"
                 );
+
+                // This iteration's tool work is done; the loop cycles for the
+                // next response.
+                yield NormalizedEvent::RuntimeStep {
+                    step,
+                    kind: RuntimeStepKind::Finished,
+                };
 
                 // Continue the loop to get the next response
             }

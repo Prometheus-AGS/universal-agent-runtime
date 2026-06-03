@@ -374,6 +374,9 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "memory_type": memory_type
             }),
         )),
+        // Runtime step progress is delivered on the `runtime.*` entity bus
+        // (see `to_runtime_entity_event`), not the agui surface.
+        NormalizedEvent::RuntimeStep { .. } => None,
     }
 }
 
@@ -511,6 +514,17 @@ pub fn to_runtime_entity_event(
                 "updated_at": chrono::Utc::now().to_rfc3339()
             }),
         )),
+        NormalizedEvent::RuntimeStep { run_id, step, kind } => Some((
+            "runtime.step",
+            serde_json::json!({
+                "type": format!("step_{kind}"),
+                "id": format!("{run_id}-{step}"),
+                "run_id": run_id,
+                "step": step,
+                "status": kind,
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            }),
+        )),
         // All other events don't produce a Runtime entity.
         _ => None,
     }
@@ -518,7 +532,7 @@ pub fn to_runtime_entity_event(
 
 #[cfg(test)]
 mod tests {
-    use super::to_agui_event;
+    use super::{to_agui_event, to_runtime_entity_event};
     use crate::uar::domain::{
         context::{ContextAction, ContextStrategy},
         events::NormalizedEvent,
@@ -541,6 +555,36 @@ mod tests {
         assert_eq!(payload["skill"]["id"], "skills.weather");
         assert_eq!(payload["skill"]["title"], "Weather Skill");
         assert_eq!(payload["selection_method"], "skill_service.keyword");
+    }
+
+    #[test]
+    fn maps_runtime_step_started_to_runtime_entity() {
+        let event = NormalizedEvent::RuntimeStep {
+            run_id: "run-1".to_string(),
+            step: 2,
+            kind: "started".to_string(),
+        };
+        let (name, payload) = to_runtime_entity_event(&event).expect("step should map");
+        assert_eq!(name, "runtime.step");
+        assert_eq!(payload["type"], "step_started");
+        assert_eq!(payload["id"], "run-1-2");
+        assert_eq!(payload["run_id"], "run-1");
+        assert_eq!(payload["step"], 2);
+        // Step progress is not mirrored to the agui surface.
+        assert!(to_agui_event(&event).is_none());
+    }
+
+    #[test]
+    fn maps_runtime_step_finished_to_runtime_entity() {
+        let event = NormalizedEvent::RuntimeStep {
+            run_id: "run-9".to_string(),
+            step: 5,
+            kind: "finished".to_string(),
+        };
+        let (name, payload) = to_runtime_entity_event(&event).expect("step should map");
+        assert_eq!(name, "runtime.step");
+        assert_eq!(payload["type"], "step_finished");
+        assert_eq!(payload["id"], "run-9-5");
     }
 
     #[test]
