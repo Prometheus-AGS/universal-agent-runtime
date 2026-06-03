@@ -1,22 +1,19 @@
 {
   "phase": "uar-safety-and-evals",
   "change": null,
-  "status": "planned",
+  "status": "reflect_complete",
   "previousPhase": "wire-dead-metric-recorders",
-  "currentTask": "Planned: 3 changes (SE4 tool-loop-cedar-gating, SE3 guardrail-pii-block, SE2 sycophancy-auto-correct). S1 eval harness deferred to own phase. Next: /opsx:new tool-loop-cedar-gating.",
-  "nextPendingChange": "tool-loop-cedar-gating",
+  "currentTask": "uar-safety-and-evals reflected: 3 MET (S2/S3/S4, PRs #31-#33) / S1 deferred to own phase. Next: /kbd-new-phase (recommend uar-eval-harness).",
+  "nextPendingChange": null,
   "roundZeroComplete": true,
   "changeStatus": {
-    "HP1-add-run-cancellation": "MERGED #23",
-    "HP2-wire-otlp-tracing-and-cost": "MERGED #24",
-    "HP3-emit-runtime-step-events": "MERGED #29 (carry-over closed; H3 MET)",
-    "HP4-wire-sycophancy-detection": "MERGED #25",
-    "HP5-resumable-streaming-client": "MERGED #26",
-    "HP6-mount-governance-guardrails": "MERGED #27",
-    "HP7-eval-harness": "deferred by design (uar-safety-and-evals)"
+    "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
+    "SE3-guardrail-pii-block": "MERGED #32 (S3 MET)",
+    "SE2-sycophancy-auto-correct": "MERGED #33 (S2 MET)",
+    "S1-eval-harness": "DEFERRED -> uar-eval-harness phase"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/opsx:new tool-loop-cedar-gating",
+  "exactNextCommand": "/kbd-new-phase",
   "plannedChanges": [
     "add-run-cancellation",
     "wire-otlp-tracing-and-cost",
