@@ -1,10 +1,10 @@
 {
   "phase": "uar-safety-and-evals",
   "change": null,
-  "status": "assessed",
+  "status": "planned",
   "previousPhase": "wire-dead-metric-recorders",
-  "currentTask": "Assessed uar-safety-and-evals (S1 eval harness [greenfield, phase-sized], S2 sycophancy auto-correct, S3 PII-block, S4 tool-loop Cedar). Decisions D1-D4 pending. Next: /kbd-plan.",
-  "nextPendingChange": null,
+  "currentTask": "Planned: 3 changes (SE4 tool-loop-cedar-gating, SE3 guardrail-pii-block, SE2 sycophancy-auto-correct). S1 eval harness deferred to own phase. Next: /opsx:new tool-loop-cedar-gating.",
+  "nextPendingChange": "tool-loop-cedar-gating",
   "roundZeroComplete": true,
   "changeStatus": {
     "HP1-add-run-cancellation": "MERGED #23",
@@ -16,7 +16,7 @@
     "HP7-eval-harness": "deferred by design (uar-safety-and-evals)"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-plan uar-safety-and-evals",
+  "exactNextCommand": "/opsx:new tool-loop-cedar-gating",
   "plannedChanges": [
     "add-run-cancellation",
     "wire-otlp-tracing-and-cost",
