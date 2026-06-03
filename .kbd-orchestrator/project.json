@@ -4,14 +4,19 @@
   "sourceOfTruth": ".kbd-orchestrator",
   "specSystem": "openspec",
   "activeChange": null,
-  "activePhase": "uar-harness-parity",
+  "activePhase": "emit-runtime-step-events",
   "memoryMirror": {
     "provider": "surreal_memory",
     "mcpServer": "surreal_memory",
     "endpoint": "${UAR_MEMORY_MCP_URL:-http://127.0.0.1:3000/mcp/memory}",
     "authoritative": false
   },
-  "tools": ["codex", "claude-code", "cursor", "opencode"],
+  "tools": [
+    "codex",
+    "claude-code",
+    "cursor",
+    "opencode"
+  ],
   "worktreeRoot": "${HOME}/.claude/worktrees",
-  "updatedAt": "2026-06-02T00:00:00Z"
+  "updatedAt": "2026-06-03T00:00:00Z"
 }

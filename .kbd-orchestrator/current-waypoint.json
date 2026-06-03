@@ -1,10 +1,10 @@
 {
-  "phase": "uar-harness-parity",
+  "phase": "emit-runtime-step-events",
   "change": null,
-  "status": "reflect_complete",
-  "previousPhase": "uar-production-readiness-gaps",
-  "currentTask": "Phase reflected. 5/6 changes shipped (PRs #23-#27 merged). H3 (emit-runtime-step-events) NOT built — carry-over. Next: /kbd-new-phase (close H3 first, then uar-safety-and-evals).",
-  "nextPendingChange": null,
+  "status": "assessed",
+  "previousPhase": "uar-harness-parity",
+  "currentTask": "Assessed H3 carry-over (emit-runtime-step-events). Backend-only gap — frontend already maps step_started/updated/finished -> RuntimeRunStep. Decisions: D-A signal origin (recommend orchestrator base marker), D-B granularity, D-C path coverage. Next: /kbd-plan emit-runtime-step-events.",
+  "nextPendingChange": "emit-runtime-step-events",
   "roundZeroComplete": true,
   "changeStatus": {
     "HP1-add-run-cancellation": "MERGED #23",
@@ -16,7 +16,7 @@
     "HP7-eval-harness": "deferred by design (uar-safety-and-evals)"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-new-phase",
+  "exactNextCommand": "/kbd-plan emit-runtime-step-events",
   "plannedChanges": ["add-run-cancellation", "wire-otlp-tracing-and-cost", "emit-runtime-step-events", "wire-sycophancy-detection", "resumable-streaming-client", "mount-governance-guardrails"],
   "productDecisionsResolved": {
     "R2": "cancel on last-subscriber-drop + explicit POST /runs/{id}/cancel + UI stop button",
