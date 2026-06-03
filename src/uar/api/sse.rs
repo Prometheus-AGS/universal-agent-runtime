@@ -278,6 +278,18 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "classifications": classifications,
             }),
         )),
+        NormalizedEvent::SycophancyCorrected {
+            run_id,
+            corrected_text,
+        } => Some((
+            "agui.quality.sycophancy_corrected",
+            serde_json::json!({
+                "kind": "quality",
+                "phase": "sycophancy_corrected",
+                "request_id": run_id,
+                "corrected_text": corrected_text,
+            }),
+        )),
         NormalizedEvent::GuardrailFlagged {
             run_id,
             category,

@@ -88,6 +88,12 @@ pub enum NormalizedEvent {
         correction_mandatory: bool,
         classifications: Vec<SycophancyClassification>,
     },
+    /// A sycophantic response was auto-corrected: carries the rewritten text,
+    /// emitted as a follow-up after the original response. Opt-in (`auto_correct`).
+    SycophancyCorrected {
+        run_id: String,
+        corrected_text: String,
+    },
     /// Chat input was flagged by an input guardrail (prompt-injection or PII).
     /// `run_id` is absent when the input was blocked before a run started.
     /// Carries only the category and a short reason — never the raw input or the

@@ -1706,6 +1706,10 @@ pub struct SycophancyConfig {
     /// Log detections without blocking (default: false).
     #[serde(default)]
     pub log_only: bool,
+    /// Run one corrective LLM pass on a flagged response and emit the rewrite as
+    /// a follow-up (default: false — detection-only). Suppressed when `log_only`.
+    #[serde(default)]
+    pub auto_correct: bool,
 }
 
 impl SycophancyConfig {
@@ -1731,6 +1735,7 @@ impl Default for SycophancyConfig {
             auto_correct_threshold: Self::default_auto_correct_threshold(),
             reflect_threshold: Self::default_reflect_threshold(),
             log_only: false,
+            auto_correct: false,
         }
     }
 }
