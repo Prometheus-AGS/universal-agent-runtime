@@ -1,0 +1,20 @@
+{
+  "phase": "uar-safety-and-evals",
+  "previousPhase": "wire-dead-metric-recorders",
+  "backend": "openspec",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": false,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "goals": ["S1", "S2", "S3", "S4"],
+  "proposedChangeSets": [
+    {"id": "SE4-tool-loop-cedar-gating", "goal": "S4", "size": "M", "note": "is_tool_allowed at manager.rs:918; permit-safe default"},
+    {"id": "SE3-guardrail-pii-block", "goal": "S3", "size": "S-M", "note": "block_on_pii + block path mirroring injection"},
+    {"id": "SE2-sycophancy-auto-correct", "goal": "S2", "size": "M", "note": "regenerate on flag; honor thresholds; UX decision D3"},
+    {"id": "SE1-eval-harness", "goal": "S1", "size": "L", "note": "PHASE-SIZED — recommend own phase or tight v1 (rule-based + golden + persist; judge deferred)"}
+  ],
+  "decisionsRequired": ["D1 eval-harness scope/placement", "D2 tool-loop Cedar semantics", "D3 sycophancy auto-correct UX", "D4 PII-block default"],
+  "exactNextCommand": "/kbd-plan uar-safety-and-evals",
+  "updatedAt": "2026-06-03T00:00:00Z"
+}

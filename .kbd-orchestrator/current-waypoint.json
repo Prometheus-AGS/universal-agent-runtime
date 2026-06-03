@@ -1,9 +1,9 @@
 {
-  "phase": "emit-runtime-step-events",
+  "phase": "uar-safety-and-evals",
   "change": null,
-  "status": "reflect_complete",
-  "previousPhase": "uar-harness-parity",
-  "currentTask": "H3 closed (PR #29 merged) \u2014 emit-runtime-step-events done. uar-harness-parity goals now fully resolved. Next: /kbd-new-phase (recommend uar-safety-and-evals).",
+  "status": "assessed",
+  "previousPhase": "wire-dead-metric-recorders",
+  "currentTask": "Assessed uar-safety-and-evals (S1 eval harness [greenfield, phase-sized], S2 sycophancy auto-correct, S3 PII-block, S4 tool-loop Cedar). Decisions D1-D4 pending. Next: /kbd-plan.",
   "nextPendingChange": null,
   "roundZeroComplete": true,
   "changeStatus": {
@@ -16,7 +16,7 @@
     "HP7-eval-harness": "deferred by design (uar-safety-and-evals)"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-new-phase",
+  "exactNextCommand": "/kbd-plan uar-safety-and-evals",
   "plannedChanges": [
     "add-run-cancellation",
     "wire-otlp-tracing-and-cost",
