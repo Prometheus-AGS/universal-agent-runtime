@@ -76,6 +76,18 @@ pub enum NormalizedEvent {
     Cancelled {
         run_id: String,
     },
+    /// The completed assistant response was flagged by sycophancy detection.
+    /// Quality signal (not an error); emitted only when the score meets the
+    /// configured threshold or a critical pattern was found. Carries the score
+    /// and pattern classifications, never the full response text.
+    SycophancyFlagged {
+        run_id: String,
+        /// 0.0 (clean) – 1.0 (fully sycophantic).
+        sycophancy_score: f32,
+        has_critical: bool,
+        correction_mandatory: bool,
+        classifications: Vec<SycophancyClassification>,
+    },
     StatePatch {
         run_id: String,
         patch: Vec<StatePatchOp>,
@@ -145,6 +157,19 @@ pub struct CitationSource {
     pub title: String,
     pub url: String,
     pub snippet: Option<String>,
+}
+
+/// A single sycophancy pattern match (a compact, serializable summary of a
+/// detector `HeuristicMatch`). Excludes the response text; the rationale is the
+/// detector's short explanation of why the pattern triggered.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SycophancyClassification {
+    /// Pattern id, e.g. `S-01` … `S-08`.
+    pub pattern_id: String,
+    /// Severity: `low` | `medium` | `high` | `critical`.
+    pub severity: String,
+    /// Short explanation of why the pattern triggered.
+    pub rationale: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

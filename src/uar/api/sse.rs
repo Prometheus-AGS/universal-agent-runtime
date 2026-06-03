@@ -260,6 +260,24 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "request_id": run_id
             }),
         )),
+        NormalizedEvent::SycophancyFlagged {
+            run_id,
+            sycophancy_score,
+            has_critical,
+            correction_mandatory,
+            classifications,
+        } => Some((
+            "agui.quality.sycophancy",
+            serde_json::json!({
+                "kind": "quality",
+                "phase": "sycophancy",
+                "request_id": run_id,
+                "score": sycophancy_score,
+                "has_critical": has_critical,
+                "correction_mandatory": correction_mandatory,
+                "classifications": classifications,
+            }),
+        )),
         NormalizedEvent::RunDoneWithUsage {
             run_id,
             input_tokens,
@@ -353,7 +371,9 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
 /// `stream_mode` is `dual` or when a `runtime` consumer is connected.
 ///
 /// Returns `None` for events that don't produce a `Runtime*` entity.
-pub fn to_runtime_entity_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::Value)> {
+pub fn to_runtime_entity_event(
+    event: &NormalizedEvent,
+) -> Option<(&'static str, serde_json::Value)> {
     match event {
         NormalizedEvent::RunStart { run_id, agent_id } => Some((
             "runtime.run",
@@ -369,9 +389,18 @@ pub fn to_runtime_entity_event(event: &NormalizedEvent) -> Option<(&'static str,
         )),
         NormalizedEvent::RunDone { run_id } | NormalizedEvent::RunDoneWithUsage { run_id, .. } => {
             let (input_tokens, output_tokens, total_tokens, cost_usd_estimate) = match event {
-                NormalizedEvent::RunDoneWithUsage { input_tokens, output_tokens, total_tokens, cost_usd_estimate, .. } => {
-                    (*input_tokens, *output_tokens, *total_tokens, *cost_usd_estimate)
-                }
+                NormalizedEvent::RunDoneWithUsage {
+                    input_tokens,
+                    output_tokens,
+                    total_tokens,
+                    cost_usd_estimate,
+                    ..
+                } => (
+                    *input_tokens,
+                    *output_tokens,
+                    *total_tokens,
+                    *cost_usd_estimate,
+                ),
                 _ => (None, None, None, None),
             };
             Some((
@@ -389,7 +418,11 @@ pub fn to_runtime_entity_event(event: &NormalizedEvent) -> Option<(&'static str,
                 }),
             ))
         }
-        NormalizedEvent::Error { run_id, code, message } => Some((
+        NormalizedEvent::Error {
+            run_id,
+            code,
+            message,
+        } => Some((
             "runtime.run",
             serde_json::json!({
                 "type": "run_failed",
@@ -401,7 +434,13 @@ pub fn to_runtime_entity_event(event: &NormalizedEvent) -> Option<(&'static str,
                 "updated_at": chrono::Utc::now().to_rfc3339()
             }),
         )),
-        NormalizedEvent::ToolStart { run_id, call_index, tool_call_id, tool, input } => Some((
+        NormalizedEvent::ToolStart {
+            run_id,
+            call_index,
+            tool_call_id,
+            tool,
+            input,
+        } => Some((
             "runtime.tool_call",
             serde_json::json!({
                 "type": "tool_call_started",
@@ -415,7 +454,14 @@ pub fn to_runtime_entity_event(event: &NormalizedEvent) -> Option<(&'static str,
                 "updated_at": chrono::Utc::now().to_rfc3339()
             }),
         )),
-        NormalizedEvent::ToolEnd { run_id, call_index, tool_call_id, tool, output, ok } => Some((
+        NormalizedEvent::ToolEnd {
+            run_id,
+            call_index,
+            tool_call_id,
+            tool,
+            output,
+            ok,
+        } => Some((
             "runtime.tool_call",
             serde_json::json!({
                 "type": if *ok { "tool_call_finished" } else { "tool_call_failed" },
@@ -430,7 +476,12 @@ pub fn to_runtime_entity_event(event: &NormalizedEvent) -> Option<(&'static str,
             }),
         )),
         NormalizedEvent::ToolCallApprovalRequired {
-            run_id, call_index, tool_call_id, name, arguments_json, risk_reason
+            run_id,
+            call_index,
+            tool_call_id,
+            name,
+            arguments_json,
+            risk_reason,
         } => Some((
             "runtime.approval",
             serde_json::json!({
