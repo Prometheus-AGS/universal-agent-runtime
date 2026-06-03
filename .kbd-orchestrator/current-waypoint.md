@@ -1,48 +1,48 @@
 # Current Waypoint
 
-- Phase: `uar-harness-parity` **(planned)**
-- Previous phase: `uar-production-readiness-gaps` *(6/7 goals met)*
+- Phase: `uar-harness-parity` **(reflect_complete)**
+- Previous phase: `uar-production-readiness-gaps`
 - Backend: OpenSpec
-- Status: `planned`
-- Progress: **0 / 6 changes** · plan complete
-- Active change: none
-- Exact next command: **Round 0 merge gate** (C2→C1→C3→C4 to `main`), then `/opsx:new add-run-cancellation`
-- Plan: [plan.md](phases/uar-harness-parity/plan.md) · Assessment: [assessment.md](phases/uar-harness-parity/assessment.md)
-- Updated at: 2026-06-02T00:00:00Z
+- Status: `reflect_complete`
+- Progress: **5 / 6 changes shipped** (PRs #23–#27 merged) · 1 planned change not built (H3)
+- Exact next command: `/kbd-new-phase`
+- Reflection: [reflection.md](phases/uar-harness-parity/reflection.md)
+- Merged `main` HEAD: `ea01958` · 232 lib tests pass
+- Updated at: 2026-06-03
 
-## ⚠️ Round 0 — Merge gate (do first, not an OpenSpec change)
+## Phase arc outcome
 
-Assessment was run against `main` (`8b3c503`), which lacks the prior phase's work. Merge **C2 → C1 → C3 → C4** to `main` and verify `cargo build` + `cargo test` green BEFORE starting Round 1. HP1/HP2/HP3 assume `main` has the ingestion `CancellationToken`, graceful shutdown, and `runtime.*` SSE events.
+**5 MET / 1 PARTIAL / 2 NOT MET.**
 
-## Product decisions resolved
+Shipped + merged: run cancellation (H1, #23), OTLP tracing + per-LLM latency + cost (H2, #24), sycophancy detection (H4, #25), resumable streaming client (H5, #26), mounted Cedar layer + injection/PII guardrails (H6, #27). H8 PARTIAL (cache/latency/cost/sessions wired; sandbox + MCP recorders deferred).
 
-| ID | Decision |
-|---|---|
-| R2 cancel semantics | Cancel on **last-subscriber-drop** + explicit `POST /runs/{id}/cancel` + UI stop button |
-| R3 eval scope | **Deferred** to dedicated `uar-safety-and-evals` phase |
-| R4 guardrails | **In-house heuristics + mount existing Cedar `governance_layer`** (no external service) |
+**NOT MET:** **H3 `emit-runtime-step-events` was never built** — skipped during execution (carry-over, top priority). H7 eval harness deferred by design.
 
-## Change roster (ordered)
+Parity vs Mastra/Volt/LangGraph/Vercel/Rig: **6 red→green, 1 yellow→green, 1 red→yellow** (injection/PII heuristic). Lifecycle **step** events stayed yellow (the H3 gap).
 
-| # | Change | Round | Complexity | Model | Value | Agent |
-|---|---|---|---|---|---|---|
-| 1 | `add-run-cancellation` | 1 | L / High | frontier | HIGH | Claude Code |
-| 2 | `wire-otlp-tracing-and-cost` | 2 | L / High | frontier | HIGH | Claude Code |
-| 3 | `emit-runtime-step-events` | 2 | M / Med | medium | MED | Codex |
-| 4 | `wire-sycophancy-detection` | 1 | M / Med | medium | MED | Codex |
-| 5 | `resumable-streaming-client` | 1 | M / Med | medium | MED | Claude Code |
-| 6 | `mount-governance-guardrails` | 1 | L / High | frontier | HIGH | Claude Code |
+## Goal scoreboard
 
-## Execution rounds
+| Goal | Change | Status |
+|---|---|---|
+| H1 cancellation | HP1 #23 | ✅ MET |
+| H2 OTLP + latency + cost | HP2 #24 | ✅ MET |
+| H3 runtime-step events | HP3 | ❌ NOT BUILT (carry-over) |
+| H4 sycophancy detection | HP4 #25 | ✅ MET |
+| H5 resumable streaming | HP5 #26 | ✅ MET |
+| H6 guardrails + Cedar mount | HP6 #27 | ✅ MET |
+| H7 eval harness | — | ⏸️ deferred (by design) |
+| H8 dead metric recorders | in HP2 | 🟡 PARTIAL |
 
-- **Round 0 (gate):** merge prior-phase branches to `main`.
-- **Round 1 (parallel):** `add-run-cancellation`, `resumable-streaming-client`, `mount-governance-guardrails`, `wire-sycophancy-detection` (HP1 first / isolated — HP4 shares the response path).
-- **Round 2 (after HP1 orchestrator surface):** `emit-runtime-step-events`, then `wire-otlp-tracing-and-cost`.
+## Carry-over / debt
 
-## Deferred (out of phase)
+1. **H3 `emit-runtime-step-events`** — unbuilt planned change; do first.
+2. Unformatted `routes.rs` + `ingestion_worker.rs` on `main` — spawn-task chip filed (fmt-only).
+3. Sandbox (4) + `set_mcp_server_status` recorders still dead.
+4. `tool_requires_approval` still heuristic; Cedar `is_tool_allowed` mounted at HTTP only.
+5. Live-env verifications deferred across all changes (SIGTERM, OTLP collector, mid-stream drop, injection 403).
 
-- HP7 eval harness → `uar-safety-and-evals` phase
-- Tool-approval Cedar migration → fold into `uar-safety-and-evals`
-- Durable workflows / checkpointing → own phase
-- Config write-back to YAML → own change
-- Parking-lot `HookBus` → **will not build** (redundant with `RunEventEmitter`)
+## Recommended next phase
+
+- **First:** close **H3** (small, unblocked) — standalone change or open the next phase with it.
+- **Then:** `uar-safety-and-evals` — eval harness, sycophancy auto-correction, injection-blocking + PII-block, tool-loop Cedar gating.
+- Finish **H8**; build a **live-env smoke harness**; config liveness; durable workflows (own phase).

@@ -5,34 +5,104 @@
   "childPointer": null,
   "assessment_complete": true,
   "plan_complete": true,
-  "execute_complete": false,
-  "reflect_complete": false,
+  "execute_complete": true,
+  "reflect_complete": true,
   "backend": "openspec",
   "sourceTool": "claude-code",
-  "goals": ["H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8"],
-  "evolverBridge": null,
-  "blockingPrerequisite": "C0 — merge prior-phase branches (C1 fix/worker-pool-graceful-shutdown, C2 fix/make-config-authoritative-on-boot, C3 fix/persist-builtin-agents, C4 fix/wire-runtime-console-events) to main BEFORE executing this phase. Assessment was run against main (8b3c503) which lacks them.",
-  "proposedChangeSets": [
-    { "id": "C0-merge-prior-branches", "goals": [], "priority": "P0-gate", "note": "merge C1->C2->C3->C4 to main; not a code change" },
-    { "id": "HP1-run-cancellation", "goals": ["H1"], "priority": "P0", "note": "promoted from P1 — orphaned runs are a live cost/safety bug; model on approval-gate seam" },
-    { "id": "HP2-otlp-tracing-cost", "goals": ["H2", "H8"], "priority": "P0", "note": "OTLP deps present but unused; add exporter + run-path spans + latency + cost + 6 dead recorders" },
-    { "id": "HP3-runtime-step-events", "goals": ["H3"], "priority": "P1", "note": "add NormalizedEvent::RuntimeStep via existing RunEventEmitter — NOT parking-lot HookBus" },
-    { "id": "HP4-wire-sycophancy", "goals": ["H5"], "priority": "P1", "note": "sycophancy-core is a dead dep; invoke post-generation against existing thresholds" },
-    { "id": "HP5-resumable-streaming-client", "goals": ["H4"], "priority": "P2", "note": "server complete; frontend-only: capture run_id, track event id, reconnect via existing resume GET" },
-    { "id": "HP6-guardrails-governance", "goals": ["H6"], "priority": "P2", "note": "mount unmounted governance_layer; add call_llm/validate_output Cedar action; basic injection/PII screening" },
-    { "id": "HP7-eval-harness", "goals": ["H7"], "priority": "P2-or-own-phase", "note": "PRODUCT DECISION R3 — scope: scaffold vs full vs dedicated uar-safety-and-evals phase" }
+  "goals": [
+    "H1",
+    "H2",
+    "H3",
+    "H4",
+    "H5",
+    "H6",
+    "H7",
+    "H8"
   ],
-  "suggestedPhaseCut": ["C0-merge-prior-branches", "HP1-run-cancellation", "HP2-otlp-tracing-cost", "HP3-runtime-step-events", "HP4-wire-sycophancy"],
+  "evolverBridge": null,
+  "blockingPrerequisite": "C0 \u2014 merge prior-phase branches (C1 fix/worker-pool-graceful-shutdown, C2 fix/make-config-authoritative-on-boot, C3 fix/persist-builtin-agents, C4 fix/wire-runtime-console-events) to main BEFORE executing this phase. Assessment was run against main (8b3c503) which lacks them.",
+  "proposedChangeSets": [
+    {
+      "id": "C0-merge-prior-branches",
+      "goals": [],
+      "priority": "P0-gate",
+      "note": "merge C1->C2->C3->C4 to main; not a code change"
+    },
+    {
+      "id": "HP1-run-cancellation",
+      "goals": [
+        "H1"
+      ],
+      "priority": "P0",
+      "note": "promoted from P1 \u2014 orphaned runs are a live cost/safety bug; model on approval-gate seam"
+    },
+    {
+      "id": "HP2-otlp-tracing-cost",
+      "goals": [
+        "H2",
+        "H8"
+      ],
+      "priority": "P0",
+      "note": "OTLP deps present but unused; add exporter + run-path spans + latency + cost + 6 dead recorders"
+    },
+    {
+      "id": "HP3-runtime-step-events",
+      "goals": [
+        "H3"
+      ],
+      "priority": "P1",
+      "note": "add NormalizedEvent::RuntimeStep via existing RunEventEmitter \u2014 NOT parking-lot HookBus"
+    },
+    {
+      "id": "HP4-wire-sycophancy",
+      "goals": [
+        "H5"
+      ],
+      "priority": "P1",
+      "note": "sycophancy-core is a dead dep; invoke post-generation against existing thresholds"
+    },
+    {
+      "id": "HP5-resumable-streaming-client",
+      "goals": [
+        "H4"
+      ],
+      "priority": "P2",
+      "note": "server complete; frontend-only: capture run_id, track event id, reconnect via existing resume GET"
+    },
+    {
+      "id": "HP6-guardrails-governance",
+      "goals": [
+        "H6"
+      ],
+      "priority": "P2",
+      "note": "mount unmounted governance_layer; add call_llm/validate_output Cedar action; basic injection/PII screening"
+    },
+    {
+      "id": "HP7-eval-harness",
+      "goals": [
+        "H7"
+      ],
+      "priority": "P2-or-own-phase",
+      "note": "PRODUCT DECISION R3 \u2014 scope: scaffold vs full vs dedicated uar-safety-and-evals phase"
+    }
+  ],
+  "suggestedPhaseCut": [
+    "C0-merge-prior-branches",
+    "HP1-run-cancellation",
+    "HP2-otlp-tracing-cost",
+    "HP3-runtime-step-events",
+    "HP4-wire-sycophancy"
+  ],
   "explicitlyNotDoing": [
-    "parking-lot HookBus wiring — redundant with existing RunEventEmitter broadcast+replay",
-    "durable workflows / checkpointing — own phase",
-    "config write-back to YAML — own change (C2 carryover)"
+    "parking-lot HookBus wiring \u2014 redundant with existing RunEventEmitter broadcast+replay",
+    "durable workflows / checkpointing \u2014 own phase",
+    "config write-back to YAML \u2014 own change (C2 carryover)"
   ],
   "correctedReflectionSeeds": [
-    "HookBus seed KILLED — would duplicate RunEventEmitter",
-    "resumable streaming DOWNGRADED P2 — server already complete, frontend-only gap",
-    "cancellation PROMOTED to P0 — orphaned runs are a live bug, not parity nicety",
-    "sycophancy-core 'already present' CORRECTED — it is a dead/unwired dependency"
+    "HookBus seed KILLED \u2014 would duplicate RunEventEmitter",
+    "resumable streaming DOWNGRADED P2 \u2014 server already complete, frontend-only gap",
+    "cancellation PROMOTED to P0 \u2014 orphaned runs are a live bug, not parity nicety",
+    "sycophancy-core 'already present' CORRECTED \u2014 it is a dead/unwired dependency"
   ],
   "productDecisionsRequired": [
     "R2: cancel-on-last-disconnect vs explicit stop-button-only",
@@ -40,5 +110,34 @@
     "R4: guardrail build-in-house vs integrate external model/service"
   ],
   "exactNextCommand": "/kbd-plan uar-harness-parity",
-  "updatedAt": "2026-06-02T00:00:00Z"
+  "updatedAt": "2026-06-02T00:00:00Z",
+  "shippedChanges": [
+    "HP1-run-cancellation",
+    "HP2-otlp-tracing-cost",
+    "HP4-wire-sycophancy",
+    "HP5-resumable-streaming-client",
+    "HP6-guardrails-governance"
+  ],
+  "notShipped": {
+    "HP3-runtime-step-events": "NOT BUILT \u2014 skipped during execution (carry-over)",
+    "HP7-eval-harness": "deferred by design (uar-safety-and-evals)"
+  },
+  "goalStatus": {
+    "H1": "MET",
+    "H2": "MET",
+    "H3": "NOT MET (unintended gap)",
+    "H4": "MET",
+    "H5": "MET",
+    "H6": "MET",
+    "H7": "NOT MET (deferred)",
+    "H8": "PARTIAL"
+  },
+  "prs": {
+    "HP1": 23,
+    "HP2": 24,
+    "HP4": 25,
+    "HP5": 26,
+    "HP6": 27
+  },
+  "mergedHead": "ea01958"
 }
