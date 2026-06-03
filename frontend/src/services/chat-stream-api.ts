@@ -15,6 +15,30 @@ export async function postChatCompletion(
 }
 
 /**
+ * GET /api/uar/runs/{runId}/stream — resume an in-flight run's SSE stream from
+ * `lastEventId`. Used to recover after a mid-stream drop without re-POSTing
+ * (which would start a duplicate run). The server replays buffered events after
+ * `lastEventId` and continues live.
+ */
+export async function resumeRunStream(
+  runId: string,
+  lastEventId: number,
+  signal: AbortSignal,
+): Promise<Response> {
+  return fetch(
+    `/api/uar/runs/${encodeURIComponent(runId)}/stream?last_event_id=${lastEventId}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "text/event-stream",
+        "Last-Event-ID": String(lastEventId),
+      },
+      signal,
+    },
+  );
+}
+
+/**
  * POST /api/uar/runs/{runId}/cancel — request server-side cancellation of an
  * in-flight run. Idempotent; safe to call for unknown/finished runs. Best-effort
  * (fire-and-forget): aborting the local stream also triggers server cancellation
