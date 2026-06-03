@@ -278,6 +278,20 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "classifications": classifications,
             }),
         )),
+        NormalizedEvent::GuardrailFlagged {
+            run_id,
+            category,
+            reason,
+        } => Some((
+            "agui.guardrail",
+            serde_json::json!({
+                "kind": "guardrail",
+                "phase": "flagged",
+                "request_id": run_id,
+                "category": category,
+                "reason": reason,
+            }),
+        )),
         NormalizedEvent::RunDoneWithUsage {
             run_id,
             input_tokens,

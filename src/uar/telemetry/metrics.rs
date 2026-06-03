@@ -110,6 +110,13 @@ pub fn record_sycophancy_flagged() {
     counter!("uar_sycophancy_flagged_total").increment(1);
 }
 
+/// Increment the count of chat inputs flagged by an input guardrail, by category
+/// (`injection` | `pii`).
+pub fn record_guardrail_flagged(category: &str) {
+    let labels = [("category", category.to_string())];
+    counter!("uar_guardrail_flagged_total", &labels).increment(1);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tool Call Metrics
 // ─────────────────────────────────────────────────────────────────────────────

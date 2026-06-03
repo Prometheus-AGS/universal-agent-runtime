@@ -88,6 +88,17 @@ pub enum NormalizedEvent {
         correction_mandatory: bool,
         classifications: Vec<SycophancyClassification>,
     },
+    /// Chat input was flagged by an input guardrail (prompt-injection or PII).
+    /// `run_id` is absent when the input was blocked before a run started.
+    /// Carries only the category and a short reason — never the raw input or the
+    /// matched secret value.
+    GuardrailFlagged {
+        run_id: Option<String>,
+        /// `injection` | `pii`.
+        category: String,
+        /// Short, content-free reason label.
+        reason: String,
+    },
     StatePatch {
         run_id: String,
         patch: Vec<StatePatchOp>,
