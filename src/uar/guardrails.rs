@@ -157,6 +157,7 @@ mod tests {
         GuardrailsConfig {
             input_screening_enabled: enabled,
             block_on_injection: false,
+            block_on_pii: false,
         }
     }
 
