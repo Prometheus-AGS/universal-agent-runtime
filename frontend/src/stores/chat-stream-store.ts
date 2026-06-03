@@ -3,6 +3,7 @@ import { create } from "zustand";
 import {
   postChatCompletion,
   cancelRun,
+  resumeRunStream,
   CHAT_COMPLETION_URL,
 } from "@/services/chat-stream-api";
 import { fetchResilienceSettings } from "@/services/settings-api";
@@ -217,15 +218,83 @@ function extractA2uiEnvelope(value: unknown): Record<string, unknown> | null {
   return null;
 }
 
-function parseSseBlock(raw: string): { event: string; data: string } | null {
+function parseSseBlock(
+  raw: string,
+): { event: string; data: string; id?: number } | null {
   let event = "message";
   let data = "";
+  let id: number | undefined;
   for (const line of raw.split("\n")) {
     if (line.startsWith("event:")) event = line.slice(6).trim();
     else if (line.startsWith("data:")) data = line.slice(5).trim();
+    else if (line.startsWith("id:")) {
+      const n = Number(line.slice(3).trim());
+      if (Number.isFinite(n)) id = n;
+    }
   }
   if (!data) return null;
-  return { event, data };
+  return { event, data, id };
+}
+
+/// Maximum mid-stream reconnect attempts before giving up and finalizing.
+const STREAM_MAX_RECONNECTS = 5;
+
+/**
+ * Read SSE blocks from a chat stream, yielding `{ event, data }` for each.
+ *
+ * Owns mid-stream recovery: if the underlying read fails after at least one
+ * block has been yielded and the server `runId` is known, it reconnects via the
+ * server's resume endpoint (`Last-Event-ID`) and continues — so a dropped
+ * connection resumes the remaining response instead of truncating. Reconnection
+ * is bounded by `maxReconnects`. Blocks with an id at or below the highest seen
+ * are skipped (dedup across the reconnect boundary; the server also filters).
+ * Aborts (user stop) propagate immediately.
+ */
+async function* streamSseBlocks(
+  initialReader: ReadableStreamDefaultReader<Uint8Array>,
+  opts: { runId: string | null; signal: AbortSignal; maxReconnects: number },
+): AsyncGenerator<{ event: string; data: string }> {
+  const decoder = new TextDecoder();
+  let reader = initialReader;
+  let lastEventId = 0;
+  let yieldedAny = false;
+  let reconnects = 0;
+
+  while (true) {
+    let buffer = "";
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) return;
+        buffer += decoder.decode(value, { stream: true });
+        const blocks = buffer.split("\n\n");
+        buffer = blocks.pop() ?? "";
+        for (const raw of blocks) {
+          if (!raw.trim()) continue;
+          const block = parseSseBlock(raw);
+          if (!block) continue;
+          if (block.id !== undefined) {
+            if (block.id <= lastEventId) continue;
+            lastEventId = block.id;
+          }
+          yieldedAny = true;
+          yield { event: block.event, data: block.data };
+        }
+      }
+    } catch (err) {
+      // User-initiated abort (stop) ends immediately; never reconnect.
+      if ((err as Error).name === "AbortError") throw err;
+      // Only resume a stream that actually started and whose run we can target.
+      if (!yieldedAny || !opts.runId || reconnects >= opts.maxReconnects) {
+        throw err;
+      }
+      reconnects += 1;
+      const res = await resumeRunStream(opts.runId, lastEventId, opts.signal);
+      if (!res.ok || !res.body) throw err;
+      reader = res.body.getReader();
+      // Continue the outer loop with the new reader from the resume point.
+    }
+  }
 }
 
 export interface StreamRetryPolicy {
@@ -638,22 +707,12 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
         serverRunIdRef = res.headers.get("x-uar-run-id");
 
         const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const blocks = buffer.split("\n\n");
-          buffer = blocks.pop() ?? "";
-
-          for (const raw of blocks) {
-            if (!raw.trim()) continue;
-            const block = parseSseBlock(raw);
-            if (!block) continue;
-            const { event, data } = block;
-
+        for await (const { event, data } of streamSseBlocks(reader, {
+          runId: serverRunIdRef,
+          signal: controller.signal,
+          maxReconnects: STREAM_MAX_RECONNECTS,
+        })) {
             if (event.startsWith("agui.")) {
               let agui: AguiPayload;
               try {
@@ -973,7 +1032,6 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
             sawFirstStreamChunk = true;
             clearTimeout(streamStartTimer);
             useChatMessageStore.getState().markStreamStarted(threadId, runId);
-          }
         }
 
         clearTimeout(streamStartTimer);
