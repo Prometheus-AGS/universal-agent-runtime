@@ -12,6 +12,7 @@ pub mod memory;
 pub mod orchestrator;
 pub mod persistence;
 pub mod prompt_cache;
+pub mod quality;
 pub mod rag;
 pub mod realtime;
 pub mod runtime;

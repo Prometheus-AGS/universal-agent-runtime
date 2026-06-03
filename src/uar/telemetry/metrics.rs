@@ -97,6 +97,20 @@ pub fn record_cache_tokens(provider: &str, model: &str, write_tokens: u32, read_
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Response Quality (Sycophancy) Metrics
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Record the sycophancy score (0.0 clean – 1.0 fully sycophantic) of a response.
+pub fn record_sycophancy_score(score: f64) {
+    histogram!("uar_sycophancy_score").record(score);
+}
+
+/// Increment the count of responses flagged as sycophantic.
+pub fn record_sycophancy_flagged() {
+    counter!("uar_sycophancy_flagged_total").increment(1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Tool Call Metrics
 // ─────────────────────────────────────────────────────────────────────────────
 

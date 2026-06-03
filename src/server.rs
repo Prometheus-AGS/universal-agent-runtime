@@ -617,30 +617,27 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     // `ingestion_pool_shared.shutdown()` during graceful shutdown after the
     // signal fires — `shutdown(&self)` is callable through `Arc` in the new
     // crate revision (CR-02 fix).
-    let ingestion_pool_shared: Option<Arc<IngestionWorkerPool>> = if let (
-        Some(p),
-        Some(ingest),
-    ) = (&persistence, &state.ingest_service)
-    {
-        match IngestionWorkerPool::new(
-            0,   // auto-detect CPU count
-            100, // max queue depth
-            Arc::clone(ingest),
-            Arc::clone(p),
-            Arc::clone(&config),
-        ) {
-            Ok(pool) => {
-                info!("Shared ingestion worker pool initialized (single instance)");
-                Some(Arc::new(pool))
+    let ingestion_pool_shared: Option<Arc<IngestionWorkerPool>> =
+        if let (Some(p), Some(ingest)) = (&persistence, &state.ingest_service) {
+            match IngestionWorkerPool::new(
+                0,   // auto-detect CPU count
+                100, // max queue depth
+                Arc::clone(ingest),
+                Arc::clone(p),
+                Arc::clone(&config),
+            ) {
+                Ok(pool) => {
+                    info!("Shared ingestion worker pool initialized (single instance)");
+                    Some(Arc::new(pool))
+                }
+                Err(e) => {
+                    tracing::error!("Failed to create shared ingestion pool: {:?}", e);
+                    None
+                }
             }
-            Err(e) => {
-                tracing::error!("Failed to create shared ingestion pool: {:?}", e);
-                None
-            }
-        }
-    } else {
-        None
-    };
+        } else {
+            None
+        };
 
     // Build router
     // Memory MCP router — built before the main router so type inference is unambiguous.
@@ -1150,7 +1147,6 @@ fn normalize_legacy_openai_base_url(llm_config: &mut crate::config::LlmConfig) {
     }
 }
 
-
 fn build_permissive_cors_layer() -> CorsLayer {
     CorsLayer::new()
         .allow_origin(Any)
@@ -1170,7 +1166,10 @@ async fn handle_tool_call_approval(
     axum::extract::Path(run_id): axum::extract::Path<String>,
     Json(body): Json<serde_json::Value>,
 ) -> Response {
-    let approved = body.get("approved").and_then(|v| v.as_bool()).unwrap_or(false);
+    let approved = body
+        .get("approved")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let resolved = state.run_manager.resolve_approval(&run_id, approved).await;
     if resolved {
         info!(
@@ -1515,12 +1514,7 @@ async fn api_catalog(State(state): State<AppState>) -> Response {
         .list()
         .await
         .into_iter()
-        .filter(|p| {
-            p.enabled
-                && p.api_key
-                    .as_deref()
-                    .map_or(false, |k| !k.trim().is_empty())
-        })
+        .filter(|p| p.enabled && p.api_key.as_deref().map_or(false, |k| !k.trim().is_empty()))
         .map(|p| p.id)
         .collect();
 
@@ -4277,6 +4271,44 @@ pub(crate) async fn api_chat_completion(
                                         });
                                     }
                                 }
+                            }
+
+                            // --- Response quality: sycophancy detection (fire-and-forget,
+                            // post-stream; sync rule-based, no LLM call, no added latency) ---
+                            if !assistant_text_for_capture.is_empty() {
+                                let sycophancy_cfg = state.config.sycophancy.clone();
+                                let mgr = Arc::clone(&state.run_manager);
+                                let rid = run_id.clone();
+                                let text = assistant_text_for_capture.clone();
+                                tokio::spawn(async move {
+                                    let Some(outcome) = uar::quality::detect(&sycophancy_cfg, &text)
+                                    else {
+                                        return;
+                                    };
+                                    uar::telemetry::metrics::record_sycophancy_score(f64::from(
+                                        outcome.score,
+                                    ));
+                                    if outcome.flagged {
+                                        uar::telemetry::metrics::record_sycophancy_flagged();
+                                        tracing::warn!(
+                                            run_id = %rid,
+                                            score = outcome.score,
+                                            has_critical = outcome.has_critical,
+                                            "Response flagged by sycophancy detection"
+                                        );
+                                        mgr.emit_to_run(
+                                            &rid,
+                                            uar::domain::events::NormalizedEvent::SycophancyFlagged {
+                                                run_id: rid.clone(),
+                                                sycophancy_score: outcome.score,
+                                                has_critical: outcome.has_critical,
+                                                correction_mandatory: outcome.correction_mandatory,
+                                                classifications: outcome.classifications,
+                                            },
+                                        )
+                                        .await;
+                                    }
+                                });
                             }
 
                             if emit_openai_chunks {
