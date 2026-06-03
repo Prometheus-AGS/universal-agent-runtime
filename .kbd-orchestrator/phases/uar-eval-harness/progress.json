@@ -4,20 +4,68 @@
   "backend": "openspec",
   "sourceTool": "claude-code",
   "assessment_complete": true,
-  "plan_complete": false,
+  "plan_complete": true,
   "execute_complete": false,
   "reflect_complete": false,
-  "goals": ["S1"],
-  "origin": "S1 deferred from uar-safety-and-evals (greenfield eval harness)",
-  "headline": "Greenfield — no eval infra; src/testing dead. Reuse chat_non_streaming (judge), quality::detect (rule scorer), metrics, PersistenceLayer.",
-  "proposedChangeSets": [
-    {"id": "EH1-eval-domain-and-rule-scorers", "size": "M", "note": "EvalCase/Suite/Scorer trait + rule-based scorers (+ sycophancy adapter)"},
-    {"id": "EH2-suite-loading-and-runner", "size": "M", "note": "golden files -> execute cases -> collect results (bare-output mode)"},
-    {"id": "EH3-llm-judge-scorer", "size": "M", "note": "rubric via chat_non_streaming; deterministic parse (fast-follow candidate)"},
-    {"id": "EH4-persistence-and-regression", "size": "M", "note": "store EvalResults + baseline diff + metrics"},
-    {"id": "EH5-runner-surface", "size": "M", "note": "CLI subcommand and/or POST /api/uar/eval/run + report"}
+  "goals": [
+    "S1"
   ],
-  "decisionsRequired": ["D1 result/suite storage (files vs SurrealDB)", "D2 surface (CLI subcommand vs endpoint vs bin)", "D3 run mode (full agent run vs bare completion)", "D4 LLM-judge in v1 or fast-follow", "D5 regression gate semantics"],
-  "exactNextCommand": "/kbd-plan uar-eval-harness",
-  "updatedAt": "2026-06-03T00:00:00Z"
+  "origin": "S1 deferred from uar-safety-and-evals (greenfield eval harness)",
+  "headline": "Greenfield \u2014 no eval infra; src/testing dead. Reuse chat_non_streaming (judge), quality::detect (rule scorer), metrics, PersistenceLayer.",
+  "proposedChangeSets": [
+    {
+      "id": "EH1-eval-domain-and-rule-scorers",
+      "size": "M",
+      "note": "EvalCase/Suite/Scorer trait + rule-based scorers (+ sycophancy adapter)"
+    },
+    {
+      "id": "EH2-suite-loading-and-runner",
+      "size": "M",
+      "note": "golden files -> execute cases -> collect results (bare-output mode)"
+    },
+    {
+      "id": "EH3-llm-judge-scorer",
+      "size": "M",
+      "note": "rubric via chat_non_streaming; deterministic parse (fast-follow candidate)"
+    },
+    {
+      "id": "EH4-persistence-and-regression",
+      "size": "M",
+      "note": "store EvalResults + baseline diff + metrics"
+    },
+    {
+      "id": "EH5-runner-surface",
+      "size": "M",
+      "note": "CLI subcommand and/or POST /api/uar/eval/run + report"
+    }
+  ],
+  "decisionsRequired": [
+    "D1 result/suite storage (files vs SurrealDB)",
+    "D2 surface (CLI subcommand vs endpoint vs bin)",
+    "D3 run mode (full agent run vs bare completion)",
+    "D4 LLM-judge in v1 or fast-follow",
+    "D5 regression gate semantics"
+  ],
+  "exactNextCommand": "/opsx:new eval-domain-and-rule-scorers",
+  "updatedAt": "2026-06-03T00:00:00Z",
+  "decisionsResolved": {
+    "D1": "files",
+    "D2": "CLI subcommand",
+    "D3": "bare completion v1 (full-run later)",
+    "D4": "rule-based v1; LLM-judge EH3 deferred",
+    "D5": "delta-vs-baseline gate"
+  },
+  "plannedChanges": [
+    "eval-domain-and-rule-scorers",
+    "eval-suite-loading-and-runner",
+    "eval-persistence-and-regression",
+    "eval-cli-subcommand"
+  ],
+  "deferred": [
+    "EH3 llm-judge-scorer (fast-follow)",
+    "full-agent-run mode",
+    "HTTP endpoint",
+    "SurrealDB result storage",
+    "delete dead src/testing"
+  ]
 }

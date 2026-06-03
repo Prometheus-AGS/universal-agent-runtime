@@ -1,10 +1,10 @@
 {
   "phase": "uar-eval-harness",
   "change": null,
-  "status": "assessed",
+  "status": "planned",
   "previousPhase": "uar-safety-and-evals",
-  "currentTask": "Assessed uar-eval-harness (greenfield eval subsystem, S1). Proposed EH1-EH5; decisions D1-D5 pending. Next: /kbd-plan.",
-  "nextPendingChange": null,
+  "currentTask": "Planned uar-eval-harness v1: EH1 domain+rule-scorers, EH2 suite+runner, EH4 persistence+regression, EH5 CLI subcommand. LLM-judge (EH3) deferred. Next: /opsx:new eval-domain-and-rule-scorers.",
+  "nextPendingChange": "eval-domain-and-rule-scorers",
   "roundZeroComplete": true,
   "changeStatus": {
     "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
@@ -13,7 +13,7 @@
     "S1-eval-harness": "DEFERRED -> uar-eval-harness phase"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-plan uar-eval-harness",
+  "exactNextCommand": "/opsx:new eval-domain-and-rule-scorers",
   "plannedChanges": [
     "add-run-cancellation",
     "wire-otlp-tracing-and-cost",
