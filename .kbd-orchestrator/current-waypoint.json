@@ -1,23 +1,30 @@
 {
   "phase": "emit-runtime-step-events",
   "change": null,
-  "status": "assessed",
+  "status": "planned",
   "previousPhase": "uar-harness-parity",
-  "currentTask": "Assessed H3 carry-over (emit-runtime-step-events). Backend-only gap — frontend already maps step_started/updated/finished -> RuntimeRunStep. Decisions: D-A signal origin (recommend orchestrator base marker), D-B granularity, D-C path coverage. Next: /kbd-plan emit-runtime-step-events.",
+  "currentTask": "Planned (1 change). Decisions: Option 1 orchestrator base marker + started/finished + tool-loop. Next: /opsx:new emit-runtime-step-events.",
   "nextPendingChange": "emit-runtime-step-events",
   "roundZeroComplete": true,
   "changeStatus": {
     "HP1-add-run-cancellation": "MERGED #23",
     "HP2-wire-otlp-tracing-and-cost": "MERGED #24",
-    "HP3-emit-runtime-step-events": "NOT BUILT — skipped during execution (carry-over)",
+    "HP3-emit-runtime-step-events": "NOT BUILT \u2014 skipped during execution (carry-over)",
     "HP4-wire-sycophancy-detection": "MERGED #25",
     "HP5-resumable-streaming-client": "MERGED #26",
     "HP6-mount-governance-guardrails": "MERGED #27",
     "HP7-eval-harness": "deferred by design (uar-safety-and-evals)"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-plan emit-runtime-step-events",
-  "plannedChanges": ["add-run-cancellation", "wire-otlp-tracing-and-cost", "emit-runtime-step-events", "wire-sycophancy-detection", "resumable-streaming-client", "mount-governance-guardrails"],
+  "exactNextCommand": "/opsx:new emit-runtime-step-events",
+  "plannedChanges": [
+    "add-run-cancellation",
+    "wire-otlp-tracing-and-cost",
+    "emit-runtime-step-events",
+    "wire-sycophancy-detection",
+    "resumable-streaming-client",
+    "mount-governance-guardrails"
+  ],
   "productDecisionsResolved": {
     "R2": "cancel on last-subscriber-drop + explicit POST /runs/{id}/cancel + UI stop button",
     "R3": "eval harness deferred to dedicated uar-safety-and-evals phase",
@@ -27,38 +34,42 @@
   "childPhases": [],
   "childPointer": null,
   "backend": "openspec",
-  "session_arc_outcome": "uar-harness-parity: 5 MET / 1 PARTIAL / 2 NOT MET. Shipped+merged PRs #23-#27: run cancellation (H1), OTLP tracing+latency+cost (H2), sycophancy detection (H4), resumable streaming client (H5), mounted Cedar layer + injection/PII guardrails (H6); H8 partial (cache/latency/cost/sessions wired, sandbox+mcp recorders deferred). Merged main builds clean, 232 lib tests pass, 14 new unit tests. NOT MET: H3 emit-runtime-step-events NEVER BUILT (skipped during execution — carry-over) and H7 eval harness (deferred by design). Parity: 6 red→green, 1 yellow→green, 1 red→yellow (injection/PII heuristic). Prior phase (uar-production-readiness-gaps) C1-C4 merged to main as the Round-0 gate.",
+  "session_arc_outcome": "uar-harness-parity: 5 MET / 1 PARTIAL / 2 NOT MET. Shipped+merged PRs #23-#27: run cancellation (H1), OTLP tracing+latency+cost (H2), sycophancy detection (H4), resumable streaming client (H5), mounted Cedar layer + injection/PII guardrails (H6); H8 partial (cache/latency/cost/sessions wired, sandbox+mcp recorders deferred). Merged main builds clean, 232 lib tests pass, 14 new unit tests. NOT MET: H3 emit-runtime-step-events NEVER BUILT (skipped during execution \u2014 carry-over) and H7 eval harness (deferred by design). Parity: 6 red\u2192green, 1 yellow\u2192green, 1 red\u2192yellow (injection/PII heuristic). Prior phase (uar-production-readiness-gaps) C1-C4 merged to main as the Round-0 gate.",
   "carryOver": [
-    "Credentials admin UI — SCOPED (prior carryover); open dedicated phase uar-credentials-admin-ui (UI/UX routing first)",
-    "Agent-config POST error surfacing — P3 UX polish (C3)",
-    "Protocols page explicit gating — P3 cleanup (C4)",
-    "Artifact-refiner QA gate automation — missed this phase; automate for next",
-    "Config write-back to YAML — R3 deferred tradeoff (C2)",
-    "CLI vs LLM_* precedence fix — documented known limitation (C2)"
+    "Credentials admin UI \u2014 SCOPED (prior carryover); open dedicated phase uar-credentials-admin-ui (UI/UX routing first)",
+    "Agent-config POST error surfacing \u2014 P3 UX polish (C3)",
+    "Protocols page explicit gating \u2014 P3 cleanup (C4)",
+    "Artifact-refiner QA gate automation \u2014 missed this phase; automate for next",
+    "Config write-back to YAML \u2014 R3 deferred tradeoff (C2)",
+    "CLI vs LLM_* precedence fix \u2014 documented known limitation (C2)"
   ],
   "resolvedCarryOver": [
-    "D1 blocking defect: ingestion pool shutdown unreachable — RESOLVED (C1)",
-    "DB-wins-after-first-boot: config changes invisible in UI — RESOLVED (C2)",
-    "OPENAI_API_KEY shortcut dead path — RESOLVED (C2)",
-    "Built-in agents not persisted / unreliable visibility — RESOLVED (C3)",
-    "Runtime Console dead facade / dead buttons — RESOLVED (C4)"
+    "D1 blocking defect: ingestion pool shutdown unreachable \u2014 RESOLVED (C1)",
+    "DB-wins-after-first-boot: config changes invisible in UI \u2014 RESOLVED (C2)",
+    "OPENAI_API_KEY shortcut dead path \u2014 RESOLVED (C2)",
+    "Built-in agents not persisted / unreliable visibility \u2014 RESOLVED (C3)",
+    "Runtime Console dead facade / dead buttons \u2014 RESOLVED (C4)"
   ],
   "recommendedNextPhaseSeeds": [
-    "P0 (carry-over): emit-runtime-step-events (H3) — NEVER BUILT this phase. NormalizedEvent::RuntimeStep per orchestrator iteration via existing RunEventEmitter. Small/unblocked; do first (standalone change or open the next phase with it).",
-    "P0: uar-safety-and-evals phase — eval harness (HP7), sycophancy auto-correction, injection-blocking + PII-block mode, tool_requires_approval → Cedar is_tool_allowed at the tool loop",
-    "P1: finish H8 — wire sandbox recorders (4) + set_mcp_server_status (needs per-runner hooks + MCP health loop)",
-    "P2: live-env smoke harness — make deferred manual verifications runnable (SIGTERM drain, OTLP collector span tree, mid-stream drop, injection 403)",
-    "P2: config liveness — sycophancy/guardrails read boot snapshots; wire settings-API edits into in-flight runs",
+    "P0 (carry-over): emit-runtime-step-events (H3) \u2014 NEVER BUILT this phase. NormalizedEvent::RuntimeStep per orchestrator iteration via existing RunEventEmitter. Small/unblocked; do first (standalone change or open the next phase with it).",
+    "P0: uar-safety-and-evals phase \u2014 eval harness (HP7), sycophancy auto-correction, injection-blocking + PII-block mode, tool_requires_approval \u2192 Cedar is_tool_allowed at the tool loop",
+    "P1: finish H8 \u2014 wire sandbox recorders (4) + set_mcp_server_status (needs per-runner hooks + MCP health loop)",
+    "P2: live-env smoke harness \u2014 make deferred manual verifications runnable (SIGTERM drain, OTLP collector span tree, mid-stream drop, injection 403)",
+    "P2: config liveness \u2014 sycophancy/guardrails read boot snapshots; wire settings-API edits into in-flight runs",
     "Deferred: durable workflows / checkpoint (own phase)"
   ],
   "carryOverDebt": [
-    "H3 emit-runtime-step-events — unbuilt planned change (top priority)",
-    "Unformatted routes.rs + ingestion_worker.rs on main — spawn-task chip filed; fmt-only fix",
+    "H3 emit-runtime-step-events \u2014 unbuilt planned change (top priority)",
+    "Unformatted routes.rs + ingestion_worker.rs on main \u2014 spawn-task chip filed; fmt-only fix",
     "Sandbox + MCP-status metric recorders still dead (H8 partial)",
     "Cedar is_tool_allowed mounted at HTTP only, not orchestrator tool loop"
   ],
   "blockingPrerequisite": null,
-  "parityAssessmentSummary": "uar-harness-parity: 8 goals (H1-H8). Corrections vs reflection seeds: (1) cancellation PROMOTED to P0 — client disconnect orphans runs that keep executing destructive tools + burning tokens (live bug); (2) parking-lot HookBus KILLED — redundant with existing RunEventEmitter broadcast+replay; (3) resumable streaming DOWNGRADED to frontend-only — server already has 512-event buffer + working GET /api/uar/runs/{id}/stream resume endpoint; (4) sycophancy-core is a DEAD dependency (declared, never invoked in src/). OTLP deps present but unused (1 #[instrument] on whole run path); Prometheus /metrics + JSON logging already done. Biggest true gap: evals + guardrails (no injection defense; Cedar governance_layer defined-but-unmounted). Cut C0+HP1-HP4 this phase; HP6+HP7 candidate for own uar-safety-and-evals phase.",
-  "productDecisionsRequired": ["R2 cancel semantics", "R3 eval scope", "R4 guardrail build-vs-buy"],
+  "parityAssessmentSummary": "uar-harness-parity: 8 goals (H1-H8). Corrections vs reflection seeds: (1) cancellation PROMOTED to P0 \u2014 client disconnect orphans runs that keep executing destructive tools + burning tokens (live bug); (2) parking-lot HookBus KILLED \u2014 redundant with existing RunEventEmitter broadcast+replay; (3) resumable streaming DOWNGRADED to frontend-only \u2014 server already has 512-event buffer + working GET /api/uar/runs/{id}/stream resume endpoint; (4) sycophancy-core is a DEAD dependency (declared, never invoked in src/). OTLP deps present but unused (1 #[instrument] on whole run path); Prometheus /metrics + JSON logging already done. Biggest true gap: evals + guardrails (no injection defense; Cedar governance_layer defined-but-unmounted). Cut C0+HP1-HP4 this phase; HP6+HP7 candidate for own uar-safety-and-evals phase.",
+  "productDecisionsRequired": [
+    "R2 cancel semantics",
+    "R3 eval scope",
+    "R4 guardrail build-vs-buy"
+  ],
   "updatedAt": "2026-06-02T00:00:00Z"
 }
