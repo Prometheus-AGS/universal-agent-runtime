@@ -178,7 +178,9 @@ impl DocumentIngestionExecutor {
         // Check cancellation between stages so a shutdown during a slow
         // extraction is caught before we spend time on embedding.
         if self.cancellation.is_cancelled() {
-            return Err(anyhow::anyhow!("cancelled between extraction and embedding"));
+            return Err(anyhow::anyhow!(
+                "cancelled between extraction and embedding"
+            ));
         }
 
         let provider_name = result.provider_name.clone();
