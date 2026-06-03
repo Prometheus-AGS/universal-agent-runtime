@@ -4,7 +4,7 @@
   "sourceOfTruth": ".kbd-orchestrator",
   "specSystem": "openspec",
   "activeChange": null,
-  "activePhase": "uar-safety-and-evals",
+  "activePhase": "uar-eval-harness",
   "memoryMirror": {
     "provider": "surreal_memory",
     "mcpServer": "surreal_memory",

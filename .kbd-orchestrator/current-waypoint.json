@@ -1,9 +1,9 @@
 {
-  "phase": "uar-safety-and-evals",
+  "phase": "uar-eval-harness",
   "change": null,
-  "status": "reflect_complete",
-  "previousPhase": "wire-dead-metric-recorders",
-  "currentTask": "uar-safety-and-evals reflected: 3 MET (S2/S3/S4, PRs #31-#33) / S1 deferred to own phase. Next: /kbd-new-phase (recommend uar-eval-harness).",
+  "status": "assessed",
+  "previousPhase": "uar-safety-and-evals",
+  "currentTask": "Assessed uar-eval-harness (greenfield eval subsystem, S1). Proposed EH1-EH5; decisions D1-D5 pending. Next: /kbd-plan.",
   "nextPendingChange": null,
   "roundZeroComplete": true,
   "changeStatus": {
@@ -13,7 +13,7 @@
     "S1-eval-harness": "DEFERRED -> uar-eval-harness phase"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-new-phase",
+  "exactNextCommand": "/kbd-plan uar-eval-harness",
   "plannedChanges": [
     "add-run-cancellation",
     "wire-otlp-tracing-and-cost",
