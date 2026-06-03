@@ -4,17 +4,24 @@
   "backend": "openspec",
   "sourceTool": "claude-code",
   "assessment_complete": true,
-  "plan_complete": false,
+  "plan_complete": true,
   "execute_complete": false,
   "reflect_complete": false,
-  "goals": ["H3"],
+  "goals": [
+    "H3"
+  ],
   "origin": "carry-over from uar-harness-parity (HP3, never built)",
-  "headline": "Backend-only gap — frontend runtime-ingest.ts already maps step_started/updated/finished -> RuntimeRunStep",
+  "headline": "Backend-only gap \u2014 frontend runtime-ingest.ts already maps step_started/updated/finished -> RuntimeRunStep",
   "decisionsRequired": [
     "D-A: signal origin (Option 1 orchestrator base marker [recommended] vs Option 2 manager milestones)",
     "D-B: step granularity / kinds (started only, or started+finished)",
     "D-C: path coverage (tool-loop now; graph path follow-up)"
   ],
-  "exactNextCommand": "/kbd-plan emit-runtime-step-events",
-  "updatedAt": "2026-06-03T00:00:00Z"
+  "exactNextCommand": "/opsx:new emit-runtime-step-events",
+  "updatedAt": "2026-06-03T00:00:00Z",
+  "decisionsResolved": {
+    "D-A": "Option 1 orchestrator base marker",
+    "D-B": "started+finished",
+    "D-C": "tool-loop now, graph follow-up"
+  }
 }

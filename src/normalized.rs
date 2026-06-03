@@ -189,9 +189,30 @@ pub enum NormalizedEvent {
         cache_creation_tokens: Option<u32>,
     },
 
+    /// A tool-loop iteration boundary — per-step run progress. Emitted at the
+    /// start and end of each orchestrator iteration so the Runtime Console can
+    /// show step progress.
+    #[serde(rename = "runtime.step")]
+    RuntimeStep {
+        /// Monotonic per-run step index (the orchestrator iteration number).
+        step: u32,
+        /// Whether the step is beginning or ending.
+        kind: RuntimeStepKind,
+    },
+
     /// Stream has completed successfully.
     #[serde(rename = "done")]
     Done,
+}
+
+/// Lifecycle phase of a runtime step.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimeStepKind {
+    /// The iteration is beginning.
+    Started,
+    /// The iteration has ended.
+    Finished,
 }
 
 fn default_memory_operation() -> String {
@@ -242,6 +263,7 @@ pub fn event_name(evt: &NormalizedEvent) -> &'static str {
         NormalizedEvent::Usage { .. } => "usage",
         NormalizedEvent::SandboxOutput { .. } => "sandbox.output",
         NormalizedEvent::Error { .. } => "error",
+        NormalizedEvent::RuntimeStep { .. } => "runtime.step",
         NormalizedEvent::Done => "done",
     }
 }
@@ -396,6 +418,18 @@ pub fn agui_sse_event(evt: &NormalizedEvent, request_id: &str) -> String {
                 "request_id": request_id,
                 "message": message,
                 "code": code
+            }),
+        ),
+        NormalizedEvent::RuntimeStep { step, kind } => (
+            "agui.step",
+            serde_json::json!({
+                "kind": "step",
+                "phase": match kind {
+                    RuntimeStepKind::Started => "started",
+                    RuntimeStepKind::Finished => "finished",
+                },
+                "request_id": request_id,
+                "step": step
             }),
         ),
         NormalizedEvent::Done => (

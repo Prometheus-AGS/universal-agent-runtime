@@ -1171,6 +1171,17 @@ impl RunManager {
                                     text_delta: text,
                                 })
                             }
+                            crate::normalized::NormalizedEvent::RuntimeStep { step, kind } => {
+                                let kind = match kind {
+                                    crate::normalized::RuntimeStepKind::Started => "started",
+                                    crate::normalized::RuntimeStepKind::Finished => "finished",
+                                };
+                                Some(NormalizedEvent::RuntimeStep {
+                                    run_id: execute_run_id.clone(),
+                                    step,
+                                    kind: kind.to_string(),
+                                })
+                            }
                             crate::normalized::NormalizedEvent::CitationAdded(citation) => {
                                 Some(NormalizedEvent::Citation {
                                     run_id: execute_run_id.clone(),
