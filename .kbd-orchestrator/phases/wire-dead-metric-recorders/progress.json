@@ -1,0 +1,13 @@
+{
+  "phase": "wire-dead-metric-recorders",
+  "backend": "openspec",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "goals": ["H8"],
+  "origin": "carry-over from uar-harness-parity (H8 PARTIAL)",
+  "scope": "wire all 5 dead recorders: 4 sandbox + set_mcp_server_status",
+  "updatedAt": "2026-06-03T00:00:00Z"
+}
