@@ -39,6 +39,32 @@ cargo run --bin universal-agent-runtime -- \
 git add evals/results/starter.baseline.json && git commit -m "chore(eval): update starter baseline"
 ```
 
-Until a baseline is committed, the scheduled run reports scores and is clean
-(a run can establish expectations). Baselines are updated by a deliberate commit,
-never auto-committed from CI.
+Baselines are updated by a deliberate commit, never auto-committed from CI.
+
+## Activating the gate (operator)
+
+The scheduled job runs `eval run … --require-baseline`, so **until a baseline is
+committed it fails loudly** ("blocked until seeded") rather than passing silently.
+To activate the gate:
+
+1. **Configure the model in CI** — add a repository **secret** `UAR_LLM__API_KEY`
+   (the provider key) and, optionally, a repository **variable** `UAR_EVAL_MODEL`
+   (defaults to `openai/gpt-4o-mini`).
+2. **Seed the baseline** — run the **Eval Nightly** workflow via
+   *Actions → Eval Nightly → Run workflow* with `update_baseline = true`. It writes
+   `evals/results/starter.baseline.json`.
+3. **Commit the baseline** — add and commit that file (it is not auto-committed):
+   ```bash
+   git add evals/results/starter.baseline.json
+   git commit -m "chore(eval): seed starter baseline"
+   ```
+4. **Verify it gates** — a normal (strict) run now compares against the baseline and
+   exits non-zero on regression. Locally:
+   ```bash
+   cargo run --bin universal-agent-runtime -- eval run evals/starter.yaml --require-baseline
+   ```
+   With no baseline this exits non-zero (the "blocked until seeded" signal); with one
+   committed it passes unless a scorer mean drops past the threshold.
+
+Without the `UAR_LLM__API_KEY` secret the scheduled job skips the model run entirely
+(fork-safe) — it neither seeds nor gates.

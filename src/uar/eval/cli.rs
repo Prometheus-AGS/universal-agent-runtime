@@ -71,10 +71,27 @@ pub async fn run_eval(config: &AppConfig, action: &EvalAction) -> i32 {
             threshold,
             results_dir,
             update_baseline,
-        } => run_suite(config, suite, *threshold, results_dir, *update_baseline).await,
+            require_baseline,
+        } => {
+            run_suite(
+                config,
+                suite,
+                *threshold,
+                results_dir,
+                *update_baseline,
+                *require_baseline,
+            )
+            .await
+        }
         EvalAction::List { suite, results_dir } => list_results(results_dir, suite.as_deref()),
         EvalAction::Baseline { suite, results_dir } => print_baseline(results_dir, suite),
     }
+}
+
+/// Strict-gate precondition: under `--require-baseline`, a missing (empty)
+/// baseline is a failure rather than a vacuous clean comparison.
+fn baseline_missing_under_strict(require_baseline: bool, baseline: &ScoreSummary) -> bool {
+    require_baseline && baseline.is_empty()
 }
 
 async fn run_suite(
@@ -83,6 +100,7 @@ async fn run_suite(
     threshold: f32,
     results_dir: &str,
     update_baseline: bool,
+    require_baseline: bool,
 ) -> i32 {
     let Some(path) = resolve_suite_path(suite) else {
         eprintln!(
@@ -97,6 +115,21 @@ async fn run_suite(
             return 2;
         }
     };
+
+    let dir = Path::new(results_dir);
+    // Load the baseline up front and, under `--require-baseline` (a non-seeding
+    // run), fail fast *before* any model call when it is absent — so a CI gate
+    // with no committed baseline blocks loudly without spending tokens.
+    let baseline = load_baseline(dir, &suite_obj.name)
+        .unwrap_or(None)
+        .unwrap_or_default();
+    if !update_baseline && baseline_missing_under_strict(require_baseline, &baseline) {
+        eprintln!(
+            "eval: --require-baseline set but no baseline for '{}'; seed it with 'eval run {} --update-baseline'",
+            suite_obj.name, suite
+        );
+        return 2;
+    }
 
     let orchestrator = match Orchestrator::new(
         config.llm.clone(),
@@ -123,7 +156,6 @@ async fn run_suite(
         .await;
     let summary = summarize(&results);
 
-    let dir = Path::new(results_dir);
     let ts = chrono::Utc::now().to_rfc3339();
     if let Err(e) = save_results(dir, &suite_obj.name, &results, &ts) {
         eprintln!("eval: warning — failed to save results: {e}");
@@ -146,9 +178,6 @@ async fn run_suite(
         };
     }
 
-    let baseline = load_baseline(dir, &suite_obj.name)
-        .unwrap_or(None)
-        .unwrap_or_default();
     let report = compare(&summary, &baseline, threshold);
     println!(
         "Eval '{}' ({} cases):",
@@ -225,7 +254,7 @@ fn print_baseline(results_dir: &str, suite: &str) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use super::resolve_suite_path;
+    use super::{ScoreSummary, baseline_missing_under_strict, resolve_suite_path};
 
     #[test]
     fn resolve_direct_path() {
@@ -236,5 +265,20 @@ mod tests {
         assert_eq!(resolved.as_deref(), Some(path.as_path()));
         let _ = std::fs::remove_file(&path);
         assert!(resolve_suite_path("definitely-missing-suite-xyz").is_none());
+    }
+
+    #[test]
+    fn strict_gate_only_fails_on_strict_plus_empty_baseline() {
+        let empty = ScoreSummary::new();
+        let mut present = ScoreSummary::new();
+        present.insert("non_empty".into(), 1.0);
+
+        // strict + no baseline → fail
+        assert!(baseline_missing_under_strict(true, &empty));
+        // strict + baseline present → ok
+        assert!(!baseline_missing_under_strict(true, &present));
+        // non-strict → never fails on this check (prior behavior preserved)
+        assert!(!baseline_missing_under_strict(false, &empty));
+        assert!(!baseline_missing_under_strict(false, &present));
     }
 }
