@@ -12,7 +12,7 @@
     "remove-dead-testing-tree",
     "eval-starter-suite-and-ci-gate"
   ],
-  "execute_complete": false,
+  "execute_complete": true,
   "reflect_complete": false,
   "origin": "Fast-follow on uar-eval-harness (S1 MET v1). Make the harness load-bearing + close v1 debt.",
   "goals": [
@@ -38,6 +38,7 @@
     "eval-suite-scorer-config",
     "eval-llm-judge-scorer",
     "eval-run-integration-coverage",
-    "remove-dead-testing-tree"
+    "remove-dead-testing-tree",
+    "eval-starter-suite-and-ci-gate"
   ]
 }

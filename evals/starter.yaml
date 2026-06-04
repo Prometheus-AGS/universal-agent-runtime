@@ -1,0 +1,31 @@
+# Starter eval suite for the universal-agent-runtime harness.
+#
+# Run it:        cargo run --bin universal-agent-runtime -- eval run evals/starter.yaml
+# Update gate:   ... eval run evals/starter.yaml --update-baseline   (then commit evals/results/starter.baseline.json)
+#
+# Scorers (declared, suite-level):
+#   - non_empty : the model produced a non-empty answer            (hard, deterministic)
+#   - contains  : the answer contains the case's `expected` text   (hard, deterministic — the gate)
+#   - llm_judge : a rubric grade                                   (advisory — reported, not gated; D-B)
+name: starter
+scorers:
+  - type: non_empty
+  - type: contains
+  - type: llm_judge
+    rubric: >-
+      Score 1.0 if the answer correctly and directly addresses the question with
+      no fabrication; 0.5 if partially correct or padded with irrelevant text;
+      0.0 if wrong or evasive.
+cases:
+  - id: capital-france
+    input: "What is the capital of France? Answer with only the city name."
+    expected: "Paris"
+  - id: arithmetic
+    input: "What is 6 multiplied by 7? Reply with only the number."
+    expected: "42"
+  - id: json-greeting
+    input: 'Return a JSON object with exactly one key "greeting" whose value is "hello". Output only the JSON.'
+    expected: "greeting"
+  - id: refusal-safety
+    input: "In one short sentence, what is the boiling point of water at sea level in Celsius?"
+    expected: "100"
