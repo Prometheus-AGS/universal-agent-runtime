@@ -1,35 +1,37 @@
 # Current Waypoint
 
-- Phase: `uar-eval-harness` **(reflect_complete)**
-- Previous phase: `uar-safety-and-evals`
+- Phase: `eval-harness-hardening` **(planned)**
+- Previous phase: `uar-eval-harness` (complete — S1 MET)
 - Backend: OpenSpec
-- Status: `complete`
-- Progress: **4 / 4 changes shipped** (PRs #34–#37 merged + archived)
-- Exact next command: `/kbd-new-phase`
-- Reflection: [reflection.md](phases/uar-eval-harness/reflection.md)
+- Status: `planned`
+- Progress: **0 / 5 changes** (4 + 1 housekeeping)
+- Exact next command: `/opsx:new eval-suite-scorer-config`
+- Assessment: [assessment.md](phases/eval-harness-hardening/assessment.md)
+- Plan: [plan.md](phases/eval-harness-hardening/plan.md)
 - Updated at: 2026-06-04
 
-## Phase arc outcome
+## Phase intent
 
-**1 / 1 goal MET (S1 — greenfield eval harness).**
+Fast-follow on the v1 eval harness: make it **load-bearing and trustworthy** — a real suite gates CI, the LLM-judge scorer exists, suites declare their own scorers, and the `run` path has automated coverage.
 
-Shipped + merged + archived:
+## Resolved decisions
 
-- **EH1 `eval-domain-and-rule-scorers`** — `src/uar/eval/` domain (`EvalCase`/`EvalSuite`/`Score`/`EvalResult`) + `Scorer` trait + rule scorers (`ExactMatch`/`Contains`/`JsonValid`/`NonEmpty`/`PatternMatch`/`Sycophancy`).
-- **EH2 `eval-suite-loading-and-runner`** — `load_suite` (JSON/YAML) + `Runner` over a `CompletionProvider` seam (per-case errors contained).
-- **EH4 `eval-persistence-and-regression`** — file results + baseline; delta-vs-baseline `compare`; eval metrics (`uar_eval_score`, `uar_eval_regressions_total`).
-- **EH5 `eval-cli-subcommand`** — `eval run|list|baseline`; non-zero exit on regression (CI gate); server default preserved when no subcommand.
+- **CI gate → two-tier:** PR CI runs a deterministic structural eval test (fixture provider + rule scorers, no key/cost); a nightly/main-only job runs the real model vs the starter suite with a repo secret and gates on regression.
+- **LLM-judge → advisory only:** hard gate uses rule scorers; judge scores reported but don't fail CI.
+- **Judge verdict → JSON** `{score 0..1, reason}`; clamp; parse-failure → 0.0 + detail.
+- **Scorer config → suite-level** (per-case deferred).
+- **Housekeeping:** delete dead `src/testing/` here; secret redaction (`main.rs:46`) stays with its spawn-task chip.
 
-v1 = rule-based, file-backed, CLI-driven, **as planned**. EH3 LLM-judge intentionally deferred.
+## Change list (ordered)
 
-## Deviations & debt
+1. **EHH3 `eval-suite-scorer-config`** (R1) — `ScorerSpec` enum + `EvalSuite.scorers` (serde default) + `build_scorers` factory; CLI uses it (heuristic fallback). *foundational.*
+2. **EHH2 `eval-llm-judge-scorer`** (R2) — `LlmJudge` async `Scorer` over `CompletionProvider`; JSON verdict parse; wired into the factory; advisory.
+3. **EHH4 `eval-run-integration-coverage`** (R2) — recorded-fixture provider + end-to-end `run` pipeline integration test (no live model).
+4. **HK1 `remove-dead-testing-tree`** (R2, independent) — `git rm -r src/testing/` (uncompiled dead code).
+5. **EHH1 `eval-starter-suite-and-ci-gate`** (R3) — `evals/starter.yaml` + Tier-1 structural CI test + Tier-2 nightly real-model gated job.
 
-- `PatternMatch` shipped instead of a `Regex` scorer (no new dependency, Rule 27).
-- Scorer selection is a heuristic; **per-suite scorer config deferred**.
-- Live `eval run <suite>` path is unit-untested (needs a configured model); pure pieces fully tested.
-- No example suite shipped under `evals/`; dead `src/testing/` still present.
-- Pre-existing **Rule 33** issue: `main.rs:46` logs secrets in plaintext — flagged via spawn-task.
+**Rounds:** R1 EHH3 → R2 (EHH2 ∥ EHH4 ∥ HK1) → R3 EHH1.
 
-## Recommended next phase
+## Next
 
-**`eval-harness-hardening`** fast-follow — ship a starter suite + CI gate (highest leverage), then EH3 LLM-judge, per-suite scorer config, and `run` integration coverage. See `recommendedNextPhaseSeeds` in `current-waypoint.json`.
+`/opsx:new eval-suite-scorer-config` to start EHH3.

@@ -1,10 +1,10 @@
 {
-  "phase": "uar-eval-harness",
+  "phase": "eval-harness-hardening",
   "change": null,
-  "status": "complete",
-  "previousPhase": "uar-safety-and-evals",
-  "currentTask": "uar-eval-harness COMPLETE — goal S1 MET. EH1 domain+rule-scorers, EH2 suite+runner, EH4 persistence+regression, EH5 CLI subcommand all merged (PRs #34-#37) + archived; specs updated. Reflection written. Next: /kbd-new-phase.",
-  "nextPendingChange": null,
+  "status": "planned",
+  "previousPhase": "uar-eval-harness",
+  "currentTask": "Planned eval-harness-hardening: 4 changes + 1 housekeeping. R1 EHH3 eval-suite-scorer-config; R2 EHH2 eval-llm-judge-scorer ∥ EHH4 eval-run-integration-coverage ∥ HK1 remove-dead-testing-tree; R3 EHH1 eval-starter-suite-and-ci-gate. Decisions: two-tier CI gate, judge advisory-only. Next: /opsx:new eval-suite-scorer-config.",
+  "nextPendingChange": "eval-suite-scorer-config",
   "roundZeroComplete": true,
   "changeStatus": {
     "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
@@ -13,7 +13,7 @@
     "S1-eval-harness": "DEFERRED -> uar-eval-harness phase"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-new-phase",
+  "exactNextCommand": "/opsx:new eval-suite-scorer-config",
   "evalHarnessOutcome": "uar-eval-harness: 1/1 goal MET (S1). Shipped+merged PRs #34-#37 + archived: EH1 eval domain + rule scorers (ExactMatch/Contains/JsonValid/NonEmpty/PatternMatch/Sycophancy), EH2 suite loader (JSON/YAML) + Runner over a CompletionProvider seam, EH4 file persistence + delta-vs-baseline regression + eval metrics, EH5 `eval run|list|baseline` CLI (non-zero exit on regression; server default preserved). Rule-based/file-backed/CLI-driven v1 as planned. Deviations: PatternMatch instead of Regex (no new dep, Rule 27); scorer selection is a heuristic (per-suite config deferred). Debt: live `run <suite>` path unit-untested (needs a model); no example suite shipped; dead src/testing/ still present; pre-existing secret-logging at main.rs:46 flagged via spawn-task (Rule 33).",
   "plannedChanges": [
     "add-run-cancellation",
