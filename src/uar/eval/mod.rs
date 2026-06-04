@@ -8,6 +8,8 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 pub mod cli;
+#[cfg(test)]
+mod integration_tests;
 mod judge;
 mod persistence;
 mod runner;

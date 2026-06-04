@@ -36,6 +36,7 @@
   "updatedAt": "2026-06-04T00:00:00Z",
   "completedChanges": [
     "eval-suite-scorer-config",
-    "eval-llm-judge-scorer"
+    "eval-llm-judge-scorer",
+    "eval-run-integration-coverage"
   ]
 }
