@@ -4,7 +4,7 @@
   "backend": "openspec",
   "sourceTool": "claude-code",
   "assessment_complete": true,
-  "plan_complete": false,
+  "plan_complete": true,
   "execute_complete": false,
   "reflect_complete": false,
   "origin": "Follow-up seeds from eval-harness-hardening: make the nightly eval gate enforce; close the carried secret-logging item.",
@@ -15,7 +15,7 @@
   ],
   "keyFindings": [
     "SECURITY ALREADY DONE: config.rs has custom redacting Debug for LlmConfig (api_key+provider_keys), SecurityConfig (jwt_secret), PersistenceConfig + MemoryConfig (passwords/keys). main.rs:48 is the only full-config dump and is now masked. No other secret-logging sites. Goal 2 essentially MET on main.",
-    "GATE GAP (G1): eval run exits 0 with no baseline (silently passes) — the real code gap is the invisible unseeded state.",
+    "GATE GAP (G1): eval run exits 0 with no baseline (silently passes) \u2014 the real code gap is the invisible unseeded state.",
     "OPERATOR-ONLY (G3): configuring UAR_LLM__API_KEY secret + first workflow_dispatch run cannot be done by the agent."
   ],
   "decisionsRequired": [
@@ -27,5 +27,13 @@
     "eval-require-baseline-flag (GA1)",
     "eval-gate-operator-runbook (GA-DOC)"
   ],
-  "updatedAt": "2026-06-04T00:00:00Z"
+  "updatedAt": "2026-06-04T00:00:00Z",
+  "plannedChanges": [
+    "eval-require-baseline-gate"
+  ],
+  "decisionsResolved": {
+    "D-A": "operator-seeds the baseline (no agent model call); --require-baseline keeps unseeded state safe",
+    "D-B": "minimal scope (GA1 + runbook + verify security); QA1 refiner automation deferred",
+    "D-C": "--require-baseline opt-in flag, default off (preserves EH5 behavior)"
+  }
 }

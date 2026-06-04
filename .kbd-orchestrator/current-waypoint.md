@@ -1,34 +1,37 @@
 # Current Waypoint
 
-- Phase: `eval-harness-hardening` **(reflect_complete)**
-- Previous phase: `uar-eval-harness` (complete — S1 MET)
+- Phase: `gate-activation-and-security-cleanup` **(planned)**
+- Previous phase: `eval-harness-hardening` (complete — 4/4 MET + HK1)
 - Backend: OpenSpec
-- Status: `complete`
-- Progress: **5 / 5 changes shipped** (PRs #38–#42 merged; 4 archived + HK1 chore)
-- Exact next command: `/kbd-new-phase`
-- Reflection: [reflection.md](phases/eval-harness-hardening/reflection.md)
+- Status: `planned`
+- Progress: **0 / 1 change** (+ 1 verification task, no code)
+- Exact next command: `/opsx:new eval-require-baseline-gate`
+- Assessment: [assessment.md](phases/gate-activation-and-security-cleanup/assessment.md)
+- Plan: [plan.md](phases/gate-activation-and-security-cleanup/plan.md)
 - Updated at: 2026-06-04
 
-## Phase arc outcome
+## Phase intent (small phase)
 
-**4 / 4 goals MET + 1 housekeeping (HK1).**
+Make the nightly eval gate *enforce* (not silently pass when unseeded) and close the carried secret-logging item.
 
-- **EHH3 `eval-suite-scorer-config`** (#38) — `ScorerSpec` + `EvalSuite.scorers` (serde-default) + `build_scorers` factory; CLI uses it (heuristic fallback retained).
-- **EHH2 `eval-llm-judge-scorer`** (#39) — `LlmJudge` async scorer; rubric prompt; deterministic JSON-verdict parse; advisory (D-B).
-- **EHH4 `eval-run-integration-coverage`** (#40) — recorded-fixture provider + end-to-end pipeline tests (no live model).
-- **HK1 `remove-dead-testing-tree`** (#41) — deleted uncompiled `src/testing/` (27 files, ~22.7k lines).
-- **EHH1 `eval-starter-suite-and-ci-gate`** (#42) — `evals/starter.yaml` + two-tier CI gate (Tier-1 keyless structural test per PR; Tier-2 nightly real-model gated workflow, fork-safe, Rule 33).
+**Key finding:** secret redaction is **already done on `main`** (`config.rs` redacting `Debug` impls) — Goal 2 essentially MET. So the only code is one small change; the rest is a runbook + verification.
 
-35 eval lib tests green. The harness is now **load-bearing** (suite + gate), **trustworthy** (judge + integration coverage), and **configurable** (suite-declared scorers).
+## Resolved decisions
 
-## Debt / follow-ups
+- **D-A → operator-seeds the baseline** (no agent model call; human owns the reference bar). `--require-baseline` keeps the unseeded state safe meanwhile.
+- **D-B → minimal scope** (GA1 + runbook + verify security). Refiner QA-automation deferred.
+- **D-C → `--require-baseline` opt-in** (default off preserves EH5 behavior; nightly opts in).
 
-- **P0 — seed + prove the gate:** no baseline shipped, so Tier-2 is *informational until seeded*. Configure `UAR_LLM__API_KEY`, run nightly via `workflow_dispatch --update_baseline`, commit `evals/results/starter.baseline.json`, confirm a deliberate regression fails the job. Tier-2 has not run in CI yet.
-- **P1 — secret-redaction chip** (`main.rs:46`, Rule 33) still open.
-- **P1 — artifact-refiner QA-gate automation** still not wired (carried 2 phases).
-- **P2** — per-case scorer overrides; per-judge model override.
-- **Later** — HTTP `POST /api/uar/eval/run`; SurrealDB result storage; true-regex scorer; expand starter suite.
+## Change list
+
+1. **GA1 `eval-require-baseline-gate`** — `EvalAction::Run` gains `--require-baseline`; `run_suite` exits non-zero when set + no baseline (fail loudly); nightly workflow adds the flag; `evals/README.md` gets an operator runbook for seeding + activating the gate. Pure-helper unit test for the strict-missing decision.
+2. **SC1 (no code)** — verify the config dump is masked at runtime; dismiss the secret-redaction spawn-task chip; record Goal 2 as pre-existing MET. Folded into reflect.
+
+## Deferred (not this phase)
+
+- Operator actions: configure `UAR_LLM__API_KEY` secret + first `workflow_dispatch` seed + commit baseline (human-only; documented).
+- QA1 refiner QA-gate automation (own phase); per-case scorers; per-judge model; HTTP eval endpoint; SurrealDB storage.
 
 ## Next
 
-`/kbd-new-phase` — recommended next is a short gate-activation + security-cleanup phase (seed the baseline, redact secrets, automate the QA gate).
+`/opsx:new eval-require-baseline-gate` to start GA1.

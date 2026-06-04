@@ -1,10 +1,10 @@
 {
   "phase": "gate-activation-and-security-cleanup",
   "change": null,
-  "status": "assessing",
+  "status": "planned",
   "previousPhase": "eval-harness-hardening",
-  "currentTask": "Assessed gate-activation-and-security-cleanup. KEY FINDING: secret redaction is ALREADY DONE on main (config.rs redacting Debug impls) \u2014 Goal 2 essentially MET. Remaining agent work is small: GA1 --require-baseline flag (unseeded gate fails loudly), a runbook for operator-only steps (CI secret + first run). Decisions D-A/D-B/D-C for plan. Next: /kbd-plan gate-activation-and-security-cleanup.",
-  "nextPendingChange": null,
+  "currentTask": "Planned gate-activation-and-security-cleanup (small phase). 1 change: GA1 eval-require-baseline-gate (--require-baseline flag so the unseeded nightly gate fails loudly + operator runbook in evals/README.md). SC1 (verify security/close chip) folded into reflect \u2014 security already done on main. Decisions: operator-seeds baseline, minimal scope, opt-in flag. Next: /opsx:new eval-require-baseline-gate.",
+  "nextPendingChange": "eval-require-baseline-gate",
   "roundZeroComplete": true,
   "changeStatus": {
     "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
@@ -13,7 +13,7 @@
     "S1-eval-harness": "DEFERRED -> uar-eval-harness phase"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-plan gate-activation-and-security-cleanup",
+  "exactNextCommand": "/opsx:new eval-require-baseline-gate",
   "evalHarnessHardeningOutcome": "eval-harness-hardening: 4/4 goals MET + HK1. PRs #38-#42 merged + archived. EHH3 suite-declared scorers (ScorerSpec + build_scorers factory, serde-default backward compat); EHH2 LlmJudge scorer (rubric, deterministic JSON parse, advisory per D-B); EHH4 recorded-fixture provider + end-to-end pipeline integration tests; HK1 deleted dead src/testing/ (27 files, ~22.7k lines); EHH1 evals/starter.yaml + two-tier CI gate (Tier-1 keyless structural test per PR, Tier-2 nightly real-model gated workflow, fork-safe, Rule 33). 35 eval lib tests green. DEBT: no baseline shipped so Tier-2 is informational until seeded (top follow-up); Tier-2 never run in CI yet (needs UAR_LLM__API_KEY secret + workflow_dispatch); secret-redaction chip (main.rs:46, Rule 33) still open; refiner QA-gate automation still not wired.",
   "evalHarnessOutcome": "uar-eval-harness: 1/1 goal MET (S1). Shipped+merged PRs #34-#37 + archived: EH1 eval domain + rule scorers (ExactMatch/Contains/JsonValid/NonEmpty/PatternMatch/Sycophancy), EH2 suite loader (JSON/YAML) + Runner over a CompletionProvider seam, EH4 file persistence + delta-vs-baseline regression + eval metrics, EH5 `eval run|list|baseline` CLI (non-zero exit on regression; server default preserved). Rule-based/file-backed/CLI-driven v1 as planned. Deviations: PatternMatch instead of Regex (no new dep, Rule 27); scorer selection is a heuristic (per-suite config deferred). Debt: live `run <suite>` path unit-untested (needs a model); no example suite shipped; dead src/testing/ still present; pre-existing secret-logging at main.rs:46 flagged via spawn-task (Rule 33).",
   "plannedChanges": [
