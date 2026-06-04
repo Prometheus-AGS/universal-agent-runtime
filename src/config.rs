@@ -239,7 +239,18 @@ pub enum LogFormat {
     Pretty,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+/// Placeholder rendered in `Debug` output in place of any secret value.
+/// Keeps `tracing::info!("… {config:?}")` dumps free of plaintext credentials.
+const REDACTED: &str = "***redacted***";
+
+/// Mask an optional secret for `Debug`: a present value becomes
+/// `Some("***redacted***")`, while `None` is preserved so "not set" stays
+/// visible without leaking the value.
+fn redact_opt(value: &Option<String>) -> Option<&'static str> {
+    value.as_ref().map(|_| REDACTED)
+}
+
+#[derive(Deserialize, Clone)]
 pub struct SecurityConfig {
     pub jwt_required: bool,
     pub jwt_secret: String,
@@ -248,6 +259,19 @@ pub struct SecurityConfig {
     /// Set to `false` for trusted local development only.
     #[serde(default = "SecurityConfig::default_settings_mutation_auth_required")]
     pub settings_mutation_auth_required: bool,
+}
+
+impl std::fmt::Debug for SecurityConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SecurityConfig")
+            .field("jwt_required", &self.jwt_required)
+            .field("jwt_secret", &REDACTED)
+            .field(
+                "settings_mutation_auth_required",
+                &self.settings_mutation_auth_required,
+            )
+            .finish()
+    }
 }
 
 impl SecurityConfig {
@@ -339,7 +363,7 @@ impl ResilienceConfig {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct PersistenceConfig {
     pub provider: String,
     pub database_url: String,
@@ -361,6 +385,21 @@ pub struct PersistenceConfig {
     /// Optional SurrealDB database name for UAR persistence (default `uar`).
     #[serde(default)]
     pub surreal_db: Option<String>,
+}
+
+impl std::fmt::Debug for PersistenceConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PersistenceConfig")
+            .field("provider", &self.provider)
+            .field("database_url", &self.database_url)
+            .field("vector_dimension", &self.vector_dimension)
+            .field("external_cache_enabled", &self.external_cache_enabled)
+            .field("surreal_user", &self.surreal_user)
+            .field("surreal_pass", &redact_opt(&self.surreal_pass))
+            .field("surreal_ns", &self.surreal_ns)
+            .field("surreal_db", &self.surreal_db)
+            .finish()
+    }
 }
 
 /// Configuration for file processing and uploads.
@@ -701,7 +740,7 @@ impl Default for ChunkingConfig {
 // =============================================================================
 
 /// Configuration for the in-process agent memory system, backed by surreal-memory + SurrealDB/SurrealKV.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct MemoryConfig {
     /// Enable the memory system (default: false — opt-in).
     #[serde(default)]
@@ -760,6 +799,31 @@ pub struct MemoryConfig {
     /// Env var: UAR_MEMORY__SURREAL_PASS
     #[serde(default)]
     pub surreal_pass: Option<String>,
+}
+
+impl std::fmt::Debug for MemoryConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MemoryConfig")
+            .field("enabled", &self.enabled)
+            .field("db_path", &self.db_path)
+            .field("embedding_provider", &self.embedding_provider)
+            .field("embedding_model", &self.embedding_model)
+            .field("openai_api_key", &redact_opt(&self.openai_api_key))
+            .field("cohere_api_key", &redact_opt(&self.cohere_api_key))
+            .field("auto_capture", &self.auto_capture)
+            .field("vector_weight", &self.vector_weight)
+            .field("bm25_weight", &self.bm25_weight)
+            .field("inject_context", &self.inject_context)
+            .field("max_context_tokens", &self.max_context_tokens)
+            .field("mcp_http_enabled", &self.mcp_http_enabled)
+            .field("mcp_http_path", &self.mcp_http_path)
+            .field("namespace", &self.namespace)
+            .field("database", &self.database)
+            .field("surreal_endpoint", &self.surreal_endpoint)
+            .field("surreal_user", &self.surreal_user)
+            .field("surreal_pass", &redact_opt(&self.surreal_pass))
+            .finish()
+    }
 }
 
 impl MemoryConfig {
@@ -1229,7 +1293,7 @@ pub fn build_client_config(llm: &LlmConfig) -> liter_llm::ClientConfig {
 /// Settings are loaded from all layers via [`load_llm_config`]:
 /// compiled defaults → `config.yaml` `llm:` section → `UAR_LLM__*` env vars →
 /// `LLM_*` legacy env vars → CLI arguments.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct LlmConfig {
     /// Default model in `provider/model` format (e.g., `"openai/gpt-4o"`).
     #[serde(default = "LlmConfig::default_model")]
@@ -1293,6 +1357,37 @@ pub struct LlmConfig {
     /// NOT read from `config.yaml` — always sourced from env at boot.
     #[serde(default)]
     pub provider_keys: std::collections::HashMap<String, String>,
+}
+
+impl std::fmt::Debug for LlmConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Show which providers have keys (provider ids are not secret) but mask
+        // every value; sorted for deterministic output.
+        let provider_keys: std::collections::BTreeMap<&str, &str> = self
+            .provider_keys
+            .keys()
+            .map(|provider| (provider.as_str(), REDACTED))
+            .collect();
+        f.debug_struct("LlmConfig")
+            .field("model", &self.model)
+            .field("api_key", &redact_opt(&self.api_key))
+            .field("api_key_env", &self.api_key_env)
+            .field("base_url", &self.base_url)
+            .field("protocol", &self.protocol)
+            .field("parallel_tool_calls", &self.parallel_tool_calls)
+            .field("timeout_secs", &self.timeout_secs)
+            .field("max_retries", &self.max_retries)
+            .field("cache", &self.cache)
+            .field("budget", &self.budget)
+            .field("rate_limit", &self.rate_limit)
+            .field("cost_tracking", &self.cost_tracking)
+            .field("tracing", &self.tracing)
+            .field("cooldown_secs", &self.cooldown_secs)
+            .field("health_check_secs", &self.health_check_secs)
+            .field("thinking_budget", &self.thinking_budget)
+            .field("provider_keys", &provider_keys)
+            .finish()
+    }
 }
 
 impl LlmConfig {
