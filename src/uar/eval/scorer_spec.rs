@@ -9,13 +9,12 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    Contains, EvalSuite, ExactMatch, JsonValid, NonEmpty, PatternMatch, PatternMode, Scorer,
-    Sycophancy,
+    CompletionProvider, Contains, EvalSuite, ExactMatch, JsonValid, LlmJudge, NonEmpty,
+    PatternMatch, PatternMode, Scorer, Sycophancy,
 };
 
 /// A declarative scorer entry in a suite file. Serde-tagged by `type`
 /// (`snake_case`), e.g. `{ "type": "pattern_match", "pattern": "ERROR", "mode": "starts_with" }`.
-/// The `llm_judge` variant is added by a later change.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ScorerSpec {
@@ -23,13 +22,22 @@ pub enum ScorerSpec {
     Contains,
     JsonValid,
     NonEmpty,
-    PatternMatch { pattern: String, mode: PatternMode },
+    PatternMatch {
+        pattern: String,
+        mode: PatternMode,
+    },
     Sycophancy,
+    /// LLM-as-judge: grade against `rubric` via the run's completion provider.
+    /// Advisory (not part of the hard regression gate).
+    LlmJudge {
+        rubric: String,
+    },
 }
 
 impl ScorerSpec {
-    /// Construct the concrete scorer for this spec.
-    fn build(&self) -> Arc<dyn Scorer> {
+    /// Construct the concrete scorer for this spec. `provider` is used only by
+    /// the `llm_judge` variant; rule scorers ignore it.
+    fn build(&self, provider: &Arc<dyn CompletionProvider>) -> Arc<dyn Scorer> {
         match self {
             ScorerSpec::ExactMatch => Arc::new(ExactMatch),
             ScorerSpec::Contains => Arc::new(Contains),
@@ -40,18 +48,25 @@ impl ScorerSpec {
                 mode: *mode,
             }),
             ScorerSpec::Sycophancy => Arc::new(Sycophancy),
+            ScorerSpec::LlmJudge { rubric } => {
+                Arc::new(LlmJudge::new(Arc::clone(provider), rubric.clone()))
+            }
         }
     }
 }
 
 /// Build the scorers for a suite: its declared [`ScorerSpec`]s, or — when it
-/// declares none — the default set from [`default_scorers`].
+/// declares none — the default set from [`default_scorers`]. `provider` backs
+/// any `llm_judge` scorers.
 #[must_use]
-pub fn build_scorers(suite: &EvalSuite) -> Vec<Arc<dyn Scorer>> {
+pub fn build_scorers(
+    suite: &EvalSuite,
+    provider: &Arc<dyn CompletionProvider>,
+) -> Vec<Arc<dyn Scorer>> {
     if suite.scorers.is_empty() {
         return default_scorers(suite);
     }
-    suite.scorers.iter().map(ScorerSpec::build).collect()
+    suite.scorers.iter().map(|s| s.build(provider)).collect()
 }
 
 /// Default scorer set when a suite declares none: quality scorers always, plus
@@ -71,7 +86,21 @@ pub fn default_scorers(suite: &EvalSuite) -> Vec<Arc<dyn Scorer>> {
 #[cfg(test)]
 mod tests {
     use super::{ScorerSpec, build_scorers, default_scorers};
-    use crate::uar::eval::{EvalCase, EvalSuite, PatternMode};
+    use crate::uar::eval::{CompletionProvider, EvalCase, EvalSuite, PatternMode};
+    use async_trait::async_trait;
+    use std::sync::Arc;
+
+    struct StubProvider;
+    #[async_trait]
+    impl CompletionProvider for StubProvider {
+        async fn complete(&self, _input: &str) -> anyhow::Result<String> {
+            Ok(r#"{"score": 1.0}"#.to_string())
+        }
+    }
+
+    fn provider() -> Arc<dyn CompletionProvider> {
+        Arc::new(StubProvider)
+    }
 
     fn suite(expecteds: &[Option<&str>], scorers: Vec<ScorerSpec>) -> EvalSuite {
         EvalSuite {
@@ -111,13 +140,30 @@ mod tests {
             &[Some("a")],
             vec![ScorerSpec::JsonValid, ScorerSpec::NonEmpty],
         );
-        assert_eq!(build_scorers(&s).len(), 2);
+        assert_eq!(build_scorers(&s, &provider()).len(), 2);
+    }
+
+    #[test]
+    fn build_scorers_includes_llm_judge_when_declared() {
+        let s = suite(
+            &[None],
+            vec![
+                ScorerSpec::NonEmpty,
+                ScorerSpec::LlmJudge {
+                    rubric: "ok?".into(),
+                },
+            ],
+        );
+        assert_eq!(build_scorers(&s, &provider()).len(), 2);
     }
 
     #[test]
     fn build_scorers_falls_back_to_default_when_empty() {
         let s = suite(&[Some("a"), Some("b")], vec![]);
-        assert_eq!(build_scorers(&s).len(), default_scorers(&s).len());
+        assert_eq!(
+            build_scorers(&s, &provider()).len(),
+            default_scorers(&s).len()
+        );
     }
 
     #[test]
@@ -126,7 +172,18 @@ mod tests {
         let s: EvalSuite =
             serde_json::from_str(r#"{"name":"x","cases":[{"id":"a","input":"i"}]}"#).unwrap();
         assert!(s.scorers.is_empty());
-        assert!(!build_scorers(&s).is_empty());
+        assert!(!build_scorers(&s, &provider()).is_empty());
+    }
+
+    #[test]
+    fn llm_judge_spec_round_trips() {
+        let spec = ScorerSpec::LlmJudge {
+            rubric: "Is it correct?".into(),
+        };
+        let json = serde_json::to_string(&spec).unwrap();
+        assert!(json.contains("\"type\":\"llm_judge\""));
+        let back: ScorerSpec = serde_json::from_str(&json).unwrap();
+        assert_eq!(spec, back);
     }
 
     #[test]
