@@ -15,8 +15,8 @@ use crate::llm::orchestrator::Orchestrator;
 use crate::llm::{Message, MessageContent, MessageRole};
 use crate::mcp::registry::McpRegistry;
 use crate::uar::eval::{
-    CompletionProvider, Contains, EvalSuite, ExactMatch, NonEmpty, Runner, ScoreSummary, Scorer,
-    Sycophancy, compare, load_baseline, load_suite, save_baseline, save_results, summarize,
+    CompletionProvider, Runner, ScoreSummary, build_scorers, compare, load_baseline, load_suite,
+    save_baseline, save_results, summarize,
 };
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
 use crate::uar::telemetry::metrics;
@@ -54,20 +54,6 @@ fn resolve_suite_path(suite: &str) -> Option<PathBuf> {
         }
     }
     None
-}
-
-/// Default scorer set for a suite: quality scorers always, plus expected-based
-/// scorers when every case carries an `expected` output. (Per-suite scorer
-/// configuration is a follow-up.)
-fn select_scorers(suite: &EvalSuite) -> Vec<Arc<dyn Scorer>> {
-    let mut scorers: Vec<Arc<dyn Scorer>> = Vec::new();
-    if !suite.cases.is_empty() && suite.cases.iter().all(|c| c.expected.is_some()) {
-        scorers.push(Arc::new(ExactMatch));
-        scorers.push(Arc::new(Contains));
-    }
-    scorers.push(Arc::new(NonEmpty));
-    scorers.push(Arc::new(Sycophancy));
-    scorers
 }
 
 fn print_summary(summary: &ScoreSummary) {
@@ -124,7 +110,7 @@ async fn run_suite(
         }
     };
     let provider = OrchestratorCompletionProvider { orchestrator };
-    let scorers = select_scorers(&suite_obj);
+    let scorers = build_scorers(&suite_obj);
 
     let results = Runner
         .run(&suite_obj, &scorers, &provider, Some(&config.llm.model))
@@ -233,24 +219,7 @@ fn print_baseline(results_dir: &str, suite: &str) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{resolve_suite_path, select_scorers};
-    use crate::uar::eval::{EvalCase, EvalSuite};
-
-    fn suite(expecteds: &[Option<&str>]) -> EvalSuite {
-        EvalSuite {
-            name: "s".into(),
-            cases: expecteds
-                .iter()
-                .enumerate()
-                .map(|(i, e)| EvalCase {
-                    id: format!("c{i}"),
-                    input: "in".into(),
-                    expected: e.map(str::to_string),
-                    metadata: serde_json::Map::new(),
-                })
-                .collect(),
-        }
-    }
+    use super::resolve_suite_path;
 
     #[test]
     fn resolve_direct_path() {
@@ -261,15 +230,5 @@ mod tests {
         assert_eq!(resolved.as_deref(), Some(path.as_path()));
         let _ = std::fs::remove_file(&path);
         assert!(resolve_suite_path("definitely-missing-suite-xyz").is_none());
-    }
-
-    #[test]
-    fn scorers_include_expected_based_only_when_all_have_expected() {
-        // all have expected → exact+contains+nonempty+sycophancy = 4
-        assert_eq!(select_scorers(&suite(&[Some("a"), Some("b")])).len(), 4);
-        // some missing expected → only nonempty+sycophancy = 2
-        assert_eq!(select_scorers(&suite(&[Some("a"), None])).len(), 2);
-        // empty suite → 2 (no expected-based)
-        assert_eq!(select_scorers(&suite(&[])).len(), 2);
     }
 }

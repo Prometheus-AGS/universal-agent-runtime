@@ -16,22 +16,25 @@
   "reflect_complete": false,
   "origin": "Fast-follow on uar-eval-harness (S1 MET v1). Make the harness load-bearing + close v1 debt.",
   "goals": [
-    "EHH1 starter suite + CI regression gate (eval run) — make the harness load-bearing",
+    "EHH1 starter suite + CI regression gate (eval run) \u2014 make the harness load-bearing",
     "EHH2 EH3 LLM-as-judge scorer (rubric via chat_non_streaming + deterministic parse)",
     "EHH3 per-suite scorer configuration (remove EH5 heuristic)",
     "EHH4 integration coverage for `run` (recorded-fixture provider or gated live smoke)"
   ],
   "decisionsResolved": {
     "D-A": "two-tier CI gate: PR CI runs a deterministic structural eval test (fixture provider, rule scorers, no key); a separate nightly/main-only job runs the real model vs the starter suite with a repo secret and gates on regression",
-    "D-B": "LLM-judge scores are advisory only — computed/persisted/reported but do NOT fail CI; hard gate uses deterministic rule scorers",
+    "D-B": "LLM-judge scores are advisory only \u2014 computed/persisted/reported but do NOT fail CI; hard gate uses deterministic rule scorers",
     "D-C": "judge verdict JSON {score: 0..1, reason}; clamp; parse-failure -> 0.0 + detail (default)",
     "D-D": "suite-level scorers (apply to all cases) in v1.1; per-case overrides deferred (default)",
     "D-E": "fold dead src/testing/ deletion into this phase; secret redaction (main.rs:46) stays with its spawn-task chip"
   },
   "candidateSeeds": [
-    "P1: secret-logging redaction at main.rs:46 (Rule 33) — spawn-task chip filed",
+    "P1: secret-logging redaction at main.rs:46 (Rule 33) \u2014 spawn-task chip filed",
     "P3: delete/compile-gate dead src/testing/ tree",
     "Deferred: HTTP POST /api/uar/eval/run; SurrealDB eval result storage; true-regex scorer"
   ],
-  "updatedAt": "2026-06-04T00:00:00Z"
+  "updatedAt": "2026-06-04T00:00:00Z",
+  "completedChanges": [
+    "eval-suite-scorer-config"
+  ]
 }

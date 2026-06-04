@@ -10,11 +10,13 @@ use serde::{Deserialize, Serialize};
 pub mod cli;
 mod persistence;
 mod runner;
+mod scorer_spec;
 pub use persistence::{
     RegressionEntry, RegressionReport, ScoreSummary, compare, load_baseline, save_baseline,
     save_results, summarize,
 };
 pub use runner::{CompletionProvider, Runner, load_suite};
+pub use scorer_spec::{ScorerSpec, build_scorers, default_scorers};
 
 /// A single evaluation case: an input and an optional expected output.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -32,6 +34,11 @@ pub struct EvalCase {
 pub struct EvalSuite {
     pub name: String,
     pub cases: Vec<EvalCase>,
+    /// Scorers to apply to this suite's cases. Empty ⇒ the runner uses the
+    /// default set (`default_scorers`). Defaulted so existing suite files
+    /// without a `scorers` key still load unchanged.
+    #[serde(default)]
+    pub scorers: Vec<ScorerSpec>,
 }
 
 /// A normalized score in the range 0.0–1.0 produced by a [`Scorer`].
@@ -144,7 +151,8 @@ impl Scorer for NonEmpty {
 }
 
 /// How a [`PatternMatch`] matches its literal `pattern` against the output.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
 pub enum PatternMode {
     Contains,
     StartsWith,
