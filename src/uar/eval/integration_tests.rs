@@ -32,6 +32,17 @@ impl CompletionProvider for RecordedProvider {
     }
 }
 
+/// A provider that always returns the same canned string (for structural tests
+/// that assert wiring, not answer correctness).
+struct ConstProvider(&'static str);
+
+#[async_trait]
+impl CompletionProvider for ConstProvider {
+    async fn complete(&self, _input: &str) -> anyhow::Result<String> {
+        Ok(self.0.to_string())
+    }
+}
+
 fn unique_dir(tag: &str) -> std::path::PathBuf {
     let dir = std::env::temp_dir().join(format!("uar_eval_itest_{tag}_{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
@@ -109,6 +120,33 @@ async fn full_pipeline_runs_scores_persists_and_compares() {
     assert!(compare(&summary, &higher, 0.1).any_regressed);
 
     let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// Tier-1 CI guard (EHH1): the *shipped* `evals/starter.yaml` must parse, declare
+/// scorers, and run through the harness — deterministically, no model call. This
+/// fails the build if the suite file rots or the wiring breaks.
+#[tokio::test]
+async fn starter_suite_is_valid_and_runs() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("evals/starter.yaml");
+    let suite = load_suite(&path).expect("shipped evals/starter.yaml loads");
+    assert_eq!(suite.name, "starter");
+    assert!(!suite.cases.is_empty(), "starter suite has cases");
+    assert!(!suite.scorers.is_empty(), "starter suite declares scorers");
+
+    let provider: Arc<dyn CompletionProvider> = Arc::new(ConstProvider("a deterministic answer"));
+    let scorers = build_scorers(&suite, &provider);
+    assert_eq!(scorers.len(), suite.scorers.len());
+
+    let results = Runner
+        .run(&suite, &scorers, provider.as_ref(), Some("test/model"))
+        .await;
+    assert_eq!(results.len(), suite.cases.len());
+    // Every case was scored by every declared scorer.
+    assert!(
+        results
+            .iter()
+            .all(|r| r.scores.len() == suite.scorers.len())
+    );
 }
 
 #[tokio::test]
