@@ -8,9 +8,11 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
 pub mod cli;
+mod judge;
 mod persistence;
 mod runner;
 mod scorer_spec;
+pub use judge::LlmJudge;
 pub use persistence::{
     RegressionEntry, RegressionReport, ScoreSummary, compare, load_baseline, save_baseline,
     save_results, summarize,

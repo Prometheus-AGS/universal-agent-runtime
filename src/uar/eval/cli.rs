@@ -109,11 +109,17 @@ async fn run_suite(
             return 2;
         }
     };
-    let provider = OrchestratorCompletionProvider { orchestrator };
-    let scorers = build_scorers(&suite_obj);
+    let provider: Arc<dyn CompletionProvider> =
+        Arc::new(OrchestratorCompletionProvider { orchestrator });
+    let scorers = build_scorers(&suite_obj, &provider);
 
     let results = Runner
-        .run(&suite_obj, &scorers, &provider, Some(&config.llm.model))
+        .run(
+            &suite_obj,
+            &scorers,
+            provider.as_ref(),
+            Some(&config.llm.model),
+        )
         .await;
     let summary = summarize(&results);
 
