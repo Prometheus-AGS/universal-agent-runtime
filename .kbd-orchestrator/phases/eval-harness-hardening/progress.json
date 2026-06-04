@@ -37,6 +37,7 @@
   "completedChanges": [
     "eval-suite-scorer-config",
     "eval-llm-judge-scorer",
-    "eval-run-integration-coverage"
+    "eval-run-integration-coverage",
+    "remove-dead-testing-tree"
   ]
 }
