@@ -46,8 +46,14 @@
     "D4 LLM-judge in v1 or fast-follow",
     "D5 regression gate semantics"
   ],
-  "exactNextCommand": "/opsx:new eval-domain-and-rule-scorers",
-  "updatedAt": "2026-06-03T00:00:00Z",
+  "exactNextCommand": "await merge of eval-cli-subcommand PR, then /kbd-reflect uar-eval-harness",
+  "updatedAt": "2026-06-04T00:00:00Z",
+  "completedChanges": [
+    "eval-domain-and-rule-scorers",
+    "eval-suite-loading-and-runner",
+    "eval-persistence-and-regression",
+    "eval-cli-subcommand"
+  ],
   "decisionsResolved": {
     "D1": "files",
     "D2": "CLI subcommand",

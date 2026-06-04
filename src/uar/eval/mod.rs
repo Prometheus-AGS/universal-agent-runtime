@@ -7,6 +7,7 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
+pub mod cli;
 mod persistence;
 mod runner;
 pub use persistence::{
