@@ -121,6 +121,10 @@ pub enum EvalAction {
         /// Save this run's summary as the new baseline (no regression gating).
         #[arg(long)]
         update_baseline: bool,
+        /// Strict gate: fail (non-zero exit) when no baseline exists, instead of
+        /// passing silently. Off by default; the scheduled CI tier opts in.
+        #[arg(long)]
+        require_baseline: bool,
     },
     /// List stored result files (optionally filtered by suite).
     List {

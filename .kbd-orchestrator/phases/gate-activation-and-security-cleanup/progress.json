@@ -35,5 +35,8 @@
     "D-A": "operator-seeds the baseline (no agent model call); --require-baseline keeps unseeded state safe",
     "D-B": "minimal scope (GA1 + runbook + verify security); QA1 refiner automation deferred",
     "D-C": "--require-baseline opt-in flag, default off (preserves EH5 behavior)"
-  }
+  },
+  "completedChanges": [
+    "eval-require-baseline-gate"
+  ]
 }

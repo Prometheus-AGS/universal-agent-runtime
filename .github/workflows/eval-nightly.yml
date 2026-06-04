@@ -65,6 +65,8 @@ jobs:
               --results-dir evals/results --update-baseline
             echo "Baseline written to evals/results/starter.baseline.json — commit it deliberately."
           else
+            # Strict: fail loudly if no baseline is committed yet (rather than
+            # passing silently). Seed it via workflow_dispatch update_baseline=true.
             ./target/release/universal-agent-runtime eval run evals/starter.yaml \
-              --results-dir evals/results
+              --results-dir evals/results --require-baseline
           fi
