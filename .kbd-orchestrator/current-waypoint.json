@@ -1,10 +1,10 @@
 {
   "phase": "gate-activation-and-security-cleanup",
   "change": null,
-  "status": "planned",
+  "status": "complete",
   "previousPhase": "eval-harness-hardening",
-  "currentTask": "Planned gate-activation-and-security-cleanup (small phase). 1 change: GA1 eval-require-baseline-gate (--require-baseline flag so the unseeded nightly gate fails loudly + operator runbook in evals/README.md). SC1 (verify security/close chip) folded into reflect \u2014 security already done on main. Decisions: operator-seeds baseline, minimal scope, opt-in flag. Next: /opsx:new eval-require-baseline-gate.",
-  "nextPendingChange": "eval-require-baseline-gate",
+  "currentTask": "gate-activation-and-security-cleanup COMPLETE \u2014 both goals MET (code) in PR #43 (2 commits, archived). GA1 --require-baseline (nightly fails loudly when unseeded; fail-fast before model). SECURITY: redaction was NOT pre-existing as I mis-assessed \u2014 it was uncommitted WIP; this PR actually lands it (LlmConfig/SecurityConfig/Persistence/Memory Debug masked). Remainder = operator-only gate activation (secret + seed baseline). Next: /kbd-new-phase.",
+  "nextPendingChange": null,
   "roundZeroComplete": true,
   "changeStatus": {
     "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
@@ -13,7 +13,8 @@
     "S1-eval-harness": "DEFERRED -> uar-eval-harness phase"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/opsx:new eval-require-baseline-gate",
+  "exactNextCommand": "/kbd-new-phase",
+  "gateActivationSecurityOutcome": "gate-activation-and-security-cleanup: both goals MET (code) in PR #43 (2 commits, archived). (1) feat(eval) --require-baseline strict gate: unseeded nightly fails loudly instead of passing silently; pure baseline_missing_under_strict helper; fail-fast exit 2 BEFORE any model call; nightly opts in; operator runbook in evals/README.md. (2) fix(config) secret redaction (Rule 33): redacting Debug for LlmConfig api_key+provider_keys, SecurityConfig jwt_secret, Persistence/Memory passwords. CORRECTION: I mis-assessed redaction as already-on-main; it was uncommitted working-tree WIP (origin/main had 0 REDACTED) \u2014 this PR actually lands it; caught at commit, split into 2 focused commits, disclosed in PR. 36 eval tests green. REMAINDER (operator-only): configure UAR_LLM__API_KEY secret + seed/commit evals/results/starter.baseline.json to make the gate enforce green. Spawn-task redaction chip now resolved by #43. LESSON: verify 'already merged' against committed state (git show origin/main:<file>), never the working tree.",
   "evalHarnessHardeningOutcome": "eval-harness-hardening: 4/4 goals MET + HK1. PRs #38-#42 merged + archived. EHH3 suite-declared scorers (ScorerSpec + build_scorers factory, serde-default backward compat); EHH2 LlmJudge scorer (rubric, deterministic JSON parse, advisory per D-B); EHH4 recorded-fixture provider + end-to-end pipeline integration tests; HK1 deleted dead src/testing/ (27 files, ~22.7k lines); EHH1 evals/starter.yaml + two-tier CI gate (Tier-1 keyless structural test per PR, Tier-2 nightly real-model gated workflow, fork-safe, Rule 33). 35 eval lib tests green. DEBT: no baseline shipped so Tier-2 is informational until seeded (top follow-up); Tier-2 never run in CI yet (needs UAR_LLM__API_KEY secret + workflow_dispatch); secret-redaction chip (main.rs:46, Rule 33) still open; refiner QA-gate automation still not wired.",
   "evalHarnessOutcome": "uar-eval-harness: 1/1 goal MET (S1). Shipped+merged PRs #34-#37 + archived: EH1 eval domain + rule scorers (ExactMatch/Contains/JsonValid/NonEmpty/PatternMatch/Sycophancy), EH2 suite loader (JSON/YAML) + Runner over a CompletionProvider seam, EH4 file persistence + delta-vs-baseline regression + eval metrics, EH5 `eval run|list|baseline` CLI (non-zero exit on regression; server default preserved). Rule-based/file-backed/CLI-driven v1 as planned. Deviations: PatternMatch instead of Regex (no new dep, Rule 27); scorer selection is a heuristic (per-suite config deferred). Debt: live `run <suite>` path unit-untested (needs a model); no example suite shipped; dead src/testing/ still present; pre-existing secret-logging at main.rs:46 flagged via spawn-task (Rule 33).",
   "plannedChanges": [
@@ -50,10 +51,10 @@
     "Runtime Console dead facade / dead buttons \u2014 RESOLVED (C4)"
   ],
   "recommendedNextPhaseSeeds": [
-    "P0: seed + prove the eval gate \u2014 configure UAR_LLM__API_KEY secret, run eval-nightly via workflow_dispatch --update_baseline, commit evals/results/starter.baseline.json, confirm a deliberate regression fails the job. Turns Tier-2 from informational to enforcing (top follow-up from eval-harness-hardening).",
-    "P1: secret-logging redaction \u2014 main.rs:46 dumps AppConfig (LLM keys, provider keys, JWT secret) at INFO; redact secret fields in Debug (Rule 33). spawn-task chip STILL OPEN.",
+    "P0 (operator, human-only): activate the eval gate \u2014 set UAR_LLM__API_KEY secret + vars.UAR_EVAL_MODEL, run eval-nightly via workflow_dispatch update_baseline=true, commit evals/results/starter.baseline.json, confirm a deliberate regression fails. Gate code is in place (--require-baseline); only the operational seed remains. (Agent cannot do this.)",
+    "P0 (hygiene): resolve the long-lived dirty working tree \u2014 commit/stash static/index.html + untracked .agents/.firecrawl/.zed/ so future git add can't capture stray WIP (this caused the redaction mis-assessment).",
+    "P1: automate artifact-refiner QA gate \u2014 carried unaddressed across 3 phases.",
     "P1: finish H8 \u2014 wire sandbox recorders (4) + set_mcp_server_status (needs per-runner hooks + MCP health loop)",
-    "P1: automate artifact-refiner QA gate \u2014 carried unaddressed across uar-eval-harness + eval-harness-hardening.",
     "P2: per-case scorer overrides + per-judge model override (eval follow-ups)",
     "P2: live-env smoke harness \u2014 SIGTERM drain, OTLP collector span tree, mid-stream drop, injection 403, eval run against a model",
     "P2: config liveness \u2014 sycophancy/guardrails read boot snapshots; wire settings-API edits into in-flight runs",

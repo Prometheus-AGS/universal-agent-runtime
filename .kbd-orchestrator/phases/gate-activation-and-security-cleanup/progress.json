@@ -5,8 +5,8 @@
   "sourceTool": "claude-code",
   "assessment_complete": true,
   "plan_complete": true,
-  "execute_complete": false,
-  "reflect_complete": false,
+  "execute_complete": true,
+  "reflect_complete": true,
   "origin": "Follow-up seeds from eval-harness-hardening: make the nightly eval gate enforce; close the carried secret-logging item.",
   "goals": [
     "GA1 --require-baseline gate-strictness flag (unseeded gate fails loudly instead of passing silently)",

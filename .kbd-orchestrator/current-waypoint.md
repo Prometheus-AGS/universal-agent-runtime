@@ -1,37 +1,43 @@
 # Current Waypoint
 
-- Phase: `gate-activation-and-security-cleanup` **(planned)**
+- Phase: `gate-activation-and-security-cleanup` **(reflect_complete)**
 - Previous phase: `eval-harness-hardening` (complete — 4/4 MET + HK1)
 - Backend: OpenSpec
-- Status: `planned`
-- Progress: **0 / 1 change** (+ 1 verification task, no code)
-- Exact next command: `/opsx:new eval-require-baseline-gate`
-- Assessment: [assessment.md](phases/gate-activation-and-security-cleanup/assessment.md)
-- Plan: [plan.md](phases/gate-activation-and-security-cleanup/plan.md)
+- Status: `complete`
+- Progress: **1 / 1 change shipped** (PR #43 — 2 commits — merged + archived)
+- Exact next command: `/kbd-new-phase`
+- Reflection: [reflection.md](phases/gate-activation-and-security-cleanup/reflection.md)
 - Updated at: 2026-06-04
 
-## Phase intent (small phase)
+## Phase arc outcome
 
-Make the nightly eval gate *enforce* (not silently pass when unseeded) and close the carried secret-logging item.
+**Both goals MET (code side), in one PR (#43, two commits).**
 
-**Key finding:** secret redaction is **already done on `main`** (`config.rs` redacting `Debug` impls) — Goal 2 essentially MET. So the only code is one small change; the rest is a runbook + verification.
+- **`feat(eval): --require-baseline strict gate` (GA1)** — the unseeded nightly now fails loudly instead of passing silently; pure `baseline_missing_under_strict` helper; **fail-fast exit 2 before any model call**; nightly opts in; operator runbook in `evals/README.md`.
+- **`fix(config): redact secrets in config Debug output` (Rule 33)** — redacting `Debug` for `LlmConfig` (api_key + provider_keys), `SecurityConfig` (jwt_secret), `Persistence`/`Memory` passwords.
 
-## Resolved decisions
+36 eval lib tests green.
 
-- **D-A → operator-seeds the baseline** (no agent model call; human owns the reference bar). `--require-baseline` keeps the unseeded state safe meanwhile.
-- **D-B → minimal scope** (GA1 + runbook + verify security). Refiner QA-automation deferred.
-- **D-C → `--require-baseline` opt-in** (default off preserves EH5 behavior; nightly opts in).
+## ⚠️ Correction recorded
 
-## Change list
+I mis-assessed the redaction as "already on `main`." It was **uncommitted working-tree WIP** (`origin/main` had 0 `REDACTED`) — this PR actually lands it. Caught at commit time (diff showed it as additions), **split into two focused commits**, and disclosed in the PR body. Lesson banked: verify "already merged" against committed state (`git show origin/main:<file>`), never the working tree.
 
-1. **GA1 `eval-require-baseline-gate`** — `EvalAction::Run` gains `--require-baseline`; `run_suite` exits non-zero when set + no baseline (fail loudly); nightly workflow adds the flag; `evals/README.md` gets an operator runbook for seeding + activating the gate. Pure-helper unit test for the strict-missing decision.
-2. **SC1 (no code)** — verify the config dump is masked at runtime; dismiss the secret-redaction spawn-task chip; record Goal 2 as pre-existing MET. Folded into reflect.
+## Remainder (operator-only — by design)
 
-## Deferred (not this phase)
+The gate code is in place but enforces *green* only once a human:
+1. sets the `UAR_LLM__API_KEY` secret (+ optional `vars.UAR_EVAL_MODEL`),
+2. runs `eval-nightly` with `update_baseline=true`,
+3. commits `evals/results/starter.baseline.json`,
+4. confirms a deliberate regression fails.
 
-- Operator actions: configure `UAR_LLM__API_KEY` secret + first `workflow_dispatch` seed + commit baseline (human-only; documented).
-- QA1 refiner QA-gate automation (own phase); per-case scorers; per-judge model; HTTP eval endpoint; SurrealDB storage.
+Until then the scheduled job fails loudly ("blocked until seeded") — intended.
+
+## Other follow-ups
+
+- **Hygiene:** resolve the long-lived dirty working tree (`static/index.html`, untracked `.agents/`/`.firecrawl/`/`.zed/`) so future `git add` can't capture stray WIP.
+- Spawn-task "redact secrets" chip → **resolved by PR #43** (dismiss it).
+- Carried: refiner QA-gate automation (3 phases); per-case scorers; per-judge model; HTTP eval endpoint; SurrealDB storage.
 
 ## Next
 
-`/opsx:new eval-require-baseline-gate` to start GA1.
+`/kbd-new-phase` — likely candidates: artifact-refiner QA-gate automation, or finishing H8 metric recorders. (Gate activation itself is an operator action, documented above.)
