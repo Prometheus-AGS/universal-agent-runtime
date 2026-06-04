@@ -1,10 +1,10 @@
 {
   "phase": "eval-harness-hardening",
   "change": null,
-  "status": "planned",
+  "status": "complete",
   "previousPhase": "uar-eval-harness",
-  "currentTask": "Planned eval-harness-hardening: 4 changes + 1 housekeeping. R1 EHH3 eval-suite-scorer-config; R2 EHH2 eval-llm-judge-scorer ∥ EHH4 eval-run-integration-coverage ∥ HK1 remove-dead-testing-tree; R3 EHH1 eval-starter-suite-and-ci-gate. Decisions: two-tier CI gate, judge advisory-only. Next: /opsx:new eval-suite-scorer-config.",
-  "nextPendingChange": "eval-suite-scorer-config",
+  "currentTask": "eval-harness-hardening COMPLETE \u2014 4/4 goals MET + HK1. EHH3/EHH2/EHH4/HK1/EHH1 merged (PRs #38-#42) + archived; specs updated. Reflection written. Top follow-up: seed evals/results/starter.baseline.json to make the nightly gate enforce. Next: /kbd-new-phase.",
+  "nextPendingChange": null,
   "roundZeroComplete": true,
   "changeStatus": {
     "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
@@ -13,7 +13,8 @@
     "S1-eval-harness": "DEFERRED -> uar-eval-harness phase"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/opsx:new eval-suite-scorer-config",
+  "exactNextCommand": "/kbd-new-phase",
+  "evalHarnessHardeningOutcome": "eval-harness-hardening: 4/4 goals MET + HK1. PRs #38-#42 merged + archived. EHH3 suite-declared scorers (ScorerSpec + build_scorers factory, serde-default backward compat); EHH2 LlmJudge scorer (rubric, deterministic JSON parse, advisory per D-B); EHH4 recorded-fixture provider + end-to-end pipeline integration tests; HK1 deleted dead src/testing/ (27 files, ~22.7k lines); EHH1 evals/starter.yaml + two-tier CI gate (Tier-1 keyless structural test per PR, Tier-2 nightly real-model gated workflow, fork-safe, Rule 33). 35 eval lib tests green. DEBT: no baseline shipped so Tier-2 is informational until seeded (top follow-up); Tier-2 never run in CI yet (needs UAR_LLM__API_KEY secret + workflow_dispatch); secret-redaction chip (main.rs:46, Rule 33) still open; refiner QA-gate automation still not wired.",
   "evalHarnessOutcome": "uar-eval-harness: 1/1 goal MET (S1). Shipped+merged PRs #34-#37 + archived: EH1 eval domain + rule scorers (ExactMatch/Contains/JsonValid/NonEmpty/PatternMatch/Sycophancy), EH2 suite loader (JSON/YAML) + Runner over a CompletionProvider seam, EH4 file persistence + delta-vs-baseline regression + eval metrics, EH5 `eval run|list|baseline` CLI (non-zero exit on regression; server default preserved). Rule-based/file-backed/CLI-driven v1 as planned. Deviations: PatternMatch instead of Regex (no new dep, Rule 27); scorer selection is a heuristic (per-suite config deferred). Debt: live `run <suite>` path unit-untested (needs a model); no example suite shipped; dead src/testing/ still present; pre-existing secret-logging at main.rs:46 flagged via spawn-task (Rule 33).",
   "plannedChanges": [
     "add-run-cancellation",
@@ -49,13 +50,14 @@
     "Runtime Console dead facade / dead buttons \u2014 RESOLVED (C4)"
   ],
   "recommendedNextPhaseSeeds": [
-    "P0: eval-harness-hardening fast-follow \u2014 (a) ship evals/<starter>.yaml (3-5 cases) + CI step running `eval run` as a regression gate (highest value/smallest effort; makes the harness load-bearing); (b) EH3 LLM-as-judge scorer (rubric via chat_non_streaming + deterministic parse); (c) per-suite scorer configuration (removes EH5 heuristic); (d) integration coverage for `run` (recorded-fixture provider or gated live smoke).",
+    "P0: seed + prove the eval gate \u2014 configure UAR_LLM__API_KEY secret, run eval-nightly via workflow_dispatch --update_baseline, commit evals/results/starter.baseline.json, confirm a deliberate regression fails the job. Turns Tier-2 from informational to enforcing (top follow-up from eval-harness-hardening).",
+    "P1: secret-logging redaction \u2014 main.rs:46 dumps AppConfig (LLM keys, provider keys, JWT secret) at INFO; redact secret fields in Debug (Rule 33). spawn-task chip STILL OPEN.",
     "P1: finish H8 \u2014 wire sandbox recorders (4) + set_mcp_server_status (needs per-runner hooks + MCP health loop)",
-    "P1: secret-logging redaction \u2014 main.rs:46 dumps AppConfig (LLM keys, provider keys, JWT secret) at INFO; redact secret fields in Debug (Rule 33). spawn-task chip filed.",
-    "P2: live-env smoke harness \u2014 make deferred manual verifications runnable (SIGTERM drain, OTLP collector span tree, mid-stream drop, injection 403, eval `run` against a model)",
+    "P1: automate artifact-refiner QA gate \u2014 carried unaddressed across uar-eval-harness + eval-harness-hardening.",
+    "P2: per-case scorer overrides + per-judge model override (eval follow-ups)",
+    "P2: live-env smoke harness \u2014 SIGTERM drain, OTLP collector span tree, mid-stream drop, injection 403, eval run against a model",
     "P2: config liveness \u2014 sycophancy/guardrails read boot snapshots; wire settings-API edits into in-flight runs",
-    "P3: housekeeping \u2014 delete/compile-gate dead src/testing/ tree",
-    "Deferred: HTTP POST /api/uar/eval/run; SurrealDB eval result storage; true-regex scorer; durable workflows / checkpoint (own phase)"
+    "Deferred: HTTP POST /api/uar/eval/run; SurrealDB eval result storage; true-regex scorer; expand starter suite; durable workflows / checkpoint (own phase)"
   ],
   "carryOverDebt": [
     "H3 emit-runtime-step-events \u2014 unbuilt planned change (top priority)",

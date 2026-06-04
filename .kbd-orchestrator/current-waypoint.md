@@ -1,37 +1,34 @@
 # Current Waypoint
 
-- Phase: `eval-harness-hardening` **(planned)**
+- Phase: `eval-harness-hardening` **(reflect_complete)**
 - Previous phase: `uar-eval-harness` (complete — S1 MET)
 - Backend: OpenSpec
-- Status: `planned`
-- Progress: **0 / 5 changes** (4 + 1 housekeeping)
-- Exact next command: `/opsx:new eval-suite-scorer-config`
-- Assessment: [assessment.md](phases/eval-harness-hardening/assessment.md)
-- Plan: [plan.md](phases/eval-harness-hardening/plan.md)
+- Status: `complete`
+- Progress: **5 / 5 changes shipped** (PRs #38–#42 merged; 4 archived + HK1 chore)
+- Exact next command: `/kbd-new-phase`
+- Reflection: [reflection.md](phases/eval-harness-hardening/reflection.md)
 - Updated at: 2026-06-04
 
-## Phase intent
+## Phase arc outcome
 
-Fast-follow on the v1 eval harness: make it **load-bearing and trustworthy** — a real suite gates CI, the LLM-judge scorer exists, suites declare their own scorers, and the `run` path has automated coverage.
+**4 / 4 goals MET + 1 housekeeping (HK1).**
 
-## Resolved decisions
+- **EHH3 `eval-suite-scorer-config`** (#38) — `ScorerSpec` + `EvalSuite.scorers` (serde-default) + `build_scorers` factory; CLI uses it (heuristic fallback retained).
+- **EHH2 `eval-llm-judge-scorer`** (#39) — `LlmJudge` async scorer; rubric prompt; deterministic JSON-verdict parse; advisory (D-B).
+- **EHH4 `eval-run-integration-coverage`** (#40) — recorded-fixture provider + end-to-end pipeline tests (no live model).
+- **HK1 `remove-dead-testing-tree`** (#41) — deleted uncompiled `src/testing/` (27 files, ~22.7k lines).
+- **EHH1 `eval-starter-suite-and-ci-gate`** (#42) — `evals/starter.yaml` + two-tier CI gate (Tier-1 keyless structural test per PR; Tier-2 nightly real-model gated workflow, fork-safe, Rule 33).
 
-- **CI gate → two-tier:** PR CI runs a deterministic structural eval test (fixture provider + rule scorers, no key/cost); a nightly/main-only job runs the real model vs the starter suite with a repo secret and gates on regression.
-- **LLM-judge → advisory only:** hard gate uses rule scorers; judge scores reported but don't fail CI.
-- **Judge verdict → JSON** `{score 0..1, reason}`; clamp; parse-failure → 0.0 + detail.
-- **Scorer config → suite-level** (per-case deferred).
-- **Housekeeping:** delete dead `src/testing/` here; secret redaction (`main.rs:46`) stays with its spawn-task chip.
+35 eval lib tests green. The harness is now **load-bearing** (suite + gate), **trustworthy** (judge + integration coverage), and **configurable** (suite-declared scorers).
 
-## Change list (ordered)
+## Debt / follow-ups
 
-1. **EHH3 `eval-suite-scorer-config`** (R1) — `ScorerSpec` enum + `EvalSuite.scorers` (serde default) + `build_scorers` factory; CLI uses it (heuristic fallback). *foundational.*
-2. **EHH2 `eval-llm-judge-scorer`** (R2) — `LlmJudge` async `Scorer` over `CompletionProvider`; JSON verdict parse; wired into the factory; advisory.
-3. **EHH4 `eval-run-integration-coverage`** (R2) — recorded-fixture provider + end-to-end `run` pipeline integration test (no live model).
-4. **HK1 `remove-dead-testing-tree`** (R2, independent) — `git rm -r src/testing/` (uncompiled dead code).
-5. **EHH1 `eval-starter-suite-and-ci-gate`** (R3) — `evals/starter.yaml` + Tier-1 structural CI test + Tier-2 nightly real-model gated job.
-
-**Rounds:** R1 EHH3 → R2 (EHH2 ∥ EHH4 ∥ HK1) → R3 EHH1.
+- **P0 — seed + prove the gate:** no baseline shipped, so Tier-2 is *informational until seeded*. Configure `UAR_LLM__API_KEY`, run nightly via `workflow_dispatch --update_baseline`, commit `evals/results/starter.baseline.json`, confirm a deliberate regression fails the job. Tier-2 has not run in CI yet.
+- **P1 — secret-redaction chip** (`main.rs:46`, Rule 33) still open.
+- **P1 — artifact-refiner QA-gate automation** still not wired (carried 2 phases).
+- **P2** — per-case scorer overrides; per-judge model override.
+- **Later** — HTTP `POST /api/uar/eval/run`; SurrealDB result storage; true-regex scorer; expand starter suite.
 
 ## Next
 
-`/opsx:new eval-suite-scorer-config` to start EHH3.
+`/kbd-new-phase` — recommended next is a short gate-activation + security-cleanup phase (seed the baseline, redact secrets, automate the QA gate).

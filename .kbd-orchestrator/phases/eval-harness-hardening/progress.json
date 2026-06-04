@@ -13,7 +13,7 @@
     "eval-starter-suite-and-ci-gate"
   ],
   "execute_complete": true,
-  "reflect_complete": false,
+  "reflect_complete": true,
   "origin": "Fast-follow on uar-eval-harness (S1 MET v1). Make the harness load-bearing + close v1 debt.",
   "goals": [
     "EHH1 starter suite + CI regression gate (eval run) \u2014 make the harness load-bearing",

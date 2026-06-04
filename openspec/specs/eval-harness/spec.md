@@ -145,3 +145,85 @@ preserving the default (no-subcommand) behavior of starting the server.
 - **WHEN** `eval baseline <suite>` or `eval list` is invoked
 - **THEN** the stored baseline summary, or the result files, are printed
 
+### Requirement: Suites declare their scorers
+
+An eval suite SHALL be able to declare the scorers applied to its cases, and the
+runner SHALL build scorers from that declaration. When a suite declares no
+scorers, the system SHALL fall back to a default scorer set so existing suites
+behave unchanged.
+
+#### Scenario: Declared scorers are used
+- **WHEN** a suite declares a list of scorers (e.g. `json_valid`, `pattern_match`)
+- **THEN** the runner scores each case with exactly those scorers
+
+#### Scenario: No declaration falls back to the default set
+- **WHEN** a suite declares no scorers
+- **THEN** the runner applies the default set (non-empty + sycophancy, plus exact-match + contains when every case has an expected output)
+
+#### Scenario: Existing suites deserialize unchanged
+- **WHEN** a suite file without a `scorers` field is loaded
+- **THEN** it loads successfully and uses the default scorer set
+
+### Requirement: LLM-as-judge scorer
+
+The system SHALL provide an LLM-as-judge scorer that grades a candidate output
+against a rubric via a completion provider and returns a normalized score. The
+scorer SHALL parse the model's verdict deterministically and SHALL NOT panic on
+malformed output. Judge scores SHALL be advisory — reported and persisted, but
+not part of the hard regression gate.
+
+#### Scenario: Rubric grading
+- **WHEN** a suite declares an `llm_judge` scorer with a rubric
+- **THEN** each case's input + candidate output are sent to the provider with the rubric, and the parsed score is recorded
+
+#### Scenario: Deterministic verdict parse
+- **WHEN** the judge response contains a JSON object `{ "score": <0.0–1.0>, "reason": <text> }`
+- **THEN** the score is extracted and clamped to 0.0–1.0
+
+#### Scenario: Malformed verdict is contained
+- **WHEN** the judge response cannot be parsed into a verdict
+- **THEN** the scorer returns 0.0 with a detail explaining the failure, and does not panic
+
+### Requirement: End-to-end run pipeline is covered by an automated test
+
+The system SHALL cover the eval run pipeline (load a suite, run each case
+through a completion provider, score, summarize, persist, and compare to a
+baseline) with an automated test that uses a deterministic recorded provider, so
+the pipeline is verifiable without a live model.
+
+#### Scenario: Deterministic pipeline run
+- **WHEN** a suite is run through the pipeline with a recorded provider
+- **THEN** each case produces scored results, the summary reflects the recorded outputs, and results persist and reload unchanged
+
+#### Scenario: Regression verdicts are exercised
+- **WHEN** the summary is compared to baselines representing no-baseline, equal, and a drop beyond the threshold
+- **THEN** the comparison reports clean, clean, and regressed respectively
+
+#### Scenario: Provider failure is contained
+- **WHEN** the provider has no recorded output for a case
+- **THEN** that case yields a contained failure result and the run still completes
+
+### Requirement: Starter suite and two-tier CI gate
+
+The repository SHALL ship a starter eval suite and SHALL run it in CI as a
+regression gate across two tiers: a deterministic structural check on every pull
+request that requires no model or API key, and a scheduled real-model run that
+gates on regression against a baseline and degrades gracefully when no API key
+is configured.
+
+#### Scenario: Starter suite ships and is valid
+- **WHEN** the repository is checked out
+- **THEN** `evals/starter.yaml` exists, declares scorers, and loads + scores through the harness
+
+#### Scenario: PR tier requires no key
+- **WHEN** the pull-request CI runs
+- **THEN** the starter suite is loaded and scored with a deterministic provider, with no API key and no model call
+
+#### Scenario: Scheduled tier gates on regression
+- **WHEN** the scheduled job runs and an API key secret is present
+- **THEN** the suite runs against the real model and the job exits non-zero on regression against the baseline
+
+#### Scenario: Scheduled tier without a key is skipped
+- **WHEN** the scheduled job runs and no API key secret is present
+- **THEN** the job skips the real-model run without failing
+
