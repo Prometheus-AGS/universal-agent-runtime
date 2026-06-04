@@ -1,5 +1,5 @@
 use crate::uar::runtime::matching::ClassifierConfig;
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use config::{Config, Environment};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -88,6 +88,57 @@ pub struct Cli {
     /// ACP server path prefix
     #[arg(long, env = "UAR_ACP__PATH")]
     pub acp_path: Option<String>,
+
+    /// Optional subcommand. When omitted, the binary starts the server.
+    #[command(subcommand)]
+    pub command: Option<Command>,
+}
+
+/// Top-level binary subcommands. Absent ⇒ run the server (default).
+#[derive(Subcommand, Debug, Clone)]
+pub enum Command {
+    /// Run and inspect the LLM evaluation harness.
+    Eval {
+        #[command(subcommand)]
+        action: EvalAction,
+    },
+}
+
+/// `eval` subcommands.
+#[derive(Subcommand, Debug, Clone)]
+pub enum EvalAction {
+    /// Run a suite, score it, persist results, and gate on regression.
+    Run {
+        /// Suite name (resolved to `evals/<suite>.{yaml,yml,json}`) or a direct path.
+        suite: String,
+        /// Regression threshold: a scorer regresses if its mean drops below the
+        /// baseline by more than this (delta-vs-baseline).
+        #[arg(long, default_value_t = 0.05)]
+        threshold: f32,
+        /// Directory for result + baseline files.
+        #[arg(long, default_value = "evals/results")]
+        results_dir: String,
+        /// Save this run's summary as the new baseline (no regression gating).
+        #[arg(long)]
+        update_baseline: bool,
+    },
+    /// List stored result files (optionally filtered by suite).
+    List {
+        /// Only list results for this suite.
+        #[arg(long)]
+        suite: Option<String>,
+        /// Directory holding result files.
+        #[arg(long, default_value = "evals/results")]
+        results_dir: String,
+    },
+    /// Print the stored baseline summary for a suite.
+    Baseline {
+        /// Suite name.
+        suite: String,
+        /// Directory holding the baseline file.
+        #[arg(long, default_value = "evals/results")]
+        results_dir: String,
+    },
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -1365,6 +1416,7 @@ mod tests {
                 skill_evolution_model: None,
                 acp_enabled: None,
                 acp_path: None,
+                command: None,
             },
             cfg_path,
         )
