@@ -123,6 +123,7 @@ mod tests {
                     metadata: serde_json::Map::new(),
                 },
             ],
+            scorers: Vec::new(),
         }
     }
 
