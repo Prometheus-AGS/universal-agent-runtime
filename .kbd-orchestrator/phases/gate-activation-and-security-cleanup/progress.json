@@ -1,0 +1,31 @@
+{
+  "phase": "gate-activation-and-security-cleanup",
+  "previousPhase": "eval-harness-hardening",
+  "backend": "openspec",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": false,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "origin": "Follow-up seeds from eval-harness-hardening: make the nightly eval gate enforce; close the carried secret-logging item.",
+  "goals": [
+    "GA1 --require-baseline gate-strictness flag (unseeded gate fails loudly instead of passing silently)",
+    "GA-DOC operator runbook for seeding the baseline + configuring the CI secret",
+    "SC1 verify secret redaction (already implemented on main) + close the spawn-task chip"
+  ],
+  "keyFindings": [
+    "SECURITY ALREADY DONE: config.rs has custom redacting Debug for LlmConfig (api_key+provider_keys), SecurityConfig (jwt_secret), PersistenceConfig + MemoryConfig (passwords/keys). main.rs:48 is the only full-config dump and is now masked. No other secret-logging sites. Goal 2 essentially MET on main.",
+    "GATE GAP (G1): eval run exits 0 with no baseline (silently passes) — the real code gap is the invisible unseeded state.",
+    "OPERATOR-ONLY (G3): configuring UAR_LLM__API_KEY secret + first workflow_dispatch run cannot be done by the agent."
+  ],
+  "decisionsRequired": [
+    "D-A seed baseline locally (agent real-model call) vs operator-seeded",
+    "D-B phase scope minimal (GA1+runbook+close) vs include QA1 refiner automation",
+    "D-C --require-baseline opt-in flag vs always-warn"
+  ],
+  "candidateChanges": [
+    "eval-require-baseline-flag (GA1)",
+    "eval-gate-operator-runbook (GA-DOC)"
+  ],
+  "updatedAt": "2026-06-04T00:00:00Z"
+}
