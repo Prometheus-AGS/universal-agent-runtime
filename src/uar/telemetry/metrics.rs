@@ -119,6 +119,21 @@ pub fn record_guardrail_flagged(category: &str) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Eval Harness Metrics
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Set the mean score for an eval suite + scorer (0.0–1.0).
+pub fn record_eval_score(suite: &str, scorer: &str, mean: f64) {
+    let labels = [("suite", suite.to_string()), ("scorer", scorer.to_string())];
+    gauge!("uar_eval_score", &labels).set(mean);
+}
+
+/// Increment the count of eval regressions detected against a baseline.
+pub fn record_eval_regression() {
+    counter!("uar_eval_regressions_total").increment(1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Tool Call Metrics
 // ─────────────────────────────────────────────────────────────────────────────
 
