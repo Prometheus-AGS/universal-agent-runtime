@@ -1071,12 +1071,43 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     let addr = format!("{}:{}", config.server.host, config.server.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
-    let shutdown_timeout = Duration::from_secs(config.server.shutdown_timeout_secs);
+    serve_on_listener(
+        listener,
+        app,
+        config.server.shutdown_timeout_secs,
+        ingestion_pool_shared,
+        run_cancellation_root,
+    )
+    .await
+}
+
+/// Start the server with a caller-provided, already-bound `TcpListener`.
+///
+/// This is the entry point for the `uar-sidecar` binary, which pre-binds on
+/// `127.0.0.1:0` to discover the OS-assigned port, emits `READY:{port}` to
+/// stdout, sets `UAR_SERVER__PORT` and `UAR_SERVER__HOST` env vars to lock the
+/// port, drops the pre-bound socket, and then calls this function.
+///
+/// The tiny loopback race window between dropping the pre-bound socket and
+/// `start_server` re-binding is acceptable for trusted-loopback sidecar use.
+pub async fn start_server_sidecar(config: Arc<AppConfig>) -> anyhow::Result<()> {
+    start_server(config).await
+}
+
+async fn serve_on_listener(
+    listener: tokio::net::TcpListener,
+    app: axum::Router,
+    shutdown_timeout_secs: u64,
+    ingestion_pool_shared: Option<Arc<IngestionWorkerPool>>,
+    run_cancellation_root: tokio_util::sync::CancellationToken,
+) -> anyhow::Result<()> {
+    let addr = listener.local_addr()?;
+    let shutdown_timeout = Duration::from_secs(shutdown_timeout_secs);
 
     info!(
         name: "server.started",
         address = %addr,
-        shutdown_timeout_secs = config.server.shutdown_timeout_secs,
+        shutdown_timeout_secs = shutdown_timeout_secs,
         "Server started"
     );
 

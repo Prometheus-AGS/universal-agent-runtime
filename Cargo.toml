@@ -16,6 +16,10 @@ path = "src/lib.rs"
 name = "universal-agent-runtime"
 path = "src/main.rs"
 
+[[bin]]
+name = "uar-sidecar"
+path = "src/bin/uar-sidecar.rs"
+
 [dev-dependencies]
 anyhow = "1.0"
 axum-test = "19.1.1"
