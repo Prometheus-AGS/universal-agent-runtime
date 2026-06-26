@@ -1,4 +1,4 @@
-name: Build and Deploy to GKE
+name: Build and Deploy to AKS
 
 on:
   push:
@@ -17,10 +17,10 @@ on:
         type: boolean
 
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  GKE_CLUSTER: client-cluster
-  GKE_ZONE: ${{ secrets.GKE_ZONE || 'us-central1' }}
-  REPOSITORY: uar
+  ACR_NAME: prometheusagsacr
+  ACR: prometheusagsacr.azurecr.io
+  AKS_CLUSTER: main
+  AKS_RG: prometheus-rg
   IMAGE: universal-agent-runtime
 
 jobs:
@@ -36,9 +36,8 @@ jobs:
     timeout-minutes: 75
 
     # Required for Workload Identity Federation: the job must be allowed to
-    # request the GitHub OIDC token that google-github-actions/auth exchanges
-    # for GCP credentials. Without `id-token: write` the auth step fails with
-    # "did not inject $ACTIONS_ID_TOKEN_REQUEST_TOKEN".
+    # request the GitHub OIDC token that azure/login exchanges for Azure
+    # credentials. Without `id-token: write` the OIDC auth step fails.
     permissions:
       contents: read
       id-token: write
@@ -53,18 +52,18 @@ jobs:
           submodules: recursive
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
 
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v2
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
         with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker us-docker.pkg.dev --quiet
+      - name: ACR login
+        run: az acr login --name ${{ env.ACR_NAME }}
 
       - name: Determine image tag
         id: meta
@@ -84,8 +83,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            us-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.meta.outputs.image_tag }}
-            us-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:latest
+            ${{ env.ACR }}/${{ env.IMAGE }}:${{ steps.meta.outputs.image_tag }}
+            ${{ env.ACR }}/${{ env.IMAGE }}:latest
           # Token for cargo git deps over SSH (kreuzberg) + any private fetches.
           # The Dockerfile rewrites ssh://git@github.com → https with this token.
           secrets: |
@@ -93,9 +92,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ── 2. Deploy to GKE ─────────────────────────────────────────────────────
+  # ── 2. Deploy to AKS ─────────────────────────────────────────────────────
   deploy:
-    name: Deploy to GKE
+    name: Deploy to AKS
     runs-on: ubuntu-latest
     needs: build
     # Run when build succeeded, OR when build was intentionally skipped
@@ -103,7 +102,7 @@ jobs:
     if: ${{ always() && needs.build.result != 'failure' && needs.build.result != 'cancelled' }}
     timeout-minutes: 15
 
-    # WIF OIDC token (same as the build job) for the GKE auth step.
+    # Azure OIDC token (same as the build job) for the azure/login step.
     permissions:
       contents: read
       id-token: write
@@ -115,22 +114,18 @@ jobs:
           submodules: recursive
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
         with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Set AKS context
+        uses: azure/aks-set-context@v4
         with:
-          install_components: gke-gcloud-auth-plugin
-
-      - name: Get GKE credentials
-        run: |
-          gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} \
-            --zone ${{ env.GKE_ZONE }} \
-            --project ${{ env.PROJECT_ID }}
+          resource-group: ${{ env.AKS_RG }}
+          cluster-name: ${{ env.AKS_CLUSTER }}
 
       # Resolve the tag to deploy. Prefer the build job's output; when build was
       # skipped (skip_build dispatch) fall back to the dispatch input, then SHA.
@@ -150,7 +145,7 @@ jobs:
       - name: Bump deployment image
         run: |
           kubectl set image deploy/uar \
-            uar=us-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE }}:${{ steps.tag.outputs.image_tag }} \
+            uar=${{ env.ACR }}/${{ env.IMAGE }}:${{ steps.tag.outputs.image_tag }} \
             -n uar
 
       # The deployment is single-replica with ReadWriteOnce PVCs; a RollingUpdate
@@ -175,28 +170,24 @@ jobs:
     needs: deploy
     timeout-minutes: 10
 
-    # WIF OIDC token for the GKE auth step.
+    # Azure OIDC token for the azure/login step.
     permissions:
       contents: read
       id-token: write
 
     steps:
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
         with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Set AKS context
+        uses: azure/aks-set-context@v4
         with:
-          install_components: gke-gcloud-auth-plugin
-
-      - name: Get GKE credentials
-        run: |
-          gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} \
-            --zone ${{ env.GKE_ZONE }} \
-            --project ${{ env.PROJECT_ID }}
+          resource-group: ${{ env.AKS_RG }}
+          cluster-name: ${{ env.AKS_CLUSTER }}
 
       - name: Get UAR service endpoint
         id: endpoint
