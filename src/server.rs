@@ -671,6 +671,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .route("/api/generate-title", post(api_generate_title))
         .route("/api/chat/completion", post(api_chat_completion))
         .route("/api/upload", post(uar::api::upload::upload_handler))
+        .route("/api/live", get(uar::api::live::live_stream_all))
         .route("/api/live/{topic}", get(uar::api::live::live_stream))
         .route(
             "/api/attachments/{id}",
@@ -1071,14 +1072,59 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     let addr = format!("{}:{}", config.server.host, config.server.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
+    // Dual-stack companion bind. Browsers resolve `localhost` to IPv6 `::1`
+    // first, but an IPv4-only primary (`0.0.0.0` / `127.0.0.1`) leaves `::1`
+    // refused — so the UI appears to hang while every server-side check looks
+    // healthy. Binding the loopback of the other address family on the same
+    // port makes `localhost` work regardless of which address the client picks.
+    // A failure here (e.g. IPv6 disabled) is non-fatal: we keep the primary.
+    let companion = bind_companion_listener(&config.server.host, config.server.port).await;
+
     serve_on_listener(
         listener,
+        companion,
         app,
         config.server.shutdown_timeout_secs,
         ingestion_pool_shared,
         run_cancellation_root,
     )
     .await
+}
+
+/// Best-effort bind of the loopback companion address for dual-stack `localhost`.
+///
+/// When the primary host is an IPv4 address (`0.0.0.0` or `127.0.0.1`), clients
+/// that resolve `localhost` to IPv6 `::1` would otherwise get connection-refused.
+/// Binding `[::1]` on the same port closes that gap. Symmetrically, an IPv6
+/// primary gets a `127.0.0.1` companion. Returns `None` (and logs) when no
+/// companion applies (hostname primary) or the bind fails — startup never fails
+/// because of this.
+async fn bind_companion_listener(host: &str, port: u16) -> Option<tokio::net::TcpListener> {
+    let companion_ip = match host.parse::<std::net::IpAddr>() {
+        Ok(std::net::IpAddr::V4(_)) => "::1", // IPv4 primary → IPv6 loopback companion
+        Ok(std::net::IpAddr::V6(_)) => "127.0.0.1", // IPv6 primary → IPv4 loopback companion
+        Err(_) => return None,                // hostname or unparseable → no companion
+    };
+    let addr = format!("{companion_ip}:{port}");
+    match tokio::net::TcpListener::bind(&addr).await {
+        Ok(listener) => {
+            info!(
+                name: "server.companion.bound",
+                address = %addr,
+                "Dual-stack companion listener bound"
+            );
+            Some(listener)
+        }
+        Err(e) => {
+            tracing::warn!(
+                name: "server.companion.skip",
+                address = %addr,
+                error = %e,
+                "Could not bind dual-stack companion listener — continuing with primary only"
+            );
+            None
+        }
+    }
 }
 
 /// Start the server with a caller-provided, already-bound `TcpListener`.
@@ -1096,6 +1142,7 @@ pub async fn start_server_sidecar(config: Arc<AppConfig>) -> anyhow::Result<()> 
 
 async fn serve_on_listener(
     listener: tokio::net::TcpListener,
+    companion: Option<tokio::net::TcpListener>,
     app: axum::Router,
     shutdown_timeout_secs: u64,
     ingestion_pool_shared: Option<Arc<IngestionWorkerPool>>,
@@ -1111,10 +1158,10 @@ async fn serve_on_listener(
         "Server started"
     );
 
-    // Build a one-shot shutdown channel so the signal handler can notify
-    // the Axum serve loop AND the pool shutdown in a single coordinated
-    // sequence, without spawning extra tasks.
-    let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();
+    // A `CancellationToken` (rather than a one-shot channel) fans the
+    // graceful-shutdown trigger out to BOTH the primary and the optional
+    // companion serve loops from the single signal-handler task.
+    let http_shutdown = tokio_util::sync::CancellationToken::new();
 
     // Spawn the signal handler: wait for SIGINT/SIGTERM, then:
     //   1. Shut down the ingestion worker pool (drains with timeout, detaches wedges).
@@ -1122,6 +1169,7 @@ async fn serve_on_listener(
     {
         let pool_for_shutdown = ingestion_pool_shared.clone();
         let run_cancellation_root = run_cancellation_root.clone();
+        let http_shutdown = http_shutdown.clone();
         tokio::spawn(async move {
             prometheus_parking_lot::core::shutdown::wait_for_signal().await;
             info!(
@@ -1137,22 +1185,48 @@ async fn serve_on_listener(
                 pool.shutdown();
             }
             info!(name: "server.shutdown.pool_drained", "Ingestion pool shut down — closing HTTP connections");
-            // Signal Axum to stop accepting and drain open connections.
-            let _ = shutdown_tx.send(());
+            // Signal Axum (both listeners) to stop accepting and drain open connections.
+            http_shutdown.cancel();
         });
     }
 
-    axum::serve(listener, app.into_make_service())
-        .with_graceful_shutdown(async move {
-            let _ = shutdown_rx.await;
-            info!(
-                name: "server.draining",
-                timeout_secs = shutdown_timeout.as_secs(),
-                "Draining in-flight HTTP connections"
-            );
+    // Build a graceful-shutdown future bound to the shared cancellation token.
+    // `log_drain` is only emitted by the primary listener to avoid duplicate logs.
+    let shutdown_future = |log_drain: bool| {
+        let http_shutdown = http_shutdown.clone();
+        async move {
+            http_shutdown.cancelled().await;
+            if log_drain {
+                info!(
+                    name: "server.draining",
+                    timeout_secs = shutdown_timeout.as_secs(),
+                    "Draining in-flight HTTP connections"
+                );
+            }
             tokio::time::sleep(shutdown_timeout).await;
-        })
-        .await?;
+        }
+    };
+
+    let primary = axum::serve(listener, app.clone().into_make_service())
+        .with_graceful_shutdown(shutdown_future(true));
+
+    match companion {
+        Some(companion_listener) => {
+            if let Ok(companion_addr) = companion_listener.local_addr() {
+                info!(
+                    name: "server.started.companion",
+                    address = %companion_addr,
+                    "Dual-stack companion listener serving"
+                );
+            }
+            let secondary = axum::serve(companion_listener, app.into_make_service())
+                .with_graceful_shutdown(shutdown_future(false));
+            tokio::try_join!(primary, secondary)?;
+        }
+        None => {
+            primary.await?;
+        }
+    }
 
     info!(name: "server.stopped", "Server shut down gracefully");
     Ok(())
