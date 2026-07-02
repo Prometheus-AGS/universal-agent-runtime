@@ -4,8 +4,8 @@
 The live integration tier SHALL include, at minimum, one case for each of the
 following baseline flows, run against a real booted server instance:
 streaming chat under each of the `openai`, `agui`, and `dual` SSE stream
-modes; an MCP tool-loop round-trip; agent selection via the `model` request
-parameter; a memory write followed by a recall; a RAG document ingest
+modes; an MCP tool-loop round-trip; agent selection via the `agent_id`
+request field; a memory write followed by a recall; a RAG document ingest
 followed by a retrieval; and credential-chain resolution.
 
 #### Scenario: All three streaming modes are exercised
@@ -20,9 +20,22 @@ followed by a retrieval; and credential-chain resolution.
 
 #### Scenario: Agent selection is exercised
 - **WHEN** the baseline case suite runs against either backend
-- **THEN** it includes a passing case that selects a non-default agent via
-  the `model` request parameter and asserts that agent's configuration was
-  used
+- **THEN** it includes a passing case that sends `agent_id: "default-agent"`
+  and one that sends `agent_id: "orchestrator-agent"`, and both resolve and
+  complete successfully via `resolve_agent_for_run`'s fallback-safe lookup
+
+**Known gap (documented, not silently assumed):** `/api/chat/completion`
+resolves an `AgentArtifact` via `agent_id` but does not read
+`agent.prompt.system` for this endpoint — that field is only consumed by
+`RunManager::start_run` (`src/uar/runtime/manager.rs:610`), a different code
+path this endpoint does not call. The two built-in agents
+(`default-agent`, `orchestrator-agent`) are also behaviorally identical
+except for `id`/metadata (`src/uar/defaults.rs:76-82`). This requirement
+therefore proves `agent_id` resolution is fallback-safe and error-free; it
+does NOT prove that agent identity changes observable LLM-call behavior
+through this endpoint — that would need either a different endpoint or a
+change to `/api/chat/completion` itself, both out of scope for this
+test-infra change.
 
 #### Scenario: Memory and RAG cases are exercised or explicitly excused
 - **WHEN** the baseline case suite runs

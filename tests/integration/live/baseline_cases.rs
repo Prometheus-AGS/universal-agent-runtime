@@ -187,3 +187,60 @@ async fn tool_loop_round_trip() {
         "expected the tool loop to complete and return the post-tool-call content, got: {body}"
     );
 }
+
+/// 2.5 — Agent selection via the `agent_id` request field.
+///
+/// Scope note (see specs/live-integration-testing/spec.md's "Known gap"):
+/// this proves `agent_id` resolution is fallback-safe for both built-in
+/// agents (`resolve_agent_for_run`, `src/uar/api/discovery.rs:259`) — it
+/// does NOT prove agent identity changes observable LLM-call behavior.
+/// `/api/chat/completion` does not read `agent.prompt.system` (that's only
+/// consumed by `RunManager::start_run`, a different code path), and the two
+/// built-in agents are behaviorally identical except for id/metadata
+/// (`src/uar/defaults.rs:76-82`). The original, stronger claim ("selecting
+/// an agent changes behavior") was corrected after checking against code —
+/// not assumed.
+#[tokio::test]
+async fn agent_selection_resolves_both_builtin_agents() {
+    let stub = start_stub_llm(content_fixture("hello", "hi there")).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let client = reqwest::Client::new();
+
+    for agent_id in ["default-agent", "orchestrator-agent"] {
+        let resp = client
+            .post(format!("{}/api/chat/completion", server.base_url))
+            .json(&serde_json::json!({
+                "model": MODEL,
+                "messages": [{"role": "user", "content": "hello"}],
+                "agent_id": agent_id,
+                "stream": false,
+            }))
+            .send()
+            .await
+            .expect("request");
+        assert!(
+            resp.status().is_success(),
+            "agent_id {agent_id:?}: status {} body {}",
+            resp.status(),
+            resp.text().await.unwrap_or_default()
+        );
+    }
+
+    // An unknown agent_id must fall back to default-agent rather than error.
+    let resp = client
+        .post(format!("{}/api/chat/completion", server.base_url))
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": "hello"}],
+            "agent_id": "no-such-agent",
+            "stream": false,
+        }))
+        .send()
+        .await
+        .expect("request");
+    assert!(
+        resp.status().is_success(),
+        "unknown agent_id should fall back to default-agent, not error: status {}",
+        resp.status()
+    );
+}

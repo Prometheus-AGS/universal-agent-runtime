@@ -30,7 +30,7 @@ change depends on.
   constructors. **Confirmed per case, not assumed up front** — see design.md.
 - 8 baseline feature cases against the real HTTP server: streaming chat under
   `stream_mode: openai`, `agui`, and `dual`; an MCP tool-loop round-trip;
-  agent selection via the `model` request parameter; a memory write followed
+  agent selection via the `agent_id` request field; a memory write followed
   by a recall; a RAG document ingest followed by a retrieval; and
   credential-chain resolution. Each case runs against both the `recorded` and
   (locally) the `live` backend.

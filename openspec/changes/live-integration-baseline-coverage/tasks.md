@@ -22,7 +22,9 @@
 - [x] 2.3 Streaming chat case for `stream_mode: dual`
 - [x] 2.4 MCP tool-loop round-trip case (tool call issued, result
       incorporated into the final response)
-- [ ] 2.5 Agent selection via the `model` request parameter
+- [x] 2.5 Agent selection via the `agent_id` request field (corrected from
+      `model` after checking code — see specs' "Known gap" note: proves
+      fallback-safe resolution only, not behavior differentiation)
 - [ ] 2.6 Memory write followed by a recall (or `#[ignore]` + documented
       reason per 1.4's finding)
 - [ ] 2.7 RAG document ingest followed by a retrieval (or `#[ignore]` +
