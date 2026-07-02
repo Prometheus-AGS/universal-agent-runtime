@@ -139,22 +139,29 @@ impl ProviderRegistry {
         // catalog. The full catalog is available via `/api/models` (browse path).
         // This ensures the admin UI "configured models" section reflects reality.
         let catalog_model = catalog_provider.and_then(|p| {
-            p.models.iter().find(|m| m.id == model_id).map(|m| ModelConfig {
-                id: m.id.clone(),
-                display_name: if m.name.is_empty() { None } else { Some(m.name.clone()) },
-                context_window: if m.limits.context_window > 0 {
-                    Some(u32::try_from(m.limits.context_window).unwrap_or(u32::MAX))
-                } else {
-                    None
-                },
-                supports_vision: m.modalities.input.iter().any(|s| s == "image"),
-                supports_tools: m.capabilities.tool_call,
-                max_output_tokens: if m.limits.max_output > 0 {
-                    Some(u32::try_from(m.limits.max_output).unwrap_or(u32::MAX))
-                } else {
-                    None
-                },
-            })
+            p.models
+                .iter()
+                .find(|m| m.id == model_id)
+                .map(|m| ModelConfig {
+                    id: m.id.clone(),
+                    display_name: if m.name.is_empty() {
+                        None
+                    } else {
+                        Some(m.name.clone())
+                    },
+                    context_window: if m.limits.context_window > 0 {
+                        Some(u32::try_from(m.limits.context_window).unwrap_or(u32::MAX))
+                    } else {
+                        None
+                    },
+                    supports_vision: m.modalities.input.iter().any(|s| s == "image"),
+                    supports_tools: m.capabilities.tool_call,
+                    max_output_tokens: if m.limits.max_output > 0 {
+                        Some(u32::try_from(m.limits.max_output).unwrap_or(u32::MAX))
+                    } else {
+                        None
+                    },
+                })
         });
         let models = if let Some(m) = catalog_model {
             vec![m]
