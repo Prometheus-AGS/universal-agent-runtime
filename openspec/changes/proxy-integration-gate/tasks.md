@@ -20,14 +20,14 @@
 
 ## 2. Proxy health check + remediation script
 
-- [ ] 2.1 Add `scripts/live-integration.sh`: fast health check
+- [x] 2.1 Add `scripts/live-integration.sh`: fast health check
       (`GET /v1/models` or equivalent) against the configured proxy
-- [ ] 2.2 On health-check failure: print Codex re-login step +
+- [x] 2.2 On health-check failure: print Codex re-login step +
       `launchctl kickstart -k gui/501/ai.prometheus.openai-proxy`
       remediation, exit non-zero, run no test cases
-- [ ] 2.3 On health-check success: set `UAR_LIVE_INTEGRATION_BACKEND=live`
+- [x] 2.3 On health-check success: set `UAR_LIVE_INTEGRATION_BACKEND=live`
       and run the live case suite
-- [ ] 2.4 Add `--allow-recorded-fallback` flag: when the proxy is
+- [x] 2.4 Add `--allow-recorded-fallback` flag: when the proxy is
       unreachable, skip the health-check failure path and run the
       `recorded` backend instead (this is the default in CI)
 
