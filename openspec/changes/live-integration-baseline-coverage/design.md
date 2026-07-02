@@ -73,12 +73,45 @@ presence, advisory until CH-01..CH-04 land a case without drift.
 
 ## Risks / Trade-offs
 
-- **[Risk]** Memory/RAG cases may have no viable in-memory/embedded backend,
-  forcing a real DB dependency this tier was designed to avoid.
-  **Mitigation:** confirm at implementation time (D1); if no embedded mode
-  exists, mark those two cases `#[ignore = "needs a running SurrealDB/
-  Postgres; see D1"]` rather than fabricate a fixture that doesn't prove
-  anything, and note this explicitly in `MATRIX.md` and the phase plan.
+- **[Risk — materialized] Memory/RAG cases have no hermetically-usable
+  embedding provider.** The storage layer IS embedded (SurrealKV file, no
+  network service — that part of the original mitigation was right). The
+  gap is the embedding provider: `embedding_provider: "local"` requires
+  `surreal-memory`'s `local-embeddings` Cargo feature, which this
+  workspace's `Cargo.toml` does not enable anywhere (confirmed by grep, and
+  by `memory_write_then_recall` actually hitting the resulting 503 at
+  runtime — `start_server` swallows the construction error into
+  `memory_service: None` with only a `tracing::error!`, no visible signal
+  without going looking). `"openai"`/`"cohere"` need a real API key, which
+  this hermetic tier can't depend on.
+  **RAG (2.7) has a second, independent reason, found while diagnosing the
+  first via a `tracing_subscriber` added to `harness.rs`:**
+  `VectorMatcher::embed_batch`'s local-model path
+  (`src/uar/runtime/matching/vector.rs:210-213`) has its real
+  `model.forward(...)` call commented out and unconditionally returns
+  all-zero placeholder vectors ("Burn inference running in generic
+  placeholder mode") — not environment-specific, not a missing dependency,
+  just incomplete code. Search after successful ingestion always returns
+  `results: []` because query/document embeddings are always identical
+  zeros. Also found along the way: `update_document_status`
+  (`src/uar/persistence/providers/surreal.rs:524`) uses the SurrealQL
+  function `type::thing(...)`, rejected by the pinned SurrealDB `=3.0.5`
+  ("did you maybe mean type::record") — status writes silently fail, so a
+  document that ingests successfully stays reported `"pending"` forever.
+  Both are real, disclosable, pre-existing product gaps, not test-harness
+  issues.
+  **Resolution (per the original mitigation plan for this exact outcome):**
+  `#[ignore]` both memory (2.6) and RAG (2.7) cases with reasons naming the
+  actual root causes (missing `local-embeddings` feature; placeholder
+  embeddings), not a vague "needs a DB" reason, and note the gap in
+  `MATRIX.md`. Each root cause flagged separately via `spawn_task` for a
+  dedicated follow-up session — enabling `local-embeddings` project-wide is
+  a build-footprint/dependency decision (comparable to the `palace`
+  feature's documented `rusqlite`-conflict trade-off next to it in
+  `Cargo.toml`); wiring up real Burn inference is a real implementation
+  task. Both are well out of scope
+  for this test-infra change to decide unilaterally; flagged as a follow-up
+  candidate, not resolved here.
 - **[Risk]** `stream_mode: dual` (both OpenAI and AG-UI events on one
   connection) may need a raw `TcpListener` + streaming HTTP client rather
   than `axum_test::TestServer`, which could behave differently under test.
@@ -88,3 +121,19 @@ presence, advisory until CH-01..CH-04 land a case without drift.
   sub-scope once started (mirroring `proxy-integration-gate`'s own history).
   **Mitigation:** if it does, apply the same discipline — pause, report,
   split further rather than silently descope requirements.
+- **[Risk — materialized, fixed] Concurrent `boot_test_server` calls cause
+  health-check timeouts.** Confirmed by running the full `live::` suite
+  together (as opposed to per-module during development): 7/16 tests failed
+  at the 10s health-check with `cargo test`'s default parallelism, while
+  every module passed 100% in isolation. Booting a real server (embedded
+  SurrealDB persistence, real orchestrator, real MCP subprocess spawns via
+  the repo's `mcp.json`) several times concurrently is resource-heavy enough
+  to matter.
+  **Fix:** every test that calls `boot_test_server` (in `harness.rs` and
+  `baseline_cases.rs`) is `#[serial]` (`serial_test`, matching the pattern
+  already used in `backend.rs` for a different reason). This forces
+  server-boot tests to run one at a time within the binary; cheap
+  non-booting tests (`stub_llm.rs`'s direct fixture tests) remain
+  unaffected. Relevant for task 3.0's CI-timing concern too: a CI runner is
+  likely more resource-constrained than this dev machine, so serialization
+  isn't just a local nicety — it's load-bearing for CI reliability.

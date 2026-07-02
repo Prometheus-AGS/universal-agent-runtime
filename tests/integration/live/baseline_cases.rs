@@ -8,6 +8,7 @@
 
 use super::harness::{ServiceNeeds, boot_test_server};
 use super::stub_llm::{FixtureResponse, FixtureSet, RequestFingerprint, start_stub_llm};
+use serial_test::serial;
 
 /// Model name as it appears on the wire to the stub — bare, no `provider/`
 /// prefix; see harness.rs's discovery note on why.
@@ -27,6 +28,7 @@ fn content_fixture(last_user_message: &str, response: &str) -> FixtureSet {
 
 /// 2.1 — Streaming chat case for `stream_mode: openai`.
 #[tokio::test]
+#[serial]
 async fn streaming_chat_openai_mode() {
     let stub = start_stub_llm(content_fixture("hello openai mode", "hi there")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
@@ -63,6 +65,7 @@ async fn streaming_chat_openai_mode() {
 
 /// 2.2 — Streaming chat case for `stream_mode: agui`.
 #[tokio::test]
+#[serial]
 async fn streaming_chat_agui_mode() {
     let stub = start_stub_llm(content_fixture("hello agui mode", "hi there")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
@@ -95,6 +98,7 @@ async fn streaming_chat_agui_mode() {
 
 /// 2.3 — Streaming chat case for `stream_mode: dual`.
 #[tokio::test]
+#[serial]
 async fn streaming_chat_dual_mode() {
     let stub = start_stub_llm(content_fixture("hello dual mode", "hi there")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
@@ -134,6 +138,7 @@ async fn streaming_chat_dual_mode() {
 /// `RequestFingerprint::has_tool_result`'s doc comment for why two fixtures
 /// are needed for what looks like "the same" request.
 #[tokio::test]
+#[serial]
 async fn tool_loop_round_trip() {
     let fixtures = FixtureSet::new()
         .with(
@@ -201,6 +206,7 @@ async fn tool_loop_round_trip() {
 /// an agent changes behavior") was corrected after checking against code —
 /// not assumed.
 #[tokio::test]
+#[serial]
 async fn agent_selection_resolves_both_builtin_agents() {
     let stub = start_stub_llm(content_fixture("hello", "hi there")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
@@ -242,5 +248,241 @@ async fn agent_selection_resolves_both_builtin_agents() {
         resp.status().is_success(),
         "unknown agent_id should fall back to default-agent, not error: status {}",
         resp.status()
+    );
+}
+
+/// 2.6 — Memory write followed by a recall.
+///
+/// Write: via the `native__memory_save` MCP native tool (`src/uar/tools/
+/// memory.rs`, namespaced per `McpRegistry::with_native_tool`'s
+/// `native__{name}` convention), same tool-loop mechanism proven in
+/// `tool_loop_round_trip`. Recall: NOT a second LLM tool call — that would
+/// only prove the orchestrator echoes back whatever content this test's own
+/// stub fixture supplies, not that the write actually persisted. Instead,
+/// recall is verified via `GET /api/admin/memories/search`, a plain REST
+/// endpoint reading directly from the same embedded `MemoryService` instance
+/// this server booted with (`ServiceNeeds { memory: true }`) — independent
+/// proof the write landed in real (if embedded) storage, not just that the
+/// stub's canned answer was echoed.
+///
+/// Currently ignored: `MemoryService::new` requires an embedding provider.
+/// `embedding_provider: "local"` needs `surreal-memory`'s `local-embeddings`
+/// Cargo feature, which this workspace does not enable anywhere (checked:
+/// `grep -rn local-embeddings Cargo.toml` — zero hits). `start_server`
+/// swallows the resulting construction error into `memory_service: None`
+/// (a logged `tracing::error!`, not a panic), which is why this test's
+/// symptom was a 503 from the search endpoint rather than a boot failure.
+/// `"openai"`/`"cohere"` need a real API key, unsuitable for this hermetic
+/// tier. See design.md's Risk 1 and appstate-field-plan.md's correction —
+/// this was originally (wrongly) marked "resolved" before the test actually
+/// ran. Re-enable once `local-embeddings` is available in this build.
+#[tokio::test]
+#[serial]
+#[ignore = "needs surreal-memory's local-embeddings Cargo feature, not enabled in this workspace — see design.md Risk 1"]
+async fn memory_write_then_recall() {
+    const USER_ID: &str = "live-itest-user";
+    const CONTENT: &str = "the sky is blue in this test";
+
+    let fixtures = FixtureSet::new()
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: "remember that the sky is blue".to_string(),
+                has_tools: true,
+                has_tool_result: false,
+            },
+            FixtureResponse::ToolCall {
+                name: "native__memory_save".to_string(),
+                arguments: serde_json::json!({
+                    "content": CONTENT,
+                    "user_id": USER_ID,
+                })
+                .to_string(),
+            },
+        )
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: "remember that the sky is blue".to_string(),
+                has_tools: true,
+                has_tool_result: true,
+            },
+            FixtureResponse::Content("saved it".to_string()),
+        );
+    let stub = start_stub_llm(fixtures).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds { memory: true }).await;
+
+    let client = reqwest::Client::new();
+    let write_resp = client
+        .post(format!("{}/api/chat/completion", server.base_url))
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": "remember that the sky is blue"}],
+            "stream": false,
+        }))
+        .send()
+        .await
+        .expect("write request");
+    assert!(
+        write_resp.status().is_success(),
+        "status: {} body: {}",
+        write_resp.status(),
+        write_resp.text().await.unwrap_or_default()
+    );
+
+    let search_resp = client
+        .get(format!(
+            "{}/api/admin/memories/search?q=sky&user_id={USER_ID}",
+            server.base_url
+        ))
+        .send()
+        .await
+        .expect("recall/search request");
+    assert!(
+        search_resp.status().is_success(),
+        "search status: {}",
+        search_resp.status()
+    );
+    let body: serde_json::Value = search_resp.json().await.expect("search json body");
+    let items = body["items"].as_array().expect("items array");
+    assert!(
+        items
+            .iter()
+            .any(|item| item["content"].as_str() == Some(CONTENT)),
+        "expected the saved memory to be recallable via search, got: {body}"
+    );
+}
+
+/// 2.7 — RAG document ingest followed by a retrieval.
+///
+/// Unlike memory (2.6), RAG's embedding path is `VectorMatcher.embed_batch`
+/// (`src/uar/api/knowledge.rs:541-543`) — the same local Burn/Candle model
+/// already used by the intent classifier (`src/uar/runtime/matching/
+/// vector.rs`, loaded from the committed `tokenizer.json`), NOT
+/// `surreal_memory`'s Cargo-feature-gated `EmbeddingProvider::Local`. So RAG
+/// is NOT blocked by the same wall as memory — checked before writing this,
+/// not assumed after 2.6's failure.
+///
+/// Ingestion is asynchronous (`IngestionWorkerPool`, `src/uar/api/
+/// knowledge.rs:422-441`): `POST .../documents` returns 202 with
+/// `status: "pending"` and processes in the background
+/// (pending -> processing -> indexed).
+///
+/// This test polls the SEARCH endpoint directly, not the document-status
+/// endpoint — found (via a `tracing_subscriber` added to `harness.rs` for
+/// exactly this kind of diagnosis) that `update_document_status`
+/// (`src/uar/persistence/providers/surreal.rs:524`) uses the SurrealQL
+/// function `type::thing(...)`, which the pinned SurrealDB version
+/// (`=3.0.5`) rejects ("did you maybe mean type::record"). The status write
+/// silently fails and is swallowed (`warn!`/`error!`, no propagation), so a
+/// document that ingests successfully (chunked, embedded, stored — the
+/// worker log confirms "Document ingestion completed") stays reported as
+/// `"pending"` forever. Flagged separately (spawn_task), not fixed here.
+///
+/// Currently ignored for a second, more fundamental reason found the same
+/// way: `VectorMatcher::embed_batch`'s local-model path
+/// (`src/uar/runtime/matching/vector.rs:210-213`) has its actual
+/// `model.forward(...)` call commented out — `// UNCOMMENT ONCE COMPILED TO
+/// VERIFY SIGNATURE` — and unconditionally returns all-zero 384-dim vectors
+/// ("Burn inference running in generic placeholder mode", logged on every
+/// call). This isn't environment-specific; it's incomplete code affecting
+/// every caller of this embedding path, not just this test. Confirmed live:
+/// search after successful ingestion always returns `results: []`, because
+/// query and document embeddings are always identical zero vectors. Flagged
+/// separately (spawn_task) — wiring up real Burn inference is well out of
+/// scope for a test-infra change. Re-enable once that's fixed; the test
+/// itself is correct (polls search, doesn't depend on the broken status
+/// field) and will properly validate the fix when embeddings are real.
+#[tokio::test]
+#[serial]
+#[ignore = "VectorMatcher::embed_batch always returns zero-vector placeholder embeddings (model.forward() call is commented out) — search can never find real matches; see spawn_task"]
+async fn rag_ingest_then_retrieve() {
+    let stub = start_stub_llm(FixtureSet::new()).await; // unused — this case never calls the LLM
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let client = reqwest::Client::new();
+
+    let kb_resp = client
+        .post(format!("{}/api/knowledge", server.base_url))
+        .json(&serde_json::json!({
+            "name": format!("live-itest-kb-{}", uuid::Uuid::new_v4()),
+            "description": "live integration test KB",
+        }))
+        .send()
+        .await
+        .expect("create KB request");
+    assert!(
+        kb_resp.status().is_success(),
+        "create KB status: {} body: {}",
+        kb_resp.status(),
+        kb_resp.text().await.unwrap_or_default()
+    );
+    let kb: serde_json::Value = kb_resp.json().await.expect("KB json body");
+    let kb_id = kb["id"].as_str().expect("KB id").to_string();
+
+    const CONTENT: &str = "Prometheus universal agent runtime live integration test marker phrase.";
+    let form = reqwest::multipart::Form::new().part(
+        "file",
+        reqwest::multipart::Part::bytes(CONTENT.as_bytes().to_vec())
+            .file_name("marker.txt")
+            .mime_str("text/plain")
+            .unwrap(),
+    );
+    let upload_resp = client
+        .post(format!(
+            "{}/api/knowledge/{kb_id}/documents",
+            server.base_url
+        ))
+        .multipart(form)
+        .send()
+        .await
+        .expect("upload request");
+    assert!(
+        upload_resp.status().is_success(),
+        "upload status: {} body: {}",
+        upload_resp.status(),
+        upload_resp.text().await.unwrap_or_default()
+    );
+    let doc: serde_json::Value = upload_resp.json().await.expect("upload json body");
+    let doc_id = doc["id"].as_str().expect("document id").to_string();
+
+    // doc_id is captured for completeness (matches the real API response
+    // shape) but deliberately unused for polling — see the doc comment on
+    // why document-status polling doesn't work in this build.
+    let _ = doc_id;
+
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(20);
+    let search_body = loop {
+        let search_resp = client
+            .post(format!("{}/api/knowledge/{kb_id}/search", server.base_url))
+            .json(&serde_json::json!({ "query": "live integration test marker phrase" }))
+            .send()
+            .await
+            .expect("search request");
+        assert!(
+            search_resp.status().is_success(),
+            "search status: {} body: {}",
+            search_resp.status(),
+            search_resp.text().await.unwrap_or_default()
+        );
+        let body: serde_json::Value = search_resp.json().await.expect("search json body");
+        let has_results = body["results"]
+            .as_array()
+            .is_some_and(|results| !results.is_empty());
+        if has_results {
+            break body;
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "no search results within 20s (last response: {body})"
+        );
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    };
+
+    let results = search_body["results"].as_array().expect("results array");
+    assert!(
+        results.iter().any(|r| r["content"]
+            .as_str()
+            .is_some_and(|c| c.contains("marker phrase"))),
+        "expected the ingested marker content to be retrievable via search, got: {search_body}"
     );
 }

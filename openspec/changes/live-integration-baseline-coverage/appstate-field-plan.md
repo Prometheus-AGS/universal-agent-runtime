@@ -50,10 +50,34 @@ the existing pattern in `src/config.rs`'s own `#[cfg(test)]` module
 
 ## Answers to design.md's open risks
 
-- **Memory/RAG embeddability (Risk 1):** resolved — `MemoryConfig.db_path`
-  drives an embedded SurrealKV file, not a network service; setting
-  `embedding_provider: "local"` avoids needing a real OpenAI key. No
-  `#[ignore]` needed for these two cases.
+- **Memory/RAG embeddability (Risk 1):** **CORRECTED — was wrong, not
+  resolved.** The claim below (struck through) was based on reading
+  `MemoryConfig`'s doc comments and defaults, not on tracing the actual
+  Cargo feature wiring — the real gate. Discovered only when
+  `memory_write_then_recall` (task 2.6) actually ran and got a 503: the repo
+  root's `Cargo.toml` pins `surreal-memory` with `default-features = false`
+  and **does not** enable the `local-embeddings` feature anywhere in the
+  workspace (confirmed: `grep -rn local-embeddings Cargo.toml` — zero hits).
+  `EmbeddingProvider::Local` requires that feature; without it,
+  `surreal-memory`'s `create_embedding_service` hits an explicit
+  `#[cfg(not(feature = "local-embeddings"))]` arm that
+  `anyhow::bail!("Local embeddings are not available. Rebuild with --features
+  local-embeddings, or use EMBEDDING_PROVIDER=openai or
+  EMBEDDING_PROVIDER=cohere")`. `start_server` catches that error and falls
+  back to `memory_service: None` with only a `tracing::error!` (no panic, no
+  visible signal unless you go looking — which is exactly why this wasn't
+  caught by reading code alone).
+  ~~resolved — `MemoryConfig.db_path` drives an embedded SurrealKV file, not
+  a network service; setting `embedding_provider: "local"` avoids needing a
+  real OpenAI key. No `#[ignore]` needed for these two cases.~~
+  **Actual resolution:** `MemoryConfig.db_path`'s embedded-SurrealKV finding
+  still holds (that part was right) — but no embedding provider is usable
+  hermetically in this build: `"local"` needs a Cargo feature this project
+  doesn't enable (a build-footprint decision out of scope for a test-infra
+  change — flagging it, not deciding it); `"openai"`/`"cohere"` need a real
+  API key (not appropriate for CI). Both memory (2.6) and RAG (2.7) cases
+  are `#[ignore]`d per this exact reason, per design.md's original fallback
+  plan for this risk (which existed precisely for this outcome).
 - **`stream_mode: dual` / SSE support (Risk 2):** still open — task 1.3.
 
 ## Superseding decision: use `start_server` directly, not hand-rolled `AppState`

@@ -25,10 +25,19 @@
 - [x] 2.5 Agent selection via the `agent_id` request field (corrected from
       `model` after checking code — see specs' "Known gap" note: proves
       fallback-safe resolution only, not behavior differentiation)
-- [ ] 2.6 Memory write followed by a recall (or `#[ignore]` + documented
-      reason per 1.4's finding)
-- [ ] 2.7 RAG document ingest followed by a retrieval (or `#[ignore]` +
-      documented reason per 1.4's finding)
+- [x] 2.6 Memory write followed by a recall — `#[ignore]`d (needs
+      `local-embeddings` Cargo feature, not enabled in this workspace; see
+      design.md Risk 1); root-caused and documented, not silently skipped
+- [x] 2.7 RAG document ingest followed by a retrieval — `#[ignore]`d for two
+      independent, root-caused reasons (both flagged via `spawn_task`, not
+      fixed here): `VectorMatcher::embed_batch` returns unconditional
+      zero-vector placeholder embeddings (`model.forward()` commented out,
+      `src/uar/runtime/matching/vector.rs:210-213` — search can never find
+      real matches); and a SurrealQL `type::thing(...)` call rejected by the
+      pinned SurrealDB `=3.0.5` (`src/uar/persistence/providers/surreal.rs:524`
+      — document status silently stays "pending" even when ingestion
+      actually succeeds). Test polls search directly (not the broken status
+      field) so it will correctly validate the embedding fix once landed.
 - [ ] 2.8 Credential-chain resolution case (reuse
       `InMemoryCredentialStore` pattern from
       `tests/credentials_api_integration_test.rs`)

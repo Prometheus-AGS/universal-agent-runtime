@@ -14,11 +14,32 @@
 //! `pub(crate)`, so this harness cannot call them directly even if it wanted
 //! to — which is fine, since HTTP-level testing never needs to.
 
-use std::sync::Arc;
+use std::sync::{Arc, Once};
 use std::time::Duration;
 
 use universal_agent_runtime::config::{AppConfig, Cli};
 use universal_agent_runtime::server::start_server;
+
+static TRACING_INIT: Once = Once::new();
+
+/// `start_server`'s internal `tracing::info!`/`error!` calls are otherwise
+/// silently dropped in a test binary (no ambient subscriber) — which made a
+/// prior failure (memory service falling back to `None`) far harder to
+/// diagnose than it needed to be. `Once`-guarded so repeated
+/// `boot_test_server` calls across tests in the same process don't panic on
+/// double-init. `RUST_LOG` controls verbosity; default `info` to catch
+/// exactly the sort of soft-fail-and-fall-back errors this tier cares about.
+fn init_tracing_once() {
+    TRACING_INIT.call_once(|| {
+        let _ = tracing_subscriber::fmt()
+            .with_env_filter(
+                tracing_subscriber::EnvFilter::try_from_default_env()
+                    .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+            )
+            .with_test_writer()
+            .try_init();
+    });
+}
 
 /// Which optional services a baseline case needs, beyond the always-on
 /// SurrealDB-embedded persistence layer `start_server` requires
@@ -86,6 +107,7 @@ pub async fn boot_test_server(
     llm_model: &str,
     needs: ServiceNeeds,
 ) -> TestServerHandle {
+    init_tracing_once();
     let port = find_free_port();
     let persistence_path = unique_temp_path("persistence");
 
@@ -185,8 +207,17 @@ mod tests {
     use super::*;
     use crate::live::stub_llm::{FixtureResponse, RequestFingerprint};
     use crate::live::stub_llm::{FixtureSet, start_stub_llm};
+    use serial_test::serial;
 
+    // #[serial]: booting a real server (real embedded SurrealDB, real
+    // orchestrator, real MCP subprocess spawns) is heavy enough that running
+    // several concurrently causes health-check timeouts under cargo test's
+    // default parallelism — confirmed by a full-suite run that passed each
+    // module individually but failed 7/16 tests together. Every test that
+    // calls boot_test_server (here and in baseline_cases.rs) is #[serial]
+    // for this reason, not for shared mutable state.
     #[tokio::test]
+    #[serial]
     async fn boots_and_answers_health_check() {
         let stub = start_stub_llm(FixtureSet::new()).await;
 
@@ -207,6 +238,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[serial]
     async fn chat_completion_flows_through_the_real_server_to_the_stub() {
         // The real orchestrator (a) strips the `provider/` prefix before the
         // wire request — the stub sees the bare model name, not
