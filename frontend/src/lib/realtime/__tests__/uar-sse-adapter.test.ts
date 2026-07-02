@@ -10,7 +10,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { ChangeSet } from "@prometheus-ags/prometheus-entity-management";
 
-import { createUarSseAdapter } from "../uar-sse-adapter";
+import { __resetUarSseConnections, createUarSseAdapter } from "../uar-sse-adapter";
 
 type Listener = (ev: MessageEvent | Event) => void;
 
@@ -65,6 +65,7 @@ class FakeEventSource {
 
 describe("createUarSseAdapter", () => {
   beforeEach(() => {
+    __resetUarSseConnections();
     FakeEventSource.reset();
     vi.stubGlobal("EventSource", FakeEventSource);
   });

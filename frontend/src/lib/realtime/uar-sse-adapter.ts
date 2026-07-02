@@ -1,12 +1,16 @@
 /**
  * SSE-backed RealtimeAdapter for the UAR live-query bus.
  *
- * Subscribes to `GET /api/live/{topic}` on the UAR server (exposed by the
- * `surreal-live-query-bus` change) and translates each `event: create|update|delete`
- * frame into an `EntityChange` published through the entity-mgmt graph.
+ * Every topic shares a SINGLE `GET /api/live` EventSource. Browsers cap HTTP/1.1
+ * connections at 6 per origin; opening one stream per topic (10 of them)
+ * exhausted that budget and starved every other request — including the PGlite
+ * WASM the SPA needs to boot — hanging startup. The multiplexed endpoint fans
+ * all topics over one connection, tagging each event with its `topic`; this
+ * module demultiplexes back to per-topic, per-`entityType` `EntityChange`s.
  *
- * One adapter instance per topic. Multiple views reading the same entity all
- * re-render from the single graph subscription — no per-view fetches.
+ * `createUarSseAdapter` still returns one adapter per topic (so the entity graph
+ * keeps routing changes by `entityType`), but all adapters reuse the one shared
+ * connection underneath.
  */
 import type {
   AdapterStatus,
@@ -23,8 +27,8 @@ export interface UarSseAdapterOptions {
   /** Logical entity type the graph stores rows under (often equal to `topic`). */
   entityType: string;
   /**
-   * Optional base URL. Defaults to same-origin (`/api/live/...`) which is what
-   * the dev proxy and the production deploy both serve. Useful for cross-origin
+   * Optional base URL. Defaults to same-origin (`/api/live`) which is what the
+   * dev proxy and the production deploy both serve. Useful for cross-origin
    * dev rigs.
    */
   baseUrl?: string;
@@ -34,46 +38,76 @@ export interface UarSseAdapterOptions {
   maxReconnectAttempts?: number;
 }
 
-export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter {
-  const {
-    topic,
-    entityType,
-    baseUrl = "",
-    reconnectBaseDelay = 1_000,
-    maxReconnectAttempts = Number.POSITIVE_INFINITY,
-  } = opts;
+type LiveOp = "insert" | "update" | "delete";
+type TopicListener = (op: LiveOp, id: string, data: Record<string, unknown>) => void;
 
+// ── Shared multiplexed connection ──────────────────────────────────────────
+// One EventSource to `/api/live` per origin, demultiplexed to per-topic
+// listeners. Created lazily on first subscriber and disconnected when the last
+// listener (across all topics) goes away. The registry object persists so
+// status subscribers and later re-subscribes reuse the same instance.
+
+interface SharedConnection {
+  addListener(topic: string, fn: TopicListener): void;
+  removeListener(topic: string, fn: TopicListener): void;
+  onStatus(cb: (s: AdapterStatus) => void): () => void;
+}
+
+const sharedConnections = new Map<string, SharedConnection>();
+
+/**
+ * Test-only: drop all shared connections so each test starts from a clean
+ * slate. The shared connection is a module-level singleton (one socket for the
+ * whole app); without this, state would leak between test cases. Never called
+ * in production.
+ *
+ * @internal
+ */
+export function __resetUarSseConnections(): void {
+  sharedConnections.clear();
+}
+
+function getSharedConnection(
+  baseUrl: string,
+  reconnectBaseDelay: number,
+  maxReconnectAttempts: number,
+): SharedConnection {
+  const existing = sharedConnections.get(baseUrl);
+  if (existing) return existing;
+
+  const listeners = new Map<string, Set<TopicListener>>();
   const statusCbs = new Set<(s: AdapterStatus) => void>();
-  const handlers = new Set<(cs: ChangeSet) => void>();
 
   let es: EventSource | null = null;
   let attempts = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  let stopped = false;
 
   const emitStatus = (s: AdapterStatus) => {
     for (const cb of statusCbs) cb(s);
   };
 
-  const parseLive = (raw: string, op: "insert" | "update" | "delete"): EntityChange[] => {
+  const totalListeners = (): number => {
+    let n = 0;
+    for (const set of listeners.values()) n += set.size;
+    return n;
+  };
+
+  const dispatch = (raw: string, op: LiveOp) => {
+    let parsed: { topic: string; id: string; data: unknown };
     try {
-      const parsed = JSON.parse(raw) as { topic: string; id: string; data: unknown };
-      return [
-        {
-          op,
-          type: entityType,
-          id: parsed.id,
-          data: (parsed.data ?? {}) as Record<string, unknown>,
-        },
-      ];
+      parsed = JSON.parse(raw) as { topic: string; id: string; data: unknown };
     } catch {
-      return [];
+      return;
     }
+    const set = listeners.get(parsed.topic);
+    if (!set || set.size === 0) return;
+    const data = (parsed.data ?? {}) as Record<string, unknown>;
+    for (const fn of set) fn(op, parsed.id, data);
   };
 
   function connect() {
-    if (stopped) return;
-    const url = `${baseUrl}/api/live/${encodeURIComponent(topic)}`;
+    reconnectTimer = null;
+    const url = `${baseUrl}/api/live`;
     emitStatus("connecting");
 
     try {
@@ -89,15 +123,9 @@ export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter
       emitStatus("connected");
     };
 
-    const dispatch = (changes: EntityChange[]) => {
-      if (!changes.length) return;
-      const cs: ChangeSet = { changes, timestamp: new Date().toISOString() };
-      for (const h of handlers) h(cs);
-    };
-
-    es.addEventListener("create", (e) => dispatch(parseLive((e as MessageEvent).data, "insert")));
-    es.addEventListener("update", (e) => dispatch(parseLive((e as MessageEvent).data, "update")));
-    es.addEventListener("delete", (e) => dispatch(parseLive((e as MessageEvent).data, "delete")));
+    es.addEventListener("create", (e) => dispatch((e as MessageEvent).data, "insert"));
+    es.addEventListener("update", (e) => dispatch((e as MessageEvent).data, "update"));
+    es.addEventListener("delete", (e) => dispatch((e as MessageEvent).data, "delete"));
 
     es.onerror = () => {
       emitStatus("error");
@@ -108,31 +136,80 @@ export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter
   }
 
   function scheduleReconnect() {
-    if (stopped) return;
+    if (totalListeners() === 0) return;
     if (attempts >= maxReconnectAttempts) return;
     const delay = Math.min(reconnectBaseDelay * 2 ** Math.min(attempts++, 6), 30_000);
     reconnectTimer = setTimeout(connect, delay);
   }
 
+  const conn: SharedConnection = {
+    addListener(topic, fn) {
+      let set = listeners.get(topic);
+      if (!set) {
+        set = new Set();
+        listeners.set(topic, set);
+      }
+      set.add(fn);
+      // First listener of the whole connection — open the stream.
+      if (!es && reconnectTimer === null) {
+        attempts = 0;
+        connect();
+      }
+    },
+    removeListener(topic, fn) {
+      const set = listeners.get(topic);
+      if (set) {
+        set.delete(fn);
+        if (set.size === 0) listeners.delete(topic);
+      }
+      // Last listener across all topics — tear the stream down.
+      if (totalListeners() === 0) {
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+        es?.close();
+        es = null;
+        attempts = 0;
+        emitStatus("disconnected");
+      }
+    },
+    onStatus(cb) {
+      statusCbs.add(cb);
+      return () => statusCbs.delete(cb);
+    },
+  };
+
+  sharedConnections.set(baseUrl, conn);
+  return conn;
+}
+
+export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter {
+  const {
+    topic,
+    entityType,
+    baseUrl = "",
+    reconnectBaseDelay = 1_000,
+    maxReconnectAttempts = Number.POSITIVE_INFINITY,
+  } = opts;
+
+  const conn = getSharedConnection(baseUrl, reconnectBaseDelay, maxReconnectAttempts);
+
   return {
     name: `uar-sse:${topic}`,
     subscribe(_config: SubscriptionConfig, handler): UnsubscribeFn {
-      handlers.add(handler);
-      if (!es) connect();
+      const listener: TopicListener = (op, id, data) => {
+        const change: EntityChange = { op, type: entityType, id, data };
+        const cs: ChangeSet = { changes: [change], timestamp: new Date().toISOString() };
+        handler(cs);
+      };
+      conn.addListener(topic, listener);
       return () => {
-        handlers.delete(handler);
-        if (handlers.size === 0) {
-          stopped = true;
-          if (reconnectTimer) clearTimeout(reconnectTimer);
-          es?.close();
-          es = null;
-          emitStatus("disconnected");
-        }
+        conn.removeListener(topic, listener);
       };
     },
     onStatusChange(cb) {
-      statusCbs.add(cb);
-      return () => statusCbs.delete(cb);
+      return conn.onStatus(cb);
     },
   };
 }
