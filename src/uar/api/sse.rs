@@ -400,6 +400,37 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
 /// `stream_mode` is `dual` or when a `runtime` consumer is connected.
 ///
 /// Returns `None` for events that don't produce a `Runtime*` entity.
+/// Map a `NormalizedEvent` to an **official AG-UI protocol** event
+/// (`RUN_STARTED`, `TEXT_MESSAGE_CONTENT`, `TOOL_CALL_*`, `STATE_DELTA`, …)
+/// instead of UAR's invented `agui.*` names (CH-21, fable §7 R6). This is what
+/// CopilotKit / Microsoft Agent Framework / Oracle A2UI clients expect on the
+/// wire. Reuses [`to_agui_event`]'s payload logic and only remaps the event
+/// name, so behaviour and payload shape are identical — only the SSE `event:`
+/// field changes. Wire this behind a new `stream_mode` (e.g. `agui_spec`) or
+/// promote it to replace the legacy names once clients migrate.
+#[must_use]
+pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::Value)> {
+    let (legacy_name, payload) = to_agui_event(event)?;
+    let spec_name = match legacy_name {
+        "agui.stream.start" => "RUN_STARTED",
+        "agui.message.delta" => "TEXT_MESSAGE_CONTENT",
+        "agui.thinking.delta" | "agui.reasoning.delta" => "THINKING_TEXT_MESSAGE_CONTENT",
+        "agui.done" => "RUN_FINISHED",
+        "agui.error" => "RUN_ERROR",
+        "agui.cancelled" => "RUN_ERROR",
+        "agui.state.patch" => "STATE_DELTA",
+        "agui.context.update" => "STATE_DELTA",
+        "agui.citation.added" => "CUSTOM",
+        "agui.artifact" => "CUSTOM",
+        "agui.skill.activated" => "CUSTOM",
+        "agui.guardrail" => "CUSTOM",
+        "agui.quality.sycophancy" => "CUSTOM",
+        "agui.memory.mutation" | "agui.memory.recall" | "agui.memory.update" => "CUSTOM",
+        other => other, // unknown → pass through unchanged
+    };
+    Some((spec_name, payload))
+}
+
 pub fn to_runtime_entity_event(
     event: &NormalizedEvent,
 ) -> Option<(&'static str, serde_json::Value)> {
