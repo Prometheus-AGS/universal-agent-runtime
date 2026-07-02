@@ -70,19 +70,42 @@ impl ModelRouter {
             }
         }
 
-        // Sort by cost (cheapest first), then by context window (largest first)
+        // Sort by cost (cheapest first), then by context window (largest first).
+        //
+        // A model with NO cost data must NOT sort as free (0.0) — that made
+        // uncatalogued/unknown-priced models win the "cheapest" selection,
+        // silently preferring models we can't cost-account. Treat missing cost
+        // as most-expensive (`f64::INFINITY`) so priced models are preferred
+        // and unknown-cost models are only chosen when nothing else qualifies.
         candidates.sort_by(|(_, a), (_, b)| {
-            let cost_a = a.cost.as_ref().map_or(0.0, |c| c.input);
-            let cost_b = b.cost.as_ref().map_or(0.0, |c| c.input);
+            let cost_a = a.cost.as_ref().map_or(f64::INFINITY, |c| c.input);
+            let cost_b = b.cost.as_ref().map_or(f64::INFINITY, |c| c.input);
             cost_a
                 .partial_cmp(&cost_b)
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| b.limits.context_window.cmp(&a.limits.context_window))
         });
 
-        candidates
+        let selection = candidates
             .first()
-            .map(|(provider, model)| format!("{}/{}", provider.id, model.id))
+            .map(|(provider, model)| format!("{}/{}", provider.id, model.id));
+
+        // Routing-decision audit trail (Rule 34): what was chosen, from how many
+        // configured candidates, against which requirements.
+        tracing::info!(
+            name: "llm.router.decision",
+            selected = selection.as_deref().unwrap_or("<none>"),
+            candidate_count = candidates.len(),
+            needs_tools = requirements.needs_tools,
+            needs_reasoning = requirements.needs_reasoning,
+            needs_vision = requirements.needs_vision,
+            needs_structured_output = requirements.needs_structured_output,
+            min_context = requirements.min_context,
+            max_cost_per_1m_input = requirements.max_cost_per_1m_input,
+            "model router selected a model"
+        );
+
+        selection
     }
 }
 

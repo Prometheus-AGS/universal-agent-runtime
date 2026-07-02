@@ -1048,26 +1048,25 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .with_state(state);
 
     // ── A2A v0.3 gRPC transport ──────────────────────────────────────────────
-    // Disabled pending tonic-build proto compilation setup.
-    // When enabled, this spawns a gRPC server on a separate port (default 50051)
-    // alongside the main HTTP server.
-    // {
-    //     let grpc_port = config.server.grpc_port;
-    //     let grpc_addr: std::net::SocketAddr = format!("0.0.0.0:{grpc_port}")
-    //         .parse()
-    //         .expect("invalid gRPC address");
-    //     let grpc_service =
-    //         crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state));
-    //     tokio::spawn(async move {
-    //         if let Err(e) = tonic::transport::Server::builder()
-    //             .add_service(grpc_service.into_server())
-    //             .serve(grpc_addr)
-    //             .await
-    //         {
-    //             tracing::error!(error = %e, "A2A gRPC server error");
-    //         }
-    //     });
-    // }
+    // Spawns a gRPC server on a separate port (default 50051) alongside HTTP.
+    {
+        let grpc_port = config.server.grpc_port;
+        let grpc_addr: std::net::SocketAddr = format!("0.0.0.0:{grpc_port}")
+            .parse()
+            .expect("invalid gRPC address");
+        let grpc_service =
+            crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state));
+        info!(name: "a2a.grpc.serving", address = %grpc_addr, "A2A gRPC transport serving");
+        tokio::spawn(async move {
+            if let Err(e) = tonic::transport::Server::builder()
+                .add_service(grpc_service.into_server())
+                .serve(grpc_addr)
+                .await
+            {
+                tracing::error!(error = %e, "A2A gRPC server error");
+            }
+        });
+    }
 
     let addr = format!("{}:{}", config.server.host, config.server.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;

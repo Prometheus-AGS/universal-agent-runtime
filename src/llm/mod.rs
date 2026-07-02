@@ -22,6 +22,7 @@ pub mod catalog;
 pub mod liter_driver;
 pub mod mock_driver;
 pub mod orchestrator;
+pub mod prompt_dialect;
 pub mod registry;
 pub mod router;
 pub mod tool_extractor;

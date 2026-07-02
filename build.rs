@@ -19,10 +19,11 @@ fn main() {
     // in src/uar/api/a2a/grpc.rs using tonic's manual service builder.
     // To enable auto-generation, add `tonic-build = { version = "0.14", features = ["prost"] }`
     // to [build-dependencies] and uncomment the compile_protos call below.
-    // if Path::new("proto/a2a.proto").exists() {
-    //     tonic_build::compile_protos("proto/a2a.proto")
-    //         .expect("Failed to compile A2A proto");
-    // }
+    // tonic 0.14 moved prost codegen to the separate `tonic-prost-build` crate.
+    if Path::new("proto/a2a.proto").exists() {
+        tonic_prost_build::compile_protos("proto/a2a.proto")
+            .expect("Failed to compile A2A proto");
+    }
 
     // -------------------------------------------------------------------------
     // Provider / Model Catalog
