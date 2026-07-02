@@ -178,17 +178,22 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
                 compiler_store
                     as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
-            let registry = Arc::new(crate::uar::api::a2a::PostgresAgentRegistry::new(pool))
+            let registry = Arc::new(crate::uar::api::a2a::PostgresAgentRegistry::new(pool.clone()))
                 as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
+
+            // Durable per-user credential store on the same pool (CH-02) — no
+            // longer falls back to in-memory on Postgres.
+            let credential_store = Some(Arc::new(
+                uar::security::credentials::PostgresCredentialStore::new(pool),
+            )
+                as Arc<dyn uar::security::credentials::CredentialStore>);
 
             (
                 Arc::new(provider) as Arc<dyn PersistenceLayer>,
                 Some((spec, sess)),
                 Some(registry),
                 live_bus,
-                // Postgres-backed credential store not implemented; falls back
-                // to in-memory below (matches the api_keys precedent).
-                None,
+                credential_store,
             )
         }
         #[cfg(not(feature = "postgres-backend"))]

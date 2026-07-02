@@ -18,6 +18,8 @@ pub use store::{
     CredentialMetadata, CredentialRecord, CredentialScope, CredentialStore,
     InMemoryCredentialStore, SharedCredentialStore, SurrealCredentialStore,
 };
+#[cfg(feature = "sqlx")]
+pub use store::PostgresCredentialStore;
 
 use std::sync::Arc;
 

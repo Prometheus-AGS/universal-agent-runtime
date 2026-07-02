@@ -40,6 +40,18 @@ impl CredentialScope {
             Self::System => "system",
         }
     }
+
+    /// Parse a scope from its `as_str` form. Unknown values map to `System`
+    /// (the safest, least-privileged default for a scoped lookup).
+    #[must_use]
+    pub fn from_str_lenient(s: &str) -> Self {
+        match s {
+            "session" => Self::Session,
+            "agent" => Self::Agent,
+            "user" => Self::User,
+            _ => Self::System,
+        }
+    }
 }
 
 /// A stored credential row. `api_key_encrypted` is AES-256-GCM ciphertext.
@@ -378,5 +390,136 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Postgres-backed credential store (feature-gated: `sqlx`/`postgres-backend`).
+//
+// Mirrors `SurrealCredentialStore` for Postgres deployments — closes the
+// multi-tenant-credentials gap where Postgres previously fell back to the
+// in-memory store (see fable §R2). AES-256-GCM encryption is applied by the
+// caller (`ProviderService`); this store only persists ciphertext.
+//
+// Requires this table (add via sqlx migration):
+//   CREATE TABLE IF NOT EXISTS provider_credentials (
+//     scope             TEXT NOT NULL,
+//     scope_id          TEXT NOT NULL,
+//     provider_id       TEXT NOT NULL,
+//     api_key_encrypted TEXT NOT NULL,
+//     api_key_hint      TEXT NOT NULL,
+//     created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+//     updated_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+//     PRIMARY KEY (scope, scope_id, provider_id)
+//   );
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[cfg(feature = "sqlx")]
+#[derive(Debug, Clone)]
+pub struct PostgresCredentialStore {
+    pool: sqlx::PgPool,
+}
+
+#[cfg(feature = "sqlx")]
+impl PostgresCredentialStore {
+    #[must_use]
+    pub fn new(pool: sqlx::PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[cfg(feature = "sqlx")]
+#[async_trait::async_trait]
+impl CredentialStore for PostgresCredentialStore {
+    async fn put(&self, record: CredentialRecord) -> anyhow::Result<()> {
+        sqlx::query(
+            "INSERT INTO provider_credentials \
+             (scope, scope_id, provider_id, api_key_encrypted, api_key_hint, created_at, updated_at) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7) \
+             ON CONFLICT (scope, scope_id, provider_id) DO UPDATE SET \
+             api_key_encrypted = EXCLUDED.api_key_encrypted, \
+             api_key_hint = EXCLUDED.api_key_hint, \
+             updated_at = EXCLUDED.updated_at",
+        )
+        .bind(record.scope.as_str())
+        .bind(&record.scope_id)
+        .bind(&record.provider_id)
+        .bind(&record.api_key_encrypted)
+        .bind(&record.api_key_hint)
+        .bind(record.created_at)
+        .bind(record.updated_at)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn get(
+        &self,
+        scope: CredentialScope,
+        scope_id: &str,
+        provider_id: &str,
+    ) -> anyhow::Result<Option<CredentialRecord>> {
+        use sqlx::Row;
+        let row = sqlx::query(
+            "SELECT scope, scope_id, provider_id, api_key_encrypted, api_key_hint, \
+             created_at, updated_at FROM provider_credentials \
+             WHERE scope = $1 AND scope_id = $2 AND provider_id = $3",
+        )
+        .bind(scope.as_str())
+        .bind(scope_id)
+        .bind(provider_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(row.map(|r| row_to_record(&r)))
+    }
+
+    async fn list(
+        &self,
+        scope: CredentialScope,
+        scope_id: &str,
+    ) -> anyhow::Result<Vec<CredentialRecord>> {
+        use sqlx::Row;
+        let rows = sqlx::query(
+            "SELECT scope, scope_id, provider_id, api_key_encrypted, api_key_hint, \
+             created_at, updated_at FROM provider_credentials \
+             WHERE scope = $1 AND scope_id = $2 ORDER BY provider_id",
+        )
+        .bind(scope.as_str())
+        .bind(scope_id)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(rows.iter().map(row_to_record).collect())
+    }
+
+    async fn delete(
+        &self,
+        scope: CredentialScope,
+        scope_id: &str,
+        provider_id: &str,
+    ) -> anyhow::Result<bool> {
+        let result = sqlx::query(
+            "DELETE FROM provider_credentials \
+             WHERE scope = $1 AND scope_id = $2 AND provider_id = $3",
+        )
+        .bind(scope.as_str())
+        .bind(scope_id)
+        .bind(provider_id)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected() > 0)
+    }
+}
+
+#[cfg(feature = "sqlx")]
+fn row_to_record(r: &sqlx::postgres::PgRow) -> CredentialRecord {
+    use sqlx::Row;
+    CredentialRecord {
+        scope: CredentialScope::from_str_lenient(&r.get::<String, _>("scope")),
+        scope_id: r.get("scope_id"),
+        provider_id: r.get("provider_id"),
+        api_key_encrypted: r.get("api_key_encrypted"),
+        api_key_hint: r.get("api_key_hint"),
+        created_at: r.get("created_at"),
+        updated_at: r.get("updated_at"),
     }
 }
