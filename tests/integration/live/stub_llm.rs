@@ -36,14 +36,20 @@ pub enum FixtureResponse {
 }
 
 /// Fingerprint a request the same way regardless of streaming: by model, the
-/// last user message's content, and whether any tool schema was offered.
-/// This is deliberately coarse — fixtures key on "what is being asked for",
-/// not exact request byte-equality.
+/// last user message's content, whether any tool schema was offered, and
+/// whether a tool result is already present in the conversation. This is
+/// deliberately coarse — fixtures key on "what is being asked for", not
+/// exact request byte-equality. `has_tool_result` exists because a tool-loop
+/// round trip sends the SAME user message twice (initial call, then again
+/// after appending the tool's `role: "tool"` result) — without it, both
+/// calls would fingerprint identically and the stub couldn't distinguish
+/// "return a tool call" from "return the final answer".
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RequestFingerprint {
     pub model: String,
     pub last_user_message: String,
     pub has_tools: bool,
+    pub has_tool_result: bool,
 }
 
 impl RequestFingerprint {
@@ -57,6 +63,11 @@ impl RequestFingerprint {
             .get("tools")
             .and_then(Value::as_array)
             .is_some_and(|t| !t.is_empty());
+        let messages = body.get("messages").and_then(Value::as_array);
+        let has_tool_result = messages
+            .into_iter()
+            .flatten()
+            .any(|m| m.get("role").and_then(Value::as_str) == Some("tool"));
         let last_user_message = body
             .get("messages")
             .and_then(Value::as_array)
@@ -72,6 +83,7 @@ impl RequestFingerprint {
             model,
             last_user_message,
             has_tools,
+            has_tool_result,
         }
     }
 }
@@ -253,6 +265,7 @@ mod tests {
             model: model.to_string(),
             last_user_message: msg.to_string(),
             has_tools,
+            has_tool_result: false,
         }
     }
 

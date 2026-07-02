@@ -126,6 +126,7 @@ mod tests {
                 model: LIVE_MODEL.to_string(),
                 last_user_message: "ping".to_string(),
                 has_tools: false,
+                has_tool_result: false,
             },
             FixtureResponse::Content("pong".to_string()),
         );

@@ -17,10 +17,10 @@
 
 ## 2. Baseline feature cases
 
-- [ ] 2.1 Streaming chat case for `stream_mode: openai`
-- [ ] 2.2 Streaming chat case for `stream_mode: agui`
-- [ ] 2.3 Streaming chat case for `stream_mode: dual`
-- [ ] 2.4 MCP tool-loop round-trip case (tool call issued, result
+- [x] 2.1 Streaming chat case for `stream_mode: openai`
+- [x] 2.2 Streaming chat case for `stream_mode: agui`
+- [x] 2.3 Streaming chat case for `stream_mode: dual`
+- [x] 2.4 MCP tool-loop round-trip case (tool call issued, result
       incorporated into the final response)
 - [ ] 2.5 Agent selection via the `model` request parameter
 - [ ] 2.6 Memory write followed by a recall (or `#[ignore]` + documented
@@ -36,6 +36,16 @@
 
 ## 3. Feature coverage matrix + CI wiring
 
+- [ ] 3.0 CI risk to check before wiring the job: `start_server` loads the
+      repo's real `mcp.json` (cwd-relative, hardcoded path,
+      `src/server.rs:271`), which spawns `npx -y @mcpcentral/mcp-time` as a
+      subprocess ("MCP Time Server running on stdio" appears in every
+      baseline-case test's output). This worked fine locally (6.10s for 4
+      server boots, npx likely had the package cached) but a cold CI runner
+      may need network access for the first `npx` fetch. Loading failure is
+      already non-fatal (falls back to an empty MCP registry with a logged
+      warning), so worst case is slower CI, not a hard failure — confirm
+      this holds on the actual CI runner before relying on it.
 - [ ] 3.1 Create `tests/integration/live/MATRIX.md` seeded with the
       baseline cases from Section 2 (no `CH-##` yet — pre-existing
       baseline); note any `#[ignore]`d cases explicitly

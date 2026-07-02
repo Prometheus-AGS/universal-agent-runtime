@@ -221,6 +221,7 @@ mod tests {
                 model: "gpt-5.4-mini".to_string(),
                 last_user_message: "ping".to_string(),
                 has_tools: true,
+                has_tool_result: false,
             },
             FixtureResponse::Content("pong".to_string()),
         );
