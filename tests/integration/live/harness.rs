@@ -42,6 +42,12 @@ fn init_tracing_once() {
     });
 }
 
+/// JWT secret the harness bakes into every booted server's config. Exposed so
+/// tests that need an authenticated request can mint a Bearer token the
+/// server will actually verify (the middleware parses a provided token even
+/// when `jwt_required: false`, yielding a real non-anonymous `UserContext`).
+pub const HARNESS_JWT_SECRET: &str = "test-secret-not-for-production";
+
 /// Which optional services a baseline case needs, beyond the always-on
 /// SurrealDB-embedded persistence layer `start_server` requires
 /// unconditionally (see appstate-field-plan.md's persistence finding).
@@ -172,7 +178,7 @@ pub async fn boot_test_server(
     };
 
     let yaml = format!(
-        "security:\n  jwt_required: false\n  jwt_secret: \"test-secret-not-for-production\"\n\
+        "security:\n  jwt_required: false\n  jwt_secret: \"{HARNESS_JWT_SECRET}\"\n\
          resilience:\n  rate_limit_enabled: false\n\
          persistence:\n  provider: \"surreal\"\n  database_url: \"surrealkv://{}\"\n\
          llm:\n  model: \"{llm_model}\"\n  base_url: \"{llm_base_url}\"\n\

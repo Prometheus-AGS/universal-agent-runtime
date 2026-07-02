@@ -38,9 +38,16 @@
       — document status silently stays "pending" even when ingestion
       actually succeeds). Test polls search directly (not the broken status
       field) so it will correctly validate the embedding fix once landed.
-- [ ] 2.8 Credential-chain resolution case (reuse
-      `InMemoryCredentialStore` pattern from
-      `tests/credentials_api_integration_test.rs`)
+- [x] 2.8 Credential-chain resolution case — `credential_chain_put_then_list`
+      through the FULL booted server (`/api/uar/credentials`), not the narrow
+      sub-router the existing test uses. Sets `CREDENTIAL_ENCRYPTION_KEY`
+      around boot (`#[serial]`, removed right after so no leak), mints a
+      Bearer JWT with the harness's shared secret (middleware yields a real
+      non-anonymous `UserContext` even with `jwt_required: false`), PUTs a
+      provider key, lists it back asserting masked metadata + that the raw
+      key never appears, and confirms anonymous access → 401. Fixed an axum
+      0.8 nested trailing-slash gotcha (list route is `/api/uar/credentials`,
+      no trailing slash) along the way.
 - [ ] 2.9 Run all non-ignored cases from 2.1-2.8 against both the
       `recorded` and (locally) the `live` backend; confirm parity of
       pass/fail shape between backends

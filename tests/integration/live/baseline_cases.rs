@@ -6,7 +6,7 @@
 //! proving the feature works end-to-end through the actual production code
 //! path — not a unit-level approximation.
 
-use super::harness::{ServiceNeeds, boot_test_server};
+use super::harness::{HARNESS_JWT_SECRET, ServiceNeeds, boot_test_server};
 use super::stub_llm::{FixtureResponse, FixtureSet, RequestFingerprint, start_stub_llm};
 use serial_test::serial;
 
@@ -484,5 +484,114 @@ async fn rag_ingest_then_retrieve() {
             .as_str()
             .is_some_and(|c| c.contains("marker phrase"))),
         "expected the ingested marker content to be retrievable via search, got: {search_body}"
+    );
+}
+
+/// 2.8 — Credential-chain resolution (multi-tenant provider credentials).
+///
+/// Exercises the per-user encrypted credential store through the FULL booted
+/// server (`/api/uar/credentials`), not the narrow sub-router the existing
+/// `tests/credentials_api_integration_test.rs` uses — so this additionally
+/// proves the real auth middleware + `CREDENTIAL_ENCRYPTION_KEY`-gated
+/// `ProviderService` wiring.
+///
+/// Two pieces of setup the other baseline cases don't need:
+///   1. `CREDENTIAL_ENCRYPTION_KEY` (32 ASCII chars) — `ProviderService`
+///      only exists when this is set at boot (`from_env`); otherwise the API
+///      returns 503. Set it around boot only (server reads it once during
+///      startup), then removed — `#[serial]` keeps this from leaking into
+///      other tests' boots.
+///   2. A real Bearer JWT — the credentials API rejects anonymous callers
+///      (401). The middleware parses a provided token even with
+///      `jwt_required: false`, so a token signed with the harness's jwt
+///      secret yields a genuine non-anonymous `UserContext`.
+#[tokio::test]
+#[serial]
+async fn credential_chain_put_then_list() {
+    // SAFETY: process-global env mutation, guarded by #[serial]; removed
+    // immediately after boot (below), before any assertion that could panic.
+    unsafe {
+        std::env::set_var(
+            "CREDENTIAL_ENCRYPTION_KEY",
+            "0123456789abcdef0123456789abcdef",
+        );
+    }
+
+    let stub = start_stub_llm(FixtureSet::new()).await; // unused — no LLM call
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+
+    // Server has now read the key into its ProviderService — safe to clear so
+    // a later test's boot isn't affected even if an assertion below panics.
+    // SAFETY: process-global env mutation, guarded by #[serial].
+    unsafe {
+        std::env::remove_var("CREDENTIAL_ENCRYPTION_KEY");
+    }
+
+    // Mint a Bearer token the booted server will verify (same secret).
+    let claims = universal_agent_runtime::uar::security::claims::UserClaims {
+        sub: "live-itest-user".to_string(),
+        name: Some("Live ITest User".to_string()),
+        roles: Some(vec!["user".to_string()]),
+        exp: usize::MAX,
+    };
+    let token = jsonwebtoken::encode(
+        &jsonwebtoken::Header::default(),
+        &claims,
+        &jsonwebtoken::EncodingKey::from_secret(HARNESS_JWT_SECRET.as_bytes()),
+    )
+    .expect("mint jwt");
+    let bearer = format!("Bearer {token}");
+
+    let client = reqwest::Client::new();
+    const RAW_KEY: &str = "sk-live-itest-super-secret-value-42";
+
+    // Store a provider key.
+    let put_resp = client
+        .put(format!("{}/api/uar/credentials/openai", server.base_url))
+        .header("Authorization", &bearer)
+        .json(&serde_json::json!({ "api_key": RAW_KEY }))
+        .send()
+        .await
+        .expect("put credential request");
+    assert!(
+        put_resp.status().is_success(),
+        "put status: {} body: {}",
+        put_resp.status(),
+        put_resp.text().await.unwrap_or_default()
+    );
+
+    // List credentials back — masked metadata only, never the raw key.
+    let list_resp = client
+        .get(format!("{}/api/uar/credentials", server.base_url))
+        .header("Authorization", &bearer)
+        .send()
+        .await
+        .expect("list credentials request");
+    assert!(
+        list_resp.status().is_success(),
+        "list status: {}",
+        list_resp.status()
+    );
+    let list_text = list_resp.text().await.expect("list body");
+    assert!(
+        list_text.contains("openai"),
+        "expected the stored openai credential in the list, got: {list_text}"
+    );
+    assert!(
+        !list_text.contains(RAW_KEY),
+        "raw api key must NEVER appear in a credential list response, got: {list_text}"
+    );
+
+    // Anonymous request (no Bearer) must be rejected — proves auth is enforced
+    // through the full server, not just in the sub-router unit test.
+    let anon_resp = client
+        .get(format!("{}/api/uar/credentials", server.base_url))
+        .send()
+        .await
+        .expect("anonymous list request");
+    assert_eq!(
+        anon_resp.status(),
+        reqwest::StatusCode::UNAUTHORIZED,
+        "anonymous credential access must be 401"
     );
 }
