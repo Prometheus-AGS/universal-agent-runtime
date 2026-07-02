@@ -12,11 +12,11 @@
 
 ## 1b. Backend selection (both backends = pick a base_url)
 
-- [ ] 1b.1 Add `UAR_LIVE_INTEGRATION_BACKEND=live|recorded` selection
+- [x] 1b.1 Add `UAR_LIVE_INTEGRATION_BACKEND=live|recorded` selection
       (default `recorded`); `recorded` points `UAR_LLM__BASE_URL` at the
       stub server from Section 1, `live` points it at
       `http://127.0.0.1:8181/v1` with model `openai/gpt-5.4-mini`
-- [ ] 1b.2 Unit-test the default-to-recorded behavior
+- [x] 1b.2 Unit-test the default-to-recorded behavior
 
 ## 2. Proxy health check + remediation script
 
