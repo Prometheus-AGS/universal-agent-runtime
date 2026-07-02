@@ -1,4 +1,5 @@
 pub mod actor;
+pub mod cost_budget;
 pub mod checkpoint;
 pub mod context;
 pub mod graph;

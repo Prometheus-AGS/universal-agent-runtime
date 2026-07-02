@@ -216,3 +216,29 @@ pub fn set_mcp_server_status(server_name: &str, healthy: bool) {
     let value = if healthy { 1.0 } else { 0.0 };
     gauge!("uar_mcp_server_status", &labels).set(value);
 }
+
+// ── Skill activation metrics (CH-08) ─────────────────────────────────────────
+
+/// Record a skill-activation decision: which skill was selected for an intent,
+/// by which classifier backend, and whether it was accepted (vs. an override /
+/// fallback). Enables per-skill / per-backend precision-recall accounting —
+/// the prerequisite for measuring and improving activation accuracy
+/// (fable §8, plan CH-08).
+pub fn record_skill_activation(skill_id: &str, backend: &str, accepted: bool) {
+    let labels = [
+        ("skill_id", skill_id.to_string()),
+        ("backend", backend.to_string()),
+        ("accepted", accepted.to_string()),
+    ];
+    counter!("uar_skill_activation_total", &labels).increment(1);
+}
+
+/// Record that an activated skill's execution succeeded or failed — pairs with
+/// `record_skill_activation` to distinguish "chosen" from "chosen and worked".
+pub fn record_skill_activation_outcome(skill_id: &str, success: bool) {
+    let labels = [
+        ("skill_id", skill_id.to_string()),
+        ("success", success.to_string()),
+    ];
+    counter!("uar_skill_activation_outcome_total", &labels).increment(1);
+}
