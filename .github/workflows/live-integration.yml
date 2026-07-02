@@ -1,0 +1,43 @@
+name: Live Integration Tier
+
+# Feature-correctness gate for the uar-next-harness phase (plan Amendment A2).
+# Runs the live integration tier against the RECORDED backend (in-process stub
+# LLM) — deterministic, no network model, GitHub-hosted-runner safe. The LIVE
+# backend (real proxy at 127.0.0.1:8181) is operator-only via
+# scripts/live-integration.sh and is intentionally NOT run in CI.
+#
+# Advisory (non-blocking) for now: `continue-on-error: true` on both steps.
+# Promote to blocking once CH-01..CH-04 have each added a MATRIX.md row without
+# drift (see tests/integration/live/MATRIX.md).
+
+on:
+  push:
+    branches: ["main", "master", "develop"]
+  pull_request:
+
+jobs:
+  live-integration-recorded:
+    runs-on: ubuntu-latest
+    env:
+      SKIP_MODEL_BUILD: "1"
+      # Default backend is `recorded`; set explicitly for clarity.
+      UAR_LIVE_INTEGRATION_BACKEND: "recorded"
+    steps:
+      - name: Checkout (with submodules — skill pack + entity mgmt)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # Feature-coverage matrix presence check (task 3.2). For each change
+      # referenced in the phase plan, MATRIX.md must contain its CH-## token.
+      # Advisory: reports drift without failing the build (yet).
+      - name: Matrix presence check
+        continue-on-error: true
+        run: bash tools/live-matrix-check.sh
+
+      - name: Run live integration tier (recorded backend)
+        continue-on-error: true
+        run: cargo test --test integration live::

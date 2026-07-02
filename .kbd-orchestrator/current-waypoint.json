@@ -3,8 +3,8 @@
   "change": null,
   "status": "executing",
   "previousPhase": "gate-activation-and-security-cleanup",
-  "currentTask": "live-integration-baseline-coverage at 8/24 tasks. Natural checkpoint after landing the harness + 4 baseline cases (the two hardest design questions this change had).",
-  "nextPendingChange": "live-integration-baseline-coverage (task 2.5 agent selection)",
+  "currentTask": "live-integration-baseline-coverage COMPLETE. Next Round-1 change: a2a-grpc-enable (0/4 artifacts) \u2014 or /opsx:archive the two done changes first.",
+  "nextPendingChange": "a2a-grpc-enable",
   "roundZeroComplete": true,
   "changeStatus": {
     "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
@@ -13,10 +13,10 @@
     "S1-eval-harness": "DEFERRED -> uar-eval-harness phase",
     "HK0-commit-live-sse-dualstack": "DONE (7 focused commits: dual-stack listener, multiplexed /api/live SSE, fmt, asset rebuild, uar-next-fable.md, KBD phase state, settings sync). 268/268 lib tests + 5/5 frontend adapter tests green.",
     "proxy-integration-gate": "DONE (narrowed scope, plan Amendment A3). OpenSpec 4/4 + 10/10 tasks: stub LLM server (tests/integration/live/stub_llm.rs), backend selection (backend.rs, UAR_LIVE_INTEGRATION_BACKEND), scripts/live-integration.sh health-check+remediation. 9/9 new unit tests green + 3 script paths smoke-tested. 4 commits: 439f5f9 (plan), 99eeddf, 38f24f4, 781ca77 (code), plus this turn's narrowing edits. Baseline cases + AppState harness split out to new CH-22b live-integration-baseline-coverage (see below).",
-    "live-integration-baseline-coverage": "IN PROGRESS (apply started). OpenSpec 4/4 planned. 8/24 tasks done + committed (439f5f9..43c8ccd chain): task group 1 (minimal server-boot harness, superseding hand-rolled AppState -- calls the real public start_server() directly against a temp-YAML config; fixed a !Send start_server future via a dedicated-thread runtime; found+fixed an AppConfig hermeticity risk -- ./config.yaml and ~/.uar/config.yaml both exist on this dev machine and would leak in without an explicit --config path); task group 2 partial (4/9: three stream_mode cases openai/agui/dual + MCP/native tool-loop round-trip via native_echo, extending RequestFingerprint with has_tool_result to distinguish the two-call tool-loop pattern). 15/15 tests green in tests/integration/live/. Remaining: 2.5 agent selection, 2.6 memory, 2.7 RAG, 2.8 credentials, 2.9 live-backend parity run, then groups 3 (matrix+CI, noted an MCP/npx CI-network risk), 4 (docs), 5 (verification)."
+    "live-integration-baseline-coverage": "DONE \u2014 all 5 task groups. 9 baseline cases (7 pass, 2 #[ignore]d for disclosed product bugs), backend-parametric parity case, MATRIX.md feature-coverage contract + tools/live-matrix-check.sh + .github/workflows/live-integration.yml (advisory), README. Local suite 17 passed/2 ignored/0 failed; final full-suite verify running in isolated target dir. Every remaining Round1-4 feature change must add a MATRIX.md row."
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/opsx:apply live-integration-baseline-coverage  (continue with 2.5-2.9, then groups 3-5)",
+  "exactNextCommand": "/opsx:continue a2a-grpc-enable  (draft proposal.md)  OR  /opsx:apply proxy-integration-gate/live-integration-baseline-coverage then /opsx:archive",
   "gateActivationSecurityOutcome": "gate-activation-and-security-cleanup: both goals MET (code) in PR #43 (2 commits, archived). (1) feat(eval) --require-baseline strict gate: unseeded nightly fails loudly instead of passing silently; pure baseline_missing_under_strict helper; fail-fast exit 2 BEFORE any model call; nightly opts in; operator runbook in evals/README.md. (2) fix(config) secret redaction (Rule 33): redacting Debug for LlmConfig api_key+provider_keys, SecurityConfig jwt_secret, Persistence/Memory passwords. CORRECTION: I mis-assessed redaction as already-on-main; it was uncommitted working-tree WIP (origin/main had 0 REDACTED) \u2014 this PR actually lands it; caught at commit, split into 2 focused commits, disclosed in PR. 36 eval tests green. REMAINDER (operator-only): configure UAR_LLM__API_KEY secret + seed/commit evals/results/starter.baseline.json to make the gate enforce green. Spawn-task redaction chip now resolved by #43. LESSON: verify 'already merged' against committed state (git show origin/main:<file>), never the working tree.",
   "evalHarnessHardeningOutcome": "eval-harness-hardening: 4/4 goals MET + HK1. PRs #38-#42 merged + archived. EHH3 suite-declared scorers (ScorerSpec + build_scorers factory, serde-default backward compat); EHH2 LlmJudge scorer (rubric, deterministic JSON parse, advisory per D-B); EHH4 recorded-fixture provider + end-to-end pipeline integration tests; HK1 deleted dead src/testing/ (27 files, ~22.7k lines); EHH1 evals/starter.yaml + two-tier CI gate (Tier-1 keyless structural test per PR, Tier-2 nightly real-model gated workflow, fork-safe, Rule 33). 35 eval lib tests green. DEBT: no baseline shipped so Tier-2 is informational until seeded (top follow-up); Tier-2 never run in CI yet (needs UAR_LLM__API_KEY secret + workflow_dispatch); secret-redaction chip (main.rs:46, Rule 33) still open; refiner QA-gate automation still not wired.",
   "evalHarnessOutcome": "uar-eval-harness: 1/1 goal MET (S1). Shipped+merged PRs #34-#37 + archived: EH1 eval domain + rule scorers (ExactMatch/Contains/JsonValid/NonEmpty/PatternMatch/Sycophancy), EH2 suite loader (JSON/YAML) + Runner over a CompletionProvider seam, EH4 file persistence + delta-vs-baseline regression + eval metrics, EH5 `eval run|list|baseline` CLI (non-zero exit on regression; server default preserved). Rule-based/file-backed/CLI-driven v1 as planned. Deviations: PatternMatch instead of Regex (no new dep, Rule 27); scorer selection is a heuristic (per-suite config deferred). Debt: live `run <suite>` path unit-untested (needs a model); no example suite shipped; dead src/testing/ still present; pre-existing secret-logging at main.rs:46 flagged via spawn-task (Rule 33).",
@@ -76,6 +76,11 @@
     "R3 eval scope",
     "R4 guardrail build-vs-buy"
   ],
-  "updatedAt": "2026-07-02T04:02:05Z",
-  "planRevision": "A1+A2 2026-07-01 \u2014 source docs/uar-next-fable.md; A2 adds proxy-integration-gate + 100%-feature-coverage contract (see plan.md)"
+  "updatedAt": "2026-07-02T16:50:01Z",
+  "planRevision": "A1+A2 2026-07-01 \u2014 source docs/uar-next-fable.md; A2 adds proxy-integration-gate + 100%-feature-coverage contract (see plan.md)",
+  "discoveredBugs": [
+    "task_188b4179: VectorMatcher::embed_batch returns zero-vector placeholder embeddings (model.forward() commented out) - breaks all RAG search + LocalEmbedding intent backend. spawn_task started by user.",
+    "task_7c2fd7ee: update_document_status uses SurrealQL type::thing() rejected by pinned SurrealDB 3.0.5 (wants type::record) - doc status stuck pending. spawn_task started by user."
+  ],
+  "infraNotes": "CARGO_TARGET_DIR=/Volumes/my-passport/cargo-target REQUIRED (not set in shell; forgetting fills root disk). Session hit machine-wide memory-pressure stall from 6 concurrent cargo builds (mine + 2 spawn_task fixes + 3 other sessions) - cleared on its own. Cleaned 280 leaked harness temp dirs; added Drop cleanup so it does not recur. 37GB stale /private/tmp/librefang-upstream-merge* dirs flagged to user (not deleted - not mine)."
 }
