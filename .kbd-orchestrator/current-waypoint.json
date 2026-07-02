@@ -1,11 +1,11 @@
 {
-  "phase": "gate-activation-and-security-cleanup",
+  "phase": "uar-next-harness",
   "change": null,
-  "status": "complete",
-  "previousPhase": "eval-harness-hardening",
-  "currentTask": "gate-activation-and-security-cleanup COMPLETE \u2014 both goals MET (code) in PR #43 (2 commits, archived). GA1 --require-baseline (nightly fails loudly when unseeded; fail-fast before model). SECURITY: redaction was NOT pre-existing as I mis-assessed \u2014 it was uncommitted WIP; this PR actually lands it (LlmConfig/SecurityConfig/Persistence/Memory Debug masked). Remainder = operator-only gate activation (secret + seed baseline). Next: /kbd-new-phase.",
-  "nextPendingChange": null,
-  "roundZeroComplete": true,
+  "status": "executing",
+  "previousPhase": "gate-activation-and-security-cleanup",
+  "currentTask": "Executing Round 0: HK0-commit-live-sse-dualstack (review dirty tree, test, fmt, commit focused commits). Then open Round 1 OpenSpec changes (proxy-integration-gate FIRST, then a2a-grpc-enable, postgres-credential-store, provider-health-failover, prompt-dialect-engine). Plan amended A1+A2: 23 changes.",
+  "nextPendingChange": "HK0-commit-live-sse-dualstack",
+  "roundZeroComplete": false,
   "changeStatus": {
     "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
     "SE3-guardrail-pii-block": "MERGED #32 (S3 MET)",
@@ -13,7 +13,7 @@
     "S1-eval-harness": "DEFERRED -> uar-eval-harness phase"
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-new-phase",
+  "exactNextCommand": "commit HK0 focused commits, then /opsx:new proxy-integration-gate a2a-grpc-enable postgres-credential-store provider-health-failover prompt-dialect-engine",
   "gateActivationSecurityOutcome": "gate-activation-and-security-cleanup: both goals MET (code) in PR #43 (2 commits, archived). (1) feat(eval) --require-baseline strict gate: unseeded nightly fails loudly instead of passing silently; pure baseline_missing_under_strict helper; fail-fast exit 2 BEFORE any model call; nightly opts in; operator runbook in evals/README.md. (2) fix(config) secret redaction (Rule 33): redacting Debug for LlmConfig api_key+provider_keys, SecurityConfig jwt_secret, Persistence/Memory passwords. CORRECTION: I mis-assessed redaction as already-on-main; it was uncommitted working-tree WIP (origin/main had 0 REDACTED) \u2014 this PR actually lands it; caught at commit, split into 2 focused commits, disclosed in PR. 36 eval tests green. REMAINDER (operator-only): configure UAR_LLM__API_KEY secret + seed/commit evals/results/starter.baseline.json to make the gate enforce green. Spawn-task redaction chip now resolved by #43. LESSON: verify 'already merged' against committed state (git show origin/main:<file>), never the working tree.",
   "evalHarnessHardeningOutcome": "eval-harness-hardening: 4/4 goals MET + HK1. PRs #38-#42 merged + archived. EHH3 suite-declared scorers (ScorerSpec + build_scorers factory, serde-default backward compat); EHH2 LlmJudge scorer (rubric, deterministic JSON parse, advisory per D-B); EHH4 recorded-fixture provider + end-to-end pipeline integration tests; HK1 deleted dead src/testing/ (27 files, ~22.7k lines); EHH1 evals/starter.yaml + two-tier CI gate (Tier-1 keyless structural test per PR, Tier-2 nightly real-model gated workflow, fork-safe, Rule 33). 35 eval lib tests green. DEBT: no baseline shipped so Tier-2 is informational until seeded (top follow-up); Tier-2 never run in CI yet (needs UAR_LLM__API_KEY secret + workflow_dispatch); secret-redaction chip (main.rs:46, Rule 33) still open; refiner QA-gate automation still not wired.",
   "evalHarnessOutcome": "uar-eval-harness: 1/1 goal MET (S1). Shipped+merged PRs #34-#37 + archived: EH1 eval domain + rule scorers (ExactMatch/Contains/JsonValid/NonEmpty/PatternMatch/Sycophancy), EH2 suite loader (JSON/YAML) + Runner over a CompletionProvider seam, EH4 file persistence + delta-vs-baseline regression + eval metrics, EH5 `eval run|list|baseline` CLI (non-zero exit on regression; server default preserved). Rule-based/file-backed/CLI-driven v1 as planned. Deviations: PatternMatch instead of Regex (no new dep, Rule 27); scorer selection is a heuristic (per-suite config deferred). Debt: live `run <suite>` path unit-untested (needs a model); no example suite shipped; dead src/testing/ still present; pre-existing secret-logging at main.rs:46 flagged via spawn-task (Rule 33).",
@@ -73,5 +73,6 @@
     "R3 eval scope",
     "R4 guardrail build-vs-buy"
   ],
-  "updatedAt": "2026-06-04T00:00:00Z"
+  "updatedAt": "2026-07-02T02:07:44Z",
+  "planRevision": "A1+A2 2026-07-01 \u2014 source docs/uar-next-fable.md; A2 adds proxy-integration-gate + 100%-feature-coverage contract (see plan.md)"
 }

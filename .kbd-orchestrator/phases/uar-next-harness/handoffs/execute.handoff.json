@@ -1,0 +1,12 @@
+{
+  "stage": "execute",
+  "completedAt": "2026-07-02T01:24:03Z",
+  "outputs": [
+    "execution.md",
+    "progress.json"
+  ],
+  "nextStage": "reflect",
+  "summaryForNext": "Backend selected: OpenSpec with Round 0 as direct native task. HK0-commit-live-sse-dualstack executed first (commit dirty-tree dual-stack listener + multiplexed /api/live SSE + fmt). Round 1 OpenSpec changes opened (a2a-grpc-enable, postgres-credential-store, provider-health-failover, prompt-dialect-engine). Subsequent rounds execute through child phases foundation-completion, intelligence-completion, spec-v2-distribution, integration-and-polish.",
+  "skipped": false,
+  "skipReason": null
+}

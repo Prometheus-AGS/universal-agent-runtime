@@ -1,0 +1,50 @@
+{
+  "phase": "uar-next-harness",
+  "previousPhase": "gate-activation-and-security-cleanup",
+  "backend": "openspec",
+  "sourceTool": "claude-code",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "origin": "Manual entry via /kbd-new-phase: implement every recommendation in docs/uar-next.md (commit f58514e) \u2014 dynamic model router, prompt dialect engine, A2A/gRPC fix + LibreFang integration, Knowledge Service RAG extraction, agent spec v2.0, Prometheus Skill Pack, plus the full \u00a717 five-sub-phase plan \u2014 to make UAR the world's best agent harness.",
+  "goals": [
+    "G1 Foundation (P0): fix A2A gRPC, Postgres credential store, dynamic model router, prompt dialect engine, MemPalace fix, unpin deps, Docker Compose, \u00a714 gap fixes",
+    "G2 Intelligence (P1): Cedar in tool loop, per-model context strategy, cost tracking, skill activation metrics, skill schema transformation, Knowledge Service RAG, provider health monitoring, model capability registry",
+    "G3 UX & Integration (P2): web UI config redesign, model comparison dashboard, agent state visualization, cost dashboard, LibreFang A2A/AG-UI/shared-router integration, Prometheus Skill Pack (\u00a718)",
+    "G4 Specification & Distribution (P2): agent spec v2.0 + compiler update, conformance testing, template library, docs overhaul + deployment guide, benchmark suite",
+    "G5 Polish & Release (P3): hot-path performance, security audit, load testing, docs finalization, RC \u2192 GA"
+  ],
+  "candidateChanges": [
+    "HK0-commit-live-sse-dualstack",
+    "proxy-integration-gate",
+    "a2a-grpc-enable",
+    "postgres-credential-store",
+    "provider-health-failover",
+    "prompt-dialect-engine",
+    "per-model-context-strategy",
+    "cost-budgets-backend",
+    "cost-dashboard",
+    "skill-activation-metrics",
+    "capability-registry-benchmarks",
+    "model-comparison-dashboard",
+    "rag-hardening",
+    "agent-spec-v2",
+    "compiler-v2-stages",
+    "conformance-testing",
+    "agent-template-library",
+    "skill-pack-bundling",
+    "eval-targeted-suites",
+    "agui-spec-alignment",
+    "librefang-a2a-agui-bridge",
+    "docs-overhaul-deploy-guide",
+    "perf-security-load"
+  ],
+  "updatedAt": "2026-07-02T02:07:44Z",
+  "changes_completed": 0,
+  "changes_total": 23,
+  "planAmendments": [
+    "A1 2026-07-01: docs/uar-next-fable.md supersedes docs/uar-next.md as recommendation source; CH-03/04/09/16/18/20 amended, CH-21 agui-spec-alignment added (see plan.md Amendment A1)",
+    "A2 2026-07-01: proxy-integration-gate (CH-22) added as first Round-1 change \u2014 live integration tier against local OpenAI proxy 127.0.0.1:8181 (recorded-fixture mirror in CI), 100% FEATURE coverage contract (every CH ships a live case, MATRIX.md), line coverage stays at 80% llvm-cov gate; 100% line coverage explicitly rejected (operator may override before Round 2)"
+  ]
+}

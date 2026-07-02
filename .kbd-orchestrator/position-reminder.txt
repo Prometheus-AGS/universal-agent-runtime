@@ -1,0 +1,10 @@
+POSITION REMINDER — read this as your FIRST tool call every turn
+Phase: uar-next-harness
+Step: 0 of 23
+Stage: unknown
+Next command: commit HK0 focused commits, then /opsx:new proxy-integration-gate a2a-grpc-enable postgres-credential-store provider-health-failover prompt-dialect-engine
+
+Required signal format (emit BEFORE any tool call):
+  Starting <kbd-skill> — uar-next-harness (step 0 of 23)
+  [do work]
+  Completed <kbd-skill> — uar-next-harness (step 0 of 23)

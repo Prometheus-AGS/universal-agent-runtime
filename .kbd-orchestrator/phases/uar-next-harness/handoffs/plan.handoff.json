@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-02T01:19:31Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "21 changes in 4 dependency-ordered rounds mapped to nested child phases; 4 product decisions defaulted (RAG in-process, MemPalace off, LibreFang UAR-side, dep-unpin REJECTED); first change is HK0-commit-live-sse-dualstack (commit the dirty-tree dual-stack+SSE features, fmt 3 files), then open Round 1 OpenSpec changes (a2a-grpc-enable, postgres-credential-store, provider-health-failover, prompt-dialect-engine).",
+  "skipped": false,
+  "skipReason": null
+}

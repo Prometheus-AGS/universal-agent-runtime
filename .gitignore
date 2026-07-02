@@ -95,3 +95,7 @@ static/assets
 .agents/
 .firecrawl/
 .zed/
+
+# Local pk/Karpathy LLM-wiki state (events log + generated wiki articles) —
+# machine-local knowledge cache, not shared project content.
+.prometheus/

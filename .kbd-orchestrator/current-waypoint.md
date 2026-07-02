@@ -1,43 +1,29 @@
-# Current Waypoint
+# Current Waypoint — universal-agent-runtime
 
-- Phase: `gate-activation-and-security-cleanup` **(reflect_complete)**
-- Previous phase: `eval-harness-hardening` (complete — 4/4 MET + HK1)
-- Backend: OpenSpec
-- Status: `complete`
-- Progress: **1 / 1 change shipped** (PR #43 — 2 commits — merged + archived)
-- Exact next command: `/kbd-new-phase`
-- Reflection: [reflection.md](phases/gate-activation-and-security-cleanup/reflection.md)
-- Updated at: 2026-06-04
+- **Phase:** uar-next-harness (parent; 4 planned child tranches)
+- **Status:** executing
+- **Progress:** 0 of 23 changes (plan amended A1 + A2; A2 = proxy-integration-gate + 100%-feature-coverage contract)
+- **Next pending change:** HK0-commit-live-sse-dualstack (Round 0 hygiene — commit dual-stack listener + multiplexed /api/live SSE + fmt)
+- **Exact next command:** commit HK0 focused commits, then /opsx:new proxy-integration-gate a2a-grpc-enable postgres-credential-store provider-health-failover prompt-dialect-engine
+- **Recommendation source:** docs/uar-next-fable.md (supersedes docs/uar-next.md; validated scorecard + amendments A1.1–A1.8 recorded in plan.md)
 
-## Phase arc outcome
+## Round map
+- Round 0: HK0 (direct task)
+- Round 1 `foundation-completion`: proxy-integration-gate (NEW A2 — live tier vs 127.0.0.1:8181 proxy + feature MATRIX; every CH ships a live case), a2a-grpc-enable, postgres-credential-store, provider-health-failover (+A1.1 router cost-None bug + audit log), prompt-dialect-engine (+A1.2 verified param list)
+- Round 2 `intelligence-completion`: per-model-context-strategy, cost-budgets-backend→cost-dashboard, skill-activation-metrics, capability-registry-benchmarks (+A1.3 source+date per entry)→model-comparison-dashboard, rag-hardening
+- Round 3 `spec-v2-distribution`: agent-spec-v2→compiler-v2-stages→{conformance-testing, agent-template-library, skill-pack-bundling (RESCOPED A1.4: auto-detection + loader upgrades — pack already bundled)}, eval-targeted-suites
+- Round 4 `integration-and-polish`: agui-spec-alignment (NEW A1.6) → librefang-a2a-agui-bridge (+A1.5 zero-code provider_urls seam first), docs-overhaul-deploy-guide, perf-security-load
+- Operator: OP-1 seed eval baseline (human-only)
 
-**Both goals MET (code side), in one PR (#43, two commits).**
+## Decisions (from plan)
+- D-A: RAG hardened in-process; Knowledge Service extraction deferred
+- D-B: MemPalace stays off
+- D-C: LibreFang integration scoped to UAR side (A1.5: provider_urls seam needs no librefang code, so e2e test is in scope)
+- D-D: dep unpin REJECTED (pins deliberate + load-bearing)
 
-- **`feat(eval): --require-baseline strict gate` (GA1)** — the unseeded nightly now fails loudly instead of passing silently; pure `baseline_missing_under_strict` helper; **fail-fast exit 2 before any model call**; nightly opts in; operator runbook in `evals/README.md`.
-- **`fix(config): redact secrets in config Debug output` (Rule 33)** — redacting `Debug` for `LlmConfig` (api_key + provider_keys), `SecurityConfig` (jwt_secret), `Persistence`/`Memory` passwords.
-
-36 eval lib tests green.
-
-## ⚠️ Correction recorded
-
-I mis-assessed the redaction as "already on `main`." It was **uncommitted working-tree WIP** (`origin/main` had 0 `REDACTED`) — this PR actually lands it. Caught at commit time (diff showed it as additions), **split into two focused commits**, and disclosed in the PR body. Lesson banked: verify "already merged" against committed state (`git show origin/main:<file>`), never the working tree.
-
-## Remainder (operator-only — by design)
-
-The gate code is in place but enforces *green* only once a human:
-1. sets the `UAR_LLM__API_KEY` secret (+ optional `vars.UAR_EVAL_MODEL`),
-2. runs `eval-nightly` with `update_baseline=true`,
-3. commits `evals/results/starter.baseline.json`,
-4. confirms a deliberate regression fails.
-
-Until then the scheduled job fails loudly ("blocked until seeded") — intended.
-
-## Other follow-ups
-
-- **Hygiene:** resolve the long-lived dirty working tree (`static/index.html`, untracked `.agents/`/`.firecrawl/`/`.zed/`) so future `git add` can't capture stray WIP.
-- Spawn-task "redact secrets" chip → **resolved by PR #43** (dismiss it).
-- Carried: refiner QA-gate automation (3 phases); per-case scorers; per-judge model; HTTP eval endpoint; SurrealDB storage.
-
-## Next
-
-`/kbd-new-phase` — likely candidates: artifact-refiner QA-gate automation, or finishing H8 metric recorders. (Gate activation itself is an operator action, documented above.)
+## A1 key corrections (do not regress on these)
+- Anthropic 2×->200K long-context surcharge was REMOVED 2026-03; GPT-5.5 carries 2×/1.5× >272K. Tokenizer overhead ~16% English / ~30% code (not flat +30%).
+- model-comparison-expanded.docx.md: taxonomy yes, numbers no (15+ internal contradictions).
+- Skill pack already loaded via builtin_loader.rs from crates/prometheus-skill-system submodule.
+- UAR `agui.*` events ≠ official AG-UI vocabulary (hence CH-21).
+- librefang facts: 48 providers, OFP wire protocol, sidecar channels, A2A + surreal-memory already present, no 50-page dashboard.
