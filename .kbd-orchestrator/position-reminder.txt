@@ -2,7 +2,7 @@ POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-next-harness
 Step: 2 of 24
 Stage: unknown
-Next command: /opsx:apply live-integration-baseline-coverage  (start the AppState-harness work); or /opsx:continue a2a-grpc-enable  (keep planning remaining Round-1 changes first)
+Next command: /opsx:continue a2a-grpc-enable  (draft proposal.md)  OR  /opsx:apply proxy-integration-gate/live-integration-baseline-coverage then /opsx:archive
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-next-harness (step 2 of 24)
