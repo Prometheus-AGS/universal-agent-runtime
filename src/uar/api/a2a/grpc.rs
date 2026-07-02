@@ -96,12 +96,7 @@ impl AgentService for GrpcAgentService {
             .append_message(&task.id, agent_reply.clone())
             .await;
 
-        let mut result_task = self
-            .state
-            .task_store
-            .get(&task.id)
-            .await
-            .unwrap_or(task);
+        let mut result_task = self.state.task_store.get(&task.id).await.unwrap_or(task);
         result_task.status.message = Some(agent_reply);
 
         Ok(Response::new(task_to_pb(&result_task)))
@@ -202,8 +197,7 @@ impl GrpcAgentService {
         let trimmed = user_text.trim();
         if trimmed.starts_with("# Agent:") || trimmed.contains("## Metadata") {
             if let Ok(output) = self.state.compiler_service.compile_content(trimmed).await {
-                let descriptor =
-                    serde_json::to_value(&output).unwrap_or(serde_json::Value::Null);
+                let descriptor = serde_json::to_value(&output).unwrap_or(serde_json::Value::Null);
                 self.state
                     .task_store
                     .complete_with_descriptor(&task_id, descriptor)
@@ -231,12 +225,7 @@ impl GrpcAgentService {
             .append_message(&task_id, agent_reply.clone())
             .await;
 
-        let mut result_task = self
-            .state
-            .task_store
-            .get(&task_id)
-            .await
-            .unwrap_or(task);
+        let mut result_task = self.state.task_store.get(&task_id).await.unwrap_or(task);
         result_task.status.state = TaskState::InputRequired;
         result_task.status.message = Some(agent_reply);
 
@@ -263,9 +252,7 @@ fn pb_message_to_a2a(pb: &PbMessage) -> A2aMessage {
 
 fn pb_part_to_a2a(pb: &PbPart) -> A2aPart {
     match &pb.content {
-        Some(pb::part::Content::Text(text)) => A2aPart::Text {
-            text: text.clone(),
-        },
+        Some(pb::part::Content::Text(text)) => A2aPart::Text { text: text.clone() },
         Some(pb::part::Content::Data(bytes)) => A2aPart::Data {
             data: serde_json::Value::String(base64::Engine::encode(
                 &base64::engine::general_purpose::STANDARD,
@@ -285,9 +272,7 @@ fn a2a_part_to_pb(part: &A2aPart) -> PbPart {
             content_type: "text/plain".to_string(),
         },
         A2aPart::File {
-            bytes,
-            mime_type,
-            ..
+            bytes, mime_type, ..
         } => {
             let data = bytes
                 .as_ref()

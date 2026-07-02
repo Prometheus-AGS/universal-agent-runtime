@@ -51,7 +51,10 @@ pub struct BudgetLimit {
 
 impl Default for BudgetLimit {
     fn default() -> Self {
-        Self { limit_usd: f64::INFINITY, warn_at: 0.8 }
+        Self {
+            limit_usd: f64::INFINITY,
+            warn_at: 0.8,
+        }
     }
 }
 
@@ -106,12 +109,7 @@ impl CostBudgetTracker {
     /// resulting status. Emits a `cost.budget.*` tracing event on threshold
     /// crossings so downstream (UI/alerts) can react; also updates the
     /// `uar_cost_budget_spent_usd` gauge.
-    pub async fn record(
-        &self,
-        scope: BudgetScope,
-        scope_id: &str,
-        cost_usd: f64,
-    ) -> BudgetStatus {
+    pub async fn record(&self, scope: BudgetScope, scope_id: &str, cost_usd: f64) -> BudgetStatus {
         let key = (scope, scope_id.to_string());
         let mut guard = self.inner.write().await;
         let spent = {
@@ -134,14 +132,20 @@ impl CostBudgetTracker {
                 scope = scope.as_str(), scope_id, spent_usd = spent, limit_usd = limit.limit_usd,
                 "cost budget exceeded"
             );
-            BudgetStatus::Exceeded { spent_usd: spent, limit_usd: limit.limit_usd }
+            BudgetStatus::Exceeded {
+                spent_usd: spent,
+                limit_usd: limit.limit_usd,
+            }
         } else if limit.limit_usd.is_finite() && spent >= limit.warn_at * limit.limit_usd {
             tracing::warn!(
                 name: "cost.budget.warning",
                 scope = scope.as_str(), scope_id, spent_usd = spent, limit_usd = limit.limit_usd,
                 "cost budget warning threshold crossed"
             );
-            BudgetStatus::Warning { spent_usd: spent, limit_usd: limit.limit_usd }
+            BudgetStatus::Warning {
+                spent_usd: spent,
+                limit_usd: limit.limit_usd,
+            }
         } else {
             BudgetStatus::Ok
         };
@@ -167,10 +171,20 @@ mod tests {
     #[tokio::test]
     async fn accumulates_and_crosses_thresholds() {
         let t = CostBudgetTracker::new();
-        t.set_limit(BudgetScope::Task, "t1", BudgetLimit { limit_usd: 1.0, warn_at: 0.8 })
-            .await;
+        t.set_limit(
+            BudgetScope::Task,
+            "t1",
+            BudgetLimit {
+                limit_usd: 1.0,
+                warn_at: 0.8,
+            },
+        )
+        .await;
 
-        assert_eq!(t.record(BudgetScope::Task, "t1", 0.5).await, BudgetStatus::Ok);
+        assert_eq!(
+            t.record(BudgetScope::Task, "t1", 0.5).await,
+            BudgetStatus::Ok
+        );
         assert!(matches!(
             t.record(BudgetScope::Task, "t1", 0.35).await,
             BudgetStatus::Warning { .. }
@@ -182,6 +196,9 @@ mod tests {
     #[tokio::test]
     async fn no_limit_never_warns() {
         let t = CostBudgetTracker::new();
-        assert_eq!(t.record(BudgetScope::Global, "g", 1000.0).await, BudgetStatus::Ok);
+        assert_eq!(
+            t.record(BudgetScope::Global, "g", 1000.0).await,
+            BudgetStatus::Ok
+        );
     }
 }

@@ -21,8 +21,7 @@ fn main() {
     // to [build-dependencies] and uncomment the compile_protos call below.
     // tonic 0.14 moved prost codegen to the separate `tonic-prost-build` crate.
     if Path::new("proto/a2a.proto").exists() {
-        tonic_prost_build::compile_protos("proto/a2a.proto")
-            .expect("Failed to compile A2A proto");
+        tonic_prost_build::compile_protos("proto/a2a.proto").expect("Failed to compile A2A proto");
     }
 
     // -------------------------------------------------------------------------

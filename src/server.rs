@@ -178,8 +178,9 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
                 compiler_store
                     as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
-            let registry = Arc::new(crate::uar::api::a2a::PostgresAgentRegistry::new(pool.clone()))
-                as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
+            let registry = Arc::new(crate::uar::api::a2a::PostgresAgentRegistry::new(
+                pool.clone(),
+            )) as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
 
             // Durable per-user credential store on the same pool (CH-02) — no
             // longer falls back to in-memory on Postgres.

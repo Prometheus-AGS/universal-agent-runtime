@@ -145,13 +145,34 @@ mod tests {
 
     #[test]
     fn detects_families() {
-        assert_eq!(PromptDialect::detect("anthropic/claude-sonnet-5"), PromptDialect::AnthropicXml);
-        assert_eq!(PromptDialect::detect("openai/gpt-5.5"), PromptDialect::OpenAiJson);
-        assert_eq!(PromptDialect::detect("moonshot/kimi-k2.7-code"), PromptDialect::KimiMarkdown);
-        assert_eq!(PromptDialect::detect("z.ai/glm-5.2"), PromptDialect::GlmThinking);
-        assert_eq!(PromptDialect::detect("alibaba/qwen3.7-max"), PromptDialect::QwenHybrid);
-        assert_eq!(PromptDialect::detect("minimax/m3"), PromptDialect::MiniMaxStructured);
-        assert_eq!(PromptDialect::detect("meta/llama-4"), PromptDialect::Generic);
+        assert_eq!(
+            PromptDialect::detect("anthropic/claude-sonnet-5"),
+            PromptDialect::AnthropicXml
+        );
+        assert_eq!(
+            PromptDialect::detect("openai/gpt-5.5"),
+            PromptDialect::OpenAiJson
+        );
+        assert_eq!(
+            PromptDialect::detect("moonshot/kimi-k2.7-code"),
+            PromptDialect::KimiMarkdown
+        );
+        assert_eq!(
+            PromptDialect::detect("z.ai/glm-5.2"),
+            PromptDialect::GlmThinking
+        );
+        assert_eq!(
+            PromptDialect::detect("alibaba/qwen3.7-max"),
+            PromptDialect::QwenHybrid
+        );
+        assert_eq!(
+            PromptDialect::detect("minimax/m3"),
+            PromptDialect::MiniMaxStructured
+        );
+        assert_eq!(
+            PromptDialect::detect("meta/llama-4"),
+            PromptDialect::Generic
+        );
     }
 
     #[test]
@@ -159,7 +180,11 @@ mod tests {
         let e = PromptDialectEngine::new();
         let p = e.request_params(
             "anthropic/claude-opus-4-8",
-            DialectRequest { wants_reasoning: true, hard: true, ..Default::default() },
+            DialectRequest {
+                wants_reasoning: true,
+                hard: true,
+                ..Default::default()
+            },
         );
         assert_eq!(p["thinking"]["type"], "enabled");
         assert_eq!(p["thinking"]["budget_tokens"], 8192);
@@ -170,7 +195,10 @@ mod tests {
         let e = PromptDialectEngine::new();
         let p = e.request_params(
             "moonshot/kimi-k2.6",
-            DialectRequest { multi_turn: true, ..Default::default() },
+            DialectRequest {
+                multi_turn: true,
+                ..Default::default()
+            },
         );
         assert_eq!(p["thinking"]["keep"], "all");
     }
@@ -180,7 +208,11 @@ mod tests {
         let e = PromptDialectEngine::new();
         let p = e.request_params(
             "alibaba/qwen3.7-max",
-            DialectRequest { wants_reasoning: true, multi_turn: true, ..Default::default() },
+            DialectRequest {
+                wants_reasoning: true,
+                multi_turn: true,
+                ..Default::default()
+            },
         );
         assert_eq!(p["enable_thinking"], true);
         assert_eq!(p["preserve_thinking"], true);
