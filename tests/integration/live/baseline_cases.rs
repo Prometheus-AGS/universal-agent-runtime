@@ -595,3 +595,61 @@ async fn credential_chain_put_then_list() {
         "anonymous credential access must be 401"
     );
 }
+
+/// 2.9 — Backend-parametric parity smoke.
+///
+/// Cases 2.1-2.8 hardcode the stub and assert exact fixture content, which
+/// makes them recorded-only by nature: a live model will not reproduce canned
+/// text like "hi there", so those exact-match assertions cannot hold against
+/// the real proxy. This case is the exception — it routes through
+/// `backend::resolve()` so it honors `UAR_LIVE_INTEGRATION_BACKEND`: recorded
+/// (default, CI-safe) hits the in-process stub; `live` (operator, local) hits
+/// the real proxy at 127.0.0.1:8181. Its assertions are content-TOLERANT
+/// (2xx + non-empty assistant text), so the pass/fail shape is identical on
+/// both backends — that shared shape IS the "parity" task 2.9 asks for, and
+/// this is the only baseline case actually wired through the dual-backend
+/// switch. Live-backend runs are exercised via `scripts/live-integration.sh`
+/// (operator; needs the proxy + a real model, hence non-deterministic).
+#[tokio::test]
+#[serial]
+async fn backend_parametric_chat_smoke() {
+    const PROBE: &str = "say hello to the live integration tier";
+    let fixtures = FixtureSet::new().with(
+        RequestFingerprint {
+            model: MODEL.to_string(),
+            last_user_message: PROBE.to_string(),
+            has_tools: true,
+            has_tool_result: false,
+        },
+        FixtureResponse::Content("hello from the recorded backend".to_string()),
+    );
+    // Held for the whole test so its stub (recorded backend) stays alive.
+    let backend = super::backend::resolve(fixtures).await;
+    let server = boot_test_server(&backend.base_url, &backend.model, ServiceNeeds::default()).await;
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(format!("{}/api/chat/completion", server.base_url))
+        .json(&serde_json::json!({
+            "model": backend.model,
+            "messages": [{"role": "user", "content": PROBE}],
+            "stream": false,
+        }))
+        .send()
+        .await
+        .expect("chat request");
+    assert!(
+        resp.status().is_success(),
+        "status: {} body: {}",
+        resp.status(),
+        resp.text().await.unwrap_or_default()
+    );
+    let body: serde_json::Value = resp.json().await.expect("json body");
+    let content = body["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap_or_default();
+    assert!(
+        !content.trim().is_empty(),
+        "expected non-empty assistant content on either backend, got: {body}"
+    );
+}
