@@ -180,6 +180,52 @@ pub fn apply_strategy(
     }
 }
 
+/// Choose a context strategy tuned to a model's effective context window
+/// (CH-05, fable §13). Larger-context models get a proportionally larger
+/// sliding window before summarisation kicks in; small-context models
+/// summarise sooner. `effective_context_tokens` should be the *usable*
+/// window (typically 50-80% of advertised), not the advertised maximum.
+///
+/// This is the per-model *selection* layer; the chosen strategy is then
+/// applied by [`apply_strategy`]. Placement (lost-in-the-middle mitigation)
+/// is handled by [`keep_first_last`].
+#[must_use]
+pub fn strategy_for_model(effective_context_tokens: u32) -> ContextStrategy {
+    // ~4 chars/token; budget ~60% of the effective window to history, leaving
+    // room for the system prompt, tools, and the response.
+    let history_tokens = (f64::from(effective_context_tokens) * 0.6) as u32;
+    // Assume ~250 tokens/message average → derive a message budget, clamped.
+    let max_messages = (history_tokens / 250).clamp(20, 400) as usize;
+    if effective_context_tokens >= 200_000 {
+        // Big-context models: prefer summarisation past a high threshold so
+        // long-horizon coherence is preserved rather than truncated.
+        ContextStrategy::Summarize {
+            threshold: max_messages,
+            summary_max_tokens: 2_000,
+            model: None,
+        }
+    } else {
+        ContextStrategy::SlidingWindow { max_messages }
+    }
+}
+
+/// Positional-bias mitigation (lost-in-the-middle): reorder so the most
+/// important items sit at the beginning and end of the context, where models
+/// attend most reliably (Anthropic's ~18% middle drop vs 30-50% elsewhere,
+/// fable §13). Keeps the first `head` and last `tail` items in place and
+/// moves the middle to the end (least-attended region) preserving order.
+#[must_use]
+pub fn keep_first_last<T: Clone>(items: &[T], head: usize, tail: usize) -> Vec<T> {
+    if items.len() <= head + tail {
+        return items.to_vec();
+    }
+    let mut out = Vec::with_capacity(items.len());
+    out.extend_from_slice(&items[..head]);
+    out.extend_from_slice(&items[items.len() - tail..]);
+    out.extend_from_slice(&items[head..items.len() - tail]);
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
