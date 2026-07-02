@@ -3,7 +3,7 @@
   "change": null,
   "status": "executing",
   "previousPhase": "gate-activation-and-security-cleanup",
-  "currentTask": "8 changes coded this turn (CH-01..CH-08, CH-21). Verification blocked by concurrent worktree sessions' cargo locks. Ready for one batch compile when machine frees.",
+  "currentTask": "Batch-verified CH-01..CH-08/CH-21 on handoff machine: fixed tonic-prost/prost version mismatch (commit 2e1f153), 276/276 lib tests green. CH-01 tasks.md corrected to reflect partial completion (shutdown wiring + tests still open). Ready for either (a) finishing CH-01's open items, (b) continuing to code CH-09/11/16/etc, or (c) a product decision on how much more autonomous fast-coding to do before the next verify checkpoint.",
   "nextPendingChange": "a2a-grpc-enable",
   "roundZeroComplete": true,
   "changeStatus": {
@@ -13,11 +13,11 @@
     "S1-eval-harness": "DEFERRED -> uar-eval-harness phase",
     "HK0-commit-live-sse-dualstack": "DONE (7 focused commits: dual-stack listener, multiplexed /api/live SSE, fmt, asset rebuild, uar-next-fable.md, KBD phase state, settings sync). 268/268 lib tests + 5/5 frontend adapter tests green.",
     "proxy-integration-gate": "DONE (narrowed scope, plan Amendment A3). OpenSpec 4/4 + 10/10 tasks: stub LLM server (tests/integration/live/stub_llm.rs), backend selection (backend.rs, UAR_LIVE_INTEGRATION_BACKEND), scripts/live-integration.sh health-check+remediation. 9/9 new unit tests green + 3 script paths smoke-tested. 4 commits: 439f5f9 (plan), 99eeddf, 38f24f4, 781ca77 (code), plus this turn's narrowing edits. Baseline cases + AppState harness split out to new CH-22b live-integration-baseline-coverage (see below).",
-    "live-integration-baseline-coverage": "DONE \u2014 all 5 task groups. 9 baseline cases (7 pass, 2 #[ignore]d for disclosed product bugs), backend-parametric parity case, MATRIX.md feature-coverage contract + tools/live-matrix-check.sh + .github/workflows/live-integration.yml (advisory), README. Local suite 17 passed/2 ignored/0 failed; final full-suite verify running in isolated target dir. Every remaining Round1-4 feature change must add a MATRIX.md row."
+    "live-integration-baseline-coverage": "DONE — all 5 task groups. 9 baseline cases (7 pass, 2 #[ignore]d for disclosed product bugs), backend-parametric parity case, MATRIX.md feature-coverage contract + tools/live-matrix-check.sh + .github/workflows/live-integration.yml (advisory), README. Local suite 17 passed/2 ignored/0 failed; final full-suite verify running in isolated target dir. Every remaining Round1-4 feature change must add a MATRIX.md row."
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "When machine free: CARGO_TARGET_DIR=/Volumes/my-passport/cargo-target cargo build --lib  (shake out errors across the 8 coded changes), fix, then continue coding CH-09/11/16/etc.",
-  "gateActivationSecurityOutcome": "gate-activation-and-security-cleanup: both goals MET (code) in PR #43 (2 commits, archived). (1) feat(eval) --require-baseline strict gate: unseeded nightly fails loudly instead of passing silently; pure baseline_missing_under_strict helper; fail-fast exit 2 BEFORE any model call; nightly opts in; operator runbook in evals/README.md. (2) fix(config) secret redaction (Rule 33): redacting Debug for LlmConfig api_key+provider_keys, SecurityConfig jwt_secret, Persistence/Memory passwords. CORRECTION: I mis-assessed redaction as already-on-main; it was uncommitted working-tree WIP (origin/main had 0 REDACTED) \u2014 this PR actually lands it; caught at commit, split into 2 focused commits, disclosed in PR. 36 eval tests green. REMAINDER (operator-only): configure UAR_LLM__API_KEY secret + seed/commit evals/results/starter.baseline.json to make the gate enforce green. Spawn-task redaction chip now resolved by #43. LESSON: verify 'already merged' against committed state (git show origin/main:<file>), never the working tree.",
+  "exactNextCommand": "Operator decision needed: continue coding CH-09 (capability-registry-benchmarks) next per remaining_to_code order, OR first close out CH-01's open gaps (2.3 shutdown wiring + 3.1 integration test) since it's the most complete/highest-risk-if-shipped-half-done change. No blocking infra issue remains on this machine.",
+  "gateActivationSecurityOutcome": "gate-activation-and-security-cleanup: both goals MET (code) in PR #43 (2 commits, archived). (1) feat(eval) --require-baseline strict gate: unseeded nightly fails loudly instead of passing silently; pure baseline_missing_under_strict helper; fail-fast exit 2 BEFORE any model call; nightly opts in; operator runbook in evals/README.md. (2) fix(config) secret redaction (Rule 33): redacting Debug for LlmConfig api_key+provider_keys, SecurityConfig jwt_secret, Persistence/Memory passwords. CORRECTION: I mis-assessed redaction as already-on-main; it was uncommitted working-tree WIP (origin/main had 0 REDACTED) — this PR actually lands it; caught at commit, split into 2 focused commits, disclosed in PR. 36 eval tests green. REMAINDER (operator-only): configure UAR_LLM__API_KEY secret + seed/commit evals/results/starter.baseline.json to make the gate enforce green. Spawn-task redaction chip now resolved by #43. LESSON: verify 'already merged' against committed state (git show origin/main:<file>), never the working tree.",
   "evalHarnessHardeningOutcome": "eval-harness-hardening: 4/4 goals MET + HK1. PRs #38-#42 merged + archived. EHH3 suite-declared scorers (ScorerSpec + build_scorers factory, serde-default backward compat); EHH2 LlmJudge scorer (rubric, deterministic JSON parse, advisory per D-B); EHH4 recorded-fixture provider + end-to-end pipeline integration tests; HK1 deleted dead src/testing/ (27 files, ~22.7k lines); EHH1 evals/starter.yaml + two-tier CI gate (Tier-1 keyless structural test per PR, Tier-2 nightly real-model gated workflow, fork-safe, Rule 33). 35 eval lib tests green. DEBT: no baseline shipped so Tier-2 is informational until seeded (top follow-up); Tier-2 never run in CI yet (needs UAR_LLM__API_KEY secret + workflow_dispatch); secret-redaction chip (main.rs:46, Rule 33) still open; refiner QA-gate automation still not wired.",
   "evalHarnessOutcome": "uar-eval-harness: 1/1 goal MET (S1). Shipped+merged PRs #34-#37 + archived: EH1 eval domain + rule scorers (ExactMatch/Contains/JsonValid/NonEmpty/PatternMatch/Sycophancy), EH2 suite loader (JSON/YAML) + Runner over a CompletionProvider seam, EH4 file persistence + delta-vs-baseline regression + eval metrics, EH5 `eval run|list|baseline` CLI (non-zero exit on regression; server default preserved). Rule-based/file-backed/CLI-driven v1 as planned. Deviations: PatternMatch instead of Regex (no new dep, Rule 27); scorer selection is a heuristic (per-suite config deferred). Debt: live `run <suite>` path unit-untested (needs a model); no example suite shipped; dead src/testing/ still present; pre-existing secret-logging at main.rs:46 flagged via spawn-task (Rule 33).",
   "plannedChanges": [
@@ -37,67 +37,70 @@
   "childPhases": [],
   "childPointer": null,
   "backend": "openspec",
-  "session_arc_outcome": "uar-harness-parity: 5 MET / 1 PARTIAL / 2 NOT MET. Shipped+merged PRs #23-#27: run cancellation (H1), OTLP tracing+latency+cost (H2), sycophancy detection (H4), resumable streaming client (H5), mounted Cedar layer + injection/PII guardrails (H6); H8 partial (cache/latency/cost/sessions wired, sandbox+mcp recorders deferred). Merged main builds clean, 232 lib tests pass, 14 new unit tests. NOT MET: H3 emit-runtime-step-events NEVER BUILT (skipped during execution \u2014 carry-over) and H7 eval harness (deferred by design). Parity: 6 red\u2192green, 1 yellow\u2192green, 1 red\u2192yellow (injection/PII heuristic). Prior phase (uar-production-readiness-gaps) C1-C4 merged to main as the Round-0 gate.",
+  "session_arc_outcome": "uar-harness-parity: 5 MET / 1 PARTIAL / 2 NOT MET. Shipped+merged PRs #23-#27: run cancellation (H1), OTLP tracing+latency+cost (H2), sycophancy detection (H4), resumable streaming client (H5), mounted Cedar layer + injection/PII guardrails (H6); H8 partial (cache/latency/cost/sessions wired, sandbox+mcp recorders deferred). Merged main builds clean, 232 lib tests pass, 14 new unit tests. NOT MET: H3 emit-runtime-step-events NEVER BUILT (skipped during execution — carry-over) and H7 eval harness (deferred by design). Parity: 6 red→green, 1 yellow→green, 1 red→yellow (injection/PII heuristic). Prior phase (uar-production-readiness-gaps) C1-C4 merged to main as the Round-0 gate.",
   "carryOver": [
-    "Credentials admin UI \u2014 SCOPED (prior carryover); open dedicated phase uar-credentials-admin-ui (UI/UX routing first)",
-    "Agent-config POST error surfacing \u2014 P3 UX polish (C3)",
-    "Protocols page explicit gating \u2014 P3 cleanup (C4)",
-    "Artifact-refiner QA gate automation \u2014 missed this phase; automate for next",
-    "Config write-back to YAML \u2014 R3 deferred tradeoff (C2)",
-    "CLI vs LLM_* precedence fix \u2014 documented known limitation (C2)"
+    "Credentials admin UI — SCOPED (prior carryover); open dedicated phase uar-credentials-admin-ui (UI/UX routing first)",
+    "Agent-config POST error surfacing — P3 UX polish (C3)",
+    "Protocols page explicit gating — P3 cleanup (C4)",
+    "Artifact-refiner QA gate automation — missed this phase; automate for next",
+    "Config write-back to YAML — R3 deferred tradeoff (C2)",
+    "CLI vs LLM_* precedence fix — documented known limitation (C2)"
   ],
   "resolvedCarryOver": [
-    "D1 blocking defect: ingestion pool shutdown unreachable \u2014 RESOLVED (C1)",
-    "DB-wins-after-first-boot: config changes invisible in UI \u2014 RESOLVED (C2)",
-    "OPENAI_API_KEY shortcut dead path \u2014 RESOLVED (C2)",
-    "Built-in agents not persisted / unreliable visibility \u2014 RESOLVED (C3)",
-    "Runtime Console dead facade / dead buttons \u2014 RESOLVED (C4)"
+    "D1 blocking defect: ingestion pool shutdown unreachable — RESOLVED (C1)",
+    "DB-wins-after-first-boot: config changes invisible in UI — RESOLVED (C2)",
+    "OPENAI_API_KEY shortcut dead path — RESOLVED (C2)",
+    "Built-in agents not persisted / unreliable visibility — RESOLVED (C3)",
+    "Runtime Console dead facade / dead buttons — RESOLVED (C4)"
   ],
   "recommendedNextPhaseSeeds": [
-    "P0 (operator, human-only): activate the eval gate \u2014 set UAR_LLM__API_KEY secret + vars.UAR_EVAL_MODEL, run eval-nightly via workflow_dispatch update_baseline=true, commit evals/results/starter.baseline.json, confirm a deliberate regression fails. Gate code is in place (--require-baseline); only the operational seed remains. (Agent cannot do this.)",
-    "P0 (hygiene): resolve the long-lived dirty working tree \u2014 commit/stash static/index.html + untracked .agents/.firecrawl/.zed/ so future git add can't capture stray WIP (this caused the redaction mis-assessment).",
-    "P1: automate artifact-refiner QA gate \u2014 carried unaddressed across 3 phases.",
-    "P1: finish H8 \u2014 wire sandbox recorders (4) + set_mcp_server_status (needs per-runner hooks + MCP health loop)",
+    "P0 (operator, human-only): activate the eval gate — set UAR_LLM__API_KEY secret + vars.UAR_EVAL_MODEL, run eval-nightly via workflow_dispatch update_baseline=true, commit evals/results/starter.baseline.json, confirm a deliberate regression fails. Gate code is in place (--require-baseline); only the operational seed remains. (Agent cannot do this.)",
+    "P0 (hygiene): resolve the long-lived dirty working tree — commit/stash static/index.html + untracked .agents/.firecrawl/.zed/ so future git add can't capture stray WIP (this caused the redaction mis-assessment).",
+    "P1: automate artifact-refiner QA gate — carried unaddressed across 3 phases.",
+    "P1: finish H8 — wire sandbox recorders (4) + set_mcp_server_status (needs per-runner hooks + MCP health loop)",
     "P2: per-case scorer overrides + per-judge model override (eval follow-ups)",
-    "P2: live-env smoke harness \u2014 SIGTERM drain, OTLP collector span tree, mid-stream drop, injection 403, eval run against a model",
-    "P2: config liveness \u2014 sycophancy/guardrails read boot snapshots; wire settings-API edits into in-flight runs",
+    "P2: live-env smoke harness — SIGTERM drain, OTLP collector span tree, mid-stream drop, injection 403, eval run against a model",
+    "P2: config liveness — sycophancy/guardrails read boot snapshots; wire settings-API edits into in-flight runs",
     "Deferred: HTTP POST /api/uar/eval/run; SurrealDB eval result storage; true-regex scorer; expand starter suite; durable workflows / checkpoint (own phase)"
   ],
   "carryOverDebt": [
-    "H3 emit-runtime-step-events \u2014 unbuilt planned change (top priority)",
-    "Unformatted routes.rs + ingestion_worker.rs on main \u2014 spawn-task chip filed; fmt-only fix",
+    "H3 emit-runtime-step-events — unbuilt planned change (top priority)",
+    "Unformatted routes.rs + ingestion_worker.rs on main — spawn-task chip filed; fmt-only fix",
     "Sandbox + MCP-status metric recorders still dead (H8 partial)",
     "Cedar is_tool_allowed mounted at HTTP only, not orchestrator tool loop"
   ],
   "blockingPrerequisite": null,
-  "parityAssessmentSummary": "uar-harness-parity: 8 goals (H1-H8). Corrections vs reflection seeds: (1) cancellation PROMOTED to P0 \u2014 client disconnect orphans runs that keep executing destructive tools + burning tokens (live bug); (2) parking-lot HookBus KILLED \u2014 redundant with existing RunEventEmitter broadcast+replay; (3) resumable streaming DOWNGRADED to frontend-only \u2014 server already has 512-event buffer + working GET /api/uar/runs/{id}/stream resume endpoint; (4) sycophancy-core is a DEAD dependency (declared, never invoked in src/). OTLP deps present but unused (1 #[instrument] on whole run path); Prometheus /metrics + JSON logging already done. Biggest true gap: evals + guardrails (no injection defense; Cedar governance_layer defined-but-unmounted). Cut C0+HP1-HP4 this phase; HP6+HP7 candidate for own uar-safety-and-evals phase.",
+  "parityAssessmentSummary": "uar-harness-parity: 8 goals (H1-H8). Corrections vs reflection seeds: (1) cancellation PROMOTED to P0 — client disconnect orphans runs that keep executing destructive tools + burning tokens (live bug); (2) parking-lot HookBus KILLED — redundant with existing RunEventEmitter broadcast+replay; (3) resumable streaming DOWNGRADED to frontend-only — server already has 512-event buffer + working GET /api/uar/runs/{id}/stream resume endpoint; (4) sycophancy-core is a DEAD dependency (declared, never invoked in src/). OTLP deps present but unused (1 #[instrument] on whole run path); Prometheus /metrics + JSON logging already done. Biggest true gap: evals + guardrails (no injection defense; Cedar governance_layer defined-but-unmounted). Cut C0+HP1-HP4 this phase; HP6+HP7 candidate for own uar-safety-and-evals phase.",
   "productDecisionsRequired": [
     "R2 cancel semantics",
     "R3 eval scope",
     "R4 guardrail build-vs-buy"
   ],
-  "updatedAt": "2026-07-02T17:35:14Z",
-  "planRevision": "A1+A2 2026-07-01 \u2014 source docs/uar-next-fable.md; A2 adds proxy-integration-gate + 100%-feature-coverage contract (see plan.md)",
+  "updatedAt": "2026-07-02T20:10:00Z",
+  "planRevision": "A1+A2 2026-07-01 — source docs/uar-next-fable.md; A2 adds proxy-integration-gate + 100%-feature-coverage contract (see plan.md)",
   "discoveredBugs": [
     "task_188b4179: VectorMatcher::embed_batch returns zero-vector placeholder embeddings (model.forward() commented out) - breaks all RAG search + LocalEmbedding intent backend. spawn_task started by user.",
     "task_7c2fd7ee: update_document_status uses SurrealQL type::thing() rejected by pinned SurrealDB 3.0.5 (wants type::record) - doc status stuck pending. spawn_task started by user."
   ],
   "infraNotes": "CARGO_TARGET_DIR=/Volumes/my-passport/cargo-target REQUIRED (not set in shell; forgetting fills root disk). Session hit machine-wide memory-pressure stall from 6 concurrent cargo builds (mine + 2 spawn_task fixes + 3 other sessions) - cleared on its own. Cleaned 280 leaked harness temp dirs; added Drop cleanup so it does not recur. 37GB stale /private/tmp/librefang-upstream-merge* dirs flagged to user (not deleted - not mine).",
   "codeWrittenUnverified": {
-    "strategy": "User directive: write code across all changes fast, test 2-3x at section boundaries (not per-change). Verification currently BLOCKED by concurrent autonomous worktree sessions holding the shared ~/.cargo + CARGO_TARGET_DIR locks (proven: cannot win the cargo build lock while they run; isolation attempts also hit the shared registry lock). Deferred to one batch compile when machine frees.",
-    "changes_coded_this_turn": [
-      "CH-01 a2a-grpc-enable: tonic-prost-build codegen + pub mod grpc + server mount",
-      "CH-02 postgres-credential-store: feature-gated PostgresCredentialStore + wired",
-      "CH-03 provider-health-failover (core): router cost-None-as-INFINITY fix + audit log",
-      "CH-04 prompt-dialect-engine: new src/llm/prompt_dialect.rs (+tests)",
-      "CH-05 per-model-context-strategy (core): strategy_for_model + keep_first_last",
-      "CH-06 cost-budgets-backend: new CostBudgetTracker (+tests)",
-      "CH-08 skill-activation-metrics: record_skill_activation/_outcome",
-      "CH-21 agui-spec-alignment: to_agui_spec_event official AG-UI vocabulary"
+    "strategy": "User directive: write code across all changes fast, test 2-3x at section boundaries (not per-change). Section-boundary verification completed 2026-07-02 on the handoff higher-mem machine.",
+    "changes_verified_this_turn": [
+      "CH-01 a2a-grpc-enable: compiles (proto-codegen approach, deviates from planned manual-service-builder); NOT feature-complete — open: 2.3 graceful shutdown unwired, 3.1/3.3 no integration test/MATRIX row (see openspec/changes/a2a-grpc-enable/tasks.md)",
+      "CH-02 postgres-credential-store: compiles, lib tests green",
+      "CH-03 provider-health-failover (core only): compiles, lib tests green",
+      "CH-04 prompt-dialect-engine: compiles, lib tests green",
+      "CH-05 per-model-context-strategy (core only): compiles, lib tests green",
+      "CH-06 cost-budgets-backend: compiles, lib tests green",
+      "CH-08 skill-activation-metrics: compiles, lib tests green",
+      "CH-21 agui-spec-alignment: compiles, lib tests green"
     ],
-    "risk": "UNVERIFIED \u2014 one batch `cargo build --lib` needed to shake out compile errors (already caught+fixed 1 field-name bug in CH-05 by checking). Likely more, esp. CH-01 tonic-0.14 grpc.rs API + a2a codegen.",
+    "verificationResult": "cargo build --lib clean + cargo test --lib 276/276 (was 268) after fixing a real bug: tonic-prost 0.14 codegen needs the tonic-prost runtime crate (only tonic-prost-build was declared) and our prost=\"0.13\" pin diverged from tonic-prost's required prost 0.14.x, producing duplicate incompatible ::prost::Message impls. Fixed in commit 2e1f153 (added tonic-prost=\"0.14\", bumped prost to \"0.14\", ran cargo fmt). Machine also lacked cmake + protobuf-compiler (installed via apt, one-time toolchain gap unrelated to the code).",
+    "risk": "CH-01/03/05 are explicitly partial (core-only / missing shutdown+tests) — do not mark DONE or archive yet. No live/e2e server smoke test run this pass, only cargo build+test+clippy+fmt.",
     "remaining_to_code": [
-      "CH-07/CH-10 dashboards (React \u2014 separate)",
+      "CH-01 remainder: 2.3 graceful shutdown wiring, 3.1 tonic-client integration test, 3.3 MATRIX.md row, 4.1/4.2 spec+docs",
+      "CH-03/CH-05 remainder: whatever is outside \"core\" scope (not itemized — no tasks.md for these)",
+      "CH-07/CH-10 dashboards (React — separate)",
       "CH-09 capability-registry-benchmarks (touches struct literals)",
       "CH-11 rag-hardening",
       "CH-16 skill-pack loader upgrades",

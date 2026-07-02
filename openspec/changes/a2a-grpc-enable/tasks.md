@@ -1,38 +1,42 @@
 ## 1. Compile the parked gRPC service
 
-- [ ] 1.1 Uncomment `pub mod grpc;` in `src/uar/api/a2a/mod.rs:23`
-- [ ] 1.2 `cargo build` and fix the tonic-0.14 API errors surfaced in
-      `src/uar/api/a2a/grpc.rs` (service trait signatures, `tonic::Request`/
-      `Response` wrapping, any streaming/codec type changes). No proto
-      codegen — it's a manual service builder.
+- [x] 1.1 Uncomment `pub mod grpc;` in `src/uar/api/a2a/mod.rs:23`
+- [x] 1.2 `cargo build` green (verified 2026-07-02 on handoff machine after
+      fixing an unrelated tonic-prost/prost version mismatch, see main repo
+      commit `2e1f153`). **Plan deviation:** implemented via proto codegen
+      (`proto/a2a.proto` + `tonic_prost_build::compile_protos` in `build.rs`,
+      `tonic::include_proto!("a2a")` in `grpc.rs`) instead of the manual
+      service builder this task originally specified — proto codegen was
+      judged less boilerplate-prone for the 4 RPC methods. Delta spec (4.1)
+      still needs updating to describe the codegen approach.
 
 ## 2. Config + mount
 
-- [ ] 2.1 Add `grpc_port` to `ServerConfig` (`src/config.rs`) with a default
-      (e.g. 50051) and `UAR_SERVER__GRPC_PORT` env override
-- [ ] 2.2 Uncomment + wire the mount in `start_server`
-      (`src/server.rs:1055-1064`): bind the grpc addr, build
-      `GrpcAgentService::new(a2a_state).into_server()`, serve concurrently
-      with the HTTP listener (mirror the dual-listener `tokio::try_join!`
-      pattern already used for the IPv4/IPv6 companion)
-- [ ] 2.3 Graceful shutdown: fold the gRPC serve future into the existing
-      `CancellationToken` shutdown path
+- [x] 2.1 Added `grpc_port` to `ServerConfig` (`src/config.rs:218-232`),
+      default port, `UAR_SERVER__GRPC_PORT` env override
+- [x] 2.2 (partial) gRPC server is mounted and serving in `start_server`
+      (`src/server.rs:1056-1072`) — binds `grpc_addr`, builds
+      `GrpcAgentService::new(a2a_state).into_server()`. **Not** wired the way
+      this task asked: it's a detached `tokio::spawn`, not joined into the
+      `tokio::try_join!` used for the HTTP dual-stack listeners, so a gRPC
+      bind failure or panic is silent (only `tracing::error!`, no propagation).
+- [ ] 2.3 Graceful shutdown: NOT done — the spawned task has no
+      `CancellationToken` wiring, so it will not stop on server shutdown.
+      Open gap for next session.
 
 ## 3. Verify
 
-- [ ] 3.1 tonic-client integration test: start the server on an ephemeral
-      grpc port, connect a tonic client, round-trip one A2A method
-      (SendMessage or GetTask), assert the response
-- [ ] 3.2 `cargo test` green; existing A2A JSON-RPC tests still pass
-      (no regression to the HTTP binding)
-- [ ] 3.3 Add the `CH-01` row to `tests/integration/live/MATRIX.md`
-      (gRPC task round-trip) per plan A2.3
+- [ ] 3.1 tonic-client integration test — not written yet
+- [x] 3.2 `cargo test --lib` green: 276/276 (verified 2026-07-02 alongside
+      the build fix above); existing A2A JSON-RPC tests unaffected
+- [ ] 3.3 `CH-01` row still not added to `tests/integration/live/MATRIX.md`
+      (blocked on 3.1)
 
 ## 4. Spec + docs
 
-- [ ] 4.1 Update the `a2a-grpc` delta spec: transport is now
-      compiled/exported/mounted/tested (was defined-but-disabled)
-- [ ] 4.2 Note the grpc_port in deployment docs
+- [ ] 4.1 Delta spec still describes the old "manual service builder" plan —
+      needs updating to reflect the proto-codegen approach actually used
+- [ ] 4.2 grpc_port not yet documented in deployment docs
 
 ## Notes
 
@@ -40,3 +44,8 @@ Design/specs artifacts are light for this change — it's "finish wiring
 already-written code," not new architecture. Draft them via
 `/opsx:continue a2a-grpc-enable` if the schema requires them before apply;
 otherwise this proposal + tasks are enough to execute.
+
+**2026-07-02 verification pass:** code compiles and lib tests are green, but
+this change is NOT ready to archive — 2.3 (graceful shutdown) is unimplemented
+and 3.1/3.3 (integration test + MATRIX row) are unwritten. Treat as
+"code lands, verify-gate open" rather than done.

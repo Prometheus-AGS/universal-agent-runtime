@@ -2,7 +2,7 @@ POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-next-harness
 Step: 2 of 24
 Stage: unknown
-Next command: /opsx:continue a2a-grpc-enable  (draft proposal.md)  OR  /opsx:apply proxy-integration-gate/live-integration-baseline-coverage then /opsx:archive
+Next command: Batch build/test verified clean (commit 2e1f153, 276/276 tests). Operator decision: continue coding CH-09 (capability-registry-benchmarks) next, OR close CH-01's open gaps (2.3 shutdown wiring + 3.1 integration test) first.
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-next-harness (step 2 of 24)

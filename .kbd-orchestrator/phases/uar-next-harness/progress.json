@@ -41,7 +41,7 @@
     "docs-overhaul-deploy-guide",
     "perf-security-load"
   ],
-  "updatedAt": "2026-07-02T03:22:42Z",
+  "updatedAt": "2026-07-02T20:10:00Z",
   "changes_completed": 2,
   "changes_total": 24,
   "planAmendments": [
@@ -58,5 +58,16 @@
     "5d13d71",
     "0751e88",
     "c4ed8c9"
-  ]
+  ],
+  "batchVerification2026_07_02": {
+    "machine": "handoff higher-mem Linux box (previous handoff was targeting a Mac with /Volumes/my-passport; that path does not exist here \u2014 built with default CARGO_TARGET_DIR instead)",
+    "toolchainGapsFixed": [
+      "cmake (apt) \u2014 required by kreuzberg-tesseract native build, unrelated to this turn's code",
+      "protobuf-compiler / protoc (apt) \u2014 required by CH-01's new tonic-prost-build proto codegen"
+    ],
+    "codeFixCommit": "2e1f153 fix(build): resolve tonic-prost/prost version mismatch for A2A gRPC codegen (added tonic-prost=0.14 dep, bumped prost 0.13->0.14; also ran cargo fmt)",
+    "result": "cargo build --lib clean; cargo test --lib 276/276 green (was 268 baseline); cargo clippy --lib has 477 warnings, all warn-level per this repo's own Cargo.toml lint config (no -D warnings gate) \u2014 not a regression, includes ~15 new warnings in this turn's files (doc backticks, collapsible-if, map().unwrap_or()) left as-is, consistent with existing repo-wide warning debt",
+    "changeStatusCorrection": "CH-01 a2a-grpc-enable tasks.md updated to reflect reality: code compiles (proto-codegen approach, deviating from the planned manual-service-builder) but is NOT feature-complete \u2014 open gaps are 2.3 graceful shutdown (gRPC serve task is a bare detached tokio::spawn, not joined into the try_join!/CancellationToken shutdown path) and 3.1/3.3 (no integration test, no MATRIX.md row). CH-02/03/04/05/06/08/CH-21 have no tasks.md (coded directly, no formal OpenSpec task breakdown) \u2014 compiling + lib-test-green is the only verification signal available for those.",
+    "notYetVerified": "No end-to-end/live server smoke test was run this pass (would need MCP/DB/provider creds); this was a cargo build+test+clippy+fmt static verification only."
+  }
 }
