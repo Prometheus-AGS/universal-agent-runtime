@@ -21,6 +21,7 @@ use universal_agent_runtime::config::{AppConfig, Cli};
 use universal_agent_runtime::server::start_server;
 
 static TRACING_INIT: Once = Once::new();
+static SCRATCH_SWEEP: Once = Once::new();
 
 /// `start_server`'s internal `tracing::info!`/`error!` calls are otherwise
 /// silently dropped in a test binary (no ambient subscriber) — which made a
@@ -72,6 +73,54 @@ pub struct TestServerHandle {
     _thread: std::thread::JoinHandle<()>,
 }
 
+/// Best-effort removal of THIS process's temp scratch once, at process exit,
+/// registered lazily on the first `boot_test_server` call. Per-handle
+/// `Drop`-time cleanup does not work here: the detached `start_server` thread
+/// keeps its surrealkv persistence dir open and actively written for the rest
+/// of the process, so removing it mid-run either fails or is immediately
+/// recreated. Sweeping stale scratch (from prior, now-exited processes) at
+/// startup is the robust approach — see [`sweep_stale_scratch`].
+fn scratch_prefix() -> std::path::PathBuf {
+    std::env::temp_dir().join("uar-live-itest-")
+}
+
+/// Remove `uar-live-itest-*` scratch left by earlier test-binary runs.
+///
+/// Each entry embeds the creating process's PID and is only ever written
+/// while that process lives (the detached server holds it open). Anything
+/// last-modified more than a few minutes ago therefore belongs to a process
+/// that has since exited (a live suite finishes in well under a minute), so
+/// it is safe to delete — and safe against a *concurrently* running test
+/// binary, whose scratch is fresh. Called once per process (Once-guarded)
+/// from `boot_test_server`, so accumulation across runs self-limits to at
+/// most one run's worth (~80MB) at any time.
+fn sweep_stale_scratch() {
+    let prefix = scratch_prefix();
+    let prefix_str = prefix.to_string_lossy().to_string();
+    let Some(parent) = prefix.parent().map(std::path::Path::to_path_buf) else {
+        return;
+    };
+    let cutoff = std::time::SystemTime::now() - Duration::from_secs(300);
+    let Ok(entries) = std::fs::read_dir(&parent) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.to_string_lossy().starts_with(&prefix_str) {
+            continue;
+        }
+        let stale = entry
+            .metadata()
+            .and_then(|m| m.modified())
+            .map(|mtime| mtime < cutoff)
+            .unwrap_or(false);
+        if stale {
+            let _ = std::fs::remove_dir_all(&path);
+            let _ = std::fs::remove_file(&path);
+        }
+    }
+}
+
 fn find_free_port() -> u16 {
     std::net::TcpListener::bind("127.0.0.1:0")
         .expect("bind ephemeral port")
@@ -108,6 +157,7 @@ pub async fn boot_test_server(
     needs: ServiceNeeds,
 ) -> TestServerHandle {
     init_tracing_once();
+    SCRATCH_SWEEP.call_once(sweep_stale_scratch);
     let port = find_free_port();
     let persistence_path = unique_temp_path("persistence");
 
