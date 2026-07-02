@@ -5,5 +5,7 @@ mod certification;
 mod api;
 #[path = "integration/database/mod.rs"]
 mod database;
+#[path = "integration/live/mod.rs"]
+mod live;
 #[path = "integration/services/mod.rs"]
 mod services;
