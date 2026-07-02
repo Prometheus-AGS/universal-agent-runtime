@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-next-harness
-Step: 0 of 23
+Step: 2 of 24
 Stage: unknown
-Next command: commit HK0 focused commits, then /opsx:new proxy-integration-gate a2a-grpc-enable postgres-credential-store provider-health-failover prompt-dialect-engine
+Next command: /opsx:apply live-integration-baseline-coverage  (start the AppState-harness work); or /opsx:continue a2a-grpc-enable  (keep planning remaining Round-1 changes first)
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-next-harness (step 0 of 23)
+  Starting <kbd-skill> — uar-next-harness (step 2 of 24)
   [do work]
-  Completed <kbd-skill> — uar-next-harness (step 0 of 23)
+  Completed <kbd-skill> — uar-next-harness (step 2 of 24)

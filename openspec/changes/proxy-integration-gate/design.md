@@ -21,12 +21,10 @@ work in both places without forking the test suite.
 ## Goals / Non-Goals
 
 **Goals:**
-- One case list, two execution backends: live (local proxy) and recorded
-  (existing fixture provider), so CI enforces structural/wiring correctness on
-  every PR while the operator can additionally run the same cases against a
-  real model before pushing.
-- A per-change contract (the feature matrix) that scales through all 23
-  changes in this phase without requiring a redesign each round.
+- One interchangeable backend mechanism — live (local proxy) or recorded
+  (in-process stub) — selected the same way regardless of what test code
+  calls it, so the follow-on change's baseline cases (and every later
+  change's feature cases) don't each invent their own mock/proxy plumbing.
 - Fail loud and specific when the proxy is down (known remediation), never a
   silent skip when running locally.
 
@@ -78,14 +76,15 @@ remediation (Codex re-login; `launchctl kickstart -k
 gui/501/ai.prometheus.openai-proxy`) and exits non-zero, rather than letting
 the first test case fail with a generic connection/401 error.
 
-**D4: Feature matrix as a living markdown doc, checked by CI presence-check
-only (not content-parsed).**
-`tests/integration/live/MATRIX.md` maps `CH-## → test case name(s)`. A
-lightweight CI step greps the matrix for the current change's `CH-##` token
-and fails if absent, enforcing "every change adds its case" without building
-a bespoke parser. Alternative considered: a structured YAML/JSON matrix with
-schema validation — rejected as over-engineering (Rule 2) for a 23-row table
-maintained by the same people writing the code.
+**D4 (moved to `live-integration-baseline-coverage`): Feature matrix as a
+living markdown doc, checked by CI presence-check only (not content-parsed).**
+This decision — and the matrix/CI work it drives — belongs to the follow-on
+change once real baseline cases exist to populate it. Recorded here for
+continuity: `tests/integration/live/MATRIX.md` maps `CH-## → test case
+name(s)`; a lightweight CI step greps it for the current change's `CH-##`
+token and fails if absent; rejected alternative: a structured YAML/JSON
+matrix with schema validation (over-engineering, Rule 2, for a table
+maintained by the people writing the code).
 
 ## Risks / Trade-offs
 
@@ -112,41 +111,36 @@ maintained by the same people writing the code.
   boot harness is a materially bigger lift than this change's original
   complexity estimate assumed — discovered during implementation, not
   planning.
-  **Mitigation:** split delivery — the stub LLM server (D1) is self-contained
-  and ships first with no `AppState` dependency; the minimal server-boot
-  harness + the 8 baseline cases (tasks.md Section 3) are their own clearly
-  labeled follow-on within this same change. Some baseline cases (memory
-  write→recall, RAG ingest→retrieve) may need in-memory test-double backends
-  to be boot-able without a running Postgres/SurrealDB — confirm per-case as
-  the harness is built, don't assume up front.
+  **Mitigation (decided — see proposal.md Scope note):** split delivery. This
+  change ships only the stub LLM server (D1) + backend selection (D2) +
+  health-check script (D3), none of which need `AppState`. The minimal
+  server-boot harness, the 8 baseline cases, `MATRIX.md`, and CI wiring move
+  to a dedicated follow-on change, `live-integration-baseline-coverage`,
+  scoped and designed on its own terms rather than folded into this change's
+  original estimate.
 
 ## Migration Plan
 
 1. Build the in-process stub LLM server (`tests/integration/live/stub_llm.rs`):
    non-streaming + SSE chat-completion responses, tool-call responses,
    fixtures keyed by request fingerprint. No `AppState` dependency.
-2. Build a minimal test harness that boots the real UAR server with
-   `UAR_LLM__BASE_URL` pointed at either the stub (recorded, default) or the
-   real proxy (live, via env var) — scoped only to what's needed for the
-   baseline cases, not a general-purpose harness.
-3. Write the baseline case list (streaming×3 modes, tool loop, agent
-   selection, memory write→recall, RAG ingest→retrieve, credential-chain
-   resolution) against both backends.
-4. Add `scripts/live-integration.sh` with the health check + remediation.
-5. Add `tests/integration/live/MATRIX.md` seeded with the baseline cases.
-6. Wire the recorded-backend run + matrix presence-check into
-   `comprehensive-tests.yml` (or a new lightweight workflow) — additive, no
-   existing job removed.
-7. No rollback complexity: this is a net-new, additive test tier; reverting is
+2. Build backend selection (`tests/integration/live/backend.rs`):
+   `UAR_LIVE_INTEGRATION_BACKEND` resolves to either the stub (recorded,
+   default) or the real proxy (live).
+3. Add `scripts/live-integration.sh` with the health check + remediation.
+4. No rollback complexity: this is a net-new, additive test tier; reverting is
    a plain revert of the new files with no data migration.
+5. **Out of scope for this change** (see `live-integration-baseline-coverage`):
+   the minimal server-boot harness, the 8 baseline cases, `MATRIX.md`, CI
+   wiring, docs, and verification.
 
 ## Open Questions
 
 - Should the live-tier recorded-backend run block PR merge, or start
-  advisory-only (like `llm_judge` in the eval harness) until the baseline case
-  list stabilizes across Round 1? Recommend: advisory for this change's own
-  landing, promote to blocking once CH-01/02/03/04 have each added a case
-  without matrix drift.
+  advisory-only (like `llm_judge` in the eval harness)? This is now a
+  `live-integration-baseline-coverage` decision (needs real cases to matter);
+  carried recommendation: advisory at first, promote to blocking once
+  CH-01/02/03/04 have each added a case without matrix drift.
 - Should `scripts/live-integration.sh` also support the Anthropic-compatible
   shape of the proxy, or is OpenAI-compatible sufficient given liter-llm
   normalizes both? Recommend: OpenAI-compatible only for now; liter-llm's

@@ -422,10 +422,35 @@ changes up front — create each round's changes when the round starts.
   update_baseline=true`, commit `evals/results/starter.baseline.json`, verify a
   deliberate regression fails. Until then the nightly gate fails loudly by design.
 
+## Amendment A3 — 2026-07-01: proxy-integration-gate split during implementation
+
+CH-22 (`proxy-integration-gate`) shipped and archived-ready as scoped:
+stub LLM server + backend selection (`UAR_LIVE_INTEGRATION_BACKEND`) +
+`scripts/live-integration.sh` health-check/remediation. 10/10 tasks done, 9
+new unit tests + manual script smoke-tests green, 4 focused commits.
+
+Starting task group 3 (the minimal `AppState`-boot harness + 8 baseline
+cases) surfaced a confirmed, separately-sized gap: no existing test in this
+repo boots a full real server (`design.md` Risks). Rather than force that
+work into CH-22's original estimate, it's split into a new change:
+
+- **NEW CH-22b `live-integration-baseline-coverage`**: minimal server-boot
+  harness, 8 baseline feature cases, `tests/integration/live/MATRIX.md`, CI
+  wiring, docs, verification. Fully planned (4/4 OpenSpec artifacts), 0/23
+  tasks implemented. Depends on CH-22 (shipped).
+- CH-22's own proposal/design/specs/tasks were narrowed to match what it
+  actually shipped (mechanism only); CH-22b's specs extend the same
+  `live-integration-testing` capability with the baseline/matrix/CI
+  requirements CH-22's spec originally over-promised.
+- Phase change count: 23 → 24 (`proxy-integration-gate` unchanged as a name;
+  `live-integration-baseline-coverage` added immediately after it in Round 1,
+  still ahead of CH-01..CH-04's "add a matrix row" completion criterion,
+  which now depends on CH-22b rather than CH-22 alone).
+
 ## EXECUTION ROUND ORDER
 
 Round 0 (immediate): HK0
-Round 1 (parallel, child `foundation-completion`): CH-22 first, then CH-01, CH-02, CH-03, CH-04 (each adds its live case per A2.3)
+Round 1 (parallel, child `foundation-completion`): CH-22 (done) → CH-22b, then CH-01, CH-02, CH-03, CH-04 (each adds its live case per A2.3, once CH-22b's MATRIX.md exists)
 Round 2 (parallel after CH-04, child `intelligence-completion`): CH-05, CH-06→CH-07, CH-08, CH-09→CH-10, CH-11
 Round 3 (child `spec-v2-distribution`, after CH-03/CH-04): CH-12→CH-13→{CH-14, CH-15, CH-16}, CH-17
 Round 4 (child `integration-and-polish`): CH-21 → CH-18 (after CH-01+CH-21), CH-19, CH-20

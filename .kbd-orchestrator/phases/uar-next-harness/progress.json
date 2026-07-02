@@ -18,6 +18,7 @@
   "candidateChanges": [
     "HK0-commit-live-sse-dualstack",
     "proxy-integration-gate",
+    "live-integration-baseline-coverage",
     "a2a-grpc-enable",
     "postgres-credential-store",
     "provider-health-failover",
@@ -40,11 +41,22 @@
     "docs-overhaul-deploy-guide",
     "perf-security-load"
   ],
-  "updatedAt": "2026-07-02T02:07:44Z",
-  "changes_completed": 0,
-  "changes_total": 23,
+  "updatedAt": "2026-07-02T03:22:42Z",
+  "changes_completed": 2,
+  "changes_total": 24,
   "planAmendments": [
     "A1 2026-07-01: docs/uar-next-fable.md supersedes docs/uar-next.md as recommendation source; CH-03/04/09/16/18/20 amended, CH-21 agui-spec-alignment added (see plan.md Amendment A1)",
-    "A2 2026-07-01: proxy-integration-gate (CH-22) added as first Round-1 change \u2014 live integration tier against local OpenAI proxy 127.0.0.1:8181 (recorded-fixture mirror in CI), 100% FEATURE coverage contract (every CH ships a live case, MATRIX.md), line coverage stays at 80% llvm-cov gate; 100% line coverage explicitly rejected (operator may override before Round 2)"
+    "A2 2026-07-01: proxy-integration-gate (CH-22) added as first Round-1 change \u2014 live integration tier against local OpenAI proxy 127.0.0.1:8181 (recorded-fixture mirror in CI), 100% FEATURE coverage contract (every CH ships a live case, MATRIX.md), line coverage stays at 80% llvm-cov gate; 100% line coverage explicitly rejected (operator may override before Round 2)",
+    "A3 2026-07-01: proxy-integration-gate (CH-22) split during implementation. CH-22 narrowed to its shipped scope (stub LLM server + backend selection + health-check script) and is DONE (10/10 tasks, 9 tests, 4 commits). New CH-22b live-integration-baseline-coverage carries the minimal server-boot harness + 8 baseline cases + MATRIX.md + CI wiring (fully planned, 0/23 tasks implemented). Total changes 23 -> 24."
+  ],
+  "hk0_complete": true,
+  "hk0_commits": [
+    "240daf1",
+    "930f507",
+    "8374ae0",
+    "10079db",
+    "5d13d71",
+    "0751e88",
+    "c4ed8c9"
   ]
 }
