@@ -1,17 +1,17 @@
 ## 1. Minimal server-boot harness (see design.md D1/D2 — confirm each
       `AppState` field's construction per case, don't assume up front)
 
-- [ ] 1.1 Confirm which `AppState` fields each baseline case actually needs;
+- [x] 1.1 Confirm which `AppState` fields each baseline case actually needs;
       record the answer (this is design work, not just coding) before
       writing `boot_test_server`
-- [ ] 1.2 Build `boot_test_server(fixtures, needs) -> TestServerHandle`
+- [x] 1.2 Build `boot_test_server(fixtures, needs) -> TestServerHandle`
       (or equivalent) wiring real `orchestrator`, `provider_registry`,
       `model_router`, `sessions`, `run_manager` and defaulting other
       `AppState` fields per 1.1's findings
-- [ ] 1.3 Confirm `axum_test::TestServer`'s SSE support is sufficient for
+- [x] 1.3 Confirm `axum_test::TestServer`'s SSE support is sufficient for
       `stream_mode: dual`; fall back to a raw `TcpListener` +
       `axum::serve` pattern (per `tests/test_a2a_client.rs`) if not
-- [ ] 1.4 Confirm whether `MemoryService`/RAG have an embedded/in-memory
+- [x] 1.4 Confirm whether `MemoryService`/RAG have an embedded/in-memory
       construction path suitable for tests; if not, note the gap per
       design.md Risk 1 rather than silently work around it
 
