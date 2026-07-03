@@ -22,6 +22,7 @@ const EVENT_TYPE_MAP: Record<string, EntityType> = {
   a2ui_surface: "RuntimeA2uiSurface",
   model_route_decision: "RuntimeModelRouteDecision",
   provider_health: "RuntimeProviderHealth",
+  budget_alert: "RuntimeBudgetAlert",
 };
 
 interface RuntimeEventEnvelope {

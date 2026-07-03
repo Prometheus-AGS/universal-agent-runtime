@@ -182,4 +182,14 @@ export function registerAllSchemas() {
   registerSchema({ type: "RuntimeA2uiSurface" });
   registerSchema({ type: "RuntimeModelRouteDecision" });
   registerSchema({ type: "RuntimeProviderHealth" });
+  registerSchema({
+    type: "RuntimeBudgetAlert",
+    relations: {
+      run: {
+        cardinality: "belongsTo",
+        targetType: "RuntimeRun",
+        foreignKey: "run_id",
+      },
+    },
+  });
 }

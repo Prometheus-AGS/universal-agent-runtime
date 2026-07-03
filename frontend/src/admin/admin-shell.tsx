@@ -8,6 +8,7 @@ import {
   Brain,
   Code2,
   Compass,
+  DollarSign,
   FileClock,
   Key,
   KeyRound,
@@ -52,7 +53,8 @@ export type AdminSection =
   | "compiler"
   | "settings"
   | "a2ui-testing"
-  | "mcp-health";
+  | "mcp-health"
+  | "cost";
 
 interface NavGroup {
   label: string;
@@ -96,6 +98,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Infrastructure",
     items: [
       { id: "auth", label: "API Keys", subtitle: "Authentication keys", icon: Key },
+      { id: "cost", label: "Cost", subtitle: "Spend & budget alerts", icon: DollarSign },
       { id: "settings", label: "Settings", subtitle: "Global configuration", icon: SlidersHorizontal },
       { id: "mcp-health", label: "MCP Health", subtitle: "Server connections", icon: Activity },
     ],

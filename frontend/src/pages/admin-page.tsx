@@ -15,6 +15,7 @@ import { CompilerPage } from "@/admin/pages/compiler-page";
 import { SettingsPage } from "@/admin/pages/settings-page";
 import { A2uiTestingPage } from "@/admin/A2uiTestingPage";
 import { McpHealthPage } from "@/admin/McpHealthPage";
+import { CostDashboardPage } from "@/admin/pages/cost-dashboard-page";
 import {
   RuntimeApprovalsPage,
   RuntimeCockpitPage,
@@ -40,6 +41,7 @@ const PAGE_MAP: Record<AdminSection, () => ReactNode> = {
   settings: () => <SettingsPage />,
   "a2ui-testing": () => <A2uiTestingPage />,
   "mcp-health": () => <McpHealthPage />,
+  cost: () => <CostDashboardPage />,
 };
 
 export function AdminPage() {

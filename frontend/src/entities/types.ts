@@ -180,6 +180,11 @@ export interface RuntimeRunEntity extends Record<string, unknown> {
   started_at?: string;
   completed_at?: string;
   updated_at: string;
+  /** Present on `run_finished` (CH-06 cost-budgets-backend). */
+  cost_usd_estimate?: number | null;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  total_tokens?: number | null;
 }
 
 export interface RuntimeRunStepEntity extends Record<string, unknown> {
@@ -273,5 +278,16 @@ export interface RuntimeProviderHealthEntity extends Record<string, unknown> {
   status: "healthy" | "degraded" | "offline" | "unknown";
   latency_ms?: number;
   error?: string;
+  updated_at: string;
+}
+
+export interface RuntimeBudgetAlertEntity extends Record<string, unknown> {
+  id: string;
+  run_id: string;
+  scope: "run" | "task" | "session" | "agent" | "global";
+  scope_id: string;
+  spent_usd: number;
+  limit_usd: number;
+  exceeded: boolean;
   updated_at: string;
 }
