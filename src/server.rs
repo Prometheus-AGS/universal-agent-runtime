@@ -32,7 +32,7 @@ use crate::llm::{LlmDriver, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
 use crate::session::SessionStore;
-use crate::uar::api::sse::{to_agui_event, to_runtime_entity_event};
+use crate::uar::api::sse::{to_agui_event, to_agui_spec_event, to_runtime_entity_event};
 use crate::uar::settings::resilience_policy::{
     PolicySource, ResiliencePolicy, resolve_effective_policy,
 };
@@ -3332,6 +3332,13 @@ enum StreamMode {
     Openai,
     Agui,
     Dual,
+    /// Official AG-UI protocol event vocabulary (`RUN_STARTED`,
+    /// `TEXT_MESSAGE_CONTENT`, `TOOL_CALL_*`, `STATE_DELTA`, `RUN_FINISHED`,
+    /// `RUN_ERROR`) instead of UAR's legacy `agui.*` names — CH-21/CH-18.
+    /// What CopilotKit / Microsoft Agent Framework / Oracle A2UI clients
+    /// (e.g. LibreFang) expect on the wire.
+    #[serde(rename = "agui_spec")]
+    AguiSpec,
 }
 
 impl StreamMode {
@@ -3339,8 +3346,16 @@ impl StreamMode {
         matches!(self, Self::Openai | Self::Dual)
     }
 
+    /// Legacy `agui.*`-named events (`Agui`/`Dual` only — unchanged
+    /// behavior; `AguiSpec` uses [`Self::emits_agui_spec_chunks`] instead so
+    /// existing consumers of the legacy names are unaffected).
     fn emits_agui_chunks(&self) -> bool {
         matches!(self, Self::Agui | Self::Dual)
+    }
+
+    /// Official AG-UI spec-vocabulary events (`AguiSpec` only).
+    fn emits_agui_spec_chunks(&self) -> bool {
+        matches!(self, Self::AguiSpec)
     }
 }
 
@@ -3365,7 +3380,8 @@ pub(crate) struct ChatCompletionRequest {
     /// Stream response chunks if true.
     #[serde(default)]
     stream: bool,
-    /// Streaming payload mode: `openai` (default), `agui`, or `dual`.
+    /// Streaming payload mode: `openai` (default), `agui`, `dual`, or
+    /// `agui_spec` (official AG-UI event vocabulary — CH-21/CH-18).
     #[serde(default, alias = "stream_format")]
     stream_mode: StreamMode,
     /// Optional UAR extension; header is preferred.
@@ -4103,6 +4119,7 @@ pub(crate) async fn api_chat_completion(
     if req.stream {
         let emit_openai_chunks = req.stream_mode.emits_openai_chunks();
         let emit_agui_chunks = req.stream_mode.emits_agui_chunks();
+        let emit_agui_spec_chunks = req.stream_mode.emits_agui_spec_chunks();
         let stream_session_id = session_id.clone();
         // Keep an extra copy for the response headers (stream_session_id is moved into the closure).
         let response_session_id = session_id.clone();
@@ -4133,9 +4150,13 @@ pub(crate) async fn api_chat_completion(
         let stream = async_stream::stream! {
             let _disconnect_guard = disconnect_guard;
             // Emit agui.memory.context event so frontend can show indicator.
-            if emit_agui_chunks && _stream_memory_ctx_count > 0 {
+            // No formal AG-UI event covers this UAR-specific signal, so spec
+            // mode maps it to CUSTOM (same convention as to_agui_spec_event's
+            // other UAR-only events) rather than dropping it silently.
+            if (emit_agui_chunks || emit_agui_spec_chunks) && _stream_memory_ctx_count > 0 {
+                let event_name = if emit_agui_spec_chunks { "CUSTOM" } else { "agui.memory.context" };
                 let mem_event = Event::default()
-                    .event("agui.memory.context")
+                    .event(event_name)
                     .data(serde_json::to_string(&serde_json::json!({
                         "kind": "memory",
                         "phase": "injected",
@@ -4187,6 +4208,21 @@ pub(crate) async fn api_chat_completion(
                             .id(event_id.clone())
                             .data(payload_json);
                         yield Ok(agui_event);
+                    }
+
+                    // Official AG-UI spec-vocabulary events (CH-21/CH-18) —
+                    // independent mode from the legacy agui.* names above, so
+                    // existing `agui`/`dual` consumers see no change.
+                    if emit_agui_spec_chunks
+                        && let Some((event_name, payload)) = to_agui_spec_event(&normalized_event)
+                    {
+                        let payload_json =
+                            serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
+                        let agui_spec_event = Event::default()
+                            .event(event_name)
+                            .id(event_id.clone())
+                            .data(payload_json);
+                        yield Ok(agui_spec_event);
                     }
 
                     // Emit runtime entity events alongside agui events.
