@@ -467,7 +467,9 @@
       "Read(//home/azureuser/.cargo/git/checkouts/liter-llm-23c88e0332ff1c57/d8223de/crates/liter-llm/src/types/**)",
       "Bash(SKIP_FRONTEND_BUILD=1 cargo check --lib --tests --features postgres-backend)",
       "Bash(awk 'NR==29,/^}/{print NR\": \"$0}' src/uar/api/sse.rs)",
-      "Bash(SKIP_FRONTEND_BUILD=1 cargo test --lib cost_budget)"
+      "Bash(SKIP_FRONTEND_BUILD=1 cargo test --lib cost_budget)",
+      "Bash(SKIP_FRONTEND_BUILD=1 cargo test --lib uar::context::)",
+      "Bash(rustfmt --edition 2024 src/uar/context/strategy.rs src/uar/context/mod.rs src/uar/runtime/manager.rs)"
     ]
   }
 }

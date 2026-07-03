@@ -862,7 +862,44 @@ impl RunManager {
         messages.extend(session.messages());
 
         // Message-count context strategy (trim history before token-budget management).
-        let messages = crate::uar::context::trim_count(messages, &self.message_context_strategy);
+        //
+        // CH-05: `Auto` resolves against this deployment's default model's
+        // cataloged context window (an approximation — the per-agent-resolved
+        // model isn't known yet at this point in the pipeline). Real
+        // Summarize/Hierarchical behavior needs an LLM call, so a lightweight
+        // driver is built from the same default config only when the
+        // resolved strategy actually needs one.
+        let effective_strategy = {
+            let (provider_id, model_id) =
+                crate::llm::registry::split_model_string_pub(&self.llm_config.model);
+            let effective_context_tokens = crate::llm::catalog::ModelCatalog::global()
+                .model(&provider_id, &model_id)
+                .map(|m| (m.limits.context_window as f64 * 0.7) as u32);
+            crate::uar::context::resolve_effective_strategy(
+                &self.message_context_strategy,
+                effective_context_tokens,
+            )
+        };
+        let summarization_driver: Option<crate::llm::LiterLlmDriver> = match &effective_strategy {
+            crate::uar::context::ContextStrategy::Summarize { .. }
+            | crate::uar::context::ContextStrategy::Hierarchical { .. } => {
+                crate::llm::LiterLlmDriver::new(
+                    crate::config::build_client_config(&self.llm_config),
+                    self.llm_config.model.clone(),
+                    self.llm_config.parallel_tool_calls,
+                )
+                .ok()
+            }
+            _ => None,
+        };
+        let messages = crate::uar::context::trim_with_summarization(
+            messages,
+            &effective_strategy,
+            summarization_driver
+                .as_ref()
+                .map(|d| d as &dyn crate::llm::LlmDriver),
+        )
+        .await;
 
         // Token-budget context management (summarization, etc.)
         let (optimized_messages, context_action) =
