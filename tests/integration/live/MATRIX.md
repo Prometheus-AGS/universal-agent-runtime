@@ -43,11 +43,10 @@ wired through the switch with content-tolerant assertions, so it runs on both.
 
 | CH-## | Feature | Test case(s) | Notes |
 |---|---|---|---|
-| _(none yet — CH-01..CH-04 add theirs on landing)_ | | | |
+| CH-01 | A2A gRPC `MessageSend`/`TaskGet` round-trip + not-found error mapping | `grpc_message_send_and_task_get_round_trip`, `grpc_task_get_missing_task_returns_not_found` (`tests/test_a2a_grpc.rs`) | Real `GrpcAgentService` + tonic client over a live TCP port; not routed through the recorded/live LLM backend switch — the A2A transport never calls an LLM, so that axis doesn't apply. Lives outside `tests/integration/live/` (plain cargo integration test) since it needs no stub-LLM/proxy backend. |
+| CH-11 | RAG retrieval pipeline: query decomposition, cross-sub-query dedup, verification annotation, `rag.retrieval.decision` audit event | `single_query_passthrough_matches_backend`, `same_chunk_from_two_subqueries_dedupes_keeping_higher_score`, `drop_uncorroborated_filters_when_enabled`, `uncorroborated_not_dropped_by_default` (`src/uar/rag/pipeline.rs` unit tests, fake `RetrievalBackend`) | **Gap, disclosed:** these test the pipeline logic against a fake backend, not the real `POST /{id}/search` HTTP endpoint end-to-end — a true live-integration case would need the embedding pipeline, which is currently broken (`VectorMatcher::embed_batch` zero-vector placeholder, `task_188b4179`, tracked separately). Add an e2e case here once that's fixed. |
 
 <!--
-When CH-01 (a2a-grpc-enable) lands, add e.g.:
-| CH-01 | A2A gRPC task round-trip | `a2a_grpc_task_roundtrip` | |
 CH-03 (provider-health-failover): a case inducing a 429 and asserting failover.
 CH-04 (prompt-dialect-engine): a case asserting dialect params in the captured request.
 CH-21 (agui-spec-alignment): AG-UI vocabulary conformance.

@@ -45,3 +45,19 @@ Dependencies are already in place (`tonic = "0.14"`, `tonic-build = "0.14"`,
 - **Risk:** the manual `grpc.rs` may need non-trivial tonic-0.14 API updates
   (service trait signatures, `Request`/`Response` wrapping, streaming types) —
   surfaced only at compile time; iterate against `cargo build`.
+
+## Implementation Note (2026-07-02, post-landing)
+
+The actual implementation deviated from "no codegen required" above: it adds
+`proto/a2a.proto` and generates the service/message types via
+`tonic_prost_build::compile_protos` in `build.rs` (`tonic::include_proto!("a2a")`
+in `grpc.rs`), rather than hand-writing the tonic service against the
+pre-existing manual types. This added a new runtime dependency,
+`tonic-prost = "0.14"` (the codegen output needs the `tonic-prost` crate, not
+just the `tonic-prost-build` build-dependency already present) — the
+"Dependencies: none new" line above no longer holds. Landing this also
+required bumping `prost` from `"0.13"` to `"0.14"` to match the version
+`tonic-prost` 0.14 pulls in (two incompatible `prost::Message` traits in the
+graph otherwise). See `tasks.md` for what shipped vs. what remains open
+(shutdown wiring on the mount is now done as of the 2026-07-02 verification
+pass; spec/deployment-docs update is still open).

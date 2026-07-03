@@ -1054,25 +1054,31 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .with_state(state);
 
     // ── A2A v0.3 gRPC transport ──────────────────────────────────────────────
-    // Spawns a gRPC server on a separate port (default 50051) alongside HTTP.
-    {
+    // Spawns a gRPC server on a separate port (default 50051) alongside HTTP,
+    // sharing the root run-cancellation token so it drains at the same moment
+    // in-flight runs are aborted (see the shutdown signal handler below).
+    let grpc_handle = {
         let grpc_port = config.server.grpc_port;
         let grpc_addr: std::net::SocketAddr = format!("0.0.0.0:{grpc_port}")
             .parse()
             .expect("invalid gRPC address");
         let grpc_service =
             crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state));
+        let grpc_shutdown = run_cancellation_root.clone();
         info!(name: "a2a.grpc.serving", address = %grpc_addr, "A2A gRPC transport serving");
         tokio::spawn(async move {
-            if let Err(e) = tonic::transport::Server::builder()
+            let result = tonic::transport::Server::builder()
                 .add_service(grpc_service.into_server())
-                .serve(grpc_addr)
-                .await
-            {
+                .serve_with_shutdown(grpc_addr, async move {
+                    grpc_shutdown.cancelled().await;
+                    info!(name: "a2a.grpc.shutdown", "A2A gRPC transport shutting down");
+                })
+                .await;
+            if let Err(e) = result {
                 tracing::error!(error = %e, "A2A gRPC server error");
             }
-        });
-    }
+        })
+    };
 
     let addr = format!("{}:{}", config.server.host, config.server.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
@@ -1085,7 +1091,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     // A failure here (e.g. IPv6 disabled) is non-fatal: we keep the primary.
     let companion = bind_companion_listener(&config.server.host, config.server.port).await;
 
-    serve_on_listener(
+    let http_result = serve_on_listener(
         listener,
         companion,
         app,
@@ -1093,7 +1099,13 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         ingestion_pool_shared,
         run_cancellation_root,
     )
-    .await
+    .await;
+
+    if let Err(e) = grpc_handle.await {
+        tracing::error!(error = %e, "A2A gRPC task panicked");
+    }
+
+    http_result
 }
 
 /// Best-effort bind of the loopback companion address for dual-stack `localhost`.
