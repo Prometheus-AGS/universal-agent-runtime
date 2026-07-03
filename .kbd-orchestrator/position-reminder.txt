@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-next-harness
-Step: 13 of 24
+Step: 14 of 24
 Stage: unknown
-Next command: Operator decision: continue into CH-05 per-model-context-strategy real implementation (Summarize/Hierarchical algorithms + wiring strategy_for_model/keep_first_last into RunManager.message_context_strategy) and/or the CH-07/CH-10 frontend dashboards (each requires the CLAUDE.md UI/UX routing steps before writing code), or pause for review of the 13/24 changes now landed.
+Next command: CH-05 is now genuinely done (14/24). G1+G2 fully closed for this phase. Only CH-07 cost-dashboard and CH-10 model-comparison-dashboard remain to close G3 -- both are frontend, each requires the CLAUDE.md UI/UX routing steps before writing code.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-next-harness (step 13 of 24)
+  Starting <kbd-skill> — uar-next-harness (step 14 of 24)
   [do work]
-  Completed <kbd-skill> — uar-next-harness (step 13 of 24)
+  Completed <kbd-skill> — uar-next-harness (step 14 of 24)
