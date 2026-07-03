@@ -153,3 +153,76 @@ pub struct RouteRequirements {
     /// Preferred provider ID (used as tie-breaker).
     pub preferred_provider: Option<String>,
 }
+
+/// Approximate cost ceiling (USD per 1M input tokens) for each model-class
+/// string the skill pack's `model_routing.phases` frontmatter uses.
+/// **Provisional** — there is no established `ModelClass` concept elsewhere
+/// in this codebase yet (CH-16 loader-upgrade scope is "don't drop this
+/// data", not "build a full model-tier resolution engine"); this exists so
+/// `model_routing` closes the loop into `RouteRequirements` at all rather
+/// than being silently dropped, per docs/uar-next-fable.md §6.3 item 1.
+/// Tighten/replace when a real tiering system lands.
+fn cost_ceiling_for_model_class(class: &str) -> Option<f64> {
+    match class.to_lowercase().as_str() {
+        "small" => Some(1.0),
+        "medium" => Some(5.0),
+        "large" => Some(15.0),
+        // "frontier" (and anything unrecognized) — no cost ceiling; let
+        // cost/context/benchmark tiebreaks decide instead of guessing a cap.
+        _ => None,
+    }
+}
+
+/// Turn a skill's declared model-class hint for one phase (`model_routing.phases`
+/// in its SKILL.md frontmatter — see [`crate::uar::domain::skills::SkillModelRouting`])
+/// into a [`RouteRequirements`]. Returns `None` when the skill has no routing
+/// hint for `phase`.
+#[must_use]
+pub fn route_requirements_for_model_class(
+    routing: &crate::uar::domain::skills::SkillModelRouting,
+    phase: &str,
+) -> Option<RouteRequirements> {
+    let class = routing.phases.get(phase)?;
+    Some(RouteRequirements {
+        max_cost_per_1m_input: cost_ceiling_for_model_class(class),
+        ..RouteRequirements::default()
+    })
+}
+
+#[cfg(test)]
+mod model_class_tests {
+    use super::*;
+    use crate::uar::domain::skills::SkillModelRouting;
+
+    #[test]
+    fn known_class_maps_to_a_cost_ceiling() {
+        let routing = SkillModelRouting {
+            phases: std::collections::HashMap::from([(
+                "my-phase".to_string(),
+                "small".to_string(),
+            )]),
+            ..Default::default()
+        };
+        let req = route_requirements_for_model_class(&routing, "my-phase").unwrap();
+        assert_eq!(req.max_cost_per_1m_input, Some(1.0));
+    }
+
+    #[test]
+    fn frontier_class_has_no_cost_ceiling() {
+        let routing = SkillModelRouting {
+            phases: std::collections::HashMap::from([(
+                "my-phase".to_string(),
+                "frontier".to_string(),
+            )]),
+            ..Default::default()
+        };
+        let req = route_requirements_for_model_class(&routing, "my-phase").unwrap();
+        assert_eq!(req.max_cost_per_1m_input, None);
+    }
+
+    #[test]
+    fn unknown_phase_is_none() {
+        let routing = SkillModelRouting::default();
+        assert!(route_requirements_for_model_class(&routing, "no-such-phase").is_none());
+    }
+}

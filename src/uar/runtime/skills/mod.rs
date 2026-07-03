@@ -7,6 +7,7 @@
 //! - SKILL.md parsing with MCP server configuration
 
 pub mod builtin_loader;
+pub mod pack_detection;
 pub mod registry;
 pub mod service;
 pub mod storage;

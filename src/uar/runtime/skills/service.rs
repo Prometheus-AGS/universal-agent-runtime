@@ -643,6 +643,7 @@ mod tests {
             execution_config: Default::default(),
             kind: Default::default(),
             origin: Default::default(),
+            ..Default::default()
         }
     }
 

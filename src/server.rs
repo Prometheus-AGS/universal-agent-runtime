@@ -372,10 +372,20 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     let skills = skill_service.registry().clone();
     let skill_service = Arc::new(skill_service);
 
-    // Load built-in (Manifest-kind, Builtin-origin) skills from the embedded
-    // prometheus-skill-system submodule. Failure here is non-fatal.
+    // Load built-in (Manifest-kind, Builtin-origin) skills from the active
+    // skill-pack root (CH-16: env override -> sibling checkout -> installed
+    // plugin -> embedded submodule, see pack_detection). Failure here is
+    // non-fatal.
     {
-        let builtins = uar::runtime::skills::builtin_loader::discover_builtin_skills();
+        let (builtins, pack_provenance) = uar::runtime::skills::builtin_loader::discover_builtin_skills();
+        info!(
+            name: "skills.pack.resolved",
+            source = ?pack_provenance.source,
+            root = %pack_provenance.root.display(),
+            version = pack_provenance.version.as_deref().unwrap_or("<unknown>"),
+            skill_count = builtins.len(),
+            "Resolved active skill-pack root"
+        );
         if !builtins.is_empty() {
             skill_service.register_builtins(builtins).await;
         }

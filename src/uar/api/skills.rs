@@ -198,6 +198,7 @@ async fn create_skill(
         execution_config: req.execution_config,
         kind: Default::default(),
         origin: Default::default(),
+        ..Default::default()
     };
 
     match service.create_skill(skill).await {

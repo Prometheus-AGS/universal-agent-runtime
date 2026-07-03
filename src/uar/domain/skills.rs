@@ -42,7 +42,7 @@ pub struct SkillExecutionConfig {
     pub max_tokens: Option<usize>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[allow(clippy::struct_field_names)]
 pub struct Skill {
     pub skill_id: String,
@@ -72,6 +72,57 @@ pub struct Skill {
     /// Provenance — Builtin (system-shipped, immutable) or User (default).
     #[serde(default)]
     pub origin: SkillOrigin,
+    /// SPDX license identifier from agentskills.io frontmatter, when present.
+    #[serde(default)]
+    pub license: Option<String>,
+    /// Author names from agentskills.io frontmatter.
+    #[serde(default)]
+    pub authors: Vec<String>,
+    /// Skill's declared implementation language (e.g. `"rust"`, `"typescript"`),
+    /// when the frontmatter specifies one.
+    #[serde(default)]
+    pub language: Option<String>,
+    /// Free-form compatibility note/object from frontmatter — shape varies
+    /// per skill (plain string or a structured `{platforms, node, ...}`
+    /// object), so this is passed through untyped rather than guessed at.
+    #[serde(default)]
+    pub compatibility: Option<serde_json::Value>,
+    /// `metadata.tags` from frontmatter.
+    #[serde(default)]
+    pub metadata_tags: Vec<String>,
+    /// `metadata.category` from frontmatter.
+    #[serde(default)]
+    pub metadata_category: Option<String>,
+    /// Per-phase model-class routing hints from frontmatter's `model_routing`
+    /// (agentskills.io convention — see e.g. `liter-llm-bridge`'s SKILL.md).
+    #[serde(default)]
+    pub model_routing: Option<SkillModelRouting>,
+    /// `skill_id` of the parent skill when this one is nested
+    /// (`skills/*/skills/*/SKILL.md`) — `None` for top-level skills.
+    #[serde(default)]
+    pub parent_skill_id: Option<String>,
+}
+
+/// Per-phase model-class routing hints, parsed from a SKILL.md's
+/// `model_routing` frontmatter block (see e.g. `liter-llm-bridge`'s
+/// SKILL.md). `phases` maps a phase name to a coarse model-class string
+/// (`"small"`, `"medium"`, `"large"`, `"frontier"`, by convention in the
+/// skill pack) — this is preserved data, not yet a resolved model
+/// selection; see `crate::llm::router::route_requirements_for_model_class`
+/// for the (intentionally approximate, documented-as-provisional)
+/// conversion into a [`crate::llm::router::RouteRequirements`].
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct SkillModelRouting {
+    /// Where the skill author says the routing policy itself lives (e.g. a
+    /// project config path) — informational, not resolved by UAR.
+    #[serde(default)]
+    pub policy_source: Option<String>,
+    /// Phase name -> model-class string.
+    #[serde(default)]
+    pub phases: std::collections::HashMap<String, String>,
+    /// Path to further routing documentation within the skill, if any.
+    #[serde(default)]
+    pub routing_reference: Option<String>,
 }
 
 /// Represents the YAML frontmatter of a SKILL.md file

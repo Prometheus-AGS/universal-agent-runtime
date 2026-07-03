@@ -111,6 +111,7 @@ impl FilesystemStorageProvider {
             execution_config: Default::default(),
             kind: crate::uar::domain::skills::SkillKind::Manifest,
             origin: Default::default(),
+            ..Default::default()
         };
 
         info!("Loaded skill from filesystem: {}", skill.title);

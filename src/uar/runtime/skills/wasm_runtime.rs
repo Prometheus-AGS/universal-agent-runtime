@@ -172,6 +172,7 @@ pub async fn discover_and_load(runtime: &WasmSkillRuntime) -> Vec<Skill> {
                 execution_config: SkillExecutionConfig::default(),
                 kind: SkillKind::Wasm,
                 origin,
+                ..Default::default()
             });
         }
     }
