@@ -83,7 +83,7 @@ test-config.yaml
 # Generated files
 src-tauri/gen/
 *.tsbuildinfo
-data/
+/data/
 static/assets
 
 # Git worktrees must live under ~/.claude/worktrees/ — defense-in-depth so

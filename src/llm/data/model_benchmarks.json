@@ -1,0 +1,122 @@
+{
+  "_readme": "Hand-curated capability-benchmark dataset (CH-09 capability-registry-benchmarks). Keyed by fully-qualified `provider/model` id, verified against an actual build.rs-generated provider_catalog.json snapshot on 2026-07-03 (not guessed) so lookups actually match router candidates. Each score is independently sourced and dated per docs/uar-next-fable.md §2.4 (\"version every entry with a source URL + retrieval date. Encode zero numbers from this document directly\" — none of the numbers below come from uar-next-fable.md; they were pulled directly from the cited leaderboard at the recorded date). Only the `coding` dimension (SWE-bench Verified) has verified data as of this pass — `agentic` and `context` dimensions are defined in the schema (see src/llm/benchmarks.rs) but intentionally left unpopulated rather than guessed. Coverage is a SMALL, deliberately-not-comprehensive subset (~15 of 258+ catalog providers' models): only entries where the leaderboard's model name could be confidently matched to an exact catalog id were kept — e.g. the leaderboard's 'DeepSeek-V4-Pro-Max' and 'Mistral Medium 3.5' were DROPPED rather than guess-mapped to 'deepseek-v4-pro'/'mistral-medium-latest', since the naming doesn't confirm they're the same checkpoint. See UPDATE.md in this directory for the refresh process and this same no-silent-guessing rule.",
+  "models": {
+    "anthropic/claude-opus-4-8": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 88.6,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "anthropic/claude-sonnet-5": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 85.2,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "anthropic/claude-sonnet-4-6": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 79.6,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "anthropic/claude-haiku-4-5": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 73.3,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "openai/gpt-5.2": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 80.0,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "openai/gpt-5.1": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 76.3,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "openai/gpt-5": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 74.9,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "google/gemini-3.1-pro-preview": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 80.6,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "google/gemini-3-pro-preview": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 76.2,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "moonshotai/kimi-k2.6": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 80.2,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "zhipuai/glm-5": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 77.8,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "alibaba/qwen3.7-max": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 80.4,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ],
+    "minimax/MiniMax-M3": [
+      {
+        "benchmark": "swe-bench-verified",
+        "dimension": "coding",
+        "score": 80.5,
+        "source_url": "https://llm-stats.com/benchmarks/swe-bench-verified",
+        "retrieved_date": "2026-07-03"
+      }
+    ]
+  }
+}
