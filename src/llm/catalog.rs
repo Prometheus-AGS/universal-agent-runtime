@@ -82,7 +82,7 @@ impl ModelCatalog {
 }
 
 /// Provider information from the merged catalog.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ProviderInfo {
     /// Provider identifier (e.g., `"openai"`, `"anthropic"`).
     pub id: String,
@@ -122,7 +122,7 @@ pub struct ProviderAuth {
 }
 
 /// Model information from the catalog.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ModelInfo {
     /// Model identifier (e.g., `"gpt-4o"`, `"claude-sonnet-4"`).
     #[serde(default)]

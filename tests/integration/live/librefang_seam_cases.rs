@@ -109,3 +109,66 @@ async fn agui_spec_mode_emits_official_event_vocabulary() {
         "agui_spec mode should not emit OpenAI chunks, got: {body}"
     );
 }
+
+/// A gap found while verifying CH-18/CH-21: `to_agui_spec_event`'s remapping
+/// table had no entries at all for tool-call events, so they fell through
+/// unchanged as the legacy `agui.tool_call.*` names instead of the official
+/// `TOOL_CALL_START`/`TOOL_CALL_ARGS`/`TOOL_CALL_END`/`TOOL_CALL_RESULT`
+/// vocabulary plan.md's CH-21 scope calls for. Fixed alongside this test.
+#[tokio::test]
+#[serial]
+async fn agui_spec_mode_maps_tool_call_lifecycle_to_official_vocabulary() {
+    let fixtures = FixtureSet::new()
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: "echo this via agui spec".to_string(),
+                has_tools: true,
+                has_tool_result: false,
+            },
+            FixtureResponse::ToolCall {
+                name: "native_echo".to_string(),
+                arguments: r#"{"message":"echo this via agui spec"}"#.to_string(),
+            },
+        )
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: "echo this via agui spec".to_string(),
+                has_tools: true,
+                has_tool_result: true,
+            },
+            FixtureResponse::Content("echoed via the tool loop".to_string()),
+        );
+    let stub = start_stub_llm(fixtures).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(format!("{}/api/chat/completion", server.base_url))
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": "echo this via agui spec"}],
+            "stream": true,
+            "stream_mode": "agui_spec",
+        }))
+        .send()
+        .await
+        .expect("request");
+
+    assert!(resp.status().is_success(), "status: {}", resp.status());
+    let body = resp.text().await.expect("body");
+
+    assert!(
+        body.contains("TOOL_CALL_END"),
+        "expected TOOL_CALL_END when the tool call's name+arguments are fully known, got: {body}"
+    );
+    assert!(
+        body.contains("TOOL_CALL_RESULT"),
+        "expected TOOL_CALL_RESULT once the tool finishes executing, got: {body}"
+    );
+    assert!(
+        !body.contains("agui.tool_call.") && !body.contains("agui.tool_result"),
+        "agui_spec mode must not leak legacy agui.tool_call.*/agui.tool_result names, got: {body}"
+    );
+}

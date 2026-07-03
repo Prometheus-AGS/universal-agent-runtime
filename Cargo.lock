@@ -2357,7 +2357,7 @@ dependencies = [
  "atty",
  "bitflags 1.3.2",
  "strsim 0.8.0",
- "textwrap",
+ "textwrap 0.11.0",
  "unicode-width 0.1.14",
  "vec_map",
 ]
@@ -2587,6 +2587,18 @@ dependencies = [
  "once_cell",
  "unicode-width 0.2.2",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "console"
+version = "0.16.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fe5f465a4f6fee88fad41b85d990f84c835335e85b5d9e6e63e0d06d28cba7c"
+dependencies = [
+ "encode_unicode",
+ "libc",
+ "unicode-width 0.2.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3579,6 +3591,63 @@ dependencies = [
  "num-traits",
  "serde",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "cucumber"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96a87e18d925b19ebe0fd47ea45316abd216d81ec0879c2448c3f9a0e9da62be"
+dependencies = [
+ "anyhow",
+ "clap 4.6.1",
+ "console 0.16.4",
+ "cucumber-codegen",
+ "cucumber-expressions",
+ "derive_more",
+ "either",
+ "futures",
+ "gherkin",
+ "globwalk",
+ "humantime",
+ "inventory",
+ "itertools 0.14.0",
+ "linked-hash-map",
+ "pin-project",
+ "ref-cast",
+ "regex",
+ "sealed",
+ "smart-default",
+]
+
+[[package]]
+name = "cucumber-codegen"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed2fc8a8bbb73af3230db699e8690c5c786655f75eb89e5f18d76055fa1a9a4d"
+dependencies = [
+ "cucumber-expressions",
+ "inflections",
+ "itertools 0.14.0",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn 2.0.117",
+ "synthez",
+]
+
+[[package]]
+name = "cucumber-expressions"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6401038de3af44fe74e6fccdb8a5b7db7ba418f480c8e9ad584c6f65c05a27a6"
+dependencies = [
+ "derive_more",
+ "either",
+ "nom 8.0.0",
+ "nom_locate",
+ "regex",
+ "regex-syntax",
 ]
 
 [[package]]
@@ -5529,6 +5598,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "gherkin"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e2c0d8c632f8a251ce9a8198079b1022adc586ff4e3d33e18debd40eb463b31"
+dependencies = [
+ "heck 0.5.0",
+ "peg",
+ "quote",
+ "serde",
+ "serde_json",
+ "syn 2.0.117",
+ "textwrap 0.16.2",
+ "thiserror 2.0.18",
+ "typed-builder",
+]
+
+[[package]]
 name = "gif"
 version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6759,7 +6845,7 @@ version = "0.17.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "183b3088984b400f4cfac3620d5e076c84da5364016b4f49473de574b2586235"
 dependencies = [
- "console",
+ "console 0.15.11",
  "number_prefix",
  "portable-atomic",
  "unicode-width 0.2.2",
@@ -6783,6 +6869,12 @@ checksum = "a588916bfdfd92e71cacef98a63d9b1f0d74d6599980d11894290e7ddefffcf7"
 dependencies = [
  "cfb 0.7.3",
 ]
+
+[[package]]
+name = "inflections"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a257582fdcde896fd96463bf2d40eefea0580021c0712a0e2b028b60b47a837a"
 
 [[package]]
 name = "inherent"
@@ -9854,6 +9946,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ec91767ecc0a0bbe558ce8c9da33c068066c57ecc8bb8477ef8c1ad3ef77c27"
 
 [[package]]
+name = "peg"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f76678828272f177ac33b7e2ac2e3e73cc6c1cd1e3e387928aa69562fa51367"
+dependencies = [
+ "peg-macros",
+ "peg-runtime",
+]
+
+[[package]]
+name = "peg-macros"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "636d60acf97633e48d266d7415a9355d4389cea327a193f87df395d88cd2b14d"
+dependencies = [
+ "peg-runtime",
+ "proc-macro2",
+ "quote",
+]
+
+[[package]]
+name = "peg-runtime"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9555b1514d2d99d78150d3c799d4c357a3e2c2a8062cd108e93a06d9057629c5"
+
+[[package]]
 name = "pem"
 version = "3.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12404,6 +12523,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
 
 [[package]]
+name = "sealed"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22f968c5ea23d555e670b449c1c5e7b2fc399fdaec1d304a17cd48e288abc107"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "sec1"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -13003,6 +13133,23 @@ checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
 dependencies = [
  "serde",
 ]
+
+[[package]]
+name = "smart-default"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0eb01866308440fc64d6c44d9e86c5cc17adfe33c4d6eed55da9145044d0ffc1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "smawk"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8e2fb0f499abb4d162f2bedad68f5ef91a1682b5a03596ddb67efd37768d100"
 
 [[package]]
 name = "smol_str"
@@ -13907,6 +14054,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "synthez"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d8a928f38f1bc873f28e0d2ba8298ad65374a6ac2241dabd297271531a736cd"
+dependencies = [
+ "syn 2.0.117",
+ "synthez-codegen",
+ "synthez-core",
+]
+
+[[package]]
+name = "synthez-codegen"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8fb83b8df4238e11746984dfb3819b155cd270de0e25847f45abad56b3671047"
+dependencies = [
+ "syn 2.0.117",
+ "synthez-core",
+]
+
+[[package]]
+name = "synthez-core"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "906fba967105d822e7c7ed60477b5e76116724d33de68a585681fb253fc30d5c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "sealed",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "sysctl"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14216,6 +14396,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
  "unicode-width 0.1.14",
+]
+
+[[package]]
+name = "textwrap"
+version = "0.16.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c13547615a44dc9c452a8a534638acdf07120d4b6847c8178705da06306a3057"
+dependencies = [
+ "smawk",
+ "unicode-linebreak",
+ "unicode-width 0.2.2",
 ]
 
 [[package]]
@@ -15362,6 +15553,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6e4313cd5fcd3dad5cafa179702e2b244f760991f45397d14d4ebf38247da75"
 
 [[package]]
+name = "unicode-linebreak"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b09c83c3c29d37506a3e260c08c03743a6bb66a9cd432c6934ab501a190571f"
+
+[[package]]
 name = "unicode-normalization"
 version = "0.1.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -15456,6 +15653,7 @@ dependencies = [
  "chrono",
  "clap 4.6.1",
  "config",
+ "cucumber",
  "dirs 6.0.0",
  "dotenvy",
  "ed25519-dalek",

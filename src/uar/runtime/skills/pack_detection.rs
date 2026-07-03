@@ -268,4 +268,100 @@ mod tests {
         }
         assert_ne!(provenance.source, PackSource::SiblingCheckout);
     }
+
+    fn write_plugin_manifest(dir: &Path, name: &str, version: &str) {
+        std::fs::create_dir_all(dir.join(".claude-plugin")).unwrap();
+        std::fs::write(
+            dir.join(".claude-plugin").join("plugin.json"),
+            format!(r#"{{"name": "{name}", "version": "{version}"}}"#),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn sibling_checkout_found_via_prometheus_skill_system_dir_env_var() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let sibling_root = dir.path().join("sibling");
+        std::fs::create_dir_all(sibling_root.join("skills")).unwrap();
+        write_plugin_manifest(&sibling_root, "prometheus-skill-pack", "9.9.9");
+
+        // SAFETY: test-only, single-threaded env var mutation.
+        unsafe {
+            std::env::set_var(
+                "PROMETHEUS_SKILL_SYSTEM_DIR",
+                sibling_root.to_str().unwrap(),
+            );
+        }
+        let found = find_sibling_checkout();
+        unsafe {
+            std::env::remove_var("PROMETHEUS_SKILL_SYSTEM_DIR");
+        }
+
+        let (root, version) = found.expect("sibling checkout with a valid manifest must match");
+        assert_eq!(root, sibling_root.join("skills"));
+        assert_eq!(version.as_deref(), Some("9.9.9"));
+    }
+
+    #[test]
+    fn sibling_checkout_without_skills_dir_does_not_match() {
+        let dir = tempfile::TempDir::new().unwrap();
+        // Manifest present, but no `skills/` subdirectory — not a valid pack root.
+        write_plugin_manifest(dir.path(), "prometheus-skill-pack", "1.0.0");
+
+        // SAFETY: test-only, single-threaded env var mutation.
+        unsafe {
+            std::env::set_var("PROMETHEUS_SKILL_SYSTEM_DIR", dir.path().to_str().unwrap());
+        }
+        let found = find_sibling_checkout();
+        unsafe {
+            std::env::remove_var("PROMETHEUS_SKILL_SYSTEM_DIR");
+        }
+
+        assert!(found.is_none());
+    }
+
+    #[test]
+    fn installed_plugin_prefers_highest_version_among_matches() {
+        let fake_home = tempfile::TempDir::new().unwrap();
+        let cache_root = fake_home.path().join(".claude/plugins/cache");
+
+        for version in ["1.0.0", "1.5.0", "1.2.0"] {
+            let version_dir = cache_root.join("prometheus-skill-pack").join(version);
+            std::fs::create_dir_all(version_dir.join("skills")).unwrap();
+            write_plugin_manifest(&version_dir, "prometheus-skill-pack", version);
+        }
+        // A same-named-org plugin that ISN'T the skill pack must be ignored
+        // even if its version would otherwise "win".
+        let other_plugin_dir = cache_root.join("some-other-plugin").join("9.0.0");
+        std::fs::create_dir_all(other_plugin_dir.join("skills")).unwrap();
+        write_plugin_manifest(&other_plugin_dir, "some-other-plugin", "9.0.0");
+
+        // HOME is process-global and potentially read by unrelated
+        // concurrently-running tests elsewhere in this binary (unlike
+        // UAR_BUILTIN_SKILLS_DIR/PROMETHEUS_SKILL_SYSTEM_DIR, which only
+        // this module's tests touch) — save and restore the real value
+        // rather than removing it.
+        // SAFETY: test-only env var mutation.
+        let real_home = std::env::var_os("HOME");
+        unsafe {
+            std::env::set_var("HOME", fake_home.path().to_str().unwrap());
+        }
+        let found = find_installed_plugin();
+        unsafe {
+            match &real_home {
+                Some(v) => std::env::set_var("HOME", v),
+                None => std::env::remove_var("HOME"),
+            }
+        }
+
+        let (root, version) = found.expect("highest-version prometheus-skill-pack must be found");
+        assert_eq!(version, "1.5.0");
+        assert_eq!(
+            root,
+            cache_root
+                .join("prometheus-skill-pack")
+                .join("1.5.0")
+                .join("skills")
+        );
+    }
 }

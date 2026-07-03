@@ -20,9 +20,19 @@ path = "src/main.rs"
 name = "uar-sidecar"
 path = "src/bin/uar-sidecar.rs"
 
+# Gherkin/BDD suite (tests/bdd.rs) drives its own main() via the Cucumber
+# runner instead of libtest's harness, so it needs harness = false — Cargo's
+# default auto-discovered test target assumes libtest and fails to build
+# otherwise ("main function present" conflict).
+[[test]]
+name = "bdd"
+path = "tests/bdd.rs"
+harness = false
+
 [dev-dependencies]
 anyhow = "1.0"
 axum-test = "19.1.1"
+cucumber = "0.23.0"
 serial_test = "3.4.0"
 tempfile = "3.27.0"
 tokio = { version = "1.50.0", features = ["full", "test-util"] }

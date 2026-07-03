@@ -69,7 +69,10 @@ Set `stream_mode: "agui_spec"` on a streaming `/api/chat/completion` or
 | `RUN_STARTED` | Run begins |
 | `TEXT_MESSAGE_CONTENT` | Assistant text delta |
 | `THINKING_TEXT_MESSAGE_CONTENT` | Extended-thinking/reasoning delta |
-| `TOOL_CALL_START` / `TOOL_CALL_ARGS` / `TOOL_CALL_END` | Tool call lifecycle |
+| `TOOL_CALL_START` | First delta or start of a given tool call (`call_index`/`id`; synthesized once per tool call — no dedicated UAR event exists for it) |
+| `TOOL_CALL_ARGS` | Incremental tool-call argument JSON while the model is still generating |
+| `TOOL_CALL_END` | Tool call's name+arguments are fully known, ready to execute |
+| `TOOL_CALL_RESULT` | Tool finished executing (content + success flag) |
 | `STATE_DELTA` | State patch / context update |
 | `CUSTOM` | UAR-specific signals with no AG-UI equivalent (citations, skill activation, guardrail flags, memory events) — payload shape unchanged from the legacy event, only the wire name differs |
 | `RUN_FINISHED` | Run completes |

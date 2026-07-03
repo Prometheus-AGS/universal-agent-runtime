@@ -567,4 +567,114 @@ body"#,
         );
         assert_eq!(parent.parent_skill_id, None);
     }
+
+    #[test]
+    fn load_collision_allowlist_reads_names_from_real_file() {
+        let dir = TempDir::new().unwrap();
+        let pack_parent = dir.path().join("some-pack");
+        let pack_root = pack_parent.join("skills");
+        fs::create_dir_all(pack_parent.join("scripts")).unwrap();
+        fs::write(
+            pack_parent.join("scripts").join("skill-collision-allowlist.json"),
+            r#"[{"skills": ["artifact-refiner", "artifact-refiner"], "reason": "duplicate at two depths"}]"#,
+        )
+        .unwrap();
+
+        let allowlist = load_collision_allowlist(&pack_root);
+
+        assert!(allowlist.contains("artifact-refiner"));
+        assert!(!allowlist.contains("some-unrelated-skill"));
+    }
+
+    #[test]
+    fn load_collision_allowlist_missing_file_is_empty_not_an_error() {
+        let dir = TempDir::new().unwrap();
+        let pack_root = dir.path().join("no-scripts-dir-here").join("skills");
+
+        let allowlist = load_collision_allowlist(&pack_root);
+
+        assert!(allowlist.is_empty());
+    }
+
+    #[test]
+    fn detect_pack_mcp_servers_reads_real_mcp_json() {
+        let dir = TempDir::new().unwrap();
+        let pack_parent = dir.path().join("some-pack");
+        let pack_root = pack_parent.join("skills");
+        fs::create_dir_all(&pack_parent).unwrap();
+        fs::write(
+            pack_parent.join(".mcp.json"),
+            r#"{"mcpServers": {"tavily": {"command": "npx", "args": ["-y", "tavily-mcp"]}, "surreal-memory": {"type": "sse", "url": "http://localhost:23001/mcp/sse"}}}"#,
+        )
+        .unwrap();
+
+        let mut servers = detect_pack_mcp_servers(&pack_root);
+        servers.sort();
+
+        assert_eq!(
+            servers,
+            vec!["surreal-memory".to_string(), "tavily".to_string()]
+        );
+    }
+
+    #[test]
+    fn detect_pack_mcp_servers_missing_file_is_empty_not_an_error() {
+        let dir = TempDir::new().unwrap();
+        let pack_root = dir.path().join("no-mcp-json-here").join("skills");
+
+        assert!(detect_pack_mcp_servers(&pack_root).is_empty());
+    }
+
+    #[test]
+    fn collision_across_roots_is_precedence_wins_not_last_wins() {
+        // Two roots define a skill with the SAME name but different bodies.
+        // The primary root (UAR_BUILTIN_SKILLS_DIR, resolved first) must win
+        // over the lower-precedence extra root — the opposite of the old
+        // last-seen-wins behavior.
+        let primary_dir = TempDir::new().unwrap();
+        let primary_skill_dir = primary_dir.path().join("shared-name");
+        fs::create_dir_all(&primary_skill_dir).unwrap();
+        fs::write(
+            primary_skill_dir.join("SKILL.md"),
+            "---\nname: shared-name\ndescription: primary root version\n---\nprimary body",
+        )
+        .unwrap();
+
+        let extra_dir = TempDir::new().unwrap();
+        let extra_skill_dir = extra_dir.path().join("shared-name");
+        fs::create_dir_all(&extra_skill_dir).unwrap();
+        fs::write(
+            extra_skill_dir.join("SKILL.md"),
+            "---\nname: shared-name\ndescription: extra root version\n---\nextra body",
+        )
+        .unwrap();
+
+        // SAFETY: test-only, single-threaded context.
+        unsafe {
+            std::env::set_var(
+                "UAR_BUILTIN_SKILLS_DIR",
+                primary_dir.path().to_str().unwrap(),
+            );
+            std::env::set_var(
+                "UAR_EXTRA_BUILTIN_SKILL_DIRS",
+                extra_dir.path().to_str().unwrap(),
+            );
+        }
+        let (skills, _) = discover_builtin_skills();
+        unsafe {
+            std::env::remove_var("UAR_BUILTIN_SKILLS_DIR");
+            std::env::remove_var("UAR_EXTRA_BUILTIN_SKILL_DIRS");
+        }
+
+        let matches: Vec<_> = skills.iter().filter(|s| s.title == "shared-name").collect();
+        assert_eq!(
+            matches.len(),
+            1,
+            "collision must resolve to exactly one skill"
+        );
+        assert_eq!(
+            matches[0].description, "primary root version",
+            "the primary (higher-precedence) root's skill must win, not the extra root's"
+        );
+    }
 }
