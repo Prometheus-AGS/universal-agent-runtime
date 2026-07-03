@@ -12,9 +12,12 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::uar::{
-    domain::knowledge::{DocumentStatus, KbConfig, KnowledgeBase, KnowledgeDocument},
+    domain::knowledge::{DocumentStatus, KbConfig, KnowledgeBase, KnowledgeDocument, KnowledgeMatch},
     persistence::PersistenceLayer,
-    rag::{chunking::ChunkingStrategy, ingestion_worker::IngestionWorkerPool},
+    rag::{
+        chunking::ChunkingStrategy, ingestion_worker::IngestionWorkerPool,
+        pipeline::{RagRetrievalPipeline, RetrievalBackend},
+    },
     runtime::matching::VectorMatcher,
 };
 
@@ -513,7 +516,45 @@ async fn delete_document(
 // Search Handler
 // =============================================================================
 
+/// Adapts `(PersistenceLayer, VectorMatcher)` to [`RetrievalBackend`] so
+/// [`RagRetrievalPipeline`] (CH-11 rag-hardening) can run one search per
+/// decomposed sub-query without depending on either concrete type.
+struct KbSearchBackend<'a> {
+    persistence: &'a dyn PersistenceLayer,
+    vector_matcher: &'a VectorMatcher,
+    kb_id: &'a str,
+}
+
+#[async_trait::async_trait]
+impl RetrievalBackend for KbSearchBackend<'_> {
+    async fn search_one(
+        &self,
+        sub_query: &str,
+        limit: usize,
+        min_score: f32,
+    ) -> anyhow::Result<Vec<KnowledgeMatch>> {
+        let embeddings = self
+            .vector_matcher
+            .embed_batch(vec![sub_query.to_string()])
+            .await?;
+        let query_vec = embeddings
+            .into_iter()
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("no embedding generated for sub-query"))?;
+        self.persistence
+            .search_knowledge_scoped(&[self.kb_id], &query_vec, limit, min_score)
+            .await
+    }
+}
+
 /// POST /{id}/search - Vector search within a knowledge base
+///
+/// Runs through [`RagRetrievalPipeline`] (CH-11 rag-hardening): the query is
+/// decomposed into sub-queries, each searched independently, results are
+/// deduped/fused, verification-annotated, and the decision is audit-logged
+/// (`rag.retrieval.decision`, Rule 34). Verification only annotates by
+/// default (`RagRetrievalConfig::default()`) — it does not drop results, so
+/// existing callers see the same result set as before this pipeline existed.
 async fn search_knowledge_base(
     State(state): State<Arc<KnowledgeApiState>>,
     Path(kb_id): Path<String>,
@@ -537,28 +578,13 @@ async fn search_knowledge_base(
         req.limit
     );
 
-    // Embed the query using VectorMatcher
-    let embeddings = state
-        .vector_matcher
-        .embed_batch(vec![req.query.clone()])
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to embed query: {e}");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Embedding failed: {e}"),
-            )
-        })?;
-
-    let query_vec = embeddings.into_iter().next().ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "No embedding generated".to_string(),
-    ))?;
-
-    // Search knowledge scoped to this KB
-    let matches = state
-        .persistence
-        .search_knowledge_scoped(&[kb_id.as_str()], &query_vec, req.limit, req.min_score)
+    let backend = KbSearchBackend {
+        persistence: state.persistence.as_ref(),
+        vector_matcher: state.vector_matcher.as_ref(),
+        kb_id: kb_id.as_str(),
+    };
+    let matches = RagRetrievalPipeline::new()
+        .retrieve(&backend, &kb_id, &req.query, req.limit, req.min_score)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
