@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-next-harness
-Step: 3 of 24
+Step: 6 of 24
 Stage: unknown
-Next command: Continue coding forward per remaining_to_code (CH-16 skill-pack loader is next in plan order and has no blocking dependency). Do NOT compile until a meaningful batch is done -- this is one of at most 3 remaining verification checkpoints for the rest of this phase.
+Next command: Continue coding forward. CH-18 (librefang bridge, D-C: UAR-side-only per plan.md) is next with no blocking dependency. Save remaining 2 compile checkpoints for further batch boundaries.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-next-harness (step 3 of 24)
+  Starting <kbd-skill> — uar-next-harness (step 6 of 24)
   [do work]
-  Completed <kbd-skill> — uar-next-harness (step 3 of 24)
+  Completed <kbd-skill> — uar-next-harness (step 6 of 24)

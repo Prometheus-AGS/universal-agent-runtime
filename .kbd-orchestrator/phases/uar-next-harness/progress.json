@@ -41,10 +41,10 @@
     "docs-overhaul-deploy-guide",
     "perf-security-load"
   ],
-  "updatedAt": "2026-07-03T11:05:00Z",
-  "changes_completed": 3,
+  "updatedAt": "2026-07-03T14:00:00Z",
+  "changes_completed": 6,
   "changes_total": 24,
-  "changes_completed_note": "3 = proxy-integration-gate + live-integration-baseline-coverage + a2a-grpc-enable (CH-01, fully closed out 2026-07-03: tasks.md 100% checked, 276/276 lib tests + 2/2 new gRPC tests green). CH-09 and CH-11 are CODED but not yet compiled/counted as complete -- see current-waypoint.json codeWrittenUnverified for the implementation-first-test-at-checkpoints pacing now in effect.",
+  "changes_completed_note": "6 = proxy-integration-gate + live-integration-baseline-coverage + a2a-grpc-enable (CH-01) + capability-registry-benchmarks (CH-09) + rag-hardening (CH-11) + skill-pack-bundling loader upgrades (CH-16). All verified: cargo build --lib clean, cargo test --lib 301/301 green (2026-07-03 checkpoint). CH-09/11/16 have no openspec proposal/tasks.md (coded directly, same as CH-02/03/04/05/06/08/21) -- 'complete' here means code + tests verified, with each change's own doc comments disclosing what's explicitly deferred (e.g. CH-16's progressive disclosure, live MCP registry wiring, hooks mapping). Operating under implementation-first/test-at-checkpoints pacing now (see current-waypoint.json) -- checkpoint 1 of 3 used for the rest of this phase.",
   "planAmendments": [
     "A1 2026-07-01: docs/uar-next-fable.md supersedes docs/uar-next.md as recommendation source; CH-03/04/09/16/18/20 amended, CH-21 agui-spec-alignment added (see plan.md Amendment A1)",
     "A2 2026-07-01: proxy-integration-gate (CH-22) added as first Round-1 change \u2014 live integration tier against local OpenAI proxy 127.0.0.1:8181 (recorded-fixture mirror in CI), 100% FEATURE coverage contract (every CH ships a live case, MATRIX.md), line coverage stays at 80% llvm-cov gate; 100% line coverage explicitly rejected (operator may override before Round 2)",

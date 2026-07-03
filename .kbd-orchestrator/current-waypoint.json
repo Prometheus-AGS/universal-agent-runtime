@@ -3,7 +3,7 @@
   "change": null,
   "status": "executing",
   "previousPhase": "gate-activation-and-security-cleanup",
-  "currentTask": "CH-01 a2a-grpc-enable fully closed out (shutdown wiring, gRPC integration test 2/2, MATRIX row, docs) -- tasks.md 100% checked, ready for QA gate + archive. New operating philosophy adopted this turn (implementation-first, test-at-checkpoints; see memory feedback-implementation-first-test-checkpoints + Karpathy rules-cache.md principle 5): coded CH-09 (capability-registry-benchmarks) and CH-11 (rag-hardening) fully, back-to-back, with ZERO compiles in between -- committed as-is, verification deferred to a later batch checkpoint per the new max-3-checkpoints-per-epoch rule.",
+  "currentTask": "CH-09/CH-11/CH-16 batch-verified (checkpoint 1 of 3 for this epoch): cargo build --lib clean, 301/301 lib tests green after fixing one real test-hermeticity bug (pack_detection test assumed no sibling repo checkout existed; this box has one). Committed. Continuing to code forward (CH-18, CH-12..17 chain, CH-19, CH-20, CH-03/05 remainders) without compiling until the next batch boundary.",
   "nextPendingChange": "a2a-grpc-enable",
   "roundZeroComplete": true,
   "changeStatus": {
@@ -16,7 +16,7 @@
     "live-integration-baseline-coverage": "DONE — all 5 task groups. 9 baseline cases (7 pass, 2 #[ignore]d for disclosed product bugs), backend-parametric parity case, MATRIX.md feature-coverage contract + tools/live-matrix-check.sh + .github/workflows/live-integration.yml (advisory), README. Local suite 17 passed/2 ignored/0 failed; final full-suite verify running in isolated target dir. Every remaining Round1-4 feature change must add a MATRIX.md row."
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "Continue coding forward per remaining_to_code (CH-16 skill-pack loader is next in plan order and has no blocking dependency). Do NOT compile until a meaningful batch is done -- this is one of at most 3 remaining verification checkpoints for the rest of this phase.",
+  "exactNextCommand": "Continue coding forward. CH-18 (librefang bridge, D-C: UAR-side-only per plan.md) is next with no blocking dependency. Save remaining 2 compile checkpoints for further batch boundaries.",
   "gateActivationSecurityOutcome": "gate-activation-and-security-cleanup: both goals MET (code) in PR #43 (2 commits, archived). (1) feat(eval) --require-baseline strict gate: unseeded nightly fails loudly instead of passing silently; pure baseline_missing_under_strict helper; fail-fast exit 2 BEFORE any model call; nightly opts in; operator runbook in evals/README.md. (2) fix(config) secret redaction (Rule 33): redacting Debug for LlmConfig api_key+provider_keys, SecurityConfig jwt_secret, Persistence/Memory passwords. CORRECTION: I mis-assessed redaction as already-on-main; it was uncommitted working-tree WIP (origin/main had 0 REDACTED) — this PR actually lands it; caught at commit, split into 2 focused commits, disclosed in PR. 36 eval tests green. REMAINDER (operator-only): configure UAR_LLM__API_KEY secret + seed/commit evals/results/starter.baseline.json to make the gate enforce green. Spawn-task redaction chip now resolved by #43. LESSON: verify 'already merged' against committed state (git show origin/main:<file>), never the working tree.",
   "evalHarnessHardeningOutcome": "eval-harness-hardening: 4/4 goals MET + HK1. PRs #38-#42 merged + archived. EHH3 suite-declared scorers (ScorerSpec + build_scorers factory, serde-default backward compat); EHH2 LlmJudge scorer (rubric, deterministic JSON parse, advisory per D-B); EHH4 recorded-fixture provider + end-to-end pipeline integration tests; HK1 deleted dead src/testing/ (27 files, ~22.7k lines); EHH1 evals/starter.yaml + two-tier CI gate (Tier-1 keyless structural test per PR, Tier-2 nightly real-model gated workflow, fork-safe, Rule 33). 35 eval lib tests green. DEBT: no baseline shipped so Tier-2 is informational until seeded (top follow-up); Tier-2 never run in CI yet (needs UAR_LLM__API_KEY secret + workflow_dispatch); secret-redaction chip (main.rs:46, Rule 33) still open; refiner QA-gate automation still not wired.",
   "evalHarnessOutcome": "uar-eval-harness: 1/1 goal MET (S1). Shipped+merged PRs #34-#37 + archived: EH1 eval domain + rule scorers (ExactMatch/Contains/JsonValid/NonEmpty/PatternMatch/Sycophancy), EH2 suite loader (JSON/YAML) + Runner over a CompletionProvider seam, EH4 file persistence + delta-vs-baseline regression + eval metrics, EH5 `eval run|list|baseline` CLI (non-zero exit on regression; server default preserved). Rule-based/file-backed/CLI-driven v1 as planned. Deviations: PatternMatch instead of Regex (no new dep, Rule 27); scorer selection is a heuristic (per-suite config deferred). Debt: live `run <suite>` path unit-untested (needs a model); no example suite shipped; dead src/testing/ still present; pre-existing secret-logging at main.rs:46 flagged via spawn-task (Rule 33).",
@@ -76,7 +76,7 @@
     "R3 eval scope",
     "R4 guardrail build-vs-buy"
   ],
-  "updatedAt": "2026-07-03T11:05:00Z",
+  "updatedAt": "2026-07-03T14:00:00Z",
   "planRevision": "A1+A2 2026-07-01 — source docs/uar-next-fable.md; A2 adds proxy-integration-gate + 100%-feature-coverage contract (see plan.md)",
   "discoveredBugs": [
     "task_188b4179: VectorMatcher::embed_batch returns zero-vector placeholder embeddings (model.forward() commented out) - breaks all RAG search + LocalEmbedding intent backend. spawn_task started by user.",
@@ -84,19 +84,16 @@
   ],
   "infraNotes": "CARGO_TARGET_DIR=/Volumes/my-passport/cargo-target REQUIRED (not set in shell; forgetting fills root disk). Session hit machine-wide memory-pressure stall from 6 concurrent cargo builds (mine + 2 spawn_task fixes + 3 other sessions) - cleared on its own. Cleaned 280 leaked harness temp dirs; added Drop cleanup so it does not recur. 37GB stale /private/tmp/librefang-upstream-merge* dirs flagged to user (not deleted - not mine).",
   "codeWrittenUnverified": {
-    "strategy": "2026-07-03: operator directive changes pacing -- implement the full remaining plan first (CH-16, CH-18, CH-12..15/17 chain, CH-19, CH-20, CH-03/CH-05 core-only remainders), compile/test at most 3 times total for the rest of this phase, not after every change. CH-09 and CH-11 below were coded and committed WITHOUT a compile check -- next compile will need to catch errors across both at once.",
-    "changes_coded_this_turn_uncompiled": [
-      "CH-09 capability-registry-benchmarks: src/llm/benchmarks.rs + data/model_benchmarks.json (~15 sourced entries) + router.rs tiebreak wiring",
-      "CH-11 rag-hardening: src/uar/rag/{decomposition,verification,pipeline}.rs + knowledge.rs search handler rewire to the pipeline"
+    "strategy": "implementation-first / test-at-checkpoints (max 3 compiles for the rest of this phase). Checkpoint 1 of 3 used and clean (CH-09/11/16). 2 remain.",
+    "changes_verified_this_turn": [
+      "CH-09 capability-registry-benchmarks: compiles, tests green",
+      "CH-11 rag-hardening: compiles, tests green",
+      "CH-16 skill-pack-bundling loader upgrades: compiles, tests green (1 test bug found+fixed, was a test-environment assumption, not a production bug)"
     ],
-    "verified_this_turn": [
-      "CH-01 a2a-grpc-enable: FULLY verified -- cargo test --lib 276/276 + cargo test --test test_a2a_grpc 2/2, both green after the shutdown-wiring change"
-    ],
-    "risk": "CH-09/CH-11 have NOT been compiled since being written. Plausible failure points: async-trait/RetrievalBackend trait-object bound mismatches in pipeline.rs, borrow/lifetime issues in KbSearchBackend<'_>, serde field-name mismatches in benchmarks.rs's BenchmarkDataset deserialization, or a missed import in router.rs's new tiebreak closure. First `cargo build --lib` after more changes land should surface all of it in one pass.",
+    "changes_coded_this_turn_uncompiled": [],
     "remaining_to_code": [
-      "CH-03/CH-05 remainder: whatever is outside the already-committed 'core' scope for provider-health-failover / per-model-context-strategy (not itemized -- no tasks.md for these)",
+      "CH-03/CH-05 remainder: whatever is outside the already-committed 'core' scope for provider-health-failover / per-model-context-strategy",
       "CH-07/CH-10 dashboards (React -- separate)",
-      "CH-16 skill-pack-bundling loader upgrades (L complexity)",
       "CH-18 librefang bridge",
       "CH-12/13/14/15/17 spec-v2/compiler/conformance/templates/evals chain (sequential deps)",
       "CH-19 docs",
