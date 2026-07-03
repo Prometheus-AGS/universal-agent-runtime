@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-next-harness
-Step: 14 of 24
+Step: 16 of 24
 Stage: unknown
-Next command: CH-05 is now genuinely done (14/24). G1+G2 fully closed for this phase. Only CH-07 cost-dashboard and CH-10 model-comparison-dashboard remain to close G3 -- both are frontend, each requires the CLAUDE.md UI/UX routing steps before writing code.
+Next command: G1+G2+G3 are fully closed (16/24). Operator directive from this turn is complete. Remaining phase scope is G4 (CH-12 agent-spec-v2 -> CH-13 compiler-v2-stages -> {CH-14 conformance-testing, CH-15 agent-template-library, CH-16 already done}, CH-17 eval-targeted-suites -- a large sequential-dependency chain) and G5 (CH-19 docs, CH-20 perf-security), both explicitly out of scope for the G1-G3 directive. Also flagged: a disclosed pre-existing bug (useEntityList/useEntity hook API drift across 5+ frontend files) surfaced while verifying CH-07/CH-10 against a live server -- recommend a dedicated follow-up to fix it.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-next-harness (step 14 of 24)
+  Starting <kbd-skill> — uar-next-harness (step 16 of 24)
   [do work]
-  Completed <kbd-skill> — uar-next-harness (step 14 of 24)
+  Completed <kbd-skill> — uar-next-harness (step 16 of 24)
