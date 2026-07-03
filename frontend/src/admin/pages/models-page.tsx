@@ -1,8 +1,17 @@
 import { type FC, useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, RefreshCw, Search, Star, Trash2 } from "lucide-react";
+import { Columns3, Loader2, Plus, RefreshCw, Search, Star, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +41,15 @@ import { cn } from "@/lib/utils";
 import { useModels } from "@/entities/hooks/use-models";
 import { loadModelsIntoGraph } from "@/entities/fetchers/models";
 import { fetchConfiguredProviders, updateProvider } from "@/services/providers-api";
-import type { UarModel, UarProvider } from "@/types";
+import type { CatalogModelBenchmark, UarModel, UarProvider } from "@/types";
+
+const MAX_COMPARE = 4;
+
+const DIMENSION_LABEL: Record<CatalogModelBenchmark["dimension"], string> = {
+  coding: "coding",
+  agentic: "agentic",
+  context: "context recall",
+};
 
 // ---------------------------------------------------------------------------
 // Page-local model row shape (catalog view)
@@ -52,6 +69,7 @@ interface ModelRowShape {
   open_weights?: boolean;
   cost_input: number;
   cost_output: number;
+  benchmarks: CatalogModelBenchmark[];
 }
 
 /** A configured model belonging to a provider, paired with its provider. */
@@ -86,6 +104,21 @@ export const ModelsPage: FC = () => {
   const [busyModelKey, setBusyModelKey] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{ providerId: string; modelId: string } | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+
+  // Compare state (CH-10): a bounded selection of catalog model keys, plus
+  // whether the side-by-side dialog is open. Selection persists across
+  // filter changes so switching providers to pick a second model doesn't
+  // lose the first pick.
+  const [compareKeys, setCompareKeys] = useState<string[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
+
+  const toggleCompare = useCallback((key: string) => {
+    setCompareKeys((prev) => {
+      if (prev.includes(key)) return prev.filter((k) => k !== key);
+      if (prev.length >= MAX_COMPARE) return prev;
+      return [...prev, key];
+    });
+  }, []);
 
   const loadConfigured = useCallback(async () => {
     const res = await fetchConfiguredProviders();
@@ -129,6 +162,7 @@ export const ModelsPage: FC = () => {
       open_weights: row.open_weights === true,
       cost_input: (row.cost_input as number) ?? 0,
       cost_output: (row.cost_output as number) ?? 0,
+      benchmarks: (row.benchmarks as CatalogModelBenchmark[] | undefined) ?? [],
     }));
   }, [rawItems]);
 
@@ -171,6 +205,16 @@ export const ModelsPage: FC = () => {
 
   const toggleCap = (cap: keyof typeof capabilities) =>
     setCapabilities((prev) => ({ ...prev, [cap]: !prev[cap] }));
+
+  // Preserve pick order (not catalog order) so a model stays where the user
+  // put it when comparing.
+  const compareModels = useMemo(
+    () =>
+      compareKeys
+        .map((key) => allModels.find((m) => m.key === key))
+        .filter((m): m is ModelRowShape => m !== undefined),
+    [compareKeys, allModels],
+  );
 
   // ── Mutations ──────────────────────────────────────────────────────────
   //
@@ -400,11 +444,65 @@ export const ModelsPage: FC = () => {
           )}
           <div className="flex flex-col gap-1.5">
             {filtered.map((m) => (
-              <ModelRow key={m.key} row={m} />
+              <ModelRow
+                key={m.key}
+                row={m}
+                compareChecked={compareKeys.includes(m.key)}
+                compareDisabled={compareKeys.length >= MAX_COMPARE && !compareKeys.includes(m.key)}
+                onToggleCompare={() => toggleCompare(m.key)}
+              />
             ))}
           </div>
         </section>
       </div>
+
+      {/* Compare bar (CH-10): appears once 1+ models are picked, so the user
+          sees the running selection without losing catalog scroll position. */}
+      {compareKeys.length > 0 && (
+        <div
+          className="flex items-center gap-3 border-t border-[hsl(var(--phosphor)/0.4)] bg-[hsl(var(--terminal-surface))] px-6 py-2.5"
+          data-testid="compare-bar"
+        >
+          <Columns3 size={14} className="shrink-0 text-[hsl(var(--phosphor))]" aria-hidden />
+          <div className="flex flex-1 flex-wrap items-center gap-1.5">
+            {compareModels.map((m) => (
+              <span
+                key={m.key}
+                className="inline-flex items-center gap-1 rounded border border-[hsl(var(--terminal-line-strong))] py-0 pl-2 pr-1 text-xs text-[hsl(var(--terminal-fg))]"
+              >
+                {m.name || m.model_id}
+                <button
+                  type="button"
+                  onClick={() => toggleCompare(m.key)}
+                  aria-label={`Remove ${m.key} from compare`}
+                  className="rounded p-0.5 text-[hsl(var(--terminal-fg-dim))] hover:text-[hsl(var(--signal-red))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--phosphor-glow))]"
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setCompareKeys([])}
+            className="text-xs text-[hsl(var(--terminal-fg-dim))] hover:text-[hsl(var(--terminal-fg))]"
+          >
+            clear
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setShowCompare(true)}
+            disabled={compareModels.length < 2}
+            className="gap-1.5 border border-[hsl(var(--phosphor)/0.5)] bg-[hsl(var(--phosphor)/0.12)] text-[hsl(var(--phosphor))] hover:bg-[hsl(var(--phosphor)/0.2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--phosphor-glow))] disabled:opacity-40"
+            data-testid="open-compare"
+          >
+            <Columns3 size={13} />compare ({compareModels.length})
+          </Button>
+        </div>
+      )}
 
       {/* Add model dialog */}
       <AddModelDialog
@@ -415,6 +513,9 @@ export const ModelsPage: FC = () => {
         busy={busyModelKey !== null}
         onAdd={handleAddModel}
       />
+
+      {/* Compare dialog (CH-10) */}
+      <CompareDialog open={showCompare} onOpenChange={setShowCompare} models={compareModels} />
 
       {/* Remove model confirmation */}
       <AlertDialog open={removeTarget !== null} onOpenChange={(open) => !open && setRemoveTarget(null)}>
@@ -676,17 +777,33 @@ function FilterPill({
   );
 }
 
-function ModelRow({ row }: { row: ModelRowShape }) {
+interface ModelRowProps {
+  row: ModelRowShape;
+  compareChecked: boolean;
+  compareDisabled: boolean;
+  onToggleCompare: () => void;
+}
+
+function ModelRow({ row, compareChecked, compareDisabled, onToggleCompare }: ModelRowProps) {
   const ctxK = row.context > 0 ? `${Math.round(row.context / 1000)}k` : null;
   return (
     <div
       className={cn(
         "flex items-center gap-3 border px-4 py-3 transition-colors duration-[160ms]",
-        row.provider_configured
-          ? "border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-surface))] hover:border-[hsl(var(--phosphor)/0.4)]"
-          : "border-[hsl(var(--terminal-line))] bg-transparent opacity-50",
+        compareChecked && "border-[hsl(var(--phosphor))] bg-[hsl(var(--phosphor)/0.06)]",
+        !compareChecked && row.provider_configured &&
+          "border-[hsl(var(--terminal-line-strong))] bg-[hsl(var(--terminal-surface))] hover:border-[hsl(var(--phosphor)/0.4)]",
+        !compareChecked && !row.provider_configured && "border-[hsl(var(--terminal-line))] bg-transparent opacity-50",
       )}
     >
+      <Checkbox
+        checked={compareChecked}
+        disabled={compareDisabled}
+        onCheckedChange={onToggleCompare}
+        aria-label={`Select ${row.name || row.model_id} for comparison`}
+        data-testid={`compare-checkbox-${row.key}`}
+      />
+
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-[13px] font-medium text-[hsl(var(--terminal-fg))]">{row.name || row.model_id}</p>
@@ -710,6 +827,144 @@ function ModelRow({ row }: { row: ModelRowShape }) {
         {row.open_weights && <CapBadge tone="amber">open</CapBadge>}
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Compare dialog (CH-10)
+// ---------------------------------------------------------------------------
+
+function CompareDialog({
+  open,
+  onOpenChange,
+  models,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  models: ModelRowShape[];
+}) {
+  // Union of every dimension any selected model has a score for — keeps the
+  // benchmark section from padding out with all-empty rows for dimensions
+  // nobody in the current selection has data for.
+  const dimensions = useMemo(() => {
+    const seen = new Set<CatalogModelBenchmark["dimension"]>();
+    for (const m of models) for (const b of m.benchmarks) seen.add(b.dimension);
+    return Array.from(seen);
+  }, [models]);
+
+  const bestScore = (dimension: CatalogModelBenchmark["dimension"]) =>
+    Math.max(
+      0,
+      ...models.map((m) =>
+        Math.max(0, ...m.benchmarks.filter((b) => b.dimension === dimension).map((b) => b.score)),
+      ),
+    );
+
+  const cheapestInput = Math.min(...models.map((m) => m.cost_input || Number.POSITIVE_INFINITY));
+  const largestContext = Math.max(...models.map((m) => m.context));
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl font-mono">
+        <DialogHeader>
+          <DialogTitle>compare models</DialogTitle>
+          <DialogDescription>
+            side-by-side cost, capabilities, and sourced benchmark scores for {models.length} selected
+            models.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-[hsl(var(--terminal-line-strong))] hover:bg-transparent">
+                <TableHead className="text-xs text-[hsl(var(--terminal-fg-dim))]">metric</TableHead>
+                {models.map((m) => (
+                  <TableHead key={m.key} className="text-xs text-[hsl(var(--terminal-fg))]">
+                    {m.name || m.model_id}
+                    <div className="font-normal normal-case text-[hsl(var(--terminal-fg-dim))]">{m.key}</div>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow className="border-[hsl(var(--terminal-line))]">
+                <TableCell className="text-xs text-[hsl(var(--terminal-fg-dim))]">context window</TableCell>
+                {models.map((m) => (
+                  <TableCell key={m.key} className="text-xs">
+                    <ComparedValue highlight={m.context === largestContext && m.context > 0}>
+                      {m.context > 0 ? `${Math.round(m.context / 1000)}k tokens` : "—"}
+                    </ComparedValue>
+                  </TableCell>
+                ))}
+              </TableRow>
+              <TableRow className="border-[hsl(var(--terminal-line))]">
+                <TableCell className="text-xs text-[hsl(var(--terminal-fg-dim))]">cost / 1M tokens</TableCell>
+                {models.map((m) => (
+                  <TableCell key={m.key} className="text-xs">
+                    <ComparedValue highlight={m.cost_input > 0 && m.cost_input === cheapestInput}>
+                      {m.cost_input > 0 ? `$${m.cost_input.toFixed(2)} in / $${m.cost_output.toFixed(2)} out` : "—"}
+                    </ComparedValue>
+                  </TableCell>
+                ))}
+              </TableRow>
+              <TableRow className="border-[hsl(var(--terminal-line))]">
+                <TableCell className="text-xs text-[hsl(var(--terminal-fg-dim))]">capabilities</TableCell>
+                {models.map((m) => (
+                  <TableCell key={m.key} className="text-xs">
+                    <div className="flex flex-wrap gap-1">
+                      {m.tool_call && <CapBadge>tools</CapBadge>}
+                      {m.reasoning && <CapBadge>reasoning</CapBadge>}
+                      {m.vision && <CapBadge>vision</CapBadge>}
+                      {m.open_weights && <CapBadge tone="amber">open</CapBadge>}
+                      {!m.tool_call && !m.reasoning && !m.vision && !m.open_weights && (
+                        <span className="text-[hsl(var(--terminal-fg-dim))]">—</span>
+                      )}
+                    </div>
+                  </TableCell>
+                ))}
+              </TableRow>
+              {dimensions.map((dimension) => (
+                <TableRow key={dimension} className="border-[hsl(var(--terminal-line))]">
+                  <TableCell className="text-xs text-[hsl(var(--terminal-fg-dim))]">
+                    {DIMENSION_LABEL[dimension]}
+                  </TableCell>
+                  {models.map((m) => {
+                    const score = Math.max(
+                      0,
+                      ...m.benchmarks.filter((b) => b.dimension === dimension).map((b) => b.score),
+                    );
+                    const hasScore = m.benchmarks.some((b) => b.dimension === dimension);
+                    return (
+                      <TableCell key={m.key} className="text-xs">
+                        <ComparedValue highlight={hasScore && score === bestScore(dimension) && score > 0}>
+                          {hasScore ? score.toFixed(1) : "no data"}
+                        </ComparedValue>
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Highlights the best value in a comparison row (cheapest cost, largest
+ * context, highest benchmark score) so a scan across columns lands on the
+ * winner without reading every cell. */
+function ComparedValue({ children, highlight }: { children: React.ReactNode; highlight: boolean }) {
+  return (
+    <span className={cn(highlight ? "font-medium text-[hsl(var(--phosphor))]" : "text-[hsl(var(--terminal-fg))]")}>
+      {children}
+    </span>
   );
 }
 

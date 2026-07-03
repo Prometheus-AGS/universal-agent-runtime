@@ -39,6 +39,8 @@ export async function loadModelsIntoGraph(): Promise<void> {
         modalities_input: model.modalities.input,
         modalities_output: model.modalities.output,
         family: model.family,
+        // CH-10: sourced benchmark scores (CH-09), for the model-comparison view.
+        benchmarks: model.benchmarks,
       };
       upsertEntity("Model", key, entity);
     }

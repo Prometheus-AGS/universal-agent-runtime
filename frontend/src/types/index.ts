@@ -70,6 +70,18 @@ export interface CatalogModelLimits {
   output: number;
 }
 
+/** Which capability dimension a benchmark measures (CH-09). */
+export type BenchmarkDimension = "coding" | "agentic" | "context";
+
+/** A single sourced benchmark measurement (CH-09/CH-10). */
+export interface CatalogModelBenchmark {
+  benchmark: string;
+  dimension: BenchmarkDimension;
+  score: number;
+  source_url: string;
+  retrieved_date: string;
+}
+
 /** A single model entry from /api/models. */
 export interface CatalogModel {
   name: string;
@@ -82,6 +94,8 @@ export interface CatalogModel {
   structured_output: boolean;
   streaming: boolean;
   open_weights: boolean;
+  /** Sourced benchmark scores (CH-09). Empty when the model has no curated data. */
+  benchmarks: CatalogModelBenchmark[];
 }
 
 /** A provider entry from /api/models. */
