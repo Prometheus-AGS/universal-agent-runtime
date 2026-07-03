@@ -1,14 +1,19 @@
-[env]
-# LLVM instrumentation for code coverage
-RUSTFLAGS = "-C instrument-coverage"
-
-[target.'cfg(test)']
-# Additional flags for test builds
-rustflags = [
-    "-C", "instrument-coverage",
-    "-C", "link-dead-code"
-]
+# Coverage instrumentation (`-C instrument-coverage`, `-C link-dead-code`) used
+# to be forced on globally here via `[env]`/`[target.'cfg(test)']`, which meant
+# EVERY local `cargo build`/`cargo test`/`cargo check` paid the coverage tax
+# (bigger binaries, slower links, more link-time memory) for no benefit — only
+# `tools/coverage.sh` and CI's coverage job actually need it, and both already
+# `export RUSTFLAGS`/`CARGO_INCREMENTAL` themselves right before the
+# coverage-instrumented run (see tools/coverage.sh:138-144, 170-176). Removed
+# so day-to-day builds are fast; coverage runs are unaffected.
 
 [build]
-# Ensure coverage instrumentation in test builds
 target-dir = "target"
+# This box has 4 cores / 15GB RAM with no swap and a dependency graph that
+# includes burn, cedar-policy, surrealdb, kreuzberg-tesseract, and tokenizers
+# — several of these produce very large debug binaries. Letting cargo default
+# to `-j4` lets 4 huge links happen concurrently, which has stalled the
+# machine into a near-OOM thrash (see git history 2026-07-02). Capping
+# parallelism trades some wall-clock for not paging to death. Raise this (or
+# pass `--jobs N` / unset via `CARGO_BUILD_JOBS`) on a bigger machine.
+jobs = 2

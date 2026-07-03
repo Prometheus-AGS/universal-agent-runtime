@@ -316,3 +316,16 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
+
+# Dev/test build speed. The dependency graph here (burn, cedar-policy,
+# surrealdb, kreuzberg-tesseract, tokenizers, ...) produces very large debug
+# binaries; full DWARF (debug=2) embedded in each of the ~50+ test binaries
+# makes linking slow and memory-hungry (see .cargo/config.toml `jobs = 2`
+# comment for the incident this was tuned against). `split-debuginfo =
+# "unpacked"` keeps debug info out of the binary the linker has to produce;
+# `debug = "line-tables-only"` keeps enough for `RUST_BACKTRACE` file:line
+# without full variable/type DWARF. `cargo test`/`cargo build` (no --release)
+# inherit these since `[profile.test]` defaults to `[profile.dev]`.
+[profile.dev]
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
