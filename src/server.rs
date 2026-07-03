@@ -459,7 +459,10 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .with_provider_registry(Arc::clone(&provider_registry))
         .with_native_skills(Arc::clone(&native_skill_registry))
         .with_message_context_strategy(config.context_strategy.clone())
-        .with_governance_engine(Arc::clone(&governance_engine));
+        .with_governance_engine(Arc::clone(&governance_engine))
+        .with_failover_config(config.failover.clone())
+        .with_global_cost_budget(config.llm.budget.as_ref())
+        .await;
         if let Some(ref svc) = provider_service {
             rm = rm.with_provider_service(Arc::clone(svc));
         }
@@ -470,6 +473,15 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     // in-flight runs (they emit a terminal `Cancelled` event) within the drain
     // window, instead of being killed abruptly at process teardown.
     let run_cancellation_root = run_manager.root_cancellation_token();
+
+    // CH-03: periodic provider-health sweep, consuming the previously-dead
+    // `health_check_secs` config. Shares the same shutdown token as the other
+    // background loops (gRPC listener, run cancellation).
+    {
+        let health_check_secs = config.llm.health_check_secs.unwrap_or(30);
+        Arc::clone(provider_registry.health())
+            .spawn_monitor_loop(health_check_secs, run_cancellation_root.clone());
+    }
 
     // Initialize Global Rate Limiter
     #[allow(clippy::cast_sign_loss)]
@@ -2844,6 +2856,7 @@ async fn api_messages(
         cache_strategy: None,
         thinking_config: None,
         anthropic_system: None,
+        extra_params: None,
     };
 
     let client_config = crate::config::build_client_config(&resolved_llm_config);
@@ -4189,6 +4202,8 @@ pub(crate) async fn api_chat_completion(
             }
 
             let mut tool_name_by_id: HashMap<String, String> = HashMap::new();
+            let mut seen_agui_spec_tool_call_ids: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
             let mut assistant_text_for_capture = String::new();
             let user_text_for_capture = effective_input.clone();
 
@@ -4213,16 +4228,59 @@ pub(crate) async fn api_chat_completion(
                     // Official AG-UI spec-vocabulary events (CH-21/CH-18) —
                     // independent mode from the legacy agui.* names above, so
                     // existing `agui`/`dual` consumers see no change.
-                    if emit_agui_spec_chunks
-                        && let Some((event_name, payload)) = to_agui_spec_event(&normalized_event)
-                    {
-                        let payload_json =
-                            serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
-                        let agui_spec_event = Event::default()
-                            .event(event_name)
-                            .id(event_id.clone())
-                            .data(payload_json);
-                        yield Ok(agui_spec_event);
+                    if emit_agui_spec_chunks {
+                        // TOOL_CALL_START has no dedicated NormalizedEvent of
+                        // its own — UAR's ToolDelta/ToolStart map to
+                        // TOOL_CALL_ARGS/TOOL_CALL_END (see to_agui_spec_event).
+                        // Synthesize START the first time a tool_call_id is
+                        // seen, so agui_spec consumers get the full
+                        // START/ARGS/END lifecycle the AG-UI spec expects.
+                        let tool_call_start_info: Option<(String, Option<i64>, Option<String>)> =
+                            match &normalized_event {
+                                uar::domain::events::NormalizedEvent::ToolDelta {
+                                    call_index,
+                                    tool_call_id,
+                                    ..
+                                } => Some((tool_call_id.clone(), Some(*call_index as i64), None)),
+                                uar::domain::events::NormalizedEvent::ToolStart {
+                                    call_index,
+                                    tool_call_id,
+                                    tool,
+                                    ..
+                                } => Some((
+                                    tool_call_id.clone(),
+                                    Some(*call_index as i64),
+                                    Some(tool.clone()),
+                                )),
+                                _ => None,
+                            };
+                        if let Some((tool_call_id, call_index, tool_name)) = tool_call_start_info
+                            && seen_agui_spec_tool_call_ids.insert(tool_call_id.clone())
+                        {
+                            let start_payload = serde_json::json!({
+                                "kind": "tool_call",
+                                "phase": "start",
+                                "call_index": call_index,
+                                "id": tool_call_id,
+                                "name": tool_name,
+                            });
+                            let start_json = serde_json::to_string(&start_payload)
+                                .unwrap_or_else(|_| "{}".to_string());
+                            yield Ok(Event::default()
+                                .event("TOOL_CALL_START")
+                                .id(event_id.clone())
+                                .data(start_json));
+                        }
+
+                        if let Some((event_name, payload)) = to_agui_spec_event(&normalized_event) {
+                            let payload_json = serde_json::to_string(&payload)
+                                .unwrap_or_else(|_| "{}".to_string());
+                            let agui_spec_event = Event::default()
+                                .event(event_name)
+                                .id(event_id.clone())
+                                .data(payload_json);
+                            yield Ok(agui_spec_event);
+                        }
                     }
 
                     // Emit runtime entity events alongside agui events.

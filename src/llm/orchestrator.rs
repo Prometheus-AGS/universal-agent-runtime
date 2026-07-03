@@ -30,7 +30,7 @@ use std::sync::Arc;
 use futures::{Stream, StreamExt};
 use uuid::Uuid;
 
-use crate::config::{FailoverConfig, LlmConfig};
+use crate::config::{FailoverConfig, FallbackModel, LlmConfig};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::{NormalizedEvent, RuntimeStepKind};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
@@ -190,6 +190,14 @@ pub struct Orchestrator {
     fallback_driver: Option<Arc<dyn LlmDriver>>,
     /// Controls when/how to switch to the fallback driver.
     failover_config: FailoverConfig,
+    /// Provider id (e.g. `"openai"`) the fallback driver targets, derived from
+    /// `failover_config.fallback_models.first()` at `with_failover` time — used
+    /// to record health outcomes for the fallback attempt (CH-03).
+    fallback_provider_id: Option<String>,
+    /// Shared provider-health monitor (CH-03). When set, every driver
+    /// success/failure updates `ProviderRegistry::health()` so subsequent
+    /// routing decisions see the outcome immediately.
+    health_monitor: Option<Arc<super::health::ProviderHealthMonitor>>,
     native_skills: Arc<NativeSkillRegistry>,
     /// Optional gate that is consulted before each tool call execution.
     /// If `None`, all tool calls are approved automatically.
@@ -237,6 +245,8 @@ impl Orchestrator {
             driver,
             fallback_driver: None,
             failover_config: FailoverConfig::default(),
+            fallback_provider_id: None,
+            health_monitor: None,
             native_skills,
             tool_approval_gate: None,
             sandbox_runner: None,
@@ -248,15 +258,63 @@ impl Orchestrator {
     ///
     /// When `failover_config.enabled` is `true` and the primary driver fails,
     /// the orchestrator will re-try the same request against `fallback_driver`.
+    /// The fallback's provider id (for health recording) is derived from the
+    /// first entry in `failover_config.fallback_models` (`FailoverStrategy::Priority`).
     #[must_use]
     pub fn with_failover(
         mut self,
         fallback_driver: Arc<dyn LlmDriver>,
         failover_config: FailoverConfig,
     ) -> Self {
+        self.fallback_provider_id = failover_config
+            .fallback_models
+            .first()
+            .map(|f| super::registry::split_model_string_pub(&f.model).0);
         self.fallback_driver = Some(fallback_driver);
         self.failover_config = failover_config;
         self
+    }
+
+    /// Attach the shared provider-health monitor (CH-03). Driver
+    /// successes/failures are recorded against it so `ModelRouter` and
+    /// `ProviderRegistry::resolve_to_llm_config` see the outcome on the very
+    /// next call.
+    #[must_use]
+    pub fn with_health_monitor(
+        mut self,
+        health_monitor: Arc<super::health::ProviderHealthMonitor>,
+    ) -> Self {
+        self.health_monitor = Some(health_monitor);
+        self
+    }
+
+    /// Build a driver for one `FailoverConfig::fallback_models` entry, reusing
+    /// `base_llm_config` for every field except `model`/`api_key`/`base_url`
+    /// (CH-03). Used by callers wiring `with_failover` from app config.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the underlying LLM client cannot be constructed.
+    pub fn build_fallback_driver(
+        base_llm_config: &LlmConfig,
+        fallback: &FallbackModel,
+    ) -> anyhow::Result<Arc<dyn LlmDriver>> {
+        let mut fallback_llm_config = base_llm_config.clone();
+        fallback_llm_config.model.clone_from(&fallback.model);
+        if fallback.api_key.is_some() {
+            fallback_llm_config.api_key.clone_from(&fallback.api_key);
+        }
+        if fallback.base_url.is_some() {
+            fallback_llm_config.base_url.clone_from(&fallback.base_url);
+        }
+
+        let client_config = crate::config::build_client_config(&fallback_llm_config);
+        let driver: Arc<dyn LlmDriver> = Arc::new(LiterLlmDriver::new(
+            client_config,
+            fallback_llm_config.model.clone(),
+            fallback_llm_config.parallel_tool_calls,
+        )?);
+        Ok(driver)
     }
 
     /// Get the LLM configuration.
@@ -402,12 +460,29 @@ impl Orchestrator {
                     "Starting tool loop iteration"
                 );
 
+                // CH-04: per-model dialect params (extended-thinking budgets,
+                // reasoning-persistence toggles) keyed off the model id.
+                // `thinking_budget` doubles as the "this deployment wants
+                // reasoning" signal — it was otherwise a dead config knob.
+                let dialect_params = super::prompt_dialect::PromptDialectEngine::new()
+                    .request_params(
+                        &orchestrator.llm_config.model,
+                        super::prompt_dialect::DialectRequest {
+                            wants_reasoning: orchestrator.llm_config.thinking_budget.is_some(),
+                            multi_turn: message_json.len() > 1,
+                            hard: orchestrator.llm_config.thinking_budget.unwrap_or(0) > 4096,
+                        },
+                    );
                 let req = LlmRequest {
                     messages: message_json.clone(),
                     tools: tools.clone(),
                     cache_strategy: None,
                     thinking_config: None,
                     anthropic_system: None,
+                    extra_params: dialect_params
+                        .as_object()
+                        .filter(|o| !o.is_empty())
+                        .map(|_| dialect_params.clone()),
                 };
 
                 // Log the full request being sent to the LLM
@@ -419,7 +494,13 @@ impl Orchestrator {
                     "Sending request to LLM driver"
                 );
 
-                // Stream from the driver (with automatic failover if configured)
+                // Stream from the driver (with automatic failover if configured).
+                // CH-03: every outcome is recorded against the shared health
+                // monitor (when attached) so ModelRouter/ProviderRegistry see
+                // it on the very next routing decision, independent of
+                // whether failover itself is enabled.
+                let primary_provider_id =
+                    super::registry::split_model_string_pub(&orchestrator.llm_config.model).0;
                 let driver_stream = {
                     let primary = orchestrator.driver.stream(req.clone()).await;
                     match primary {
@@ -429,9 +510,21 @@ impl Orchestrator {
                                 iteration = iteration,
                                 "Driver stream created successfully"
                             );
+                            if let Some(health) = &orchestrator.health_monitor {
+                                health.record_success(&primary_provider_id).await;
+                            }
                             s
                         }
                         Err(e) if orchestrator.failover_config.enabled => {
+                            if let Some(health) = &orchestrator.health_monitor {
+                                health
+                                    .record_failure(
+                                        &primary_provider_id,
+                                        orchestrator.failover_config.error_threshold,
+                                        orchestrator.failover_config.cooldown_secs,
+                                    )
+                                    .await;
+                            }
                             if let Some(ref fallback) = orchestrator.fallback_driver {
                                 tracing::warn!(
                                     request_id = %request_id,
@@ -440,8 +533,28 @@ impl Orchestrator {
                                     "Primary LLM driver failed; attempting failover",
                                 );
                                 match fallback.stream(req).await {
-                                    Ok(s) => s,
+                                    Ok(s) => {
+                                        if let (Some(health), Some(fallback_id)) = (
+                                            &orchestrator.health_monitor,
+                                            &orchestrator.fallback_provider_id,
+                                        ) {
+                                            health.record_success(fallback_id).await;
+                                        }
+                                        s
+                                    }
                                     Err(fe) => {
+                                        if let (Some(health), Some(fallback_id)) = (
+                                            &orchestrator.health_monitor,
+                                            &orchestrator.fallback_provider_id,
+                                        ) {
+                                            health
+                                                .record_failure(
+                                                    fallback_id,
+                                                    orchestrator.failover_config.error_threshold,
+                                                    orchestrator.failover_config.cooldown_secs,
+                                                )
+                                                .await;
+                                        }
                                         tracing::error!(
                                             request_id = %request_id,
                                             primary_error = %e,
@@ -472,6 +585,15 @@ impl Orchestrator {
                             }
                         }
                         Err(e) => {
+                            if let Some(health) = &orchestrator.health_monitor {
+                                health
+                                    .record_failure(
+                                        &primary_provider_id,
+                                        orchestrator.failover_config.error_threshold,
+                                        orchestrator.failover_config.cooldown_secs,
+                                    )
+                                    .await;
+                            }
                             tracing::error!(
                                 request_id = %request_id,
                                 iteration = iteration,
@@ -949,6 +1071,7 @@ impl Orchestrator {
             cache_strategy: None,
             thinking_config: None,
             anthropic_system: None,
+            extra_params: None,
         };
 
         // Stream from the driver and collect message deltas

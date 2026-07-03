@@ -92,6 +92,7 @@ impl GraphNode for RouterNode {
             cache_strategy: None,
             thinking_config: None,
             anthropic_system: None,
+            extra_params: None,
         };
 
         let stream = match ctx.driver.stream(req).await {

@@ -67,6 +67,13 @@ pub fn record_llm_cost(provider: &str, model: &str, cost_usd: f64) {
     histogram!("uar_llm_cost_usd", &labels).record(cost_usd);
 }
 
+/// Record a provider's current health (CH-03): `1.0` when available, `0.0`
+/// when in a failover cooldown window.
+pub fn record_provider_health(provider: &str, healthy: bool) {
+    let labels = [("provider", provider.to_string())];
+    gauge!("uar_provider_health", &labels).set(if healthy { 1.0 } else { 0.0 });
+}
+
 /// Record LLM token usage.
 pub fn record_llm_tokens(provider: &str, model: &str, input_tokens: u64, output_tokens: u64) {
     let input_labels = [

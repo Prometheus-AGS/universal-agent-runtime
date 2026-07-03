@@ -44,10 +44,15 @@ impl ModelRouter {
         let candidates: Vec<(&ProviderInfo, &ModelInfo)> =
             self.catalog.models_with_capabilities(&filter);
 
-        // Filter to only configured (available) providers — check each async
+        // Filter to only configured, healthy providers — check each async.
+        // CH-03: a provider in an active failover cooldown is excluded from
+        // selection entirely (not just deprioritized), so a struggling
+        // provider doesn't keep winning ties against healthy alternatives.
         let mut configured_candidates = Vec::new();
         for (provider, model) in candidates {
-            if self.registry.is_configured(&provider.id).await {
+            if self.registry.is_configured(&provider.id).await
+                && self.registry.health().is_available(&provider.id).await
+            {
                 configured_candidates.push((provider, model));
             }
         }
@@ -74,43 +79,10 @@ impl ModelRouter {
         // Sort by cost (cheapest first), then by context window (largest
         // first), then — CH-09 — by sourced coding-benchmark score (highest
         // first) as a final tiebreaker among otherwise-equal candidates.
-        //
-        // A model with NO cost data must NOT sort as free (0.0) — that made
-        // uncatalogued/unknown-priced models win the "cheapest" selection,
-        // silently preferring models we can't cost-account. Treat missing cost
-        // as most-expensive (`f64::INFINITY`) so priced models are preferred
-        // and unknown-cost models are only chosen when nothing else qualifies.
-        candidates.sort_by(|(pa, a), (pb, b)| {
-            let cost_a = a.cost.as_ref().map_or(f64::INFINITY, |c| c.input);
-            let cost_b = b.cost.as_ref().map_or(f64::INFINITY, |c| c.input);
-            cost_a
-                .partial_cmp(&cost_b)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| b.limits.context_window.cmp(&a.limits.context_window))
-                .then_with(|| {
-                    // Missing benchmark data (the common case — coverage is a
-                    // small verified subset, see src/llm/data/UPDATE.md) must
-                    // NOT sort as a worst-possible 0.0 score for the same
-                    // reason missing cost must not sort as free: it would
-                    // silently penalize uncatalogued-but-otherwise-tied
-                    // models against ones that happen to have data. Only
-                    // break the tie when BOTH sides have a score.
-                    let bench_a = benchmarks::best_score(
-                        &format!("{}/{}", pa.id, a.id),
-                        BenchmarkDimension::Coding,
-                    );
-                    let bench_b = benchmarks::best_score(
-                        &format!("{}/{}", pb.id, b.id),
-                        BenchmarkDimension::Coding,
-                    );
-                    match (bench_a, bench_b) {
-                        (Some(x), Some(y)) => {
-                            y.partial_cmp(&x).unwrap_or(std::cmp::Ordering::Equal)
-                        }
-                        _ => std::cmp::Ordering::Equal,
-                    }
-                })
-        });
+        // Extracted to `compare_candidates` so the tiebreak chain is unit-
+        // testable against synthetic candidates, independent of the global
+        // catalog/benchmark singletons' actual contents.
+        candidates.sort_by(|(pa, a), (pb, b)| compare_candidates(pa, a, pb, b));
 
         let selection = candidates
             .first()
@@ -132,6 +104,145 @@ impl ModelRouter {
         );
 
         selection
+    }
+}
+
+/// Ordering for candidate `(provider, model)` pairs: cheapest cost first,
+/// then largest context window, then — CH-09 — highest sourced coding-
+/// benchmark score, as a final tiebreaker among otherwise-equal candidates.
+///
+/// A model with NO cost data must NOT sort as free (0.0) — that made
+/// uncatalogued/unknown-priced models win the "cheapest" selection, silently
+/// preferring models we can't cost-account. Treat missing cost as
+/// most-expensive (`f64::INFINITY`) so priced models are preferred and
+/// unknown-cost models are only chosen when nothing else qualifies. Missing
+/// benchmark data (the common case — coverage is a small verified subset,
+/// see `src/llm/data/UPDATE.md`) must likewise NOT sort as a worst-possible
+/// 0.0 score, for the same reason — only break the tie when BOTH sides have
+/// a score.
+fn compare_candidates(
+    pa: &ProviderInfo,
+    a: &ModelInfo,
+    pb: &ProviderInfo,
+    b: &ModelInfo,
+) -> std::cmp::Ordering {
+    let cost_a = a.cost.as_ref().map_or(f64::INFINITY, |c| c.input);
+    let cost_b = b.cost.as_ref().map_or(f64::INFINITY, |c| c.input);
+    cost_a
+        .partial_cmp(&cost_b)
+        .unwrap_or(std::cmp::Ordering::Equal)
+        .then_with(|| b.limits.context_window.cmp(&a.limits.context_window))
+        .then_with(|| {
+            let bench_a =
+                benchmarks::best_score(&format!("{}/{}", pa.id, a.id), BenchmarkDimension::Coding);
+            let bench_b =
+                benchmarks::best_score(&format!("{}/{}", pb.id, b.id), BenchmarkDimension::Coding);
+            match (bench_a, bench_b) {
+                (Some(x), Some(y)) => y.partial_cmp(&x).unwrap_or(std::cmp::Ordering::Equal),
+                _ => std::cmp::Ordering::Equal,
+            }
+        })
+}
+
+#[cfg(test)]
+mod compare_candidates_tests {
+    use super::*;
+    use crate::llm::catalog::{ModelCost, ModelLimits};
+
+    fn provider(id: &str) -> ProviderInfo {
+        ProviderInfo {
+            id: id.to_string(),
+            ..Default::default()
+        }
+    }
+
+    fn model(id: &str, cost_input: Option<f64>, context_window: u64) -> ModelInfo {
+        ModelInfo {
+            id: id.to_string(),
+            cost: cost_input.map(|input| ModelCost {
+                input,
+                ..Default::default()
+            }),
+            limits: ModelLimits {
+                context_window,
+                ..Default::default()
+            },
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn cheaper_model_sorts_first() {
+        let pa = provider("openai");
+        let a = model("cheap", Some(1.0), 100_000);
+        let pb = provider("openai");
+        let b = model("expensive", Some(5.0), 100_000);
+
+        assert_eq!(
+            compare_candidates(&pa, &a, &pb, &b),
+            std::cmp::Ordering::Less
+        );
+    }
+
+    #[test]
+    fn missing_cost_sorts_as_most_expensive_not_free() {
+        let pa = provider("openai");
+        let priced = model("priced", Some(1.0), 100_000);
+        let pb = provider("openai");
+        let unpriced = model("unpriced", None, 100_000);
+
+        assert_eq!(
+            compare_candidates(&pa, &priced, &pb, &unpriced),
+            std::cmp::Ordering::Less,
+            "priced model must sort before an unpriced one, not lose to it as if unpriced meant free"
+        );
+    }
+
+    #[test]
+    fn equal_cost_breaks_tie_on_larger_context_window() {
+        let pa = provider("openai");
+        let a = model("small-context", Some(1.0), 32_000);
+        let pb = provider("openai");
+        let b = model("large-context", Some(1.0), 200_000);
+
+        assert_eq!(
+            compare_candidates(&pa, &a, &pb, &b),
+            std::cmp::Ordering::Greater,
+            "the larger-context model should sort first (Less), so a-vs-b is Greater"
+        );
+    }
+
+    #[test]
+    fn equal_cost_and_context_breaks_tie_on_benchmark_score() {
+        // Real ids from src/llm/data/model_benchmarks.json: claude-opus-4-8
+        // (88.6) outscores claude-haiku-4-5 (73.3) on SWE-bench Verified.
+        // Cost/context set identically so ONLY the benchmark tiebreak can
+        // decide the ordering — proves CH-09's data actually reaches the
+        // router's candidate sort, not just the standalone helper function.
+        let anthropic_a = provider("anthropic");
+        let higher_scoring = model("claude-opus-4-8", Some(3.0), 200_000);
+        let anthropic_b = provider("anthropic");
+        let lower_scoring = model("claude-haiku-4-5", Some(3.0), 200_000);
+
+        assert_eq!(
+            compare_candidates(&anthropic_a, &higher_scoring, &anthropic_b, &lower_scoring),
+            std::cmp::Ordering::Less,
+            "claude-opus-4-8 (88.6) should sort before claude-haiku-4-5 (73.3) once cost/context tie"
+        );
+    }
+
+    #[test]
+    fn tie_with_no_benchmark_data_on_either_side_stays_equal() {
+        let pa = provider("some-uncatalogued-provider");
+        let a = model("no-data-a", Some(1.0), 100_000);
+        let pb = provider("some-uncatalogued-provider");
+        let b = model("no-data-b", Some(1.0), 100_000);
+
+        assert_eq!(
+            compare_candidates(&pa, &a, &pb, &b),
+            std::cmp::Ordering::Equal,
+            "neither candidate has benchmark data -- must not be silently penalized to 0.0"
+        );
     }
 }
 

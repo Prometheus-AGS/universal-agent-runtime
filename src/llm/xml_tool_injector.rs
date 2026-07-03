@@ -107,6 +107,7 @@ mod tests {
             cache_strategy: None,
             thinking_config: None,
             anthropic_system: None,
+            extra_params: None,
         }
     }
 

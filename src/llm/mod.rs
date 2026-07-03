@@ -20,6 +20,7 @@ pub mod anthropic_types;
 pub mod benchmarks;
 pub mod capability_registry;
 pub mod catalog;
+pub mod health;
 pub mod liter_driver;
 pub mod mock_driver;
 pub mod orchestrator;
@@ -31,6 +32,7 @@ pub mod tool_normalizer;
 pub mod xml_tool_injector;
 
 pub use catalog::ModelCatalog;
+pub use health::{ProviderHealthMonitor, ProviderHealthSnapshot};
 pub use liter_driver::LiterLlmDriver;
 pub use orchestrator::{Orchestrator, ToolApprovalGate, ToolApprovalResult};
 pub use registry::{ProviderConfig, ProviderRegistry};
@@ -273,6 +275,11 @@ pub struct LlmRequest {
     /// When present, the driver uses these instead of extracting from messages.
     /// Ignored by non-Anthropic drivers.
     pub anthropic_system: Option<Vec<serde_json::Value>>,
+    /// Provider-dialect-specific extra request-body parameters (CH-04), e.g.
+    /// from [`prompt_dialect::PromptDialectEngine::request_params`]. Merged
+    /// into liter-llm's `ChatCompletionRequest::extra_body` by
+    /// [`LiterLlmDriver`]; ignored by drivers that don't support it.
+    pub extra_params: Option<serde_json::Value>,
 }
 
 /// Trait for LLM streaming drivers.

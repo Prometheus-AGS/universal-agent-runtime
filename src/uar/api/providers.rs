@@ -27,6 +27,7 @@ pub struct ProviderApiState {
 pub fn build_router() -> Router<ProviderApiState> {
     Router::new()
         .route("/", get(list_providers).post(create_provider))
+        .route("/health", get(provider_health))
         .route(
             "/{id}",
             get(get_provider)
@@ -61,6 +62,29 @@ async fn list_providers(State(state): State<ProviderApiState>) -> Json<Providers
         providers,
         default_id,
     })
+}
+
+/// Provider health snapshot (CH-03): current failover-cooldown state per
+/// provider, for Runtime Console surfacing.
+async fn provider_health(State(state): State<ProviderApiState>) -> Json<ProviderHealthResponse> {
+    let providers = state
+        .registry
+        .health()
+        .snapshot()
+        .await
+        .into_iter()
+        .map(|(id, s)| {
+            (
+                id,
+                ProviderHealthEntry {
+                    healthy: s.healthy,
+                    consecutive_errors: s.consecutive_errors,
+                    cooldown_remaining_secs: s.cooldown_remaining_secs,
+                },
+            )
+        })
+        .collect();
+    Json(ProviderHealthResponse { providers })
 }
 
 /// Get a single provider by ID.
@@ -250,4 +274,17 @@ struct ProvidersResponse {
 #[derive(Serialize, Deserialize)]
 struct ErrorResponse {
     error: String,
+}
+
+/// One provider's health entry in `GET /health` (CH-03).
+#[derive(Serialize)]
+struct ProviderHealthEntry {
+    healthy: bool,
+    consecutive_errors: u32,
+    cooldown_remaining_secs: Option<u64>,
+}
+
+#[derive(Serialize)]
+struct ProviderHealthResponse {
+    providers: std::collections::HashMap<String, ProviderHealthEntry>,
 }

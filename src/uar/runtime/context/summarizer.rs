@@ -48,6 +48,7 @@ pub async fn summarize_messages(messages: &[Message], driver: &dyn LlmDriver) ->
         cache_strategy: None,
         thinking_config: None,
         anthropic_system: None,
+        extra_params: None,
     };
 
     let mut stream = driver.stream(request).await?;

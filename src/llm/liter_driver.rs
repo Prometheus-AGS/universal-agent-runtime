@@ -118,6 +118,11 @@ impl LlmDriver for LiterLlmDriver {
             chat_req.tool_choice = Some(ToolChoice::Mode(ToolChoiceMode::Auto));
         }
 
+        // CH-04: per-model dialect params (extended-thinking budgets, reasoning
+        // persistence toggles) computed by `PromptDialectEngine`, merged
+        // verbatim into the outbound request body.
+        chat_req.extra_body = req.extra_params.clone();
+
         // Collect chunks eagerly into a Vec, then stream owned events.
         // This is necessary because liter-llm's BoxStream borrows from the client
         // and cannot be moved into a 'static stream directly.

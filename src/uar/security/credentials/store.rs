@@ -523,3 +523,124 @@ fn row_to_record(r: &sqlx::postgres::PgRow) -> CredentialRecord {
         updated_at: r.get("updated_at"),
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Parity tests: `PostgresCredentialStore` against a real Postgres pool.
+//
+// This repo has no existing testcontainers wiring for Postgres — the
+// `docker-compose.prod.postgres.yaml` service is the intended local target
+// (`docker compose -f docker-compose.prod.postgres.yaml up -d postgres`).
+// These mirror the four `InMemoryCredentialStore` tests above and are
+// `#[ignore]`d by default (run with `cargo test -- --ignored`), consistent
+// with this repo's existing live-infra test convention
+// (tests/integration/live/*). `DATABASE_URL` defaults to the compose file's
+// `uar`/`changeme`/`uar` local credentials.
+// ─────────────────────────────────────────────────────────────────────────────
+#[cfg(all(test, feature = "sqlx"))]
+mod postgres_tests {
+    use super::*;
+
+    async fn pool() -> sqlx::PgPool {
+        let url = std::env::var("DATABASE_URL")
+            .unwrap_or_else(|_| "postgres://uar:changeme@localhost:5432/uar".to_string());
+        let pool = sqlx::PgPool::connect(&url)
+            .await
+            .expect("connect to local Postgres (docker-compose.prod.postgres.yaml)");
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .expect("run migrations");
+        pool
+    }
+
+    fn rec(scope: CredentialScope, scope_id: &str, provider: &str) -> CredentialRecord {
+        let now = Utc::now();
+        CredentialRecord {
+            scope,
+            scope_id: scope_id.to_string(),
+            provider_id: provider.to_string(),
+            api_key_encrypted: "ct".to_string(),
+            api_key_hint: "1234".to_string(),
+            created_at: now,
+            updated_at: now,
+        }
+    }
+
+    #[tokio::test]
+    #[ignore = "requires a local Postgres (docker-compose.prod.postgres.yaml)"]
+    async fn store_and_retrieve_user_scoped() {
+        let s = PostgresCredentialStore::new(pool().await);
+        s.put(rec(CredentialScope::User, "pg-userA", "openai"))
+            .await
+            .unwrap();
+        let got = s
+            .get(CredentialScope::User, "pg-userA", "openai")
+            .await
+            .unwrap();
+        assert!(got.is_some());
+        assert_eq!(got.unwrap().provider_id, "openai");
+        s.delete(CredentialScope::User, "pg-userA", "openai")
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    #[ignore = "requires a local Postgres (docker-compose.prod.postgres.yaml)"]
+    async fn cross_user_isolation() {
+        let s = PostgresCredentialStore::new(pool().await);
+        s.put(rec(CredentialScope::User, "pg-userA2", "openai"))
+            .await
+            .unwrap();
+        let b = s
+            .get(CredentialScope::User, "pg-userB2", "openai")
+            .await
+            .unwrap();
+        assert!(b.is_none(), "user B must not see user A's credential");
+        s.delete(CredentialScope::User, "pg-userA2", "openai")
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    #[ignore = "requires a local Postgres (docker-compose.prod.postgres.yaml)"]
+    async fn delete_removes() {
+        let s = PostgresCredentialStore::new(pool().await);
+        s.put(rec(CredentialScope::User, "pg-userA3", "openai"))
+            .await
+            .unwrap();
+        assert!(
+            s.delete(CredentialScope::User, "pg-userA3", "openai")
+                .await
+                .unwrap()
+        );
+        assert!(
+            s.get(CredentialScope::User, "pg-userA3", "openai")
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            !s.delete(CredentialScope::User, "pg-userA3", "openai")
+                .await
+                .unwrap()
+        );
+    }
+
+    #[tokio::test]
+    #[ignore = "requires a local Postgres (docker-compose.prod.postgres.yaml)"]
+    async fn provider_isolation() {
+        let s = PostgresCredentialStore::new(pool().await);
+        s.put(rec(CredentialScope::User, "pg-userA4", "openai"))
+            .await
+            .unwrap();
+        assert!(
+            s.get(CredentialScope::User, "pg-userA4", "anthropic")
+                .await
+                .unwrap()
+                .is_none()
+        );
+        s.delete(CredentialScope::User, "pg-userA4", "openai")
+            .await
+            .unwrap();
+    }
+}

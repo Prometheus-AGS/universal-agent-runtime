@@ -421,7 +421,7 @@ impl SkillService {
         }
 
         // Match using configured algorithm
-        match config.algorithm {
+        let matched = match config.algorithm {
             SkillMatchingAlgorithm::Keyword => {
                 self.keyword_match(query, &candidates, config.top_k, config.threshold)
             }
@@ -462,7 +462,30 @@ impl SkillService {
                 merged.truncate(config.top_k);
                 merged
             }
+        };
+
+        // CH-08: record an activation decision (accepted=true — everything
+        // `match_skills` returns was selected) per skill, labeled by the
+        // matching backend actually used. Per-skill/per-backend counters give
+        // the activation-recall half of the precision/recall pair; whether
+        // the model actually *used* an activated skill's tools (the outcome
+        // half, `record_skill_activation_outcome`) requires correlating this
+        // decision against the run's later tool-call stream, which is a
+        // separate, harder problem (candidate-vs-considered-but-rejected
+        // visibility doesn't exist at this layer either) — deliberately
+        // scope-cut for this pass, consistent with this phase's other
+        // documented scope cuts (plan.md D-A..D-D).
+        let backend = match config.algorithm {
+            SkillMatchingAlgorithm::Keyword => "keyword",
+            SkillMatchingAlgorithm::Embedding => "embedding",
+            SkillMatchingAlgorithm::LocalEmbedding => "local_embedding",
+            SkillMatchingAlgorithm::Llm => "llm",
+            SkillMatchingAlgorithm::Hybrid => "hybrid",
+        };
+        for skill in &matched {
+            crate::uar::telemetry::metrics::record_skill_activation(&skill.skill_id, backend, true);
         }
+        matched
     }
 
     /// Simple keyword matching.

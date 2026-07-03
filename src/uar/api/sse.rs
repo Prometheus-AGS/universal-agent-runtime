@@ -389,6 +389,25 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
         // Runtime step progress is delivered on the `runtime.*` entity bus
         // (see `to_runtime_entity_event`), not the agui surface.
         NormalizedEvent::RuntimeStep { .. } => None,
+        NormalizedEvent::BudgetAlert {
+            run_id,
+            scope,
+            scope_id,
+            spent_usd,
+            limit_usd,
+            exceeded,
+        } => Some((
+            "agui.budget.alert",
+            serde_json::json!({
+                "kind": "budget",
+                "phase": if *exceeded { "exceeded" } else { "warning" },
+                "request_id": run_id,
+                "scope": scope,
+                "scope_id": scope_id,
+                "spent_usd": spent_usd,
+                "limit_usd": limit_usd
+            }),
+        )),
     }
 }
 
@@ -420,13 +439,28 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
         "agui.cancelled" => "RUN_ERROR",
         "agui.state.patch" => "STATE_DELTA",
         "agui.context.update" => "STATE_DELTA",
+        // NormalizedEvent::ToolDelta — incremental tool-call argument JSON
+        // while the model is still generating the call.
+        "agui.tool_call.delta" => "TOOL_CALL_ARGS",
+        // NormalizedEvent::ToolStart — the tool call's name+arguments are
+        // now fully known (about to execute); this is the END of the
+        // tool-call-construction phase, not the start of execution.
+        "agui.tool_call.complete" => "TOOL_CALL_END",
+        // NormalizedEvent::ToolEnd — the tool finished executing.
+        "agui.tool_result" => "TOOL_CALL_RESULT",
         "agui.citation.added" => "CUSTOM",
         "agui.artifact" => "CUSTOM",
+        "agui.artifact_input_request" => "CUSTOM",
         "agui.skill.activated" => "CUSTOM",
         "agui.guardrail" => "CUSTOM",
-        "agui.quality.sycophancy" => "CUSTOM",
+        "agui.quality.sycophancy" | "agui.quality.sycophancy_corrected" => "CUSTOM",
         "agui.memory.mutation" | "agui.memory.recall" | "agui.memory.update" => "CUSTOM",
-        other => other, // unknown → pass through unchanged
+        "agui.tool_call.approval_required" => "CUSTOM",
+        // Genuinely unrecognized (e.g. a new agui.* event added to
+        // to_agui_event without an entry here) — pass through rather than
+        // silently drop, but this should not happen in practice; every
+        // agui.* name to_agui_event can produce is listed above.
+        other => other,
     };
     Some((spec_name, payload))
 }

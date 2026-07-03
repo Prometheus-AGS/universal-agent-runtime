@@ -120,6 +120,20 @@ pub enum NormalizedEvent {
     },
     ContextAction(super::context::ContextAction),
 
+    /// A cost-budget warning or hard-limit crossing (CH-06). Emitted when
+    /// `CostBudgetTracker::record` returns `Warning`/`Exceeded` for any scope
+    /// (run/task/session/agent/global) with a configured limit.
+    BudgetAlert {
+        run_id: String,
+        /// `run` | `task` | `session` | `agent` | `global`.
+        scope: String,
+        scope_id: String,
+        spent_usd: f64,
+        limit_usd: f64,
+        /// `true` for a hard-limit crossing, `false` for the warning threshold.
+        exceeded: bool,
+    },
+
     /// A memory was created, updated, or deleted — either by an LLM tool call or by auto-capture.
     MemoryMutation {
         run_id: String,

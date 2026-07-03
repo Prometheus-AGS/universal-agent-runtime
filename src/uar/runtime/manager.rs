@@ -121,6 +121,15 @@ pub struct RunManager {
     /// When set, a tool that policy denies is routed to the HITL approval gate.
     /// `None` ⇒ tool approval relies solely on the keyword heuristic.
     governance_engine: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
+    /// Runtime model failover configuration (CH-03). `enabled: false` by
+    /// default (opt-in) — when enabled, each run's `Orchestrator` is given a
+    /// fallback driver built from `fallback_models.first()` plus the shared
+    /// provider-health monitor.
+    failover_config: crate::config::FailoverConfig,
+    /// Per-run/task/session/agent/global spend aggregator (CH-06). Always
+    /// present (unconfigured scopes simply have no limit, so `record` is a
+    /// cheap no-op warning check).
+    cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker,
 }
 
 /// Memory mutation tool name sets — used to detect side effects in ToolEnd events.
@@ -402,6 +411,8 @@ impl RunManager {
             message_context_strategy: crate::uar::context::ContextStrategy::default(),
             agent_graph: None,
             governance_engine: None,
+            failover_config: crate::config::FailoverConfig::default(),
+            cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker::new(),
         }
     }
 
@@ -439,6 +450,37 @@ impl RunManager {
     /// Set the provider registry for per-agent LLM provider resolution.
     pub fn with_provider_registry(mut self, registry: Arc<crate::llm::ProviderRegistry>) -> Self {
         self.provider_registry = Some(registry);
+        self
+    }
+
+    /// Set the runtime model failover configuration (CH-03). When
+    /// `enabled`, each run's `Orchestrator` gets a fallback driver built from
+    /// `fallback_models.first()` plus the shared provider-health monitor.
+    #[must_use]
+    pub fn with_failover_config(mut self, config: crate::config::FailoverConfig) -> Self {
+        self.failover_config = config;
+        self
+    }
+
+    /// Configure the global spend ceiling (CH-06) from `LlmConfig.budget`.
+    /// A no-op when `budget` is `None` (global scope is left unlimited —
+    /// `CostBudgetTracker`'s default `BudgetLimit` is `f64::INFINITY`).
+    pub async fn with_global_cost_budget(
+        self,
+        budget: Option<&crate::config::LlmBudgetConfig>,
+    ) -> Self {
+        if let Some(budget) = budget {
+            self.cost_budget
+                .set_limit(
+                    crate::uar::runtime::cost_budget::BudgetScope::Global,
+                    "global",
+                    crate::uar::runtime::cost_budget::BudgetLimit {
+                        limit_usd: budget.global_limit,
+                        warn_at: 0.8,
+                    },
+                )
+                .await;
+        }
         self
     }
 
@@ -920,6 +962,39 @@ impl RunManager {
             Arc::clone(&self.native_skills),
         ) {
             Ok(o) => {
+                // CH-03: attach the shared provider-health monitor (always,
+                // when a registry is configured) and, if failover is enabled,
+                // a fallback driver built from the first configured fallback
+                // model (`FailoverStrategy::Priority`).
+                let o = if self.failover_config.enabled {
+                    match self.failover_config.fallback_models.first() {
+                        Some(fallback_model) => {
+                            match crate::llm::Orchestrator::build_fallback_driver(
+                                &llm_config_for_graph,
+                                fallback_model,
+                            ) {
+                                Ok(fallback_driver) => {
+                                    o.with_failover(fallback_driver, self.failover_config.clone())
+                                }
+                                Err(e) => {
+                                    tracing::warn!(
+                                        error = %e,
+                                        "Failed to build failover fallback driver; continuing without failover"
+                                    );
+                                    o
+                                }
+                            }
+                        }
+                        None => o,
+                    }
+                } else {
+                    o
+                };
+                let o = match &self.provider_registry {
+                    Some(registry) => o.with_health_monitor(Arc::clone(registry.health())),
+                    None => o,
+                };
+
                 // Wire up tool approval gate
                 let approval_run_id = run_id.clone();
                 let approval_emitter = emitter.clone();
@@ -1017,6 +1092,10 @@ impl RunManager {
         let execution_session = session.clone();
         let skill_service_for_evolution = self.skill_service.clone();
         let skill_evolution_cfg = self.skill_evolution_config.clone();
+        let cost_budget_for_run = self.cost_budget.clone();
+        // `execute_agent_id` is moved into the `RunStart` event below; keep an
+        // independent clone for the budget-scope keys used at run end (CH-06).
+        let cost_scope_agent_id = execute_agent_id.clone();
         let graph_for_run = self.agent_graph.clone();
         let persistence_for_run = self.persistence.clone();
         // Cancellation: the run's child token (selected on in the consumption loop,
@@ -1161,6 +1240,7 @@ impl RunManager {
             // Token usage tracking — accumulated across all LLM calls in this run.
             let mut total_input_tokens: u32 = 0;
             let mut total_output_tokens: u32 = 0;
+            let mut total_cache_read_tokens: u32 = 0;
 
             // 2. Execute Orchestrator
             match orchestrator.chat_with_history(messages).await {
@@ -1338,12 +1418,18 @@ impl RunManager {
                                 prompt_tokens,
                                 completion_tokens,
                                 total_tokens: _,
+                                cached_tokens,
                                 ..
                             } => {
                                 total_input_tokens =
                                     total_input_tokens.saturating_add(prompt_tokens);
                                 total_output_tokens =
                                     total_output_tokens.saturating_add(completion_tokens);
+                                // CH-06: cache-read tokens are billed at a discounted
+                                // rate (`ModelCost::compute`) — accumulate them so the
+                                // run-level cost estimate below isn't overcharged.
+                                total_cache_read_tokens = total_cache_read_tokens
+                                    .saturating_add(cached_tokens.unwrap_or(0));
                                 None // Accumulate — emit on RunDone
                             }
                             _ => None, // Ignore other events for now
@@ -1421,7 +1507,7 @@ impl RunManager {
                         &run_model,
                         u64::from(total_input_tokens),
                         u64::from(total_output_tokens),
-                        0, // cache-read totals not separately accumulated at run level yet
+                        u64::from(total_cache_read_tokens),
                     )
                 } else {
                     None
@@ -1430,6 +1516,75 @@ impl RunManager {
                     && let Some((provider, model_id)) = run_model.split_once('/')
                 {
                     crate::uar::telemetry::metrics::record_llm_cost(provider, model_id, cost);
+
+                    // CH-06: aggregate spend across every scope and surface a
+                    // `BudgetAlert` for the first scope (in priority order)
+                    // that crosses its configured threshold. Unconfigured
+                    // scopes have an unlimited `BudgetLimit::default()`, so
+                    // `record` is a cheap no-op warning check for them.
+                    // `BudgetScope::Task` is intentionally omitted — this
+                    // runtime has no task entity distinct from a run.
+                    use crate::uar::runtime::cost_budget::{BudgetScope, BudgetStatus};
+                    let scopes: [(BudgetScope, &str); 3] = [
+                        (BudgetScope::Run, execute_run_id.as_str()),
+                        (BudgetScope::Session, execution_session.id()),
+                        (BudgetScope::Agent, cost_scope_agent_id.as_str()),
+                    ];
+                    let mut alert: Option<(BudgetScope, String, f64, f64, bool)> = None;
+                    for (scope, scope_id) in scopes {
+                        let status = cost_budget_for_run.record(scope, scope_id, cost).await;
+                        if alert.is_none()
+                            && let BudgetStatus::Warning {
+                                spent_usd,
+                                limit_usd,
+                            }
+                            | BudgetStatus::Exceeded {
+                                spent_usd,
+                                limit_usd,
+                            } = status
+                        {
+                            alert = Some((
+                                scope,
+                                scope_id.to_string(),
+                                spent_usd,
+                                limit_usd,
+                                status.is_exceeded(),
+                            ));
+                        }
+                    }
+                    let global_status = cost_budget_for_run
+                        .record(BudgetScope::Global, "global", cost)
+                        .await;
+                    if alert.is_none()
+                        && let BudgetStatus::Warning {
+                            spent_usd,
+                            limit_usd,
+                        }
+                        | BudgetStatus::Exceeded {
+                            spent_usd,
+                            limit_usd,
+                        } = global_status
+                    {
+                        alert = Some((
+                            BudgetScope::Global,
+                            "global".to_string(),
+                            spent_usd,
+                            limit_usd,
+                            global_status.is_exceeded(),
+                        ));
+                    }
+                    if let Some((scope, scope_id, spent_usd, limit_usd, exceeded)) = alert {
+                        emitter
+                            .emit(NormalizedEvent::BudgetAlert {
+                                run_id: execute_run_id.clone(),
+                                scope: scope.as_str().to_string(),
+                                scope_id,
+                                spent_usd,
+                                limit_usd,
+                                exceeded,
+                            })
+                            .await;
+                    }
                 }
                 emitter
                     .emit(NormalizedEvent::RunDoneWithUsage {

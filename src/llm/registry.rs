@@ -114,6 +114,9 @@ fn default_supports_tools() -> bool {
 pub struct ProviderRegistry {
     providers: RwLock<HashMap<String, ProviderConfig>>,
     default_id: RwLock<Option<String>>,
+    /// Per-provider health/cooldown tracking, shared with `ModelRouter` and
+    /// every `Orchestrator` (CH-03).
+    health: std::sync::Arc<super::health::ProviderHealthMonitor>,
 }
 
 impl ProviderRegistry {
@@ -122,7 +125,16 @@ impl ProviderRegistry {
         Self {
             providers: RwLock::new(HashMap::new()),
             default_id: RwLock::new(None),
+            health: std::sync::Arc::new(super::health::ProviderHealthMonitor::new()),
         }
+    }
+
+    /// Shared provider-health monitor (CH-03): consulted by `resolve_to_llm_config`
+    /// below and by `ModelRouter::route`, and updated by `Orchestrator` on every
+    /// driver success/failure.
+    #[must_use]
+    pub fn health(&self) -> &std::sync::Arc<super::health::ProviderHealthMonitor> {
+        &self.health
     }
 
     /// Seed the registry from the global `LlmConfig`.
@@ -385,6 +397,11 @@ impl ProviderRegistry {
 
         if !config.enabled {
             tracing::debug!(provider_id, "Provider is disabled, skipping");
+            return None;
+        }
+
+        if !self.health.is_available(provider_id).await {
+            tracing::debug!(provider_id, "Provider is in a failover cooldown, skipping");
             return None;
         }
 
