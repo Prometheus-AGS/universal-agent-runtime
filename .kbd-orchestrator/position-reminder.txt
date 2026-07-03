@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-next-harness
-Step: 6 of 24
+Step: 13 of 24
 Stage: unknown
-Next command: Continue coding forward. CH-18 (librefang bridge, D-C: UAR-side-only per plan.md) is next with no blocking dependency. Save remaining 2 compile checkpoints for further batch boundaries.
+Next command: Operator decision: continue into CH-05 per-model-context-strategy real implementation (Summarize/Hierarchical algorithms + wiring strategy_for_model/keep_first_last into RunManager.message_context_strategy) and/or the CH-07/CH-10 frontend dashboards (each requires the CLAUDE.md UI/UX routing steps before writing code), or pause for review of the 13/24 changes now landed.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-next-harness (step 6 of 24)
+  Starting <kbd-skill> — uar-next-harness (step 13 of 24)
   [do work]
-  Completed <kbd-skill> — uar-next-harness (step 6 of 24)
+  Completed <kbd-skill> — uar-next-harness (step 13 of 24)
