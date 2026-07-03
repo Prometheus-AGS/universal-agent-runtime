@@ -12,10 +12,13 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::uar::{
-    domain::knowledge::{DocumentStatus, KbConfig, KnowledgeBase, KnowledgeDocument, KnowledgeMatch},
+    domain::knowledge::{
+        DocumentStatus, KbConfig, KnowledgeBase, KnowledgeDocument, KnowledgeMatch,
+    },
     persistence::PersistenceLayer,
     rag::{
-        chunking::ChunkingStrategy, ingestion_worker::IngestionWorkerPool,
+        chunking::ChunkingStrategy,
+        ingestion_worker::IngestionWorkerPool,
         pipeline::{RagRetrievalPipeline, RetrievalBackend},
     },
     runtime::matching::VectorMatcher,

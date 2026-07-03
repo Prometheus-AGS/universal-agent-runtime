@@ -104,9 +104,9 @@ impl ModelRouter {
                         BenchmarkDimension::Coding,
                     );
                     match (bench_a, bench_b) {
-                        (Some(x), Some(y)) => y
-                            .partial_cmp(&x)
-                            .unwrap_or(std::cmp::Ordering::Equal),
+                        (Some(x), Some(y)) => {
+                            y.partial_cmp(&x).unwrap_or(std::cmp::Ordering::Equal)
+                        }
                         _ => std::cmp::Ordering::Equal,
                     }
                 })

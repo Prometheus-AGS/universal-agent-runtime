@@ -157,10 +157,7 @@ fn find_sibling_checkout() -> Option<(PathBuf, Option<String>)> {
         // isn't confirmed to be this pack, so don't treat it as a match.
         return None;
     }
-    Some((
-        candidate_root.join("skills"),
-        manifest.map(|m| m.version),
-    ))
+    Some((candidate_root.join("skills"), manifest.map(|m| m.version)))
 }
 
 /// Level 4: the embedded submodule — always available as a path (existence
@@ -207,7 +204,10 @@ pub fn resolve_skill_pack_root() -> PackProvenance {
     }
 
     let root = embedded_submodule_dir();
-    let version = root.parent().and_then(read_plugin_manifest).map(|m| m.version);
+    let version = root
+        .parent()
+        .and_then(read_plugin_manifest)
+        .map(|m| m.version);
     PackProvenance {
         source: PackSource::EmbeddedSubmodule,
         root,
@@ -239,19 +239,33 @@ mod tests {
             std::env::remove_var("UAR_BUILTIN_SKILLS_DIR");
         }
         assert_eq!(provenance.source, PackSource::EnvOverride);
-        assert_eq!(provenance.root, PathBuf::from("/tmp/__uar_pack_detection_test__"));
+        assert_eq!(
+            provenance.root,
+            PathBuf::from("/tmp/__uar_pack_detection_test__")
+        );
     }
 
     #[test]
     fn missing_sibling_manifest_does_not_match() {
-        // No env override, no real sibling checkout in a test sandbox —
-        // this should fall through to embedded submodule without panicking.
+        // Point PROMETHEUS_SKILL_SYSTEM_DIR at a path that definitely has no
+        // plugin.json, rather than relying on `../prometheus-skill-system`
+        // not existing relative to cwd — on a dev box with sibling checkouts
+        // of other Prometheus repos (this one included), that relative path
+        // can genuinely resolve to a real sibling with a valid manifest, so
+        // asserting "no sibling checkout" without controlling this env var
+        // is not hermetic (observed: false failure on exactly such a box).
         // SAFETY: test-only; ensure a clean slate for env vars this test reads.
         unsafe {
             std::env::remove_var("UAR_BUILTIN_SKILLS_DIR");
-            std::env::remove_var("PROMETHEUS_SKILL_SYSTEM_DIR");
+            std::env::set_var(
+                "PROMETHEUS_SKILL_SYSTEM_DIR",
+                "/tmp/__uar_pack_detection_no_such_sibling__",
+            );
         }
         let provenance = resolve_skill_pack_root();
+        unsafe {
+            std::env::remove_var("PROMETHEUS_SKILL_SYSTEM_DIR");
+        }
         assert_ne!(provenance.source, PackSource::SiblingCheckout);
     }
 }

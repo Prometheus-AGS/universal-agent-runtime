@@ -166,7 +166,9 @@ fn load_collision_allowlist(pack_root: &Path) -> HashSet<String> {
     let Some(pack_parent) = pack_root.parent() else {
         return HashSet::new();
     };
-    let allowlist_path = pack_parent.join("scripts").join("skill-collision-allowlist.json");
+    let allowlist_path = pack_parent
+        .join("scripts")
+        .join("skill-collision-allowlist.json");
     let Ok(raw) = std::fs::read_to_string(&allowlist_path) else {
         return HashSet::new();
     };
@@ -395,7 +397,11 @@ fn load_one(path: &Path) -> Result<Skill> {
         authors: meta.authors,
         language: meta.language,
         compatibility: meta.compatibility,
-        metadata_tags: meta.metadata.as_ref().map(|m| m.tags.clone()).unwrap_or_default(),
+        metadata_tags: meta
+            .metadata
+            .as_ref()
+            .map(|m| m.tags.clone())
+            .unwrap_or_default(),
         metadata_category: meta.metadata.and_then(|m| m.category),
         model_routing,
         parent_skill_id: None,
@@ -508,14 +514,20 @@ body"#,
             std::env::remove_var("UAR_EXTRA_BUILTIN_SKILL_DIRS");
         }
 
-        let skill = skills.into_iter().find(|s| s.title == "rich-skill").unwrap();
+        let skill = skills
+            .into_iter()
+            .find(|s| s.title == "rich-skill")
+            .unwrap();
         assert_eq!(skill.license.as_deref(), Some("MIT"));
         assert_eq!(skill.authors, vec!["Someone".to_string()]);
         assert_eq!(skill.language.as_deref(), Some("rust"));
         assert_eq!(skill.metadata_tags, vec!["a".to_string(), "b".to_string()]);
         assert_eq!(skill.metadata_category.as_deref(), Some("testing"));
         let routing = skill.model_routing.expect("model_routing should be parsed");
-        assert_eq!(routing.phases.get("my-phase").map(String::as_str), Some("small"));
+        assert_eq!(
+            routing.phases.get("my-phase").map(String::as_str),
+            Some("small")
+        );
     }
 
     #[test]
@@ -549,7 +561,10 @@ body"#,
 
         let parent = skills.iter().find(|s| s.title == "parent-skill").unwrap();
         let child = skills.iter().find(|s| s.title == "child-skill").unwrap();
-        assert_eq!(child.parent_skill_id.as_deref(), Some(parent.skill_id.as_str()));
+        assert_eq!(
+            child.parent_skill_id.as_deref(),
+            Some(parent.skill_id.as_str())
+        );
         assert_eq!(parent.parent_skill_id, None);
     }
 }

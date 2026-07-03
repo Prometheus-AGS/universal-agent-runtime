@@ -99,9 +99,8 @@ mod tests {
     #[test]
     fn compound_query_splits_on_and_also() {
         let d = HeuristicDecomposer;
-        let result = d.decompose(
-            "How does the compiler validate agent specs and also how does signing work",
-        );
+        let result = d
+            .decompose("How does the compiler validate agent specs and also how does signing work");
         assert_eq!(result.len(), 2);
         assert!(result[0].to_lowercase().contains("compiler"));
         assert!(result[1].to_lowercase().contains("signing"));
@@ -118,8 +117,9 @@ mod tests {
     #[test]
     fn semicolon_splits_into_two_substantive_clauses() {
         let d = HeuristicDecomposer;
-        let result =
-            d.decompose("Describe the chunking strategy in detail; describe the Leiden extraction pipeline");
+        let result = d.decompose(
+            "Describe the chunking strategy in detail; describe the Leiden extraction pipeline",
+        );
         assert_eq!(result.len(), 2);
     }
 }

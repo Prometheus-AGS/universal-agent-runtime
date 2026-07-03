@@ -111,7 +111,11 @@ mod tests {
     fn unknown_model_has_no_score() {
         assert!(scores_for("nonexistent-provider/nope-model").is_empty());
         assert!(
-            best_score("nonexistent-provider/nope-model", BenchmarkDimension::Coding).is_none()
+            best_score(
+                "nonexistent-provider/nope-model",
+                BenchmarkDimension::Coding
+            )
+            .is_none()
         );
     }
 
@@ -131,7 +135,10 @@ mod tests {
         for scores in BENCHMARKS.values() {
             for s in scores {
                 assert!(!s.source_url.is_empty(), "missing source_url: {s:?}");
-                assert!(!s.retrieved_date.is_empty(), "missing retrieved_date: {s:?}");
+                assert!(
+                    !s.retrieved_date.is_empty(),
+                    "missing retrieved_date: {s:?}"
+                );
             }
         }
     }

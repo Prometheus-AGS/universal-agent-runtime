@@ -377,7 +377,8 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     // plugin -> embedded submodule, see pack_detection). Failure here is
     // non-fatal.
     {
-        let (builtins, pack_provenance) = uar::runtime::skills::builtin_loader::discover_builtin_skills();
+        let (builtins, pack_provenance) =
+            uar::runtime::skills::builtin_loader::discover_builtin_skills();
         info!(
             name: "skills.pack.resolved",
             source = ?pack_provenance.source,
