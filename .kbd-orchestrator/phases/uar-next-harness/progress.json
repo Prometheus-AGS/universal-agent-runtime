@@ -7,13 +7,13 @@
   "plan_complete": true,
   "execute_complete": false,
   "reflect_complete": false,
-  "origin": "Manual entry via /kbd-new-phase: implement every recommendation in docs/uar-next.md (commit f58514e) \u2014 dynamic model router, prompt dialect engine, A2A/gRPC fix + LibreFang integration, Knowledge Service RAG extraction, agent spec v2.0, Prometheus Skill Pack, plus the full \u00a717 five-sub-phase plan \u2014 to make UAR the world's best agent harness.",
+  "origin": "Manual entry via /kbd-new-phase: implement every recommendation in docs/uar-next.md (commit f58514e) — dynamic model router, prompt dialect engine, A2A/gRPC fix + LibreFang integration, Knowledge Service RAG extraction, agent spec v2.0, Prometheus Skill Pack, plus the full §17 five-sub-phase plan — to make UAR the world's best agent harness.",
   "goals": [
-    "G1 Foundation (P0): fix A2A gRPC, Postgres credential store, dynamic model router, prompt dialect engine, MemPalace fix, unpin deps, Docker Compose, \u00a714 gap fixes",
+    "G1 Foundation (P0): fix A2A gRPC, Postgres credential store, dynamic model router, prompt dialect engine, MemPalace fix, unpin deps, Docker Compose, §14 gap fixes",
     "G2 Intelligence (P1): Cedar in tool loop, per-model context strategy, cost tracking, skill activation metrics, skill schema transformation, Knowledge Service RAG, provider health monitoring, model capability registry",
-    "G3 UX & Integration (P2): web UI config redesign, model comparison dashboard, agent state visualization, cost dashboard, LibreFang A2A/AG-UI/shared-router integration, Prometheus Skill Pack (\u00a718)",
+    "G3 UX & Integration (P2): web UI config redesign, model comparison dashboard, agent state visualization, cost dashboard, LibreFang A2A/AG-UI/shared-router integration, Prometheus Skill Pack (§18)",
     "G4 Specification & Distribution (P2): agent spec v2.0 + compiler update, conformance testing, template library, docs overhaul + deployment guide, benchmark suite",
-    "G5 Polish & Release (P3): hot-path performance, security audit, load testing, docs finalization, RC \u2192 GA"
+    "G5 Polish & Release (P3): hot-path performance, security audit, load testing, docs finalization, RC → GA"
   ],
   "candidateChanges": [
     "HK0-commit-live-sse-dualstack",
@@ -41,13 +41,13 @@
     "docs-overhaul-deploy-guide",
     "perf-security-load"
   ],
-  "updatedAt": "2026-07-03T14:00:00Z",
-  "changes_completed": 6,
+  "updatedAt": "2026-07-03T15:35:00Z",
+  "changes_completed": 7,
   "changes_total": 24,
-  "changes_completed_note": "6 = proxy-integration-gate + live-integration-baseline-coverage + a2a-grpc-enable (CH-01) + capability-registry-benchmarks (CH-09) + rag-hardening (CH-11) + skill-pack-bundling loader upgrades (CH-16). All verified: cargo build --lib clean, cargo test --lib 301/301 green (2026-07-03 checkpoint). CH-09/11/16 have no openspec proposal/tasks.md (coded directly, same as CH-02/03/04/05/06/08/21) -- 'complete' here means code + tests verified, with each change's own doc comments disclosing what's explicitly deferred (e.g. CH-16's progressive disclosure, live MCP registry wiring, hooks mapping). Operating under implementation-first/test-at-checkpoints pacing now (see current-waypoint.json) -- checkpoint 1 of 3 used for the rest of this phase.",
+  "changes_completed_note": "7 = proxy-integration-gate + live-integration-baseline-coverage + a2a-grpc-enable (CH-01) + capability-registry-benchmarks (CH-09) + rag-hardening (CH-11) + skill-pack-bundling loader upgrades (CH-16) + librefang-a2a-agui-bridge (CH-18, D-C scope, also finished CH-21's dangling stream_mode wiring gap). All verified: targeted compile+test checkpoints green (301/301 lib + 2/2 new librefang seam integration tests). Checkpoint 2 of 3 used for the rest of this phase.",
   "planAmendments": [
     "A1 2026-07-01: docs/uar-next-fable.md supersedes docs/uar-next.md as recommendation source; CH-03/04/09/16/18/20 amended, CH-21 agui-spec-alignment added (see plan.md Amendment A1)",
-    "A2 2026-07-01: proxy-integration-gate (CH-22) added as first Round-1 change \u2014 live integration tier against local OpenAI proxy 127.0.0.1:8181 (recorded-fixture mirror in CI), 100% FEATURE coverage contract (every CH ships a live case, MATRIX.md), line coverage stays at 80% llvm-cov gate; 100% line coverage explicitly rejected (operator may override before Round 2)",
+    "A2 2026-07-01: proxy-integration-gate (CH-22) added as first Round-1 change — live integration tier against local OpenAI proxy 127.0.0.1:8181 (recorded-fixture mirror in CI), 100% FEATURE coverage contract (every CH ships a live case, MATRIX.md), line coverage stays at 80% llvm-cov gate; 100% line coverage explicitly rejected (operator may override before Round 2)",
     "A3 2026-07-01: proxy-integration-gate (CH-22) split during implementation. CH-22 narrowed to its shipped scope (stub LLM server + backend selection + health-check script) and is DONE (10/10 tasks, 9 tests, 4 commits). New CH-22b live-integration-baseline-coverage carries the minimal server-boot harness + 8 baseline cases + MATRIX.md + CI wiring (fully planned, 0/23 tasks implemented). Total changes 23 -> 24."
   ],
   "hk0_complete": true,
@@ -61,14 +61,14 @@
     "c4ed8c9"
   ],
   "batchVerification2026_07_02": {
-    "machine": "handoff higher-mem Linux box (previous handoff was targeting a Mac with /Volumes/my-passport; that path does not exist here \u2014 built with default CARGO_TARGET_DIR instead)",
+    "machine": "handoff higher-mem Linux box (previous handoff was targeting a Mac with /Volumes/my-passport; that path does not exist here — built with default CARGO_TARGET_DIR instead)",
     "toolchainGapsFixed": [
-      "cmake (apt) \u2014 required by kreuzberg-tesseract native build, unrelated to this turn's code",
-      "protobuf-compiler / protoc (apt) \u2014 required by CH-01's new tonic-prost-build proto codegen"
+      "cmake (apt) — required by kreuzberg-tesseract native build, unrelated to this turn's code",
+      "protobuf-compiler / protoc (apt) — required by CH-01's new tonic-prost-build proto codegen"
     ],
     "codeFixCommit": "2e1f153 fix(build): resolve tonic-prost/prost version mismatch for A2A gRPC codegen (added tonic-prost=0.14 dep, bumped prost 0.13->0.14; also ran cargo fmt)",
-    "result": "cargo build --lib clean; cargo test --lib 276/276 green (was 268 baseline); cargo clippy --lib has 477 warnings, all warn-level per this repo's own Cargo.toml lint config (no -D warnings gate) \u2014 not a regression, includes ~15 new warnings in this turn's files (doc backticks, collapsible-if, map().unwrap_or()) left as-is, consistent with existing repo-wide warning debt",
-    "changeStatusCorrection": "CH-01 a2a-grpc-enable tasks.md updated to reflect reality: code compiles (proto-codegen approach, deviating from the planned manual-service-builder) but is NOT feature-complete \u2014 open gaps are 2.3 graceful shutdown (gRPC serve task is a bare detached tokio::spawn, not joined into the try_join!/CancellationToken shutdown path) and 3.1/3.3 (no integration test, no MATRIX.md row). CH-02/03/04/05/06/08/CH-21 have no tasks.md (coded directly, no formal OpenSpec task breakdown) \u2014 compiling + lib-test-green is the only verification signal available for those.",
+    "result": "cargo build --lib clean; cargo test --lib 276/276 green (was 268 baseline); cargo clippy --lib has 477 warnings, all warn-level per this repo's own Cargo.toml lint config (no -D warnings gate) — not a regression, includes ~15 new warnings in this turn's files (doc backticks, collapsible-if, map().unwrap_or()) left as-is, consistent with existing repo-wide warning debt",
+    "changeStatusCorrection": "CH-01 a2a-grpc-enable tasks.md updated to reflect reality: code compiles (proto-codegen approach, deviating from the planned manual-service-builder) but is NOT feature-complete — open gaps are 2.3 graceful shutdown (gRPC serve task is a bare detached tokio::spawn, not joined into the try_join!/CancellationToken shutdown path) and 3.1/3.3 (no integration test, no MATRIX.md row). CH-02/03/04/05/06/08/CH-21 have no tasks.md (coded directly, no formal OpenSpec task breakdown) — compiling + lib-test-green is the only verification signal available for those.",
     "notYetVerified": "No end-to-end/live server smoke test was run this pass (would need MCP/DB/provider creds); this was a cargo build+test+clippy+fmt static verification only."
   }
 }
