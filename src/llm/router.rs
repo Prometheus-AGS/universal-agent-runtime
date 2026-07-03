@@ -6,6 +6,7 @@
 
 use std::sync::Arc;
 
+use super::benchmarks::{self, BenchmarkDimension};
 use super::catalog::{CapabilityFilter, ModelCatalog, ModelInfo, ProviderInfo};
 use super::registry::ProviderRegistry;
 
@@ -70,20 +71,45 @@ impl ModelRouter {
             }
         }
 
-        // Sort by cost (cheapest first), then by context window (largest first).
+        // Sort by cost (cheapest first), then by context window (largest
+        // first), then — CH-09 — by sourced coding-benchmark score (highest
+        // first) as a final tiebreaker among otherwise-equal candidates.
         //
         // A model with NO cost data must NOT sort as free (0.0) — that made
         // uncatalogued/unknown-priced models win the "cheapest" selection,
         // silently preferring models we can't cost-account. Treat missing cost
         // as most-expensive (`f64::INFINITY`) so priced models are preferred
         // and unknown-cost models are only chosen when nothing else qualifies.
-        candidates.sort_by(|(_, a), (_, b)| {
+        candidates.sort_by(|(pa, a), (pb, b)| {
             let cost_a = a.cost.as_ref().map_or(f64::INFINITY, |c| c.input);
             let cost_b = b.cost.as_ref().map_or(f64::INFINITY, |c| c.input);
             cost_a
                 .partial_cmp(&cost_b)
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| b.limits.context_window.cmp(&a.limits.context_window))
+                .then_with(|| {
+                    // Missing benchmark data (the common case — coverage is a
+                    // small verified subset, see src/llm/data/UPDATE.md) must
+                    // NOT sort as a worst-possible 0.0 score for the same
+                    // reason missing cost must not sort as free: it would
+                    // silently penalize uncatalogued-but-otherwise-tied
+                    // models against ones that happen to have data. Only
+                    // break the tie when BOTH sides have a score.
+                    let bench_a = benchmarks::best_score(
+                        &format!("{}/{}", pa.id, a.id),
+                        BenchmarkDimension::Coding,
+                    );
+                    let bench_b = benchmarks::best_score(
+                        &format!("{}/{}", pb.id, b.id),
+                        BenchmarkDimension::Coding,
+                    );
+                    match (bench_a, bench_b) {
+                        (Some(x), Some(y)) => y
+                            .partial_cmp(&x)
+                            .unwrap_or(std::cmp::Ordering::Equal),
+                        _ => std::cmp::Ordering::Equal,
+                    }
+                })
         });
 
         let selection = candidates
