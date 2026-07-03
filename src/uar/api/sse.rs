@@ -602,6 +602,27 @@ pub fn to_runtime_entity_event(
                 "updated_at": chrono::Utc::now().to_rfc3339()
             }),
         )),
+        NormalizedEvent::BudgetAlert {
+            run_id,
+            scope,
+            scope_id,
+            spent_usd,
+            limit_usd,
+            exceeded,
+        } => Some((
+            "runtime.budget_alert",
+            serde_json::json!({
+                "type": "budget_alert",
+                "id": format!("budget:{scope}:{scope_id}:{run_id}"),
+                "run_id": run_id,
+                "scope": scope,
+                "scope_id": scope_id,
+                "spent_usd": spent_usd,
+                "limit_usd": limit_usd,
+                "exceeded": exceeded,
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            }),
+        )),
         // All other events don't produce a Runtime entity.
         _ => None,
     }

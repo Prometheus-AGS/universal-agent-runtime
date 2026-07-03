@@ -1578,7 +1578,11 @@ async fn api_generate_title(Json(req): Json<GenerateTitleRequest>) -> Response {
 ///         "cost": { "input": 2.50, "output": 10.00 },
 ///         "modalities": { "input": ["text", "image"], "output": ["text"] },
 ///         "tool_call": true,
-///         "reasoning": false
+///         "reasoning": false,
+///         "benchmarks": [
+///           { "benchmark": "swe-bench-verified", "dimension": "coding", "score": 74.9,
+///             "source_url": "...", "retrieved_date": "2026-06-01" }
+///         ]
 ///       }
 ///     }
 ///   }
@@ -1613,6 +1617,25 @@ async fn api_models(State(state): State<AppState>) -> Response {
                 4_096
             };
 
+            // CH-10: sourced benchmark scores (CH-09), for the model-comparison
+            // dashboard's side-by-side benchmark columns. Empty for the (common)
+            // case where a model has no curated benchmark data.
+            let benchmarks: Vec<Value> = crate::llm::benchmarks::scores_for(&format!(
+                "{}/{}",
+                provider.id, model.id
+            ))
+            .iter()
+            .map(|s| {
+                json!({
+                    "benchmark": s.benchmark,
+                    "dimension": s.dimension,
+                    "score": s.score,
+                    "source_url": s.source_url,
+                    "retrieved_date": s.retrieved_date
+                })
+            })
+            .collect();
+
             models.insert(
                 model.id.clone(),
                 json!({
@@ -1635,7 +1658,8 @@ async fn api_models(State(state): State<AppState>) -> Response {
                     "reasoning": model.capabilities.reasoning,
                     "structured_output": model.capabilities.structured_output,
                     "streaming": model.capabilities.streaming,
-                    "open_weights": model.open_weights
+                    "open_weights": model.open_weights,
+                    "benchmarks": benchmarks
                 }),
             );
         }
