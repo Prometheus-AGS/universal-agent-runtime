@@ -214,6 +214,21 @@ fn deserialize_section(
         SectionName::Deployment => {
             ir.deployment = Some(serde_yml::from_str(yaml).map_err(map_err)?);
         }
+        SectionName::ModelRequirements => {
+            ir.model_requirements = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+        }
+        SectionName::PromptDialect => {
+            ir.prompt_dialect = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+        }
+        SectionName::RagConfiguration => {
+            ir.rag_configuration = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+        }
+        SectionName::ContextStrategy => {
+            ir.context_strategy = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+        }
+        SectionName::ApiHarness => {
+            ir.api_harness = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+        }
     }
 
     Ok(())
@@ -277,6 +292,7 @@ fn find_missing_sections(ir: &PartialAgentDescriptorIR) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::ir::ContextStrategySection;
     use super::*;
 
     fn minimal_agent_md() -> String {
@@ -453,5 +469,115 @@ persona: "I help with things"
     fn test_partial_try_into_complete_fails_when_missing() {
         let partial = PartialAgentDescriptorIR::default();
         assert!(partial.try_into_complete().is_none());
+    }
+
+    // ── CH-12 agent-spec-v2 ─────────────────────────────────────────────
+
+    #[test]
+    fn v1_1_document_without_v2_sections_still_parses_with_defaults() {
+        // `minimal_agent_md()` predates CH-12 and declares none of the five
+        // v2 sections — this is the "v1.1 still loads" backward-compat
+        // contract in test form.
+        let md = minimal_agent_md();
+        let ir = parse(&md).expect("v1.1-style document must still parse");
+        assert!(!ir.model_requirements.needs_tools);
+        assert!(ir.prompt_dialect.dialect.is_none());
+        assert!(!ir.rag_configuration.enabled);
+        assert!(matches!(ir.context_strategy, ContextStrategySection::Auto));
+        assert!(ir.api_harness.protocols.is_empty());
+    }
+
+    #[test]
+    fn v2_sections_parse_when_declared() {
+        let mut md = minimal_agent_md();
+        md.push_str(
+            r#"
+## Model Requirements
+```yaml
+needs_tools: true
+needs_reasoning: true
+min_context: 200000
+preferred_provider: "anthropic"
+```
+
+## Prompt Dialect
+```yaml
+dialect: "anthropic_xml"
+wants_reasoning: true
+hard: true
+```
+
+## RAG Configuration
+```yaml
+enabled: true
+decomposition: true
+verification: true
+knowledge_base_ids: ["kb-1"]
+```
+
+## Context Strategy
+```yaml
+type: "hierarchical"
+short_term_turns: 5
+mid_term_summary_tokens: 2000
+```
+
+## API Harness
+```yaml
+protocols: ["a2a", "agui"]
+stream_mode: "agui_spec"
+```
+"#,
+        );
+
+        let ir = parse(&md).expect("v2 document must parse");
+        assert!(ir.model_requirements.needs_tools);
+        assert!(ir.model_requirements.needs_reasoning);
+        assert_eq!(ir.model_requirements.min_context, Some(200_000));
+        assert_eq!(
+            ir.model_requirements.preferred_provider.as_deref(),
+            Some("anthropic")
+        );
+        assert_eq!(ir.prompt_dialect.dialect.as_deref(), Some("anthropic_xml"));
+        assert!(ir.prompt_dialect.hard);
+        assert!(ir.rag_configuration.enabled);
+        assert_eq!(ir.rag_configuration.knowledge_base_ids, vec!["kb-1"]);
+        match ir.context_strategy {
+            ContextStrategySection::Hierarchical {
+                short_term_turns,
+                mid_term_summary_tokens,
+                ..
+            } => {
+                assert_eq!(short_term_turns, Some(5));
+                assert_eq!(mid_term_summary_tokens, Some(2000));
+            }
+            other => panic!("expected Hierarchical, got {other:?}"),
+        }
+        assert_eq!(ir.api_harness.protocols, vec!["a2a", "agui"]);
+        assert_eq!(ir.api_harness.stream_mode.as_deref(), Some("agui_spec"));
+    }
+
+    #[test]
+    fn v2_section_headings_recognized() {
+        assert_eq!(
+            SectionName::from_heading("Model Requirements"),
+            Some(SectionName::ModelRequirements)
+        );
+        assert_eq!(
+            SectionName::from_heading("Prompt Dialect"),
+            Some(SectionName::PromptDialect)
+        );
+        assert_eq!(
+            SectionName::from_heading("RAG Configuration"),
+            Some(SectionName::RagConfiguration)
+        );
+        assert_eq!(
+            SectionName::from_heading("Context Strategy"),
+            Some(SectionName::ContextStrategy)
+        );
+        assert_eq!(
+            SectionName::from_heading("API Harness"),
+            Some(SectionName::ApiHarness)
+        );
     }
 }

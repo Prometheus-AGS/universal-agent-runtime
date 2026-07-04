@@ -103,6 +103,15 @@ impl CompletenessAnalyzer {
             SectionName::Execution => ir.execution.is_some(),
             SectionName::Observability => ir.observability.is_some(),
             SectionName::Deployment => ir.deployment.is_some(),
+            // v2 (CH-12) sections — not part of `SectionName::ALL`, so this
+            // loop never reaches these arms; included for match
+            // exhaustiveness and in case a future caller iterates all
+            // variants directly.
+            SectionName::ModelRequirements => ir.model_requirements.is_some(),
+            SectionName::PromptDialect => ir.prompt_dialect.is_some(),
+            SectionName::RagConfiguration => ir.rag_configuration.is_some(),
+            SectionName::ContextStrategy => ir.context_strategy.is_some(),
+            SectionName::ApiHarness => ir.api_harness.is_some(),
         }
     }
 
@@ -253,6 +262,10 @@ mod tests {
                 logging: LoggingConfig::default(),
             }),
             deployment: Some(DeploymentSection { profiles: vec![] }),
+            // v2 (CH-12) sections are intentionally excluded from
+            // completeness gating — a v1.1-style IR without them is still
+            // "ready".
+            ..Default::default()
         };
 
         let report = CompletenessAnalyzer::analyze(&ir);

@@ -21,10 +21,10 @@
     "docs-overhaul-deploy-guide",
     "perf-security-load"
   ],
-  "updatedAt": "2026-07-04T00:30:00Z",
-  "changes_completed": 0,
+  "updatedAt": "2026-07-04T02:00:00Z",
+  "changes_completed": 1,
   "changes_total": 7,
-  "changes_completed_note": "Skeleton seeded from uar-next-harness reflection. No changes started yet -- next step is /kbd-assess.",
+  "changes_completed_note": "1 = agent-spec-v2 (CH-12): added 5 new IR sections (model_requirements, prompt_dialect, rag_configuration, context_strategy, api_harness) to AgentDescriptorIR, each mirroring an existing runtime type (RouteRequirements, DialectRequest, CH-11 RAG knobs, ContextStrategy incl. Auto, CH-21 stream_mode) for a future conformance check. Backward-compatible via #[serde(default)] + deliberately excluding the 5 new SectionName variants from ALL/completeness gating -- v1.1 documents still complete/parse unchanged. 3 new tests (v1.1 backward-compat, full v2 round-trip, heading recognition), 30/30 compiler tests green, 333/333 full suite green. Tranche A of plan.md complete; next is Tranche B (CH-13 + CH-17 + CH-20 in parallel).",
   "carriedOverDebt": [
     "Artifact-refiner QA gate automation (carried 4+ phases from uar-next-harness and earlier)",
     "17 pre-existing bun run typecheck errors (Base UI Select nullability, react-resizable-panels API drift, recharts type-export drift) -- unrelated to uar-next-harness's own work",
