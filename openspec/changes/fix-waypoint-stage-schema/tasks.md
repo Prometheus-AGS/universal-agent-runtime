@@ -1,0 +1,9 @@
+- [x] Surface the cross-repo scope to the user before proceeding (blocker, resolved via AskUserQuestion)
+- [x] Fix `write-position-reminder.sh`'s `.stage // "unknown"` → `.stage // .status // "unknown"`
+- [x] Find and fix the identical bug in `write-session-summary.sh`
+- [x] Confirm `position-stop-gate.sh` already had the correct fallback (no change needed there)
+- [x] Test against a synthetic `.status`-only waypoint (no `.stage`) — confirms the fix resolves the actual regression scenario
+- [x] Rebase onto `origin/main` (20 unrelated upstream commits, none conflicting) instead of force-pushing
+- [x] Stash and restore the pre-existing unrelated `rules-cache.md` WIP around the rebase, untouched
+- [x] Push to `prometheus-skill-system`'s `origin/main` (commit `91006b8`)
+- [x] Re-verify against this project's real `current-waypoint.json`
