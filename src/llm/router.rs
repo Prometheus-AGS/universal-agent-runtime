@@ -6,6 +6,8 @@
 
 use std::sync::Arc;
 
+use serde::Deserialize;
+
 use super::benchmarks::{self, BenchmarkDimension};
 use super::catalog::{CapabilityFilter, ModelCatalog, ModelInfo, ProviderInfo};
 use super::registry::ProviderRegistry;
@@ -247,7 +249,8 @@ mod compare_candidates_tests {
 }
 
 /// Requirements for model selection.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
 pub struct RouteRequirements {
     /// Model must support tool calling.
     pub needs_tools: bool,

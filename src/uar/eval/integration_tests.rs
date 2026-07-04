@@ -149,6 +149,55 @@ async fn starter_suite_is_valid_and_runs() {
     );
 }
 
+/// Tier-1 CI guard (CH-17): each targeted suite's shipped YAML must parse
+/// AND, run through its *real* fixture provider (not a canned stand-in —
+/// these suites test actual runtime decision code), score 1.0 on every
+/// case. This fails the build if a suite file and its provider's fixture
+/// data (skills, seeded catalog providers) drift out of sync.
+#[tokio::test]
+async fn targeted_suites_are_valid_and_score_perfectly() {
+    use crate::uar::eval::{ContextEfficiencyProvider, RoutingProvider, SkillActivationProvider};
+
+    let cases: Vec<(&str, Arc<dyn CompletionProvider>)> = vec![
+        (
+            "skill-activation",
+            Arc::new(SkillActivationProvider::new().await),
+        ),
+        ("routing-accuracy", Arc::new(RoutingProvider::new().await)),
+        (
+            "context-efficiency",
+            Arc::new(ContextEfficiencyProvider) as Arc<dyn CompletionProvider>,
+        ),
+    ];
+
+    for (name, provider) in cases {
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("evals/{name}.yaml"));
+        let suite = load_suite(&path).unwrap_or_else(|e| panic!("evals/{name}.yaml loads: {e}"));
+        assert_eq!(suite.name, name);
+        assert!(!suite.cases.is_empty(), "{name} suite has cases");
+
+        let scorers = build_scorers(&suite, &provider);
+        let results = Runner
+            .run(&suite, &scorers, provider.as_ref(), None)
+            .await;
+        assert_eq!(results.len(), suite.cases.len());
+
+        for r in &results {
+            for score in &r.scores {
+                assert!(
+                    (score.value - 1.0).abs() < f32::EPSILON,
+                    "{name}/{}: scorer '{}' expected 1.0, got {} (detail: {:?})",
+                    r.case_id,
+                    score.scorer,
+                    score.value,
+                    score.detail
+                );
+            }
+        }
+    }
+}
+
 #[tokio::test]
 async fn provider_failure_is_contained_and_run_completes() {
     let dir = unique_dir("fail");

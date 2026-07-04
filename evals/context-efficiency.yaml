@@ -1,0 +1,23 @@
+# CH-17 targeted suite: context-strategy efficiency.
+#
+# Keyless/deterministic -- routed through ContextEfficiencyProvider
+# (src/uar/eval/targeted.rs), which calls the real
+# uar::context::strategy::strategy_for_model (CH-05's model-aware `Auto`
+# resolution), not an LLM. Case `input` is JSON:
+# {"effective_context_tokens": <u32>}.
+#
+# Run it:        cargo run --bin universal-agent-runtime -- eval run evals/context-efficiency.yaml
+# Update gate:   ... eval run evals/context-efficiency.yaml --update-baseline
+name: context-efficiency
+scorers:
+  - type: contains
+cases:
+  - id: small-context-window-uses-sliding-window
+    input: '{"effective_context_tokens": 32000}'
+    expected: "sliding_window"
+  - id: medium-context-window-uses-sliding-window
+    input: '{"effective_context_tokens": 128000}'
+    expected: "sliding_window"
+  - id: large-context-window-uses-summarize
+    input: '{"effective_context_tokens": 250000}'
+    expected: "summarize"

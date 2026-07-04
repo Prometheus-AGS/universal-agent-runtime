@@ -131,19 +131,41 @@ async fn run_suite(
         return 2;
     }
 
-    let orchestrator = match Orchestrator::new(
-        config.llm.clone(),
-        Arc::new(McpRegistry::empty()),
-        Arc::new(NativeSkillRegistry::new()),
-    ) {
-        Ok(o) => o,
-        Err(e) => {
-            eprintln!("eval: failed to build orchestrator: {e}");
-            return 2;
+    // CH-17: the three targeted suites test deterministic runtime decision
+    // code (skill matching, model routing, context-strategy selection)
+    // directly, not LLM completions — no API key needed, so they dispatch
+    // to a fixture provider instead of the real-model orchestrator. Any
+    // other suite name keeps the original real-model path unchanged.
+    let model_label: Option<String>;
+    let provider: Arc<dyn CompletionProvider> = match suite_obj.name.as_str() {
+        "skill-activation" => {
+            model_label = None;
+            Arc::new(crate::uar::eval::SkillActivationProvider::new().await)
+        }
+        "routing-accuracy" => {
+            model_label = None;
+            Arc::new(crate::uar::eval::RoutingProvider::new().await)
+        }
+        "context-efficiency" => {
+            model_label = None;
+            Arc::new(crate::uar::eval::ContextEfficiencyProvider)
+        }
+        _ => {
+            let orchestrator = match Orchestrator::new(
+                config.llm.clone(),
+                Arc::new(McpRegistry::empty()),
+                Arc::new(NativeSkillRegistry::new()),
+            ) {
+                Ok(o) => o,
+                Err(e) => {
+                    eprintln!("eval: failed to build orchestrator: {e}");
+                    return 2;
+                }
+            };
+            model_label = Some(config.llm.model.clone());
+            Arc::new(OrchestratorCompletionProvider { orchestrator })
         }
     };
-    let provider: Arc<dyn CompletionProvider> =
-        Arc::new(OrchestratorCompletionProvider { orchestrator });
     let scorers = build_scorers(&suite_obj, &provider);
 
     let results = Runner
@@ -151,7 +173,7 @@ async fn run_suite(
             &suite_obj,
             &scorers,
             provider.as_ref(),
-            Some(&config.llm.model),
+            model_label.as_deref(),
         )
         .await;
     let summary = summarize(&results);

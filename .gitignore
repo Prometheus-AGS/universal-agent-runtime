@@ -99,3 +99,8 @@ static/assets
 # Local pk/Karpathy LLM-wiki state (events log + generated wiki articles) —
 # machine-local knowledge cache, not shared project content.
 .prometheus/
+
+# Eval harness: per-invocation timestamped run results are local artifacts;
+# only the committed baseline (evals/results/<suite>.baseline.json) is shared.
+evals/results/*.json
+!evals/results/*.baseline.json

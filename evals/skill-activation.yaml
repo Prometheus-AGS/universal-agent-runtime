@@ -1,0 +1,33 @@
+# CH-17 targeted suite: skill-activation accuracy.
+#
+# Unlike starter.yaml, this suite is fully keyless/deterministic -- the CLI
+# (src/uar/eval/cli.rs) recognizes this suite name and routes it through
+# SkillActivationProvider (src/uar/eval/targeted.rs) instead of a real-model
+# orchestrator. It exercises the real SkillService::match_skills keyword
+# matcher (CH-08 instruments this same call) against a small fixed fixture
+# skill set, not an LLM.
+#
+# Run it:        cargo run --bin universal-agent-runtime -- eval run evals/skill-activation.yaml
+# Update gate:   ... eval run evals/skill-activation.yaml --update-baseline   (then commit the baseline)
+name: skill-activation
+scorers:
+  - type: contains
+cases:
+  - id: web-search-query
+    input: "Can you search the web for the latest news on this topic?"
+    expected: "web-search"
+  - id: code-review-query
+    input: "Please review this pull request diff for bugs."
+    expected: "code-review"
+  - id: data-analysis-query
+    input: "I need to analyze this CSV of sales statistics."
+    expected: "data-analysis"
+  - id: image-generation-query
+    input: "Draw a picture of a mountain at sunset."
+    expected: "image-generation"
+  - id: translation-query
+    input: "Please translate this sentence into French."
+    expected: "translation"
+  - id: no-match-query
+    input: "asdkjqwoiej completely unrelated gibberish text"
+    expected: "none"

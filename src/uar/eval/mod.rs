@@ -14,6 +14,7 @@ mod judge;
 mod persistence;
 mod runner;
 mod scorer_spec;
+pub mod targeted;
 pub use judge::LlmJudge;
 pub use persistence::{
     RegressionEntry, RegressionReport, ScoreSummary, compare, load_baseline, save_baseline,
@@ -21,6 +22,7 @@ pub use persistence::{
 };
 pub use runner::{CompletionProvider, Runner, load_suite};
 pub use scorer_spec::{ScorerSpec, build_scorers, default_scorers};
+pub use targeted::{ContextEfficiencyProvider, RoutingProvider, SkillActivationProvider};
 
 /// A single evaluation case: an input and an optional expected output.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

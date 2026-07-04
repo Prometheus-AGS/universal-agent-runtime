@@ -1,0 +1,24 @@
+# CH-17 targeted suite: model-routing accuracy.
+#
+# Keyless/deterministic -- routed through RoutingProvider
+# (src/uar/eval/targeted.rs), which seeds a small fixed fixture registry
+# (openai/gpt-4o, anthropic/claude-3-5-haiku) and exercises the real
+# ModelRouter::route (CH-03 capability filter + health-aware selection),
+# not an LLM. Case `input` is JSON: {"requirements": <RouteRequirements>,
+# "trip_health_for": <optional provider id to push into cooldown first>}.
+#
+# Run it:        cargo run --bin universal-agent-runtime -- eval run evals/routing-accuracy.yaml
+# Update gate:   ... eval run evals/routing-accuracy.yaml --update-baseline
+name: routing-accuracy
+scorers:
+  - type: contains
+cases:
+  - id: preferred-provider-overrides-cost
+    input: '{"requirements": {"needs_tools": true, "preferred_provider": "anthropic"}}'
+    expected: "anthropic"
+  - id: unhealthy-preferred-provider-excluded
+    input: '{"requirements": {"needs_tools": true, "preferred_provider": "anthropic"}, "trip_health_for": "anthropic"}'
+    expected: "openai"
+  - id: impossible-cost-ceiling-yields-no-candidate
+    input: '{"requirements": {"needs_tools": true, "max_cost_per_1m_input": 0.0000001}}'
+    expected: "none"
