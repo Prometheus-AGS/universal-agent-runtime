@@ -2,9 +2,9 @@
 
 - **Phase:** uar-spec-v2-and-polish
 - **Status:** executing
-- **Progress:** 4 of 7 changes done (agent-spec-v2, compiler-v2-stages, eval-targeted-suites, perf-security-load). Tranche B complete.
-- **Next pending change:** conformance-testing (CH-14) and agent-template-library (CH-15), both unblocked on CH-13 — Tranche C
-- **Exact next command:** /kbd-execute for uar-spec-v2-and-polish — land CH-14 + CH-15 (Tranche C), then CH-19 (Tranche D)
+- **Progress:** 6 of 7 changes done. Tranche B (CH-13, CH-17, CH-20) and Tranche C (CH-14, CH-15) both complete.
+- **Next pending change:** docs-overhaul-deploy-guide (CH-19) — last change, Tranche D
+- **Exact next command:** /kbd-execute for uar-spec-v2-and-polish — land CH-19, then phase is execute-complete
 - **Recommendation source:** goals.md, seeded from uar-next-harness's reflection (2026-07-04)
 
 ## Change map (G4 → G5)
@@ -12,8 +12,8 @@
 - G4 Specification & Distribution (P2, primary, sequential chain):
   - CH-12 agent-spec-v2 — DONE (75116e4)
   - CH-13 compiler-v2-stages — DONE (e1532d6)
-  - CH-14 conformance-testing — NOT STARTED (depends on CH-13, done — unblocked)
-  - CH-15 agent-template-library — NOT STARTED (depends on CH-13, done — unblocked)
+  - CH-14 conformance-testing — DONE (4b24f01). New conformance.rs drives real ModelRouter::route/PromptDialect::detect/apply_strategy against declared v2 sections. 10/10 new tests, full suite 360/360.
+  - CH-15 agent-template-library — DONE (bbe7ec2). 4 templates + `compile` CLI subcommand + CI release job + regression test. Full suite 363/363, integration 56/56.
   - CH-17 eval-targeted-suites — DONE (13326a4)
 - G5 Polish & Release (P3, after G4 lands):
   - CH-19 docs-overhaul-deploy-guide — NOT STARTED

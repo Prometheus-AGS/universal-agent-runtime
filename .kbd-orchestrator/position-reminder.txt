@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-spec-v2-and-polish
-Step: 4 of 7
+Step: 6 of 7
 Stage: executing
-Next command: /kbd-execute for uar-spec-v2-and-polish -- Tranche B complete (CH-13, CH-17, CH-20 all done, 4/7). Land CH-14 conformance-testing and CH-15 agent-template-library (both unblocked on CH-13, Tranche C), then finish CH-19 docs-overhaul-deploy-guide (Tranche D).
+Next command: /kbd-execute for uar-spec-v2-and-polish -- 6/7 done, only CH-19 docs-overhaul-deploy-guide remains (Tranche D). Update docs/ARCHITECTURE.md to narratively cover the dialect engine, health monitoring, and cost-budget systems; write a consolidated production deployment guide tying together the existing k8s/helm charts; document the D-D dependency-pin rationale and D-B MemPalace status.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-spec-v2-and-polish (step 4 of 7)
+  Starting <kbd-skill> — uar-spec-v2-and-polish (step 6 of 7)
   [do work]
-  Completed <kbd-skill> — uar-spec-v2-and-polish (step 4 of 7)
+  Completed <kbd-skill> — uar-spec-v2-and-polish (step 6 of 7)
