@@ -91,6 +91,46 @@ registry.register_custom_provider(ProviderConfig {
 }).await?;
 ```
 
+### Provider Health & Failover
+
+`ProviderHealthMonitor` (`src/llm/health.rs`) tracks per-provider consecutive-failure counts and puts a provider into a cooldown window once `FailoverConfig.error_threshold` consecutive failures are recorded. Both `ModelRouter::route` and `ProviderRegistry::resolve_to_llm_config` consult `is_available()` before selecting a provider — a provider currently in cooldown is excluded from selection entirely, not just deprioritized, so a struggling provider can't keep winning ties against healthy alternatives:
+
+```rust
+health_monitor.record_failure("openai").await;  // increments consecutive_errors
+// ... after error_threshold consecutive failures:
+health_monitor.is_available("openai").await;    // false until cooldown_secs elapses
+```
+
+The monitor is shared (`Arc`) across `ProviderRegistry`, `ModelRouter`, and every `Orchestrator` instance, so a failure observed on one run's driver call immediately affects routing decisions for the next run. Failover itself (opt-in via `FailoverConfig.enabled`) falls back through `FailoverConfig.fallback_models` using the configured `strategy` (default: `Priority`).
+
+### Prompt Dialect Engine
+
+Different model families have documented, web-verified preferences for how prompts and reasoning are expressed at the API layer — treating every model as an interchangeable black box leaves capability on the table. `PromptDialect::detect(model_id)` (`src/llm/prompt_dialect.rs`) classifies a model into one of six dialects (`AnthropicXml`, `OpenAiJson`, `KimiMarkdown`, `GlmThinking`, `QwenHybrid`, `MiniMaxStructured`) plus a `Generic` fallback, purely from substring matching on the model id — no network call, no catalog lookup. `PromptDialectEngine::request_params(model_id, DialectRequest)` then emits the extra request-body parameters that dialect wants (reasoning-persistence toggles, structured-output hints, thinking-effort levels) as a JSON object the driver merges into the outbound request. Only web-verified parameters are encoded — nothing here is guessed.
+
+### Cost & Budget Tracking
+
+`src/uar/runtime/cost_budget.rs` (CH-06) adds the *accounting* layer on top of the existing opt-in cost estimation (`LlmConfig.cost_tracking`, `estimate_cost`, the `uar_llm_cost_usd` metric): aggregate spend per `BudgetScope` (`Run` / `Task` / `Session` / `Agent` / `Global`), a configurable `BudgetLimit { limit_usd, warn_at }` per scope, and threshold-crossing events so the UI and operators can react before a runaway burns the budget. It's in-memory and lock-light — a single-process aggregator suitable for the runtime hot path; durable roll-ups (SurrealDB/Postgres) are intentionally out of scope and would layer on top by subscribing to the emitted events. The cost-dashboard admin page (CH-07) is the current read surface for this data; only the *global* budget limit is configurable today (per-agent/per-task configuration is tracked debt, not yet built).
+
+---
+
+## Agent Spec v2 & Conformance (`uar-spec-v2-and-polish` phase)
+
+`AgentDescriptorIR` (`src/uar/compiler/ir.rs`) gained five additive v2 sections — `model_requirements`, `prompt_dialect`, `rag_configuration`, `context_strategy`, `api_harness` — each deliberately mirroring an existing runtime type so a compiled agent's *declared* needs can be checked against what the runtime actually does:
+
+| v2 IR section | Mirrors |
+|---|---|
+| `model_requirements` | `llm::router::RouteRequirements` |
+| `prompt_dialect` | `llm::prompt_dialect::DialectRequest` (+ optional explicit override) |
+| `rag_configuration` | the in-process RAG hardening knobs (decomposition/verification/audit) |
+| `context_strategy` | `uar::context::strategy::ContextStrategy`, variant-for-variant, including `Auto` |
+| `api_harness` | transport protocol + `stream_mode` selection |
+
+All five are `#[serde(default)]` and excluded from the original 15-section completeness contract, so v1.1 documents still parse and compile unchanged (`s08_emit` only bumps the emitted `schema` to `uar-agent-descriptor/v2` when at least one v2 section is non-default; otherwise it stays `/v1` — descriptive metadata, not a compile gate).
+
+**Conformance harness** (`src/uar/compiler/conformance.rs`): `check_conformance(ir, router)` drives the *real* runtime functions — `ModelRouter::route`, `PromptDialect::detect`, `apply_strategy` — against a descriptor's declared `model_requirements`/`prompt_dialect`/`context_strategy`, proving each is satisfiable at load time and honored at run time rather than re-implementing their logic. A section left at its parsed default is reported `NotDeclared` (indistinguishable from "the author wrote nothing here" — `#[serde(default)]` produces the same value either way), not a pass/fail verdict.
+
+**Template library** (`templates/*.agent.md`): four worked examples — `coding` (tools+reasoning-required), `vision` (vision-required, deliberately leaves context strategy at `Auto`), `terminal` (tools+structured-output-required, small sliding window), `data` (RAG fully enabled, `Hierarchical` context strategy) — each compiles+signs cleanly via `universal-agent-runtime compile templates/<name>.agent.md` (`Command::Compile`, `src/uar/compiler/cli.rs`) and is regression-guarded by `tests/agent_templates_test.rs`. CI compiles+signs all four as a release artifact (`.github/workflows/release.yml`'s `compile-agent-templates` job → `agent-templates.tar.gz`).
+
 ---
 
 ## Chat Serving Path
@@ -223,8 +263,23 @@ src/
     │                       seed_from_llm_config() — catalog-enriched
     │                       register_custom_provider() — with auto-enrichment
     │                       resolve_to_llm_config() — for driver construction
-    └── router.rs         # ModelRouter
-                            route(requirements) → best available model
+    ├── router.rs         # ModelRouter
+    │                       route(requirements) → best available model
+    ├── health.rs         # ProviderHealthMonitor — failover cooldown tracking
+    └── prompt_dialect.rs # PromptDialect::detect, PromptDialectEngine
+
+# uar/compiler/ — UAR-AGENT-MD compiler (agent spec v2)
+src/uar/compiler/
+    ├── ir.rs             # AgentDescriptorIR (15 v1.1 sections + 5 v2 sections)
+    ├── parser.rs         # Markdown → IR
+    ├── stages/           # 8-stage compile pipeline (s01_frontmatter .. s08_emit)
+    ├── pipeline.rs       # compile() orchestrator → CompiledDescriptor
+    ├── conformance.rs    # check_conformance() — declared v2 sections vs. real runtime
+    ├── cli.rs            # `compile` subcommand (compile+sign a .agent.md file)
+    └── signing.rs        # LocalKeyProvider (Ed25519)
+
+src/uar/runtime/cost_budget.rs  # BudgetScope/BudgetLimit — per-scope spend aggregation
+templates/                      # coding/vision/terminal/data .agent.md worked examples
 ```
 
 ---
@@ -252,6 +307,17 @@ cargo build
 ```
 
 The catalog is rebuilt on every clean build. For faster iteration, set `SKIP_CATALOG_BUILD=1` to use the empty stub (catalog will have no providers).
+
+---
+
+## Architectural Decisions
+
+Standing decisions carried forward from `uar-next-harness`'s planning, re-affirmed (not re-litigated) during this phase:
+
+- **D-A — RAG stays in-process.** Query decomposition, retrieval verification, and audit events (CH-11) are hardened directly in `src/uar/rag/pipeline.rs`, not extracted into a separate Knowledge Service. Revisit only if RAG load or team ownership genuinely requires a separate deployable.
+- **D-B — MemPalace stays off by default.** The `memory-palace` Cargo feature (`surreal-memory/palace`) is not in UAR's default feature set: it pulls in `mempalace-core` → `rusqlite` (bundled SQLite) → `libsqlite3-sys`, which conflicts with the newer `libsqlite3-sys` versions pulled in by other consumers (e.g. `sqlx 0.8`'s transitive closure). See `Cargo.toml`'s `memory-palace` feature comment for the exact version conflict. UAR itself does not need it; opt in explicitly via `--features memory-palace` only if you understand the conflict and have resolved it for your build.
+- **D-C — LibreFang integration is scoped to the UAR side only.** UAR exposes the zero-code `provider_urls` seam (an OpenAI-compatible `/v1/chat/completions` endpoint LibreFang can target with no UAR-specific code) — see `docs/librefang-integration.md`. No LibreFang-side code lives in this repository.
+- **D-D — Git-sourced dependency pins are deliberate, not technical debt.** `rmcp`, `surreal-memory`, `kreuzberg`, and `prometheus_parking_lot` are pinned to specific commit SHAs (or, for `kreuzberg`, tracking `branch = "main"` deliberately) for reproducible builds and CI stability. Full rationale, current pins, and the upgrade SOP live in `docs/DEPENDENCY_MANAGEMENT.md` — this is not duplicated here.
 
 ---
 
