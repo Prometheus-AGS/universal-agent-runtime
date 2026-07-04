@@ -180,28 +180,22 @@ impl McpRegistry {
     /// Creates a registry with a single test tool.
     pub fn new_with_test_tool(name: &str, description: &str) -> Self {
         let ns_name = Self::sanitize_tool_name(&format!("test__{name}"));
-        let tool = Tool {
-            name: name.to_string().into(),
-            description: Some(description.to_string().into()),
-            input_schema: Arc::new(
-                serde_json::json!({
-                    "type": "object",
-                    "properties": {
-                        "mirror": { "type": "string" }
-                    },
-                    "required": ["mirror"]
-                })
-                .as_object()
-                .unwrap()
-                .clone(),
-            ),
-            title: None,
-            output_schema: None,
-            annotations: None,
-            execution: None,
-            icons: None,
-            meta: None,
-        };
+        // rmcp 1.8: Tool is #[non_exhaustive] -- struct-literal syntax (even
+        // with ..Default::default()) is rejected cross-crate; use Tool::new.
+        let tool = Tool::new(
+            name.to_string(),
+            description.to_string(),
+            serde_json::json!({
+                "type": "object",
+                "properties": {
+                    "mirror": { "type": "string" }
+                },
+                "required": ["mirror"]
+            })
+            .as_object()
+            .unwrap()
+            .clone(),
+        );
 
         let tools = vec![(ns_name.clone(), tool)];
         let mut tool_index = HashMap::new();
@@ -278,22 +272,14 @@ impl McpRegistry {
         let ns_name = Self::sanitize_tool_name(&format!("native__{}", tool.name()));
 
         let mut tools = (*self.tools).clone();
-        let mcp_tool = Tool {
-            name: tool.name().to_string().into(),
-            description: Some(tool.description().to_string().into()),
-            input_schema: Arc::new(
-                tool.schema()
-                    .as_object()
-                    .unwrap_or(&serde_json::Map::new())
-                    .clone(),
-            ),
-            title: None,
-            output_schema: None,
-            annotations: None,
-            execution: None,
-            icons: None,
-            meta: None,
-        };
+        let mcp_tool = Tool::new(
+            tool.name().to_string(),
+            tool.description().to_string(),
+            tool.schema()
+                .as_object()
+                .unwrap_or(&serde_json::Map::new())
+                .clone(),
+        );
         tools.push((ns_name.clone(), mcp_tool));
 
         let mut native_tools = (*self.native_tools).clone();
@@ -371,14 +357,13 @@ impl McpRegistry {
             .map(|s| s.len())
             .unwrap_or(0);
         let start = std::time::Instant::now();
-        let res = service
-            .call_tool(CallToolRequestParams {
-                meta: None,
-                name: raw_tool_name.clone().into(),
-                arguments: args_obj,
-                task: None,
-            })
-            .await;
+        // rmcp 1.8: CallToolRequestParams is #[non_exhaustive] -- use the
+        // provided new()/with_arguments() builder instead of a struct literal.
+        let mut call_params = CallToolRequestParams::new(raw_tool_name.clone());
+        if let Some(args) = args_obj {
+            call_params = call_params.with_arguments(args);
+        }
+        let res = service.call_tool(call_params).await;
         let duration = start.elapsed();
         let success = res.is_ok();
 

@@ -823,30 +823,26 @@ impl UarMemoryMcpServer {
 #[tool_handler]
 impl ServerHandler for UarMemoryMcpServer {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo {
-            capabilities: ServerCapabilities::builder().enable_tools().build(),
-            server_info: Implementation {
-                name: "uar-memory-mcp".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                title: None,
-                description: None,
-                icons: None,
-                website_url: None,
-            },
-            instructions: Some(
-                "UAR in-process memory MCP server. \
-                Scoped memory (mem0-compatible): memory_add, memory_get, memory_update, memory_delete, \
-                memory_delete_all, memory_list, memory_search, memory_hybrid_search, memory_history, \
-                memory_compress, memory_extract_from_conversation. \
-                Knowledge graph (graph-RAG): kg_read, kg_search, kg_semantic_search, kg_create_entity, \
-                kg_add_observations, kg_create_relation, kg_delete_entity, kg_delete_relation, \
-                kg_expand_neighbors, kg_find_path, kg_get_related. \
-                TaskStreams: task_stream_create, task_stream_get, task_stream_add, task_stream_context, \
-                task_stream_list, task_stream_archive, task_stream_auto_summarize."
-                    .to_string(),
-            ),
-            ..Default::default()
-        }
+        // rmcp 1.8: ServerInfo (InitializeResult) and Implementation are both
+        // #[non_exhaustive] -- struct-literal syntax (even with
+        // ..Default::default()) is rejected cross-crate; use the provided
+        // constructors + field mutation instead (all fields are `pub`).
+        let mut info =
+            ServerInfo::new(ServerCapabilities::builder().enable_tools().build());
+        info.server_info = Implementation::new("uar-memory-mcp", env!("CARGO_PKG_VERSION"));
+        info.instructions = Some(
+            "UAR in-process memory MCP server. \
+            Scoped memory (mem0-compatible): memory_add, memory_get, memory_update, memory_delete, \
+            memory_delete_all, memory_list, memory_search, memory_hybrid_search, memory_history, \
+            memory_compress, memory_extract_from_conversation. \
+            Knowledge graph (graph-RAG): kg_read, kg_search, kg_semantic_search, kg_create_entity, \
+            kg_add_observations, kg_create_relation, kg_delete_entity, kg_delete_relation, \
+            kg_expand_neighbors, kg_find_path, kg_get_related. \
+            TaskStreams: task_stream_create, task_stream_get, task_stream_add, task_stream_context, \
+            task_stream_list, task_stream_archive, task_stream_auto_summarize."
+                .to_string(),
+        );
+        info
     }
 }
 
@@ -868,10 +864,10 @@ pub fn memory_mcp_router(service: Arc<MemoryService>) -> Router {
 
     let session_manager = Arc::new(LocalSessionManager::default());
 
-    let config = StreamableHttpServerConfig {
-        stateful_mode: true,
-        ..StreamableHttpServerConfig::default()
-    };
+    // #[non_exhaustive] -- struct-literal syntax rejected cross-crate even
+    // with ..Default::default(); mutate the public field on a default instance.
+    let mut config = StreamableHttpServerConfig::default();
+    config.stateful_mode = true;
 
     let http_service = StreamableHttpService::new(
         move || -> Result<UarMemoryMcpServer, std::io::Error> {

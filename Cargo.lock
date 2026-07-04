@@ -11755,38 +11755,6 @@ dependencies = [
 
 [[package]]
 name = "rmcp"
-version = "0.16.0"
-source = "git+https://github.com/modelcontextprotocol/rust-sdk?rev=085470025f690050e8776ffa939e7ba71d3abc01#085470025f690050e8776ffa939e7ba71d3abc01"
-dependencies = [
- "async-trait",
- "base64 0.22.1",
- "bytes",
- "chrono",
- "futures",
- "http 1.4.1",
- "http-body 1.0.1",
- "http-body-util",
- "pastey 0.2.3",
- "pin-project-lite",
- "process-wrap",
- "rand 0.10.1",
- "reqwest 0.13.4",
- "rmcp-macros 0.16.0",
- "schemars 1.2.1",
- "serde",
- "serde_json",
- "sse-stream",
- "thiserror 2.0.18",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "tower-service",
- "tracing",
- "uuid",
-]
-
-[[package]]
-name = "rmcp"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0810a9f717d9828f475fe1f629f4c305c8464b7f496c3a854b58d29e65f4058e"
@@ -11817,9 +11785,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "rmcp"
+version = "1.8.0"
+source = "git+https://github.com/modelcontextprotocol/rust-sdk?rev=26b65b6b88c5552447905923f683b6e4720a5600#25220361d5540715294c501c289d79de4bec2bfc"
+dependencies = [
+ "async-trait",
+ "base64 0.22.1",
+ "bytes",
+ "chrono",
+ "futures",
+ "http 1.4.1",
+ "http-body 1.0.1",
+ "http-body-util",
+ "pastey 0.2.3",
+ "pin-project-lite",
+ "process-wrap",
+ "rand 0.10.1",
+ "reqwest 0.13.4",
+ "rmcp-macros 1.8.0",
+ "schemars 1.2.1",
+ "serde",
+ "serde_json",
+ "sse-stream",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tower-service",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "rmcp-macros"
-version = "0.16.0"
-source = "git+https://github.com/modelcontextprotocol/rust-sdk?rev=085470025f690050e8776ffa939e7ba71d3abc01#085470025f690050e8776ffa939e7ba71d3abc01"
+version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6aefac48c364756e97f04c0401ba3231e8607882c7c1d92da0437dc16307904d"
 dependencies = [
  "darling 0.23.0",
  "proc-macro2",
@@ -11830,9 +11831,8 @@ dependencies = [
 
 [[package]]
 name = "rmcp-macros"
-version = "1.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6aefac48c364756e97f04c0401ba3231e8607882c7c1d92da0437dc16307904d"
+version = "1.8.0"
+source = "git+https://github.com/modelcontextprotocol/rust-sdk?rev=26b65b6b88c5552447905923f683b6e4720a5600#25220361d5540715294c501c289d79de4bec2bfc"
 dependencies = [
  "darling 0.23.0",
  "proc-macro2",
@@ -15719,7 +15719,7 @@ dependencies = [
  "ractor",
  "rand 0.10.1",
  "reqwest 0.12.28",
- "rmcp 0.16.0",
+ "rmcp 1.8.0",
  "rustls",
  "secrecy",
  "serde",

@@ -286,27 +286,23 @@ impl UarRuntimeMcpServer {
 #[tool_handler]
 impl ServerHandler for UarRuntimeMcpServer {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo {
-            capabilities: ServerCapabilities::builder().enable_tools().build(),
-            server_info: Implementation {
-                name: "uar-runtime-mcp".into(),
-                version: env!("CARGO_PKG_VERSION").into(),
-                title: None,
-                description: None,
-                icons: None,
-                website_url: None,
-            },
-            instructions: Some(
-                "UAR Runtime MCP server. Tools: \
-                uar_list_agents — list compiled agents in the registry; \
-                uar_create_run — start an agent run (returns run_id + SSE URL); \
-                uar_get_run_status — poll run status by run_id; \
-                uar_list_skills — enumerate available native skills; \
-                uar_compile_spec — compile a UAR-AGENT-MD Markdown document."
-                    .to_string(),
-            ),
-            ..Default::default()
-        }
+        // rmcp 1.8: ServerInfo (InitializeResult) and Implementation are both
+        // #[non_exhaustive] -- struct-literal syntax (even with
+        // ..Default::default()) is rejected cross-crate; use the provided
+        // constructors + field mutation instead (all fields are `pub`).
+        let mut info =
+            ServerInfo::new(ServerCapabilities::builder().enable_tools().build());
+        info.server_info = Implementation::new("uar-runtime-mcp", env!("CARGO_PKG_VERSION"));
+        info.instructions = Some(
+            "UAR Runtime MCP server. Tools: \
+            uar_list_agents — list compiled agents in the registry; \
+            uar_create_run — start an agent run (returns run_id + SSE URL); \
+            uar_get_run_status — poll run status by run_id; \
+            uar_list_skills — enumerate available native skills; \
+            uar_compile_spec — compile a UAR-AGENT-MD Markdown document."
+                .to_string(),
+        );
+        info
     }
 }
 
@@ -328,10 +324,10 @@ pub fn uar_mcp_router(
 ) -> Router {
     let session_manager = Arc::new(LocalSessionManager::default());
 
-    let config = StreamableHttpServerConfig {
-        stateful_mode: true,
-        ..StreamableHttpServerConfig::default()
-    };
+    // #[non_exhaustive] -- struct-literal syntax rejected cross-crate even
+    // with ..Default::default(); mutate the public field on a default instance.
+    let mut config = StreamableHttpServerConfig::default();
+    config.stateful_mode = true;
 
     let http_service = StreamableHttpService::new(
         move || -> Result<UarRuntimeMcpServer, std::io::Error> {

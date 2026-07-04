@@ -1,0 +1,17 @@
+- [x] Confirm the fix commit/version from the advisory (GHSA-89vp-x53w-74fx, patched >=1.4.0, fix PR #764/commit 8e22aa2)
+- [x] Confirm `transport-streamable-http-server`/`-session` features are actually enabled (real exposure, not theoretical)
+- [x] `git ls-remote --tags` to find a tagged release past the fix (`rmcp-v1.8.0`)
+- [x] Bump `Cargo.toml`'s `rev` to the `rmcp-v1.8.0` commit
+- [x] `cargo update -p rmcp`; discover + assess the transitive `kreuzberg`-sourced `rmcp@1.7.0` (already patched, no action needed)
+- [x] Diagnose the resulting 9 `E0639` errors (all `#[non_exhaustive]` rmcp types rejecting struct-literal syntax, including with `..Default::default()`)
+- [x] Confirm via `rustc --explain E0639` that `..Default::default()` does NOT work around `#[non_exhaustive]` (unlike the `wasmtime::error::Context` fix pattern from `wasmtime-disposition`)
+- [x] Fix `src/mcp/registry.rs` (3 sites): `Tool::new()`, `CallToolRequestParams::new().with_arguments()`
+- [x] Fix `src/uar/mcp_server.rs` (3 sites): `ServerInfo::new()` + field assignment, `Implementation::new()`, `StreamableHttpServerConfig::default()` + field mutation
+- [x] Fix `src/uar/memory/mcp_server.rs` (identical 3 sites)
+- [x] `cargo check` (default) clean
+- [x] `cargo check --features wasm-runtime` clean (combined with the earlier wasmtime bump)
+- [x] `cargo test --lib` 363/363 green
+- [x] `cargo check --tests` clean
+- [x] `cargo test --test test_mcp_optional` 4/4 green
+- [x] `cargo test --test integration` 56/56 green (incl. real MCP tool-call round trip, `tool_loop_round_trip`)
+- [x] `cargo clippy` zero new warnings at touched lines

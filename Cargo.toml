@@ -149,8 +149,12 @@ reqwest = { version = "0.12", features = [
   "multipart",
 ] }
 
-# MCP client + in-process server (memory MCP)
-rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", rev = "085470025f690050e8776ffa939e7ba71d3abc01", features = [
+# MCP client + in-process server (memory MCP). Bumped from
+# 085470025f6 to the rmcp-v1.8.0 tag (2026-07-04, uar-security-deps-and-hygiene):
+# fixes GHSA-89vp-x53w-74fx, a DNS-rebinding vuln in the Streamable HTTP
+# server transport (patched >=1.4.0) -- this project enables
+# transport-streamable-http-server below, so it was directly exposed.
+rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", rev = "26b65b6b88c5552447905923f683b6e4720a5600", features = [
   "client",
   "server",
   "macros",
