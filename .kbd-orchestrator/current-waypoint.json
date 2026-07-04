@@ -1,11 +1,11 @@
 {
   "phase": "uar-spec-v2-and-polish",
   "change": null,
-  "status": "executing",
-  "stage": "executing",
+  "status": "executed",
+  "stage": "executed",
   "previousPhase": "uar-next-harness",
-  "currentTask": "6/7 done. Tranche B (CH-13, CH-17, CH-20) and Tranche C (CH-14, CH-15) both complete. CH-14 conformance-testing (4b24f01): new src/uar/compiler/conformance.rs driving real ModelRouter::route/PromptDialect::detect/apply_strategy against declared v2 sections, 10/10 new tests green, full suite 360/360. CH-15 agent-template-library (bbe7ec2): 4 templates/*.agent.md + new `compile` CLI subcommand + compile-agent-templates CI release job + tests/agent_templates_test.rs regression guard, full suite 363/363, integration 56/56. Only CH-19 docs-overhaul-deploy-guide remains (Tranche D, last by design so there is maximum content to document). Two unrelated pre-existing compile failures found and left untouched: tests/uar_integration.rs (Skill struct missing 8 fields), tests/bdd.rs (broken nested #[path]).",
-  "nextPendingChange": "docs-overhaul-deploy-guide",
+  "currentTask": "ALL 7/7 CHANGES DONE. execute_complete=true for uar-spec-v2-and-polish. G4 (CH-12 agent-spec-v2, CH-13 compiler-v2-stages, CH-14 conformance-testing, CH-15 agent-template-library, CH-17 eval-targeted-suites) and G5 (CH-19 docs-overhaul-deploy-guide, CH-20 perf-security-load) are fully landed. CH-19 (45e7e37) closed the phase: docs/ARCHITECTURE.md gained 3 new narrative sections + an Agent Spec v2 & Conformance section + an Architectural Decisions section (D-A/B/C/D); new docs/DEPLOYMENT.md honestly discloses a real AKS-vs-GKE drift between deploy.yml and the Helm chart found via git history, rather than presenting a misleading unified story. Two unrelated pre-existing compile failures found during verification remain untouched (out of scope for this phase's tracked changes): tests/uar_integration.rs (Skill struct missing 8 fields), tests/bdd.rs (broken nested #[path]) -- both should be flagged in phase reflection. Next KBD step is /kbd-reflect (not yet run).",
+  "nextPendingChange": null,
   "roundZeroComplete": true,
   "changeStatus": {
     "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
@@ -21,10 +21,10 @@
     "perf-security-load": "MERGED 369117b + e2c82c7 (CH-20). Criterion hot-path benches (not run this session), 50-concurrent-agent load test, prompt-injection whitespace-evasion fix + disclosed known-gaps (13/13 guardrails tests green), server.rs split assessment (recommendation only). OpenSpec change dir opened retroactively at openspec/changes/perf-security-load/.",
     "conformance-testing": "MERGED 4b24f01 (CH-14). check_conformance() drives ModelRouter::route/PromptDialect::detect/apply_strategy against declared model_requirements/prompt_dialect/context_strategy; NotDeclared for sections left at parsed default. 10/10 new tests, full suite 360/360 green, zero new clippy warnings.",
     "agent-template-library": "MERGED bbe7ec2 (CH-15). 4 templates (coding/vision/terminal/data) + `compile` CLI subcommand + compile-agent-templates CI release job (agent-templates.tar.gz) + tests/agent_templates_test.rs regression guard. Full suite 363/363, integration 56/56 green.",
-    "docs-overhaul-deploy-guide": "NOT STARTED (CH-19) -- last remaining change."
+    "docs-overhaul-deploy-guide": "MERGED 45e7e37 (CH-19). ARCHITECTURE.md gained Provider Health & Failover / Prompt Dialect Engine / Cost & Budget Tracking sections, an Agent Spec v2 & Conformance section, and an Architectural Decisions section (D-A/B/C/D). New DEPLOYMENT.md discloses a real AKS-vs-GKE deploy.yml/Helm-chart drift found via git history. Docs-only, phase's last change."
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-execute for uar-spec-v2-and-polish -- 6/7 done, only CH-19 docs-overhaul-deploy-guide remains (Tranche D). Update docs/ARCHITECTURE.md to narratively cover the dialect engine, health monitoring, and cost-budget systems; write a consolidated production deployment guide tying together the existing k8s/helm charts; document the D-D dependency-pin rationale and D-B MemPalace status.",
+  "exactNextCommand": "/kbd-reflect for uar-spec-v2-and-polish -- all 7/7 changes done (execute_complete=true). Aggregate outcomes, decide MET/PARTIAL/NOT MET per G4/G5 goal, and disclose the two pre-existing unrelated compile failures found during verification (tests/uar_integration.rs Skill struct fields, tests/bdd.rs broken nested #[path]) plus the carried known limitation (main() requires full AppConfig for config-light subcommands) as carry-over debt for the next phase.",
   "uarNextHarnessOutcome": "uar-next-harness CLOSED at reflection 2026-07-04: 16/24 tracked changes done, G1+G2+G3 fully MET, G4+G5 NOT MET (0/7, carried to this phase). Wired CH-02/03/04/06/08 (several were committed-but-unwired dead code), implemented CH-05 for real after finding it was a stub, built CH-07/CH-10 from scratch including two backend gaps (BudgetAlert entity wiring, CH-09 benchmarks exposed via REST). Fixed two real bugs found via live-server verification (not just build-green): an uninitialized prometheus-entity-management submodule that had been silently breaking the embedded frontend build all phase, and a resulting useEntityList/useEntity hook API drift across 6 frontend files (all silently returning empty data) -- both now resolved and verified live (models catalog went from 0 to 5331 models across 150 providers; CH-10 compare feature exercised end-to-end with real data). Full detail + lessons in .kbd-orchestrator/phases/uar-next-harness/reflection.md.",
   "gateActivationSecurityOutcome": "gate-activation-and-security-cleanup: both goals MET (code) in PR #43 (2 commits, archived). (1) feat(eval) --require-baseline strict gate: unseeded nightly fails loudly instead of passing silently; pure baseline_missing_under_strict helper; fail-fast exit 2 BEFORE any model call; nightly opts in; operator runbook in evals/README.md. (2) fix(config) secret redaction (Rule 33): redacting Debug for LlmConfig api_key+provider_keys, SecurityConfig jwt_secret, Persistence/Memory passwords. CORRECTION: I mis-assessed redaction as already-on-main; it was uncommitted working-tree WIP (origin/main had 0 REDACTED) — this PR actually lands it; caught at commit, split into 2 focused commits, disclosed in PR. 36 eval tests green. REMAINDER (operator-only): configure UAR_LLM__API_KEY secret + seed/commit evals/results/starter.baseline.json to make the gate enforce green. Spawn-task redaction chip now resolved by #43. LESSON: verify 'already merged' against committed state (git show origin/main:<file>), never the working tree.",
   "evalHarnessHardeningOutcome": "eval-harness-hardening: 4/4 goals MET + HK1. PRs #38-#42 merged + archived. EHH3 suite-declared scorers (ScorerSpec + build_scorers factory, serde-default backward compat); EHH2 LlmJudge scorer (rubric, deterministic JSON parse, advisory per D-B); EHH4 recorded-fixture provider + end-to-end pipeline integration tests; HK1 deleted dead src/testing/ (27 files, ~22.7k lines); EHH1 evals/starter.yaml + two-tier CI gate (Tier-1 keyless structural test per PR, Tier-2 nightly real-model gated workflow, fork-safe, Rule 33). 35 eval lib tests green. DEBT: no baseline shipped so Tier-2 is informational until seeded (top follow-up); Tier-2 never run in CI yet (needs UAR_LLM__API_KEY secret + workflow_dispatch); secret-redaction chip (main.rs:46, Rule 33) still open; refiner QA-gate automation still not wired.",
@@ -90,7 +90,7 @@
     "R3 eval scope",
     "R4 guardrail build-vs-buy"
   ],
-  "updatedAt": "2026-07-04T06:30:00Z",
+  "updatedAt": "2026-07-04T07:15:00Z",
   "planRevision": "A1+A2 2026-07-01 — source docs/uar-next-fable.md; A2 adds proxy-integration-gate + 100%-feature-coverage contract (see plan.md)",
   "discoveredBugs": [
     "task_188b4179: VectorMatcher::embed_batch returns zero-vector placeholder embeddings (model.forward() commented out) - breaks all RAG search + LocalEmbedding intent backend. spawn_task started by user.",
@@ -98,11 +98,9 @@
   ],
   "infraNotes": "CARGO_TARGET_DIR=/Volumes/my-passport/cargo-target REQUIRED (not set in shell; forgetting fills root disk). Session hit machine-wide memory-pressure stall from 6 concurrent cargo builds (mine + 2 spawn_task fixes + 3 other sessions) - cleared on its own. Cleaned 280 leaked harness temp dirs; added Drop cleanup so it does not recur. 37GB stale /private/tmp/librefang-upstream-merge* dirs flagged to user (not deleted - not mine).",
   "codeWrittenUnverified": {
-    "strategy": "implementation-first / test-at-checkpoints (standing preference). CH-12/13/17/20/14/15 all went through this cycle and merged clean.",
-    "changes_verified_this_turn": ["conformance-testing (CH-14)", "agent-template-library (CH-15)"],
+    "strategy": "implementation-first / test-at-checkpoints (standing preference). All 7 changes (CH-12/13/17/20/14/15/19) went through this cycle and merged clean.",
+    "changes_verified_this_turn": ["conformance-testing (CH-14)", "agent-template-library (CH-15)", "docs-overhaul-deploy-guide (CH-19, docs-only)"],
     "changes_coded_this_turn_uncompiled": [],
-    "remaining_to_code": [
-      "CH-19 docs-overhaul-deploy-guide (G5, last change in the phase)"
-    ]
+    "remaining_to_code": []
   }
 }
