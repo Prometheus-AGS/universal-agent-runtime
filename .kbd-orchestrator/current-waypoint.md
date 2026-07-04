@@ -1,11 +1,40 @@
 # Current Waypoint — universal-agent-runtime
 
 - **Phase:** uar-security-deps-and-hygiene
-- **Status:** planned
-- **Progress:** 0 of 10 changes (planned; execute not yet started)
-- **Next pending change:** `dependabot-yml` (first change, Round 1)
-- **Exact next command:** `/kbd-execute uar-security-deps-and-hygiene`
+- **Status:** executing (Round 1: 5 of 6 done, 1 blocked)
+- **Progress:** 5 of 10 changes (commit `814be24`, pushed)
+- **Next pending change:** `fix-waypoint-stage-schema` — **BLOCKED, needs a user decision** (see below)
+- **Exact next command:** get a scope decision on `fix-waypoint-stage-schema`, then `/kbd-execute uar-security-deps-and-hygiene` to continue with Round 2
 - **Recommendation source:** `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`'s 2026-07-04 addendum (rescoped after a Dependabot backlog was found via post-reflection research); confirmed against direct inspection in `assessment.md`; sequenced by risk in `plan.md`
+
+## Blocked: `fix-waypoint-stage-schema`
+
+The `write-position-reminder.sh` script that reads `.stage` lives at
+`shared/scripts/write-position-reminder.sh` under
+`/usr/local/src/prometheus-skill-system` — a **separate git repository**
+(`Prometheus-AGS/prometheus-skill-system`), not `universal-agent-runtime`.
+Fixing it there would affect every project using this skill pack, not
+just this one, and means committing to a repo this phase wasn't scoped
+to touch. Surfaced for a decision rather than silently committing
+cross-repo or silently dropping the change.
+
+## Round 1 results (5 of 6 done)
+
+- `dependabot-yml`: new `.github/dependabot.yml`, 4 ecosystems.
+- `fix-uar-integration-test`: `Skill` struct literal fixed via
+  `..Default::default()`.
+- `fix-bdd-test-path`: nested `#[path]` resolution fixed by moving the
+  prefix onto the outer `mod live`.
+- `artifact-refiner-gate-decision`: D-E decision record written
+  (`.kbd-orchestrator/references/artifact-refiner-gate-decision.md`) —
+  gate formally retired, no tool available in this environment.
+- `npm-deps-triage`: **both** alerts fully resolved (better than
+  `plan.md`'s disclosed risk of a dead end). `jsonwebtoken` was actually
+  a Rust alert against `tools/uar-jwt-proxy` (bumped `9`→`10`,
+  `Cargo.lock` now unified on `10.4.0`). `dompurify` traced to a
+  completely unused `@types/dompurify` devDependency (removed).
+- Checkpoint: `cargo check --workspace` clean, `cargo test --lib`
+  363/363, frontend `tsc --noEmit` unchanged at 17 pre-existing errors.
 
 ## Why this phase, and why rescoped
 
@@ -46,7 +75,7 @@ checking whether the pinned versions carry known, fixed-upstream CVEs.
 
 ## Planned change order (see `plan.md` for full detail — all 10 are independent, ordered by risk not dependency)
 
-- **Round 1 (parallel, low risk)**: `dependabot-yml`, `fix-uar-integration-test`, `fix-bdd-test-path`, `fix-waypoint-stage-schema`, `artifact-refiner-gate-decision`, `npm-deps-triage`
+- **Round 1 (parallel, low risk)**: `dependabot-yml` ✅, `fix-uar-integration-test` ✅, `fix-bdd-test-path` ✅, `artifact-refiner-gate-decision` ✅, `npm-deps-triage` ✅, `fix-waypoint-stage-schema` ⛔ BLOCKED (see above)
 - **Round 2 (parallel)**: `wasmtime-disposition`, `run-hot-path-bench`
 - **Round 3 (sequenced, own checkpoint)**: `rmcp-pin-bump`
 - **Round 4 (sequenced, own checkpoint, last, highest blast radius)**: `surrealdb-upgrade`

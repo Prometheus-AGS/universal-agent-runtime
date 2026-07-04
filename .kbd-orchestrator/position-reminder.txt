@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-security-deps-and-hygiene
-Step: 0 of 10
-Stage: planned
-Next command: /kbd-execute uar-security-deps-and-hygiene -- start Round 1 (dependabot-yml, fix-uar-integration-test, fix-bdd-test-path, fix-waypoint-stage-schema, artifact-refiner-gate-decision, npm-deps-triage), one verification checkpoint at the end of the round, then Round 2, then Round 3 (rmcp-pin-bump, own checkpoint), then Round 4 (surrealdb-upgrade, own checkpoint, highest blast radius, last).
+Step: 5 of 10
+Stage: executing
+Next command: BLOCKED on a user decision for fix-waypoint-stage-schema (touches shared/scripts/write-position-reminder.sh in the separate prometheus-skill-system git repo, not universal-agent-runtime) -- get direction, then /kbd-execute uar-security-deps-and-hygiene to continue with Round 2 (wasmtime-disposition, run-hot-path-bench), Round 3 (rmcp-pin-bump, own checkpoint), Round 4 (surrealdb-upgrade, own checkpoint, highest blast radius, last).
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-security-deps-and-hygiene (step 0 of 10)
+  Starting <kbd-skill> — uar-security-deps-and-hygiene (step 5 of 10)
   [do work]
-  Completed <kbd-skill> — uar-security-deps-and-hygiene (step 0 of 10)
+  Completed <kbd-skill> — uar-security-deps-and-hygiene (step 5 of 10)
