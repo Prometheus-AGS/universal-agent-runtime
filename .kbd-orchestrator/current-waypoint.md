@@ -1,10 +1,10 @@
 # Current Waypoint — universal-agent-runtime
 
 - **Phase:** uar-security-deps-and-hygiene
-- **Status:** executing (Round 1: 6/6 ✅; Round 2: 2/2 ✅)
-- **Progress:** 8 of 10 changes (latest: `38f285b`). GitHub alert count: 78 (down from 96 at phase start; critical 5→3, high 17→16)
-- **Next pending change:** `rmcp-pin-bump` (Round 3, own checkpoint)
-- **Exact next command:** `/kbd-execute uar-security-deps-and-hygiene` for Round 3, then Round 4 (`surrealdb-upgrade`, highest blast radius, last)
+- **Status:** executing (Round 1: 6/6 ✅; Round 2: 2/2 ✅; Round 3: 1/1 ✅)
+- **Progress:** 9 of 10 changes (latest: `c90858e`). GitHub alert count: 78 as of last push (rmcp fix not yet re-scanned)
+- **Next pending change:** `surrealdb-upgrade` (Round 4, final change, own checkpoint, highest blast radius)
+- **Exact next command:** `/kbd-execute uar-security-deps-and-hygiene` for the final Round 4 change
 - **Recommendation source:** `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`'s 2026-07-04 addendum (rescoped after a Dependabot backlog was found via post-reflection research); confirmed against direct inspection in `assessment.md`; sequenced by risk in `plan.md`
 
 ## Round 1 results (6 of 6 done)
@@ -75,8 +75,8 @@ checking whether the pinned versions carry known, fixed-upstream CVEs.
 
 - **Round 1 (parallel, low risk)**: `dependabot-yml` ✅, `fix-uar-integration-test` ✅, `fix-bdd-test-path` ✅, `artifact-refiner-gate-decision` ✅, `npm-deps-triage` ✅, `fix-waypoint-stage-schema` ✅ — **all 6 done**
 - **Round 2 (parallel)**: `wasmtime-disposition` ✅ (bumped 41→46 per user request, fixed the resulting Context-trait break at 6 call sites), `run-hot-path-bench` ✅ (executed for the first time — see Round 2 results below)
-- **Round 3 (sequenced, own checkpoint)**: `rmcp-pin-bump` (next)
-- **Round 4 (sequenced, own checkpoint, last, highest blast radius)**: `surrealdb-upgrade`
+- **Round 3 (sequenced, own checkpoint)**: `rmcp-pin-bump` ✅ (fixed GHSA-89vp-x53w-74fx, DNS rebinding; see Round 3 results below)
+- **Round 4 (sequenced, own checkpoint, last, highest blast radius)**: `surrealdb-upgrade` (next — final change)
 
 `surrealdb-upgrade` and `rmcp-pin-bump` carry real regression risk and each get their own dedicated test-suite checkpoint, not bundled with the smaller Round 1/2 items.
 
@@ -91,6 +91,20 @@ checking whether the pinned versions carry known, fixed-upstream CVEs.
   hot_path` both run for the first time ever. All 4 benchmarks
   microsecond-scale or better, no red flags. Baseline recorded in
   `benches/hot_path.rs`'s own doc comment.
+
+## Round 3 results (1 of 1 done)
+
+- `rmcp-pin-bump`: bumped `rmcp` from a pre-1.4.0 git rev to the
+  `rmcp-v1.8.0` tag, fixing `GHSA-89vp-x53w-74fx` (high severity — DNS
+  rebinding in the Streamable HTTP server transport, which this project
+  directly enables). Broke 9 call sites the same way (`Tool`,
+  `CallToolRequestParams`, `Implementation`, `ServerInfo`,
+  `StreamableHttpServerConfig` all became `#[non_exhaustive]`) —
+  confirmed `..Default::default()` does **not** bypass this (unlike
+  `wasmtime`'s `Context` trait issue in Round 2), fixed via each type's
+  provided constructor/builder instead. 363/363 lib tests, 4/4
+  MCP-specific tests, 56/56 integration tests (incl. a real MCP
+  tool-call round trip) all green.
 
 ## Decisions carried forward (still load-bearing)
 - D-A: RAG hardened in-process; Knowledge Service extraction deferred
