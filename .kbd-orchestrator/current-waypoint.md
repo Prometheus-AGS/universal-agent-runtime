@@ -1,10 +1,10 @@
 # Current Waypoint — universal-agent-runtime
 
 - **Phase:** uar-spec-v2-and-polish
-- **Status:** executed (execute_complete=true)
-- **Progress:** 7 of 7 changes done. All of Tranche B/C/D complete.
-- **Next pending change:** none — /kbd-reflect is the next KBD step
-- **Exact next command:** /kbd-reflect for uar-spec-v2-and-polish
+- **Status:** reflected (execute_complete=true, reflect_complete=true)
+- **Progress:** 7 of 7 changes done. Phase fully reflected — `reflection.md` written.
+- **Next pending change:** none — `/kbd-next-phase` is the next KBD step
+- **Exact next command:** `/kbd-next-phase` — seeds from `reflection.md`'s "Next Phase Focus" (recommended working title: `uar-hygiene-and-bench-validation`)
 - **Recommendation source:** goals.md, seeded from uar-next-harness's reflection (2026-07-04)
 
 ## Change map (G4 → G5)
@@ -19,7 +19,7 @@
   - CH-19 docs-overhaul-deploy-guide — DONE (45e7e37). ARCHITECTURE.md gained 3 narrative sections + Agent Spec v2 & Conformance + Architectural Decisions (D-A/B/C/D). New DEPLOYMENT.md discloses a real AKS-vs-GKE deploy.yml/Helm-chart drift found via git history, rather than a smoothed-over unified story.
   - CH-20 perf-security-load — DONE (369117b + incidental fix e2c82c7). Criterion hot-path benches (not run this session, disclosed), 50-concurrent-agent load test, prompt-injection whitespace-evasion fix + disclosed known-gaps (13/13 guardrails tests green), server.rs split assessment (recommendation only). OpenSpec change dir at openspec/changes/perf-security-load/.
 
-**All 7 changes done — G4 and G5 both fully landed. This phase's execute stage is complete.**
+**All 7 changes done — G4 and G5 both fully landed. Phase reflected (`reflection.md`); sycophancy self-check score 0.018 (well under proceed threshold), no phase inversion detected.**
 
 ## Decisions carried from uar-next-harness (still load-bearing)
 - D-A: RAG hardened in-process; Knowledge Service extraction deferred
@@ -37,6 +37,8 @@
 - NEW this phase: `tests/bdd.rs` broken nested `#[path]` resolution (pre-existing, unrelated, same discovery)
 - NEW this phase: `main()` always loads full `AppConfig` before dispatching any subcommand, so the config-light `compile`/`eval` subcommands need a minimal persistence config they don't otherwise use (found while building CH-15's `compile` subcommand)
 - NEW this phase: `benches/hot_path.rs` (CH-20) has never been run via `cargo bench`/`cargo check --benches` in any session — compiles-by-inspection only
+- NEW this phase: `write-position-reminder.sh` reads a `.stage` key `current-waypoint.json` never populated (only `.status` existed) — silently rendered `Stage: unknown` until fixed by hand; the script/schema mismatch itself is not yet fixed at the source
+- NEW this phase: none of the 7 OpenSpec change directories were run through `/opsx:verify` + `/opsx:archive` — same chronic artifact-refiner automation gap as the first bullet above
 
 ## Housekeeping note (2026-07-04)
 This file and `current-waypoint.json` had drifted stale — both were still describing

@@ -6,7 +6,7 @@
   "assessment_complete": true,
   "plan_complete": true,
   "execute_complete": true,
-  "reflect_complete": false,
+  "reflect_complete": true,
   "origin": "Seeded via /kbd-next-phase from uar-next-harness's reflection.md (2026-07-04). Carries forward G4 (Specification & Distribution) and G5 (Polish & Release), deliberately deferred when uar-next-harness closed G1-G3 at 16/24 tracked changes.",
   "goals": [
     "G4 Specification & Distribution (P2, primary): agent spec v2.0 (CH-12) -> compiler v2 stages (CH-13) -> {conformance testing (CH-14), agent template library (CH-15)} -> eval-targeted-suites (CH-17)",
@@ -21,18 +21,24 @@
     "docs-overhaul-deploy-guide",
     "perf-security-load"
   ],
-  "updatedAt": "2026-07-04T07:15:00Z",
+  "updatedAt": "2026-07-04T07:30:00Z",
   "changes_completed": 7,
   "changes_total": 7,
   "changes_completed_note": "ALL 7 CHANGES DONE, execute_complete=true. 1 = agent-spec-v2 (CH-12, 75116e4): 5 new IR sections on AgentDescriptorIR, #[serde(default)] backward-compatible. 333/333 suite green. 2 = compiler-v2-stages (CH-13, e1532d6): stage 01 validation + stage 08 schema bump to /v2. 334/334 suite green. 3 = eval-targeted-suites (CH-17, 13326a4): 3 keyless CompletionProvider fixtures wired into eval CLI. 341/341 suite green. 4 = perf-security-load (CH-20, 369117b + e2c82c7): Criterion hot-path benches, 50-concurrent-agent load test, prompt-injection whitespace-evasion fix + disclosed known-gaps, server.rs split assessment (recommendation only). 5 = conformance-testing (CH-14, 4b24f01): new src/uar/compiler/conformance.rs -- check_conformance() drives the real ModelRouter::route/PromptDialect::detect/apply_strategy to prove declared model_requirements/prompt_dialect/context_strategy are satisfiable at load and honored at run; a section left at its parsed default reports NotDeclared. 10/10 new conformance tests green, full suite 360/360 green, zero new clippy warnings. 6 = agent-template-library (CH-15, bbe7ec2): 4 complete .agent.md templates (coding/vision/terminal/data); new `compile` CLI subcommand compiling+signing via the existing pipeline; new compile-agent-templates CI job producing agent-templates.tar.gz; tests/agent_templates_test.rs guards against bit-rot. Full suite 363/363, integration 56/56 green. 7 = docs-overhaul-deploy-guide (CH-19, 45e7e37): docs/ARCHITECTURE.md gained Provider Health & Failover / Prompt Dialect Engine / Cost & Budget Tracking narrative sections, an Agent Spec v2 & Conformance section, and an Architectural Decisions section (D-A/B/C/D). New docs/DEPLOYMENT.md consolidates container image + Helm chart + config reference, and honestly discloses a real drift found via git history: deploy.yml was originally GKE-based, later fully rewritten to Azure AKS, while the Helm chart's storageClass is still GKE-specific and unwired from CI -- documented as 'two deployment paths', not smoothed over. Docs-only, relies on CH-15's green state. Disclosed known limitation carried from CH-15: main() requires full AppConfig even for config-light `compile`/`eval` subcommands, not fixed. Two unrelated pre-existing compile failures found during CH-20/CH-14 verification remain untouched: tests/uar_integration.rs (Skill struct missing 8 fields), tests/bdd.rs (broken nested #[path]) -- neither part of any tracked G4/G5 change, both should be flagged in phase reflection.",
   "carriedOverDebt": [
-    "Artifact-refiner QA gate automation (carried 4+ phases from uar-next-harness and earlier)",
+    "Artifact-refiner QA gate automation (carried 4+ phases from uar-next-harness and earlier; ALSO not used this phase -- all 7 changes verified via cargo check/test/clippy directly, none run through /opsx:verify + /opsx:archive)",
     "17 pre-existing bun run typecheck errors (Base UI Select nullability, react-resizable-panels API drift, recharts type-export drift) -- unrelated to uar-next-harness's own work",
     "CH-06 per-agent/per-task budget configuration surface (aggregation done; only global limit configurable)",
     "CH-08 activation-outcome correlation (recall half wired; outcome half unsolved)",
-    "Durable (non-session-scoped) cost/spend history for the CH-07 dashboard"
+    "Durable (non-session-scoped) cost/spend history for the CH-07 dashboard",
+    "NEW (uar-spec-v2-and-polish): benches/hot_path.rs (CH-20) has never been run via cargo bench or cargo check --benches in any session",
+    "NEW (uar-spec-v2-and-polish): tests/uar_integration.rs Skill struct literal missing 8 fields -- pre-existing, unrelated to any tracked change, found during CH-20/CH-14 verification",
+    "NEW (uar-spec-v2-and-polish): tests/bdd.rs broken nested #[path] resolution -- pre-existing, unrelated, same discovery",
+    "NEW (uar-spec-v2-and-polish): main() loads full AppConfig before dispatching any subcommand, so the config-light compile/eval subcommands need a minimal persistence config they never use",
+    "NEW (uar-spec-v2-and-polish): write-position-reminder.sh reads a .stage key current-waypoint.json never populated (only .status existed) -- silently rendered Stage: unknown until fixed by hand this phase; the script/schema mismatch itself is not yet fixed at the source"
   ],
   "operatorOnlyFollowUps": [
     "Activate the eval gate: set UAR_LLM__API_KEY secret + vars.UAR_EVAL_MODEL, run eval-nightly via workflow_dispatch update_baseline=true, commit evals/results/starter.baseline.json"
-  ]
+  ],
+  "reflectionSummary": "All 7 changes DONE, G4+G5 both MET. reflection.md written 2026-07-04. Sycophancy check: score 0.018 (well under 0.3 proceed threshold), s08_detected=false -- reflection proceeded as drafted, leading with process gaps (stale waypoint files, unarchived OpenSpec changes) before crediting delivered work. Recommended next phase (working title): uar-hygiene-and-bench-validation -- automate artifact-refiner QA gate, fix the 2 newly-found pre-existing test failures, run cargo bench on hot_path.rs, operator-only eval-gate activation."
 }

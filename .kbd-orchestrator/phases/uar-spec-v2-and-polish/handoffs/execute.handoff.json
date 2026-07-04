@@ -1,0 +1,29 @@
+{
+  "stage": "execute",
+  "completedAt": "2026-07-04T07:15:00Z",
+  "outputs": [
+    "src/uar/compiler/conformance.rs",
+    "src/uar/compiler/cli.rs",
+    "templates/coding.agent.md",
+    "templates/vision.agent.md",
+    "templates/terminal.agent.md",
+    "templates/data.agent.md",
+    "tests/agent_templates_test.rs",
+    "benches/hot_path.rs",
+    "tests/integration/live/load_test.rs",
+    "docs/server-rs-split-assessment.md",
+    "docs/ARCHITECTURE.md",
+    "docs/DEPLOYMENT.md",
+    "openspec/changes/agent-spec-v2/",
+    "openspec/changes/compiler-v2-stages/",
+    "openspec/changes/conformance-testing/",
+    "openspec/changes/agent-template-library/",
+    "openspec/changes/eval-targeted-suites/",
+    "openspec/changes/perf-security-load/",
+    "openspec/changes/docs-overhaul-deploy-guide/"
+  ],
+  "nextStage": "reflect",
+  "summaryForNext": "All 7 changes landed as 7 separate commits (75116e4, e1532d6, 13326a4, 369117b+e2c82c7, 4b24f01, bbe7ec2, 45e7e37), each verified via cargo check/test/clippy rather than a formal artifact-refiner QA gate (that automation remains unaddressed debt). None of the 7 OpenSpec change directories were run through /opsx:verify + /opsx:archive. Open items for reflect: benches/hot_path.rs never executed via cargo bench; two unrelated pre-existing compile failures found (tests/uar_integration.rs, tests/bdd.rs); main() requires full AppConfig for the new config-light `compile` subcommand.",
+  "skipped": false,
+  "skipReason": null
+}

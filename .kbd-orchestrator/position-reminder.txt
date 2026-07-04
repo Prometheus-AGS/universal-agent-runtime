@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-spec-v2-and-polish
 Step: 7 of 7
-Stage: executed
-Next command: /kbd-reflect for uar-spec-v2-and-polish -- all 7/7 changes done (execute_complete=true). Aggregate outcomes, decide MET/PARTIAL/NOT MET per G4/G5 goal, and disclose the two pre-existing unrelated compile failures found during verification (tests/uar_integration.rs Skill struct fields, tests/bdd.rs broken nested #[path]) plus the carried known limitation (main() requires full AppConfig for config-light subcommands) as carry-over debt for the next phase.
+Stage: reflected
+Next command: /kbd-next-phase -- uar-spec-v2-and-polish is fully reflected (G4+G5 both MET, 7/7 changes). Seed the next phase from .kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md's 'Next Phase Focus': recommended working title uar-hygiene-and-bench-validation -- automate the artifact-refiner QA gate (4th+ phase as debt), fix 2 newly-found pre-existing test compile failures, run cargo bench on hot_path.rs, operator-only eval-gate activation.
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-spec-v2-and-polish (step 7 of 7)
