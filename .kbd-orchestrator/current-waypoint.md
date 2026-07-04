@@ -1,10 +1,10 @@
 # Current Waypoint — universal-agent-runtime
 
 - **Phase:** uar-security-deps-and-hygiene
-- **Status:** executing (Round 1: 6 of 6 done ✅)
-- **Progress:** 6 of 10 changes (commits `814be24`, `853b194`; cross-repo fix `91006b8` in `prometheus-skill-system`)
-- **Next pending change:** `wasmtime-disposition` (Round 2)
-- **Exact next command:** `/kbd-execute uar-security-deps-and-hygiene` to continue with Round 2
+- **Status:** executing (Round 1: 6/6 done ✅; Round 2: 1 of 2 done)
+- **Progress:** 7 of 10 changes (latest: `720ba17`)
+- **Next pending change:** `run-hot-path-bench` (Round 2)
+- **Exact next command:** `/kbd-execute uar-security-deps-and-hygiene` to finish Round 2, then Round 3/4
 - **Recommendation source:** `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`'s 2026-07-04 addendum (rescoped after a Dependabot backlog was found via post-reflection research); confirmed against direct inspection in `assessment.md`; sequenced by risk in `plan.md`
 
 ## Round 1 results (6 of 6 done)
@@ -74,7 +74,7 @@ checking whether the pinned versions carry known, fixed-upstream CVEs.
 ## Planned change order (see `plan.md` for full detail — all 10 are independent, ordered by risk not dependency)
 
 - **Round 1 (parallel, low risk)**: `dependabot-yml` ✅, `fix-uar-integration-test` ✅, `fix-bdd-test-path` ✅, `artifact-refiner-gate-decision` ✅, `npm-deps-triage` ✅, `fix-waypoint-stage-schema` ✅ — **all 6 done**
-- **Round 2 (parallel)**: `wasmtime-disposition`, `run-hot-path-bench`
+- **Round 2 (parallel)**: `wasmtime-disposition` ✅ (bumped 41→46 per user request, fixed the resulting Context-trait break at 6 call sites), `run-hot-path-bench` (next)
 - **Round 3 (sequenced, own checkpoint)**: `rmcp-pin-bump`
 - **Round 4 (sequenced, own checkpoint, last, highest blast radius)**: `surrealdb-upgrade`
 

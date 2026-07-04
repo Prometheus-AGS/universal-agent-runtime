@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-security-deps-and-hygiene
-Step: 6 of 10
+Step: 7 of 10
 Stage: executing
-Next command: /kbd-execute uar-security-deps-and-hygiene -- Round 1 complete (6/6), start Round 2 (wasmtime-disposition, run-hot-path-bench), then Round 3 (rmcp-pin-bump, own checkpoint), then Round 4 (surrealdb-upgrade, own checkpoint, highest blast radius, last).
+Next command: /kbd-execute uar-security-deps-and-hygiene -- finish Round 2 with run-hot-path-bench, then Round 3 (rmcp-pin-bump, own checkpoint), then Round 4 (surrealdb-upgrade, own checkpoint, highest blast radius, last).
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-security-deps-and-hygiene (step 6 of 10)
+  Starting <kbd-skill> — uar-security-deps-and-hygiene (step 7 of 10)
   [do work]
-  Completed <kbd-skill> — uar-security-deps-and-hygiene (step 6 of 10)
+  Completed <kbd-skill> — uar-security-deps-and-hygiene (step 7 of 10)
