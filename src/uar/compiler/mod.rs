@@ -12,6 +12,7 @@
 //!   - `uar.session.check_completeness`
 //!   - `uar.session.compile`
 
+pub mod cli;
 pub mod compiler_skill;
 pub mod completeness;
 pub mod conformance;
@@ -30,6 +31,7 @@ pub mod storage;
 pub mod to_artifact;
 
 // Re-exports for convenience
+pub use cli::run_compile;
 pub use compiler_skill::CompilerAgentSkill;
 pub use conformance::{CheckResult, ConformanceReport, check_conformance};
 pub use conversational::{

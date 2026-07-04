@@ -102,6 +102,16 @@ pub enum Command {
         #[command(subcommand)]
         action: EvalAction,
     },
+    /// Compile a UAR-AGENT-MD document into a signed `CompiledDescriptor`
+    /// (CH-15: used by CI to compile+sign `templates/*.agent.md` as release
+    /// artifacts, and available standalone for any `.agent.md` document).
+    Compile {
+        /// Path to the `.agent.md` source document.
+        path: String,
+        /// Output path for the compiled+signed JSON. Prints to stdout when omitted.
+        #[arg(long)]
+        out: Option<String>,
+    },
 }
 
 /// `eval` subcommands.

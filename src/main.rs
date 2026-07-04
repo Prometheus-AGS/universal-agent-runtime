@@ -72,5 +72,14 @@ async fn main() {
             }
             std::process::exit(code);
         }
+        // `compile <path>`: compile+sign a single .agent.md document (CH-15).
+        Some(Command::Compile { path, out }) => {
+            let code = uar::compiler::run_compile(&path, out.as_deref()).await;
+
+            if let Some(provider) = &otel_provider {
+                let _ = provider.shutdown();
+            }
+            std::process::exit(code);
+        }
     }
 }

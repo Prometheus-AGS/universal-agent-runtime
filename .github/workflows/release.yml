@@ -303,6 +303,76 @@ jobs:
           path: release-artifacts/${{ matrix.artifact_name }}.*
           retention-days: 30
 
+  # CH-15: compile+sign the agent template library (templates/*.agent.md)
+  # as a release artifact via the `compile` subcommand (CH-15/config.rs
+  # Command::Compile). A debug build is enough — this doesn't need release
+  # optimizations, just the compiler pipeline.
+  compile-agent-templates:
+    name: Compile Agent Template Library
+    runs-on: ubuntu-latest
+    needs: pre-release-validation
+    env:
+      # The binary loads full AppConfig before dispatching to any
+      # subcommand (including `compile`), so a minimal persistence config
+      # is required even though compiling a template touches no database.
+      UAR_PERSISTENCE__PROVIDER: surreal
+      UAR_PERSISTENCE__DATABASE_URL: rocksdb:///tmp/uar-template-compile-db
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Node.js and Bun
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ubuntu-latest-templates-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build frontend assets
+        run: bun run build
+
+      - name: Build binary
+        run: cargo build --bin universal-agent-runtime
+
+      - name: Compile + sign each template
+        run: |
+          mkdir -p release-artifacts/agent-templates
+          for name in coding vision terminal data; do
+            ./target/debug/universal-agent-runtime compile \
+              "templates/${name}.agent.md" \
+              --out "release-artifacts/agent-templates/${name}.compiled.json"
+          done
+
+      - name: Archive compiled templates
+        run: |
+          cd release-artifacts
+          tar -czf agent-templates.tar.gz agent-templates
+
+      - name: Upload compiled templates
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-templates
+          path: release-artifacts/agent-templates.tar.gz
+          retention-days: 30
+
   # Docker image builds
   build-docker-images:
     name: Build Docker Images
@@ -355,7 +425,13 @@ jobs:
   update-release:
     name: Update GitHub Release
     runs-on: ubuntu-latest
-    needs: [pre-release-validation, build-release-artifacts, build-docker-images]
+    needs:
+      [
+        pre-release-validation,
+        build-release-artifacts,
+        build-docker-images,
+        compile-agent-templates,
+      ]
     if: github.event_name == 'release'
     steps:
       - name: Download all artifacts
