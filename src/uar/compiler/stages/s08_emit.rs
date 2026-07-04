@@ -5,8 +5,43 @@
 //! handled by the pipeline orchestrator after this stage.
 
 use crate::uar::compiler::error::CompileResult;
+use crate::uar::compiler::ir::ContextStrategySection;
 use crate::uar::compiler::pipeline::{CompileContext, CompiledDescriptor};
 use crate::uar::compiler::report::{Diagnostic, DiagnosticLevel};
+
+/// True if the document declares any v2 section (CH-12) with a non-default
+/// value. Used only to pick the descriptive `schema` string below — v1
+/// documents compile and run identically regardless of this flag.
+fn uses_any_v2_section(ctx: &CompileContext) -> bool {
+    let mr = &ctx.ir.model_requirements;
+    let has_model_requirements = mr.needs_tools
+        || mr.needs_reasoning
+        || mr.needs_vision
+        || mr.needs_structured_output
+        || mr.min_context.is_some()
+        || mr.max_cost_per_1m_input.is_some()
+        || mr.preferred_provider.is_some();
+
+    let pd = &ctx.ir.prompt_dialect;
+    let has_prompt_dialect = pd.dialect.is_some() || pd.wants_reasoning || pd.hard;
+
+    let has_rag_configuration = ctx.ir.rag_configuration.enabled
+        || ctx.ir.rag_configuration.decomposition
+        || ctx.ir.rag_configuration.verification
+        || ctx.ir.rag_configuration.audit
+        || !ctx.ir.rag_configuration.knowledge_base_ids.is_empty();
+
+    let has_context_strategy = !matches!(ctx.ir.context_strategy, ContextStrategySection::Auto);
+
+    let ah = &ctx.ir.api_harness;
+    let has_api_harness = !ah.protocols.is_empty() || ah.stream_mode.is_some();
+
+    has_model_requirements
+        || has_prompt_dialect
+        || has_rag_configuration
+        || has_context_strategy
+        || has_api_harness
+}
 
 pub async fn run(ctx: &mut CompileContext) -> CompileResult<Vec<Diagnostic>> {
     let mut diagnostics = Vec::new();
@@ -18,9 +53,19 @@ pub async fn run(ctx: &mut CompileContext) -> CompileResult<Vec<Diagnostic>> {
         .map(|b| format!("{b:02x}"))
         .collect::<String>();
 
+    // CH-12/CH-13: a document that declares any v2 section is tagged
+    // schema/v2 in the emitted descriptor. This is purely descriptive
+    // metadata (not a compile gate) — v1 documents keep the original schema
+    // string and compile/run identically either way.
+    let schema = if uses_any_v2_section(ctx) {
+        "uar-agent-descriptor/v2"
+    } else {
+        "uar-agent-descriptor/v1"
+    };
+
     // Build the canonical descriptor
     let descriptor = CompiledDescriptor {
-        schema: "uar-agent-descriptor/v1".into(),
+        schema: schema.into(),
         agent_id: ctx.ir.identity.name.clone(),
         version: ctx.ir.metadata.version.clone(),
         content_hash: String::new(), // Will be set below

@@ -216,6 +216,54 @@ profiles: []
     }
 
     #[tokio::test]
+    async fn test_compiler_skill_v2_sections_bump_schema_and_round_trip() {
+        // CH-13: a document declaring a v2 section (CH-12) is tagged
+        // schema/v2 through the FULL compile pipeline (parser -> 8 PMPO
+        // stages -> emit -> sign), and the declared fields survive
+        // round-trip in the emitted descriptor's JSON payload.
+        let kp = Arc::new(LocalKeyProvider::ephemeral());
+        let skill = CompilerAgentSkill::new(kp);
+
+        let mut md = sample_doc();
+        md.push_str(
+            r#"
+## Model Requirements
+```yaml
+needs_tools: true
+min_context: 100000
+```
+
+## Context Strategy
+```yaml
+type: "sliding_window"
+max_messages: 40
+```
+"#,
+        );
+
+        let result = skill.execute(json!({ "markdown": md })).await.unwrap();
+
+        let descriptor = &result["descriptor"];
+        assert_eq!(descriptor["schema"], "uar-agent-descriptor/v2");
+        assert_eq!(
+            descriptor["payload"]["model_requirements"]["needs_tools"],
+            true
+        );
+        assert_eq!(
+            descriptor["payload"]["model_requirements"]["min_context"],
+            100_000
+        );
+        assert_eq!(
+            descriptor["payload"]["context_strategy"]["type"],
+            "sliding_window"
+        );
+        assert_eq!(
+            descriptor["payload"]["context_strategy"]["max_messages"],
+            40
+        );
+    }
+
+    #[tokio::test]
     async fn test_compiler_skill_rejects_incomplete() {
         let kp = Arc::new(LocalKeyProvider::ephemeral());
         let skill = CompilerAgentSkill::new(kp);
