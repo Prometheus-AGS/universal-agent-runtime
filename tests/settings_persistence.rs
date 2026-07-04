@@ -124,6 +124,7 @@ fn minimal_config() -> AppConfig {
         acp: Default::default(),
         context_strategy: Default::default(),
         sycophancy: Default::default(),
+        guardrails: Default::default(),
     }
 }
 
