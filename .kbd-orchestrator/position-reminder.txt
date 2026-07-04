@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-security-deps-and-hygiene
-Step: 0 of 0
-Stage: assess_pending
-Next command: /kbd-assess uar-security-deps-and-hygiene -- confirm G1's security scope (surrealdb/rmcp version currency, wasmtime/failure disposition, npm-side triage) and G2's carried hygiene items against direct codebase/dependency inspection before planning, per goals.md.
+Step: 0 of 10
+Stage: assessed
+Next command: /kbd-plan uar-security-deps-and-hygiene -- sequence the 10 assessed candidate changes (surrealdb-upgrade, rmcp-pin-bump, wasmtime-disposition, npm-deps-triage, dependabot-yml, artifact-refiner-gate-decision, fix-uar-integration-test, fix-bdd-test-path, run-hot-path-bench, fix-waypoint-stage-schema). The two upgrade changes (surrealdb, rmcp) carry real regression risk and should each get their own test-suite checkpoint; the G2 items are small and independent and can run in parallel/any order.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-security-deps-and-hygiene (step 0 of 0)
+  Starting <kbd-skill> — uar-security-deps-and-hygiene (step 0 of 10)
   [do work]
-  Completed <kbd-skill> — uar-security-deps-and-hygiene (step 0 of 0)
+  Completed <kbd-skill> — uar-security-deps-and-hygiene (step 0 of 10)

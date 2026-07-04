@@ -1,11 +1,11 @@
 # Current Waypoint — universal-agent-runtime
 
 - **Phase:** uar-security-deps-and-hygiene
-- **Status:** assess_pending
-- **Progress:** 0 of ? changes (not yet assessed/planned)
-- **Next pending change:** none yet — run `/kbd-assess uar-security-deps-and-hygiene`
-- **Exact next command:** `/kbd-assess uar-security-deps-and-hygiene`
-- **Recommendation source:** `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`'s 2026-07-04 addendum (rescoped after a Dependabot backlog was found via post-reflection research)
+- **Status:** assessed
+- **Progress:** 0 of 10 changes (assessed; not yet planned)
+- **Next pending change:** none yet — run `/kbd-plan uar-security-deps-and-hygiene`
+- **Exact next command:** `/kbd-plan uar-security-deps-and-hygiene`
+- **Recommendation source:** `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`'s 2026-07-04 addendum (rescoped after a Dependabot backlog was found via post-reflection research); confirmed against direct inspection in `assessment.md`
 
 ## Why this phase, and why rescoped
 
@@ -43,6 +43,13 @@ checking whether the pinned versions carry known, fixed-upstream CVEs.
   `tests/bdd.rs` pre-existing compile failures; run `cargo bench` on
   `benches/hot_path.rs`; fix `write-position-reminder.sh`'s
   `.stage`/`.status` schema mismatch at the source.
+
+## Candidate changes (assessed 2026-07-04, see `assessment.md`; not yet planned/sequenced)
+
+- G1: `surrealdb-upgrade` (PARTIAL — pin confirmed stale, not started), `rmcp-pin-bump` (PARTIAL — pin confirmed stale, not started), `wasmtime-disposition` (not started, correctly lower priority), `npm-deps-triage` (STUB — dompurify traced, jsonwebtoken not located), `dependabot-yml` (not started, absence confirmed)
+- G2: `artifact-refiner-gate-decision` (confirmed unavailable in this environment, not just unused), `fix-uar-integration-test`, `fix-bdd-test-path`, `run-hot-path-bench`, `fix-waypoint-stage-schema` (all reconfirmed still needed via fresh `cargo check`/inspection)
+
+`surrealdb-upgrade` and `rmcp-pin-bump` carry real regression risk and should each get their own test-suite checkpoint at plan time; the 4 G2 items are small and independent.
 
 ## Decisions carried forward (still load-bearing)
 - D-A: RAG hardened in-process; Knowledge Service extraction deferred
