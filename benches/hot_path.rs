@@ -4,6 +4,23 @@
 //! though each call is individually cheap.
 //!
 //! Run: `cargo bench --bench hot_path`
+//!
+//! ## Baseline (2026-07-04, first run — this bench had never actually been
+//! executed before `uar-security-deps-and-hygiene`'s `run-hot-path-bench`
+//! change; it only existed by inspection since CH-20 wrote it)
+//!
+//! | Benchmark | Time |
+//! |---|---|
+//! | `prompt_dialect_detect` (7 model ids) | ~1.81 µs |
+//! | `strategy_for_model` (5 context windows) | ~82.1 ns |
+//! | `apply_strategy_sliding_window_500_messages` | ~134.9 µs |
+//! | `model_router_route` (async, seeded registry) | ~341.2 µs |
+//!
+//! All four are microsecond-scale or better — consistent with a cheap
+//! per-request hot path, no red flags. `model_router_route` is the most
+//! expensive (async + registry/health-monitor lookups), still well under a
+//! millisecond. Re-run and update this table if any of these functions'
+//! implementations change materially.
 
 use std::hint::black_box;
 use std::sync::Arc;

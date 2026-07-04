@@ -1,0 +1,4 @@
+- [x] `cargo check --benches` — confirm the bench compiles (never verified before)
+- [x] `cargo bench --bench hot_path` — run all 4 benchmarks for a real baseline
+- [x] Record the baseline numbers durably in `benches/hot_path.rs`'s own doc comment
+- [x] Confirm all 4 results are microsecond-scale or better (no red flags)
