@@ -29,6 +29,13 @@ name = "bdd"
 path = "tests/bdd.rs"
 harness = false
 
+# CH-20: Criterion benchmarks for the router/dialect/context hot path.
+# harness = false because Criterion drives its own main().
+[[bench]]
+name = "hot_path"
+path = "benches/hot_path.rs"
+harness = false
+
 [dev-dependencies]
 anyhow = "1.0"
 axum-test = "19.1.1"
@@ -44,6 +51,7 @@ testcontainers = "0.23"
 mockall = "0.13"
 tokio-test = "0.4"
 rustls = { version = "0.23.37", features = ["ring"] }
+criterion = { version = "0.8.2", features = ["html_reports", "async_tokio"] }
 
 [build-dependencies]
 burn-import = { version = "0.20.1", optional = true }
