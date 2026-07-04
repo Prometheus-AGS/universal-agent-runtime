@@ -1,10 +1,10 @@
 # Current Waypoint — universal-agent-runtime
 
 - **Phase:** uar-security-deps-and-hygiene
-- **Status:** executing (Round 1: 6/6 done ✅; Round 2: 1 of 2 done)
-- **Progress:** 7 of 10 changes (latest: `720ba17`)
-- **Next pending change:** `run-hot-path-bench` (Round 2)
-- **Exact next command:** `/kbd-execute uar-security-deps-and-hygiene` to finish Round 2, then Round 3/4
+- **Status:** executing (Round 1: 6/6 ✅; Round 2: 2/2 ✅)
+- **Progress:** 8 of 10 changes (latest: `38f285b`). GitHub alert count: 78 (down from 96 at phase start; critical 5→3, high 17→16)
+- **Next pending change:** `rmcp-pin-bump` (Round 3, own checkpoint)
+- **Exact next command:** `/kbd-execute uar-security-deps-and-hygiene` for Round 3, then Round 4 (`surrealdb-upgrade`, highest blast radius, last)
 - **Recommendation source:** `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`'s 2026-07-04 addendum (rescoped after a Dependabot backlog was found via post-reflection research); confirmed against direct inspection in `assessment.md`; sequenced by risk in `plan.md`
 
 ## Round 1 results (6 of 6 done)
@@ -74,11 +74,23 @@ checking whether the pinned versions carry known, fixed-upstream CVEs.
 ## Planned change order (see `plan.md` for full detail — all 10 are independent, ordered by risk not dependency)
 
 - **Round 1 (parallel, low risk)**: `dependabot-yml` ✅, `fix-uar-integration-test` ✅, `fix-bdd-test-path` ✅, `artifact-refiner-gate-decision` ✅, `npm-deps-triage` ✅, `fix-waypoint-stage-schema` ✅ — **all 6 done**
-- **Round 2 (parallel)**: `wasmtime-disposition` ✅ (bumped 41→46 per user request, fixed the resulting Context-trait break at 6 call sites), `run-hot-path-bench` (next)
-- **Round 3 (sequenced, own checkpoint)**: `rmcp-pin-bump`
+- **Round 2 (parallel)**: `wasmtime-disposition` ✅ (bumped 41→46 per user request, fixed the resulting Context-trait break at 6 call sites), `run-hot-path-bench` ✅ (executed for the first time — see Round 2 results below)
+- **Round 3 (sequenced, own checkpoint)**: `rmcp-pin-bump` (next)
 - **Round 4 (sequenced, own checkpoint, last, highest blast radius)**: `surrealdb-upgrade`
 
 `surrealdb-upgrade` and `rmcp-pin-bump` carry real regression risk and each get their own dedicated test-suite checkpoint, not bundled with the smaller Round 1/2 items.
+
+## Round 2 results (2 of 2 done)
+
+- `wasmtime-disposition`: bumped `wasmtime`/`wasmtime-wasi` 41.0.3→46
+  (user asked for latest). Fixed the resulting break (`wasmtime::Error`
+  no longer implements `std::error::Error`) by swapping to wasmtime's
+  own `wasmtime::error::Context` trait at 6 call sites. 367/367 tests
+  green with the feature enabled.
+- `run-hot-path-bench`: `cargo check --benches` + `cargo bench --bench
+  hot_path` both run for the first time ever. All 4 benchmarks
+  microsecond-scale or better, no red flags. Baseline recorded in
+  `benches/hot_path.rs`'s own doc comment.
 
 ## Decisions carried forward (still load-bearing)
 - D-A: RAG hardened in-process; Knowledge Service extraction deferred
