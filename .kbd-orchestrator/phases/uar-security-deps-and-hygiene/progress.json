@@ -4,7 +4,7 @@
   "backend": "openspec",
   "sourceTool": "claude-code",
   "assessment_complete": true,
-  "plan_complete": false,
+  "plan_complete": true,
   "execute_complete": false,
   "reflect_complete": false,
   "origin": "Seeded from uar-spec-v2-and-polish's reflection.md addendum (2026-07-04) -- rescoped after a 96-alert Dependabot backlog (5 critical, 17 high) was found via post-reflection research, never investigated during the prior phase because it wasn't in its declared scope. Promotes security dependency triage/upgrade to G1 (primary), carries the prior phase's original hygiene recommendations forward as G2 (secondary).",
@@ -13,21 +13,21 @@
     "G2 Hygiene & validation (P1, secondary, carried from uar-spec-v2-and-polish): automate artifact-refiner QA gate or explicitly drop it, fix tests/uar_integration.rs + tests/bdd.rs pre-existing compile failures, run cargo bench on hot_path.rs, fix write-position-reminder.sh's stage/status schema mismatch"
   ],
   "candidateChanges": [
-    "surrealdb-upgrade",
-    "rmcp-pin-bump",
-    "wasmtime-disposition",
-    "npm-deps-triage",
     "dependabot-yml",
-    "artifact-refiner-gate-decision",
     "fix-uar-integration-test",
     "fix-bdd-test-path",
+    "fix-waypoint-stage-schema",
+    "artifact-refiner-gate-decision",
+    "npm-deps-triage",
+    "wasmtime-disposition",
     "run-hot-path-bench",
-    "fix-waypoint-stage-schema"
+    "rmcp-pin-bump",
+    "surrealdb-upgrade"
   ],
-  "updatedAt": "2026-07-04T08:30:00Z",
+  "updatedAt": "2026-07-04T08:45:00Z",
   "changes_completed": 0,
   "changes_total": 10,
-  "changes_completed_note": "Assessed 2026-07-04 (assessment.md). G1 (5 candidate changes): surrealdb pin confirmed stale (=3.0.5 vs 3.2.0, high-severity session-hijack/privilege-escalation CVEs, default backend) -- PARTIAL/not started. rmcp pin confirmed stale (behind upstream HEAD, high-severity DNS rebinding, core MCP SDK) -- PARTIAL/not started. wasmtime confirmed opt-in-only (lower priority, 2 critical + 1 high alerts) -- not started. failure crate confirmed dev-only via grcov (no exposure) -- DONE, disposition-only, no code change needed. npm-side (dompurify confirmed present transitively, jsonwebtoken not yet located) -- STUB, needs a dedicated trace pass. dependabot.yml confirmed absent -- not started. G2 (5 candidate changes, carried from uar-spec-v2-and-polish): artifact-refiner gate confirmed unavailable in this environment (not just unused) -- needs an explicit decision, not started. tests/uar_integration.rs + tests/bdd.rs reconfirmed broken via fresh cargo check -- not started. benches/hot_path.rs reconfirmed never run -- not started. write-position-reminder.sh schema mismatch confirmed only hand-patched, not fixed at the source -- not started. Next: /kbd-plan to sequence these 10 candidates (surrealdb/rmcp upgrades should be tackled with individual test-suite checkpoints given real regression risk; the 4 remaining G2 items are small and independent).",
+  "changes_completed_note": "Planned 2026-07-04 (plan.md). All 10 changes are independent of each other (no dependency chain) -- ordered by RISK, not dependency. Round 1 (parallel, low risk): dependabot-yml, fix-uar-integration-test, fix-bdd-test-path, fix-waypoint-stage-schema, artifact-refiner-gate-decision, npm-deps-triage. Round 2 (parallel): wasmtime-disposition, run-hot-path-bench. Round 3 (sequenced, own checkpoint): rmcp-pin-bump. Round 4 (sequenced, own checkpoint, last, highest blast radius): surrealdb-upgrade. Sycophancy self-check on plan: score 0.0. Next: /kbd-execute to start Round 1 with dependabot-yml.",
   "carriedOverDebt": [
     "17 pre-existing bun run typecheck errors (Base UI Select nullability, react-resizable-panels API drift, recharts type-export drift) -- unrelated to any recent phase's own work",
     "CH-06 per-agent/per-task budget configuration surface (aggregation done; only global limit configurable)",

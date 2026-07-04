@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-security-deps-and-hygiene
 Step: 0 of 10
-Stage: assessed
-Next command: /kbd-plan uar-security-deps-and-hygiene -- sequence the 10 assessed candidate changes (surrealdb-upgrade, rmcp-pin-bump, wasmtime-disposition, npm-deps-triage, dependabot-yml, artifact-refiner-gate-decision, fix-uar-integration-test, fix-bdd-test-path, run-hot-path-bench, fix-waypoint-stage-schema). The two upgrade changes (surrealdb, rmcp) carry real regression risk and should each get their own test-suite checkpoint; the G2 items are small and independent and can run in parallel/any order.
+Stage: planned
+Next command: /kbd-execute uar-security-deps-and-hygiene -- start Round 1 (dependabot-yml, fix-uar-integration-test, fix-bdd-test-path, fix-waypoint-stage-schema, artifact-refiner-gate-decision, npm-deps-triage), one verification checkpoint at the end of the round, then Round 2, then Round 3 (rmcp-pin-bump, own checkpoint), then Round 4 (surrealdb-upgrade, own checkpoint, highest blast radius, last).
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-security-deps-and-hygiene (step 0 of 10)

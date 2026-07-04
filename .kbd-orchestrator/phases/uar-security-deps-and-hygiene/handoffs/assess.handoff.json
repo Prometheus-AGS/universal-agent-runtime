@@ -1,0 +1,12 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-07-04T08:30:00Z",
+  "outputs": [
+    "assessment.md",
+    "sycophancy/assess-2026-07-04T14-33-59Z.json"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "10 candidate changes confirmed via direct inspection (5 for G1 security: surrealdb-upgrade, rmcp-pin-bump, wasmtime-disposition, npm-deps-triage, dependabot-yml; 5 for G2 hygiene: artifact-refiner-gate-decision, fix-uar-integration-test, fix-bdd-test-path, run-hot-path-bench, fix-waypoint-stage-schema). All 10 are independent of each other -- no dependency chain. surrealdb-upgrade and rmcp-pin-bump carry real regression risk and need their own checkpoints.",
+  "skipped": false,
+  "skipReason": null
+}

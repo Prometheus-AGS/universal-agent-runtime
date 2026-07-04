@@ -1,0 +1,12 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-04T08:45:00Z",
+  "outputs": [
+    "plan.md",
+    "sycophancy/plan-2026-07-04T14-44-44Z.json"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "10 changes ordered into 4 rounds by risk, not dependency (all 10 are independent): Round 1 (parallel, low risk) = dependabot-yml, fix-uar-integration-test, fix-bdd-test-path, fix-waypoint-stage-schema, artifact-refiner-gate-decision, npm-deps-triage. Round 2 (parallel) = wasmtime-disposition, run-hot-path-bench. Round 3 (own checkpoint) = rmcp-pin-bump. Round 4 (own checkpoint, last, highest blast radius) = surrealdb-upgrade. First change to apply: dependabot-yml.",
+  "skipped": false,
+  "skipReason": null
+}

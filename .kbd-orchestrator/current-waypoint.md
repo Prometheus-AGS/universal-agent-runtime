@@ -1,11 +1,11 @@
 # Current Waypoint — universal-agent-runtime
 
 - **Phase:** uar-security-deps-and-hygiene
-- **Status:** assessed
-- **Progress:** 0 of 10 changes (assessed; not yet planned)
-- **Next pending change:** none yet — run `/kbd-plan uar-security-deps-and-hygiene`
-- **Exact next command:** `/kbd-plan uar-security-deps-and-hygiene`
-- **Recommendation source:** `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`'s 2026-07-04 addendum (rescoped after a Dependabot backlog was found via post-reflection research); confirmed against direct inspection in `assessment.md`
+- **Status:** planned
+- **Progress:** 0 of 10 changes (planned; execute not yet started)
+- **Next pending change:** `dependabot-yml` (first change, Round 1)
+- **Exact next command:** `/kbd-execute uar-security-deps-and-hygiene`
+- **Recommendation source:** `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`'s 2026-07-04 addendum (rescoped after a Dependabot backlog was found via post-reflection research); confirmed against direct inspection in `assessment.md`; sequenced by risk in `plan.md`
 
 ## Why this phase, and why rescoped
 
@@ -44,12 +44,14 @@ checking whether the pinned versions carry known, fixed-upstream CVEs.
   `benches/hot_path.rs`; fix `write-position-reminder.sh`'s
   `.stage`/`.status` schema mismatch at the source.
 
-## Candidate changes (assessed 2026-07-04, see `assessment.md`; not yet planned/sequenced)
+## Planned change order (see `plan.md` for full detail — all 10 are independent, ordered by risk not dependency)
 
-- G1: `surrealdb-upgrade` (PARTIAL — pin confirmed stale, not started), `rmcp-pin-bump` (PARTIAL — pin confirmed stale, not started), `wasmtime-disposition` (not started, correctly lower priority), `npm-deps-triage` (STUB — dompurify traced, jsonwebtoken not located), `dependabot-yml` (not started, absence confirmed)
-- G2: `artifact-refiner-gate-decision` (confirmed unavailable in this environment, not just unused), `fix-uar-integration-test`, `fix-bdd-test-path`, `run-hot-path-bench`, `fix-waypoint-stage-schema` (all reconfirmed still needed via fresh `cargo check`/inspection)
+- **Round 1 (parallel, low risk)**: `dependabot-yml`, `fix-uar-integration-test`, `fix-bdd-test-path`, `fix-waypoint-stage-schema`, `artifact-refiner-gate-decision`, `npm-deps-triage`
+- **Round 2 (parallel)**: `wasmtime-disposition`, `run-hot-path-bench`
+- **Round 3 (sequenced, own checkpoint)**: `rmcp-pin-bump`
+- **Round 4 (sequenced, own checkpoint, last, highest blast radius)**: `surrealdb-upgrade`
 
-`surrealdb-upgrade` and `rmcp-pin-bump` carry real regression risk and should each get their own test-suite checkpoint at plan time; the 4 G2 items are small and independent.
+`surrealdb-upgrade` and `rmcp-pin-bump` carry real regression risk and each get their own dedicated test-suite checkpoint, not bundled with the smaller Round 1/2 items.
 
 ## Decisions carried forward (still load-bearing)
 - D-A: RAG hardened in-process; Knowledge Service extraction deferred
