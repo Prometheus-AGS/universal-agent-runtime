@@ -1,29 +1,39 @@
 # Current Waypoint — universal-agent-runtime
 
-- **Phase:** uar-next-harness (parent; 4 planned child tranches)
+- **Phase:** uar-spec-v2-and-polish
 - **Status:** executing
-- **Progress:** 2 of 24 changes done (HK0, proxy-integration-gate); plan amended A1 + A2 + A3
-- **Next pending change:** live-integration-baseline-coverage (CH-22b, task 1.1) or a2a-grpc-enable (proposal.md) — operator's call
-- **Exact next command:** /opsx:apply live-integration-baseline-coverage (start harness work); or /opsx:continue a2a-grpc-enable (plan remaining Round-1 changes first)
-- **Recommendation source:** docs/uar-next-fable.md (supersedes docs/uar-next.md; validated scorecard + amendments A1.1–A1.8 recorded in plan.md)
+- **Progress:** 4 of 7 changes done (agent-spec-v2, compiler-v2-stages, eval-targeted-suites, perf-security-load). Tranche B complete.
+- **Next pending change:** conformance-testing (CH-14) and agent-template-library (CH-15), both unblocked on CH-13 — Tranche C
+- **Exact next command:** /kbd-execute for uar-spec-v2-and-polish — land CH-14 + CH-15 (Tranche C), then CH-19 (Tranche D)
+- **Recommendation source:** goals.md, seeded from uar-next-harness's reflection (2026-07-04)
 
-## Round map
-- Round 0: HK0 (direct task) — DONE
-- Round 1 `foundation-completion`: proxy-integration-gate (DONE, narrowed A3 — stub LLM server + backend selection + health-check script) → live-integration-baseline-coverage (NEW A3 — AppState harness + 8 baseline cases + MATRIX.md + CI, fully planned, 0/23 tasks), a2a-grpc-enable, postgres-credential-store, provider-health-failover (+A1.1 router cost-None bug + audit log), prompt-dialect-engine (+A1.2 verified param list)
-- Round 2 `intelligence-completion`: per-model-context-strategy, cost-budgets-backend→cost-dashboard, skill-activation-metrics, capability-registry-benchmarks (+A1.3 source+date per entry)→model-comparison-dashboard, rag-hardening
-- Round 3 `spec-v2-distribution`: agent-spec-v2→compiler-v2-stages→{conformance-testing, agent-template-library, skill-pack-bundling (RESCOPED A1.4: auto-detection + loader upgrades — pack already bundled)}, eval-targeted-suites
-- Round 4 `integration-and-polish`: agui-spec-alignment (NEW A1.6) → librefang-a2a-agui-bridge (+A1.5 zero-code provider_urls seam first), docs-overhaul-deploy-guide, perf-security-load
-- Operator: OP-1 seed eval baseline (human-only)
+## Change map (G4 → G5)
 
-## Decisions (from plan)
+- G4 Specification & Distribution (P2, primary, sequential chain):
+  - CH-12 agent-spec-v2 — DONE (75116e4)
+  - CH-13 compiler-v2-stages — DONE (e1532d6)
+  - CH-14 conformance-testing — NOT STARTED (depends on CH-13, done — unblocked)
+  - CH-15 agent-template-library — NOT STARTED (depends on CH-13, done — unblocked)
+  - CH-17 eval-targeted-suites — DONE (13326a4)
+- G5 Polish & Release (P3, after G4 lands):
+  - CH-19 docs-overhaul-deploy-guide — NOT STARTED
+  - CH-20 perf-security-load — DONE (369117b + incidental fix e2c82c7). Criterion hot-path benches (not run this session, disclosed), 50-concurrent-agent load test, prompt-injection whitespace-evasion fix + disclosed known-gaps (13/13 guardrails tests green), server.rs split assessment (recommendation only). OpenSpec change dir at openspec/changes/perf-security-load/.
+
+## Decisions carried from uar-next-harness (still load-bearing)
 - D-A: RAG hardened in-process; Knowledge Service extraction deferred
 - D-B: MemPalace stays off
-- D-C: LibreFang integration scoped to UAR side (A1.5: provider_urls seam needs no librefang code, so e2e test is in scope)
+- D-C: LibreFang integration scoped to UAR side
 - D-D: dep unpin REJECTED (pins deliberate + load-bearing)
 
-## A1 key corrections (do not regress on these)
-- Anthropic 2×->200K long-context surcharge was REMOVED 2026-03; GPT-5.5 carries 2×/1.5× >272K. Tokenizer overhead ~16% English / ~30% code (not flat +30%).
-- model-comparison-expanded.docx.md: taxonomy yes, numbers no (15+ internal contradictions).
-- Skill pack already loaded via builtin_loader.rs from crates/prometheus-skill-system submodule.
-- UAR `agui.*` events ≠ official AG-UI vocabulary (hence CH-21).
-- librefang facts: 48 providers, OFP wire protocol, sidecar channels, A2A + surreal-memory already present, no 50-page dashboard.
+## Carried-over debt (see progress.json / goals.md for full list)
+- Artifact-refiner QA gate automation (carried 4+ phases)
+- 17 pre-existing `bun run typecheck` errors (unrelated to this phase's own work)
+- CH-06 per-agent/per-task budget configuration surface (global-only today)
+- CH-08 activation-outcome correlation (recall wired; outcome half unsolved)
+- Durable cost/spend history for CH-07 dashboard
+
+## Housekeeping note (2026-07-04)
+This file and `current-waypoint.json` had drifted stale — both were still describing
+the closed `uar-next-harness` phase / an `assess_pending` status days after assess+plan
+actually completed (commit 16c1aa3) and three G4 changes had merged. Corrected via
+`/kbd-status` findings; see `progress.json` as the authoritative source going forward.

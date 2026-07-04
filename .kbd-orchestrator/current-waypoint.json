@@ -1,10 +1,11 @@
 {
   "phase": "uar-spec-v2-and-polish",
   "change": null,
-  "status": "assess_pending",
+  "status": "executing",
+  "stage": "executing",
   "previousPhase": "uar-next-harness",
-  "currentTask": "Seeded via /kbd-next-phase from uar-next-harness's reflection (2026-07-04). Carries forward G4 (Specification & Distribution: CH-12 agent-spec-v2 -> CH-13 compiler-v2-stages -> {CH-14 conformance-testing, CH-15 agent-template-library} -> CH-17 eval-targeted-suites) and G5 (Polish & Release: CH-19 docs-overhaul-deploy-guide, CH-20 perf-security-load), deliberately deferred (not abandoned) when uar-next-harness closed G1-G3 at 16/24 tracked changes. Next step: /kbd-assess.",
-  "nextPendingChange": "agent-spec-v2",
+  "currentTask": "Tranche B complete: CH-12 agent-spec-v2 (75116e4), CH-13 compiler-v2-stages (e1532d6), CH-17 eval-targeted-suites (13326a4), and CH-20 perf-security-load (369117b, + incidental fix e2c82c7) all merged, 4/7. CH-20 verified via cargo check + cargo check --test integration + cargo test --lib uar::guardrails:: (13/13 green); cargo bench/--benches deliberately not run this session (disclosed in openspec/changes/perf-security-load/proposal.md). CH-14 conformance-testing and CH-15 agent-template-library (both depend on CH-13, done) are unstarted -- no OpenSpec change dir yet (Tranche C). CH-19 docs-overhaul-deploy-guide is unstarted (Tranche D). Two unrelated pre-existing compile failures found and left untouched: tests/uar_integration.rs (Skill struct missing 8 fields), tests/bdd.rs (broken nested #[path]).",
+  "nextPendingChange": "conformance-testing",
   "roundZeroComplete": true,
   "changeStatus": {
     "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
@@ -13,10 +14,17 @@
     "S1-eval-harness": "DEFERRED -> uar-eval-harness phase",
     "HK0-commit-live-sse-dualstack": "DONE (7 focused commits: dual-stack listener, multiplexed /api/live SSE, fmt, asset rebuild, uar-next-fable.md, KBD phase state, settings sync). 268/268 lib tests + 5/5 frontend adapter tests green.",
     "proxy-integration-gate": "DONE (narrowed scope, plan Amendment A3). OpenSpec 4/4 + 10/10 tasks: stub LLM server (tests/integration/live/stub_llm.rs), backend selection (backend.rs, UAR_LIVE_INTEGRATION_BACKEND), scripts/live-integration.sh health-check+remediation. 9/9 new unit tests green + 3 script paths smoke-tested. 4 commits: 439f5f9 (plan), 99eeddf, 38f24f4, 781ca77 (code), plus this turn's narrowing edits. Baseline cases + AppState harness split out to new CH-22b live-integration-baseline-coverage (see below).",
-    "live-integration-baseline-coverage": "DONE — all 5 task groups. 9 baseline cases (7 pass, 2 #[ignore]d for disclosed product bugs), backend-parametric parity case, MATRIX.md feature-coverage contract + tools/live-matrix-check.sh + .github/workflows/live-integration.yml (advisory), README. Local suite 17 passed/2 ignored/0 failed; final full-suite verify running in isolated target dir. Every remaining Round1-4 feature change must add a MATRIX.md row."
+    "live-integration-baseline-coverage": "DONE — all 5 task groups. 9 baseline cases (7 pass, 2 #[ignore]d for disclosed product bugs), backend-parametric parity case, MATRIX.md feature-coverage contract + tools/live-matrix-check.sh + .github/workflows/live-integration.yml (advisory), README. Local suite 17 passed/2 ignored/0 failed; final full-suite verify running in isolated target dir. Every remaining Round1-4 feature change must add a MATRIX.md row.",
+    "agent-spec-v2": "MERGED 75116e4 (CH-12). 5 new IR sections on AgentDescriptorIR (model_requirements, prompt_dialect, rag_configuration, context_strategy, api_harness), backward-compatible via #[serde(default)], v1.1 completeness gating untouched. 3 new tests, 333/333 suite green.",
+    "compiler-v2-stages": "MERGED e1532d6 (CH-13). Stage 01 validation for all 5 v2 sections + stage 08 schema bump to /v2 when non-default. Full-pipeline round-trip test added; v1-only test still asserts /v1. 334/334 suite green.",
+    "eval-targeted-suites": "MERGED 13326a4 (CH-17). 3 keyless CompletionProvider fixtures exercising real runtime decisions (skill activation, routing incl. CH-03 health-cooldown, context strategy) wired into eval CLI with committed baselines. 341/341 suite green.",
+    "perf-security-load": "MERGED 369117b + e2c82c7 (CH-20). Criterion hot-path benches (not run this session), 50-concurrent-agent load test, prompt-injection whitespace-evasion fix + disclosed known-gaps (13/13 guardrails tests green), server.rs split assessment (recommendation only). OpenSpec change dir opened retroactively at openspec/changes/perf-security-load/.",
+    "conformance-testing": "NOT STARTED (CH-14). Depends on CH-13 (done) -- unblocked.",
+    "agent-template-library": "NOT STARTED (CH-15). Depends on CH-13 (done) -- unblocked.",
+    "docs-overhaul-deploy-guide": "NOT STARTED (CH-19)."
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-assess for uar-spec-v2-and-polish -- confirm the seeded G4/G5 goals against current codebase state (some of CH-12..20 may have partial groundwork already; verify against git log/grep before assuming unstarted, per the lesson uar-next-harness's reflection just recorded), then /kbd-plan to sequence the CH-12->13->{14,15}->17 chain and CH-19/20.",
+  "exactNextCommand": "/kbd-execute for uar-spec-v2-and-polish -- Tranche B complete (CH-13, CH-17, CH-20 all done, 4/7). Land CH-14 conformance-testing and CH-15 agent-template-library (both unblocked on CH-13, Tranche C), then finish CH-19 docs-overhaul-deploy-guide (Tranche D).",
   "uarNextHarnessOutcome": "uar-next-harness CLOSED at reflection 2026-07-04: 16/24 tracked changes done, G1+G2+G3 fully MET, G4+G5 NOT MET (0/7, carried to this phase). Wired CH-02/03/04/06/08 (several were committed-but-unwired dead code), implemented CH-05 for real after finding it was a stub, built CH-07/CH-10 from scratch including two backend gaps (BudgetAlert entity wiring, CH-09 benchmarks exposed via REST). Fixed two real bugs found via live-server verification (not just build-green): an uninitialized prometheus-entity-management submodule that had been silently breaking the embedded frontend build all phase, and a resulting useEntityList/useEntity hook API drift across 6 frontend files (all silently returning empty data) -- both now resolved and verified live (models catalog went from 0 to 5331 models across 150 providers; CH-10 compare feature exercised end-to-end with real data). Full detail + lessons in .kbd-orchestrator/phases/uar-next-harness/reflection.md.",
   "gateActivationSecurityOutcome": "gate-activation-and-security-cleanup: both goals MET (code) in PR #43 (2 commits, archived). (1) feat(eval) --require-baseline strict gate: unseeded nightly fails loudly instead of passing silently; pure baseline_missing_under_strict helper; fail-fast exit 2 BEFORE any model call; nightly opts in; operator runbook in evals/README.md. (2) fix(config) secret redaction (Rule 33): redacting Debug for LlmConfig api_key+provider_keys, SecurityConfig jwt_secret, Persistence/Memory passwords. CORRECTION: I mis-assessed redaction as already-on-main; it was uncommitted working-tree WIP (origin/main had 0 REDACTED) — this PR actually lands it; caught at commit, split into 2 focused commits, disclosed in PR. 36 eval tests green. REMAINDER (operator-only): configure UAR_LLM__API_KEY secret + seed/commit evals/results/starter.baseline.json to make the gate enforce green. Spawn-task redaction chip now resolved by #43. LESSON: verify 'already merged' against committed state (git show origin/main:<file>), never the working tree.",
   "evalHarnessHardeningOutcome": "eval-harness-hardening: 4/4 goals MET + HK1. PRs #38-#42 merged + archived. EHH3 suite-declared scorers (ScorerSpec + build_scorers factory, serde-default backward compat); EHH2 LlmJudge scorer (rubric, deterministic JSON parse, advisory per D-B); EHH4 recorded-fixture provider + end-to-end pipeline integration tests; HK1 deleted dead src/testing/ (27 files, ~22.7k lines); EHH1 evals/starter.yaml + two-tier CI gate (Tier-1 keyless structural test per PR, Tier-2 nightly real-model gated workflow, fork-safe, Rule 33). 35 eval lib tests green. DEBT: no baseline shipped so Tier-2 is informational until seeded (top follow-up); Tier-2 never run in CI yet (needs UAR_LLM__API_KEY secret + workflow_dispatch); secret-redaction chip (main.rs:46, Rule 33) still open; refiner QA-gate automation still not wired.",
@@ -82,7 +90,7 @@
     "R3 eval scope",
     "R4 guardrail build-vs-buy"
   ],
-  "updatedAt": "2026-07-04T00:30:00Z",
+  "updatedAt": "2026-07-04T04:00:00Z",
   "planRevision": "A1+A2 2026-07-01 — source docs/uar-next-fable.md; A2 adds proxy-integration-gate + 100%-feature-coverage contract (see plan.md)",
   "discoveredBugs": [
     "task_188b4179: VectorMatcher::embed_batch returns zero-vector placeholder embeddings (model.forward() commented out) - breaks all RAG search + LocalEmbedding intent backend. spawn_task started by user.",
@@ -90,12 +98,14 @@
   ],
   "infraNotes": "CARGO_TARGET_DIR=/Volumes/my-passport/cargo-target REQUIRED (not set in shell; forgetting fills root disk). Session hit machine-wide memory-pressure stall from 6 concurrent cargo builds (mine + 2 spawn_task fixes + 3 other sessions) - cleared on its own. Cleaned 280 leaked harness temp dirs; added Drop cleanup so it does not recur. 37GB stale /private/tmp/librefang-upstream-merge* dirs flagged to user (not deleted - not mine).",
   "codeWrittenUnverified": {
-    "strategy": "implementation-first / test-at-checkpoints (standing preference) -- not yet started for uar-spec-v2-and-polish; this block will populate once /kbd-assess -> /kbd-plan -> /kbd-execute begins.",
+    "strategy": "implementation-first / test-at-checkpoints (standing preference). CH-12/CH-13/CH-17 already went through this cycle and merged clean.",
     "changes_verified_this_turn": [],
-    "changes_coded_this_turn_uncompiled": [],
+    "changes_coded_this_turn_uncompiled": [
+      "perf-security-load (CH-20): benches/hot_path.rs, tests/integration/live/load_test.rs, docs/server-rs-split-assessment.md, src/uar/guardrails.rs diff -- uncommitted, not yet verified via cargo test/build or a live smoke check"
+    ],
     "remaining_to_code": [
-      "CH-12 agent-spec-v2, CH-13 compiler-v2-stages, CH-14 conformance-testing, CH-15 agent-template-library, CH-17 eval-targeted-suites (G4, sequential chain)",
-      "CH-19 docs-overhaul-deploy-guide, CH-20 perf-security-load (G5, after G4)"
+      "CH-14 conformance-testing, CH-15 agent-template-library (G4, both unblocked on CH-13)",
+      "CH-19 docs-overhaul-deploy-guide, CH-20 perf-security-load (G5 -- CH-20 partially in flight, see changes_coded_this_turn_uncompiled)"
     ]
   }
 }

@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-spec-v2-and-polish
-Step: 0 of 7
-Stage: unknown
-Next command: /kbd-assess for uar-spec-v2-and-polish -- confirm the seeded G4/G5 goals against current codebase state (some of CH-12..20 may have partial groundwork already; verify against git log/grep before assuming unstarted, per the lesson uar-next-harness's reflection just recorded), then /kbd-plan to sequence the CH-12->13->{14,15}->17 chain and CH-19/20.
+Step: 4 of 7
+Stage: executing
+Next command: /kbd-execute for uar-spec-v2-and-polish -- Tranche B complete (CH-13, CH-17, CH-20 all done, 4/7). Land CH-14 conformance-testing and CH-15 agent-template-library (both unblocked on CH-13, Tranche C), then finish CH-19 docs-overhaul-deploy-guide (Tranche D).
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-spec-v2-and-polish (step 0 of 7)
+  Starting <kbd-skill> — uar-spec-v2-and-polish (step 4 of 7)
   [do work]
-  Completed <kbd-skill> — uar-spec-v2-and-polish (step 0 of 7)
+  Completed <kbd-skill> — uar-spec-v2-and-polish (step 4 of 7)
