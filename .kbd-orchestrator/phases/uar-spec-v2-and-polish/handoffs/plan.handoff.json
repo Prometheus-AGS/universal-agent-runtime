@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-04T01:12:15Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "7 changes ordered into 4 tranches: A=CH-12 (foundation), B=CH-13+CH-17+CH-20 (parallel), C=CH-14+CH-15 (parallel, depends on B), D=CH-19 (last). First change to apply: CH-12 agent-spec-v2.",
+  "skipped": false,
+  "skipReason": null
+}
