@@ -197,7 +197,7 @@ tokenizers = { version = "0.22.2", default-features = false, features = [
   "onig",
   "esaxx_fast",
 ] }
-tiktoken-rs = "0.9.1"
+tiktoken-rs = "0.12.0"
 # Postgres stack — optional, gated by the `postgres-backend` feature. The empty
 # `sqlx` feature flag (above) wires this dependency in for any code that needs
 # `sqlx::FromRow` derives without enabling the full `postgres-backend` stack.

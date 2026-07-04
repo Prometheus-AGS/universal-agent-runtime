@@ -13782,7 +13782,7 @@ dependencies = [
  "surrealdb",
  "surrealdb-types",
  "thiserror 2.0.18",
- "tiktoken-rs",
+ "tiktoken-rs 0.9.1",
  "tokio",
  "tracing",
  "uuid",
@@ -14570,6 +14570,21 @@ dependencies = [
  "lazy_static",
  "regex",
  "rustc-hash 1.1.0",
+]
+
+[[package]]
+name = "tiktoken-rs"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "027853bbf8c7763b77c5c595f1c271c7d536ced7d6f83452911b944621e57fc2"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "bstr",
+ "fancy-regex 0.17.0",
+ "lazy_static",
+ "regex",
+ "rustc-hash 2.1.2",
 ]
 
 [[package]]
@@ -15788,7 +15803,7 @@ dependencies = [
  "testcontainers",
  "text-splitter 0.29.3",
  "thiserror 2.0.18",
- "tiktoken-rs",
+ "tiktoken-rs 0.12.0",
  "tokenizers 0.22.2",
  "tokio",
  "tokio-stream",
