@@ -1,0 +1,10 @@
+- [x] Confirm fix versions from Dependabot (wasmtime >=42.0.2/>=43.0.2, wasmtime-wasi >=44.0.2)
+- [x] Baseline `cargo check --features wasm-runtime` at 41.0.3 (confirmed clean before bumping)
+- [x] Bump `wasmtime`/`wasmtime-wasi` to `"46"` in `Cargo.toml`
+- [x] Diagnose the resulting 6 compile errors (all one root cause: `wasmtime::Error` no longer implements `std::error::Error`)
+- [x] Swap `anyhow::Context` → `wasmtime::error::Context` in `wasm_runtime.rs` (3 sites) and `sandbox.rs` (3 sites)
+- [x] Remove the deprecated no-op `Config::async_support(true)` call in `sandbox.rs`
+- [x] `cargo check --features wasm-runtime` clean
+- [x] `cargo check --tests --features wasm-runtime` clean
+- [x] `cargo test --lib --features wasm-runtime` 367/367 green
+- [x] `cargo clippy --features wasm-runtime` zero new warnings at touched lines

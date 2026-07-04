@@ -134,9 +134,12 @@ cedar-policy = "4.9.1"
 # Sycophancy detection and correction (runtime quality gate)
 sycophancy-core = { git = "https://github.com/Know-Me-Tools/sycophancy-correction-skill.git", package = "sycophancy-core" }
 
-# Wasm runtime (feature-gated)
-wasmtime = { version = "41.0.3", optional = true }
-wasmtime-wasi = { version = "41.0.3", optional = true }
+# Wasm runtime (feature-gated). Bumped from 41.0.3 (CH-security-deps):
+# fixes 2 critical aarch64 Winch-backend sandbox-escape CVEs (need >=42.0.2/
+# >=43.0.2) and a wasmtime-wasi path_open(TRUNCATE) permission bypass (needs
+# >=44.0.2). Took latest (46.x) rather than the exact minimum patched version.
+wasmtime = { version = "46", optional = true }
+wasmtime-wasi = { version = "46", optional = true }
 
 # HTTP client
 reqwest = { version = "0.12", features = [

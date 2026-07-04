@@ -12,7 +12,11 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
+// wasmtime::Error no longer implements std::error::Error (wasmtime 46), so
+// anyhow's blanket Context impl doesn't apply to wasmtime Results anymore —
+// wasmtime ships its own Context trait for exactly this case.
+use wasmtime::error::Context;
 use tokio::sync::Mutex;
 use tracing::{info, warn};
 use walkdir::WalkDir;

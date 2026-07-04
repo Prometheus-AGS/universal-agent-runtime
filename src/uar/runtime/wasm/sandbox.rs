@@ -3,8 +3,11 @@
 //! [`WasmSandbox`] provides a secure, resource-limited execution environment
 //! for running Wasm modules with optional WASI capabilities.
 
-use anyhow::Context as _;
+// wasmtime::Error no longer implements std::error::Error (wasmtime 46), so
+// anyhow's blanket Context impl doesn't apply to wasmtime Results anymore —
+// wasmtime ships its own Context trait for exactly this case.
 use tracing::{debug, info};
+use wasmtime::error::Context as _;
 use wasmtime::{Config, Engine, Linker, Module, Store};
 use wasmtime_wasi::{WasiCtxBuilder, p1::WasiP1Ctx};
 
@@ -74,8 +77,8 @@ impl WasmSandbox {
             engine_config.consume_fuel(true);
         }
 
-        // Enable async support for WASI
-        engine_config.async_support(true);
+        // wasmtime 46: `Config::async_support` is deprecated and no longer has
+        // any effect -- async support is no longer an opt-in Config toggle.
 
         let engine = Engine::new(&engine_config).context("Failed to create Wasmtime engine")?;
 
