@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-next-harness
-Step: 16 of 24
+Phase: uar-spec-v2-and-polish
+Step: 0 of 7
 Stage: unknown
-Next command: G1+G2+G3 are fully closed (16/24). Operator directive from this turn is complete. Remaining phase scope is G4 (CH-12 agent-spec-v2 -> CH-13 compiler-v2-stages -> {CH-14 conformance-testing, CH-15 agent-template-library, CH-16 already done}, CH-17 eval-targeted-suites -- a large sequential-dependency chain) and G5 (CH-19 docs, CH-20 perf-security), both explicitly out of scope for the G1-G3 directive. Also flagged: a disclosed pre-existing bug (useEntityList/useEntity hook API drift across 5+ frontend files) surfaced while verifying CH-07/CH-10 against a live server -- recommend a dedicated follow-up to fix it.
+Next command: /kbd-assess for uar-spec-v2-and-polish -- confirm the seeded G4/G5 goals against current codebase state (some of CH-12..20 may have partial groundwork already; verify against git log/grep before assuming unstarted, per the lesson uar-next-harness's reflection just recorded), then /kbd-plan to sequence the CH-12->13->{14,15}->17 chain and CH-19/20.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-next-harness (step 16 of 24)
+  Starting <kbd-skill> — uar-spec-v2-and-polish (step 0 of 7)
   [do work]
-  Completed <kbd-skill> — uar-next-harness (step 16 of 24)
+  Completed <kbd-skill> — uar-spec-v2-and-polish (step 0 of 7)
