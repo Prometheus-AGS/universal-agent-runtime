@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { useEntity, useGraphStore } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphEntity } from "@/entities/hooks/use-graph-entities";
 import type { SettingWithMeta } from "@/types";
 
 interface SettingsNamespaceRow {
@@ -21,7 +22,7 @@ export function useSettingsEntity(namespace: string): {
   values: Record<string, unknown>;
   settings: Record<string, SettingWithMeta>;
 } {
-  const nsRow = useEntity<SettingsNamespaceRow>("SettingsNamespace", namespace);
+  const nsRow = useGraphEntity<SettingsNamespaceRow>("SettingsNamespace", namespace);
   // Subscribe to the Setting slice so re-renders track per-row updates.
   const settingsMap = useGraphStore((s) => s.entities["Setting"]);
 
@@ -35,7 +36,7 @@ export function useSettingsEntity(namespace: string): {
     const values: Record<string, unknown> = {};
     const settings: Record<string, SettingWithMeta> = {};
     for (const r of records) {
-      values[r.key] = r.value;
+      values[r.key] = r.data;
       settings[r.key] = r;
     }
     return { records, values, settings };

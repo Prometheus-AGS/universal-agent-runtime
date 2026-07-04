@@ -1,4 +1,4 @@
-import { useEntityList } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphEntities } from "@/entities/hooks/use-graph-entities";
 import type { ModelEntity } from "@/entities/types";
 
 /**
@@ -7,6 +7,6 @@ import type { ModelEntity } from "@/entities/types";
  * Hydration is the page's responsibility (call `loadModelsIntoGraph()` on
  * mount). SSE-fed graph mutations keep the view fresh thereafter.
  */
-export function useModels() {
-  return useEntityList<ModelEntity>("Model");
+export function useModels(): { items: ModelEntity[] } {
+  return { items: useGraphEntities<ModelEntity>("Model") };
 }

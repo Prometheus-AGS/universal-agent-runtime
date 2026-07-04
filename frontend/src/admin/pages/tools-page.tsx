@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminEmptyState, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { ToolDetailPanel } from "@/admin/components/tool-detail-panel";
-import { useEntityList } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphEntities } from "@/entities/hooks/use-graph-entities";
 import { cn } from "@/lib/utils";
 import { loadToolsIntoGraph, type ToolGraphRow } from "@/entities/fetchers/tools";
 
@@ -12,8 +12,7 @@ import { loadToolsIntoGraph, type ToolGraphRow } from "@/entities/fetchers/tools
 type ToolWithNs = ToolGraphRow;
 
 export const ToolsPage: FC = () => {
-  const view = useEntityList<ToolGraphRow>("Tool");
-  const tools = view.items as ToolWithNs[];
+  const tools = useGraphEntities<ToolWithNs>("Tool");
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");

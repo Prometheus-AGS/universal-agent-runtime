@@ -865,7 +865,7 @@ function CompareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl font-mono">
+      <DialogContent className="sm:max-w-3xl font-mono">
         <DialogHeader>
           <DialogTitle>compare models</DialogTitle>
           <DialogDescription>
