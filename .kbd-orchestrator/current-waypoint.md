@@ -1,47 +1,73 @@
 # Current Waypoint — universal-agent-runtime
 
-- **Phase:** uar-spec-v2-and-polish
-- **Status:** reflected (execute_complete=true, reflect_complete=true)
-- **Progress:** 7 of 7 changes done. Phase fully reflected — `reflection.md` written.
-- **Next pending change:** none — `/kbd-next-phase` is the next KBD step
-- **Exact next command:** `/kbd-next-phase` — seeds from `reflection.md`'s "Next Phase Focus" (recommended working title: `uar-hygiene-and-bench-validation`)
-- **Recommendation source:** goals.md, seeded from uar-next-harness's reflection (2026-07-04)
+- **Phase:** uar-security-deps-and-hygiene
+- **Status:** assess_pending
+- **Progress:** 0 of ? changes (not yet assessed/planned)
+- **Next pending change:** none yet — run `/kbd-assess uar-security-deps-and-hygiene`
+- **Exact next command:** `/kbd-assess uar-security-deps-and-hygiene`
+- **Recommendation source:** `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`'s 2026-07-04 addendum (rescoped after a Dependabot backlog was found via post-reflection research)
 
-## Change map (G4 → G5)
+## Why this phase, and why rescoped
 
-- G4 Specification & Distribution (P2, primary, sequential chain):
-  - CH-12 agent-spec-v2 — DONE (75116e4)
-  - CH-13 compiler-v2-stages — DONE (e1532d6)
-  - CH-14 conformance-testing — DONE (4b24f01). New conformance.rs drives real ModelRouter::route/PromptDialect::detect/apply_strategy against declared v2 sections. 10/10 new tests, full suite 360/360.
-  - CH-15 agent-template-library — DONE (bbe7ec2). 4 templates + `compile` CLI subcommand + CI release job + regression test. Full suite 363/363, integration 56/56.
-  - CH-17 eval-targeted-suites — DONE (13326a4)
-- G5 Polish & Release (P3, after G4 lands):
-  - CH-19 docs-overhaul-deploy-guide — DONE (45e7e37). ARCHITECTURE.md gained 3 narrative sections + Agent Spec v2 & Conformance + Architectural Decisions (D-A/B/C/D). New DEPLOYMENT.md discloses a real AKS-vs-GKE deploy.yml/Helm-chart drift found via git history, rather than a smoothed-over unified story.
-  - CH-20 perf-security-load — DONE (369117b + incidental fix e2c82c7). Criterion hot-path benches (not run this session, disclosed), 50-concurrent-agent load test, prompt-injection whitespace-evasion fix + disclosed known-gaps (13/13 guardrails tests green), server.rs split assessment (recommendation only). OpenSpec change dir at openspec/changes/perf-security-load/.
+`uar-spec-v2-and-polish` closed 7/7 changes, G4+G5 both MET. Its own
+"Next Phase Focus" recommended a `uar-hygiene-and-bench-validation`
+phase (QA gate automation, 2 broken test files, `cargo bench`). Before
+starting that, the user asked for research into whether anything should
+change the plan. It did: GitHub had been flagging **96 open Dependabot
+alerts** (5 critical, 17 high, ~4 months accumulated, no
+`dependabot.yml` automation) on every push all phase, never
+investigated because it wasn't in that phase's declared scope. The two
+that matter most are directly production-relevant:
 
-**All 7 changes done — G4 and G5 both fully landed. Phase reflected (`reflection.md`); sycophancy self-check score 0.018 (well under proceed threshold), no phase inversion detected.**
+- **`surrealdb`** pinned `=3.0.5` (crates.io has `3.2.0`) — high-severity
+  HTTP RPC session-hijack + privilege-escalation CVEs. `surreal-backend`
+  is UAR's **default** feature.
+- **`rmcp`** pinned via git rev, behind upstream `HEAD` — high-severity
+  DNS rebinding in its Streamable HTTP transport. Core, non-optional MCP
+  SDK.
 
-## Decisions carried from uar-next-harness (still load-bearing)
+This directly undercuts D-D ("dependency pins are deliberate, not
+debt"), which `uar-spec-v2-and-polish`'s own CH-19 re-affirmed without
+checking whether the pinned versions carry known, fixed-upstream CVEs.
+
+## Goals (see `phases/uar-security-deps-and-hygiene/goals.md` for full detail)
+
+- **G1 (P0, primary): security dependency triage & upgrade.** Triage
+  the 5 critical + 17 high alerts; upgrade `surrealdb`; bump the `rmcp`
+  pin; disposition `wasmtime` (opt-in feature, lower priority) and the
+  `failure` crate (dev-only via `grcov`, no exposure); triage npm-side
+  alerts (`dompurify`, `jsonwebtoken`, etc.); add `.github/dependabot.yml`.
+- **G2 (P1, secondary — carried from `uar-spec-v2-and-polish`): hygiene
+  & validation.** Automate the artifact-refiner QA gate (or explicitly
+  drop it — 4th+ phase as debt); fix `tests/uar_integration.rs` +
+  `tests/bdd.rs` pre-existing compile failures; run `cargo bench` on
+  `benches/hot_path.rs`; fix `write-position-reminder.sh`'s
+  `.stage`/`.status` schema mismatch at the source.
+
+## Decisions carried forward (still load-bearing)
 - D-A: RAG hardened in-process; Knowledge Service extraction deferred
 - D-B: MemPalace stays off
 - D-C: LibreFang integration scoped to UAR side
-- D-D: dep unpin REJECTED (pins deliberate + load-bearing)
+- D-D: dependency pins deliberate — **under active re-examination this
+  phase** for `surrealdb`/`rmcp` specifically, given known fixed-upstream
+  CVEs on the currently-pinned versions
 
-## Carried-over debt (see progress.json / goals.md for full list)
-- Artifact-refiner QA gate automation (carried 4+ phases)
-- 17 pre-existing `bun run typecheck` errors (unrelated to this phase's own work)
+## Carried-over debt (see progress.json for full list; G1/G2 above absorb most of it)
+- 17 pre-existing `bun run typecheck` errors (unrelated to recent work)
 - CH-06 per-agent/per-task budget configuration surface (global-only today)
 - CH-08 activation-outcome correlation (recall wired; outcome half unsolved)
 - Durable cost/spend history for CH-07 dashboard
-- NEW this phase: `tests/uar_integration.rs` `Skill` struct literal missing 8 fields (pre-existing, unrelated to any tracked change, found while verifying CH-20/CH-14)
-- NEW this phase: `tests/bdd.rs` broken nested `#[path]` resolution (pre-existing, unrelated, same discovery)
-- NEW this phase: `main()` always loads full `AppConfig` before dispatching any subcommand, so the config-light `compile`/`eval` subcommands need a minimal persistence config they don't otherwise use (found while building CH-15's `compile` subcommand)
-- NEW this phase: `benches/hot_path.rs` (CH-20) has never been run via `cargo bench`/`cargo check --benches` in any session — compiles-by-inspection only
-- NEW this phase: `write-position-reminder.sh` reads a `.stage` key `current-waypoint.json` never populated (only `.status` existed) — silently rendered `Stage: unknown` until fixed by hand; the script/schema mismatch itself is not yet fixed at the source
-- NEW this phase: none of the 7 OpenSpec change directories were run through `/opsx:verify` + `/opsx:archive` — same chronic artifact-refiner automation gap as the first bullet above
+- `main()` always loads full `AppConfig` before dispatching any
+  subcommand, so the config-light `compile`/`eval` subcommands need a
+  minimal persistence config they don't otherwise use (found while
+  building `uar-spec-v2-and-polish`'s CH-15 `compile` subcommand;
+  not yet in this phase's own goals — candidate for a future pass)
 
-## Housekeeping note (2026-07-04)
-This file and `current-waypoint.json` had drifted stale — both were still describing
-the closed `uar-next-harness` phase / an `assess_pending` status days after assess+plan
-actually completed (commit 16c1aa3) and three G4 changes had merged. Corrected via
-`/kbd-status` findings; see `progress.json` as the authoritative source going forward.
+## Prior phase archive
+
+- **`uar-spec-v2-and-polish`** (2026-07-04): 7/7 changes, G4+G5 MET.
+  See `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`
+  (and its addendum) for full detail, including the sycophancy
+  self-check (score 0.018, no phase inversion detected).
+- **`uar-next-harness`**: 16/24 changes, G1-G3 MET, G4-G5 deferred to
+  `uar-spec-v2-and-polish`. See its own `reflection.md`.

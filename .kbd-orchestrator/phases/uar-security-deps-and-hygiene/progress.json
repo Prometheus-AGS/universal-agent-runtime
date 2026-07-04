@@ -1,0 +1,29 @@
+{
+  "phase": "uar-security-deps-and-hygiene",
+  "previousPhase": "uar-spec-v2-and-polish",
+  "backend": "openspec",
+  "sourceTool": "claude-code",
+  "assessment_complete": false,
+  "plan_complete": false,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "origin": "Seeded from uar-spec-v2-and-polish's reflection.md addendum (2026-07-04) -- rescoped after a 96-alert Dependabot backlog (5 critical, 17 high) was found via post-reflection research, never investigated during the prior phase because it wasn't in its declared scope. Promotes security dependency triage/upgrade to G1 (primary), carries the prior phase's original hygiene recommendations forward as G2 (secondary).",
+  "goals": [
+    "G1 Security dependency triage & upgrade (P0, primary): triage the 5 critical + 17 high Dependabot alerts, upgrade surrealdb (pinned =3.0.5 -> latest 3.x, default backend), bump the rmcp git-rev pin (core MCP SDK, DNS rebinding fix), disposition wasmtime (opt-in feature, lower priority) and failure crate (dev-only via grcov, no exposure), triage npm-side alerts, add .github/dependabot.yml",
+    "G2 Hygiene & validation (P1, secondary, carried from uar-spec-v2-and-polish): automate artifact-refiner QA gate or explicitly drop it, fix tests/uar_integration.rs + tests/bdd.rs pre-existing compile failures, run cargo bench on hot_path.rs, fix write-position-reminder.sh's stage/status schema mismatch"
+  ],
+  "candidateChanges": [],
+  "updatedAt": "2026-07-04T08:00:00Z",
+  "changes_completed": 0,
+  "changes_total": 0,
+  "changes_completed_note": "Not yet assessed/planned. Run /kbd-assess uar-security-deps-and-hygiene to derive the candidate change list from direct codebase inspection (per uar-next-harness's lesson: verify against git log/grep before assuming unstarted).",
+  "carriedOverDebt": [
+    "17 pre-existing bun run typecheck errors (Base UI Select nullability, react-resizable-panels API drift, recharts type-export drift) -- unrelated to any recent phase's own work",
+    "CH-06 per-agent/per-task budget configuration surface (aggregation done; only global limit configurable)",
+    "CH-08 activation-outcome correlation (recall half wired; outcome half unsolved)",
+    "Durable (non-session-scoped) cost/spend history for the CH-07 dashboard"
+  ],
+  "operatorOnlyFollowUps": [
+    "Activate the eval gate: set UAR_LLM__API_KEY secret + vars.UAR_EVAL_MODEL, run eval-nightly via workflow_dispatch update_baseline=true, commit evals/results/starter.baseline.json"
+  ]
+}

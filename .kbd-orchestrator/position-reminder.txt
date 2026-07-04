@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-spec-v2-and-polish
-Step: 7 of 7
-Stage: reflected
-Next command: /kbd-next-phase -- uar-spec-v2-and-polish is fully reflected (G4+G5 both MET, 7/7 changes). Seed the next phase from .kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md's 'Next Phase Focus': recommended working title uar-hygiene-and-bench-validation -- automate the artifact-refiner QA gate (4th+ phase as debt), fix 2 newly-found pre-existing test compile failures, run cargo bench on hot_path.rs, operator-only eval-gate activation.
+Phase: uar-security-deps-and-hygiene
+Step: 0 of 0
+Stage: assess_pending
+Next command: /kbd-assess uar-security-deps-and-hygiene -- confirm G1's security scope (surrealdb/rmcp version currency, wasmtime/failure disposition, npm-side triage) and G2's carried hygiene items against direct codebase/dependency inspection before planning, per goals.md.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-spec-v2-and-polish (step 7 of 7)
+  Starting <kbd-skill> — uar-security-deps-and-hygiene (step 0 of 0)
   [do work]
-  Completed <kbd-skill> — uar-spec-v2-and-polish (step 7 of 7)
+  Completed <kbd-skill> — uar-security-deps-and-hygiene (step 0 of 0)

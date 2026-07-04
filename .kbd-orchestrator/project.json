@@ -4,7 +4,7 @@
   "sourceOfTruth": ".kbd-orchestrator",
   "specSystem": "openspec",
   "activeChange": null,
-  "activePhase": "uar-spec-v2-and-polish",
+  "activePhase": "uar-security-deps-and-hygiene",
   "memoryMirror": {
     "provider": "surreal_memory",
     "mcpServer": "surreal_memory",
@@ -18,5 +18,5 @@
     "opencode"
   ],
   "worktreeRoot": "${HOME}/.claude/worktrees",
-  "updatedAt": "2026-07-04T00:30:00Z"
+  "updatedAt": "2026-07-04T08:00:00Z"
 }

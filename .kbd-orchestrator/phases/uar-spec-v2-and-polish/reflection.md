@@ -214,6 +214,41 @@ accumulated:
    `workflow_dispatch update_baseline=true`) — carried across multiple
    phases now.
 
+## Addendum (2026-07-04, post-reflection research)
+
+The "Next Phase Focus" above was written without checking GitHub's
+Dependabot alerts — which had been printing a vulnerability count on
+every `git push` this entire phase and were never investigated because
+they weren't in this phase's declared scope. Follow-up research at the
+user's request found:
+
+- **96 open alerts** (5 critical, 17 high, 63 medium, 11 low), oldest
+  dated ~March 2026 (~4 months accumulated), no `.github/dependabot.yml`
+  (so no automated PR pipeline — a pure, silently-ignored backlog).
+- **`surrealdb`** (pinned `=3.0.5`; crates.io has `3.2.0`): high-severity
+  HTTP RPC session-UUID leak (anonymous session hijack) and privilege
+  escalation via an HTTP RPC race condition. `surreal-backend` is UAR's
+  **default** feature — directly production-relevant.
+- **`rmcp`** (pinned via git rev, well behind upstream `HEAD`):
+  high-severity DNS rebinding in its Streamable HTTP server transport.
+  `rmcp` is the core, non-optional MCP SDK.
+- **`wasmtime`/`wasmtime-wasi`**: 2 critical sandbox-escape bugs (aarch64
+  Winch backend) + a WASI path bypass. Lower urgency — `wasm-runtime` is
+  opt-in, not in UAR's default feature set.
+- **`failure`** crate (critical, type confusion): no real exposure — a
+  dev-only transitive dependency of `grcov` (coverage tooling), never
+  shipped.
+
+This directly intersects with D-D ("dependency pins are deliberate, not
+debt"), which this phase's own CH-19 re-affirmed in `ARCHITECTURE.md`
+without checking whether the *specific pinned versions* carry known,
+upstream-fixed vulnerabilities. They do, for the two that matter most.
+
+**Rescoped decision**: the next phase (`uar-security-deps-and-hygiene`)
+promotes a security dependency triage/upgrade pass to G1 (primary),
+carrying this reflection's original hygiene recommendations forward as
+G2 (secondary). See `.kbd-orchestrator/phases/uar-security-deps-and-hygiene/goals.md`.
+
 ## Context for Next Phase
 
 Use this file as prior context for the next `/kbd-assess` invocation.
