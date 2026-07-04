@@ -1,0 +1,6 @@
+- [x] Confirm `.github/dependabot.yml` was absent
+- [x] Configure `cargo` ecosystem (root)
+- [x] Configure `npm` ecosystem (root — build tooling)
+- [x] Configure `npm` ecosystem (`/frontend` — separate pnpm project, own lockfile)
+- [x] Configure `github-actions` ecosystem (root)
+- [x] Validate YAML syntax

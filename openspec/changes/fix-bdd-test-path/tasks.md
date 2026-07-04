@@ -1,0 +1,4 @@
+- [x] Diagnose the nested `#[path]` resolution rule causing the wrong directory
+- [x] Move the `integration/live` prefix to the outer `mod live` attribute
+- [x] `cargo check --test bdd` clean
+- [x] Confirm remaining warnings are pre-existing/out-of-scope (unused imports/dead code in shared test helpers, not caused by this fix)

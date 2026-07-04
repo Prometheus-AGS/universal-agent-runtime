@@ -1,0 +1,4 @@
+- [x] Re-confirm artifact-refiner tool unavailability via `ToolSearch` (not assumed from memory)
+- [x] Write `.kbd-orchestrator/references/artifact-refiner-gate-decision.md` (D-E)
+- [x] Document the actual replacement verification methods already in use
+- [x] Note what would change this decision (tool becomes available in a future session)

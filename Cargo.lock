@@ -7285,21 +7285,6 @@ dependencies = [
 
 [[package]]
 name = "jsonwebtoken"
-version = "9.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a87cc7a48537badeae96744432de36f4be2b4a34a05a5ef32e9dd8a1c169dde"
-dependencies = [
- "base64 0.22.1",
- "js-sys",
- "pem",
- "ring",
- "serde",
- "serde_json",
- "simple_asn1",
-]
-
-[[package]]
-name = "jsonwebtoken"
 version = "10.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eba32bfb4ffdeaca3e34431072faf01745c9b26d25504aa7a6cf5684334fc4fc"
@@ -7823,7 +7808,7 @@ dependencies = [
  "futures-core",
  "futures-util",
  "gcp_auth",
- "jsonwebtoken 10.4.0",
+ "jsonwebtoken",
  "memchr",
  "opendal",
  "opentelemetry 0.32.0",
@@ -9361,7 +9346,7 @@ dependencies = [
  "futures-util",
  "http 1.4.1",
  "http-auth",
- "jsonwebtoken 10.4.0",
+ "jsonwebtoken",
  "lazy_static",
  "oci-spec",
  "olpc-cjson",
@@ -13878,7 +13863,7 @@ dependencies = [
  "http 1.4.1",
  "humantime",
  "ipnet",
- "jsonwebtoken 10.4.0",
+ "jsonwebtoken",
  "lexicmp",
  "md-5 0.10.6",
  "mime",
@@ -15590,7 +15575,7 @@ dependencies = [
  "dirs 5.0.1",
  "futures-util",
  "http 1.4.1",
- "jsonwebtoken 9.3.1",
+ "jsonwebtoken",
  "reqwest 0.12.28",
  "serde",
  "serde_yaml",
@@ -15763,7 +15748,7 @@ dependencies = [
  "governor",
  "grcov",
  "jsonschema",
- "jsonwebtoken 10.4.0",
+ "jsonwebtoken",
  "kreuzberg",
  "liter-llm",
  "metrics",

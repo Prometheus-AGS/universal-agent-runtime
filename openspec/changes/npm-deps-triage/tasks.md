@@ -1,0 +1,10 @@
+- [x] Trace `jsonwebtoken` alert to its actual manifest path via `gh api` (found: Rust, `tools/uar-jwt-proxy/Cargo.toml`, not npm as assumed)
+- [x] Identify the coexisting vulnerable (9.3.1) and patched (10.4.0) versions in `Cargo.lock`
+- [x] Confirm `uar-jwt-proxy`'s jsonwebtoken usage is stable-API-only (no breaking changes across the major bump)
+- [x] Bump `tools/uar-jwt-proxy/Cargo.toml` to `jsonwebtoken = "10"`
+- [x] `cargo check -p uar-jwt-proxy` clean; confirm `Cargo.lock` now has a single jsonwebtoken entry
+- [x] Trace `dompurify`'s actual importer in `pnpm-lock.yaml` (found: only `@types/dompurify`'s own declared dependency)
+- [x] Confirm `@types/dompurify` has zero imports anywhere in `frontend/src`/`web/`
+- [x] Remove `@types/dompurify` from root `package.json`, regenerate `pnpm-lock.yaml`
+- [x] Confirm `dompurify` no longer appears in `pnpm-lock.yaml`
+- [x] `cargo check --workspace` + `cargo test --lib` (363/363) + frontend `tsc --noEmit` (17 pre-existing errors, unchanged) all green/unaffected

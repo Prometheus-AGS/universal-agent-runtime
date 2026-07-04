@@ -1,0 +1,3 @@
+- [x] Confirm `Skill` derives `Default`
+- [x] Add `..Default::default()` to the `Skill { ... }` literal at `tests/uar_integration.rs:430`
+- [x] `cargo check --test uar_integration` clean (re-confirmed after stale diagnostic)

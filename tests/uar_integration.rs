@@ -449,6 +449,7 @@ async fn test_m6_skills_execution() {
                 execution_config: Default::default(),
                 kind: Default::default(),
                 origin: Default::default(),
+                ..Default::default()
             })
             .await;
     }
