@@ -501,7 +501,11 @@
       "Bash(cd *)",
       "Bash(rm -f /usr/local/src/universal-agent-runtime/frontend/scratch-screenshot*.mjs)",
       "Bash(pkill -9 -f \"target/debug/universal-agent-runtime\")",
-      "Bash(echo \"check done, exit=$?\")"
+      "Bash(echo \"check done, exit=$?\")",
+      "Bash(mkdir -p /tmp/uar-verify2/screenshots)",
+      "Bash(rm -rf /tmp/uar-verify2/db)",
+      "Bash(UAR_PERSISTENCE__PROVIDER=surreal UAR_PERSISTENCE__DATABASE_URL=rocksdb:///tmp/uar-verify2/db UAR_SERVER__PORT=3901 UAR_SERVER__GRPC_PORT=50062 OPENAI_API_KEY=sk-dummy-verify-key UAR_SECURITY__JWT_REQUIRED=false nohup ./target/debug/universal-agent-runtime)",
+      "Bash(curl -s -o /dev/null -w \"models: %{http_code}\\\\n\" http://localhost:3901/api/models --max-time 5)"
     ]
   }
 }
