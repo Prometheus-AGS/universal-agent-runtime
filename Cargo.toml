@@ -136,7 +136,7 @@ sycophancy-core = { git = "https://github.com/Know-Me-Tools/sycophancy-correctio
 
 # Wasm runtime (feature-gated)
 wasmtime = { version = "41.0.3", optional = true }
-wasmtime-wasi = { version = "41.0.3", optional = true }
+wasmtime-wasi = { version = "46.0.1", optional = true }
 
 # HTTP client
 reqwest = { version = "0.12", features = [
