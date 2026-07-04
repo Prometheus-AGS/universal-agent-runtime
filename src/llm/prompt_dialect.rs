@@ -71,6 +71,23 @@ impl PromptDialect {
     pub fn markdown_averse(self) -> bool {
         matches!(self, Self::MiniMaxStructured)
     }
+
+    /// The string name a compiled agent descriptor's `prompt_dialect.dialect`
+    /// override uses to name this variant (CH-12/CH-14) — the inverse of
+    /// [`Self::detect`]'s model-id sniffing. Kept in the same module as
+    /// `detect` so the two can't drift apart.
+    #[must_use]
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::AnthropicXml => "anthropic_xml",
+            Self::OpenAiJson => "openai_json",
+            Self::KimiMarkdown => "kimi_markdown",
+            Self::GlmThinking => "glm_thinking",
+            Self::QwenHybrid => "qwen_hybrid",
+            Self::MiniMaxStructured => "minimax_structured",
+            Self::Generic => "generic",
+        }
+    }
 }
 
 /// Options controlling dialect parameter generation for one request.

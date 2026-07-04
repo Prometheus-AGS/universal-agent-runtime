@@ -738,7 +738,7 @@ pub struct ResourceConfig {
 /// declaration and the runtime router's selection criteria are the same
 /// shape by design, so a conformance check (CH-14) can compare them
 /// directly.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ModelRequirementsSection {
     #[serde(default)]
     pub needs_tools: bool,

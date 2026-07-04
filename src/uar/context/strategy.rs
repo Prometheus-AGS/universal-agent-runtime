@@ -58,28 +58,32 @@ pub enum ContextStrategy {
     Auto,
 }
 
-fn default_max_messages() -> usize {
+// `pub(crate)` (not private): CH-14's conformance harness
+// (`uar::compiler::conformance`) reuses these as the single source of truth
+// for "what does the runtime default to when a v2 IR section leaves a field
+// unset" instead of duplicating these numbers.
+pub(crate) fn default_max_messages() -> usize {
     20
 }
-fn default_summarize_threshold() -> usize {
+pub(crate) fn default_summarize_threshold() -> usize {
     6
 }
-fn default_summary_max_tokens() -> usize {
+pub(crate) fn default_summary_max_tokens() -> usize {
     500
 }
-fn default_keep_first() -> usize {
+pub(crate) fn default_keep_first() -> usize {
     2
 }
-fn default_keep_last() -> usize {
+pub(crate) fn default_keep_last() -> usize {
     4
 }
-fn default_short_term_turns() -> usize {
+pub(crate) fn default_short_term_turns() -> usize {
     5
 }
-fn default_mid_term_tokens() -> usize {
+pub(crate) fn default_mid_term_tokens() -> usize {
     2000
 }
-fn default_long_term_tokens() -> usize {
+pub(crate) fn default_long_term_tokens() -> usize {
     500
 }
 

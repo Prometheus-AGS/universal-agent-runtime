@@ -290,13 +290,14 @@ fn find_missing_sections(ir: &PartialAgentDescriptorIR) -> Vec<String> {
     missing
 }
 
+/// A minimal but complete UAR-AGENT-MD document (all 15 v1.1 sections,
+/// trivial values) — used as a base fixture by this module's own tests and,
+/// via `pub(crate)`, by CH-14's conformance-harness tests
+/// (`uar::compiler::conformance`), which append v2 sections to it rather
+/// than duplicating all 15 required sections themselves.
 #[cfg(test)]
-mod tests {
-    use super::super::ir::ContextStrategySection;
-    use super::*;
-
-    fn minimal_agent_md() -> String {
-        r#"# Agent: Test Agent
+pub(crate) fn minimal_agent_md() -> String {
+    r#"# Agent: Test Agent
 
 ## Metadata
 ```yaml
@@ -396,8 +397,13 @@ logging:
 profiles: []
 ```
 "#
-        .to_string()
-    }
+    .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::ir::ContextStrategySection;
+    use super::*;
 
     #[test]
     fn test_parse_complete_document() {

@@ -14,6 +14,7 @@
 
 pub mod compiler_skill;
 pub mod completeness;
+pub mod conformance;
 pub mod conversational;
 pub mod error;
 pub mod ir;
@@ -30,6 +31,7 @@ pub mod to_artifact;
 
 // Re-exports for convenience
 pub use compiler_skill::CompilerAgentSkill;
+pub use conformance::{CheckResult, ConformanceReport, check_conformance};
 pub use conversational::{
     CheckCompletenessTool, CompileSessionTool, CompilerSessionStore, UpdateSectionTool,
 };
