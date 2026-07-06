@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: prometheus-package-integration
-Step: 2 of 3
-Stage: executing
-Next command: /kbd-execute prometheus-package-integration -- Round 3: provisioning-tests-and-docs (new docs/PROVISIONING.md + close any remaining test gaps), then /kbd-reflect prometheus-package-integration.
+Step: 3 of 3
+Stage: reflect_pending
+Next command: /kbd-reflect prometheus-package-integration
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — prometheus-package-integration (step 2 of 3)
+  Starting <kbd-skill> — prometheus-package-integration (step 3 of 3)
   [do work]
-  Completed <kbd-skill> — prometheus-package-integration (step 2 of 3)
+  Completed <kbd-skill> — prometheus-package-integration (step 3 of 3)
