@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-carryover-audit
 Step: 4 of 4
-Stage: reflecting
-Next command: /kbd-reflect uar-carryover-audit -- all 4/4 changes done, execute_complete=true, G0 MET.
+Stage: reflect_complete
+Next command: /kbd-next-phase -- uar-carryover-audit is fully reflected (4/4 changes, G0 MET). Reflection recommends genuine new feature/roadmap scope -- no more hygiene backlog left to justify a third consecutive cleanup phase.
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-carryover-audit (step 4 of 4)

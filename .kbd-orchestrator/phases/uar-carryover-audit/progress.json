@@ -6,7 +6,7 @@
   "assessment_complete": true,
   "plan_complete": true,
   "execute_complete": true,
-  "reflect_complete": false,
+  "reflect_complete": true,
   "origin": "Seeded at the user's explicit choice ('Fresh assess first') after uar-frontend-typecheck-cleanup's reflection recommended feature scope but 2 of 3 spot-checked carryOverDebt items (H3 emit-runtime-step-events, H8 sandbox/MCP-status recorders) turned out to already be done despite being flagged 'unbuilt'/'still dead'. No fixed goal yet -- this phase's job is to run /kbd-assess against the full carry-over list and produce a grounded, directly-verified status for each item before /kbd-plan scopes real work.",
   "goals": [
     "G0 Audit the carryOverDebt list (P0, primary, provisional): directly verify CH-06 (per-agent/per-task budget config), CH-08 (activation-outcome correlation), durable cost/spend history (CH-07 dashboard), R2/R3/R4 product decisions (cancel semantics, eval scope, guardrail build-vs-buy -- may already be resolved by landed openspec changes), the unformatted-code carryover (stale file names but a real, fresh cargo fmt --check found 21 diffs across 12 different files), and the status of task_188b4179/task_7c2fd7ee's separate spawn_task sessions. Output: a corrected, evidence-backed status for every item, feeding a real /kbd-plan."
@@ -17,7 +17,7 @@
     "ch08-activation-outcome-correlation",
     "ch07-durable-cost-history"
   ],
-  "updatedAt": "2026-07-06T16:45:00Z",
+  "updatedAt": "2026-07-06T17:00:00Z",
   "changes_completed": 4,
   "changes_total": 4,
   "changes_completed_note": "Assessed 2026-07-06 (assessment.md): CH-06/CH-08/CH-07 confirmed still open; R2/R3/R4 confirmed resolved and cleared; fmt-drift confirmed real (21 diffs, 12 files); both spawn_task bugs confirmed still open, out of scope. Planned 2026-07-06 (plan.md): 4 changes, 3 rounds, with CH-06's scope corrected during planning (narrower than assessed -- a wiring fix, not new config-surface design; 'per-task' dropped entirely). EXECUTED 2026-07-06: Round 1 (15457ed) fmt-drift-cleanup -- cargo fmt across 12 files, cargo fmt --check clean. Round 2 (e68e2fb, one shared checkpoint) ch06-wire-agent-cost-budget (found during implementation that AgentPolicy has no typed budgets field at all -- it's preserved under extensions['budgets'] as JSON per to_artifact.rs's own established convention; added agent_cost_limit_from_extensions() + wired cost_budget.set_limit(Agent, ...)) and ch08-activation-outcome-correlation (captured skill->MCP-server-name ownership pre-merge, resolved invoked tool names back to their server via the existing McpRegistry::resolve_mcp_tool, wired record_skill_activation_outcome at the single run-end point common to every terminal branch; prompt-overlay-only skills explicitly excluded, disclosed limitation). Checkpoint: cargo test --lib 371/371 (8 new unit tests), cargo clippy zero new warnings (502 before/after via git stash A/B). Round 3 (ac75ee6, own dedicated checkpoint) ch07-durable-cost-history -- new cost_ledger table in both schema.surql and a new Postgres migration, real PersistenceLayer implementations in both surreal.rs and postgres.rs, fire-and-forget tokio::spawn persist calls wired into manager.rs's existing cost-recording block for all 4 scopes. Verified with a REAL round-trip test against a live embedded SurrealKV instance (not mocked). cargo test --lib 372/372, cargo clippy zero new warnings (508 before/after under postgres-backend, confirmed via git stash A/B). All 4/4 changes done. Next: /kbd-reflect uar-carryover-audit.",
