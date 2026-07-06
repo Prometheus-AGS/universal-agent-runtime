@@ -551,7 +551,9 @@
       "Bash(awk -F: '$1 < 1127')",
       "Bash(awk 'NR==1600,NR==1750' src/uar/runtime/manager.rs)",
       "Bash(gh issue *)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(git cherry-pick *)",
+      "Bash(curl -s \"https://crates.io/api/v1/crates/which\")"
     ]
   }
 }
