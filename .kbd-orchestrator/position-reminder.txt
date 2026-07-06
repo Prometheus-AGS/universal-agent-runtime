@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-carryover-audit
-Step: 4 of 4
-Stage: reflect_complete
-Next command: (paused) Wait for the user to name a feature/roadmap area, or explicitly ask to scan for candidates, before running /kbd-next-phase or /kbd-assess on a new phase.
+Phase: prometheus-package-integration
+Step: 12 of 14
+Stage: assess_pending
+Next command: AWAITING USER CONFIRMATION before /kbd-plan. Fresh assessment.md corrected a mistake made earlier in this session: #13 (dockerfile-multistage-with-submodules) is NOT a gap -- it's already-shipped, CI/deploy-wired infrastructure (5 docker-compose files + 5 GitHub Actions workflows depend on it). Only #4 (binary-instance-discovery) is a genuine gap needing the pluggable provisioning-strategy redesign. Need the user to confirm whether they still want #13 touched (replacing working infra) now that this correction is known, before /kbd-plan scopes anything.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-carryover-audit (step 4 of 4)
+  Starting <kbd-skill> — prometheus-package-integration (step 12 of 14)
   [do work]
-  Completed <kbd-skill> — uar-carryover-audit (step 4 of 4)
+  Completed <kbd-skill> — prometheus-package-integration (step 12 of 14)
