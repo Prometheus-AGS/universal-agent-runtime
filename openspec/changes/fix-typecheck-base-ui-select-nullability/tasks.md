@@ -1,0 +1,8 @@
+- [x] `agent-editor.tsx`: guard 4 `Select onValueChange` sites (`status`, `skill_selection_method`, `memory_scope`, `tool_approval`) with `v !== null`
+- [x] `agents-page.tsx`: fix `TriToggle`'s `ToggleGroup` usage — pass `value={[encodeTriValue(value)]}` (array, not bare string), read `vals[0]` in `onValueChange`, remove the nonexistent `type="single"` prop
+- [x] `agents-page.tsx`: guard the `memory_scope` `Select onValueChange` with `v !== null`
+- [x] `models-page.tsx`: guard both `Select onValueChange` sites (provider picker, model picker) with `v !== null`
+- [x] Confirm via `.d.ts` inspection that Base UI's `ToggleGroup` has no `type` prop and is unconditionally array-based (not a Radix-style single/multiple union)
+- [x] `bun run typecheck`: these 6 errors resolved
+- [x] `bun run lint`: 215 problems before/after (A-B via `git stash`), no new issues
+- [x] `bun run build`: succeeds

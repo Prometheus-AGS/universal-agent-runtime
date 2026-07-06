@@ -442,7 +442,7 @@ export const KnowledgePage: FC = () => {
 								{uploadProgress}
 							</span>
 						</div>
-						<Progress value={undefined} className="mt-1.5 h-1" />
+						<Progress value={null} className="mt-1.5 h-1" />
 					</div>
 				)}
 

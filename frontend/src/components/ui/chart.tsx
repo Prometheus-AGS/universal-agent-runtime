@@ -1,6 +1,5 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
-import type { TooltipValueType } from "recharts"
 
 import { cn } from "@/lib/utils"
 
@@ -9,6 +8,10 @@ const THEMES = { light: "", dark: ".dark" } as const
 
 const INITIAL_DIMENSION = { width: 320, height: 200 } as const
 type TooltipNameType = number | string
+// recharts doesn't re-export ValueType/NameType from its top-level index
+// (only DefaultTooltipContentProps) — mirrored locally here, same as
+// TooltipNameType above.
+type TooltipValueType = number | string | Array<number | string>
 
 export type ChartConfig = Record<
   string,

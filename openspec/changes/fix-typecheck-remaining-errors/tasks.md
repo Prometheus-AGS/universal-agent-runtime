@@ -1,0 +1,5 @@
+- [x] `knowledge-page.tsx`: change indeterminate `<Progress value={undefined} />` to `value={null}` (Base UI's actual indeterminate sentinel)
+- [x] `use-thread-graph-sync.ts`: confirm via `grep '\.id\b'` that `ServerThreadRow.id` is never read in the file
+- [x] Remove the unused `id: string` field from `ServerThreadRow` rather than force-casting past the mismatch
+- [x] `bun run typecheck`: both errors resolved — combined with the round's other 3 changes, exits 0 (was 17 errors)
+- [x] `bun run build`: succeeds

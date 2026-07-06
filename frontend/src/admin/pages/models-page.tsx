@@ -612,7 +612,7 @@ function AddModelDialog({ open, onOpenChange, configured, catalog, busy, onAdd }
             <Label htmlFor="add-model-provider" className="mb-1 block font-mono text-xs text-muted-foreground">
               Provider
             </Label>
-            <Select value={providerId} onValueChange={(v) => { setProviderId(v); setModelId(""); }}>
+            <Select value={providerId} onValueChange={(v) => { if (v !== null) { setProviderId(v); setModelId(""); } }}>
               <SelectTrigger id="add-model-provider" data-testid="add-model-provider">
                 <SelectValue placeholder="Select a provider" />
               </SelectTrigger>
@@ -629,7 +629,7 @@ function AddModelDialog({ open, onOpenChange, configured, catalog, busy, onAdd }
             <Label htmlFor="add-model-model" className="mb-1 block font-mono text-xs text-muted-foreground">
               Model
             </Label>
-            <Select value={modelId} onValueChange={setModelId} disabled={!providerId || available.length === 0}>
+            <Select value={modelId} onValueChange={(v) => { if (v !== null) setModelId(v); }} disabled={!providerId || available.length === 0}>
               <SelectTrigger id="add-model-model" data-testid="add-model-model">
                 <SelectValue
                   placeholder={

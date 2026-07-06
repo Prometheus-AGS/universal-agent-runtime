@@ -1,0 +1,5 @@
+- [x] Confirm via direct `.d.ts` inspection that installed `react-resizable-panels@2.1.9` exports `Panel`/`PanelGroup`/`PanelResizeHandle`, not `Group`/`Separator`
+- [x] Rename `ResizablePrimitive.Group` → `PanelGroup` (JSX element, both open and prop type)
+- [x] Rename `ResizablePrimitive.Separator` → `PanelResizeHandle` (JSX element, both open/close tags, and prop type)
+- [x] `bun run typecheck`: these 4 errors resolved
+- [x] `bun run build`: succeeds

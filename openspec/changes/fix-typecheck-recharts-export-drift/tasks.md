@@ -1,0 +1,6 @@
+- [x] Confirm via direct `.d.ts` inspection that `recharts@2.15.4`'s top-level index doesn't re-export `ValueType`/`NameType` from `DefaultTooltipContent` — only `DefaultTooltipContent`/`DefaultTooltipContentProps`
+- [x] Note this matches the file's existing `TooltipNameType` local-alias convention (already worked around the same gap for `NameType`)
+- [x] Remove the broken `import type { TooltipValueType } from "recharts"`
+- [x] Add a local `TooltipValueType` alias matching recharts's own `ValueType` definition
+- [x] `bun run typecheck`: this error resolved
+- [x] `bun run build`: succeeds

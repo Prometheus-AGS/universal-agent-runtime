@@ -372,7 +372,7 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
             </div>
             <div className="space-y-2">
               <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Status</Label>
-              <Select value={form.status} onValueChange={(v) => update("status", v)}>
+              <Select value={form.status} onValueChange={(v) => v !== null && update("status", v)}>
                 <SelectTrigger className="font-mono text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -476,7 +476,7 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
               </div>
               <div className="space-y-1 pt-1">
                 <Label className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Selection Method</Label>
-                <Select value={form.skill_selection_method} onValueChange={(v) => update("skill_selection_method", v)}>
+                <Select value={form.skill_selection_method} onValueChange={(v) => v !== null && update("skill_selection_method", v)}>
                   <SelectTrigger className="h-8 font-mono text-xs">
                     <SelectValue />
                   </SelectTrigger>
@@ -652,7 +652,7 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
             <Separator />
             <div className="space-y-2">
               <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Default Scope</Label>
-              <Select value={form.memory_scope} onValueChange={(v) => update("memory_scope", v)}>
+              <Select value={form.memory_scope} onValueChange={(v) => v !== null && update("memory_scope", v)}>
                 <SelectTrigger className="font-mono text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -672,7 +672,7 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
             <div className="space-y-2">
               <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Tool Approval</Label>
               <p className="font-mono text-xs text-muted-foreground">How tool calls are approved before execution.</p>
-              <Select value={form.tool_approval} onValueChange={(v) => update("tool_approval", v)}>
+              <Select value={form.tool_approval} onValueChange={(v) => v !== null && update("tool_approval", v)}>
                 <SelectTrigger className="font-mono text-xs">
                   <SelectValue />
                 </SelectTrigger>

@@ -21,7 +21,6 @@ import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 
 interface ServerThreadRow {
-  id: string;
   title?: string;
   created_at?: string;
   updated_at?: string;

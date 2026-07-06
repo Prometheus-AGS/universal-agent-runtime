@@ -58,9 +58,8 @@ function decodeTriValue(s: string): boolean | null {
 function TriToggle({ value, onChange }: { value: boolean | null; onChange: (v: boolean | null) => void }) {
   return (
     <ToggleGroup
-      type="single"
-      value={encodeTriValue(value)}
-      onValueChange={(s) => { if (s) onChange(decodeTriValue(s)); }}
+      value={[encodeTriValue(value)]}
+      onValueChange={(vals) => { const s = vals[0]; if (s) onChange(decodeTriValue(s)); }}
       className="gap-0 overflow-hidden rounded-lg border border-border"
     >
       {(["inherit", "on", "off"] as TriValue[]).map((v) => (
@@ -155,7 +154,7 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
             </div>
             <Select
               value={state.memory_scope}
-              onValueChange={(v) => setState((s) => ({ ...s, memory_scope: v }))}
+              onValueChange={(v) => v !== null && setState((s) => ({ ...s, memory_scope: v }))}
             >
               <SelectTrigger className="h-8 w-36 font-mono text-xs">
                 <SelectValue />
