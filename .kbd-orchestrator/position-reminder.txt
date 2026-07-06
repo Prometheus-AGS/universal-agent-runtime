@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-frontend-typecheck-cleanup
 Step: 5 of 5
-Stage: reflecting
-Next command: /kbd-reflect uar-frontend-typecheck-cleanup -- all 5/5 changes done, execute_complete=true, G1 MET.
+Stage: reflect_complete
+Next command: /kbd-next-phase -- uar-frontend-typecheck-cleanup is fully reflected (5/5 changes, G1 MET). Reflection recommends returning to genuine feature scope, not another cleanup phase.
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-frontend-typecheck-cleanup (step 5 of 5)
