@@ -1,0 +1,22 @@
+{
+  "phase": "uar-dependabot-remediation-2026-07",
+  "createdAt": "2026-07-06T19:45:00Z",
+  "updatedAt": "2026-07-06T19:45:00Z",
+  "sourceTool": "claude-code",
+  "assessment_complete": false,
+  "plan_complete": false,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "previousPhase": "prometheus-package-integration",
+  "seedNote": "Seeded from prometheus-package-integration's reflection.md candidate 3, chosen explicitly by the user over the other two candidates (original #14 test gap; cross-platform live verification of provisioning.rs). Starting numbers verified live via gh api .../dependabot/alerts (not just the push-time summary): 52 open, 3 critical/10 high/32 medium/7 low, across Cargo.lock (11), package-lock.json (30), frontend/pnpm-lock.yaml (10), sdks/typescript/package.json (1).",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "changes_in_progress": null,
+  "decisions": {},
+  "changes_ordered": [],
+  "change_status": {},
+  "next_change": null,
+  "next_session_priorities": [
+    "Run /kbd-assess uar-dependabot-remediation-2026-07 to triage all 52 alerts and scope which are safely resolvable now vs. need disclosure as deferred"
+  ]
+}
