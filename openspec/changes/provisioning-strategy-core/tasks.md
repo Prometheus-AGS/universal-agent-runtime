@@ -1,0 +1,11 @@
+- [x] Confirm `process_supervisor.rs` has no current call site and solves a different (TCP-service) problem shape — leave it untouched
+- [x] Design `ToolSpec`/`ProvisionOutcome`/`Strategy` types
+- [x] Implement `which()` PATH lookup (Adopt strategy), mirroring `build.rs:495`'s existing helper
+- [x] Implement native-package-manager detection (`apt-get`/`dnf`/`brew`/`winget`/`choco`) + install
+- [x] Implement git-install (clone + build command + resulting binary path)
+- [x] Implement prebuilt-binary fetch (download via `reqwest`, extract via native `tar`, no new archive crate)
+- [x] Gate strategies 2–4 behind `ProvisionOptions::allow_install` (default `false`) so nothing is silently host-modifying
+- [x] 7 unit tests: Adopt success/failure, native-package selection, resolve() adopt path, resolve() error paths (allow_install=false, no strategy declared)
+- [x] `cargo test --lib` 379/379 green
+- [x] `cargo clippy --lib` zero new warnings (502, matching established baseline)
+- [x] Register `pub mod provisioning;` in `src/uar/orchestrator/mod.rs`
