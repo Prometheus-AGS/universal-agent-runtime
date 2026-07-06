@@ -1,0 +1,8 @@
+- [x] Add `is_on_path()` public helper to `provisioning.rs` for fast-path checks
+- [x] Add `known_tool_spec()` curated spec for `kreuzberg`, Adopt-only fallback for uncurated names
+- [x] Wire `mcp/registry.rs`'s `McpServerEntry::Stdio` arm: check `is_on_path` first, only call `ToolProvisioner::resolve` when it fails, fall through to original spawn+error path on provisioning failure
+- [x] Confirm existing `test_mcp_optional` suite unaffected (4/4 still green)
+- [x] Add `skill_toolchain_specs()` (rustc/node/python3/go/wasmtime) as ready-to-use recipes — scope-corrected: not wired to any caller since no compile-from-source code path exists in UAR
+- [x] 6 new unit tests covering `known_tool_spec`, `is_on_path`, and the toolchain specs (including a real Adopt-path resolution of `rustc`)
+- [x] `cargo test --lib` 385/385 green
+- [x] `cargo clippy --lib` zero new warnings (502, unchanged)

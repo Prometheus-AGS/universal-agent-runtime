@@ -75,7 +75,45 @@ impl McpRegistry {
                 } => {
                     let env = expand_env_map(env);
 
-                    let command_path = resolve_mcp_command(command);
+                    let mut command_path = resolve_mcp_command(command);
+                    // Provisioning: only attempted when the configured
+                    // command isn't already resolvable (preserves the fast
+                    // path for the common case where it's already
+                    // installed). A curated ToolSpec exists for `kreuzberg`;
+                    // any other name gets an Adopt-only spec, so this never
+                    // silently installs something for an uncurated tool —
+                    // it just surfaces a clearer error than the raw spawn
+                    // failure below would.
+                    if !crate::uar::orchestrator::provisioning::is_on_path(
+                        &command_path.to_string_lossy(),
+                    ) {
+                        let spec = crate::uar::orchestrator::provisioning::known_tool_spec(command);
+                        let opts = crate::uar::orchestrator::provisioning::ProvisionOptions::default();
+                        match crate::uar::orchestrator::provisioning::ToolProvisioner::resolve(
+                            &spec, &opts,
+                        )
+                        .await
+                        {
+                            Ok(outcome) => {
+                                tracing::info!(
+                                    server = %name,
+                                    command = %command,
+                                    strategy = ?outcome.strategy,
+                                    path = %outcome.path.display(),
+                                    "provisioned MCP server command"
+                                );
+                                command_path = outcome.path;
+                            }
+                            Err(e) => {
+                                tracing::warn!(
+                                    server = %name,
+                                    command = %command,
+                                    error = %e,
+                                    "could not provision MCP server command; falling back to spawning it as configured"
+                                );
+                            }
+                        }
+                    }
                     let mut cmd = Command::new(&command_path);
                     cmd.args(args);
 

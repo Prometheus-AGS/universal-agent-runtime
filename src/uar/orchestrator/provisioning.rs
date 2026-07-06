@@ -105,6 +105,131 @@ impl Default for ProvisionOptions {
     }
 }
 
+/// Curated [`ToolSpec`] for tool names this codebase already documents an
+/// install path for (see `Cargo.toml`'s comment above the `kreuzberg`
+/// dependency and `docs/DEPENDENCY_MANAGEMENT.md`). Returns a bare,
+/// strategy-less spec (Adopt-only) for anything not curated — this
+/// deliberately does not invent installation strategies for arbitrary,
+/// uncurated tool names (e.g. `npx`, `uvx`, or a user's own MCP command).
+pub fn known_tool_spec(name: &str) -> ToolSpec {
+    match name {
+        "kreuzberg" => ToolSpec {
+            name: "kreuzberg",
+            native_pkg: PerOsPackageName {
+                brew: Some("kreuzberg-dev/tap/kreuzberg-cli"),
+                ..Default::default()
+            },
+            git_install: Some(GitInstallSpec {
+                url: "https://github.com/kreuzberg-dev/kreuzberg.git",
+                build_cmd: &[
+                    "cargo",
+                    "install",
+                    "--path",
+                    ".",
+                    "--bin",
+                    "kreuzberg",
+                ],
+                binary_relpath: "target/release/kreuzberg",
+            }),
+            prebuilt: None,
+        },
+        other => ToolSpec {
+            // `ToolSpec::name` is `&'static str` so specs can be declared as
+            // plain constants above. For an uncurated name we don't have a
+            // 'static str to hand back — `Box::leak` is a small, one-time
+            // leak per unique MCP server name (these come from `mcp.json`,
+            // loaded once at startup, not a per-call or user-scale input),
+            // which is an acceptable trade for keeping the common case
+            // (curated specs) allocation-free.
+            name: Box::leak(other.to_string().into_boxed_str()),
+            native_pkg: PerOsPackageName::default(),
+            git_install: None,
+            prebuilt: None,
+        },
+    }
+}
+
+/// `ToolSpec`s for the 5 skill-compilation toolchains the Dockerfile (`#13`
+/// in `prometheus-package-integration`) bakes into the runtime image —
+/// Rust, Node, Python, Go, wasmtime. Package/URL choices here deliberately
+/// mirror the Dockerfile's own install methods where practical, so the two
+/// don't drift (Go and wasmtime both use the same prebuilt-release pattern
+/// the Dockerfile does; Rust/Node/Python use each OS's default package
+/// manager rather than the Dockerfile's more specific rustup/nodesource
+/// scripts, which don't map cleanly onto this module's 4-strategy shape).
+///
+/// **Not currently wired to any caller.** UAR has no code path that compiles
+/// a skill from source today — the Dockerfile's own comment confirms these
+/// toolchains are kept resident "for user builds" (a human manually building
+/// their own skill inside the container), not something UAR's runtime
+/// invokes. These specs exist so a future "compile a skill from source"
+/// feature has ready-to-use, tested recipes rather than needing to
+/// reverse-engineer install methods from scratch — see `docs/PROVISIONING.md`.
+pub fn skill_toolchain_specs() -> Vec<ToolSpec> {
+    vec![
+        ToolSpec {
+            name: "rustc",
+            native_pkg: PerOsPackageName {
+                apt: Some("rustc"),
+                dnf: Some("rust"),
+                brew: Some("rust"),
+                winget: Some("Rustlang.Rustup"),
+                choco: Some("rust"),
+            },
+            git_install: None,
+            prebuilt: None,
+        },
+        ToolSpec {
+            name: "node",
+            native_pkg: PerOsPackageName {
+                apt: Some("nodejs"),
+                dnf: Some("nodejs"),
+                brew: Some("node"),
+                winget: Some("OpenJS.NodeJS"),
+                choco: Some("nodejs"),
+            },
+            git_install: None,
+            prebuilt: None,
+        },
+        ToolSpec {
+            name: "python3",
+            native_pkg: PerOsPackageName {
+                apt: Some("python3"),
+                dnf: Some("python3"),
+                brew: Some("python3"),
+                winget: Some("Python.Python.3"),
+                choco: Some("python3"),
+            },
+            git_install: None,
+            prebuilt: None,
+        },
+        ToolSpec {
+            name: "go",
+            native_pkg: PerOsPackageName::default(),
+            git_install: None,
+            // Matches the Dockerfile's own install method exactly (go.dev/dl
+            // release tarballs), rather than an OS package manager's often
+            // older Go version.
+            prebuilt: Some(PrebuiltSpec {
+                url_template: "https://go.dev/dl/go1.26.3.{os}-{arch}.tar.gz",
+                binary_relpath_in_archive: "go/bin/go",
+            }),
+        },
+        ToolSpec {
+            name: "wasmtime",
+            native_pkg: PerOsPackageName {
+                brew: Some("wasmtime"),
+                ..Default::default()
+            },
+            git_install: None,
+            prebuilt: Some(PrebuiltSpec {
+                url_template: "https://github.com/bytecodealliance/wasmtime/releases/download/v29.0.1/wasmtime-v29.0.1-{arch}-{os}.tar.xz",
+                binary_relpath_in_archive: "wasmtime",
+            }),
+        },
+    ]
+}
+
 #[derive(Debug)]
 pub struct ToolProvisioner;
 
@@ -170,6 +295,19 @@ impl ToolProvisioner {
             spec.name
         )
     }
+}
+
+/// Cheap, allocation-light check for whether `name` is already resolvable —
+/// either an existing absolute/relative path, or found on `PATH`. Intended
+/// for call sites (like `mcp/registry.rs`'s stdio spawn path) that want to
+/// preserve their fast path and only invoke [`ToolProvisioner::resolve`] when
+/// this returns `false`.
+pub fn is_on_path(name_or_path: &str) -> bool {
+    let p = std::path::Path::new(name_or_path);
+    if p.is_absolute() || p.components().count() > 1 {
+        return p.exists();
+    }
+    which(name_or_path).is_some()
 }
 
 /// `PATH` lookup — the "Adopt" strategy. Mirrors `build.rs`'s `which()`
@@ -378,6 +516,56 @@ async fn fetch_prebuilt(name: &str, spec: &PrebuiltSpec, cache_dir: &std::path::
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn known_tool_spec_returns_curated_kreuzberg_spec() {
+        let spec = known_tool_spec("kreuzberg");
+        assert_eq!(spec.name, "kreuzberg");
+        assert!(spec.git_install.is_some());
+        assert_eq!(
+            spec.native_pkg.brew,
+            Some("kreuzberg-dev/tap/kreuzberg-cli")
+        );
+    }
+
+    #[test]
+    fn known_tool_spec_returns_adopt_only_for_uncurated_names() {
+        let spec = known_tool_spec("some-arbitrary-mcp-command");
+        assert_eq!(spec.name, "some-arbitrary-mcp-command");
+        assert!(spec.git_install.is_none());
+        assert!(spec.prebuilt.is_none());
+        assert!(spec.native_pkg.apt.is_none());
+    }
+
+    #[test]
+    fn is_on_path_finds_a_bare_command_via_path() {
+        assert!(is_on_path("git"));
+    }
+
+    #[test]
+    fn is_on_path_returns_false_for_a_nonexistent_command() {
+        assert!(!is_on_path("uar-provisioning-test-nonexistent-binary-xyz"));
+    }
+
+    #[test]
+    fn skill_toolchain_specs_covers_all_5_dockerfile_toolchains() {
+        let specs = skill_toolchain_specs();
+        let names: Vec<&str> = specs.iter().map(|s| s.name).collect();
+        assert_eq!(names, vec!["rustc", "node", "python3", "go", "wasmtime"]);
+    }
+
+    #[tokio::test]
+    async fn skill_toolchain_specs_adopt_successfully_when_present() {
+        // In this CI/dev environment rustc is guaranteed present (the crate
+        // itself needs it to build) -- a real, non-trivial exercise of the
+        // Adopt path for one of the 5 toolchain specs, not just a synthetic
+        // fixture.
+        let specs = skill_toolchain_specs();
+        let rustc_spec = specs.iter().find(|s| s.name == "rustc").unwrap();
+        let opts = ProvisionOptions::default();
+        let outcome = ToolProvisioner::resolve(rustc_spec, &opts).await.unwrap();
+        assert_eq!(outcome.strategy, Strategy::Adopt);
+    }
 
     #[test]
     fn which_finds_a_binary_known_to_exist() {
