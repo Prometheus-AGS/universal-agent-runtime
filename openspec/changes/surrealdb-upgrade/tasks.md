@@ -1,0 +1,10 @@
+- [x] Confirm current pin (`=3.0.5`) vs crates.io latest (`3.2.0`) and the Dependabot alert set (highest requirement `<3.1.5`)
+- [x] Bump `Cargo.toml`'s `surrealdb` pin to `=3.2.0`; `cargo update -p surrealdb` refreshes `Cargo.lock`
+- [x] Review `migrations/surrealdb/schema.surql` (85 `DEFINE` statements) for breaking syntax between 3.0.5 and 3.2.0 — none found
+- [x] Correct this phase's assessment/plan: "12 SurrealDB migrations" are actually Postgres/sqlx migrations (`migrations/*.sql`); the real SurrealDB schema is the single `schema.surql` file
+- [x] Review SurrealQL call sites in `src/uar/persistence/providers/surreal.rs` and `src/uar/compiler/storage/surreal.rs` for breaking syntax — found a pre-existing `type::thing()` vs `type::record()` inconsistency (3 sites), confirmed as already-tracked bug `task_7c2fd7ee`, not a new regression; left unfixed (separate task's scope)
+- [x] `cargo check --lib` clean (no Rust API breakage, unlike `rmcp-pin-bump`/`wasmtime-disposition`)
+- [x] `cargo test --lib` 363/363 green
+- [x] `cargo test --test integration` 56/56 green (diagnosed and ruled out one resource-contention flake via isolated rerun + full-suite rerun)
+- [x] `cargo clippy --lib --tests` zero new warnings
+- [x] Live-server smoke check: boot with embedded SurrealKV against a scratch `surrealkv://` path, confirm zero-error settings-bootstrap writes (162 seeded) and a real `/readyz` read round-trip (`list_skills()` → `"ok"`)
