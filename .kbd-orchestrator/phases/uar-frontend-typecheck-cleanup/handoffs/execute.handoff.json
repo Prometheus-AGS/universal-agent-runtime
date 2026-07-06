@@ -1,0 +1,24 @@
+{
+  "stage": "execute",
+  "completedAt": "2026-07-06T14:45:00Z",
+  "outputs": [
+    "package.json",
+    "frontend/src/admin/components/agent-editor.tsx",
+    "frontend/src/admin/pages/agents-page.tsx",
+    "frontend/src/admin/pages/knowledge-page.tsx",
+    "frontend/src/admin/pages/models-page.tsx",
+    "frontend/src/components/ui/chart.tsx",
+    "frontend/src/components/ui/resizable.tsx",
+    "frontend/src/stores/use-thread-graph-sync.ts",
+    "static/index.html",
+    "openspec/changes/fix-root-frontend-script-invocation/",
+    "openspec/changes/fix-typecheck-base-ui-select-nullability/",
+    "openspec/changes/fix-typecheck-resizable-panels-api-drift/",
+    "openspec/changes/fix-typecheck-recharts-export-drift/",
+    "openspec/changes/fix-typecheck-remaining-errors/"
+  ],
+  "nextStage": "reflect",
+  "summaryForNext": "All 5 changes landed across 2 commits matching plan.md's 2 rounds: Round 1 (f6b3d69, fix-root-frontend-script-invocation) restored 6 broken root package.json scripts by swapping `pnpm --filter ./frontend` for `pnpm -C frontend` (format needed a distinct fix, `pnpm exec prettier --write frontend/src/`, since prettier is a root-only devDependency not resolved via -C). Round 2 (43ea2ad, all 4 remaining changes, one shared checkpoint) cleared all 17 pre-existing TypeScript errors: Base UI Select/ToggleGroup nullability (6), react-resizable-panels API drift (4, a mechanical rename confirmed via .d.ts inspection not a version bump), recharts type-export drift (1), and 2 remaining errors (Progress indeterminate value + an unused ServerThreadRow.id field removed rather than force-cast). Checkpoint: bun run typecheck exits 0 (was 17), bun run build succeeds, bun run lint shows the same 215 pre-existing problems before/after (no regression). One process note for reflect: an initial mistake ran the real prettier --write instead of a dry --check during Round 1 verification, reformatting 174 unrelated files across frontend/ -- caught immediately via git status and reverted with `git checkout -- frontend/` before anything was staged, so no unintended changes shipped, but worth naming as a lesson (verify with --check/--dry-run first when a command's side effects aren't yet confirmed safe). QA gate: artifact-refiner remains formally retired per uar-security-deps-and-hygiene's decision record; verification was direct bun run typecheck/lint/build execution.",
+  "skipped": false,
+  "skipReason": null
+}
