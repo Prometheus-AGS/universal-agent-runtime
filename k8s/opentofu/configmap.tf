@@ -12,8 +12,9 @@ resource "kubernetes_config_map" "uar_config" {
 
   data = {
     # ── Server ──────────────────────────────────────────────────────────────
-    UAR_SERVER__PORT = "3000"
-    UAR_SERVER__HOST = "0.0.0.0"
+    UAR_SERVER__PORT      = "3000"
+    UAR_SERVER__GRPC_PORT = "50051"
+    UAR_SERVER__HOST      = "0.0.0.0"
 
     # ── Persistence ──────────────────────────────────────────────────────────
     UAR_PERSISTENCE__PROVIDER             = "postgres"

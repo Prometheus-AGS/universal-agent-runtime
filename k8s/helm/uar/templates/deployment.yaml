@@ -26,6 +26,9 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
+            - name: grpc
+              containerPort: {{ .Values.uar.service.grpcPort }}
+              protocol: TCP
           envFrom:
             - configMapRef:
                 name: {{ include "uar.fullname" . }}-config

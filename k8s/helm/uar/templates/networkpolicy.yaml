@@ -112,6 +112,30 @@ spec:
         - protocol: TCP
           port: 3000
 ---
+# Allow Envoy Gateway -> UAR app on gRPC port (A2A gRPC transport)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-envoy-to-uar-grpc
+  namespace: {{ include "uar.namespace" . }}
+  labels:
+    app.kubernetes.io/part-of: universal-agent-runtime
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: uar
+      app.kubernetes.io/component: app
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: envoy-gateway-system
+      ports:
+        - protocol: TCP
+          port: {{ .Values.uar.service.grpcPort }}
+---
 # Allow Prometheus scraping -> UAR app on port 3000 from kube-system
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

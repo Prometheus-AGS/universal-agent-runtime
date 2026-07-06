@@ -135,6 +135,7 @@ services:
     environment:
       # ── Server ─────────────────────────────────────────────────────────────
       UAR_SERVER__PORT: "3000"
+      UAR_SERVER__GRPC_PORT: "50051"
       UAR_SERVER__HOST: "0.0.0.0"
 
       # ── Persistence: Postgres (primary) ───────────────────────────────────
@@ -178,6 +179,7 @@ services:
       - uar-data:/data
     ports:
       - "3000:3000"
+      - "50051:50051"
     depends_on:
       postgres:
         condition: service_healthy

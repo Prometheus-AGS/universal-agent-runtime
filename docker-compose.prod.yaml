@@ -32,9 +32,11 @@ services:
     env_file: .env
     ports:
       - "${APP_PORT:-3000}:3000"
+      - "${GRPC_PORT:-50051}:50051"
     environment:
       # ── Server ───────────────────────────────────────────────────────────────
       UAR_SERVER__PORT: "3000"
+      UAR_SERVER__GRPC_PORT: "50051"
       UAR_SERVER__HOST: "0.0.0.0"
 
       # ── Persistence: SurrealDB (HTTP RPC — use Docker service hostname) ─────

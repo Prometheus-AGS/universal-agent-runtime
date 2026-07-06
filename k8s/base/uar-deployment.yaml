@@ -29,6 +29,9 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
+            - name: grpc
+              containerPort: 50051
+              protocol: TCP
           envFrom:
             - configMapRef:
                 name: uar-config

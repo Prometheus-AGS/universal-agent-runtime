@@ -8,6 +8,7 @@ metadata:
     app.kubernetes.io/part-of: universal-agent-runtime
 data:
   UAR_SERVER__PORT: "3000"
+  UAR_SERVER__GRPC_PORT: "50051"
   UAR_SERVER__HOST: "0.0.0.0"
   UAR_SERVER__LOG_FORMAT: "json"
   UAR_SERVER__SHUTDOWN_TIMEOUT_SECS: "30"

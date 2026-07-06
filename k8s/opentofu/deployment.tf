@@ -84,6 +84,12 @@ resource "kubernetes_deployment" "uar" {
             protocol       = "TCP"
           }
 
+          port {
+            name           = "grpc"
+            container_port = 50051
+            protocol       = "TCP"
+          }
+
           # ── Non-sensitive configuration (ConfigMap) ──────────────────────
           env_from {
             config_map_ref {
@@ -294,6 +300,13 @@ resource "kubernetes_service" "uar_svc" {
       name        = "http"
       port        = 3000
       target_port = 3000
+      protocol    = "TCP"
+    }
+
+    port {
+      name        = "grpc"
+      port        = 50051
+      target_port = 50051
       protocol    = "TCP"
     }
   }

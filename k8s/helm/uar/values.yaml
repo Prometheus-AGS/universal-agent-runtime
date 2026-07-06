@@ -9,6 +9,7 @@ uar:
   service:
     type: ClusterIP
     port: 3000
+    grpcPort: 50051
   resources:
     requests:
       cpu: 250m
@@ -35,6 +36,7 @@ uar:
   terminationGracePeriodSeconds: 60
   env:
     UAR_SERVER__PORT: "3000"
+    UAR_SERVER__GRPC_PORT: "50051"
     UAR_SERVER__HOST: "0.0.0.0"
     UAR_SERVER__LOG_FORMAT: "json"
     UAR_SERVER__SHUTDOWN_TIMEOUT_SECS: "30"

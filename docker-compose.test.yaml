@@ -12,8 +12,9 @@ services:
       # Persistence
       - UAR_PERSISTENCE__PROVIDER=postgres
       - UAR_PERSISTENCE__DATABASE_URL=postgres://postgres:postgres@postgres:5432/uar_test
-      # Server port (test uses 3001 to avoid conflicts)
+      # Server port (test uses 3001/50052 to avoid conflicts)
       - UAR_SERVER__PORT=3001
+      - UAR_SERVER__GRPC_PORT=50052
       # LLM (stub values for tests — real requests should be mocked)
       - LLM_PROTOCOL=auto
       - LLM_BASE_URL=${LLM_BASE_URL:-https://api.openai.com}
@@ -28,6 +29,7 @@ services:
       - RUST_LOG=info
     ports:
       - "3001:3001"
+      - "50052:50052"
     depends_on:
       postgres:
         condition: service_healthy
