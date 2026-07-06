@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-carryover-audit
-Step: 0 of 4
-Stage: executing
-Next command: /kbd-execute uar-carryover-audit -- Round 1: fmt-drift-cleanup (cargo fmt across 12 files). Round 2 (parallel, one shared checkpoint): ch06-wire-agent-cost-budget, ch08-activation-outcome-correlation. Round 3 (own checkpoint, touches persistence): ch07-durable-cost-history.
+Step: 4 of 4
+Stage: reflecting
+Next command: /kbd-reflect uar-carryover-audit -- all 4/4 changes done, execute_complete=true, G0 MET.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-carryover-audit (step 0 of 4)
+  Starting <kbd-skill> — uar-carryover-audit (step 4 of 4)
   [do work]
-  Completed <kbd-skill> — uar-carryover-audit (step 0 of 4)
+  Completed <kbd-skill> — uar-carryover-audit (step 4 of 4)
