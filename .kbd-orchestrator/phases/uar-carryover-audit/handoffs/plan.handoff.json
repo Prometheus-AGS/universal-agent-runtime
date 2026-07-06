@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-06T15:40:00Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "4 changes in 3 rounds. Round 1 (zero risk): fmt-drift-cleanup -- cargo fmt across 12 files, cargo fmt --check to confirm. Round 2 (parallel, one shared cargo test --lib + clippy checkpoint): ch06-wire-agent-cost-budget (small wiring fix, scope corrected during planning -- AgentDescriptorIR.BudgetsSection.max_cost_per_session_usd already exists and CostBudgetTracker already records Agent-scoped spend, just needs cost_budget.set_limit(Agent, agent_id, ...) called from the config value; 'per-task' dropped entirely, no task entity in this runtime) and ch08-activation-outcome-correlation (real design work: track each matched skill's introduced MCP server namespace(s) before merge, collect actually-invoked tool names during the run via the existing ToolCallComplete events, correlate at run end and call the already-defined record_skill_activation_outcome; prompt-overlay-only skills with no mcp_config are explicitly excluded from outcome tracking as a disclosed limitation, not force-fit). Round 3 (sequenced, own dedicated checkpoint including a live-server smoke check, since it touches the persistence layer): ch07-durable-cost-history -- new cost_ledger SurrealDB table + PersistenceLayer trait methods (both surreal.rs and postgres.rs implementations per this project's dual-backend pattern) + a fire-and-forget persist call from the existing cost-recording block in manager.rs. First change to apply: fmt-drift-cleanup.",
+  "skipped": false,
+  "skipReason": null
+}

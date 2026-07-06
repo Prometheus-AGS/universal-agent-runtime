@@ -4,7 +4,7 @@
   "backend": "openspec",
   "sourceTool": "claude-code",
   "assessment_complete": true,
-  "plan_complete": false,
+  "plan_complete": true,
   "execute_complete": false,
   "reflect_complete": false,
   "origin": "Seeded at the user's explicit choice ('Fresh assess first') after uar-frontend-typecheck-cleanup's reflection recommended feature scope but 2 of 3 spot-checked carryOverDebt items (H3 emit-runtime-step-events, H8 sandbox/MCP-status recorders) turned out to already be done despite being flagged 'unbuilt'/'still dead'. No fixed goal yet -- this phase's job is to run /kbd-assess against the full carry-over list and produce a grounded, directly-verified status for each item before /kbd-plan scopes real work.",
@@ -13,14 +13,14 @@
   ],
   "candidateChanges": [
     "fmt-drift-cleanup",
-    "ch06-per-agent-task-budget",
+    "ch06-wire-agent-cost-budget",
     "ch08-activation-outcome-correlation",
     "ch07-durable-cost-history"
   ],
-  "updatedAt": "2026-07-06T15:25:00Z",
+  "updatedAt": "2026-07-06T15:40:00Z",
   "changes_completed": 0,
-  "changes_total": 0,
-  "changes_completed_note": "Assessed 2026-07-06 (assessment.md). Directly re-verified every carryover candidate (no trust carried forward): CH-06 (per-agent/per-task budget config) CONFIRMED still open -- LlmBudgetConfig only has global_limit + per-model model_limits, no per-agent/task field anywhere. CH-08 (activation-outcome correlation) CONFIRMED still open exactly as carried -- record_skill_activation_outcome defined but never called, record_skill_activation (recall half) is. CH-07 (durable cost history) CONFIRMED still open -- cost_budget.rs's own doc comment says persistence is intentionally out of scope, pure in-memory HashMap. R2 (cancel semantics) RESOLVED -- full CancellationToken + cancel_run + last-subscriber-drop infra already shipped (add-run-cancellation). R3 (eval scope) RESOLVED -- 8-file eval harness + eval-targeted-suites landed. R4 (guardrail build-vs-buy) RESOLVED -- real GuardrailsConfig + guardrail-pii-block/mount-governance-guardrails landed. All 3 productDecisionsRequired entries are stale, not open questions. Unformatted-code note: stale in specifics (routes.rs/ingestion_worker.rs not in current diff) but real in substance -- fresh cargo fmt --check found 21 diffs across 12 other files. task_7c2fd7ee (type::thing fix) and task_188b4179 (embed_batch placeholder) both CONFIRMED still open, unchanged -- owned by separate spawn_task sessions, informational only, not this phase's to fix. Next: /kbd-plan uar-carryover-audit -- candidates are CH-06, CH-08, CH-07 (all real feature work, not quick fixes) plus a zero-risk fmt pass.",
+  "changes_total": 4,
+  "changes_completed_note": "Assessed 2026-07-06 (assessment.md): CH-06/CH-08/CH-07 confirmed still open; R2/R3/R4 confirmed resolved and cleared; fmt-drift confirmed real (21 diffs, 12 files); both spawn_task bugs confirmed still open, out of scope. Planned 2026-07-06 (plan.md): 4 changes, 3 rounds. Deeper investigation while planning CORRECTED CH-06's scope (narrower than assessed): AgentDescriptorIR.BudgetsSection already declares max_cost_per_session_usd (parsed, completeness-checked) and CostBudgetTracker already records spend against BudgetScope::Agent on every cost event (manager.rs:1568) -- the only gap is that nothing reads the config field and calls cost_budget.set_limit(Agent, ...). Renamed the change ch06-wire-agent-cost-budget to reflect this (a wiring fix, not new config-surface design); dropped 'per-task' from scope entirely since the runtime has no task entity distinct from a run (per the code's own comment). Round 1 (zero risk): fmt-drift-cleanup. Round 2 (parallel, one shared checkpoint -- cargo test --lib + clippy): ch06-wire-agent-cost-budget, ch08-activation-outcome-correlation (real design: correlate matched-skill MCP server namespaces against actually-invoked tool names at run end; explicitly excludes prompt-overlay-only skills from outcome tracking as a disclosed limitation). Round 3 (sequenced, own dedicated checkpoint incl. live-server smoke check, touches persistence): ch07-durable-cost-history (new SurrealDB cost_ledger table + PersistenceLayer methods + fire-and-forget write from the existing cost-recording block). Next: /kbd-execute uar-carryover-audit.",
   "carriedOverDebt": [
     "task_7c2fd7ee (SurrealQL type::thing() fix, src/uar/persistence/providers/surreal.rs:524 + src/uar/compiler/storage/surreal.rs:71,109) -- confirmed still open, owned by a separate spawn_task session, not this phase's scope",
     "task_188b4179 (VectorMatcher::embed_batch placeholder embeddings, src/uar/runtime/matching/vector.rs) -- confirmed still open, owned by a separate spawn_task session, not this phase's scope"
