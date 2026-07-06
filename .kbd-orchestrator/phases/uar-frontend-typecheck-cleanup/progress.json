@@ -3,19 +3,25 @@
   "previousPhase": "uar-security-deps-and-hygiene",
   "backend": "openspec",
   "sourceTool": "claude-code",
-  "assessment_complete": false,
+  "assessment_complete": true,
   "plan_complete": false,
   "execute_complete": false,
   "reflect_complete": false,
   "origin": "Seeded from uar-security-deps-and-hygiene's reflection.md 'Next Phase Focus' -- deliberately scoped down to a thin cleanup phase at the user's explicit choice (AskUserQuestion: 'Thin cleanup phase' over 'New feature area' or 'Hold off'). Two of that reflection's other carryover items (task_7c2fd7ee, task_188b4179) were explicitly excluded because separate spawn_task sessions are already working on them; the eval-gate item is operator-only.",
   "goals": [
-    "G1 Clear the pre-existing bun run typecheck backlog (P0, primary): 17 pre-existing errors carried across 3+ phases (Base UI Select nullability, react-resizable-panels API drift, recharts type-export drift) -- plus a newly-found blocker this session where bun run typecheck fails immediately on a pnpm ignored-builds gate (@parcel/watcher) before reaching the TypeScript compiler at all, likely unrelated to the 17 carried errors."
+    "G1 Clear the pre-existing bun run typecheck backlog (P0, primary): 17 real TypeScript errors confirmed unchanged (Base UI Select nullability x6, react-resizable-panels API drift x4, recharts type-export drift x1, 6 other not-previously-itemized errors), PLUS a newly-discovered structural finding: 6 of 7 root package.json scripts (build/dev/test/test:e2e/lint/typecheck/format) that use `pnpm --filter ./frontend <cmd>` are non-functional from repo root because root was never registered as a pnpm workspace member of frontend during the already-landed frontend-pnpm-workspace-migration change -- confirmed working alternative is `pnpm -C frontend <cmd>` (matches build.rs's own already-working pattern); confirmed REJECTED alternative is adding root-level `packages: - frontend`, which breaks frontend's own nested workspace (the entity-mgmt submodule)."
   ],
-  "candidateChanges": [],
-  "updatedAt": "2026-07-06T13:40:00Z",
+  "candidateChanges": [
+    "fix-root-frontend-script-invocation",
+    "fix-typecheck-base-ui-select-nullability",
+    "fix-typecheck-resizable-panels-api-drift",
+    "fix-typecheck-recharts-export-drift",
+    "fix-typecheck-remaining-errors"
+  ],
+  "updatedAt": "2026-07-06T14:00:00Z",
   "changes_completed": 0,
   "changes_total": 0,
-  "changes_completed_note": "Phase seeded, not yet assessed. Next: /kbd-assess uar-frontend-typecheck-cleanup -- first confirm whether the pnpm ignored-builds gate blocking bun run typecheck entirely is a one-time local approval or a repo-level regression, then re-verify the actual current TypeScript error count/content before assuming the carried '17 errors, 3 causes' description is still accurate.",
+  "changes_completed_note": "Assessed 2026-07-06 (assessment.md). Resolved the pnpm build-approval gate (allowBuilds: @parcel/watcher: true in root pnpm-workspace.yaml, a legitimate well-known native package). Found and confirmed via direct testing that this alone wasn't enough -- root-level `bun run typecheck`/build/dev/test/lint/format all fail with 'No projects matched the filters' because repo root isn't a registered pnpm workspace member of frontend (frontend has its own nested pnpm-workspace.yaml for the entity-mgmt submodule, and nesting workspace roots this way isn't supported cleanly). Confirmed `pnpm -C frontend <cmd>` as a working fix candidate (matches build.rs's already-working current_dir-based invocation) and confirmed adding root-level `packages: - frontend` as a REJECTED alternative (breaks the submodule resolution). Reconfirmed the 17 real TypeScript errors are unchanged from prior phases when run correctly (`pnpm typecheck` inside frontend/ or `pnpm -C frontend typecheck`) -- itemized all 17 by file/cause, including 6 not previously broken out individually. Next: /kbd-plan to sequence (1) the small, low-risk root-script invocation fix, then (2) the 17 TypeScript fixes, likely grouped by cause (Base UI Select, resizable-panels, recharts, misc).",
   "carriedOverDebt": [
     "CH-06 per-agent/per-task budget configuration surface (aggregation done; only global limit configurable)",
     "CH-08 activation-outcome correlation (recall half wired; outcome half unsolved)",

@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-07-06T14:00:00Z",
+  "outputs": [
+    "assessment.md"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "Two distinct gaps found, not one: (1) 17 real, unchanged TypeScript errors across 6 files/causes (itemized in full in assessment.md, including 6 errors not previously broken out by name); (2) a newly-discovered structural gap where 6 of 7 root package.json scripts (build/dev/test/test:e2e/lint/typecheck/format) are non-functional from repo root due to a pnpm --filter vs. nested-workspace conflict introduced by the already-landed frontend-pnpm-workspace-migration change. Confirmed fix candidate for (2): swap `pnpm --filter ./frontend <cmd>` for `pnpm -C frontend <cmd>` in all 6 scripts (matches build.rs's already-working pattern); confirmed REJECTED alternative: adding a root-level `packages: - frontend` workspace entry, which breaks the frontend/packages/prometheus-entity-management submodule resolution. Open question for /kbd-plan: whether the `format` script's `exec prettier` sub-case needs extra handling beyond the directory-flag swap (prettier is a root devDependency, not hoisted into frontend/node_modules under -C).",
+  "skipped": false,
+  "skipReason": null
+}

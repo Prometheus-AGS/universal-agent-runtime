@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-frontend-typecheck-cleanup
 Step: 0 of 0
-Stage: assess_pending
-Next command: /kbd-assess uar-frontend-typecheck-cleanup
+Stage: plan_pending
+Next command: /kbd-plan uar-frontend-typecheck-cleanup
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-frontend-typecheck-cleanup (step 0 of 0)
