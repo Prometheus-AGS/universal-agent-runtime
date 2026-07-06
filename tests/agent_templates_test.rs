@@ -20,8 +20,8 @@ const TEMPLATES: &[&str] = &["coding", "vision", "terminal", "data"];
 async fn all_templates_compile_and_sign_to_v2_schema() {
     for name in TEMPLATES {
         let path = format!("{}/templates/{name}.agent.md", env!("CARGO_MANIFEST_DIR"));
-        let markdown = std::fs::read_to_string(&path)
-            .unwrap_or_else(|e| panic!("failed to read {path}: {e}"));
+        let markdown =
+            std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("failed to read {path}: {e}"));
 
         let ir = parse(&markdown).unwrap_or_else(|e| panic!("{name}: failed to parse: {e}"));
 

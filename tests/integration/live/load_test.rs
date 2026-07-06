@@ -67,7 +67,10 @@ async fn concurrent_agents_load_test() {
                 Ok(r) => {
                     let status = r.status();
                     let body = r.text().await.unwrap_or_default();
-                    (elapsed, status.is_success() && body.contains(&format!("load test response {i}")))
+                    (
+                        elapsed,
+                        status.is_success() && body.contains(&format!("load test response {i}")),
+                    )
                 }
                 Err(_) => (elapsed, false),
             }

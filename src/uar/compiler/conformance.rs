@@ -74,7 +74,9 @@ impl ConformanceReport {
     /// [`CheckResult::Satisfied`].
     #[must_use]
     pub fn all_satisfied(&self) -> bool {
-        self.model_requirements.is_ok() && self.prompt_dialect.is_ok() && self.context_strategy.is_ok()
+        self.model_requirements.is_ok()
+            && self.prompt_dialect.is_ok()
+            && self.context_strategy.is_ok()
     }
 }
 
@@ -141,7 +143,10 @@ async fn check_model_requirements(
     }
 }
 
-fn check_prompt_dialect(section: &PromptDialectSection, resolved_model: Option<&str>) -> CheckResult {
+fn check_prompt_dialect(
+    section: &PromptDialectSection,
+    resolved_model: Option<&str>,
+) -> CheckResult {
     let Some(declared) = section.dialect.as_deref() else {
         return CheckResult::NotDeclared;
     };
@@ -200,7 +205,8 @@ fn to_runtime_strategy(section: &ContextStrategySection) -> Option<ContextStrate
             long_term_facts_tokens,
         } => Some(ContextStrategy::Hierarchical {
             short_term_turns: short_term_turns.unwrap_or_else(default_short_term_turns),
-            mid_term_summary_tokens: mid_term_summary_tokens.unwrap_or_else(default_mid_term_tokens),
+            mid_term_summary_tokens: mid_term_summary_tokens
+                .unwrap_or_else(default_mid_term_tokens),
             long_term_facts_tokens: long_term_facts_tokens.unwrap_or_else(default_long_term_tokens),
         }),
     }
@@ -218,7 +224,11 @@ fn expected_trim_len(strategy: &ContextStrategy, total: usize) -> usize {
             keep_last,
         } => {
             let total_keep = keep_first + keep_last;
-            if total <= total_keep { total } else { total_keep }
+            if total <= total_keep {
+                total
+            } else {
+                total_keep
+            }
         }
         // `apply_strategy` deliberately falls back to a 50-message sliding
         // window for Summarize/Hierarchical (see its own doc comment) — a
@@ -312,11 +322,19 @@ needs_tools: true
         );
         let router = router_with_anthropic().await;
         let report = check_conformance(&ir, &router).await;
-        assert!(matches!(report.model_requirements, CheckResult::Satisfied(_)));
+        assert!(matches!(
+            report.model_requirements,
+            CheckResult::Satisfied(_)
+        ));
         // The router picks the cheapest tools-capable Anthropic model, not
         // necessarily the exact one `router_with_anthropic()` configured —
         // seeding a provider makes its whole catalog available.
-        assert!(report.resolved_model.as_deref().is_some_and(|m| m.starts_with("anthropic/")));
+        assert!(
+            report
+                .resolved_model
+                .as_deref()
+                .is_some_and(|m| m.starts_with("anthropic/"))
+        );
     }
 
     #[tokio::test]
@@ -380,10 +398,7 @@ dialect: "openai_json"
         // to it -> declared "openai_json" does not match.
         let router = router_with_anthropic().await;
         let report = check_conformance(&ir, &router).await;
-        assert!(matches!(
-            report.prompt_dialect,
-            CheckResult::Unsatisfied(_)
-        ));
+        assert!(matches!(report.prompt_dialect, CheckResult::Unsatisfied(_)));
         assert!(!report.all_satisfied());
     }
 
@@ -401,10 +416,7 @@ dialect: "anthropic_xml"
         // nothing to resolve a model from.
         let router = ModelRouter::new(Arc::new(ProviderRegistry::new()));
         let report = check_conformance(&ir, &router).await;
-        assert!(matches!(
-            report.prompt_dialect,
-            CheckResult::Unsatisfied(_)
-        ));
+        assert!(matches!(report.prompt_dialect, CheckResult::Unsatisfied(_)));
     }
 
     #[tokio::test]
@@ -440,10 +452,7 @@ keep_last: 2
         );
         let router = router_with_anthropic().await;
         let report = check_conformance(&ir, &router).await;
-        assert!(matches!(
-            report.context_strategy,
-            CheckResult::Satisfied(_)
-        ));
+        assert!(matches!(report.context_strategy, CheckResult::Satisfied(_)));
     }
 
     #[tokio::test]

@@ -18,7 +18,9 @@ mod live {
 
 use cucumber::{World as _, given, then, when};
 use live::harness::{ServiceNeeds, boot_test_server};
-use live::stub_llm::{FixtureResponse, FixtureSet, RequestFingerprint, StubLlmServer, start_stub_llm};
+use live::stub_llm::{
+    FixtureResponse, FixtureSet, RequestFingerprint, StubLlmServer, start_stub_llm,
+};
 
 const MODEL: &str = "gpt-5.4-mini";
 
@@ -75,13 +77,13 @@ fn given_a_running_server(_world: &mut World) {
     // until the full fixture set for the scenario is known.
 }
 
-#[given(
-    regex = r#"^the stub LLM responds to "([^"]+)" with the content "([^"]+)"$"#
-)]
+#[given(regex = r#"^the stub LLM responds to "([^"]+)" with the content "([^"]+)"$"#)]
 fn given_content_fixture(world: &mut World, message: String, response: String) {
     let fixtures = std::mem::take(&mut world.pending_fixtures);
-    world.pending_fixtures =
-        fixtures.with(content_fingerprint(&message), FixtureResponse::Content(response));
+    world.pending_fixtures = fixtures.with(
+        content_fingerprint(&message),
+        FixtureResponse::Content(response),
+    );
 }
 
 #[given(
@@ -168,7 +170,9 @@ async fn when_streaming_request(world: &mut World, stream_mode: String, message:
 
 #[then("the response status should be successful")]
 fn then_status_successful(world: &mut World) {
-    let status = world.response_status.expect("a request should have been sent");
+    let status = world
+        .response_status
+        .expect("a request should have been sent");
     assert!((200..300).contains(&status), "status: {status}");
 }
 

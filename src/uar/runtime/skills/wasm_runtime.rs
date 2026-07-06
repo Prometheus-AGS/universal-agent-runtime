@@ -16,11 +16,11 @@ use anyhow::Result;
 // wasmtime::Error no longer implements std::error::Error (wasmtime 46), so
 // anyhow's blanket Context impl doesn't apply to wasmtime Results anymore —
 // wasmtime ships its own Context trait for exactly this case.
-use wasmtime::error::Context;
 use tokio::sync::Mutex;
 use tracing::{info, warn};
 use walkdir::WalkDir;
 use wasmtime::component::{Component, Linker};
+use wasmtime::error::Context;
 use wasmtime::{Engine, Store};
 
 use crate::uar::domain::skills::{

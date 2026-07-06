@@ -1,0 +1,3 @@
+- [x] Run `cargo fmt` across the whole workspace
+- [x] `cargo fmt --check` clean (was 21 diffs across 12 files)
+- [x] `cargo check --lib` clean (formatting-only change, confirmed no behavior impact)

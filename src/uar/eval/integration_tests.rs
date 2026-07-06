@@ -178,9 +178,7 @@ async fn targeted_suites_are_valid_and_score_perfectly() {
         assert!(!suite.cases.is_empty(), "{name} suite has cases");
 
         let scorers = build_scorers(&suite, &provider);
-        let results = Runner
-            .run(&suite, &scorers, provider.as_ref(), None)
-            .await;
+        let results = Runner.run(&suite, &scorers, provider.as_ref(), None).await;
         assert_eq!(results.len(), suite.cases.len());
 
         for r in &results {

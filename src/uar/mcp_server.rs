@@ -290,8 +290,7 @@ impl ServerHandler for UarRuntimeMcpServer {
         // #[non_exhaustive] -- struct-literal syntax (even with
         // ..Default::default()) is rejected cross-crate; use the provided
         // constructors + field mutation instead (all fields are `pub`).
-        let mut info =
-            ServerInfo::new(ServerCapabilities::builder().enable_tools().build());
+        let mut info = ServerInfo::new(ServerCapabilities::builder().enable_tools().build());
         info.server_info = Implementation::new("uar-runtime-mcp", env!("CARGO_PKG_VERSION"));
         info.instructions = Some(
             "UAR Runtime MCP server. Tools: \

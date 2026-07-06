@@ -827,8 +827,7 @@ impl ServerHandler for UarMemoryMcpServer {
         // #[non_exhaustive] -- struct-literal syntax (even with
         // ..Default::default()) is rejected cross-crate; use the provided
         // constructors + field mutation instead (all fields are `pub`).
-        let mut info =
-            ServerInfo::new(ServerCapabilities::builder().enable_tools().build());
+        let mut info = ServerInfo::new(ServerCapabilities::builder().enable_tools().build());
         info.server_info = Implementation::new("uar-memory-mcp", env!("CARGO_PKG_VERSION"));
         info.instructions = Some(
             "UAR in-process memory MCP server. \
