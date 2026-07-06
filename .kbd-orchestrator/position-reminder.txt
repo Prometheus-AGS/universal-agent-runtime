@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-security-deps-and-hygiene
 Step: 10 of 10
-Stage: reflecting
-Next command: /kbd-reflect uar-security-deps-and-hygiene -- all 10/10 changes done, execute_complete=true, reflection.md already drafted at .kbd-orchestrator/phases/uar-security-deps-and-hygiene/reflection.md. Run /kbd-reflect to formally close the phase (set reflect_complete=true) and seed /kbd-next-phase.
+Stage: reflect_complete
+Next command: /kbd-next-phase -- uar-security-deps-and-hygiene is fully reflected (10/10 changes, both goals MET). Seed the next phase from reflection.md's Next Phase Focus: recommend returning to feature scope, with task_7c2fd7ee, task_188b4179, and the 17 pre-existing bun typecheck errors as visible non-blocking carryover.
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-security-deps-and-hygiene (step 10 of 10)

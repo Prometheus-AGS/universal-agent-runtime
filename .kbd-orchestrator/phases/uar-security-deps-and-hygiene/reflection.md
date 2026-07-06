@@ -38,6 +38,41 @@ this test harness's design (many parallel server-booting tests) makes
 this class of flake plausible under CPU load; worth a note for whoever
 next investigates integration test reliability, though not blocking.
 
+As with every phase since at least `uar-spec-v2-and-polish`: none of
+this phase's 10 OpenSpec change directories were run through
+`/opsx:verify` + `/opsx:archive` — all 10 still sit in
+`openspec/changes/<id>/` rather than `openspec/changes/archive/`. This
+is the same, already-disclosed pattern (artifact-refiner QA-gate
+automation carried as unaddressed debt for 4+ phases, formally
+addressed *within* this phase via the `artifact-refiner-gate-decision`
+change — see Artifact Quality Summary below), not a new gap. Every
+change was still verified, just via `cargo check`/`cargo test`/`cargo
+clippy` (+ a live-server smoke check for `surrealdb-upgrade`) directly
+rather than the formal OpenSpec/artifact-refiner gate.
+
+## Artifact Quality Summary
+
+| Metric                       | Value                              |
+| ----------------------------- | ----------------------------------- |
+| Changes with QA (artifact-refiner) | 0/10                           |
+| First-pass pass rate         | N/A — gate not applicable this phase |
+| Changes requiring refinement | 0                                   |
+| Total refinement iterations  | 0                                   |
+
+No artifact-refiner MCP tool is available in this environment (this
+phase's `artifact-refiner-gate-decision` change — see below —
+reconfirmed this via `ToolSearch` and formally retired the gate
+requirement rather than continuing to silently carry it as debt). The
+replacement verification method used for all 10 changes: `cargo
+check`/`cargo test --lib`/`cargo test --test integration`/`cargo
+clippy`, plus a dedicated live-server smoke check for the two
+highest-blast-radius changes (`rmcp-pin-bump`, `surrealdb-upgrade`).
+Full detail and rationale: `.kbd-orchestrator/references/artifact-refiner-gate-decision.md`.
+
+### Recurring Constraint Violations
+
+None — no constraint-based QA gate ran this phase (see above).
+
 ## Goals
 
 | Goal | Status | Notes |
