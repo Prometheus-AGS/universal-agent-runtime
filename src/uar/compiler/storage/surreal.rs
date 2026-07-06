@@ -68,7 +68,7 @@ impl SpecStorage for SurrealCompilerStorage {
         // For now, fetch-modify-save pattern unless we want to use specific SQL queries.
         // Let's use a merge query.
         let updated_at = chrono::Utc::now();
-        let query = "UPDATE type::thing('uar_specs', $id) MERGE { content: $content, updated_at: $updated_at } RETURN AFTER";
+        let query = "UPDATE type::record('uar_specs', $id) MERGE { content: $content, updated_at: $updated_at } RETURN AFTER";
         let mut response = self
             .db
             .query(query)
@@ -106,7 +106,7 @@ impl SpecStorage for SurrealCompilerStorage {
             .context("failed to save report to SurrealDB")?;
 
         // Update parent spec
-        let query = "UPDATE type::thing('uar_specs', $spec_id) MERGE { latest_report_id: $report_id, updated_at: $updated_at }";
+        let query = "UPDATE type::record('uar_specs', $spec_id) MERGE { latest_report_id: $report_id, updated_at: $updated_at }";
         self.db
             .query(query)
             .bind(("spec_id", record.spec_id.clone()))

@@ -519,9 +519,9 @@ impl PersistenceLayer for SurrealDbProvider {
 
     async fn update_document_status(&self, doc_id: &str, status: &DocumentStatus) -> Result<()> {
         // `knowledge_documents.id` is a record id (e.g. knowledge_documents:`<uuid>`),
-        // not a plain string — match it via type::thing() so the bound UUID resolves
+        // not a plain string — match it via type::record() so the bound UUID resolves
         // to the correct row.
-        let sql = "UPDATE type::thing('knowledge_documents', $id) SET status = $status, updated_at = time::now()";
+        let sql = "UPDATE type::record('knowledge_documents', $id) SET status = $status, updated_at = time::now()";
         self.db
             .query(sql)
             .bind(("id", doc_id.to_string()))
