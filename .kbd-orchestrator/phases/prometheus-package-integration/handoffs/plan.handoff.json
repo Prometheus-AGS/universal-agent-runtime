@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-06T18:45:00Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "4 changes in 3 rounds. Round 1 (foundational): provisioning-strategy-core -- new src/uar/orchestrator/provisioning.rs implementing ToolSpec + ToolProvisioner::resolve() with 4-strategy fallthrough (Adopt via a promoted which()-style PATH check from build.rs:495, NativePackageManager per-OS, GitInstall, PrebuiltBinary). Round 2 (parallel, one shared checkpoint): wire-mcp-server-provisioning (mcp/registry.rs's Stdio spawn arm, only invoked when the plain command doesn't already resolve via PATH, preserving today's fast path) and wire-toolchain-provisioning (rustc/node/python3/go/wasmtime resolution for local dev, cached per-process). Round 3: provisioning-tests-and-docs -- new docs/PROVISIONING.md + closing any remaining test gaps. Explicitly does NOT touch process_supervisor.rs (different problem shape, no current call site) or Dockerfile #13 (already shipped, user confirmed leave alone) or surreal-memory-server/liter-llm (not spawnable processes). First change to apply: provisioning-strategy-core.",
+  "skipped": false,
+  "skipReason": null
+}

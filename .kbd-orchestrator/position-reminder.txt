@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: prometheus-package-integration
-Step: 12 of 14
-Stage: assess_pending
-Next command: AWAITING USER CONFIRMATION before /kbd-plan. Fresh assessment.md corrected a mistake made earlier in this session: #13 (dockerfile-multistage-with-submodules) is NOT a gap -- it's already-shipped, CI/deploy-wired infrastructure (5 docker-compose files + 5 GitHub Actions workflows depend on it). Only #4 (binary-instance-discovery) is a genuine gap needing the pluggable provisioning-strategy redesign. Need the user to confirm whether they still want #13 touched (replacing working infra) now that this correction is known, before /kbd-plan scopes anything.
+Step: 0 of 4
+Stage: executing
+Next command: /kbd-execute prometheus-package-integration -- Round 1: provisioning-strategy-core. Round 2 (parallel, one shared checkpoint): wire-mcp-server-provisioning, wire-toolchain-provisioning. Round 3: provisioning-tests-and-docs.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — prometheus-package-integration (step 12 of 14)
+  Starting <kbd-skill> — prometheus-package-integration (step 0 of 4)
   [do work]
-  Completed <kbd-skill> — prometheus-package-integration (step 12 of 14)
+  Completed <kbd-skill> — prometheus-package-integration (step 0 of 4)

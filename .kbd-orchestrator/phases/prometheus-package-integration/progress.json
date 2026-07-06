@@ -4,13 +4,13 @@
   "updatedAt": "2026-07-06T18:15:00Z",
   "sourceTool": "claude-code",
   "assessment_complete": true,
-  "plan_complete": false,
+  "plan_complete": true,
   "execute_complete": false,
   "reflect_complete": false,
   "resumedAt": "2026-07-06T18:00:00Z",
-  "resumeNote": "Resumed after being stale since 2026-05-26. Fresh /kbd-assess (2026-07-06) directly re-verified all 14 original items: 12/14 confirmed DONE (some via an evolved direct-hooks design). Only #4 (binary-instance-discovery) is a genuine remaining gap. IMPORTANT: #13 (dockerfile-multistage-with-submodules) was INITIALLY misjudged as also incomplete (a shallow `grep -c '^FROM'` check was misread) -- corrected after direct content inspection confirmed the polyglot 5-toolchain Dockerfile is fully shipped and wired into 5 docker-compose files + 5 GitHub Actions workflows (build-image.yml, deploy.yml, release.yml, comprehensive-tests.yml, image-uar-toolchain.yml). plan_complete reset to false -- the old 2026-05-26 plan.md is superseded for #4 (redesign to a pluggable provisioning-strategy system: Adopt/NativePackageManager/GitInstall/PrebuiltBinary, equally robust Linux/macOS/Windows, scope = 3 child binaries + 5 skill toolchains, DB engines out of scope) and is being reconfirmed with the user on whether #13 should still be touched given it's not actually a gap.",
-  "changes_total": 14,
-  "changes_completed": 12,
+  "resumeNote": "Resumed after being stale since 2026-05-26. Fresh /kbd-assess (2026-07-06) directly re-verified all 14 original items: 12/14 confirmed DONE (some via an evolved direct-hooks design). Two corrections made and user-confirmed during assessment: (1) #13 (dockerfile-multistage-with-submodules) was INITIALLY misjudged as incomplete (a shallow `grep -c '^FROM'` check was misread) -- corrected after direct content inspection confirmed the polyglot 5-toolchain Dockerfile is fully shipped and wired into 5 docker-compose files + 5 GitHub Actions workflows; user confirmed leave it alone. (2) surreal-memory-server and liter-llm are NOT separate spawnable processes -- both are linked Rust libraries used in-process; 'binary-instance-discovery' cannot mean spawning them, dropped from scope. Final confirmed scope for #4 (plan.md, 2026-07-06): a new focused module (src/uar/orchestrator/provisioning.rs, NOT a modification of process_supervisor.rs which solves a different TCP-service-shaped problem with no current call site) implementing 4-strategy resolution (Adopt/NativePackageManager/GitInstall/PrebuiltBinary), wired into MCP stdio server spawning (mcp/registry.rs) and skill-compilation toolchain resolution (Rust/Node/Python/Go/wasmtime) for local dev outside the container. changes_total/changes_completed below now track this NEW 4-change plan going forward -- the original 14-item list's final disposition (12 done, #13 done-not-touched, #4 replaced) is preserved in changes_ordered/change_status/plan-2026-05-26-original.md for historical record.",
+  "changes_total": 4,
+  "changes_completed": 0,
   "changes_in_progress": null,
   "decisions": {
     "waypoint": "replaces runtime-provider-protocol-hardening (stale)",
@@ -43,7 +43,7 @@
     "fix-kb-document-count": "DONE",
     "surreal-live-query-bus": "DONE",
     "add-skill-kind-and-origin": "DONE",
-    "binary-instance-discovery": "PARTIAL -- process_supervisor.rs exists with probe-then-adopt-or-spawn, but assumes the binary is already on PATH (no install/provisioning logic at all), and pidfile handling is Linux/XDG-specific. User-directed redesign in progress: pluggable provisioning strategies (Adopt/NativePackageManager/GitInstall/PrebuiltBinary), equally robust Linux/macOS/Windows.",
+    "binary-instance-discovery": "REPLACED -- see the new 4-change plan (provisioning-strategy-core, wire-mcp-server-provisioning, wire-toolchain-provisioning, provisioning-tests-and-docs) in plan.md. process_supervisor.rs itself is left untouched (solves a different TCP-service-shaped problem with no current call site); the real gap (MCP stdio spawn + toolchain resolution have zero provisioning logic) is addressed by a new, separate module.",
     "add-skill-system-submodule": "DONE",
     "wasm-component-skill-runtime": "DONE (WIT world pinned, runtime scaffolded; wit-bindgen dispatch deferred)",
     "frontend-pnpm-workspace-migration": "DONE",
@@ -55,10 +55,15 @@
     "dockerfile-multistage-with-submodules": "DONE (2026-07-06 re-verify, CORRECTED an initial mis-check this session) -- full 5-toolchain polyglot Dockerfile confirmed shipped and wired into CI/deploy. Not a gap.",
     "integration-tests-and-docs": "PARTIAL -- docs/realtime.md + docs/skill-authoring.md shipped; system tests for live-bus latency and builtin-409 still not found. Remaining scope now just needs to cover whatever #4's redesign becomes."
   },
-  "next_change": "binary-instance-discovery (redesign: pluggable provisioning strategies)",
+  "next_change": "provisioning-strategy-core",
+  "planned_changes": [
+    "provisioning-strategy-core",
+    "wire-mcp-server-provisioning",
+    "wire-toolchain-provisioning",
+    "provisioning-tests-and-docs"
+  ],
   "next_session_priorities": [
-    "Confirm with user whether #13 (Dockerfile) should still be touched now that it's confirmed already-shipped, CI/deploy-wired infrastructure -- not a gap",
-    "Write a fresh plan.md scoping #4's provisioning-strategy redesign (Adopt/NativePackageManager/GitInstall/PrebuiltBinary, Linux/macOS/Windows, 3 binaries + 5 toolchains)",
-    "Extend integration-tests-and-docs to cover the new provisioning system once built"
+    "Execute Round 1 (provisioning-strategy-core), then Round 2 (wire-mcp-server-provisioning + wire-toolchain-provisioning, shared checkpoint), then Round 3 (provisioning-tests-and-docs)",
+    "Round 2's checkpoint must confirm mcp.json's existing kreuzberg/time entries still connect (fast-path-when-already-installed must not regress)"
   ]
 }
