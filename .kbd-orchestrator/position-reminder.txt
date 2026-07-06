@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: prometheus-package-integration
 Step: 3 of 3
-Stage: reflect_pending
-Next command: /kbd-reflect prometheus-package-integration
+Stage: phase_closed_awaiting_next
+Next command: AWAITING USER DIRECTION on next phase focus (see reflection.md's 3 candidates: #14 carried-over test gap, cross-platform live verification, or a fresh Dependabot re-check). Once chosen, run /kbd-next-phase <name>.
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — prometheus-package-integration (step 3 of 3)
