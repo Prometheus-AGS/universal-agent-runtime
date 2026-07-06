@@ -248,4 +248,34 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     ) -> Result<Vec<crate::uar::runtime::checkpoint::Checkpoint>> {
         Ok(Vec::new())
     }
+
+    // =========================================================================
+    // Cost Budget History (CH-07)
+    // =========================================================================
+
+    /// Durably record one cost-budget spend event. `CostBudgetTracker`
+    /// (`src/uar/runtime/cost_budget.rs`) is intentionally in-memory-only for
+    /// the hot path; this is the durable roll-up layer its own doc comment
+    /// anticipated subscribing to. Default no-op so this remains additive for
+    /// any future `PersistenceLayer` implementer that doesn't need history.
+    async fn record_cost_entry(&self, _scope: &str, _scope_id: &str, _cost_usd: f64) -> Result<()> {
+        Ok(())
+    }
+
+    /// List durable cost-history entries for a `(scope, scope_id)`, ordered by
+    /// `recorded_at` ascending.
+    async fn list_cost_history(&self, _scope: &str, _scope_id: &str) -> Result<Vec<CostEntry>> {
+        Ok(Vec::new())
+    }
+}
+
+/// One durable cost-budget spend event (CH-07). Mirrors
+/// `cost_budget::BudgetScope`/`record()`'s in-memory accounting, but as a
+/// persisted, append-only history entry rather than an aggregate.
+#[derive(Debug, Clone)]
+pub struct CostEntry {
+    pub scope: String,
+    pub scope_id: String,
+    pub cost_usd: f64,
+    pub recorded_at: DateTime<Utc>,
 }

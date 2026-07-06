@@ -135,3 +135,15 @@ DEFINE FIELD embedding ON communities TYPE array<float>;
 DEFINE FIELD created_at ON communities TYPE datetime;
 DEFINE INDEX idx_community_id ON communities FIELDS id UNIQUE;
 DEFINE INDEX idx_community_level ON communities FIELDS level;
+
+-- =============================================================================
+-- Cost Budget History (CH-07)
+-- =============================================================================
+
+DEFINE TABLE cost_ledger SCHEMAFULL;
+DEFINE FIELD scope ON cost_ledger TYPE string;
+DEFINE FIELD scope_id ON cost_ledger TYPE string;
+DEFINE FIELD cost_usd ON cost_ledger TYPE float;
+DEFINE FIELD recorded_at ON cost_ledger TYPE datetime;
+DEFINE INDEX idx_cost_ledger_scope ON cost_ledger FIELDS scope, scope_id;
+DEFINE INDEX idx_cost_ledger_recorded_at ON cost_ledger FIELDS recorded_at;

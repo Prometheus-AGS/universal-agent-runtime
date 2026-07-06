@@ -894,6 +894,71 @@ impl PersistenceLayer for SurrealDbProvider {
             })
             .collect()
     }
+
+    // Cost Budget History (CH-07)
+    async fn record_cost_entry(&self, scope: &str, scope_id: &str, cost_usd: f64) -> Result<()> {
+        #[derive(Serialize)]
+        struct CostLedgerRow {
+            scope: String,
+            scope_id: String,
+            cost_usd: f64,
+            recorded_at: chrono::DateTime<chrono::Utc>,
+        }
+        let row = CostLedgerRow {
+            scope: scope.to_string(),
+            scope_id: scope_id.to_string(),
+            cost_usd,
+            recorded_at: chrono::Utc::now(),
+        };
+        let payload = to_db_value(&row)?;
+        let _: Option<surrealdb::types::Value> =
+            self.db.create("cost_ledger").content(payload).await?;
+        Ok(())
+    }
+
+    async fn list_cost_history(
+        &self,
+        scope: &str,
+        scope_id: &str,
+    ) -> Result<Vec<crate::uar::persistence::CostEntry>> {
+        #[derive(Deserialize)]
+        struct CostLedgerRow {
+            scope: String,
+            scope_id: String,
+            cost_usd: f64,
+            recorded_at: chrono::DateTime<chrono::Utc>,
+        }
+        let sql = "SELECT * FROM cost_ledger WHERE scope = $scope AND scope_id = $scope_id ORDER BY recorded_at";
+        let mut res = self
+            .db
+            .query(sql)
+            .bind(("scope", scope.to_string()))
+            .bind(("scope_id", scope_id.to_string()))
+            .await?;
+        let raw: Vec<surrealdb::types::Value> = res.take(0).or_else(|e| {
+            if e.to_string().contains("does not exist") {
+                Ok(vec![])
+            } else {
+                Err(anyhow::anyhow!(e))
+            }
+        })?;
+        let json: Vec<serde_json::Value> = raw
+            .into_iter()
+            .map(surreal_to_json)
+            .collect::<Result<_>>()?;
+        let rows: Vec<CostLedgerRow> = from_db_vec(json)?;
+        Ok(rows
+            .into_iter()
+            .map(
+                |r| crate::uar::persistence::CostEntry {
+                    scope: r.scope,
+                    scope_id: r.scope_id,
+                    cost_usd: r.cost_usd,
+                    recorded_at: r.recorded_at,
+                },
+            )
+            .collect())
+    }
 }
 
 /// Convert a `surrealdb::types::Value` to a standard `serde_json::Value`.
@@ -1174,5 +1239,52 @@ mod tests {
         });
 
         assert_eq!(unwrap_surreal_value(value), json!("doc-123"));
+    }
+
+    #[tokio::test]
+    async fn cost_ledger_round_trips_against_a_real_embedded_db() {
+        use super::SurrealDbProvider;
+        use crate::uar::persistence::PersistenceLayer;
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let db_path = dir.path().join("cost_ledger_test.db");
+        let endpoint = format!("surrealkv://{}", db_path.display());
+        let provider = SurrealDbProvider::new(&endpoint, None, None, None, None)
+            .await
+            .expect("connect to embedded SurrealKV");
+
+        provider
+            .record_cost_entry("agent", "agent-1", 0.05)
+            .await
+            .expect("record first entry");
+        provider
+            .record_cost_entry("agent", "agent-1", 0.10)
+            .await
+            .expect("record second entry");
+        provider
+            .record_cost_entry("agent", "agent-2", 1.00)
+            .await
+            .expect("record unrelated-scope entry");
+
+        let history = provider
+            .list_cost_history("agent", "agent-1")
+            .await
+            .expect("list history");
+
+        assert_eq!(history.len(), 2, "only agent-1's 2 entries, not agent-2's");
+        assert_eq!(history[0].scope, "agent");
+        assert_eq!(history[0].scope_id, "agent-1");
+        assert!((history[0].cost_usd - 0.05).abs() < 1e-9);
+        assert!((history[1].cost_usd - 0.10).abs() < 1e-9);
+        assert!(
+            history[0].recorded_at <= history[1].recorded_at,
+            "ordered by recorded_at ascending"
+        );
+
+        let empty = provider
+            .list_cost_history("agent", "agent-nonexistent")
+            .await
+            .expect("list history for unknown scope_id");
+        assert!(empty.is_empty());
     }
 }

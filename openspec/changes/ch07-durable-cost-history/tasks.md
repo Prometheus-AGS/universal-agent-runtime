@@ -1,0 +1,11 @@
+- [x] Add `record_cost_entry`/`list_cost_history` to `PersistenceLayer` trait with default no-op implementations, plus a new `CostEntry` struct
+- [x] Confirm `schema.surql` is documentation-only (never auto-applied by `SurrealDbProvider::new`) — SurrealDB creates tables implicitly regardless, matching every existing table in this codebase
+- [x] Add `cost_ledger` table to `migrations/surrealdb/schema.surql` (SCHEMAFULL, indexed on scope+scope_id and recorded_at)
+- [x] Implement `record_cost_entry`/`list_cost_history` in `surreal.rs` using the SDK-native `.create()`/filtered `.query()` patterns already established in that file
+- [x] Add `migrations/20260706000000_cost_ledger.sql` for Postgres (auto-applied by the existing `sqlx::migrate!` call)
+- [x] Implement `record_cost_entry`/`list_cost_history` in `postgres.rs` for dual-backend parity
+- [x] Wire fire-and-forget persist calls (`tokio::spawn`) into `manager.rs`'s existing cost-recording block for all 4 scopes (Run, Session, Agent, Global), matching the existing per-tool-call checkpoint-persist pattern
+- [x] Real round-trip integration test against a live embedded SurrealKV instance (write 3 entries across 2 scope_ids, confirm filtered + ordered read-back, confirm empty result for an unknown scope_id)
+- [x] `cargo test --lib` 372/372 green
+- [x] `cargo check --lib` clean (default + `--features postgres-backend`)
+- [x] `cargo clippy --lib` zero new warnings (default + `--features postgres-backend`, confirmed via `git stash` A/B)

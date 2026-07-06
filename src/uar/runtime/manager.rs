@@ -1661,6 +1661,21 @@ impl RunManager {
                     let mut alert: Option<(BudgetScope, String, f64, f64, bool)> = None;
                     for (scope, scope_id) in scopes {
                         let status = cost_budget_for_run.record(scope, scope_id, cost).await;
+                        // CH-07: durable roll-up, fire-and-forget so the hot
+                        // path never blocks on a DB write — mirrors the
+                        // existing per-tool-call checkpoint persist pattern
+                        // above.
+                        if let Some(db) = persistence_for_run.clone() {
+                            let scope_str = scope.as_str().to_string();
+                            let scope_id_owned = scope_id.to_string();
+                            tokio::spawn(async move {
+                                if let Err(e) =
+                                    db.record_cost_entry(&scope_str, &scope_id_owned, cost).await
+                                {
+                                    tracing::warn!(error = %e, scope = %scope_str, "Failed to persist cost ledger entry");
+                                }
+                            });
+                        }
                         if alert.is_none()
                             && let BudgetStatus::Warning {
                                 spent_usd,
@@ -1683,6 +1698,13 @@ impl RunManager {
                     let global_status = cost_budget_for_run
                         .record(BudgetScope::Global, "global", cost)
                         .await;
+                    if let Some(db) = persistence_for_run.clone() {
+                        tokio::spawn(async move {
+                            if let Err(e) = db.record_cost_entry("global", "global", cost).await {
+                                tracing::warn!(error = %e, "Failed to persist cost ledger entry (global)");
+                            }
+                        });
+                    }
                     if alert.is_none()
                         && let BudgetStatus::Warning {
                             spent_usd,

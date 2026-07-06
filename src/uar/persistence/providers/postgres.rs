@@ -1010,6 +1010,45 @@ impl PersistenceLayer for PostgresProvider {
 
         rows.into_iter().map(pg_row_to_attachment_meta).collect()
     }
+
+    // Cost Budget History (CH-07)
+    async fn record_cost_entry(&self, scope: &str, scope_id: &str, cost_usd: f64) -> Result<()> {
+        sqlx::query(
+            "INSERT INTO cost_ledger (scope, scope_id, cost_usd, recorded_at) VALUES ($1, $2, $3, NOW())",
+        )
+        .bind(scope)
+        .bind(scope_id)
+        .bind(cost_usd)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn list_cost_history(
+        &self,
+        scope: &str,
+        scope_id: &str,
+    ) -> Result<Vec<crate::uar::persistence::CostEntry>> {
+        let rows = sqlx::query(
+            "SELECT scope, scope_id, cost_usd, recorded_at FROM cost_ledger
+             WHERE scope = $1 AND scope_id = $2 ORDER BY recorded_at",
+        )
+        .bind(scope)
+        .bind(scope_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        rows.into_iter()
+            .map(|r| {
+                Ok(crate::uar::persistence::CostEntry {
+                    scope: r.try_get("scope")?,
+                    scope_id: r.try_get("scope_id")?,
+                    cost_usd: r.try_get("cost_usd")?,
+                    recorded_at: r.try_get("recorded_at")?,
+                })
+            })
+            .collect()
+    }
 }
 
 // =============================================================================
