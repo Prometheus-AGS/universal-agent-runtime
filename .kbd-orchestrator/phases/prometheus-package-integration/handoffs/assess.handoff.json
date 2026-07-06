@@ -1,0 +1,12 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-07-06T18:30:00Z",
+  "outputs": [
+    "assessment.md",
+    "assessment-2026-05-26-original.md (preserved original)"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "12 of the original 14 changes confirmed done via direct code inspection (several via an evolved direct-per-entity-hooks design). Only #4 (binary-instance-discovery) is real remaining work. Two corrections made and confirmed with the user during assessment: (1) #13 (Dockerfile) is NOT a gap -- already shipped, CI/deploy-wired, user confirmed leave it alone; (2) surreal-memory-server and liter-llm are NOT separate spawnable processes -- both are linked Rust libraries used in-process, so 'binary-instance-discovery' cannot mean spawning them. Final confirmed scope for /kbd-plan: build a pluggable provisioning-strategy system (Adopt / NativePackageManager / GitInstall / PrebuiltBinary), equally robust on Linux/macOS/Windows, and wire it into (a) MCP stdio server spawning in mcp/registry.rs (currently bare Command::new(), zero provisioning, and process_supervisor.rs's existing adopt-or-spawn logic is dead code never called from there) and (b) the 5 skill-compilation toolchains (Rust/Node/Python/Go/wasmtime) for local dev outside the container. Database engines out of scope. Existing AdoptionResult/ManagedBinary/Supervisor types should be extended, not replaced.",
+  "skipped": false,
+  "skipReason": null
+}
