@@ -567,6 +567,51 @@ mod tests {
         assert_eq!(outcome.strategy, Strategy::Adopt);
     }
 
+    /// Exercises the `GitInstall` strategy end-to-end (clone + build command +
+    /// resulting binary path) against a local, offline fixture repo -- not a
+    /// real network install, so it's safe to run in CI unlike an actual
+    /// package-manager/prebuilt-binary install would be. Named
+    /// `#[ignore]` anyway per this module's own disclosed test gap
+    /// (`docs/PROVISIONING.md`): it still shells out to `git clone` and a
+    /// build command, which is more than a pure unit test should assume is
+    /// always safe/fast in every CI environment.
+    #[tokio::test]
+    #[ignore = "shells out to git clone + a build command; run manually with `cargo test --lib -- --ignored git_install`"]
+    async fn git_install_clones_and_builds_from_a_local_fixture_repo() {
+        let tmp = tempfile::tempdir().unwrap();
+        let fixture_repo = tmp.path().join("fixture-repo");
+        std::fs::create_dir_all(&fixture_repo).unwrap();
+        let run = |args: &[&str], dir: &std::path::Path| {
+            let status = std::process::Command::new("git")
+                .args(args)
+                .current_dir(dir)
+                .status()
+                .unwrap();
+            assert!(status.success());
+        };
+        run(&["init", "-q"], &fixture_repo);
+        run(&["config", "user.email", "test@example.com"], &fixture_repo);
+        run(&["config", "user.name", "test"], &fixture_repo);
+        std::fs::write(
+            fixture_repo.join("build.sh"),
+            "#!/bin/sh\nprintf '#!/bin/sh\\necho ok\\n' > my-tool\nchmod +x my-tool\n",
+        )
+        .unwrap();
+        run(&["add", "."], &fixture_repo);
+        run(&["commit", "-q", "-m", "init"], &fixture_repo);
+
+        let cache_dir = tmp.path().join("cache");
+        let spec = GitInstallSpec {
+            url: fixture_repo.to_str().unwrap().to_string().leak(),
+            build_cmd: &["sh", "build.sh"],
+            binary_relpath: "my-tool",
+        };
+        let path = git_install("my-tool-fixture", &spec, &cache_dir)
+            .await
+            .unwrap();
+        assert!(path.exists());
+    }
+
     #[test]
     fn which_finds_a_binary_known_to_exist() {
         // `git` is a hard dependency of this project's own submodule

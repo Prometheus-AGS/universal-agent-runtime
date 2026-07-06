@@ -1,0 +1,8 @@
+- [x] Write `docs/PROVISIONING.md` — 4-strategy precedence, `allow_install` gating, how to add a `ToolSpec`, explicit non-goals
+- [x] Add D-E entry to `docs/ARCHITECTURE.md`'s Architectural Decisions section, cross-referencing `docs/PROVISIONING.md`
+- [x] Close Round 1's disclosed `GitInstall` test gap with an `#[ignore]`d, offline, local-fixture-repo end-to-end test
+- [x] Fix a real `doc_markdown` clippy lint introduced by the new test's doc comment
+- [x] `cargo test --lib` 385/385 green (1 ignored)
+- [x] `cargo test --lib -- --ignored git_install` 1/1 green, run explicitly
+- [x] `cargo clippy --lib` 502 warnings, unchanged from baseline
+- [x] `cargo clippy --lib --tests` zero `provisioning.rs` warnings after the doc fix
