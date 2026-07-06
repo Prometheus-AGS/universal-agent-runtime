@@ -1,10 +1,10 @@
 {
-  "phase": "uar-frontend-typecheck-cleanup",
+  "phase": "uar-carryover-audit",
   "change": null,
-  "status": "reflect_complete",
-  "stage": "reflect_complete",
-  "previousPhase": "uar-security-deps-and-hygiene",
-  "currentTask": "REFLECT COMPLETE. reflection.md written: G1 MET (only goal), 5/5 changes done, no re-carried items from this phase. Artifact Quality Summary added (0/5 through artifact-refiner, gate formally retired in the prior phase). Disclosed the prettier --write mistake (174 files reformatted then fully reverted before staging) as a named lesson. Disclosed the same established pattern (none of the 5 OpenSpec change dirs archived) as prior phases. New non-urgent findings surfaced: 215 pre-existing bun run lint problems + 174 pre-existing prettier --check failures, both now precisely quantified; no doc covers the root-vs-frontend pnpm workspace boundary. Recommendation: return to genuine feature scope next -- no more hygiene backlog to justify a third consecutive cleanup phase. handoffs/reflect.handoff.json recorded. progress.json reflect_complete=true.",
+  "status": "assess_pending",
+  "stage": "assess_pending",
+  "previousPhase": "uar-frontend-typecheck-cleanup",
+  "currentTask": "Phase seeded at the user's explicit choice ('Fresh assess first') after uar-frontend-typecheck-cleanup's reflection recommended feature scope but 2 of 3 spot-checked carryOverDebt items turned out stale: H3 (emit-runtime-step-events) is already fully implemented and merged (commits 2444b8c/9c45aae/f43e403, all tasks checked bar one non-blocking manual step) despite being flagged 'unbuilt, top priority'; H8 sandbox/MCP-status metric recorders are already wired into real code paths (src/mcp/registry.rs, src/llm/orchestrator.rs) despite being flagged 'still dead'. No fixed goal yet -- this phase runs /kbd-assess against the full carry-over list (CH-06 budget config, CH-08 activation-outcome correlation, CH-07 cost history, R2/R3/R4 product decisions, a fresh cargo fmt --check finding of 21 diffs across 12 files not matching the carried routes.rs/ingestion_worker.rs note, and the status of task_188b4179/task_7c2fd7ee's separate spawn_task sessions) to produce a grounded, directly-verified status before /kbd-plan scopes real work.",
   "nextPendingChange": null,
   "roundZeroComplete": true,
   "changeStatus": {
@@ -25,7 +25,7 @@
     "surrealdb-upgrade": "DONE 5cdcbde (Round 4/4, uar-security-deps-and-hygiene, final change). Bumped surrealdb =3.0.5 -> =3.2.0, resolving every open surrealdb Dependabot alert. Reviewed migrations/surrealdb/schema.surql + SurrealQL call sites for breaking changes -- none found (corrected the phase's own '12 SurrealDB migrations' claim, which actually describes Postgres/sqlx migrations, not SurrealDB). Verified: cargo check clean, cargo test --lib 363/363, cargo test --test integration 56/56, clippy zero new warnings, live-server smoke check (embedded SurrealKV write+read both succeeded). Phase now 10/10 complete."
   },
   "sourceTool": "claude-code",
-  "exactNextCommand": "/kbd-next-phase -- uar-frontend-typecheck-cleanup is fully reflected (5/5 changes, G1 MET). Reflection recommends returning to genuine feature scope, not another cleanup phase.",
+  "exactNextCommand": "/kbd-assess uar-carryover-audit",
   "uarSpecV2AndPolishOutcome": "uar-spec-v2-and-polish CLOSED at reflection 2026-07-04: 7/7 changes done, G4 (CH-12/13/14/15/17) and G5 (CH-19/20) both MET. Commits 75116e4, e1532d6, 13326a4, 369117b+e2c82c7, 4b24f01, bbe7ec2, 45e7e37. Full lib suite 363/363 green. Reflection led with process gaps: waypoint files went stale for a real span after assess+plan completed; write-position-reminder.sh's .stage/.status field mismatch silently rendered Stage: unknown; none of the 7 OpenSpec changes were run through /opsx:verify + /opsx:archive (artifact-refiner automation now carried 4+ phases). Sycophancy self-check on the reflection: score 0.018, s08_detected=false. ADDENDUM (2026-07-04): post-reflection research found a 96-alert Dependabot backlog (5 critical, 17 high) never checked during the phase -- this directly undercuts that phase's own D-D re-affirmation in ARCHITECTURE.md, since the pinned surrealdb/rmcp versions carry known, upstream-fixed high-severity CVEs. See reflection.md's addendum + this new phase's goals.md for full detail.",
   "uarNextHarnessOutcome": "uar-next-harness CLOSED at reflection 2026-07-04: 16/24 tracked changes done, G1+G2+G3 fully MET, G4+G5 NOT MET (0/7, carried to this phase). Wired CH-02/03/04/06/08 (several were committed-but-unwired dead code), implemented CH-05 for real after finding it was a stub, built CH-07/CH-10 from scratch including two backend gaps (BudgetAlert entity wiring, CH-09 benchmarks exposed via REST). Fixed two real bugs found via live-server verification (not just build-green): an uninitialized prometheus-entity-management submodule that had been silently breaking the embedded frontend build all phase, and a resulting useEntityList/useEntity hook API drift across 6 frontend files (all silently returning empty data) -- both now resolved and verified live (models catalog went from 0 to 5331 models across 150 providers; CH-10 compare feature exercised end-to-end with real data). Full detail + lessons in .kbd-orchestrator/phases/uar-next-harness/reflection.md.",
   "gateActivationSecurityOutcome": "gate-activation-and-security-cleanup: both goals MET (code) in PR #43 (2 commits, archived). (1) feat(eval) --require-baseline strict gate: unseeded nightly fails loudly instead of passing silently; pure baseline_missing_under_strict helper; fail-fast exit 2 BEFORE any model call; nightly opts in; operator runbook in evals/README.md. (2) fix(config) secret redaction (Rule 33): redacting Debug for LlmConfig api_key+provider_keys, SecurityConfig jwt_secret, Persistence/Memory passwords. CORRECTION: I mis-assessed redaction as already-on-main; it was uncommitted working-tree WIP (origin/main had 0 REDACTED) — this PR actually lands it; caught at commit, split into 2 focused commits, disclosed in PR. 36 eval tests green. REMAINDER (operator-only): configure UAR_LLM__API_KEY secret + seed/commit evals/results/starter.baseline.json to make the gate enforce green. Spawn-task redaction chip now resolved by #43. LESSON: verify 'already merged' against committed state (git show origin/main:<file>), never the working tree.",
@@ -75,20 +75,15 @@
     "Deferred: HTTP POST /api/uar/eval/run; SurrealDB eval result storage; true-regex scorer; expand starter suite; durable workflows / checkpoint (own phase)"
   ],
   "carryOverDebt": [
-    "H3 emit-runtime-step-events — unbuilt planned change (top priority)",
-    "Unformatted routes.rs + ingestion_worker.rs on main — spawn-task chip filed; fmt-only fix",
-    "Sandbox + MCP-status metric recorders still dead (H8 partial)",
+    "RESOLVED 2026-07-06 (uar-carryover-audit seeding, confirmed via git log + code inspection): H3 emit-runtime-step-events -- was flagged 'unbuilt, top priority', actually fully implemented and merged (commits 2444b8c/9c45aae/f43e403, all tasks.md items checked bar one non-blocking manual live-env step). Not re-carried.",
+    "RESOLVED 2026-07-06 (uar-carryover-audit seeding, confirmed via grep): Sandbox + MCP-status metric recorders -- was flagged 'still dead (H8 partial)', actually wired into real code paths (src/mcp/registry.rs, src/llm/orchestrator.rs via set_mcp_server_status/record_sandbox_*). Not re-carried.",
+    "RESOLVED (uar-security-deps-and-hygiene): Artifact-refiner QA gate automation -- formally retired via the artifact-refiner-gate-decision change (D-E), not re-carried as open debt.",
+    "RESOLVED (uar-frontend-typecheck-cleanup): 17 pre-existing bun run typecheck errors -- all fixed, bun run typecheck exits 0.",
     "RESOLVED 2026-07-04: Cedar is_tool_allowed is now called from the orchestrator's tool-approval gate (manager.rs), not just HTTP-only as previously carried — confirmed during uar-next-harness reflection, not re-carried.",
-    "Artifact-refiner QA gate automation — carried 4+ phases now (uar-next-harness did not automate it either; every change was verified via cargo check/test + bun run build + live-server smoke checks instead)",
-    "17 pre-existing bun run typecheck errors (Base UI Select string|null nullability, react-resizable-panels API drift, recharts type-export drift) — unrelated to uar-next-harness's own work, now the only remaining typecheck noise in the repo",
-    "CH-06 per-agent/per-task budget configuration surface (aggregation done; only global limit configurable)",
-    "CH-08 activation-outcome correlation (recall half wired; outcome half unsolved)",
-    "Durable (non-session-scoped) cost/spend history for the CH-07 dashboard",
-    "NEW (from uar-spec-v2-and-polish reflection): 96-alert Dependabot backlog (5 critical/17 high) -- now G1 of this phase, not carried debt",
-    "NEW (from uar-spec-v2-and-polish reflection): benches/hot_path.rs never run via cargo bench -- now G2 of this phase",
-    "NEW (from uar-spec-v2-and-polish reflection): tests/uar_integration.rs + tests/bdd.rs pre-existing compile failures -- now G2 of this phase",
-    "NEW (from uar-spec-v2-and-polish reflection): write-position-reminder.sh's .stage/.status schema mismatch -- now G2 of this phase",
-    "NEW (from uar-spec-v2-and-polish reflection): none of that phase's 7 OpenSpec changes were run through /opsx:verify + /opsx:archive -- artifact-refiner automation now carried 4+ phases, G2 of this phase"
+    "STALE NOTE, NOT YET RE-VERIFIED (uar-carryover-audit seeding): 'Unformatted routes.rs + ingestion_worker.rs on main' -- neither file appears in a fresh cargo fmt --check; the underlying problem is still real though: 21 diffs found across 12 different files (server.rs, uar/compiler/conformance.rs x7, uar/eval/integration_tests.rs, uar/guardrails.rs, uar/mcp_server.rs, uar/memory/mcp_server.rs, uar/runtime/skills/wasm_runtime.rs x2, 3 test files). uar-carryover-audit to confirm scope and disposition.",
+    "CH-06 per-agent/per-task budget configuration surface (aggregation done; only global limit configurable) -- plausibly still open per a quick grep (uar-carryover-audit seeding), confirm during that phase's /kbd-assess",
+    "CH-08 activation-outcome correlation (recall half wired; outcome half unsolved) -- not yet re-verified, confirm during uar-carryover-audit's /kbd-assess",
+    "Durable (non-session-scoped) cost/spend history for the CH-07 dashboard -- not yet re-verified, confirm during uar-carryover-audit's /kbd-assess"
   ],
   "blockingPrerequisite": null,
   "parityAssessmentSummary": "uar-harness-parity: 8 goals (H1-H8). Corrections vs reflection seeds: (1) cancellation PROMOTED to P0 — client disconnect orphans runs that keep executing destructive tools + burning tokens (live bug); (2) parking-lot HookBus KILLED — redundant with existing RunEventEmitter broadcast+replay; (3) resumable streaming DOWNGRADED to frontend-only — server already has 512-event buffer + working GET /api/uar/runs/{id}/stream resume endpoint; (4) sycophancy-core is a DEAD dependency (declared, never invoked in src/). OTLP deps present but unused (1 #[instrument] on whole run path); Prometheus /metrics + JSON logging already done. Biggest true gap: evals + guardrails (no injection defense; Cedar governance_layer defined-but-unmounted). Cut C0+HP1-HP4 this phase; HP6+HP7 candidate for own uar-safety-and-evals phase.",
@@ -97,7 +92,7 @@
     "R3 eval scope",
     "R4 guardrail build-vs-buy"
   ],
-  "updatedAt": "2026-07-06T15:00:00Z",
+  "updatedAt": "2026-07-06T15:10:00Z",
   "planRevision": "uar-security-deps-and-hygiene's own plan.md (2026-07-04): 10 changes in 4 risk-ordered rounds, see phases/uar-security-deps-and-hygiene/plan.md.",
   "discoveredBugs": [
     "task_188b4179: VectorMatcher::embed_batch returns zero-vector placeholder embeddings (model.forward() commented out) - breaks all RAG search + LocalEmbedding intent backend. spawn_task started by user.",

@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-frontend-typecheck-cleanup
-Step: 5 of 5
-Stage: reflect_complete
-Next command: /kbd-next-phase -- uar-frontend-typecheck-cleanup is fully reflected (5/5 changes, G1 MET). Reflection recommends returning to genuine feature scope, not another cleanup phase.
+Phase: uar-carryover-audit
+Step: 0 of 0
+Stage: assess_pending
+Next command: /kbd-assess uar-carryover-audit
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-frontend-typecheck-cleanup (step 5 of 5)
+  Starting <kbd-skill> — uar-carryover-audit (step 0 of 0)
   [do work]
-  Completed <kbd-skill> — uar-frontend-typecheck-cleanup (step 5 of 5)
+  Completed <kbd-skill> — uar-carryover-audit (step 0 of 0)

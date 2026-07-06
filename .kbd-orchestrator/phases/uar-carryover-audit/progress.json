@@ -1,0 +1,27 @@
+{
+  "phase": "uar-carryover-audit",
+  "previousPhase": "uar-frontend-typecheck-cleanup",
+  "backend": "openspec",
+  "sourceTool": "claude-code",
+  "assessment_complete": false,
+  "plan_complete": false,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "origin": "Seeded at the user's explicit choice ('Fresh assess first') after uar-frontend-typecheck-cleanup's reflection recommended feature scope but 2 of 3 spot-checked carryOverDebt items (H3 emit-runtime-step-events, H8 sandbox/MCP-status recorders) turned out to already be done despite being flagged 'unbuilt'/'still dead'. No fixed goal yet -- this phase's job is to run /kbd-assess against the full carry-over list and produce a grounded, directly-verified status for each item before /kbd-plan scopes real work.",
+  "goals": [
+    "G0 Audit the carryOverDebt list (P0, primary, provisional): directly verify CH-06 (per-agent/per-task budget config), CH-08 (activation-outcome correlation), durable cost/spend history (CH-07 dashboard), R2/R3/R4 product decisions (cancel semantics, eval scope, guardrail build-vs-buy -- may already be resolved by landed openspec changes), the unformatted-code carryover (stale file names but a real, fresh cargo fmt --check found 21 diffs across 12 different files), and the status of task_188b4179/task_7c2fd7ee's separate spawn_task sessions. Output: a corrected, evidence-backed status for every item, feeding a real /kbd-plan."
+  ],
+  "candidateChanges": [],
+  "updatedAt": "2026-07-06T15:10:00Z",
+  "changes_completed": 0,
+  "changes_total": 0,
+  "changes_completed_note": "Phase seeded, not yet assessed. Pre-seed spot checks already done (not full assess): confirmed H3 and H8 carryover entries are stale (already done); confirmed CH-06 has no per-agent/per-task budget code found via grep (plausibly still open); confirmed a fresh cargo fmt --check finds 21 diffs across 12 files, none matching the carried routes.rs/ingestion_worker.rs note. Next: /kbd-assess uar-carryover-audit -- verify every remaining candidate directly, do not trust the carried list.",
+  "carriedOverDebt": [
+    "CH-06 per-agent/per-task budget configuration surface (aggregation done; only global limit configurable) -- plausibly still open, confirm during assess",
+    "CH-08 activation-outcome correlation (recall half wired; outcome half unsolved) -- not yet checked this session",
+    "Durable (non-session-scoped) cost/spend history for the CH-07 dashboard -- not yet checked this session"
+  ],
+  "operatorOnlyFollowUps": [
+    "Activate the eval gate: set UAR_LLM__API_KEY secret + vars.UAR_EVAL_MODEL, run eval-nightly via workflow_dispatch update_baseline=true, commit evals/results/starter.baseline.json"
+  ]
+}
