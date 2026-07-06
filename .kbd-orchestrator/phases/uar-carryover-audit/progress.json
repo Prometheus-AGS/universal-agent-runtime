@@ -3,7 +3,7 @@
   "previousPhase": "uar-frontend-typecheck-cleanup",
   "backend": "openspec",
   "sourceTool": "claude-code",
-  "assessment_complete": false,
+  "assessment_complete": true,
   "plan_complete": false,
   "execute_complete": false,
   "reflect_complete": false,
@@ -11,15 +11,19 @@
   "goals": [
     "G0 Audit the carryOverDebt list (P0, primary, provisional): directly verify CH-06 (per-agent/per-task budget config), CH-08 (activation-outcome correlation), durable cost/spend history (CH-07 dashboard), R2/R3/R4 product decisions (cancel semantics, eval scope, guardrail build-vs-buy -- may already be resolved by landed openspec changes), the unformatted-code carryover (stale file names but a real, fresh cargo fmt --check found 21 diffs across 12 different files), and the status of task_188b4179/task_7c2fd7ee's separate spawn_task sessions. Output: a corrected, evidence-backed status for every item, feeding a real /kbd-plan."
   ],
-  "candidateChanges": [],
-  "updatedAt": "2026-07-06T15:10:00Z",
+  "candidateChanges": [
+    "fmt-drift-cleanup",
+    "ch06-per-agent-task-budget",
+    "ch08-activation-outcome-correlation",
+    "ch07-durable-cost-history"
+  ],
+  "updatedAt": "2026-07-06T15:25:00Z",
   "changes_completed": 0,
   "changes_total": 0,
-  "changes_completed_note": "Phase seeded, not yet assessed. Pre-seed spot checks already done (not full assess): confirmed H3 and H8 carryover entries are stale (already done); confirmed CH-06 has no per-agent/per-task budget code found via grep (plausibly still open); confirmed a fresh cargo fmt --check finds 21 diffs across 12 files, none matching the carried routes.rs/ingestion_worker.rs note. Next: /kbd-assess uar-carryover-audit -- verify every remaining candidate directly, do not trust the carried list.",
+  "changes_completed_note": "Assessed 2026-07-06 (assessment.md). Directly re-verified every carryover candidate (no trust carried forward): CH-06 (per-agent/per-task budget config) CONFIRMED still open -- LlmBudgetConfig only has global_limit + per-model model_limits, no per-agent/task field anywhere. CH-08 (activation-outcome correlation) CONFIRMED still open exactly as carried -- record_skill_activation_outcome defined but never called, record_skill_activation (recall half) is. CH-07 (durable cost history) CONFIRMED still open -- cost_budget.rs's own doc comment says persistence is intentionally out of scope, pure in-memory HashMap. R2 (cancel semantics) RESOLVED -- full CancellationToken + cancel_run + last-subscriber-drop infra already shipped (add-run-cancellation). R3 (eval scope) RESOLVED -- 8-file eval harness + eval-targeted-suites landed. R4 (guardrail build-vs-buy) RESOLVED -- real GuardrailsConfig + guardrail-pii-block/mount-governance-guardrails landed. All 3 productDecisionsRequired entries are stale, not open questions. Unformatted-code note: stale in specifics (routes.rs/ingestion_worker.rs not in current diff) but real in substance -- fresh cargo fmt --check found 21 diffs across 12 other files. task_7c2fd7ee (type::thing fix) and task_188b4179 (embed_batch placeholder) both CONFIRMED still open, unchanged -- owned by separate spawn_task sessions, informational only, not this phase's to fix. Next: /kbd-plan uar-carryover-audit -- candidates are CH-06, CH-08, CH-07 (all real feature work, not quick fixes) plus a zero-risk fmt pass.",
   "carriedOverDebt": [
-    "CH-06 per-agent/per-task budget configuration surface (aggregation done; only global limit configurable) -- plausibly still open, confirm during assess",
-    "CH-08 activation-outcome correlation (recall half wired; outcome half unsolved) -- not yet checked this session",
-    "Durable (non-session-scoped) cost/spend history for the CH-07 dashboard -- not yet checked this session"
+    "task_7c2fd7ee (SurrealQL type::thing() fix, src/uar/persistence/providers/surreal.rs:524 + src/uar/compiler/storage/surreal.rs:71,109) -- confirmed still open, owned by a separate spawn_task session, not this phase's scope",
+    "task_188b4179 (VectorMatcher::embed_batch placeholder embeddings, src/uar/runtime/matching/vector.rs) -- confirmed still open, owned by a separate spawn_task session, not this phase's scope"
   ],
   "operatorOnlyFollowUps": [
     "Activate the eval gate: set UAR_LLM__API_KEY secret + vars.UAR_EVAL_MODEL, run eval-nightly via workflow_dispatch update_baseline=true, commit evals/results/starter.baseline.json"

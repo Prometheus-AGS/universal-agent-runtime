@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-carryover-audit
 Step: 0 of 0
-Stage: assess_pending
-Next command: /kbd-assess uar-carryover-audit
+Stage: plan_pending
+Next command: /kbd-plan uar-carryover-audit
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-carryover-audit (step 0 of 0)
