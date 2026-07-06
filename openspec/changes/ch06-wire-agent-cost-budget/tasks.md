@@ -1,0 +1,9 @@
+- [x] Confirm `AgentDescriptorIR.BudgetsSection.max_cost_per_session_usd` is declared, parsed, and completeness-checked but never consumed at runtime
+- [x] Confirm `CostBudgetTracker` already records `BudgetScope::Agent` spend on every cost event (`manager.rs`, `cost_scope_agent_id`)
+- [x] Discover `AgentPolicy` has no typed `budgets` field — it's preserved under `extensions["budgets"]` as JSON per `to_artifact.rs`'s established convention
+- [x] Add `agent_cost_limit_from_extensions()` helper in `manager.rs`
+- [x] Wire `RunManager::start_run` to call `cost_budget.set_limit(Agent, agent_id, ...)` when the helper returns `Some`
+- [x] Drop "per-task" from scope — confirmed via existing code comment that this runtime has no task entity distinct from a run
+- [x] 4 new unit tests for the extraction helper (declared limit, absent key, null budgets, field absent/null)
+- [x] `cargo test --lib cost_budget` 6/6 green
+- [x] `cargo check --lib` clean

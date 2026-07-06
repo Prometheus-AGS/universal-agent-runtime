@@ -15,7 +15,7 @@ use crate::uar::runtime::skills::SkillRegistry;
 use crate::uar::runtime::skills::service::SkillService;
 use futures::StreamExt;
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     fmt::Write,
     sync::Arc,
     time::Duration,
@@ -70,6 +70,44 @@ impl RunEventEmitter {
 }
 
 type ActiveRunMap = HashMap<String, RunStreamState>;
+
+/// Extract `budgets.max_cost_per_session_usd` from an `AgentArtifact`'s
+/// `extensions` map (CH-06). `budgets` has no typed home on `AgentPolicy` —
+/// see `to_artifact.rs`'s module doc — so it's preserved losslessly as JSON
+/// under `extensions["budgets"]`. Returns `None` for an absent key, a `null`
+/// value (unset budgets section), a missing field, or a non-numeric field.
+fn agent_cost_limit_from_extensions(
+    extensions: &HashMap<String, serde_json::Value>,
+) -> Option<f64> {
+    extensions
+        .get("budgets")
+        .and_then(|v| v.get("max_cost_per_session_usd"))
+        .and_then(serde_json::Value::as_f64)
+}
+
+/// Correlate matched-skill activation against actually-invoked tools (CH-08).
+///
+/// `skill_servers` maps each matched skill's id to the MCP server name(s) its
+/// `mcp_config` introduced (captured before registries are merged, since the
+/// merged registry no longer distinguishes which skill contributed which
+/// server). `invoked_tool_servers` is the set of server names the run's
+/// actually-invoked tools resolved back to. A skill is "used" if any of its
+/// servers appears in that set. Returns one entry per key in `skill_servers`
+/// — skills with no `mcp_config` are simply absent from that map and so never
+/// appear here, which is the caller's signal to exclude them from outcome
+/// tracking entirely rather than record a proxy `false`.
+fn correlate_skill_activation_outcomes(
+    skill_servers: &HashMap<String, Vec<String>>,
+    invoked_tool_servers: &HashSet<String>,
+) -> Vec<(String, bool)> {
+    skill_servers
+        .iter()
+        .map(|(skill_id, servers)| {
+            let used = servers.iter().any(|s| invoked_tool_servers.contains(s));
+            (skill_id.clone(), used)
+        })
+        .collect()
+}
 
 #[derive(Clone)]
 pub struct RunManager {
@@ -834,6 +872,14 @@ impl RunManager {
 
         // Collect registries to merge (starting with global)
         let mut registries_to_merge = Vec::new();
+        // CH-08: record which MCP server(s) each matched skill introduces,
+        // captured before merge (the merged registry no longer distinguishes
+        // which skill contributed which server). Skills with no `mcp_config`
+        // (prompt-overlay-only) are deliberately absent from this map — they
+        // have no distinguishable "used" signal at the tool-call layer, so
+        // they're excluded from outcome tracking entirely rather than given a
+        // proxy signal.
+        let mut skill_servers: HashMap<String, Vec<String>> = HashMap::new();
 
         for skill in &matched_skills {
             // Append skill prompt overlay
@@ -845,7 +891,13 @@ impl RunManager {
             // Init Skill Tools
             if let Some(config) = &skill.mcp_config {
                 match McpRegistry::from_config(config).await {
-                    Ok(reg) => registries_to_merge.push(reg),
+                    Ok(reg) => {
+                        skill_servers
+                            .entry(skill.skill_id.clone())
+                            .or_default()
+                            .extend(reg.server_names());
+                        registries_to_merge.push(reg);
+                    }
                     Err(e) => {
                         tracing::error!("Failed to init tools for skill {}: {:?}", skill.title, e);
                     }
@@ -986,6 +1038,9 @@ impl RunManager {
         // Clone for graph context before values are moved into Orchestrator
         let llm_config_for_graph = run_llm_config.clone();
         let mcp_for_graph = Arc::clone(&mcp);
+        // CH-08: clone for activation-outcome correlation at run end (resolves
+        // invoked tool names back to their owning MCP server).
+        let mcp_for_outcome = Arc::clone(&mcp);
 
         // Capture the resolved model id so the final RunDoneWithUsage event can
         // report which model actually answered (moved into the spawned task below).
@@ -1133,6 +1188,25 @@ impl RunManager {
         // `execute_agent_id` is moved into the `RunStart` event below; keep an
         // independent clone for the budget-scope keys used at run end (CH-06).
         let cost_scope_agent_id = execute_agent_id.clone();
+        // CH-06: `budgets` has no typed home on `AgentPolicy` (see
+        // `to_artifact.rs`'s module doc) — it's preserved losslessly under
+        // `extensions["budgets"]` as JSON. Configure the agent-scoped limit
+        // from there if the spec declared one. Re-set on every run rather
+        // than caching "have we configured this agent" — `set_limit` is a
+        // single `HashMap` insert behind a `RwLock`, cheap enough that a
+        // cache would be premature complexity.
+        if let Some(limit_usd) = agent_cost_limit_from_extensions(&artifact.extensions) {
+            self.cost_budget
+                .set_limit(
+                    crate::uar::runtime::cost_budget::BudgetScope::Agent,
+                    &cost_scope_agent_id,
+                    crate::uar::runtime::cost_budget::BudgetLimit {
+                        limit_usd,
+                        warn_at: 0.8,
+                    },
+                )
+                .await;
+        }
         let graph_for_run = self.agent_graph.clone();
         let persistence_for_run = self.persistence.clone();
         // Cancellation: the run's child token (selected on in the consumption loop,
@@ -1529,6 +1603,23 @@ impl RunManager {
             // Preserve run_id before it is moved into the RunDone event below.
             let evolution_run_id = execute_run_id.clone();
 
+            // CH-08: correlate matched-skill activation against actually-
+            // invoked tools, once per run regardless of cancellation/usage/
+            // cost-tracking status. Skills absent from `skill_servers` (no
+            // `mcp_config`, i.e. prompt-overlay-only) have no distinguishable
+            // "used" signal at this layer and are deliberately excluded from
+            // outcome tracking — not given a proxy `false`.
+            let invoked_tool_servers: HashSet<String> = tool_call_names
+                .values()
+                .filter_map(|tool_name| mcp_for_outcome.resolve_mcp_tool(tool_name))
+                .map(|(server_name, _)| server_name)
+                .collect();
+            for (skill_id, used) in
+                correlate_skill_activation_outcomes(&skill_servers, &invoked_tool_servers)
+            {
+                crate::uar::telemetry::metrics::record_skill_activation_outcome(&skill_id, used);
+            }
+
             if run_cancelled {
                 tracing::info!(run_id = %execute_run_id, "Run cancelled; emitting terminal Cancelled event");
                 emitter
@@ -1787,6 +1878,107 @@ impl RunManager {
         }
 
         None
+    }
+}
+
+#[cfg(test)]
+mod activation_outcome_tests {
+    use super::correlate_skill_activation_outcomes;
+    use std::collections::{HashMap, HashSet};
+
+    #[test]
+    fn skill_used_when_its_server_was_invoked() {
+        let mut skill_servers = HashMap::new();
+        skill_servers.insert("skill-a".to_string(), vec!["weather_mcp".to_string()]);
+        let invoked: HashSet<String> = ["weather_mcp".to_string()].into_iter().collect();
+
+        let result = correlate_skill_activation_outcomes(&skill_servers, &invoked);
+        assert_eq!(result, vec![("skill-a".to_string(), true)]);
+    }
+
+    #[test]
+    fn skill_not_used_when_its_server_was_never_invoked() {
+        let mut skill_servers = HashMap::new();
+        skill_servers.insert("skill-a".to_string(), vec!["weather_mcp".to_string()]);
+        let invoked: HashSet<String> = ["other_mcp".to_string()].into_iter().collect();
+
+        let result = correlate_skill_activation_outcomes(&skill_servers, &invoked);
+        assert_eq!(result, vec![("skill-a".to_string(), false)]);
+    }
+
+    #[test]
+    fn skill_used_if_any_of_its_multiple_servers_was_invoked() {
+        let mut skill_servers = HashMap::new();
+        skill_servers.insert(
+            "skill-a".to_string(),
+            vec!["server_one".to_string(), "server_two".to_string()],
+        );
+        let invoked: HashSet<String> = ["server_two".to_string()].into_iter().collect();
+
+        let result = correlate_skill_activation_outcomes(&skill_servers, &invoked);
+        assert_eq!(result, vec![("skill-a".to_string(), true)]);
+    }
+
+    #[test]
+    fn no_matched_skills_with_mcp_config_yields_empty_result() {
+        // Prompt-overlay-only skills never appear in `skill_servers` at the
+        // call site — an empty map here models "no skill this run introduced
+        // any MCP tools," which must yield no outcome calls at all, not a
+        // false one.
+        let skill_servers = HashMap::new();
+        let invoked: HashSet<String> = ["some_mcp".to_string()].into_iter().collect();
+
+        let result = correlate_skill_activation_outcomes(&skill_servers, &invoked);
+        assert!(result.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod cost_budget_wiring_tests {
+    use super::agent_cost_limit_from_extensions;
+    use std::collections::HashMap;
+
+    #[test]
+    fn extracts_declared_limit() {
+        let mut ext = HashMap::new();
+        ext.insert(
+            "budgets".to_string(),
+            serde_json::json!({ "max_cost_per_session_usd": 2.5 }),
+        );
+        assert_eq!(agent_cost_limit_from_extensions(&ext), Some(2.5));
+    }
+
+    #[test]
+    fn returns_none_when_budgets_key_absent() {
+        let ext = HashMap::new();
+        assert_eq!(agent_cost_limit_from_extensions(&ext), None);
+    }
+
+    #[test]
+    fn returns_none_when_budgets_is_null() {
+        // `stash()` in to_artifact.rs serializes `ir.budgets: Option<BudgetsSection>`
+        // unconditionally, so an agent with no declared budgets section still
+        // gets a `"budgets": null` entry, not a missing key.
+        let mut ext = HashMap::new();
+        ext.insert("budgets".to_string(), serde_json::Value::Null);
+        assert_eq!(agent_cost_limit_from_extensions(&ext), None);
+    }
+
+    #[test]
+    fn returns_none_when_field_absent_or_null() {
+        let mut ext = HashMap::new();
+        ext.insert(
+            "budgets".to_string(),
+            serde_json::json!({ "max_tokens_per_turn": 1000 }),
+        );
+        assert_eq!(agent_cost_limit_from_extensions(&ext), None);
+
+        let mut ext2 = HashMap::new();
+        ext2.insert(
+            "budgets".to_string(),
+            serde_json::json!({ "max_cost_per_session_usd": null }),
+        );
+        assert_eq!(agent_cost_limit_from_extensions(&ext2), None);
     }
 }
 

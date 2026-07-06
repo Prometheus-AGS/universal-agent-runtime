@@ -1,0 +1,10 @@
+- [x] Confirm exact gap: `record_skill_activation` called, `record_skill_activation_outcome` defined but never called (per `service.rs:472`'s own comment)
+- [x] Design correlation strategy: skill→introduced-MCP-server-names (captured pre-merge) vs. actually-invoked tool names resolved back to their server via `McpRegistry::resolve_mcp_tool`
+- [x] Capture `skill_servers: HashMap<skill_id, Vec<server_name>>` in the matched-skill loop, before registries are merged
+- [x] Clone `mcp` (`mcp_for_outcome`) for use at run end, alongside the existing `mcp_for_graph` clone
+- [x] Add pure `correlate_skill_activation_outcomes()` function (no `McpRegistry` dependency, directly unit-testable)
+- [x] Wire the correlation at the single run-end point common to all terminal branches (cancelled / has-usage / no-usage) — not nested inside the cost-tracking-enabled branch
+- [x] Explicitly exclude prompt-overlay-only skills (no `mcp_config`) from outcome tracking — disclosed as a known limitation, not a proxy `false`
+- [x] 4 new unit tests (single server used/unused, multi-server any-match, empty-map yields no entries)
+- [x] `cargo test --lib activation_outcome` 4/4 green
+- [x] `cargo check --lib` clean
