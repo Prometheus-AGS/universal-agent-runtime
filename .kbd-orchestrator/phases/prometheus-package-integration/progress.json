@@ -9,9 +9,10 @@
   "reflect_complete": false,
   "resumedAt": "2026-07-06T18:00:00Z",
   "resumeNote": "Resumed after being stale since 2026-05-26. Fresh /kbd-assess (2026-07-06) directly re-verified all 14 original items: 12/14 confirmed DONE (some via an evolved direct-hooks design). Two corrections made and user-confirmed during assessment: (1) #13 (dockerfile-multistage-with-submodules) was INITIALLY misjudged as incomplete (a shallow `grep -c '^FROM'` check was misread) -- corrected after direct content inspection confirmed the polyglot 5-toolchain Dockerfile is fully shipped and wired into 5 docker-compose files + 5 GitHub Actions workflows; user confirmed leave it alone. (2) surreal-memory-server and liter-llm are NOT separate spawnable processes -- both are linked Rust libraries used in-process; 'binary-instance-discovery' cannot mean spawning them, dropped from scope. Final confirmed scope for #4 (plan.md, 2026-07-06): a new focused module (src/uar/orchestrator/provisioning.rs, NOT a modification of process_supervisor.rs which solves a different TCP-service-shaped problem with no current call site) implementing 4-strategy resolution (Adopt/NativePackageManager/GitInstall/PrebuiltBinary), wired into MCP stdio server spawning (mcp/registry.rs) and skill-compilation toolchain resolution (Rust/Node/Python/Go/wasmtime) for local dev outside the container. changes_total/changes_completed below now track this NEW 4-change plan going forward -- the original 14-item list's final disposition (12 done, #13 done-not-touched, #4 replaced) is preserved in changes_ordered/change_status/plan-2026-05-26-original.md for historical record.",
-  "changes_total": 4,
-  "changes_completed": 0,
+  "changes_total": 3,
+  "changes_completed": 2,
   "changes_in_progress": null,
+  "round2_note": "wire-toolchain-provisioning's originally-planned scope (wiring toolchain resolution into wasm_runtime.rs/builtin_loader.rs) turned out to have no real integration point -- no code path in UAR compiles a skill from source; the Dockerfile's own comment confirms its toolchains are for manual, human-driven skill authoring inside the container. Rather than invent a fake caller, the 5 toolchain ToolSpecs were added as ready-to-use, tested recipes (skill_toolchain_specs()) in the same commit as wire-mcp-server-provisioning (b99cab7), and the plan's change count reduced from 4 to 3 accordingly. User confirmed this scope reduction.",
   "decisions": {
     "waypoint": "replaces runtime-provider-protocol-hardening (stale)",
     "frontend_workspace_tool": "pnpm",
@@ -55,15 +56,13 @@
     "dockerfile-multistage-with-submodules": "DONE (2026-07-06 re-verify, CORRECTED an initial mis-check this session) -- full 5-toolchain polyglot Dockerfile confirmed shipped and wired into CI/deploy. Not a gap.",
     "integration-tests-and-docs": "PARTIAL -- docs/realtime.md + docs/skill-authoring.md shipped; system tests for live-bus latency and builtin-409 still not found. Remaining scope now just needs to cover whatever #4's redesign becomes."
   },
-  "next_change": "provisioning-strategy-core",
+  "next_change": "provisioning-tests-and-docs",
   "planned_changes": [
     "provisioning-strategy-core",
-    "wire-mcp-server-provisioning",
-    "wire-toolchain-provisioning",
+    "wire-mcp-server-provisioning (includes toolchain recipes, folded in)",
     "provisioning-tests-and-docs"
   ],
   "next_session_priorities": [
-    "Execute Round 1 (provisioning-strategy-core), then Round 2 (wire-mcp-server-provisioning + wire-toolchain-provisioning, shared checkpoint), then Round 3 (provisioning-tests-and-docs)",
-    "Round 2's checkpoint must confirm mcp.json's existing kreuzberg/time entries still connect (fast-path-when-already-installed must not regress)"
+    "Round 3: provisioning-tests-and-docs -- new docs/PROVISIONING.md documenting the 4-strategy precedence + explicit non-goals (no DB engines); close any remaining test gaps"
   ]
 }
