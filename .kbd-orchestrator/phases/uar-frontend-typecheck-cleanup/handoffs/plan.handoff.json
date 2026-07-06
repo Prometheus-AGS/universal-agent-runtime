@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-06T14:15:00Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "5 changes in 2 rounds. Round 1 (sequenced first, unblocks verification): fix-root-frontend-script-invocation -- swap `pnpm --filter ./frontend <cmd>` for `pnpm -C frontend <cmd>` in build/dev/test/test:e2e/lint/typecheck; format's `exec prettier` sub-case needs separate verification (prettier is a root devDependency, not hoisted into frontend/node_modules under -C -- try `pnpm exec prettier --write frontend/src/` from root with no -C/--filter at all as the simplest fix). Do NOT add a root-level pnpm-workspace.yaml `packages:` entry for frontend -- confirmed during assess to break the entity-mgmt submodule's own nested workspace resolution. Round 2 (parallel, one shared checkpoint): the 4 TypeScript-error changes grouped by cause -- Base UI Select nullability (6 errors, per-site judgment call on widening state type vs. fallback), react-resizable-panels API drift (4 errors, confirmed mechanical rename: Group->PanelGroup, Separator->PanelResizeHandle, + matching Props types -- verified via direct .d.ts inspection of the installed 2.1.9 package, not a version bump), recharts type-export drift (1 error, TooltipValueType no longer exported, needs a current equivalent or local inline type), and 6 remaining errors (knowledge-page.tsx undefined/null mismatch, use-thread-graph-sync.ts's unsafe Record cast needing either narrowing or an explicit as-unknown-as escape hatch with rationale). First change to apply: fix-root-frontend-script-invocation.",
+  "skipped": false,
+  "skipReason": null
+}

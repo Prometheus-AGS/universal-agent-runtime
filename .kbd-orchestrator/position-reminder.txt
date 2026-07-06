@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-frontend-typecheck-cleanup
-Step: 0 of 0
-Stage: plan_pending
-Next command: /kbd-plan uar-frontend-typecheck-cleanup
+Step: 0 of 5
+Stage: executing
+Next command: /kbd-execute uar-frontend-typecheck-cleanup -- Round 1: fix-root-frontend-script-invocation (swap pnpm --filter ./frontend for pnpm -C frontend in 6 root package.json scripts, verify format's exec prettier sub-case separately). Round 2 (parallel, one shared checkpoint): the 4 TypeScript-error changes. Checkpoint: bun run typecheck exits 0.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-frontend-typecheck-cleanup (step 0 of 0)
+  Starting <kbd-skill> — uar-frontend-typecheck-cleanup (step 0 of 5)
   [do work]
-  Completed <kbd-skill> — uar-frontend-typecheck-cleanup (step 0 of 0)
+  Completed <kbd-skill> — uar-frontend-typecheck-cleanup (step 0 of 5)
