@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-security-deps-and-hygiene
-Step: 9 of 10
-Stage: executing
-Next command: /kbd-execute uar-security-deps-and-hygiene -- Round 4 (final): surrealdb-upgrade. Follow docs/DEPENDENCY_MANAGEMENT.md's upgrade SOP; check the 12 SurrealDB migrations for breaking schema/query changes between 3.0.5 and the target version before bumping; full cargo test --lib + cargo test --test integration + a live-server smoke check as this change's dedicated checkpoint given it's the default persistence backend.
+Step: 10 of 10
+Stage: reflecting
+Next command: /kbd-reflect uar-security-deps-and-hygiene -- all 10/10 changes done, execute_complete=true, reflection.md already drafted at .kbd-orchestrator/phases/uar-security-deps-and-hygiene/reflection.md. Run /kbd-reflect to formally close the phase (set reflect_complete=true) and seed /kbd-next-phase.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-security-deps-and-hygiene (step 9 of 10)
+  Starting <kbd-skill> — uar-security-deps-and-hygiene (step 10 of 10)
   [do work]
-  Completed <kbd-skill> — uar-security-deps-and-hygiene (step 9 of 10)
+  Completed <kbd-skill> — uar-security-deps-and-hygiene (step 10 of 10)
