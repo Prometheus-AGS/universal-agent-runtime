@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-security-deps-and-hygiene
-Step: 10 of 10
-Stage: reflect_complete
-Next command: /kbd-next-phase -- uar-security-deps-and-hygiene is fully reflected (10/10 changes, both goals MET). Seed the next phase from reflection.md's Next Phase Focus: recommend returning to feature scope, with task_7c2fd7ee, task_188b4179, and the 17 pre-existing bun typecheck errors as visible non-blocking carryover.
+Phase: uar-frontend-typecheck-cleanup
+Step: 0 of 0
+Stage: assess_pending
+Next command: /kbd-assess uar-frontend-typecheck-cleanup
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-security-deps-and-hygiene (step 10 of 10)
+  Starting <kbd-skill> — uar-frontend-typecheck-cleanup (step 0 of 0)
   [do work]
-  Completed <kbd-skill> — uar-security-deps-and-hygiene (step 10 of 10)
+  Completed <kbd-skill> — uar-frontend-typecheck-cleanup (step 0 of 0)

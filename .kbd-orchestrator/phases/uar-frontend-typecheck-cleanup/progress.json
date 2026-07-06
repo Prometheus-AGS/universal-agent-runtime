@@ -1,0 +1,27 @@
+{
+  "phase": "uar-frontend-typecheck-cleanup",
+  "previousPhase": "uar-security-deps-and-hygiene",
+  "backend": "openspec",
+  "sourceTool": "claude-code",
+  "assessment_complete": false,
+  "plan_complete": false,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "origin": "Seeded from uar-security-deps-and-hygiene's reflection.md 'Next Phase Focus' -- deliberately scoped down to a thin cleanup phase at the user's explicit choice (AskUserQuestion: 'Thin cleanup phase' over 'New feature area' or 'Hold off'). Two of that reflection's other carryover items (task_7c2fd7ee, task_188b4179) were explicitly excluded because separate spawn_task sessions are already working on them; the eval-gate item is operator-only.",
+  "goals": [
+    "G1 Clear the pre-existing bun run typecheck backlog (P0, primary): 17 pre-existing errors carried across 3+ phases (Base UI Select nullability, react-resizable-panels API drift, recharts type-export drift) -- plus a newly-found blocker this session where bun run typecheck fails immediately on a pnpm ignored-builds gate (@parcel/watcher) before reaching the TypeScript compiler at all, likely unrelated to the 17 carried errors."
+  ],
+  "candidateChanges": [],
+  "updatedAt": "2026-07-06T13:40:00Z",
+  "changes_completed": 0,
+  "changes_total": 0,
+  "changes_completed_note": "Phase seeded, not yet assessed. Next: /kbd-assess uar-frontend-typecheck-cleanup -- first confirm whether the pnpm ignored-builds gate blocking bun run typecheck entirely is a one-time local approval or a repo-level regression, then re-verify the actual current TypeScript error count/content before assuming the carried '17 errors, 3 causes' description is still accurate.",
+  "carriedOverDebt": [
+    "CH-06 per-agent/per-task budget configuration surface (aggregation done; only global limit configurable)",
+    "CH-08 activation-outcome correlation (recall half wired; outcome half unsolved)",
+    "Durable (non-session-scoped) cost/spend history for the CH-07 dashboard"
+  ],
+  "operatorOnlyFollowUps": [
+    "Activate the eval gate: set UAR_LLM__API_KEY secret + vars.UAR_EVAL_MODEL, run eval-nightly via workflow_dispatch update_baseline=true, commit evals/results/starter.baseline.json"
+  ]
+}
