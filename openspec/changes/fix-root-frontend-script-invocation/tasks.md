@@ -1,0 +1,11 @@
+- [x] Confirm root cause: `pnpm --filter ./frontend <cmd>` requires root to be a registered pnpm workspace member of frontend, which it never was
+- [x] Confirm `build.rs`'s frontend build uses a different, already-working `current_dir`-based invocation (why this went undetected)
+- [x] Test and reject adding a root-level `packages: [frontend]` workspace entry (breaks the entity-mgmt submodule's own workspace resolution)
+- [x] Test and confirm `pnpm -C frontend <cmd>` as the fix (matches `build.rs`'s pattern, no workspace registration needed)
+- [x] Apply to `build`, `dev`, `test`, `test:e2e`, `lint`, `typecheck` in `package.json`
+- [x] Diagnose `format`'s separate failure mode (`-C` doesn't resolve the root-only `prettier` devDependency)
+- [x] Fix `format` to `pnpm exec prettier --write frontend/src/` (no `-C`/`--filter`, resolves root's own prettier)
+- [x] Verify `bun run typecheck` reaches `tsc -b` (real 17 errors, not "no projects matched")
+- [x] Verify `bun run lint` reaches `eslint` (215 real problems, unrelated pre-existing debt)
+- [x] Verify `bun run build` succeeds end-to-end
+- [x] Verify `format`'s new invocation via non-mutating `pnpm exec prettier --check frontend/src/` (avoided repeating the `--write` mistake made once during this session and reverted)
