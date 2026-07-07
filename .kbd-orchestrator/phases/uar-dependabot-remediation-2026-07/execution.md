@@ -110,20 +110,40 @@ VERIFICATION REQUIREMENTS
 - Round 2 (npm, shared checkpoint after both land): `npm audit` / `pnpm audit` re-run shows count drop; `bun run build` + `bun run check` succeed; `pnpm -C frontend build` succeeds.
 - Round 3 (own checkpoint): `sdks/typescript` vitest run green after bump; new CI workflow YAML valid and its trigger confirmed to actually fire.
 
-PROGRESS LEDGER
+PROGRESS LEDGER (refreshed 2026-07-07 via /kbd-execute re-entry, step 5 of 8)
 
-- [PENDING] kreuzberg-reachable-vulns — SELF
-- [PENDING] surreal-memory-transitive-vulns — SELF
-- [PENDING] direct-network-facing-vulns — SELF
-- [PENDING] first-party-direct-dep-hygiene — SELF
-- [PENDING] grcov-toolchain-refresh — SELF
-- [PENDING] npm-root-remediation — SELF
-- [PENDING] frontend-npm-remediation — SELF
-- [PENDING] sdk-typescript-lockfile-and-ci-audit-fix — SELF
+- [DONE] kreuzberg-reachable-vulns — SELF — archived 2026-07-07-kreuzberg-reachable-vulns
+- [DONE] surreal-memory-transitive-vulns — SELF — archived 2026-07-07-surreal-memory-transitive-vulns
+- [DONE] direct-network-facing-vulns — SELF — commit fc0f7bd, archived 2026-07-07-direct-network-facing-vulns
+- [DONE] first-party-direct-dep-hygiene — SELF — commits 8c1c6fb+eecd09a, archived 2026-07-07-first-party-direct-dep-hygiene
+- [DONE] grcov-toolchain-refresh — SELF — commits 20c9795+c719072, archived 2026-07-07-grcov-toolchain-refresh — ROUND 1 COMPLETE (5/5)
+- [PENDING] npm-root-remediation — SELF — Round 2, next up
+- [PENDING] frontend-npm-remediation — SELF — Round 2
+- [PENDING] sdk-typescript-lockfile-and-ci-audit-fix — SELF — Round 3
+
+PROCESS NOTE: /kbd-apply's `verify`/`archive` (openspec validate/archive) hard-require
+at least one delta spec per change. Round 1's first 3 changes originally declared
+"Capabilities: None" and had to be retrofitted with a new `dependency-security-posture`
+capability (see openspec/specs/dependency-security-posture/spec.md and
+progress.json's decisions.openspec_verify_archive_gap_2026-07-07). Changes 4-5
+followed the pattern from the start with no retrofit needed. Round 2/3 changes MUST
+add a dependency-security-posture delta (ADDED Requirement, SHALL/MUST on the
+requirement's own unwrapped first line -- the openspec parser only reads line 1)
+before running verify/archive.
+
+artifact-refiner QA gate (`/refine-validate`/`/refine-code`) referenced by
+/kbd-execute's per-change QA step is NOT wired up in this project -- no
+`.agent/skills/artifact-refiner/SKILL.md` or `.kbd-orchestrator/constraints.md`
+exist. This was formally decided as retired automation in a prior phase
+(`artifact-refiner-gate-decision`, D-E) and is not re-carried as open debt for
+this phase either -- skipped per that standing decision, not silently.
 
 OUTPUTS
 
-- NONE yet — populated per-change as OpenSpec change dirs are created and archived
+- Round 1: openspec/specs/dependency-security-posture/spec.md (new capability,
+  5 Requirements, one per Round-1 change); docs/DEPENDENCY_MANAGEMENT.md gained
+  6 new disposition sections (kreuzberg, rsa, hickory-proto, serde_yml/quinn-proto,
+  grcov/proc-macro-error2); 5 changes archived under openspec/changes/archive/2026-07-07-*/
 
 BLOCKERS
 

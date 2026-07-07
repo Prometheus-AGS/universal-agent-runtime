@@ -222,3 +222,20 @@ and unrelated to the `grcov` removal above (confirmed via
 disposition class as `hickory-proto` (unreachable unless
 `sandbox-microsandbox` is enabled); not assigned to any of this phase's 8
 changes. See `openspec/changes/grcov-toolchain-refresh/findings.md`.
+
+### Resolved: root `package-lock.json` npm audit findings
+
+As of `uar-dependabot-remediation-2026-07`
+(`openspec/changes/npm-root-remediation/`), a live `npm audit` against the
+root `package.json`/`package-lock.json` (npm-managed dev tooling only —
+`playwright`, `eslint`, `prettier`, `tailwindcss`, `typescript`,
+`monocart-coverage-reports`, `@tauri-apps/cli`; the shipped frontend app
+builds via `pnpm -C frontend`, a separate lockfile) found 15 findings (11
+moderate, 4 high — `ajv`, `brace-expansion`, `js-yaml`, `uuid`, `dompurify`,
+`flatted`, `lodash-es`, `minimatch`, `picomatch`, and a
+`chevrotain`/`langium`/`@mermaid-js/parser`/`mermaid` chain that all traced
+to a single vulnerable `lodash-es` resolution). All 15 had
+`fixAvailable: true` (semver-compatible, no `--force` needed). **Fully
+resolved** via `npm audit fix` — `package.json` had zero diff (lockfile-only
+change), `npm audit` confirms 0 vulnerabilities afterward. See
+`openspec/changes/npm-root-remediation/findings.md`.
