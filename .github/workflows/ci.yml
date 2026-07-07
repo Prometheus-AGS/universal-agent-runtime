@@ -20,11 +20,14 @@ jobs:
           submodules: recursive
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
       
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -68,9 +71,12 @@ jobs:
           submodules: recursive
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
       
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -80,7 +86,7 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
-      
+
       - name: Run tests
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
@@ -97,10 +103,18 @@ jobs:
         with:
           submodules: recursive
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
-      
+
+      - name: Install system dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
+
+      - name: Install system dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install protobuf
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -110,7 +124,7 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
-      
+
       - name: Build release
         run: cargo build --release
 
