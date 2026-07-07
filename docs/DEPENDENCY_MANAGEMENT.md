@@ -144,3 +144,21 @@ threat model doesn't fit this flow. UAR's own JWT usage elsewhere
 (`src/uar/security/`) is HMAC-only and does not use `rsa` at all.
 **Accepted risk, disclosed** — see
 `openspec/changes/surreal-memory-transitive-vulns/findings.md`.
+
+### Known open advisory: `hickory-proto` (dead dependency, not reachable)
+
+`cargo audit` lists 2 advisories for `hickory-proto` 0.25.2
+(`RUSTSEC-2026-0118`, `RUSTSEC-2026-0119`), pulled in only when the
+optional `sandbox-microsandbox` feature is enabled (via
+`microsandbox-network`). Neither is reachable: no `microsandbox-*` crate
+actually calls into `hickory-proto`/`hickory-resolver` anywhere (it's a
+declared-but-unused dependency of `microsandbox-network`), and
+`RUSTSEC-2026-0118` additionally requires the `dnssec-ring`/
+`dnssec-aws-lc-rs` feature, which isn't activated. Both advisories require
+`hickory-proto >= 0.26.x` to fix, but `microsandbox-network`'s own
+`Cargo.toml` pins `hickory-proto`/`hickory-resolver` to `"0.25"` — a fix
+isn't available to us without their upstream bumping first. **Not
+reachable, disclosed** — see
+`openspec/changes/direct-network-facing-vulns/findings.md`. Re-check this
+disposition if UAR ever adds real DNS-resolution logic on top of
+`microsandbox-network`.

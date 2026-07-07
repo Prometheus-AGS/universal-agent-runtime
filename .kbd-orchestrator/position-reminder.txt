@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-dependabot-remediation-2026-07
-Step: 2 of 8
+Step: 3 of 8
 Stage: executing
 Next command: /kbd-execute uar-dependabot-remediation-2026-07 -- Round 1: kreuzberg-reachable-vulns, surreal-memory-transitive-vulns, direct-network-facing-vulns, first-party-direct-dep-hygiene, grcov-toolchain-refresh (parallel, shared cargo audit/test/clippy checkpoint). Round 2: npm-root-remediation, frontend-npm-remediation. Round 3: sdk-typescript-lockfile-and-ci-audit-fix.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-dependabot-remediation-2026-07 (step 2 of 8)
+  Starting <kbd-skill> — uar-dependabot-remediation-2026-07 (step 3 of 8)
   [do work]
-  Completed <kbd-skill> — uar-dependabot-remediation-2026-07 (step 2 of 8)
+  Completed <kbd-skill> — uar-dependabot-remediation-2026-07 (step 3 of 8)

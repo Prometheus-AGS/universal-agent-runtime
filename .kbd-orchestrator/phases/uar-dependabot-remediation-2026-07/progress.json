@@ -1,7 +1,7 @@
 {
   "phase": "uar-dependabot-remediation-2026-07",
   "createdAt": "2026-07-06T19:45:00Z",
-  "updatedAt": "2026-07-07T03:00:00Z",
+  "updatedAt": "2026-07-07T03:30:00Z",
   "sourceTool": "claude-code",
   "assessment_complete": true,
   "plan_complete": true,
@@ -13,7 +13,7 @@
   "seedNote": "Seeded from prometheus-package-integration's reflection.md candidate 3, chosen explicitly by the user over the other two candidates (original #14 test gap; cross-platform live verification of provisioning.rs). Starting numbers verified live via gh api .../dependabot/alerts (not just the push-time summary): 52 open, 3 critical/10 high/32 medium/7 low, across Cargo.lock (11), package-lock.json (30), frontend/pnpm-lock.yaml (10), sdks/typescript/package.json (1).",
   "assessNote": "User explicitly directed going beyond the 52 Dependabot alerts. Ran cargo audit (installed fresh) + npm audit (root, frontend) live: found 17 real Rust advisories (vs 11 in Dependabot -- 6 net-new: ammonia, crossbeam-epoch, lopdf, quick-xml x2 CVEs, quinn-proto, rsa) plus 18 unmaintained/unsound warnings; found 6 net-new/higher-severity npm advisories not in Dependabot (ajv, brace-expansion, extra flatted/minimatch/picomatch/undici GHSA IDs). Traced reachability via cargo tree -i: lopdf + 3 quick-xml resolutions are directly reachable via kreuzberg's document-processing path (real risk); rsa/ammonia/quinn-proto reachability needs a plan-stage feature-usage check. Also found: docs/DEPENDENCY_MANAGEMENT.md claims cargo audit runs in CI via release.yml, but that workflow has NEVER executed (only triggers on a version tag/release, and none has ever been cut) -- a real process gap. sdks/typescript has no lockfile at all. Full detail in assessment.md.",
   "changes_total": 8,
-  "changes_completed": 2,
+  "changes_completed": 3,
   "changes_in_progress": null,
   "decisions": {
     "round_structure": "Round 1 (Rust, 5 parallel changes, shared checkpoint) -> Round 2 (npm, 2 parallel changes, shared checkpoint) -> Round 3 (sdks/typescript + CI process fix)",
@@ -32,15 +32,15 @@
   "change_status": {
     "kreuzberg-reachable-vulns": "DONE (2026-07-07) -- compensating control, not a crate fix. RUSTSEC-2026-0187 (lopdf stack overflow) + RUSTSEC-2026-0194 (quick-xml quadratic attribute DoS) confirmed reachable via source inspection (no NsReader anywhere rules out RUSTSEC-2026-0195). No upstream kreuzberg tag through v5.0.0-rc.35 fixes both; [patch.crates-io] doesn't work (3 semver-incompatible quick-xml resolutions from manifests UAR doesn't control). Added KreuzbergConfig.max_input_bytes (100 MiB default) + extraction_timeout_secs (60s default), wired into KreuzbergProvider::process/process_bytes with a new ProcessingError::ResourceLimitExceeded variant. 2 new regression tests; full lib suite 387/388 green (1 pre-existing ignore); cargo clippy zero new warnings (fixed 2 self-introduced map_err_ignore lints). cargo audit still lists all 3 RUSTSEC IDs (expected -- crate versions unchanged). docs/DEPENDENCY_MANAGEMENT.md corrected (stale GQAdonis/kreuzberg branch-main record -> actual kreuzberg-dev/kreuzberg tag v4.9.8 pin) + new disposition section added. Full trace in openspec/changes/kreuzberg-reachable-vulns/findings.md.",
     "surreal-memory-transitive-vulns": "DONE (2026-07-07) -- 2 of 3 advisories fixed via free/zero-risk cargo update (ammonia 4.1.2->4.1.3 clears RUSTSEC-2026-0193; crossbeam-epoch 0.9.18->0.9.20 clears RUSTSEC-2026-0204), neither was actually reachable per source inspection but bumped anyway since compatible. rsa 0.9.10/RUSTSEC-2023-0071 has patched=[] (no fix exists ever); reachable via liter-llm's Vertex AI OAuth RS256 JWT signing but the Marvin Attack's network-timing-oracle threat model doesn't fit an outbound self-triggered signing flow -- accepted risk, disclosed. surreal-memory's own branch=main git pin was NOT resynced (unnecessary, higher blast radius than the scoped cargo update that fixed it). cargo check clean, cargo test --lib 387/388 (unchanged), cargo clippy 499 warnings (unchanged, no UAR source touched), cargo audit confirms ammonia+crossbeam-epoch cleared, rsa still listed as expected. docs/DEPENDENCY_MANAGEMENT.md updated with rsa disposition. Full trace in openspec/changes/surreal-memory-transitive-vulns/findings.md.",
-    "direct-network-facing-vulns": "PENDING",
+    "direct-network-facing-vulns": "DONE (2026-07-07) -- hickory-proto (RUSTSEC-2026-0118/-0119): confirmed NOT reachable, no code change. Behind UAR's optional off-by-default sandbox-microsandbox feature; cargo tree --all-features shows it pulled in via microsandbox-network but grep across the whole microsandbox-* crate family finds zero actual hickory/Resolver/lookup_ip call sites -- declared-but-unused dependency. dnssec-ring/dnssec-aws-lc-rs feature (required for -0118) also not activated. Fix requires hickory-proto>=0.26.x but microsandbox-network's own Cargo.toml pins ^0.25, so not available to us regardless. tokio-tar (RUSTSEC-2025-0111, patched=[]): FULLY ELIMINATED -- traced to testcontainers, a completely unused dev-dependency (zero call sites anywhere in the repo via grep). Removed `testcontainers = \"0.23\"` from Cargo.toml, which pruned tokio-tar + 9 other exclusively-used transitive crates (bollard, bollard-stubs, hyperlocal, hyper-named-pipe, parse-display x2, redox_syscall, structmeta x2) from Cargo.lock -- 183 lines removed, 0 added. NOTE: an initial bare `cargo update` (no -p scope) bumped ~190 unrelated packages -- reverted via git checkout, redid via manifest-edit + scoped cargo check which produced the clean minimal diff. cargo check clean, cargo test --lib 387/388 (unchanged), cargo clippy 499 warnings (unchanged), cargo audit confirms tokio-tar cleared + hickory-proto's 2 advisories still listed as expected (disclosed not-reachable). docs/DEPENDENCY_MANAGEMENT.md updated with hickory-proto disposition. Full trace in openspec/changes/direct-network-facing-vulns/findings.md.",
     "first-party-direct-dep-hygiene": "PENDING",
     "grcov-toolchain-refresh": "PENDING",
     "npm-root-remediation": "PENDING",
     "frontend-npm-remediation": "PENDING",
     "sdk-typescript-lockfile-and-ci-audit-fix": "PENDING"
   },
-  "next_change": "direct-network-facing-vulns",
+  "next_change": "first-party-direct-dep-hygiene",
   "next_session_priorities": [
-    "Continue Round 1: direct-network-facing-vulns, first-party-direct-dep-hygiene, grcov-toolchain-refresh (shared cargo audit/test/clippy checkpoint once all 5 land), then Round 2 (2 npm changes), then Round 3 (sdk lockfile + CI fix)"
+    "Continue Round 1: first-party-direct-dep-hygiene, grcov-toolchain-refresh (shared cargo audit/test/clippy checkpoint once all 5 land), then Round 2 (2 npm changes), then Round 3 (sdk lockfile + CI fix)"
   ]
 }

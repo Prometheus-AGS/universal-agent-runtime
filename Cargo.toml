@@ -47,7 +47,6 @@ tower = { version = "0.5.2", features = ["util"] }
 
 # Testing infrastructure dependencies
 grcov = "0.8"
-testcontainers = "0.23"
 mockall = "0.13"
 tokio-test = "0.4"
 rustls = { version = "0.23.37", features = ["ring"] }
