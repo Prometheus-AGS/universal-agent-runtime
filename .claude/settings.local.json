@@ -557,7 +557,9 @@
       "Bash(cargo audit *)",
       "Bash(npm audit *)",
       "Bash(awk '/^name = \"quinn\"$/,/^$/' Cargo.lock)",
-      "Bash(gh run *)"
+      "Bash(gh run *)",
+      "Bash(curl -s \"https://rustsec.org/advisories/RUSTSEC-2026-0190.html\")",
+      "Bash(echo \"fmt check exit: $?\")"
     ]
   }
 }

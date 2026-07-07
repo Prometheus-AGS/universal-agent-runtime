@@ -121,14 +121,7 @@ pub fn known_tool_spec(name: &str) -> ToolSpec {
             },
             git_install: Some(GitInstallSpec {
                 url: "https://github.com/kreuzberg-dev/kreuzberg.git",
-                build_cmd: &[
-                    "cargo",
-                    "install",
-                    "--path",
-                    ".",
-                    "--bin",
-                    "kreuzberg",
-                ],
+                build_cmd: &["cargo", "install", "--path", ".", "--bin", "kreuzberg"],
                 binary_relpath: "target/release/kreuzberg",
             }),
             prebuilt: None,
@@ -382,7 +375,13 @@ async fn install_via_native_package_manager(
         NativePackageManager::Brew => ("brew", vec!["install", package]),
         NativePackageManager::Winget => (
             "winget",
-            vec!["install", "-e", "--id", package, "--accept-package-agreements"],
+            vec![
+                "install",
+                "-e",
+                "--id",
+                package,
+                "--accept-package-agreements",
+            ],
         ),
         NativePackageManager::Choco => ("choco", vec!["install", "-y", package]),
     };
@@ -397,7 +396,11 @@ async fn install_via_native_package_manager(
     Ok(())
 }
 
-async fn git_install(name: &str, spec: &GitInstallSpec, cache_dir: &std::path::Path) -> Result<PathBuf> {
+async fn git_install(
+    name: &str,
+    spec: &GitInstallSpec,
+    cache_dir: &std::path::Path,
+) -> Result<PathBuf> {
     let clone_dir = cache_dir.join(name);
     if !clone_dir.exists() {
         tokio::fs::create_dir_all(cache_dir)
@@ -458,7 +461,11 @@ fn os_arch_placeholders() -> (&'static str, &'static str) {
     (os, arch)
 }
 
-async fn fetch_prebuilt(name: &str, spec: &PrebuiltSpec, cache_dir: &std::path::Path) -> Result<PathBuf> {
+async fn fetch_prebuilt(
+    name: &str,
+    spec: &PrebuiltSpec,
+    cache_dir: &std::path::Path,
+) -> Result<PathBuf> {
     let (os, arch) = os_arch_placeholders();
     let url = spec
         .url_template

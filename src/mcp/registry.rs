@@ -88,7 +88,8 @@ impl McpRegistry {
                         &command_path.to_string_lossy(),
                     ) {
                         let spec = crate::uar::orchestrator::provisioning::known_tool_spec(command);
-                        let opts = crate::uar::orchestrator::provisioning::ProvisionOptions::default();
+                        let opts =
+                            crate::uar::orchestrator::provisioning::ProvisionOptions::default();
                         match crate::uar::orchestrator::provisioning::ToolProvisioner::resolve(
                             &spec, &opts,
                         )
