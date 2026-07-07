@@ -52,12 +52,18 @@ transitive crates already resolves them without needing to touch the
 
 ### New Capabilities
 
-None.
+None — see `Modified Capabilities` below.
 
 ### Modified Capabilities
 
-None — no spec-level requirement changes; this is a dependency-lockfile
-remediation (2 transitive version bumps) plus a disclosed non-fixable
+- `dependency-security-posture`: adds the "Surreal-Memory Transitive
+  Advisory Disposition" requirement (scoped `cargo update` over git-pin
+  resync when a compatible fix exists; disclose accepted risk when
+  `patched = []`). Added retroactively, same as the other 3 Round-1
+  changes — see `openspec/changes/first-party-direct-dep-hygiene/` for
+  why. Otherwise no other spec-level requirement changes; this is a
+  dependency-lockfile remediation (2 transitive version bumps) plus a
+  disclosed non-fixable
 finding.
 
 ## Impact

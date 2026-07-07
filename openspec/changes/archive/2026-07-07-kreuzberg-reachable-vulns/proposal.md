@@ -37,11 +37,17 @@ dependency-pin remediation with no API surface change.
 
 ### New Capabilities
 
-None.
+- `dependency-security-posture`: normative practice for triaging
+  `cargo audit` findings against pinned/first-party dependencies — verify
+  reachability, then fix, mitigate, or disclose as accepted risk, always
+  recorded in `docs/DEPENDENCY_MANAGEMENT.md`. Added retroactively (see
+  `openspec/changes/first-party-direct-dep-hygiene/` where this gap was
+  caught) since none of this phase's changes originally declared a
+  capability delta.
 
 ### Modified Capabilities
 
-None — no spec-level requirement changes. This only changes a pinned
+None — no other spec-level requirement changes. This only changes a pinned
 dependency version (or adds a transitive patch override), not any
 documented behavior of the document-intelligence capability.
 

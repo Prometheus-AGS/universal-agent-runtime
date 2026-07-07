@@ -45,13 +45,18 @@ deciding whether a fix is needed at all.
 
 ### New Capabilities
 
-None.
+None — see `Modified Capabilities` below.
 
 ### Modified Capabilities
 
-None — no spec-level requirement changes. This removes an unused
-dev-dependency and disclosures a non-reachable transitive advisory; no
-UAR source code changed.
+- `dependency-security-posture`: adds the "Network-Facing Dependency
+  Reachability Verification" requirement (remove confirmed-unused
+  dependencies entirely; disclose feature-gated-and-unreachable ones with
+  their fix-version constraint). Added retroactively, same as the other 3
+  Round-1 changes — see `openspec/changes/first-party-direct-dep-hygiene/`
+  for why. Otherwise no other spec-level requirement changes. This removes
+  an unused dev-dependency and discloses a non-reachable transitive
+  advisory; no UAR source code changed.
 
 ## Impact
 
