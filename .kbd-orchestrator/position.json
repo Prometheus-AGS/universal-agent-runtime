@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1",
+  "updatedAt": "2026-07-07T16:59:37Z",
+  "cursor": [
+    "uar-dependabot-remediation-2026-07"
+  ],
+  "root": {
+    "type": "phase",
+    "id": "uar-dependabot-remediation-2026-07",
+    "status": "executing",
+    "progress": {
+      "done": 1,
+      "total": 8
+    },
+    "children": [],
+    "annotations": [
+      {
+        "source": "evolver",
+        "ref": ".evolver/",
+        "summary": "evolutions: uar-evolution-2026-02,uar-production-readiness-2026-04"
+      }
+    ]
+  }
+}

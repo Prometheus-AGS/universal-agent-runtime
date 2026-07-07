@@ -4,7 +4,7 @@
   "status": "executing",
   "stage": "executing",
   "previousPhase": "prometheus-package-integration",
-  "currentTask": "PLAN COMPLETE (plan.md, 2026-07-07). 8 changes, 3 rounds, ordered by reachability/risk not by source list. Round 1 (Rust, 5 parallel changes): kreuzberg-reachable-vulns (lopdf + quick-xml x2, highest priority), surreal-memory-transitive-vulns (ammonia/crossbeam-epoch/rsa, reachability TBC), direct-network-facing-vulns (hickory-proto + tokio-tar), first-party-direct-dep-hygiene (serde_yml/libyml are direct deps), grcov-toolchain-refresh (dev-only, lower urgency). Round 2 (npm, 2 parallel changes): npm-root-remediation, frontend-npm-remediation. Round 3: sdk-typescript-lockfile-and-ci-audit-fix (vitest bump + new scheduled security-audit workflow, not repurposing release.yml). First change to apply: kreuzberg-reachable-vulns.",
+  "currentTask": "EXECUTE DISPATCH WRITTEN (execution.md, 2026-07-07). Backend: openspec, self-executing via Claude Code CLI, driven per-change through /kbd-apply (never bare /opsx:apply). None of the 8 change dirs exist under openspec/changes/ yet -- plan.md deferred proposal.md/tasks.md authorship to execute time per this project's established practice. Round 1 (Rust, 5 changes, shared cargo audit/test/clippy checkpoint): kreuzberg-reachable-vulns (lopdf + quick-xml x2, highest priority), surreal-memory-transitive-vulns (ammonia/crossbeam-epoch/rsa, reachability TBC), direct-network-facing-vulns (hickory-proto + tokio-tar), first-party-direct-dep-hygiene (serde_yml/libyml are direct deps), grcov-toolchain-refresh (dev-only, lower urgency). Round 2 (npm, 2 changes, shared audit/build checkpoint): npm-root-remediation, frontend-npm-remediation. Round 3: sdk-typescript-lockfile-and-ci-audit-fix (vitest bump + new scheduled security-audit workflow, not repurposing release.yml). Next action: /opsx:new kreuzberg-reachable-vulns then /kbd-apply kreuzberg-reachable-vulns.",
   "nextPendingChange": "kreuzberg-reachable-vulns",
   "roundZeroComplete": true,
   "changeStatus": {
@@ -95,7 +95,7 @@
     "R3 eval scope -- RESOLVED (uar-carryover-audit assessment, 2026-07-06): 8-file eval harness + eval-targeted-suites and related changes landed.",
     "R4 guardrail build-vs-buy -- RESOLVED (uar-carryover-audit assessment, 2026-07-06): real GuardrailsConfig + guardrail-pii-block/mount-governance-guardrails landed."
   ],
-  "updatedAt": "2026-07-07T00:35:00Z",
+  "updatedAt": "2026-07-07T01:15:00Z",
   "planRevision": "uar-security-deps-and-hygiene's own plan.md (2026-07-04): 10 changes in 4 risk-ordered rounds, see phases/uar-security-deps-and-hygiene/plan.md.",
   "discoveredBugs": [
     "task_188b4179: VectorMatcher::embed_batch returns zero-vector placeholder embeddings (model.forward() commented out) - breaks all RAG search + LocalEmbedding intent backend. spawn_task started by user.",

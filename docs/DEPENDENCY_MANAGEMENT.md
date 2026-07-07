@@ -10,10 +10,10 @@ UAR uses several crates sourced directly from Git repositories rather than crate
 |-------|-----------|--------|
 | `rmcp` | `modelcontextprotocol/rust-sdk` | MCP Rust SDK is pre-release; no stable crates.io version |
 | `surreal-memory` | `Prometheus-AGS/surreal-memory-server` | Internal library, not published |
-| `kreuzberg` | `GQAdonis/kreuzberg` | Default local document intelligence provider; follows the fork's main branch |
+| `kreuzberg` | `kreuzberg-dev/kreuzberg` | Default local document intelligence provider; pinned to a release tag (not a branch) |
 | `prometheus_parking_lot` | `Prometheus-AGS/prometheus-parking-lot-rs` | Internal library, not published |
 
-Most git dependencies are **pinned to a specific commit SHA** via `rev = "..."` in `Cargo.toml`. `kreuzberg` intentionally tracks `branch = "main"` so UAR can consume the active document-intelligence fork. Pinning ensures:
+Most git dependencies are **pinned to a specific commit SHA** via `rev = "..."` in `Cargo.toml`. `kreuzberg` is pinned to a release `tag` (currently `v4.9.8`) rather than a branch or commit SHA, so upgrades happen by moving to a newer tag rather than an upstream `main` sync. Pinning ensures:
 
 - **Reproducible builds**: The same SHA is resolved every time regardless of upstream changes
 - **CI stability**: The CI pipeline does not break due to unexpected upstream commits
@@ -24,7 +24,7 @@ Most git dependencies are **pinned to a specific commit SHA** via `rev = "..."` 
 ```toml
 rmcp          = rev "085470025f690050e8776ffa939e7ba71d3abc01"
 surreal-memory = rev "c6f95c905c16907ad58ef9049f32dcc9531d40eb"
-kreuzberg     = branch "main" on GQAdonis/kreuzberg
+kreuzberg     = tag "v4.9.8" on kreuzberg-dev/kreuzberg
 prometheus_parking_lot = rev "32b481d6c5694545d35789894f6feecf5ac4ca3e"
 ```
 
@@ -103,3 +103,29 @@ cargo audit
 ```
 
 The CI pipeline runs `cargo audit` as part of the release workflow (`release.yml`). For non-release branches, run it manually before merging significant dependency changes.
+
+### Known open advisories: `kreuzberg` → `lopdf` / `quick-xml`
+
+As of `uar-dependabot-remediation-2026-07` (`openspec/changes/kreuzberg-reachable-vulns/`),
+`cargo audit` reports 3 advisories reachable through the `kreuzberg` pin
+(`lopdf` 0.40.0, `quick-xml` 0.37.5/0.39.4/0.40.1):
+
+- **`RUSTSEC-2026-0187`** (lopdf stack overflow) and **`RUSTSEC-2026-0194`**
+  (quick-xml quadratic attribute-check DoS) are **confirmed reachable**
+  (source-inspected call sites in kreuzberg/biblib/calamine). No upstream
+  `kreuzberg` tag through `v5.0.0-rc.35` fixes both, and a
+  `[patch.crates-io]` override doesn't work either (3 semver-incompatible
+  quick-xml resolutions from manifests we don't control). **Mitigated, not
+  fixed**: `KreuzbergConfig.max_input_bytes` (default 100 MiB) and
+  `extraction_timeout_secs` (default 60s) bound the blast radius of a
+  crafted document without patching the vulnerable crates. These 2
+  advisories will keep appearing in `cargo audit` output until kreuzberg
+  ships a stable release with both fixed, or a future change forks and
+  backports the fixes.
+- **`RUSTSEC-2026-0195`** (quick-xml unbounded namespace-allocation DoS) is
+  **confirmed not reachable** — nothing in kreuzberg/biblib/calamine uses
+  `NsReader`, the only affected API. No action needed; still listed by
+  `cargo audit` since the crate version is unchanged.
+
+See `openspec/changes/kreuzberg-reachable-vulns/findings.md` for the full
+reachability trace.

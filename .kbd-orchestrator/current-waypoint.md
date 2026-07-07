@@ -1,135 +1,96 @@
 # Current Waypoint — universal-agent-runtime
 
-- **Phase:** uar-security-deps-and-hygiene
-- **Status:** executing (Round 1: 6/6 ✅; Round 2: 2/2 ✅; Round 3: 1/1 ✅)
-- **Progress:** 9 of 10 changes (latest: `c90858e`). GitHub alert count: 78 as of last push (rmcp fix not yet re-scanned)
-- **Next pending change:** `surrealdb-upgrade` (Round 4, final change, own checkpoint, highest blast radius)
-- **Exact next command:** `/kbd-execute uar-security-deps-and-hygiene` for the final Round 4 change
-- **Recommendation source:** `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`'s 2026-07-04 addendum (rescoped after a Dependabot backlog was found via post-reflection research); confirmed against direct inspection in `assessment.md`; sequenced by risk in `plan.md`
+- **Phase:** uar-dependabot-remediation-2026-07
+- **Status:** executing (Round 0 prerequisite ✅; Round 1: 0/5; Round 2: 0/2; Round 3: 0/1)
+- **Progress:** 0 of 8 changes
+- **Next pending change:** `kreuzberg-reachable-vulns` (Round 1, first of 5 parallel Rust changes)
+- **Exact next command:** `/opsx:new kreuzberg-reachable-vulns` then `/kbd-apply kreuzberg-reachable-vulns`
+- **Recommendation source:** seeded from `prometheus-package-integration`'s reflection.md candidate 3 ("a fresh Dependabot/security posture re-check"), chosen explicitly by the user after a 52-alert count surfaced on `git push` on 2026-07-06
 
-## Round 1 results (6 of 6 done)
+## Round 0 (prerequisite, complete)
 
-- `dependabot-yml`: new `.github/dependabot.yml`, 4 ecosystems.
-- `fix-uar-integration-test`: `Skill` struct literal fixed via
-  `..Default::default()`.
-- `fix-bdd-test-path`: nested `#[path]` resolution fixed by moving the
-  prefix onto the outer `mod live`.
-- `artifact-refiner-gate-decision`: D-E decision record written
-  (`.kbd-orchestrator/references/artifact-refiner-gate-decision.md`) —
-  gate formally retired, no tool available in this environment.
-- `npm-deps-triage`: **both** alerts fully resolved (better than
-  `plan.md`'s disclosed risk of a dead end). `jsonwebtoken` was actually
-  a Rust alert against `tools/uar-jwt-proxy` (bumped `9`→`10`,
-  `Cargo.lock` now unified on `10.4.0`). `dompurify` traced to a
-  completely unused `@types/dompurify` devDependency (removed).
-- `fix-waypoint-stage-schema`: after being surfaced as a cross-repo
-  blocker, the user chose "fix at the source." Fixed
-  `write-position-reminder.sh` **and** `write-session-summary.sh`
-  (identical bug found in the second file) in the separate
-  `prometheus-skill-system` repo — `.stage // "unknown"` →
-  `.stage // .status // "unknown"`. Rebased cleanly onto 20 unrelated
-  upstream commits (none conflicting), pushed as `91006b8`. Verified
-  against a synthetic `.status`-only waypoint (no `.stage`) — the real
-  regression scenario, not just the happy path.
-- Checkpoint: `cargo check --workspace` clean, `cargo test --lib`
-  363/363, frontend `tsc --noEmit` unchanged at 17 pre-existing errors.
+CI had been broken on every run since 2026-07-04 (missing system deps in the
+workflow) plus `cargo fmt` drift blocking every open PR. Both fixed and
+committed (`c2ff066`, `83b9505`) before the 8-change execution began, so
+Round 1-3 land against a clean CI gate.
 
-## Why this phase, and why rescoped
+## Why this phase
 
-`uar-spec-v2-and-polish` closed 7/7 changes, G4+G5 both MET. Its own
-"Next Phase Focus" recommended a `uar-hygiene-and-bench-validation`
-phase (QA gate automation, 2 broken test files, `cargo bench`). Before
-starting that, the user asked for research into whether anything should
-change the plan. It did: GitHub had been flagging **96 open Dependabot
-alerts** (5 critical, 17 high, ~4 months accumulated, no
-`dependabot.yml` automation) on every push all phase, never
-investigated because it wasn't in that phase's declared scope. The two
-that matter most are directly production-relevant:
+Seeded from `prometheus-package-integration`'s reflection, candidate 3, over
+two other candidates (original #14 test gap; cross-platform live
+verification of `provisioning.rs` — both explicitly deferred, not
+abandoned). The trigger was a live count of 52 open Dependabot alerts (3
+critical/10 high/32 medium/7 low) discovered on push. `assessment.md` then
+found the real picture is bigger: `cargo audit` surfaces 17 Rust
+vulnerabilities (6 net-new vs. Dependabot) plus 18 unmaintained/unsound
+warnings; `npm audit`/`pnpm audit` surface 6 more npm advisories Dependabot
+has no alert for; `sdks/typescript` has no lockfile at all; and the CI
+`cargo audit` step `docs/DEPENDENCY_MANAGEMENT.md` claims exists has never
+actually run (only triggers on a tag/release, none ever cut).
 
-- **`surrealdb`** pinned `=3.0.5` (crates.io has `3.2.0`) — high-severity
-  HTTP RPC session-hijack + privilege-escalation CVEs. `surreal-backend`
-  is UAR's **default** feature.
-- **`rmcp`** pinned via git rev, behind upstream `HEAD` — high-severity
-  DNS rebinding in its Streamable HTTP transport. Core, non-optional MCP
-  SDK.
+## Goals (see `phases/uar-dependabot-remediation-2026-07/goals.md` for full detail)
 
-This directly undercuts D-D ("dependency pins are deliberate, not
-debt"), which `uar-spec-v2-and-polish`'s own CH-19 re-affirmed without
-checking whether the pinned versions carry known, fixed-upstream CVEs.
+1. Triage all 52 alerts (+ the net-new cargo-audit/npm-audit findings) —
+   fixed version available? direct or transitive? actually reachable?
+2. Resolve what's safely upgradable, re-verifying build/test/clippy green
+   after each ecosystem's batch.
+3. Disclose explicitly what can't be resolved yet — not every finding needs
+   a code change to count as "handled."
+4. Re-affirm or revise the D-D architectural decision (git-sourced pins:
+   `rmcp`, `surreal-memory`, `kreuzberg`, `prometheus_parking_lot`) if any
+   are implicated.
 
-## Goals (see `phases/uar-security-deps-and-hygiene/goals.md` for full detail)
+## Planned change order (see `plan.md` for full detail — ordered by reachability/risk, not by source list)
 
-- **G1 (P0, primary): security dependency triage & upgrade.** Triage
-  the 5 critical + 17 high alerts; upgrade `surrealdb`; bump the `rmcp`
-  pin; disposition `wasmtime` (opt-in feature, lower priority) and the
-  `failure` crate (dev-only via `grcov`, no exposure); triage npm-side
-  alerts (`dompurify`, `jsonwebtoken`, etc.); add `.github/dependabot.yml`.
-- **G2 (P1, secondary — carried from `uar-spec-v2-and-polish`): hygiene
-  & validation.** Automate the artifact-refiner QA gate (or explicitly
-  drop it — 4th+ phase as debt); fix `tests/uar_integration.rs` +
-  `tests/bdd.rs` pre-existing compile failures; run `cargo bench` on
-  `benches/hot_path.rs`; fix `write-position-reminder.sh`'s
-  `.stage`/`.status` schema mismatch at the source.
+- **Round 1 (Rust, 5 changes, shared cargo audit/test/clippy checkpoint):**
+  `kreuzberg-reachable-vulns` (lopdf + quick-xml x2, highest priority — most
+  concretely reachable finding in the whole assessment),
+  `surreal-memory-transitive-vulns` (ammonia/crossbeam-epoch/rsa,
+  reachability TBC), `direct-network-facing-vulns` (hickory-proto +
+  tokio-tar), `first-party-direct-dep-hygiene` (serde_yml/libyml are direct
+  deps), `grcov-toolchain-refresh` (dev-only, lower urgency)
+- **Round 2 (npm, 2 changes, shared audit/build checkpoint):**
+  `npm-root-remediation`, `frontend-npm-remediation`
+- **Round 3 (closes out, own checkpoint):**
+  `sdk-typescript-lockfile-and-ci-audit-fix` (vitest bump + new scheduled
+  security-audit workflow — deliberately not repurposing `release.yml`)
 
-## Planned change order (see `plan.md` for full detail — all 10 are independent, ordered by risk not dependency)
+## Execute-phase dispatch (see `execution.md` for full contract)
 
-- **Round 1 (parallel, low risk)**: `dependabot-yml` ✅, `fix-uar-integration-test` ✅, `fix-bdd-test-path` ✅, `artifact-refiner-gate-decision` ✅, `npm-deps-triage` ✅, `fix-waypoint-stage-schema` ✅ — **all 6 done**
-- **Round 2 (parallel)**: `wasmtime-disposition` ✅ (bumped 41→46 per user request, fixed the resulting Context-trait break at 6 call sites), `run-hot-path-bench` ✅ (executed for the first time — see Round 2 results below)
-- **Round 3 (sequenced, own checkpoint)**: `rmcp-pin-bump` ✅ (fixed GHSA-89vp-x53w-74fx, DNS rebinding; see Round 3 results below)
-- **Round 4 (sequenced, own checkpoint, last, highest blast radius)**: `surrealdb-upgrade` (next — final change)
-
-`surrealdb-upgrade` and `rmcp-pin-bump` carry real regression risk and each get their own dedicated test-suite checkpoint, not bundled with the smaller Round 1/2 items.
-
-## Round 2 results (2 of 2 done)
-
-- `wasmtime-disposition`: bumped `wasmtime`/`wasmtime-wasi` 41.0.3→46
-  (user asked for latest). Fixed the resulting break (`wasmtime::Error`
-  no longer implements `std::error::Error`) by swapping to wasmtime's
-  own `wasmtime::error::Context` trait at 6 call sites. 367/367 tests
-  green with the feature enabled.
-- `run-hot-path-bench`: `cargo check --benches` + `cargo bench --bench
-  hot_path` both run for the first time ever. All 4 benchmarks
-  microsecond-scale or better, no red flags. Baseline recorded in
-  `benches/hot_path.rs`'s own doc comment.
-
-## Round 3 results (1 of 1 done)
-
-- `rmcp-pin-bump`: bumped `rmcp` from a pre-1.4.0 git rev to the
-  `rmcp-v1.8.0` tag, fixing `GHSA-89vp-x53w-74fx` (high severity — DNS
-  rebinding in the Streamable HTTP server transport, which this project
-  directly enables). Broke 9 call sites the same way (`Tool`,
-  `CallToolRequestParams`, `Implementation`, `ServerInfo`,
-  `StreamableHttpServerConfig` all became `#[non_exhaustive]`) —
-  confirmed `..Default::default()` does **not** bypass this (unlike
-  `wasmtime`'s `Context` trait issue in Round 2), fixed via each type's
-  provided constructor/builder instead. 363/363 lib tests, 4/4
-  MCP-specific tests, 56/56 integration tests (incl. a real MCP
-  tool-call round trip) all green.
+Backend: `openspec`, self-executing via Claude Code CLI, driven per-change
+through `/kbd-apply` (never bare `/opsx:apply`). None of the 8 change dirs
+exist under `openspec/changes/` yet — `plan.md` deferred `proposal.md`/
+`tasks.md` authorship to execute time per this project's established
+practice, so each change is scaffolded via `/opsx:new` immediately before
+`/kbd-apply` drives its tasks.
 
 ## Decisions carried forward (still load-bearing)
 - D-A: RAG hardened in-process; Knowledge Service extraction deferred
 - D-B: MemPalace stays off
 - D-C: LibreFang integration scoped to UAR side
-- D-D: dependency pins deliberate — **under active re-examination this
-  phase** for `surrealdb`/`rmcp` specifically, given known fixed-upstream
-  CVEs on the currently-pinned versions
+- D-D: dependency pins deliberate — reaffirmed for `rmcp`/`surrealdb`/
+  `wasmtime` in `uar-security-deps-and-hygiene` (2026-07-04); this phase
+  re-examines the git-tracked pins (`surreal-memory`, `kreuzberg`) plus the
+  first-party direct deps (`serde_yml`/`libyml`) specifically
 
-## Carried-over debt (see progress.json for full list; G1/G2 above absorb most of it)
-- 17 pre-existing `bun run typecheck` errors (unrelated to recent work)
+## Carried-over debt (unrelated to this phase's scope, tracked for later)
+- 17 pre-existing `bun run typecheck` errors
 - CH-06 per-agent/per-task budget configuration surface (global-only today)
 - CH-08 activation-outcome correlation (recall wired; outcome half unsolved)
 - Durable cost/spend history for CH-07 dashboard
-- `main()` always loads full `AppConfig` before dispatching any
-  subcommand, so the config-light `compile`/`eval` subcommands need a
-  minimal persistence config they don't otherwise use (found while
-  building `uar-spec-v2-and-polish`'s CH-15 `compile` subcommand;
-  not yet in this phase's own goals — candidate for a future pass)
+- `main()` always loads full `AppConfig` before dispatching any subcommand
+  (found during `uar-spec-v2-and-polish`'s CH-15 `compile` subcommand)
 
 ## Prior phase archive
 
+- **`uar-security-deps-and-hygiene`** (2026-07-04): 10/10 changes across 4
+  risk-ordered rounds. Upgraded `surrealdb` 3.0.5→3.2.0 (session-hijack +
+  privilege-escalation CVEs), `rmcp` to `rmcp-v1.8.0` tag (DNS rebinding,
+  `GHSA-89vp-x53w-74fx`), `wasmtime` 41→46, added `.github/dependabot.yml`,
+  fixed `write-position-reminder.sh`'s `.stage`/`.status` schema mismatch at
+  the source (also fixed in the sibling `prometheus-skill-system` repo).
+  See its own `reflection.md` for full detail — its recommendation seeded
+  `prometheus-package-integration`, whose own reflection candidate 3 in
+  turn seeded this phase.
 - **`uar-spec-v2-and-polish`** (2026-07-04): 7/7 changes, G4+G5 MET.
-  See `.kbd-orchestrator/phases/uar-spec-v2-and-polish/reflection.md`
-  (and its addendum) for full detail, including the sycophancy
-  self-check (score 0.018, no phase inversion detected).
-- **`uar-next-harness`**: 16/24 changes, G1-G3 MET, G4-G5 deferred to
-  `uar-spec-v2-and-polish`. See its own `reflection.md`.
+- **`uar-next-harness`**: 16/24 changes, G1-G3 MET, G4-G5 deferred.

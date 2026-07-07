@@ -6,6 +6,7 @@
 use async_trait::async_trait;
 use std::fmt::Write;
 use std::path::Path;
+use std::time::Duration;
 
 use crate::config::KreuzbergConfig;
 
@@ -72,15 +73,32 @@ impl KreuzbergProvider {
 #[async_trait]
 impl FileProcessor for KreuzbergProvider {
     async fn process(&self, path: &Path) -> Result<ProcessingResult, ProcessingError> {
+        let file_len = tokio::fs::metadata(path).await?.len();
+        if file_len > self.config.max_input_bytes {
+            return Err(ProcessingError::ResourceLimitExceeded(format!(
+                "document is {file_len} bytes, exceeds max_input_bytes ({})",
+                self.config.max_input_bytes
+            )));
+        }
+
         let extraction_config = self.build_extraction_config();
 
         // Use kreuzberg's synchronous API wrapped in spawn_blocking
         // for async compatibility
         let path_buf = path.to_path_buf();
-        let result = tokio::task::spawn_blocking(move || {
-            kreuzberg::extract_file_sync(path_buf, None, &extraction_config)
-        })
+        let result = tokio::time::timeout(
+            Duration::from_secs(self.config.extraction_timeout_secs),
+            tokio::task::spawn_blocking(move || {
+                kreuzberg::extract_file_sync(path_buf, None, &extraction_config)
+            }),
+        )
         .await
+        .map_err(|_elapsed| {
+            ProcessingError::ResourceLimitExceeded(format!(
+                "extraction exceeded {}s timeout",
+                self.config.extraction_timeout_secs
+            ))
+        })?
         .map_err(|e| ProcessingError::ProviderError(format!("Task join error: {e}")))?
         .map_err(|e| ProcessingError::ProviderError(format!("Kreuzberg error: {e}")))?;
 
@@ -202,6 +220,14 @@ pub async fn process_bytes(
     mime_type: &str,
     config: &KreuzbergConfig,
 ) -> Result<ProcessingResult, ProcessingError> {
+    if data.len() as u64 > config.max_input_bytes {
+        return Err(ProcessingError::ResourceLimitExceeded(format!(
+            "document is {} bytes, exceeds max_input_bytes ({})",
+            data.len(),
+            config.max_input_bytes
+        )));
+    }
+
     let mut extraction_config = kreuzberg::ExtractionConfig::default();
 
     // Map output format string → v4 enum
@@ -235,10 +261,19 @@ pub async fn process_bytes(
     let mime_for_extraction = mime_type.to_string();
     let mime_for_result = mime_type.to_string();
 
-    let result = tokio::task::spawn_blocking(move || {
-        kreuzberg::extract_bytes_sync(&data_owned, &mime_for_extraction, &extraction_config)
-    })
+    let result = tokio::time::timeout(
+        Duration::from_secs(config.extraction_timeout_secs),
+        tokio::task::spawn_blocking(move || {
+            kreuzberg::extract_bytes_sync(&data_owned, &mime_for_extraction, &extraction_config)
+        }),
+    )
     .await
+    .map_err(|_elapsed| {
+        ProcessingError::ResourceLimitExceeded(format!(
+            "extraction exceeded {}s timeout",
+            config.extraction_timeout_secs
+        ))
+    })?
     .map_err(|e| ProcessingError::ProviderError(format!("Task join error: {e}")))?
     .map_err(|e| ProcessingError::ProviderError(format!("Kreuzberg error: {e}")))?;
 
@@ -331,9 +366,38 @@ mod tests {
             extract_metadata: true,
             output_format: "markdown".to_string(),
             chunking: None,
+            ..KreuzbergConfig::default()
         };
 
         let provider = KreuzbergProvider::new(config);
         assert_eq!(provider.provider_name(), "Kreuzberg");
+    }
+
+    #[tokio::test]
+    async fn test_process_bytes_rejects_oversized_input() {
+        let config = KreuzbergConfig {
+            max_input_bytes: 16,
+            ..KreuzbergConfig::default()
+        };
+        let data = vec![0u8; 17];
+
+        let err = process_bytes(&data, "text/plain", &config)
+            .await
+            .expect_err("oversized input must be rejected before reaching kreuzberg");
+
+        assert!(matches!(err, ProcessingError::ResourceLimitExceeded(_)));
+    }
+
+    #[tokio::test]
+    async fn test_process_bytes_accepts_input_within_limit() {
+        let config = KreuzbergConfig {
+            max_input_bytes: 4096,
+            ..KreuzbergConfig::default()
+        };
+        let data = b"hello world".to_vec();
+
+        let result = process_bytes(&data, "text/plain", &config).await;
+
+        assert!(result.is_ok(), "input within the size cap should proceed to extraction");
     }
 }

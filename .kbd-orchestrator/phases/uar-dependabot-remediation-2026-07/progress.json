@@ -1,17 +1,19 @@
 {
   "phase": "uar-dependabot-remediation-2026-07",
   "createdAt": "2026-07-06T19:45:00Z",
-  "updatedAt": "2026-07-07T00:35:00Z",
+  "updatedAt": "2026-07-07T02:30:00Z",
   "sourceTool": "claude-code",
   "assessment_complete": true,
   "plan_complete": true,
+  "execution_dispatched": true,
+  "execution_backend": "openspec",
   "execute_complete": false,
   "reflect_complete": false,
   "previousPhase": "prometheus-package-integration",
   "seedNote": "Seeded from prometheus-package-integration's reflection.md candidate 3, chosen explicitly by the user over the other two candidates (original #14 test gap; cross-platform live verification of provisioning.rs). Starting numbers verified live via gh api .../dependabot/alerts (not just the push-time summary): 52 open, 3 critical/10 high/32 medium/7 low, across Cargo.lock (11), package-lock.json (30), frontend/pnpm-lock.yaml (10), sdks/typescript/package.json (1).",
   "assessNote": "User explicitly directed going beyond the 52 Dependabot alerts. Ran cargo audit (installed fresh) + npm audit (root, frontend) live: found 17 real Rust advisories (vs 11 in Dependabot -- 6 net-new: ammonia, crossbeam-epoch, lopdf, quick-xml x2 CVEs, quinn-proto, rsa) plus 18 unmaintained/unsound warnings; found 6 net-new/higher-severity npm advisories not in Dependabot (ajv, brace-expansion, extra flatted/minimatch/picomatch/undici GHSA IDs). Traced reachability via cargo tree -i: lopdf + 3 quick-xml resolutions are directly reachable via kreuzberg's document-processing path (real risk); rsa/ammonia/quinn-proto reachability needs a plan-stage feature-usage check. Also found: docs/DEPENDENCY_MANAGEMENT.md claims cargo audit runs in CI via release.yml, but that workflow has NEVER executed (only triggers on a version tag/release, and none has ever been cut) -- a real process gap. sdks/typescript has no lockfile at all. Full detail in assessment.md.",
   "changes_total": 8,
-  "changes_completed": 0,
+  "changes_completed": 1,
   "changes_in_progress": null,
   "decisions": {
     "round_structure": "Round 1 (Rust, 5 parallel changes, shared checkpoint) -> Round 2 (npm, 2 parallel changes, shared checkpoint) -> Round 3 (sdks/typescript + CI process fix)",
@@ -28,7 +30,7 @@
     "sdk-typescript-lockfile-and-ci-audit-fix"
   ],
   "change_status": {
-    "kreuzberg-reachable-vulns": "PENDING",
+    "kreuzberg-reachable-vulns": "DONE (2026-07-07) -- compensating control, not a crate fix. RUSTSEC-2026-0187 (lopdf stack overflow) + RUSTSEC-2026-0194 (quick-xml quadratic attribute DoS) confirmed reachable via source inspection (no NsReader anywhere rules out RUSTSEC-2026-0195). No upstream kreuzberg tag through v5.0.0-rc.35 fixes both; [patch.crates-io] doesn't work (3 semver-incompatible quick-xml resolutions from manifests UAR doesn't control). Added KreuzbergConfig.max_input_bytes (100 MiB default) + extraction_timeout_secs (60s default), wired into KreuzbergProvider::process/process_bytes with a new ProcessingError::ResourceLimitExceeded variant. 2 new regression tests; full lib suite 387/388 green (1 pre-existing ignore); cargo clippy zero new warnings (fixed 2 self-introduced map_err_ignore lints). cargo audit still lists all 3 RUSTSEC IDs (expected -- crate versions unchanged). docs/DEPENDENCY_MANAGEMENT.md corrected (stale GQAdonis/kreuzberg branch-main record -> actual kreuzberg-dev/kreuzberg tag v4.9.8 pin) + new disposition section added. Full trace in openspec/changes/kreuzberg-reachable-vulns/findings.md.",
     "surreal-memory-transitive-vulns": "PENDING",
     "direct-network-facing-vulns": "PENDING",
     "first-party-direct-dep-hygiene": "PENDING",
@@ -37,8 +39,8 @@
     "frontend-npm-remediation": "PENDING",
     "sdk-typescript-lockfile-and-ci-audit-fix": "PENDING"
   },
-  "next_change": "kreuzberg-reachable-vulns",
+  "next_change": "surreal-memory-transitive-vulns",
   "next_session_priorities": [
-    "Execute Round 1 (5 Rust changes, shared cargo audit/test/clippy checkpoint), then Round 2 (2 npm changes, shared audit/build checkpoint), then Round 3 (sdk lockfile + CI fix)"
+    "Continue Round 1: surreal-memory-transitive-vulns, direct-network-facing-vulns, first-party-direct-dep-hygiene, grcov-toolchain-refresh (shared cargo audit/test/clippy checkpoint once all 5 land), then Round 2 (2 npm changes), then Round 3 (sdk lockfile + CI fix)"
   ]
 }
