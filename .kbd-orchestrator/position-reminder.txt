@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-dependabot-remediation-2026-07
 Step: 0 of 0
-Stage: assess_pending
-Next command: /kbd-assess uar-dependabot-remediation-2026-07 -- triage all 52 open Dependabot alerts (verify fixed-version availability, direct-vs-transitive, actual reachability) before scoping a remediation plan.
+Stage: plan_pending
+Next command: /kbd-plan uar-dependabot-remediation-2026-07 -- scope remediation across Rust (cargo audit's 17 vulns + 18 warnings, prioritizing kreuzberg-reachable lopdf/quick-xml findings), npm (root + frontend), sdks/typescript (needs a lockfile + vitest range bump), and fixing release.yml's dead cargo-audit trigger.
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-dependabot-remediation-2026-07 (step 0 of 0)

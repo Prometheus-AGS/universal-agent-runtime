@@ -553,7 +553,11 @@
       "Bash(gh issue *)",
       "Bash(gh auth *)",
       "Bash(git cherry-pick *)",
-      "Bash(curl -s \"https://crates.io/api/v1/crates/which\")"
+      "Bash(curl -s \"https://crates.io/api/v1/crates/which\")",
+      "Bash(cargo audit *)",
+      "Bash(npm audit *)",
+      "Bash(awk '/^name = \"quinn\"$/,/^$/' Cargo.lock)",
+      "Bash(gh run *)"
     ]
   }
 }
