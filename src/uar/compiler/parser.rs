@@ -163,71 +163,71 @@ fn deserialize_section(
         return Ok(());
     }
 
-    let map_err = |e: serde_yml::Error| CompileError::SectionDeserialize {
+    let map_err = |e: serde_norway::Error| CompileError::SectionDeserialize {
         section: section.display_name().into(),
         message: e.to_string(),
     };
 
     match section {
         SectionName::Metadata => {
-            ir.metadata = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.metadata = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Identity => {
-            ir.identity = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.identity = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Ui => {
-            ir.ui = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.ui = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Capabilities => {
-            ir.capabilities = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.capabilities = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Skills => {
-            ir.skills = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.skills = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Tools => {
-            ir.tools = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.tools = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::McpServers => {
-            ir.mcp_servers = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.mcp_servers = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Knowledge => {
-            ir.knowledge = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.knowledge = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Memory => {
-            ir.memory = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.memory = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::A2A => {
-            ir.a2a = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.a2a = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Governance => {
-            ir.governance = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.governance = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Budgets => {
-            ir.budgets = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.budgets = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Execution => {
-            ir.execution = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.execution = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Observability => {
-            ir.observability = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.observability = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::Deployment => {
-            ir.deployment = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.deployment = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::ModelRequirements => {
-            ir.model_requirements = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.model_requirements = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::PromptDialect => {
-            ir.prompt_dialect = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.prompt_dialect = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::RagConfiguration => {
-            ir.rag_configuration = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.rag_configuration = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::ContextStrategy => {
-            ir.context_strategy = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.context_strategy = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
         SectionName::ApiHarness => {
-            ir.api_harness = Some(serde_yml::from_str(yaml).map_err(map_err)?);
+            ir.api_harness = Some(serde_norway::from_str(yaml).map_err(map_err)?);
         }
     }
 

@@ -162,3 +162,31 @@ reachable, disclosed** — see
 `openspec/changes/direct-network-facing-vulns/findings.md`. Re-check this
 disposition if UAR ever adds real DNS-resolution logic on top of
 `microsandbox-network`.
+
+### Resolved: `serde_yml` → `serde_norway` (unmaintained + unsound)
+
+As of `uar-dependabot-remediation-2026-07`
+(`openspec/changes/first-party-direct-dep-hygiene/`), `cargo audit` flagged
+`serde_yml` 0.0.12 as both unmaintained and unsound. Unlike this project's
+git-pinned dependencies (see "Why Git Dependencies Are Pinned" above),
+`serde_yml` was a direct, first-party-controllable dependency with no
+upstream fix in progress — replaced with `serde_norway` 0.9.42 (an
+actively maintained fork with a compatible `Serialize`/`Deserialize`-based
+API) across its 3 call sites. This also fully eliminated `libyml` (an
+unmaintained native library pulled in only transitively via `serde_yml`)
+from `Cargo.lock`. `anyhow`/`memmap2` unsoundness reports surfaced in the
+same assessment were re-checked against the currently pinned versions
+(`anyhow` 1.0.103, `memmap2` 0.9.11) and do not apply — no action needed.
+
+### Known orphaned advisory: `quinn-proto` (not in resolved graph)
+
+`cargo audit` lists `RUSTSEC-2026-0185` (`quinn-proto` 0.11.14, remote
+memory exhaustion), but `cargo tree -i quinn-proto --target all --all-features`
+resolves to zero reverse dependencies — the entry is present in
+`Cargo.lock` but not reachable in the currently resolved dependency graph
+under any feature/target combination. `reqwest`'s enabled features
+(`json`, `stream`, `rustls-tls-native-roots`, `multipart`) never activate
+HTTP/3 either, ruling out that suspected path too. Not assigned to any of
+this phase's 8 changes; likely to self-prune on a future full
+`cargo update`. See
+`openspec/changes/first-party-direct-dep-hygiene/findings.md`.
