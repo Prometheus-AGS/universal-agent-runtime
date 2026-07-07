@@ -190,3 +190,35 @@ HTTP/3 either, ruling out that suspected path too. Not assigned to any of
 this phase's 8 changes; likely to self-prune on a future full
 `cargo update`. See
 `openspec/changes/first-party-direct-dep-hygiene/findings.md`.
+
+### Resolved: unused `grcov` dev-dependency removed
+
+As of `uar-dependabot-remediation-2026-07`
+(`openspec/changes/grcov-toolchain-refresh/`), `cargo audit` attributed 18
+unmaintained/unsound warnings (`atty`, `failure`, `ansi_term`,
+`proc-macro-error`, plus their exclusive chain: `cargo-binutils`,
+`rustc-cfg`, `tabled`, `tabled_derive`, `clap` 2.34.0) to the
+`grcov = "0.8"` entry in `Cargo.toml`'s `[dev-dependencies]`.
+Investigation found this entry unused: `grep -rn "use grcov\|grcov::"`
+finds zero call sites in the repo, and the coverage tool actually invoked
+(`tools/coverage.sh`, `tools/test-all.sh`, and 3 CI workflows) is a
+separately `cargo install`'d CLI binary, entirely decoupled from this
+workspace's `Cargo.lock`. **Fully eliminated** by removing the unused
+`[dev-dependencies]` entry — a complete fix, not a disclosure. **Plan
+correction**: the phase's `plan.md` also listed `paste` as expected to
+clear; `cargo tree -i paste` shows it's pulled in via `kreuzberg`/`burn`,
+unrelated to `grcov` — left unchanged. `instant`, `number_prefix`, `scc`,
+and `ttf-parser` from the same 18-warning tally are likewise unrelated to
+`grcov` (see `openspec/changes/grcov-toolchain-refresh/findings.md` for
+each crate's actual path) and out of this change's scope.
+
+### Known orphaned/gated advisory: `proc-macro-error2` (unmaintained)
+
+`cargo audit` lists `proc-macro-error2` 2.0.1 (`RUSTSEC-2026-0173`,
+unmaintained) via `microsandbox` (behind the optional, off-by-default
+`sandbox-microsandbox` feature) → `oci-spec`/`sea-orm-macros`. Pre-existing
+and unrelated to the `grcov` removal above (confirmed via
+`git diff Cargo.lock` — this entry was untouched by that change). Same
+disposition class as `hickory-proto` (unreachable unless
+`sandbox-microsandbox` is enabled); not assigned to any of this phase's 8
+changes. See `openspec/changes/grcov-toolchain-refresh/findings.md`.
