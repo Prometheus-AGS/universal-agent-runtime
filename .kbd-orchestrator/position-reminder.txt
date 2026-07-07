@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-dependabot-remediation-2026-07
-Step: 0 of 0
-Stage: plan_pending
-Next command: /kbd-plan uar-dependabot-remediation-2026-07 -- scope remediation across Rust (cargo audit's 17 vulns + 18 warnings, prioritizing kreuzberg-reachable lopdf/quick-xml findings), npm (root + frontend), sdks/typescript (needs a lockfile + vitest range bump), and fixing release.yml's dead cargo-audit trigger.
+Step: 0 of 8
+Stage: executing
+Next command: /kbd-execute uar-dependabot-remediation-2026-07 -- Round 1: kreuzberg-reachable-vulns, surreal-memory-transitive-vulns, direct-network-facing-vulns, first-party-direct-dep-hygiene, grcov-toolchain-refresh (parallel, shared cargo audit/test/clippy checkpoint). Round 2: npm-root-remediation, frontend-npm-remediation. Round 3: sdk-typescript-lockfile-and-ci-audit-fix.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-dependabot-remediation-2026-07 (step 0 of 0)
+  Starting <kbd-skill> — uar-dependabot-remediation-2026-07 (step 0 of 8)
   [do work]
-  Completed <kbd-skill> — uar-dependabot-remediation-2026-07 (step 0 of 0)
+  Completed <kbd-skill> — uar-dependabot-remediation-2026-07 (step 0 of 8)

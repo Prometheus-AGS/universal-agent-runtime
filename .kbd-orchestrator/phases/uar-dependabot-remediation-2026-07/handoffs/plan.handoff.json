@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-07T00:35:00Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "8 changes in 3 rounds, ordered by reachability/risk not by which list (Dependabot/cargo audit/npm audit) an item came from. Round 1 (Rust, 5 parallel changes): kreuzberg-reachable-vulns (lopdf stack overflow + quick-xml DoS x2, highest priority -- directly reachable via kreuzberg's document processing), surreal-memory-transitive-vulns (ammonia/crossbeam-epoch/rsa via surrealdb-core, reachability needs confirming -- 'not reachable, no action needed' is a valid outcome), direct-network-facing-vulns (hickory-proto + tokio-tar), first-party-direct-dep-hygiene (serde_yml/libyml are DIRECT deps, not transitive -- first-party controllable), grcov-toolchain-refresh (dev-dependency-only chain, lower urgency). Round 2 (npm, 2 parallel changes): npm-root-remediation, frontend-npm-remediation. Round 3: sdk-typescript-lockfile-and-ci-audit-fix (bump vitest past the vulnerable range + generate a real lockfile, plus add a NEW scheduled security-audit workflow rather than repurposing release.yml's tag-only trigger). First change to apply: kreuzberg-reachable-vulns.",
+  "skipped": false,
+  "skipReason": null
+}
