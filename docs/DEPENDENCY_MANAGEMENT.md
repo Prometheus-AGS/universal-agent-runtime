@@ -129,3 +129,18 @@ As of `uar-dependabot-remediation-2026-07` (`openspec/changes/kreuzberg-reachabl
 
 See `openspec/changes/kreuzberg-reachable-vulns/findings.md` for the full
 reachability trace.
+
+### Known open advisory: `rsa` (Marvin Attack, no fix exists)
+
+`cargo audit` lists **`RUSTSEC-2023-0071`** (`rsa` 0.9.10, timing
+side-channel key recovery) via `jsonwebtoken` ← `liter-llm`'s Vertex AI
+OAuth service-account JWT signing (`Algorithm::RS256`). This advisory has
+**`patched = []`** — no version of the `rsa` crate fixes it; there is
+nothing to upgrade to. Traced reachability: the signing is an outbound,
+self-triggered operation (UAR signs its own assertion to authenticate to
+Google's OAuth endpoint), not a network-facing decrypt/verify oracle an
+external attacker controls the input to or can time — the Marvin Attack's
+threat model doesn't fit this flow. UAR's own JWT usage elsewhere
+(`src/uar/security/`) is HMAC-only and does not use `rsa` at all.
+**Accepted risk, disclosed** — see
+`openspec/changes/surreal-memory-transitive-vulns/findings.md`.
