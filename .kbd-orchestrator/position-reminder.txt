@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-post-dependabot-followup-2026-07
 Step: 0 of 0
-Stage: assess_pending
-Next command: /kbd-assess uar-post-dependabot-followup-2026-07
+Stage: assess_complete
+Next command: /kbd-plan uar-post-dependabot-followup-2026-07 -- assessment.md complete: Goal 1 STUB (D-D bullet fix identified), Goal 2 blocked on human input (surreal-memory branch=main pin decision), Goal 3 missing (security-audit.yml never pushed, root-caused), Goal 4 partial (reachability traced for all 9 unmaintained warnings).
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 0 of 0)

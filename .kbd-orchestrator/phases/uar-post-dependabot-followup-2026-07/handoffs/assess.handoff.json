@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-07-08T09:01:12Z",
+  "outputs": [
+    ".kbd-orchestrator/phases/uar-post-dependabot-followup-2026-07/assessment.md"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "4 findings: (1) D-D bullet fix identified (kreuzberg/surreal-memory pin-type swap), (2) surreal-memory branch=main pin decision needs human input -- 2 viable options, no default assumed, (3) security-audit.yml root-caused as never-pushed (15 commits ahead of origin/main, gh confirms 404), (4) reachability traced for all 9 unmaintained warnings -- 5 reachable/always-compiled, 2 feature-gated, 1 dev-only, 1 orphaned.",
+  "skipped": false,
+  "skipReason": null
+}
