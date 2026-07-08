@@ -224,10 +224,10 @@ chrono = { version = "0.4.44", features = ["serde"] }
 walkdir = "2.5.0"
 serde_yaml = "0.9"
 jsonwebtoken = "10.2.0"
-tracing-opentelemetry = "0.32.0"
-opentelemetry = "0.31.0"
-opentelemetry-otlp = "0.31.1"
-opentelemetry_sdk = { version = "0.31.0", features = ["rt-tokio"] }
+tracing-opentelemetry = "0.33.0"
+opentelemetry = "0.32.0"
+opentelemetry-otlp = "0.32.0"
+opentelemetry_sdk = { version = "0.32.1", features = ["rt-tokio"] }
 metrics = "0.24.3"
 metrics-exporter-prometheus = "0.18.1"
 config = "0.15.22"

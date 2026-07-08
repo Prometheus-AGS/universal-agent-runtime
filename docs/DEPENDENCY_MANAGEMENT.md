@@ -174,6 +174,20 @@ threat model doesn't fit this flow. UAR's own JWT usage elsewhere
 
 ### Known open advisory: `hickory-proto` (dead dependency, not reachable)
 
+**Update (`uar-post-dependabot-followup-2026-07`)**: GitHub's own
+Dependabot/GHSA database tracks 2 additional `hickory-proto` advisories
+not yet present in the RustSec advisory database `cargo audit` uses —
+`GHSA-q2qq-hmj6-3wpp` (CPU exhaustion via O(n²) name compression) and
+`GHSA-3v94-mw7p-v465` (NSEC3 unbounded loop on cross-zone responses).
+Confirmed via `cargo tree -i hickory-proto --target all --all-features`
+that the reachability path is identical to the 2 advisories below (same
+`hickory-proto` 0.25.2, same `microsandbox-network` route, same optional
+`sandbox-microsandbox` feature) — same disposition applies: **not
+reachable, disclosed**. This confirms `cargo audit`'s RustSec-only
+coverage can lag GitHub's own GHSA database for a given crate; check
+`gh api repos/<org>/<repo>/dependabot/alerts` periodically, not just
+`cargo audit`, for a fuller picture.
+
 `cargo audit` lists 2 advisories for `hickory-proto` 0.25.2
 (`RUSTSEC-2026-0118`, `RUSTSEC-2026-0119`), pulled in only when the
 optional `sandbox-microsandbox` feature is enabled (via
@@ -353,3 +367,42 @@ phase was assigned to were triaged:
 
 See `openspec/changes/triage-unassigned-unmaintained-warnings/findings.md`
 for the full investigation trace.
+
+### Resolved: 2 real CVEs found only via GitHub Dependabot, not `cargo audit`
+
+As of `uar-post-dependabot-followup-2026-07`
+(`openspec/changes/push-and-verify-security-audit-workflow/`), after
+pushing this phase's work and dispatching `security-audit.yml` for the
+first time, `gh api repos/.../dependabot/alerts` was checked directly
+(prompted by GitHub reporting a much larger alert count at push time than
+this project's own `cargo audit`/`npm audit`/`pnpm audit` tooling showed).
+Found 2 real, reachable, always-compiled Rust CVEs that `cargo audit`'s
+RustSec advisory database doesn't (yet) track:
+
+- **`cmov`** (`CVE-2026-50185`, `GHSA-3rjw-m598-pq24`) — aarch64
+  `Cmov`/`CmovEq` can produce wrong results if high bits of registers are
+  set. Reachable via `liter-llm`'s `aws-sigv4` → `hmac`/`md-5` →
+  `digest` → `ctutils` → `cmov` chain (used for AWS request signing,
+  e.g. Bedrock). Fixed via a scoped `cargo update -p cmov --precise
+  0.5.4` (patched version) — no `Cargo.toml` edit needed, already within
+  the resolved range.
+- **`opentelemetry_sdk`** (`CVE-2026-48504`, `GHSA-w9wp-h8wv-79jx`) —
+  unbounded memory allocation in W3C Baggage propagation. A direct,
+  always-compiled UAR dependency (`opentelemetry-otlp`/
+  `opentelemetry_sdk`, both pinned `0.31.x`). Fixed by bumping the whole
+  `opentelemetry` family in `Cargo.toml`: `opentelemetry` 0.31.0→0.32.0,
+  `opentelemetry-otlp` 0.31.1→0.32.0, `opentelemetry_sdk` 0.31.0→0.32.1.
+  This also required bumping `tracing-opentelemetry` 0.32.0→0.33.0 — its
+  version number does not track `opentelemetry`'s 1:1; `0.32.0` was
+  actually built against `opentelemetry` `0.31.x`'s API and failed to
+  compile against `0.32.x` (`Layered<...>: Subscriber` trait-bound
+  errors) until bumped to `0.33.0`.
+
+Both confirmed fixed: `cargo tree -i cmov` → `0.5.4`; `cargo tree -i
+opentelemetry_sdk` → `0.32.1`. `cargo check`/`test`/`clippy`/`audit` all
+clean afterward, no regressions. **Lesson**: `cargo audit` alone is not
+sufficient coverage — its RustSec advisory database can lag behind
+GitHub's own GHSA database for the same crate. Check
+`gh api repos/<org>/<repo>/dependabot/alerts?state=open` directly,
+especially right after a push, rather than relying on `cargo audit`
+exclusively.
