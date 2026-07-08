@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-post-dependabot-followup-2026-07
 Step: 4 of 4
-Stage: execute_complete
-Next command: /kbd-reflect uar-post-dependabot-followup-2026-07 -- phase complete (4/4), ready for reflection.
+Stage: reflected
+Next command: /kbd-next-phase -- seed a new phase from uar-post-dependabot-followup-2026-07's reflection.md (top recommendation: add a gh api dependabot/alerts check to security-audit.yml, since cargo audit alone missed 2 real CVEs this phase).
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 4 of 4)
