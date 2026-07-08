@@ -273,7 +273,7 @@ When an unmaintained-crate `cargo audit` warning has no patched version and no f
 
 ### Requirement: CI Trigger Actually Fires
 
-A new or modified CI trigger SHALL NOT be considered verified until it is observed firing on the actual CI platform, not merely locally simulated.
+A new or modified CI trigger SHALL NOT be considered verified until it is observed firing on the actual CI platform, not merely locally simulated. When a job's correctness depends on a credential's runtime scope (not just its presence), verification MUST confirm the credential actually has that scope on the real platform, not just that a local credential with different provenance produced the expected result.
 
 #### Scenario: A workflow file exists but was never pushed
 
@@ -291,6 +291,18 @@ A new or modified CI trigger SHALL NOT be considered verified until it is observ
 - **When** verification is needed sooner
 - **Then** a manual `workflow_dispatch` run SHOULD be triggered instead
   of waiting, provided the workflow supports it
+
+#### Scenario: A job's correctness depends on a secret's runtime scope
+
+- **Given** a CI job authenticates with a repo secret (e.g.
+  `secrets.SUBMODULES_TOKEN`) whose actual permission scope was not
+  independently confirmed before being reused for a new purpose
+- **When** a local dry-run used a different credential (e.g. an
+  interactive developer token) to validate the job's logic
+- **Then** the job MUST still be run for real in CI with the actual
+  secret before being considered verified, since a local dry-run with a
+  different credential does not confirm the real secret's scope is
+  sufficient
 
 ### Requirement: Dependabot Alert Feed Checked in CI
 
