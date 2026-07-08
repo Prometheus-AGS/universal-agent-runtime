@@ -4,8 +4,8 @@
   "status": "executing",
   "stage": "executing",
   "previousPhase": "prometheus-package-integration",
-  "currentTask": "ROUND 1 COMPLETE (5/5 Rust changes DONE, committed, archived as of 2026-07-07): kreuzberg-reachable-vulns (commit fc0f7bd, compensating control via resource limits), surreal-memory-transitive-vulns (commit 07cac2a, ammonia/crossbeam-epoch fixed, rsa disclosed accepted-risk), direct-network-facing-vulns (commit fc0f7bd, hickory-proto disclosed unreachable, tokio-tar/testcontainers eliminated), first-party-direct-dep-hygiene (commits 8c1c6fb+eecd09a, serde_yml->serde_norway swap), grcov-toolchain-refresh (commits 20c9795+c719072, unused grcov dev-dep removed). Introduced new openspec capability dependency-security-posture (openspec/specs/dependency-security-posture/spec.md) after discovering openspec validate/archive hard-require a delta spec per change -- retrofitted into changes 1-3, followed from the start for changes 4-5; see progress.json's decisions.openspec_verify_archive_gap_2026-07-07 for the full pattern Round 2/3 must also follow. Next action: /opsx:new npm-root-remediation then /kbd-apply npm-root-remediation.",
-  "nextPendingChange": "npm-root-remediation",
+  "currentTask": "ROUND 1 COMPLETE (5/5). ROUND 2 1/2 DONE: npm-root-remediation (commits 52290b6+38e0f03) -- 15 npm audit findings on root package-lock.json (dev tooling only: playwright/eslint/prettier/tailwindcss/typescript/monocart-coverage-reports/@tauri-apps/cli), all fixed via plain `npm audit fix` (semver-compatible, no --force), package.json zero diff, 0 vulnerabilities after, bun run build verified clean. Continuing to follow the dependency-security-posture delta-spec pattern (see progress.json's decisions.openspec_verify_archive_gap_2026-07-07) -- validated on first try, no retrofit needed. Next action: /opsx:new frontend-npm-remediation then /kbd-apply frontend-npm-remediation.",
+  "nextPendingChange": "frontend-npm-remediation",
   "roundZeroComplete": true,
   "changeStatus": {
     "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",

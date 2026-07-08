@@ -239,3 +239,22 @@ to a single vulnerable `lodash-es` resolution). All 15 had
 resolved** via `npm audit fix` — `package.json` had zero diff (lockfile-only
 change), `npm audit` confirms 0 vulnerabilities afterward. See
 `openspec/changes/npm-root-remediation/findings.md`.
+
+### Resolved: frontend `pnpm-lock.yaml` npm audit findings
+
+As of `uar-dependabot-remediation-2026-07`
+(`openspec/changes/frontend-npm-remediation/`), a live `pnpm audit` against
+`frontend/` found 11 findings (4 high, 4 moderate, 3 low): `vite` (direct
+devDependency), `undici` (×7, transitive via `packages/prometheus-entity-management`'s
+`jsdom`), `js-yaml` (transitive via `eslint`'s `@eslint/eslintrc`), and
+`esbuild` (transitive, dual-resolved via both `vite` and `tsup`). All 4
+resolved to patched versions within their parents' already-declared ranges
+(`pnpm update`/`pnpm -r update`, no override needed) **except** `esbuild`
+via `tsup` (pinned to exactly `^0.27.0`, no compatible patched release
+available) — a single `pnpm-workspace.yaml` override was added, pinned to
+the exact patched version (`"0.28.1"`, not an open-ended range). **Caught
+and corrected mid-change**: an initial `pnpm audit --fix` run generated an
+open-ended `vite` override that resolved to an unintended major-version
+bump (`vite@8.1.3`); reverted and redone deliberately. `pnpm audit` now
+reports 0 vulnerabilities; frontend build/typecheck verified green. See
+`openspec/changes/frontend-npm-remediation/findings.md`.

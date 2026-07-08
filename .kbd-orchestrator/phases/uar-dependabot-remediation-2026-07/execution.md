@@ -110,15 +110,15 @@ VERIFICATION REQUIREMENTS
 - Round 2 (npm, shared checkpoint after both land): `npm audit` / `pnpm audit` re-run shows count drop; `bun run build` + `bun run check` succeed; `pnpm -C frontend build` succeeds.
 - Round 3 (own checkpoint): `sdks/typescript` vitest run green after bump; new CI workflow YAML valid and its trigger confirmed to actually fire.
 
-PROGRESS LEDGER (refreshed 2026-07-07 via /kbd-execute re-entry, step 5 of 8)
+PROGRESS LEDGER (refreshed 2026-07-07 via /kbd-execute re-entry, step 6 of 8)
 
 - [DONE] kreuzberg-reachable-vulns — SELF — archived 2026-07-07-kreuzberg-reachable-vulns
 - [DONE] surreal-memory-transitive-vulns — SELF — archived 2026-07-07-surreal-memory-transitive-vulns
 - [DONE] direct-network-facing-vulns — SELF — commit fc0f7bd, archived 2026-07-07-direct-network-facing-vulns
 - [DONE] first-party-direct-dep-hygiene — SELF — commits 8c1c6fb+eecd09a, archived 2026-07-07-first-party-direct-dep-hygiene
 - [DONE] grcov-toolchain-refresh — SELF — commits 20c9795+c719072, archived 2026-07-07-grcov-toolchain-refresh — ROUND 1 COMPLETE (5/5)
-- [PENDING] npm-root-remediation — SELF — Round 2, next up
-- [PENDING] frontend-npm-remediation — SELF — Round 2
+- [DONE] npm-root-remediation — SELF — commits 52290b6+38e0f03, archived 2026-07-07-npm-root-remediation
+- [PENDING] frontend-npm-remediation — SELF — Round 2, next up (last Round 2 change)
 - [PENDING] sdk-typescript-lockfile-and-ci-audit-fix — SELF — Round 3
 
 PROCESS NOTE: /kbd-apply's `verify`/`archive` (openspec validate/archive) hard-require
