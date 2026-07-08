@@ -1,0 +1,19 @@
+{
+  "phase": "uar-post-dependabot-followup-2026-07",
+  "createdAt": "2026-07-08T09:00:00Z",
+  "updatedAt": "2026-07-08T09:00:00Z",
+  "sourceTool": "claude-code",
+  "assessment_complete": false,
+  "plan_complete": false,
+  "execution_dispatched": false,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "previousPhase": "uar-dependabot-remediation-2026-07",
+  "seedNote": "Seeded from uar-dependabot-remediation-2026-07's reflection.md (2026-07-08): that phase's Goal 4 (re-affirm/revise the D-D architectural decision) was NOT MET, and while writing the reflection a factual inaccuracy was found in docs/ARCHITECTURE.md's D-D bullet (kreuzberg/surreal-memory pin-type swap -- kreuzberg is tag-pinned, surreal-memory is the one on a floating branch=main, not the reverse as currently documented). Also carries forward: verifying the new security-audit.yml workflow's first real scheduled/dispatch run (only locally simulated in the prior phase), and triaging 9 never-assigned unmaintained/unsound cargo audit warnings.",
+  "changes_total": null,
+  "changes_completed": 0,
+  "changes_in_progress": null,
+  "changes_ordered": [],
+  "change_status": {},
+  "next_change": null
+}

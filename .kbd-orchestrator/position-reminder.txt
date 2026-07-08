@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-dependabot-remediation-2026-07
-Step: 8 of 8
-Stage: reflected
-Next command: /kbd-next-phase (phase reflected 2026-07-08; see reflection.md recommendations: correct ARCHITECTURE.md's D-D bullet + surreal-memory pin decision, verify security-audit.yml's first real scheduled/dispatch run, triage 9 never-assigned unmaintained warnings).
+Phase: uar-post-dependabot-followup-2026-07
+Step: 0 of 0
+Stage: assess_pending
+Next command: /kbd-assess uar-post-dependabot-followup-2026-07
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-dependabot-remediation-2026-07 (step 8 of 8)
+  Starting <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 0 of 0)
   [do work]
-  Completed <kbd-skill> — uar-dependabot-remediation-2026-07 (step 8 of 8)
+  Completed <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 0 of 0)
