@@ -45,6 +45,7 @@ terraform.rc
 /static/styles.css
 /static/*.wasm
 /static/*.data
+sdks/typescript/dist/
 
 # IDE & Editor
 .vscode/

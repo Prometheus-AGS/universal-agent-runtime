@@ -1,0 +1,131 @@
+name: Security Audit
+
+# Scheduled dependency vulnerability scan, decoupled from release.yml on
+# purpose (decision recorded in uar-dependabot-remediation-2026-07/plan.md):
+# release.yml's tag/release trigger answers "when do we cut a release" and
+# has never fired in this repo's history, which meant the cargo audit/bun
+# audit steps buried in it never ran either. This workflow answers a
+# separate question -- "how often do we check for new CVEs" -- on its own
+# schedule regardless of release cadence.
+on:
+  schedule:
+    - cron: '0 6 * * 1' # weekly, Monday 06:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  rust-audit:
+    name: cargo audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-audit-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-audit-
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      # Ignored IDs are advisories this project has already triaged and
+      # disclosed a disposition for in docs/DEPENDENCY_MANAGEMENT.md (fixed
+      # where possible, mitigated, or accepted risk with no fix available).
+      # A net-new advisory not in this list will fail the job -- that's the
+      # signal this workflow exists to surface. Unmaintained/unsound
+      # warnings (not CVE-style vulnerabilities) still print but don't fail
+      # the job by default; review them periodically via `cargo audit`
+      # locally.
+      - name: Run cargo audit
+        run: |
+          cargo audit \
+            --ignore RUSTSEC-2026-0118 `# hickory-proto: not reachable, disclosed` \
+            --ignore RUSTSEC-2026-0119 `# hickory-proto: not reachable, disclosed` \
+            --ignore RUSTSEC-2026-0187 `# lopdf via kreuzberg: mitigated (resource limits), no crate fix exists` \
+            --ignore RUSTSEC-2026-0194 `# quick-xml via kreuzberg: mitigated (resource limits), no crate fix exists` \
+            --ignore RUSTSEC-2026-0195 `# quick-xml via kreuzberg: confirmed not reachable` \
+            --ignore RUSTSEC-2026-0185 `# quinn-proto: orphaned Cargo.lock entry, not reachable` \
+            --ignore RUSTSEC-2023-0071 `# rsa: accepted risk, patched=[] (no fix exists)`
+
+  npm-root-audit:
+    name: npm audit (root)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: npm audit
+        run: npm audit
+
+  frontend-audit:
+    name: pnpm audit (frontend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install workspace
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit
+        working-directory: frontend
+        run: pnpm audit
+
+  sdk-typescript-audit:
+    name: npm audit (sdks/typescript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sdks/typescript/package-lock.json
+
+      - name: Install
+        working-directory: sdks/typescript
+        run: npm ci
+
+      - name: npm audit
+        working-directory: sdks/typescript
+        run: npm audit

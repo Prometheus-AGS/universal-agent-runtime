@@ -102,7 +102,22 @@ cargo install cargo-audit
 cargo audit
 ```
 
-The CI pipeline runs `cargo audit` as part of the release workflow (`release.yml`). For non-release branches, run it manually before merging significant dependency changes.
+**Corrected (`uar-dependabot-remediation-2026-07`)**: this document previously
+claimed "the CI pipeline runs `cargo audit` as part of the release workflow
+(`release.yml`)." That step exists in `release.yml`, but that workflow only
+triggers on a pushed version tag or a published GitHub release — and as of
+this writing, this repository has never cut one (`gh run list
+--workflow=release.yml` returns zero runs, ever), so the step has never
+actually executed. A dedicated `.github/workflows/security-audit.yml` now
+runs `cargo audit` + `npm audit` (root) + `pnpm audit` (`frontend/`) +
+`npm audit` (`sdks/typescript/`) on its own weekly schedule (`workflow_dispatch`
+also available for on-demand runs), deliberately decoupled from
+`release.yml`'s tag/release trigger — "when we cut a release" and "how often
+we scan for CVEs" are separate concerns. It ignores only the advisories
+already disclosed with a rationale in this document (see sections below);
+any new, undisclosed advisory fails the job. For non-release branches, you
+can still run `cargo audit` / `npm audit` / `pnpm audit` manually before
+merging significant dependency changes.
 
 ### Known open advisories: `kreuzberg` → `lopdf` / `quick-xml`
 
@@ -258,3 +273,26 @@ open-ended `vite` override that resolved to an unintended major-version
 bump (`vite@8.1.3`); reverted and redone deliberately. `pnpm audit` now
 reports 0 vulnerabilities; frontend build/typecheck verified green. See
 `openspec/changes/frontend-npm-remediation/findings.md`.
+
+### Resolved: `sdks/typescript` had no lockfile at all
+
+As of `uar-dependabot-remediation-2026-07`
+(`openspec/changes/sdk-typescript-lockfile-and-ci-audit-fix/`),
+`sdks/typescript/package.json` declared `"vitest": "^2.0.0"` with no
+`package-lock.json`/`pnpm-lock.yaml`/`yarn.lock` at all. Dependabot's
+critical alert (`GHSA-5xrq-8626-4rwp`) affects `vitest < 3.2.6` or
+`>= 4.0.0, < 4.1.0` — the entire declared `^2.0.0` range falls inside the
+vulnerable window, so a lockfile regenerate alone would not have fixed it;
+the declared range itself had to move. Bumped to `^4.1.10` (current stable,
+matching the version line already used by `frontend/`) and generated a real
+`package-lock.json` via `npm install`. This also surfaced the same
+`esbuild`-via-`tsup` blocker seen in `frontend-npm-remediation` (`tsup`
+pins `esbuild` to exactly `^0.27.0`, no compatible patched release exists)
+— resolved via an `overrides` entry in `package.json`, pinned to the exact
+patched version (`"0.28.1"`). `npm audit` now reports 0 vulnerabilities
+(was 1). `tsc --noEmit`, `tsup` build, and `vitest --run` all confirmed
+working; note `sdks/typescript` currently has zero test files, so
+`vitest --run` exits non-zero ("No test files found") — pre-existing gap,
+not introduced by this change, and not currently exercised by any CI
+workflow. See
+`openspec/changes/sdk-typescript-lockfile-and-ci-audit-fix/findings.md`.
