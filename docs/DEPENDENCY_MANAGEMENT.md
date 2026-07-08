@@ -184,9 +184,24 @@ that the reachability path is identical to the 2 advisories below (same
 `hickory-proto` 0.25.2, same `microsandbox-network` route, same optional
 `sandbox-microsandbox` feature) — same disposition applies: **not
 reachable, disclosed**. This confirms `cargo audit`'s RustSec-only
-coverage can lag GitHub's own GHSA database for a given crate; check
-`gh api repos/<org>/<repo>/dependabot/alerts` periodically, not just
-`cargo audit`, for a fuller picture.
+coverage can lag GitHub's own GHSA database for a given crate.
+
+**Update (`uar-security-audit-alerts-gate-2026-07`)**: this check is now
+automated. `security-audit.yml`'s `dependabot-alerts-gate` job calls
+`gh api repos/<org>/<repo>/dependabot/alerts` on every scheduled/dispatched
+run and fails if any **open** alert's GHSA ID isn't in the job's inline
+`DISCLOSED_GHSA_IDS` allowlist (currently `GHSA-q2qq-hmj6-3wpp` and
+`GHSA-3v94-mw7p-v465`, both `hickory-proto`, both disclosed above) —
+closing the gap that let 2 real CVEs (`cmov`, `opentelemetry_sdk`) go
+unnoticed by CI the phase before this one. The job authenticates with
+`secrets.SUBMODULES_TOKEN` (reused; already provisioned for private-submodule
+checkout across every workflow) rather than the default `GITHUB_TOKEN`,
+which cannot read this endpoint under any `permissions:` grant — a hard
+Actions platform limitation. **Whenever a new advisory is triaged and
+disclosed here, its GHSA ID must also be added to `DISCLOSED_GHSA_IDS` in
+`security-audit.yml`**, mirroring the existing `cargo audit --ignore`
+convention for RustSec IDs. A manual `gh api dependabot/alerts` check
+between scheduled runs remains useful but is no longer the only backstop.
 
 `cargo audit` lists 2 advisories for `hickory-proto` 0.25.2
 (`RUSTSEC-2026-0118`, `RUSTSEC-2026-0119`), pulled in only when the

@@ -129,3 +129,47 @@ jobs:
       - name: npm audit
         working-directory: sdks/typescript
         run: npm audit
+
+  dependabot-alerts-gate:
+    name: Dependabot alerts gate
+    runs-on: ubuntu-latest
+    # GITHUB_TOKEN can never read the Dependabot alerts API under any
+    # permissions: grant -- a hard Actions platform limitation, not a
+    # config gap (see docs/DEPENDENCY_MANAGEMENT.md). SUBMODULES_TOKEN is
+    # reused here (already provisioned for private-submodule checkout
+    # across every workflow) rather than a new dedicated secret.
+    env:
+      GH_TOKEN: ${{ secrets.SUBMODULES_TOKEN }}
+      # Disclosed, already-triaged GHSA IDs -- update this list whenever a
+      # new advisory is triaged and disclosed in
+      # docs/DEPENDENCY_MANAGEMENT.md (mirrors cargo audit's --ignore
+      # convention above).
+      DISCLOSED_GHSA_IDS: "GHSA-q2qq-hmj6-3wpp GHSA-3v94-mw7p-v465"
+    steps:
+      - name: Check Dependabot alert feed
+        run: |
+          set -euo pipefail
+
+          if ! RESPONSE=$(gh api "repos/${{ github.repository }}/dependabot/alerts" --paginate 2>&1); then
+            echo "::error::Failed to call the Dependabot alerts API (likely 401/403). SUBMODULES_TOKEN may lack the security_events scope (classic PAT) or 'Dependabot alerts: Read' permission (fine-grained token) -- GITHUB_TOKEN can never read this endpoint under any permissions: grant. See docs/DEPENDENCY_MANAGEMENT.md."
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+          echo "$RESPONSE" | python3 -c "
+          import json, os, sys
+
+          disclosed = set(os.environ['DISCLOSED_GHSA_IDS'].split())
+          alerts = json.loads(sys.stdin.read())
+          open_alerts = [a for a in alerts if a.get('state') == 'open']
+          undisclosed = [a for a in open_alerts if a['security_advisory']['ghsa_id'] not in disclosed]
+
+          if undisclosed:
+              for a in undisclosed:
+                  adv = a['security_advisory']
+                  pkg = a['dependency']['package']['name']
+                  print(f\"::error::{adv['ghsa_id']} ({adv['severity']}) -- {pkg} -- undisclosed open Dependabot alert, not covered by cargo audit/npm audit/pnpm audit's ignore-lists. Triage and disclose in docs/DEPENDENCY_MANAGEMENT.md, then add its GHSA ID to this job's DISCLOSED_GHSA_IDS.\")
+              sys.exit(1)
+
+          print(f'All {len(open_alerts)} open Dependabot alert(s) are already disclosed.')
+          "
