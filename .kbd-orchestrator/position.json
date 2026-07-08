@@ -1,16 +1,16 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-08T14:39:49Z",
+  "updatedAt": "2026-07-08T19:03:48Z",
   "cursor": [
-    "uar-security-audit-alerts-gate-2026-07"
+    "uar-production-ready-uiux-2026-07"
   ],
   "root": {
     "type": "phase",
-    "id": "uar-security-audit-alerts-gate-2026-07",
+    "id": "uar-production-ready-uiux-2026-07",
     "status": "executing",
     "progress": {
-      "done": 2,
-      "total": 3
+      "done": 0,
+      "total": 9
     },
     "children": [],
     "annotations": [
