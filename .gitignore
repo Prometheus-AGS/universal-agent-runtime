@@ -78,7 +78,6 @@ coverage_report/
 *.prof*
 *.gcda
 *.gcno
-test-config.yaml
 .nyc_output/
 
 # Generated files

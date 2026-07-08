@@ -1,0 +1,77 @@
+# test-config.yaml — test-runner configuration (NOT the server's AppConfig).
+#
+# Read via the TEST_CONFIG_FILE env var (defaults to this path) by
+# tools/check-coverage.mjs for per-language coverage thresholds, and
+# required to exist by .github/workflows/comprehensive-tests.yml and
+# tests-full.yml's pre-flight/prerequisite checks. tools/test-all.sh
+# exports this separately from CONFIG_FILE (config.test.yaml, the real
+# server config) — the two have never been conflated in the current
+# script; only this file itself was missing.
+#
+# Coverage thresholds below are INTERIM, UNMEASURED PLACEHOLDERS, not a
+# verified assessment of actual coverage health. Deliberately set low
+# rather than copied from specs/001-testing-infrastructure/quickstart.md's
+# aspirational 90%+/95% figures, since this project's frontend unit-test
+# coverage was independently measured at ~5.8% (12/206 files) during the
+# uar-production-ready-uiux-2026-07 assessment (2026-07-08). Ratchet these
+# up as real coverage-improvement work lands — do not treat them as a
+# target already met.
+
+environments:
+  development:
+    mode: fast
+    parallel: true
+    timeout: 300s
+    services: [postgres, redis]
+
+  integration:
+    mode: full
+    parallel: true
+    timeout: 900s
+    services: [postgres, redis, surreal, unstructured]
+
+# Coverage tool selection, keyed by an underscore suffix rather than the
+# bare language name — deliberately avoids colliding with the
+# threshold-bearing sections below. tools/check-coverage.mjs's regex
+# parser matches the FIRST threshold block found anywhere after a given
+# language name appears anywhere in the file, including inside comment
+# text — a bare, un-suffixed language key (or even a comment mentioning
+# one) here previously caused the parser to latch onto the wrong
+# language's threshold block (caught via a dry-run of the parser against
+# this exact file before this fix).
+coverage_tools:
+  rust_coverage_tool: grcov
+  rust_format: [html, lcov, json]
+  rust_exclude_patterns:
+    - "build.rs"
+    - "tests/fixtures/*"
+    - "target/*"
+  typescript_coverage_tool: playwright-v8
+  typescript_format: [html, json]
+  typescript_exclude_patterns:
+    - "node_modules/*"
+    - "dist/*"
+    - "*.config.ts"
+
+# Per-language coverage thresholds, parsed by tools/check-coverage.mjs via
+# a loose "language name, eventually a threshold block, eventually a
+# numeric key" pattern match with no section-boundary awareness. Each of
+# the 3 language sections below must be the ONLY place its own name
+# appears literally in this file (including in comments), immediately
+# followed by its own threshold block.
+rust:
+  threshold:
+    line: 15
+    function: 15
+    branch: 10
+
+typescript:
+  threshold:
+    line: 6
+    function: 6
+    branch: 5
+
+playwright:
+  threshold:
+    line: 10
+    function: 10
