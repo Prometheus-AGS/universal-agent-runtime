@@ -295,7 +295,7 @@ petgraph = "0.8"
 dirs = "6.0.0"
 
 # Filesystem watcher for skill hot-reload
-notify = "7"
+notify = "8"
 
 # Microsandbox — hardware VM isolation for sandboxed code execution (feature-gated)
 microsandbox = { version = "0.3", optional = true }

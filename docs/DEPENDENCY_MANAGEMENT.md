@@ -308,3 +308,48 @@ working; note `sdks/typescript` currently has zero test files, so
 not introduced by this change, and not currently exercised by any CI
 workflow. See
 `openspec/changes/sdk-typescript-lockfile-and-ci-audit-fix/findings.md`.
+
+### Resolved/disclosed: 9 never-assigned unmaintained/unsound warnings
+
+As of `uar-post-dependabot-followup-2026-07`
+(`openspec/changes/triage-unassigned-unmaintained-warnings/`), 9
+unmaintained/unsound `cargo audit` warnings that no change in the prior
+phase was assigned to were triaged:
+
+- **`instant` (`RUSTSEC-2024-0384`) — fixed.** Pulled in via `notify`
+  7.x → `notify-types` 1.0.1. Bumped `notify = "7"` → `notify = "8"`;
+  `notify-types` 2.0.0 dropped `instant` for `web-time`. The only call
+  site (`src/uar/runtime/skills/watcher.rs`) uses long-stable core API,
+  unaffected by the major bump.
+- **`bincode` (`RUSTSEC-2025-0141`) — no fix exists, accepted risk.**
+  Reachable via `burn` (always-compiled). The bincode maintainers
+  permanently ceased development after a doxxing/harassment incident — no
+  version will ever be patched. A fix requires `burn` to migrate
+  serialization backends, outside UAR's control.
+- **`paste` (`RUSTSEC-2024-0436`) — no single fix point, accepted risk.**
+  Reachable via both `kreuzberg`/`biblatex` and the `burn` family
+  (independent paths). Stable, simple proc-macro crate with no unsound
+  behavior reported; two unrelated upstream owners would each need to
+  move off it.
+- **`ttf-parser` (`RUSTSEC-2026-0192`) — no fix through current
+  kreuzberg, accepted risk.** Same `lopdf` dependency already covered by
+  the "Known open advisories: `kreuzberg` → `lopdf` / `quick-xml`"
+  section above.
+- **`number_prefix` (`RUSTSEC-2025-0119`) — too deep to control,
+  accepted risk.** Reachable via `indicatif` → `hf-hub` → `fastembed` →
+  `mempalace-core` → `surreal-memory` — 4 hops beyond `surreal-memory`
+  itself, none controlled by UAR.
+- **`rustls-pemfile` (`RUSTSEC-2025-0134`) and `proc-macro-error2`
+  (`RUSTSEC-2026-0173`) — not reachable by default.** Both via
+  `microsandbox-*`, behind the optional, off-by-default
+  `sandbox-microsandbox` feature — same disposition class as
+  `hickory-proto` above.
+- **`scc` (`RUSTSEC-2026-0205`) — dev-only.** Via `serial_test`
+  (`[dev-dependencies]`); never ships in the release binary.
+- **`atomic-polyfill` (`RUSTSEC-2023-0089`) — orphaned lockfile entry.**
+  `cargo tree -i --target all --all-features` finds zero reverse
+  dependencies — same class as `quinn-proto` above; likely self-prunes on
+  a future full `cargo update`.
+
+See `openspec/changes/triage-unassigned-unmaintained-warnings/findings.md`
+for the full investigation trace.
