@@ -2,16 +2,19 @@
 
 - **Phase:** uar-production-ready-uiux-2026-07
 - **Status:** executing
-- **Progress:** 1 of 9 changes
-- **Next pending change:** `fix-auth-revoke-key-error-surfacing` (Round 1, second of 3)
-- **Exact next command:** `/opsx:new fix-auth-revoke-key-error-surfacing` + `/kbd-apply fix-auth-revoke-key-error-surfacing`
+- **Progress:** 2 of 9 changes
+- **Next pending change:** `retire-a2ui-testing-page-from-prod` (Round 1, last of 3)
+- **Exact next command:** `/opsx:new retire-a2ui-testing-page-from-prod` + `/kbd-apply retire-a2ui-testing-page-from-prod`
 - **Recommendation source:** created manually via `/kbd-new-phase` at the user's direct request ("production-ready with UI/UX full capable and tested") — not seeded from a reflection recommendation, since `uar-security-audit-alerts-gate-2026-07`'s reflection had no single dominant next-phase recommendation.
 
 ## Execute-phase dispatch (2026-07-08, see `phases/uar-production-ready-uiux-2026-07/execution.md` for full contract)
 
 Backend: `openspec`, self-executing via Claude Code CLI, driven per-change through `/kbd-apply` (never bare `/opsx:apply`). **User confirmed via `AskUserQuestion`: keep as one flat phase** — no child-phase split for the BDD or Docusaurus tracks.
 
-**`fix-comprehensive-tests-ci-gate`: DONE** (archived `openspec/changes/archive/2026-07-08-fix-comprehensive-tests-ci-gate/`, 9/9 tasks). Root cause was deeper than the assessment found: `test-config.yaml` was both never created **and** listed in `.gitignore` since the initial commit — fixed both, pushed (`9d4da6a`). Verified live on GitHub Actions for the first time in this project's history: `comprehensive-tests.yml`'s Pre-flight Checks **passed** (run [28966990812](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/28966990812)), but Security Audit and Code Quality then failed for real, newly-surfaced reasons (unfiltered inline `cargo audit`; frozen root `bun.lockb`). `tests-full.yml` (run [28967666152](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/28967666152)) got 8 real minutes into work (previously failed in <1 minute) before failing on a Docker Compose `surreal`/`unstructured` health-check timeout. Per this change's own design non-goal, none of these 3 newly-surfaced issues were fixed here — documented in `findings.md` as follow-up work, not yet triaged into this phase's plan.
+**Round 1: 2/3 done.**
+
+- **`fix-comprehensive-tests-ci-gate`: DONE** (archived `openspec/changes/archive/2026-07-08-fix-comprehensive-tests-ci-gate/`, 9/9 tasks). Root cause was deeper than the assessment found: `test-config.yaml` was both never created **and** listed in `.gitignore` since the initial commit — fixed both, pushed (`9d4da6a`). Verified live on GitHub Actions for the first time in this project's history: `comprehensive-tests.yml`'s Pre-flight Checks **passed** (run [28966990812](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/28966990812)), but Security Audit and Code Quality then failed for real, newly-surfaced reasons (unfiltered inline `cargo audit`; frozen root `bun.lockb`). `tests-full.yml` (run [28967666152](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/28967666152)) got 8 real minutes into work (previously failed in <1 minute) before failing on a Docker Compose `surreal`/`unstructured` health-check timeout. Per this change's own design non-goal, none of these 3 newly-surfaced issues were fixed here — documented in `findings.md` as follow-up work, not yet triaged into this phase's plan.
+- **`fix-auth-revoke-key-error-surfacing`: DONE** (archived `openspec/changes/archive/2026-07-08-fix-auth-revoke-key-error-surfacing/`, 3/3 tasks). `auth-keys-store.ts`'s `revokeKey` now sets an error message on failure instead of silently swallowing it, matching `load`/`createKey`'s existing pattern. `pnpm run build` clean.
 
 **3 open blockers to surface to the user before their respective rounds:**
 - Round 2 (`resolve-runtime-protocols-page-facade`, `resolve-runtime-cockpit-dead-panels`): fix-vs-remove decision, not yet resolved.

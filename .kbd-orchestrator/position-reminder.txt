@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-production-ready-uiux-2026-07
-Step: 1 of 9
+Step: 2 of 9
 Stage: executing
-Next command: /opsx:new fix-auth-revoke-key-error-surfacing + /kbd-apply fix-auth-revoke-key-error-surfacing
+Next command: /opsx:new retire-a2ui-testing-page-from-prod + /kbd-apply retire-a2ui-testing-page-from-prod
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-production-ready-uiux-2026-07 (step 1 of 9)
+  Starting <kbd-skill> — uar-production-ready-uiux-2026-07 (step 2 of 9)
   [do work]
-  Completed <kbd-skill> — uar-production-ready-uiux-2026-07 (step 1 of 9)
+  Completed <kbd-skill> — uar-production-ready-uiux-2026-07 (step 2 of 9)

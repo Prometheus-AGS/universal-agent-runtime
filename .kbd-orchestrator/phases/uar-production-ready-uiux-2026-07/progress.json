@@ -1,7 +1,7 @@
 {
   "phase": "uar-production-ready-uiux-2026-07",
   "createdAt": "2026-07-08T16:42:58Z",
-  "updatedAt": "2026-07-08T19:10:00Z",
+  "updatedAt": "2026-07-08T19:20:00Z",
   "parentPhase": null,
   "childPhases": [],
   "childPointer": null,
@@ -20,7 +20,7 @@
     "phase_structure": "RESOLVED via AskUserQuestion (2026-07-08): user chose to keep this as ONE FLAT PHASE rather than splitting the BDD (Round 3) or Docusaurus (Round 4) tracks into child phases. All 9 changes execute + reflect under uar-production-ready-uiux-2026-07 directly."
   },
   "changes_total": 9,
-  "changes_completed": 1,
+  "changes_completed": 2,
   "changes_ordered": [
     "fix-comprehensive-tests-ci-gate",
     "fix-auth-revoke-key-error-surfacing",
@@ -34,7 +34,7 @@
   ],
   "change_status": {
     "fix-comprehensive-tests-ci-gate": "DONE (2026-07-08) -- archived openspec/changes/archive/2026-07-08-fix-comprehensive-tests-ci-gate/. Root cause was deeper than assessment found: test-config.yaml was BOTH never created AND listed in .gitignore since the initial commit (confirmed via git log -S), so no local copy could ever have reached CI. Fixed both. Created test-config.yaml with honest low interim coverage thresholds (not the abandoned spec's 90%+ aspirational figures); a dry-run of tools/check-coverage.mjs's naive regex parser caught 2 real bugs before they ever reached CI (section-name collisions -- both a coverage_tools sub-key AND an explanatory comment mentioning 'typescript:' caused the parser to return rust's values for typescript). Verified live on GitHub Actions for the first time ever: comprehensive-tests.yml's Pre-flight Checks PASSED (47s, run 28966990812) -- but Security Audit and Code Quality then failed for real, newly-surfaced reasons (unfiltered inline cargo audit hitting already-disclosed advisories; frozen root bun.lockb drift). tests-full.yml (run 28967666152) got 8 minutes into real work (previously failed in <1 min) before failing on Docker Compose surreal/unstructured health-check timeout. Per design.md's explicit non-goal, none of these 3 newly-surfaced issues were fixed in this narrowly-scoped change -- documented in findings.md as follow-up work. 9/9 tasks complete, verify PASS, QA gate skipped (2 files changed).",
-    "fix-auth-revoke-key-error-surfacing": "PENDING (Round 1, parallel)",
+    "fix-auth-revoke-key-error-surfacing": "DONE (2026-07-08) -- archived openspec/changes/archive/2026-07-08-fix-auth-revoke-key-error-surfacing/. auth-keys-store.ts's revokeKey catch block now sets error: (e as Error).message before clearing revoking, matching load/createKey's existing pattern. auth-page.tsx already renders error via <AdminError>, no template changes needed. 3/3 tasks complete, pnpm run build clean, verify PASS, QA gate skipped (1 file changed).",
     "retire-a2ui-testing-page-from-prod": "PENDING (Round 1, parallel)",
     "resolve-runtime-protocols-page-facade": "PENDING (Round 2 -- needs fix-vs-remove decision at execute time)",
     "resolve-runtime-cockpit-dead-panels": "PENDING (Round 2, same file as above -- sequence to avoid conflicts)",
@@ -43,14 +43,17 @@
     "bootstrap-docusaurus-site": "PENDING (Round 4, independent -- user confirmed via AskUserQuestion)",
     "refresh-readme-diagrams-and-branding": "PENDING (Round 4, independent -- confirmed real factual error in README already)"
   },
-  "completed_changes": ["fix-comprehensive-tests-ci-gate"],
+  "completed_changes": [
+    "fix-comprehensive-tests-ci-gate",
+    "fix-auth-revoke-key-error-surfacing"
+  ],
   "active_change": null,
   "blocked_changes": [],
-  "next_change": "fix-auth-revoke-key-error-surfacing",
+  "next_change": "retire-a2ui-testing-page-from-prod",
   "sourceTool": "claude-code",
   "createdBy": "kbd-new-phase",
   "assessmentSummary": "HEADLINE FINDING: comprehensive-tests.yml + tests-full.yml have NEVER passed their Pre-flight/Prerequisite check since the initial commit (2026-01-19) -- both require test-config.yaml, which has never existed. Traces to an abandoned Spec Kit feature (specs/001-testing-infrastructure/, 0/74 tasks complete) whose partial dead-code (src/testing/) was already deleted in a prior phase without cleaning up the spec or the 2 broken workflows referencing it. This exact bug was already found by docs/CODEX_ASSESSMENT.md (2025-12-31) and never fixed. Both user-mandated load-bearing capabilities (chat+agent-config, provider/model-config) confirmed genuinely solid, no facades. Found 4 concrete dead facades in Runtime Console (Protocols page entirely, Cockpit's Provider Health + Memory Activity panels, Runs page Artifacts panel, 1 dead Inspect button with no onClick) plus 1 non-essential page (A2uiTestingPage, dev-only tooling shipping to prod nav) and 1 minor bug (auth revokeKey swallows errors). Re-verified 5 old carryover items: 3 resolved (credentials UI, agent-config error surfacing, skill-activation-outcome now recorded backend-side), 2 still open (CH-06 per-agent budget config UI, Protocols page gating). cargo test --lib 387/1/0, frontend vitest 46/46 but thin (12/206 files ~5.8%), e2e Playwright 40 tests/12 files parse cleanly but not executed live this session. Sycophancy self-check: 0.018.",
   "next_session_priorities": [
-    "Round 1 change 1/3 DONE (fix-comprehensive-tests-ci-gate). Next: fix-auth-revoke-key-error-surfacing and retire-a2ui-testing-page-from-prod (both S/small, no shared files with each other). 3 new follow-up items surfaced by the CI fix, not yet triaged into this phase's plan: (a) comprehensive-tests.yml's inline cargo audit needs the same --ignore list as security-audit.yml, (b) root bun.lockb needs regenerating (frozen-lockfile drift), (c) docker-compose.test.yaml's surreal/unstructured health checks need longer timeout or startup-time investigation. Before Round 2, ask the user to resolve the 2 fix-vs-remove decisions (Runtime Protocols page, Cockpit dead panels). Before bootstrap-docusaurus-site (Round 4), ask the user for the hosting/deployment target."
+    "Round 1 changes 2/3 DONE (fix-comprehensive-tests-ci-gate, fix-auth-revoke-key-error-surfacing). Next: retire-a2ui-testing-page-from-prod (last Round 1 change). 3 new follow-up items surfaced by the CI fix, not yet triaged into this phase's plan: (a) comprehensive-tests.yml's inline cargo audit needs the same --ignore list as security-audit.yml, (b) root bun.lockb needs regenerating (frozen-lockfile drift), (c) docker-compose.test.yaml's surreal/unstructured health checks need longer timeout or startup-time investigation. Before Round 2, ask the user to resolve the 2 fix-vs-remove decisions (Runtime Protocols page, Cockpit dead panels). Before bootstrap-docusaurus-site (Round 4), ask the user for the hosting/deployment target."
   ]
 }
