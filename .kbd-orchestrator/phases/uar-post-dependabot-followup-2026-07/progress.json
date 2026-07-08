@@ -1,7 +1,7 @@
 {
   "phase": "uar-post-dependabot-followup-2026-07",
   "createdAt": "2026-07-08T09:00:00Z",
-  "updatedAt": "2026-07-08T09:30:00Z",
+  "updatedAt": "2026-07-08T09:45:00Z",
   "sourceTool": "claude-code",
   "assessment_complete": true,
   "plan_complete": true,
@@ -16,7 +16,7 @@
     "push_approval_gate": "change #3 (push-and-verify-security-audit-workflow) requires explicit user confirmation before `git push origin main` -- the one genuinely irreversible step in this phase. Do not push without asking first."
   },
   "changes_total": 4,
-  "changes_completed": 0,
+  "changes_completed": 1,
   "changes_in_progress": null,
   "changes_ordered": [
     "pin-surreal-memory-to-sha",
@@ -26,12 +26,12 @@
   ],
   "change_status": {
     "fix-d-d-pin-characterization": "PENDING",
-    "pin-surreal-memory-to-sha": "PENDING",
+    "pin-surreal-memory-to-sha": "DONE (2026-07-08) -- surreal-memory moved from branch=\"main\" to rev=\"f9ab1c29944b86d44c23ea0e6192fa3d39acbde8\" (main's HEAD, re-verified unchanged immediately before applying). Cargo.lock diff exactly 1 line (source query string branch=main#<sha> -> rev=<sha>#<sha>, same sha both sides) -- zero crate version churn, confirming a pure pin-mechanism change. cargo check clean, cargo test --lib 387/388 (unchanged), cargo clippy 499 warnings (unchanged), cargo audit 11 vulnerabilities + 9 warnings (identical to phase's assessment.md baseline, nothing new). Full trace in openspec/changes/pin-surreal-memory-to-sha/findings.md.",
     "push-and-verify-security-audit-workflow": "PENDING",
     "triage-unassigned-unmaintained-warnings": "PENDING"
   },
-  "next_change": "pin-surreal-memory-to-sha",
+  "next_change": "fix-d-d-pin-characterization",
   "next_session_priorities": [
-    "Sequence: pin-surreal-memory-to-sha first (change #1's wording depends on its outcome), then fix-d-d-pin-characterization, then triage-unassigned-unmaintained-warnings, then push-and-verify-security-audit-workflow last (needs explicit user confirmation before the git push step)."
+    "Continue: fix-d-d-pin-characterization (surreal-memory is now SHA-pinned, safe to write accurate D-D wording), then triage-unassigned-unmaintained-warnings, then push-and-verify-security-audit-workflow last (needs explicit user confirmation before the git push step)."
   ]
 }

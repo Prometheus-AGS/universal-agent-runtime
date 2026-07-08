@@ -171,7 +171,7 @@ rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", rev = "26b65b
 # which conflicts with downstream consumers (e.g. librefang) that link a
 # newer `rusqlite`/`libsqlite3-sys`. Opt in via the `memory-palace` feature
 # below if you need the MemPalace knowledge-graph layer.
-surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server.git", branch = "main", package = "surreal-memory", default-features = false }
+surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server.git", rev = "f9ab1c29944b86d44c23ea0e6192fa3d39acbde8", package = "surreal-memory", default-features = false }
 
 # Utilities
 url = "2.5.7"

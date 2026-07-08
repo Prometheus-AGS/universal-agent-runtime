@@ -13164,7 +13164,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "surreal-memory"
 version = "0.1.0"
-source = "git+https://github.com/Prometheus-AGS/surreal-memory-server.git?branch=main#7072370e1c1bb3c68ad1f2529a3d7daa241fad31"
+source = "git+https://github.com/Prometheus-AGS/surreal-memory-server.git?rev=f9ab1c29944b86d44c23ea0e6192fa3d39acbde8#f9ab1c29944b86d44c23ea0e6192fa3d39acbde8"
 dependencies = [
  "anyhow",
  "arc-swap",
