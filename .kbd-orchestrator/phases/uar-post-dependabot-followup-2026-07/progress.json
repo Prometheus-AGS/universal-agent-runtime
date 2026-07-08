@@ -1,11 +1,12 @@
 {
   "phase": "uar-post-dependabot-followup-2026-07",
   "createdAt": "2026-07-08T09:00:00Z",
-  "updatedAt": "2026-07-08T09:20:00Z",
+  "updatedAt": "2026-07-08T09:30:00Z",
   "sourceTool": "claude-code",
   "assessment_complete": true,
   "plan_complete": true,
-  "execution_dispatched": false,
+  "execution_dispatched": true,
+  "execution_backend": "openspec",
   "execute_complete": false,
   "reflect_complete": false,
   "previousPhase": "uar-dependabot-remediation-2026-07",
@@ -18,10 +19,10 @@
   "changes_completed": 0,
   "changes_in_progress": null,
   "changes_ordered": [
-    "fix-d-d-pin-characterization",
     "pin-surreal-memory-to-sha",
-    "push-and-verify-security-audit-workflow",
-    "triage-unassigned-unmaintained-warnings"
+    "fix-d-d-pin-characterization",
+    "triage-unassigned-unmaintained-warnings",
+    "push-and-verify-security-audit-workflow"
   ],
   "change_status": {
     "fix-d-d-pin-characterization": "PENDING",

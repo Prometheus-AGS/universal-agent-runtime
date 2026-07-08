@@ -1,13 +1,13 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-08T09:10:59Z",
+  "updatedAt": "2026-07-08T09:15:21Z",
   "cursor": [
     "uar-post-dependabot-followup-2026-07"
   ],
   "root": {
     "type": "phase",
     "id": "uar-post-dependabot-followup-2026-07",
-    "status": "plan_complete",
+    "status": "executing",
     "progress": {
       "done": 0,
       "total": 4

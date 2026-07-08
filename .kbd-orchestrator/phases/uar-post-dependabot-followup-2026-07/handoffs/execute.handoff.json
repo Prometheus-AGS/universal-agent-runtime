@@ -1,0 +1,12 @@
+{
+  "stage": "execute",
+  "completedAt": "2026-07-08T09:13:24Z",
+  "outputs": [
+    ".kbd-orchestrator/phases/uar-post-dependabot-followup-2026-07/execution.md",
+    ".kbd-orchestrator/phases/uar-post-dependabot-followup-2026-07/progress.json"
+  ],
+  "nextStage": "reflect",
+  "summaryForNext": "openspec backend, self-executing via Claude Code CLI. 4 changes dispatched: pin-surreal-memory-to-sha (first), fix-d-d-pin-characterization, triage-unassigned-unmaintained-warnings, push-and-verify-security-audit-workflow (last, needs explicit user confirmation before git push).",
+  "skipped": false,
+  "skipReason": null
+}
