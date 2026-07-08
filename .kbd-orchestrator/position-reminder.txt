@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-post-dependabot-followup-2026-07
-Step: 0 of 0
-Stage: assess_complete
-Next command: /kbd-plan uar-post-dependabot-followup-2026-07 -- assessment.md complete: Goal 1 STUB (D-D bullet fix identified), Goal 2 blocked on human input (surreal-memory branch=main pin decision), Goal 3 missing (security-audit.yml never pushed, root-caused), Goal 4 partial (reachability traced for all 9 unmaintained warnings).
+Step: 0 of 4
+Stage: plan_complete
+Next command: /kbd-execute uar-post-dependabot-followup-2026-07 -- 4 changes single round: pin-surreal-memory-to-sha (first -- SHA f9ab1c29944b86d44c23ea0e6192fa3d39acbde8, re-verify current), fix-d-d-pin-characterization (after the pin lands), triage-unassigned-unmaintained-warnings, push-and-verify-security-audit-workflow (last -- needs explicit user confirmation before git push origin main).
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 0 of 0)
+  Starting <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 0 of 4)
   [do work]
-  Completed <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 0 of 0)
+  Completed <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 0 of 4)

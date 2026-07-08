@@ -1,19 +1,36 @@
 {
   "phase": "uar-post-dependabot-followup-2026-07",
   "createdAt": "2026-07-08T09:00:00Z",
-  "updatedAt": "2026-07-08T09:15:00Z",
+  "updatedAt": "2026-07-08T09:20:00Z",
   "sourceTool": "claude-code",
   "assessment_complete": true,
-  "plan_complete": false,
+  "plan_complete": true,
   "execution_dispatched": false,
   "execute_complete": false,
   "reflect_complete": false,
   "previousPhase": "uar-dependabot-remediation-2026-07",
   "seedNote": "Seeded from uar-dependabot-remediation-2026-07's reflection.md (2026-07-08): that phase's Goal 4 (re-affirm/revise the D-D architectural decision) was NOT MET, and while writing the reflection a factual inaccuracy was found in docs/ARCHITECTURE.md's D-D bullet (kreuzberg/surreal-memory pin-type swap -- kreuzberg is tag-pinned, surreal-memory is the one on a floating branch=main, not the reverse as currently documented). Also carries forward: verifying the new security-audit.yml workflow's first real scheduled/dispatch run (only locally simulated in the prior phase), and triaging 9 never-assigned unmaintained/unsound cargo audit warnings.",
-  "changes_total": null,
+  "decisions": {
+    "surreal_memory_pin_resolution_2026-07-08": "User chose (AskUserQuestion, offered 3 options) to pin surreal-memory to a fixed SHA rather than re-affirm the branch=main float or defer the decision. Resolved current main HEAD via git ls-remote: f9ab1c29944b86d44c23ea0e6192fa3d39acbde8 -- re-verify at execute time in case it has moved.",
+    "push_approval_gate": "change #3 (push-and-verify-security-audit-workflow) requires explicit user confirmation before `git push origin main` -- the one genuinely irreversible step in this phase. Do not push without asking first."
+  },
+  "changes_total": 4,
   "changes_completed": 0,
   "changes_in_progress": null,
-  "changes_ordered": [],
-  "change_status": {},
-  "next_change": null
+  "changes_ordered": [
+    "fix-d-d-pin-characterization",
+    "pin-surreal-memory-to-sha",
+    "push-and-verify-security-audit-workflow",
+    "triage-unassigned-unmaintained-warnings"
+  ],
+  "change_status": {
+    "fix-d-d-pin-characterization": "PENDING",
+    "pin-surreal-memory-to-sha": "PENDING",
+    "push-and-verify-security-audit-workflow": "PENDING",
+    "triage-unassigned-unmaintained-warnings": "PENDING"
+  },
+  "next_change": "pin-surreal-memory-to-sha",
+  "next_session_priorities": [
+    "Sequence: pin-surreal-memory-to-sha first (change #1's wording depends on its outcome), then fix-d-d-pin-characterization, then triage-unassigned-unmaintained-warnings, then push-and-verify-security-audit-workflow last (needs explicit user confirmation before the git push step)."
+  ]
 }
