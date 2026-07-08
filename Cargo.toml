@@ -298,7 +298,7 @@ dirs = "6.0.0"
 notify = "8"
 
 # Microsandbox — hardware VM isolation for sandboxed code execution (feature-gated)
-microsandbox = { version = "0.3", optional = true }
+microsandbox = { version = "0.6", optional = true }
 
 # Universal LLM client — 142+ providers, streaming, tool calling
 liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", rev = "d8223de3e07615c899b2658309d15d01c242940b", features = ["full"] }
