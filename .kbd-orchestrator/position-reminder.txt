@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-post-dependabot-followup-2026-07
-Step: 1 of 4
+Step: 2 of 4
 Stage: executing
-Next command: /opsx:new fix-d-d-pin-characterization then /kbd-apply fix-d-d-pin-characterization -- then triage-unassigned-unmaintained-warnings, and finally push-and-verify-security-audit-workflow (ask before git push origin main).
+Next command: /opsx:new triage-unassigned-unmaintained-warnings then /kbd-apply triage-unassigned-unmaintained-warnings -- then finally push-and-verify-security-audit-workflow (ask before git push origin main).
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 1 of 4)
+  Starting <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 2 of 4)
   [do work]
-  Completed <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 1 of 4)
+  Completed <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 2 of 4)

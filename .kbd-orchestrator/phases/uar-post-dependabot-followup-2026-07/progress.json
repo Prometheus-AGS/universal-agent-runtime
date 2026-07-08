@@ -1,7 +1,7 @@
 {
   "phase": "uar-post-dependabot-followup-2026-07",
   "createdAt": "2026-07-08T09:00:00Z",
-  "updatedAt": "2026-07-08T09:45:00Z",
+  "updatedAt": "2026-07-08T10:00:00Z",
   "sourceTool": "claude-code",
   "assessment_complete": true,
   "plan_complete": true,
@@ -16,7 +16,7 @@
     "push_approval_gate": "change #3 (push-and-verify-security-audit-workflow) requires explicit user confirmation before `git push origin main` -- the one genuinely irreversible step in this phase. Do not push without asking first."
   },
   "changes_total": 4,
-  "changes_completed": 1,
+  "changes_completed": 2,
   "changes_in_progress": null,
   "changes_ordered": [
     "pin-surreal-memory-to-sha",
@@ -25,13 +25,13 @@
     "push-and-verify-security-audit-workflow"
   ],
   "change_status": {
-    "fix-d-d-pin-characterization": "PENDING",
+    "fix-d-d-pin-characterization": "DONE (2026-07-08) -- corrected docs/ARCHITECTURE.md's D-D bullet (kreuzberg/surreal-memory pin-type swap; now accurately states rmcp/surreal-memory/prometheus_parking_lot are SHA-pinned, kreuzberg is tag-pinned, none float). SCOPE EXPANSION found while proofreading: docs/DEPENDENCY_MANAGEMENT.md's 'Current Pinned Versions' table had drifted on 3 of 4 entries (rmcp and prometheus_parking_lot both stale from later un-recorded bumps; surreal-memory's prior rev value was aspirational, didn't match the actual branch=main state before this phase's pin fix) -- corrected all 3 in this same change per the new dependency-security-posture requirement this change itself adds (catch parallel drift, don't just fix the one thing that prompted the investigation). Docs-only, no code/build impact. Full trace in openspec/changes/fix-d-d-pin-characterization/findings.md.",
     "pin-surreal-memory-to-sha": "DONE (2026-07-08) -- surreal-memory moved from branch=\"main\" to rev=\"f9ab1c29944b86d44c23ea0e6192fa3d39acbde8\" (main's HEAD, re-verified unchanged immediately before applying). Cargo.lock diff exactly 1 line (source query string branch=main#<sha> -> rev=<sha>#<sha>, same sha both sides) -- zero crate version churn, confirming a pure pin-mechanism change. cargo check clean, cargo test --lib 387/388 (unchanged), cargo clippy 499 warnings (unchanged), cargo audit 11 vulnerabilities + 9 warnings (identical to phase's assessment.md baseline, nothing new). Full trace in openspec/changes/pin-surreal-memory-to-sha/findings.md.",
     "push-and-verify-security-audit-workflow": "PENDING",
     "triage-unassigned-unmaintained-warnings": "PENDING"
   },
-  "next_change": "fix-d-d-pin-characterization",
+  "next_change": "triage-unassigned-unmaintained-warnings",
   "next_session_priorities": [
-    "Continue: fix-d-d-pin-characterization (surreal-memory is now SHA-pinned, safe to write accurate D-D wording), then triage-unassigned-unmaintained-warnings, then push-and-verify-security-audit-workflow last (needs explicit user confirmation before the git push step)."
+    "Continue: triage-unassigned-unmaintained-warnings (9 crates, reachability already traced in assessment.md), then push-and-verify-security-audit-workflow last (needs explicit user confirmation before the git push step)."
   ]
 }

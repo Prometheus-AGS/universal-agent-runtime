@@ -22,11 +22,23 @@ Most git dependencies are **pinned to a specific commit SHA** via `rev = "..."` 
 ## Current Pinned Versions
 
 ```toml
-rmcp          = rev "085470025f690050e8776ffa939e7ba71d3abc01"
-surreal-memory = rev "c6f95c905c16907ad58ef9049f32dcc9531d40eb"
+rmcp          = rev "26b65b6b88c5552447905923f683b6e4720a5600"
+surreal-memory = rev "f9ab1c29944b86d44c23ea0e6192fa3d39acbde8"
 kreuzberg     = tag "v4.9.8" on kreuzberg-dev/kreuzberg
-prometheus_parking_lot = rev "32b481d6c5694545d35789894f6feecf5ac4ca3e"
+prometheus_parking_lot = rev "ebb7c3ce02f7b925bc2e1b45c87ce8abf402b1f0"
 ```
+
+**Corrected (`uar-post-dependabot-followup-2026-07`)**: this table had
+drifted out of sync with `Cargo.toml` on 3 of its 4 entries (`rmcp` and
+`prometheus_parking_lot` had both been bumped in later phases without
+this table being updated; `surreal-memory` previously showed a `rev`
+value here even though `Cargo.toml` actually had `branch = "main"` at the
+time — this table was aspirational, not descriptive, on that line). All 4
+values above are re-verified directly against live `Cargo.toml` state as
+of this correction. `surreal-memory` is genuinely `rev`-pinned now (see
+below) — the table's claim finally matches reality. Re-verify this table
+against `Cargo.toml` whenever a pinned dependency is bumped, rather than
+assuming it's already correct.
 
 ## Upgrade SOP
 
