@@ -1,16 +1,16 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-08T10:50:04Z",
+  "updatedAt": "2026-07-08T13:29:24Z",
   "cursor": [
-    "uar-post-dependabot-followup-2026-07"
+    "uar-security-audit-alerts-gate-2026-07"
   ],
   "root": {
     "type": "phase",
-    "id": "uar-post-dependabot-followup-2026-07",
-    "status": "reflected",
+    "id": "uar-security-audit-alerts-gate-2026-07",
+    "status": "executing",
     "progress": {
-      "done": 4,
-      "total": 4
+      "done": 1,
+      "total": 3
     },
     "children": [],
     "annotations": [

@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-08T12:50:02Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "3 changes ordered: add-dependabot-alerts-ci-gate (M, frontier) and migrate-vite-rolldown-codesplitting (S, small) run in parallel Round 1; verify-dependabot-alerts-gate-live (S, small) runs Round 2, depends on Round 1s CI change and is likely blocked on an operator-supplied token secret. First change to apply: add-dependabot-alerts-ci-gate.",
+  "skipped": false,
+  "skipReason": null
+}

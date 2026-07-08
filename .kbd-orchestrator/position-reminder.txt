@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-post-dependabot-followup-2026-07
-Step: 4 of 4
-Stage: reflected
-Next command: /kbd-next-phase -- seed a new phase from uar-post-dependabot-followup-2026-07's reflection.md (top recommendation: add a gh api dependabot/alerts check to security-audit.yml, since cargo audit alone missed 2 real CVEs this phase).
+Phase: uar-security-audit-alerts-gate-2026-07
+Step: 2 of 3
+Stage: executing
+Next command: Ask user to approve commit+push, then /opsx:new verify-dependabot-alerts-gate-live + /kbd-apply verify-dependabot-alerts-gate-live
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 4 of 4)
+  Starting <kbd-skill> — uar-security-audit-alerts-gate-2026-07 (step 2 of 3)
   [do work]
-  Completed <kbd-skill> — uar-post-dependabot-followup-2026-07 (step 4 of 4)
+  Completed <kbd-skill> — uar-security-audit-alerts-gate-2026-07 (step 2 of 3)
