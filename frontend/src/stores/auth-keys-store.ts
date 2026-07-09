@@ -49,12 +49,12 @@ export const useAuthKeysStore = create<AuthKeysState & AuthKeysActions>((set, ge
   },
 
   revokeKey: async (id: string) => {
-    set({ revoking: true });
+    set({ revoking: true, error: null });
     try {
       await deleteAuthKey(id);
       set((s) => ({ keys: s.keys.filter((k) => k.id !== id), revoking: false }));
-    } catch {
-      set({ revoking: false });
+    } catch (e) {
+      set({ error: (e as Error).message, revoking: false });
     }
   },
 }));

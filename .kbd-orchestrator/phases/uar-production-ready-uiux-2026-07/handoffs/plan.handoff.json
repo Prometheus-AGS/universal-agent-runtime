@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-08T18:06:17Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "9 changes, 4 rounds: Round 1 (3 assessment-driven fixes, parallel), Round 2 (3 Runtime Console dead-facade fixes, same file), Round 3 (BDD/video-proof chat scenario suite), Round 4 (Docusaurus bootstrap + README refresh). First change: fix-comprehensive-tests-ci-gate. Flagged: consider splitting Rounds 3-4 into child phases; 2 fix-vs-remove product decisions needed at execute time (Protocols page, Cockpit panels).",
+  "skipped": false,
+  "skipReason": null
+}

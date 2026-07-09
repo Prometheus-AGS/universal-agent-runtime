@@ -1,17 +1,66 @@
 # Current Waypoint — universal-agent-runtime
 
-- **Phase:** uar-security-audit-alerts-gate-2026-07
-- **Status:** reflected
-- **Progress:** 3 of 3 changes — ALL DONE, PHASE REFLECTED
-- **Next pending change:** none — phase complete
-- **Exact next command:** `/kbd-next-phase` — but this reflection has no single dominant high-priority recommendation (see below); ask the user for direction before auto-seeding
-- **Recommendation source:** seeded from `uar-post-dependabot-followup-2026-07`'s reflection.md §7 "Next Phase Recommendations", high-priority item
+- **Phase:** uar-production-ready-uiux-2026-07
+- **Status:** executing
+- **Progress:** 2 of 9 changes
+- **Next pending change:** `retire-a2ui-testing-page-from-prod` (Round 1, last of 3)
+- **Exact next command:** `/opsx:new retire-a2ui-testing-page-from-prod` + `/kbd-apply retire-a2ui-testing-page-from-prod`
+- **Recommendation source:** created manually via `/kbd-new-phase` at the user's direct request ("production-ready with UI/UX full capable and tested") — not seeded from a reflection recommendation, since `uar-security-audit-alerts-gate-2026-07`'s reflection had no single dominant next-phase recommendation.
 
-## Reflection (2026-07-08, see `phases/uar-security-audit-alerts-gate-2026-07/reflection.md` for full detail)
+## Execute-phase dispatch (2026-07-08, see `phases/uar-production-ready-uiux-2026-07/execution.md` for full contract)
 
-**4/4 goals MET, 3/3 changes done — 100% phase completion.** Sycophancy self-check via `analyze_reflect_phase`: score 0.018, `s08_detected: false`.
+Backend: `openspec`, self-executing via Claude Code CLI, driven per-change through `/kbd-apply` (never bare `/opsx:apply`). **User confirmed via `AskUserQuestion`: keep as one flat phase** — no child-phase split for the BDD or Docusaurus tracks.
 
-Key deltas surfaced (not failures, but worth carrying forward): OpenSpec's `validate` unconditionally requires ≥1 spec delta per change, which required correcting 2 of 3 proposals' initial "no capability" framing mid-flight (new `frontend-build-tooling` capability; extended `dependency-security-posture`'s `CI Trigger Actually Fires` requirement with a credential-runtime-scope scenario) — not previously hit since every prior hygiene change in this project happened to touch an existing capability. `AGENTS.md`'s OpenSpec CLI version reference is stale (v1.4.0 vs installed v1.5.0). The heavily-flagged `SUBMODULES_TOKEN` scope risk resolved cleanly on the first live CI attempt.
+**Round 1: 2/3 done.**
+
+- **`fix-comprehensive-tests-ci-gate`: DONE** (archived `openspec/changes/archive/2026-07-08-fix-comprehensive-tests-ci-gate/`, 9/9 tasks). Root cause was deeper than the assessment found: `test-config.yaml` was both never created **and** listed in `.gitignore` since the initial commit — fixed both, pushed (`9d4da6a`). Verified live on GitHub Actions for the first time in this project's history: `comprehensive-tests.yml`'s Pre-flight Checks **passed** (run [28966990812](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/28966990812)), but Security Audit and Code Quality then failed for real, newly-surfaced reasons (unfiltered inline `cargo audit`; frozen root `bun.lockb`). `tests-full.yml` (run [28967666152](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/28967666152)) got 8 real minutes into work (previously failed in <1 minute) before failing on a Docker Compose `surreal`/`unstructured` health-check timeout. Per this change's own design non-goal, none of these 3 newly-surfaced issues were fixed here — documented in `findings.md` as follow-up work, not yet triaged into this phase's plan.
+- **`fix-auth-revoke-key-error-surfacing`: DONE** (archived `openspec/changes/archive/2026-07-08-fix-auth-revoke-key-error-surfacing/`, 3/3 tasks). `auth-keys-store.ts`'s `revokeKey` now sets an error message on failure instead of silently swallowing it, matching `load`/`createKey`'s existing pattern. `pnpm run build` clean.
+
+**3 open blockers to surface to the user before their respective rounds:**
+- Round 2 (`resolve-runtime-protocols-page-facade`, `resolve-runtime-cockpit-dead-panels`): fix-vs-remove decision, not yet resolved.
+- Round 4 (`bootstrap-docusaurus-site`): hosting/deployment target, not yet resolved.
+
+## Plan (2026-07-08, see `phases/uar-production-ready-uiux-2026-07/plan.md` for full detail)
+
+**9 changes, 4 rounds.** User expanded scope when invoking `/kbd-plan`:
+- **Round 1** (parallel): `fix-comprehensive-tests-ci-gate` (M/frontier, highest-value — the headline assessment finding), `fix-auth-revoke-key-error-surfacing` (S/small), `retire-a2ui-testing-page-from-prod` (S/small)
+- **Round 2** (same file, sequence to avoid conflicts): `resolve-runtime-protocols-page-facade`, `resolve-runtime-cockpit-dead-panels`, `resolve-runs-artifacts-and-inspect-button` — **2 of these need a fix-vs-remove product decision at execute time**, not decided here
+- **Round 3** (independent, new scope): `bdd-chat-scenario-suite` (L/frontier) — Cucumber/Gherkin + Playwright BDD suite via the `bdd-testing` skill, with `bdd-video-proof` capturing IPFS-pinned video evidence per scenario, covering chat with/without knowledge base, skills activated, tool calls, agent switching, and provider/model config — user's explicit, detailed ask
+- **Round 4** (independent, docs/branding): `bootstrap-docusaurus-site` (L/frontier — **no Docusaurus site existed anywhere in the repo**; user confirmed via `AskUserQuestion` to bootstrap a new one from `docs/`), `refresh-readme-diagrams-and-branding` (M/medium — **confirmed a real factual error**: README.md claims "HTMX, Web Components, Alpine.js; no React" but the actual frontend is 100% React/TypeScript; `CLAUDE.md` has the identical stale claim, flagged but out of explicit scope)
+
+**Scope note**: given the plan's own breadth (bug fixes + a product-completeness decision + a new test framework + a new docs platform), `plan.md` recommends considering `/kbd-new-child` to split Rounds 3–4 into their own child phases before executing, so each track gets a focused reflection. Not decided — flagged for the user.
+
+Sycophancy self-check on the plan: 0.018.
+
+## Assessment findings (2026-07-08, see `phases/uar-production-ready-uiux-2026-07/assessment.md` for full detail)
+
+**Headline finding:** `.github/workflows/comprehensive-tests.yml` and `.github/workflows/tests-full.yml` have **never passed their Pre-flight/Prerequisite check since the initial commit** (2026-01-19) — both require `test-config.yaml`, which has never existed in this project's history. Confirmed 0/30 recent successes via `gh run list`. Traces to an abandoned Spec Kit feature (`specs/001-testing-infrastructure/`, 0/74 tasks complete) whose partial dead-code (`src/testing/`) was already deleted in a prior phase (`eval-harness-hardening`'s HK1) without cleaning up the spec directory or the 2 broken workflows referencing it. A prior tool assessment (`docs/CODEX_ASSESSMENT.md`, 2025-12-31) already found this exact bug and proposed a fix that was never applied.
+
+**Both user-mandated load-bearing capabilities confirmed genuinely solid** (deep code tracing to real backend routes, no facades): chat + agent configuration, and provider/model configuration.
+
+**4 concrete dead facades found** in Runtime Console: the Protocols page (entirely dead for dynamic content, no gating message — the exact "Protocols page gating" item carried open since `uar-production-readiness-gaps`, confirmed still unresolved); Cockpit's Provider Health + Memory Activity panels (permanently empty, backend never emits these events); Runs page's Artifacts panel (same); a Run row's "Inspect" button with no `onClick` at all.
+
+**1 non-essential page flagged**: `A2uiTestingPage` is real but dev-only testing tooling shipping to the production admin nav. **1 minor bug**: `auth-keys-store.ts`'s `revokeKey` silently swallows errors.
+
+**5 old carryover items re-verified**: 3 confirmed resolved (credentials admin UI, agent-config error surfacing, skill-activation-outcome now recorded backend-side), 2 confirmed still open (CH-06 per-agent budget config UI, Protocols page gating).
+
+Build health: `cargo test --lib` 387/1/0 clean; frontend `vitest` 46/46 but thin unit coverage (12/206 files, ~5.8%); e2e Playwright (40 tests/12 files) parses cleanly but wasn't executed live this session. Sycophancy self-check: 0.018.
+
+## Why this phase
+
+See `phases/uar-production-ready-uiux-2026-07/goals.md` for the full narrative. In short: this project has been through several rounds of hardening (`uar-production-readiness-gaps`, `uar-harness-parity`, `uar-next-harness` for backend/feature parity; several frontend migration phases for the UI surface; three security/dependency phases ending in `uar-security-audit-alerts-gate-2026-07`), but no single phase has asked the holistic question this one does: is this genuinely production-ready, is the UI/UX complete and polished (not just functional), and is it tested to a level that justifies calling it done?
+
+## Goals (see `phases/uar-production-ready-uiux-2026-07/goals.md` for full detail)
+
+1. Survey and close remaining production-readiness gaps beyond what prior phases already closed — re-verify against the live codebase, don't assume.
+2. Audit UI/UX completeness across all frontend surfaces, following CLAUDE.md's mandatory "UI/UX work routing" (memory consult, UI/UX Pro Max analysis, `/impeccable audit`+`critique`, `frontend-design`/`ux-designer` skills, Vercel React best-practices) before any UI code is written.
+3. Identify and close test coverage gaps (unit, integration, browser/e2e) for genuine production-ready confidence.
+
+**Deliberately broad** — expect `/kbd-assess` to surface a large gap list and `/kbd-plan` to produce multiple rounds, possibly split into nested child phases if assessment reveals separable sub-initiatives.
+
+## Prior phase archive
+
+- **`uar-security-audit-alerts-gate-2026-07`** (2026-07-08): 3/3 changes, 4/4 goals MET. Dependabot-alerts CI gate built and confirmed live on GitHub Actions; Vite `manualChunks`→`codeSplitting` migration; both pushed and verified. See its own `reflection.md` for full detail, including the OpenSpec ≥1-delta-per-change finding and the now-fixed `AGENTS.md` doc-staleness items.
 
 **No single dominant next-phase recommendation.** Only optional doc-fix pickups (documenting the validate requirement, fixing the CLI version reference) and standing process questions needing human review (whether OpenSpec needs a lighter-weight schema for hygiene-only changes; the 129-directory unarchived `openspec/changes/` backlog; the pre-existing uncommitted `ci.yml` diff). Recommend asking the user what to focus on next rather than auto-seeding from any of these.
 

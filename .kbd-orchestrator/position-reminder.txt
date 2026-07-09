@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-security-audit-alerts-gate-2026-07
-Step: 3 of 3
-Stage: reflected
-Next command: /kbd-next-phase -- but this reflection has no single dominant high-priority recommendation; ask the user for direction before seeding.
+Phase: uar-production-ready-uiux-2026-07
+Step: 2 of 9
+Stage: executing
+Next command: /opsx:new retire-a2ui-testing-page-from-prod + /kbd-apply retire-a2ui-testing-page-from-prod
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-security-audit-alerts-gate-2026-07 (step 3 of 3)
+  Starting <kbd-skill> — uar-production-ready-uiux-2026-07 (step 2 of 9)
   [do work]
-  Completed <kbd-skill> — uar-security-audit-alerts-gate-2026-07 (step 3 of 3)
+  Completed <kbd-skill> — uar-production-ready-uiux-2026-07 (step 2 of 9)
