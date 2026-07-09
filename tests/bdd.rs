@@ -284,5 +284,15 @@ fn then_not_contains_legacy_event(world: &mut World, event_name: String) {
 
 #[tokio::main]
 async fn main() {
-    World::run("tests/features").await;
+    // Run scenarios one at a time. Each scenario boots a real UAR server
+    // (embedded SurrealDB, orchestrator, MCP subprocess spawns) via
+    // `boot_test_server`; running several concurrently causes health-check
+    // timeouts under cargo's default parallelism — the plain integration
+    // tests use `#[serial]` for the same reason (see
+    // tests/integration/live/harness.rs). Cucumber drives its own runner and
+    // ignores `#[serial]`, so serialization is configured here instead.
+    World::cucumber()
+        .max_concurrent_scenarios(1)
+        .run_and_exit("tests/features")
+        .await;
 }
