@@ -1,4 +1,15 @@
+<div align="center">
+
 # Universal Agent Runtime
+
+**Agentic streaming LLM runtime — 142+ providers, MCP-first, Tauri-ready**
+
+[![CI](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/workflows/ci.yml/badge.svg)](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/workflows/ci.yml)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
+[![Providers](https://img.shields.io/badge/providers-142%2B-8A2BE2.svg)](https://models.dev)
+[![Rust](https://img.shields.io/badge/Rust-edition%202024-CE422B.svg?logo=rust)](Cargo.toml)
+
+</div>
 
 ## Agentic Streaming LLM Application — 142+ Providers, MCP-First, Tauri-Ready
 
