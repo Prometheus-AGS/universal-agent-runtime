@@ -78,59 +78,59 @@ See [TEMPLATE_USAGE.md](./TEMPLATE_USAGE.md) for detailed configuration options.
 ```mermaid
 graph TB
     subgraph Config [Configuration Layers]
-        CLI["CLI args\n--llm-model, --llm-api-key"]
-        EnvNew["UAR_LLM__* env vars\n(structured)"]
-        EnvLegacy["LLM_* legacy env vars\n(backward compat)"]
-        ProviderKeys["Provider shortcuts\nOPENAI_API_KEY, GROQ_API_KEY…"]
-        YAMLFile["config.yaml\nllm: section"]
+        CLI["CLI args<br/>--llm-model, --llm-api-key"]
+        EnvNew["UAR_LLM__* env vars<br/>(structured)"]
+        EnvLegacy["LLM_* legacy env vars<br/>(backward compat)"]
+        ProviderKeys["Provider shortcuts<br/>OPENAI_API_KEY, GROQ_API_KEY…"]
+        YAMLFile["config.yaml<br/>llm: section"]
     end
 
     subgraph Catalog [Compile-Time Model Catalog]
-        BuildRS["build.rs\nfetches models.dev + liter-llm schemas"]
-        CatalogJSON["provider_catalog.json\nbaked into binary"]
-        ModelCatalog["ModelCatalog\n142+ providers, capabilities,\npricing, limits"]
-        ModelRouter["ModelRouter\nselects best model\nfor capability requirements"]
+        BuildRS["build.rs<br/>fetches models.dev + liter-llm schemas"]
+        CatalogJSON["provider_catalog.json<br/>baked into binary"]
+        ModelCatalog["ModelCatalog<br/>142+ providers, capabilities,<br/>pricing, limits"]
+        ModelRouter["ModelRouter<br/>selects best model<br/>for capability requirements"]
     end
 
     subgraph LLMLayer [LLM Layer — liter-llm]
-        LlmConfig["LlmConfig\nUnified config struct"]
-        LiterDriver["LiterLlmDriver\nwraps liter-llm DefaultClient"]
-        ToolNorm["Tool Call Normalization\nAnthropic · Google · Mistral → OpenAI"]
-        ProviderReg["ProviderRegistry\ncatalog-enriched,\nruntime-managed"]
+        LlmConfig["LlmConfig<br/>Unified config struct"]
+        LiterDriver["LiterLlmDriver<br/>wraps liter-llm DefaultClient"]
+        ToolNorm["Tool Call Normalization<br/>Anthropic · Google · Mistral → OpenAI"]
+        ProviderReg["ProviderRegistry<br/>catalog-enriched,<br/>runtime-managed"]
     end
 
     subgraph Orchestrator [Orchestrator]
-        Orch["Orchestrator\ntool loop + streaming"]
-        NormEvent["NormalizedEvent stream\nmessage.delta · tool_call.delta\ntool_call.complete · done"]
+        Orch["Orchestrator<br/>tool loop + streaming"]
+        NormEvent["NormalizedEvent stream<br/>message.delta · tool_call.delta<br/>tool_call.complete · done"]
     end
 
     subgraph MCPLayer [MCP Tool Ecosystem]
-        MCPReg["MCP Registry\ntool discovery"]
-        MCPClient["rmcp client\nstdio + HTTP"]
+        MCPReg["MCP Registry<br/>tool discovery"]
+        MCPClient["rmcp client<br/>stdio + HTTP"]
     end
 
     subgraph Server [Axum Server]
-        API["API Endpoints\nREST + SSE"]
-        APIModels["GET /api/models\ncatalog-backed"]
-        APICatalog["GET /api/catalog\nprovider summary"]
-        APIRoute["POST /api/uar/route\ncapability routing"]
+        API["API Endpoints<br/>REST + SSE"]
+        APIModels["GET /api/models<br/>catalog-backed"]
+        APICatalog["GET /api/catalog<br/>provider summary"]
+        APIRoute["POST /api/uar/route<br/>capability routing"]
     end
 
     subgraph UI [Admin UI — React/TypeScript]
-        ProvidersPage["Providers Page\ncatalog + configured status"]
-        ModelsPage["Models Page\ncapability filters + pricing"]
-        SettingsPage["Settings Page\nllm config namespace"]
+        ProvidersPage["Providers Page<br/>catalog + configured status"]
+        ModelsPage["Models Page<br/>capability filters + pricing"]
+        SettingsPage["Settings Page<br/>llm config namespace"]
     end
 
     subgraph Persistence [Settings Persistence]
-        SettingsMgr["SettingsManager\nllm namespace seeded"]
+        SettingsMgr["SettingsManager<br/>llm namespace seeded"]
         DB[(PostgreSQL / SurrealDB)]
     end
 
     subgraph ClientUI [Client UI]
         HTMX["HTMX 2.0.8"]
         WC["Web Components"]
-        PGLite["PGlite\nClient DB"]
+        PGLite["PGlite<br/>Client DB"]
     end
 
     Config --> LlmConfig
