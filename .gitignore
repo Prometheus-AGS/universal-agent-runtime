@@ -104,3 +104,4 @@ static/assets
 # only the committed baseline (evals/results/<suite>.baseline.json) is shared.
 evals/results/*.json
 !evals/results/*.baseline.json
+.kbd-orchestrator/**/hooks.log.jsonl.lock
