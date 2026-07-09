@@ -21,7 +21,7 @@
     "a2ui_testing_page_rescoped": "RESOLVED via AskUserQuestion (2026-07-09): user rejected the plan's default 'remove A2uiTestingPage' recommendation for retire-a2ui-testing-page-from-prod -- 'It seems we need something like that.' Investigation found the real A2UI round-trip (agent requests input -> A2uiInputBlock renders -> real /artifact-response endpoint -> agent resumes) already works end-to-end in production chat; the actual gap was narrower (no way to trigger it on demand for testing). User chose to reuse the real chat components against a real run (new backend test-trigger endpoint + reworked test page), not a standalone mock preview. Change renamed retire-a2ui-testing-page-from-prod -> upgrade-a2ui-testing-live-round-trip; original openspec change dir deleted (3/7 tasks had been done then reverted -- nav/PAGE_MAP edits restored to original before renaming)."
   },
   "changes_total": 9,
-  "changes_completed": 7,
+  "changes_completed": 8,
   "changes_ordered": [
     "fix-comprehensive-tests-ci-gate",
     "fix-auth-revoke-key-error-surfacing",
