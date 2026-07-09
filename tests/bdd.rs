@@ -168,6 +168,65 @@ async fn when_streaming_request(world: &mut World, stream_mode: String, message:
     world.response_body = resp.text().await.expect("response body");
 }
 
+#[when(
+    regex = r#"^I send a chat completion request continuing the conversation: user "([^"]+)", assistant "([^"]+)", then user "([^"]+)"$"#
+)]
+async fn when_multi_turn_request(
+    world: &mut World,
+    first_user: String,
+    prior_assistant: String,
+    latest_user: String,
+) {
+    ensure_server_booted(world).await;
+    let base_url = world.base_url.clone().expect("server should be booted");
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(format!("{base_url}/v1/chat/completions"))
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "messages": [
+                {"role": "user", "content": first_user},
+                {"role": "assistant", "content": prior_assistant},
+                {"role": "user", "content": latest_user},
+            ]
+        }))
+        .send()
+        .await
+        .expect("request");
+    world.response_status = Some(resp.status().as_u16());
+    world.response_body = resp.text().await.expect("response body");
+}
+
+#[when(regex = r#"^I send a chat completion request with no "messages" field$"#)]
+async fn when_malformed_request(world: &mut World) {
+    ensure_server_booted(world).await;
+    let base_url = world.base_url.clone().expect("server should be booted");
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(format!("{base_url}/v1/chat/completions"))
+        .json(&serde_json::json!({ "model": MODEL }))
+        .send()
+        .await
+        .expect("request");
+    world.response_status = Some(resp.status().as_u16());
+    world.response_body = resp.text().await.expect("response body");
+}
+
+#[then("the response status should be a client error")]
+fn then_status_client_error(world: &mut World) {
+    let status = world
+        .response_status
+        .expect("a request should have been sent");
+    assert!(
+        (400..500).contains(&status),
+        "expected 4xx client error, got: {status}"
+    );
+    assert!(
+        !(500..600).contains(&status),
+        "expected client error but got server error: {status}"
+    );
+}
+
 #[then("the response status should be successful")]
 fn then_status_successful(world: &mut World) {
     let status = world
