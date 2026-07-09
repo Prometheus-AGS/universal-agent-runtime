@@ -1,3 +1,4 @@
+pub mod a2ui_test_trigger_cases;
 pub mod backend;
 pub mod baseline_cases;
 pub mod harness;

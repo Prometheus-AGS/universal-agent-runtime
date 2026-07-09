@@ -2,21 +2,22 @@
 
 - **Phase:** uar-production-ready-uiux-2026-07
 - **Status:** executing
-- **Progress:** 2 of 9 changes
-- **Next pending change:** `retire-a2ui-testing-page-from-prod` (Round 1, last of 3)
-- **Exact next command:** `/opsx:new retire-a2ui-testing-page-from-prod` + `/kbd-apply retire-a2ui-testing-page-from-prod`
+- **Progress:** 3 of 9 changes
+- **Next pending change:** `resolve-runtime-protocols-page-facade` (Round 2, needs a user fix-vs-remove decision first)
+- **Exact next command:** Ask the user to resolve the fix-vs-remove decision for `resolve-runtime-protocols-page-facade` + `resolve-runtime-cockpit-dead-panels`, then `/opsx:new resolve-runtime-protocols-page-facade` + `/kbd-apply resolve-runtime-protocols-page-facade`
 - **Recommendation source:** created manually via `/kbd-new-phase` at the user's direct request ("production-ready with UI/UX full capable and tested") — not seeded from a reflection recommendation, since `uar-security-audit-alerts-gate-2026-07`'s reflection had no single dominant next-phase recommendation.
 
 ## Execute-phase dispatch (2026-07-08, see `phases/uar-production-ready-uiux-2026-07/execution.md` for full contract)
 
 Backend: `openspec`, self-executing via Claude Code CLI, driven per-change through `/kbd-apply` (never bare `/opsx:apply`). **User confirmed via `AskUserQuestion`: keep as one flat phase** — no child-phase split for the BDD or Docusaurus tracks.
 
-**Round 1: 2/3 done.**
+**Round 1: 3/3 DONE.**
 
 - **`fix-comprehensive-tests-ci-gate`: DONE** (archived `openspec/changes/archive/2026-07-08-fix-comprehensive-tests-ci-gate/`, 9/9 tasks). Root cause was deeper than the assessment found: `test-config.yaml` was both never created **and** listed in `.gitignore` since the initial commit — fixed both, pushed (`9d4da6a`). Verified live on GitHub Actions for the first time in this project's history: `comprehensive-tests.yml`'s Pre-flight Checks **passed** (run [28966990812](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/28966990812)), but Security Audit and Code Quality then failed for real, newly-surfaced reasons (unfiltered inline `cargo audit`; frozen root `bun.lockb`). `tests-full.yml` (run [28967666152](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/28967666152)) got 8 real minutes into work (previously failed in <1 minute) before failing on a Docker Compose `surreal`/`unstructured` health-check timeout. Per this change's own design non-goal, none of these 3 newly-surfaced issues were fixed here — documented in `findings.md` as follow-up work, not yet triaged into this phase's plan.
 - **`fix-auth-revoke-key-error-surfacing`: DONE** (archived `openspec/changes/archive/2026-07-08-fix-auth-revoke-key-error-surfacing/`, 3/3 tasks). `auth-keys-store.ts`'s `revokeKey` now sets an error message on failure instead of silently swallowing it, matching `load`/`createKey`'s existing pattern. `pnpm run build` clean.
+- **`upgrade-a2ui-testing-live-round-trip`: DONE** (archived `openspec/changes/archive/2026-07-09-upgrade-a2ui-testing-live-round-trip/`, 13/13 tasks). Rescoped mid-flight from the plan's default `retire-a2ui-testing-page-from-prod` after the user rejected removal ("It seems we need something like that"). Added `POST /api/uar/runs/{run_id}/a2ui/test-trigger` (`src/uar/a2ui/routes.rs`) emitting a real `ArtifactInputRequest` via the same `RunManager::emit_to_run` path a live agent tool call uses; reworked `A2uiTestingPage.tsx` to target a real active run and hand off to the real `/threads` chat UI on success instead of a parallel mock render; also fixed the pre-existing schema browser, which silently read stale field names never matching the real `ArtifactSchema` shape (always fell through to "Unknown schema type"). Live-verified via new `tests/integration/live/a2ui_test_trigger_cases.rs` (2/2 passing against the real booted server + stub LLM): full trigger→submit round trip, and 404-on-nonexistent-run. Empirically confirmed (not just by code read) that `RunManager::emit_to_run` does not lose the event when no SSE client is subscribed at trigger time, resolving `design.md`'s stated buffering risk. Caught and removed one stray untracked `frontend/vite.config.js` (non-gitignored compiled duplicate of the tracked `vite.config.ts`) during the git-scope check.
 
-**3 open blockers to surface to the user before their respective rounds:**
+**2 open blockers to surface to the user before their respective rounds:**
 - Round 2 (`resolve-runtime-protocols-page-facade`, `resolve-runtime-cockpit-dead-panels`): fix-vs-remove decision, not yet resolved.
 - Round 4 (`bootstrap-docusaurus-site`): hosting/deployment target, not yet resolved.
 

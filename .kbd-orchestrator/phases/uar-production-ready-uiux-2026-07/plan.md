@@ -26,15 +26,15 @@ CHANGE LIST (ordered)
    - Customer value: LOW
    - Details: Replace the empty `catch {}` with the same `setError`/toast pattern used by every other mutation on `auth-page.tsx`.
 
-3. retire-a2ui-testing-page-from-prod: remove or dev-gate `A2uiTestingPage` from the production admin nav.
-   - Scope: frontend (`admin-page.tsx`'s `PAGE_MAP`/`AdminSection`, admin nav/sidebar)
+3. upgrade-a2ui-testing-live-round-trip: ~~retire-a2ui-testing-page-from-prod~~ **RESCOPED 2026-07-09** — user rejected removal; kept the page and upgraded it to trigger a real round-trip instead.
+   - Scope: backend (`src/uar/a2ui/routes.rs`, new endpoint), frontend (`A2uiTestingPage.tsx` reworked, not deleted)
    - Depends on: NONE
    - Recommended agent: Claude Code (self-executing)
-   - Est. complexity: S
-   - Complexity score: Low — routing/nav removal or an env-flag gate, no new logic
-   - Model class: small
+   - Est. complexity: M (revised up from original S — this is now real new feature work, not a removal)
+   - Complexity score: Medium — investigation found the real A2UI round-trip already works end-to-end in production chat (`A2uiInputBlock` → real `/artifact-response` endpoint → agent resumes); the actual gap was narrower than assessed: no way to *trigger* that flow on demand for testing. New endpoint (`POST /api/uar/runs/{run_id}/a2ui/test-trigger`) emits a real `ArtifactInputRequest` into an active run; the reworked test page adds an active-run picker and hands off to the real chat UI to complete the round-trip — reuses existing production components entirely, no parallel rendering path.
+   - Model class: frontier
    - Customer value: MEDIUM
-   - Details: This is a real, working page (confirmed, not a facade) but it's developer/QA-only tooling with a local-echo form. Default to removing it from the production nav (simplest, matches "remove non-essential functionality"); gate behind a dev-only build flag only if the team actually uses it during development and wants it reachable locally.
+   - Details: See `openspec/changes/upgrade-a2ui-testing-live-round-trip/design.md` for the full investigation and decision trace. Explicitly does NOT overlap with change #4's (`resolve-runtime-protocols-page-facade`) still-open fix-vs-remove decision — that's about the Runtime Console's read-only dead display panels, a separate concern from this change's interactive trigger-and-complete purpose.
 
 4. resolve-runtime-protocols-page-facade: close the "Protocols page gating" carryover (open since `uar-production-readiness-gaps`, 2026-06-02).
    - Scope: frontend (`runtime-console-page.tsx`'s `RuntimeProtocolsPage`), possibly backend (`src/uar/api/sse.rs`) if wiring real data
@@ -97,7 +97,7 @@ CHANGE LIST (ordered)
    - Details: **Concrete factual error found and confirmed this session**: README.md's "High-Level Goals" #6 claims *"HTML-centric UI — HTMX, Web Components, Alpine.js; no React, Next.js, or SPA routers"* — this directly contradicts the actual codebase, which is a 100%-React/TypeScript SPA (`react-router-dom` `BrowserRouter`, TanStack Query, Zustand, shadcn-ui, assistant-ui — confirmed extensively during this phase's assessment, zero HTMX/Alpine/Web-Components anywhere in `frontend/src`). The 2nd mermaid diagram (realtime data-flow) checked out as accurate; the 1st (architecture overview) is structurally close but should be re-verified end-to-end against current code, not just this one claim. **Note**: `CLAUDE.md` opens with the identical stale claim ("HTML-first frontend technologies (HTMX, Web Components, Alpine.js)") — out of the user's explicit ask (README only) but flagged as a closely-related fix worth folding in or doing as an immediate follow-up.
 
 EXECUTION ROUND ORDER
-Round 1 (parallel, no shared files): `fix-comprehensive-tests-ci-gate`, `fix-auth-revoke-key-error-surfacing`, `retire-a2ui-testing-page-from-prod`
+Round 1 (parallel, no shared files): `fix-comprehensive-tests-ci-gate`, `fix-auth-revoke-key-error-surfacing`, `upgrade-a2ui-testing-live-round-trip`
 Round 2 (parallel-ish, all touch `runtime-console-page.tsx` — sequence to avoid merge conflicts, or combine at execute time): `resolve-runtime-protocols-page-facade`, `resolve-runtime-cockpit-dead-panels`, `resolve-runs-artifacts-and-inspect-button`
 Round 3 (independent, new scope): `bdd-chat-scenario-suite`
 Round 4 (independent, docs/branding): `bootstrap-docusaurus-site`, `refresh-readme-diagrams-and-branding`
@@ -109,7 +109,7 @@ Rounds 3 and 4 have no dependency on Rounds 1–2 and could run in parallel with
 COMMANDS TO RUN
 /opsx:new fix-comprehensive-tests-ci-gate
 /opsx:new fix-auth-revoke-key-error-surfacing
-/opsx:new retire-a2ui-testing-page-from-prod
+/opsx:new upgrade-a2ui-testing-live-round-trip
 /opsx:new resolve-runtime-protocols-page-facade
 /opsx:new resolve-runtime-cockpit-dead-panels
 /opsx:new resolve-runs-artifacts-and-inspect-button

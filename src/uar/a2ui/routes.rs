@@ -7,6 +7,7 @@
 //! | GET | `/api/uar/a2ui/schemas` | List all registered artifact schemas |
 //! | GET | `/api/uar/a2ui/schemas/{schema_id}` | Get a single schema by ID |
 //! | POST | `/api/uar/runs/{run_id}/artifact-response` | Submit user response to an input artifact |
+//! | POST | `/api/uar/runs/{run_id}/a2ui/test-trigger` | Trigger a real artifact input request for testing |
 
 use std::sync::Arc;
 
@@ -20,7 +21,10 @@ use axum::{
 use serde::{Deserialize, Serialize};
 
 use super::registry::A2uiRegistry;
-use crate::uar::{domain::events::NormalizedEvent, runtime::manager::RunManager};
+use crate::uar::{
+    domain::events::{ArtifactPayload, NormalizedEvent},
+    runtime::manager::RunManager,
+};
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -47,6 +51,26 @@ pub struct ArtifactResponsePayload {
 
 #[derive(Debug, Serialize)]
 struct ArtifactResponseAck {
+    run_id: String,
+    artifact_id: String,
+    status: &'static str,
+}
+
+/// Request body for `POST /api/uar/runs/{run_id}/a2ui/test-trigger`.
+///
+/// Mirrors [`ArtifactPayload`] minus `artifact_id` (generated server-side)
+/// and `language` (not needed for input-request artifact types).
+#[derive(Debug, Deserialize)]
+pub struct TestTriggerPayload {
+    pub artifact_type: String,
+    pub title: String,
+    pub content: String,
+    #[serde(default)]
+    pub metadata: serde_json::Value,
+}
+
+#[derive(Debug, Serialize)]
+struct TestTriggerAck {
     run_id: String,
     artifact_id: String,
     status: &'static str,
@@ -129,6 +153,54 @@ async fn submit_artifact_response(
         .into_response()
 }
 
+/// `POST /api/uar/runs/{run_id}/a2ui/test-trigger`
+///
+/// Emits a real `ArtifactInputRequest` event onto the given run's SSE stream,
+/// using the exact same [`RunManager::emit_to_run`] path a live agent tool
+/// call uses — for testing/validating the A2UI round-trip on demand rather
+/// than waiting for an agent to naturally request input.
+async fn test_trigger_artifact(
+    State(state): State<A2uiApiState>,
+    Path(run_id): Path<String>,
+    Json(payload): Json<TestTriggerPayload>,
+) -> impl IntoResponse {
+    let run = match state.run_manager.get_run(&run_id).await {
+        Some(r) => r,
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({ "error": format!("run '{}' not found or not active", run_id) })),
+            )
+                .into_response();
+        }
+    };
+
+    let artifact_id = uuid::Uuid::new_v4().to_string();
+    let event = NormalizedEvent::ArtifactInputRequest {
+        run_id: run.run_id.clone(),
+        artifact: ArtifactPayload {
+            artifact_id: artifact_id.clone(),
+            artifact_type: payload.artifact_type,
+            title: payload.title,
+            content: payload.content,
+            language: None,
+            metadata: payload.metadata,
+        },
+    };
+
+    state.run_manager.emit_to_run(&run.run_id, event).await;
+
+    (
+        StatusCode::OK,
+        Json(TestTriggerAck {
+            run_id: run.run_id,
+            artifact_id,
+            status: "triggered",
+        }),
+    )
+        .into_response()
+}
+
 // ── Router builders ───────────────────────────────────────────────────────────
 
 /// Build the A2UI schema listing router (mounted at `/api/uar/a2ui`).
@@ -143,8 +215,13 @@ pub fn build_schema_router() -> Router<A2uiApiState> {
 /// This is separate from the schema router because it shares the path prefix
 /// with the main runs API.
 pub fn build_response_router() -> Router<A2uiApiState> {
-    Router::new().route(
-        "/{run_id}/artifact-response",
-        post(submit_artifact_response),
-    )
+    Router::new()
+        .route(
+            "/{run_id}/artifact-response",
+            post(submit_artifact_response),
+        )
+        .route(
+            "/{run_id}/a2ui/test-trigger",
+            post(test_trigger_artifact),
+        )
 }
