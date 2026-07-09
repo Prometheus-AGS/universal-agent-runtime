@@ -1,6 +1,8 @@
-import { useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Activity,
+  AlertTriangle,
   Bot,
   Boxes,
   Brain,
@@ -17,6 +19,7 @@ import {
 } from "lucide-react";
 import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
 import type { EntityType } from "@prometheus-ags/prometheus-entity-management";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -136,7 +139,22 @@ function EmptyRuntimeState({ label }: { label: string }) {
   );
 }
 
-function RunRow({ run }: { run: RuntimeRunEntity }) {
+/**
+ * Distinct from EmptyRuntimeState: this panel isn't merely quiet, its
+ * backend event source doesn't exist yet — an operator should be able to
+ * tell "not built" apart from "nothing happened recently".
+ */
+function NotWiredRuntimeState({ detail }: { detail: string }) {
+  return (
+    <Alert className="m-4 border-dashed">
+      <AlertTriangle size={16} className="text-amber-500" />
+      <AlertTitle>Not yet wired to live backend data</AlertTitle>
+      <AlertDescription>{detail}</AlertDescription>
+    </Alert>
+  );
+}
+
+function RunRow({ run, onInspect }: { run: RuntimeRunEntity; onInspect?: (runId: string) => void }) {
   return (
     <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-border px-4 py-3 last:border-b-0 md:grid-cols-[1fr_140px_120px_auto]">
       <div className="min-w-0">
@@ -153,7 +171,13 @@ function RunRow({ run }: { run: RuntimeRunEntity }) {
       <span className="hidden self-center font-mono text-xs text-muted-foreground md:block">
         {formatTime(run.updated_at)}
       </span>
-      <Button variant="ghost" size="sm" className="h-7 justify-self-end px-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 justify-self-end px-2"
+        disabled={!onInspect}
+        onClick={() => onInspect?.(run.id)}
+      >
         Inspect
       </Button>
     </div>
@@ -192,9 +216,17 @@ export function RuntimeCockpitPage() {
   const approvals = useEntities<RuntimeApprovalEntity>("RuntimeApproval");
   const memory = useEntities<RuntimeMemoryEventEntity>("RuntimeMemoryEvent");
   const health = useEntities<RuntimeProviderHealthEntity>("RuntimeProviderHealth");
+  const navigate = useNavigate();
 
   const running = runs.filter((run) => run.status === "running" || run.status === "waiting");
   const pendingApprovals = approvals.filter((approval) => approval.status === "pending");
+
+  // No run-detail column exists on this page — inspecting a run means
+  // handing off to the Runs page with that run preselected.
+  const inspectRun = useCallback(
+    (runId: string) => navigate(`/admin/runs?run=${encodeURIComponent(runId)}`),
+    [navigate],
+  );
 
   return (
     <ScrollArea className="flex-1">
@@ -208,7 +240,7 @@ export function RuntimeCockpitPage() {
           </div>
 
           <SectionFrame title="Live Runs" eyebrow="Runtime">
-            {runs.length > 0 ? runs.slice(0, 8).map((run) => <RunRow key={run.id} run={run} />) : (
+            {runs.length > 0 ? runs.slice(0, 8).map((run) => <RunRow key={run.id} run={run} onInspect={inspectRun} />) : (
               <EmptyRuntimeState label="No runtime runs observed yet" />
             )}
           </SectionFrame>
@@ -233,7 +265,7 @@ export function RuntimeCockpitPage() {
                 <Badge variant="outline" className={cn(statusTone(row.status))}>{row.status}</Badge>
               </div>
             )) : (
-              <EmptyRuntimeState label="Provider health has not reported" />
+              <NotWiredRuntimeState detail="The backend does not yet emit provider health checks onto the entity graph. This panel will populate once that emission path is built." />
             )}
           </SectionFrame>
 
@@ -262,7 +294,7 @@ export function RuntimeCockpitPage() {
                 <p className="truncate text-xs text-muted-foreground">{event.summary}</p>
               </div>
             )) : (
-              <EmptyRuntimeState label="No memory activity observed" />
+              <NotWiredRuntimeState detail="The backend does not yet emit memory-service activity onto the entity graph. This panel will populate once that emission path is built." />
             )}
           </SectionFrame>
         </aside>
@@ -276,26 +308,37 @@ export function RuntimeRunsPage() {
   const steps = useEntities<RuntimeRunStepEntity>("RuntimeRunStep");
   const tools = useEntities<RuntimeToolCallEntity>("RuntimeToolCall");
   const artifacts = useEntities<RuntimeArtifactEntity>("RuntimeArtifact");
+  const [searchParams] = useSearchParams();
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(searchParams.get("run"));
 
-  const latestRun = runs[0];
-  const latestRunSteps = useMemo(
-    () => steps.filter((step) => !latestRun || step.run_id === latestRun.id),
-    [steps, latestRun],
+  // Preselect from ?run=<id> whenever it changes (e.g. arriving via the
+  // Cockpit's Inspect handoff); falls back to the first run once loaded.
+  useEffect(() => {
+    const fromQuery = searchParams.get("run");
+    if (fromQuery) setSelectedRunId(fromQuery);
+  }, [searchParams]);
+
+  const selectedRun = runs.find((run) => run.id === selectedRunId) ?? runs[0];
+  const selectedRunSteps = useMemo(
+    () => steps.filter((step) => !selectedRun || step.run_id === selectedRun.id),
+    [steps, selectedRun],
   );
 
   return (
     <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[360px_1fr_300px]">
       <ScrollArea className="border-r border-border">
         <SectionFrame title="Runs" eyebrow={`${runs.length} observed`}>
-          {runs.length > 0 ? runs.map((run) => <RunRow key={run.id} run={run} />) : (
+          {runs.length > 0 ? runs.map((run) => (
+            <RunRow key={run.id} run={run} onInspect={setSelectedRunId} />
+          )) : (
             <EmptyRuntimeState label="No runs are available" />
           )}
         </SectionFrame>
       </ScrollArea>
 
       <ScrollArea>
-        <SectionFrame title={latestRun?.title ?? "Run Detail"} eyebrow={latestRun?.id ?? "Select a run"}>
-          {latestRunSteps.length > 0 ? latestRunSteps.map((step) => <TimelineRow key={step.id} step={step} />) : (
+        <SectionFrame title={selectedRun?.title ?? "Run Detail"} eyebrow={selectedRun?.id ?? "Select a run"}>
+          {selectedRunSteps.length > 0 ? selectedRunSteps.map((step) => <TimelineRow key={step.id} step={step} />) : (
             <EmptyRuntimeState label="Run timeline is empty" />
           )}
         </SectionFrame>
@@ -308,7 +351,7 @@ export function RuntimeRunsPage() {
               <p className="truncate text-sm font-medium text-foreground">{artifact.title}</p>
               <p className="truncate font-mono text-xs text-muted-foreground">{artifact.kind} · {artifact.mime_type ?? "unknown"}</p>
             </div>
-          )) : <EmptyRuntimeState label="No artifacts produced yet" />}
+          )) : <NotWiredRuntimeState detail="The backend does not yet emit run artifacts onto the entity graph. This panel will populate once that emission path is built." />}
         </SectionFrame>
         <SectionFrame title="Tool Calls" eyebrow={`${tools.length} calls`}>
           {tools.length > 0 ? tools.map((tool) => (
@@ -459,7 +502,7 @@ export function RuntimeProtocolsPage() {
                 <p className="truncate font-mono text-xs text-muted-foreground">{event.run_id}</p>
               </div>
             )) : (
-              <EmptyRuntimeState label="No AG-UI events ingested" />
+              <NotWiredRuntimeState detail="The backend does not yet emit normalized AG-UI events onto the entity graph. This panel will populate once that emission path is built." />
             )}
           </SectionFrame>
           <SectionFrame title="Model Routing" eyebrow="liter-llm">
@@ -469,7 +512,7 @@ export function RuntimeProtocolsPage() {
                 <p className="truncate text-xs text-muted-foreground">{route.reason ?? route.selected_provider ?? "route reason pending"}</p>
               </div>
             )) : (
-              <EmptyRuntimeState label="No route decisions recorded" />
+              <NotWiredRuntimeState detail="The backend does not yet emit model-routing decisions onto the entity graph. This panel will populate once that emission path is built." />
             )}
           </SectionFrame>
           <SectionFrame title="A2UI Surfaces" eyebrow="Protocol UI">
@@ -484,7 +527,7 @@ export function RuntimeProtocolsPage() {
                 </p>
               </div>
             )) : (
-              <EmptyRuntimeState label="No A2UI surfaces recorded" />
+              <NotWiredRuntimeState detail="The backend does not yet emit A2UI surface records onto the entity graph (the A2UI round-trip itself works — see the A2UI Live Testing admin page — but it isn't mirrored here yet). This panel will populate once that emission path is built." />
             )}
           </SectionFrame>
         </aside>

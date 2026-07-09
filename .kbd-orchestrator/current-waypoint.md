@@ -2,9 +2,9 @@
 
 - **Phase:** uar-production-ready-uiux-2026-07
 - **Status:** executing
-- **Progress:** 3 of 9 changes
-- **Next pending change:** `resolve-runtime-protocols-page-facade` (Round 2, needs a user fix-vs-remove decision first)
-- **Exact next command:** Ask the user to resolve the fix-vs-remove decision for `resolve-runtime-protocols-page-facade` + `resolve-runtime-cockpit-dead-panels`, then `/opsx:new resolve-runtime-protocols-page-facade` + `/kbd-apply resolve-runtime-protocols-page-facade`
+- **Progress:** 6 of 9 changes
+- **Next pending change:** `bdd-chat-scenario-suite` (Round 3, no blockers)
+- **Exact next command:** `/opsx:new bdd-chat-scenario-suite` + `/kbd-apply bdd-chat-scenario-suite`
 - **Recommendation source:** created manually via `/kbd-new-phase` at the user's direct request ("production-ready with UI/UX full capable and tested") — not seeded from a reflection recommendation, since `uar-security-audit-alerts-gate-2026-07`'s reflection had no single dominant next-phase recommendation.
 
 ## Execute-phase dispatch (2026-07-08, see `phases/uar-production-ready-uiux-2026-07/execution.md` for full contract)
@@ -17,8 +17,9 @@ Backend: `openspec`, self-executing via Claude Code CLI, driven per-change throu
 - **`fix-auth-revoke-key-error-surfacing`: DONE** (archived `openspec/changes/archive/2026-07-08-fix-auth-revoke-key-error-surfacing/`, 3/3 tasks). `auth-keys-store.ts`'s `revokeKey` now sets an error message on failure instead of silently swallowing it, matching `load`/`createKey`'s existing pattern. `pnpm run build` clean.
 - **`upgrade-a2ui-testing-live-round-trip`: DONE** (archived `openspec/changes/archive/2026-07-09-upgrade-a2ui-testing-live-round-trip/`, 13/13 tasks). Rescoped mid-flight from the plan's default `retire-a2ui-testing-page-from-prod` after the user rejected removal ("It seems we need something like that"). Added `POST /api/uar/runs/{run_id}/a2ui/test-trigger` (`src/uar/a2ui/routes.rs`) emitting a real `ArtifactInputRequest` via the same `RunManager::emit_to_run` path a live agent tool call uses; reworked `A2uiTestingPage.tsx` to target a real active run and hand off to the real `/threads` chat UI on success instead of a parallel mock render; also fixed the pre-existing schema browser, which silently read stale field names never matching the real `ArtifactSchema` shape (always fell through to "Unknown schema type"). Live-verified via new `tests/integration/live/a2ui_test_trigger_cases.rs` (2/2 passing against the real booted server + stub LLM): full trigger→submit round trip, and 404-on-nonexistent-run. Empirically confirmed (not just by code read) that `RunManager::emit_to_run` does not lose the event when no SSE client is subscribed at trigger time, resolving `design.md`'s stated buffering risk. Caught and removed one stray untracked `frontend/vite.config.js` (non-gitignored compiled duplicate of the tracked `vite.config.ts`) during the git-scope check.
 
-**2 open blockers to surface to the user before their respective rounds:**
-- Round 2 (`resolve-runtime-protocols-page-facade`, `resolve-runtime-cockpit-dead-panels`): fix-vs-remove decision, not yet resolved.
+**Round 2: 3/3 DONE.** Fix-vs-remove decision resolved via `AskUserQuestion` (2026-07-09): cheap "not yet wired" gating banner for all three. New `NotWiredRuntimeState` component (built on the project's existing, previously-unused `Alert`/`AlertTitle`/`AlertDescription` shadcn primitive) applied to `RuntimeProtocolsPage`'s 3 dead panels, `RuntimeCockpitPage`'s Provider Health + Memory Activity, and `RuntimeRunsPage`'s Artifacts panel. `resolve-runs-artifacts-and-inspect-button` also did a real fix (not a facade decision): the previously-dead "Inspect" button now wires through a new `onInspect(runId)` prop on `RunRow` — `RuntimeRunsPage` tracks `selectedRunId` (seeded from a new `?run=` search param) and shows that run's detail instead of always the first run; `RuntimeCockpitPage`'s Inspect navigates to `/admin/runs?run=<id>` since Cockpit has no detail column. All 3 changes: `pnpm run build` + `pnpm run typecheck` clean, archived.
+
+**1 open blocker to surface to the user before its round:**
 - Round 4 (`bootstrap-docusaurus-site`): hosting/deployment target, not yet resolved.
 
 ## Plan (2026-07-08, see `phases/uar-production-ready-uiux-2026-07/plan.md` for full detail)
