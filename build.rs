@@ -496,8 +496,7 @@ fn which(name: &str) -> bool {
     Command::new(if cfg!(windows) { "where" } else { "which" })
         .arg(name)
         .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
+        .is_ok_and(|o| o.status.success())
 }
 
 fn create_stub_model() {

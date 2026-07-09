@@ -38,13 +38,23 @@ This avoids duplicated data logic, keeps ESLint `react-hooks/*` rules satisfied,
 ## OpenSpec workflow
 
 This repo uses **OpenSpec** for spec-driven change management. The `openspec` CLI
-(`@fission-ai/openspec`, v1.4.0) is installed globally and on `PATH`.
+(`@fission-ai/openspec`, v1.5.0) is installed globally and on `PATH`.
 
 - **Specs** live in `openspec/specs/`; **change proposals** in `openspec/changes/<name>/`
   (`proposal.md` + `tasks.md`, schema `spec-driven`).
 - **Common commands**: `openspec list`, `openspec status --change <name>`,
   `openspec new change "<name>"`, `openspec instructions <artifact> --change <name>`,
   `openspec validate <name>`, `openspec archive <name>`.
+- **Every change needs at least one spec delta.** `openspec validate` fails a
+  change with zero deltas under `specs/`, even for CI-only, build-tooling, or
+  pure-verification changes that don't obviously map to a "capability." When
+  a change genuinely doesn't fit an existing capability, either introduce a
+  narrowly-scoped new one (e.g. `frontend-build-tooling` for a bundler config
+  change) or extend an existing requirement with a new scenario relevant to
+  the change (e.g. extending `dependency-security-posture`'s
+  `CI Trigger Actually Fires` requirement for a live-verification change).
+  Don't discover this by writing "Capabilities: none" and hitting a validate
+  failure — plan the delta up front.
 - **Tool integrations** (slash commands / skills) are generated per tool — refresh
   with `openspec update` after a CLI upgrade. First-class tools include Claude Code
   (`/opsx:*`), Codex, OpenCode, Cursor, Windsurf, Gemini, RooCode, Kilo Code, Antigravity.

@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-07-07T00:15:00Z",
+  "outputs": [
+    "assessment.md"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "Headline: the 52 Dependabot alerts undercount the real picture. cargo audit (installed fresh) found 17 real Rust vulnerabilities (vs 11 in Dependabot) -- 6 net-new: ammonia, crossbeam-epoch, lopdf (stack overflow, directly reachable via kreuzberg's document processing), quick-xml (2 DoS CVEs across 4 resolved versions, 3 of them reachable via kreuzberg), quinn-proto (memory exhaustion via reqwest, reachability depends on whether HTTP/3 is enabled -- needs checking), rsa (Marvin Attack timing sidechannel via jsonwebtoken, used by both liter-llm and surrealdb-core -- needs checking if RSA-signed JWTs are actually used). Plus 18 unmaintained/unsound warnings. npm audit (root + frontend) found 6 more advisories not in Dependabot at all (ajv, brace-expansion, plus extra GHSA IDs on flatted/minimatch/picomatch/undici), some higher severity than what Dependabot shows for the same package. sdks/typescript has zero lockfile. Also found docs/DEPENDENCY_MANAGEMENT.md's claim that cargo audit runs in CI (release.yml) is false in practice -- that workflow has never once executed since it only triggers on a version tag/release and none has ever been cut. Plan should scope: (1) Rust remediation prioritizing the kreuzberg-reachable lopdf/quick-xml findings, (2) checking whether the kreuzberg/surreal-memory pinned versions already have fixes upstream before doing anything more invasive, (3) npm remediation for root+frontend, (4) sdks/typescript needs a lockfile plus a package.json vitest range bump (the fix crosses the ^2.0.0 boundary), (5) fixing the release.yml trigger so cargo audit actually runs periodically going forward, not just once.",
+  "skipped": false,
+  "skipReason": null
+}

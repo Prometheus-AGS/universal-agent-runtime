@@ -563,6 +563,20 @@ pub struct KreuzbergConfig {
     /// Optional chunking config for RAG pipelines (kreuzberg v4 feature)
     #[serde(default)]
     pub chunking: Option<KreuzbergChunkingConfig>,
+    /// Maximum accepted input size in bytes before handing content to
+    /// kreuzberg's native parsers. Compensating control for RUSTSEC-2026-0187
+    /// (lopdf stack overflow) / RUSTSEC-2026-0194 (quick-xml quadratic
+    /// attribute-check DoS): both are reachable through kreuzberg's
+    /// document-parsing path with no consumer-side opt-out, so bounding the
+    /// input size limits the CPU/stack cost a single crafted document can incur.
+    #[serde(default = "KreuzbergConfig::default_max_input_bytes")]
+    pub max_input_bytes: u64,
+    /// Wall-clock timeout (seconds) for a single kreuzberg extraction call.
+    /// Compensating control alongside `max_input_bytes` — bounds worst-case
+    /// request latency if a crafted document still triggers pathological
+    /// parsing cost within the size cap.
+    #[serde(default = "KreuzbergConfig::default_extraction_timeout_secs")]
+    pub extraction_timeout_secs: u64,
 }
 
 impl KreuzbergConfig {
@@ -587,6 +601,12 @@ impl KreuzbergConfig {
     fn default_output_format() -> String {
         "markdown".to_string()
     }
+    fn default_max_input_bytes() -> u64 {
+        100 * 1024 * 1024 // 100 MiB
+    }
+    fn default_extraction_timeout_secs() -> u64 {
+        60
+    }
 }
 
 impl Default for KreuzbergConfig {
@@ -601,6 +621,8 @@ impl Default for KreuzbergConfig {
             extract_metadata: Self::default_extract_metadata(),
             output_format: Self::default_output_format(),
             chunking: None,
+            max_input_bytes: Self::default_max_input_bytes(),
+            extraction_timeout_secs: Self::default_extraction_timeout_secs(),
         }
     }
 }

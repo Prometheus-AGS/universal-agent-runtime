@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-08T09:10:27Z",
+  "outputs": [
+    ".kbd-orchestrator/phases/uar-post-dependabot-followup-2026-07/plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "4 changes, single round: pin-surreal-memory-to-sha (user chose SHA-pin via AskUserQuestion), fix-d-d-pin-characterization (sequenced after the SHA pin lands), triage-unassigned-unmaintained-warnings, push-and-verify-security-audit-workflow (last, requires explicit user confirmation before the git push).",
+  "skipped": false,
+  "skipReason": null
+}

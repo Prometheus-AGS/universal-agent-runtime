@@ -551,7 +551,13 @@
       "mcp__plugin_prometheus-skill-pack_surreal-memory__add_memory",
       "mcp__plugin_prometheus-skill-pack_sycophancy-correction__analyze_reflect_phase",
       "mcp__plugin_prometheus-skill-pack_sycophancy-correction__detect_sycophancy",
-      "mcp__tavily-mcp__tavily-search"
+      "mcp__tavily-mcp__tavily-search",
+      "Bash(cargo audit *)",
+      "Bash(npm audit *)",
+      "Bash(awk '/^name = \"quinn\"$/,/^$/' Cargo.lock)",
+      "Bash(gh run *)",
+      "Bash(curl -s \"https://rustsec.org/advisories/RUSTSEC-2026-0190.html\")",
+      "Bash(echo \"fmt check exit: $?\")"
     ],
     "deny": [],
     "ask": []

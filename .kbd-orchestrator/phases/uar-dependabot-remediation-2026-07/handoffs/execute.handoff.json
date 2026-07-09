@@ -1,0 +1,12 @@
+{
+  "stage": "execute",
+  "completedAt": "2026-07-07T16:11:09Z",
+  "outputs": [
+    "execution.md",
+    "progress.json"
+  ],
+  "nextStage": "reflect",
+  "summaryForNext": "Backend: openspec, self-executing via Claude Code CLI driven through /kbd-apply per change. 8 changes scaffolded as dispatch contracts in execution.md across 3 rounds; none have OpenSpec change dirs yet (plan.md deferred proposal.md/tasks.md to execute time) -- first pending action is /opsx:new kreuzberg-reachable-vulns then /kbd-apply kreuzberg-reachable-vulns.",
+  "skipped": false,
+  "skipReason": null
+}

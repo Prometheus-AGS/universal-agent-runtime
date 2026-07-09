@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1",
+  "updatedAt": "2026-07-08T14:39:49Z",
+  "cursor": [
+    "uar-security-audit-alerts-gate-2026-07"
+  ],
+  "root": {
+    "type": "phase",
+    "id": "uar-security-audit-alerts-gate-2026-07",
+    "status": "executing",
+    "progress": {
+      "done": 2,
+      "total": 3
+    },
+    "children": [],
+    "annotations": [
+      {
+        "source": "evolver",
+        "ref": ".evolver/",
+        "summary": "evolutions: uar-evolution-2026-02,uar-production-readiness-2026-04"
+      }
+    ]
+  }
+}

@@ -949,14 +949,12 @@ impl PersistenceLayer for SurrealDbProvider {
         let rows: Vec<CostLedgerRow> = from_db_vec(json)?;
         Ok(rows
             .into_iter()
-            .map(
-                |r| crate::uar::persistence::CostEntry {
-                    scope: r.scope,
-                    scope_id: r.scope_id,
-                    cost_usd: r.cost_usd,
-                    recorded_at: r.recorded_at,
-                },
-            )
+            .map(|r| crate::uar::persistence::CostEntry {
+                scope: r.scope,
+                scope_id: r.scope_id,
+                cost_usd: r.cost_usd,
+                recorded_at: r.recorded_at,
+            })
             .collect())
     }
 }

@@ -1,0 +1,12 @@
+{
+  "stage": "execute",
+  "completedAt": "2026-07-08T12:56:13Z",
+  "outputs": [
+    "execution.md",
+    "progress.json"
+  ],
+  "nextStage": "reflect",
+  "summaryForNext": "Backend: openspec, self-executing via /kbd-apply. 3 changes dispatched: add-dependabot-alerts-ci-gate (frontier) first, blocked on a token-source product decision to resolve with the user; migrate-vite-rolldown-codesplitting (small) parallel; verify-dependabot-alerts-gate-live (small) last, may be operator-blocked on a real secret.",
+  "skipped": false,
+  "skipReason": null
+}

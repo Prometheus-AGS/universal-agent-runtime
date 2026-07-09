@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: prometheus-package-integration
+Phase: uar-security-audit-alerts-gate-2026-07
 Step: 3 of 3
-Stage: phase_closed_awaiting_next
-Next command: AWAITING USER DIRECTION on next phase focus (see reflection.md's 3 candidates: #14 carried-over test gap, cross-platform live verification, or a fresh Dependabot re-check). Once chosen, run /kbd-next-phase <name>.
+Stage: reflected
+Next command: /kbd-next-phase -- but this reflection has no single dominant high-priority recommendation; ask the user for direction before seeding.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — prometheus-package-integration (step 3 of 3)
+  Starting <kbd-skill> — uar-security-audit-alerts-gate-2026-07 (step 3 of 3)
   [do work]
-  Completed <kbd-skill> — prometheus-package-integration (step 3 of 3)
+  Completed <kbd-skill> — uar-security-audit-alerts-gate-2026-07 (step 3 of 3)

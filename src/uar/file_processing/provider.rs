@@ -49,6 +49,11 @@ pub enum ProcessingError {
     /// HTTP request error.
     #[error("HTTP error: {0}")]
     HttpError(String),
+
+    /// Input rejected or aborted by a resource-bounding guard (size cap,
+    /// extraction timeout) before or during processing.
+    #[error("Resource limit exceeded: {0}")]
+    ResourceLimitExceeded(String),
 }
 
 /// Trait for file processing providers.

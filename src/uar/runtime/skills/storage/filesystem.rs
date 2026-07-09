@@ -133,7 +133,7 @@ pub fn parse_skill_file(content: &str) -> anyhow::Result<(SkillManifest, String)
     let yaml = parts[1];
     let body = parts[2].trim().to_string();
 
-    let manifest: SkillManifest = serde_yml::from_str(yaml)?;
+    let manifest: SkillManifest = serde_norway::from_str(yaml)?;
     Ok((manifest, body))
 }
 
@@ -147,7 +147,7 @@ pub fn serialize_skill_to_md(skill: &Skill) -> anyhow::Result<String> {
         triggers: skill.triggers.clone(),
         tools: skill.preferred_tools.clone(),
     };
-    let yaml = serde_yml::to_string(&manifest)?;
+    let yaml = serde_norway::to_string(&manifest)?;
     let body = if skill.prompt_overlay.is_empty() {
         format!("# {}\n\n{}", skill.title, skill.description)
     } else {
