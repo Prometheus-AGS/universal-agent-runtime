@@ -37,6 +37,6 @@
 - [x] 4.1 Update `docs/BDD_SCENARIOS.md` (scenario 2 → PASS, bug note →
       fixed) and add the re-ingestion upgrade note where the docs-site change
       will pick it up.
-- [ ] 4.2 Commit, push, confirm bdd-chat.yml goes 6/6 green on real CI;
+- [x] 4.2 Commit, push, confirm bdd-chat.yml goes 6/6 green on real CI;
       update phase progress.json/waypoint; `openspec validate --strict` +
       archive.
