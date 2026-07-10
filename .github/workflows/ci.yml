@@ -9,6 +9,13 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  # Rust jobs don't need the embedded frontend bundle or the burn model
+  # regen — build.rs otherwise attempts a frontend install via npm (no pnpm
+  # on these jobs) and fails. Frontend correctness is covered by the
+  # dedicated "Frontend Check" job; the shipped bundle is built by the
+  # release/deploy workflows which set up pnpm properly.
+  SKIP_FRONTEND_BUILD: "1"
+  SKIP_MODEL_BUILD: "1"
 
 jobs:
   check:
