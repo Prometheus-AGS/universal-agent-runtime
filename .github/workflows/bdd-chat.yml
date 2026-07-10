@@ -55,6 +55,15 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
+      # @prometheus-ags/prometheus-entity-management's package.json points
+      # main/module/types at ./dist/* (tsup output) — pnpm install alone
+      # symlinks the workspace package but doesn't build it, so `dist/` is
+      # missing on a fresh checkout (5th real-dispatch failure: identical
+      # Rolldown resolution error, this time from use-thread-graph-sync.ts).
+      - name: Build entity-management workspace package
+        working-directory: frontend
+        run: pnpm --filter @prometheus-ags/prometheus-entity-management build
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
