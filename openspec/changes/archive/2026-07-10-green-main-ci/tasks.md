@@ -18,8 +18,11 @@
 
 ## 4. Verify + bookkeeping
 
-- [ ] 4.1 Push; real-dispatch/watch every touched workflow to green (or
+- [x] 4.1 Push; real-dispatch/watch every touched workflow to green (or
       explicitly advisory); iterate on newly surfaced failures, disclosing
-      each.
-- [ ] 4.2 Update phase progress.json/waypoint; openspec validate --strict;
+      each. (3 iterations: config_integration env-prefix fix b2a6e42;
+      microsandbox source-removal completion 25a4bb1 for cargo fmt;
+      workflow_mirror doctest double-unwrap e563d68. All 4 push workflows
+      green on e563d68: CI, Live Integration, BDD Chat, Deploy.)
+- [x] 4.2 Update phase progress.json/waypoint; openspec validate --strict;
       archive.

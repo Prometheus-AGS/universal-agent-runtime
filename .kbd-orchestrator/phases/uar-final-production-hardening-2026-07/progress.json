@@ -1,7 +1,7 @@
 {
   "phase": "uar-final-production-hardening-2026-07",
   "createdAt": "2026-07-10T02:45:00Z",
-  "updatedAt": "2026-07-10T05:25:00Z",
+  "updatedAt": "2026-07-10T15:20:00Z",
   "parentPhase": null,
   "childPhases": [],
   "childPointer": null,
@@ -14,7 +14,7 @@
   "previousPhase": "uar-production-ready-uiux-2026-07",
   "seedNote": "Created 2026-07-10 via direct /kbd-assess invocation with an operator mandate: '100% ready for customer use and consumption' is the ONLY success condition. Seeded from the prior phase's honest not-yet-shippable verdict: RAG retrieval broken (zero-vector embeddings), 2 open Dependabot alerts, Runtime Console gated placeholder panels, thin test coverage, config-surface traps (dead PORT/JWT_REQUIRED passthroughs), no public docs site. Assessment must additionally web-research current production-readiness practice and enumerate anything else blocking external use.",
   "changes_total": 9,
-  "changes_completed": 1,
+  "changes_completed": 2,
   "changes_ordered": [
     "fix-embeddings-fastembed",
     "green-main-ci",
@@ -28,7 +28,7 @@
   ],
   "change_status": {
     "fix-embeddings-fastembed": "DONE (2026-07-10) -- archived openspec/changes/archive/2026-07-10-fix-embeddings-fastembed/. Real BGE-small embeddings via fastembed 4.9.1 from on-disk ONNX (major pinned to 4 to share ort rc.9 with surreal-memory's mempalace-core; burn ONNX BERT import confirmed dead upstream). 11/11 tasks. Verified: lib 389/389, integration 59/59 incl. re-enabled rag_ingest_then_retrieve, live ingest->search 0.84 on previously-empty query, bdd-chat 6/6 LOCAL AND ON REAL CI (run 29070510582, '6 passed'). Also: embedding_provider config now truthful + warns on unknown values; zero-norm stale-index error logging; harness health timeout 10->30s (real ONNX session at boot).",
-    "green-main-ci": "IN PROGRESS -- ci.yml fix adopted, live-integration.yml invalid-YAML-since-inception fixed, 5 legacy/never-green workflows deleted (consolidation, design D2 revised); pushed aab85b0; awaiting CI+LiveIntegration+BDD conclusions for task 4.1.",
+    "green-main-ci": "DONE (2026-07-10) -- archived openspec/changes/archive/2026-07-10-green-main-ci/. 7/7 tasks. ci.yml fix adopted; live-integration.yml invalid-YAML-since-inception fixed; 5 never-green legacy workflows + template-cleanup.yml deleted (design D2 consolidation). Task 4.1 took 3 real-CI iterations, each un-masking the next failure: (1) tests/config_integration.rs used stale UAR__SECTION__KEY env double-prefix -- never ran in CI before, only in the deleted legacy workflows (fixed b2a6e42 + leaked test_config.yaml fixture removed 1fb5dbf); (2) cargo fmt fails on missing module files even behind cfg gates -- b2a6e42 had accidentally committed re-remediate-stale-rustsec's pre-staged microsandbox_runner deletion ahead of its companion edits; completed the source removal 25a4bb1 (disclosed); (3) select_recovery_candidate doctest single-unwrapped a Result<Option<...>> -- broken since the API changed, masked by cargo test fail-fast (fixed e563d68, 14/14 doctests green locally with CI feature set). FINAL: all 4 push workflows green on e563d68 (CI, Live Integration, BDD Chat, Deploy to AKS). INFRA: local disk hit 100% (linker SIGBUS); freed 64GB via target/debug/incremental.",
     "re-remediate-stale-rustsec": "IN PROGRESS -- quinn-proto 0.11.16 FIXED; hickory disclosure corrected (broken optional feature only); kreuzberg fork Prometheus-AGS/xberg branch security/lopdf-quickxml-bumps (lopdf 0.42, quick-xml 0.41, calamine 0.36, biblib 0.7) compiling.",
     "security-policy-and-community-files": "PENDING",
     "runtime-console-wire-or-remove": "PENDING",
@@ -38,11 +38,12 @@
     "release-1-0-0": "PENDING (LAST -- gates on all others green; first release ever)"
   },
   "completed_changes": [
-    "fix-embeddings-fastembed"
+    "fix-embeddings-fastembed",
+    "green-main-ci"
   ],
   "active_change": null,
   "blocked_changes": [],
-  "next_change": "green-main-ci",
+  "next_change": "re-remediate-stale-rustsec",
   "sourceTool": "claude-code",
   "createdBy": "kbd-assess (inline phase seed; no prior reflection recommendation selected)",
   "assessmentSummary": "100%-customer-ready mandate assessed. P0: fastembed-based real embeddings (RAG/KB/skills/intent all zero-vector today; burn ONNX confirmed dead upstream); green main (5 workflows red, ci.yml fix sits uncommitted in working tree); re-remediate 4 stale-ignored RUSTSEC families (patches now exist) + SECURITY.md/CRA. Dependabot already 0 open -- prior '2 alerts' claim outdated. P1: Runtime Console wire-or-remove (provider-health endpoint already exists), first-ever release (1.0.0 decision, GHCR/SBOM/cosign/CHANGELOG), docs site (GitHub Pages rec), PORT/JWT_REQUIRED dead passthroughs. P2: test hardening, SUPPORT/templates/licensing-clarity. 4 operator questions for plan time.",
