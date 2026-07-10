@@ -65,13 +65,13 @@
 - [x] 5.1 Add a CI job (new `bdd-chat.yml` or a job in an existing test
       workflow) running `test:bdd`, advisory (non-blocking) on first run per
       this change's design.md Open Questions.
-- [ ] 5.2 Dispatch the workflow for real (not just a dry run) and confirm it
+- [x] 5.2 Dispatch the workflow for real (not just a dry run) and confirm it
       executes on actual GitHub Actions infrastructure.
 
 ## 6. KBD + phase bookkeeping
 
-- [ ] 6.1 Update `.kbd-orchestrator/phases/uar-production-ready-uiux-2026-07/progress.json`
+- [x] 6.1 Update `.kbd-orchestrator/phases/uar-production-ready-uiux-2026-07/progress.json`
       and `current-waypoint.json`: mark `bdd-chat-scenario-suite` DONE,
       advance `next_change` to `bootstrap-docusaurus-site`.
-- [ ] 6.2 Run `openspec archive bdd-chat-scenario-suite` (or `/opsx:archive`)
+- [x] 6.2 Run `openspec archive bdd-chat-scenario-suite` (or `/opsx:archive`)
       once all tasks are verified complete.
