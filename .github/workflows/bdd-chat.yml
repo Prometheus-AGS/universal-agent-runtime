@@ -45,6 +45,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # frontend/ is its own pnpm workspace (own pnpm-lock.yaml), separate
+      # from root's — matching ci.yml's "Frontend Check" job. Without this,
+      # cargo build's build.rs frontend-bootstrap step fails to resolve the
+      # local workspace package `@prometheus-ags/prometheus-entity-management`
+      # on a fresh checkout (confirmed via this workflow's 4th real dispatch:
+      # "Rolldown failed to resolve import ...prometheus-entity-management").
+      - name: Install frontend workspace
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
