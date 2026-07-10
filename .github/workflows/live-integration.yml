@@ -40,4 +40,4 @@ jobs:
 
       - name: Run live integration tier (recorded backend)
         continue-on-error: true
-        run: cargo test --test integration live::
+        run: "cargo test --test integration live::"
