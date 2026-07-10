@@ -26,6 +26,9 @@ jobs:
           submodules: recursive
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
+
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
