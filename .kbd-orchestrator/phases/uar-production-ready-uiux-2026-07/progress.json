@@ -1,7 +1,7 @@
 {
   "phase": "uar-production-ready-uiux-2026-07",
   "createdAt": "2026-07-08T16:42:58Z",
-  "updatedAt": "2026-07-08T19:20:00Z",
+  "updatedAt": "2026-07-09T00:00:00Z",
   "parentPhase": null,
   "childPhases": [],
   "childPointer": null,
@@ -20,8 +20,8 @@
     "phase_structure": "RESOLVED via AskUserQuestion (2026-07-08): user chose to keep this as ONE FLAT PHASE rather than splitting the BDD (Round 3) or Docusaurus (Round 4) tracks into child phases. All 9 changes execute + reflect under uar-production-ready-uiux-2026-07 directly.",
     "a2ui_testing_page_rescoped": "RESOLVED via AskUserQuestion (2026-07-09): user rejected the plan's default 'remove A2uiTestingPage' recommendation for retire-a2ui-testing-page-from-prod -- 'It seems we need something like that.' Investigation found the real A2UI round-trip (agent requests input -> A2uiInputBlock renders -> real /artifact-response endpoint -> agent resumes) already works end-to-end in production chat; the actual gap was narrower (no way to trigger it on demand for testing). User chose to reuse the real chat components against a real run (new backend test-trigger endpoint + reworked test page), not a standalone mock preview. Change renamed retire-a2ui-testing-page-from-prod -> upgrade-a2ui-testing-live-round-trip; original openspec change dir deleted (3/7 tasks had been done then reverted -- nav/PAGE_MAP edits restored to original before renaming)."
   },
-  "changes_total": 9,
-  "changes_completed": 6,
+  "changes_total": 8,
+  "changes_completed": 8,
   "changes_ordered": [
     "fix-comprehensive-tests-ci-gate",
     "fix-auth-revoke-key-error-surfacing",
@@ -60,5 +60,13 @@
   "assessmentSummary": "HEADLINE FINDING: comprehensive-tests.yml + tests-full.yml have NEVER passed their Pre-flight/Prerequisite check since the initial commit (2026-01-19) -- both require test-config.yaml, which has never existed. Traces to an abandoned Spec Kit feature (specs/001-testing-infrastructure/, 0/74 tasks complete) whose partial dead-code (src/testing/) was already deleted in a prior phase without cleaning up the spec or the 2 broken workflows referencing it. This exact bug was already found by docs/CODEX_ASSESSMENT.md (2025-12-31) and never fixed. Both user-mandated load-bearing capabilities (chat+agent-config, provider/model-config) confirmed genuinely solid, no facades. Found 4 concrete dead facades in Runtime Console (Protocols page entirely, Cockpit's Provider Health + Memory Activity panels, Runs page Artifacts panel, 1 dead Inspect button with no onClick) plus 1 non-essential page (A2uiTestingPage, dev-only tooling shipping to prod nav) and 1 minor bug (auth revokeKey swallows errors). Re-verified 5 old carryover items: 3 resolved (credentials UI, agent-config error surfacing, skill-activation-outcome now recorded backend-side), 2 still open (CH-06 per-agent budget config UI, Protocols page gating). cargo test --lib 387/1/0, frontend vitest 46/46 but thin (12/206 files ~5.8%), e2e Playwright 40 tests/12 files parse cleanly but not executed live this session. Sycophancy self-check: 0.018.",
   "next_session_priorities": [
     "Round 1 + Round 2 COMPLETE (6/9 total). Round 2 (Runtime Console dead-facade cluster) resolved via AskUserQuestion: cheap gating-banner fix for all 3 changes, plus a real fix for the previously-dead Inspect button (now wired to real run selection/navigation). Next: Round 3 -- bdd-chat-scenario-suite (independent, no blockers). Then Round 4 -- bootstrap-docusaurus-site (needs hosting/deployment target from the user), refresh-readme-diagrams-and-branding (no blockers). 3 follow-up items surfaced by the Round-1 CI fix remain untriaged into this phase's plan: (a) comprehensive-tests.yml's inline cargo audit needs the same --ignore list as security-audit.yml, (b) root bun.lockb needs regenerating (frozen-lockfile drift), (c) docker-compose.test.yaml's surreal/unstructured health checks need longer timeout or startup-time investigation. Also noted during Round-1 push: 2 new GitHub Dependabot alerts (1 high, 1 moderate) not yet triaged into any phase."
-  ]
+  ],
+  "deferred": [
+    {
+      "change": "bootstrap-docusaurus-site",
+      "reason": "blocked on hosting/deployment target not provided; deferred to a future phase",
+      "date": "2026-07-09"
+    }
+  ],
+  "rescope_note": "changes_total 9->8 on 2026-07-09 per operator decision: bootstrap-docusaurus-site deferred (blocked on hosting target). Phase now 8/8 complete."
 }
