@@ -73,6 +73,8 @@ config.yaml
 tests/coverage/
 test-results/
 playwright-report/
+.features-gen/
+tests/bdd/cucumber-report.json
 coverage/
 coverage_report/
 *.prof*

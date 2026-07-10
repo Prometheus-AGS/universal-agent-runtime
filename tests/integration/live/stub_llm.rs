@@ -15,7 +15,7 @@
 
 use std::collections::HashMap;
 use std::net::TcpListener as StdTcpListener;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use axum::{
     Json, Router,
@@ -110,6 +110,12 @@ impl FixtureSet {
 
 /// A running stub server. Drop (or let it fall out of scope) to stop it —
 /// the underlying task is aborted when `handle` is dropped.
+///
+/// `#[allow(dead_code)]`: this file is also included by `src/bin/stub-llm.rs`
+/// (a separate compilation unit) via `#[path]`, which only uses `serve` —
+/// `start_stub_llm`/`StubLlmServer`/`find_free_port` are dead in that unit
+/// but live, used code in `tests/bdd.rs`'s.
+#[allow(dead_code)]
 pub struct StubLlmServer {
     pub base_url: String,
     handle: tokio::task::JoinHandle<()>,
@@ -121,6 +127,7 @@ impl Drop for StubLlmServer {
     }
 }
 
+#[allow(dead_code)]
 fn find_free_port() -> u16 {
     StdTcpListener::bind("127.0.0.1:0")
         .expect("bind ephemeral port")
@@ -129,16 +136,50 @@ fn find_free_port() -> u16 {
         .port()
 }
 
-/// Start the stub server on a free loopback port and return its base URL
-/// (e.g. `http://127.0.0.1:54321/v1`), suitable for `UAR_LLM__BASE_URL`.
-pub async fn start_stub_llm(fixtures: FixtureSet) -> StubLlmServer {
-    let port = find_free_port();
-    let state = Arc::new(fixtures);
+/// Shared state: the fixture table plus a log of every raw request body
+/// received, so callers that need to prove something about the *request*
+/// (e.g. that a system prompt actually contains RAG-retrieved content, which
+/// `RequestFingerprint` deliberately does not key on) can inspect it via
+/// `/_stub/requests` instead of only observing which canned response routed.
+struct AppState {
+    fixtures: FixtureSet,
+    log: Mutex<Vec<Value>>,
+}
 
-    let app = Router::new()
+fn build_router(fixtures: FixtureSet) -> Router {
+    let state = Arc::new(AppState {
+        fixtures,
+        log: Mutex::new(Vec::new()),
+    });
+    Router::new()
         .route("/v1/models", get(models_handler))
         .route("/v1/chat/completions", post(chat_completions_handler))
-        .with_state(state);
+        .route(
+            "/_stub/requests",
+            get(list_requests_handler).post(reset_requests_handler),
+        )
+        .with_state(state)
+}
+
+/// Every raw request body received by `/v1/chat/completions` so far, in
+/// order. Lets a caller assert on system-prompt content (e.g. RAG context,
+/// skill overlays) that the response-routing fingerprint never inspects.
+async fn list_requests_handler(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let log = state.log.lock().expect("stub request log poisoned");
+    Json(json!({ "requests": log.clone() }))
+}
+
+async fn reset_requests_handler(State(state): State<Arc<AppState>>) -> StatusCode {
+    state.log.lock().expect("stub request log poisoned").clear();
+    StatusCode::NO_CONTENT
+}
+
+/// Start the stub server on a free loopback port and return its base URL
+/// (e.g. `http://127.0.0.1:54321/v1`), suitable for `UAR_LLM__BASE_URL`.
+#[allow(dead_code)]
+pub async fn start_stub_llm(fixtures: FixtureSet) -> StubLlmServer {
+    let port = find_free_port();
+    let app = build_router(fixtures);
 
     let listener = TcpListener::bind(format!("127.0.0.1:{port}"))
         .await
@@ -154,6 +195,16 @@ pub async fn start_stub_llm(fixtures: FixtureSet) -> StubLlmServer {
     }
 }
 
+/// Serve the stub on an already-bound listener, blocking forever. Used by the
+/// standalone `stub-llm` binary (`src/bin/stub-llm.rs`) so Playwright's
+/// `webServer` can boot it as a separate OS process, unlike `start_stub_llm`
+/// which spawns an in-process task for use within a single test binary.
+#[allow(dead_code)]
+pub async fn serve(listener: TcpListener, fixtures: FixtureSet) {
+    let app = build_router(fixtures);
+    axum::serve(listener, app).await.expect("stub llm server");
+}
+
 /// Minimal `/v1/models` so the same health check
 /// (`scripts/live-integration.sh`) used against the real proxy also passes
 /// against the stub.
@@ -162,11 +213,17 @@ async fn models_handler() -> Json<Value> {
 }
 
 async fn chat_completions_handler(
-    State(fixtures): State<Arc<FixtureSet>>,
+    State(state): State<Arc<AppState>>,
     Json(body): Json<Value>,
 ) -> Response {
+    state
+        .log
+        .lock()
+        .expect("stub request log poisoned")
+        .push(body.clone());
+
     let fingerprint = RequestFingerprint::from_request_body(&body);
-    let Some(fixture) = fixtures.responses.get(&fingerprint) else {
+    let Some(fixture) = state.fixtures.responses.get(&fingerprint) else {
         return (
             StatusCode::NOT_FOUND,
             Json(json!({

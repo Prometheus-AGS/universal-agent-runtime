@@ -8,6 +8,7 @@
     "dev": "cargo run --bin universal-agent-runtime & pnpm -C frontend dev",
     "test": "pnpm -C frontend test",
     "test:e2e": "pnpm -C frontend test:e2e",
+    "test:bdd": "cargo build --bin stub-llm --bin universal-agent-runtime && bddgen test -c tests/bdd/playwright.config.ts && playwright test -c tests/bdd/playwright.config.ts",
     "lint": "pnpm -C frontend lint",
     "typecheck": "pnpm -C frontend typecheck",
     "format": "pnpm exec prettier --write frontend/src/",
@@ -17,6 +18,7 @@
     "tauri:build": "tauri build"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^13.0.0",
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/cli": "^4.1.18",
@@ -28,6 +30,7 @@
     "eslint": "^9.17.0",
     "monocart-coverage-reports": "^2.11.0",
     "playwright": "^1.57.0",
+    "playwright-bdd": "^9.2.0",
     "prettier": "^3.7.4",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",

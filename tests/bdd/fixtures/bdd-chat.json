@@ -1,0 +1,108 @@
+[
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "What is 2 plus 2?",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "2 plus 2 is 4." }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "What is 2 plus 2?",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "2 plus 2 is 4." }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "What is the secret onboarding code mentioned in the handbook?",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "The secret onboarding code is ZEBRA-42." }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "What is the secret onboarding code mentioned in the handbook?",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "The secret onboarding code is ZEBRA-42." }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Please run diagnostics on the system.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "Diagnostics complete: all systems nominal." }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Please run diagnostics on the system.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "Diagnostics complete: all systems nominal." }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Echo this via the bdd tool-call scenario.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "tool_call",
+      "name": "native_echo",
+      "arguments": "{\"text\":\"echo this via the bdd tool-call scenario\"}"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Echo this via the bdd tool-call scenario.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "tool_call",
+      "name": "native_echo",
+      "arguments": "{\"text\":\"echo this via the bdd tool-call scenario\"}"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Echo this via the bdd tool-call scenario.",
+    "has_tools": true,
+    "has_tool_result": true,
+    "response": { "kind": "content", "text": "echoed via the tool loop" }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Echo this via the bdd tool-call scenario.",
+    "has_tools": true,
+    "has_tool_result": true,
+    "response": { "kind": "content", "text": "echoed via the tool loop" }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Which agent is answering?",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "Answered by Agent Aurora." }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Which agent is answering?",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "Answered by Agent Aurora." }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "Which agent is answering?",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "Answered by Agent Borealis." }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "Which agent is answering?",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "Answered by Agent Borealis." }
+  }
+]

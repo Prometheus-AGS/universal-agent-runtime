@@ -1,0 +1,501 @@
+[
+  {
+    "description": "  As a user with more than one agent available\n  I want switching the active agent to actually change who answers\n  So that agent selection isn't just cosmetic",
+    "elements": [
+      {
+        "description": "",
+        "id": "chat-with-agent-selection-and-mid-session-switching;switching-agent-changes-the-answering-agent",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Switching agent changes the answering agent",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "two agents \"BDD Agent Aurora\" (model \"openai/gpt-5.4-mini\") and \"BDD Agent Borealis\" (model \"bdd-provider-b/claude-5-haiku\") exist",
+            "result": {
+              "status": "passed",
+              "duration": 266000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "a fresh conversation using \"BDD Agent Aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 10624000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I send the message \"Which agent is answering?\"",
+            "result": {
+              "status": "passed",
+              "duration": 1749000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the assistant responds with content containing \"Agent Aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 49000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 11,
+            "name": "I switch the active agent to \"BDD Agent Borealis\"",
+            "result": {
+              "status": "passed",
+              "duration": 441000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "I send the message \"Which agent is answering?\"",
+            "result": {
+              "status": "passed",
+              "duration": 2381000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "the assistant responds with content containing \"Agent Borealis\"",
+            "result": {
+              "status": "passed",
+              "duration": 20000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 314000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "chat-with-agent-selection-and-mid-session-switching",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Chat with agent selection and mid-session switching",
+    "tags": [],
+    "uri": "features/chat-agent-switching.feature"
+  },
+  {
+    "description": "  As a user with a knowledge base attached to my agent\n  I want retrieved document content to actually reach the LLM call\n  So that answers are grounded in my ingested documents, not generic",
+    "elements": [
+      {
+        "description": "",
+        "id": "chat-with-a-knowledge-base-enabled,-retrieval-influencing-the-response;retrieval-influenced-response",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Retrieval-influenced response",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I have ingested a knowledge base document containing \"The secret onboarding code is ZEBRA-42.\"",
+            "result": {
+              "status": "passed",
+              "duration": 409000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "a fresh conversation with an agent scoped to that knowledge base",
+            "result": {
+              "status": "passed",
+              "duration": 10092000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I ask \"What is the secret onboarding code mentioned in the handbook?\"",
+            "result": {
+              "status": "passed",
+              "duration": 992000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the assistant responds with content containing \"ZEBRA-42\"",
+            "result": {
+              "status": "passed",
+              "duration": 20000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "the outgoing request's system prompt actually contains \"The secret onboarding code is ZEBRA-42.\"",
+            "result": {
+              "status": "failed",
+              "duration": 15000000,
+              "error_message": "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"The secret onboarding code is ZEBRA-42.\"\nReceived string:    \"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\"\n\n   at ../steps/kb-retrieval.steps.ts:25\n\n  23 |   const last = requests.at(-1);\n  24 |   expect(last, 'expected at least one captured stub-LLM request').toBeTruthy();\n> 25 |   expect(systemPromptOf(last!)).toContain(phrase);\n     |                                 ^\n  26 | });\n  27 |\n\n    at Object.<anonymous> (/usr/local/src/universal-agent-runtime/tests/bdd/steps/kb-retrieval.steps.ts:25:33)\n    at BddStepInvoker.runWithAfterStepHooks (/usr/local/src/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.60.0/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/usr/local/src/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.60.0/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /usr/local/src/universal-agent-runtime/tests/bdd/.features-gen/features/chat-kb-retrieval.feature.spec.js:11:5"
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 182000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 197000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "chat-with-a-knowledge-base-enabled,-retrieval-influencing-the-response",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Chat with a knowledge base enabled, retrieval influencing the response",
+    "tags": [],
+    "uri": "features/chat-kb-retrieval.feature"
+  },
+  {
+    "description": "  As a user configuring which agent (and therefore which provider/model) answers\n  I want the outgoing LLM request's model field to actually change\n  So that provider/model configuration is a real routing decision, not just display state",
+    "elements": [
+      {
+        "description": "",
+        "id": "chat-with-provider/model-configuration-affecting-the-answering-model;model-configuration-changes-the-answering-model",
+        "keyword": "Scenario",
+        "line": 11,
+        "name": "Model configuration changes the answering model",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 12,
+            "name": "two agents \"BDD Agent Aurora\" (model \"openai/gpt-5.4-mini\") and \"BDD Agent Borealis\" (model \"bdd-provider-b/claude-5-haiku\") exist",
+            "result": {
+              "status": "passed",
+              "duration": 137000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 13,
+            "name": "a fresh conversation using \"BDD Agent Aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 9395000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 14,
+            "name": "I send the message \"Which agent is answering?\"",
+            "result": {
+              "status": "passed",
+              "duration": 1830000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 15,
+            "name": "the outgoing request's model field is \"gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 27000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 16,
+            "name": "I switch the active agent to \"BDD Agent Borealis\"",
+            "result": {
+              "status": "passed",
+              "duration": 439000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "I send the message \"Which agent is answering?\"",
+            "result": {
+              "status": "passed",
+              "duration": 1376000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 18,
+            "name": "the outgoing request's model field is \"claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 17000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 224000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "chat-with-provider/model-configuration-affecting-the-answering-model",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Chat with provider/model configuration affecting the answering model",
+    "tags": [],
+    "uri": "features/chat-model-routing.feature"
+  },
+  {
+    "description": "  As a user with no knowledge base configured for my agent\n  I want a plain chat response with no retrieval-related UI\n  So that I can trust the chat works standalone, without requiring a KB",
+    "elements": [
+      {
+        "description": "",
+        "id": "chat-with-no-knowledge-base-attached;plain-chat-with-no-knowledge-base",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Plain chat with no knowledge base",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a fresh conversation with an agent that has no knowledge bases attached",
+            "result": {
+              "status": "passed",
+              "duration": 8240000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I send the message \"What is 2 plus 2?\"",
+            "result": {
+              "status": "passed",
+              "duration": 2155000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the assistant responds with content containing \"2 plus 2 is 4\"",
+            "result": {
+              "status": "passed",
+              "duration": 45000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "no knowledge-base retrieval indicator is shown in the transcript",
+            "result": {
+              "status": "passed",
+              "duration": 37000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 255000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "chat-with-no-knowledge-base-attached",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Chat with no knowledge base attached",
+    "tags": [],
+    "uri": "features/chat-no-kb.feature"
+  },
+  {
+    "description": "  As a user whose message matches a configured skill's trigger\n  I want the frontend to visibly show which skill activated\n  So that I can trust the system is actually applying the skill, not just replying generically",
+    "elements": [
+      {
+        "description": "",
+        "id": "chat-with-a-skill-activated-mid-conversation;skill-visibly-activates-mid-conversation",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Skill visibly activates mid-conversation",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a fresh conversation with an agent bound to a skill triggered by the keyword \"diagnostics\"",
+            "result": {
+              "status": "passed",
+              "duration": 10064000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I send the message \"Please run diagnostics on the system.\"",
+            "result": {
+              "status": "passed",
+              "duration": 2369000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the assistant responds with content containing \"Diagnostics complete\"",
+            "result": {
+              "status": "passed",
+              "duration": 22000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "a skill-activation indicator for \"BDD Diagnostics Skill\" is shown in the transcript",
+            "result": {
+              "status": "passed",
+              "duration": 9000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 1272000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "chat-with-a-skill-activated-mid-conversation",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Chat with a skill activated mid-conversation",
+    "tags": [],
+    "uri": "features/chat-skill-activation.feature"
+  },
+  {
+    "description": "  As a user whose message triggers a tool call\n  I want to see both the tool invocation and its result in the transcript\n  So that I can trust the agent actually used a tool, not just described using one",
+    "elements": [
+      {
+        "description": "",
+        "id": "chat-with-a-tool-call,-invocation-and-result-surfaced-in-the-transcript;tool-call-invoked-and-result-surfaced",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Tool call invoked and result surfaced",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a fresh conversation with an agent that has tools enabled",
+            "result": {
+              "status": "passed",
+              "duration": 10242000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I send the message \"Echo this via the bdd tool-call scenario.\"",
+            "result": {
+              "status": "passed",
+              "duration": 1920000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "a tool-call block for \"native_echo\" is shown in the transcript",
+            "result": {
+              "status": "passed",
+              "duration": 43000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "the tool-call result contains \"echoed via the tool loop\"",
+            "result": {
+              "status": "passed",
+              "duration": 283000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 281000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "chat-with-a-tool-call,-invocation-and-result-surfaced-in-the-transcript",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Chat with a tool call, invocation and result surfaced in the transcript",
+    "tags": [],
+    "uri": "features/chat-tool-call.feature"
+  }
+]

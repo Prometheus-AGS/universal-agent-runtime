@@ -1,0 +1,63 @@
+<!doctype html><html><head><meta charset="utf-8"><title>bdd-chat certification bundle — cf37653</title></head>
+<body style="font-family:system-ui,sans-serif;max-width:900px;margin:32px auto;padding:0 16px">
+<h1>bdd-chat certification bundle</h1>
+<p>Commit: <code>cf37653ca1b54aab6f385c3293eba220e21379cc</code></p>
+<p>5/6 scenarios pass. The one failure (Retrieval-influenced response) is a confirmed real product bug
+(RAG search returns zero matches even for an exact-phrase document match — see
+<code>openspec/changes/bdd-chat-scenario-suite/design.md</code>'s Findings section and <code>docs/BDD_SCENARIOS.md</code>),
+deliberately left failing rather than weakened.</p>
+
+        <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px">
+          <h3 style="margin:0 0 8px">Chat with agent selection and mid-session switching <span style="color:#1a7f37;font-size:0.8em">[PASS]</span></h3>
+          <p style="margin:0 0 8px;color:#555">Switching agent changes the answering agent</p>
+          <video controls width="480" src="videos/features-chat-agent-switch-9a6eb-changes-the-answering-agent.mp4"></video>
+          
+        </div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px">
+          <h3 style="margin:0 0 8px">Chat with a knowledge base enabled, retrieval influencing the response <span style="color:#c9302c;font-size:0.8em">[FAIL]</span></h3>
+          <p style="margin:0 0 8px;color:#555">Retrieval-influenced response</p>
+          <video controls width="480" src="videos/features-chat-kb-retrieval-f284a-trieval-influenced-response.mp4"></video>
+          <pre style="white-space:pre-wrap;color:#c9302c;background:#fff5f5;padding:8px;border-radius:4px">Error: expect(received).toContain(expected) // indexOf
+
+Expected substring: &quot;The secret onboarding code is ZEBRA-42.&quot;
+Received string:    &quot;You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.&quot;
+
+   at ../steps/kb-retrieval.steps.ts:25
+
+  23 |   const last = requests.at(-1);
+  24 |   expect(last, &#x27;expected at least one captured stub-LLM request&#x27;).toBeTruthy();
+&gt; 25 |   expect(systemPromptOf(last!)).toContain(phrase);
+     |                                 ^
+  26 | });
+  27 |
+
+    at Object.&lt;anonymous&gt; (/usr/local/src/universal-agent-runtime/tests/bdd/steps/kb-retrieval.steps.ts:25:33)
+    at BddStepInvoker.runWithAfterStepHooks (/usr/local/src/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.60.0/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)
+    at BddStepInvoker.invoke (/usr/local/src/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.0_@playwright+test@1.60.0/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)
+    at /usr/local/src/universal-agent-runtime/tests/bdd/.features-gen/features/chat-kb-retrieval.feature.spec.js:11:5</pre>
+        </div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px">
+          <h3 style="margin:0 0 8px">Chat with provider/model configuration affecting the answering model <span style="color:#1a7f37;font-size:0.8em">[PASS]</span></h3>
+          <p style="margin:0 0 8px;color:#555">Model configuration changes the answering model</p>
+          <video controls width="480" src="videos/features-chat-model-routin-1191a-changes-the-answering-model.mp4"></video>
+          
+        </div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px">
+          <h3 style="margin:0 0 8px">Chat with no knowledge base attached <span style="color:#1a7f37;font-size:0.8em">[PASS]</span></h3>
+          <p style="margin:0 0 8px;color:#555">Plain chat with no knowledge base</p>
+          <video controls width="480" src="videos/features-chat-no-kb.featur-7c2c7-chat-with-no-knowledge-base.mp4"></video>
+          
+        </div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px">
+          <h3 style="margin:0 0 8px">Chat with a skill activated mid-conversation <span style="color:#1a7f37;font-size:0.8em">[PASS]</span></h3>
+          <p style="margin:0 0 8px;color:#555">Skill visibly activates mid-conversation</p>
+          <video controls width="480" src="videos/features-chat-skill-activa-3b818--activates-mid-conversation.mp4"></video>
+          
+        </div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin-bottom:16px">
+          <h3 style="margin:0 0 8px">Chat with a tool call, invocation and result surfaced in the transcript <span style="color:#1a7f37;font-size:0.8em">[PASS]</span></h3>
+          <p style="margin:0 0 8px;color:#555">Tool call invoked and result surfaced</p>
+          <video controls width="480" src="videos/features-chat-tool-call.fe-f62cb-invoked-and-result-surfaced.mp4"></video>
+          
+        </div>
+</body></html>

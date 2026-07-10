@@ -1,6 +1,5 @@
 import { useMemo } from "react";
-import { useEntityView, useGraphStore } from "@prometheus-ags/prometheus-entity-management";
-import type { FilterClause, ViewDescriptor } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
 import type { AgentEntity } from "@/entities/types";
 
 const EMPTY_AGENTS: AgentEntity[] = [];
@@ -8,35 +7,43 @@ const EMPTY_AGENTS: AgentEntity[] = [];
 /**
  * Live, filterable view of all Agent entities in the graph.
  *
- * Sorted alphabetically by name.
- * Supports optional free-text search across name and description,
+ * Sorted alphabetically by title.
+ * Supports optional free-text search across title and description,
  * and optional status filtering (active/draft/disabled).
+ *
+ * Previously used `useEntityView` (the library's deprecated local-list
+ * hook), which derives its visible ids from `graph.lists[baseKey]` — a
+ * list index only ever written by `setListResult`/`appendListResult`.
+ * `loadAgentsIntoGraph()` only calls `upsertEntity` (entity *data*, no list
+ * index), so that list key was NEVER populated: the agent selector's
+ * popover showed "Loading agents..." forever, for every agent, not just
+ * newly-created ones. `useGraphEntities` (already the working pattern for
+ * `useModels`/`useAgentsByStatus` above) reads entities directly and has
+ * no such list-index dependency.
  */
-export function useAgents(searchTerm?: string, statusFilter?: string) {
-  const filter = useMemo<FilterClause[] | undefined>(() => {
-    if (!statusFilter || statusFilter === "all") return undefined;
-    return [{ field: "status", op: "eq" as const, value: statusFilter }];
-  }, [statusFilter]);
+export function useAgents(searchTerm?: string, statusFilter?: string): { items: AgentEntity[] } {
+  const agentMap = useGraphStore((state) => state.entities["Agent"]);
 
-  const view = useMemo<ViewDescriptor>(() => {
-    const baseFilter: FilterClause[] = filter ? [...filter] : [];
+  const items = useMemo(() => {
+    const all = Object.values(agentMap ?? {}) as unknown as AgentEntity[];
+    const needle = searchTerm?.trim().toLowerCase();
 
-    return {
-      filter: baseFilter.length > 0 ? baseFilter : undefined,
-      sort: [{ field: "name", direction: "asc" as const }],
-      search:
-        searchTerm && searchTerm.length > 0
-          ? { query: searchTerm, fields: ["name", "description"], minChars: 1 }
-          : undefined,
-    };
-  }, [searchTerm, filter]);
+    const filtered = all.filter((a) => {
+      if (statusFilter && statusFilter !== "all" && (a as unknown as Record<string, unknown>).status !== statusFilter) {
+        return false;
+      }
+      if (needle) {
+        const title = a.metadata?.title?.toLowerCase() ?? "";
+        const description = a.metadata?.description?.toLowerCase() ?? "";
+        if (!title.includes(needle) && !description.includes(needle)) return false;
+      }
+      return true;
+    });
 
-  return useEntityView<AgentEntity>({
-    type: "Agent",
-    baseQueryKey: ["agents", searchTerm ?? "", statusFilter ?? ""],
-    view,
-    mode: "local",
-  });
+    return filtered.sort((a, b) => (a.metadata?.title ?? "").localeCompare(b.metadata?.title ?? ""));
+  }, [agentMap, searchTerm, statusFilter]);
+
+  return { items: items.length > 0 ? items : EMPTY_AGENTS };
 }
 
 /**

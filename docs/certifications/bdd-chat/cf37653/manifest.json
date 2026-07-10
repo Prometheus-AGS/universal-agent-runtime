@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-10T00:14:21Z",
+  "git_sha": "cf37653ca1b54aab6f385c3293eba220e21379cc",
+  "module": "bdd-chat",
+  "module_fingerprint": "sha256:c40b906d3139626664d046fa663e63718e3dd98d54cb4dfa627740b5803c0f1e",
+  "artifacts": [
+    {
+      "path": "cucumber-report.json",
+      "sha256": "8b5539c924fe72f243d5b9a976e1510de4fe551359070c355b97e23685d18246",
+      "bytes": 17308
+    },
+    {
+      "path": "videos/features-chat-agent-switch-9a6eb-changes-the-answering-agent.mp4",
+      "sha256": "695ca5069e6707fcb360f721ec1d79a45231a88e0e6e8d7d6b3d81ae38a25925",
+      "bytes": 98071
+    },
+    {
+      "path": "videos/features-chat-kb-retrieval-f284a-trieval-influenced-response.mp4",
+      "sha256": "b15bf4d887954e43da73779f5b8e3a6601ce5fea73361914e2025dfa7d5ce033",
+      "bytes": 70599
+    },
+    {
+      "path": "videos/features-chat-model-routin-1191a-changes-the-answering-model.mp4",
+      "sha256": "0d1e573d2a9df38ad13bd03b0482e3c3e9adb18d7c93f0852dc1880765fc8274",
+      "bytes": 89392
+    },
+    {
+      "path": "videos/features-chat-no-kb.featur-7c2c7-chat-with-no-knowledge-base.mp4",
+      "sha256": "aa528d020d31f7a51e4e5b2605f136a1ca30cb72a4d8c62db527527057974c82",
+      "bytes": 78607
+    },
+    {
+      "path": "videos/features-chat-skill-activa-3b818--activates-mid-conversation.mp4",
+      "sha256": "e187e32829716d1fe9fed1175e019c00f290ea41d1e5aba254728ff6faed5b2b",
+      "bytes": 74008
+    },
+    {
+      "path": "videos/features-chat-tool-call.fe-f62cb-invoked-and-result-surfaced.mp4",
+      "sha256": "84c9af0881f66cf5ae2f7ece29d68cdd8015106c65eadb7d8190c3492dc738e8",
+      "bytes": 76558
+    }
+  ],
+  "runtime": {
+    "cucumber_version": "13.0.0",
+    "playwright_version": "1.60.0",
+    "runner": "playwright-bdd"
+  }
+}
