@@ -122,3 +122,68 @@ follow-up regardless of which direction is chosen.
 _Sycophancy self-check: this reflection records 2 PARTIAL goals, a deferred
 change, honest-placeholder tech debt, and a mis-diagnosis (the "pull loop") — it
 does not overstate completion._
+
+## Addendum (2026-07-10): a second, complementary `bdd-chat-scenario-suite` track
+
+A concurrent Claude Code session was independently executing change 7/9
+(`bdd-chat-scenario-suite`) at the same time this reflection's session landed
+its own version and closed the phase — neither session was aware of the
+other's work until the second session tried to push and hit a diverged
+`origin/main`. Per the operator's explicit direction (asked live via
+`AskUserQuestion` when the conflict surfaced), **both implementations were
+merged as complementary** rather than one replacing the other — they test
+different layers and don't overlap:
+
+- **Already reflected above**: `tests/bdd.rs` + `tests/features/chat.feature`
+  — API-level, on the existing Rust cucumber-rs harness. 5 scenarios
+  (single-turn, multi-turn, tool-call round trip, streaming, malformed-request),
+  9/9 scenarios / 49/49 steps green.
+- **Added by the second session**: `tests/bdd/` — a Playwright + Cucumber.js
+  **browser-level** suite (`pnpm test:bdd`), driving the real UI against a new
+  deterministic stub-llm binary (`src/bin/stub-llm.rs` + a `/_stub/requests`
+  introspection endpoint). 6 scenarios: no-KB, KB-influenced retrieval, skill
+  activation, tool calls, agent switching, provider/model routing. **5/6
+  scenarios pass**, verified on real GitHub Actions
+  (`.github/workflows/bdd-chat.yml`, advisory) after 6 rounds of real-dispatch
+  CI fixes (pnpm version pin, Node 22 for pnpm 11, `protobuf-compiler` for the
+  A2A gRPC `build.rs` step, frontend's own separate pnpm workspace install,
+  and an explicit `tsup` build step for the `@prometheus-ags/prometheus-entity-management`
+  workspace package — none of which any prior CI job needed because none of
+  them ran `cargo build` cold on a truly fresh checkout the way this one does).
+
+**Two real findings from the browser-level suite, beyond test coverage
+itself:**
+
+- **Fixed as part of this addendum**: the agent-selector popover
+  (`frontend/src/features/chat/agent-selector.tsx`) was **permanently
+  broken for every user, not just test-created agents** — stuck on "Loading
+  agents..." forever. Root cause: `loadAgentsIntoGraph()` only called the
+  entity-management library's `upsertEntity()` (writes entity data), never
+  populated `graph.lists[baseKey]` — the list index the deprecated
+  `useEntityView()` hook (used by `useAgents()`) actually reads from. This is
+  the same failure class Goal 2 was built around ("does it actually function,
+  not just render") and would not have been caught by the API-level suite.
+  Fixed by rewriting `frontend/src/entities/hooks/use-agents.ts` to use the
+  same `useGraphStore`-selector pattern already proven by `useModels()` /
+  `useAgentsByStatus()` in this codebase — no more dependency on the
+  deprecated hook. Confirmed via the suite's `chat-agent-switching` and
+  `chat-model-routing` scenarios, which exercise real UI-driven agent
+  switching end-to-end.
+- **Confirmed (not fixed — real product bug, disclosed, left failing)**: KB
+  retrieval search returns zero matches even for an exact-phrase query
+  against a freshly-ingested, successfully-`indexed` document — verified
+  independently of the chat layer via a direct `POST /api/knowledge/{id}/search`
+  call. This is the previously-flagged `task_188b4179` (`VectorMatcher::embed_batch`
+  returns placeholder zero-vector embeddings) now empirically confirmed to
+  break the KB search path too, not just whatever it was originally flagged
+  against. `chat-kb-retrieval.feature` stays red on purpose — see
+  `docs/BDD_SCENARIOS.md` and `design.md`'s Findings section in the
+  (now-doubly-landed) `bdd-chat-scenario-suite` OpenSpec change history.
+
+**Not re-opening this phase's goal table or scope-change decision above** —
+those stand as written. This addendum only supplements change 7's outcome
+with the second track's results, since the reflection was written before that
+track existed. Recommended next-phase candidates are unchanged, with one
+addition: **fix `VectorMatcher::embed_batch`** (real embedding pipeline,
+un-blocks `chat-kb-retrieval.feature` and any other RAG-dependent feature)
+is now a concretely-confirmed, not just suspected, follow-up.

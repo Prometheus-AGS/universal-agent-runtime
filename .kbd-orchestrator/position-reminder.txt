@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-production-ready-uiux-2026-07
-Step: 6 of 9
-Stage: executing
-Next command: /opsx:new bdd-chat-scenario-suite + /kbd-apply bdd-chat-scenario-suite
+Step: 8 of 8
+Stage: reflected
+Next command: /kbd-next-phase (no single dominant recommendation -- see reflection.md's Recommended Next Phase: docs platform once hosting is chosen, Runtime Console real-data wiring, or broader UI E2E coverage; plus fix VectorMatcher::embed_batch, now concretely confirmed not just suspected, and 2 standing Dependabot alerts)
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-production-ready-uiux-2026-07 (step 6 of 9)
+  Starting <kbd-skill> — uar-production-ready-uiux-2026-07 (step 8 of 8)
   [do work]
-  Completed <kbd-skill> — uar-production-ready-uiux-2026-07 (step 6 of 9)
+  Completed <kbd-skill> — uar-production-ready-uiux-2026-07 (step 8 of 8)

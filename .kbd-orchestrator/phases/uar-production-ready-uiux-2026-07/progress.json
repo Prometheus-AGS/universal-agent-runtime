@@ -1,7 +1,7 @@
 {
   "phase": "uar-production-ready-uiux-2026-07",
   "createdAt": "2026-07-08T16:42:58Z",
-  "updatedAt": "2026-07-09T00:00:00Z",
+  "updatedAt": "2026-07-10T02:20:00Z",
   "parentPhase": null,
   "childPhases": [],
   "childPointer": null,
@@ -9,8 +9,8 @@
   "plan_complete": true,
   "execution_dispatched": true,
   "execution_backend": "openspec",
-  "execute_complete": false,
-  "reflect_complete": false,
+  "execute_complete": true,
+  "reflect_complete": true,
   "previousPhase": "uar-security-audit-alerts-gate-2026-07",
   "seedNote": "Created manually via /kbd-new-phase (2026-07-08) at the user's direct request: 'production-ready with UI/UX full capable and tested.' Deliberately broad -- goals.md states intent (close remaining production-readiness gaps, audit UI/UX completeness per CLAUDE.md's routing rules, close test coverage gaps); the concrete gap list is expected from /kbd-assess, not pre-guessed. Not seeded from a prior phase's reflection recommendation -- uar-security-audit-alerts-gate-2026-07's reflection had no single dominant recommendation, so this phase was opened on direct user instruction instead of via /kbd-next-phase.",
   "decisions": {
@@ -40,9 +40,9 @@
     "resolve-runtime-protocols-page-facade": "DONE (2026-07-09) -- archived openspec/changes/archive/2026-07-09-resolve-runtime-protocols-page-facade/. Fix-vs-remove decision resolved via AskUserQuestion: cheap gating banner. Added NotWiredRuntimeState (built on the project's existing, previously-unused Alert/AlertTitle/AlertDescription shadcn primitive) in runtime-console-page.tsx, applied to RuntimeProtocolsPage's 3 dead panels (AG-UI Events, Model Routing, A2UI Surfaces). New runtime-console-ux capability spec added. pnpm run build clean, verify PASS.",
     "resolve-runtime-cockpit-dead-panels": "DONE (2026-07-09) -- archived openspec/changes/archive/2026-07-09-resolve-runtime-cockpit-dead-panels/. Reused NotWiredRuntimeState for RuntimeCockpitPage's Provider Health + Memory Activity panels; Live Runs/Execution Timeline/stat tiles untouched (real data). pnpm run build clean, verify PASS.",
     "resolve-runs-artifacts-and-inspect-button": "DONE (2026-07-09) -- archived openspec/changes/archive/2026-07-09-resolve-runs-artifacts-and-inspect-button/. Artifacts panel gated with NotWiredRuntimeState. Inspect button (previously dead, no onClick) now real: RunRow takes an onInspect(runId) prop; RuntimeRunsPage tracks selectedRunId (seeded from a new ?run= search param) and renders that run's detail instead of always runs[0]; RuntimeCockpitPage's Inspect navigates to /admin/runs?run=<id> since Cockpit has no detail column. pnpm run build + pnpm run typecheck clean, verify PASS. Round 2 (Runtime Console dead-facade cluster) now fully complete, 3/3.",
-    "bdd-chat-scenario-suite": "PENDING (Round 3, independent -- user's explicit detailed ask)",
-    "bootstrap-docusaurus-site": "PENDING (Round 4, independent -- user confirmed via AskUserQuestion)",
-    "refresh-readme-diagrams-and-branding": "PENDING (Round 4, independent -- confirmed real factual error in README already)"
+    "bdd-chat-scenario-suite": "DONE (2026-07-09/10) -- TWO complementary tracks landed concurrently by separate sessions (see reflection.md's 2026-07-10 addendum): (1) archived openspec/changes/archive/2026-07-09-bdd-chat-scenario-suite/ -- API-level, extends the existing Rust cucumber-rs harness (tests/bdd.rs + tests/features/chat.feature), 5 scenarios, 9/9 scenarios green. (2) openspec/changes/bdd-chat-scenario-suite/ -- browser-level Playwright+Cucumber.js suite (tests/bdd/), 6 scenarios, 5/6 pass (1 confirmed real product bug, disclosed not weakened), verified on real GitHub Actions after 6 rounds of CI-config fixes. Track 2 also fixed a real, previously-undiscovered production bug: the agent-selector's agent list was permanently broken for every user (frontend/src/entities/hooks/use-agents.ts, deprecated useEntityView never populated the list index it read from). Both tracks merged as complementary per operator decision (AskUserQuestion) after a real git-divergence conflict.",
+    "bootstrap-docusaurus-site": "DEFERRED (2026-07-09) -- blocked on hosting/deployment target not provided; see deferred[] below.",
+    "refresh-readme-diagrams-and-branding": "DONE (2026-07-09) -- archived openspec/changes/archive/2026-07-09-refresh-readme-diagrams-and-branding/. README hero + status badges + architecture mermaid render fix."
   },
   "completed_changes": [
     "fix-comprehensive-tests-ci-gate",
@@ -50,11 +50,13 @@
     "upgrade-a2ui-testing-live-round-trip",
     "resolve-runtime-protocols-page-facade",
     "resolve-runtime-cockpit-dead-panels",
-    "resolve-runs-artifacts-and-inspect-button"
+    "resolve-runs-artifacts-and-inspect-button",
+    "bdd-chat-scenario-suite",
+    "refresh-readme-diagrams-and-branding"
   ],
   "active_change": null,
   "blocked_changes": [],
-  "next_change": "bdd-chat-scenario-suite",
+  "next_change": null,
   "sourceTool": "claude-code",
   "createdBy": "kbd-new-phase",
   "assessmentSummary": "HEADLINE FINDING: comprehensive-tests.yml + tests-full.yml have NEVER passed their Pre-flight/Prerequisite check since the initial commit (2026-01-19) -- both require test-config.yaml, which has never existed. Traces to an abandoned Spec Kit feature (specs/001-testing-infrastructure/, 0/74 tasks complete) whose partial dead-code (src/testing/) was already deleted in a prior phase without cleaning up the spec or the 2 broken workflows referencing it. This exact bug was already found by docs/CODEX_ASSESSMENT.md (2025-12-31) and never fixed. Both user-mandated load-bearing capabilities (chat+agent-config, provider/model-config) confirmed genuinely solid, no facades. Found 4 concrete dead facades in Runtime Console (Protocols page entirely, Cockpit's Provider Health + Memory Activity panels, Runs page Artifacts panel, 1 dead Inspect button with no onClick) plus 1 non-essential page (A2uiTestingPage, dev-only tooling shipping to prod nav) and 1 minor bug (auth revokeKey swallows errors). Re-verified 5 old carryover items: 3 resolved (credentials UI, agent-config error surfacing, skill-activation-outcome now recorded backend-side), 2 still open (CH-06 per-agent budget config UI, Protocols page gating). cargo test --lib 387/1/0, frontend vitest 46/46 but thin (12/206 files ~5.8%), e2e Playwright 40 tests/12 files parse cleanly but not executed live this session. Sycophancy self-check: 0.018.",
