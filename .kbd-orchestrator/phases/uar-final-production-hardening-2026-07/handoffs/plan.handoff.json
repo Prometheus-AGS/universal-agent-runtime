@@ -1,0 +1,9 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-10T03:25:00Z",
+  "outputs": ["plan.md"],
+  "nextStage": "execute",
+  "summaryForNext": "9 changes, 4 rounds. Round 1 P0: fix-embeddings-fastembed (fastembed 5.17.2, local onnx, spawn_blocking; verify bdd-chat 6/6 + real search results), green-main-ci (adopt uncommitted ci.yml fix, fix comprehensive-tests 3 knowns, delete template-cleanup, diagnose live-integration), re-remediate-stale-rustsec (quinn/hickory/lopdf/quick-xml patches now exist; shrink ignore list to rsa+hickory-0118). Round 2: SECURITY.md et al (CRA manufacturer posture), console wire-2/remove-4, PORT/JWT_REQUIRED passthroughs. Round 3: Docusaurus on GitHub Pages (+backup/restore+upgrade+config-reference content), then release-1-0-0 LAST (tag v1.0.0, GHCR multi-arch, SBOM, cosign, CHANGELOG, real pipeline run). Round 4 (overlaps R3): test-hardening incl. real rag.spec.ts and flipping bdd-chat to blocking.",
+  "skipped": false,
+  "skipReason": null
+}
