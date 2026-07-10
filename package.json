@@ -33,7 +33,7 @@
     "playwright-bdd": "^9.2.0",
     "prettier": "^3.7.4",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.51.0"
   },
   "description": "This repository is a reference implementation and living architecture example for building agentic AI applications that: *   support tool-first LLM interaction *   stream rich, typed model output *   remain HTML-first and inspectable *   avoid heavyweight SPA frameworks *   run identically as:     *   a web app     *   a desktop app (via Tauri)     *   a mobile app (via Tauri)",
