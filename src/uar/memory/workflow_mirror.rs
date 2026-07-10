@@ -620,7 +620,7 @@ pub fn workflow_candidate_from_memory(memory: &Memory) -> Result<WorkflowMirrorC
 ///     .with_routing(Some("runtime-console-validation-hardening"), Some("surreal-memory-workflow-mirror-tests"))
 ///     .unwrap(),
 /// };
-/// let selection = select_recovery_candidate(vec![old, new]).unwrap();
+/// let selection = select_recovery_candidate(vec![old, new]).unwrap().unwrap();
 /// assert_eq!(selection.selected.record.source_tool, "claude-code");
 /// assert_eq!(selection.candidates.len(), 2);
 /// ```
