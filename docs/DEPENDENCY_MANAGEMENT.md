@@ -131,31 +131,23 @@ any new, undisclosed advisory fails the job. For non-release branches, you
 can still run `cargo audit` / `npm audit` / `pnpm audit` manually before
 merging significant dependency changes.
 
-### Known open advisories: `kreuzberg` → `lopdf` / `quick-xml`
+### Resolved (fork): `kreuzberg` → `lopdf` / `quick-xml`
 
-As of `uar-dependabot-remediation-2026-07` (`openspec/changes/kreuzberg-reachable-vulns/`),
-`cargo audit` reports 3 advisories reachable through the `kreuzberg` pin
-(`lopdf` 0.40.0, `quick-xml` 0.37.5/0.39.4/0.40.1):
-
-- **`RUSTSEC-2026-0187`** (lopdf stack overflow) and **`RUSTSEC-2026-0194`**
-  (quick-xml quadratic attribute-check DoS) are **confirmed reachable**
-  (source-inspected call sites in kreuzberg/biblib/calamine). No upstream
-  `kreuzberg` tag through `v5.0.0-rc.35` fixes both, and a
-  `[patch.crates-io]` override doesn't work either (3 semver-incompatible
-  quick-xml resolutions from manifests we don't control). **Mitigated, not
-  fixed**: `KreuzbergConfig.max_input_bytes` (default 100 MiB) and
-  `extraction_timeout_secs` (default 60s) bound the blast radius of a
-  crafted document without patching the vulnerable crates. These 2
-  advisories will keep appearing in `cargo audit` output until kreuzberg
-  ships a stable release with both fixed, or a future change forks and
-  backports the fixes.
-- **`RUSTSEC-2026-0195`** (quick-xml unbounded namespace-allocation DoS) is
-  **confirmed not reachable** — nothing in kreuzberg/biblib/calamine uses
-  `NsReader`, the only affected API. No action needed; still listed by
-  `cargo audit` since the crate version is unchanged.
-
-See `openspec/changes/kreuzberg-reachable-vulns/findings.md` for the full
-reachability trace.
+**Update (`uar-final-production-hardening-2026-07`,
+`re-remediate-stale-rustsec`)**: the "fork and backport" future-work noted
+below is now done. UAR pins `kreuzberg` to the **Prometheus-AGS/xberg** fork
+(branch `security/lopdf-quickxml-bumps`, based on upstream `v4.9.9`) which
+bumps `lopdf` → 0.42 (clears `RUSTSEC-2026-0187`), `quick-xml` → 0.41,
+`calamine` → 0.36 and `biblib` → 0.7 (clearing `RUSTSEC-2026-0194/0195` for
+all kreuzberg-owned copies; biblib 0.7 dropped its `regex` feature — no other
+API changes), and constrains `html-to-markdown-rs` to 3.5.x (3.6+ broke
+`ImageInfo.dimensions` semver). An upstream PR with the same bumps has been
+filed against `kreuzberg-dev/kreuzberg`; repoint at an upstream tag once a
+release containing them ships. One `quick-xml` 0.39 copy remains via
+`opendal` 0.57 (the **latest** upstream release) ← `liter-llm`'s cache layer:
+DoS-class, reachable only when S3-backed cache storage is configured —
+**upstream-blocked, disclosed** (tracked in `security-audit.yml`'s ignore
+list).
 
 ### Known open advisory: `rsa` (Marvin Attack, no fix exists)
 
@@ -172,7 +164,7 @@ threat model doesn't fit this flow. UAR's own JWT usage elsewhere
 **Accepted risk, disclosed** — see
 `openspec/changes/surreal-memory-transitive-vulns/findings.md`.
 
-### Known open advisory: `hickory-proto` (dead dependency, not reachable)
+### Resolved (feature removed): `hickory-proto`
 
 **Update (`uar-post-dependabot-followup-2026-07`)**: GitHub's own
 Dependabot/GHSA database tracks 2 additional `hickory-proto` advisories
@@ -203,21 +195,20 @@ disclosed here, its GHSA ID must also be added to `DISCLOSED_GHSA_IDS` in
 convention for RustSec IDs. A manual `gh api dependabot/alerts` check
 between scheduled runs remains useful but is no longer the only backstop.
 
-`cargo audit` lists 2 advisories for `hickory-proto` 0.25.2
-(`RUSTSEC-2026-0118`, `RUSTSEC-2026-0119`), pulled in only when the
-optional `sandbox-microsandbox` feature is enabled (via
-`microsandbox-network`). Neither is reachable: no `microsandbox-*` crate
-actually calls into `hickory-proto`/`hickory-resolver` anywhere (it's a
-declared-but-unused dependency of `microsandbox-network`), and
-`RUSTSEC-2026-0118` additionally requires the `dnssec-ring`/
-`dnssec-aws-lc-rs` feature, which isn't activated. Both advisories require
-`hickory-proto >= 0.26.x` to fix, but `microsandbox-network`'s own
-`Cargo.toml` pins `hickory-proto`/`hickory-resolver` to `"0.25"` — a fix
-isn't available to us without their upstream bumping first. **Not
-reachable, disclosed** — see
-`openspec/changes/direct-network-facing-vulns/findings.md`. Re-check this
-disposition if UAR ever adds real DNS-resolution logic on top of
-`microsandbox-network`.
+**Update (`uar-final-production-hardening-2026-07`,
+`re-remediate-stale-rustsec`)**: the optional `sandbox-microsandbox` feature
+— the sole path pulling `hickory-proto` into `Cargo.lock` — has been
+**removed entirely**. The feature had been documented-broken for multiple
+phases (its integration test called an API that doesn't exist, so it could
+not compile), was excluded from every CI job, and pinned `hickory-proto`
+0.25.2 into the lockfile where both `cargo audit` (RUSTSEC-2026-0118/0119)
+and GitHub Dependabot (the 2 GHSA IDs above) flagged it on every scan.
+`hickory-proto`, `hickory-resolver`, and the whole `microsandbox-*` tree are
+gone from `Cargo.lock`; the sandbox subsystem retains its Wasmtime and
+remote-HTTP runners. Both RUSTSEC ignores and both `DISCLOSED_GHSA_IDS`
+entries have been dropped from `security-audit.yml`. Re-adding a microVM
+runner in the future should use a maintained upstream with current
+`hickory` (or no DNS dependency at all).
 
 ### Resolved: `serde_yml` → `serde_norway` (unmaintained + unsound)
 
@@ -234,18 +225,12 @@ from `Cargo.lock`. `anyhow`/`memmap2` unsoundness reports surfaced in the
 same assessment were re-checked against the currently pinned versions
 (`anyhow` 1.0.103, `memmap2` 0.9.11) and do not apply — no action needed.
 
-### Known orphaned advisory: `quinn-proto` (not in resolved graph)
+### Resolved: `quinn-proto` orphan updated
 
-`cargo audit` lists `RUSTSEC-2026-0185` (`quinn-proto` 0.11.14, remote
-memory exhaustion), but `cargo tree -i quinn-proto --target all --all-features`
-resolves to zero reverse dependencies — the entry is present in
-`Cargo.lock` but not reachable in the currently resolved dependency graph
-under any feature/target combination. `reqwest`'s enabled features
-(`json`, `stream`, `rustls-tls-native-roots`, `multipart`) never activate
-HTTP/3 either, ruling out that suspected path too. Not assigned to any of
-this phase's 8 changes; likely to self-prune on a future full
-`cargo update`. See
-`openspec/changes/first-party-direct-dep-hygiene/findings.md`.
+**Update (`uar-final-production-hardening-2026-07`)**: `cargo update -p
+quinn-proto` moved the orphaned lock entry to 0.11.16 (≥ the 0.11.15 patch
+for `RUSTSEC-2026-0185`); the ignore has been removed from
+`security-audit.yml`. The entry remains unreferenced in the resolved graph.
 
 ### Resolved: unused `grcov` dev-dependency removed
 

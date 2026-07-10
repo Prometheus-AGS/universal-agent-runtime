@@ -47,14 +47,17 @@ jobs:
       # locally.
       - name: Run cargo audit
         run: |
+          # Shrunk 7 -> 3 by re-remediate-stale-rustsec (2026-07-10): hickory
+          # advisories cleared by REMOVING the broken sandbox-microsandbox
+          # feature; quinn-proto fixed via 0.11.16; lopdf + 2 of 3 quick-xml
+          # copies fixed via the Prometheus-AGS/xberg kreuzberg fork (lopdf
+          # 0.42, quick-xml 0.41, calamine 0.36, biblib 0.7 — upstream PR
+          # filed). Every remaining ignore is genuinely unfixable by us today;
+          # full rationale in docs/DEPENDENCY_MANAGEMENT.md.
           cargo audit \
-            --ignore RUSTSEC-2026-0118 `# hickory-proto: not reachable, disclosed` \
-            --ignore RUSTSEC-2026-0119 `# hickory-proto: not reachable, disclosed` \
-            --ignore RUSTSEC-2026-0187 `# lopdf via kreuzberg: mitigated (resource limits), no crate fix exists` \
-            --ignore RUSTSEC-2026-0194 `# quick-xml via kreuzberg: mitigated (resource limits), no crate fix exists` \
-            --ignore RUSTSEC-2026-0195 `# quick-xml via kreuzberg: confirmed not reachable` \
-            --ignore RUSTSEC-2026-0185 `# quinn-proto: orphaned Cargo.lock entry, not reachable` \
-            --ignore RUSTSEC-2023-0071 `# rsa: accepted risk, patched=[] (no fix exists)`
+            --ignore RUSTSEC-2026-0194 `# quick-xml 0.39 via opendal 0.57 (LATEST upstream) via liter-llm cache; DoS-class, reachable only with S3-backed cache storage` \
+            --ignore RUSTSEC-2026-0195 `# same quick-xml copy as above` \
+            --ignore RUSTSEC-2023-0071 `# rsa Marvin: accepted risk, patched=[] (no fix exists)`
 
   npm-root-audit:
     name: npm audit (root)
@@ -144,7 +147,7 @@ jobs:
       # new advisory is triaged and disclosed in
       # docs/DEPENDENCY_MANAGEMENT.md (mirrors cargo audit's --ignore
       # convention above).
-      DISCLOSED_GHSA_IDS: "GHSA-q2qq-hmj6-3wpp GHSA-3v94-mw7p-v465"
+      DISCLOSED_GHSA_IDS: ""
     steps:
       - name: Check Dependabot alert feed
         run: |

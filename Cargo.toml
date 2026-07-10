@@ -91,7 +91,6 @@ memory-palace = ["surreal-memory/palace"]
 model-build = ["dep:burn-import"]
 tauri = []
 wasm-runtime = ["dep:wasmtime", "dep:wasmtime-wasi"]
-sandbox-microsandbox = ["dep:microsandbox"]
 
 
 [dependencies]
@@ -275,7 +274,11 @@ aes-gcm = "0.10"
 # Kreuzberg - document intelligence framework with Rust core (v4 upstream)
 # CLI install: cargo install --git https://github.com/kreuzberg-dev/kreuzberg --tag v4.9.8 kreuzberg-cli
 # Or via Homebrew: brew tap kreuzberg-dev/tap && brew install kreuzberg-cli
-kreuzberg = { git = "https://github.com/kreuzberg-dev/kreuzberg.git", tag = "v4.9.8", default-features = false, features = [
+# Prometheus-AGS fork of kreuzberg v4.9.9 + security bumps (lopdf 0.42,
+# quick-xml 0.41, calamine 0.36, biblib 0.7) clearing RUSTSEC-2026-0187/0194/
+# 0195 — upstream PR filed (kreuzberg-dev/kreuzberg); repoint at an upstream
+# tag once it ships a release containing these bumps.
+kreuzberg = { git = "https://github.com/Prometheus-AGS/xberg.git", rev = "fbea152d4735dd817fc353f7eb5c359f798579f0", default-features = false, features = [
     "tokio-runtime",        # extract_file_sync, batch_extract_file_sync
     "pdf",                  # PDF extraction via pdf_oxide (replaces "formats")
     "office",               # docx, odt, pptx, xlsx, odp, ods, etc. (replaces "formats")
@@ -310,7 +313,6 @@ dirs = "6.0.0"
 notify = "8"
 
 # Microsandbox — hardware VM isolation for sandboxed code execution (feature-gated)
-microsandbox = { version = "0.3", optional = true }
 
 # Universal LLM client — 142+ providers, streaming, tool calling
 liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", rev = "d8223de3e07615c899b2658309d15d01c242940b", features = ["full"] }
