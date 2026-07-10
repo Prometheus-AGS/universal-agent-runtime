@@ -220,8 +220,5 @@ pub fn build_response_router() -> Router<A2uiApiState> {
             "/{run_id}/artifact-response",
             post(submit_artifact_response),
         )
-        .route(
-            "/{run_id}/a2ui/test-trigger",
-            post(test_trigger_artifact),
-        )
+        .route("/{run_id}/a2ui/test-trigger", post(test_trigger_artifact))
 }

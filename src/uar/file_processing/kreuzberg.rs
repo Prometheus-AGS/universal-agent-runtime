@@ -398,6 +398,9 @@ mod tests {
 
         let result = process_bytes(&data, "text/plain", &config).await;
 
-        assert!(result.is_ok(), "input within the size cap should proceed to extraction");
+        assert!(
+            result.is_ok(),
+            "input within the size cap should proceed to extraction"
+        );
     }
 }

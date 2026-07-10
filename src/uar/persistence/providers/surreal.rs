@@ -265,6 +265,7 @@ impl PersistenceLayer for SurrealDbProvider {
     ) -> Result<Vec<KnowledgeMatch>> {
         let chunks_raw = self.fetch_all("knowledge_chunks").await?;
         let chunks: Vec<KnowledgeChunk> = from_db_vec(chunks_raw)?;
+        warn_zero_norm_chunks(&chunks);
 
         let mut matches: Vec<KnowledgeMatch> = chunks
             .into_iter()
@@ -431,6 +432,7 @@ impl PersistenceLayer for SurrealDbProvider {
             .map(surreal_to_json)
             .collect::<Result<_>>()?;
         let chunks: Vec<KnowledgeChunk> = from_db_vec(chunks_json)?;
+        warn_zero_norm_chunks(&chunks);
 
         // In-memory cosine similarity
         let mut matches: Vec<KnowledgeMatch> = chunks
@@ -1189,6 +1191,28 @@ fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
         0.0
     } else {
         dot_product / (norm_a * norm_b)
+    }
+}
+
+/// Stale-index self-identification (fix-embeddings-fastembed, design D4):
+/// chunks ingested before real embedding inference landed carry zero-vector
+/// embeddings and can never match anything. Instead of silently returning
+/// empty results, name the affected knowledge bases and point at re-ingestion.
+fn warn_zero_norm_chunks(chunks: &[KnowledgeChunk]) {
+    let mut stale_kbs: Vec<&str> = chunks
+        .iter()
+        .filter(|c| c.embedding.iter().all(|x| *x == 0.0))
+        .map(|c| c.kb_id.as_str())
+        .collect();
+    stale_kbs.sort_unstable();
+    stale_kbs.dedup();
+    if !stale_kbs.is_empty() {
+        tracing::error!(
+            knowledge_bases = %stale_kbs.join(", "),
+            "knowledge base contains zero-vector (stale) chunk embeddings from a \
+             pre-fix index — these chunks can never match; re-ingest the affected \
+             documents (see the upgrade guide)"
+        );
     }
 }
 

@@ -107,3 +107,8 @@ static/assets
 evals/results/*.json
 !evals/results/*.baseline.json
 .kbd-orchestrator/**/hooks.log.jsonl.lock
+
+# Runtime-created dynamic skills (persisted via the skills API for restart
+# durability) — deployment data, not project source. The BDD suite creates
+# one on every run.
+skills/dynamic/

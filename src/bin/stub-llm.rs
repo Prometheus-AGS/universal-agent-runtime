@@ -79,6 +79,9 @@ async fn main() {
         .await
         .unwrap_or_else(|e| panic!("failed to bind stub-llm on 127.0.0.1:{port}: {e}"));
 
-    println!("stub-llm listening on http://127.0.0.1:{port}/v1 (fixtures: {})", fixture_path.display());
+    println!(
+        "stub-llm listening on http://127.0.0.1:{port}/v1 (fixtures: {})",
+        fixture_path.display()
+    );
     stub_llm::serve(listener, fixtures).await;
 }

@@ -649,11 +649,27 @@ fn doc_to_response(doc: KnowledgeDocument) -> DocumentResponse {
     }
 }
 
+/// The only embedding engine actually wired into retrieval. Anything else is
+/// accepted for backward compatibility but warned about loudly — silently
+/// storing an unsupported provider is how `embedding_provider` spent months
+/// as a config lie (fix-embeddings-fastembed).
+fn validate_embedding_provider(provider: &str) {
+    if provider != "fastembed" {
+        tracing::warn!(
+            requested = %provider,
+            "unsupported embedding_provider — retrieval uses the local fastembed \
+             engine (bge-small-en-v1.5) regardless; update the KB config to \
+             'fastembed' to silence this warning"
+        );
+    }
+}
+
 fn build_kb_config(req: Option<KbConfigRequest>) -> KbConfig {
     match req {
         Some(cfg) => KbConfig {
             embedding_provider: cfg
                 .embedding_provider
+                .inspect(|p| validate_embedding_provider(p))
                 .unwrap_or_else(KbConfig::default_embedding_provider),
             embedding_model: cfg
                 .embedding_model
@@ -670,6 +686,7 @@ fn build_kb_config(req: Option<KbConfigRequest>) -> KbConfig {
 
 fn merge_kb_config(mut existing: KbConfig, req: KbConfigRequest) -> KbConfig {
     if let Some(provider) = req.embedding_provider {
+        validate_embedding_provider(&provider);
         existing.embedding_provider = provider;
     }
     if let Some(model) = req.embedding_model {

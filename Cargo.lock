@@ -14965,6 +14965,7 @@ dependencies = [
  "dirs 6.0.0",
  "dotenvy",
  "ed25519-dalek",
+ "fastembed",
  "futures",
  "governor",
  "jsonschema",

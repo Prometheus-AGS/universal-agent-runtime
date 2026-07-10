@@ -239,12 +239,15 @@ pub async fn boot_test_server(
     }
 }
 
-/// Poll `/health` until it responds or a 10s timeout elapses, closing the
+/// Poll `/health` until it responds or a 30s timeout elapses, closing the
 /// race window between the harness starting the server task and the
-/// listener actually accepting connections.
+/// listener actually accepting connections. 30s (was 10s): boot now loads
+/// the real 34MB BGE embedding model and builds an ONNX Runtime session
+/// (fix-embeddings-fastembed), which legitimately adds several seconds on
+/// slower machines.
 async fn wait_for_health(base_url: &str) {
     let client = reqwest::Client::new();
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
     loop {
         if let Ok(resp) = client.get(format!("{base_url}/health")).send().await
             && resp.status().is_success()
@@ -252,7 +255,7 @@ async fn wait_for_health(base_url: &str) {
             return;
         }
         if tokio::time::Instant::now() >= deadline {
-            panic!("server at {base_url} did not become healthy within 10s");
+            panic!("server at {base_url} did not become healthy within 30s");
         }
         tokio::time::sleep(Duration::from_millis(50)).await;
     }

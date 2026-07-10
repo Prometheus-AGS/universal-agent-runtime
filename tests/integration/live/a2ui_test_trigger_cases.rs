@@ -50,11 +50,7 @@ fn extract_run_id(sse_body: &str) -> String {
 #[tokio::test]
 #[serial]
 async fn test_trigger_round_trips_through_real_artifact_response_endpoint() {
-    let stub = start_stub_llm(content_fixture(
-        "hello a2ui test trigger",
-        "hi there",
-    ))
-    .await;
+    let stub = start_stub_llm(content_fixture("hello a2ui test trigger", "hi there")).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
     let client = reqwest::Client::new();
 

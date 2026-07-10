@@ -2,51 +2,22 @@ use crate::uar::domain::matching::{MatchReason, SkillMatch, SkillMatcher};
 use crate::uar::runtime::skills::SkillRegistry;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
-use burn::backend::NdArray; // Default backend
-use burn::tensor::backend::Backend;
-use burn::tensor::{Shape, Tensor, TensorData};
+use fastembed::{
+    InitOptionsUserDefined, Pooling, TextEmbedding, TokenizerFiles, UserDefinedEmbeddingModel,
+};
+use std::path::PathBuf;
 use std::sync::Arc;
-use tokenizers::Tokenizer;
 use tokio::sync::Mutex;
-use tracing::{info, warn};
+use tracing::info;
 
-// Import the generated model (conditionally compiled)
-#[cfg(feature = "model-build")]
-use super::burn_model::model;
-
-#[cfg(not(feature = "model-build"))]
-pub mod model {
-    use burn::module::Module;
-    use burn::tensor::backend::Backend;
-
-    #[derive(Module, Debug)]
-    pub struct Model<B: Backend> {
-        _phantom: std::marker::PhantomData<B>,
-    }
-
-    impl<B: Backend> Model<B> {
-        pub fn new() -> Self {
-            Self {
-                _phantom: std::marker::PhantomData,
-            }
-        }
-    }
-
-    impl<B: Backend> Default for Model<B> {
-        fn default() -> Self {
-            Self::new()
-        }
-    }
-}
-
-// We define our backend. NdArray is pure rust CPU.
-// For WebGPU or other backends, this type alias can be changed or made generic.
-type B = NdArray;
 type EmbeddingCache = Vec<(String, Vec<f32>)>;
 
+/// Real local embedding inference (BGE-small-en-v1.5, 384-dim, CLS-pooled,
+/// L2-normalized) via fastembed/ONNX Runtime, loaded entirely from on-disk
+/// assets — no network access at runtime. Replaces the former burn-based
+/// placeholder that returned zero vectors (`fix-embeddings-fastembed`).
 pub struct VectorMatcher {
-    model: Arc<Mutex<Option<model::Model<B>>>>,
-    tokenizer: Arc<Mutex<Option<Tokenizer>>>,
+    engine: Arc<Mutex<Option<Arc<TextEmbedding>>>>,
     embeddings: Arc<Mutex<EmbeddingCache>>,
     threshold: f32,
     models_dir: String,
@@ -55,167 +26,124 @@ pub struct VectorMatcher {
 impl std::fmt::Debug for VectorMatcher {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("VectorMatcher")
-            .field("backend", &"NdArray")
+            .field("backend", &"fastembed-onnx (bge-small-en-v1.5)")
             .field("threshold", &self.threshold)
             .finish()
     }
 }
 
+/// The five on-disk assets a user-defined fastembed model needs.
+const MODEL_FILES: [&str; 5] = [
+    "bg-small-en-v1.5.onnx",
+    "tokenizer.json",
+    "config.json",
+    "special_tokens_map.json",
+    "tokenizer_config.json",
+];
+
 impl VectorMatcher {
     pub fn new(threshold: f32, models_dir: String) -> Self {
         Self {
-            model: Arc::new(Mutex::new(None)),
-            tokenizer: Arc::new(Mutex::new(None)),
+            engine: Arc::new(Mutex::new(None)),
             embeddings: Arc::new(Mutex::new(Vec::new())),
             threshold,
             models_dir,
         }
     }
 
+    /// Locate a directory containing all required model assets, trying the
+    /// same candidate order the previous implementation used: env override,
+    /// configured dir, container path, then development paths.
+    fn resolve_models_dir(&self) -> Result<PathBuf> {
+        let candidates = [
+            std::env::var("UAR_MODELS_DIR").ok().map(PathBuf::from),
+            Some(PathBuf::from(&self.models_dir)),
+            Some(PathBuf::from("/app/models")),
+            Some(PathBuf::from("src/uar/runtime/matching/models")),
+            Some(PathBuf::from("./src/uar/runtime/matching/models")),
+        ];
+
+        let candidates: Vec<PathBuf> = candidates.into_iter().flatten().collect();
+        for dir in &candidates {
+            if MODEL_FILES.iter().all(|f| dir.join(f).exists()) {
+                return Ok(dir.clone());
+            }
+        }
+        anyhow::bail!(
+            "embedding model assets ({}) not found in any candidate dir: {}",
+            MODEL_FILES.join(", "),
+            candidates
+                .iter()
+                .map(|p| p.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    }
+
     pub async fn initialize(&self) -> Result<()> {
-        let mut model_guard = self.model.lock().await;
-        if model_guard.is_none() {
-            info!("Initializing Burn model (BG-Small-En-V1.5)...");
-            // Standard burn-import generated model constructor
-            // Assuming no weights in a separate file (embedded in binary)
-            let _device = <B as Backend>::Device::default();
-            let model = model::Model::<B>::default();
-            *model_guard = Some(model);
+        let mut engine_guard = self.engine.lock().await;
+        if engine_guard.is_some() {
+            return Ok(());
         }
 
-        let mut tok_guard = self.tokenizer.lock().await;
-        if tok_guard.is_none() {
-            info!("Initializing Tokenizer...");
+        let dir = self.resolve_models_dir()?;
+        info!(dir = %dir.display(), "Initializing fastembed engine (bge-small-en-v1.5)…");
 
-            // Try multiple potential tokenizer paths
-            let tokenizer_paths = vec![
-                // Environment variable override (highest priority)
-                std::env::var("UAR_MODELS_DIR")
-                    .map(|dir| std::path::PathBuf::from(dir).join("tokenizer.json"))
-                    .ok(),
-                // Configuration-specified path (second priority)
-                Some(std::path::PathBuf::from(&self.models_dir).join("tokenizer.json")),
-                // Docker/production path (fallback)
-                Some(std::path::PathBuf::from("/app/models/tokenizer.json")),
-                // Development paths (fallbacks)
-                Some(std::path::PathBuf::from(
-                    "src/uar/runtime/matching/models/tokenizer.json",
-                )),
-                Some(std::path::PathBuf::from(
-                    "./src/uar/runtime/matching/models/tokenizer.json",
-                )),
-            ]
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>();
+        // Session construction is synchronous CPU/IO work — keep it off the
+        // async executor.
+        let engine = tokio::task::spawn_blocking(move || -> Result<TextEmbedding> {
+            let read = |name: &str| -> Result<Vec<u8>> {
+                std::fs::read(dir.join(name))
+                    .with_context(|| format!("reading embedding asset {name}"))
+            };
+            let mut model = UserDefinedEmbeddingModel::new(
+                read("bg-small-en-v1.5.onnx")?,
+                TokenizerFiles {
+                    tokenizer_file: read("tokenizer.json")?,
+                    config_file: read("config.json")?,
+                    special_tokens_map_file: read("special_tokens_map.json")?,
+                    tokenizer_config_file: read("tokenizer_config.json")?,
+                },
+            );
+            // BGE-family models are CLS-pooled (matches fastembed's own
+            // built-in BGESmallENV15 definition).
+            model.pooling = Some(Pooling::Cls);
 
-            let mut tokenizer = None;
-            let mut last_error = None;
+            TextEmbedding::try_new_from_user_defined(
+                model,
+                InitOptionsUserDefined::new().with_max_length(512),
+            )
+            .map_err(|e| anyhow::anyhow!("initializing fastembed engine: {e}"))
+        })
+        .await
+        .context("embedding engine init task panicked")??;
 
-            for path in &tokenizer_paths {
-                if path.exists() {
-                    match Tokenizer::from_file(path) {
-                        Ok(t) => {
-                            info!("Tokenizer loaded from: {}", path.display());
-                            tokenizer = Some(t);
-                            break;
-                        }
-                        Err(e) => {
-                            warn!("Failed to load tokenizer from {}: {}", path.display(), e);
-                            last_error = Some(anyhow::anyhow!(e));
-                        }
-                    }
-                }
-            }
-
-            if let Some(tokenizer) = tokenizer {
-                *tok_guard = Some(tokenizer);
-            } else {
-                return Err(last_error.unwrap_or_else(|| {
-                    anyhow::anyhow!(
-                        "Tokenizer file not found at any of these paths: {}",
-                        tokenizer_paths
-                            .iter()
-                            .map(|p| p.display().to_string())
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    )
-                }));
-            }
-        }
-
+        *engine_guard = Some(Arc::new(engine));
+        info!("Embedding engine ready (384-dim, CLS pooling, normalized).");
         Ok(())
     }
 
     pub async fn embed_batch(&self, texts: Vec<String>) -> Result<Vec<Vec<f32>>> {
-        let model_guard = self.model.lock().await;
-        let tok_guard = self.tokenizer.lock().await;
-
-        if let (Some(_model), Some(tokenizer)) = (&*model_guard, &*tok_guard) {
-            // 1. Tokenize
-            let encoding = tokenizer
-                .encode_batch(texts.clone(), true)
-                .map_err(|e| anyhow::anyhow!("Tokenization failed: {e}"))?;
-
-            let batch_size = texts.len();
-            if batch_size == 0 {
-                return Ok(vec![]);
-            }
-
-            // Find max length and pad/truncate to ensure consistent tensor shapes
-            let max_len = encoding
-                .iter()
-                .map(tokenizers::Encoding::len)
-                .max()
-                .unwrap_or(0);
-            let seq_len = max_len.min(512); // Cap at reasonable max length
-
-            // flatten with padding/truncation
-            let mut input_ids_vec = Vec::with_capacity(batch_size * seq_len);
-            let mut mask_vec = Vec::with_capacity(batch_size * seq_len);
-            let mut type_ids_vec = Vec::with_capacity(batch_size * seq_len);
-
-            for e in &encoding {
-                let ids = e.get_ids();
-                let mask = e.get_attention_mask();
-                let type_ids = e.get_type_ids();
-
-                // Truncate or pad to seq_len
-                for i in 0..seq_len {
-                    if i < ids.len() {
-                        input_ids_vec.push(i32::try_from(ids[i]).unwrap_or_default());
-                        mask_vec.push(i32::try_from(mask[i]).unwrap_or_default());
-                        type_ids_vec.push(i32::try_from(type_ids[i]).unwrap_or_default());
-                    } else {
-                        // Pad with zeros (standard padding for BERT-style models)
-                        input_ids_vec.push(0i32);
-                        mask_vec.push(0i32);
-                        type_ids_vec.push(0i32);
-                    }
-                }
-            }
-
-            let device = <B as Backend>::Device::default();
-
-            // Create Tensors
-            let _input_ids: Tensor<B, 2, burn::tensor::Int> = Tensor::from_data(
-                TensorData::new(input_ids_vec, Shape::new([batch_size, seq_len])),
-                &device,
-            );
-            // Assuming generated model takes generic arguments or specific names?
-            // burn-import usually generates `forward(input_ids, attention_mask, token_type_ids)`
-            // If argument names mismatch, we'll see compilation error.
-
-            // UNCOMMENT ONCE COMPILED TO VERIFY SIGNATURE
-            // let output = model.forward(input_ids, ...);
-
-            // Returning placeholder zero-embeddings to allow compilation until signature is known
-            warn!("Burn inference running in generic placeholder mode");
-            let dim = 384;
-            Ok(vec![vec![0.0; dim]; batch_size])
-        } else {
-            Err(anyhow::anyhow!("Model not initialized"))
+        if texts.is_empty() {
+            return Ok(vec![]);
         }
+
+        let engine = {
+            let guard = self.engine.lock().await;
+            guard
+                .as_ref()
+                .cloned()
+                .context("Embedding engine not initialized")?
+        };
+
+        // fastembed inference is synchronous CPU work.
+        tokio::task::spawn_blocking(move || {
+            engine
+                .embed(texts, None)
+                .map_err(|e| anyhow::anyhow!("embedding inference failed: {e}"))
+        })
+        .await
+        .context("embedding task panicked")?
     }
 
     pub async fn index_skills(&self, registry: &SkillRegistry) -> Result<()> {
@@ -238,7 +166,7 @@ impl VectorMatcher {
         for (i, emb) in embeddings.into_iter().enumerate() {
             cache.push((skills[i].skill_id.clone(), emb));
         }
-        info!("Skill vector index built (Burn).");
+        info!("Skill vector index built (fastembed).");
 
         Ok(())
     }
@@ -291,5 +219,52 @@ impl SkillMatcher for VectorMatcher {
         }
         matches.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
         Ok(matches)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn matcher() -> VectorMatcher {
+        VectorMatcher::new(0.75, "src/uar/runtime/matching/models".to_string())
+    }
+
+    #[tokio::test]
+    async fn embeddings_are_nonzero_normalized_and_discriminative() {
+        let m = matcher();
+        m.initialize().await.expect("engine init");
+
+        let out = m
+            .embed_batch(vec![
+                "The quarterly financial report shows revenue growth.".to_string(),
+                "Quarterly finances: the report indicates revenues grew.".to_string(),
+                "My cat enjoys sleeping in cardboard boxes.".to_string(),
+            ])
+            .await
+            .expect("embed");
+
+        assert_eq!(out.len(), 3);
+        for v in &out {
+            assert_eq!(v.len(), 384);
+            let norm = v.iter().map(|x| x * x).sum::<f32>().sqrt();
+            assert!((norm - 1.0).abs() < 1e-3, "expected ~unit norm, got {norm}");
+        }
+
+        let near = VectorMatcher::cosine_similarity(&out[0], &out[1]);
+        let far = VectorMatcher::cosine_similarity(&out[0], &out[2]);
+        assert!(
+            near > far,
+            "near-duplicate pair ({near}) must beat unrelated pair ({far})"
+        );
+        assert!(near > 0.8, "near-duplicate similarity too low: {near}");
+    }
+
+    #[tokio::test]
+    async fn empty_batch_is_ok() {
+        let m = matcher();
+        m.initialize().await.expect("engine init");
+        let out = m.embed_batch(vec![]).await.expect("embed empty");
+        assert!(out.is_empty());
     }
 }

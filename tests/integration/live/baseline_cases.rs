@@ -379,23 +379,13 @@ async fn memory_write_then_recall() {
 /// worker log confirms "Document ingestion completed") stays reported as
 /// `"pending"` forever. Flagged separately (spawn_task), not fixed here.
 ///
-/// Currently ignored for a second, more fundamental reason found the same
-/// way: `VectorMatcher::embed_batch`'s local-model path
-/// (`src/uar/runtime/matching/vector.rs:210-213`) has its actual
-/// `model.forward(...)` call commented out — `// UNCOMMENT ONCE COMPILED TO
-/// VERIFY SIGNATURE` — and unconditionally returns all-zero 384-dim vectors
-/// ("Burn inference running in generic placeholder mode", logged on every
-/// call). This isn't environment-specific; it's incomplete code affecting
-/// every caller of this embedding path, not just this test. Confirmed live:
-/// search after successful ingestion always returns `results: []`, because
-/// query and document embeddings are always identical zero vectors. Flagged
-/// separately (spawn_task) — wiring up real Burn inference is well out of
-/// scope for a test-infra change. Re-enable once that's fixed; the test
-/// itself is correct (polls search, doesn't depend on the broken status
-/// field) and will properly validate the fix when embeddings are real.
+/// Formerly ignored because `VectorMatcher::embed_batch` returned all-zero
+/// placeholder vectors, making retrieval structurally impossible. Re-enabled
+/// by `fix-embeddings-fastembed` (uar-final-production-hardening-2026-07),
+/// which wired real local BGE-small inference via fastembed — this case now
+/// validates that fix end-to-end exactly as its original disclosure promised.
 #[tokio::test]
 #[serial]
-#[ignore = "VectorMatcher::embed_batch always returns zero-vector placeholder embeddings (model.forward() call is commented out) — search can never find real matches; see spawn_task"]
 async fn rag_ingest_then_retrieve() {
     let stub = start_stub_llm(FixtureSet::new()).await; // unused — this case never calls the LLM
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;

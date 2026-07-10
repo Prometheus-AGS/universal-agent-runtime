@@ -6,49 +6,40 @@ video-proof evidence lives. Generated per `bdd-chat-scenario-suite`
 (`uar-production-ready-uiux-2026-07`, Round 3). Run locally with
 `pnpm test:bdd` (root `package.json`).
 
-Last run: 2026-07-10, commit `cf37653`. **5/6 scenarios pass.**
-Certification bundle: [`docs/certifications/bdd-chat/cf37653/report.html`](certifications/bdd-chat/cf37653/report.html).
+Last run: 2026-07-10 (post `fix-embeddings-fastembed`,
+`uar-final-production-hardening-2026-07`). **6/6 scenarios pass.**
+Certification bundle (5/6-era, pre-fix): [`docs/certifications/bdd-chat/cf37653/report.html`](certifications/bdd-chat/cf37653/report.html).
 
 ## Scenarios
 
 | # | Scenario | Feature file | Status |
 |---|----------|--------------|--------|
 | 1 | Plain chat with no knowledge base | [`chat-no-kb.feature`](../tests/bdd/features/chat-no-kb.feature) | ✅ PASS |
-| 2 | Retrieval-influenced response (KB enabled) | [`chat-kb-retrieval.feature`](../tests/bdd/features/chat-kb-retrieval.feature) | ❌ **FAIL — confirmed real product bug, see below** |
+| 2 | Retrieval-influenced response (KB enabled) | [`chat-kb-retrieval.feature`](../tests/bdd/features/chat-kb-retrieval.feature) | ✅ PASS (fixed — see below) |
 | 3 | Skill visibly activates mid-conversation | [`chat-skill-activation.feature`](../tests/bdd/features/chat-skill-activation.feature) | ✅ PASS |
 | 4 | Tool call invoked and result surfaced | [`chat-tool-call.feature`](../tests/bdd/features/chat-tool-call.feature) | ✅ PASS |
 | 5 | Agent selection / mid-session switching | [`chat-agent-switching.feature`](../tests/bdd/features/chat-agent-switching.feature) | ✅ PASS |
 | 6 | Provider/model configuration affecting the answering model | [`chat-model-routing.feature`](../tests/bdd/features/chat-model-routing.feature) | ✅ PASS |
 
-## Confirmed real bug: KB retrieval never influences a response
+## KB retrieval bug: FIXED (2026-07-10, `fix-embeddings-fastembed`)
 
-**Scenario 2 is failing for a real reason, not a test defect — left failing
-deliberately rather than weakened.**
+Scenario 2 was deliberately left failing when this suite first landed: the
+root cause was `VectorMatcher::embed_batch` returning placeholder zero-vector
+embeddings (`model.forward()` never wired), which made every embedding
+consumer — KB search, chat RAG, skill embedding matching, LocalEmbedding
+intent — structurally unable to match anything.
 
-Ingesting a document containing a distinctive phrase, then asking a
-question only answerable from that phrase, produces a response with **no**
-retrieved content — verified by inspecting the actual outgoing system
-prompt via `stub-llm`'s `/_stub/requests` introspection endpoint (the
-prompt contains only the agent's base system prompt, no
-`[RELEVANT KNOWLEDGE]` section).
-
-Confirmed independently of the chat layer: `POST /api/knowledge/{id}/search`
-with the ingested document's exact phrase as the query returns
-`{"results":[]}`, even though the document's ingestion status reaches
-`indexed` successfully.
-
-Root cause: `VectorMatcher::embed_batch` (`src/uar/runtime/matching/vector.rs`)
-returns placeholder zero-vector embeddings — `model.forward()` is still
-commented out — a previously-flagged, still-open bug (tracked informally
-as `task_188b4179`, owned by a separate session). Zero-vector cosine
-similarity never clears the 0.7 match threshold in
-`src/uar/runtime/manager.rs`'s RAG search, so `search_knowledge`/
-`search_knowledge_scoped` always return empty, and the KB system-prompt
-block is never appended.
-
-**Not fixed here** — real embedding-pipeline work, out of this
-test-infrastructure-only change's scope. Follow-up: fix
-`VectorMatcher::embed_batch` and re-run `chat-kb-retrieval.feature` to confirm.
+Fixed by `fix-embeddings-fastembed` (`uar-final-production-hardening-2026-07`):
+real local BGE-small-en-v1.5 inference (384-dim, CLS-pooled, normalized) via
+`fastembed`, loading the repo's on-disk ONNX model + tokenizer — no network
+at runtime. Verified three independent ways: unit tests (non-zero,
+discriminative embeddings), a live-server ingest→`POST /api/knowledge/{id}/search`
+round trip returning the phrase-bearing chunk (score ≈0.84 on the exact query
+that previously returned `{"results":[]}`), and this scenario passing
+unweakened. The formerly-`#[ignore]`d `rag_ingest_then_retrieve` integration
+case is re-enabled and passing. Knowledge bases ingested BEFORE the fix carry
+zero-vector chunks that can never match — searches over them now log an
+explicit stale-index error; re-ingest affected documents.
 
 ## Other findings disclosed (not fixed here — see design.md for full detail)
 
