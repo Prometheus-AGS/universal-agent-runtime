@@ -275,7 +275,7 @@ aes-gcm = "0.10"
 # Kreuzberg - document intelligence framework with Rust core (v4 upstream)
 # CLI install: cargo install --git https://github.com/kreuzberg-dev/kreuzberg --tag v4.9.8 kreuzberg-cli
 # Or via Homebrew: brew tap kreuzberg-dev/tap && brew install kreuzberg-cli
-kreuzberg = { git = "https://github.com/kreuzberg-dev/kreuzberg.git", tag = "v4.9.8", default-features = false, features = [
+kreuzberg = { git = "https://github.com/kreuzberg-dev/kreuzberg.git", tag = "v4.9.9", default-features = false, features = [
     "tokio-runtime",        # extract_file_sync, batch_extract_file_sync
     "pdf",                  # PDF extraction via pdf_oxide (replaces "formats")
     "office",               # docx, odt, pptx, xlsx, odp, ods, etc. (replaces "formats")
