@@ -1,16 +1,16 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-10T02:20:00Z",
+  "updatedAt": "2026-07-10T03:10:00Z",
   "cursor": [
-    "uar-production-ready-uiux-2026-07"
+    "uar-final-production-hardening-2026-07"
   ],
   "root": {
     "type": "phase",
-    "id": "uar-production-ready-uiux-2026-07",
-    "status": "reflected",
+    "id": "uar-final-production-hardening-2026-07",
+    "status": "assessed",
     "progress": {
-      "done": 8,
-      "total": 8
+      "done": 0,
+      "total": 0
     },
     "children": [],
     "annotations": [
