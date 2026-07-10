@@ -197,7 +197,7 @@ burn = { version = "0.20.1", default-features = false, features = [
   "train",
   "ndarray",
 ] }
-tokenizers = { version = "0.22.2", default-features = false, features = [
+tokenizers = { version = "0.23.1", default-features = false, features = [
   "onig",
   "esaxx_fast",
 ] }
