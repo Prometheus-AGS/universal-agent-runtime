@@ -933,7 +933,7 @@ impl Default for MemoryConfig {
 /// Configuration for the sandboxed code-execution subsystem.
 #[derive(Debug, Deserialize, Clone)]
 pub struct SandboxRuntimeConfig {
-    /// Runner selection: "auto", "microsandbox", "wasmtime", "remote".
+    /// Runner selection: "auto", "wasmtime", "remote".
     #[serde(default = "SandboxRuntimeConfig::default_runner")]
     pub runner: String,
     /// URL for the remote sandbox runner (required when runner = "remote").

@@ -2161,7 +2161,7 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
             "properties": {
                 "runner": {
                     "type": "string", "title": "Runner",
-                    "enum": ["auto", "microsandbox", "wasmtime", "remote"], "x-control": "select"
+                    "enum": ["auto", "wasmtime", "remote"], "x-control": "select"
                 },
                 "remote_url": { "type": ["string", "null"], "title": "Remote URL", "x-control": "url" },
                 "default_memory_mib": { "type": "integer", "minimum": 16, "title": "Default Memory (MiB)", "x-control": "number" },

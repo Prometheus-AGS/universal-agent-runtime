@@ -1,7 +1,9 @@
 //! Sandboxed code execution for MCP tools and agent-generated code.
 //!
-//! Provides hardware VM isolation via microsandbox (libkrun) with fallback
-//! to Wasmtime or remote HTTP execution.
+//! Provides Wasmtime or remote HTTP execution backends. (A microsandbox/
+//! libkrun runner existed as an optional feature but was removed in
+//! re-remediate-stale-rustsec: it never compiled — its test called a
+//! nonexistent API — and pinned vulnerable hickory-proto into Cargo.lock.)
 
 pub mod mcp_tools;
 pub mod platform;
@@ -9,8 +11,6 @@ pub mod runner;
 pub mod session_manager;
 pub mod types;
 
-#[cfg(feature = "sandbox-microsandbox")]
-pub mod microsandbox_runner;
 pub mod remote_runner;
 pub mod wasmtime_runner;
 
