@@ -15,18 +15,19 @@ fn setup_env_vars() {
         env::remove_var("CONFIG_FILE");
 
         // Set required fields to dummy values for testing
-        // Note: config-rs with separator("__") expects UAR__SECURITY__JWT_SECRET
-        env::set_var("UAR__SECURITY__JWT_SECRET", "test_secret_123");
+        // Note: the env layer uses prefix_separator("_") + separator("__"),
+        // so vars follow the UAR_SECTION__KEY convention (single underscore
+        // after the UAR prefix) — see AppConfig::load_with_cli.
+        env::set_var("UAR_SECURITY__JWT_SECRET", "test_secret_123");
 
-        // Use double underscore for all fields that config-rs needs to map
-        env::set_var("UAR__PERSISTENCE__PROVIDER", "postgres");
+        env::set_var("UAR_PERSISTENCE__PROVIDER", "postgres");
         env::set_var(
-            "UAR__PERSISTENCE__DATABASE_URL",
+            "UAR_PERSISTENCE__DATABASE_URL",
             "postgres://user:pass@localhost:5432/db",
         );
 
         // Vector dimension relies on EnvSource
-        env::set_var("UAR__PERSISTENCE__VECTOR_DIMENSION", "384");
+        env::set_var("UAR_PERSISTENCE__VECTOR_DIMENSION", "384");
     }
 }
 
@@ -55,7 +56,7 @@ fn test_env_override() {
     setup_env_vars();
     // SAFETY: Tests are serialized with `serial_test`, so process-wide env mutation is controlled.
     unsafe {
-        env::set_var("UAR__SERVER__PORT", "9090");
+        env::set_var("UAR_SERVER__PORT", "9090");
     }
 
     let config = AppConfig::load_from_args(Vec::<String>::new()).expect("Failed to load config");
