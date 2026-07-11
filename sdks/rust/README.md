@@ -31,7 +31,7 @@ use universal_agent_runtime_sdk::Client;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::new("http://localhost:3000")?;
+    let client = Client::new("http://localhost:1906")?;
     
     // Chat API
     let response = client.chat().send("Hello!").await?;

@@ -66,7 +66,7 @@ resource "kubernetes_ingress_v1" "uar_ingress" {
             service {
               name = kubernetes_service.uar_svc.metadata[0].name
               port {
-                number = 3000
+                number = 1906
               }
             }
           }

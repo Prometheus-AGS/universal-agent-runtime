@@ -1,6 +1,7 @@
 import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
 import type { EntityType } from "@prometheus-ags/prometheus-entity-management";
 import { ingestAgUiEvent, ingestRuntimeEvent } from "./runtime-ingest";
+import { UarAguiAdapter } from "@/protocols/agui-adapter";
 
 export interface RuntimeReplayEvent {
   type: string;
@@ -219,20 +220,23 @@ export const runtimeReplayUpdateEvents: RuntimeReplayEvent[] = [
 
 export const agUiReplayEvents: RuntimeReplayEvent[] = [
   {
-    type: "run.started",
+    type: "RUN_STARTED",
     id: RUNTIME_REPLAY_AGUI_ID,
     sequence: 1,
     payload: {
-      message: "AG-UI replay run started",
-      run_id: RUNTIME_REPLAY_RUN_ID,
+      profile: "uar.agui/1",
+      runId: RUNTIME_REPLAY_RUN_ID,
+      input: { agentId: "replay-agent" },
     },
   },
   {
-    type: "tool_call.delta",
+    type: "TOOL_CALL_ARGS",
     id: "replay-agui-002",
     sequence: 2,
     payload: {
-      tool_call_id: RUNTIME_REPLAY_TOOL_ID,
+      profile: "uar.agui/1",
+      runId: RUNTIME_REPLAY_RUN_ID,
+      toolCallId: RUNTIME_REPLAY_TOOL_ID,
       delta: "provider health chunk",
     },
   },
@@ -268,8 +272,25 @@ export function replayRuntimeEvents(events = runtimeReplayEvents) {
 }
 
 export function replayAgUiEvents(events = agUiReplayEvents) {
+  const adapter = new UarAguiAdapter();
   for (const event of events) {
-    ingestAgUiEvent(RUNTIME_REPLAY_RUN_ID, event);
+    const adapted = adapter.ingest(
+      event.type,
+      JSON.stringify({
+        ...event.payload,
+        type: event.type,
+        eventId: event.id,
+        sequence: event.sequence,
+      }),
+      event.sequence,
+    );
+    if (!adapted) continue;
+    ingestAgUiEvent(RUNTIME_REPLAY_RUN_ID, {
+      type: adapted.event,
+      id: adapted.eventId,
+      sequence: adapted.sequence,
+      payload: adapted.payload,
+    });
   }
 }
 

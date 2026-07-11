@@ -26,12 +26,13 @@ print_header() {
 }
 
 print_urls() {
+  local uar_port="${UAR_SERVER__PORT:-${PORT:-1906}}"
   echo -e "${GREEN}✓ Stack is running!${NC}"
   echo ""
-  echo -e "  ${CYAN}UAR Application${NC}   →  http://localhost:3000"
-  echo -e "  ${CYAN}UAR API Docs${NC}      →  http://localhost:3000/api/uar"
-  echo -e "  ${CYAN}Memory MCP${NC}        →  http://localhost:3000/mcp/memory"
-  echo -e "  ${CYAN}UAR MCP${NC}           →  http://localhost:3000/mcp/uar"
+  echo -e "  ${CYAN}UAR Application${NC}   →  http://localhost:${uar_port}"
+  echo -e "  ${CYAN}UAR API Docs${NC}      →  http://localhost:${uar_port}/api/uar"
+  echo -e "  ${CYAN}Memory MCP${NC}        →  http://localhost:${uar_port}/mcp/memory"
+  echo -e "  ${CYAN}UAR MCP${NC}           →  http://localhost:${uar_port}/mcp/uar"
   echo -e "  ${CYAN}DbGate${NC}            →  http://localhost:5050"
   echo -e "  ${CYAN}Surrealist${NC}        →  http://localhost:8080"
   echo ""

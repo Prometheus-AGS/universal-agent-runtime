@@ -312,6 +312,35 @@ fn tool_requires_approval(tool_name: &str) -> bool {
     RISKY_KEYWORDS.iter().any(|kw| lower.contains(kw))
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum ApprovalWaitOutcome {
+    Approved,
+    Rejected,
+    ChannelClosed,
+    TimedOut,
+}
+
+async fn await_approval(
+    receiver: oneshot::Receiver<bool>,
+    timeout_duration: Duration,
+) -> ApprovalWaitOutcome {
+    match tokio::time::timeout(timeout_duration, receiver).await {
+        Ok(Ok(true)) => ApprovalWaitOutcome::Approved,
+        Ok(Ok(false)) => ApprovalWaitOutcome::Rejected,
+        Ok(Err(_)) => ApprovalWaitOutcome::ChannelClosed,
+        Err(_) => ApprovalWaitOutcome::TimedOut,
+    }
+}
+
+async fn resolve_pending_approval(
+    approvals: &Mutex<HashMap<String, oneshot::Sender<bool>>>,
+    run_id: &str,
+    approved: bool,
+) -> bool {
+    let sender = approvals.lock().await.remove(run_id);
+    sender.is_some_and(|sender| sender.send(approved).is_ok())
+}
+
 /// RAII guard tied to the lifetime of an SSE subscription.
 ///
 /// When dropped (the SSE client disconnects and its stream is torn down), it
@@ -554,16 +583,7 @@ impl RunManager {
     /// Returns `true` if an approval was pending and the decision was delivered,
     /// `false` if no pending approval was found for that run_id.
     pub async fn resolve_approval(&self, run_id: &str, approved: bool) -> bool {
-        let sender = {
-            let mut approvals = self.pending_approvals.lock().await;
-            approvals.remove(run_id)
-        };
-        if let Some(tx) = sender {
-            let _ = tx.send(approved);
-            true
-        } else {
-            false
-        }
+        resolve_pending_approval(&self.pending_approvals, run_id, approved).await
     }
 
     /// Cancel an in-flight run.
@@ -1101,27 +1121,34 @@ impl RunManager {
                         let agent_id = approval_agent_id.clone();
                         let governance = approval_governance.clone();
                         Box::pin(async move {
-                            // A tool requires approval when the risk heuristic flags it
-                            // OR the governance engine denies it (deny → HITL approval).
                             let heuristic_flag = tool_requires_approval(&tool_name);
-                            let policy_denies = match &governance {
-                                Some(engine) => {
-                                    !engine.is_tool_allowed(&agent_id, &tool_name).await
+                            let decision = match &governance {
+                                Some(engine) => engine
+                                    .tool_decision(&agent_id, &tool_name, heuristic_flag)
+                                    .await,
+                                None if heuristic_flag => crate::uar::governance::engine::ToolGovernanceDecision::RequireApproval,
+                                None => crate::uar::governance::engine::ToolGovernanceDecision::Allow,
+                            };
+                            match decision {
+                                crate::uar::governance::engine::ToolGovernanceDecision::Allow => {
+                                    return crate::llm::ToolApprovalResult::Approved;
                                 }
-                                None => false,
-                            };
-                            if !heuristic_flag && !policy_denies {
-                                return crate::llm::ToolApprovalResult::Approved;
+                                crate::uar::governance::engine::ToolGovernanceDecision::Deny => {
+                                    let reason = format!("Tool '{tool_name}' is denied by governance policy");
+                                    emitter.emit(NormalizedEvent::ToolCallDenied {
+                                        run_id: run_id.clone(),
+                                        call_index,
+                                        tool_call_id: tool_call_id.clone(),
+                                        name: tool_name.clone(),
+                                        reason: reason.clone(),
+                                    }).await;
+                                    return crate::llm::ToolApprovalResult::Rejected { reason };
+                                }
+                                crate::uar::governance::engine::ToolGovernanceDecision::RequireApproval => {}
                             }
-                            let risk_reason = if policy_denies && !heuristic_flag {
-                                format!(
-                                    "Tool '{tool_name}' is denied by governance policy and requires approval"
-                                )
-                            } else {
-                                format!(
-                                    "Tool '{tool_name}' may perform a destructive or write operation"
-                                )
-                            };
+                            let risk_reason = format!(
+                                "Tool '{tool_name}' may perform a destructive or write operation"
+                            );
                             // Emit approval-required event to the client
                             emitter
                                 .emit(NormalizedEvent::ToolCallApprovalRequired {
@@ -1140,24 +1167,24 @@ impl RunManager {
                                 approvals.insert(run_id.clone(), tx);
                             }
                             // Wait with 5-minute timeout; auto-reject on timeout or channel error
-                            match tokio::time::timeout(Duration::from_secs(300), rx).await {
-                                Ok(Ok(true)) => {
+                            match await_approval(rx, Duration::from_secs(300)).await {
+                                ApprovalWaitOutcome::Approved => {
                                     tracing::info!(run_id = %run_id, tool = %tool_name, "Tool call approved by user");
                                     crate::llm::ToolApprovalResult::Approved
                                 }
-                                Ok(Ok(false)) => {
+                                ApprovalWaitOutcome::Rejected => {
                                     tracing::info!(run_id = %run_id, tool = %tool_name, "Tool call rejected by user");
                                     crate::llm::ToolApprovalResult::Rejected {
                                         reason: "Rejected by user".to_string(),
                                     }
                                 }
-                                Ok(Err(_)) => {
+                                ApprovalWaitOutcome::ChannelClosed => {
                                     tracing::warn!(run_id = %run_id, tool = %tool_name, "Approval channel dropped");
                                     crate::llm::ToolApprovalResult::Rejected {
                                         reason: "Approval channel closed".to_string(),
                                     }
                                 }
-                                Err(_) => {
+                                ApprovalWaitOutcome::TimedOut => {
                                     // Timeout — clean up the pending entry
                                     let mut approvals = pending.lock().await;
                                     approvals.remove(&run_id);
@@ -1900,6 +1927,54 @@ impl RunManager {
         }
 
         None
+    }
+}
+
+#[cfg(test)]
+mod approval_gate_tests {
+    use super::{ApprovalWaitOutcome, await_approval, resolve_pending_approval};
+    use std::{collections::HashMap, time::Duration};
+    use tokio::sync::{Mutex, oneshot};
+
+    #[tokio::test]
+    async fn approval_wait_covers_approve_reject_close_and_timeout() {
+        let (approved_tx, approved_rx) = oneshot::channel();
+        approved_tx.send(true).expect("receiver remains open");
+        assert_eq!(
+            await_approval(approved_rx, Duration::from_secs(1)).await,
+            ApprovalWaitOutcome::Approved
+        );
+
+        let (rejected_tx, rejected_rx) = oneshot::channel();
+        rejected_tx.send(false).expect("receiver remains open");
+        assert_eq!(
+            await_approval(rejected_rx, Duration::from_secs(1)).await,
+            ApprovalWaitOutcome::Rejected
+        );
+
+        let (closed_tx, closed_rx) = oneshot::channel::<bool>();
+        drop(closed_tx);
+        assert_eq!(
+            await_approval(closed_rx, Duration::from_secs(1)).await,
+            ApprovalWaitOutcome::ChannelClosed
+        );
+
+        let (_timeout_tx, timeout_rx) = oneshot::channel::<bool>();
+        assert_eq!(
+            await_approval(timeout_rx, Duration::from_millis(1)).await,
+            ApprovalWaitOutcome::TimedOut
+        );
+    }
+
+    #[tokio::test]
+    async fn approval_resolution_is_single_use() {
+        let approvals = Mutex::new(HashMap::new());
+        let (sender, receiver) = oneshot::channel();
+        approvals.lock().await.insert("run-1".to_string(), sender);
+
+        assert!(resolve_pending_approval(&approvals, "run-1", true).await);
+        assert!(!resolve_pending_approval(&approvals, "run-1", false).await);
+        assert_eq!(receiver.await, Ok(true));
     }
 }
 

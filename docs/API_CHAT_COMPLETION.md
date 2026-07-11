@@ -270,7 +270,7 @@ data: [DONE]
 ```bash
 RESP=$(curl -sS -i -H 'content-type: application/json' \
   -d '{"model":"gpt-5.2","message":"Tell me a joke.","stream":false}' \
-  http://localhost:6565/api/chat/completion)
+  http://localhost:1906/api/chat/completion)
 ```
 
 Extract `X-UAR-Session-ID` from response headers.
@@ -281,7 +281,7 @@ Extract `X-UAR-Session-ID` from response headers.
 curl -sS -H 'content-type: application/json' \
   -H 'X-UAR-Session-ID: <session-id>' \
   -d '{"model":"gpt-5.2","message":"Another one.","stream":false}' \
-  http://localhost:6565/api/chat/completion
+  http://localhost:1906/api/chat/completion
 ```
 
 ## Route Contract

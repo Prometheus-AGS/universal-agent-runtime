@@ -27,7 +27,7 @@ spec:
           image: PLACEHOLDER_IMAGE
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: 1906
               protocol: TCP
             - name: grpc
               containerPort: 50051

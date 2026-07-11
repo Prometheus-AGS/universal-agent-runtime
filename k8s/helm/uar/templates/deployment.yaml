@@ -24,7 +24,7 @@ spec:
           imagePullPolicy: {{ .Values.uar.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 3000
+              containerPort: {{ .Values.uar.service.port }}
               protocol: TCP
             - name: grpc
               containerPort: {{ .Values.uar.service.grpcPort }}

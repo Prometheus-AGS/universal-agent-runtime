@@ -23,7 +23,7 @@ Examples:
 
 | Env var | Sets |
 |---|---|
-| `UAR_SERVER__PORT=3000` | `server.port` |
+| `UAR_SERVER__PORT=1906` | `server.port` |
 | `UAR_SERVER__HOST=0.0.0.0` | `server.host` |
 | `UAR_SECURITY__JWT_REQUIRED=true` | `security.jwt_required` |
 | `UAR_PERSISTENCE__PROVIDER=surreal` | `persistence.provider` |
@@ -40,12 +40,12 @@ priority wins:
 
 | Priority | Source | Example |
 |---|---|---|
-| 1 (highest) | CLI arguments | `--llm-model openai/gpt-4o`, `--port 3000` |
+| 1 (highest) | CLI arguments | `--llm-model openai/gpt-4o`, `--port 1906` |
 | 2 | `UAR_*__*` structured env vars | `UAR_LLM__MODEL=openai/gpt-4o` |
 | 3 | Legacy `LLM_*` env vars | `LLM_MODEL=gpt-4o` |
 | 4 | Provider shortcut env vars | `OPENAI_API_KEY=sk-...` |
 | 5 | `config.yaml` (`llm:`, `server:`, …) | see YAML section |
-| 6 (lowest) | Compiled defaults | `server.port = 3000`, `llm.model = openai/gpt-4o` |
+| 6 (lowest) | Compiled defaults | `server.port = 1906`, `llm.model = openai/gpt-4o` |
 
 A few short CLI env vars are honored as convenience overrides and are applied at
 the CLI tier (priority 1): `PORT` / `--port`, `JWT_REQUIRED` /
@@ -77,7 +77,7 @@ CONFIG_FILE=config.embedded.yaml cargo run
 
 | Env var | YAML key | Default | Notes |
 |---|---|---|---|
-| `UAR_SERVER__PORT` (or `PORT` / `--port`) | `server.port` | `3000` | HTTP listen port. |
+| `UAR_SERVER__PORT` (or `PORT` / `--port`) | `server.port` | `1906` | HTTP listen port. |
 | `UAR_SERVER__HOST` | `server.host` | `0.0.0.0` | Bind address. |
 | `UAR_SERVER__GRPC_PORT` | `server.grpc_port` | `50051` | A2A v0.3 gRPC transport port. |
 | `UAR_SERVER__SHUTDOWN_TIMEOUT_SECS` | `server.shutdown_timeout_secs` | `30` | Graceful shutdown budget. |

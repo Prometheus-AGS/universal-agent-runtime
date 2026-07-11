@@ -60,7 +60,7 @@ Backed by the compile-time model catalog (models.dev + liter-llm schemas).
 Example capability-routing request:
 
 ```bash
-curl -X POST http://localhost:3000/api/uar/route \
+curl -X POST http://localhost:1906/api/uar/route \
   -H 'Content-Type: application/json' \
   -d '{"needs_tools": true, "needs_vision": false, "min_context": 32000,
        "max_cost_per_1m_tokens": 5.0, "preferred_provider": "openai"}'

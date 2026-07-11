@@ -8,7 +8,7 @@ uar:
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
-    port: 3000
+    port: 1906
     grpcPort: 50051
   resources:
     requests:
@@ -35,7 +35,7 @@ uar:
     failureThreshold: 3
   terminationGracePeriodSeconds: 60
   env:
-    UAR_SERVER__PORT: "3000"
+    UAR_SERVER__PORT: "1906"
     UAR_SERVER__GRPC_PORT: "50051"
     UAR_SERVER__HOST: "0.0.0.0"
     UAR_SERVER__LOG_FORMAT: "json"

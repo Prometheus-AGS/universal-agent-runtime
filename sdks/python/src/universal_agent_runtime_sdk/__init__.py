@@ -7,7 +7,7 @@ Example:
     >>> from universal_agent_runtime_sdk import Client
     >>>
     >>> async def main():
-    ...     client = Client("http://localhost:3000")
+    ...     client = Client("http://localhost:1906")
     ...     
     ...     # Chat API
     ...     response = await client.chat("Hello!")

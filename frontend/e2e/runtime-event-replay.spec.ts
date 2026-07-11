@@ -33,7 +33,7 @@ test.describe("Runtime event replay entity sync", () => {
     await expect(page.getByText("workflow_mirror")).toBeVisible();
     await expect(page.getByText("Mirrored KBD waypoint for surreal-memory-workflow-mirror-tests")).toBeVisible();
     await expect(page.getByText("No runtime runs observed yet")).not.toBeVisible();
-    await expect(page.getByText("Provider health has not reported")).not.toBeVisible();
+    await expect(page.getByText("No provider health reported yet")).not.toBeVisible();
   });
 
   test("runs detail updates replayed artifacts and tool calls without refresh", async ({ page }) => {
@@ -92,6 +92,6 @@ test.describe("Runtime event replay entity sync", () => {
     await page.goto("/admin/runtime");
 
     await expect(page.getByText("No runtime runs observed yet")).toBeVisible();
-    await expect(page.getByText("Provider health has not reported")).toBeVisible();
+    await expect(page.getByText("No provider health reported yet")).toBeVisible();
   });
 });

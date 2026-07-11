@@ -177,6 +177,15 @@ pub enum NormalizedEvent {
         arguments_json: String,
         risk_reason: String,
     },
+    /// A governance policy denied a tool call. This is terminal for the call
+    /// and must never create a human approval request.
+    ToolCallDenied {
+        run_id: String,
+        call_index: usize,
+        tool_call_id: String,
+        name: String,
+        reason: String,
+    },
 
     /// A run completed. Optionally carries token usage and cost estimates
     /// when the persistence layer or LLM provider reports them.

@@ -83,7 +83,7 @@ tar xzf uar-backup-20260711-120000.tar.gz -C ./data
 docker compose -f docker-compose.prod.yaml start app
 
 # 5. Health-check and spot-check data.
-curl -sf http://localhost:3000/healthz
+curl -sf http://localhost:1906/healthz
 ```
 
 Restore into a datastore built by the **same or a compatible UAR version**.

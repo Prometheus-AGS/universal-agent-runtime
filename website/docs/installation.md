@@ -58,7 +58,7 @@ cp .env.example .env
 docker compose -f docker-compose.prod.yaml --env-file .env up -d
 
 # 3. Check health
-curl -sf http://localhost:3000/healthz
+curl -sf http://localhost:1906/healthz
 ```
 
 The compose stack sets persistence for you — the app talks to the SurrealDB
@@ -71,7 +71,7 @@ UAR_PERSISTENCE__SURREAL_USER: ${SURREAL_USER:-root}
 UAR_PERSISTENCE__SURREAL_PASS: ${SURREAL_PASS:-changeme}
 ```
 
-Ports (host defaults): app `3000`, gRPC `50051`, SurrealDB `8000`, Redis `6379`.
+Ports (host defaults): app `1906`, gRPC `50051`, SurrealDB `8000`, Redis `6379`.
 Persistent data lives in named Docker volumes (`surreal_data_prod`,
 `uar_data_prod`, `uar_uploads_prod`, `redis_data_prod`).
 
@@ -87,7 +87,7 @@ standalone (embedded SurrealDB, single container):
 
 ```bash
 docker run -d --name uar \
-  -p 3000:3000 \
+  -p 1906:1906 \
   -v uar_data:/data \
   -e UAR_PERSISTENCE__PROVIDER=surreal \
   -e UAR_PERSISTENCE__DATABASE_URL=rocksdb:///data/uar-db \

@@ -15,7 +15,7 @@
 #   surreal    — SurrealDB v2 (memory / knowledge-graph backend for UAR memory)
 #   surrealist — SurrealDB web UI (http://localhost:8080)
 #   dbgate     — DB admin UI for Postgres (http://localhost:5050)
-#   uar        — Universal Agent Runtime (http://localhost:3000)
+#   uar        — Universal Agent Runtime (http://localhost:1906)
 #
 # Prerequisites:
 #   - Docker Desktop or Docker Engine + Compose v2
@@ -134,7 +134,7 @@ services:
     env_file: .env
     environment:
       # ── Server ─────────────────────────────────────────────────────────────
-      UAR_SERVER__PORT: "3000"
+      UAR_SERVER__PORT: "${UAR_SERVER__PORT:-1906}"
       UAR_SERVER__GRPC_PORT: "50051"
       UAR_SERVER__HOST: "0.0.0.0"
 
@@ -178,7 +178,7 @@ services:
       - uar-uploads:/uploads
       - uar-data:/data
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-1906}:${UAR_SERVER__PORT:-1906}"
       - "50051:50051"
     depends_on:
       postgres:
@@ -188,7 +188,7 @@ services:
       surreal:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:3000/healthz || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:$${UAR_SERVER__PORT:-1906}/healthz || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10

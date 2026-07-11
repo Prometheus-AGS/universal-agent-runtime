@@ -23,3 +23,12 @@ export interface ResolvedRuntimeModel {
 export function fetchRuntimeModelRoute(): Promise<ResolvedRuntimeModel> {
   return getJson("/api/uar/resolve-model");
 }
+
+export async function resolveRuntimeApproval(runId: string, approved: boolean): Promise<void> {
+  const response = await fetch(`/api/uar/runs/${encodeURIComponent(runId)}/approval`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ approved }),
+  });
+  if (!response.ok) throw new Error(`Approval resolution failed: ${response.status}`);
+}

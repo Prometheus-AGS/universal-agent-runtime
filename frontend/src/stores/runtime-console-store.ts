@@ -5,7 +5,9 @@ import {
   fetchRuntimeA2uiSchemas,
   fetchRuntimeModelRoute,
   fetchRuntimeProviderHealth,
+  resolveRuntimeApproval,
 } from "@/services/runtime-console-api";
+import type { RuntimeApprovalEntity } from "@/entities/types";
 
 const POLL_MS = 15_000;
 
@@ -15,6 +17,7 @@ interface RuntimeConsoleState {
   start: () => void;
   stop: () => void;
   refresh: () => Promise<void>;
+  resolveApproval: (approval: RuntimeApprovalEntity, approved: boolean) => Promise<boolean>;
 }
 
 function nowIso(): string {
@@ -80,6 +83,22 @@ export const useRuntimeConsoleStore = create<RuntimeConsoleState>((set, get) => 
       hydrateA2uiSurfaces(),
       hydrateModelRoute(),
     ]);
+  },
+  resolveApproval: async (approval, approved) => {
+    if (approval.status !== "pending") return false;
+    const graph = useGraphStore.getState();
+    graph.upsertEntity("RuntimeApproval", approval.id, {
+      ...approval,
+      status: approved ? "approved" : "denied",
+      updated_at: nowIso(),
+    });
+    try {
+      await resolveRuntimeApproval(approval.run_id, approved);
+      return true;
+    } catch {
+      graph.upsertEntity("RuntimeApproval", approval.id, approval);
+      return false;
+    }
   },
   start: () => {
     const subscribers = get().subscribers + 1;

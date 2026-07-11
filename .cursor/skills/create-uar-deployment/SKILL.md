@@ -181,7 +181,7 @@ provider "kubernetes" {
 
 | Key | Value / Source |
 |-----|----------------|
-| `UAR_SERVER__PORT` | `3000` |
+| `UAR_SERVER__PORT` | `1906` |
 | `UAR_SERVER__HOST` | `0.0.0.0` |
 | `UAR_PERSISTENCE__PROVIDER` | `postgres` |
 | `UAR_PERSISTENCE__EXTERNAL_CACHE_ENABLED` | `true` |
@@ -237,10 +237,10 @@ Add `lifecycle { prevent_destroy = true }` to `postgres_data`.
 - `env_from`: ConfigMap `uar-config`
 - Individual `env` entries from both secrets (see `secrets.tf` section)
 - Volumes: `uar-uploads-pvc` → `/uploads`, `uar-data-pvc` → `/data`
-- Liveness: `httpGet /healthz :3000` (30s initial delay)
-- Readiness: `httpGet /readyz :3000` (15s initial delay)
+- Liveness: `httpGet /healthz :1906` (30s initial delay)
+- Readiness: `httpGet /readyz :1906` (15s initial delay)
 - Resources: `requests: cpu=250m, memory=256Mi` / `limits: cpu=1, memory=1Gi`
-- ClusterIP Service `uar-svc` on port 3000
+- ClusterIP Service `uar-svc` on port 1906
 
 ### `ingress.tf` — nginx + cert-manager
 
@@ -262,7 +262,7 @@ tls:
 rules:
   - host: <hostname>
     http.paths:
-      - path: /  pathType: Prefix  backend: uar-svc:3000
+      - path: /  pathType: Prefix  backend: uar-svc:1906
 ```
 
 ## Phase 5 — Pre-Deployment Checklist
@@ -290,7 +290,7 @@ kubectl -n <namespace> get pods
 kubectl -n <namespace> get certificate uar-tls
 
 # App health
-kubectl -n <namespace> exec deploy/uar -- curl -s http://localhost:3000/healthz
+kubectl -n <namespace> exec deploy/uar -- curl -s http://localhost:1906/healthz
 
 # Public HTTPS
 curl -I https://<hostname>/healthz

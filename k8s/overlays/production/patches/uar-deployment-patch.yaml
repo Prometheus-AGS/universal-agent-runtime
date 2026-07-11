@@ -24,4 +24,4 @@ spec:
             - name: UAR_SERVER__HOST
               value: "0.0.0.0"
             - name: UAR_SERVER__PORT
-              value: "3000"
+              value: "1906"

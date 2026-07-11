@@ -54,7 +54,7 @@ impl AgentNode {
         } else {
             // Local agent — resolve via UAR_LOCAL_A2A_URL env var or default.
             let base = std::env::var("UAR_LOCAL_A2A_URL")
-                .unwrap_or_else(|_| "http://127.0.0.1:3000".to_string());
+                .unwrap_or_else(|_| "http://127.0.0.1:1906".to_string());
             format!(
                 "{}/a2a/{}",
                 base.trim_end_matches('/'),

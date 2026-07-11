@@ -81,7 +81,7 @@ LLM_PROTOCOL=auto
 
 | Env Var | Default | Description |
 |---|---|---|
-| `UAR_SERVER__PORT` | `3001` | Listening port |
+| `UAR_SERVER__PORT` | `1906` | Listening port |
 | `UAR_SERVER__HOST` | `0.0.0.0` | Bind address |
 | `PORT` | — | Alias for `UAR_SERVER__PORT` |
 | `UAR_SERVER__GRPC_PORT` | `50051` | A2A v0.3 gRPC transport port (serves alongside the HTTP/JSON-RPC A2A endpoint) |

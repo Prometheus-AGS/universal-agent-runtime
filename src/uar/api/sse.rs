@@ -377,6 +377,20 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 "risk_reason": risk_reason
             }),
         )),
+        NormalizedEvent::ToolCallDenied {
+            run_id,
+            call_index,
+            tool_call_id,
+            name,
+            reason,
+        } => Some((
+            "agui.tool_call.denied",
+            serde_json::json!({
+                "kind": "tool_call", "phase": "denied", "request_id": run_id,
+                "call_index": call_index, "id": tool_call_id, "name": name,
+                "reason": reason
+            }),
+        )),
         NormalizedEvent::MemoryMutation {
             run_id,
             operation,
@@ -702,6 +716,19 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
                 "arguments": arguments_json, "riskReason": risk_reason
             }),
         ),
+        NormalizedEvent::ToolCallDenied {
+            run_id,
+            tool_call_id,
+            name,
+            reason,
+            ..
+        } => custom(
+            "uar.tool.denied",
+            Some(run_id),
+            serde_json::json!({
+                "toolCallId": tool_call_id, "name": name, "reason": reason
+            }),
+        ),
         NormalizedEvent::RunDoneWithUsage {
             run_id,
             input_tokens,
@@ -869,6 +896,26 @@ pub fn to_runtime_entity_event(
                 "arguments_json": arguments_json,
                 "risk_reason": risk_reason,
                 "status": "pending",
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            }),
+        )),
+        NormalizedEvent::ToolCallDenied {
+            run_id,
+            call_index,
+            tool_call_id,
+            name,
+            reason,
+        } => Some((
+            "runtime.approval",
+            serde_json::json!({
+                "type": "approval_denied",
+                "id": format!("approval:{tool_call_id}"),
+                "run_id": run_id,
+                "call_index": call_index,
+                "tool_call_id": tool_call_id,
+                "tool_name": name,
+                "reason": reason,
+                "status": "denied",
                 "updated_at": chrono::Utc::now().to_rfc3339()
             }),
         )),

@@ -41,7 +41,7 @@ Clients should persist and resend this header for multi-turn context.
 curl -i -N -sS --max-time 20 \
   -H 'content-type: application/json' \
   -d '{"model":"gpt-5.2","message":"Say exactly: stream-ok","stream":true}' \
-  http://localhost:6565/api/chat/completion
+  http://localhost:1906/api/chat/completion
 ```
 
 Success criteria:
@@ -57,7 +57,7 @@ Success criteria:
 curl -i -sS \
   -H 'content-type: application/json' \
   -d '{"model":"gpt-5.2","message":"Say exactly: completion-ok","stream":false}' \
-  http://localhost:6565/api/chat/completion
+  http://localhost:1906/api/chat/completion
 ```
 
 Success criteria:

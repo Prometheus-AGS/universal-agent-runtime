@@ -47,7 +47,7 @@ fn test_default_config() {
     // But defaults should kick in.
     assert!(config.is_ok());
     let config = config.unwrap();
-    assert_eq!(config.server.port, 3000); // Default
+    assert_eq!(config.server.port, 1906); // Default
 }
 
 #[test]

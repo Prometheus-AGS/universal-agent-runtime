@@ -99,6 +99,8 @@ function customToLegacy(wire: UarAguiEvent): [string, Record<string, unknown>] {
       return ["agui.context.update", { kind: "context", phase: "update", request_id, ...value }];
     case "uar.tool.approval_required":
       return ["agui.tool_call.approval_required", { kind: "tool_call", phase: "approval_required", request_id, ...value }];
+    case "uar.tool.denied":
+      return ["agui.tool_call.denied", { kind: "tool_call", phase: "denied", request_id, ...value }];
     default:
       return ["agui.custom", { kind: "custom", request_id, name: wire.name, value }];
   }

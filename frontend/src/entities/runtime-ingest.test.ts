@@ -6,10 +6,13 @@ import {
   RUNTIME_REPLAY_AGUI_ID,
   RUNTIME_REPLAY_A2UI_ID,
   RUNTIME_REPLAY_APPROVAL_ID,
+  RUNTIME_REPLAY_ARTIFACT_ID,
+  RUNTIME_REPLAY_MEMORY_ID,
+  RUNTIME_REPLAY_PROVIDER_ID,
+  RUNTIME_REPLAY_ROUTE_ID,
   RUNTIME_REPLAY_RUN_ID,
   RUNTIME_REPLAY_TOOL_ID,
   RUNTIME_REPLAY_WORKFLOW_MIRROR_MEMORY_ID,
-  agUiReplayEvents,
   replayAgUiEvents,
   replayAllRuntimeFixtures,
   replayRuntimeEvents,
@@ -37,6 +40,29 @@ describe("runtime event replay entity sync", () => {
     for (const entityType of runtimeReplayEntityTypes) {
       expect(entityCount(entityType), entityType).toBeGreaterThan(0);
     }
+  });
+
+  test("health, memory, routing, surfaces, and artifacts retain one run correlation", () => {
+    replayAllRuntimeFixtures();
+
+    const correlatedEntities = [
+      entity("RuntimeArtifact", RUNTIME_REPLAY_ARTIFACT_ID),
+      entity("RuntimeMemoryEvent", RUNTIME_REPLAY_MEMORY_ID),
+      entity("RuntimeModelRouteDecision", RUNTIME_REPLAY_ROUTE_ID),
+      entity("RuntimeA2uiSurface", RUNTIME_REPLAY_A2UI_ID),
+      entity("RuntimeProviderHealth", `provider-health-${RUNTIME_REPLAY_PROVIDER_ID}`),
+    ];
+
+    for (const correlated of correlatedEntities) {
+      expect(correlated?.run_id).toBe(RUNTIME_REPLAY_RUN_ID);
+    }
+
+    expect(entity("RuntimeRun", RUNTIME_REPLAY_RUN_ID)?.provider_id).toBe(
+      RUNTIME_REPLAY_PROVIDER_ID,
+    );
+    expect(entity("RuntimeModelRouteDecision", RUNTIME_REPLAY_ROUTE_ID)?.selected_provider).toBe(
+      RUNTIME_REPLAY_PROVIDER_ID,
+    );
   });
 
   test("ingestRuntimeEvent maps replayed events to runtime entity types", () => {
@@ -119,9 +145,9 @@ describe("runtime event replay entity sync", () => {
 
     const event = entity("RuntimeAgUiEvent", RUNTIME_REPLAY_AGUI_ID);
     expect(event?.run_id).toBe(RUNTIME_REPLAY_RUN_ID);
-    expect(event?.event_type).toBe(agUiReplayEvents[0]?.type);
+    expect(event?.event_type).toBe("agui.stream.start");
     expect(event?.sequence).toBe(1);
-    expect(event?.payload).toEqual(agUiReplayEvents[0]?.payload);
+    expect(event?.payload).toMatchObject({ request_id: RUNTIME_REPLAY_RUN_ID, agent_id: "replay-agent" });
     expect(typeof event?.updated_at).toBe("string");
   });
 

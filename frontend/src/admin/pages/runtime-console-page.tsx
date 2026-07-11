@@ -16,7 +16,6 @@ import {
   Wrench,
   XCircle,
 } from "lucide-react";
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
 import type { EntityType } from "@prometheus-ags/prometheus-entity-management";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,13 +33,11 @@ import type {
   RuntimeRunStepEntity,
   RuntimeToolCallEntity,
 } from "@/entities/types";
+import { useGraphEntities } from "@/entities/hooks/use-graph-entities";
+import { useRuntimeConsoleActions } from "@/hooks/use-runtime-console";
 
 function useEntities<T>(type: EntityType): T[] {
-  const entityMap = useGraphStore((state) => state.entities[type]);
-  return useMemo(
-    () => Object.values(entityMap ?? {}) as T[],
-    [entityMap],
-  );
+  return useGraphEntities<T>(type);
 }
 
 function formatTime(value?: string) {
@@ -369,37 +366,7 @@ export function RuntimeRunsPage() {
 
 export function RuntimeApprovalsPage() {
   const approvals = useEntities<RuntimeApprovalEntity>("RuntimeApproval");
-  const { upsertEntity } = useGraphStore.getState();
-
-  /** Resolve a pending approval: POST to backend, then optimistically update entity. */
-  const resolveApproval = useCallback(async (approval: RuntimeApprovalEntity, approved: boolean) => {
-    if (approval.status !== "pending") return;
-    // Optimistic update in entity graph immediately.
-    upsertEntity("RuntimeApproval", approval.id, {
-      ...approval,
-      status: approved ? "approved" : "denied",
-      updated_at: new Date().toISOString(),
-    });
-    try {
-      const res = await fetch(`/api/uar/runs/${encodeURIComponent(approval.run_id)}/approval`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ approved }),
-      });
-      if (!res.ok) {
-        // Revert on failure.
-        upsertEntity("RuntimeApproval", approval.id, {
-          ...approval,
-          status: "pending",
-        });
-      }
-    } catch {
-      upsertEntity("RuntimeApproval", approval.id, {
-        ...approval,
-        status: "pending",
-      });
-    }
-  }, [upsertEntity]);
+  const { resolveApproval } = useRuntimeConsoleActions();
 
   return (
     <ScrollArea className="flex-1">

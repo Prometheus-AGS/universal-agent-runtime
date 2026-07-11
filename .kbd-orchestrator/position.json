@@ -1,22 +1,22 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-11T15:27:40Z",
+  "updatedAt": "2026-07-11T22:40:00Z",
   "cursor": [
     "uar-final-production-hardening-2026-07",
-    "certify-runtime-console-governance"
+    "certify-remaining-admin-surfaces"
   ],
   "root": {
     "type": "phase",
     "id": "uar-final-production-hardening-2026-07",
     "status": "executing",
     "progress": {
-      "done": 12,
+      "done": 13,
       "total": 24
     },
     "children": [
       {
         "type": "change",
-        "id": "certify-runtime-console-governance",
+        "id": "certify-remaining-admin-surfaces",
         "status": "PENDING",
         "progress": {
           "done": 0,

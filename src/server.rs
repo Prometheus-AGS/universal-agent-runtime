@@ -1334,8 +1334,13 @@ async fn handle_tool_call_approval(
             approved,
             "Tool-call approval resolved"
         );
-        Json(serde_json::json!({ "ok": true, "run_id": run_id, "approved": approved }))
-            .into_response()
+        Json(serde_json::json!({
+            "ok": true,
+            "run_id": run_id,
+            "approved": approved,
+            "decision": if approved { "allow" } else { "deny" }
+        }))
+        .into_response()
     } else {
         (
             StatusCode::NOT_FOUND,

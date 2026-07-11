@@ -80,7 +80,7 @@ resource "kubernetes_deployment" "uar" {
 
           port {
             name           = "http"
-            container_port = 3000
+            container_port = 1906
             protocol       = "TCP"
           }
 
@@ -227,7 +227,7 @@ resource "kubernetes_deployment" "uar" {
           liveness_probe {
             http_get {
               path = "/healthz"
-              port = 3000
+              port = 1906
             }
             initial_delay_seconds = 30
             period_seconds        = 15
@@ -238,7 +238,7 @@ resource "kubernetes_deployment" "uar" {
           readiness_probe {
             http_get {
               path = "/readyz"
-              port = 3000
+              port = 1906
             }
             initial_delay_seconds = 15
             period_seconds        = 10
@@ -275,7 +275,7 @@ resource "kubernetes_deployment" "uar" {
 }
 
 # ── ClusterIP Service ──────────────────────────────────────────────────────
-# Exposed to the nginx Ingress on port 3000.
+# Exposed to the nginx Ingress on port 1906.
 resource "kubernetes_service" "uar_svc" {
   metadata {
     name      = "uar-svc"
@@ -298,8 +298,8 @@ resource "kubernetes_service" "uar_svc" {
 
     port {
       name        = "http"
-      port        = 3000
-      target_port = 3000
+      port        = 1906
+      target_port = 1906
       protocol    = "TCP"
     }
 

@@ -11,6 +11,18 @@ use tracing::{debug, error, info, warn};
 
 use super::policy;
 
+/// Runtime outcome of evaluating a tool call at the governance boundary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ToolGovernanceDecision {
+    /// Execute immediately.
+    Allow,
+    /// Pause and request a human decision.
+    RequireApproval,
+    /// Reject immediately; human approval cannot override this outcome.
+    Deny,
+}
+
 // ---------------------------------------------------------------------------
 // GovernanceEngine
 // ---------------------------------------------------------------------------
@@ -150,6 +162,22 @@ impl GovernanceEngine {
                 );
                 false
             }
+        }
+    }
+
+    /// Evaluate a tool call into the complete runtime governance outcome.
+    pub async fn tool_decision(
+        &self,
+        agent_id: &str,
+        tool_name: &str,
+        risk_requires_approval: bool,
+    ) -> ToolGovernanceDecision {
+        if !self.is_tool_allowed(agent_id, tool_name).await {
+            ToolGovernanceDecision::Deny
+        } else if risk_requires_approval {
+            ToolGovernanceDecision::RequireApproval
+        } else {
+            ToolGovernanceDecision::Allow
         }
     }
 
@@ -382,5 +410,23 @@ mod tests {
 
         assert!(engine.is_tool_allowed("agent-1", "web_search").await);
         assert!(!engine.is_tool_allowed("agent-1", "dangerous_tool").await);
+    }
+
+    #[tokio::test]
+    async fn tool_decision_distinguishes_allow_approval_and_deny() {
+        let engine = GovernanceEngine::with_default_permit().unwrap();
+        assert_eq!(
+            engine.tool_decision("agent-1", "read", false).await,
+            ToolGovernanceDecision::Allow
+        );
+        assert_eq!(
+            engine.tool_decision("agent-1", "write", true).await,
+            ToolGovernanceDecision::RequireApproval
+        );
+        let denied = GovernanceEngine::new();
+        assert_eq!(
+            denied.tool_decision("agent-1", "read", false).await,
+            ToolGovernanceDecision::Deny
+        );
     }
 }

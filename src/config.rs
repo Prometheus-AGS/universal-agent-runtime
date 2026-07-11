@@ -992,7 +992,7 @@ impl AppConfig {
 
         // 1. Default Defaults
         builder = builder
-            .set_default("server.port", 3000)?
+            .set_default("server.port", 1906)?
             .set_default("server.host", "0.0.0.0")?
             .set_default("security.jwt_required", true)?
             .set_default("security.settings_mutation_auth_required", true)?
@@ -1617,7 +1617,7 @@ persistence:
         // but never applied to the config builder.
         let (cli, cfg_path) = base_cli();
         let default_cfg = AppConfig::load_with_cli(cli).expect("config should load");
-        assert_eq!(default_cfg.server.port, 3000, "default port");
+        assert_eq!(default_cfg.server.port, 1906, "default port");
 
         let (mut cli, _) = base_cli();
         cli.config = Some(cfg_path.to_string_lossy().to_string());

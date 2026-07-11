@@ -852,7 +852,7 @@ td code {
 {
   <span class="str">"mcpServers"</span>: {
     <span class="str">"uar-memory"</span>: {
-      <span class="str">"url"</span>: <span class="str">"http://localhost:3000/mcp/memory"</span>
+      <span class="str">"url"</span>: <span class="str">"http://localhost:1906/mcp/memory"</span>
     }
   }
 }
@@ -1080,7 +1080,7 @@ docker compose -f docker-compose.prod.yml up -d
         <div class="step-body">Send a message through the web UI or via the API:
           <div class="code-block" style="margin-top:.5rem;">
             <span class="code-lang">bash</span>
-curl -X POST http://localhost:3000/api/uar/runs \
+curl -X POST http://localhost:1906/api/uar/runs \
   -H <span class="str">"Content-Type: application/json"</span> \
   -d <span class="str">'{"agent_id": "your-agent-id", "input": "My name is Alice and I work at Acme Corp."}'</span>
           </div>
@@ -1094,7 +1094,7 @@ curl -X POST http://localhost:3000/api/uar/runs \
           <div class="code-block" style="margin-top:.5rem;">
             <span class="code-lang">bash</span>
 <span class="comment"># Via the memory admin API</span>
-curl <span class="str">"http://localhost:3000/api/admin/memories?scope=session"</span>
+curl <span class="str">"http://localhost:1906/api/admin/memories?scope=session"</span>
           </div>
           <p style="font-family:var(--font-ui);font-size:.83rem;color:var(--fg-muted);margin-top:.6rem;">Or connect Claude Desktop to the MCP endpoint and call <code style="font-family:var(--font-mono);font-size:.78rem;background:var(--muted);border:1px solid var(--border);border-radius:3px;padding:.08rem .35rem;">memory_list</code> — you should see the extracted fact about Alice.</p>
         </div>

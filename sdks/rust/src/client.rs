@@ -14,7 +14,7 @@ use url::Url;
 /// use universal_agent_runtime_sdk::Client;
 ///
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = Client::new("http://localhost:3000")?;
+/// let client = Client::new("http://localhost:1906")?;
 ///
 /// // Chat API
 /// let chat = client.chat().send("Hello!").await?;
@@ -35,7 +35,7 @@ impl Client {
     ///
     /// # Arguments
     ///
-    /// * `base_url` - The base URL of the server (e.g., "http://localhost:3000")
+    /// * `base_url` - The base URL of the server (e.g., "http://localhost:1906")
     pub fn new(base_url: impl AsRef<str>) -> Result<Self> {
         let base_url = Url::parse(base_url.as_ref())?;
         Ok(Self {

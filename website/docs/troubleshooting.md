@@ -125,7 +125,7 @@ listening on the port you expect.
 
 **Cause** — another process holds the port, or UAR is bound to a different port
 than you are connecting to. Defaults differ by config: the compiled default is
-`3000`, but `config.embedded.yaml` uses **`1906`**.
+`1906`; configuration files and deployment manifests should use the same default.
 
 **Fix**
 
@@ -134,11 +134,11 @@ than you are connecting to. Defaults differ by config: the compiled default is
 2. Find and stop whatever holds it, or choose a free port:
 
    ```bash
-   lsof -i :3000            # who has the port?
+   lsof -i :1906            # who has the port?
    UAR_SERVER__PORT=3010 cargo run
    ```
 
-3. In Docker, check the host-side port mapping (`-p 3000:3000`) and that the
+3. In Docker, check the host-side port mapping (`-p 1906:1906`) and that the
    container's `UAR_SERVER__PORT` matches the container-side port.
 
 ## Configuration override "not taking effect"

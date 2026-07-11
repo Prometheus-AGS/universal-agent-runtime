@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-http://127.0.0.1:6565}"
+BASE_URL="${BASE_URL:-http://127.0.0.1:1906}"
 PROMPT="${PROMPT:-Reply with exactly: openai-ok}"
 MODEL="${MODEL:-gpt-5.2}"
 WAIT_SECONDS="${WAIT_SECONDS:-3}"

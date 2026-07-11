@@ -6,8 +6,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
-PORT=6565 \
-UAR_SERVER__PORT=6565 \
+PORT=1906 \
+UAR_SERVER__PORT=1906 \
 LLM_BASE_URL='https://api.openai.com' \
 LLM_MODEL='gpt-5.2' \
 LLM_API_KEY="$OPENAI_API_KEY" \

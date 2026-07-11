@@ -29,7 +29,7 @@ class Client:
     """Async HTTP client for the API.
 
     Example:
-        >>> async with Client("http://localhost:3000") as client:
+        >>> async with Client("http://localhost:1906") as client:
         ...     response = await client.chat("Hello!")
         ...     print(response.stream_url)
     """
@@ -38,7 +38,7 @@ class Client:
         """Initialize the client.
 
         Args:
-            base_url: The base URL of the server (e.g., "http://localhost:3000")
+            base_url: The base URL of the server (e.g., "http://localhost:1906")
         """
         self.base_url = base_url.rstrip("/")
         self._http = httpx.AsyncClient()

@@ -10,7 +10,6 @@ frontend/src/admin/pages/agents-page.tsx|component-service-import
 frontend/src/admin/pages/compiler-page.tsx|component-service-import
 frontend/src/admin/pages/credentials-page.tsx|component-service-import
 frontend/src/admin/pages/memory-page.tsx|component-service-import
-frontend/src/admin/pages/runtime-console-page.tsx|component-direct-fetch
 frontend/src/admin/pages/skills-page.tsx|component-service-import
 frontend/src/components/ThemeToggle.tsx|component-store-import
 frontend/src/components/assistant-ui/enhanced-thread.tsx|component-store-import

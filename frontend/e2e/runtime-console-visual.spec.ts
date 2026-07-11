@@ -44,7 +44,7 @@ test.describe("Runtime console visual verification", () => {
     await expect(page.getByRole("heading", { name: "Provider Health" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Workflow State" })).toBeVisible();
     await expect(page.getByText("No runtime runs observed yet")).toBeVisible();
-    await expect(page.getByText("Provider health has not reported")).toBeVisible();
+    await expect(page.getByText("No provider health reported yet")).toBeVisible();
 
     await expectNoOverlap(
       page.getByTestId("admin-navigation"),
@@ -67,7 +67,7 @@ test.describe("Runtime console visual verification", () => {
       { id: "protocols", path: /\/admin\/protocols/, heading: "Compatibility Console" },
       { id: "providers", path: /\/admin\/providers/, heading: "Providers" },
       { id: "memory", path: /\/admin\/memory/, heading: "Memory Browser" },
-      { id: "a2ui-testing", path: /\/admin\/a2ui-testing/, heading: "A2UI Schema Testing" },
+      { id: "a2ui-testing", path: /\/admin\/a2ui-testing/, heading: "A2UI Live Testing" },
     ] as const;
 
     for (const surface of surfaces) {

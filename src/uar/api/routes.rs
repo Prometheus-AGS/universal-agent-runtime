@@ -120,9 +120,18 @@ async fn api_tool_approval(
     Json(body): Json<ToolApprovalRequest>,
 ) -> impl IntoResponse {
     if manager.resolve_approval(&run_id, body.approved).await {
-        StatusCode::OK
+        (
+            StatusCode::OK,
+            Json(serde_json::json!({
+                "resolved": true,
+                "decision": if body.approved { "allow" } else { "deny" }
+            })),
+        )
     } else {
-        StatusCode::NOT_FOUND
+        (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "resolved": false })),
+        )
     }
 }
 

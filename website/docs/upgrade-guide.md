@@ -67,7 +67,7 @@ docker compose -f docker-compose.prod.yaml pull app
 docker compose -f docker-compose.prod.yaml up -d app
 
 # 4. Verify.
-curl -sf http://localhost:3000/healthz
+curl -sf http://localhost:1906/healthz
 docker compose -f docker-compose.prod.yaml logs -f app   # watch for boot errors
 ```
 

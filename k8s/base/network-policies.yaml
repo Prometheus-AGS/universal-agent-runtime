@@ -87,7 +87,7 @@ spec:
         - protocol: TCP
           port: 8000
 ---
-# Allow Envoy Gateway -> UAR app on port 3000
+# Allow Envoy Gateway -> UAR app on port 1906
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -109,7 +109,7 @@ spec:
               kubernetes.io/metadata.name: envoy-gateway-system
       ports:
         - protocol: TCP
-          port: 3000
+          port: 1906
 ---
 # Allow Envoy Gateway -> UAR app on port 50051 (A2A gRPC transport)
 apiVersion: networking.k8s.io/v1
@@ -135,7 +135,7 @@ spec:
         - protocol: TCP
           port: 50051
 ---
-# Allow Prometheus scraping -> UAR app on port 3000 from kube-system
+# Allow Prometheus scraping -> UAR app on port 1906 from kube-system
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -157,4 +157,4 @@ spec:
               kubernetes.io/metadata.name: kube-system
       ports:
         - protocol: TCP
-          port: 3000
+          port: 1906

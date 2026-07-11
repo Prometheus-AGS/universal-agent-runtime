@@ -8,9 +8,9 @@
 
 server:
   # The port to listen on.
-  # Default: 3000
+  # Default: 1906
   # Env: UAR_SERVER__PORT
-  port: 3000
+  port: 1906
 
   # The host address to bind to.
   # Default: 0.0.0.0

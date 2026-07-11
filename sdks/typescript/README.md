@@ -15,7 +15,7 @@ bun add @prometheus-ags/universal-agent-runtime-sdk
 ```typescript
 import { Client } from '@prometheus-ags/universal-agent-runtime-sdk';
 
-const client = new Client('http://localhost:3000');
+const client = new Client('http://localhost:1906');
 
 // Chat API
 const chat = await client.chat.send('Hello!');

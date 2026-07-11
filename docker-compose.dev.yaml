@@ -6,7 +6,7 @@ services:
       args:
         SKIP_MODEL_BUILD: "1"
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-1906}:${UAR_SERVER__PORT:-1906}"
       - "50051:50051"
     environment:
       # Database
@@ -16,6 +16,7 @@ services:
       # Persistence
       - UAR_PERSISTENCE__PROVIDER=postgres
       - UAR_PERSISTENCE__DATABASE_URL=postgres://postgres:postgres@postgres:5432/uar
+      - UAR_SERVER__PORT=${UAR_SERVER__PORT:-1906}
       # LLM (override via .env or shell env)
       - LLM_PROTOCOL=${LLM_PROTOCOL:-auto}
       - LLM_BASE_URL=${LLM_BASE_URL:-https://api.openai.com}
@@ -33,7 +34,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:3000/health || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:$${UAR_SERVER__PORT:-1906}/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5

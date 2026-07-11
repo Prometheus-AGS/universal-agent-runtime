@@ -203,7 +203,7 @@ mcp_http_path = "/mcp/memory"   # default
 {
   "mcpServers": {
     "uar-memory": {
-      "url": "http://localhost:3000/mcp/memory"
+      "url": "http://localhost:1906/mcp/memory"
     }
   }
 }
@@ -323,7 +323,7 @@ docker compose -f docker-compose.prod.yml up -d
 Send a message through the UAR web UI or via the API:
 
 ```bash
-curl -X POST http://localhost:3000/api/uar/runs \
+curl -X POST http://localhost:1906/api/uar/runs \
   -H "Content-Type: application/json" \
   -d '{"agent_id": "your-agent-id", "input": "My name is Alice and I work at Acme Corp."}'
 ```
@@ -334,12 +334,12 @@ After the run completes, check what was remembered:
 
 ```bash
 # Via the memory admin API
-curl "http://localhost:3000/api/admin/memories?scope=session"
+curl "http://localhost:1906/api/admin/memories?scope=session"
 ```
 
 Or connect Claude Desktop to the MCP endpoint:
 ```json
-{ "mcpServers": { "uar-memory": { "url": "http://localhost:3000/mcp/memory" } } }
+{ "mcpServers": { "uar-memory": { "url": "http://localhost:1906/mcp/memory" } } }
 ```
 
 Then ask: `memory_list` → you should see the extracted fact about Alice.
