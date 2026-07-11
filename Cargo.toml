@@ -38,7 +38,7 @@ harness = false
 
 [dev-dependencies]
 anyhow = "1.0"
-axum-test = "19.1.1"
+axum-test = "20.1.0"
 cucumber = "0.23.0"
 serial_test = "3.4.0"
 tempfile = "3.27.0"
