@@ -34,6 +34,9 @@ export interface ModelEntity extends Record<string, unknown> {
   tool_call: boolean;
   reasoning: boolean;
   vision: boolean;
+  model_id?: string;
+  provider_name?: string;
+  provider_configured?: boolean;
 }
 
 // AgentEntity is stored in the graph as the raw `UarAgent` shape from the

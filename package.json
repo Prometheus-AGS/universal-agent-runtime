@@ -9,6 +9,7 @@
     "dev": "cargo run --bin universal-agent-runtime & pnpm -C frontend dev",
     "test": "pnpm -C frontend test",
     "test:e2e": "pnpm -C frontend test:e2e",
+    "test:e2e:real-provider-route": "cargo build --bin stub-llm --bin universal-agent-runtime && pnpm -C frontend test:e2e:real-provider-route",
     "test:bdd": "cargo build --bin stub-llm --bin universal-agent-runtime && bddgen test -c tests/bdd/playwright.config.ts && playwright test -c tests/bdd/playwright.config.ts",
     "lint": "pnpm -C frontend lint",
     "typecheck": "pnpm -C frontend typecheck",

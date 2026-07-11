@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
 
 import { useSettingsEntity } from "@/entities/hooks/use-settings-entity";
-import { loadSettingsIntoGraph } from "@/entities/fetchers/settings";
-import { putSettingsNamespace } from "@/services/settings-api";
 import {
   clearDirty,
   getDirty,
   setDirty,
-  setSaving,
   subscribe,
 } from "@/hooks/settings-form-cache";
+import { useSettingsStore } from "@/stores/settings-store";
 import type { SettingWithMeta } from "@/types";
 
 export interface UseSettingsReturn {
@@ -32,14 +29,17 @@ export interface UseSettingsReturn {
  * - Reads `values` + `settings` from the entity graph (live, SSE-fed).
  * - Owns `dirty` / `saving` / `error` in a module-level per-namespace cache
  *   so edits survive component re-mount within a session.
- * - Mutates via direct `putSettingsNamespace` wrapped in an optimistic
- *   per-namespace upsert + rollback.
+ * - Exposes the settings store's load/save actions while retaining only
+ *   unsaved form drafts in the presentation cache.
  *
  * Replaces the retired `settings-store.ts`. Hook contract unchanged so
  * the 3334 LOC `settings-page.tsx` requires zero call-site changes.
  */
 export function useSettings(namespace: string): UseSettingsReturn {
   const graphView = useSettingsEntity(namespace);
+  const status = useSettingsStore((state) => state.statusByNamespace[namespace]);
+  const loadNamespace = useSettingsStore((state) => state.load);
+  const saveNamespace = useSettingsStore((state) => state.save);
 
   // Per-namespace dirty/saving/error from the module cache.
   const dirtyState = useSyncExternalStore(
@@ -50,8 +50,8 @@ export function useSettings(namespace: string): UseSettingsReturn {
 
   // Hydrate the graph on mount.
   useEffect(() => {
-    void loadSettingsIntoGraph(namespace);
-  }, [namespace]);
+    void loadNamespace(namespace);
+  }, [namespace, loadNamespace]);
 
   // Conflicts: where dirty diverges from remote-known.
   const conflicts = useMemo(() => {
@@ -77,77 +77,19 @@ export function useSettings(namespace: string): UseSettingsReturn {
   );
 
   const reload = useCallback(
-    () => loadSettingsIntoGraph(namespace),
-    [namespace],
+    () => loadNamespace(namespace),
+    [namespace, loadNamespace],
   );
 
   const saveAll = useCallback(async () => {
     const dirty = getDirty(namespace).values;
     if (Object.keys(dirty).length === 0) return;
 
-    // Snapshot the current graph values for the dirty keys so we can roll back.
-    const graph = useGraphStore.getState();
-    const snapshots: Record<string, unknown> = {};
-    for (const k of Object.keys(dirty)) {
-      const id = `${namespace}:${k}`;
-      snapshots[k] = graph.entities["Setting"]?.[id];
-    }
+    await saveNamespace(namespace, dirty);
+    clearDirty(namespace);
+  }, [namespace, saveNamespace]);
 
-    // Optimistically apply dirty to the graph.
-    for (const [k, v] of Object.entries(dirty)) {
-      const id = `${namespace}:${k}`;
-      const existing = (graph.entities["Setting"]?.[id] ?? {}) as Record<string, unknown>;
-      graph.upsertEntity("Setting", id, {
-        ...existing,
-        id,
-        namespace,
-        key: k,
-        data: v,
-      });
-    }
-
-    setSaving(namespace, true, null);
-    try {
-      const payload: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(dirty)) {
-        const stripped = k.startsWith(`${namespace}.`)
-          ? k.slice(namespace.length + 1)
-          : k;
-        payload[stripped] = v;
-      }
-      const response = await putSettingsNamespace(namespace, payload);
-      if (response.errors?.length) {
-        throw new Error(
-          response.errors.map((e) => `${e.key}: ${e.error}`).join("; "),
-        );
-      }
-      // Apply server response to the graph; clear dirty.
-      const after = useGraphStore.getState();
-      for (const row of response.updated ?? []) {
-        const id = `${namespace}:${row.key}`;
-        after.upsertEntity("Setting", id, {
-          id,
-          namespace,
-          ...(row as unknown as Record<string, unknown>),
-        });
-      }
-      clearDirty(namespace);
-      setSaving(namespace, false, null);
-    } catch (e) {
-      // Roll back graph to snapshots.
-      const after = useGraphStore.getState();
-      for (const [k, snap] of Object.entries(snapshots)) {
-        const id = `${namespace}:${k}`;
-        if (snap !== undefined) {
-          after.upsertEntity("Setting", id, snap as Record<string, unknown>);
-        }
-      }
-      setSaving(namespace, false, (e as Error).message);
-      throw e;
-    }
-  }, [namespace]);
-
-  const loading = graphView.records.length === 0;
+  const loading = (status?.loading ?? false) && graphView.records.length === 0;
 
   return {
     values,
@@ -155,8 +97,8 @@ export function useSettings(namespace: string): UseSettingsReturn {
     dirty: dirtyState.values,
     conflicts,
     loading,
-    saving: dirtyState.saving,
-    error: dirtyState.error,
+    saving: status?.saving ?? false,
+    error: status?.error ?? null,
     setSetting,
     saveAll,
     reload,

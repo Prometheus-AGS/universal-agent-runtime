@@ -3,9 +3,9 @@ import { create } from "zustand";
 import {
   fetchModelsCatalog,
   modelsRowsForProvider,
-  type ProviderModelRow,
 } from "@/services/models-api";
 import { onSettingsChanged } from "@/services/settings-change-bus";
+import type { ProviderModelRow } from "@/types";
 
 interface ProviderModelsState {
   /** Models shown for the last completed load for this provider id */

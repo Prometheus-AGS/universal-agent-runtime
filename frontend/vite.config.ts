@@ -59,6 +59,10 @@ export default defineConfig({
     },
   },
   resolve: {
+    // Linked workspace packages must use the host application's singleton
+    // React and Zustand instances. Without dedupe, a standalone package
+    // install can produce invalid-hook-call failures in development/tests.
+    dedupe: ["react", "react-dom", "use-sync-external-store", "zustand"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },

@@ -25,7 +25,7 @@
 //! | Concurrency | `mgr_concurrent_reads_are_safe` |
 
 use anyhow::Result;
-use serde_json::json;
+use serde_json::{Value, json};
 use std::{collections::HashSet, sync::Arc};
 use uuid::Uuid;
 
@@ -463,6 +463,113 @@ async fn mgr_core_schema_covers_app_config_namespaces_and_document_defaults() ->
         );
     }
 
+    Ok(())
+}
+
+#[tokio::test]
+async fn mgr_schema_generated_namespace_values_round_trip() -> Result<()> {
+    let (mgr, _dir) = make_manager().await;
+    mgr.initialize(&minimal_config()).await?;
+
+    let mut namespaces_checked = 0usize;
+    let mut settings_checked = 0usize;
+    for settings_type in mgr.list_types().await? {
+        let rows = mgr.list_namespace_with_meta(&settings_type.key).await;
+        if rows.is_empty() {
+            continue;
+        }
+        namespaces_checked += 1;
+        for row in rows {
+            let original = row.setting.data.clone();
+            mgr.set_value(&row.setting.key, original.clone()).await?;
+            assert_eq!(
+                mgr.get_value(&row.setting.key).await,
+                Some(original),
+                "schema-generated round trip changed {}",
+                row.setting.key
+            );
+            settings_checked += 1;
+        }
+    }
+
+    assert!(
+        namespaces_checked >= 20,
+        "only {namespaces_checked} namespaces exercised"
+    );
+    assert!(
+        settings_checked >= 50,
+        "only {settings_checked} settings exercised"
+    );
+    Ok(())
+}
+
+fn value_invalid_for_schema(property: &Value) -> Option<Value> {
+    let accepts = |candidate: &str| {
+        property.get("type").is_some_and(|kind| match kind {
+            Value::String(kind) => kind == candidate,
+            Value::Array(kinds) => kinds.iter().any(|kind| kind.as_str() == Some(candidate)),
+            _ => false,
+        })
+    };
+    if property.get("type").is_none() {
+        return None;
+    }
+    if !accepts("object") {
+        Some(json!({"definitely": "invalid"}))
+    } else if !accepts("boolean") {
+        Some(json!(true))
+    } else if !accepts("array") {
+        Some(json!(["invalid"]))
+    } else {
+        None
+    }
+}
+
+#[tokio::test]
+async fn mgr_schema_generated_invalid_values_are_rejected() -> Result<()> {
+    let (mgr, _dir) = make_manager().await;
+    mgr.initialize(&minimal_config()).await?;
+
+    let mut rejected = 0usize;
+    for settings_type in mgr.list_types().await? {
+        let Some(properties) = settings_type
+            .schema
+            .get("properties")
+            .and_then(Value::as_object)
+        else {
+            continue;
+        };
+        for row in mgr.list_namespace_with_meta(&settings_type.key).await {
+            let Some(field) = row
+                .setting
+                .key
+                .strip_prefix(&format!("{}.", settings_type.key))
+            else {
+                continue;
+            };
+            let Some(invalid) = properties.get(field).and_then(value_invalid_for_schema) else {
+                continue;
+            };
+            let original = row.setting.data.clone();
+            assert!(
+                mgr.set_value(&row.setting.key, invalid).await.is_err(),
+                "schema accepted invalid value for {}",
+                row.setting.key
+            );
+            assert_eq!(
+                mgr.get_value(&row.setting.key).await,
+                Some(original),
+                "invalid write changed {}",
+                row.setting.key
+            );
+            rejected += 1;
+        }
+    }
+
+    assert!(
+        rejected >= 50,
+        "only {rejected} invalid settings were rejected"
+    );
     Ok(())
 }
 

@@ -1,23 +1,18 @@
 /**
- * Module-level dirty/saving state cache for the settings page.
+ * Module-level draft-value cache for the settings page.
  *
- * Replaces the per-namespace slice that `settings-store.ts` (Zustand) used
- * to own. Keeps state across component re-mounts within a session so the
- * user can navigate between settings tabs without losing pending edits.
+ * Complements the domain-owned settings store by retaining only unsaved
+ * presentation drafts across component re-mounts within a session.
  *
  * Designed for `useSyncExternalStore` consumption from `use-settings.ts`.
  */
 
 export interface SettingsDirtyState {
   values: Record<string, unknown>;
-  saving: boolean;
-  error: string | null;
 }
 
 const emptyDirty = (): SettingsDirtyState => ({
   values: {},
-  saving: false,
-  error: null,
 });
 
 const cache = new Map<string, SettingsDirtyState>();
@@ -46,16 +41,6 @@ export function clearDirty(ns: string): void {
   const cur = cache.get(ns);
   if (!cur || Object.keys(cur.values).length === 0) return;
   cache.set(ns, { ...cur, values: {} });
-  notify(ns);
-}
-
-export function setSaving(
-  ns: string,
-  saving: boolean,
-  error: string | null = null,
-): void {
-  const cur = cache.get(ns) ?? emptyDirty();
-  cache.set(ns, { ...cur, saving, error });
   notify(ns);
 }
 

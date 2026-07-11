@@ -14,7 +14,6 @@ import {
   clearDirty,
   getDirty,
   setDirty,
-  setSaving,
 } from "../settings-form-cache";
 
 beforeEach(() => {
@@ -41,16 +40,6 @@ describe("settings-form-cache", () => {
 
     clearDirty("provider");
     expect(Object.keys(getDirty("provider").values).length).toBe(0);
-  });
-
-  test("setSaving updates the saving + error flags", () => {
-    setSaving("provider", true);
-    expect(getDirty("provider").saving).toBe(true);
-    expect(getDirty("provider").error).toBeNull();
-
-    setSaving("provider", false, "boom");
-    expect(getDirty("provider").saving).toBe(false);
-    expect(getDirty("provider").error).toBe("boom");
   });
 
   test("conflict synthesis: dirty value diverges from remote graph value", () => {

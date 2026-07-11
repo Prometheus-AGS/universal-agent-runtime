@@ -12,6 +12,22 @@ export async function fetchConfiguredProviders(): Promise<ProvidersResponse> {
   return res.json() as Promise<ProvidersResponse>;
 }
 
+export interface ProviderHealthEntry {
+  healthy: boolean;
+  consecutive_errors: number;
+  cooldown_remaining_secs: number | null;
+}
+
+export interface ProviderHealthResponse {
+  providers: Record<string, ProviderHealthEntry>;
+}
+
+export async function fetchProviderHealth(): Promise<ProviderHealthResponse> {
+  const res = await fetch("/api/uar/providers/health");
+  if (!res.ok) throw new Error(`Provider health fetch failed: ${res.status}`);
+  return res.json() as Promise<ProviderHealthResponse>;
+}
+
 export interface CreateProviderBody {
   id: string;
   display_name: string;

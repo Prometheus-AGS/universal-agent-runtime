@@ -1,4 +1,4 @@
-import { type FC, useEffect, useState } from "react";
+import { type FC, useState } from "react";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronRight, Circle, Loader2, Plus, RefreshCw, Search, Server, Star, XCircle } from "lucide-react";
 import {
   AlertDialog,
@@ -19,108 +19,25 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
 import { useProviderModels } from "@/hooks/use-provider-models";
-import { useProviders } from "@/entities/hooks/use-providers";
-import { useProviderDefault } from "@/entities/hooks/use-provider-default";
+import { useProvidersAdmin } from "@/hooks/use-providers-admin";
 import type { CatalogProviderSummary } from "@/types";
-import { loadProvidersIntoGraph } from "@/entities/fetchers/providers";
-import { optimisticUpsert, optimisticRemove } from "@/lib/realtime/optimistic";
-import {
-  createProvider as createProviderApi,
-  deleteProvider as deleteProviderApi,
-  setDefaultProvider as setDefaultProviderApi,
-} from "@/services/providers-api";
 
 export const ProvidersPage: FC = () => {
-  // Reads come from the entity graph (hydrated by loadProvidersIntoGraph and
-  // kept fresh by SSE realtime).
-  const providersView = useProviders();
-  const defaultId = useProviderDefault() ?? undefined;
+  const {
+    catalog,
+    configured,
+    defaultId,
+    loading,
+    saving,
+    removing,
+    error,
+    load,
+    configure,
+    setDefault,
+    remove,
+  } = useProvidersAdmin();
 
-  // Local UI state — no longer routed through a Zustand store.
-  const [saving, setSaving] = useState(false);
-  const [removing, setRemoving] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  // The graph stores rich ProviderEntity rows that are a superset of
-  // CatalogProviderSummary; cast for the legacy render code below.
-  const catalog = providersView.items as unknown as CatalogProviderSummary[];
-  const configured = catalog.filter((p) => p.configured);
-  const loading = providersView.items.length === 0;
-
-  // Populate the entity graph on mount and provide a manual refresh.
-  useEffect(() => {
-    void loadProvidersIntoGraph();
-  }, []);
-  const load = () => loadProvidersIntoGraph();
-
-  // ── Mutations ────────────────────────────────────────────────────────────
-  //
-  // - configureProvider: non-optimistic per the global rule for creates; on
-  //   success we re-run loadProvidersIntoGraph so the new row + ProviderMeta
-  //   reach the graph.
-  // - setDefault: optimistic — flip ProviderMeta singleton immediately;
-  //   rollback the singleton's default_id on failure.
-  // - removeProvider: capture the entity snapshot, optimistically remove from
-  //   the graph, and on failure re-upsert the snapshot.
-
-  const configureProvider = async (args: {
-    addTarget: CatalogProviderSummary;
-    apiKey: string;
-    baseUrl: string;
-  }) => {
-    const { addTarget, apiKey, baseUrl } = args;
-    setSaving(true);
-    setError(null);
-    try {
-      const resolvedBase = (baseUrl.trim() || addTarget.base_url) ?? "";
-      const res = await createProviderApi({
-        id: addTarget.id,
-        display_name: addTarget.display_name ?? "",
-        base_url: resolvedBase,
-        api_key: apiKey || undefined,
-        protocol: "auto",
-        enabled: true,
-      });
-      if (!res.ok && res.status !== 409) throw new Error(`${res.status}`);
-      await loadProvidersIntoGraph();
-    } catch (e) {
-      setError((e as Error).message);
-      throw e;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const setDefault = async (id: string) => {
-    try {
-      await optimisticUpsert(
-        "ProviderMeta",
-        "current",
-        { id: "current", default_id: id },
-        async () => {
-          await setDefaultProviderApi(id);
-        },
-      );
-    } catch (e) {
-      setError(`Failed to set default: ${(e as Error).message}`);
-    }
-  };
-
-  const removeProvider = async (id: string) => {
-    setRemoving(id);
-    setError(null);
-    try {
-      await optimisticRemove("Provider", id, async () => {
-        await deleteProviderApi(id);
-      });
-    } catch (e) {
-      setError(`Failed to remove provider: ${(e as Error).message}`);
-    } finally {
-      setRemoving(null);
-    }
-  };
-
-  const [selected, setSelected] = useState<CatalogProviderSummary | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [addTarget, setAddTarget] = useState<CatalogProviderSummary | null>(null);
   const [form, setForm] = useState({ api_key: "", base_url: "" });
@@ -137,8 +54,8 @@ export const ProvidersPage: FC = () => {
   const handleSaveConfigure = async () => {
     if (!addTarget) return;
     try {
-      await configureProvider({
-        addTarget,
+      await configure({
+        provider: addTarget,
         apiKey: form.api_key,
         baseUrl: form.base_url,
       });
@@ -149,16 +66,17 @@ export const ProvidersPage: FC = () => {
   };
 
   const handleSetDefault = (id: string) => {
-    void setDefault(id);
+    void setDefault(id).catch(() => undefined);
   };
 
   const handleDelete = async () => {
     if (!removeTarget) return;
-    await removeProvider(removeTarget);
-    if (selected?.id === removeTarget) setSelected(null);
+    await remove(removeTarget).catch(() => undefined);
+    if (selectedId === removeTarget) setSelectedId(null);
     setRemoveTarget(null);
   };
 
+  const selected = catalog.find((provider) => provider.id === selectedId) ?? null;
   const visible = catalog
     .filter((p) => {
       if (filter === "configured") return p.configured;
@@ -235,8 +153,9 @@ export const ProvidersPage: FC = () => {
           {visible.map((p) => (
             <Button
               key={p.id}
+              data-testid={`provider-row-${p.id}`}
               variant="ghost"
-              onClick={() => setSelected(p)}
+              onClick={() => setSelectedId(p.id)}
               className={cn(
                 "flex h-auto w-full items-center justify-start gap-3 px-4 py-2.5 text-left transition-colors",
                 selected?.id === p.id ? "bg-accent" : "hover:bg-muted/50",
@@ -276,7 +195,7 @@ export const ProvidersPage: FC = () => {
             onSetDefault={() => handleSetDefault(selected.id)}
             onConfigure={() => handleConfigure(selected)}
             onDelete={() => setRemoveTarget(selected.id)}
-            onBack={() => setSelected(null)}
+            onBack={() => setSelectedId(null)}
           />
         ) : (
           <div className="flex flex-1 flex-col overflow-hidden">

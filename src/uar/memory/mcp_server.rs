@@ -337,6 +337,10 @@ pub struct AutoSummarizeParams {
 #[derive(Clone)]
 pub struct UarMemoryMcpServer {
     storage: Arc<dyn MemoryStorage>,
+    #[expect(
+        dead_code,
+        reason = "rmcp's generated tool handler retains this router for runtime dispatch"
+    )]
     tool_router: ToolRouter<UarMemoryMcpServer>,
 }
 

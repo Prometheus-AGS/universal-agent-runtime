@@ -331,6 +331,24 @@ fn mask_sensitive(data: Value, schema: &Value) -> Value {
     }
 }
 
+fn mask_setting_data(data: Value, schema: &Value, field_key: Option<&str>) -> Value {
+    let scalar_is_sensitive = field_key
+        .and_then(|field| {
+            schema
+                .get("properties")
+                .and_then(Value::as_object)
+                .and_then(|props| props.get(field))
+        })
+        .and_then(|prop| prop.get("x-sensitive"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    if scalar_is_sensitive {
+        Value::String("***".to_string())
+    } else {
+        mask_sensitive(data, schema)
+    }
+}
+
 /// Apply sensitive masking to a SettingsWithMeta response.
 async fn masked_response(swm: SettingsWithMeta, mgr: &SettingsManager) -> SettingsWithMetaResponse {
     // Try to find the schema for this setting type.
@@ -344,21 +362,7 @@ async fn masked_response(swm: SettingsWithMeta, mgr: &SettingsManager) -> Settin
         .map(|t| t.schema)
         .unwrap_or(json!({}));
 
-    let scalar_is_sensitive = field_key
-        .and_then(|field| {
-            schema
-                .get("properties")
-                .and_then(Value::as_object)
-                .and_then(|props| props.get(field))
-        })
-        .and_then(|prop| prop.get("x-sensitive"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    let masked_data = if scalar_is_sensitive {
-        Value::String("***".to_string())
-    } else {
-        mask_sensitive(swm.setting.data.clone(), &schema)
-    };
+    let masked_data = mask_setting_data(swm.setting.data.clone(), &schema, field_key);
     SettingsWithMetaResponse {
         id: swm.setting.id,
         settings_type_id: swm.setting.settings_type_id,
@@ -641,4 +645,38 @@ async fn is_sensitive_setting(mgr: &SettingsManager, key: &str) -> bool {
         .and_then(|prop| prop.get("x-sensitive"))
         .and_then(Value::as_bool)
         .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::mask_setting_data;
+    use serde_json::json;
+
+    #[test]
+    fn retrieval_masking_redacts_scalar_and_object_secrets() {
+        let schema = json!({
+            "type": "object",
+            "properties": {
+                "api_key": { "type": "string", "x-sensitive": true },
+                "base_url": { "type": "string" }
+            }
+        });
+
+        assert_eq!(
+            mask_setting_data(json!("plaintext-secret"), &schema, Some("api_key")),
+            json!("***")
+        );
+        assert_eq!(
+            mask_setting_data(json!("https://example.test"), &schema, Some("base_url")),
+            json!("https://example.test")
+        );
+        assert_eq!(
+            mask_setting_data(
+                json!({"api_key": "plaintext-secret", "base_url": "https://example.test"}),
+                &schema,
+                None,
+            ),
+            json!({"api_key": "***", "base_url": "https://example.test"})
+        );
+    }
 }

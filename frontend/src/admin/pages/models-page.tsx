@@ -38,9 +38,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { useModels } from "@/entities/hooks/use-models";
-import { loadModelsIntoGraph } from "@/entities/fetchers/models";
-import { fetchConfiguredProviders, updateProvider } from "@/services/providers-api";
+import { useModelsAdmin } from "@/hooks/use-models-admin";
+import {
+  filterModelRows,
+  projectModelRows,
+  selectComparisonModels,
+  type ModelRowShape,
+} from "@/hooks/model-catalog-view";
 import type { CatalogModelBenchmark, UarModel, UarProvider } from "@/types";
 
 const MAX_COMPARE = 4;
@@ -50,27 +54,6 @@ const DIMENSION_LABEL: Record<CatalogModelBenchmark["dimension"], string> = {
   agentic: "agentic",
   context: "context recall",
 };
-
-// ---------------------------------------------------------------------------
-// Page-local model row shape (catalog view)
-// ---------------------------------------------------------------------------
-
-interface ModelRowShape {
-  key: string;             // "openai/gpt-4o"
-  provider_id: string;
-  provider_name: string;
-  provider_configured: boolean;
-  model_id: string;
-  name: string;
-  context: number;
-  tool_call: boolean;
-  reasoning: boolean;
-  vision: boolean;
-  open_weights?: boolean;
-  cost_input: number;
-  cost_output: number;
-  benchmarks: CatalogModelBenchmark[];
-}
 
 /** A configured model belonging to a provider, paired with its provider. */
 interface ConfiguredModelRow {
@@ -84,24 +67,25 @@ interface ConfiguredModelRow {
 // ---------------------------------------------------------------------------
 
 export const ModelsPage: FC = () => {
-  // Catalog reads come from the entity graph. Hydration is the page's job.
-  const view = useModels();
-  const rawItems = view.items as ReadonlyArray<Record<string, unknown>>;
+  const {
+    items,
+    configured,
+    refreshing,
+    busyModelKey,
+    error,
+    load,
+    addModel,
+    setDefaultModel,
+    removeModel,
+  } = useModelsAdmin();
+  const rawItems = items as ReadonlyArray<Record<string, unknown>>;
 
-  // Configured providers (authoritative `models[]` + `default_model`) are
-  // fetched directly — they are not mirrored into the catalog Model entities.
-  const [configured, setConfigured] = useState<UarProvider[]>([]);
-
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [capabilities, setCapabilities] = useState<{ tools: boolean; reasoning: boolean; vision: boolean }>({
     tools: false, reasoning: false, vision: false,
   });
 
-  // Mutation state
-  const [busyModelKey, setBusyModelKey] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{ providerId: string; modelId: string } | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
@@ -120,51 +104,10 @@ export const ModelsPage: FC = () => {
     });
   }, []);
 
-  const loadConfigured = useCallback(async () => {
-    const res = await fetchConfiguredProviders();
-    setConfigured(res.providers);
-  }, []);
-
-  const load = useCallback(async () => {
-    setRefreshing(true);
-    setError(null);
-    try {
-      await Promise.all([loadModelsIntoGraph(), loadConfigured()]);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setRefreshing(false);
-    }
-  }, [loadConfigured]);
-
-  useEffect(() => {
-    // Defer past the synchronous effect body so the initial `setRefreshing`
-    // inside `load` does not run as a synchronous setState in the effect.
-    const id = setTimeout(() => void load(), 0);
-    return () => clearTimeout(id);
-  }, [load]);
-
   const loading = refreshing && rawItems.length === 0;
 
   // Adapt the loose graph rows into typed catalog model rows for rendering.
-  const allModels: ModelRowShape[] = useMemo(() => {
-    return rawItems.map((row) => ({
-      key: row.id as string,
-      provider_id: row.provider_id as string,
-      provider_name: (row.provider_name as string) ?? (row.provider_id as string),
-      provider_configured: row.provider_configured === true,
-      model_id: (row.model_id as string) ?? "",
-      name: (row.name as string) ?? "",
-      context: (row.context as number) ?? 0,
-      tool_call: row.tool_call === true,
-      reasoning: row.reasoning === true,
-      vision: row.vision === true,
-      open_weights: row.open_weights === true,
-      cost_input: (row.cost_input as number) ?? 0,
-      cost_output: (row.cost_output as number) ?? 0,
-      benchmarks: (row.benchmarks as CatalogModelBenchmark[] | undefined) ?? [],
-    }));
-  }, [rawItems]);
+  const allModels = useMemo(() => projectModelRows(rawItems), [rawItems]);
 
   const providers = useMemo(() => {
     const seen = new Set<string>();
@@ -190,18 +133,10 @@ export const ModelsPage: FC = () => {
 
   const configuredCount = configuredRows.length;
 
-  const filtered = useMemo(() => {
-    let list = allModels;
-    if (selectedProvider !== "all") list = list.filter((m) => m.provider_id === selectedProvider);
-    if (capabilities.tools) list = list.filter((m) => m.tool_call);
-    if (capabilities.reasoning) list = list.filter((m) => m.reasoning);
-    if (capabilities.vision) list = list.filter((m) => m.vision);
-    if (query) {
-      const q = query.toLowerCase();
-      list = list.filter((m) => m.key.toLowerCase().includes(q) || m.name.toLowerCase().includes(q));
-    }
-    return list;
-  }, [allModels, selectedProvider, capabilities, query]);
+  const filtered = useMemo(
+    () => filterModelRows(allModels, selectedProvider, capabilities, query),
+    [allModels, selectedProvider, capabilities, query],
+  );
 
   const toggleCap = (cap: keyof typeof capabilities) =>
     setCapabilities((prev) => ({ ...prev, [cap]: !prev[cap] }));
@@ -209,90 +144,35 @@ export const ModelsPage: FC = () => {
   // Preserve pick order (not catalog order) so a model stays where the user
   // put it when comparing.
   const compareModels = useMemo(
-    () =>
-      compareKeys
-        .map((key) => allModels.find((m) => m.key === key))
-        .filter((m): m is ModelRowShape => m !== undefined),
+    () => selectComparisonModels(compareKeys, allModels),
     [compareKeys, allModels],
   );
 
-  // ── Mutations ──────────────────────────────────────────────────────────
-  //
-  // All writes go through PUT /api/uar/providers/{id} with the full provider
-  // config. We optimistically patch local `configured` state, call the PUT,
-  // then reconcile from the server response; on failure we restore the prior
-  // snapshot. There is no dedicated models write endpoint.
-
-  const putProvider = useCallback(
-    async (next: UarProvider) => {
-      const snapshot = configured;
-      setConfigured((prev) => prev.map((p) => (p.id === next.id ? next : p)));
-      setError(null);
-      try {
-        const saved = await updateProvider(next.id, next);
-        setConfigured((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
-      } catch (e) {
-        setConfigured(snapshot);
-        setError((e as Error).message);
-        throw e;
-      }
-    },
-    [configured],
-  );
-
   const handleAddModel = async (providerId: string, model: UarModel) => {
-    const provider = configured.find((p) => p.id === providerId);
-    if (!provider) return;
-    const next: UarProvider = {
-      ...provider,
-      models: [...(provider.models ?? []), model],
-    };
-    setBusyModelKey(`${providerId}/${model.id}`);
     try {
-      await putProvider(next);
+      await addModel(providerId, model);
       setShowAddDialog(false);
     } catch {
       /* error surfaced via state */
-    } finally {
-      setBusyModelKey(null);
     }
   };
 
   const handleSetDefault = async (providerId: string, modelId: string) => {
-    const provider = configured.find((p) => p.id === providerId);
-    if (!provider) return;
-    const next: UarProvider = { ...provider, default_model: modelId };
-    setBusyModelKey(`${providerId}/${modelId}`);
     try {
-      await putProvider(next);
+      await setDefaultModel(providerId, modelId);
     } catch {
       /* error surfaced via state */
-    } finally {
-      setBusyModelKey(null);
     }
   };
 
   const handleRemoveModel = async () => {
     if (!removeTarget) return;
     const { providerId, modelId } = removeTarget;
-    const provider = configured.find((p) => p.id === providerId);
-    if (!provider) {
-      setRemoveTarget(null);
-      return;
-    }
-    const next: UarProvider = {
-      ...provider,
-      models: (provider.models ?? []).filter((m) => m.id !== modelId),
-      // Drop the default pointer if it referenced the removed model.
-      default_model: provider.default_model === modelId ? undefined : provider.default_model,
-    };
-    setBusyModelKey(`${providerId}/${modelId}`);
     try {
-      await putProvider(next);
+      await removeModel(providerId, modelId);
     } catch {
       /* error surfaced via state */
     } finally {
-      setBusyModelKey(null);
       setRemoveTarget(null);
     }
   };

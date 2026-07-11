@@ -1633,7 +1633,10 @@ persistence:
         // a silently-ignored security flag.
         let (cli, cfg_path) = base_cli();
         let default_cfg = AppConfig::load_with_cli(cli).expect("config should load");
-        assert!(default_cfg.security.jwt_required, "jwt_required defaults true");
+        assert!(
+            default_cfg.security.jwt_required,
+            "jwt_required defaults true"
+        );
 
         let (mut cli, _) = base_cli();
         cli.config = Some(cfg_path.to_string_lossy().to_string());

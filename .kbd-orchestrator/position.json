@@ -1,22 +1,22 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-11T05:58:04Z",
+  "updatedAt": "2026-07-11T13:11:56Z",
   "cursor": [
     "uar-final-production-hardening-2026-07",
-    "establish-react-product-contract"
+    "certify-knowledge-rag-flow"
   ],
   "root": {
     "type": "phase",
     "id": "uar-final-production-hardening-2026-07",
     "status": "executing",
     "progress": {
-      "done": 7,
+        "done": 9,
       "total": 24
     },
     "children": [
       {
         "type": "change",
-        "id": "establish-react-product-contract",
+        "id": "certify-knowledge-rag-flow",
         "status": "PENDING",
         "progress": {
           "done": 0,

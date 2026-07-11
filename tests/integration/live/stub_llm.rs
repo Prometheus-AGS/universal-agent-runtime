@@ -317,6 +317,10 @@ fn streaming_response(model: String, fixture: FixtureResponse) -> impl IntoRespo
 mod tests {
     use super::*;
 
+    #[expect(
+        dead_code,
+        reason = "the Cucumber custom test harness compiles this unit-test helper without executing it"
+    )]
     fn fp(model: &str, msg: &str, has_tools: bool) -> RequestFingerprint {
         RequestFingerprint {
             model: model.to_string(),

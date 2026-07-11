@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import { useProviderModelsStore } from "@/stores/provider-models-store";
-import type { ProviderModelRow } from "@/services/models-api";
+import type { ProviderModelRow } from "@/types";
 
 const EMPTY_MODELS: ProviderModelRow[] = [];
 

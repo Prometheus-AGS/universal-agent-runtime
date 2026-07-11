@@ -109,6 +109,15 @@ export interface CatalogProvider {
 /** Full /api/models response: provider_id → CatalogProvider. */
 export type CatalogModelsResponse = Record<string, CatalogProvider>;
 
+/** Model row projected from the catalog for a single provider. */
+export interface ProviderModelRow {
+  id: string;
+  name: string;
+  tool_call: boolean;
+  reasoning: boolean;
+  context: number;
+}
+
 /** A provider summary from /api/catalog. */
 export interface CatalogProviderSummary {
   id: string;

@@ -90,6 +90,10 @@ struct UarRuntimeMcpServer {
     run_manager: Arc<RunManager>,
     native_skills: Arc<NativeSkillRegistry>,
     persistence: Option<Arc<dyn PersistenceLayer>>,
+    #[expect(
+        dead_code,
+        reason = "rmcp's generated tool handler retains this router for runtime dispatch"
+    )]
     tool_router: ToolRouter<UarRuntimeMcpServer>,
 }
 

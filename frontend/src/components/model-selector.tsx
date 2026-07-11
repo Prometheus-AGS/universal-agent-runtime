@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { fetchModelsCatalog } from "@/services/models-api";
-import type { CatalogModelsResponse, CatalogProvider } from "@/types";
+import { useModelSelector } from "@/hooks/use-model-selector";
 
 interface ModelSelectorProps {
   value: string;
@@ -55,60 +54,28 @@ export function ModelSelector({
   className,
 }: ModelSelectorProps) {
   const [open, setOpen] = useState(false);
-  const [catalog, setCatalog] = useState<CatalogModelsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchModelsCatalog()
-      .then((data) => {
-        if (!cancelled) setCatalog(data);
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) setError((e as Error).message);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { items, loading, error } = useModelSelector();
 
   /** Flatten catalog into grouped models, filtering to configured providers only. */
   const grouped = useMemo(() => {
-    if (!catalog) return new Map<string, FlatModel[]>();
-
     const groups = new Map<string, FlatModel[]>();
-
-    const entries = Object.entries(catalog) as [string, CatalogProvider][];
-    // Sort providers alphabetically by display name
-    entries.sort(([, a], [, b]) =>
-      a.display_name.localeCompare(b.display_name),
-    );
-
-    for (const [providerId, provider] of entries) {
-      if (!provider.configured) continue;
-      if (!provider.models || Object.keys(provider.models).length === 0)
-        continue;
-
-      const models: FlatModel[] = Object.entries(provider.models)
-        .map(([modelId, model]) => ({
-          value: `${providerId}/${modelId}`,
-          name: model.name,
-          id: modelId,
-          providerName: provider.display_name,
-          providerId,
-          context: model.limit.context,
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      groups.set(provider.display_name, models);
+    for (const model of items) {
+      if (model.provider_configured !== true) continue;
+      const providerName = String(model.provider_name ?? model.provider_id);
+      const modelId = String(model.model_id ?? model.id.split("/").slice(1).join("/"));
+      const option: FlatModel = {
+        value: model.id,
+        name: model.name,
+        id: modelId,
+        providerName,
+        providerId: model.provider_id,
+        context: model.context,
+      };
+      groups.set(providerName, [...(groups.get(providerName) ?? []), option]);
     }
-
+    for (const models of groups.values()) models.sort((a, b) => a.name.localeCompare(b.name));
     return groups;
-  }, [catalog]);
+  }, [items]);
 
   /** Find the currently selected model's display name. */
   const selectedLabel = useMemo(() => {
