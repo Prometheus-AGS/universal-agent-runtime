@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-final-production-hardening-2026-07
-Step: 3 of 9
+Step: 4 of 9
 Stage: executing
-Next command: /kbd-apply security-policy-and-community-files
+Next command: /kbd-apply runtime-console-wire-or-remove
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-final-production-hardening-2026-07 (step 3 of 9)
+  Starting <kbd-skill> — uar-final-production-hardening-2026-07 (step 4 of 9)
   [do work]
-  Completed <kbd-skill> — uar-final-production-hardening-2026-07 (step 3 of 9)
+  Completed <kbd-skill> — uar-final-production-hardening-2026-07 (step 4 of 9)

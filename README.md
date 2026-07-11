@@ -679,6 +679,16 @@ Pushing to the `deployment` branch triggers `.github/workflows/deploy.yml`:
 
 ---
 
+## Security
+
+Found a vulnerability? **Please do not open a public issue.** Report it
+privately via [GitHub private vulnerability reporting](https://github.com/Prometheus-AGS/universal-agent-runtime/security/advisories/new).
+Our disclosure policy, response targets, supported-versions table, and EU CRA
+posture are in [SECURITY.md](SECURITY.md). For usage questions and support
+channels, see [SUPPORT.md](SUPPORT.md).
+
+---
+
 ## Licensing
 
 Dual-licensed:
