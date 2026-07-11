@@ -192,7 +192,7 @@ axum-extra = { version = "0.12.3", features = [
 tower = "0.5.2"
 tokio-stream = { version = "0.1.17", features = ["net", "sync"] }
 serde_norway = "0.9.42"
-burn = { version = "0.20.1", default-features = false, features = [
+burn = { version = "0.21.0", default-features = false, features = [
   "wgpu",
   "train",
   "ndarray",
