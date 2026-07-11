@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prometheus-ags.dev/schemas/uar-agui-v1.schema.json",
+  "title": "UAR AG-UI profile event",
+  "type": "object",
+  "required": ["type", "profile", "eventId", "sequence"],
+  "properties": {
+    "type": {
+      "enum": [
+        "RUN_STARTED", "RUN_FINISHED", "RUN_ERROR",
+        "STEP_STARTED", "STEP_FINISHED",
+        "TEXT_MESSAGE_START", "TEXT_MESSAGE_CONTENT", "TEXT_MESSAGE_END",
+        "REASONING_START", "REASONING_MESSAGE_START", "REASONING_MESSAGE_CONTENT",
+        "REASONING_MESSAGE_END", "REASONING_END",
+        "TOOL_CALL_START", "TOOL_CALL_ARGS", "TOOL_CALL_END", "TOOL_CALL_RESULT",
+        "STATE_SNAPSHOT", "STATE_DELTA", "MESSAGES_SNAPSHOT", "RAW", "CUSTOM"
+      ]
+    },
+    "profile": { "const": "uar.agui/1" },
+    "eventId": { "type": "string", "minLength": 1 },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "threadId": { "type": "string" },
+    "runId": { "type": "string" },
+    "messageId": { "type": "string" },
+    "toolCallId": { "type": "string" },
+    "delta": {},
+    "snapshot": {},
+    "messages": { "type": "array" },
+    "name": { "type": "string", "pattern": "^uar\\." },
+    "value": {},
+    "code": { "type": "string" },
+    "message": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "CUSTOM" } } },
+      "then": { "required": ["name", "value"] }
+    },
+    {
+      "if": { "properties": { "type": { "enum": ["RUN_STARTED", "RUN_FINISHED", "RUN_ERROR"] } } },
+      "then": { "required": ["threadId", "runId"] }
+    },
+    {
+      "if": { "properties": { "type": { "enum": ["TEXT_MESSAGE_START", "TEXT_MESSAGE_CONTENT", "TEXT_MESSAGE_END", "REASONING_MESSAGE_START", "REASONING_MESSAGE_CONTENT", "REASONING_MESSAGE_END"] } } },
+      "then": { "required": ["messageId"] }
+    },
+    {
+      "if": { "properties": { "type": { "const": "STATE_DELTA" } } },
+      "then": { "required": ["delta"] }
+    }
+  ],
+  "additionalProperties": true
+}

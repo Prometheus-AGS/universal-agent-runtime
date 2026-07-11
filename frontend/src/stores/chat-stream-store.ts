@@ -13,6 +13,10 @@ import { useAgentStatusStore } from "@/stores/agent-status-store";
 import type { ToolCallContentBlock } from "@/types/chat-content";
 import type { AttachmentPayload } from "@/types";
 import { ingestAgUiEvent, ingestRuntimeEvent } from "@/entities/runtime-ingest";
+import {
+  isHighFrequencyAguiEvent,
+  UarAguiAdapter,
+} from "@/protocols/agui-adapter";
 
 export interface UarChatPayload {
   message: string;
@@ -246,14 +250,15 @@ const STREAM_MAX_RECONNECTS = 5;
  * block has been yielded and the server `runId` is known, it reconnects via the
  * server's resume endpoint (`Last-Event-ID`) and continues — so a dropped
  * connection resumes the remaining response instead of truncating. Reconnection
- * is bounded by `maxReconnects`. Blocks with an id at or below the highest seen
- * are skipped (dedup across the reconnect boundary; the server also filters).
+ * is bounded by `maxReconnects`. The cursor is monotonic, but multiple protocol
+ * frames derived from one normalized event may legitimately share an SSE id;
+ * event-level deduplication therefore belongs to `UarAguiAdapter` via `eventId`.
  * Aborts (user stop) propagate immediately.
  */
 async function* streamSseBlocks(
   initialReader: ReadableStreamDefaultReader<Uint8Array>,
   opts: { runId: string | null; signal: AbortSignal; maxReconnects: number },
-): AsyncGenerator<{ event: string; data: string }> {
+): AsyncGenerator<{ event: string; data: string; id?: number }> {
   const decoder = new TextDecoder();
   let reader = initialReader;
   let lastEventId = 0;
@@ -274,11 +279,10 @@ async function* streamSseBlocks(
           const block = parseSseBlock(raw);
           if (!block) continue;
           if (block.id !== undefined) {
-            if (block.id <= lastEventId) continue;
-            lastEventId = block.id;
+            lastEventId = Math.max(lastEventId, block.id);
           }
           yieldedAny = true;
-          yield { event: block.event, data: block.data };
+          yield { event: block.event, data: block.data, id: block.id };
         }
       }
     } catch (err) {
@@ -654,6 +658,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
 
     const runId = `run-${Date.now()}`;
     const pendingArgs = new Map<string, string>();
+    const aguiAdapter = new UarAguiAdapter();
     useChatMessageStore.getState().beginStream(threadId, runId);
     const retryPolicy = await loadStreamRetryPolicy();
     const maxAttempts = Math.max(1, retryPolicy.maxAttempts);
@@ -661,7 +666,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
     const requestBody = JSON.stringify({
       message: payload.message,
       stream: true,
-      stream_mode: "dual",
+      stream_mode: "agui_spec",
       ...(payload.attachments?.length
         ? { attachments: payload.attachments }
         : {}),
@@ -708,31 +713,27 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
 
         const reader = res.body.getReader();
 
-        for await (const { event, data } of streamSseBlocks(reader, {
+        for await (const frame of streamSseBlocks(reader, {
           runId: serverRunIdRef,
           signal: controller.signal,
           maxReconnects: STREAM_MAX_RECONNECTS,
         })) {
-            if (event.startsWith("agui.")) {
-              let agui: AguiPayload;
-              try {
-                agui = JSON.parse(data) as AguiPayload;
-              } catch {
-                continue;
-              }
+            let { event } = frame;
+            const { data } = frame;
+            const adapted = aguiAdapter.ingest(event, data, frame.id);
+            if (adapted) {
+              event = adapted.event;
+              const agui = adapted.payload as AguiPayload;
 
               // Mirror AG-UI frames into the Runtime Console entity graph so the
               // Protocols (AG-UI Events), Memory Activity, and Artifacts panels
               // render live. High-frequency token deltas are excluded to keep the
               // AG-UI events panel readable. Chat rendering below is unaffected.
-              if (
-                event !== "agui.message.delta" &&
-                event !== "agui.thinking.delta" &&
-                event !== "agui.reasoning.delta" &&
-                event !== "agui.tool_call.delta"
-              ) {
+              if (!isHighFrequencyAguiEvent(event)) {
                 ingestAgUiEvent(runId, {
                   type: event,
+                  id: adapted.eventId,
+                  sequence: adapted.sequence,
                   payload: agui as unknown as Record<string, unknown>,
                 });
               }

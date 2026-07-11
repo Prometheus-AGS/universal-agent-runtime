@@ -32,7 +32,9 @@ use crate::llm::{LlmDriver, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
 use crate::session::SessionStore;
-use crate::uar::api::sse::{to_agui_event, to_agui_spec_event, to_runtime_entity_event};
+use crate::uar::api::sse::{
+    enrich_agui_spec_payload, to_agui_event, to_agui_spec_event, to_runtime_entity_event,
+};
 use crate::uar::settings::resilience_policy::{
     PolicySource, ResiliencePolicy, resolve_effective_policy,
 };
@@ -4190,13 +4192,26 @@ pub(crate) async fn api_chat_completion(
             // other UAR-only events) rather than dropping it silently.
             if (emit_agui_chunks || emit_agui_spec_chunks) && _stream_memory_ctx_count > 0 {
                 let event_name = if emit_agui_spec_chunks { "CUSTOM" } else { "agui.memory.context" };
-                let mem_event = Event::default()
-                    .event(event_name)
-                    .data(serde_json::to_string(&serde_json::json!({
+                let payload = if emit_agui_spec_chunks {
+                    enrich_agui_spec_payload(
+                        "CUSTOM",
+                        serde_json::json!({
+                            "name": "uar.memory.context_injected",
+                            "value": { "count": _stream_memory_ctx_count },
+                        }),
+                        "0",
+                        0,
+                    )
+                } else {
+                    serde_json::json!({
                         "kind": "memory",
                         "phase": "injected",
                         "count": _stream_memory_ctx_count
-                    })).unwrap_or_default());
+                    })
+                };
+                let mem_event = Event::default()
+                    .event(event_name)
+                    .data(serde_json::to_string(&payload).unwrap_or_default());
                 yield Ok::<Event, std::convert::Infallible>(mem_event);
             }
 
@@ -4226,6 +4241,8 @@ pub(crate) async fn api_chat_completion(
             let mut tool_name_by_id: HashMap<String, String> = HashMap::new();
             let mut seen_agui_spec_tool_call_ids: std::collections::HashSet<String> =
                 std::collections::HashSet::new();
+            let mut agui_spec_text_started = false;
+            let mut agui_spec_reasoning_started = false;
             let mut assistant_text_for_capture = String::new();
             let user_text_for_capture = effective_input.clone();
 
@@ -4251,6 +4268,102 @@ pub(crate) async fn api_chat_completion(
                     // independent mode from the legacy agui.* names above, so
                     // existing `agui`/`dual` consumers see no change.
                     if emit_agui_spec_chunks {
+                        let spec_run_id = match &normalized_event {
+                            uar::domain::events::NormalizedEvent::RunStart { run_id, .. }
+                            | uar::domain::events::NormalizedEvent::ChatDelta { run_id, .. }
+                            | uar::domain::events::NormalizedEvent::ThinkingDelta { run_id, .. }
+                            | uar::domain::events::NormalizedEvent::ReasoningDelta { run_id, .. }
+                            | uar::domain::events::NormalizedEvent::RunDone { run_id }
+                            | uar::domain::events::NormalizedEvent::RunDoneWithUsage { run_id, .. }
+                            | uar::domain::events::NormalizedEvent::Error { run_id, .. }
+                            | uar::domain::events::NormalizedEvent::Cancelled { run_id } => Some(run_id.as_str()),
+                            _ => None,
+                        };
+                        if matches!(&normalized_event, uar::domain::events::NormalizedEvent::ChatDelta { .. })
+                            && !agui_spec_text_started
+                        {
+                            agui_spec_text_started = true;
+                            let run_id = spec_run_id.unwrap_or_default();
+                            let payload = enrich_agui_spec_payload(
+                                "TEXT_MESSAGE_START",
+                                serde_json::json!({
+                                    "messageId": format!("{run_id}:assistant"),
+                                    "role": "assistant",
+                                    "threadId": run_id,
+                                    "runId": run_id,
+                                }),
+                                &event_id,
+                                0,
+                            );
+                            yield Ok(Event::default()
+                                .event("TEXT_MESSAGE_START")
+                                .id(event_id.clone())
+                                .data(payload.to_string()));
+                        }
+                        if matches!(&normalized_event,
+                            uar::domain::events::NormalizedEvent::ThinkingDelta { .. }
+                            | uar::domain::events::NormalizedEvent::ReasoningDelta { .. })
+                            && !agui_spec_reasoning_started
+                        {
+                            agui_spec_reasoning_started = true;
+                            let run_id = spec_run_id.unwrap_or_default();
+                            for (ordinal, (name, payload)) in [
+                                ("REASONING_START", serde_json::json!({
+                                    "type": "REASONING_START", "profile": "uar.agui/1",
+                                    "threadId": run_id, "runId": run_id,
+                                })),
+                                ("REASONING_MESSAGE_START", serde_json::json!({
+                                    "type": "REASONING_MESSAGE_START", "profile": "uar.agui/1",
+                                    "messageId": format!("{run_id}:reasoning"), "role": "reasoning",
+                                    "threadId": run_id, "runId": run_id,
+                                })),
+                            ].into_iter().enumerate() {
+                                let payload = enrich_agui_spec_payload(name, payload, &event_id, ordinal as u64);
+                                yield Ok(Event::default().event(name).id(event_id.clone()).data(payload.to_string()));
+                            }
+                        }
+                        if matches!(&normalized_event,
+                            uar::domain::events::NormalizedEvent::RunDone { .. }
+                            | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. }
+                            | uar::domain::events::NormalizedEvent::Error { .. }
+                            | uar::domain::events::NormalizedEvent::Cancelled { .. })
+                        {
+                            let run_id = spec_run_id.unwrap_or_default();
+                            if agui_spec_text_started {
+                                let payload = enrich_agui_spec_payload(
+                                    "TEXT_MESSAGE_END",
+                                    serde_json::json!({
+                                        "messageId": format!("{run_id}:assistant"),
+                                        "threadId": run_id,
+                                        "runId": run_id,
+                                    }),
+                                    &event_id,
+                                    0,
+                                );
+                                yield Ok(Event::default()
+                                    .event("TEXT_MESSAGE_END")
+                                    .id(event_id.clone())
+                                    .data(payload.to_string()));
+                            }
+                            if agui_spec_reasoning_started {
+                                for (offset, (name, payload)) in [
+                                    ("REASONING_MESSAGE_END", serde_json::json!({
+                                        "type": "REASONING_MESSAGE_END", "profile": "uar.agui/1",
+                                        "messageId": format!("{run_id}:reasoning"),
+                                        "threadId": run_id, "runId": run_id,
+                                    })),
+                                    ("REASONING_END", serde_json::json!({
+                                        "type": "REASONING_END", "profile": "uar.agui/1",
+                                        "threadId": run_id, "runId": run_id,
+                                    })),
+                                ].into_iter().enumerate() {
+                                    let payload = enrich_agui_spec_payload(
+                                        name, payload, &event_id, offset as u64 + 1,
+                                    );
+                                    yield Ok(Event::default().event(name).id(event_id.clone()).data(payload.to_string()));
+                                }
+                            }
+                        }
                         // TOOL_CALL_START has no dedicated NormalizedEvent of
                         // its own — UAR's ToolDelta/ToolStart map to
                         // TOOL_CALL_ARGS/TOOL_CALL_END (see to_agui_spec_event).
@@ -4280,12 +4393,14 @@ pub(crate) async fn api_chat_completion(
                             && seen_agui_spec_tool_call_ids.insert(tool_call_id.clone())
                         {
                             let start_payload = serde_json::json!({
-                                "kind": "tool_call",
-                                "phase": "start",
-                                "call_index": call_index,
-                                "id": tool_call_id,
-                                "name": tool_name,
+                                "type": "TOOL_CALL_START",
+                                "profile": "uar.agui/1",
+                                "toolCallId": tool_call_id,
+                                "toolCallName": tool_name.unwrap_or_else(|| format!("tool-{call_index:?}")),
                             });
+                            let start_payload = enrich_agui_spec_payload(
+                                "TOOL_CALL_START", start_payload, &event_id, 0,
+                            );
                             let start_json = serde_json::to_string(&start_payload)
                                 .unwrap_or_else(|_| "{}".to_string());
                             yield Ok(Event::default()
@@ -4295,6 +4410,9 @@ pub(crate) async fn api_chat_completion(
                         }
 
                         if let Some((event_name, payload)) = to_agui_spec_event(&normalized_event) {
+                            let payload = enrich_agui_spec_payload(
+                                event_name, payload, &event_id, 8,
+                            );
                             let payload_json = serde_json::to_string(&payload)
                                 .unwrap_or_else(|_| "{}".to_string());
                             let agui_spec_event = Event::default()

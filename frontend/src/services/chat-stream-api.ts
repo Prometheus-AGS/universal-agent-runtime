@@ -26,7 +26,7 @@ export async function resumeRunStream(
   signal: AbortSignal,
 ): Promise<Response> {
   return fetch(
-    `/api/uar/runs/${encodeURIComponent(runId)}/stream?last_event_id=${lastEventId}`,
+    `/api/uar/runs/${encodeURIComponent(runId)}/stream?last_event_id=${lastEventId}&stream_mode=agui_spec`,
     {
       method: "GET",
       headers: {

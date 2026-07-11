@@ -5,12 +5,23 @@ use futures::{Stream, StreamExt};
 use std::convert::Infallible;
 use std::time::Duration;
 
-pub fn build_sse_response<S>(stream: S) -> Sse<impl Stream<Item = Result<Event, Infallible>> + Send>
+pub fn build_sse_response<S>(
+    stream: S,
+    agui_spec: bool,
+) -> Sse<impl Stream<Item = Result<Event, Infallible>> + Send>
 where
     S: Stream<Item = StreamEvent> + Send + 'static,
 {
-    let stream = stream.filter_map(|event| async move {
-        let (event_name, payload) = to_agui_event(&event.event)?;
+    let stream = stream.filter_map(move |event| async move {
+        let (event_name, payload) = if agui_spec {
+            let (event_name, payload) = to_agui_spec_event(&event.event)?;
+            (
+                event_name,
+                enrich_agui_spec_payload(event_name, payload, &event.id.to_string(), 8),
+            )
+        } else {
+            to_agui_event(&event.event)?
+        };
 
         let json = serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
         let sse_event = Event::default()
@@ -423,46 +434,316 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
 /// (`RUN_STARTED`, `TEXT_MESSAGE_CONTENT`, `TOOL_CALL_*`, `STATE_DELTA`, …)
 /// instead of UAR's invented `agui.*` names (CH-21, fable §7 R6). This is what
 /// CopilotKit / Microsoft Agent Framework / Oracle A2UI clients expect on the
-/// wire. Reuses [`to_agui_event`]'s payload logic and only remaps the event
-/// name, so behaviour and payload shape are identical — only the SSE `event:`
-/// field changes. Wire this behind a new `stream_mode` (e.g. `agui_spec`) or
-/// promote it to replace the legacy names once clients migrate.
+/// wire. Payloads use official field names; UAR-only signals are named
+/// `CUSTOM` extensions. This is intentionally separate from the deprecated
+/// legacy `agui.*` mapping.
 #[must_use]
 pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serde_json::Value)> {
-    let (legacy_name, payload) = to_agui_event(event)?;
-    let spec_name = match legacy_name {
-        "agui.stream.start" => "RUN_STARTED",
-        "agui.message.delta" => "TEXT_MESSAGE_CONTENT",
-        "agui.thinking.delta" | "agui.reasoning.delta" => "THINKING_TEXT_MESSAGE_CONTENT",
-        "agui.done" => "RUN_FINISHED",
-        "agui.error" => "RUN_ERROR",
-        "agui.cancelled" => "RUN_ERROR",
-        "agui.state.patch" => "STATE_DELTA",
-        "agui.context.update" => "STATE_DELTA",
-        // NormalizedEvent::ToolDelta — incremental tool-call argument JSON
-        // while the model is still generating the call.
-        "agui.tool_call.delta" => "TOOL_CALL_ARGS",
-        // NormalizedEvent::ToolStart — the tool call's name+arguments are
-        // now fully known (about to execute); this is the END of the
-        // tool-call-construction phase, not the start of execution.
-        "agui.tool_call.complete" => "TOOL_CALL_END",
-        // NormalizedEvent::ToolEnd — the tool finished executing.
-        "agui.tool_result" => "TOOL_CALL_RESULT",
-        "agui.citation.added" => "CUSTOM",
-        "agui.artifact" => "CUSTOM",
-        "agui.artifact_input_request" => "CUSTOM",
-        "agui.skill.activated" => "CUSTOM",
-        "agui.guardrail" => "CUSTOM",
-        "agui.quality.sycophancy" | "agui.quality.sycophancy_corrected" => "CUSTOM",
-        "agui.memory.mutation" | "agui.memory.recall" | "agui.memory.update" => "CUSTOM",
-        "agui.tool_call.approval_required" => "CUSTOM",
-        // Genuinely unrecognized (e.g. a new agui.* event added to
-        // to_agui_event without an entry here) — pass through rather than
-        // silently drop, but this should not happen in practice; every
-        // agui.* name to_agui_event can produce is listed above.
-        other => other,
+    const PROFILE: &str = "uar.agui/1";
+    let custom = |name: &'static str, run_id: Option<&str>, value: serde_json::Value| {
+        (
+            "CUSTOM",
+            serde_json::json!({
+                "type": "CUSTOM",
+                "profile": PROFILE,
+                "name": name,
+                "value": value,
+                "runId": run_id,
+                "threadId": run_id,
+            }),
+        )
     };
-    Some((spec_name, payload))
+
+    let mapped = match event {
+        NormalizedEvent::RunStart { run_id, agent_id } => (
+            "RUN_STARTED",
+            serde_json::json!({
+                "type": "RUN_STARTED", "profile": PROFILE,
+                "threadId": run_id, "runId": run_id,
+                "input": { "agentId": agent_id }
+            }),
+        ),
+        NormalizedEvent::ChatDelta { run_id, text_delta } => (
+            "TEXT_MESSAGE_CONTENT",
+            serde_json::json!({
+                "type": "TEXT_MESSAGE_CONTENT", "profile": PROFILE,
+                "messageId": format!("{run_id}:assistant"), "delta": text_delta,
+                "threadId": run_id, "runId": run_id
+            }),
+        ),
+        NormalizedEvent::ThinkingDelta { run_id, text_delta }
+        | NormalizedEvent::ReasoningDelta { run_id, text_delta } => (
+            "REASONING_MESSAGE_CONTENT",
+            serde_json::json!({
+                "type": "REASONING_MESSAGE_CONTENT", "profile": PROFILE,
+                "messageId": format!("{run_id}:reasoning"), "delta": text_delta,
+                "threadId": run_id, "runId": run_id
+            }),
+        ),
+        NormalizedEvent::Citation { run_id, sources } => custom(
+            "uar.citation.added",
+            Some(run_id),
+            serde_json::json!({ "citation": sources }),
+        ),
+        NormalizedEvent::MemoryRecall { run_id, items } => custom(
+            "uar.memory.recall",
+            Some(run_id),
+            serde_json::json!({ "items": items, "count": items.len() }),
+        ),
+        NormalizedEvent::SkillActivated {
+            run_id,
+            skill_id,
+            title,
+            selection_method,
+        } => custom(
+            "uar.skill.activated",
+            Some(run_id),
+            serde_json::json!({
+                "skill": { "id": skill_id, "title": title },
+                "selectionMethod": selection_method
+            }),
+        ),
+        NormalizedEvent::ToolDelta {
+            run_id,
+            tool_call_id,
+            delta,
+            ..
+        } => (
+            "TOOL_CALL_ARGS",
+            serde_json::json!({
+                "type": "TOOL_CALL_ARGS", "profile": PROFILE,
+                "toolCallId": tool_call_id, "delta": delta.to_string(),
+                "threadId": run_id, "runId": run_id
+            }),
+        ),
+        NormalizedEvent::ToolStart {
+            run_id,
+            tool_call_id,
+            tool,
+            input,
+            ..
+        } => (
+            "TOOL_CALL_END",
+            serde_json::json!({
+                "type": "TOOL_CALL_END", "profile": PROFILE,
+                "toolCallId": tool_call_id, "toolCallName": tool,
+                "arguments": input, "threadId": run_id, "runId": run_id
+            }),
+        ),
+        NormalizedEvent::ToolEnd {
+            run_id,
+            tool_call_id,
+            output,
+            ..
+        } => (
+            "TOOL_CALL_RESULT",
+            serde_json::json!({
+                "type": "TOOL_CALL_RESULT", "profile": PROFILE,
+                "messageId": format!("{run_id}:tool:{tool_call_id}"),
+                "toolCallId": tool_call_id, "content": output.to_string(),
+                "role": "tool", "threadId": run_id, "runId": run_id
+            }),
+        ),
+        NormalizedEvent::Artifact { run_id, artifact }
+        | NormalizedEvent::ArtifactDisplay { run_id, artifact } => custom(
+            "uar.artifact.available",
+            Some(run_id),
+            serde_json::json!({
+                "artifactId": artifact.artifact_id,
+                "artifactType": artifact.artifact_type,
+                "title": artifact.title, "content": artifact.content,
+                "language": artifact.language, "metadata": artifact.metadata
+            }),
+        ),
+        NormalizedEvent::ArtifactInputRequest { run_id, artifact } => custom(
+            "uar.artifact.input_required",
+            Some(run_id),
+            serde_json::json!({
+                "artifactId": artifact.artifact_id,
+                "artifactType": artifact.artifact_type,
+                "title": artifact.title, "content": artifact.content,
+                "metadata": artifact.metadata
+            }),
+        ),
+        NormalizedEvent::Error {
+            run_id,
+            code,
+            message,
+        } => (
+            "RUN_ERROR",
+            serde_json::json!({
+                "type": "RUN_ERROR", "profile": PROFILE,
+                "threadId": run_id, "runId": run_id,
+                "code": code, "message": message
+            }),
+        ),
+        NormalizedEvent::RunDone { run_id } => (
+            "RUN_FINISHED",
+            serde_json::json!({
+                "type": "RUN_FINISHED", "profile": PROFILE,
+                "threadId": run_id, "runId": run_id
+            }),
+        ),
+        NormalizedEvent::Cancelled { run_id } => (
+            "RUN_ERROR",
+            serde_json::json!({
+                "type": "RUN_ERROR", "profile": PROFILE,
+                "threadId": run_id, "runId": run_id,
+                "code": "CANCELLED", "message": "Run cancelled"
+            }),
+        ),
+        NormalizedEvent::SycophancyFlagged {
+            run_id,
+            sycophancy_score,
+            has_critical,
+            correction_mandatory,
+            classifications,
+        } => custom(
+            "uar.quality.sycophancy_flagged",
+            Some(run_id),
+            serde_json::json!({
+                "score": sycophancy_score, "hasCritical": has_critical,
+                "correctionMandatory": correction_mandatory,
+                "classifications": classifications
+            }),
+        ),
+        NormalizedEvent::SycophancyCorrected {
+            run_id,
+            corrected_text,
+        } => custom(
+            "uar.quality.sycophancy_corrected",
+            Some(run_id),
+            serde_json::json!({ "correctedText": corrected_text }),
+        ),
+        NormalizedEvent::GuardrailFlagged {
+            run_id,
+            category,
+            reason,
+        } => custom(
+            "uar.guardrail.flagged",
+            run_id.as_deref(),
+            serde_json::json!({ "category": category, "reason": reason }),
+        ),
+        NormalizedEvent::RuntimeStep { run_id, step, kind } => {
+            let event_type = if kind == "started" {
+                "STEP_STARTED"
+            } else {
+                "STEP_FINISHED"
+            };
+            (
+                event_type,
+                serde_json::json!({
+                    "type": event_type, "profile": PROFILE,
+                    "stepName": format!("step-{step}"),
+                    "threadId": run_id, "runId": run_id
+                }),
+            )
+        }
+        NormalizedEvent::StatePatch { run_id, patch } => (
+            "STATE_DELTA",
+            serde_json::json!({
+                "type": "STATE_DELTA", "profile": PROFILE,
+                "delta": patch, "threadId": run_id, "runId": run_id
+            }),
+        ),
+        NormalizedEvent::ContextAction(action) => custom(
+            "uar.context.updated",
+            None,
+            serde_json::json!({
+                "strategy": action.strategy,
+                "messagesRemoved": action.messages_removed,
+                "tokensSaved": action.tokens_saved,
+                "wasApplied": action.was_applied,
+                "summaryGenerated": action.summary_generated
+            }),
+        ),
+        NormalizedEvent::BudgetAlert {
+            run_id,
+            scope,
+            scope_id,
+            spent_usd,
+            limit_usd,
+            exceeded,
+        } => custom(
+            "uar.budget.alert",
+            Some(run_id),
+            serde_json::json!({
+                "scope": scope, "scopeId": scope_id, "spentUsd": spent_usd,
+                "limitUsd": limit_usd, "exceeded": exceeded
+            }),
+        ),
+        NormalizedEvent::MemoryMutation {
+            run_id,
+            operation,
+            memory_id,
+            content,
+            scope,
+            memory_type,
+        } => custom(
+            "uar.memory.mutation",
+            Some(run_id),
+            serde_json::json!({
+                "operation": operation, "memoryId": memory_id, "content": content,
+                "scope": scope, "memoryType": memory_type
+            }),
+        ),
+        NormalizedEvent::ToolCallApprovalRequired {
+            run_id,
+            tool_call_id,
+            name,
+            arguments_json,
+            risk_reason,
+            ..
+        } => custom(
+            "uar.tool.approval_required",
+            Some(run_id),
+            serde_json::json!({
+                "toolCallId": tool_call_id, "name": name,
+                "arguments": arguments_json, "riskReason": risk_reason
+            }),
+        ),
+        NormalizedEvent::RunDoneWithUsage {
+            run_id,
+            input_tokens,
+            output_tokens,
+            total_tokens,
+            cost_usd_estimate,
+            model,
+        } => (
+            "RUN_FINISHED",
+            serde_json::json!({
+                "type": "RUN_FINISHED", "profile": PROFILE,
+                "threadId": run_id, "runId": run_id,
+                "result": { "usage": {
+                    "inputTokens": input_tokens, "outputTokens": output_tokens,
+                    "totalTokens": total_tokens, "costUsdEstimate": cost_usd_estimate,
+                    "model": model
+                }}
+            }),
+        ),
+    };
+    Some(mapped)
+}
+
+/// Add the stable UAR profile metadata shared by live and replayed AG-UI frames.
+#[must_use]
+pub fn enrich_agui_spec_payload(
+    event_type: &str,
+    mut payload: serde_json::Value,
+    source_id: &str,
+    ordinal: u64,
+) -> serde_json::Value {
+    let sequence = source_id.parse::<u64>().unwrap_or(0).saturating_mul(16) + ordinal;
+    if let Some(object) = payload.as_object_mut() {
+        object.insert("type".to_string(), serde_json::json!(event_type));
+        object.insert("profile".to_string(), serde_json::json!("uar.agui/1"));
+        object.insert(
+            "eventId".to_string(),
+            serde_json::json!(format!("{source_id}:{ordinal}")),
+        );
+        object.insert("sequence".to_string(), serde_json::json!(sequence));
+    }
+    payload
 }
 
 pub fn to_runtime_entity_event(
@@ -630,10 +911,12 @@ pub fn to_runtime_entity_event(
 
 #[cfg(test)]
 mod tests {
-    use super::{to_agui_event, to_runtime_entity_event};
+    use super::{
+        enrich_agui_spec_payload, to_agui_event, to_agui_spec_event, to_runtime_entity_event,
+    };
     use crate::uar::domain::{
         context::{ContextAction, ContextStrategy},
-        events::NormalizedEvent,
+        events::{NormalizedEvent, StatePatchOp},
     };
 
     #[test]
@@ -736,5 +1019,97 @@ mod tests {
         assert_eq!(payload["tokens_saved"], 2000);
         assert_eq!(payload["was_applied"], true);
         assert_eq!(payload["summary_generated"], false);
+    }
+
+    #[test]
+    fn maps_core_lifecycle_text_tool_state_and_error_to_agui_profile() {
+        let cases = [
+            (
+                NormalizedEvent::RunStart {
+                    run_id: "run-1".into(),
+                    agent_id: "agent-1".into(),
+                },
+                "RUN_STARTED",
+            ),
+            (
+                NormalizedEvent::ChatDelta {
+                    run_id: "run-1".into(),
+                    text_delta: "hello".into(),
+                },
+                "TEXT_MESSAGE_CONTENT",
+            ),
+            (
+                NormalizedEvent::ThinkingDelta {
+                    run_id: "run-1".into(),
+                    text_delta: "reason".into(),
+                },
+                "REASONING_MESSAGE_CONTENT",
+            ),
+            (
+                NormalizedEvent::ToolDelta {
+                    run_id: "run-1".into(),
+                    call_index: 0,
+                    tool_call_id: "call-1".into(),
+                    delta: serde_json::json!({"city": "Chi"}),
+                },
+                "TOOL_CALL_ARGS",
+            ),
+            (
+                NormalizedEvent::ToolStart {
+                    run_id: "run-1".into(),
+                    call_index: 0,
+                    tool_call_id: "call-1".into(),
+                    tool: "weather".into(),
+                    input: serde_json::json!({"city": "Chicago"}),
+                },
+                "TOOL_CALL_END",
+            ),
+            (
+                NormalizedEvent::ToolEnd {
+                    run_id: "run-1".into(),
+                    call_index: 0,
+                    tool_call_id: "call-1".into(),
+                    tool: "weather".into(),
+                    output: serde_json::json!({"temperature": 72}),
+                    ok: true,
+                },
+                "TOOL_CALL_RESULT",
+            ),
+            (
+                NormalizedEvent::StatePatch {
+                    run_id: "run-1".into(),
+                    patch: vec![StatePatchOp {
+                        op: "replace".into(),
+                        path: "/status".into(),
+                        value: Some(serde_json::json!("ready")),
+                    }],
+                },
+                "STATE_DELTA",
+            ),
+            (
+                NormalizedEvent::Error {
+                    run_id: "run-1".into(),
+                    code: "PROVIDER_ERROR".into(),
+                    message: "provider failed".into(),
+                },
+                "RUN_ERROR",
+            ),
+            (
+                NormalizedEvent::RunDone {
+                    run_id: "run-1".into(),
+                },
+                "RUN_FINISHED",
+            ),
+        ];
+
+        for (index, (event, expected_type)) in cases.into_iter().enumerate() {
+            let (event_type, payload) = to_agui_spec_event(&event).expect("event maps");
+            assert_eq!(event_type, expected_type);
+            assert_eq!(payload["type"], expected_type);
+            assert_eq!(payload["profile"], "uar.agui/1");
+            let enriched = enrich_agui_spec_payload(event_type, payload, "7", index as u64);
+            assert_eq!(enriched["eventId"], format!("7:{index}"));
+            assert!(enriched["sequence"].as_u64().is_some());
+        }
     }
 }

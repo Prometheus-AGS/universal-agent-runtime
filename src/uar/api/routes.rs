@@ -46,6 +46,7 @@ struct CreateRunResponse {
 #[derive(Deserialize)]
 struct StreamParams {
     last_event_id: Option<u64>,
+    stream_mode: Option<String>,
 }
 
 async fn create_run(
@@ -101,7 +102,7 @@ async fn stream_run(
             event
         });
 
-    build_sse_response(stream).into_response()
+    build_sse_response(stream, params.stream_mode.as_deref() == Some("agui_spec")).into_response()
 }
 
 #[derive(Deserialize)]

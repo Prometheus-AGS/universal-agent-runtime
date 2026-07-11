@@ -37,7 +37,7 @@ Supported fields:
 - `temperature`
 - `tools`
 - `stream`
-- `stream_mode` (`openai` default, `agui`, or `dual`)
+- `stream_mode` (`openai` default, `agui_spec`, deprecated `agui`, or `dual`)
 
 ## Session Semantics
 
@@ -129,7 +129,8 @@ Returns SSE with OpenAI-style chunk payloads and `[DONE]` terminator.
 Streaming modes:
 
 - `stream_mode: "openai"` (default): OpenAI chunk payloads only.
-- `stream_mode: "agui"`: AG-UI named SSE events (`agui.*`) only.
+- `stream_mode: "agui_spec"`: conformant [`uar.agui/1`](protocols/ag-ui-profile.md) events using official AG-UI vocabulary.
+- `stream_mode: "agui"`: deprecated legacy UAR events (`agui.*`); not AG-UI conformant.
 - `stream_mode: "dual"`: emits both AG-UI events and OpenAI chunks.
 
 Tool chunk behavior:

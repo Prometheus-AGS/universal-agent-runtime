@@ -263,17 +263,17 @@ async fn wait_for_health(base_url: &str) {
 
 #[cfg(test)]
 mod tests {
-    #[expect(
+    #[allow(
         unused_imports,
         reason = "the Cucumber custom test harness compiles this unit-test module without executing it"
     )]
     use super::*;
-    #[expect(
+    #[allow(
         unused_imports,
         reason = "the Cucumber custom test harness compiles this unit-test module without executing it"
     )]
     use crate::live::stub_llm::{FixtureResponse, RequestFingerprint};
-    #[expect(
+    #[allow(
         unused_imports,
         reason = "the Cucumber custom test harness compiles this unit-test module without executing it"
     )]

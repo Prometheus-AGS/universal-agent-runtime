@@ -14,7 +14,7 @@
   "previousPhase": "uar-production-ready-uiux-2026-07",
   "seedNote": "Created 2026-07-10 via direct /kbd-assess invocation with an operator mandate: '100% ready for customer use and consumption' is the ONLY success condition. Seeded from the prior phase's honest not-yet-shippable verdict: RAG retrieval broken (zero-vector embeddings), 2 open Dependabot alerts, Runtime Console gated placeholder panels, thin test coverage, config-surface traps (dead PORT/JWT_REQUIRED passthroughs), no public docs site. Assessment must additionally web-research current production-readiness practice and enumerate anything else blocking external use.",
   "changes_total": 24,
-  "changes_completed": 10,
+  "changes_completed": 11,
   "changes_ordered": [
     "fix-embeddings-fastembed",
     "green-main-ci",
@@ -52,7 +52,7 @@
     "establish-react-product-contract": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-establish-react-product-contract/. React 19 declared canonical via ADR-007 + frontend architecture contract; all 21 live surfaces inventoried with owner/action/API/spec/test/maturity evidence; conservative product support matrix seeded. New dependency-direction checker freezes 33 legacy violations, blocks new component/hook/store/service/direct-fetch violations, and is wired into local + CI gates. Also restored a truthful zero-warning product lint scope and fixed 22 live-product lint errors. Verified: pnpm lint clean, typecheck clean, boundary positive + negative fixture, strict OpenSpec validate.",
     "certify-provider-model-settings-flow": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-certify-provider-model-settings-flow/. Providers, Models, and Settings now follow Component -> Hook -> Store -> Service -> API; provider graph views hydrate their list contract and selected details remain reactive. Added deterministic store/catalog/settings tests, schema-generated settings round trips and validation, secret redaction coverage, and a real-server Playwright configure -> default model -> route -> Protocols journey. Provider/model/settings boundary exceptions removed (33 initial legacy violations -> 27 remaining phase-wide). Verified: frontend 62/62, typecheck, lint, production build, settings persistence 34/34, provider resolution 7/7, redaction 1/1, real-server E2E 1/1, boundary gate, strict OpenSpec validate.",
     "certify-knowledge-rag-flow": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-certify-knowledge-rag-flow/. Knowledge now follows Component -> Hook -> Store -> Service -> API with graph reconciliation, optimistic rollback, session-safe failed-ingestion retry, announced errors, and no Knowledge boundary exception. Real browser certification covers create -> upload -> indexed -> ranked semantic search -> document/base deletion. Chat BDD now gates the canned answer on retrieved system context, proving causal grounding rather than response text alone. Verified: frontend 71/71, focused knowledge store 9/9, Rust knowledge lifecycle 9/9, grounded stub 1/1, real page E2E 1/1, grounded chat BDD 1/1, typecheck, lint, build, boundary gate (26 remaining), strict OpenSpec validate.",
-    "certify-agui-chat-flow": "PENDING",
+    "certify-agui-chat-flow": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-certify-agui-chat-flow/. Published stable uar.agui/1 profile and schema, official lifecycle/reasoning/tool/state mappings, named UAR CUSTOM extensions, shared Rust/TypeScript golden fixtures, and one validated ordered/idempotent Chat+Runtime Console adapter. Resume now preserves agui_spec negotiation; stable event IDs/sequences support replay deduplication; JSON Patch divergence recovers on snapshots. Verified: Rust lib 393/393 (1 ignored), frontend 80/80, focused protocol/runtime 15/15, live AG-UI vocabulary/tool/replay integration, BDD 6/6, typecheck, lint, production build, fmt, and strict OpenSpec validate. BossFang decision recorded: supervise current UAR out-of-process; consider a narrow library only after modular extraction and profiling.",
     "certify-a2ui-react-flow": "PENDING",
     "certify-runtime-console-governance": "PENDING",
     "certify-remaining-admin-surfaces": "PENDING",
@@ -77,14 +77,15 @@
     "docs-site-github-pages",
     "establish-react-product-contract",
     "certify-provider-model-settings-flow",
-    "certify-knowledge-rag-flow"
+    "certify-knowledge-rag-flow",
+    "certify-agui-chat-flow"
   ],
-  "active_change": "certify-agui-chat-flow",
+  "active_change": "certify-a2ui-react-flow",
   "blocked_changes": [],
-  "next_change": "certify-agui-chat-flow",
+  "next_change": "certify-a2ui-react-flow",
   "sourceTool": "codex",
   "last_updated_by": "codex",
-  "last_updated": "2026-07-11T13:44:13Z",
+  "last_updated": "2026-07-11T14:56:42Z",
   "createdBy": "kbd-assess (inline phase seed; no prior reflection recommendation selected)",
   "assessmentSummary": "Re-assessed against the supplied GA and feature-set recommendations after 4/9 phase changes. Readiness 68/100: RAG, ordinary CI, dependency security, and policy/community work improved; broad 1.0 remains blocked by stale Node18/Bun/all-features release.yml, Cargo 0.1.0 versus SECURITY.md 1.0-only support, no candidate-tag evidence, network/Git build reproducibility, Cedar denial mapped to approval, unconditional platform dependencies, and missing feature/provider/platform maturity contracts. See assessment.md.",
   "decisions": {

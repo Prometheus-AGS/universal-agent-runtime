@@ -84,6 +84,12 @@ async fn agui_spec_mode_emits_official_event_vocabulary() {
         .expect("request");
 
     assert!(resp.status().is_success(), "status: {}", resp.status());
+    let run_id = resp
+        .headers()
+        .get("x-uar-run-id")
+        .and_then(|value| value.to_str().ok())
+        .expect("stream exposes resumable run id")
+        .to_string();
     let body = resp.text().await.expect("body");
 
     assert!(
@@ -107,6 +113,45 @@ async fn agui_spec_mode_emits_official_event_vocabulary() {
     assert!(
         !body.contains("chat.completion.chunk"),
         "agui_spec mode should not emit OpenAI chunks, got: {body}"
+    );
+    assert!(
+        body.contains("\"profile\":\"uar.agui/1\"")
+            && body.contains("\"eventId\"")
+            && body.contains("\"sequence\""),
+        "every official event needs stable profile metadata, got: {body}"
+    );
+
+    let mut replay = client
+        .get(format!(
+            "{}/api/uar/runs/{run_id}/stream?last_event_id=0&stream_mode=agui_spec",
+            server.base_url
+        ))
+        .header("Last-Event-ID", "0")
+        .send()
+        .await
+        .expect("resume request");
+    assert!(
+        replay.status().is_success(),
+        "resume status: {}",
+        replay.status()
+    );
+    let replay_body = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        let mut body = String::new();
+        while let Some(chunk) = replay.chunk().await.expect("resume chunk") {
+            body.push_str(&String::from_utf8_lossy(&chunk));
+            if body.contains("event: RUN_FINISHED") {
+                break;
+            }
+        }
+        body
+    })
+    .await
+    .expect("resume emits a terminal frame");
+    assert!(
+        replay_body.contains("event: RUN_STARTED")
+            && replay_body.contains("event: RUN_FINISHED")
+            && !replay_body.contains("event: agui."),
+        "resume must preserve the negotiated AG-UI profile, got: {replay_body}"
     );
 }
 

@@ -68,7 +68,7 @@ Set `stream_mode: "agui_spec"` on a streaming `/api/chat/completion` or
 |---|---|
 | `RUN_STARTED` | Run begins |
 | `TEXT_MESSAGE_CONTENT` | Assistant text delta |
-| `THINKING_TEXT_MESSAGE_CONTENT` | Extended-thinking/reasoning delta |
+| `REASONING_MESSAGE_CONTENT` | Extended-thinking/reasoning delta |
 | `TOOL_CALL_START` | First delta or start of a given tool call (`call_index`/`id`; synthesized once per tool call — no dedicated UAR event exists for it) |
 | `TOOL_CALL_ARGS` | Incremental tool-call argument JSON while the model is still generating |
 | `TOOL_CALL_END` | Tool call's name+arguments are fully known, ready to execute |
@@ -128,3 +128,45 @@ pack's `librefang-wasm-skill` (generates WASM-ABI crates for bossfang's
 `WasmSkillSandbox`) and `upload-to-bossfang` (SSRF-guarded POST to
 `/skills/install`) skills — no UAR runtime change needed; this is a
 skill-pack-level bridge that already exists today.
+
+## 6. Deployment decision: library or supervised service
+
+For the current production architecture, bossfang should consume UAR through a
+**supervised out-of-process boundary**, not link the full
+`universal-agent-runtime` crate into the bossfang process. The existing
+OpenAI-compatible `provider_urls` seam is the lowest-risk first step; A2A and
+AG-UI add richer task and event semantics without changing the ownership
+boundary.
+
+| Criterion | Current UAR library | Supervised UAR service/sidecar |
+|---|---|---|
+| Integration effort | High: bossfang must reconcile Tokio, features, native dependencies, and exact Cargo pins | Low: supported `provider_urls` configuration plus stable HTTP/SSE contracts |
+| Fault and security isolation | Shared process, allocator, runtime, and crash domain | Separate crash/restart and least-privilege boundary |
+| Upgrade and rollback | Coupled bossfang/UAR release and rebuild | Independently versioned and reversible deployment |
+| Latency and footprint | Avoids IPC, but embeds UAR's broad server/runtime dependency graph | Small local IPC cost; one reusable runtime process |
+| Portability | Rust-only ABI/source integration | Language- and host-neutral OpenAI/A2A/AG-UI protocols |
+| Ownership fit | Overlaps bossfang kernel responsibilities | Bossfang owns workflows/channels/approvals; UAR owns model routing and execution policy |
+
+This recommendation applies to the **current monolithic crate**. A future
+library option can make sense for offline/mobile packaging or a measured
+latency-critical path after UAR extracts a narrow, dependency-light runtime
+kernel (for example typed events, routing, and dialect policy) with no server,
+UI, database, or process-lifecycle coupling. That extraction should be driven
+by profiling rather than assumed IPC cost. Until then, embedding the full crate
+would trade a mature protocol seam for a coupled build and failure domain.
+
+For bossfang specifically, “sidecar” means a generic child process or managed
+local service, not necessarily the existing Electron-oriented `uar-sidecar`
+binary. The supervisor contract should include authenticated loopback or Unix
+socket transport, readiness and health checks, protocol/profile negotiation,
+bounded restart policy, structured logs, and clean shutdown. This preserves a
+later migration to a narrow in-process library without changing bossfang's
+agent, workflow, or channel contracts.
+
+The decision is consistent with LibreFang's documented layered
+kernel/runtime/API architecture and its supported OpenAI-compatible
+`provider_urls` overrides:
+
+- [LibreFang architecture](https://docs.librefang.ai/architecture)
+- [LibreFang configuration](https://docs.librefang.ai/configuration)
+- [LibreFang documentation](https://docs.librefang.ai/)
