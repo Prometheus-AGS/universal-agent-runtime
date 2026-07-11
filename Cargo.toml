@@ -251,7 +251,7 @@ config = "0.15.22"
 ## 3.1.5 dedicated security-patch release per explicit user direction).
 ## surreal-memory's own pin (surrealdb = "3.0.5", a caret range) is
 ## satisfied by 3.2.0 without needing a change in that repo.
-surrealdb = { version = "=3.2.0", features = ["kv-surrealkv"] }
+surrealdb = { version = "=3.2.1", features = ["kv-surrealkv"] }
 jsonschema = { version = "0.46.10", default-features = false }
 governor = { version = "0.10.4", features = ["std", "jitter", "quanta"] }
 nonzero_ext = "0.3.0"
