@@ -19,6 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
+    # Rust checks skip build.rs's frontend/model builds (matching ci.yml); the
+    # frontend is validated by the dedicated pnpm steps below.
+    env:
+      SKIP_FRONTEND_BUILD: "1"
+      SKIP_MODEL_BUILD: "1"
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/uar_test
+      REDIS_URL: redis://localhost:6379
+
     services:
       postgres:
         image: pgvector/pgvector:pg17
