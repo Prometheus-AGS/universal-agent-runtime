@@ -1,7 +1,7 @@
 {
   "phase": "uar-final-production-hardening-2026-07",
   "createdAt": "2026-07-10T02:45:00Z",
-  "updatedAt": "2026-07-11T05:45:00Z",
+  "updatedAt": "2026-07-11T06:05:00Z",
   "parentPhase": null,
   "childPhases": [],
   "childPointer": null,
@@ -65,7 +65,7 @@
     "certify-operational-resilience": "PENDING",
     "produce-supply-chain-artifacts": "PENDING",
     "certify-release-candidate": "PENDING",
-    "release-1-0-0": "PENDING (LAST; requires unchanged certified RC commit)"
+    "release-1-0-0": "PREPARED + STAGED on main (ff4994c) -- NOT tagged (operator action). Versions 0.1.0->1.0.0 (Cargo.toml + Cargo.lock + root/frontend/sdks package.json), CHANGELOG.md (Keep-a-Changelog) + stability statement, release.yml publish-ghcr-signed job (GHCR multi-arch amd64/arm64 + SLSA provenance mode=max + SBOM via build-push/cargo-cyclonedx/syft + cosign keyless signing; GITHUB_TOKEN + OIDC, no new secrets). Cargo.lock synced so --locked CI builds pass. AGENT BOUNDARY: cutting the v1.0.0 tag triggers an irreversible signed publish to GHCR -- operator must review + tag. NOTE: on-disk plan was concurrently re-planned 9->24 (16 certify-* changes inserted before release); operator to reconcile plan authority."
   },
   "completed_changes": [
     "fix-embeddings-fastembed",
@@ -81,7 +81,7 @@
   "next_change": "test-hardening",
   "sourceTool": "claude-code",
   "last_updated_by": "claude-code",
-  "last_updated": "2026-07-11T05:45:00Z",
+  "last_updated": "2026-07-11T06:05:00Z",
   "createdBy": "kbd-assess (inline phase seed; no prior reflection recommendation selected)",
   "assessmentSummary": "Re-assessed against the supplied GA and feature-set recommendations after 4/9 phase changes. Readiness 68/100: RAG, ordinary CI, dependency security, and policy/community work improved; broad 1.0 remains blocked by stale Node18/Bun/all-features release.yml, Cargo 0.1.0 versus SECURITY.md 1.0-only support, no candidate-tag evidence, network/Git build reproducibility, Cedar denial mapped to approval, unconditional platform dependencies, and missing feature/provider/platform maturity contracts. See assessment.md.",
   "decisions": {
