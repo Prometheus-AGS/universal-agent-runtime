@@ -72,7 +72,7 @@ export const A2uiTestingPage: FC = () => {
     setTriggerError(null);
     try {
       let metadata: Record<string, unknown> = {};
-      let parsedContent = content;
+      const parsedContent = content;
       try {
         const parsed = JSON.parse(content) as Record<string, unknown>;
         metadata = parsed;

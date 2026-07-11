@@ -37,7 +37,6 @@ export const McpHealthPage: FC = () => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loading = refreshing && servers.length === 0;

@@ -32,7 +32,6 @@ export const ToolsPage: FC = () => {
   // Tool registry is static after server startup — one-time fetch on mount.
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loading = refreshing && tools.length === 0;

@@ -40,7 +40,6 @@ export const ProvidersPage: FC = () => {
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const clearError = () => setError(null);
 
   // The graph stores rich ProviderEntity rows that are a superset of
   // CatalogProviderSummary; cast for the legacy render code below.

@@ -17,11 +17,6 @@ export const CompilerPage: FC = () => {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const load = async () => {
     setRefreshing(true);
     setError(null);
@@ -33,6 +28,10 @@ export const CompilerPage: FC = () => {
       setRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    void load();
+  }, []);
 
   const createNew = async () => {
     setCreating(true);

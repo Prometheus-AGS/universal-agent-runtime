@@ -42,29 +42,9 @@ export interface ModelEntity extends Record<string, unknown> {
 // existing consumers worked around by reading nested fields anyway.
 //
 // Aliasing to `UarAgent` makes the typed contract match reality. The legacy
-// flat interface stays below as `LegacyAgentEntityShape` purely for any
-// downstream that references the old declaration; nothing currently does.
+// flat interface was removed after all consumers migrated to the real shape.
 import type { UarAgent } from "@/types";
 export type AgentEntity = UarAgent;
-
-interface LegacyAgentEntityShape extends Record<string, unknown> {
-  id: string;
-  name: string;
-  description: string;
-  system_prompt: string;
-  model?: string;
-  protocol?: "auto" | "openai-chat" | "openai-responses";
-  skills: string[];
-  tools: string[];
-  knowledge_bases: string[];
-  mcp_servers: string[];
-  context_strategy: ContextStrategy;
-  tool_approval: "auto" | "ask" | "deny";
-  status: "active" | "draft" | "disabled";
-  spec_id?: string;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface ContextStrategy extends Record<string, unknown> {
   max_history_messages: number;

@@ -123,7 +123,6 @@ export const SkillsPage: FC = () => {
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loading = refreshing && skills.length === 0;

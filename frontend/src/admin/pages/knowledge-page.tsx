@@ -36,8 +36,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { ErrorBar } from "@/components/admin/error-bar";
-import { LoadingCursor } from "@/components/admin/loading-cursor";
 import { useKnowledgePage } from "@/entities/hooks/use-knowledge-page";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { cn, friendlyError } from "@/lib/utils";

@@ -1,6 +1,7 @@
 {
   "name": "universal-agent-runtime",
   "version": "0.1.0",
+  "packageManager": "pnpm@10.33.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,6 +14,7 @@
     "typecheck": "pnpm -C frontend typecheck",
     "format": "pnpm exec prettier --write frontend/src/",
     "ci-gates": "bash scripts/ci-grep-gates.sh",
+    "frontend:boundaries": "node scripts/check-frontend-boundaries.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"

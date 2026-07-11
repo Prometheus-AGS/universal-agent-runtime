@@ -10,6 +10,7 @@ export function useMemory(): { items: MemoryItem[] } {
 export function useMemoryStats(): MemoryStats | null {
   const row = useGraphEntity<MemoryStats & { id: string }>("MemoryMeta", "current");
   if (!row) return null;
-  const { id: _id, ...stats } = row;
+  const { id, ...stats } = row;
+  void id;
   return stats as MemoryStats;
 }

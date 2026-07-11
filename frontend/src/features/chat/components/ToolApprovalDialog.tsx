@@ -52,7 +52,10 @@ export const ToolApprovalDialog: FC<ToolApprovalDialogProps> = ({
   );
 
   const respondRef = useRef(respond);
-  respondRef.current = respond;
+
+  useEffect(() => {
+    respondRef.current = respond;
+  }, [respond]);
 
   // Countdown timer (use ref so the interval does not close over a stale `respond` / skip deps)
   useEffect(() => {
