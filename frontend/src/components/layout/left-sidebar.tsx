@@ -21,9 +21,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useThreadRegistryStore } from "@/stores/thread-registry-store";
-import { useChatMessageStore } from "@/stores/chat-message-store";
-import { useUiStore } from "@/stores/ui-store";
+import { useThreadUi } from "@/hooks/use-thread-ui";
+import { useUiState } from "@/hooks/use-ui-state";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import type { LocalThread } from "@/types";
 import type { RichMessage } from "@/types/chat-content";
@@ -53,16 +52,8 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
   const [renameThreadId, setRenameThreadId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [deleteThreadId, setDeleteThreadId] = useState<string | null>(null);
-  const setMobileSidebarOpen = useUiStore((s) => s.setMobileSidebarOpen);
-
-  const threads = useThreadRegistryStore((s) => s.threads);
-  const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
-  const registerThread = useThreadRegistryStore((s) => s.registerThread);
-  const setTitle = useThreadRegistryStore((s) => s.setTitle);
-  const setActive = useThreadRegistryStore((s) => s.setActive);
-  const removeThread = useThreadRegistryStore((s) => s.removeThread);
-
-  const messagesByThread = useChatMessageStore((s) => s.messagesByThread);
+  const { setMobileSidebarOpen } = useUiState();
+  const { threads, activeThreadId, registerThread, setTitle, setActive, removeThread, messagesByThread, clearThread } = useThreadUi();
 
   const visibleThreads: LocalThread[] = Object.values(threads)
     .filter((t) => !t.isEphemeral)
@@ -88,7 +79,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
 
     const id = deleteThreadId;
     removeThread(id);
-    useChatMessageStore.getState().clearThread(id);
+    clearThread(id);
     if (activeThreadId === id) setActive(null);
     setDeleteThreadId(null);
   };

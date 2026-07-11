@@ -91,6 +91,9 @@ jobs:
           bun run format --check
           bun run lint
 
+      - name: Enforce frontend architecture boundaries
+        run: bun run frontend:boundaries
+
       - name: Security audit
         run: |
           cargo install cargo-audit

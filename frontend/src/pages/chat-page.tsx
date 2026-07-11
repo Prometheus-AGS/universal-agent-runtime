@@ -1,7 +1,7 @@
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { EnhancedThread } from "@/components/assistant-ui/enhanced-thread";
 import { LeftSidebar } from "@/components/layout/left-sidebar";
-import { useUiStore } from "@/stores/ui-store";
+import { useUiState } from "@/hooks/use-ui-state";
 import { useChatRuntime } from "@/features/chat/use-chat-runtime";
 import { AttachmentContext } from "@/features/chat/attachment-context";
 import { MemoryContextProvider } from "@/features/chat/memory-context";
@@ -10,11 +10,11 @@ import { AgentConfigContext } from "@/features/chat/agent-config-context";
 import { SessionConfigPanel } from "@/features/chat/session-config-panel";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useThreadRegistryStore } from "@/stores/thread-registry-store";
+import { useThreadUi } from "@/hooks/use-thread-ui";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Settings2 } from "lucide-react";
-import { fetchResolveModel } from "@/services/models-api";
+import { useChatPage } from "@/hooks/use-chat-page";
 
 /** Thread detail view — wraps chat runtime for the store-selected thread. */
 function ThreadView({ threadId }: { threadId: string }) {
@@ -32,8 +32,7 @@ function ThreadView({ threadId }: { threadId: string }) {
 
 /** Empty state shown when no thread is selected. */
 function NoThreadSelected() {
-  const registerThread = useThreadRegistryStore((s) => s.registerThread);
-  const setActive = useThreadRegistryStore((s) => s.setActive);
+  const { registerThread, setActive } = useThreadUi();
 
   const handleNew = () => {
     const id = crypto.randomUUID();
@@ -57,32 +56,18 @@ function NoThreadSelected() {
 }
 
 export function ChatPage() {
-  const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
-  const mobileSidebarOpen = useUiStore((s) => s.mobileSidebarOpen);
-  const setMobileSidebarOpen = useUiStore((s) => s.setMobileSidebarOpen);
+  const { activeThreadId } = useThreadUi();
+  const { mobileSidebarOpen, setMobileSidebarOpen } = useUiState();
   const [configOpen, setConfigOpen] = useState(false);
   const [agentConfigState, setAgentConfigState] = useState<{
     threadId: string | null;
     config: AgentConfig | null;
   }>({ threadId: null, config: null });
-  const [modelCheck, setModelCheck] = useState<{ loading: boolean; ok: boolean; error?: string }>({ loading: true, ok: true });
+  const { modelCheck } = useChatPage();
   const navigate = useNavigate();
   const agentConfig = agentConfigState.threadId === activeThreadId
     ? agentConfigState.config
     : null;
-
-  // Check if a model is resolvable before allowing chat
-  useEffect(() => {
-    let cancelled = false;
-    fetchResolveModel()
-      .then((res) => {
-        if (!cancelled) setModelCheck({ loading: false, ok: res.ok });
-      })
-      .catch(() => {
-        if (!cancelled) setModelCheck({ loading: false, ok: false, error: "Could not verify model configuration." });
-      });
-    return () => { cancelled = true; };
-  }, []);
 
   // Close mobile sidebar when active thread changes
   useEffect(() => { setMobileSidebarOpen(false); }, [activeThreadId, setMobileSidebarOpen]);

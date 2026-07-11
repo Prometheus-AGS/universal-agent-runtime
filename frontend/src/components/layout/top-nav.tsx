@@ -1,7 +1,7 @@
 import { Bot, Info, Menu, Settings2, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useUiStore } from "@/stores/ui-store";
+import { useUiState } from "@/hooks/use-ui-state";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -12,7 +12,7 @@ const NAV_ITEMS = [
 
 export function TopNav() {
   const location = useLocation();
-  const { mobileSidebarOpen, toggleMobileSidebar } = useUiStore();
+  const { mobileSidebarOpen, toggleMobileSidebar } = useUiState();
 
   const isActive = (path: string, exact: boolean) => {
     if (exact) return location.pathname === path;

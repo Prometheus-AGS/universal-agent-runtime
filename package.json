@@ -16,7 +16,7 @@
     "typecheck": "pnpm -C frontend typecheck",
     "format": "pnpm exec prettier --write frontend/src/",
     "ci-gates": "bash scripts/ci-grep-gates.sh",
-    "frontend:boundaries": "node scripts/check-frontend-boundaries.mjs",
+    "frontend:boundaries": "node scripts/check-frontend-boundaries.mjs && node scripts/test-frontend-boundaries-negative.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"

@@ -50,10 +50,9 @@ import { useMemoryContext } from "@/features/chat/memory-context";
 import { cn } from "@/lib/utils";
 import { CapabilityToggles } from "@/features/chat/capability-toggles";
 import { useAgentConfig } from "@/features/chat/agent-config-context";
-import { useThreadRegistryStore } from "@/stores/thread-registry-store";
-import { useChatMessageStore, selectMessageById } from "@/stores/chat-message-store";
+import { selectMessageById, type ChatMessageStoreState, useChatMessageSelector, useThreadUi } from "@/hooks/use-thread-ui";
 import { useAgent } from "@/entities/hooks/use-agents";
-import { useAgentStatusStore } from "@/stores/agent-status-store";
+import { useAgentStatus } from "@/hooks/use-agent-status";
 import { AgentStatusIndicator } from "@/features/chat/components/AgentStatusIndicator";
 
 // ─── Stable AuiIf condition predicates ────────────────────────────────────────
@@ -95,8 +94,7 @@ function selectErrorText(m: ThreadMessageLike): string | null {
 }
 
 const ThreadAgentStatus: FC = () => {
-  const status = useAgentStatusStore((s) => s.status);
-  const toolName = useAgentStatusStore((s) => s.toolName);
+  const { status, toolName } = useAgentStatus();
   return (
     <div className="mx-auto w-full max-w-(--thread-max-width) px-4">
       <AgentStatusIndicator status={{ type: status, toolName }} />
@@ -105,7 +103,7 @@ const ThreadAgentStatus: FC = () => {
 };
 
 export const EnhancedThread: FC = () => {
-  const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
+  const { activeThreadId } = useThreadUi();
   const agentConfig = useAgentConfig();
 
   return (
@@ -177,34 +175,33 @@ const EnhancedComposer: FC = () => {
   const attachmentManager = useAttachmentContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { memoryEnabled, setMemoryEnabled } = useMemoryContext();
-  const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
+  const { activeThreadId } = useThreadUi();
 
   // Stabilize curried selector references with useCallback so Zustand v5 sees
   // the same selector object across renders when threadKey hasn't changed.
   // The selectors are written inline so threadKey is genuinely in the closure.
   const threadKey = activeThreadId ?? "__none__";
-  type StoreState = ReturnType<typeof useChatMessageStore.getState>;
   const selectIsAwaiting = useCallback(
-    (s: StoreState) => s.streamingByThread[threadKey]?.awaitingFirstToken ?? false,
+    (s: ChatMessageStoreState) => s.streamingByThread[threadKey]?.awaitingFirstToken ?? false,
     [threadKey],
   );
   const selectRetryAttemptCb = useCallback(
-    (s: StoreState) => s.streamingByThread[threadKey]?.retryAttempt ?? 0,
+    (s: ChatMessageStoreState) => s.streamingByThread[threadKey]?.retryAttempt ?? 0,
     [threadKey],
   );
   const selectRetryMaxAttemptsCb = useCallback(
-    (s: StoreState) => s.streamingByThread[threadKey]?.retryMaxAttempts ?? 0,
+    (s: ChatMessageStoreState) => s.streamingByThread[threadKey]?.retryMaxAttempts ?? 0,
     [threadKey],
   );
   const selectRetryDelayMsCb = useCallback(
-    (s: StoreState) => s.streamingByThread[threadKey]?.retryDelayMs ?? 0,
+    (s: ChatMessageStoreState) => s.streamingByThread[threadKey]?.retryDelayMs ?? 0,
     [threadKey],
   );
 
-  const isAwaitingFirstToken = useChatMessageStore(selectIsAwaiting);
-  const retryAttempt = useChatMessageStore(selectRetryAttemptCb);
-  const retryMaxAttempts = useChatMessageStore(selectRetryMaxAttemptsCb);
-  const retryDelayMs = useChatMessageStore(selectRetryDelayMsCb);
+  const isAwaitingFirstToken = useChatMessageSelector(selectIsAwaiting);
+  const retryAttempt = useChatMessageSelector(selectRetryAttemptCb);
+  const retryMaxAttempts = useChatMessageSelector(selectRetryMaxAttemptsCb);
+  const retryDelayMs = useChatMessageSelector(selectRetryDelayMsCb);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -634,14 +631,14 @@ const MetaChip: FC<{ icon: ReactNode; label: string; title: string }> = ({ icon,
 
 const MessageMetaChips: FC = () => {
   const messageId = useMessage((m) => m.id);
-  const activeThreadId = useThreadRegistryStore((s) => s.activeThreadId);
+  const { activeThreadId } = useThreadUi();
   // Memoize the selector so its reference is stable across renders — an inline
   // selector re-fires assistant-ui's Zustand subscription (React error #185).
   const selector = useMemo(
     () => (activeThreadId ? selectMessageById(activeThreadId, messageId) : () => null),
     [activeThreadId, messageId],
   );
-  const message = useChatMessageStore(selector);
+  const message = useChatMessageSelector(selector);
   const answeringAgent = useAgent(message?.agentId);
 
   if (!message) return null;

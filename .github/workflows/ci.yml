@@ -189,6 +189,9 @@ jobs:
       - name: Type check
         run: pnpm --filter ./frontend typecheck
 
+      - name: Enforce frontend architecture boundaries
+        run: pnpm run frontend:boundaries
+
       - name: Vitest contract tests
         run: pnpm --filter ./frontend test
 

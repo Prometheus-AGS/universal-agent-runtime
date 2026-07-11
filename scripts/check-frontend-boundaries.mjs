@@ -5,7 +5,8 @@ import { relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const src = resolve(root, "frontend/src");
-const allowlistPath = resolve(root, "scripts/frontend-boundary-allowlist.txt");
+const fixtureIndex = process.argv.indexOf("--fixture-dir");
+const scanRoot = fixtureIndex >= 0 ? resolve(root, process.argv[fixtureIndex + 1]) : src;
 const infrastructureFetchExceptions = new Set([
   // Shared transport bootstrap, not feature/domain I/O.
   "frontend/src/entities/sync.ts",
@@ -53,7 +54,7 @@ function importsLayer(modules, layer) {
 }
 
 const violations = [];
-for (const path of walk(src).filter(isProductionTs)) {
+for (const path of walk(scanRoot).filter(isProductionTs)) {
   const content = readFileSync(path, "utf8");
   const file = repoPath(path);
   const layer = layerFor(path);
@@ -89,25 +90,10 @@ if (process.argv.includes("--print")) {
   process.exit(0);
 }
 
-const expected = readFileSync(allowlistPath, "utf8")
-  .split(/\r?\n/)
-  .map((line) => line.trim())
-  .filter((line) => line && !line.startsWith("#"))
-  .sort();
-
-const unexpected = actual.filter((item) => !expected.includes(item));
-const stale = expected.filter((item) => !actual.includes(item));
-
-if (unexpected.length || stale.length) {
-  if (unexpected.length) {
-    console.error("New frontend boundary violations (fix; do not extend the allowlist):");
-    for (const item of unexpected) console.error(`  + ${item}`);
-  }
-  if (stale.length) {
-    console.error("Resolved allowlist entries (remove them from the allowlist):");
-    for (const item of stale) console.error(`  - ${item}`);
-  }
+if (actual.length) {
+  console.error("Frontend boundary violations (move I/O and mutations to the owning layer):");
+  for (const item of actual) console.error(`  + ${item}`);
   process.exit(1);
 }
 
-console.log(`Frontend boundary gate passed (${actual.length} tracked legacy violations, 0 new).`);
+console.log("Frontend boundary gate passed (0 production violations).");

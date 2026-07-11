@@ -1,7 +1,7 @@
 import { type FC } from "react";
 import { Brain, Search, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { AgentStatusType } from "@/stores/agent-status-store";
+import type { AgentStatusType } from "@/hooks/use-agent-status";
 
 interface AgentStatusIndicatorProps {
   status: { type: AgentStatusType; toolName?: string };

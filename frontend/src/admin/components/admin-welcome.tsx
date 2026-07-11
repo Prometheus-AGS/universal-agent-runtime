@@ -11,14 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { cn } from "@/lib/utils";
-import { useOnboardingWelcomeStore } from "@/stores/onboarding-welcome-store";
+import { useOnboardingWelcome } from "@/hooks/use-onboarding-welcome";
 
 interface SetupStep {
   id: string;
   label: string;
   description: string;
   icon: FC<{ size?: number; className?: string }>;
-  check: () => Promise<boolean>;
   navigateTo: string;
 }
 
@@ -29,7 +28,6 @@ const SETUP_STEPS: SetupStep[] = [
     description:
       "Connect at least one AI provider (OpenAI, Anthropic, etc.) so agents can generate responses.",
     icon: Server,
-    check: () => useOnboardingWelcomeStore.getState().checkConfiguredProviders(),
     navigateTo: "/admin/providers",
   },
   {
@@ -38,7 +36,6 @@ const SETUP_STEPS: SetupStep[] = [
     description:
       "Choose a default model for your provider. Chat will not work until a model is selected.",
     icon: Bot,
-    check: () => useOnboardingWelcomeStore.getState().checkDefaultModel(),
     navigateTo: "/admin/providers",
   },
   {
@@ -47,7 +44,6 @@ const SETUP_STEPS: SetupStep[] = [
     description:
       "Upload documents so agents can search and reference your content when answering questions.",
     icon: BookOpen,
-    check: () => useOnboardingWelcomeStore.getState().checkKnowledgeBases(),
     navigateTo: "/admin/knowledge",
   },
   {
@@ -56,14 +52,6 @@ const SETUP_STEPS: SetupStep[] = [
     description:
       "Check defaults for context management, resilience policies, and memory behavior.",
     icon: SlidersHorizontal,
-    check: async () => {
-      // Settings always exist — mark complete if user has visited
-      try {
-        return localStorage.getItem("uar-onboarding-settings-visited") === "1";
-      } catch {
-        return false;
-      }
-    },
     navigateTo: "/admin/settings",
   },
 ];
@@ -76,17 +64,18 @@ export const AdminWelcome: FC<AdminWelcomeProps> = ({ onNavigate }) => {
   const { dismissed, dismiss } = useOnboarding("admin-welcome");
   const [stepStatus, setStepStatus] = useState<Record<string, boolean>>({});
   const [checking, setChecking] = useState(true);
+  const checkStep = useOnboardingWelcome();
 
   const checkSteps = useCallback(async () => {
     await Promise.resolve();
     setChecking(true);
     const results: Record<string, boolean> = {};
     for (const step of SETUP_STEPS) {
-      results[step.id] = await step.check();
+      results[step.id] = await checkStep(step.id);
     }
     setStepStatus(results);
     setChecking(false);
-  }, []);
+  }, [checkStep]);
 
   useEffect(() => {
     if (dismissed) return;

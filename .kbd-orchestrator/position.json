@@ -1,22 +1,22 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-11T23:18:00Z",
+  "updatedAt": "2026-07-11T23:25:52Z",
   "cursor": [
     "uar-final-production-hardening-2026-07",
-    "close-react-boundary-gate"
+    "publish-capability-support-matrix"
   ],
   "root": {
     "type": "phase",
     "id": "uar-final-production-hardening-2026-07",
     "status": "executing",
     "progress": {
-      "done": 14,
+      "done": 15,
       "total": 24
     },
     "children": [
       {
         "type": "change",
-        "id": "close-react-boundary-gate",
+        "id": "publish-capability-support-matrix",
         "status": "PENDING",
         "progress": {
           "done": 0,

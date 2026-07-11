@@ -1,7 +1,7 @@
 import { type FC } from "react";
 import { Moon, Monitor, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useThemeStore, resolveTheme, type Theme } from "@/stores/theme-store";
+import { type Theme, useTheme } from "@/hooks/use-theme";
 
 const themeOrder: Theme[] = ["dark", "light", "system"];
 
@@ -18,8 +18,7 @@ const themeLabels = {
 } as const;
 
 export const ThemeToggle: FC = () => {
-  const { theme, setTheme } = useThemeStore();
-  const resolved = resolveTheme(theme);
+  const { theme, resolved, setTheme } = useTheme();
   const Icon = themeIcons[theme];
 
   const cycle = () => {
