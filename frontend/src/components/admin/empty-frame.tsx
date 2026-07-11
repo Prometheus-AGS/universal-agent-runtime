@@ -20,6 +20,7 @@ export const EmptyFrame: FC<{
 
   return (
     <div className={cn("mx-auto max-w-md py-12 text-center", className)}>
+      <p className="sr-only">{title}</p>
       <pre
         aria-hidden
         className="select-none text-xs leading-[1.2] text-[hsl(var(--terminal-fg-dim))] opacity-60"

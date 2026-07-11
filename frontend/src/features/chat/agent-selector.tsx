@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ChevronDownIcon, CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchConfiguredProviders } from "@/services/providers-api";
-import { loadAgentsIntoGraph } from "@/entities/fetchers/agents";
-import { useAgents } from "@/entities/hooks/use-agents";
+import { useChatSessionConfig } from "@/hooks/use-chat-session-config";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -57,42 +55,19 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
   // Agent list now comes from the entity graph — same source as the Admin
   // page — so SSE mutations (rename, delete, enable-flag flips) propagate
   // into the chat sidebar without a reload.
-  const agentsView = useAgents();
-  const agents = agentsView.items as unknown as AgentWithType[];
-  const loading = agents.length === 0;
+  const {
+    agents: graphAgents,
+    modelLabel,
+    loadingAgents,
+    loadDefaultModelLabel,
+    save,
+    setModelLabel,
+  } = useChatSessionConfig(true);
+  const agents = graphAgents as unknown as AgentWithType[];
+  const loading = loadingAgents && agents.length === 0;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [modelLabel, setModelLabel] = useState<string | null>(null);
-
-  // Hydrate the graph on mount (idempotent — the Admin page also calls this).
-  useEffect(() => {
-    void loadAgentsIntoGraph();
-  }, []);
-
-  // Fetch default provider/model to display in header
-  useEffect(() => {
-    let cancelled = false;
-    fetchConfiguredProviders()
-      .then((data) => {
-        if (cancelled) return;
-        const defaultId = data.default_id;
-        if (defaultId) {
-          const provider = (data.providers ?? []).find((p) => p.id === defaultId);
-          if (provider?.models && provider.models.length > 0) {
-            setModelLabel(`${defaultId}/${provider.models[0].id}`);
-          } else {
-            setModelLabel(`${defaultId}`);
-          }
-        } else if ((data.providers ?? []).length > 0) {
-          setModelLabel("Using default model");
-        }
-      })
-      .catch(() => {
-        /* swallow */
-      });
-    return () => { cancelled = true; };
-  }, []);
 
   // Render-derived AgentConfig: re-derives whenever the selected agent's
   // underlying record changes in the graph (e.g. via SSE from an admin edit
@@ -114,17 +89,9 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
   const applyAgentConfig = useCallback(
     async (agentId: string) => {
       if (!threadId) return;
-      try {
-        await fetch(`/api/uar/sessions/${encodeURIComponent(threadId)}/agent-config`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ agent_id: agentId }),
-        });
-      } catch {
-        /* best-effort */
-      }
+      await save(threadId, { agent_id: agentId });
     },
-    [threadId],
+    [save, threadId],
   );
 
   const handleSelect = useCallback(
@@ -144,24 +111,10 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
         }
       } else {
         // Reset model label to system default
-        fetchConfiguredProviders()
-          .then((data) => {
-            const defaultId = data.default_id;
-            if (defaultId) {
-              const provider = (data.providers ?? []).find((p) => p.id === defaultId);
-              if (provider?.models && provider.models.length > 0) {
-                setModelLabel(`${defaultId}/${provider.models[0].id}`);
-              } else {
-                setModelLabel(`${defaultId}`);
-              }
-            } else if ((data.providers ?? []).length > 0) {
-              setModelLabel("Using default model");
-            }
-          })
-          .catch(() => { /* swallow */ });
+        void loadDefaultModelLabel();
       }
     },
-    [selectedId, applyAgentConfig, agents],
+    [selectedId, applyAgentConfig, agents, loadDefaultModelLabel, setModelLabel],
   );
 
   const selectedAgent = agents.find((a) => a.id === selectedId);

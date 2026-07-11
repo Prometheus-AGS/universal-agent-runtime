@@ -20,10 +20,8 @@ import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/comp
 import { AgentAiBuilder } from "@/admin/components/agent-ai-builder";
 import { AgentEditor } from "@/admin/components/agent-editor";
 import { cn } from "@/lib/utils";
-import { deleteAgent, patchAgent as patchAgentApi } from "@/services/agents-api";
-import { loadAgentsIntoGraph } from "@/entities/fetchers/agents";
 import { useAgents } from "@/entities/hooks/use-agents";
-import { optimisticUpsert, optimisticRemove } from "@/lib/realtime/optimistic";
+import { useAgentsAdmin } from "@/hooks/use-agents-admin";
 import type { UarAgent } from "@/types";
 
 // ── Agent Memory Section ───────────────────────────────────────────────────
@@ -75,7 +73,13 @@ function TriToggle({ value, onChange }: { value: boolean | null; onChange: (v: b
   );
 }
 
-function AgentMemorySection({ agent }: { agent: UarAgent }) {
+function AgentMemorySection({
+  agent,
+  onPatch,
+}: {
+  agent: UarAgent;
+  onPatch: (id: string, values: Record<string, unknown>) => Promise<void>;
+}) {
   const [state, setState] = useState<AgentMemoryState>({
     memory_enabled: null,
     auto_capture: null,
@@ -96,9 +100,7 @@ function AgentMemorySection({ agent }: { agent: UarAgent }) {
       if (state.inject_context !== null) body.memory_inject_context = state.inject_context;
       body.memory_scope = state.memory_scope;
 
-      await optimisticUpsert("Agent", agent.id, body, async () => {
-        await patchAgentApi(agent.id, body);
-      });
+      await onPatch(agent.id, body);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
@@ -203,18 +205,14 @@ export const AgentsPage: FC = () => {
   // until the next change in this phase migrates them too.
   const agentsView = useAgents();
   const agents = agentsView.items as unknown as UarAgent[];
-  const loading = agents.length === 0;
-  const [error, setError] = useState<string | null>(null);
-  const load = () => {
-    setError(null);
-    return loadAgentsIntoGraph().catch((e) => setError((e as Error).message));
-  };
+  const admin = useAgentsAdmin();
+  const { loading, error, load } = admin;
   const [selected, setSelected] = useState<UarAgent | null>(null);
 
   // Populate the entity graph on mount.
   useEffect(() => {
-    void loadAgentsIntoGraph();
-  }, []);
+    void load().catch(() => undefined);
+  }, [load]);
 
   // Editor state
   const [editorOpen, setEditorOpen] = useState(false);
@@ -239,7 +237,7 @@ export const AgentsPage: FC = () => {
   };
 
   const handleEditorSave = () => {
-    void load();
+    void load().catch(() => undefined);
   };
 
   const handleAiGenerated = (agentData: Record<string, unknown>) => {
@@ -253,13 +251,7 @@ export const AgentsPage: FC = () => {
     setDeleting(true);
     setDeleteError(null);
     try {
-      await optimisticRemove("Agent", deleteTarget.id, async () => {
-        const res = await deleteAgent(deleteTarget.id);
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || `${res.status}`);
-        }
-      });
+      await admin.remove(deleteTarget.id);
       if (selected?.id === deleteTarget.id) setSelected(null);
       setDeleteTarget(null);
     } catch (e) {
@@ -286,7 +278,7 @@ export const AgentsPage: FC = () => {
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={openCreate} aria-label="New agent">
               <Plus size={12} />
             </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => void load()} aria-label="Refresh">
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => void load().catch(() => undefined)} aria-label="Refresh">
               <RefreshCw size={12} className={cn(loading && "animate-spin")} />
             </Button>
           </div>
@@ -393,7 +385,7 @@ export const AgentsPage: FC = () => {
               )}
 
               {/* Memory section */}
-              <AgentMemorySection agent={selected} />
+              <AgentMemorySection agent={selected} onPatch={admin.patch} />
             </div>
           </ScrollArea>
         ) : (
@@ -416,6 +408,7 @@ export const AgentsPage: FC = () => {
         open={showAiBuilder}
         onOpenChange={setShowAiBuilder}
         onGenerated={handleAiGenerated}
+        generate={admin.generate}
       />
 
       {/* Agent Editor Sheet */}
@@ -424,6 +417,13 @@ export const AgentsPage: FC = () => {
         open={editorOpen}
         onOpenChange={setEditorOpen}
         onSave={handleEditorSave}
+        onSubmit={admin.save}
+        onLoadCapabilities={admin.loadCapabilities}
+        availableSkills={admin.availableSkills}
+        availableTools={admin.availableTools}
+        availableKnowledgeBases={admin.availableKnowledgeBases}
+        capabilitiesLoading={admin.capabilitiesLoading}
+        capabilitiesError={admin.capabilitiesError}
       />
 
       {/* Delete Confirmation Dialog */}

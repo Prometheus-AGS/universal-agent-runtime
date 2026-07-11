@@ -108,6 +108,9 @@ fn extract_action(request: &Request<Body>) -> String {
     if path.contains("/runs") && method == "POST" {
         return "execute_tool".to_string();
     }
+    if path.starts_with("/api/tools/") && path.ends_with("/execute") && method == "POST" {
+        return "execute_tool".to_string();
+    }
 
     // Fallback to method-based action
     format!("http_{}", method.to_lowercase())
@@ -123,4 +126,19 @@ fn extract_resource(request: &Request<Body>) -> String {
         .last()
         .unwrap_or("unknown")
         .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn direct_tool_execution_uses_governed_action() {
+        let request = Request::builder()
+            .method("POST")
+            .uri("/api/tools/web%3A%3Asearch/execute")
+            .body(Body::empty())
+            .expect("request");
+        assert_eq!(extract_action(&request), "execute_tool");
+    }
 }

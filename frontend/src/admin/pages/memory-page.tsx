@@ -25,10 +25,8 @@ import { EmptyFrame } from "@/components/admin/empty-frame";
 import { ErrorBar } from "@/components/admin/error-bar";
 import { cn } from "@/lib/utils";
 import { useMemory, useMemoryStats } from "@/entities/hooks/use-memory";
-import { loadMemoryIntoGraph, loadMemoryStatsIntoGraph } from "@/entities/fetchers/memory";
-import { optimisticRemove } from "@/lib/realtime/optimistic";
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
-import { bulkDeleteMemoriesApi, deleteMemoryApi, type MemoryItem } from "@/services/memory-api";
+import type { MemoryItem } from "@/entities/memory-types";
+import { useMemoryAdmin } from "@/hooks/use-memory-admin";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -71,11 +69,9 @@ export const MemoryPage: FC = () => {
     const view = useMemory();
     const items = view.items as MemoryItem[];
     const stats = useMemoryStats();
+    const admin = useMemoryAdmin();
 
     // Local UI state
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [deleting, setDeleting] = useState(false);
     const [selected, setSelected] = useState<MemoryItem | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [showBulkDelete, setShowBulkDelete] = useState(false);
@@ -87,16 +83,9 @@ export const MemoryPage: FC = () => {
 
     const runLoad = async () => {
         setPage(0);
-        setLoading(true);
-        setError(null);
         try {
-            await loadMemoryIntoGraph({ userId, agentId, searchQ, searchMode });
-            void loadMemoryStatsIntoGraph();
-        } catch (e) {
-            setError((e as Error).message);
-        } finally {
-            setLoading(false);
-        }
+            await admin.load({ userId, agentId, searchQ, searchMode });
+        } catch { /* store surfaces error */ }
     };
 
     useEffect(() => {
@@ -105,45 +94,27 @@ export const MemoryPage: FC = () => {
     }, []);
 
     const deleteOneRow = async (id: string) => {
-        setDeleting(true);
-        setError(null);
         try {
-            await optimisticRemove("Memory", id, async () => {
-                await deleteMemoryApi(id);
-            });
+            const item = items.find((candidate) => candidate.id === id);
+            if (!item) return;
+            await admin.remove(item);
             if (selected?.id === id) setSelected(null);
             setSavedFlash(true);
             setTimeout(() => setSavedFlash(false), 2500);
-            void loadMemoryStatsIntoGraph();
-        } catch (e) {
-            setError((e as Error).message);
+        } catch {
+            /* store surfaces error */
         } finally {
-            setDeleting(false);
             setDeleteConfirm(null);
         }
     };
 
     const runBulkDelete = async () => {
-        setDeleting(true);
-        setError(null);
-        // Snapshot all visible items for rollback on failure.
-        const snapshots: MemoryItem[] = [...items];
-        const graph = useGraphStore.getState();
-        for (const s of snapshots) graph.removeEntity("Memory", s.id);
         try {
-            await bulkDeleteMemoriesApi(userId, agentId);
+            await admin.removeVisible(items, userId, agentId);
             setSelected(null);
             setSavedFlash(true);
             setTimeout(() => setSavedFlash(false), 2500);
-            void loadMemoryStatsIntoGraph();
-        } catch (e) {
-            // Rollback all snapshots.
-            const restore = useGraphStore.getState();
-            for (const s of snapshots) restore.upsertEntity("Memory", s.id, s as unknown as Record<string, unknown>);
-            setError((e as Error).message);
-        } finally {
-            setDeleting(false);
-        }
+        } catch { /* store retains graph and surfaces error */ }
     };
 
     const start = page * PAGE_SIZE;
@@ -163,7 +134,7 @@ export const MemoryPage: FC = () => {
                         <h2 className="text-[20px] font-medium tracking-tight">memory browser</h2>
                         <p className="text-xs text-[hsl(var(--terminal-fg-dim))]">
                             {stats ? `${stats.total} total memories` : "loading stats"}
-                            {loading && <LoadingCursor className="ml-2" />}
+                            {admin.loading && <LoadingCursor className="ml-2" />}
                         </p>
                     </div>
                 </div>
@@ -172,15 +143,15 @@ export const MemoryPage: FC = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => void runLoad()}
-                        disabled={loading}
+                        disabled={admin.loading}
                         className="gap-1.5 border border-[hsl(var(--terminal-line-strong))] bg-transparent text-[hsl(var(--terminal-fg))] hover:bg-[hsl(var(--phosphor)/0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--phosphor-glow))]"
                     >
-                        <RefreshCw size={13} className={cn(loading && "animate-spin")} />refresh
+                        <RefreshCw size={13} className={cn(admin.loading && "animate-spin")} />refresh
                     </Button>
                     <Button
                         size="sm"
                         onClick={() => setShowBulkDelete(true)}
-                        disabled={deleting || items.length === 0}
+                        disabled={admin.deleting || items.length === 0}
                         className="gap-1.5 border border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.12)] text-[hsl(var(--signal-red))] hover:bg-[hsl(var(--signal-red)/0.18)]"
                     >
                         <Trash2 size={13} />delete all visible
@@ -251,12 +222,12 @@ export const MemoryPage: FC = () => {
                     <Check size={13} />deleted successfully
                 </div>
             )}
-            {error && <ErrorBar code="MEMORY" message={error} onDismiss={() => setError(null)} className="mx-6 mt-3" />}
+            {admin.error && <ErrorBar code="MEMORY" message={admin.error} onDismiss={admin.clearError} className="mx-6 mt-3" />}
 
             {/* Content: table + detail panel */}
             <div className="flex flex-1 overflow-hidden">
                 <div className="flex flex-1 flex-col overflow-hidden">
-                    {loading && items.length === 0 ? (
+                    {admin.loading && items.length === 0 ? (
                         <div className="p-6"><LoadingCursor label="loading memories" /></div>
                     ) : pageItems.length === 0 ? (
                         <div className="flex flex-1 items-center justify-center">
@@ -303,7 +274,7 @@ export const MemoryPage: FC = () => {
                                                                 <Button
                                                                     size="sm"
                                                                     className="h-6 border border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.12)] px-2 text-xs text-[hsl(var(--signal-red))]"
-                                                                    disabled={deleting}
+                                                                    disabled={admin.deleting}
                                                                     onClick={(e) => { e.stopPropagation(); void deleteOneRow(m.id); }}
                                                                 >
                                                                     confirm
@@ -385,10 +356,10 @@ export const MemoryPage: FC = () => {
                                     <Button
                                         size="sm"
                                         className="flex-1 border border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.12)] text-[hsl(var(--signal-red))]"
-                                        disabled={deleting}
+                                        disabled={admin.deleting}
                                         onClick={() => void deleteOneRow(selected.id)}
                                     >
-                                        {deleting ? <LoadingCursor /> : "confirm delete"}
+                                        {admin.deleting ? <LoadingCursor /> : "confirm delete"}
                                     </Button>
                                     <Button variant="ghost" size="sm" className="border border-[hsl(var(--terminal-line-strong))] text-[hsl(var(--terminal-fg))]" onClick={() => setDeleteConfirm(null)}>cancel</Button>
                                 </div>
@@ -415,13 +386,13 @@ export const MemoryPage: FC = () => {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={admin.deleting}>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={(e) => { e.preventDefault(); setShowBulkDelete(false); void runBulkDelete(); }}
-                            disabled={deleting}
+                            disabled={admin.deleting}
                             className="border border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.12)] text-[hsl(var(--signal-red))] hover:bg-[hsl(var(--signal-red)/0.18)]"
                         >
-                            {deleting ? <LoadingCursor /> : "delete all"}
+                            {admin.deleting ? <LoadingCursor /> : "delete all"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

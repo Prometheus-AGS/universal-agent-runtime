@@ -26,14 +26,7 @@ import { EmptyFrame } from "@/components/admin/empty-frame";
 import { ErrorBar } from "@/components/admin/error-bar";
 import { cn } from "@/lib/utils";
 import { useSkills } from "@/entities/hooks/use-skills";
-import { loadSkillsIntoGraph } from "@/entities/fetchers/skills";
-import { optimisticUpsert, optimisticRemove } from "@/lib/realtime/optimistic";
-import {
-  createSkillApi,
-  deleteSkillApi,
-  toggleSkillApi,
-  updateSkillApi,
-} from "@/services/skills-api";
+import { useSkillsAdmin } from "@/hooks/use-skills-admin";
 import type { UarSkill } from "@/types";
 import {
   buildCreateSkillRequest,
@@ -103,77 +96,16 @@ export const SkillsPage: FC = () => {
   const view = useSkills();
   const skills = view.items as unknown as UarSkill[];
 
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [actionSkillId, setActionSkillId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  const load = async () => {
-    setRefreshing(true);
-    setError(null);
-    try {
-      await loadSkillsIntoGraph();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setRefreshing(false);
-    }
-  };
+  const admin = useSkillsAdmin();
+  const { load } = admin;
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const error = validationError ?? admin.error;
 
   useEffect(() => {
-    void load();
-  }, []);
+    void load().catch(() => undefined);
+  }, [load]);
 
-  const loading = refreshing && skills.length === 0;
-
-  const toggle = async (skill: UarSkill, enabled: boolean) => {
-    setActionSkillId(skill.skill_id);
-    setError(null);
-    try {
-      await optimisticUpsert("Skill", skill.skill_id, { enabled }, async () => {
-        await toggleSkillApi(skill.skill_id, enabled);
-      });
-    } catch (e) {
-      setError(`Failed to toggle skill: ${(e as Error).message}`);
-    } finally {
-      setActionSkillId(null);
-    }
-  };
-
-  const remove = async (skill: UarSkill) => {
-    setDeleting(true);
-    setError(null);
-    try {
-      await optimisticRemove("Skill", skill.skill_id, async () => {
-        await deleteSkillApi(skill.skill_id);
-      });
-    } catch (e) {
-      setError(`Failed to delete skill: ${(e as Error).message}`);
-      throw e;
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const save = async (
-    editingId: string | null,
-    createBody: unknown,
-    updateBody: unknown,
-  ) => {
-    setSaving(true);
-    setError(null);
-    try {
-      if (editingId) await updateSkillApi(editingId, updateBody);
-      else await createSkillApi(createBody);
-      await loadSkillsIntoGraph();
-    } catch (e) {
-      setError(`Failed to save skill: ${(e as Error).message}`);
-      throw e;
-    } finally {
-      setSaving(false);
-    }
-  };
+  const loading = admin.loading && skills.length === 0;
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
@@ -208,13 +140,13 @@ export const SkillsPage: FC = () => {
   };
 
   const handleToggle = (skill: UarSkill, enabled: boolean) => {
-    void toggle(skill, enabled);
+    void admin.toggle(skill, enabled).catch(() => undefined);
   };
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     try {
-      await remove(deleteTarget);
+      await admin.remove(deleteTarget);
       setDeleteTarget(null);
     } catch {
       /* error surfaced via store */
@@ -224,13 +156,13 @@ export const SkillsPage: FC = () => {
   const handleSave = async () => {
     const title = form.title.trim();
     if (!title) {
-      setError("Skill title is required.");
+      setValidationError("Skill title is required.");
       return;
     }
 
-    setError(null);
+    setValidationError(null);
     try {
-      await save(
+      await admin.save(
         editingSkillId,
         buildCreateSkillRequest(form),
         buildUpdateSkillRequest(form),
@@ -257,18 +189,18 @@ export const SkillsPage: FC = () => {
           <h2 className="text-[20px] font-medium tracking-tight">skills</h2>
           <p className="text-xs text-[hsl(var(--terminal-fg-dim))]">
             {skills.length} skills
-            {refreshing && <LoadingCursor className="ml-2" />}
+            {admin.loading && <LoadingCursor className="ml-2" />}
           </p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => void load()}
+            onClick={() => void load().catch(() => undefined)}
             className="gap-1.5 border border-[hsl(var(--terminal-line-strong))] bg-transparent text-[hsl(var(--terminal-fg))] hover:bg-[hsl(var(--phosphor)/0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--phosphor-glow))]"
             aria-label="Refresh skills"
           >
-            <RefreshCw size={13} className={cn(refreshing && "animate-spin")} />refresh
+            <RefreshCw size={13} className={cn(admin.loading && "animate-spin")} />refresh
           </Button>
           <Button
             variant="ghost"
@@ -289,7 +221,7 @@ export const SkillsPage: FC = () => {
         </div>
       </div>
 
-      {error && <ErrorBar code="SKILLS" message={error} onDismiss={() => setError(null)} />}
+      {error && <ErrorBar code="SKILLS" message={error} onDismiss={() => { setValidationError(null); admin.clearError(); }} />}
 
       <div className="flex-1 overflow-y-auto p-6">
         {loading && skills.length === 0 && <LoadingCursor label="loading skills" />}
@@ -312,7 +244,7 @@ export const SkillsPage: FC = () => {
         <div className="flex flex-col gap-2.5">
           {sortedSkills.map((skill) => {
             const isEnabled = skill.enabled !== false;
-            const isBusy = actionSkillId === skill.skill_id;
+            const isBusy = admin.actionSkillId === skill.skill_id;
             const isBuiltin = (skill as { origin?: string }).origin === "builtin";
             return (
               <div
@@ -516,8 +448,8 @@ export const SkillsPage: FC = () => {
             >
               Cancel
             </Button>
-            <Button onClick={() => void handleSave()} disabled={saving || !form.title.trim()}>
-              {saving && <Loader2 size={14} className="mr-1 animate-spin" />}
+            <Button onClick={() => void handleSave()} disabled={admin.saving || !form.title.trim()}>
+              {admin.saving && <Loader2 size={14} className="mr-1 animate-spin" />}
               {dialogCta}
             </Button>
           </DialogFooter>
@@ -527,7 +459,9 @@ export const SkillsPage: FC = () => {
       <SkillImportDialog
         open={isImportOpen}
         onOpenChange={setIsImportOpen}
-        onImported={() => void load()}
+        onImported={() => undefined}
+        parseImport={admin.parseImport}
+        importParsed={admin.importParsed}
       />
 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
@@ -541,16 +475,16 @@ export const SkillsPage: FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={admin.deleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={(event) => {
                 event.preventDefault();
                 void handleDeleteConfirm();
               }}
-              disabled={deleting}
+              disabled={admin.deleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleting ? <Loader2 size={12} className="animate-spin" /> : "Delete"}
+              {admin.deleting ? <Loader2 size={12} className="animate-spin" /> : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

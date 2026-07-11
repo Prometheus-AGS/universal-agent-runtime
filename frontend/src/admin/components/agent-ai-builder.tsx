@@ -18,6 +18,7 @@ interface AgentAiBuilderProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onGenerated: (agentData: Record<string, unknown>) => void;
+  generate: (description: string) => Promise<unknown>;
 }
 
 type BuilderStatus = "idle" | "loading" | "success" | "error";
@@ -141,7 +142,7 @@ function normalizeAgentData(raw: Record<string, unknown>): Record<string, unknow
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export const AgentAiBuilder: FC<AgentAiBuilderProps> = ({ open, onOpenChange, onGenerated }) => {
+export const AgentAiBuilder: FC<AgentAiBuilderProps> = ({ open, onOpenChange, onGenerated, generate }) => {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<BuilderStatus>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -167,29 +168,7 @@ export const AgentAiBuilder: FC<AgentAiBuilderProps> = ({ open, onOpenChange, on
     setInfoMsg(null);
 
     try {
-      const res = await fetch("/api/a2a/compiler", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: crypto.randomUUID(),
-          method: "message/send",
-          params: {
-            message: {
-              role: "user",
-              parts: [{ type: "text", text: description }],
-            },
-            metadata: { skill: "uar.compile" },
-          },
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `Compiler returned ${res.status}`);
-      }
-
-      const body: unknown = await res.json();
+      const body = await generate(description.trim());
       const { data, text } = extractAgentData(body);
 
       if (data) {

@@ -1,4 +1,4 @@
-import { type FC, useState, useEffect, useCallback } from "react";
+import { type FC, useState, useEffect } from "react";
 import { AlertTriangle, Loader2, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { ModelSelector } from "@/components/model-selector";
-import { createAgent, updateAgentFull } from "@/services/agents-api";
-import { fetchSkillsList } from "@/services/skills-api";
-import { fetchToolsDiscovery } from "@/services/tools-api";
-import { fetchKnowledgeBases } from "@/services/knowledge-api";
 import type { UarAgent, UarSkill, UarTool, UarKnowledgeBase } from "@/types";
 
 // ── Form state type ──────────────────────────────────────────────────────────
@@ -195,21 +191,32 @@ interface AgentEditorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: () => void;
+  onSubmit: (id: string | undefined, payload: Record<string, unknown>) => Promise<void>;
+  onLoadCapabilities: () => Promise<void>;
+  availableSkills: UarSkill[];
+  availableTools: UarTool[];
+  availableKnowledgeBases: UarKnowledgeBase[];
+  capabilitiesLoading: boolean;
+  capabilitiesError: string | null;
 }
 
-export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, onSave }) => {
+export const AgentEditor: FC<AgentEditorProps> = ({
+  agent,
+  open,
+  onOpenChange,
+  onSave,
+  onSubmit,
+  onLoadCapabilities,
+  availableSkills,
+  availableTools,
+  availableKnowledgeBases,
+  capabilitiesLoading,
+  capabilitiesError,
+}) => {
   const isCreate = !agent;
   const [form, setForm] = useState<AgentFormState>(defaultFormState);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Available items for chip selectors
-  const [availableSkills, setAvailableSkills] = useState<UarSkill[]>([]);
-  const [availableTools, setAvailableTools] = useState<UarTool[]>([]);
-  const [availableKbs, setAvailableKbs] = useState<UarKnowledgeBase[]>([]);
-  const [skillsLoading, setSkillsLoading] = useState(false);
-  const [toolsLoading, setToolsLoading] = useState(false);
-  const [kbsLoading, setKbsLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -221,39 +228,6 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
   const update = <K extends keyof AgentFormState>(key: K, value: AgentFormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
-
-  // ── Fetch helpers (called when popovers open) ─────────────────────────────
-
-  const loadSkills = useCallback(() => {
-    if (availableSkills.length > 0 || skillsLoading) return;
-    setSkillsLoading(true);
-    fetchSkillsList()
-      .then(setAvailableSkills)
-      .catch(() => {/* silent */})
-      .finally(() => setSkillsLoading(false));
-  }, [availableSkills.length, skillsLoading]);
-
-  const loadTools = useCallback(() => {
-    if (availableTools.length > 0 || toolsLoading) return;
-    setToolsLoading(true);
-    fetchToolsDiscovery()
-      .then((res) => {
-        const data = res.data ?? res;
-        const all = [...(data.tools ?? []), ...(data.built_in_tools ?? [])];
-        setAvailableTools(all);
-      })
-      .catch(() => {/* silent */})
-      .finally(() => setToolsLoading(false));
-  }, [availableTools.length, toolsLoading]);
-
-  const loadKbs = useCallback(() => {
-    if (availableKbs.length > 0 || kbsLoading) return;
-    setKbsLoading(true);
-    fetchKnowledgeBases()
-      .then(setAvailableKbs)
-      .catch(() => {/* silent */})
-      .finally(() => setKbsLoading(false));
-  }, [availableKbs.length, kbsLoading]);
 
   // ── Array helpers ─────────────────────────────────────────────────────────
 
@@ -283,11 +257,11 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
     update("knowledge_bases", form.knowledge_bases.filter((k) => k !== id));
   };
   const kbLabel = (id: string) => {
-    const found = availableKbs.find((k) => k.id === id);
+    const found = availableKnowledgeBases.find((k) => k.id === id);
     return found ? found.name : id;
   };
   const kbDocCount = (id: string) => {
-    const found = availableKbs.find((k) => k.id === id);
+    const found = availableKnowledgeBases.find((k) => k.id === id);
     return found?.document_count ?? 0;
   };
 
@@ -313,13 +287,7 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
     setError(null);
     try {
       const payload = buildArtifactPayload(form, agent?.id);
-      const res = isCreate
-        ? await createAgent(payload)
-        : await updateAgentFull(agent!.id, payload);
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `${res.status}`);
-      }
+      await onSubmit(agent?.id, payload);
       onSave();
       onOpenChange(false);
     } catch (e) {
@@ -347,6 +315,11 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
             <TabsTrigger value="memory" className="flex-1 font-mono text-xs">Memory</TabsTrigger>
             <TabsTrigger value="governance" className="flex-1 font-mono text-xs">Governance</TabsTrigger>
           </TabsList>
+          {capabilitiesError && (
+            <p role="alert" className="mt-2 rounded-md bg-destructive/10 px-3 py-2 font-mono text-xs text-destructive">
+              Could not load agent capabilities: {capabilitiesError}
+            </p>
+          )}
 
           {/* ── Identity ─────────────────────────────────────────────── */}
           <TabsContent value="identity" className="flex-1 space-y-4 overflow-y-auto pr-1">
@@ -430,7 +403,7 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Skills</Label>
-                <Popover onOpenChange={(o) => { if (o) loadSkills(); }}>
+                <Popover onOpenChange={(o) => { if (o) void onLoadCapabilities(); }}>
                   <PopoverTrigger render={<Button variant="outline" size="sm" className="h-7 gap-1 text-xs" />}>
                     <Plus size={12} /> Add
                   </PopoverTrigger>
@@ -438,7 +411,7 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
                     <Command>
                       <CommandInput placeholder="Search skills..." className="font-mono text-xs" />
                       <CommandList>
-                        {skillsLoading && (
+                        {capabilitiesLoading && (
                           <div className="py-3 text-center font-mono text-xs text-muted-foreground">Loading...</div>
                         )}
                         <CommandEmpty className="py-3 text-center font-mono text-xs text-muted-foreground">No skills found</CommandEmpty>
@@ -496,7 +469,7 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Tools (allow list)</Label>
-                <Popover onOpenChange={(o) => { if (o) loadTools(); }}>
+                <Popover onOpenChange={(o) => { if (o) void onLoadCapabilities(); }}>
                   <PopoverTrigger render={<Button variant="outline" size="sm" className="h-7 gap-1 text-xs" />}>
                     <Plus size={12} /> Add
                   </PopoverTrigger>
@@ -504,7 +477,7 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
                     <Command>
                       <CommandInput placeholder="Search tools..." className="font-mono text-xs" />
                       <CommandList>
-                        {toolsLoading && (
+                        {capabilitiesLoading && (
                           <div className="py-3 text-center font-mono text-xs text-muted-foreground">Loading...</div>
                         )}
                         <CommandEmpty className="py-3 text-center font-mono text-xs text-muted-foreground">No tools found</CommandEmpty>
@@ -560,7 +533,7 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Knowledge Bases</Label>
-                <Popover onOpenChange={(o) => { if (o) loadKbs(); }}>
+                <Popover onOpenChange={(o) => { if (o) void onLoadCapabilities(); }}>
                   <PopoverTrigger render={<Button variant="outline" size="sm" className="h-7 gap-1 text-xs" />}>
                     <Plus size={12} /> Add
                   </PopoverTrigger>
@@ -568,12 +541,12 @@ export const AgentEditor: FC<AgentEditorProps> = ({ agent, open, onOpenChange, o
                     <Command>
                       <CommandInput placeholder="Search knowledge bases..." className="font-mono text-xs" />
                       <CommandList>
-                        {kbsLoading && (
+                        {capabilitiesLoading && (
                           <div className="py-3 text-center font-mono text-xs text-muted-foreground">Loading...</div>
                         )}
                         <CommandEmpty className="py-3 text-center font-mono text-xs text-muted-foreground">No knowledge bases found</CommandEmpty>
                         <CommandGroup>
-                          {availableKbs
+                          {availableKnowledgeBases
                             .filter((k) => !form.knowledge_bases.includes(k.id))
                             .map((k) => (
                               <CommandItem

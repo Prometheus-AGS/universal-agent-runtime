@@ -2,6 +2,9 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Admin — Skills page", () => {
   test.beforeEach(async ({ page }) => {
+    await page.route("**/api/skills", async (route) => {
+      await route.fulfill({ json: { skills: [] } });
+    });
     await page.goto("/admin/skills");
   });
 
@@ -16,10 +19,9 @@ test.describe("Admin — Skills page", () => {
   });
 
   test("skills list or empty state is visible", async ({ page }) => {
-    const content = page.locator(
-      "text=No skills configured, [data-testid='skills-list'], button:has-text('New Skill')",
-    );
-    await expect(content.first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText("no skills configured", { exact: true })).toBeVisible({
+      timeout: 8000,
+    });
   });
 
   test("new skill dialog includes model override selector", async ({ page }) => {

@@ -10,22 +10,37 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  createSkillApi,
-  importSkillFromDisk,
-  type ImportSkillResult,
-} from "@/services/skills-api";
+
+interface ImportSkillResult {
+  parsed: {
+    name: string;
+    title: string;
+    description: string;
+    version: string;
+    triggers: { keywords: string[] };
+    prompt_overlay: string;
+    source: string;
+    source_path: string;
+    references: string[];
+    detected_format: string;
+  };
+  validation: { valid: boolean; warnings: string[] };
+}
 
 interface SkillImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImported: () => void;
+  parseImport: (path: string) => Promise<ImportSkillResult>;
+  importParsed: (result: ImportSkillResult) => Promise<void>;
 }
 
 export const SkillImportDialog: FC<SkillImportDialogProps> = ({
   open,
   onOpenChange,
   onImported,
+  parseImport,
+  importParsed,
 }) => {
   const [path, setPath] = useState("");
   const [parsing, setParsing] = useState(false);
@@ -55,7 +70,7 @@ export const SkillImportDialog: FC<SkillImportDialogProps> = ({
     setResult(null);
 
     try {
-      const data = await importSkillFromDisk(trimmed);
+      const data = await parseImport(trimmed);
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to parse skill directory");
@@ -71,16 +86,7 @@ export const SkillImportDialog: FC<SkillImportDialogProps> = ({
     setError(null);
 
     try {
-      const { parsed } = result;
-      await createSkillApi({
-        name: parsed.name,
-        version: parsed.version,
-        description: parsed.description,
-        triggers: parsed.triggers,
-        prompt_overlay: parsed.prompt_overlay,
-        preferred_tools: [],
-        enabled: true,
-      });
+      await importParsed(result);
       handleOpenChange(false);
       onImported();
     } catch (err) {

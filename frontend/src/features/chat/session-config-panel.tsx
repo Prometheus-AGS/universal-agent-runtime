@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { ModelSelector } from "@/components/model-selector";
 import type { AgentConfig } from "@/features/chat/agent-selector";
+import { useChatSessionConfig } from "@/hooks/use-chat-session-config";
 
 interface SessionConfigPanelProps {
   threadId: string;
@@ -40,7 +41,7 @@ export function SessionConfigPanel({
   const [autoCapture, setAutoCapture] = useState(false);
   const [memoryScope, setMemoryScope] = useState("session");
   const [toolApproval, setToolApproval] = useState(agentConfig?.tool_approval ?? "auto");
-  const [saving, setSaving] = useState(false);
+  const { saving, error, save } = useChatSessionConfig();
 
   // Sync tool approval when agent config changes.
   // Only reset when the agent config actually changes (not on every render).
@@ -51,14 +52,7 @@ export function SessionConfigPanel({
   }
 
   const handleSave = useCallback(async () => {
-    setSaving(true);
-    try {
-      await fetch(
-        `/api/uar/sessions/${encodeURIComponent(threadId)}/agent-config`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+    const saved = await save(threadId, {
             model_override: modelOverride || null,
             context_strategy: {
               history_window:
@@ -68,14 +62,9 @@ export function SessionConfigPanel({
               memory_scope: memoryScope,
             },
             tool_approval: toolApproval,
-          }),
-        },
-      );
+          });
+    if (saved) {
       onOpenChange(false);
-    } catch {
-      /* best-effort */
-    } finally {
-      setSaving(false);
     }
   }, [
     threadId,
@@ -86,6 +75,7 @@ export function SessionConfigPanel({
     memoryScope,
     toolApproval,
     onOpenChange,
+    save,
   ]);
 
   return (
@@ -217,6 +207,7 @@ export function SessionConfigPanel({
           >
             {saving ? "Saving..." : "Save Configuration"}
           </Button>
+          {error && <p className="font-mono text-xs text-destructive">{error}</p>}
         </div>
       </SheetContent>
     </Sheet>

@@ -6,36 +6,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JsonSchemaForm } from "@/components/json-schema-form";
 import type { ToolGraphRow as ToolWithNs } from "@/entities/fetchers/tools";
 
-interface ToolDetailPanelProps {
-  tool: ToolWithNs;
-  onBack?: () => void;
-}
-
-interface ExecuteResult {
+interface ExecuteToolResult {
   result: unknown;
   duration_ms: number;
   success: boolean;
   error?: string;
 }
 
-export const ToolDetailPanel: FC<ToolDetailPanelProps> = ({ tool, onBack }) => {
+interface ToolDetailPanelProps {
+  tool: ToolWithNs;
+  onBack?: () => void;
+  onExecute: (name: string, arguments_: Record<string, unknown>) => Promise<ExecuteToolResult>;
+  executing: boolean;
+}
+
+export const ToolDetailPanel: FC<ToolDetailPanelProps> = ({ tool, onBack, onExecute, executing }) => {
   const [args, setArgs] = useState<Record<string, unknown>>({});
-  const [result, setResult] = useState<ExecuteResult | null>(null);
-  const [executing, setExecuting] = useState(false);
+  const [result, setResult] = useState<ExecuteToolResult | null>(null);
 
   const schema = tool.input_schema ?? tool.parameters ?? {};
 
   const handleExecute = async () => {
-    setExecuting(true);
     setResult(null);
     try {
-      const res = await fetch(`/api/tools/${encodeURIComponent(tool._key)}/execute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ arguments: args }),
-      });
-      const data = (await res.json()) as ExecuteResult;
-      setResult(data);
+      setResult(await onExecute(tool._key, args));
     } catch (e) {
       setResult({
         result: null,
@@ -43,9 +37,7 @@ export const ToolDetailPanel: FC<ToolDetailPanelProps> = ({ tool, onBack }) => {
         success: false,
         error: (e as Error).message,
       });
-    } finally {
-      setExecuting(false);
-    }
+    } finally { /* store owns execution state */ }
   };
 
   const sourceLabel = tool.source === "mcp" && tool.server

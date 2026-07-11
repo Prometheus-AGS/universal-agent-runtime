@@ -2,6 +2,9 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Admin — Agents page", () => {
   test.beforeEach(async ({ page }) => {
+    await page.route("**/api/agents", async (route) => {
+      await route.fulfill({ json: { runtime_agents: [], federated_agents: [] } });
+    });
     await page.goto("/admin/agents");
   });
 
@@ -17,10 +20,9 @@ test.describe("Admin — Agents page", () => {
 
   test("agents list or empty state is visible", async ({ page }) => {
     // Either there are agents listed or an empty state is shown
-    const agentsOrEmpty = page.locator(
-      "[aria-label='New agent'], text=No agents configured, [data-testid='agents-list']",
-    );
-    await expect(agentsOrEmpty.first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText("No agents configured. Click + to create one.")).toBeVisible({
+      timeout: 8000,
+    });
   });
 
   test("create new agent button opens editor panel", async ({ page }) => {

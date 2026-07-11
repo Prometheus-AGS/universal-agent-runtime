@@ -1,4 +1,4 @@
-import { type FC, useCallback, useEffect, useState } from "react";
+import { type FC, useEffect, useState } from "react";
 import { KeyRound, Loader2, Plus, RefreshCw, ShieldOff, Trash2, UserX } from "lucide-react";
 import {
   AlertDialog,
@@ -23,13 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
-import {
-  type CredentialServiceState,
-  type CredentialView,
-  deleteCredential as deleteCredentialApi,
-  listCredentials,
-  putCredential,
-} from "@/services/credentials-api";
+import { useCredentials } from "@/hooks/use-credentials";
 
 /**
  * Render the masked display form of a stored key hint (last-4).
@@ -55,26 +49,8 @@ export function formatUpdated(iso: string): string {
 }
 
 export const CredentialsPage: FC = () => {
-  const [state, setState] = useState<CredentialServiceState>("ok");
-  const [credentials, setCredentials] = useState<CredentialView[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await listCredentials();
-      setState(result.state);
-      setCredentials(
-        [...result.credentials].sort((a, b) => a.provider_id.localeCompare(b.provider_id)),
-      );
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { state, credentials, loading, error, saving, removing, load, save: saveCredential, remove } =
+    useCredentials();
 
   useEffect(() => {
     void load();
@@ -84,7 +60,6 @@ export const CredentialsPage: FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rotateTarget, setRotateTarget] = useState<string | null>(null);
   const [form, setForm] = useState({ provider_id: "", api_key: "" });
-  const [saving, setSaving] = useState(false);
 
   const openAdd = () => {
     setRotateTarget(null);
@@ -106,35 +81,17 @@ export const CredentialsPage: FC = () => {
     const provider = form.provider_id.trim();
     const key = form.api_key;
     if (!provider || !key) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await putCredential(provider, key);
+    if (await saveCredential(provider, key)) {
       closeDialog();
-      await load();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setSaving(false);
     }
   };
 
   // ── Delete confirm ───────────────────────────────────────────────────────
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
-  const [removing, setRemoving] = useState(false);
-
   const confirmDelete = async () => {
     if (!removeTarget) return;
-    setRemoving(true);
-    setError(null);
-    try {
-      await deleteCredentialApi(removeTarget);
+    if (await remove(removeTarget)) {
       setRemoveTarget(null);
-      await load();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setRemoving(false);
     }
   };
 

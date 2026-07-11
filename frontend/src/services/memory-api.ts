@@ -1,32 +1,12 @@
-export interface MemoryItem {
-  id: string;
-  content: string;
-  categories: string[];
-  scope: string;
-  memory_type: string;
-  user_id?: string;
-  agent_id?: string;
-  session_id?: string;
-  importance: number;
-  created_at: string;
-}
+import type { MemoryItem, MemoryListQuery, MemoryStats } from "@/entities/memory-types";
+
+export type { MemoryItem, MemoryListQuery, MemoryStats } from "@/entities/memory-types";
 
 export interface MemoryListResponse {
   total: number;
   items: MemoryItem[];
 }
 
-export interface MemoryStats {
-  total: number;
-  by_scope: Record<string, number>;
-}
-
-export interface MemoryListQuery {
-  userId: string;
-  agentId: string;
-  searchQ: string;
-  searchMode: boolean;
-}
 
 export function buildMemoriesUrl(q: MemoryListQuery): string {
   const { userId, agentId, searchQ, searchMode } = q;

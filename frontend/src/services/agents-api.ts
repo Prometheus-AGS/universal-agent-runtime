@@ -18,22 +18,46 @@ export async function patchAgent(agentId: string, body: Record<string, unknown>)
   if (!r.ok) throw new Error(`${r.status}`);
 }
 
-export async function createAgent(agent: unknown): Promise<Response> {
-  return fetch("/api/agents", {
+async function requireOk(response: Response): Promise<void> {
+  if (response.ok) return;
+  const text = await response.text();
+  throw new Error(text || `Agent request failed: ${response.status}`);
+}
+
+export async function createAgent(agent: unknown): Promise<void> {
+  await requireOk(await fetch("/api/agents", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(agent),
-  });
+  }));
 }
 
-export async function updateAgentFull(id: string, agent: unknown): Promise<Response> {
-  return fetch(`/api/agents/${encodeURIComponent(id)}`, {
+export async function updateAgentFull(id: string, agent: unknown): Promise<void> {
+  await requireOk(await fetch(`/api/agents/${encodeURIComponent(id)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(agent),
-  });
+  }));
 }
 
-export async function deleteAgent(id: string): Promise<Response> {
-  return fetch(`/api/agents/${encodeURIComponent(id)}`, { method: "DELETE" });
+export async function deleteAgent(id: string): Promise<void> {
+  await requireOk(await fetch(`/api/agents/${encodeURIComponent(id)}`, { method: "DELETE" }));
+}
+
+export async function generateAgentDefinition(description: string): Promise<unknown> {
+  const response = await fetch("/api/a2a/compiler", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: crypto.randomUUID(),
+      method: "message/send",
+      params: {
+        message: { role: "user", parts: [{ type: "text", text: description }] },
+        metadata: { skill: "uar.compile" },
+      },
+    }),
+  });
+  await requireOk(response);
+  return response.json();
 }

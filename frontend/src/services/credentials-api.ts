@@ -4,22 +4,13 @@
 // auth rides the session cookie, like the other admin services). Raw keys are
 // only ever sent on write — reads return masked metadata, never plaintext.
 
-/** Masked credential metadata as returned by `GET /api/uar/credentials`. */
-export interface CredentialView {
-  provider_id: string;
-  /** Last-4 characters of the stored key, for display only. */
-  api_key_hint: string;
-  created_at: string;
-  updated_at: string;
-}
+import type { CredentialListResult, CredentialView } from "@/entities/credential-types";
 
-/** Distinguishes the multi-tenant lifecycle states the UI must render. */
-export type CredentialServiceState = "ok" | "unauthorized" | "disabled";
-
-export interface CredentialListResult {
-  state: CredentialServiceState;
-  credentials: CredentialView[];
-}
+export type {
+  CredentialListResult,
+  CredentialServiceState,
+  CredentialView,
+} from "@/entities/credential-types";
 
 /**
  * List the caller's stored provider credentials.

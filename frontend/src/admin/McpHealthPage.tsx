@@ -1,45 +1,34 @@
-import { type FC, useEffect, useRef, useState } from "react";
+import { type FC, useEffect, useRef } from "react";
 import { RefreshCw, Server, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminEmptyState, AdminError, AdminListSkeleton } from "@/admin/components/admin-states";
 import { cn } from "@/lib/utils";
 import { useMcpStatus } from "@/entities/hooks/use-mcp-status";
-import { loadMcpStatusIntoGraph, type McpStatusRow } from "@/entities/fetchers/mcp-status";
+import type { McpStatusRow } from "@/entities/fetchers/mcp-status";
+import { useMcpHealth } from "@/hooks/use-mcp-health";
 
 const AUTO_REFRESH_MS = 30_000;
 
 export const McpHealthPage: FC = () => {
   const view = useMcpStatus();
   const servers = view.items as McpStatusRow[];
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const health = useMcpHealth();
+  const { load } = health;
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const load = async () => {
-    setRefreshing(true);
-    setError(null);
-    try {
-      await loadMcpStatusIntoGraph();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   // Mount: initial fetch + 30 s polling (no SSE; health probes are
   // server-process-local).
   useEffect(() => {
-    void load();
+    void load().catch(() => undefined);
     intervalRef.current = setInterval(() => {
-      void load();
+      void load().catch(() => undefined);
     }, AUTO_REFRESH_MS);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [load]);
 
-  const loading = refreshing && servers.length === 0;
+  const loading = health.loading && servers.length === 0;
 
   const statusDot = (status: McpStatusRow["status"]) => {
     const color =
@@ -71,18 +60,18 @@ export const McpHealthPage: FC = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => void load()}
+          onClick={() => void load().catch(() => undefined)}
           className="gap-1.5"
         >
-          <RefreshCw size={13} className={cn(refreshing && "animate-spin")} />
+          <RefreshCw size={13} className={cn(health.loading && "animate-spin")} />
           Refresh
         </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
         {loading && servers.length === 0 && <AdminListSkeleton rows={3} />}
-        <AdminError error={error} />
-        {!loading && servers.length === 0 && !error && (
+        <AdminError error={health.error} />
+        {!loading && servers.length === 0 && !health.error && (
           <AdminEmptyState
             icon={Server}
             title="No tool servers configured"
@@ -111,9 +100,11 @@ export const McpHealthPage: FC = () => {
                     </p>
                   )}
                 </div>
-                <span className="shrink-0 rounded border border-border px-1.5 py-0.5 font-mono text-[9px] uppercase text-muted-foreground">
-                  {server.transport}
-                </span>
+                {server.transport && (
+                  <span className="shrink-0 rounded border border-border px-1.5 py-0.5 font-mono text-[9px] uppercase text-muted-foreground">
+                    {server.transport}
+                  </span>
+                )}
                 <div className="flex shrink-0 items-center gap-1 font-mono text-xs text-muted-foreground">
                   <Wrench size={11} />
                   {server.tool_count}

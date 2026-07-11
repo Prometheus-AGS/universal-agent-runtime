@@ -1,5 +1,5 @@
 import { useGraphEntities, useGraphEntity } from "@/entities/hooks/use-graph-entities";
-import type { MemoryItem, MemoryStats } from "@/services/memory-api";
+import type { MemoryItem, MemoryStats } from "@/entities/memory-types";
 
 /** Live list of all Memory entities currently hydrated in the graph. */
 export function useMemory(): { items: MemoryItem[] } {

@@ -1,22 +1,22 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-11T22:40:00Z",
+  "updatedAt": "2026-07-11T23:18:00Z",
   "cursor": [
     "uar-final-production-hardening-2026-07",
-    "certify-remaining-admin-surfaces"
+    "close-react-boundary-gate"
   ],
   "root": {
     "type": "phase",
     "id": "uar-final-production-hardening-2026-07",
     "status": "executing",
     "progress": {
-      "done": 13,
+      "done": 14,
       "total": 24
     },
     "children": [
       {
         "type": "change",
-        "id": "certify-remaining-admin-surfaces",
+        "id": "close-react-boundary-gate",
         "status": "PENDING",
         "progress": {
           "done": 0,

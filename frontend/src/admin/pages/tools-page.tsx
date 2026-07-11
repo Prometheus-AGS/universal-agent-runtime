@@ -6,35 +6,24 @@ import { AdminEmptyState, AdminError, AdminSidebarSkeleton } from "@/admin/compo
 import { ToolDetailPanel } from "@/admin/components/tool-detail-panel";
 import { useGraphEntities } from "@/entities/hooks/use-graph-entities";
 import { cn } from "@/lib/utils";
-import { loadToolsIntoGraph, type ToolGraphRow } from "@/entities/fetchers/tools";
+import type { ToolGraphRow } from "@/entities/fetchers/tools";
+import { useToolsAdmin } from "@/hooks/use-tools-admin";
 
 // Page consumes the loose graph row shape with `_ns`/`_key`/`_builtin`.
 type ToolWithNs = ToolGraphRow;
 
 export const ToolsPage: FC = () => {
   const tools = useGraphEntities<ToolWithNs>("Tool");
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const admin = useToolsAdmin();
+  const { load } = admin;
   const [search, setSearch] = useState("");
-
-  const load = async () => {
-    setRefreshing(true);
-    setError(null);
-    try {
-      await loadToolsIntoGraph();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   // Tool registry is static after server startup — one-time fetch on mount.
   useEffect(() => {
-    void load();
-  }, []);
+    void load().catch(() => undefined);
+  }, [load]);
 
-  const loading = refreshing && tools.length === 0;
+  const loading = admin.loading && tools.length === 0;
   const [selectedTool, setSelectedTool] = useState<ToolWithNs | null>(null);
 
   const groups = tools
@@ -54,7 +43,7 @@ export const ToolsPage: FC = () => {
             <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Tools</p>
             <p className="font-mono text-xs text-muted-foreground">{tools.length} discovered</p>
           </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => void load()} aria-label="Refresh">
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => void load().catch(() => undefined)} aria-label="Refresh">
             <RefreshCw size={12} className={cn(loading && "animate-spin")} />
           </Button>
         </div>
@@ -65,7 +54,7 @@ export const ToolsPage: FC = () => {
 
         <div className="flex-1 overflow-y-auto py-2">
           {loading && tools.length === 0 && <AdminSidebarSkeleton rows={5} />}
-          <AdminError error={error} />
+          <AdminError error={admin.error} />
           {!loading && Object.keys(groups).length === 0 && (
             <AdminEmptyState
               icon={Wrench}
@@ -113,6 +102,8 @@ export const ToolsPage: FC = () => {
             key={selectedTool._key}
             tool={selectedTool}
             onBack={() => setSelectedTool(null)}
+            onExecute={admin.execute}
+            executing={admin.executing}
           />
         ) : (
           <div className="flex flex-1 items-center justify-center p-6">
