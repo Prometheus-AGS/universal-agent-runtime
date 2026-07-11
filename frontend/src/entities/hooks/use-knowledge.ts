@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useEntityView, useGraphStore } from "@prometheus-ags/prometheus-entity-management";
+import { useShallow } from "zustand/react/shallow";
 import type { ViewDescriptor } from "@prometheus-ags/prometheus-entity-management";
 import type { KnowledgeBaseEntity, DocumentEntity } from "@/entities/types";
 
@@ -41,7 +42,7 @@ export function useKnowledgeBases(searchTerm?: string) {
 export function useKnowledgeBase(
   id: string | undefined,
 ): KnowledgeBaseEntity | null {
-  return useGraphStore((state) => {
+  return useGraphStore(useShallow((state) => {
     if (!id) return null;
 
     const kbMap = state.entities["KnowledgeBase"];
@@ -51,7 +52,7 @@ export function useKnowledgeBase(
     if (!entity) return null;
 
     return entity as unknown as KnowledgeBaseEntity;
-  });
+  }));
 }
 
 /**
@@ -63,7 +64,7 @@ export function useKnowledgeBase(
  * documents are loaded yet (avoids the Zustand infinite-render bug).
  */
 export function useDocuments(kbId: string | undefined): DocumentEntity[] {
-  return useGraphStore((state) => {
+  return useGraphStore(useShallow((state) => {
     if (!kbId) return EMPTY_DOCUMENTS;
 
     const docMap = state.entities["Document"];
@@ -78,7 +79,7 @@ export function useDocuments(kbId: string | undefined): DocumentEntity[] {
     }
 
     return results.length > 0 ? results : EMPTY_DOCUMENTS;
-  });
+  }));
 }
 
 /**

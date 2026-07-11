@@ -67,12 +67,14 @@ export const KnowledgePage: FC = () => {
 		searchResults,
 		searching,
 		deletingDoc,
+		retryingDocId,
 		loadBases,
 		addBase,
 		removeBase,
 		loadDocs,
 		uploadFiles,
 		removeDocument,
+		retryDocument,
 		runSearch,
 		clearSearch,
 		clearDocView,
@@ -264,6 +266,7 @@ export const KnowledgePage: FC = () => {
 					{bases.map((kb) => (
 						<button
 							key={kb.id}
+							data-testid={`knowledge-base-${kb.id}`}
 							type="button"
 							onClick={() => selectKb(kb)}
 							className="flex flex-col rounded-lg border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
@@ -503,7 +506,7 @@ export const KnowledgePage: FC = () => {
 				{/* Content */}
 				<div className="flex-1 overflow-y-auto p-4 sm:p-6">
 					{docsError && (
-						<p className="mb-3 font-mono text-xs text-destructive">
+						<p role="alert" className="mb-3 font-mono text-xs text-destructive">
 							{friendlyError(docsError)}
 						</p>
 					)}
@@ -583,6 +586,7 @@ export const KnowledgePage: FC = () => {
 								{docs.map((doc) => (
 									<div
 										key={doc.id}
+										data-testid={`knowledge-document-${doc.id}`}
 										className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 sm:p-4"
 									>
 										<div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted">
@@ -623,15 +627,27 @@ export const KnowledgePage: FC = () => {
 												</p>
 											)}
 										</div>
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-											onClick={() => setDeleteDocTarget(doc)}
-											aria-label={`Delete ${doc.filename}`}
-										>
-											<Trash2 size={12} />
-										</Button>
+										<div className="flex shrink-0 items-center gap-1">
+											{doc.status === "failed" && (
+												<Button
+													variant="outline"
+													size="sm"
+													disabled={retryingDocId === doc.id}
+													onClick={() => void retryDocument(selectedKb.id, doc).catch(() => undefined)}
+												>
+													{retryingDocId === doc.id ? "Retrying…" : "Retry"}
+												</Button>
+											)}
+											<Button
+												variant="ghost"
+												size="icon"
+												className="h-7 w-7 text-muted-foreground hover:text-destructive"
+												onClick={() => setDeleteDocTarget(doc)}
+												aria-label={`Delete ${doc.filename}`}
+											>
+												<Trash2 size={12} />
+											</Button>
+										</div>
 									</div>
 								))}
 							</div>

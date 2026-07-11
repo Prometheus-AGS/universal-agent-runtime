@@ -34,8 +34,17 @@ struct FixtureFileEntry {
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum FixtureFileResponse {
-    Content { text: String },
-    ToolCall { name: String, arguments: String },
+    Content {
+        text: String,
+    },
+    GroundedContent {
+        required_context: String,
+        text: String,
+    },
+    ToolCall {
+        name: String,
+        arguments: String,
+    },
 }
 
 fn load_fixtures(path: &PathBuf) -> FixtureSet {
@@ -53,6 +62,13 @@ fn load_fixtures(path: &PathBuf) -> FixtureSet {
         };
         let response = match entry.response {
             FixtureFileResponse::Content { text } => FixtureResponse::Content(text),
+            FixtureFileResponse::GroundedContent {
+                required_context,
+                text,
+            } => FixtureResponse::GroundedContent {
+                required_context,
+                text,
+            },
             FixtureFileResponse::ToolCall { name, arguments } => {
                 FixtureResponse::ToolCall { name, arguments }
             }

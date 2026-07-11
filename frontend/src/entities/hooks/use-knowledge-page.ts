@@ -1,30 +1,10 @@
-/**
- * Compatibility hook for the knowledge admin page.
- *
- * Exposes the same API surface as the retired `useKnowledgeAdmin` hook
- * (which sat on top of `knowledge-admin-store`) but routes reads through
- * the entity graph and writes through direct service calls + optimistic
- * helpers. Lets the page consume direct-pattern infrastructure without a
- * full rewrite of its 782 LOC.
- */
-import { useCallback, useEffect, useState } from "react";
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
-import { useKnowledgeBases } from "@/entities/hooks/use-knowledge";
-import { loadKnowledgeBasesIntoGraph } from "@/entities/fetchers/knowledge";
-import { optimisticRemove, optimisticUpsert } from "@/lib/realtime/optimistic";
-import {
-  createKnowledgeBase,
-  deleteDocument,
-  deleteKnowledgeBase,
-  fetchDocuments,
-  searchKnowledgeBase,
-  uploadDocument,
-} from "@/services/knowledge-api";
-import type {
-  KbSearchResult,
-  UarKnowledgeBase,
-  UarKnowledgeDocument,
-} from "@/types";
+import { useEffect } from "react";
+
+import { useDocuments, useKnowledgeBases } from "@/entities/hooks/use-knowledge";
+import { useKnowledgeStore } from "@/stores/knowledge-store";
+import type { KbSearchResult, UarKnowledgeBase, UarKnowledgeDocument } from "@/types";
+
+const EMPTY_DOCUMENTS: UarKnowledgeDocument[] = [];
 
 export interface KnowledgePageState {
   bases: UarKnowledgeBase[];
@@ -41,203 +21,82 @@ export interface KnowledgePageState {
   searchResults: KbSearchResult[] | null;
   searching: boolean;
   deletingDoc: boolean;
+  retryingDocId: string | null;
   loadBases: () => Promise<void>;
   addBase: (form: { name: string; description: string }) => Promise<void>;
   removeBase: (id: string) => Promise<void>;
   loadDocs: (kbId: string) => Promise<void>;
-  uploadFiles: (kbId: string, files: FileList) => Promise<void>;
+  uploadFiles: (kbId: string, files: FileList | File[]) => Promise<void>;
   removeDocument: (kbId: string, doc: UarKnowledgeDocument) => Promise<void>;
+  retryDocument: (kbId: string, doc: UarKnowledgeDocument, file?: File) => Promise<void>;
   runSearch: (kbId: string, query: string) => Promise<void>;
   clearSearch: () => void;
-  clearDocView: () => void;
-  setDocsError: (msg: string | null) => void;
-  setUploadProgress: (msg: string | null) => void;
+  clearDocView: (kbId?: string) => void;
+  setDocsError: (message: string | null) => void;
+  setUploadProgress: (message: string | null) => void;
 }
 
 export function useKnowledgePage(): KnowledgePageState {
-  // Knowledge bases — live view from the graph.
   const basesView = useKnowledgeBases();
-  const bases = basesView.items as unknown as UarKnowledgeBase[];
+  const activeKbId = useKnowledgeStore((state) => state.activeKbId);
+  const graphDocuments = useDocuments(activeKbId ?? undefined);
+  const storedDocuments = useKnowledgeStore(
+    (state) => (activeKbId ? state.docsByKb[activeKbId] ?? EMPTY_DOCUMENTS : EMPTY_DOCUMENTS),
+  );
 
-  // Local UI state (replaces the old store-level flags).
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const loading = useKnowledgeStore((state) => state.loading);
+  const error = useKnowledgeStore((state) => state.error);
+  const saving = useKnowledgeStore((state) => state.saving);
+  const deleting = useKnowledgeStore((state) => state.deleting);
+  const docsLoadingKbId = useKnowledgeStore((state) => state.docsLoadingKbId);
+  const docsError = useKnowledgeStore((state) => state.docsError);
+  const uploading = useKnowledgeStore((state) => state.uploading);
+  const uploadProgress = useKnowledgeStore((state) => state.uploadProgress);
+  const searchResults = useKnowledgeStore((state) => state.searchResults);
+  const searching = useKnowledgeStore((state) => state.searching);
+  const deletingDoc = useKnowledgeStore((state) => state.deletingDoc);
+  const retryingDocId = useKnowledgeStore((state) => state.retryingDocId);
 
-  // Documents — also routed through the graph, but the page selects a
-  // single KB at a time, so we keep a query-scoped view in local state
-  // for the same shape consumers expect.
-  const [docs, setDocs] = useState<UarKnowledgeDocument[]>([]);
-  const [docsKbId, setDocsKbId] = useState<string | null>(null);
-  const [docsLoading, setDocsLoading] = useState(false);
-  const [docsError, setDocsError] = useState<string | null>(null);
-
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
-
-  const [searchResults, setSearchResults] = useState<KbSearchResult[] | null>(null);
-  const [searching, setSearching] = useState(false);
-
-  const [deletingDoc, setDeletingDoc] = useState(false);
-
-  const loadBases = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await loadKnowledgeBasesIntoGraph();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const loadBases = useKnowledgeStore((state) => state.loadBases);
+  const addBase = useKnowledgeStore((state) => state.addBase);
+  const removeBase = useKnowledgeStore((state) => state.removeBase);
+  const loadDocs = useKnowledgeStore((state) => state.loadDocs);
+  const uploadFiles = useKnowledgeStore((state) => state.uploadFiles);
+  const removeDocument = useKnowledgeStore((state) => state.removeDocument);
+  const retryDocument = useKnowledgeStore((state) => state.retryDocument);
+  const runSearch = useKnowledgeStore((state) => state.runSearch);
+  const clearSearch = useKnowledgeStore((state) => state.clearSearch);
+  const clearDocView = useKnowledgeStore((state) => state.clearDocView);
+  const setDocsError = useKnowledgeStore((state) => state.setDocsError);
+  const setUploadProgress = useKnowledgeStore((state) => state.setUploadProgress);
 
   useEffect(() => {
-    void loadBases();
+    void loadBases().catch(() => undefined);
   }, [loadBases]);
 
-  const addBase = useCallback(
-    async (form: { name: string; description: string }) => {
-      setSaving(true);
-      setError(null);
-      try {
-        await createKnowledgeBase(form);
-        await loadKnowledgeBasesIntoGraph();
-      } catch (e) {
-        setError((e as Error).message);
-        throw e;
-      } finally {
-        setSaving(false);
-      }
-    },
-    [],
-  );
-
-  const removeBase = useCallback(async (id: string) => {
-    setDeleting(true);
-    setError(null);
-    try {
-      await optimisticRemove("KnowledgeBase", id, async () => {
-        await deleteKnowledgeBase(id);
-      });
-    } catch (e) {
-      setError(`Failed to remove knowledge base: ${(e as Error).message}`);
-      throw e;
-    } finally {
-      setDeleting(false);
-    }
-  }, []);
-
-  const loadDocs = useCallback(async (kbId: string) => {
-    setDocsLoading(true);
-    setDocsError(null);
-    setDocsKbId(kbId);
-    try {
-      const list = await fetchDocuments(kbId);
-      setDocs(list);
-      // Also mirror into the graph so SSE deltas reconcile naturally.
-      const { upsertEntity } = useGraphStore.getState();
-      for (const d of list) {
-        upsertEntity("Document", d.id, d as unknown as Record<string, unknown>);
-      }
-    } catch (e) {
-      setDocsError((e as Error).message);
-    } finally {
-      setDocsLoading(false);
-    }
-  }, []);
-
-  const uploadFiles = useCallback(
-    async (kbId: string, files: FileList) => {
-      setUploading(true);
-      setUploadProgress(null);
-      try {
-        for (let i = 0; i < files.length; i += 1) {
-          const f = files[i];
-          setUploadProgress(`Uploading ${f.name} (${i + 1} of ${files.length})…`);
-          await uploadDocument(kbId, f);
-        }
-        await loadDocs(kbId);
-      } catch (e) {
-        setDocsError((e as Error).message);
-        throw e;
-      } finally {
-        setUploading(false);
-        setUploadProgress(null);
-      }
-    },
-    [loadDocs],
-  );
-
-  const removeDocument = useCallback(
-    async (kbId: string, doc: UarKnowledgeDocument) => {
-      setDeletingDoc(true);
-      setDocsError(null);
-      // Optimistic: hide locally first, restore on failure.
-      const snapshot = docs;
-      setDocs((prev) => prev.filter((d) => d.id !== doc.id));
-      try {
-        await optimisticRemove("Document", doc.id, async () => {
-          await deleteDocument(kbId, doc.id);
-        });
-      } catch (e) {
-        setDocs(snapshot);
-        setDocsError((e as Error).message);
-        throw e;
-      } finally {
-        setDeletingDoc(false);
-      }
-    },
-    [docs],
-  );
-
-  const runSearch = useCallback(async (kbId: string, query: string) => {
-    setSearching(true);
-    setDocsError(null);
-    try {
-      const results = await searchKnowledgeBase(kbId, query);
-      setSearchResults(results);
-    } catch (e) {
-      setDocsError((e as Error).message);
-    } finally {
-      setSearching(false);
-    }
-  }, []);
-
-  const clearSearch = useCallback(() => setSearchResults(null), []);
-  const clearDocView = useCallback(() => {
-    setDocs([]);
-    setDocsKbId(null);
-    setDocsError(null);
-    setSearchResults(null);
-  }, []);
-
-  // Silence the unused warning for optimisticUpsert (kept as a hook
-  // re-export hint for future doc-edit migrations).
-  void optimisticUpsert;
-
   return {
-    bases,
+    bases: basesView.items as unknown as UarKnowledgeBase[],
     loading,
     error,
     saving,
     deleting,
-    docs,
-    docsKbId,
-    docsLoading,
+    docs: (graphDocuments.length > 0 ? graphDocuments : storedDocuments) as UarKnowledgeDocument[],
+    docsKbId: activeKbId,
+    docsLoading: docsLoadingKbId === activeKbId,
     docsError,
     uploading,
     uploadProgress,
     searchResults,
     searching,
     deletingDoc,
+    retryingDocId,
     loadBases,
     addBase,
     removeBase,
     loadDocs,
     uploadFiles,
     removeDocument,
+    retryDocument,
     runSearch,
     clearSearch,
     clearDocView,

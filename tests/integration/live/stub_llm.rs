@@ -32,7 +32,14 @@ use tokio::net::TcpListener;
 #[derive(Debug, Clone)]
 pub enum FixtureResponse {
     Content(String),
-    ToolCall { name: String, arguments: String },
+    GroundedContent {
+        required_context: String,
+        text: String,
+    },
+    ToolCall {
+        name: String,
+        arguments: String,
+    },
 }
 
 /// Fingerprint a request the same way regardless of streaming: by model, the
@@ -239,6 +246,32 @@ async fn chat_completions_handler(
             .into_response();
     };
 
+    if let FixtureResponse::GroundedContent {
+        required_context, ..
+    } = fixture
+    {
+        let has_context = body
+            .get("messages")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter(|message| message.get("role").and_then(Value::as_str) == Some("system"))
+            .filter_map(|message| message.get("content").and_then(Value::as_str))
+            .any(|content| content.contains(required_context));
+        if !has_context {
+            return (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                Json(json!({
+                    "error": {
+                        "message": "grounded fixture required retrieved context that was absent",
+                        "type": "stub_llm_missing_grounding",
+                    }
+                })),
+            )
+                .into_response();
+        }
+    }
+
     let stream = body.get("stream").and_then(Value::as_bool).unwrap_or(false);
     let model = fingerprint.model.clone();
 
@@ -251,11 +284,13 @@ async fn chat_completions_handler(
 
 fn non_streaming_response(model: String, fixture: FixtureResponse) -> Json<Value> {
     let finish_reason = match &fixture {
-        FixtureResponse::Content(_) => "stop",
+        FixtureResponse::Content(_) | FixtureResponse::GroundedContent { .. } => "stop",
         FixtureResponse::ToolCall { .. } => "tool_calls",
     };
     let message = match fixture {
-        FixtureResponse::Content(text) => json!({ "role": "assistant", "content": text }),
+        FixtureResponse::Content(text) | FixtureResponse::GroundedContent { text, .. } => {
+            json!({ "role": "assistant", "content": text })
+        }
         FixtureResponse::ToolCall { name, arguments } => json!({
             "role": "assistant",
             "content": null,
@@ -281,7 +316,9 @@ fn non_streaming_response(model: String, fixture: FixtureResponse) -> Json<Value
 /// reconstruct a complete message.
 fn streaming_response(model: String, fixture: FixtureResponse) -> impl IntoResponse {
     let (delta, finish_reason) = match fixture {
-        FixtureResponse::Content(text) => (json!({ "role": "assistant", "content": text }), "stop"),
+        FixtureResponse::Content(text) | FixtureResponse::GroundedContent { text, .. } => {
+            (json!({ "role": "assistant", "content": text }), "stop")
+        }
         FixtureResponse::ToolCall { name, arguments } => (
             json!({
                 "role": "assistant",
@@ -317,7 +354,7 @@ fn streaming_response(model: String, fixture: FixtureResponse) -> impl IntoRespo
 mod tests {
     use super::*;
 
-    #[expect(
+    #[allow(
         dead_code,
         reason = "the Cucumber custom test harness compiles this unit-test helper without executing it"
     )]
@@ -359,6 +396,49 @@ mod tests {
         assert_eq!(
             body["choices"][0]["finish_reason"].as_str().unwrap(),
             "stop"
+        );
+    }
+
+    #[tokio::test]
+    async fn grounded_content_requires_the_expected_system_context() {
+        let server = start_stub_llm(FixtureSet::new().with(
+            fp("openai/gpt-5.4-mini", "answer", false),
+            FixtureResponse::GroundedContent {
+                required_context: "COBALT-7319".to_string(),
+                text: "The marker is COBALT-7319.".to_string(),
+            },
+        ))
+        .await;
+        let client = reqwest::Client::new();
+
+        let missing = client
+            .post(format!("{}/chat/completions", server.base_url))
+            .json(&json!({
+                "model": "openai/gpt-5.4-mini",
+                "messages": [{"role": "user", "content": "answer"}],
+            }))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(missing.status(), 422);
+
+        let grounded = client
+            .post(format!("{}/chat/completions", server.base_url))
+            .json(&json!({
+                "model": "openai/gpt-5.4-mini",
+                "messages": [
+                    {"role": "system", "content": "Retrieved fact: COBALT-7319"},
+                    {"role": "user", "content": "answer"}
+                ],
+            }))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(grounded.status(), 200);
+        let body: Value = grounded.json().await.unwrap();
+        assert_eq!(
+            body["choices"][0]["message"]["content"],
+            "The marker is COBALT-7319."
         );
     }
 

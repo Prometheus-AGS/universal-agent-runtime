@@ -1,22 +1,22 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-11T13:11:56Z",
+  "updatedAt": "2026-07-11T13:44:13Z",
   "cursor": [
     "uar-final-production-hardening-2026-07",
-    "certify-knowledge-rag-flow"
+    "certify-agui-chat-flow"
   ],
   "root": {
     "type": "phase",
     "id": "uar-final-production-hardening-2026-07",
     "status": "executing",
     "progress": {
-        "done": 9,
+      "done": 10,
       "total": 24
     },
     "children": [
       {
         "type": "change",
-        "id": "certify-knowledge-rag-flow",
+        "id": "certify-agui-chat-flow",
         "status": "PENDING",
         "progress": {
           "done": 0,

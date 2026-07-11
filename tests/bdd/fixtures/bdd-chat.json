@@ -18,14 +18,22 @@
     "last_user_message": "What is the secret onboarding code mentioned in the handbook?",
     "has_tools": true,
     "has_tool_result": false,
-    "response": { "kind": "content", "text": "The secret onboarding code is ZEBRA-42." }
+    "response": {
+      "kind": "grounded_content",
+      "required_context": "The secret onboarding code is ZEBRA-42.",
+      "text": "The secret onboarding code is ZEBRA-42."
+    }
   },
   {
     "model": "openai/gpt-5.4-mini",
     "last_user_message": "What is the secret onboarding code mentioned in the handbook?",
     "has_tools": true,
     "has_tool_result": false,
-    "response": { "kind": "content", "text": "The secret onboarding code is ZEBRA-42." }
+    "response": {
+      "kind": "grounded_content",
+      "required_context": "The secret onboarding code is ZEBRA-42.",
+      "text": "The secret onboarding code is ZEBRA-42."
+    }
   },
   {
     "model": "gpt-5.4-mini",

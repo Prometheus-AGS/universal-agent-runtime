@@ -18,7 +18,6 @@ frontend/src/components/ThemeToggle.tsx|component-store-import
 frontend/src/components/assistant-ui/enhanced-thread.tsx|component-store-import
 frontend/src/components/layout/left-sidebar.tsx|component-store-import
 frontend/src/components/layout/top-nav.tsx|component-store-import
-frontend/src/entities/hooks/use-knowledge-page.ts|hook-service-import
 frontend/src/entities/hooks/use-memory.ts|hook-service-import
 frontend/src/features/chat/agent-selector.tsx|component-direct-fetch
 frontend/src/features/chat/agent-selector.tsx|component-service-import

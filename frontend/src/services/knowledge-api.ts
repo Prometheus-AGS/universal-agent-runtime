@@ -46,17 +46,19 @@ export async function fetchKnowledgeBases(): Promise<UarKnowledgeBase[]> {
 export async function createKnowledgeBase(body: {
   name: string;
   description: string;
-}): Promise<void> {
+}): Promise<UarKnowledgeBase> {
   const res = await fetch("/api/knowledge", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`${res.status}`);
+  return res.json() as Promise<UarKnowledgeBase>;
 }
 
 export async function deleteKnowledgeBase(id: string): Promise<void> {
-  await fetch(`/api/knowledge/${encodeURIComponent(id)}`, { method: "DELETE" });
+  const res = await fetch(`/api/knowledge/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`${res.status}`);
 }
 
 export async function fetchDocuments(kbId: string): Promise<UarKnowledgeDocument[]> {
@@ -68,7 +70,10 @@ export async function fetchDocuments(kbId: string): Promise<UarKnowledgeDocument
   return parseDocList(data);
 }
 
-export async function uploadDocument(kbId: string, file: File): Promise<void> {
+export async function uploadDocument(
+  kbId: string,
+  file: File,
+): Promise<UarKnowledgeDocument> {
   const fd = new FormData();
   fd.append("file", file);
   const res = await fetch(
@@ -76,13 +81,15 @@ export async function uploadDocument(kbId: string, file: File): Promise<void> {
     { method: "POST", body: fd },
   );
   if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+  return res.json() as Promise<UarKnowledgeDocument>;
 }
 
 export async function deleteDocument(kbId: string, docId: string): Promise<void> {
-  await fetch(
+  const res = await fetch(
     `/api/knowledge/${encodeURIComponent(kbId)}/documents/${encodeURIComponent(docId)}`,
     { method: "DELETE" },
   );
+  if (!res.ok) throw new Error(`${res.status}`);
 }
 
 export async function searchKnowledgeBase(
