@@ -433,7 +433,10 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          # amd64-only for v1.0.0: the arm64 leg builds under slow QEMU
+          # emulation (~2.5h) and its tinygo .deb install fails. Multi-arch is a
+          # tracked follow-up once the arm64 toolchain path is sorted.
+          platforms: linux/amd64
           push: true
           tags: |
             ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
