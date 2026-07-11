@@ -25,6 +25,7 @@ import {
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRuntimeConsoleFeeds } from "@/entities/runtime-console-feeds";
 import { Button } from "@/components/ui/button";
 import {
   CommandDialog,
@@ -129,6 +130,10 @@ export function AdminShell({ renderContent }: AdminShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const active = sectionFromPath(location.pathname);
+
+  // Poll the REST-backed Runtime Console feeds (Provider Health, A2UI Surfaces,
+  // Model Routing) into the runtime entity graph while the console is open.
+  useRuntimeConsoleFeeds();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
 

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Activity,
-  AlertTriangle,
   Bot,
   Boxes,
   Brain,
@@ -19,7 +18,6 @@ import {
 } from "lucide-react";
 import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
 import type { EntityType } from "@prometheus-ags/prometheus-entity-management";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -139,21 +137,6 @@ function EmptyRuntimeState({ label }: { label: string }) {
   );
 }
 
-/**
- * Distinct from EmptyRuntimeState: this panel isn't merely quiet, its
- * backend event source doesn't exist yet — an operator should be able to
- * tell "not built" apart from "nothing happened recently".
- */
-function NotWiredRuntimeState({ detail }: { detail: string }) {
-  return (
-    <Alert className="m-4 border-dashed">
-      <AlertTriangle size={16} className="text-amber-500" />
-      <AlertTitle>Not yet wired to live backend data</AlertTitle>
-      <AlertDescription>{detail}</AlertDescription>
-    </Alert>
-  );
-}
-
 function RunRow({ run, onInspect }: { run: RuntimeRunEntity; onInspect?: (runId: string) => void }) {
   return (
     <div className="grid grid-cols-[1fr_auto] gap-3 border-b border-border px-4 py-3 last:border-b-0 md:grid-cols-[1fr_140px_120px_auto]">
@@ -185,25 +168,40 @@ function RunRow({ run, onInspect }: { run: RuntimeRunEntity; onInspect?: (runId:
 }
 
 function TimelineRow({ step }: { step: RuntimeRunStepEntity }) {
+  // The backend `runtime.step` frame carries `step` (identifier) + `status`
+  // (`started`/`finished`) rather than the entity's title/kind/summary, so
+  // normalize for display here.
+  const raw = step as RuntimeRunStepEntity & {
+    step?: string | number;
+    event_type?: string;
+  };
+  const rawStatus = String(step.status ?? "");
+  const done = rawStatus === "completed" || rawStatus === "finished";
+  const failed = rawStatus === "failed" || rawStatus === "error";
+  const title =
+    (typeof step.title === "string" && step.title) ||
+    (raw.step != null ? `Step ${raw.step}` : raw.event_type ?? "Runtime step");
+  const detail =
+    step.summary ?? (done ? "completed" : failed ? "failed" : "in progress");
   return (
     <div className="grid grid-cols-[24px_1fr_auto] gap-3 border-b border-border px-4 py-3 last:border-b-0">
       <div className="mt-0.5 flex size-6 items-center justify-center rounded border border-border bg-muted">
-        {step.status === "completed" ? (
+        {done ? (
           <CheckCircle2 size={13} className="text-emerald-500" />
-        ) : step.status === "failed" ? (
+        ) : failed ? (
           <XCircle size={13} className="text-destructive" />
         ) : (
           <Clock3 size={13} className="text-primary" />
         )}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-foreground">{step.title}</p>
+        <p className="truncate text-sm font-medium text-foreground">{title}</p>
         <p className="truncate text-xs text-muted-foreground">
-          {step.kind} · {step.summary ?? "waiting for event details"}
+          {step.kind ?? "step"} · {detail}
         </p>
       </div>
       <Badge variant="outline" className={cn("h-6", statusTone(step.status))}>
-        {step.status}
+        {rawStatus || "pending"}
       </Badge>
     </div>
   );
@@ -265,7 +263,7 @@ export function RuntimeCockpitPage() {
                 <Badge variant="outline" className={cn(statusTone(row.status))}>{row.status}</Badge>
               </div>
             )) : (
-              <NotWiredRuntimeState detail="The backend does not yet emit provider health checks onto the entity graph. This panel will populate once that emission path is built." />
+              <EmptyRuntimeState label="No provider health reported yet" />
             )}
           </SectionFrame>
 
@@ -294,7 +292,7 @@ export function RuntimeCockpitPage() {
                 <p className="truncate text-xs text-muted-foreground">{event.summary}</p>
               </div>
             )) : (
-              <NotWiredRuntimeState detail="The backend does not yet emit memory-service activity onto the entity graph. This panel will populate once that emission path is built." />
+              <EmptyRuntimeState label="No memory activity observed yet" />
             )}
           </SectionFrame>
         </aside>
@@ -351,7 +349,7 @@ export function RuntimeRunsPage() {
               <p className="truncate text-sm font-medium text-foreground">{artifact.title}</p>
               <p className="truncate font-mono text-xs text-muted-foreground">{artifact.kind} · {artifact.mime_type ?? "unknown"}</p>
             </div>
-          )) : <NotWiredRuntimeState detail="The backend does not yet emit run artifacts onto the entity graph. This panel will populate once that emission path is built." />}
+          )) : <EmptyRuntimeState label="No artifacts produced yet" />}
         </SectionFrame>
         <SectionFrame title="Tool Calls" eyebrow={`${tools.length} calls`}>
           {tools.length > 0 ? tools.map((tool) => (
@@ -502,7 +500,7 @@ export function RuntimeProtocolsPage() {
                 <p className="truncate font-mono text-xs text-muted-foreground">{event.run_id}</p>
               </div>
             )) : (
-              <NotWiredRuntimeState detail="The backend does not yet emit normalized AG-UI events onto the entity graph. This panel will populate once that emission path is built." />
+              <EmptyRuntimeState label="No AG-UI events observed yet" />
             )}
           </SectionFrame>
           <SectionFrame title="Model Routing" eyebrow="liter-llm">
@@ -512,7 +510,7 @@ export function RuntimeProtocolsPage() {
                 <p className="truncate text-xs text-muted-foreground">{route.reason ?? route.selected_provider ?? "route reason pending"}</p>
               </div>
             )) : (
-              <NotWiredRuntimeState detail="The backend does not yet emit model-routing decisions onto the entity graph. This panel will populate once that emission path is built." />
+              <EmptyRuntimeState label="No routing decisions yet" />
             )}
           </SectionFrame>
           <SectionFrame title="A2UI Surfaces" eyebrow="Protocol UI">
@@ -527,7 +525,7 @@ export function RuntimeProtocolsPage() {
                 </p>
               </div>
             )) : (
-              <NotWiredRuntimeState detail="The backend does not yet emit A2UI surface records onto the entity graph (the A2UI round-trip itself works — see the A2UI Live Testing admin page — but it isn't mirrored here yet). This panel will populate once that emission path is built." />
+              <EmptyRuntimeState label="No A2UI surfaces registered yet" />
             )}
           </SectionFrame>
         </aside>

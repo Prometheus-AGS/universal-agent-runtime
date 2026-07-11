@@ -12,7 +12,7 @@ import { useChatMessageStore } from "@/stores/chat-message-store";
 import { useAgentStatusStore } from "@/stores/agent-status-store";
 import type { ToolCallContentBlock } from "@/types/chat-content";
 import type { AttachmentPayload } from "@/types";
-import { ingestRuntimeEvent } from "@/entities/runtime-ingest";
+import { ingestAgUiEvent, ingestRuntimeEvent } from "@/entities/runtime-ingest";
 
 export interface UarChatPayload {
   message: string;
@@ -719,6 +719,45 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                 agui = JSON.parse(data) as AguiPayload;
               } catch {
                 continue;
+              }
+
+              // Mirror AG-UI frames into the Runtime Console entity graph so the
+              // Protocols (AG-UI Events), Memory Activity, and Artifacts panels
+              // render live. High-frequency token deltas are excluded to keep the
+              // AG-UI events panel readable. Chat rendering below is unaffected.
+              if (
+                event !== "agui.message.delta" &&
+                event !== "agui.thinking.delta" &&
+                event !== "agui.reasoning.delta" &&
+                event !== "agui.tool_call.delta"
+              ) {
+                ingestAgUiEvent(runId, {
+                  type: event,
+                  payload: agui as unknown as Record<string, unknown>,
+                });
+              }
+              if (
+                event === "agui.memory.recall" ||
+                event === "agui.memory.mutation"
+              ) {
+                ingestRuntimeEvent({
+                  type:
+                    event === "agui.memory.recall"
+                      ? "memory_recalled"
+                      : "memory_updated",
+                  run_id: runId,
+                  payload: agui as unknown as Record<string, unknown>,
+                });
+              }
+              if (
+                event === "agui.artifact" ||
+                event === "agui.artifact_input_request"
+              ) {
+                ingestRuntimeEvent({
+                  type: "artifact_created",
+                  run_id: runId,
+                  payload: agui as unknown as Record<string, unknown>,
+                });
               }
 
               const store = useChatMessageStore.getState();
