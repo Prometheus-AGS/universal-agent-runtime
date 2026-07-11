@@ -75,6 +75,11 @@ See [TEMPLATE_USAGE.md](./TEMPLATE_USAGE.md) for detailed configuration options.
 
 ## Architecture Overview
 
+The authoritative feature, provider, persistence, routing, tool, platform, and
+integration maturity contract is the [Product Support Matrix](docs/product-support-matrix.md).
+Catalog breadth is not a certification claim; use the matrix before selecting
+a production bundle or provider.
+
 ```mermaid
 graph TB
     subgraph Config [Configuration Layers]

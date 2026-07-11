@@ -1,52 +1,75 @@
 # Product Support Matrix
 
-This is the release contract skeleton. Until the referenced certification change passes, rows remain Preview or Experimental regardless of whether code is present.
-
-## First-party interfaces
-
-| Interface | Status | Contract |
-|---|---|---|
-| React web application | Preview | Primary interface; certification in the active production-hardening phase |
-| React administrative console | Preview | Same application and architecture contract |
-| Tauri desktop shell | Preview | React frontend plus local sidecar/runtime; platform artifacts pending |
-| Mobile | Experimental | No GA packaging/platform certification yet |
-| HTMX/Web Components application | Not a primary product interface | Historical/research material only unless separately scoped |
-
-## Protocols
-
-| Protocol | Status | Release condition |
-|---|---|---|
-| MCP client/server | Preview | Stable transport/health/tool certification and support statement |
-| AG-UI | Preview | Versioned mapping and golden/live conformance fixtures |
-| A2UI v0.9.1 | Planned GA profile | Validated shared React renderer and round-trip certification |
-| A2UI v1.0 candidate | Experimental | No GA promise while upstream status is candidate |
-| A2A | Preview | Declared transport/profile and integration evidence |
-
-## Persistence
-
-| Deployment | Runtime store | Client store | Current status |
-|---|---|---|---|
-| Web/server default | Embedded SurrealDB | PGlite thread/message cache | Preview; authority/conflict contract pending |
-| Server with Postgres | PostgreSQL/pgvector where configured | PGlite thread/message cache | Preview; feature matrix pending |
-| Desktop | Embedded runtime store | PGlite in webview | Preview; platform recovery tests pending |
-| Mobile | Undeclared | Local client storage | Experimental |
-
-## Providers and models
-
-The embedded catalog describes breadth; it is not a certification list. Provider Tier 1/2/3 capability evidence and last-verified dates will be published by `publish-capability-support-matrix`. Until then, the unqualified provider count is a catalog statement only.
-
-## Security defaults
-
-| Control | Current documented status | GA evidence needed |
-|---|---|---|
-| JWT authentication | Required by default | startup/API tests |
-| Rate limiting | Enabled by default | enforcement tests |
-| Prompt-injection screening | Detect-only by default | detection/block-mode tests |
-| PII/secret screening | Detect-only by default | detection/block-mode tests |
-| Cedar default policy | Permit-all baseline unless configured | exact policy/default documentation |
-| Tool approval | Risk/policy driven | `Allow`, `RequireApproval`, hard `Deny` certification |
-| Secret log redaction | Enabled | regression tests across config/error paths |
+This is UAR's public release contract. The canonical, linted data is
+[`product-support-matrix.json`](product-support-matrix.json); its schema is
+[`product-support-matrix.schema.json`](product-support-matrix.schema.json).
+“Cataloged” never means “certified.” Stable rows have executable gates; Preview
+and Experimental rows state narrower expectations.
 
 ## Release bundles
 
-The stable Cargo bundle matrix is not yet certified. `modularize-release-capabilities` will define and test `minimal`, `server-full`, and `desktop-full`; current feature presence does not imply GA support.
+| Bundle | Status | Feature set |
+|---|---|---|
+| Server default | Stable | `surreal-backend` (default) |
+| Server + Postgres | Preview | `postgres-backend` (implies `sqlx`) |
+| Desktop | Preview | `surreal-backend,tauri` |
+| Native WASM tools | Preview | `surreal-backend,wasm-runtime` |
+
+`memory-palace` is Experimental and conflicts with `postgres-backend` because
+their transitive SQLite native-link versions cannot coexist. `model-build` is a
+development-only regeneration tool and is excluded from release bundles.
+
+## Provider tiers
+
+| Tier | Promise | Evidence |
+|---|---|---|
+| 1 | Named, capability-specific execution certification | OpenAI-compatible chat/stream/tools/vision/structured paths; Anthropic chat/stream/tools/vision; local FastEmbed embeddings |
+| 2 | Native registry and basic chat/stream compatibility | Registry resolution and provider health tests |
+| 3 | Catalog metadata only | Schema/catalog validation; no execution promise |
+
+The embedded 269-provider catalog is discovery metadata, not 269 certified
+providers. Exact capabilities, evidence, and last-verified dates live in the
+JSON contract.
+
+## Persistence authority
+
+SurrealDB is authoritative in the stable default server bundle. PGlite is the
+browser/desktop cache for local threads and messages; runtime entity events
+reconcile the reactive graph, and server entity versions win conflicts while
+unsent local drafts remain client-owned. PostgreSQL/pgvector authority is
+Preview and requires the Postgres feature gate.
+
+## Routing and tools
+
+Catalog, availability, and policy routing are Stable. Adaptive learned routing
+is Experimental. MCP-discovered and native tools use the same governed
+`execute_tool` action with `Allow`, `RequireApproval`, and non-overridable
+`Deny`, plus audit events. WASM tool execution is Preview and disabled unless
+`wasm-runtime` is enabled.
+
+## Platforms
+
+Web is Stable. Desktop and native WASM are Preview. Mobile is Experimental.
+Browser-side WASM execution is Unsupported; browsers render validated,
+declarative A2UI artifacts and do not execute arbitrary artifact code.
+
+## BossFang and Flint architecture
+
+BossFang should currently consume UAR as a supervised local service/sidecar,
+starting with the OpenAI-compatible provider URL and adding A2A/AG-UI where
+richer task/event semantics are needed. Linking the full monolithic UAR crate
+would couple native dependencies, Tokio/process lifecycle, security and crash
+domains, and releases. Reconsider an in-process library only after extracting a
+narrow dependency-light kernel and profiling proves IPC is material. See the
+[BossFang integration guide](librefang-integration.md#6-deployment-decision-library-or-supervised-service).
+
+The sibling ownership contracts are:
+
+- Flint Gate owns external authentication, authorization, and stream enforcement.
+- Flint Realtime Fabric owns durable realtime distribution; UAR emits versioned events.
+- Flint Forge owns RLS-backed data APIs and edge execution; UAR consumes typed APIs/tools.
+- Flint Platform Agent administers UAR and sibling planes through authenticated management APIs.
+
+These are protocol/API boundaries, not invitations to absorb sibling kernels
+into UAR. The machine-readable integration rows are required by the matrix
+validator.

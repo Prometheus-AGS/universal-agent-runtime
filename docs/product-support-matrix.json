@@ -1,0 +1,57 @@
+{
+  "$schema": "./product-support-matrix.schema.json",
+  "version": "1.0.0",
+  "verified_at": "2026-07-11",
+  "features": [
+    { "id": "surreal-backend", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib" },
+    { "id": "postgres-backend", "status": "preview", "default": false, "platforms": ["linux", "macos"], "conflicts": ["memory-palace"], "gate": "cargo test --features postgres-backend" },
+    { "id": "sqlx", "status": "internal", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "cargo check --features postgres-backend" },
+    { "id": "wasm-runtime", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features wasm-runtime" },
+    { "id": "tauri", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features tauri" },
+    { "id": "memory-palace", "status": "experimental", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": ["postgres-backend"], "gate": "cargo check --features memory-palace" },
+    { "id": "model-build", "status": "development-only", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "manual model regeneration; excluded from release bundles" }
+  ],
+  "bundles": [
+    { "id": "server-default", "status": "stable", "features": ["surreal-backend"], "gate": "cargo test --lib" },
+    { "id": "server-postgres", "status": "preview", "features": ["postgres-backend"], "gate": "cargo test --features postgres-backend" },
+    { "id": "desktop", "status": "preview", "features": ["surreal-backend", "tauri"], "gate": "cargo check --features tauri" },
+    { "id": "native-wasm", "status": "preview", "features": ["surreal-backend", "wasm-runtime"], "gate": "cargo check --features wasm-runtime" }
+  ],
+  "providers": [
+    { "id": "openai-compatible", "tier": 1, "capabilities": ["chat", "stream", "tools", "vision", "structured"], "gate": "tests/bdd + provider route real-server E2E", "verified_at": "2026-07-11" },
+    { "id": "anthropic", "tier": 1, "capabilities": ["chat", "stream", "tools", "vision"], "gate": "anthropic streaming/cache unit suite", "verified_at": "2026-07-11" },
+    { "id": "catalog-native", "tier": 2, "capabilities": ["chat", "stream"], "gate": "registry resolution and provider health tests", "verified_at": "2026-07-11" },
+    { "id": "catalog-only", "tier": 3, "capabilities": [], "gate": "catalog schema only; no execution promise", "verified_at": "2026-07-11" },
+    { "id": "fastembed-local", "tier": 1, "capabilities": ["embedding"], "gate": "ranked retrieval integration and grounded BDD", "verified_at": "2026-07-10" }
+  ],
+  "persistence": [
+    { "deployment": "web-default", "authority": "embedded-surrealdb", "client_cache": "pglite", "sync": "server events reconcile graph; PGlite persists local threads/messages", "conflict": "server entity version wins; local unsent chat remains client-owned", "status": "stable", "gate": "cargo test --lib + frontend graph/store tests" },
+    { "deployment": "server-postgres", "authority": "postgresql-pgvector", "client_cache": "pglite", "sync": "server events reconcile graph", "conflict": "database transaction/version wins", "status": "preview", "gate": "cargo test --features postgres-backend" },
+    { "deployment": "desktop", "authority": "embedded-surrealdb", "client_cache": "pglite-webview", "sync": "local loopback event stream", "conflict": "runtime authority; client drafts remain local", "status": "preview", "gate": "desktop bundle certification pending" }
+  ],
+  "routing": [
+    { "level": "catalog", "status": "stable", "meaning": "filter declared model capabilities", "gate": "catalog/router unit tests" },
+    { "level": "availability", "status": "stable", "meaning": "exclude disabled or cooldown providers", "gate": "health and targeted routing tests" },
+    { "level": "policy", "status": "stable", "meaning": "apply preferred provider, cost and capability constraints", "gate": "targeted eval routing suite" },
+    { "level": "adaptive", "status": "experimental", "meaning": "learn from runtime quality/latency history", "gate": "no GA gate; not a release promise" }
+  ],
+  "tools": [
+    { "mode": "mcp-discovered", "status": "stable", "default_policy": "Cedar permit baseline plus risk approval", "controls": ["Allow", "RequireApproval", "Deny", "audit events"], "gate": "governance middleware and BDD tool-call tests" },
+    { "mode": "native", "status": "stable", "default_policy": "same governed execute_tool action", "controls": ["schema validation", "approval", "hard deny"], "gate": "native skill and governance unit tests" },
+    { "mode": "wasm", "status": "preview", "default_policy": "disabled unless wasm-runtime enabled", "controls": ["WASI capability boundary", "Cedar", "approval"], "gate": "cargo check --features wasm-runtime" }
+  ],
+  "platforms": [
+    { "id": "web", "status": "stable", "sandbox": "server process; browser renders declarative artifacts", "gate": "frontend unit/build/browser/BDD suites" },
+    { "id": "desktop", "status": "preview", "sandbox": "Tauri shell with supervised local runtime", "gate": "platform artifact gate pending" },
+    { "id": "mobile", "status": "experimental", "sandbox": "undeclared", "gate": "none" },
+    { "id": "native-wasm", "status": "preview", "sandbox": "Wasmtime/WASI", "gate": "cargo check --features wasm-runtime" },
+    { "id": "browser-wasm", "status": "unsupported", "sandbox": "no browser WASM executor shipped", "gate": "none" }
+  ],
+  "integrations": [
+    { "id": "bossfang", "mode": "supervised-service", "status": "recommended", "contract": "OpenAI-compatible first; A2A and AG-UI for richer semantics", "reason": "isolated faults/security/upgrades; current crate is monolithic", "library_reconsideration": "only after narrow dependency-light kernel extraction and measured IPC bottleneck" },
+    { "id": "flint-gate", "mode": "service-boundary", "status": "recommended", "contract": "gateway owns edge authentication, authorization and stream enforcement; forwards identity to UAR" },
+    { "id": "flint-realtime-fabric", "mode": "event-boundary", "status": "recommended", "contract": "fabric owns durable realtime distribution; UAR emits versioned AG-UI/runtime events" },
+    { "id": "flint-forge", "mode": "api-boundary", "status": "recommended", "contract": "Forge owns RLS-backed data APIs and edge execution; UAR consumes typed APIs/tools" },
+    { "id": "flint-platform-agent", "mode": "management-boundary", "status": "recommended", "contract": "platform agent administers UAR and sibling planes via authenticated management APIs" }
+  ]
+}

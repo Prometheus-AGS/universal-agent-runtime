@@ -192,6 +192,9 @@ jobs:
       - name: Enforce frontend architecture boundaries
         run: pnpm run frontend:boundaries
 
+      - name: Validate product support matrix
+        run: pnpm run support-matrix:validate
+
       - name: Vitest contract tests
         run: pnpm --filter ./frontend test
 

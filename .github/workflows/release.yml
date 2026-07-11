@@ -94,6 +94,9 @@ jobs:
       - name: Enforce frontend architecture boundaries
         run: bun run frontend:boundaries
 
+      - name: Validate product support matrix
+        run: bun run support-matrix:validate
+
       - name: Security audit
         run: |
           cargo install cargo-audit

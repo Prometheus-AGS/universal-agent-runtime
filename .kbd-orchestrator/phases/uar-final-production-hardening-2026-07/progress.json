@@ -14,7 +14,7 @@
   "previousPhase": "uar-production-ready-uiux-2026-07",
   "seedNote": "Created 2026-07-10 via direct /kbd-assess invocation with an operator mandate: '100% ready for customer use and consumption' is the ONLY success condition. Seeded from the prior phase's honest not-yet-shippable verdict: RAG retrieval broken (zero-vector embeddings), 2 open Dependabot alerts, Runtime Console gated placeholder panels, thin test coverage, config-surface traps (dead PORT/JWT_REQUIRED passthroughs), no public docs site. Assessment must additionally web-research current production-readiness practice and enumerate anything else blocking external use.",
   "changes_total": 24,
-  "changes_completed": 15,
+  "changes_completed": 16,
   "changes_ordered": [
     "fix-embeddings-fastembed",
     "green-main-ci",
@@ -57,7 +57,7 @@
     "certify-runtime-console-governance": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-certify-runtime-console-governance/. Cedar governance is now tri-state Allow/RequireApproval/Deny; policy denials are non-overridable and never create approval gates. Runtime Console I/O follows Component -> Hook -> Store -> Service, live/replay AG-UI shares one adapter, correlated health/memory/routing/surface/artifact state is certified, and the command palette root crash is fixed. UAR HTTP now defaults to configurable port 1906 across runtime, Vite, Docker, Kubernetes/Helm/OpenTofu, MCP, SDK examples, and operator docs. Verified: Rust lib 399/399 (1 ignored), frontend 92/92, focused runtime 17/17, browser 9/9, BDD 6/6, typecheck, lint, build, boundary gate (23 remaining), config default/override tests, manifest parsing, fmt, and strict OpenSpec validate. All-features Clippy remains a pre-existing baseline failure (ONNX DynamicQuantizeLinear build incompatibility plus 500+ strict-style findings).",
     "certify-remaining-admin-surfaces": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-certify-remaining-admin-surfaces/. Agents, Skills, Tools, MCP Health, Compiler, Memory, Auth, Credentials, Costs, agent selection, and session configuration were classified and certified. Stable I/O now follows Component -> Hook -> Store -> Service; direct tool execution maps to governed execute_tool; compiler is visibly experimental; deterministic empty/auth/failure/realtime tests were added. Boundary exceptions fell from 23 to 10. Verified: frontend 114/114, Rust lib 400/400 (1 ignored), admin browser 19/19, BDD 6/6, typecheck, lint, production build, binary build, boundary gate, fmt, and strict OpenSpec validate.",
     "close-react-boundary-gate": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-close-react-boundary-gate/. Removed all 10 remaining React production boundary violations by routing subscriptions and mutations through hooks/stores. Deleted the legacy allowlist; checker now enforces zero violations with only explicit PGlite asset and entity-sync transport exceptions. Added six negative fixtures and blocking PR/main/release CI gates. Verified: frontend 114/114, typecheck, lint, production build, zero-boundary positive gate, 6/6 negative rules, fmt, diff check, and strict OpenSpec validate.",
-    "publish-capability-support-matrix": "PENDING",
+    "publish-capability-support-matrix": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-publish-capability-support-matrix/. Published human and machine-readable matrices for all 7 Cargo features, release bundles, provider evidence tiers, persistence authority/conflicts, routing levels, governed tool modes, platforms, and BossFang/Flint integration ownership. Stable rows require executable gates; provider verification dates expire after 180 days; CI and release validate the contract. BossFang decision: supervised UAR service now; reconsider only a narrow extracted library after profiling. Verified: matrix/schema lint, strict OpenSpec, JSON parsing, documentation links, and Docusaurus production build.",
     "modularize-release-capabilities": "PENDING",
     "make-build-offline-reproducible": "PENDING",
     "reconcile-product-documentation": "PENDING",
@@ -82,11 +82,12 @@
     "certify-a2ui-react-flow",
     "certify-runtime-console-governance",
     "certify-remaining-admin-surfaces",
-    "close-react-boundary-gate"
+    "close-react-boundary-gate",
+    "publish-capability-support-matrix"
   ],
-  "active_change": "publish-capability-support-matrix",
+  "active_change": "modularize-release-capabilities",
   "blocked_changes": [],
-  "next_change": "publish-capability-support-matrix",
+  "next_change": "modularize-release-capabilities",
   "sourceTool": "codex",
   "last_updated_by": "codex",
   "last_updated": "2026-07-11T23:18:00Z",

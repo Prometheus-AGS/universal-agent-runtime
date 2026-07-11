@@ -70,6 +70,8 @@ Configuration (CLI > UAR_*__* env > legacy env > config.yaml > defaults)
 
 ## Where to go next
 
+- **[Product support matrix](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/product-support-matrix.md)** — certified feature bundles, provider tiers, platforms, and executable evidence.
+
 - **[Installation](./installation)** — run UAR via Docker/compose or a prebuilt
   binary, and the minimal boot configuration.
 - **[Configuration reference](./configuration)** — every environment variable,

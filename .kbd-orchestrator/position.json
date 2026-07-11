@@ -1,22 +1,22 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-11T23:25:52Z",
+  "updatedAt": "2026-07-11T23:47:45Z",
   "cursor": [
     "uar-final-production-hardening-2026-07",
-    "publish-capability-support-matrix"
+    "modularize-release-capabilities"
   ],
   "root": {
     "type": "phase",
     "id": "uar-final-production-hardening-2026-07",
     "status": "executing",
     "progress": {
-      "done": 15,
+      "done": 16,
       "total": 24
     },
     "children": [
       {
         "type": "change",
-        "id": "publish-capability-support-matrix",
+        "id": "modularize-release-capabilities",
         "status": "PENDING",
         "progress": {
           "done": 0,
