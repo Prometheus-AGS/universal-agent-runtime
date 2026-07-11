@@ -1,0 +1,126 @@
+{
+  "$schema": "https://prometheus-ags.dev/schemas/kbd/library-candidates.schema.json",
+  "phase": "uar-final-production-hardening-2026-07",
+  "generated_at": "2026-07-11T06:00:00Z",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": { "tier_1": 6, "tier_2": 6, "tier_3": 5, "tier_4": 8 }
+  },
+  "gaps_addressed": [
+    "react-primary-ui-truth",
+    "frontend-layering-violations",
+    "functional-surface-certification",
+    "ag-ui-conformance",
+    "a2ui-react-rendering",
+    "documentation-inconsistency"
+  ],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "Playwright Test",
+      "kind": "framework",
+      "repo_url": "https://github.com/microsoft/playwright",
+      "registry": "npm",
+      "fit_for_gap": "Real-browser functional certification of every stable React route against UAR and deterministic provider fixtures.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.85,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 2, "source_url": "https://playwright.dev/docs/best-practices", "claim": "Official guidance recommends user-facing locators and retrying web-first assertions." }
+      ],
+      "risks": ["E2E suites become slow or flaky if used instead of lower-level store/page contracts.", "Requires deterministic backend/provider fixtures."],
+      "decision_rationale": "Already installed and used; expand it into a page capability matrix rather than adding another E2E framework."
+    },
+    {
+      "id": "cand-002",
+      "name": "React Testing Library and user-event",
+      "kind": "library",
+      "repo_url": "https://github.com/testing-library/react-testing-library",
+      "registry": "npm",
+      "fit_for_gap": "Page-level interaction and accessibility contracts at the React hook/component boundary.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 2, "source_url": "https://testing-library.com/docs/react-testing-library/intro/", "claim": "Tests are designed to resemble how users interact with the product rather than component internals." }
+      ],
+      "risks": ["Can still over-mock stores/services and miss backend contract drift."],
+      "decision_rationale": "Already installed; suitable for success/error/empty/loading page contracts without coupling to implementation details."
+    },
+    {
+      "id": "cand-003",
+      "name": "Mock Service Worker",
+      "kind": "library",
+      "repo_url": "https://github.com/mswjs/msw",
+      "registry": "npm",
+      "fit_for_gap": "Reusable HTTP/WebSocket success, failure, latency, and unhandled-request fixtures for Vitest page contracts.",
+      "verdict": "adapt",
+      "coverage_estimate": 0.65,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 2, "source_url": "https://vitest.dev/guide/mocking/requests", "claim": "Vitest officially recommends MSW for network request mocking and supports failing on unhandled requests." },
+        { "tier": 2, "source_url": "https://mswjs.io/", "claim": "MSW provides client-agnostic request interception reusable in browser and Node contexts." }
+      ],
+      "risks": ["New dependency must be version/security verified before adoption.", "May duplicate deterministic real-server fixtures if applied indiscriminately."],
+      "decision_rationale": "Pilot on one domain; adopt only if fixtures become reusable across service/store/page tests."
+    },
+    {
+      "id": "cand-004",
+      "name": "AG-UI core event model",
+      "kind": "pattern",
+      "repo_url": "https://github.com/ag-ui-protocol/ag-ui",
+      "registry": "npm",
+      "fit_for_gap": "Canonical lifecycle, text, tool, state snapshot/delta, raw, and custom event conformance for chat and Runtime Console.",
+      "verdict": "reference",
+      "coverage_estimate": 0.7,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 2, "source_url": "https://docs.ag-ui.com/concepts/architecture", "claim": "AG-UI is event-driven and transport-agnostic, with a typed frontend/agent execution interface." },
+        { "tier": 2, "source_url": "https://docs.ag-ui.com/concepts/events", "claim": "The protocol defines lifecycle, message, tool, snapshot/delta, raw, custom, and reasoning event patterns." }
+      ],
+      "risks": ["Direct SDK adoption could duplicate UAR's normalized event model.", "Protocol includes evolving/deprecated event families."],
+      "decision_rationale": "Use as the conformance authority; adopt the package only after a compatibility spike proves it removes duplication."
+    },
+    {
+      "id": "cand-005",
+      "name": "Google A2UI specification and catalogs",
+      "kind": "pattern",
+      "repo_url": "https://github.com/google/a2ui",
+      "registry": "none",
+      "fit_for_gap": "Versioned declarative UI contract and security model for UAR's React A2UI renderer and testing surface.",
+      "verdict": "reference",
+      "coverage_estimate": 0.75,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 2, "source_url": "https://a2ui.org/", "claim": "A2UI v0.9.1 is the current production release; v1.0 is candidate; clients render declarative data through approved native components." },
+        { "tier": 2, "source_url": "https://docs.ag-ui.com/concepts/generative-ui-specs", "claim": "AG-UI explicitly treats A2UI as a separate generative UI specification that it can transport." }
+      ],
+      "risks": ["Specification is evolving.", "No verified drop-in React renderer candidate was identified within the research cap."],
+      "decision_rationale": "Build UAR's approved React catalog/renderer against one declared version; do not import HTMX assumptions."
+    },
+    {
+      "id": "cand-006",
+      "name": "Existing Zustand plus Prometheus entity graph",
+      "kind": "framework",
+      "repo_url": "https://github.com/Prometheus-AGS/universal-agent-runtime",
+      "registry": "none",
+      "fit_for_gap": "Single application-state boundary for domain actions, optimistic updates, realtime reconciliation, and React subscriptions.",
+      "verdict": "adapt",
+      "coverage_estimate": 0.8,
+      "license": "AGPL-3.0-or-later",
+      "evidence": [
+        { "tier": 1, "source_url": "https://github.com/Prometheus-AGS/universal-agent-runtime", "claim": "The repository already implements Zustand stores, entity graph adapters, optimistic helpers, PGlite, and SSE synchronization." }
+      ],
+      "risks": ["Current dual state patterns and direct graph mutation permit ownership ambiguity.", "Migration must avoid parallel v2 pages."],
+      "decision_rationale": "Enforce and finish the existing architecture rather than adding Redux, React Query ownership, or an admin framework."
+    }
+  ],
+  "build_required": [
+    { "need": "Feature-owned stores/hooks and automated React layer-boundary gates", "why_no_candidate": "This is repository-specific ownership and import policy; existing libraries cannot infer UAR domain boundaries.", "capability_gap_id": "react-layering-conformance" },
+    { "need": "Unified UAR normalized-event to AG-UI adapter and fixtures", "why_no_candidate": "UAR has a custom Rust normalized event model that must be mapped and certified, not replaced blindly.", "capability_gap_id": "ag-ui-conformance" },
+    { "need": "Validated React A2UI renderer/catalog shared by Chat and A2UI Testing", "why_no_candidate": "No verified drop-in React renderer matching UAR's component system and trust boundary was found within the research cap.", "capability_gap_id": "a2ui-react-conformance" },
+    { "need": "Route/action/spec/test/support documentation capability matrix", "why_no_candidate": "The matrix must reflect UAR's exact routes, endpoints, maturity, and release gates.", "capability_gap_id": "product-surface-certification" },
+    { "need": "Documentation truth gates and supersession strategy", "why_no_candidate": "The inconsistent claims are repository-specific and distributed across current and historical documents.", "capability_gap_id": "documentation-truth" }
+  ]
+}

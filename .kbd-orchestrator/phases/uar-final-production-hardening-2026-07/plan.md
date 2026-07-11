@@ -1,124 +1,211 @@
-# Plan — uar-final-production-hardening-2026-07
+# PLAN: uar-final-production-hardening-2026-07
 
-_Planned 2026-07-10 from assessment.md. All 4 operator questions resolved via
-AskUserQuestion: (1) cut **v1.0.0**; (2) docs on **GitHub Pages**; (3) console
-panels: **wire Provider Health + AG-UI Events, remove Memory Activity / Model
-Routing / A2UI Surfaces / Artifacts**; (4) **CRA manufacturer posture**._
+Project: Universal Agent Runtime
+Date: 2026-07-11
+OpenSpec available: YES
+Completed changes preserved: 6
+Changes remaining: 18
+Total phase changes after replan: 24
 
-Success bar (binary, from goals.md): 100% ready for customer use — every
-advertised feature works, zero open security alerts with honest ignore-lists,
-green `main`, a tagged signed v1.0.0 release with image/SBOM/changelog, policy
-files, live docs site, no config traps, suites credible and blocking.
+## Release success criterion
 
-## Changes (9, in 4 risk-ordered rounds)
+UAR may be tagged `v1.0.0` only when every stable claim has an executable acceptance test, the React frontend obeys the repository's required layering, AG-UI/A2UI profiles are declared and conformant, public documentation matches the implementation, the supported feature/platform matrix is green, offline locked builds work, and immutable release artifacts include checksums, SBOM, provenance, and signatures.
 
-### Round 1 — P0 correctness & hygiene (independent of each other)
+The current `docs-site-github-pages` change remains in progress. The former generic `test-hardening` and `release-1-0-0` changes are superseded by the smaller changes below.
 
-1. **fix-embeddings-fastembed** — Replace the zero-vector placeholder in
-   `VectorMatcher::embed_batch` with real inference via `fastembed` 5.17.2
-   using `try_new_from_user_defined` against the repo's existing
-   `src/uar/runtime/matching/models/bg-small-en-v1.5.onnx` + `tokenizer.json`
-   (offline; no runtime download; `spawn_blocking` around sync inference).
-   Makes `KbConfig.embedding_provider: "fastembed"` true instead of a lie.
-   Document/implement re-index for previously-zero-embedded KB rows.
-   - Verify: `chat-kb-retrieval.feature` passes unweakened (bdd-chat 6/6);
-     direct `POST /api/knowledge/{id}/search` returns ranked matches; skill
-     embedding matching + LocalEmbedding intent backend non-degenerate;
-     full lib suite green; CI build time/binary impact recorded.
-   - Risk: ort static-binary download in CI (cacheable); fallback = direct
-     `ort` rc.12 + hand-rolled pooling. Est: L. Value: CRITICAL.
+## CHANGE LIST (ordered)
 
-2. **green-main-ci** — Make every workflow on `main` green or explicitly
-   advisory: adopt/commit the existing uncommitted `ci.yml` fix (review it —
-   it predates this phase and scopes features + drops the `-D warnings`
-   blanket); align `quick-tests.yml` clippy policy the same way; fix
-   `comprehensive-tests.yml`'s 3 knowns (inline cargo-audit ignore parity
-   with security-audit.yml, bun→pnpm lockfile step, compose health-check
-   timeouts); delete `template-cleanup.yml`; diagnose+fix
-   `live-integration.yml`'s failing conclusion. Real-dispatch verification
-   for each (this repo's standing rule).
-   - Est: M-L. Value: HIGH (customer-visible badges).
+### 7. docs-site-github-pages — Complete the in-flight operational docs site
 
-3. **re-remediate-stale-rustsec** — The 4 stale-ignored RUSTSEC families now
-   have upstream patches: `cargo update -p quinn-proto` (≥0.11.15);
-   hickory-proto ≥0.26.1 (RUSTSEC-2026-0119); lopdf ≥0.42 and quick-xml
-   ≥0.41 (transitive via kreuzberg — bump kreuzberg if it has adopted them,
-   else `[patch]`/PR upstream; do NOT silently re-ignore). Shrink
-   `security-audit.yml` ignore list to genuinely unfixable only (rsa Marvin,
-   hickory RUSTSEC-2026-0118), update `docs/DEPENDENCY_MANAGEMENT.md`.
-   - Verify: `cargo audit` clean minus the 2 documented accepted risks;
-     full suite green. Est: M. Value: HIGH.
+- Scope: docs | CI
+- Depends on: NONE (already 3/12 tasks)
+- Recommended agent: Claude Code
+- Est. complexity: L
+- Customer value: HIGH
+- Details: Finish installation, configuration, backup/restore, upgrade, troubleshooting, and API content and verify GitHub Pages deployment. Limit this change to site scaffolding and operational documentation; final product-claim reconciliation occurs later after behavior certification.
 
-### Round 2 — P0/P1 policy & console honesty
+### 8. establish-react-product-contract — Make React and layer ownership canonical
 
-4. **security-policy-and-community-files** — `SECURITY.md` (manufacturer
-   posture: private vulnerability reporting via GitHub, 24h/72h escalation
-   targets, CVE triage SLA, CRA-alignment note), `SUPPORT.md`, issue
-   templates, `docs/LICENSING.md` plain-language dual-license clarity page
-   (AGPL obligations for self-hosters; commercial path), linked from README.
-   - Est: S-M. Value: HIGH (research: 2026 baseline; CRA clock 2026-09-11).
+- Scope: architecture | docs | frontend CI
+- Depends on: NONE
+- Recommended agent: Roo Code (Architect mode) + Codex
+- Est. complexity: M
+- Customer value: HIGH
+- Details: Add the React-first ADR, frontend architecture contract, route/action/API/spec/test inventory, and product-support matrix skeleton. Add an import/fetch boundary checker with an explicit, shrinking legacy allowlist so new violations cannot enter while existing pages are migrated.
 
-5. **runtime-console-wire-or-remove** — Per operator decision: wire
-   **Provider Health** (existing `GET /api/uar/providers/health`) and
-   **AG-UI Events** (tap the existing normalized run-event stream); REMOVE
-   the Memory Activity, Model Routing, A2UI Surfaces, and Runs-page
-   Artifacts panels entirely (and `NotWiredRuntimeState` if left unused).
-   Update the `runtime-console-ux` spec deltas accordingly.
-   - Verify: no "not yet wired" banner reachable in the UI; wired panels
-     show real data live; build+typecheck+e2e green. Est: M-L. Value: HIGH.
+### 9. certify-provider-model-settings-flow — Repair and certify configuration-to-routing
 
-6. **fix-config-passthroughs** — Apply `cli.port` → `server.port` and
-   `cli.jwt_required` → `security.jwt_required` in the config builder
-   (matching the 17 working passthroughs); regression tests; extend
-   `.env.example` and the new docs config reference with the `UAR_*__*`
-   convention. Est: S. Value: MEDIUM (a silently-ignored security flag).
+- Scope: React UI | hooks | stores | services | Rust API | tests
+- Depends on: establish-react-product-contract
+- Recommended agent: Claude Code
+- Est. complexity: L
+- Customer value: CRITICAL
+- Details: Migrate Providers, Models, and Settings to Component → Hook → Store → Service → API. Certify provider configuration/default/removal, model catalog/config/default routing, settings schema/save/reload/error/secret behavior, and a real routed request; extend the boundary gate for these domains.
 
-### Round 3 — P1 distribution & docs
+### 10. certify-knowledge-rag-flow — Certify the full knowledge customer journey
 
-7. **docs-site-github-pages** — Docusaurus site (`website/`), GitHub Pages
-   deploy workflow, ingest existing `docs/*.md`, plus NEW required content:
-   full configuration reference (every env var + `UAR_*__*` convention),
-   install (compose + binary), **backup/restore runbook (embedded
-   SurrealKV)**, **upgrade/migration guide**, troubleshooting, API
-   reference. Branding per the previously-approved Prometheus guide.
-   Mandatory UI/UX routing (CLAUDE.md) applies to site theme work.
-   - Est: L. Value: HIGH. (Unblocked today by the hosting decision.)
+- Scope: React UI | knowledge store | services | Rust RAG API | tests
+- Depends on: establish-react-product-contract
+- Recommended agent: Claude Code
+- Est. complexity: L
+- Customer value: CRITICAL
+- Details: Move knowledge service calls out of hooks, then certify create KB → upload → index → ranked search → chat grounding → delete/retry. Cover empty, invalid upload, indexing failure, authorization, and persisted/realtime reconciliation paths.
 
-8. **release-1-0-0** — LAST change, gates on all others green: bump versions
-   0.1.0 → 1.0.0 (Cargo.toml, package.jsons), `CHANGELOG.md`
-   (Keep-a-Changelog), stability statement, extend `release.yml` with SBOM
-   (cargo-cyclonedx + syft for the image), cosign keyless signing + SLSA
-   provenance attestation, GHCR multi-arch (amd64/arm64) image publish; tag
-   `v1.0.0` and run the release pipeline **for real** (first release ever —
-   expect pipeline fixes; that is part of the change).
-   - Est: L. Value: CRITICAL (the deliverable).
+### 11. certify-agui-chat-flow — Establish one conformant AG-UI ingestion path
 
-### Round 4 — P2 test credibility (may overlap Round 3)
+- Scope: protocol | Rust events | React adapter/store | chat | tests | docs
+- Depends on: establish-react-product-contract
+- Recommended agent: Claude Code
+- Est. complexity: L
+- Customer value: CRITICAL
+- Details: Declare the supported AG-UI profile, map UAR normalized events, remove deprecated event families, and make Chat and Runtime Console consume one adapter. Certify lifecycle, text, tool calls/results, snapshots/deltas, cancel, reconnect/resume, replay, ordering, deduplication, and visible errors.
 
-9. **test-hardening** — Convert `tests/e2e/rag.spec.ts` into a real
-   upload→search→assert flow (possible once change 1 lands); strengthen or
-   supersede `chat-agent-selection.spec.ts`-style visibility-only asserts;
-   add targeted vitest coverage for load-bearing stores/hooks
-   (chat-message-store, use-agents, auth-keys-store already covered? verify);
-   flip `bdd-chat.yml` advisory→blocking at 6/6; flip `live-integration.yml`
-   advisory→blocking if stable. Est: M. Value: MEDIUM-HIGH.
+### 12. certify-a2ui-react-flow — Build and certify the validated React A2UI path
 
-## Dependencies
+- Scope: protocol | Rust API | React renderer | A2UI Testing | chat artifacts | tests
+- Depends on: establish-react-product-contract, certify-agui-chat-flow
+- Recommended agent: Claude Code
+- Est. complexity: L
+- Customer value: HIGH
+- Details: Select A2UI v0.9.1 as the GA profile and label v1.0 candidate experimental. Share one validated, allowlisted React renderer between chat and A2UI Testing; migrate the page to hook/store/service layering and certify surface/data updates, progressive rendering, action responses, invalid inputs, and unknown-component rejection.
 
-- 8 (release) depends on 1-7 + 9 being green — cut the tag last.
-- 9's rag.spec.ts work depends on 1. Everything else independent.
-- 2 and 3 both touch CI security steps — sequence 3 after 2 or coordinate.
+### 13. certify-runtime-console-governance — Certify Cockpit, Protocols, Runs, and Approvals
 
-## Commands
+- Scope: React UI | runtime store | services | governance | Rust API | tests
+- Depends on: establish-react-product-contract, certify-agui-chat-flow
+- Recommended agent: Claude Code
+- Est. complexity: L
+- Customer value: HIGH
+- Details: Remove direct graph/fetch mutations, use the shared AG-UI/runtime ingestion path, and certify live Provider Health, runs, steps, tools, memory, routing, A2UI surfaces, artifacts, inspection, and error states. Introduce end-to-end `Allow | RequireApproval | Deny`; Cedar `Deny` must never expose an approve action.
 
-/opsx:new fix-embeddings-fastembed → /kbd-apply …
-/opsx:new green-main-ci → /kbd-apply …
-/opsx:new re-remediate-stale-rustsec → /kbd-apply …
-/opsx:new security-policy-and-community-files → /kbd-apply …
-/opsx:new runtime-console-wire-or-remove → /kbd-apply …
-/opsx:new fix-config-passthroughs → /kbd-apply …
-/opsx:new docs-site-github-pages → /kbd-apply …
-/opsx:new test-hardening → /kbd-apply …
-/opsx:new release-1-0-0 → /kbd-apply …   (LAST)
+### 14. certify-remaining-admin-surfaces — Certify all other advertised React routes
 
-PLAN COMPLETE
+- Scope: React UI | hooks | stores | services | APIs | tests
+- Depends on: establish-react-product-contract
+- Recommended agent: Claude Code
+- Est. complexity: L
+- Customer value: HIGH
+- Details: Vertically migrate and certify Agents, Skills, Tools, MCP Health, Compiler, Memory, Auth, Credentials, Costs, and remaining chat/session components. Each stable action needs success, failure, empty, auth, and realtime behavior; remove or mark experimental any surface that cannot meet the contract.
+
+### 15. close-react-boundary-gate — Eliminate the legacy layering allowlist
+
+- Scope: frontend architecture | CI
+- Depends on: certify-provider-model-settings-flow, certify-knowledge-rag-flow, certify-agui-chat-flow, certify-a2ui-react-flow, certify-runtime-console-governance, certify-remaining-admin-surfaces
+- Recommended agent: Codex
+- Est. complexity: M
+- Customer value: MEDIUM
+- Details: Remove every remaining direct `fetch`, component→service, component→store-mutation, and hook→service violation from live frontend code. Make the boundary checker blocking with zero allowlisted production violations and document the narrow exceptions for asset loading/transport infrastructure.
+
+### 16. publish-capability-support-matrix — Make provider, feature, persistence, and platform claims truthful
+
+- Scope: product contract | docs | metadata | tests
+- Depends on: establish-react-product-contract
+- Recommended agent: Roo Code (Architect mode)
+- Est. complexity: M
+- Customer value: HIGH
+- Details: Define stable/optional/experimental/internal Cargo features, provider Tier 1/2/3 capability evidence, PGlite/SurrealDB/Postgres authority and sync rules, catalog versus adaptive routing, tool exposure modes, security default enforcement, Tauri-ready versus certified desktop/mobile, and native WASM sandbox versus browser WASM.
+
+### 17. modularize-release-capabilities — Make the compiled feature model match the product model
+
+- Scope: Cargo | Rust modules | dependencies | CI | docs
+- Depends on: publish-capability-support-matrix
+- Recommended agent: Codex
+- Est. complexity: L
+- Customer value: HIGH
+- Details: Optionalize heavyweight platform dependencies and persistence backends, add supported bundles (`minimal`, `server-full`, `desktop-full`), move `model-build` to maintainer tooling, and remove/isolate `memory-palace` until supported. Test every stable bundle and enforce valid backend combinations.
+
+### 18. make-build-offline-reproducible — Prove locked offline source builds
+
+- Scope: build.rs | dependency supply chain | catalog/model artifacts | CI | docs
+- Depends on: modularize-release-capabilities
+- Recommended agent: Codex
+- Est. complexity: L
+- Customer value: CRITICAL
+- Details: Vendor or publish Git dependencies, commit versioned catalog/model snapshots with source date/digest, eliminate mandatory build-time downloads, and add clean-source `cargo build --locked --offline` verification. Catalog/model refresh becomes an explicit maintainer task.
+
+### 19. reconcile-product-documentation — Rewrite current docs from certified behavior
+
+- Scope: README | package metadata | architecture/state/testing/deployment docs | docs site
+- Depends on: docs-site-github-pages, close-react-boundary-gate, publish-capability-support-matrix, modularize-release-capabilities
+- Recommended agent: Claude Code
+- Est. complexity: L
+- Customer value: HIGH
+- Details: Make React primary everywhere, distinguish AG-UI from A2UI, correct provider/platform/security/persistence claims, align versions/licenses, and archive or banner historical HTMX/no-React material. Add CI truth/link gates so prohibited present-tense claims can only occur in marked historical documents.
+
+### 20. align-release-workflow-platforms — Replace stale release automation with the supported matrix
+
+- Scope: GitHub Actions | packaging | frontend build | Rust build | platforms
+- Depends on: modularize-release-capabilities, make-build-offline-reproducible
+- Recommended agent: Codex
+- Est. complexity: L
+- Customer value: CRITICAL
+- Details: Derive release validation from ordinary CI using Node 22, pnpm, the authoritative Cargo bundle matrix, and current asset/config paths. Add Linux x86_64/arm64, macOS arm64/x64, and Windows x64 compile/install/startup/health/archive tests for only the platforms declared supported.
+
+### 21. certify-operational-resilience — Prove production lifecycle and failure behavior
+
+- Scope: Rust runtime | persistence | providers | MCP | containers | integration/load tests | runbooks
+- Depends on: certify-agui-chat-flow, certify-runtime-console-governance, make-build-offline-reproducible
+- Recommended agent: Codex
+- Est. complexity: L
+- Customer value: CRITICAL
+- Details: Add startup/shutdown, cancellation, timeout, retry, provider outage/rate limit, MCP crash/restart, parallel tool-call, reconnect/replay, multi-hour streaming soak, non-root container, backup/restore, and corruption/recovery tests. Define thresholds and retain reports as release artifacts.
+
+### 22. produce-supply-chain-artifacts — Generate signed release evidence
+
+- Scope: release CI | SBOM | checksums | provenance | container images | docs
+- Depends on: align-release-workflow-platforms, certify-operational-resilience, reconcile-product-documentation
+- Recommended agent: Codex
+- Est. complexity: M
+- Customer value: HIGH
+- Details: Generate CycloneDX/SPDX SBOMs, SHA-256 checksums, keyless signatures, SLSA provenance, signed multi-arch GHCR images, and a machine-readable release manifest tying every artifact to source SHA, tests, and vulnerability reports.
+
+### 23. certify-release-candidate — Run an immutable pre-1.0 release candidate
+
+- Scope: release operations | external-install validation | evidence
+- Depends on: produce-supply-chain-artifacts, close-react-boundary-gate
+- Recommended agent: Manual + Codex
+- Est. complexity: L
+- Customer value: CRITICAL
+- Details: Cut `v1.0.0-rc.1`, run the real workflow, install artifacts on clean advertised platforms, execute the stable capability matrix and docs instructions, and resolve every failure through new focused OpenSpec changes. Require an immutable release evidence bundle and at least three external installations without checkout-specific knowledge.
+
+### 24. release-1-0-0 — Publish GA only from the certified candidate
+
+- Scope: versioning | release | support policy | announcements
+- Depends on: certify-release-candidate
+- Recommended agent: Manual + Codex
+- Est. complexity: M
+- Customer value: CRITICAL
+- Details: Align Cargo, npm packages, CLI, image labels, docs, changelog, compatibility policy, SECURITY.md, and tag at 1.0.0. Publish from the unchanged certified commit or rerun the complete certification if the commit differs; verify downloadable artifacts and post-release health.
+
+## EXECUTION ROUND ORDER
+
+- Round 0 (continue): `docs-site-github-pages`
+- Round 1: `establish-react-product-contract`
+- Round 2 (parallel by code ownership): `certify-provider-model-settings-flow`, `certify-knowledge-rag-flow`, `certify-agui-chat-flow`, `certify-remaining-admin-surfaces`, `publish-capability-support-matrix`
+- Round 3: `certify-a2ui-react-flow`, `certify-runtime-console-governance`, `modularize-release-capabilities`
+- Round 4: `close-react-boundary-gate`, `make-build-offline-reproducible`
+- Round 5: `reconcile-product-documentation`, `align-release-workflow-platforms`, `certify-operational-resilience`
+- Round 6: `produce-supply-chain-artifacts`
+- Round 7: `certify-release-candidate`
+- Round 8: `release-1-0-0`
+
+Parallel execution is allowed only in separate worktrees under `~/.claude/worktrees/` and only when file ownership does not overlap. The five Round-2 changes must coordinate shared frontend infrastructure and `progress.json`; sequence them if worktree merges reveal overlap.
+
+## EXPLICIT TRADE-OFFS AND SCOPE CUTS
+
+- GA targets A2UI v0.9.1; v1.0 candidate remains experimental.
+- Mobile is not GA unless platform-specific packaging/tests pass; otherwise document it as experimental.
+- Provider catalog presence is not support certification; only evidence-backed tiers are advertised.
+- Historical design documents are preserved as records but cannot remain unlabeled product truth.
+- No new admin/UI framework. MSW and `@ag-ui/core` require focused adoption spikes and dependency verification before introduction.
+- `v1.0.0` is not date-driven. Failure of the RC gate delays GA.
+
+## COMMANDS TO RUN
+
+The existing active command remains:
+
+`/kbd-apply docs-site-github-pages`
+
+Then execute each prepared OpenSpec change with `/kbd-apply <change-id>` in the round order above. Do not use bare `/opsx:apply`; KBD progress reconciliation is required.
+
+## PLAN COMPLETE

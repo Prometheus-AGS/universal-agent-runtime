@@ -1,0 +1,12 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-07-11T05:16:41Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "6 candidates: adopt existing Playwright and React Testing Library; conditionally adapt MSW; reference AG-UI/A2UI specs; finish Zustand/entity graph; re-spec remaining work around React layering, protocol conformance, surface certification, documentation truth, and release evidence. Three open questions recorded.",
+  "skipped": false,
+  "skipReason": null
+}
