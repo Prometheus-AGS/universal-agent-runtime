@@ -1,7 +1,7 @@
 {
   "phase": "uar-final-production-hardening-2026-07",
   "createdAt": "2026-07-10T02:45:00Z",
-  "updatedAt": "2026-07-11T05:10:00Z",
+  "updatedAt": "2026-07-11T05:25:00Z",
   "parentPhase": null,
   "childPhases": [],
   "childPointer": null,
@@ -14,7 +14,7 @@
   "previousPhase": "uar-production-ready-uiux-2026-07",
   "seedNote": "Created 2026-07-10 via direct /kbd-assess invocation with an operator mandate: '100% ready for customer use and consumption' is the ONLY success condition. Seeded from the prior phase's honest not-yet-shippable verdict: RAG retrieval broken (zero-vector embeddings), 2 open Dependabot alerts, Runtime Console gated placeholder panels, thin test coverage, config-surface traps (dead PORT/JWT_REQUIRED passthroughs), no public docs site. Assessment must additionally web-research current production-readiness practice and enumerate anything else blocking external use.",
   "changes_total": 9,
-  "changes_completed": 5,
+  "changes_completed": 6,
   "changes_ordered": [
     "fix-embeddings-fastembed",
     "green-main-ci",
@@ -32,7 +32,7 @@
     "re-remediate-stale-rustsec": "DONE (2026-07-10) -- archived openspec/changes/archive/2026-07-10-re-remediate-stale-rustsec/. 8/8 tasks. quinn-proto 0.11.16; hickory corrected; kreuzberg -> Prometheus-AGS/xberg fork rev fbea152 (lopdf 0.42, quick-xml 0.41, calamine 0.36, biblib 0.7); microsandbox fully removed; security-audit.yml ignores 7->3 + DISCLOSED_GHSA_IDS emptied. Verified: cargo test --lib 389/389; Dependabot 0 open (live gh api) + Dependabot-alerts-gate/npm/pnpm audit CI jobs green. FOUND+FIXED en route: two dependabot auto-merge regressions on main that had silently broken green-main-ci's baseline -- (1) PR #54 tailwindcss v4 broke build.rs frontend PostCSS build (reverted to ^3.4.19, operator-approved); (2) PR #61 tokenizers 0.23.1 left a dangling Cargo.lock ref to 0.22.2 that CRASHED cargo audit ('failed to find dependency: tokenizers 0.22.2') -- reconciled lock, cargo metadata --locked consistent. Both fixed + pushed in db71bf1. Final security-audit dispatch 29134227798 on db71bf1 was queued behind a GitHub runner backlog at archive time; watcher bu2qxw68m left live to flag any surprise.",
     "security-policy-and-community-files": "DONE (2026-07-10) -- archived openspec/changes/archive/2026-07-10-security-policy-and-community-files/. 6/6 tasks. SECURITY.md (manufacturer/CRA posture, GitHub private vuln reporting channel), SUPPORT.md, and issue templates (bug/feature/config.yml routing security to private reporting) already existed from commit 0652d79 -- verified complete. docs/licensing/LICENSING.md already existed + README already linked it. This turn: added the missing README Security section (links SECURITY.md/SUPPORT.md/advisories-new) and ENABLED GitHub private vulnerability reporting via gh api (GET now returns {\"enabled\":true}). openspec CLI absent -> validated structure manually.",
     "runtime-console-wire-or-remove": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-runtime-console-wire-or-remove/. RESCOPED per operator (wire panels with a spec-defined purpose, remove those without): all 6 previously-\"not wired\" panels have both a spec purpose AND a real backing concept, so ALL wired, NONE removed. AG-UI Events/Memory Activity/Artifacts wired frontend-side by routing existing agui.* frames into the runtime entity graph (chat-stream-store.ts). Provider Health/Model Routing/A2UI Surfaces wired via new runtime-console-feeds.ts REST polling (providers/health, resolve-model, a2ui/schemas) mounted in AdminShell. Execution Timeline step titles normalized in TimelineRow. All 6 NotWiredRuntimeState banners -> neutral EmptyRuntimeState. Verified: tsc clean + pnpm build + 7/7 ingest tests + full cargo build green; structural browser proof on all 4 console pages (A2UI shows 5 real schemas, Model Routing shows real gpt-4o, others neutral empty; zero 'not wired' banners). Commits 5e38f8d (code) + this finalize. NOTE: concurrent codex session's progress.json edits preserved.",
-    "fix-config-passthroughs": "PENDING",
+    "fix-config-passthroughs": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-fix-config-passthroughs/. Applied cli.port->server.port and cli.jwt_required->security.jwt_required in AppConfig::load_with_cli (they were dead passthroughs: --port/PORT was a no-op, --jwt-required/JWT_REQUIRED a silently-ignored security flag; only the UAR_*__* env forms worked). 2 regression tests green (cli_port_overrides_server_port, cli_jwt_required_overrides_security_jwt_required; lib now 392). .env.example notes both short + UAR_*__* forms are honored. Discovered live during runtime-console browser verification (server needed UAR_SECURITY__JWT_REQUIRED, not bare JWT_REQUIRED).",
     "docs-site-github-pages": "PENDING",
     "test-hardening": "PENDING",
     "release-1-0-0": "PENDING (LAST -- gates on all others green; first release ever)"
@@ -42,14 +42,15 @@
     "green-main-ci",
     "re-remediate-stale-rustsec",
     "security-policy-and-community-files",
-    "runtime-console-wire-or-remove"
+    "runtime-console-wire-or-remove",
+    "fix-config-passthroughs"
   ],
   "active_change": null,
   "blocked_changes": [],
-  "next_change": "fix-config-passthroughs",
+  "next_change": "docs-site-github-pages",
   "sourceTool": "claude-code",
   "last_updated_by": "claude-code",
-  "last_updated": "2026-07-11T05:10:00Z",
+  "last_updated": "2026-07-11T05:25:00Z",
   "createdBy": "kbd-assess (inline phase seed; no prior reflection recommendation selected)",
   "assessmentSummary": "Re-assessed against the supplied GA and feature-set recommendations after 4/9 phase changes. Readiness 68/100: RAG, ordinary CI, dependency security, and policy/community work improved; broad 1.0 remains blocked by stale Node18/Bun/all-features release.yml, Cargo 0.1.0 versus SECURITY.md 1.0-only support, no candidate-tag evidence, network/Git build reproducibility, Cedar denial mapped to approval, unconditional platform dependencies, and missing feature/provider/platform maturity contracts. See assessment.md.",
   "decisions": {

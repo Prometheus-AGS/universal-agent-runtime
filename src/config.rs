@@ -1082,6 +1082,12 @@ impl AppConfig {
         }
         // 4. Manual CLI Overrides
         // ...
+        if let Some(port) = cli.port {
+            builder = builder.set_override("server.port", i64::from(port))?;
+        }
+        if let Some(jwt_required) = cli.jwt_required {
+            builder = builder.set_override("security.jwt_required", jwt_required)?;
+        }
         if let Some(rl) = cli.rate_limit_enabled {
             builder = builder.set_override("resilience.rate_limit_enabled", rl)?;
         }
@@ -1602,6 +1608,41 @@ persistence:
         let cfg = AppConfig::load_with_cli(cli).expect("config should load");
         assert!(cfg.resilience.timeout_disabled);
         assert_eq!(cfg.resilience.request_timeout_ms, u64::MAX);
+        let _ = fs::remove_file(cfg_path);
+    }
+
+    #[test]
+    fn cli_port_overrides_server_port() {
+        // Regression: `--port` / `PORT` was a dead passthrough — parsed into Cli
+        // but never applied to the config builder.
+        let (cli, cfg_path) = base_cli();
+        let default_cfg = AppConfig::load_with_cli(cli).expect("config should load");
+        assert_eq!(default_cfg.server.port, 3000, "default port");
+
+        let (mut cli, _) = base_cli();
+        cli.config = Some(cfg_path.to_string_lossy().to_string());
+        cli.port = Some(8123);
+        let cfg = AppConfig::load_with_cli(cli).expect("config should load");
+        assert_eq!(cfg.server.port, 8123, "--port must override server.port");
+        let _ = fs::remove_file(cfg_path);
+    }
+
+    #[test]
+    fn cli_jwt_required_overrides_security_jwt_required() {
+        // Regression: `--jwt-required` / `JWT_REQUIRED` was a dead passthrough —
+        // a silently-ignored security flag.
+        let (cli, cfg_path) = base_cli();
+        let default_cfg = AppConfig::load_with_cli(cli).expect("config should load");
+        assert!(default_cfg.security.jwt_required, "jwt_required defaults true");
+
+        let (mut cli, _) = base_cli();
+        cli.config = Some(cfg_path.to_string_lossy().to_string());
+        cli.jwt_required = Some(false);
+        let cfg = AppConfig::load_with_cli(cli).expect("config should load");
+        assert!(
+            !cfg.security.jwt_required,
+            "--jwt-required=false must override security.jwt_required"
+        );
         let _ = fs::remove_file(cfg_path);
     }
 }
