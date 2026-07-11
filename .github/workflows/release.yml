@@ -421,6 +421,85 @@ jobs:
           docker tag universal-agent-runtime:${{ steps.version.outputs.version }} ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:latest
 
+  # GHCR multi-arch publish + SLSA provenance + SBOM + cosign keyless signing.
+  # Uses GITHUB_TOKEN for GHCR and OIDC (id-token) for keyless cosign/provenance
+  # — no new secrets required. First real tag run is expected to shake out
+  # environment specifics (this is the project's first release).
+  publish-ghcr-signed:
+    name: Publish signed multi-arch image (GHCR)
+    runs-on: ubuntu-latest
+    needs: pre-release-validation
+    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+      packages: write # push to GHCR
+      id-token: write # cosign keyless (OIDC) + provenance
+      attestations: write # SLSA provenance attestation
+    env:
+      IMAGE: ghcr.io/prometheus-ags/universal-agent-runtime
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push multi-arch image (with SBOM + SLSA provenance)
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
+            ${{ env.IMAGE }}:latest
+          provenance: mode=max
+          sbom: true
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign the image (keyless / Sigstore)
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      - name: Generate CycloneDX SBOM from Cargo
+        run: |
+          cargo install cargo-cyclonedx --locked || true
+          cargo cyclonedx --format json --override-filename sbom-cargo || true
+
+      - name: Generate image SBOM (syft)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
+          format: cyclonedx-json
+          output-file: sbom-image.cdx.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ steps.version.outputs.version }}
+          path: |
+            sbom-cargo*.json
+            sbom-image.cdx.json
+          if-no-files-found: warn
+
   # Update GitHub release
   update-release:
     name: Update GitHub Release
