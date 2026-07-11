@@ -6,9 +6,10 @@ name: Live Integration Tier
 # backend (real proxy at 127.0.0.1:8181) is operator-only via
 # scripts/live-integration.sh and is intentionally NOT run in CI.
 #
-# Advisory (non-blocking) for now: `continue-on-error: true` on both steps.
-# Promote to blocking once CH-01..CH-04 have each added a MATRIX.md row without
-# drift (see tests/integration/live/MATRIX.md).
+# The live integration tier is BLOCKING as of test-hardening (2026-07-11) — it
+# has been green on real CI. The Matrix presence check remains advisory
+# (`continue-on-error: true`): it tracks MATRIX.md row discipline, not a code
+# regression (see tests/integration/live/MATRIX.md).
 
 on:
   push:
@@ -39,5 +40,8 @@ jobs:
         run: bash tools/live-matrix-check.sh
 
       - name: Run live integration tier (recorded backend)
-        continue-on-error: true
+        # Blocking as of test-hardening (2026-07-11): the recorded-backend live
+        # tier has been green on real CI, so a regression should fail the
+        # workflow. (The Matrix presence check above stays advisory — it tracks
+        # MATRIX.md row discipline, not a code regression.)
         run: "cargo test --test integration live::"
