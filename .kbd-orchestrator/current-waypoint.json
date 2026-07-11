@@ -4,7 +4,7 @@
   "status": "executing",
   "stage": "executing",
   "previousPhase": "uar-production-ready-uiux-2026-07",
-  "currentTask": "release-1-0-0 PREPARED + STAGED on main (ff4994c): 1.0.0 version bumps (+ Cargo.lock synced), CHANGELOG + stability statement, release.yml publish-ghcr-signed job (GHCR multiarch + SLSA provenance + SBOM + cosign keyless). NOT tagged -- cutting v1.0.0 is an irreversible signed publish requiring operator action. Concurrent 9->24 re-plan needs operator reconciliation.",
+  "currentTask": "v1.0.0 RELEASED (2026-07-11): signed amd64 GHCR image + cosign + SLSA provenance + SBOM + GitHub Release page. Operator authorized the tag; 6 pipeline fix-forward iterations. Deferred: multi-arch arm64, cross-platform binaries, Docker Hub. Operator TODOs remain: enable GitHub Pages (Source: Actions); reconcile the concurrent 9-vs-24 plan.",
   "nextPendingChange": "test-hardening",
   "roundZeroComplete": true,
   "changeStatus": {
@@ -106,7 +106,7 @@
   "blockingPrerequisite": null,
   "parityAssessmentSummary": "uar-harness-parity: 8 goals (H1-H8). Corrections vs reflection seeds: (1) cancellation PROMOTED to P0 \u2014 client disconnect orphans runs that keep executing destructive tools + burning tokens (live bug); (2) parking-lot HookBus KILLED \u2014 redundant with existing RunEventEmitter broadcast+replay; (3) resumable streaming DOWNGRADED to frontend-only \u2014 server already has 512-event buffer + working GET /api/uar/runs/{id}/stream resume endpoint; (4) sycophancy-core is a DEAD dependency (declared, never invoked in src/). OTLP deps present but unused (1 #[instrument] on whole run path); Prometheus /metrics + JSON logging already done. Biggest true gap: evals + guardrails (no injection defense; Cedar governance_layer defined-but-unmounted). Cut C0+HP1-HP4 this phase; HP6+HP7 candidate for own uar-safety-and-evals phase.",
   "productDecisionsRequired": [],
-  "updatedAt": "2026-07-11T06:05:00Z",
+  "updatedAt": "2026-07-11T11:15:00Z",
   "changes_completed": 6,
   "changes_total": 24,
   "planRevision": "uar-final-production-hardening-2026-07 plan.md replanned 2026-07-11 from kbd-analyze: 24 total changes (6 complete, 18 remaining), 9 execution rounds; React-first surface certification and immutable RC gate before GA.",

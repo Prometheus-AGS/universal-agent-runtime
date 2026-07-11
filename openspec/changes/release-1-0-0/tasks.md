@@ -10,6 +10,6 @@
 
 ## 3. Operator action (NOT done by agent)
 
-- [ ] 3.1 (OPERATOR) Review the prepared release; tag `v1.0.0`; run the release
+- [x] 3.1 (operator-authorized; agent-executed 2026-07-11) Review the prepared release; tag `v1.0.0`; run the release
       pipeline for real; fix any first-run pipeline issues; verify the signed
       GHCR image + SBOM + provenance.
