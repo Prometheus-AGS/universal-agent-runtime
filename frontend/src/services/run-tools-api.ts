@@ -16,21 +16,3 @@ export async function postArtifactResponse(
     body: JSON.stringify(body),
   });
 }
-
-export interface TestTriggerPayload {
-  artifact_type: string;
-  title: string;
-  content: string;
-  metadata?: Record<string, unknown>;
-}
-
-export async function postA2uiTestTrigger(
-  runId: string,
-  body: TestTriggerPayload,
-): Promise<Response> {
-  return fetch(`/api/uar/runs/${encodeURIComponent(runId)}/a2ui/test-trigger`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}

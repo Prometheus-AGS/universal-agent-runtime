@@ -1,8 +1,6 @@
 # Exact legacy production violations. Entries may only be removed.
 # Format: repository/path|rule
 frontend/src/App.tsx|component-store-import
-frontend/src/admin/A2uiTestingPage.tsx|component-service-import
-frontend/src/admin/A2uiTestingPage.tsx|component-store-import
 frontend/src/admin/components/admin-welcome.tsx|component-store-import
 frontend/src/admin/components/agent-ai-builder.tsx|component-direct-fetch
 frontend/src/admin/components/agent-editor.tsx|component-service-import

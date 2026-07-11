@@ -8,20 +8,10 @@ import { AdminEmptyInline, AdminError, AdminSidebarSkeleton } from "@/admin/comp
 import { cn } from "@/lib/utils";
 import { useA2uiSchemas } from "@/hooks/use-a2ui-schemas";
 import { useGraphEntities } from "@/entities/hooks/use-graph-entities";
-import { useThreadRegistryStore } from "@/stores/thread-registry-store";
-import { postA2uiTestTrigger } from "@/services/run-tools-api";
 import type { RuntimeRunEntity } from "@/entities/types";
-
-/** Real shape returned by GET /api/uar/a2ui/schemas (src/uar/a2ui/schema.rs::ArtifactSchema). */
-interface A2uiSchema {
-  schema_id: string;
-  title: string;
-  description: string;
-  artifact_type: "form" | "confirm" | "select" | "text_input" | "display" | "chart" | "media";
-  json_schema: unknown;
-  render_hint?: string;
-  builtin: boolean;
-}
+import type { A2uiArtifactSchema, A2uiComponent } from "@/features/a2ui/a2ui-protocol";
+import { A2uiSurfaceRenderer } from "@/features/a2ui/a2ui-surface-renderer";
+import { useThreadRegistryActions } from "@/hooks/use-thread-registry-actions";
 
 /** Sensible example content per builtin artifact_type, pre-filled when a schema is selected. */
 const EXAMPLE_CONTENT: Record<string, string> = {
@@ -33,24 +23,38 @@ const EXAMPLE_CONTENT: Record<string, string> = {
 
 const ACTIVE_RUN_STATUSES = new Set(["running", "waiting"]);
 
+function previewSurface(title: string, content: string): A2uiComponent[] {
+  return [
+    { id: "title", component: "Text", text: title, variant: "h2" },
+    { id: "content", component: "Text", text: content || "The progressive surface preview will appear here." },
+    { id: "action-label", component: "Text", text: "Preview action" },
+    {
+      id: "action",
+      component: "Button",
+      child: "action-label",
+      variant: "primary",
+      action: { event: { name: "preview" } },
+    },
+    { id: "root", component: "Column", children: ["title", "content", "action"] },
+  ];
+}
+
 export const A2uiTestingPage: FC = () => {
   const navigate = useNavigate();
-  const { schemas: schemasRaw, loading, error, load } = useA2uiSchemas();
-  const schemas = schemasRaw as A2uiSchema[];
+  const { schemas, loading, error, load, triggering, triggerError, trigger } = useA2uiSchemas();
   const runs = useGraphEntities<RuntimeRunEntity>("RuntimeRun");
-  const setActiveThread = useThreadRegistryStore((s) => s.setActive);
+  const { setActiveThread } = useThreadRegistryActions();
 
   const activeRuns = useMemo(
     () => runs.filter((r) => ACTIVE_RUN_STATUSES.has(r.status)),
     [runs],
   );
 
-  const [selectedSchema, setSelectedSchema] = useState<A2uiSchema | null>(null);
+  const [selectedSchema, setSelectedSchema] = useState<A2uiArtifactSchema | null>(null);
   const [selectedRunId, setSelectedRunId] = useState<string>("");
   const [content, setContent] = useState("");
-  const [triggering, setTriggering] = useState(false);
-  const [triggerError, setTriggerError] = useState<string | null>(null);
   const [triggeredThreadId, setTriggeredThreadId] = useState<string | null>(null);
+  const [previewStatus, setPreviewStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (schemas.length > 0 && !selectedSchema) setSelectedSchema(schemas[0] ?? null);
@@ -60,7 +64,7 @@ export const A2uiTestingPage: FC = () => {
     if (selectedSchema) {
       setContent(EXAMPLE_CONTENT[selectedSchema.artifact_type] ?? "{}");
       setTriggeredThreadId(null);
-      setTriggerError(null);
+      setPreviewStatus(null);
     }
   }, [selectedSchema]);
 
@@ -68,32 +72,21 @@ export const A2uiTestingPage: FC = () => {
 
   const handleTrigger = async () => {
     if (!selectedSchema || !selectedRun) return;
-    setTriggering(true);
-    setTriggerError(null);
+    let metadata: Record<string, unknown> = {};
     try {
-      let metadata: Record<string, unknown> = {};
-      const parsedContent = content;
-      try {
-        const parsed = JSON.parse(content) as Record<string, unknown>;
-        metadata = parsed;
-      } catch {
-        // Not all content needs to be JSON (e.g. plain display text) — send as-is.
-      }
-      const res = await postA2uiTestTrigger(selectedRun.id, {
-        artifact_type: selectedSchema.artifact_type,
-        title: selectedSchema.title,
-        content: parsedContent,
-        metadata,
-      });
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(body || `HTTP ${res.status}`);
-      }
+      const parsed = JSON.parse(content) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) metadata = parsed as Record<string, unknown>;
+    } catch {
+      // Display content may be plain text.
+    }
+    const succeeded = await trigger(selectedRun.id, {
+      artifact_type: selectedSchema.artifact_type,
+      title: selectedSchema.title,
+      content,
+      metadata,
+    });
+    if (succeeded) {
       setTriggeredThreadId(selectedRun.thread_id ?? null);
-    } catch (e) {
-      setTriggerError((e as Error).message);
-    } finally {
-      setTriggering(false);
     }
   };
 
@@ -216,6 +209,19 @@ export const A2uiTestingPage: FC = () => {
                   className="font-mono text-xs"
                 />
               </div>
+
+              <section className="space-y-2" aria-label="A2UI surface preview">
+                <h4 className="text-sm font-medium text-foreground">Shared React renderer preview</h4>
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <A2uiSurfaceRenderer
+                    components={previewSurface(selectedSchema.title, content)}
+                    data={{}}
+                    onDataChange={() => undefined}
+                    onAction={() => setPreviewStatus("Preview action captured. Live runs submit through the A2UI action service.")}
+                    statusMessage={previewStatus}
+                  />
+                </div>
+              </section>
 
               <Button
                 type="button"

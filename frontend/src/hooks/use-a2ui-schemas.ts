@@ -7,10 +7,13 @@ export function useA2uiSchemas() {
   const loading = useA2uiSchemasStore((s) => s.loading);
   const error = useA2uiSchemasStore((s) => s.error);
   const load = useA2uiSchemasStore((s) => s.load);
+  const triggering = useA2uiSchemasStore((s) => s.triggering);
+  const triggerError = useA2uiSchemasStore((s) => s.triggerError);
+  const trigger = useA2uiSchemasStore((s) => s.trigger);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  return { schemas, loading, error, load };
+  return { schemas, loading, error, load, triggering, triggerError, trigger };
 }

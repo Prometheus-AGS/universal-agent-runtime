@@ -1,17 +1,9 @@
-import { CheckCircle2Icon, Loader2Icon, PanelTopOpenIcon, SendIcon } from "lucide-react";
-import { type FC, useId, useMemo, useState } from "react";
+import { CheckCircle2Icon, Loader2Icon, PanelTopOpenIcon } from "lucide-react";
+import { type FC, useMemo, useState } from "react";
+
+import type { A2uiComponent } from "@/features/a2ui/a2ui-protocol";
+import { A2uiSurfaceRenderer } from "@/features/a2ui/a2ui-surface-renderer";
 import { useToolApprovalActions } from "@/hooks/use-tool-approval";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -26,9 +18,93 @@ function parseJsonObject(value: string): Record<string, unknown> | null {
   }
 }
 
-function readString(obj: Record<string, unknown>, key: string): string | null {
-  const value = obj[key];
-  return typeof value === "string" ? value : null;
+function readString(value: Record<string, unknown>, key: string, fallback: string): string {
+  return typeof value[key] === "string" ? value[key] : fallback;
+}
+
+function setDataPath(data: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
+  if (!path.startsWith("/")) return data;
+  const segments = path.slice(1).split("/");
+  const next = structuredClone(data);
+  let parent = next;
+  for (const segment of segments.slice(0, -1)) {
+    const existing = parent[segment];
+    parent[segment] = isRecord(existing) ? existing : {};
+    parent = parent[segment] as Record<string, unknown>;
+  }
+  parent[segments.at(-1)!] = value;
+  return next;
+}
+
+function legacyInputSurface(
+  artifactType: string,
+  title: string,
+  input: Record<string, unknown>,
+): { components: A2uiComponent[]; data: Record<string, unknown> } | null {
+  const heading: A2uiComponent = { id: "heading", component: "Text", text: title || "User input required", variant: "h2" };
+  const components: A2uiComponent[] = [heading];
+  const children = ["heading"];
+  const button = (id: string, label: string, actionName: string, variant: "primary" | "secondary" = "primary") => {
+    components.push({ id: `${id}-label`, component: "Text", text: label });
+    components.push({ id, component: "Button", child: `${id}-label`, variant, action: { event: { name: actionName } } });
+    return id;
+  };
+
+  let data: Record<string, unknown> = {};
+  if (artifactType === "confirm") {
+    components.push({ id: "message", component: "Text", text: readString(input, "message", readString(input, "prompt", "Please confirm")) });
+    components.push({
+      id: "actions",
+      component: "Row",
+      children: [
+        button("accept", readString(input, "accept_label", "Accept"), "accept"),
+        button("cancel", readString(input, "cancel_label", "Cancel"), "cancel", "secondary"),
+      ],
+    });
+    children.push("message", "actions");
+  } else if (artifactType === "select") {
+    const options = Array.isArray(input.options)
+      ? input.options.flatMap((option) => isRecord(option) && typeof option.value === "string"
+        ? [{ value: option.value, label: readString(option, "label", option.value) }]
+        : [])
+      : [];
+    if (options.length === 0) return null;
+    data = { selection: [] };
+    components.push({
+      id: "selection",
+      component: "ChoicePicker",
+      label: readString(input, "prompt", "Choose an option"),
+      value: { path: "/selection" },
+      variant: "mutuallyExclusive",
+      options,
+    });
+    children.push("selection", button("submit", "Submit", "submit"));
+  } else if (artifactType === "text_input") {
+    data = { text: readString(input, "text", "") };
+    components.push({
+      id: "text",
+      component: "TextField",
+      label: readString(input, "prompt", "Provide input"),
+      value: { path: "/text" },
+      variant: input.multiline === true ? "longText" : "shortText",
+      placeholder: readString(input, "placeholder", ""),
+    });
+    children.push("text", button("submit", "Submit", "submit"));
+  } else if (artifactType === "form") {
+    data = { json: "{}" };
+    components.push({
+      id: "json",
+      component: "TextField",
+      label: "Structured response JSON",
+      value: { path: "/json" },
+      variant: "longText",
+    });
+    children.push("json", button("submit", "Submit", "submit"));
+  } else {
+    return null;
+  }
+  components.push({ id: "root", component: "Column", children });
+  return { components, data };
 }
 
 interface A2uiInputBlockProps {
@@ -43,267 +119,66 @@ interface A2uiInputBlockProps {
 }
 
 export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
-  runId,
-  artifactId,
-  artifactType,
-  title,
-  content,
-  metadata,
-  status,
-  result,
+  runId, artifactId, artifactType, title, content, metadata, status, result,
 }) => {
   const { submitArtifactResponse } = useToolApprovalActions();
-  const contentObj = useMemo(() => parseJsonObject(content), [content]);
-  const inputObj = contentObj ?? metadata;
-
-  const [textValue, setTextValue] = useState(readString(inputObj, "text") ?? "");
-  const [selectValue, setSelectValue] = useState("");
-  const [formJson, setFormJson] = useState("{}");
+  const input = useMemo(() => parseJsonObject(content) ?? metadata, [content, metadata]);
+  const surface = useMemo(() => legacyInputSurface(artifactType, title, input), [artifactType, input, title]);
+  const [data, setData] = useState<Record<string, unknown>>(() => surface?.data ?? {});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const baseId = useId();
-  const selectFieldId = `${baseId}-select`;
-  const textFieldId = `${baseId}-text`;
-
-  const options = useMemo(() => {
-    const raw = inputObj.options;
-    if (!Array.isArray(raw)) return [] as Array<{ value: string; label: string }>;
-    return raw
-      .map((item) => (isRecord(item) ? item : null))
-      .filter((item): item is Record<string, unknown> => item !== null)
-      .map((item) => {
-        const value = typeof item.value === "string" ? item.value : "";
-        const label = typeof item.label === "string" ? item.label : value;
-        return { value, label };
-      })
-      .filter((item) => item.value.length > 0);
-  }, [inputObj]);
-
-  const confirmMessage = readString(inputObj, "message") ?? readString(inputObj, "prompt") ?? "Please confirm";
-  const acceptLabel = readString(inputObj, "accept_label") ?? "Accept";
-  const cancelLabel = readString(inputObj, "cancel_label") ?? "Cancel";
-  const prompt = readString(inputObj, "prompt") ?? "Provide input";
-  const placeholder = readString(inputObj, "placeholder") ?? "";
-  const multiline = inputObj.multiline === true;
-
-  const submitResponse = async (response: Record<string, unknown>) => {
+  const submit = async (name: string) => {
+    let response: Record<string, unknown>;
+    if (name === "accept" || name === "cancel") response = { accepted: name === "accept" };
+    else if (artifactType === "select") response = { value: Array.isArray(data.selection) ? data.selection[0] : undefined };
+    else if (artifactType === "text_input") response = { text: String(data.text ?? "") };
+    else {
+      const parsed = parseJsonObject(String(data.json ?? ""));
+      if (!parsed) {
+        setSubmitError("Response must be a valid JSON object.");
+        return;
+      }
+      response = parsed;
+    }
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const res = await submitArtifactResponse(runId, {
-        artifact_id: artifactId,
-        response,
-      });
-      if (!res.ok) {
-        const body = await res.text().catch(() => "Failed to submit artifact response");
-        throw new Error(body || `HTTP ${res.status}`);
-      }
+      const result = await submitArtifactResponse(runId, { artifact_id: artifactId, response });
+      if (!result.ok) throw new Error(await result.text().catch(() => `HTTP ${result.status}`));
       setSubmitted(true);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Failed to submit response");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Failed to submit response");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const resolved = status === "complete";
-
+  const resolved = status === "complete" || submitted;
   return (
-    <div className="my-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5">
-      <div className="mb-2 flex items-center gap-2">
-        <PanelTopOpenIcon size={12} className="text-primary" />
-        <span className="font-mono text-[10px] uppercase tracking-widest text-primary/90">
-          A2UI Input
-        </span>
-        <span className="ml-auto font-mono text-[9px] text-primary/70">{artifactType}</span>
+    <section className="my-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-3" aria-label="A2UI input">
+      <div className="mb-3 flex items-center gap-2 text-xs text-primary">
+        <PanelTopOpenIcon size={14} aria-hidden="true" />
+        <span className="font-medium">A2UI input</span>
+        <span className="ml-auto font-mono text-muted-foreground">{artifactType}</span>
       </div>
-
-      <p className="font-display text-sm font-semibold text-foreground">{title || "User input required"}</p>
-
-      {artifactType === "confirm" && (
-        <div className="mt-2 space-y-2">
-          <p className="font-body text-sm text-muted-foreground">{confirmMessage}</p>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              disabled={submitting || resolved}
-              onClick={() => void submitResponse({ accepted: true })}
-            >
-              {acceptLabel}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={submitting || resolved}
-              onClick={() => void submitResponse({ accepted: false })}
-            >
-              {cancelLabel}
-            </Button>
-          </div>
-        </div>
+      {surface ? (
+        <A2uiSurfaceRenderer
+          components={surface.components}
+          data={data}
+          onDataChange={(path, value) => setData((current) => setDataPath(current, path, value))}
+          onAction={(name) => void submit(name)}
+          actionPending={submitting || resolved}
+          statusMessage={submitting ? "Sending response…" : resolved ? "Response captured" : submitError}
+        />
+      ) : (
+        <p className="text-sm text-destructive" role="alert">Unsupported or invalid A2UI artifact type: {artifactType}</p>
       )}
-
-      {artifactType === "select" && (
-        <div className="mt-2 space-y-2">
-          <Label htmlFor={selectFieldId} className="font-body text-sm font-normal text-muted-foreground">
-            {prompt}
-          </Label>
-          {options.length > 0 ? (
-            <Select
-              value={selectValue === "" ? undefined : selectValue}
-              onValueChange={(v) => v != null && setSelectValue(v)}
-              disabled={submitting || resolved}
-            >
-              <SelectTrigger id={selectFieldId} className="h-9 w-full">
-                <SelectValue placeholder="Choose an option" />
-              </SelectTrigger>
-              <SelectContent>
-                {options.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <p className="font-mono text-xs text-muted-foreground">No options defined for this select.</p>
-          )}
-          <Button
-            type="button"
-            size="sm"
-            disabled={!selectValue || submitting || resolved}
-            onClick={() => void submitResponse({ value: selectValue })}
-          >
-            <SendIcon size={12} className="mr-1" />
-            Submit
-          </Button>
-        </div>
-      )}
-
-      {artifactType === "text_input" && (
-        <div className="mt-2 space-y-2">
-          <Label htmlFor={textFieldId} className="font-body text-sm font-normal text-muted-foreground">
-            {prompt}
-          </Label>
-          {multiline ? (
-            <Textarea
-              id={textFieldId}
-              value={textValue}
-              onChange={(e) => setTextValue(e.target.value)}
-              placeholder={placeholder}
-              disabled={submitting || resolved}
-              rows={4}
-            />
-          ) : (
-            <Input
-              id={textFieldId}
-              value={textValue}
-              onChange={(e) => setTextValue(e.target.value)}
-              placeholder={placeholder}
-              disabled={submitting || resolved}
-            />
-          )}
-          <Button
-            type="button"
-            size="sm"
-            disabled={!textValue.trim() || submitting || resolved}
-            onClick={() => void submitResponse({ text: textValue })}
-          >
-            <SendIcon size={12} className="mr-1" />
-            Submit
-          </Button>
-        </div>
-      )}
-
-      {artifactType === "form" && (
-        <div className="mt-2 space-y-2">
-          <p className="font-body text-sm text-muted-foreground">
-            Structured form received. Submit JSON response:
-          </p>
-          <Textarea
-            value={formJson}
-            onChange={(e) => setFormJson(e.target.value)}
-            disabled={submitting || resolved}
-            rows={6}
-          />
-          <Button
-            type="button"
-            size="sm"
-            disabled={submitting || resolved}
-            onClick={() => {
-              const parsed = parseJsonObject(formJson);
-              if (!parsed) {
-                setSubmitError("Form JSON must be a valid object");
-                return;
-              }
-              void submitResponse(parsed);
-            }}
-          >
-            <SendIcon size={12} className="mr-1" />
-            Submit
-          </Button>
-        </div>
-      )}
-
-      {artifactType !== "confirm" &&
-        artifactType !== "select" &&
-        artifactType !== "text_input" &&
-        artifactType !== "form" && (
-          <div className="mt-2 space-y-2">
-            <p className="font-body text-sm text-muted-foreground">
-              Unsupported artifact type `{artifactType}`. Submit raw JSON:
-            </p>
-            <Textarea
-              value={formJson}
-              onChange={(e) => setFormJson(e.target.value)}
-              disabled={submitting || resolved}
-              rows={6}
-            />
-            <Button
-              type="button"
-              size="sm"
-              disabled={submitting || resolved}
-              onClick={() => {
-                const parsed = parseJsonObject(formJson);
-                if (!parsed) {
-                  setSubmitError("JSON must be a valid object");
-                  return;
-                }
-                void submitResponse(parsed);
-              }}
-            >
-              <SendIcon size={12} className="mr-1" />
-              Submit
-            </Button>
-          </div>
-        )}
-
-      <div className="mt-2 flex items-center gap-2">
-        {submitting && (
-          <span className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground/70">
-            <Loader2Icon size={10} className="animate-spin" />
-            Sending response...
-          </span>
-        )}
-        {!submitting && (submitted || resolved) && (
-          <span className="inline-flex items-center gap-1 font-mono text-[10px] text-success">
-            <CheckCircle2Icon size={10} />
-            Response captured
-          </span>
-        )}
-        {submitError && <span className="font-mono text-[10px] text-destructive">{submitError}</span>}
-      </div>
-
-      {result && (
-        <pre className="mt-2 overflow-x-auto rounded-md border border-border/40 bg-background/70 p-2 font-mono text-[10px] text-muted-foreground">
-          {result}
-        </pre>
-      )}
-    </div>
+      {submitting ? <Loader2Icon size={14} className="mt-2 animate-spin text-muted-foreground" aria-hidden="true" /> : null}
+      {resolved ? <CheckCircle2Icon size={14} className="mt-2 text-success" aria-hidden="true" /> : null}
+      {result ? <pre className="mt-2 overflow-x-auto rounded-md bg-background p-2 text-xs text-muted-foreground">{result}</pre> : null}
+    </section>
   );
 };
 
@@ -315,22 +190,19 @@ interface A2uiDisplayBlockProps {
 }
 
 export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({ artifactType, title, content, language }) => {
+  const components: A2uiComponent[] = [
+    { id: "title", component: "Text", text: title || "Artifact", variant: "h2" },
+    { id: "content", component: "Text", text: content, variant: "body" },
+    { id: "root", component: "Column", children: ["title", "content"] },
+  ];
   return (
-    <div className="my-2 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5">
-      <div className="mb-2 flex items-center gap-2">
-        <PanelTopOpenIcon size={12} className="text-muted-foreground" />
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          Artifact
-        </span>
-        <span className="ml-auto font-mono text-[9px] text-muted-foreground/70">
-          {artifactType}
-          {language ? ` · ${language}` : ""}
-        </span>
+    <section className="my-2 rounded-lg border border-border bg-muted/20 px-3 py-3" aria-label="A2UI display artifact">
+      <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
+        <PanelTopOpenIcon size={14} aria-hidden="true" />
+        <span className="font-medium">Artifact</span>
+        <span className="ml-auto font-mono">{artifactType}{language ? ` · ${language}` : ""}</span>
       </div>
-      <p className="font-display text-sm font-semibold text-foreground">{title || "Artifact"}</p>
-      <pre className="mt-2 whitespace-pre-wrap rounded-md border border-border/40 bg-background/70 p-2 font-body text-xs text-muted-foreground">
-        {content}
-      </pre>
-    </div>
+      <A2uiSurfaceRenderer components={components} data={{}} onDataChange={() => undefined} onAction={() => undefined} />
+    </section>
   );
 };
