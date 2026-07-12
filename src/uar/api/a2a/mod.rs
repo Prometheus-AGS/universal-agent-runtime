@@ -20,6 +20,7 @@ pub mod client;
 pub mod discovery;
 // gRPC transport requires proto compilation via tonic-build.
 // Enable once tonic-build prost integration is configured.
+#[cfg(feature = "a2a-transport")]
 pub mod grpc;
 pub mod handler;
 pub mod registry;
@@ -38,9 +39,9 @@ use axum::{
 pub use client::A2AClient;
 pub use discovery::{DiscoveryApiState, build_discovery_router};
 pub use handler::A2AState;
-pub use registry::{
-    AgentInfo, AgentRegistry, ExternalSkill, InMemoryAgentRegistry, SurrealAgentRegistry,
-};
+#[cfg(feature = "surreal-backend")]
+pub use registry::SurrealAgentRegistry;
+pub use registry::{AgentInfo, AgentRegistry, ExternalSkill, InMemoryAgentRegistry};
 #[cfg(feature = "postgres-backend")]
 pub use registry_postgres::PostgresAgentRegistry;
 pub use task_store::TaskStore;

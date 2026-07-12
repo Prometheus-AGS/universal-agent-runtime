@@ -10,14 +10,15 @@ and Experimental rows state narrower expectations.
 
 | Bundle | Status | Feature set |
 |---|---|---|
-| Server default | Stable | `surreal-backend` (default) |
+| Minimal | Stable | `minimal` → `surreal-backend` (default) |
+| Server full | Preview | `server-full` → Minimal + local models, Cedar, quality, documents, telemetry, A2A, API docs, admin UI, WASM |
+| Desktop full | Preview | `desktop-full` → Server Full + `tauri` |
 | Server + Postgres | Preview | `postgres-backend` (implies `sqlx`) |
-| Desktop | Preview | `surreal-backend,tauri` |
-| Native WASM tools | Preview | `surreal-backend,wasm-runtime` |
+| In-memory development | Development only | `in-memory-backend` without defaults |
 
-`memory-palace` is Experimental and conflicts with `postgres-backend` because
-their transitive SQLite native-link versions cannot coexist. `model-build` is a
-development-only regeneration tool and is excluded from release bundles.
+The unintegrated `memory-palace` extension is not a UAR feature. Model
+regeneration is an explicit maintainer operation (`cargo run --manifest-path
+tools/uar-model-builder/Cargo.toml`) and is excluded from release bundles.
 
 ## Provider tiers
 

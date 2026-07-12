@@ -1,5 +1,6 @@
 //! Factory for creating file processors based on configuration.
 
+#[cfg(feature = "document-intelligence")]
 use super::kreuzberg::KreuzbergProvider;
 use super::local::LocalProvider;
 use super::mistral::MistralProvider;
@@ -39,12 +40,19 @@ impl FileProcessorFactory {
     ) -> Result<Arc<dyn FileProcessor>, ProcessingError> {
         match config.provider.as_str() {
             "kreuzberg" => {
-                let cfg = kreuzberg.cloned().unwrap_or_default();
-                tracing::info!(
-                    "Using Kreuzberg for file processing (OCR backend: {})",
-                    cfg.ocr_backend
-                );
-                Ok(Arc::new(KreuzbergProvider::new(cfg)))
+                #[cfg(not(feature = "document-intelligence"))]
+                return Err(ProcessingError::ProviderNotConfigured(
+                    "Kreuzberg requires the `document-intelligence` capability".to_string(),
+                ));
+                #[cfg(feature = "document-intelligence")]
+                {
+                    let cfg = kreuzberg.cloned().unwrap_or_default();
+                    tracing::info!(
+                        "Using Kreuzberg for file processing (OCR backend: {})",
+                        cfg.ocr_backend
+                    );
+                    Ok(Arc::new(KreuzbergProvider::new(cfg)))
+                }
             }
             "unstructured" => {
                 let cfg = unstructured.ok_or_else(|| {
@@ -101,9 +109,12 @@ impl FileProcessorFactory {
             return Self::create(config, unstructured, mistral, kreuzberg);
         }
 
-        let kreuzberg_provider = KreuzbergProvider::new(kreuzberg.cloned().unwrap_or_default());
-        if kreuzberg_provider.supports_mime_type(&mime_type) {
-            return Ok(Arc::new(kreuzberg_provider));
+        #[cfg(feature = "document-intelligence")]
+        {
+            let kreuzberg_provider = KreuzbergProvider::new(kreuzberg.cloned().unwrap_or_default());
+            if kreuzberg_provider.supports_mime_type(&mime_type) {
+                return Ok(Arc::new(kreuzberg_provider));
+            }
         }
 
         if let Some(cfg) = unstructured {
@@ -131,13 +142,22 @@ impl FileProcessorFactory {
         // Try providers in order of preference
 
         // 1. Kreuzberg (high-performance local processing)
-        let cfg = kreuzberg.cloned().unwrap_or_default();
-        tracing::info!(
-            "Using Kreuzberg for file processing (OCR enabled: {}, backend: {})",
-            cfg.ocr_enabled,
-            cfg.ocr_backend
-        );
-        Arc::new(KreuzbergProvider::new(cfg))
+        #[cfg(feature = "document-intelligence")]
+        {
+            let cfg = kreuzberg.cloned().unwrap_or_default();
+            tracing::info!(
+                "Using Kreuzberg for file processing (OCR enabled: {}, backend: {})",
+                cfg.ocr_enabled,
+                cfg.ocr_backend
+            );
+            return Arc::new(KreuzbergProvider::new(cfg));
+        }
+        #[cfg(not(feature = "document-intelligence"))]
+        {
+            let _ = kreuzberg;
+            tracing::info!("Document intelligence disabled; using local text processing");
+            Arc::new(LocalProvider::new())
+        }
     }
 
     fn create_cloud_or_local_fallback(
@@ -183,6 +203,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "document-intelligence")]
     fn test_create_kreuzberg_provider() {
         let config = FileProcessingConfig {
             provider: "kreuzberg".to_string(),
@@ -195,6 +216,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "document-intelligence")]
     fn test_create_auto_defaults_to_kreuzberg() {
         let config = FileProcessingConfig {
             provider: "auto".to_string(),
@@ -206,6 +228,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "document-intelligence")]
     fn test_create_auto_with_kreuzberg() {
         let config = FileProcessingConfig {
             provider: "auto".to_string(),

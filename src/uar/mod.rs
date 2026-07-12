@@ -14,11 +14,16 @@ pub mod memory;
 pub mod orchestrator;
 pub mod persistence;
 pub mod prompt_cache;
+#[cfg(feature = "response-quality")]
 pub mod quality;
 pub mod rag;
 pub mod realtime;
 pub mod runtime;
 pub mod security;
 pub mod settings;
+#[cfg(feature = "telemetry")]
+pub mod telemetry;
+#[cfg(not(feature = "telemetry"))]
+#[path = "telemetry_disabled.rs"]
 pub mod telemetry;
 pub mod tools;

@@ -21,6 +21,7 @@
 //! ```
 
 mod factory;
+#[cfg(feature = "document-intelligence")]
 mod kreuzberg;
 mod local;
 mod mistral;
@@ -28,6 +29,7 @@ mod provider;
 mod unstructured;
 
 pub use factory::FileProcessorFactory;
+#[cfg(feature = "document-intelligence")]
 pub use kreuzberg::{KreuzbergProvider, process_bytes};
 pub use local::LocalProvider;
 pub use mistral::MistralProvider;

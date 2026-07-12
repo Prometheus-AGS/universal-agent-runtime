@@ -1,21 +1,32 @@
 {
   "$schema": "./product-support-matrix.schema.json",
   "version": "1.0.0",
-  "verified_at": "2026-07-11",
+  "verified_at": "2026-07-12",
   "features": [
+    { "id": "minimal", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features minimal" },
+    { "id": "server-full", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features server-full" },
+    { "id": "desktop-full", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features desktop-full" },
     { "id": "surreal-backend", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib" },
-    { "id": "postgres-backend", "status": "preview", "default": false, "platforms": ["linux", "macos"], "conflicts": ["memory-palace"], "gate": "cargo test --features postgres-backend" },
+    { "id": "in-memory-backend", "status": "development-only", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --no-default-features --features in-memory-backend" },
+    { "id": "postgres-backend", "status": "preview", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "cargo test --features postgres-backend" },
     { "id": "sqlx", "status": "internal", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "cargo check --features postgres-backend" },
+    { "id": "response-quality", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features response-quality" },
+    { "id": "admin-ui", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features admin-ui" },
+    { "id": "local-models", "status": "stable", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features local-models" },
+    { "id": "document-intelligence", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features document-intelligence" },
+    { "id": "api-docs", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features api-docs" },
+    { "id": "cedar-governance", "status": "stable", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features cedar-governance" },
+    { "id": "telemetry", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features telemetry" },
+    { "id": "a2a-transport", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features a2a-transport" },
     { "id": "wasm-runtime", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features wasm-runtime" },
-    { "id": "tauri", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features tauri" },
-    { "id": "memory-palace", "status": "experimental", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": ["postgres-backend"], "gate": "cargo check --features memory-palace" },
-    { "id": "model-build", "status": "development-only", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "manual model regeneration; excluded from release bundles" }
+    { "id": "tauri", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features tauri" }
   ],
   "bundles": [
-    { "id": "server-default", "status": "stable", "features": ["surreal-backend"], "gate": "cargo test --lib" },
+    { "id": "minimal", "status": "stable", "features": ["surreal-backend"], "gate": "cargo test --lib --features minimal" },
+    { "id": "server-full", "status": "preview", "features": ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"], "gate": "cargo check --lib --features server-full" },
+    { "id": "desktop-full", "status": "preview", "features": ["server-full", "tauri"], "gate": "cargo check --lib --features desktop-full" },
     { "id": "server-postgres", "status": "preview", "features": ["postgres-backend"], "gate": "cargo test --features postgres-backend" },
-    { "id": "desktop", "status": "preview", "features": ["surreal-backend", "tauri"], "gate": "cargo check --features tauri" },
-    { "id": "native-wasm", "status": "preview", "features": ["surreal-backend", "wasm-runtime"], "gate": "cargo check --features wasm-runtime" }
+    { "id": "in-memory-development", "status": "development-only", "features": ["in-memory-backend"], "gate": "cargo test --lib --no-default-features --features in-memory-backend" }
   ],
   "providers": [
     { "id": "openai-compatible", "tier": 1, "capabilities": ["chat", "stream", "tools", "vision", "structured"], "gate": "tests/bdd + provider route real-server E2E", "verified_at": "2026-07-11" },

@@ -1,0 +1,10 @@
+[workspace]
+
+[package]
+name = "uar-model-builder"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+burn-import = "0.21.0"

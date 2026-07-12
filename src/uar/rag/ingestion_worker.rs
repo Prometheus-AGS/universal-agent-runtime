@@ -3,9 +3,11 @@
 //! Uses `prometheus_parking_lot` `WorkerPool` for scalable document ingestion.
 //! This ensures CPU-bound document processing doesn't block the async HTTP server.
 
+#[cfg(feature = "document-intelligence")]
+use crate::uar::file_processing::{FileProcessor, KreuzbergProvider, process_bytes};
 use crate::uar::{
     domain::knowledge::{DocumentStatus, KnowledgeDocument},
-    file_processing::{FileProcessor, FileProcessorFactory, KreuzbergProvider, process_bytes},
+    file_processing::FileProcessorFactory,
     persistence::PersistenceLayer,
     rag::ingest::IngestService,
 };
@@ -219,6 +221,9 @@ impl DocumentIngestionExecutor {
         file_config: &FileProcessingConfig,
         mime_type: &str,
     ) -> Result<ProcessedDocument> {
+        #[cfg(not(feature = "document-intelligence"))]
+        let _ = mime_type;
+        #[cfg(feature = "document-intelligence")]
         if should_use_kreuzberg_bytes(file_config, self.config.kreuzberg.as_ref(), mime_type) {
             let kreuzberg_config = self.config.kreuzberg.clone().unwrap_or_default();
             let result = process_bytes(&job.file_content, mime_type, &kreuzberg_config).await?;
@@ -267,6 +272,7 @@ struct ProcessedDocument {
     metadata: Option<serde_json::Value>,
 }
 
+#[cfg(feature = "document-intelligence")]
 fn should_use_kreuzberg_bytes(
     file_config: &FileProcessingConfig,
     kreuzberg_config: Option<&crate::config::KreuzbergConfig>,
@@ -488,6 +494,7 @@ impl IngestionWorkerPool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "document-intelligence")]
     use crate::config::KreuzbergConfig;
 
     fn test_document() -> KnowledgeDocument {
@@ -505,6 +512,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "document-intelligence")]
     fn ingestion_worker_prefers_kreuzberg_bytes_for_default_documents() {
         let file_config = FileProcessingConfig::default();
         assert!(should_use_kreuzberg_bytes(
@@ -515,6 +523,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "document-intelligence")]
     fn ingestion_worker_does_not_route_images_to_kreuzberg_when_ocr_is_disabled() {
         let file_config = FileProcessingConfig::default();
         assert!(!should_use_kreuzberg_bytes(

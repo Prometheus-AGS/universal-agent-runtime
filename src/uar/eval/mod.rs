@@ -198,25 +198,37 @@ impl Scorer for Sycophancy {
         "sycophancy"
     }
     async fn score(&self, _case: &EvalCase, output: &str) -> Score {
-        let cfg = crate::config::SycophancyConfig::default();
-        match crate::uar::quality::detect(&cfg, output) {
-            Some(outcome) => {
-                let detail = if outcome.classifications.is_empty() {
-                    None
-                } else {
-                    Some(
-                        outcome
-                            .classifications
-                            .iter()
-                            .map(|c| c.pattern_id.as_str())
-                            .collect::<Vec<_>>()
-                            .join(","),
-                    )
-                };
-                Score::new(self.name(), 1.0 - outcome.score, detail)
+        #[cfg(not(feature = "response-quality"))]
+        {
+            let _ = output;
+            return Score::new(
+                self.name(),
+                1.0,
+                Some("response-quality capability disabled".into()),
+            );
+        }
+        #[cfg(feature = "response-quality")]
+        {
+            let cfg = crate::config::SycophancyConfig::default();
+            match crate::uar::quality::detect(&cfg, output) {
+                Some(outcome) => {
+                    let detail = if outcome.classifications.is_empty() {
+                        None
+                    } else {
+                        Some(
+                            outcome
+                                .classifications
+                                .iter()
+                                .map(|c| c.pattern_id.as_str())
+                                .collect::<Vec<_>>()
+                                .join(","),
+                        )
+                    };
+                    Score::new(self.name(), 1.0 - outcome.score, detail)
+                }
+                // Empty/clean input — treat as fully clean.
+                None => Score::new(self.name(), 1.0, None),
             }
-            // Empty/clean input — treat as fully clean.
-            None => Score::new(self.name(), 1.0, None),
         }
     }
 }

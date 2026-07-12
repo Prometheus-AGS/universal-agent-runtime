@@ -120,6 +120,7 @@ impl CostBudgetTracker {
         let limit = guard.limits.get(&key).copied().unwrap_or_default();
         drop(guard);
 
+        #[cfg(feature = "telemetry")]
         metrics::gauge!(
             "uar_cost_budget_spent_usd",
             "scope" => scope.as_str(),

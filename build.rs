@@ -6,7 +6,6 @@ use std::process::Command;
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=proto/a2a.proto");
-    println!("cargo:rerun-if-env-changed=SKIP_MODEL_BUILD");
     println!("cargo:rerun-if-env-changed=SKIP_FRONTEND_BUILD");
     println!("cargo:rerun-if-env-changed=SKIP_CATALOG_BUILD");
 
@@ -20,7 +19,8 @@ fn main() {
     // To enable auto-generation, add `tonic-build = { version = "0.14", features = ["prost"] }`
     // to [build-dependencies] and uncomment the compile_protos call below.
     // tonic 0.14 moved prost codegen to the separate `tonic-prost-build` crate.
-    if Path::new("proto/a2a.proto").exists() {
+    if env::var_os("CARGO_FEATURE_A2A_TRANSPORT").is_some() && Path::new("proto/a2a.proto").exists()
+    {
         tonic_prost_build::compile_protos("proto/a2a.proto").expect("Failed to compile A2A proto");
     }
 
@@ -39,81 +39,12 @@ fn main() {
     // -------------------------------------------------------------------------
     // Frontend Build
     // -------------------------------------------------------------------------
-    if env::var("SKIP_FRONTEND_BUILD").is_err() {
+    println!("cargo:rerun-if-env-changed=CARGO_FEATURE_ADMIN_UI");
+    if env::var("CARGO_FEATURE_ADMIN_UI").is_ok() && env::var("SKIP_FRONTEND_BUILD").is_err() {
         build_frontend();
     }
 
-    // -------------------------------------------------------------------------
-    // ONNX Model Build
-    // -------------------------------------------------------------------------
-    println!("cargo:rerun-if-env-changed=SKIP_MODEL_BUILD");
-
-    if env::var("SKIP_MODEL_BUILD").is_ok() {
-        create_stub_model();
-        return;
-    }
-
-    #[cfg(feature = "model-build")]
-    {
-        use burn_import::onnx::ModelGen;
-
-        let model_dir = Path::new("src/uar/runtime/matching/models");
-        let model_filename = "bg-small-en-v1.5.onnx";
-        let model_path = model_dir.join(model_filename);
-        let url = "https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/onnx/model_quantized.onnx";
-
-        if !model_path.exists() {
-            fs::create_dir_all(model_dir).expect("Failed to create model directory");
-
-            let status = std::process::Command::new("curl")
-                .arg("-L")
-                .arg("-o")
-                .arg(&model_path)
-                .arg(url)
-                .status()
-                .expect("Failed to execute curl");
-
-            assert!(status.success(), "Failed to download model");
-        }
-
-        let tokenizer_files = vec![
-            "tokenizer.json",
-            "tokenizer_config.json",
-            "special_tokens_map.json",
-        ];
-        for file in tokenizer_files {
-            let file_path = model_dir.join(file);
-            let file_url =
-                format!("https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/{file}");
-
-            if !file_path.exists() {
-                let status = std::process::Command::new("curl")
-                    .arg("-L")
-                    .arg("-o")
-                    .arg(&file_path)
-                    .arg(&file_url)
-                    .status()
-                    .expect("Failed to execute curl");
-
-                if !status.success() {
-                    // Non-fatal for config files.
-                }
-            }
-            println!("cargo:rerun-if-changed={}", file_path.display());
-        }
-
-        println!("cargo:rerun-if-changed={}", model_path.display());
-
-        ModelGen::new()
-            .input(model_path.to_str().expect("Valid path"))
-            .out_dir(env::var("OUT_DIR").expect("OUT_DIR not set").as_str())
-            .run_from_script();
-    }
-
-    #[cfg(not(feature = "model-build"))]
-    {
-        create_stub_model();
-    }
+    create_stub_model();
 }
 
 // =============================================================================

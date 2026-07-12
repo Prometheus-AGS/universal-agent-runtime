@@ -6,6 +6,7 @@
 //! entity will re-render on remote mutations, eliminating stale data across
 //! toolbars, dropdowns, headers, and list pages.
 
+#[cfg(feature = "surreal-backend")]
 pub mod surreal_bus;
 
 #[cfg(feature = "postgres-backend")]

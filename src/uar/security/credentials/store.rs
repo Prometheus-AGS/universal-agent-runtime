@@ -197,11 +197,13 @@ impl CredentialStore for InMemoryCredentialStore {
 /// Rows live in the `provider_credentials` table, keyed deterministically by
 /// `scope:scope_id:provider_id` so `put` is an idempotent UPSERT and the
 /// `(scope, scope_id, provider_id)` triple is unique.
+#[cfg(feature = "surreal-backend")]
 #[derive(Debug, Clone)]
 pub struct SurrealCredentialStore {
     db: surrealdb::Surreal<surrealdb::engine::any::Any>,
 }
 
+#[cfg(feature = "surreal-backend")]
 impl SurrealCredentialStore {
     #[must_use]
     pub fn new(db: surrealdb::Surreal<surrealdb::engine::any::Any>) -> Self {
@@ -217,6 +219,7 @@ impl SurrealCredentialStore {
 /// Convert raw `SurrealDB` values into `CredentialRecord`s using the codebase's
 /// `Value → serde_json::Value → serde` conversion (surrealdb 3.x does not let us
 /// `take::<Vec<T>>` a serde type directly).
+#[cfg(feature = "surreal-backend")]
 fn records_from_values(
     rows: Vec<surrealdb::types::Value>,
 ) -> anyhow::Result<Vec<CredentialRecord>> {
@@ -230,6 +233,7 @@ fn records_from_values(
         .collect()
 }
 
+#[cfg(feature = "surreal-backend")]
 #[async_trait]
 impl CredentialStore for SurrealCredentialStore {
     async fn put(&self, record: CredentialRecord) -> anyhow::Result<()> {

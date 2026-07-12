@@ -3,6 +3,7 @@
 //! Parses embedded Cedar policy text, validates entity/action usage, and compiles
 //! to a policy set. Uses the existing `cedar-policy` crate already in the project.
 
+#[cfg(feature = "cedar-governance")]
 use cedar_policy::PolicySet;
 
 use crate::uar::compiler::error::{CompileError, CompileResult};
@@ -45,6 +46,11 @@ pub async fn run(ctx: &mut CompileContext) -> CompileResult<Vec<Diagnostic>> {
 
     // If there's inline Cedar, try to parse and compile it
     if !cedar_text.trim().is_empty() {
+        #[cfg(not(feature = "cedar-governance"))]
+        return Err(CompileError::CedarPolicy(
+            "inline Cedar policy requires the `cedar-governance` capability".into(),
+        ));
+        #[cfg(feature = "cedar-governance")]
         match cedar_text.parse::<PolicySet>() {
             Ok(policy_set) => {
                 let policy_count = policy_set.policies().count();

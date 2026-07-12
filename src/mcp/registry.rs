@@ -423,8 +423,10 @@ impl McpRegistry {
         );
 
         // Emit raw metrics via the metrics crate
+        #[cfg(feature = "telemetry")]
         metrics::counter!("mcp_tool_calls_total", "tool" => namespaced_tool.to_string(), "success" => success.to_string()).increment(1);
         #[allow(clippy::cast_precision_loss)]
+        #[cfg(feature = "telemetry")]
         metrics::histogram!("mcp_tool_duration_ms", "tool" => namespaced_tool.to_string())
             .record(duration.as_millis() as f64);
 

@@ -16,9 +16,11 @@ pub use encryption::CredentialEncryption;
 pub use resolver::{CredentialResolver, ResolvedCredential};
 #[cfg(feature = "sqlx")]
 pub use store::PostgresCredentialStore;
+#[cfg(feature = "surreal-backend")]
+pub use store::SurrealCredentialStore;
 pub use store::{
     CredentialMetadata, CredentialRecord, CredentialScope, CredentialStore,
-    InMemoryCredentialStore, SharedCredentialStore, SurrealCredentialStore,
+    InMemoryCredentialStore, SharedCredentialStore,
 };
 
 use std::sync::Arc;

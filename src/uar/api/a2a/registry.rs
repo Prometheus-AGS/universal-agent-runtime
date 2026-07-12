@@ -1,7 +1,10 @@
-use anyhow::{Context, Result};
+#[cfg(feature = "surreal-backend")]
+use anyhow::Context;
+use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "surreal-backend")]
 use surrealdb::{Surreal, engine::any::Any};
 
 /// Information about a registered agent in the federation.
@@ -68,11 +71,13 @@ pub trait AgentRegistry: Send + Sync + std::fmt::Debug {
 }
 
 /// SurrealDB-backed implementation of AgentRegistry.
+#[cfg(feature = "surreal-backend")]
 #[derive(Debug, Clone)]
 pub struct SurrealAgentRegistry {
     db: Surreal<Any>,
 }
 
+#[cfg(feature = "surreal-backend")]
 impl SurrealAgentRegistry {
     pub fn new(db: Surreal<Any>) -> Self {
         Self { db }
@@ -94,6 +99,7 @@ impl SurrealAgentRegistry {
     }
 }
 
+#[cfg(feature = "surreal-backend")]
 #[async_trait]
 impl AgentRegistry for SurrealAgentRegistry {
     async fn register_agent(&self, mut agent: AgentInfo) -> Result<String> {

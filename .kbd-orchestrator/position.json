@@ -1,22 +1,22 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-11T23:47:45Z",
+  "updatedAt": "2026-07-12T11:30:17Z",
   "cursor": [
     "uar-final-production-hardening-2026-07",
-    "modularize-release-capabilities"
+    "make-build-offline-reproducible"
   ],
   "root": {
     "type": "phase",
     "id": "uar-final-production-hardening-2026-07",
     "status": "executing",
     "progress": {
-      "done": 16,
+      "done": 17,
       "total": 24
     },
     "children": [
       {
         "type": "change",
-        "id": "modularize-release-capabilities",
+        "id": "make-build-offline-reproducible",
         "status": "PENDING",
         "progress": {
           "done": 0,

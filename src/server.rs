@@ -49,7 +49,7 @@ use crate::uar::{
         auto_capture::{self, ConversationMessage},
         context_builder,
     },
-    persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
+    persistence::PersistenceLayer,
     prompt_cache::{CachedEntry, PromptCacheProvider, SurrealMemPromptCacheProvider},
     rag::{
         chunking::ChunkingStrategy, ingest::IngestService, ingestion_worker::IngestionWorkerPool,
@@ -69,6 +69,11 @@ use crate::uar::{
         claims::UserContext,
     },
 };
+
+#[cfg(feature = "in-memory-backend")]
+use crate::uar::persistence::providers::memory::InMemoryProvider;
+#[cfg(feature = "surreal-backend")]
+use crate::uar::persistence::providers::surreal::SurrealDbProvider;
 
 #[cfg(feature = "postgres-backend")]
 use crate::uar::persistence::providers::postgres::PostgresProvider;
@@ -106,57 +111,85 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
         Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
         Option<Arc<dyn uar::security::credentials::CredentialStore>>,
-    ) = if matches!(
+    ) = if config.persistence.provider == "memory" {
+        #[cfg(feature = "in-memory-backend")]
+        {
+            (
+                Arc::new(InMemoryProvider::new()) as Arc<dyn PersistenceLayer>,
+                None,
+                None,
+                None,
+                None,
+            )
+        }
+        #[cfg(not(feature = "in-memory-backend"))]
+        {
+            anyhow::bail!(
+                "persistence.provider = 'memory' requires the `in-memory-backend` Cargo feature"
+            );
+        }
+    } else if matches!(
         config.persistence.provider.as_str(),
         "surreal" | "surrealdb"
     ) {
-        let provider = SurrealDbProvider::new(
-            &config.persistence.database_url,
-            config.persistence.surreal_user.as_deref(),
-            config.persistence.surreal_pass.as_deref(),
-            config.persistence.surreal_ns.as_deref(),
-            config.persistence.surreal_db.as_deref(),
-        )
-        .await
-        .map_err(|e| {
-            anyhow::anyhow!(
-                "Failed to initialize SurrealDB at '{}': {e}\n\
-                Hint: another instance may already be running and holding the database lock.",
-                config.persistence.database_url
+        #[cfg(feature = "surreal-backend")]
+        {
+            let provider = SurrealDbProvider::new(
+                &config.persistence.database_url,
+                config.persistence.surreal_user.as_deref(),
+                config.persistence.surreal_pass.as_deref(),
+                config.persistence.surreal_ns.as_deref(),
+                config.persistence.surreal_db.as_deref(),
             )
-        })?;
+            .await
+            .map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to initialize SurrealDB at '{}': {e}\n\
+                Hint: another instance may already be running and holding the database lock.",
+                    config.persistence.database_url
+                )
+            })?;
 
-        // Create compiler storage sharing the same DB connection
-        let db = provider.client();
-        let compiler_store = Arc::new(
-            crate::uar::compiler::storage::surreal::SurrealCompilerStorage::new(db.clone()),
-        );
-        let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
-            Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
-        let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
-            compiler_store as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
-        let registry = Arc::new(crate::uar::api::a2a::SurrealAgentRegistry::new(db.clone()))
-            as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
+            // Create compiler storage sharing the same DB connection
+            let db = provider.client();
+            let compiler_store = Arc::new(
+                crate::uar::compiler::storage::surreal::SurrealCompilerStorage::new(db.clone()),
+            );
+            let spec: Arc<dyn crate::uar::compiler::storage::SpecStorage> =
+                Arc::clone(&compiler_store) as Arc<dyn crate::uar::compiler::storage::SpecStorage>;
+            let sess: Arc<dyn crate::uar::compiler::session::persistence::SessionStorage> =
+                compiler_store
+                    as Arc<dyn crate::uar::compiler::session::persistence::SessionStorage>;
+            let registry = Arc::new(crate::uar::api::a2a::SurrealAgentRegistry::new(db.clone()))
+                as Arc<dyn crate::uar::api::a2a::AgentRegistry>;
 
-        // Durable per-user credential store on the same DB connection.
-        let credential_store = Some(Arc::new(
-            uar::security::credentials::SurrealCredentialStore::new(db.clone()),
-        )
-            as Arc<dyn uar::security::credentials::CredentialStore>);
+            // Durable per-user credential store on the same DB connection.
+            let credential_store = Some(Arc::new(
+                uar::security::credentials::SurrealCredentialStore::new(db.clone()),
+            )
+                as Arc<dyn uar::security::credentials::CredentialStore>);
 
-        // Start the live-query bus on the same DB connection.
-        let live_bus = Some(
-            Arc::new(crate::uar::realtime::surreal_bus::LiveQueryBus::start(db))
-                as Arc<dyn crate::uar::realtime::RealtimeBus>,
-        );
+            // Start the live-query bus on the same DB connection.
+            let live_bus = Some(
+                Arc::new(crate::uar::realtime::surreal_bus::LiveQueryBus::start(db))
+                    as Arc<dyn crate::uar::realtime::RealtimeBus>,
+            );
 
-        (
-            Arc::new(provider) as Arc<dyn PersistenceLayer>,
-            Some((spec, sess)),
-            Some(registry),
-            live_bus,
-            credential_store,
-        )
+            (
+                Arc::new(provider) as Arc<dyn PersistenceLayer>,
+                Some((spec, sess)),
+                Some(registry),
+                live_bus,
+                credential_store,
+            )
+        }
+        #[cfg(not(feature = "surreal-backend"))]
+        {
+            anyhow::bail!(
+                "persistence.provider = '{}' requires the `surreal-backend` Cargo feature",
+                config.persistence.provider
+            );
+        }
     } else {
         // Non-surreal persistence requested. Only available when the
         // `postgres-backend` Cargo feature is enabled at build time.
@@ -523,13 +556,16 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     };
     info!("Compiler service initialized");
 
-    // Initialize A2A state (shared task store + compiler service)
+    // Initialize A2A state (shared task store + compiler service).
+    #[cfg(feature = "a2a-transport")]
     let a2a_task_store = uar::api::a2a::TaskStore::new();
+    #[cfg(feature = "a2a-transport")]
     let a2a_state = Arc::new(uar::api::a2a::A2AState {
         compiler_service: Arc::clone(&compiler_service),
         task_store: a2a_task_store,
         base_url: format!("http://{}:{}", config.server.host, config.server.port),
     });
+    #[cfg(feature = "a2a-transport")]
     info!("A2A state initialized");
     let federated_agent_registry: Arc<dyn uar::api::a2a::AgentRegistry> = agent_registry
         .unwrap_or_else(|| Arc::new(crate::uar::api::a2a::registry::InMemoryAgentRegistry::new()));
@@ -688,11 +724,34 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         state.persistence.clone(),
     );
 
-    let app = Router::new()
-        .merge(utoipa_swagger_ui::SwaggerUi::new("/api/docs").url(
-            "/api/openapi.json",
-            crate::uar::api::openapi::build_openapi_spec(),
-        ))
+    #[cfg(feature = "a2a-transport")]
+    let a2a_routes: axum::Router<AppState> = Router::new()
+        .nest(
+            "/a2a/compiler",
+            uar::api::a2a::build_rpc_router().with_state::<AppState>(Arc::clone(&a2a_state)),
+        )
+        .nest(
+            "/.well-known",
+            uar::api::a2a::build_well_known_router().with_state::<AppState>(Arc::clone(&a2a_state)),
+        )
+        .nest(
+            "/a2a/registry",
+            uar::api::a2a::build_discovery_router().with_state::<AppState>(Arc::new(
+                uar::api::a2a::DiscoveryApiState {
+                    registry: Arc::clone(&federated_agent_registry),
+                },
+            )),
+        );
+    #[cfg(not(feature = "a2a-transport"))]
+    let a2a_routes: axum::Router<AppState> = Router::new();
+
+    let app = Router::new();
+    #[cfg(feature = "api-docs")]
+    let app = app.merge(utoipa_swagger_ui::SwaggerUi::new("/api/docs").url(
+        "/api/openapi.json",
+        crate::uar::api::openapi::build_openapi_spec(),
+    ));
+    let app = app
         .route("/health", get(liveness_handler))
         .route("/healthz", get(liveness_handler))
         .route("/readyz", get(readiness_handler))
@@ -815,25 +874,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
             "/api/uar/runs/{run_id}/approval",
             post(handle_tool_call_approval),
         )
-        // A2A Compiler Agent — JSON-RPC endpoint
-        .nest(
-            "/a2a/compiler",
-            uar::api::a2a::build_rpc_router().with_state(Arc::clone(&a2a_state)),
-        )
-        // A2A well-known AgentCard
-        .nest(
-            "/.well-known",
-            uar::api::a2a::build_well_known_router().with_state(Arc::clone(&a2a_state)),
-        )
-        // A2A Registry & Discovery
-        .nest(
-            "/a2a/registry",
-            uar::api::a2a::build_discovery_router().with_state(Arc::new(
-                uar::api::a2a::DiscoveryApiState {
-                    registry: Arc::clone(&federated_agent_registry),
-                },
-            )),
-        )
+        .merge(a2a_routes)
         // Knowledge Base API
         .nest("/api/uar/knowledge-bases", {
             // Use the shared ingestion pool (single instance, hoisted above).
@@ -1082,6 +1123,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     // Spawns a gRPC server on a separate port (default 50051) alongside HTTP,
     // sharing the root run-cancellation token so it drains at the same moment
     // in-flight runs are aborted (see the shutdown signal handler below).
+    #[cfg(feature = "a2a-transport")]
     let grpc_handle = {
         let grpc_port = config.server.grpc_port;
         let grpc_addr: std::net::SocketAddr = format!("0.0.0.0:{grpc_port}")
@@ -1126,6 +1168,7 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     )
     .await;
 
+    #[cfg(feature = "a2a-transport")]
     if let Err(e) = grpc_handle.await {
         tracing::error!(error = %e, "A2A gRPC task panicked");
     }
@@ -1923,6 +1966,7 @@ async fn api_v1_model_detail(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// GET /metrics — Prometheus text exposition format.
+#[cfg(feature = "telemetry")]
 pub(crate) async fn api_metrics() -> Response {
     let handle = crate::uar::telemetry::metrics::metrics_handle();
     let output = handle.render();
@@ -1933,6 +1977,15 @@ pub(crate) async fn api_metrics() -> Response {
             "text/plain; version=0.0.4; charset=utf-8",
         )],
         output,
+    )
+        .into_response()
+}
+
+#[cfg(not(feature = "telemetry"))]
+pub(crate) async fn api_metrics() -> Response {
+    (
+        StatusCode::NOT_FOUND,
+        "telemetry capability is not compiled",
     )
         .into_response()
 }
@@ -4708,6 +4761,7 @@ pub(crate) async fn api_chat_completion(
 
                             // --- Response quality: sycophancy detection (fire-and-forget,
                             // post-stream; sync rule-based, no LLM call, no added latency) ---
+                            #[cfg(feature = "response-quality")]
                             if !assistant_text_for_capture.is_empty() {
                                 let sycophancy_cfg = state.config.sycophancy.clone();
                                 let mgr = Arc::clone(&state.run_manager);

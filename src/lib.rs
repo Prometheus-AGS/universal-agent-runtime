@@ -127,3 +127,11 @@ pub struct AppState {
     #[cfg(feature = "wasm-runtime")]
     pub wasm_sandbox: Option<Arc<uar::runtime::wasm::sandbox::WasmSandbox>>,
 }
+#[cfg(not(any(
+    feature = "surreal-backend",
+    feature = "postgres-backend",
+    feature = "in-memory-backend"
+)))]
+compile_error!(
+    "enable at least one persistence backend: surreal-backend, postgres-backend, or in-memory-backend"
+);

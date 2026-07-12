@@ -161,6 +161,42 @@ jobs:
       - name: Build release
         run: cargo build --release
 
+  release-bundles:
+    name: Release Bundle (${{ matrix.bundle }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        bundle: [minimal, server-full, desktop-full]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Install system dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
+
+      - name: Install system dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install protobuf
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Check bundle
+        env:
+          SKIP_CATALOG_BUILD: 1
+          SKIP_FRONTEND_BUILD: 1
+        run: cargo check --lib --features ${{ matrix.bundle }}
+
+      - name: Test stable minimal bundle
+        if: matrix.bundle == 'minimal'
+        env:
+          SKIP_FRONTEND_BUILD: 1
+        run: cargo test --lib --features minimal
+
   frontend:
     name: Frontend Check
     runs-on: ubuntu-latest
