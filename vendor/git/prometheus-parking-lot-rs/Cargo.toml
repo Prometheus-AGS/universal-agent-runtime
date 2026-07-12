@@ -1,0 +1,69 @@
+[package]
+name = "prometheus_parking_lot"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.91.1"
+authors = ["Prometheus AI Team"]
+description = "Runtime-agnostic, resource-aware parking-lot scheduler for AI agent and inference workloads."
+documentation = "https://docs.rs/prometheus_parking_lot"
+repository = "https://github.com/prometheus-ai/prometheus-parking-lot"
+homepage = "https://github.com/prometheus-ai/prometheus-parking-lot"
+license = "MIT"
+keywords = ["scheduler", "queue", "tokio", "gpu", "ai"]
+categories = ["asynchronous", "concurrency"]
+exclude = [
+    ".kbd-orchestrator/",
+    ".firecrawl/",
+    ".e2b-template/",
+    ".github/",
+    "reports/",
+    "docs/DISCUSSION.md",
+    "docs/Comprehensive Architectural Report Distributed Parking Management Systems and High-Performance Rust Audit Infrastructur.md",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[features]
+default = ["tokio-runtime"]
+tokio-runtime = ["tokio", "tokio-util"]
+
+[dependencies]
+lock_api = "0.4"
+parking_lot_core = "0.9"
+parking_lot = "0.12"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2.0.17"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+dotenvy = "0.15.7"
+async-trait = "0.1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "signal"], optional = true }
+tokio-util = { version = "0.7", features = ["rt"], optional = true }
+num_cpus = "1.16"
+uuid = { version = "1", features = ["v4"] }
+
+# Native-only dependencies for worker thread pool
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+crossbeam-channel = "0.5"
+
+[dev-dependencies]
+criterion = { version = "0.8.1", features = ["async_tokio"] }
+rand = "0.9.2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+serde_json = "1"
+futures = "0.3"
+flume = "0.11"  # For testing non-serializable streaming results (candle-vllm pattern)
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "deny"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"

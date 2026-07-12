@@ -197,6 +197,46 @@ jobs:
           SKIP_FRONTEND_BUILD: 1
         run: cargo test --lib --features minimal
 
+  offline-reproducible-build:
+    name: Offline Reproducible Source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Package complete offline source
+        run: scripts/package-offline-source.sh dist/uar-offline-source.tar.gz
+
+      - name: Build two isolated offline copies
+        shell: bash
+        run: |
+          mkdir -p /tmp/uar-repro/a /tmp/uar-repro/b
+          tar -xzf dist/uar-offline-source.tar.gz -C /tmp/uar-repro/a
+          tar -xzf dist/uar-offline-source.tar.gz -C /tmp/uar-repro/b
+          epoch="$(git log -1 --format=%ct)"
+          for copy in a b; do
+            source="/tmp/uar-repro/$copy"
+            (
+              cd "$source"
+              SOURCE_DATE_EPOCH="$epoch" \
+                RUSTFLAGS="--remap-path-prefix=$source=/src" \
+                CARGO_TARGET_DIR="/tmp/uar-target-$copy" \
+                cargo build --locked --offline --release --features minimal \
+                  --bin universal-agent-runtime
+            )
+          done
+
+      - name: Compare declared reproducible outputs
+        run: |
+          cmp /tmp/uar-target-a/release/universal-agent-runtime /tmp/uar-target-b/release/universal-agent-runtime
+          cmp /tmp/uar-repro/a/catalog/provider_catalog.json /tmp/uar-repro/b/catalog/provider_catalog.json
+          test -f /tmp/uar-repro/a/vendor/git/LICENSE-MIT
+          test -f /tmp/uar-repro/a/vendor/git/prometheus-parking-lot-rs/LICENSE-MIT
+
   frontend:
     name: Frontend Check
     runs-on: ubuntu-latest

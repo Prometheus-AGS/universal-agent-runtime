@@ -1,0 +1,28 @@
+[package]
+name        = "sycophancy-core"
+description = "Core detection, scoring, and correction engine for the sycophancy.correction skill"
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+authors = ["Prometheus AGS <info@prometheus-ags.ai>"]
+repository = "https://github.com/prometheus-ags/sycophancy-correction"
+homepage = "https://agentskills.io/skills/sycophancy-correction"
+keywords = ["llm", "sycophancy", "agents", "evaluation", "mcp"]
+categories = ["artificial-intelligence"]
+
+[lib]
+name = "sycophancy_core"
+path = "src/lib.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+async-trait = "0.1"
+anyhow = "1"
+thiserror = "2"
+tracing = "0.1"
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+regex = "1"

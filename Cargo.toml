@@ -1,6 +1,14 @@
 [workspace]
 members = [".", "tools/uar-jwt-proxy"]
-exclude = ["crates/prometheus-skill-system", ".claude/worktrees"]
+exclude = [
+  "crates/prometheus-skill-system",
+  ".claude/worktrees",
+  "vendor/git/prometheus-parking-lot-rs",
+  "vendor/git/surreal-memory-server",
+  "vendor/git/surreal-memory-server/crates/surreal-memory",
+  "vendor/git/sycophancy-correction",
+  "vendor/git/sycophancy-correction/crates/sycophancy-core",
+]
 resolver = "2"
 
 [package]
@@ -54,9 +62,6 @@ criterion = { version = "0.8.2", features = ["html_reports", "async_tokio"] }
 [build-dependencies]
 tonic-build = "0.14"
 tonic-prost-build = "0.14"
-ureq = "3.2.0"
-serde_json = "1.0"
-serde = { version = "1", features = ["derive"] }
 
 [features]
 ## Default backend stack: SurrealDB embedded only (SurrealKV), no Postgres/SQLite.
@@ -89,7 +94,7 @@ admin-ui = []
 local-models = ["dep:fastembed"]
 
 ## Local PDF/Office/OCR/archive document extraction.
-document-intelligence = ["dep:kreuzberg"]
+document-intelligence = ["dep:kreuzberg", "dep:lopdf"]
 
 ## Embedded Swagger UI. The OpenAPI JSON contract remains available without it.
 api-docs = ["dep:utoipa-swagger-ui"]
@@ -155,7 +160,7 @@ ractor = "0.15.12"
 cedar-policy = { version = "4.9.1", optional = true }
 
 # Sycophancy detection and correction (runtime quality gate)
-sycophancy-core = { git = "https://github.com/Know-Me-Tools/sycophancy-correction-skill.git", package = "sycophancy-core", optional = true }
+sycophancy-core = { path = "vendor/git/sycophancy-correction/crates/sycophancy-core", optional = true }
 
 # Wasm runtime (feature-gated). Bumped from 41.0.3 (CH-security-deps):
 # fixes 2 critical aarch64 Winch-backend sandbox-escape CVEs (need >=42.0.2/
@@ -177,7 +182,7 @@ reqwest = { version = "0.12", features = [
 # fixes GHSA-89vp-x53w-74fx, a DNS-rebinding vuln in the Streamable HTTP
 # server transport (patched >=1.4.0) -- this project enables
 # transport-streamable-http-server below, so it was directly exposed.
-rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", rev = "26b65b6b88c5552447905923f683b6e4720a5600", features = [
+rmcp = { version = "=1.8.0", features = [
   "client",
   "server",
   "macros",
@@ -193,7 +198,7 @@ rmcp = { git = "https://github.com/modelcontextprotocol/rust-sdk", rev = "26b65b
 #
 # The optional palace graph extension is intentionally excluded: UAR has no
 # integrated or certified palace APIs, and the extension introduces SQLite.
-surreal-memory = { git = "https://github.com/Prometheus-AGS/surreal-memory-server.git", rev = "f9ab1c29944b86d44c23ea0e6192fa3d39acbde8", package = "surreal-memory", default-features = false }
+surreal-memory = { path = "vendor/git/surreal-memory-server/crates/surreal-memory", default-features = false }
 
 # Utilities
 url = "2.5.7"
@@ -292,9 +297,8 @@ aes-gcm = "0.10"
 # quick-xml 0.41, calamine 0.36, biblib 0.7) clearing RUSTSEC-2026-0187/0194/
 # 0195 — upstream PR filed (kreuzberg-dev/kreuzberg); repoint at an upstream
 # tag once it ships a release containing these bumps.
-kreuzberg = { git = "https://github.com/Prometheus-AGS/xberg.git", rev = "fbea152d4735dd817fc353f7eb5c359f798579f0", optional = true, default-features = false, features = [
+kreuzberg = { version = "=4.10.2", optional = true, default-features = false, features = [
     "tokio-runtime",        # extract_file_sync, batch_extract_file_sync
-    "pdf",                  # PDF extraction via pdf_oxide (replaces "formats")
     "office",               # docx, odt, pptx, xlsx, odp, ods, etc. (replaces "formats")
     "excel",                # xlsx/xlsm/xls (replaces "formats")
     "email",                # .eml, .msg, .pst (replaces "formats")
@@ -305,6 +309,7 @@ kreuzberg = { git = "https://github.com/Prometheus-AGS/xberg.git", rev = "fbea15
     "chunking",             # RAG text chunking via ChunkingConfig
     "mcp",                  # Embedded MCP server (kreuzberg mcp --transport stdio)
 ] }
+lopdf = { version = "=0.44.0", optional = true, default-features = false }
 
 # Worker pool for scalable document ingestion
 # Dependency Upgrade Process:
@@ -314,7 +319,7 @@ kreuzberg = { git = "https://github.com/Prometheus-AGS/xberg.git", rev = "fbea15
 #   4. Run `cargo build` to verify compilation
 #   5. Run `cargo test` to verify no regressions
 #   6. Commit Cargo.toml + Cargo.lock together
-prometheus_parking_lot = { git = "https://github.com/Prometheus-AGS/prometheus-parking-lot-rs", rev = "ebb7c3ce02f7b925bc2e1b45c87ce8abf402b1f0", features = [
+prometheus_parking_lot = { path = "vendor/git/prometheus-parking-lot-rs", features = [
   "tokio-runtime",
 ] }
 num_cpus = "1.16"
@@ -329,7 +334,7 @@ notify = "8"
 # Microsandbox — hardware VM isolation for sandboxed code execution (feature-gated)
 
 # Universal LLM client — 142+ providers, streaming, tool calling
-liter-llm = { git = "https://github.com/GQAdonis/liter-llm.git", rev = "d8223de3e07615c899b2658309d15d01c242940b", features = ["full"] }
+liter-llm = { version = "=1.9.3", features = ["full"] }
 secrecy = { version = "0.10", features = ["serde"] }
 
 # OpenAPI / Swagger documentation

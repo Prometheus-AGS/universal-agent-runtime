@@ -81,6 +81,43 @@ impl FileProcessor for KreuzbergProvider {
             )));
         }
 
+        if mime_guess::from_path(path).first_raw() == Some("application/pdf") {
+            let path_buf = path.to_path_buf();
+            let result = tokio::time::timeout(
+                Duration::from_secs(self.config.extraction_timeout_secs),
+                tokio::task::spawn_blocking(move || {
+                    let document = lopdf::Document::load(&path_buf).map_err(|error| {
+                        ProcessingError::ProviderError(format!("PDF load error: {error}"))
+                    })?;
+                    let pages: Vec<u32> = document.get_pages().keys().copied().collect();
+                    let content = document.extract_text(&pages).map_err(|error| {
+                        ProcessingError::ProviderError(format!("PDF extraction error: {error}"))
+                    })?;
+                    Ok::<_, ProcessingError>((content, pages.len()))
+                }),
+            )
+            .await
+            .map_err(|_| {
+                ProcessingError::ResourceLimitExceeded(format!(
+                    "PDF extraction exceeded {}s timeout",
+                    self.config.extraction_timeout_secs
+                ))
+            })?
+            .map_err(|error| {
+                ProcessingError::ProviderError(format!("Task join error: {error}"))
+            })??;
+
+            return Ok(ProcessingResult {
+                content: result.0,
+                mime_type: "application/pdf".to_string(),
+                metadata: self
+                    .config
+                    .extract_metadata
+                    .then(|| serde_json::json!({ "pages": result.1 })),
+                images: Vec::new(),
+            });
+        }
+
         let extraction_config = self.build_extraction_config();
 
         // Use kreuzberg's synchronous API wrapped in spawn_blocking
