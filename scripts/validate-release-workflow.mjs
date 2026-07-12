@@ -44,6 +44,10 @@ const frontendInstalls = workflow.match(/pnpm -C frontend install --frozen-lockf
 if (frontendInstalls.length !== 2) {
   failures.push(`expected frontend lockfile install in validation and archive jobs, found ${frontendInstalls.length}`);
 }
+const entityBuilds = workflow.match(/pnpm -C frontend --filter @prometheus-ags\/prometheus-entity-management build/g) ?? [];
+if (entityBuilds.length !== 2) {
+  failures.push(`expected entity-management build in validation and archive jobs, found ${entityBuilds.length}`);
+}
 const frontendCacheKeys = workflow.match(/cache-dependency-path:\s*\|[\s\S]*?frontend\/pnpm-lock\.yaml/g) ?? [];
 if (frontendCacheKeys.length !== 2) {
   failures.push(`expected both pnpm caches to include frontend/pnpm-lock.yaml, found ${frontendCacheKeys.length}`);

@@ -54,6 +54,9 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm -C frontend install --frozen-lockfile
 
+      - name: Build entity-management workspace package
+        run: pnpm -C frontend --filter @prometheus-ags/prometheus-entity-management build
+
       - name: Validate formatting and supported bundles
         run: |
           cargo fmt --all -- --check
@@ -125,6 +128,9 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm -C frontend install --frozen-lockfile
+
+      - name: Build entity-management workspace package
+        run: pnpm -C frontend --filter @prometheus-ags/prometheus-entity-management build
 
       - name: Build Stable release bundle
         run: |
