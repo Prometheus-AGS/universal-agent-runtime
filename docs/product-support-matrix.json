@@ -56,7 +56,8 @@
     { "id": "desktop", "status": "preview", "sandbox": "Tauri shell with supervised local runtime", "gate": "platform artifact gate pending" },
     { "id": "mobile", "status": "experimental", "sandbox": "undeclared", "gate": "none" },
     { "id": "native-wasm", "status": "preview", "sandbox": "Wasmtime/WASI", "gate": "cargo check --features wasm-runtime" },
-    { "id": "browser-wasm", "status": "unsupported", "sandbox": "no browser WASM executor shipped", "gate": "none" }
+    { "id": "browser-wasm", "status": "unsupported", "sandbox": "no browser WASM executor shipped", "gate": "none" },
+    { "id": "windows-native-archive", "status": "experimental", "sandbox": "native process; archive certification deferred", "gate": "non-blocking release workflow job until promoted" }
   ],
   "integrations": [
     { "id": "bossfang", "mode": "supervised-service", "status": "recommended", "contract": "OpenAI-compatible first; A2A and AG-UI for richer semantics", "reason": "isolated faults/security/upgrades; current crate is monolithic", "library_reconsideration": "only after narrow dependency-light kernel extraction and measured IPC bottleneck" },

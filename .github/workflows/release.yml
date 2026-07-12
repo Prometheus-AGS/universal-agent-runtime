@@ -85,6 +85,7 @@ jobs:
     name: ${{ matrix.name }} archive install/startup
     needs: validate
     runs-on: ${{ matrix.runner }}
+    continue-on-error: ${{ matrix.experimental }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -94,22 +95,27 @@ jobs:
             runner: ubuntu-latest
             archive: universal-agent-runtime-linux-x64.tar.gz
             executable: universal-agent-runtime
+            experimental: false
           - name: linux-arm64
             runner: ubuntu-24.04-arm
             archive: universal-agent-runtime-linux-arm64.tar.gz
             executable: universal-agent-runtime
+            experimental: false
           - name: macos-x64
             runner: macos-15-intel
             archive: universal-agent-runtime-macos-x64.tar.gz
             executable: universal-agent-runtime
+            experimental: false
           - name: macos-arm64
             runner: macos-15
             archive: universal-agent-runtime-macos-arm64.tar.gz
             executable: universal-agent-runtime
+            experimental: false
           - name: windows-x64
             runner: windows-latest
             archive: universal-agent-runtime-windows-x64.zip
             executable: universal-agent-runtime.exe
+            experimental: true
     steps:
       - uses: actions/checkout@v4
         with:

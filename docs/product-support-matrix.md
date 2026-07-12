@@ -53,6 +53,9 @@ is Experimental. MCP-discovered and native tools use the same governed
 Web is Stable. Desktop and native WASM are Preview. Mobile is Experimental.
 Browser-side WASM execution is Unsupported; browsers render validated,
 declarative A2UI artifacts and do not execute arbitrary artifact code.
+The Windows native archive is Experimental and its release job is non-blocking
+until install/startup/health certification passes. Linux and macOS archives
+remain required release gates.
 
 ## BossFang and Flint architecture
 
