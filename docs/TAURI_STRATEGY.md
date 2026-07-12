@@ -1,5 +1,11 @@
 # Tauri Integration Strategy
 
+> [!WARNING]
+> **HISTORICAL DESIGN — NOT A RELEASE CERTIFICATION.** Desktop remains Preview.
+> Use [product-support-matrix.md](product-support-matrix.md#platforms) for the
+> current platform contract and [ARCHITECTURE.md](ARCHITECTURE.md#deployment-topology)
+> for current topology.
+
 ## 1. Overview
 This document outlines the strategy for productizing the `universal-agent-runtime` application for Tauri, specifically addressing Server-Sent Events (SSE) compatibility and MCP server packaging.
 

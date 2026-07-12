@@ -18,6 +18,7 @@
     "ci-gates": "bash scripts/ci-grep-gates.sh",
     "frontend:boundaries": "node scripts/check-frontend-boundaries.mjs && node scripts/test-frontend-boundaries-negative.mjs",
     "support-matrix:validate": "node scripts/validate-product-support-matrix.mjs && node scripts/validate-release-capabilities.mjs",
+    "docs:validate": "node scripts/validate-documentation-truth.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
@@ -41,7 +42,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.51.0"
   },
-  "description": "This repository is a reference implementation and living architecture example for building agentic AI applications that: *   support tool-first LLM interaction *   stream rich, typed model output *   remain HTML-first and inspectable *   avoid heavyweight SPA frameworks *   run identically as:     *   a web app     *   a desktop app (via Tauri)     *   a mobile app (via Tauri)",
+  "description": "Rust universal agent runtime with governed tools, typed streaming, tiered model routing, and a React operator interface.",
   "main": "index.js",
   "directories": {
     "doc": "docs",
@@ -53,7 +54,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "AGPL-3.0-only",
   "bugs": {
     "url": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues"
   },

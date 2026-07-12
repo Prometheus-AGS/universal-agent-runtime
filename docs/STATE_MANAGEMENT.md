@@ -1,5 +1,10 @@
 # State Management Architecture
 
+> [!WARNING]
+> **HISTORICAL — SUPERSEDED.** This document describes the retired Alpine/Web
+> Component client. Use [frontend-architecture.md](frontend-architecture.md)
+> for the React hook/store/service and PGlite/entity-graph contract.
+
 ## Overview
 
 This document describes the client-side state management architecture for the chat application. The system implements a **hybrid state management pattern** that combines Alpine.js global stores with Web Component local state and localStorage persistence.

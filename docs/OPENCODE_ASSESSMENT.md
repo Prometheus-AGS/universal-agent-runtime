@@ -1,5 +1,10 @@
 # Opencode Comprehensive Architectural Assessment
 
+> [!WARNING]
+> **HISTORICAL — SUPERSEDED.** This assessment predates the React-first
+> architecture. Use [frontend-architecture.md](frontend-architecture.md) and
+> [product-support-matrix.md](product-support-matrix.md).
+
 **Date**: January 1, 2026
 **Assessment Type**: Full-Stack Architecture, Code Quality, and Testing Infrastructure Review
 **Status**: **S-Tier / Production-Ready**

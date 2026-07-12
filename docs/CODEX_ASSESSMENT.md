@@ -1,5 +1,10 @@
 # Codex Architectural Assessment (S‑Tier UI/UX + HTMX + AG‑UI Streaming + Rust/MCP)
 
+> [!WARNING]
+> **HISTORICAL — SUPERSEDED.** This assessment predates the React-first
+> architecture. Use [frontend-architecture.md](frontend-architecture.md) and
+> [product-support-matrix.md](product-support-matrix.md).
+
 **Repo**: `universal-agent-runtime`  
 **Assessment History**:  
 - 2025-12-24 — Initial assessment  

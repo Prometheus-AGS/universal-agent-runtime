@@ -14,7 +14,7 @@
   "previousPhase": "uar-production-ready-uiux-2026-07",
   "seedNote": "Created 2026-07-10 via direct /kbd-assess invocation with an operator mandate: '100% ready for customer use and consumption' is the ONLY success condition. Seeded from the prior phase's honest not-yet-shippable verdict: RAG retrieval broken (zero-vector embeddings), 2 open Dependabot alerts, Runtime Console gated placeholder panels, thin test coverage, config-surface traps (dead PORT/JWT_REQUIRED passthroughs), no public docs site. Assessment must additionally web-research current production-readiness practice and enumerate anything else blocking external use.",
   "changes_total": 24,
-  "changes_completed": 18,
+  "changes_completed": 19,
   "changes_ordered": [
     "fix-embeddings-fastembed",
     "green-main-ci",
@@ -60,7 +60,7 @@
     "publish-capability-support-matrix": "DONE (2026-07-11) -- archived openspec/changes/archive/2026-07-11-publish-capability-support-matrix/. Published human and machine-readable matrices for all 7 Cargo features, release bundles, provider evidence tiers, persistence authority/conflicts, routing levels, governed tool modes, platforms, and BossFang/Flint integration ownership. Stable rows require executable gates; provider verification dates expire after 180 days; CI and release validate the contract. BossFang decision: supervised UAR service now; reconsider only a narrow extracted library after profiling. Verified: matrix/schema lint, strict OpenSpec, JSON parsing, documentation links, and Docusaurus production build.",
     "modularize-release-capabilities": "DONE (2026-07-12) -- archived openspec/changes/archive/2026-07-12-modularize-release-capabilities/. Added dependency-owned capability flags and minimal/server-full/desktop-full products; the in-memory dependency graph fell from 1,175 to 763 rendered nodes. A2A transport, local models, Cedar, quality, documents, telemetry, API docs, admin UI, and WASM now compile out; backend selection is compile-time validated. Removed memory-palace, moved Burn generation to a maintainer tool, vendored Swagger UI, and added cross-platform bundle CI plus direct-edge/API validation. Verified: all bundle checks, 371 minimal tests passed locally (6 catalog tests managed-DNS-blocked; socket test sandbox-blocked), matrix validator, fmt, strict OpenSpec, metadata, and diff check.",
     "make-build-offline-reproducible": "DONE (2026-07-12) -- archived openspec/changes/archive/2026-07-12-make-build-offline-reproducible/. Release builds now consume a committed 269-provider catalog and packaged model inputs with SHA-256 provenance. Cargo.lock has zero Git sources: published dependencies use crates.io and three unpublished crates are reduced vendored snapshots with immutable source/license records. Rust build.rs performs no HTTP or Node installation; Swagger assets are vendored and PDF extraction uses offline lopdf rather than PDFium downloads. Added explicit catalog/model refresh commands, a complete 294 MiB offline source packager, and isolated double-build CI. Verified: fresh extracted archive cargo check --locked --offline in 5m59s, server-full offline check, document factory 7/7, 529 archive license records, fmt, metadata, strict OpenSpec, and diff check.",
-    "reconcile-product-documentation": "PENDING",
+    "reconcile-product-documentation": "DONE (2026-07-12) -- archived openspec/changes/archive/2026-07-12-reconcile-product-documentation/. Replaced the canonical README, package metadata, architecture guide, and docs landing/API pages with the certified React-first contract. Documented hook/store/service ownership, entity graph and PGlite reconciliation, AG-UI transport versus A2UI rendering, provider tiers and routing levels, platform/tool/security boundaries, and the supervised-service BossFang/Flint topology. Inventoried and bannered retired HTMX/Web Component assessments and prototypes. Added a CI/release documentation truth gate for prohibited claims, Cargo/package version-license parity, and canonical local links. Verified: truth gate, strict OpenSpec validation, optimized Docusaurus build, and diff check.",
     "align-release-workflow-platforms": "PENDING",
     "certify-operational-resilience": "PENDING",
     "produce-supply-chain-artifacts": "PENDING",
@@ -85,14 +85,15 @@
     "close-react-boundary-gate",
     "publish-capability-support-matrix",
     "modularize-release-capabilities",
-    "make-build-offline-reproducible"
+    "make-build-offline-reproducible",
+    "reconcile-product-documentation"
   ],
-  "active_change": "reconcile-product-documentation",
+  "active_change": "align-release-workflow-platforms",
   "blocked_changes": [],
-  "next_change": "reconcile-product-documentation",
+  "next_change": "align-release-workflow-platforms",
   "sourceTool": "codex",
   "last_updated_by": "codex",
-  "last_updated": "2026-07-12T12:00:00Z",
+  "last_updated": "2026-07-12T14:03:40Z",
   "createdBy": "kbd-assess (inline phase seed; no prior reflection recommendation selected)",
   "assessmentSummary": "Re-assessed against the supplied GA and feature-set recommendations after 4/9 phase changes. Readiness 68/100: RAG, ordinary CI, dependency security, and policy/community work improved; broad 1.0 remains blocked by stale Node18/Bun/all-features release.yml, Cargo 0.1.0 versus SECURITY.md 1.0-only support, no candidate-tag evidence, network/Git build reproducibility, Cedar denial mapped to approval, unconditional platform dependencies, and missing feature/provider/platform maturity contracts. See assessment.md.",
   "decisions": {

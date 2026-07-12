@@ -1,5 +1,10 @@
 # Architectural Assessment: universal-agent-runtime
 
+> [!WARNING]
+> **HISTORICAL — SUPERSEDED.** This assessment predates the React-first
+> architecture. Use [frontend-architecture.md](frontend-architecture.md) and
+> [product-support-matrix.md](product-support-matrix.md).
+
 **Date**: December 24, 2025
 
 **Assessment Type**: S-Tier UI/UX Design Standards & Modern Web Architecture Analysis

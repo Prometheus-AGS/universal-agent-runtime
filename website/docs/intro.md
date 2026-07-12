@@ -5,88 +5,43 @@ title: Introduction
 
 # Universal Agent Runtime
 
-**Universal Agent Runtime (UAR)** is a production-grade, agentic streaming LLM
-runtime written in Rust. It is a tool-first, streaming-native, HTML-centric
-application server that works with **any of 142+ LLM providers** (OpenAI,
-Anthropic, Google Gemini, Groq, Mistral, Cohere, Ollama, and more) through a
-single unified configuration.
+Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, typed streaming, model routing, tools, retrieval, and declarative agent UI. The first-party interface is React 19 + TypeScript.
 
-UAR is both a runnable server and a living reference template for building
-agentic AI applications that:
+UAR is version **0.1.0**. The minimal web/server bundle is Stable under the project's evidence policy; server-full, desktop, WASM, mobile, and provider capabilities have narrower statuses. The [product support matrix](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/product-support-matrix.md) is the public release contract.
 
-- Support tool-first LLM interaction across **any provider** with automatic
-  tool-call normalization (Anthropic `tool_use`, Google `functionCall`,
-  Mistral blocks, and all others are converted into OpenAI-style `tool_calls`).
-- Stream rich, typed model output through one internal event contract,
-  regardless of the upstream provider's wire format.
-- Remain HTML-first and inspectable (HTMX, Web Components, Alpine.js) with an
-  optional React/TypeScript admin surface — no heavy SPA framework lock-in.
-- Run identically as a web app, desktop app, or mobile app (Tauri-compatible).
+## Core contracts
 
-## Why UAR
-
-| Principle | What it means in practice |
+| Area | Contract |
 |---|---|
-| **Tools are non-optional** | The server is always an MCP client. Tools are discovered dynamically at startup from `mcp.json` and injected into every LLM call. Tool execution is deterministic, auditable, and server-side. |
-| **Streaming is the default** | All LLM interactions stream through `LiterLlmDriver` → `Orchestrator` → SSE → the UI. |
-| **One internal event contract** | Provider-specific events are normalized into a single typed stream (`message.delta`, `tool_call.delta`, `tool_call.complete`, `tool_result`, `error`, `done`, `usage`), also mirrored as AG-UI (`agui.*`) events. |
-| **Compile-time model intelligence** | `build.rs` bakes the [models.dev](https://models.dev) catalog + liter-llm provider schemas into the binary. The `ModelRouter` selects the best model for a set of capability requirements with no network calls. |
-| **Local-first persistence** | Runs against an embedded on-disk datastore (SurrealDB / SurrealKV) with no separate database process, or against a remote SurrealDB or PostgreSQL instance. |
-| **Secure by default** | JWT auth required, rate limiting enabled, prompt-injection/PII guardrails active, and secrets redacted from logs. |
+| Runtime | Axum REST and SSE APIs listen on configurable port `1906` by default. |
+| Frontend | React components call hooks, hooks expose stores, stores call typed services. |
+| Streaming | AG-UI is the normalized event transport vocabulary. |
+| Artifacts | A2UI validates declarative artifacts and renders an approved React component catalog; it executes no model-provided code. |
+| Persistence | SurrealDB is the Stable server authority; PGlite is a local cache reconciled through versioned events. |
+| Providers | The committed 269-provider catalog is discovery metadata. Execution support is certified in three evidence tiers. |
+| Tools | MCP-discovered and native tools share schema, Cedar policy, approval, hard-deny, and audit controls. WASM tools are opt-in Preview. |
 
-## The LLM layer: liter-llm
+Catalog, availability, and policy routing are Stable. Adaptive learned routing is Experimental. Web is Stable, Tauri desktop and native WASM are Preview, mobile is Experimental, and browser-side arbitrary WASM execution is unsupported.
 
-UAR's LLM layer is powered by
-[liter-llm](https://github.com/GQAdonis/liter-llm), a Rust-native universal LLM
-client. A single `LiterLlmDriver` replaces per-protocol drivers and provider
-enums, and provides:
+## Architecture
 
-- **142+ providers** behind one API shape.
-- **`provider/model` addressing** — `openai/gpt-4o`, `anthropic/claude-sonnet-4`,
-  `groq/llama-3.3-70b-versatile`.
-- **Unified tool calling** across all providers.
-- **A compile-time model catalog** with capabilities, pricing, context limits,
-  and modalities.
-- **Capability-based model routing.**
-
-## High-level architecture
-
-```
-Configuration (CLI > UAR_*__* env > legacy env > config.yaml > defaults)
-        │
-        ▼
-   AppConfig ── LlmConfig ──► LiterLlmDriver ──► Orchestrator (tool loop)
-        │                          │                    │
-   Persistence               Tool-call            NormalizedEvent stream
-   (Surreal / Postgres)      normalization        (message.delta, tool_call.*, done)
-        │                                                │
-   MCP Registry ──────────────► tools injected           ▼
-   (mcp.json, stdio + HTTP)                         Axum server
-                                                    REST + SSE
-                                                         │
-                                              ┌──────────┴──────────┐
-                                        HTMX / Web Components    Admin UI (React)
+```text
+React -> hooks -> stores/entity graph -> services -> Axum REST/SSE
+                                                     |
+                    SurrealDB <- runtime/orchestrator -> providers/tools
+                        ^                 |
+                        `-- versioned events -> PGlite cache
 ```
 
-## Where to go next
+## Next steps
 
-- **[Product support matrix](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/product-support-matrix.md)** — certified feature bundles, provider tiers, platforms, and executable evidence.
-
-- **[Installation](./installation)** — run UAR via Docker/compose or a prebuilt
-  binary, and the minimal boot configuration.
-- **[Configuration reference](./configuration)** — every environment variable,
-  the `UAR_*__*` nesting convention, and the precedence order.
-- **[API reference](./api-reference)** — the REST + SSE surface: chat
-  completions, the `/api/uar/*` runtime endpoints, and knowledge endpoints.
-- **[Backup and restore](./backup-and-restore)** — runbook for the embedded
-  datastore and notes for remote providers.
-- **[Upgrade guide](./upgrade-guide)** — version pinning, upgrading a
-  self-hosted deploy, and rollback.
-- **[Troubleshooting](./troubleshooting)** — fixes for the most common boot and
-  runtime problems.
+- [Installation](./installation)
+- [Configuration](./configuration)
+- [API reference](./api-reference)
+- [Backup and restore](./backup-and-restore)
+- [Upgrade guide](./upgrade-guide)
+- [Troubleshooting](./troubleshooting)
 
 ## Licensing
 
-UAR is dual-licensed: open source under `AGPL-3.0-only`, and available under
-separate commercial terms for AGPL-incompatible usage. See `LICENSE` and
-`LICENSE-COMMERCIAL.md` in the repository.
+UAR is licensed under `AGPL-3.0-only`; separate commercial terms are available for AGPL-incompatible usage. See the repository's `LICENSE` and `LICENSE-COMMERCIAL.md`.

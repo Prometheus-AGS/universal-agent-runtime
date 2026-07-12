@@ -97,6 +97,9 @@ jobs:
       - name: Validate product support matrix
         run: bun run support-matrix:validate
 
+      - name: Validate documentation truth
+        run: bun run docs:validate
+
       - name: Security audit
         run: |
           cargo install cargo-audit

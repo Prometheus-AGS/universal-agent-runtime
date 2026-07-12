@@ -144,7 +144,7 @@ llm:
 
 ```yaml
 llm:
-  # Model in provider/model format — 142+ providers supported
+  # Model in provider/model format; support depends on the provider tier
   model: "openai/gpt-4o"
 
   # API key — prefer environment variables
@@ -187,7 +187,7 @@ llm:
   #   rpm: 60                 # requests per minute
   #   tpm: 100000             # tokens per minute
 
-# Provider overrides — supplement the compile-time catalog
+# Provider overrides — supplement the committed catalog snapshot
 # providers:
 #   - id: "openai"
 #     display_name: "OpenAI"
@@ -201,7 +201,11 @@ llm:
 
 ## 4. Multi-Provider Setup
 
-The compile-time `ModelCatalog` (from [models.dev](https://models.dev) + liter-llm schemas) provides model lists and defaults for all 142+ providers. The `providers:` section in `config.yaml` adds runtime API-key configuration on top.
+The embedded `ModelCatalog` comes from the committed, checksummed snapshot in
+`catalog/provider_catalog.json`. It provides discovery metadata; an entry does
+not imply certified execution support. The `providers:` section in
+`config.yaml` adds runtime API-key configuration and overrides. See the
+[provider tiers](product-support-matrix.md#provider-tiers).
 
 ```yaml
 providers:

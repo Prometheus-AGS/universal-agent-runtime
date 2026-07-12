@@ -47,11 +47,12 @@ Full protocol: [`docs/API_CHAT_COMPLETION.md`](https://github.com/Prometheus-AGS
 
 ## Model catalog and discovery
 
-Backed by the compile-time model catalog (models.dev + liter-llm schemas).
+Backed by the committed, checksummed provider catalog snapshot. Catalog entries
+are discovery metadata and do not imply certified execution support.
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/models` | Full catalog: all 142+ providers with model capabilities, pricing, and limits. |
+| `GET` | `/api/models` | Catalog metadata with declared capabilities, pricing, and limits. |
 | `GET` | `/api/catalog` | Summary: provider count, model count, auth env vars. |
 | `GET` | `/provider_catalog.json` | Raw embedded catalog JSON. |
 | `POST` | `/api/uar/route` | Dynamic model selection by capability requirements (tools, vision, min context, max cost, preferred provider). |

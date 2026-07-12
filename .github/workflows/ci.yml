@@ -271,6 +271,9 @@ jobs:
       - name: Validate product support matrix
         run: pnpm run support-matrix:validate
 
+      - name: Validate documentation truth
+        run: pnpm run docs:validate
+
       - name: Vitest contract tests
         run: pnpm --filter ./frontend test
 

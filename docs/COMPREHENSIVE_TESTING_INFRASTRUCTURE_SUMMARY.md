@@ -1,5 +1,11 @@
 # Comprehensive Testing Infrastructure - Implementation Summary
 
+> [!WARNING]
+> **HISTORICAL — SUPERSEDED.** This point-in-time implementation report is not
+> a release certification. Current gates and maturity are defined by
+> [product-support-matrix.md](product-support-matrix.md) and
+> [ARCHITECTURE.md](ARCHITECTURE.md#testing-and-release-evidence).
+
 ## 🎉 Project Completion
 
 This document provides a comprehensive overview of the advanced testing infrastructure that has been implemented for the Rust/TypeScript project, designed to achieve 100% test coverage certification with full integration testing capabilities.

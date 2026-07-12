@@ -1,5 +1,10 @@
 # Theme Switching & Mobile Responsiveness
 
+> [!WARNING]
+> **HISTORICAL — SUPERSEDED.** This describes the retired Web Component UI and
+> is not evidence of mobile support. Use [frontend-architecture.md](frontend-architecture.md)
+> and [product-support-matrix.md](product-support-matrix.md#platforms).
+
 ## Overview
 
 This document covers the implementation of:
