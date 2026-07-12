@@ -40,6 +40,15 @@ for (const [value, label] of prohibited) {
 const platformRows = workflow.match(/- name: (?:linux|macos|windows)-/g) ?? [];
 if (platformRows.length !== 5) failures.push(`expected 5 certified platform rows, found ${platformRows.length}`);
 
+const frontendInstalls = workflow.match(/pnpm -C frontend install --frozen-lockfile/g) ?? [];
+if (frontendInstalls.length !== 2) {
+  failures.push(`expected frontend lockfile install in validation and archive jobs, found ${frontendInstalls.length}`);
+}
+const frontendCacheKeys = workflow.match(/cache-dependency-path:\s*\|[\s\S]*?frontend\/pnpm-lock\.yaml/g) ?? [];
+if (frontendCacheKeys.length !== 2) {
+  failures.push(`expected both pnpm caches to include frontend/pnpm-lock.yaml, found ${frontendCacheKeys.length}`);
+}
+
 if (failures.length) {
   console.error(`Release workflow validation failed:\n- ${failures.join("\n- ")}`);
   process.exit(1);

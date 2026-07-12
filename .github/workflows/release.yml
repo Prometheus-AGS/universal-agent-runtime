@@ -45,10 +45,14 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
 
-      - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install root and frontend dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm -C frontend install --frozen-lockfile
 
       - name: Validate formatting and supported bundles
         run: |
@@ -113,10 +117,14 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
 
-      - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install root and frontend dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm -C frontend install --frozen-lockfile
 
       - name: Build Stable release bundle
         run: |
