@@ -1,0 +1,209 @@
+name: Supply-chain release evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v-prefixed GitHub release tag
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  artifacts-and-image:
+    name: Generate signed evidence
+    if: startsWith(inputs.tag, 'v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+      attestations: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+      source_sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - name: Resolve release source commit
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq .object.sha)"
+          object_type="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq .object.type)"
+          if [ "$object_type" = tag ]; then
+            sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${sha}" --jq .object.sha)"
+          fi
+          test "$(printf '%s' "$sha" | grep -Ec '^[0-9a-f]{40}$')" -eq 1
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release.outputs.sha }}
+          fetch-depth: 1
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Download release payloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p evidence
+          gh release download "${{ inputs.tag }}" --repo "$GITHUB_REPOSITORY" --dir evidence --pattern '*.tar.gz' --pattern '*.zip'
+          find evidence -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' \) | grep -q .
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Normalize image reference
+        id: image
+        run: echo "image=${REGISTRY}/${IMAGE_NAME,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push multi-architecture image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.image.outputs.image }}:${{ inputs.tag }}
+          provenance: mode=max
+          sbom: true
+
+      - name: Verify image executes without root
+        run: |
+          docker pull "${{ steps.image.outputs.image }}@${{ steps.build.outputs.digest }}"
+          docker run --rm --platform linux/amd64 --user 65532:65532 --entrypoint sh \
+            "${{ steps.image.outputs.image }}@${{ steps.build.outputs.digest }}" \
+            -c 'test "$(id -u)" -ne 0 && universal-agent-runtime --version'
+
+      - uses: anchore/sbom-action/download-syft@v0
+      - name: Generate CycloneDX and SPDX SBOMs
+        run: |
+          for artifact in evidence/*.tar.gz evidence/*.zip; do
+            syft "file:${artifact}" -o "cyclonedx-json=${artifact}.cyclonedx.json" -o "spdx-json=${artifact}.spdx.json"
+          done
+          syft dir:. -o cyclonedx-json=evidence/source.cyclonedx.json -o spdx-json=evidence/source.spdx.json
+          syft "${{ steps.image.outputs.image }}@${{ steps.build.outputs.digest }}" \
+            -o cyclonedx-json=evidence/image.cyclonedx.json -o spdx-json=evidence/image.spdx.json
+
+      - name: Create payload checksums
+        working-directory: evidence
+        run: sha256sum *.tar.gz *.zip > SHA256SUMS
+
+      - uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: v3.0.6
+
+      - name: Sign payloads and image keylessly
+        run: |
+          while read -r _ artifact; do
+            cosign sign-blob --yes --bundle "evidence/${artifact}.sigstore.json" "evidence/${artifact}"
+          done < evidence/SHA256SUMS
+          cosign sign --yes "${{ steps.image.outputs.image }}@${{ steps.build.outputs.digest }}"
+
+      - name: Generate SLSA provenance
+        id: provenance
+        uses: actions/attest@v4
+        with:
+          subject-checksums: evidence/SHA256SUMS
+
+      - name: Stage provenance and release manifest
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          SOURCE_SHA: ${{ steps.release.outputs.sha }}
+          REPOSITORY: ${{ github.repository }}
+          WORKFLOW_IDENTITY: ${{ github.workflow_ref }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          IMAGE_REFERENCE: ${{ steps.image.outputs.image }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          bundle="${{ steps.provenance.outputs.bundle-path }}"
+          while read -r _ artifact; do cp "$bundle" "evidence/${artifact}.intoto.jsonl"; done < evidence/SHA256SUMS
+          node scripts/generate-release-manifest.mjs evidence evidence/release-manifest.json
+          node scripts/validate-release-manifest.mjs evidence/release-manifest.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: supply-chain-evidence
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+  verify:
+    name: Verify published evidence independently
+    needs: artifacts-and-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.artifacts-and-image.outputs.source_sha }}
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: supply-chain-evidence
+          path: evidence
+      - uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: v3.0.6
+      - name: Verify checksums, signatures, provenance and manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (cd evidence && sha256sum --check SHA256SUMS)
+          identity="^https://github.com/${GITHUB_REPOSITORY}/.github/workflows/supply-chain.yml@refs/heads/"
+          while read -r _ artifact; do
+            cosign verify-blob --bundle "evidence/${artifact}.sigstore.json" \
+              --certificate-identity-regexp "$identity" \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              "evidence/${artifact}"
+            gh attestation verify "evidence/${artifact}" --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/supply-chain.yml"
+          done < evidence/SHA256SUMS
+          cosign verify --certificate-identity-regexp "$identity" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "${{ needs.artifacts-and-image.outputs.image }}@${{ needs.artifacts-and-image.outputs.digest }}"
+          node scripts/validate-release-manifest.mjs evidence/release-manifest.json
+
+      - name: Test downloaded Linux archive install
+        run: |
+          archive="$(find evidence -maxdepth 1 -name '*linux-x64.tar.gz' -print -quit)"
+          test -n "$archive"
+          mkdir installed
+          tar -xzf "$archive" -C installed
+          binary="$(find installed -type f -name universal-agent-runtime -print -quit)"
+          test -n "$binary"
+          "$binary" --version
+
+  publish-evidence:
+    name: Attach verified evidence to release
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: supply-chain-evidence
+          path: evidence
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          files: evidence/*
+          fail_on_unmatched_files: true

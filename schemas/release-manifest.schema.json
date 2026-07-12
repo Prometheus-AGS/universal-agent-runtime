@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Prometheus-AGS/universal-agent-runtime/schemas/release-manifest.schema.json",
+  "title": "Universal Agent Runtime release evidence manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "release", "source", "workflow", "artifacts", "image", "evidence", "support_matrix"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "release": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "sha"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "run_url"],
+      "properties": {
+        "identity": { "type": "string", "minLength": 1 },
+        "run_url": { "type": "string", "format": "uri" }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "digest", "platforms", "sboms", "signature", "provenance"],
+      "properties": {
+        "reference": { "type": "string", "pattern": "^ghcr\\.io/" },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "platforms": { "type": "array", "minItems": 2, "items": { "type": "string" }, "uniqueItems": true },
+        "sboms": { "type": "array", "minItems": 2, "items": { "type": "string" } },
+        "signature": { "type": "string", "minLength": 1 },
+        "provenance": { "type": "string", "minLength": 1 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checksums", "provenance", "tests", "audits"],
+      "properties": {
+        "checksums": { "const": "SHA256SUMS" },
+        "provenance": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "tests": { "type": "string", "format": "uri" },
+        "audits": { "type": "string", "format": "uri" }
+      }
+    },
+    "support_matrix": { "const": "docs/product-support-matrix.json" }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256", "sboms", "signature", "provenance"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "sboms": { "type": "array", "minItems": 2, "items": { "type": "string" } },
+        "signature": { "type": "string", "minLength": 1 },
+        "provenance": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
