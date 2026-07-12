@@ -1,6 +1,9 @@
 name: Supply-chain release evidence
 
 on:
+  push:
+    branches:
+      - production-release
   workflow_dispatch:
     inputs:
       tag:
@@ -16,9 +19,27 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  preflight:
+    name: Validate supply-chain contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate workflow, schema, and generators
+        run: |
+          node scripts/validate-supply-chain.mjs
+          node --check scripts/generate-release-manifest.mjs
+          node --check scripts/validate-release-manifest.mjs
+
   artifacts-and-image:
     name: Generate signed evidence
-    if: startsWith(inputs.tag, 'v')
+    needs: preflight
+    if: github.event_name == 'workflow_dispatch' && startsWith(inputs.tag, 'v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
