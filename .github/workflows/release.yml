@@ -53,7 +53,7 @@ jobs:
       - name: Validate formatting and supported bundles
         run: |
           cargo fmt --all -- --check
-          cargo clippy --all-targets --features postgres-backend,tauri,wasm-runtime
+          cargo clippy --all-targets --features postgres-backend,tauri,wasm-runtime --no-deps
           cargo check --locked --lib --features minimal
           cargo check --locked --lib --features server-full
           cargo check --locked --lib --features desktop-full

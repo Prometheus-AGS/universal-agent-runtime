@@ -10,6 +10,7 @@ const required = [
   "cargo check --locked --lib --features minimal",
   "cargo check --locked --lib --features server-full",
   "cargo check --locked --lib --features desktop-full",
+  "cargo clippy --all-targets --features postgres-backend,tauri,wasm-runtime --no-deps",
   "ubuntu-24.04-arm",
   "macos-15-intel",
   "runner: macos-15",
