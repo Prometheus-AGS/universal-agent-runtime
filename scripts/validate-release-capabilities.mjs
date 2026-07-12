@@ -43,6 +43,13 @@ for (const dependency of forbiddenDirectDependencies) {
 }
 
 const server = readFileSync(resolve(root, "src/server.rs"), "utf8");
+const dockerfile = readFileSync(resolve(root, "Dockerfile"), "utf8");
+if (!dockerfile.includes('--features "server-full"')) {
+  throw new Error("Dockerfile must build the authoritative server-full bundle");
+}
+if (dockerfile.includes("memory-palace")) {
+  throw new Error("Dockerfile references the removed memory-palace feature");
+}
 for (const guardedSurface of ["a2a_routes", "grpc_handle"]) {
   const pattern = new RegExp(
     `#\\[cfg\\(feature = "a2a-transport"\\)\\][\\s\\S]{0,80}(?:let )?${guardedSurface}`,
