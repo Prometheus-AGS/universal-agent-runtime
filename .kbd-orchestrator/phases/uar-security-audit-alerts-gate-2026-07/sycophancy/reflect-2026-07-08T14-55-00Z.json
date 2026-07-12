@@ -1,4 +1,5 @@
 {
+  "filename_normalized_for_windows": true,
   "corrected_reflect": null,
   "delta_summary": "Score: 0.02. 1 pattern(s) detected (detect_only mode -- no correction applied):\n[S-07] Low -- Response is 969 words -- substantially exceeds typical task scope. Verify added content delivers analytical value rather than visible effort.",
   "s08_detected": false,

@@ -1,9 +1,14 @@
 #!/usr/bin/env node
 
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 
 const workflow = readFileSync(new URL("../.github/workflows/release.yml", import.meta.url), "utf8");
 const failures = [];
+const trackedPaths = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
+for (const path of trackedPaths) {
+  if (/[<>:"|?*\\]/.test(path)) failures.push(`Windows-incompatible tracked path: ${path}`);
+}
 const required = [
   "node-version: 22",
   "version: 10.33.0",

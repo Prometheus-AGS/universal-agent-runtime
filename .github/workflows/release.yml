@@ -167,7 +167,12 @@ jobs:
         run: |
           mkdir installed
           tar -xzf "dist/${{ matrix.archive }}" -C installed
-          test "$(installed/${{ matrix.name }}/${{ matrix.executable }} --version | grep -c '0.1.0')" -eq 1
+          version_output="$(installed/${{ matrix.name }}/${{ matrix.executable }} --version 2>&1)"
+          echo "$version_output"
+          case "$version_output" in
+            *"universal-agent-runtime 0.1.0"*) ;;
+            *) echo "unexpected version output"; exit 1 ;;
+          esac
           installed/${{ matrix.name }}/${{ matrix.executable }} --port 1906 >server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
