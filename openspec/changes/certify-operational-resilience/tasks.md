@@ -9,4 +9,4 @@
 - [ ] 2.4 Test non-root container startup, writable paths, signals and health.
 ## 3. Evidence
 - [ ] 3.1 Upload machine-readable results and logs as release artifacts.
-- [ ] 3.2 Document sizing/limits and validate OpenSpec.
+- [x] 3.2 Document sizing/limits and validate OpenSpec.

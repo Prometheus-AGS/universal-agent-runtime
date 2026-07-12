@@ -1,0 +1,55 @@
+name: Operational resilience certification
+
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 0'
+
+jobs:
+  deterministic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Certify lifecycle, failures, load, reconnect, and recovery
+        run: bash scripts/certify-operational-resilience.sh
+      - name: Upload machine-readable evidence and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: operational-resilience-${{ github.run_id }}
+          path: target/resilience-certification/
+          if-no-files-found: error
+
+  non-root-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - name: Build release image
+        run: docker build -t uar-resilience .
+      - name: Verify non-root writable paths, health, and SIGTERM
+        run: |
+          mkdir -p "$RUNNER_TEMP/uar-data"
+          chmod 0777 "$RUNNER_TEMP/uar-data"
+          docker run -d --name uar-resilience --user 65532:65532 \
+            -e UAR_LLM__MODEL=openai/gpt-4o \
+            -e UAR_LLM__API_KEY=resilience-smoke-placeholder \
+            -e UAR_SERVER__HOST=0.0.0.0 \
+            -p 1906:1906 -v "$RUNNER_TEMP/uar-data:/var/lib/uar" uar-resilience
+          for attempt in $(seq 1 60); do
+            curl --fail --silent http://127.0.0.1:1906/health && break
+            sleep 2
+          done
+          curl --fail http://127.0.0.1:1906/health
+          docker stop --time 30 uar-resilience
+          test "$(docker inspect -f '{{.State.ExitCode}}' uar-resilience)" -eq 0
