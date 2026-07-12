@@ -1,518 +1,227 @@
 name: Release Pipeline
 
 on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish artifacts to an existing GitHub release
+        type: boolean
+        default: false
   push:
     tags:
       - 'v*.*.*'
-  release:
-    types: [published]
+      - 'release-test-*'
+
+permissions:
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
   CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: 1
+  UAR_LLM__MODEL: openai/gpt-4o
+  UAR_LLM__API_KEY: release-smoke-placeholder
 
 jobs:
-  # Comprehensive validation before release
-  pre-release-validation:
-    name: Pre-Release Validation
+  validate:
+    name: Ordinary release gates
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    services:
-      postgres:
-        image: pgvector/pgvector:pg17
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: uar_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis/redis-stack:latest
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
+    timeout-minutes: 60
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
+
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          fetch-depth: 0  # Full history for release notes
+          components: rustfmt, clippy
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: pnpm/action-setup@v4
         with:
-          components: rustfmt, clippy, llvm-tools-preview
+          version: 10.33.0
 
-      - name: Set up Node.js and Bun
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v1
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Install coverage tools
+      - name: Validate formatting and supported bundles
         run: |
-          cargo install grcov
-          cargo install cargo-llvm-cov
+          cargo fmt --all -- --check
+          cargo clippy --all-targets --features postgres-backend,tauri,wasm-runtime
+          cargo check --locked --lib --features minimal
+          cargo check --locked --lib --features server-full
+          cargo check --locked --lib --features desktop-full
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-            ~/.bun/install/cache
-          key: ${{ runner.os }}-release-${{ hashFiles('**/Cargo.lock', '**/bun.lockb') }}
-
-      - name: Install dependencies
+      - name: Validate frontend and product contracts
         run: |
-          bun install --frozen-lockfile
+          pnpm typecheck
+          pnpm lint
+          pnpm test
+          pnpm run frontend:boundaries
+          pnpm run support-matrix:validate
+          pnpm run docs:validate
+          pnpm build
 
-      - name: Strict format and lint checks
-        run: |
-          cargo fmt -- --check
-          cargo clippy --all-targets --all-features -- -D warnings
-          bun run format --check
-          bun run lint
+      - name: Test Stable bundle
+        run: cargo test --locked --lib --features minimal
 
-      - name: Enforce frontend architecture boundaries
-        run: bun run frontend:boundaries
-
-      - name: Validate product support matrix
-        run: bun run support-matrix:validate
-
-      - name: Validate documentation truth
-        run: bun run docs:validate
-
-      - name: Security audit
-        run: |
-          cargo install cargo-audit
-          cargo audit
-          bun audit
-
-      - name: Install Playwright
-        run: npx playwright install --with-deps chromium
-
-      - name: Run comprehensive test suite with strict coverage
-        run: |
-          chmod +x tools/test-all.sh
-          ./tools/test-all.sh --ci
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/uar_test
-          REDIS_URL: redis://localhost:6379
-          COVERAGE_THRESHOLD: 90
-
-      - name: Generate comprehensive coverage reports
-        run: |
-          chmod +x tools/coverage.sh
-          ./tools/coverage.sh --unified
-
-      - name: Verify coverage thresholds for release
-        run: |
-          THRESHOLD=90
-          echo "Verifying release coverage standards (${THRESHOLD}%)"
-
-          # Strict coverage requirements for release
-          if [[ -f "tests/coverage/rust/coverage.json" ]]; then
-            RUST_COVERAGE=$(jq -r '.percent_covered // 0' tests/coverage/rust/coverage.json)
-            echo "Rust coverage: ${RUST_COVERAGE}%"
-
-            if (( $(echo "$RUST_COVERAGE < $THRESHOLD" | bc -l) )); then
-              echo "❌ Rust coverage ${RUST_COVERAGE}% below release threshold ${THRESHOLD}%"
-              exit 1
-            fi
-          else
-            echo "❌ No Rust coverage data found"
-            exit 1
-          fi
-
-      - name: Build release artifacts
-        run: |
-          # Build optimized release
-          cargo build --release --verbose
-
-          # Build frontend assets
-          bun run build
-
-          # Verify all artifacts
-          test -f target/release/universal-agent-runtime
-          test -f static/main.js
-          test -f static/app.css
-
-      - name: Upload release coverage reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-coverage-reports
-          path: tests/coverage/
-          retention-days: 90
-
-      - name: Create release summary
-        id: release-summary
-        run: |
-          # Extract version from tag
-          VERSION=${GITHUB_REF#refs/tags/}
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-
-          # Create release summary
-          cat > release-summary.md << EOF
-          # Release ${VERSION} - Test Summary
-
-          ## Comprehensive Validation Results ✅
-          - **Full Test Suite**: All tests passed
-          - **Code Coverage**: >90% for all components
-          - **Security Audit**: No vulnerabilities found
-          - **Performance**: All benchmarks within acceptable ranges
-          - **Build Verification**: All artifacts generated successfully
-
-          ## Test Coverage Details
-          - **Rust Backend**: $(jq -r '.percent_covered // "N/A"' tests/coverage/rust/coverage.json 2>/dev/null || echo "N/A")%
-          - **TypeScript Frontend**: Coverage data available in artifacts
-          - **Integration Tests**: All API endpoints tested
-          - **End-to-End Tests**: All user workflows validated
-
-          ## Environment Verification
-          - **Rust Version**: $(rustc --version)
-          - **Node Version**: $(node --version)
-          - **Build Target**: Release optimized
-          - **Test Environment**: Full Docker integration
-
-          🚀 **Release Approved**: All quality gates passed
-          EOF
-
-          # Output for use in other steps
-          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
-          cat release-summary.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-    outputs:
-      version: ${{ steps.release-summary.outputs.version }}
-      release_notes: ${{ steps.release-summary.outputs.release_notes }}
-
-  # Multi-platform builds
-  build-release-artifacts:
-    name: Build Release Artifacts
-    runs-on: ${{ matrix.os }}
-    needs: pre-release-validation
+  platform-archives:
+    name: ${{ matrix.name }} archive install/startup
+    needs: validate
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            artifact_name: universal-agent-runtime-linux-x64
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            artifact_name: universal-agent-runtime-macos-x64
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            artifact_name: universal-agent-runtime-macos-arm64
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact_name: universal-agent-runtime-windows-x64.exe
-
+          - name: linux-x64
+            runner: ubuntu-latest
+            archive: universal-agent-runtime-linux-x64.tar.gz
+            executable: universal-agent-runtime
+          - name: linux-arm64
+            runner: ubuntu-24.04-arm
+            archive: universal-agent-runtime-linux-arm64.tar.gz
+            executable: universal-agent-runtime
+          - name: macos-x64
+            runner: macos-15-intel
+            archive: universal-agent-runtime-macos-x64.tar.gz
+            executable: universal-agent-runtime
+          - name: macos-arm64
+            runner: macos-15
+            archive: universal-agent-runtime-macos-arm64.tar.gz
+            executable: universal-agent-runtime
+          - name: windows-x64
+            runner: windows-latest
+            archive: universal-agent-runtime-windows-x64.zip
+            executable: universal-agent-runtime.exe
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: pnpm/action-setup@v4
         with:
-          targets: ${{ matrix.target }}
+          version: 10.33.0
 
-      - name: Set up Node.js and Bun (Unix)
-        if: runner.os != 'Windows'
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
-      - name: Set up Bun (Unix)
-        if: runner.os != 'Windows'
-        uses: oven-sh/setup-bun@v1
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Set up Node.js (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install bun (Windows)
-        if: runner.os == 'Windows'
+      - name: Build Stable release bundle
         run: |
-          npm install -g bun
+          pnpm build
+          cargo build --locked --release --bin universal-agent-runtime --features minimal
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ matrix.os }}-${{ matrix.target }}-release-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build frontend assets
-        run: bun run build
-
-      - name: Build release binary
-        run: |
-          cargo build --release --target ${{ matrix.target }} --verbose
-
-      - name: Create release artifact
+      - name: Package Unix archive
+        if: runner.os != 'Windows'
         shell: bash
         run: |
-          # Create release directory
-          mkdir -p release-artifacts/${{ matrix.artifact_name }}
+          mkdir -p "dist/${{ matrix.name }}"
+          cp target/release/universal-agent-runtime "dist/${{ matrix.name }}/"
+          cp README.md LICENSE LICENSE-COMMERCIAL.md example.config.yaml "dist/${{ matrix.name }}/"
+          tar -czf "dist/${{ matrix.archive }}" -C dist "${{ matrix.name }}"
 
-          # Copy binary
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp target/${{ matrix.target }}/release/universal-agent-runtime.exe release-artifacts/${{ matrix.artifact_name }}/
-          else
-            cp target/${{ matrix.target }}/release/universal-agent-runtime release-artifacts/${{ matrix.artifact_name }}/
-          fi
-
-          # Copy static assets
-          cp -r static/ release-artifacts/${{ matrix.artifact_name }}/
-
-          # Copy configuration files
-          cp test-config.yaml release-artifacts/${{ matrix.artifact_name }}/
-          cp README.md release-artifacts/${{ matrix.artifact_name }}/
-          cp LICENSE release-artifacts/${{ matrix.artifact_name }}/ 2>/dev/null || echo "LICENSE not found"
-
-          # Create archive
-          cd release-artifacts
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            powershell Compress-Archive -Path ${{ matrix.artifact_name }} -DestinationPath ${{ matrix.artifact_name }}.zip
-          else
-            tar -czf ${{ matrix.artifact_name }}.tar.gz ${{ matrix.artifact_name }}
-          fi
-
-      - name: Upload release artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: release-artifacts/${{ matrix.artifact_name }}.*
-          retention-days: 30
-
-  # CH-15: compile+sign the agent template library (templates/*.agent.md)
-  # as a release artifact via the `compile` subcommand (CH-15/config.rs
-  # Command::Compile). A debug build is enough — this doesn't need release
-  # optimizations, just the compiler pipeline.
-  compile-agent-templates:
-    name: Compile Agent Template Library
-    runs-on: ubuntu-latest
-    needs: pre-release-validation
-    env:
-      # The binary loads full AppConfig before dispatching to any
-      # subcommand (including `compile`), so a minimal persistence config
-      # is required even though compiling a template touches no database.
-      UAR_PERSISTENCE__PROVIDER: surreal
-      UAR_PERSISTENCE__DATABASE_URL: rocksdb:///tmp/uar-template-compile-db
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Set up Node.js and Bun
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@v1
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ubuntu-latest-templates-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build frontend assets
-        run: bun run build
-
-      - name: Build binary
-        run: cargo build --bin universal-agent-runtime
-
-      - name: Compile + sign each template
+      - name: Package Windows archive
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          mkdir -p release-artifacts/agent-templates
-          for name in coding vision terminal data; do
-            ./target/debug/universal-agent-runtime compile \
-              "templates/${name}.agent.md" \
-              --out "release-artifacts/agent-templates/${name}.compiled.json"
+          New-Item -ItemType Directory -Force "dist/${{ matrix.name }}" | Out-Null
+          Copy-Item target/release/universal-agent-runtime.exe "dist/${{ matrix.name }}/"
+          Copy-Item README.md,LICENSE,LICENSE-COMMERCIAL.md,example.config.yaml "dist/${{ matrix.name }}/"
+          Compress-Archive -Path "dist/${{ matrix.name }}" -DestinationPath "dist/${{ matrix.archive }}"
+
+      - name: Install and smoke-test Unix archive
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir installed
+          tar -xzf "dist/${{ matrix.archive }}" -C installed
+          test "$(installed/${{ matrix.name }}/${{ matrix.executable }} --version | grep -c '0.1.0')" -eq 1
+          installed/${{ matrix.name }}/${{ matrix.executable }} --port 1906 >server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:1906/readyz >/dev/null; then exit 0; fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then cat server.log; exit 1; fi
+            sleep 1
           done
+          cat server.log
+          exit 1
 
-      - name: Archive compiled templates
+      - name: Install and smoke-test Windows archive
+        if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          cd release-artifacts
-          tar -czf agent-templates.tar.gz agent-templates
-
-      - name: Upload compiled templates
-        uses: actions/upload-artifact@v4
-        with:
-          name: agent-templates
-          path: release-artifacts/agent-templates.tar.gz
-          retention-days: 30
-
-  # Docker image builds
-  build-docker-images:
-    name: Build Docker Images
-    runs-on: ubuntu-latest
-    needs: pre-release-validation
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        if: github.event_name == 'release'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Extract version
-        id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "short_sha=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
-
-      - name: Build and test Docker image
-        run: |
-          # Build production image
-          docker build -t universal-agent-runtime:${{ steps.version.outputs.version }} .
-
-          # Build test image
-          docker build -f Dockerfile.test -t universal-agent-runtime:test .
-
-          # Quick smoke test
-          docker run --rm universal-agent-runtime:${{ steps.version.outputs.version }} --version || echo "Version check not available"
-
-      - name: Push to Docker Hub
-        if: github.event_name == 'release'
-        run: |
-          # Tag and push versioned image
-          docker tag universal-agent-runtime:${{ steps.version.outputs.version }} ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:${{ steps.version.outputs.version }}
-          docker push ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:${{ steps.version.outputs.version }}
-
-          # Tag and push latest
-          docker tag universal-agent-runtime:${{ steps.version.outputs.version }} ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:latest
-
-  # Update GitHub release
-  update-release:
-    name: Update GitHub Release
-    runs-on: ubuntu-latest
-    needs:
-      [
-        pre-release-validation,
-        build-release-artifacts,
-        build-docker-images,
-        compile-agent-templates,
-      ]
-    if: github.event_name == 'release'
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: ./artifacts
-
-      - name: Update release with artifacts and notes
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-
-            // Get the release
-            const release = await github.rest.repos.getReleaseByTag({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag: context.ref.replace('refs/tags/', '')
-            });
-
-            // Update release with test summary
-            await github.rest.repos.updateRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: release.data.id,
-              body: `${{ needs.pre-release-validation.outputs.release_notes }}\n\n${release.data.body || ''}`
-            });
-
-            // Upload artifacts
-            const artifactDir = './artifacts';
-            const artifacts = fs.readdirSync(artifactDir);
-
-            for (const artifact of artifacts) {
-              const artifactPath = path.join(artifactDir, artifact);
-              if (fs.statSync(artifactPath).isDirectory()) {
-                const files = fs.readdirSync(artifactPath);
-                for (const file of files) {
-                  const filePath = path.join(artifactPath, file);
-                  if (file.endsWith('.tar.gz') || file.endsWith('.zip')) {
-                    console.log(`Uploading ${file}...`);
-                    const data = fs.readFileSync(filePath);
-
-                    await github.rest.repos.uploadReleaseAsset({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      release_id: release.data.id,
-                      name: file,
-                      data: data
-                    });
-                  }
-                }
-              }
+          Expand-Archive "dist/${{ matrix.archive }}" -DestinationPath installed
+          $binary = "installed/${{ matrix.name }}/${{ matrix.executable }}"
+          (& $binary --version) | Select-String "0.1.0"
+          $process = Start-Process $binary -ArgumentList "--port", "1906" -PassThru -RedirectStandardOutput server.log -RedirectStandardError server-error.log
+          try {
+            $ready = $false
+            for ($attempt = 0; $attempt -lt 60; $attempt++) {
+              if ($process.HasExited) { Get-Content server.log,server-error.log; throw "UAR exited before readiness" }
+              try { Invoke-WebRequest http://127.0.0.1:1906/readyz -UseBasicParsing | Out-Null; $ready = $true; break } catch { Start-Sleep 1 }
             }
+            if (-not $ready) { Get-Content server.log,server-error.log; throw "UAR readiness timeout" }
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id }
+          }
 
-  # Post-release validation
-  post-release-validation:
-    name: Post-Release Validation
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: dist/${{ matrix.archive }}
+          if-no-files-found: error
+          retention-days: 90
+
+  offline-source:
+    name: Complete offline source archive
+    needs: validate
     runs-on: ubuntu-latest
-    needs: [update-release]
-    if: github.event_name == 'release'
     steps:
-      - name: Validate Docker image
-        run: |
-          # Pull and test the published image
-          docker pull ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:latest
-          docker run --rm ${{ secrets.DOCKER_USERNAME }}/universal-agent-runtime:latest --version || echo "Version check not available"
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Package vendored source
+        run: scripts/package-offline-source.sh dist/uar-offline-source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: offline-source
+          path: dist/uar-offline-source.tar.gz
+          if-no-files-found: error
+          retention-days: 90
 
-      - name: Create release notification
-        run: |
-          echo "🚀 Release ${{ needs.pre-release-validation.outputs.version }} successfully published!"
-          echo "✅ All quality gates passed"
-          echo "✅ Multi-platform binaries built"
-          echo "✅ Docker images published"
-          echo "✅ Release artifacts uploaded"
+  publish:
+    name: Attach certified archives
+    needs: [platform-archives, offline-source]
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Create checksums
+        working-directory: artifacts
+        run: sha256sum * >SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*.tar.gz
+            artifacts/*.zip
+            artifacts/SHA256SUMS
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          draft: true

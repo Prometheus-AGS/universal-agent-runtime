@@ -19,6 +19,7 @@
     "frontend:boundaries": "node scripts/check-frontend-boundaries.mjs && node scripts/test-frontend-boundaries-negative.mjs",
     "support-matrix:validate": "node scripts/validate-product-support-matrix.mjs && node scripts/validate-release-capabilities.mjs",
     "docs:validate": "node scripts/validate-documentation-truth.mjs",
+    "release-workflow:validate": "node scripts/validate-release-workflow.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
