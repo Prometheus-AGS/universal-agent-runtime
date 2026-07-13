@@ -50,6 +50,9 @@ for (const value of ["protobuf-compiler", "docker stop --timeout 45 uar-resilien
 if (!/\[\[test\]\]\s+name = "test_a2a_grpc"\s+path = "tests\/test_a2a_grpc\.rs"\s+required-features = \["a2a-transport"\]/m.test(cargoManifest)) {
   failures.push("A2A gRPC integration test must require the a2a-transport feature");
 }
+if (!/\[\[test\]\]\s+name = "burn_embedding_test"\s+path = "tests\/burn_embedding_test\.rs"\s+required-features = \["local-models"\]/m.test(cargoManifest)) {
+  failures.push("Burn embedding integration test must require the local-models feature");
+}
 
 const prohibited = [
   ["node-version: '18'", "Node 18"],
