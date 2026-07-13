@@ -16,6 +16,13 @@ const shaPattern = /^[0-9a-f]{64}$/;
 
 if (manifest.schema_version !== "1.0.0") failures.push("unsupported schema_version");
 if (!/^[0-9a-f]{40}$/.test(manifest.source?.sha ?? "")) failures.push("invalid source SHA");
+if (!/^[0-9a-f]{40}$/.test(manifest.source?.git_tree ?? "")) failures.push("invalid source tree");
+for (const field of ["cargo_lock_sha256", "catalog_sha256", "model_bundle_sha256"]) {
+  if (!shaPattern.test(manifest.source?.[field] ?? "")) failures.push(`invalid source digest: ${field}`);
+}
+if (!Array.isArray(manifest.source?.model_inputs) || manifest.source.model_inputs.length === 0) {
+  failures.push("model_inputs must be non-empty");
+}
 if (!/^sha256:[0-9a-f]{64}$/.test(manifest.image?.digest ?? "")) failures.push("invalid image digest");
 if (!Array.isArray(manifest.artifacts) || manifest.artifacts.length === 0) failures.push("artifacts must be non-empty");
 

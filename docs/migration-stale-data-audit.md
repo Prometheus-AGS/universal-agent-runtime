@@ -66,11 +66,11 @@ Every PR runs `scripts/ci-grep-gates.sh` plus the standard frontend pipeline. Th
 
 | Gate | Enforcement |
 |------|-------------|
-| `pnpm --filter ./frontend typecheck` | TypeScript errors fail the job |
-| `pnpm --filter ./frontend test` | Vitest must report ≥ 40/40 |
-| `pnpm --filter ./frontend build` | Vite build must succeed |
+| `pnpm -C frontend typecheck` | TypeScript errors fail the job |
+| `pnpm -C frontend test` | Vitest must pass |
+| `pnpm -C frontend build` | Vite build must succeed |
 | `git grep useGraphBridge frontend/` empty | Bridge pattern permanently retired |
-| `git grep useSettingsStore frontend/` empty | Settings store retired |
+| `node scripts/check-frontend-boundaries.mjs` | Enforces Component → Hook → Store → Service; hooks may subscribe to Zustand stores |
 | `git grep -E "\b(Inter\|Roboto\|Arial\|Space Grotesk)\b" frontend/src/admin/` empty | Banned-fonts contract from `docs/admin-aesthetic-spec.md` |
 | `git grep "outline:\s*none" frontend/src/admin/` empty | A11y contract — focus rings must be authored, not stripped |
 

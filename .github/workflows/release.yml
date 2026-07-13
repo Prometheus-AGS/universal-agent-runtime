@@ -30,8 +30,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Complete recursive submodule checkout
+        shell: bash
+        run: bash scripts/update-submodules.sh
 
       - name: Install Linux build dependencies
         run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
@@ -119,8 +123,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Complete recursive submodule checkout
+        shell: bash
+        run: bash scripts/update-submodules.sh
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -147,7 +155,8 @@ jobs:
       - name: Build Stable release bundle
         run: |
           pnpm build
-          cargo build --locked --release --bin universal-agent-runtime --features minimal
+          node scripts/validate-static-bundle.mjs static
+          cargo build --locked --release --bin universal-agent-runtime --features server-full
 
       - name: Package Unix archive
         if: runner.os != 'Windows'
@@ -155,6 +164,10 @@ jobs:
         run: |
           mkdir -p "dist/${{ matrix.name }}"
           cp target/release/universal-agent-runtime "dist/${{ matrix.name }}/"
+          cp -R static "dist/${{ matrix.name }}/static"
+          mkdir -p "dist/${{ matrix.name }}/skills"
+          cp -R crates/prometheus-skill-system/skills "dist/${{ matrix.name }}/skills/builtin"
+          cp -R src/uar/runtime/matching/models "dist/${{ matrix.name }}/models"
           cp README.md LICENSE LICENSE-COMMERCIAL.md example.config.yaml "dist/${{ matrix.name }}/"
           tar -czf "dist/${{ matrix.archive }}" -C dist "${{ matrix.name }}"
 
@@ -164,6 +177,10 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force "dist/${{ matrix.name }}" | Out-Null
           Copy-Item target/release/universal-agent-runtime.exe "dist/${{ matrix.name }}/"
+          Copy-Item static "dist/${{ matrix.name }}/static" -Recurse
+          New-Item -ItemType Directory -Force "dist/${{ matrix.name }}/skills" | Out-Null
+          Copy-Item crates/prometheus-skill-system/skills "dist/${{ matrix.name }}/skills/builtin" -Recurse
+          Copy-Item src/uar/runtime/matching/models "dist/${{ matrix.name }}/models" -Recurse
           Copy-Item README.md,LICENSE,LICENSE-COMMERCIAL.md,example.config.yaml "dist/${{ matrix.name }}/"
           Compress-Archive -Path "dist/${{ matrix.name }}" -DestinationPath "dist/${{ matrix.archive }}"
 
@@ -179,7 +196,10 @@ jobs:
             *"universal-agent-runtime 1.0.0"*) ;;
             *) echo "unexpected version output"; exit 1 ;;
           esac
-          installed/${{ matrix.name }}/${{ matrix.executable }} --port 1906 >server.log 2>&1 &
+          UAR_STATIC_DIR="installed/${{ matrix.name }}/static" \
+            UAR_BUILTIN_SKILLS_DIR="installed/${{ matrix.name }}/skills/builtin" \
+            UAR_MODELS_DIR="installed/${{ matrix.name }}/models" \
+            installed/${{ matrix.name }}/${{ matrix.executable }} --port 1906 >server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           for attempt in $(seq 1 60); do
@@ -197,6 +217,9 @@ jobs:
           Expand-Archive "dist/${{ matrix.archive }}" -DestinationPath installed
           $binary = "installed/${{ matrix.name }}/${{ matrix.executable }}"
           (& $binary --version) | Select-String "1.0.0"
+          $env:UAR_STATIC_DIR = (Resolve-Path "installed/${{ matrix.name }}/static").Path
+          $env:UAR_BUILTIN_SKILLS_DIR = (Resolve-Path "installed/${{ matrix.name }}/skills/builtin").Path
+          $env:UAR_MODELS_DIR = (Resolve-Path "installed/${{ matrix.name }}/models").Path
           $process = Start-Process $binary -ArgumentList "--port", "1906" -PassThru -RedirectStandardOutput server.log -RedirectStandardError server-error.log
           try {
             $ready = $false
@@ -223,8 +246,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Complete recursive submodule checkout
+        shell: bash
+        run: bash scripts/update-submodules.sh
       - uses: dtolnay/rust-toolchain@stable
       - name: Package vendored source
         run: scripts/package-offline-source.sh dist/uar-offline-source.tar.gz

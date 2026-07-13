@@ -28,7 +28,11 @@ jobs:
       - name: Checkout (with submodules — skill pack + entity mgmt)
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true
+
+      - name: Complete recursive submodule checkout
+        shell: bash
+        run: bash scripts/update-submodules.sh
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable

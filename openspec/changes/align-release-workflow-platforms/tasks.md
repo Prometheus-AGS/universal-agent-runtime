@@ -8,5 +8,6 @@
 - [x] 2.3 Add Windows x64 build, archive install, startup and health tests.
 - [x] 2.4 Drop or mark preview any platform that cannot pass.
 ## 3. Verify
+<!-- EVIDENCE: complete only from the final immutable candidate run. -->
 - [ ] 3.1 Dispatch candidate workflow from a non-GA test tag.
 - [ ] 3.2 Retain logs/artifacts and validate OpenSpec.

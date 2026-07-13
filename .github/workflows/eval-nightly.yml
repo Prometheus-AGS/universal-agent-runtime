@@ -20,8 +20,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Complete recursive submodule checkout
+        shell: bash
+        run: bash scripts/update-submodules.sh
 
       - name: Guard — require an API key
         id: guard

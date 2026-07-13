@@ -97,6 +97,46 @@ fn is_code_execution_tool(name: &str) -> bool {
         || local.ends_with("_repl")
 }
 
+/// Conservative allowlist for parallel execution. Unknown and mutating tools
+/// remain sequential because their side effects may depend on call order.
+fn is_parallel_safe_tool(name: &str) -> bool {
+    let local = name
+        .rsplit_once("__")
+        .map_or(name, |(_, local)| local)
+        .to_ascii_lowercase();
+    [
+        "get_", "list_", "read_", "search_", "query_", "fetch_", "lookup_", "status_", "health_",
+    ]
+    .iter()
+    .any(|prefix| local.starts_with(prefix))
+}
+
+fn is_retryable_provider_error(
+    error: &anyhow::Error,
+    policy: &crate::uar::settings::resilience_policy::ResiliencePolicy,
+) -> bool {
+    let message = error.to_string().to_ascii_lowercase();
+    let status_retryable = policy.retryable_http_statuses.iter().any(|status| {
+        let status = status.to_string();
+        message.contains(&format!("status {status}"))
+            || message.contains(&format!("status: {status}"))
+            || message.contains(&format!("http {status}"))
+    });
+    status_retryable
+        || (policy.retryable_transport_errors
+            && [
+                "connection",
+                "transport",
+                "timed out",
+                "timeout",
+                "temporarily unavailable",
+                "broken pipe",
+                "reset by peer",
+            ]
+            .iter()
+            .any(|needle| message.contains(needle)))
+}
+
 /// Extract (`code`, `language`) from a tool-call's argument JSON, if present.
 fn extract_code_from_arguments(
     tool_name: &str,
@@ -206,6 +246,7 @@ pub struct Orchestrator {
     sandbox_runner: Option<Arc<dyn crate::sandbox::SandboxRunner>>,
     /// Controls which tool calls are routed to the sandbox runner.
     tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode,
+    resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
 }
 
 #[allow(clippy::missing_fields_in_debug)]
@@ -251,6 +292,7 @@ impl Orchestrator {
             tool_approval_gate: None,
             sandbox_runner: None,
             tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode::default(),
+            resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
         })
     }
 
@@ -351,6 +393,16 @@ impl Orchestrator {
     ) -> Self {
         self.sandbox_runner = Some(runner);
         self.tool_execution_mode = mode;
+        self
+    }
+
+    /// Apply bounded provider retry and stream-start policy to this run.
+    #[must_use]
+    pub fn with_resilience_policy(
+        mut self,
+        policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
+    ) -> Self {
+        self.resilience_policy = policy;
         self
     }
 
@@ -502,7 +554,78 @@ impl Orchestrator {
                 let primary_provider_id =
                     super::registry::split_model_string_pub(&orchestrator.llm_config.model).0;
                 let driver_stream = {
-                    let primary = orchestrator.driver.stream(req.clone()).await;
+                    let policy = &orchestrator.resilience_policy;
+                    let max_attempts = if policy.retries_enabled {
+                        policy.retry_max_attempts.max(1)
+                    } else {
+                        1
+                    };
+                    let retry_started = std::time::Instant::now();
+                    let mut attempt = 1_u32;
+                    let primary = loop {
+                        match tokio::time::timeout(
+                            std::time::Duration::from_millis(policy.stream_start_timeout_ms),
+                            orchestrator.driver.stream(req.clone()),
+                        )
+                        .await
+                        {
+                            Ok(Ok(stream)) => break Ok(stream),
+                            Ok(Err(error))
+                                if attempt < max_attempts
+                                    && is_retryable_provider_error(&error, policy) =>
+                            {
+                                let elapsed_ms = u64::try_from(retry_started.elapsed().as_millis())
+                                    .unwrap_or(u64::MAX);
+                                let exponent = i32::try_from(attempt.saturating_sub(1))
+                                    .unwrap_or(i32::MAX);
+                                let delay_ms = ((policy.retry_base_delay_ms as f64)
+                                    * f64::from(policy.retry_backoff_multiplier).powi(exponent))
+                                    .min(policy.retry_max_delay_ms as f64)
+                                    as u64;
+                                if elapsed_ms.saturating_add(delay_ms) > policy.retry_budget_ms {
+                                    break Err(error);
+                                }
+                                tracing::warn!(
+                                    request_id = %request_id,
+                                    iteration,
+                                    attempt,
+                                    max_attempts,
+                                    delay_ms,
+                                    error = %error,
+                                    "LLM stream creation failed; retrying before semantic events"
+                                );
+                                tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+                                attempt = attempt.saturating_add(1);
+                            }
+                            Ok(Err(error)) => break Err(error),
+                            Err(_) if attempt < max_attempts => {
+                                let elapsed_ms = u64::try_from(retry_started.elapsed().as_millis())
+                                    .unwrap_or(u64::MAX);
+                                let delay_ms = policy
+                                    .retry_base_delay_ms
+                                    .min(policy.retry_max_delay_ms);
+                                if elapsed_ms.saturating_add(delay_ms) > policy.retry_budget_ms {
+                                    break Err(anyhow::anyhow!(
+                                        "LLM stream start timed out after {} ms",
+                                        policy.stream_start_timeout_ms
+                                    ));
+                                }
+                                tracing::warn!(
+                                    request_id = %request_id,
+                                    iteration,
+                                    attempt,
+                                    timeout_ms = policy.stream_start_timeout_ms,
+                                    "LLM stream start timed out; retrying"
+                                );
+                                tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+                                attempt = attempt.saturating_add(1);
+                            }
+                            Err(_) => break Err(anyhow::anyhow!(
+                                "LLM stream start timed out after {} ms",
+                                policy.stream_start_timeout_ms
+                            )),
+                        }
+                    };
                     match primary {
                         Ok(s) => {
                             tracing::debug!(
@@ -774,7 +897,69 @@ impl Orchestrator {
                     "Added assistant message with tool calls to history"
                 );
 
-                // Execute each tool call and emit results
+                // Read-only calls can execute concurrently. `buffered` bounds
+                // concurrency while preserving input order, which keeps tool
+                // result message ordering deterministic for the next LLM turn.
+                if orchestrator.llm_config.parallel_tool_calls == Some(true)
+                    && tool_calls.len() > 1
+                    && orchestrator.tool_approval_gate.is_none()
+                    && orchestrator.sandbox_runner.is_none()
+                    && tool_calls
+                        .iter()
+                        .all(|call| is_parallel_safe_tool(&call.function.name))
+                {
+                    let executions = futures::stream::iter(tool_calls.iter().cloned().map(|call| {
+                        let orchestrator = orchestrator.clone();
+                        async move {
+                            let arguments = serde_json::from_str(&call.function.arguments)
+                                .unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
+                            let outcome = if let Some(native) =
+                                orchestrator.native_skills.get(&call.function.name).await
+                            {
+                                native
+                                    .execute(arguments)
+                                    .await
+                                    .map(|value| serde_json::to_string(&value).unwrap_or_default())
+                            } else {
+                                orchestrator
+                                    .mcp
+                                    .call_namespaced_tool(&call.function.name, arguments)
+                                    .await
+                                    .map(|value| serde_json::to_string(&value).unwrap_or_default())
+                            };
+                            let (content, success) = match outcome {
+                                Ok(content) => (content, true),
+                                Err(error) => (format!("Error: {error}"), false),
+                            };
+                            (call, content, success)
+                        }
+                    }))
+                    .buffered(8)
+                    .collect::<Vec<_>>()
+                    .await;
+
+                    for (call, content, success) in executions {
+                        yield NormalizedEvent::ToolResult {
+                            id: call.id.clone(),
+                            name: call.function.name.clone(),
+                            content: content.clone(),
+                            success,
+                        };
+                        message_json.push(serde_json::json!({
+                            "role": "tool",
+                            "tool_call_id": call.id,
+                            "content": content
+                        }));
+                    }
+                    yield NormalizedEvent::RuntimeStep {
+                        step,
+                        kind: RuntimeStepKind::Finished,
+                    };
+                    continue;
+                }
+
+                // Execute mutating, approval-gated, sandboxed, or unknown calls
+                // sequentially to preserve policy and side-effect ordering.
                 for (idx, tool_call) in tool_calls.iter().enumerate() {
                     let tool_name = &tool_call.function.name;
                     let arguments: serde_json::Value = serde_json::from_str(&tool_call.function.arguments)

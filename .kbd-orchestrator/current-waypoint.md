@@ -1,11 +1,14 @@
 # Current Waypoint — Universal Agent Runtime
 
-- **Phase:** `uar-final-production-hardening-2026-07`
-- **Stage:** executing
-- **Progress:** 19 of 24 changes complete
-- **Last completed:** `reconcile-product-documentation`
-- **Active/next change:** `align-release-workflow-platforms`
-- **Exact next command:** `/kbd-apply align-release-workflow-platforms`
-- **Plan:** `.kbd-orchestrator/phases/uar-final-production-hardening-2026-07/plan.md`
+> EXECUTION LOCK: Reach 24/24 production completion. CI is asynchronous evidence, not the work queue. Do not monitor workflows while actionable implementation or release work remains. Operator instructions override stale context.
 
-Canonical documentation now matches the React-first support matrix and is guarded by CI. Continue in plan order with release workflow/platform alignment, then operational resilience, supply-chain artifacts, immutable release-candidate certification, and the final 1.0.0 release gate.
+- Phase: `uar-final-production-hardening-2026-07`
+- Stage: final certification and release
+- Product: `server-full` BossFang sidecar
+- Progress: 19/24 changes formally complete; changes 20–24 are implemented and await evidence, time-bound conditions, or operator-authorized publication
+- Stable platforms: Linux and macOS
+- Experimental/nonblocking: Windows
+- Active surface: changes 20–24 only
+- Next action: hold the source stable, obtain authorization at external-effect gates, and execute one immutable RC → evidence → GA sequence
+
+Before every action ask: **Does this directly advance changes 20–24 toward completion?** If not, do not do it.

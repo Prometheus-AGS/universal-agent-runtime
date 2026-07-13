@@ -80,6 +80,14 @@ use crate::uar::persistence::providers::postgres::PostgresProvider;
 
 /// Start the Axum server with the provided configuration.
 pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
+    start_server_with_listener(config, None, None).await
+}
+
+async fn start_server_with_listener(
+    config: Arc<AppConfig>,
+    listener: Option<tokio::net::TcpListener>,
+    ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
+) -> anyhow::Result<()> {
     let mut llm_config = config.llm.clone();
     normalize_legacy_openai_base_url(&mut llm_config);
     info!(
@@ -496,6 +504,9 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         .with_message_context_strategy(config.context_strategy.clone())
         .with_governance_engine(Arc::clone(&governance_engine))
         .with_failover_config(config.failover.clone())
+        .with_resilience_policy(uar::settings::resilience_policy::ResiliencePolicy::from(
+            &config.resilience,
+        ))
         .with_global_cost_budget(config.llm.budget.as_ref())
         .await;
         if let Some(ref svc) = provider_service {
@@ -1147,8 +1158,14 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
         })
     };
 
-    let addr = format!("{}:{}", config.server.host, config.server.port);
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    let listener = match listener {
+        Some(listener) => listener,
+        None => {
+            let addr = format!("{}:{}", config.server.host, config.server.port);
+            tokio::net::TcpListener::bind(&addr).await?
+        }
+    };
+    let primary_addr = listener.local_addr()?;
 
     // Dual-stack companion bind. Browsers resolve `localhost` to IPv6 `::1`
     // first, but an IPv4-only primary (`0.0.0.0` / `127.0.0.1`) leaves `::1`
@@ -1156,7 +1173,13 @@ pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     // healthy. Binding the loopback of the other address family on the same
     // port makes `localhost` work regardless of which address the client picks.
     // A failure here (e.g. IPv6 disabled) is non-fatal: we keep the primary.
-    let companion = bind_companion_listener(&config.server.host, config.server.port).await;
+    let companion = bind_companion_listener(&config.server.host, primary_addr.port()).await;
+
+    if let Some(ready) = ready {
+        ready
+            .send(primary_addr)
+            .map_err(|_| anyhow::anyhow!("sidecar supervisor stopped before readiness"))?;
+    }
 
     let http_result = serve_on_listener(
         listener,
@@ -1212,17 +1235,22 @@ async fn bind_companion_listener(host: &str, port: u16) -> Option<tokio::net::Tc
     }
 }
 
-/// Start the server with a caller-provided, already-bound `TcpListener`.
+/// Start the server with a caller-provided, already-bound listener.
 ///
-/// This is the entry point for the `uar-sidecar` binary, which pre-binds on
-/// `127.0.0.1:0` to discover the OS-assigned port, emits `READY:{port}` to
-/// stdout, sets `UAR_SERVER__PORT` and `UAR_SERVER__HOST` env vars to lock the
-/// port, drops the pre-bound socket, and then calls this function.
+/// The readiness sender fires only after configuration, persistence, routes,
+/// and the HTTP application are initialized. The listener remains owned by the
+/// server for the entire startup path, so no other process can claim its port.
 ///
-/// The tiny loopback race window between dropping the pre-bound socket and
-/// `start_server` re-binding is acceptable for trusted-loopback sidecar use.
-pub async fn start_server_sidecar(config: Arc<AppConfig>) -> anyhow::Result<()> {
-    start_server(config).await
+/// # Errors
+///
+/// Returns an error when runtime initialization or serving fails, or when the
+/// supervising process drops the readiness receiver before startup completes.
+pub async fn start_server_sidecar(
+    config: Arc<AppConfig>,
+    listener: tokio::net::TcpListener,
+    ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
+) -> anyhow::Result<()> {
+    start_server_with_listener(config, Some(listener), Some(ready)).await
 }
 
 async fn serve_on_listener(

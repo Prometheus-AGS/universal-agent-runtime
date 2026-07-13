@@ -117,7 +117,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
     && apt-get update && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/* \
     && corepack enable \
-    && corepack prepare pnpm@latest --activate \
+    && corepack prepare pnpm@10.33.0 --activate \
     && curl -fsSL https://bun.sh/install | bash \
     && ln -sf /root/.bun/bin/bun /usr/local/bin/bun \
     && npm install -g --no-fund --no-audit \
@@ -200,11 +200,10 @@ COPY . .
 RUN git config --global --add safe.directory '*' \
     && git submodule update --init --recursive --depth 1 || true
 
-# Frontend: pnpm workspace install + build. The pnpm workspace root is `frontend/`
-# (it has pnpm-workspace.yaml + pnpm-lock.yaml; the repo root uses bun and has no
-# pnpm lockfile, which caused ERR_PNPM_NO_LOCKFILE when installing from /src).
+# Frontend: use the same pinned pnpm and immutable frontend lockfile as release
+# validation. The frontend remains an isolated workspace under `frontend/`.
 RUN cd frontend \
-    && pnpm install --no-frozen-lockfile \
+    && pnpm install --frozen-lockfile \
     && pnpm -r --filter "./packages/*" build \
     && pnpm build
 
@@ -254,6 +253,8 @@ WORKDIR /opt/uar
 ENV UAR_STATIC_DIR=/opt/uar/static \
     UAR_MODELS_DIR=/opt/uar/models \
     UAR_BUILTIN_SKILLS_DIR=/opt/uar/skills/builtin \
+    UAR_PERSISTENCE__PROVIDER=surreal \
+    UAR_PERSISTENCE__DATABASE_URL=surrealkv:///var/lib/uar/data/uar.db \
     UAR_SKILLS_WASM_BUILTIN_DIR=/opt/uar/skills/wasm-builtin \
     UAR_SKILLS_USER_DIR=/var/lib/uar/skills-user \
     UAR_SKILLS_DERIVED_DIR=/var/lib/uar/skills-derived \
@@ -266,12 +267,20 @@ COPY --from=builder /out/static /opt/uar/static
 COPY --from=builder /out/skills /opt/uar/skills
 COPY --from=builder /out/models /opt/uar/models
 
-VOLUME ["/var/lib/uar/skills-user", \
-        "/var/lib/uar/skills-derived", \
-        "/var/lib/uar/cache/huggingface", \
-        "/var/lib/uar/cache/cargo", \
-        "/var/lib/uar/cache/pnpm", \
-        "/var/lib/uar/data"]
+RUN mkdir -p /var/lib/uar/skills-user \
+        /var/lib/uar/skills-derived \
+        /var/lib/uar/cache/huggingface \
+        /var/lib/uar/cache/cargo \
+        /var/lib/uar/cache/pnpm \
+        /var/lib/uar/data \
+    && chown -R 65532:65532 /var/lib/uar
+
+# One volume avoids nested anonymous volumes masking a caller's /var/lib/uar
+# bind mount. Numeric ownership keeps the image runtime-agnostic and allows
+# Kubernetes/Docker to enforce the same non-root identity.
+VOLUME ["/var/lib/uar"]
+
+USER 65532:65532
 
 EXPOSE 1906 50051
 

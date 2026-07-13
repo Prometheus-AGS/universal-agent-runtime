@@ -1,25 +1,42 @@
 
 # AGENTS.md - Repository Guidelines
 
+## Active production-completion execution lock
+
+For the active KBD phase `uar-final-production-hardening-2026-07`:
+
+- The primary objective is 24/24 production completion for the `server-full` BossFang sidecar.
+- Operator instructions override stale plans, assessments, workflow status, and agent preferences.
+- Before every action ask whether it directly advances changes 20–24; if not, do not do it.
+- CI and tests are asynchronous evidence, not the work queue. Never babysit workflows while actionable implementation or release work remains.
+- Batch related fixes. During implementation use static inspection and cohesive `cargo check` only; validate the completed product in one consolidated sequence.
+- Linux and macOS are Stable. Windows is Experimental and nonblocking for this round.
+- Keep implementation, evidence, time-bound conditions, and operator authorization explicitly distinct.
+- Preserve active Cargo caches; never run `cargo clean`; use only reviewed reversible cleanup.
+
+The canonical active state is `.kbd-orchestrator/current-waypoint.json`. Historical KBD detail remains in Git history and must not override it.
+
+
 ## Build, Lint & Test
 
-- **Rust**: `cargo build`, `cargo clippy --all-targets --all-features`, `cargo fmt`
-- **Web**: `bun install`, `bun run build`, `bun run lint`, `bun run format`
-- **Test All**: `cargo test`, `bun test web/tests`
-- **Single Test**: `cargo test <test_name>`, `bun test <file_pattern>`
+- **Rust implementation checkpoint**: `cargo check --locked --no-default-features --features server-full`
+- **Rust final validation**: `cargo fmt --all -- --check`, supported-profile tests and release certification only after implementation is complete
+- **Web**: `pnpm -C frontend install --frozen-lockfile`, `pnpm typecheck`, `pnpm lint`, `pnpm build`
+- **Test All (final validation only)**: `cargo test --locked --no-default-features --features server-full`, `pnpm test`
+- **Single Test**: `cargo test <test_name>`, `pnpm -C frontend test <file_pattern>`
 - **Clean Build**: ZERO warnings/errors allowed. Fix warnings immediately or use `#[expect(lint, reason="...")]`.
 
 ## Code Style & Conventions
 
 - **Rust**: 4-space indent. `snake_case` (fn/mod), `CamelCase` (types). Use `anyhow` for app errors, `tracing` for structured logs.
-- **TypeScript**: 2-space indent, semicolons, TS 5.9.3. Prefer Web Components in `web/components/`.
+- **TypeScript**: 2-space indent, semicolons, TS 5.9.3. React code lives in `frontend/src/` and follows the strict layering contract below.
 - **Imports**: No glob re-exports (`pub use foo::*`). Use `#[doc(inline)]` for public re-exports.
 - **Documentation**: Public items must have `///` docs with `# Examples`, `# Errors`, and `# Panics` sections.
 
 ## Architecture & UI
 
-- **Structure**: `src/` (Axum/Leptos SSR), `web/` (TS/Web Components), `static/` (Bundled assets).
-- **UI Reference**: `docs/htmx/` for Material 3 Flat 2.0 patterns (borderless, token-based theming).
+- **Structure**: `src/` (Axum runtime/API), `frontend/` (React 19/TypeScript), `static/` (bundled production assets).
+- **UI contract**: React 19 is the authoritative first-party UI; historical HTMX/Web Component material is not present-tense product guidance.
 - **Config**: `.env` (see `.env.example`), `example.config.yaml`, `mcp.json` for MCP tools.
 - **LLM**: All LLM access goes through [liter-llm](https://github.com/GQAdonis/liter-llm) — 142+ providers via unified `provider/model` addressing. Set `UAR_LLM__MODEL` and `UAR_LLM__API_KEY` (or a provider shortcut like `OPENAI_API_KEY`). See `example.config.yaml` for the full `llm:` section.
 - **Model routing**: Use `POST /api/uar/route` with capability requirements (`needs_tools`, `needs_vision`, `min_context`, etc.) to get the best available model. The catalog is built at compile time from models.dev + liter-llm schemas.
@@ -79,6 +96,9 @@ The helper refuses any path that would land inside the repo tree and seeds the n
 
 Existing in-repo worktrees under `.claude/worktrees/` are intentionally **not relocated** — the convention applies to every worktree created from now on. The KBD orchestrator surfaces the active worktree path via `/kbd-status` and warns when the current checkout is outside `worktreeRoot` (configured in `.kbd-orchestrator/project.json`).
 
+
+/Users/gqadonis/.rvm/scripts/rvm: line 29: /bin/ps: Operation not permitted
+pyenv: cannot rehash: /Users/gqadonis/.pyenv/shims isn't writable
 ## Prometheus Base Rules Set
 
 > Canonical base rules for Claude Code, Codex, OpenAI agents, Gemini CLI, Roo,

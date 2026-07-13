@@ -38,8 +38,8 @@ and add `GCP_SA_KEY` (the JSON key) as a repo secret. WIF is preferred (no long-
 ## Other CI fixes in this PR (no secrets needed)
 - `ci.yml`: `dtolnay/rust-action@stable` → **`dtolnay/rust-toolchain@stable`** (the former
   action does not exist → "repository not found").
-- `ci.yml`, `deploy.yml`, `comprehensive-tests.yml`, `quick-tests.yml`: added
-  **`submodules: recursive`** to every `actions/checkout` so the git submodules
+- CI and release workflows use **`submodules: true`** for credentialed top-level
+  checkout, followed by the retrying **`scripts/update-submodules.sh`** step so the git submodules
   (`crates/prometheus-skill-system`, `frontend/packages/prometheus-entity-management`,
   `models.dev`, …) are present — without them the frontend type-check fails
   (`Cannot find module '@prometheus-ags/prometheus-entity-management'`) and the Rust
@@ -47,7 +47,7 @@ and add `GCP_SA_KEY` (the JSON key) as a repo secret. WIF is preferred (no long-
 
 ## Second secret required: `SUBMODULES_TOKEN` (private cross-repo submodules)
 
-`submodules: recursive` alone is **not enough** here. Two submodules point at OTHER
+Recursive initialization alone is **not enough** here. Two submodules point at OTHER
 private repos:
 - `crates/prometheus-skill-system` → `Prometheus-AGS/prometheus-skill-system` (+ its
   own nested submodules: `liter-llm`, `prometheus-knowledge`, `surreal-memory-server`, …)

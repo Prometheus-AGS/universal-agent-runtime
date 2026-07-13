@@ -8,21 +8,21 @@ title: Troubleshooting
 Common boot and runtime problems, with the exact fix for each. Each section
 names the symptom you will see in the logs or in an HTTP response.
 
-## Boot fails: missing `persistence.provider` / `persistence.database_url`
+## Embedded datastore cannot be opened
 
-**Symptom** — the process exits immediately (exit code `1`) shortly after
-`Failed to load configuration`, with a config error such as *missing field
-`provider`* (or `database_url`) for the `persistence` section.
+**Symptom** — the process exits while opening `surrealkv://./data/uar.db`, or
+reports that the datastore path is not writable.
 
-**Cause** — `persistence.provider` and `persistence.database_url` have **no
-compiled defaults**. If neither a config file nor environment variables supply
-them, configuration loading fails.
+**Cause** — packaged binaries use that embedded path by default. The service
+account may not own the working directory, or the deployment intended to use a
+different persistent volume.
 
-**Fix** — set both. For embedded SurrealDB:
+**Fix** — make the default data directory writable, or explicitly choose a
+writable embedded location:
 
 ```bash
 UAR_PERSISTENCE__PROVIDER=surreal
-UAR_PERSISTENCE__DATABASE_URL=rocksdb://./data/uar-db
+UAR_PERSISTENCE__DATABASE_URL=surrealkv:///var/lib/uar/data/uar-db
 ```
 
 Or point at the bundled example file:

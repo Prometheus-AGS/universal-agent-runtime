@@ -23,8 +23,12 @@ jobs:
       - name: Checkout (with submodules — skill pack + entity mgmt)
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Complete recursive submodule checkout
+        shell: bash
+        run: bash scripts/update-submodules.sh
 
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
@@ -55,15 +59,6 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
-      # @prometheus-ags/prometheus-entity-management's package.json points
-      # main/module/types at ./dist/* (tsup output) — pnpm install alone
-      # symlinks the workspace package but doesn't build it, so `dist/` is
-      # missing on a fresh checkout (5th real-dispatch failure: identical
-      # Rolldown resolution error, this time from use-thread-graph-sync.ts).
-      - name: Build entity-management workspace package
-        working-directory: frontend
-        run: pnpm --filter @prometheus-ags/prometheus-entity-management build
-
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -71,6 +66,8 @@ jobs:
         # Blocking as of test-hardening (2026-07-11): the suite has been green
         # (6/6) on real CI since fix-embeddings-fastembed landed, so a
         # regression here should now fail the workflow rather than be advisory.
+        # test:bdd builds the complete React/server-full product first because
+        # generated static assets are intentionally absent from fresh checkouts.
         run: pnpm test:bdd
 
       - name: Upload certification bundle

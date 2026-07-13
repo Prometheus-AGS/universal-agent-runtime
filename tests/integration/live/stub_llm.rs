@@ -32,6 +32,10 @@ use tokio::net::TcpListener;
 #[derive(Debug, Clone)]
 pub enum FixtureResponse {
     Content(String),
+    #[expect(
+        dead_code,
+        reason = "constructed by the stub's grounded-content unit fixture, which is not compiled into every integration-test binary"
+    )]
     GroundedContent {
         required_context: String,
         text: String,

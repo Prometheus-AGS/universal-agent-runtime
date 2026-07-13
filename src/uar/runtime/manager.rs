@@ -168,6 +168,7 @@ pub struct RunManager {
     /// present (unconfigured scopes simply have no limit, so `record` is a
     /// cheap no-op warning check).
     cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker,
+    resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
 }
 
 /// Memory mutation tool name sets — used to detect side effects in ToolEnd events.
@@ -480,6 +481,7 @@ impl RunManager {
             governance_engine: None,
             failover_config: crate::config::FailoverConfig::default(),
             cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker::new(),
+            resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
         }
     }
 
@@ -526,6 +528,16 @@ impl RunManager {
     #[must_use]
     pub fn with_failover_config(mut self, config: crate::config::FailoverConfig) -> Self {
         self.failover_config = config;
+        self
+    }
+
+    /// Configure bounded provider retry and stream-start behavior for runs.
+    #[must_use]
+    pub fn with_resilience_policy(
+        mut self,
+        policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
+    ) -> Self {
+        self.resilience_policy = policy;
         self
     }
 
@@ -1105,7 +1117,8 @@ impl RunManager {
                 let o = match &self.provider_registry {
                     Some(registry) => o.with_health_monitor(Arc::clone(registry.health())),
                     None => o,
-                };
+                }
+                .with_resilience_policy(self.resilience_policy.clone());
 
                 // Wire up tool approval gate
                 let approval_run_id = run_id.clone();

@@ -23,6 +23,7 @@ const requiredWorkflowContracts = [
   "--user 65532:65532",
   "node scripts/generate-release-manifest.mjs",
   "node scripts/validate-release-manifest.mjs",
+  "cp scripts/validate-release-manifest.mjs evidence/verify-release.mjs",
   "softprops/action-gh-release@v2"
 ];
 for (const value of requiredWorkflowContracts) {

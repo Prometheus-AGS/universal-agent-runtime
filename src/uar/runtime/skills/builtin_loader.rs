@@ -425,6 +425,7 @@ fn split_frontmatter(raw: &str) -> Result<(&str, &str)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use std::fs;
     use tempfile::TempDir;
 
@@ -437,6 +438,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn discover_extra_root_loads_skill() {
         let dir = TempDir::new().unwrap();
         let skill_dir = dir.path().join("my-skill");
@@ -476,6 +478,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn full_frontmatter_fields_are_parsed() {
         let dir = TempDir::new().unwrap();
         let skill_dir = dir.path().join("rich-skill");
@@ -531,6 +534,7 @@ body"#,
     }
 
     #[test]
+    #[serial]
     fn nested_skill_records_parent() {
         let dir = TempDir::new().unwrap();
         let parent_dir = dir.path().join("parent-skill");
@@ -626,6 +630,7 @@ body"#,
     }
 
     #[test]
+    #[serial]
     fn collision_across_roots_is_precedence_wins_not_last_wins() {
         // Two roots define a skill with the SAME name but different bodies.
         // The primary root (UAR_BUILTIN_SKILLS_DIR, resolved first) must win

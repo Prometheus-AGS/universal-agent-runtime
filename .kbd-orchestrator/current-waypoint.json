@@ -1,128 +1,39 @@
 {
   "phase": "uar-final-production-hardening-2026-07",
-  "change": "align-release-workflow-platforms",
   "status": "executing",
-  "stage": "executing",
-  "previousPhase": "uar-production-ready-uiux-2026-07",
-  "currentTask": "KBD execution continuing in production-release worktree (19/24 ledger; three release changes in live verification). Published-main history merged before final immutable candidate certification.",
-  "nextPendingChange": "align-release-workflow-platforms",
-  "roundZeroComplete": true,
-  "changeStatus": {
-    "SE4-tool-loop-cedar-gating": "MERGED #31 (S4 MET)",
-    "SE3-guardrail-pii-block": "MERGED #32 (S3 MET)",
-    "SE2-sycophancy-auto-correct": "MERGED #33 (S2 MET)",
-    "S1-eval-harness": "DEFERRED -> uar-eval-harness phase",
-    "HK0-commit-live-sse-dualstack": "DONE (7 focused commits: dual-stack listener, multiplexed /api/live SSE, fmt, asset rebuild, uar-next-fable.md, KBD phase state, settings sync). 268/268 lib tests + 5/5 frontend adapter tests green.",
-    "proxy-integration-gate": "DONE (narrowed scope, plan Amendment A3). OpenSpec 4/4 + 10/10 tasks: stub LLM server (tests/integration/live/stub_llm.rs), backend selection (backend.rs, UAR_LIVE_INTEGRATION_BACKEND), scripts/live-integration.sh health-check+remediation. 9/9 new unit tests green + 3 script paths smoke-tested. 4 commits: 439f5f9 (plan), 99eeddf, 38f24f4, 781ca77 (code), plus this turn's narrowing edits. Baseline cases + AppState harness split out to new CH-22b live-integration-baseline-coverage (see below).",
-    "live-integration-baseline-coverage": "DONE \u2014 all 5 task groups. 9 baseline cases (7 pass, 2 #[ignore]d for disclosed product bugs), backend-parametric parity case, MATRIX.md feature-coverage contract + tools/live-matrix-check.sh + .github/workflows/live-integration.yml (advisory), README. Local suite 17 passed/2 ignored/0 failed; final full-suite verify running in isolated target dir. Every remaining Round1-4 feature change must add a MATRIX.md row.",
-    "agent-spec-v2": "MERGED 75116e4 (CH-12). 5 new IR sections on AgentDescriptorIR (model_requirements, prompt_dialect, rag_configuration, context_strategy, api_harness), backward-compatible via #[serde(default)], v1.1 completeness gating untouched. 3 new tests, 333/333 suite green.",
-    "compiler-v2-stages": "MERGED e1532d6 (CH-13). Stage 01 validation for all 5 v2 sections + stage 08 schema bump to /v2 when non-default. Full-pipeline round-trip test added; v1-only test still asserts /v1. 334/334 suite green.",
-    "eval-targeted-suites": "MERGED 13326a4 (CH-17). 3 keyless CompletionProvider fixtures exercising real runtime decisions (skill activation, routing incl. CH-03 health-cooldown, context strategy) wired into eval CLI with committed baselines. 341/341 suite green.",
-    "perf-security-load": "MERGED 369117b + e2c82c7 (CH-20). Criterion hot-path benches (not run this session), 50-concurrent-agent load test, prompt-injection whitespace-evasion fix + disclosed known-gaps (13/13 guardrails tests green), server.rs split assessment (recommendation only). OpenSpec change dir opened retroactively at openspec/changes/perf-security-load/.",
-    "conformance-testing": "MERGED 4b24f01 (CH-14). check_conformance() drives ModelRouter::route/PromptDialect::detect/apply_strategy against declared model_requirements/prompt_dialect/context_strategy; NotDeclared for sections left at parsed default. 10/10 new tests, full suite 360/360 green, zero new clippy warnings.",
-    "agent-template-library": "MERGED bbe7ec2 (CH-15). 4 templates (coding/vision/terminal/data) + `compile` CLI subcommand + compile-agent-templates CI release job (agent-templates.tar.gz) + tests/agent_templates_test.rs regression guard. Full suite 363/363, integration 56/56 green.",
-    "docs-overhaul-deploy-guide": "MERGED 45e7e37 (CH-19). ARCHITECTURE.md gained Provider Health & Failover / Prompt Dialect Engine / Cost & Budget Tracking sections, an Agent Spec v2 & Conformance section, and an Architectural Decisions section (D-A/B/C/D). New DEPLOYMENT.md discloses a real AKS-vs-GKE deploy.yml/Helm-chart drift found via git history. Docs-only, phase's last change.",
-    "surrealdb-upgrade": "DONE 5cdcbde (Round 4/4, uar-security-deps-and-hygiene, final change). Bumped surrealdb =3.0.5 -> =3.2.0, resolving every open surrealdb Dependabot alert. Reviewed migrations/surrealdb/schema.surql + SurrealQL call sites for breaking changes -- none found (corrected the phase's own '12 SurrealDB migrations' claim, which actually describes Postgres/sqlx migrations, not SurrealDB). Verified: cargo check clean, cargo test --lib 363/363, cargo test --test integration 56/56, clippy zero new warnings, live-server smoke check (embedded SurrealKV write+read both succeeded). Phase now 10/10 complete.",
-    "pin-surreal-memory-to-sha": "DONE (uar-post-dependabot-followup-2026-07). surreal-memory branch=main -> rev=f9ab1c29944b86d44c23ea0e6192fa3d39acbde8, user-chosen via AskUserQuestion. Zero crate version churn.",
-    "fix-d-d-pin-characterization": "DONE (uar-post-dependabot-followup-2026-07). Corrected ARCHITECTURE.md's D-D kreuzberg/surreal-memory pin-type swap + 3 stale DEPENDENCY_MANAGEMENT.md entries.",
-    "triage-unassigned-unmaintained-warnings": "DONE (uar-post-dependabot-followup-2026-07). 1/9 fixed (instant via notify 7->8), 8/9 disclosed with rationale.",
-    "push-and-verify-security-audit-workflow": "DONE (uar-post-dependabot-followup-2026-07). Resolved real origin/main merge conflict (4 Dependabot PRs), fixed 2 Vite 7->8 regressions, verified security-audit.yml green on real GitHub Actions run (28935118101), found+fixed 2 bonus CVEs (cmov, opentelemetry_sdk) via gh api dependabot/alerts.",
-    "add-dependabot-alerts-ci-gate": "DONE (uar-security-audit-alerts-gate-2026-07). New dependabot-alerts-gate job in security-audit.yml, reuses secrets.SUBMODULES_TOKEN (user's AskUserQuestion choice), fails on undisclosed open alerts via inline DISCLOSED_GHSA_IDS allowlist, fails loudly on API errors. docs/DEPENDENCY_MANAGEMENT.md updated. Dry-run verified locally; real-CI confirmation is verify-dependabot-alerts-gate-live's job.",
-    "migrate-vite-rolldown-codesplitting": "DONE (uar-security-audit-alerts-gate-2026-07). vite.config.ts: build.rollupOptions -> build.rolldownOptions, manualChunks -> codeSplitting.groups, same 4 vendor chunks + chunkSizeWarningLimit confirmed via pnpm run build. New frontend-build-tooling capability spec added (OpenSpec validator requires >=1 delta per change).",
-    "verify-dependabot-alerts-gate-live": "DONE (uar-security-audit-alerts-gate-2026-07). Dispatched security-audit.yml for real (run 28950786923); all 5 jobs succeeded including dependabot-alerts-gate, confirming SUBMODULES_TOKEN has sufficient scope on the first real attempt. Extended the existing CI-Trigger-Actually-Fires requirement with a credential-runtime-scope scenario.",
-    "fix-comprehensive-tests-ci-gate": "DONE (uar-production-ready-uiux-2026-07, 2026-07-08). See progress.json for full detail.",
-    "fix-auth-revoke-key-error-surfacing": "DONE (uar-production-ready-uiux-2026-07, 2026-07-08). See progress.json for full detail.",
-    "upgrade-a2ui-testing-live-round-trip": "DONE (uar-production-ready-uiux-2026-07, 2026-07-09, archived openspec/changes/archive/2026-07-09-upgrade-a2ui-testing-live-round-trip/). See progress.json for full detail.",
-    "resolve-runtime-protocols-page-facade": "DONE (uar-production-ready-uiux-2026-07, 2026-07-09, archived openspec/changes/archive/2026-07-09-resolve-runtime-protocols-page-facade/). See progress.json for full detail.",
-    "resolve-runtime-cockpit-dead-panels": "DONE (uar-production-ready-uiux-2026-07, 2026-07-09, archived openspec/changes/archive/2026-07-09-resolve-runtime-cockpit-dead-panels/). See progress.json for full detail.",
-    "resolve-runs-artifacts-and-inspect-button": "DONE (uar-production-ready-uiux-2026-07, 2026-07-09, archived openspec/changes/archive/2026-07-09-resolve-runs-artifacts-and-inspect-button/). See progress.json for full detail."
-  },
-  "sourceTool": "codex",
-  "exactNextCommand": "/kbd-apply certify-provider-model-settings-flow",
-  "uarProductionReadyUiuxOutcome": "uar-production-ready-uiux-2026-07 CLOSED at reflection 2026-07-09 (addendum 2026-07-10): 8/8 changes done (bootstrap-docusaurus-site deferred, blocked on hosting target), 2/4 goals MET, 2 PARTIAL. Round 3 (bdd-chat-scenario-suite) ended up as TWO complementary implementations landed by separate concurrent Claude Code sessions that discovered each other only when the second tried to push against a diverged origin/main -- operator chose (AskUserQuestion) to merge both rather than pick one, since they test different layers (API-level Rust cucumber-rs vs. browser-level Playwright+Cucumber.js) with no real overlap. The browser-level track found and fixed a real, previously-undiscovered production bug (agent-selector's agent list permanently stuck on 'Loading agents...' for every user -- frontend/src/entities/hooks/use-agents.ts was using the entity-management library's deprecated useEntityView hook, which reads from a list index loadAgentsIntoGraph() never populated; fixed by switching to the same useGraphStore-selector pattern already proven by useModels()) and confirmed (disclosed, not fixed) that task_188b4179's placeholder zero-vector embeddings also break KB retrieval search, not just whatever it was originally flagged against. .github/workflows/bdd-chat.yml (advisory) needed 6 rounds of real-dispatch CI fixes before going green on actual GitHub Actions -- none of the prior CI jobs ran `cargo build` cold on a truly fresh checkout the way this one does, so several genuine gaps (protobuf-compiler, frontend's separate pnpm workspace, the entity-management package's own tsup build step) had never been hit before. Full detail in reflection.md's 2026-07-10 addendum.",
-  "uarSecurityAuditAlertsGateOutcome": "uar-security-audit-alerts-gate-2026-07 CLOSED at reflection 2026-07-08: 3/3 changes DONE, 4/4 goals MET (100%). Built dependabot-alerts-gate CI job (security-audit.yml) that fails on any open GitHub Dependabot alert not already disclosed, reusing secrets.SUBMODULES_TOKEN per user's AskUserQuestion choice over provisioning a new secret. Migrated frontend/vite.config.ts off deprecated manualChunks to Rolldown's codeSplitting.groups API, build-verified (same 4 vendor chunks, chunkSizeWarningLimit honored, no new warnings). Dispatched security-audit.yml for real (run 28950786923): all 5 jobs succeeded including the new job, confirming SUBMODULES_TOKEN has sufficient scope on the first live attempt -- the fail-loud preflight safety net was never needed. Key process finding: OpenSpec's validate command unconditionally requires >=1 spec delta per change, which required correcting 2 of 3 proposals' initial 'no capability' framing mid-flight (new frontend-build-tooling capability; extended dependency-security-posture's CI-Trigger-Actually-Fires requirement) -- not previously hit since every prior hygiene change touched an existing capability. Also found AGENTS.md's OpenSpec CLI version reference is stale (v1.4.0 vs installed v1.5.0). Sycophancy self-check on reflection: 0.018, s08_detected false. No single dominant next-phase recommendation -- only optional doc fixes + standing process questions (OpenSpec lighter-weight schema for hygiene changes, 129-dir openspec/changes backlog, pre-existing ci.yml uncommitted diff). Full detail in phases/uar-security-audit-alerts-gate-2026-07/reflection.md.",
-  "uarPostDependabotFollowupOutcome": "uar-post-dependabot-followup-2026-07 CLOSED at reflection 2026-07-08: 4/4 changes DONE, 4/4 goals MET (up from prior phase's 3/4). Fixed docs/ARCHITECTURE.md's D-D kreuzberg/surreal-memory pin-type swap (+ 3 stale DEPENDENCY_MANAGEMENT.md entries found while proofreading); user chose (AskUserQuestion) to SHA-pin surreal-memory off branch=main, matching rmcp/prometheus_parking_lot's pattern; verified security-audit.yml fires for real on GitHub (gh workflow run, all 4 jobs passed, run 28935118101) after resolving a real origin/main push conflict (4 merged Dependabot PRs incl. vite 7->8, requiring 3 merge conflicts + fixing 2 real Vite 7->8 regressions: object-form manualChunks removal, Tailwind v4 --spacing() syntax rejected by bundled lightningcss); triaged all 9 remaining unmaintained/unsound cargo-audit warnings (1 fixed via notify 7->8, 8 disclosed with specific no-fix rationale). BONUS/root cause for this new phase: gh api dependabot/alerts caught 2 real CVEs (cmov CVE-2026-50185, opentelemetry_sdk CVE-2026-48504) that cargo audit never flagged -- found only by chance while investigating a confusing GitHub push-time vulnerability count (50->4->2). Sycophancy self-check on reflection: 0.0. Full detail in phases/uar-post-dependabot-followup-2026-07/reflection.md.",
-  "uarSpecV2AndPolishOutcome": "uar-spec-v2-and-polish CLOSED at reflection 2026-07-04: 7/7 changes done, G4 (CH-12/13/14/15/17) and G5 (CH-19/20) both MET. Commits 75116e4, e1532d6, 13326a4, 369117b+e2c82c7, 4b24f01, bbe7ec2, 45e7e37. Full lib suite 363/363 green. Reflection led with process gaps: waypoint files went stale for a real span after assess+plan completed; write-position-reminder.sh's .stage/.status field mismatch silently rendered Stage: unknown; none of the 7 OpenSpec changes were run through /opsx:verify + /opsx:archive (artifact-refiner automation now carried 4+ phases). Sycophancy self-check on the reflection: score 0.018, s08_detected=false. ADDENDUM (2026-07-04): post-reflection research found a 96-alert Dependabot backlog (5 critical, 17 high) never checked during the phase -- this directly undercuts that phase's own D-D re-affirmation in ARCHITECTURE.md, since the pinned surrealdb/rmcp versions carry known, upstream-fixed high-severity CVEs. See reflection.md's addendum + this new phase's goals.md for full detail.",
-  "uarNextHarnessOutcome": "uar-next-harness CLOSED at reflection 2026-07-04: 16/24 tracked changes done, G1+G2+G3 fully MET, G4+G5 NOT MET (0/7, carried to this phase). Wired CH-02/03/04/06/08 (several were committed-but-unwired dead code), implemented CH-05 for real after finding it was a stub, built CH-07/CH-10 from scratch including two backend gaps (BudgetAlert entity wiring, CH-09 benchmarks exposed via REST). Fixed two real bugs found via live-server verification (not just build-green): an uninitialized prometheus-entity-management submodule that had been silently breaking the embedded frontend build all phase, and a resulting useEntityList/useEntity hook API drift across 6 frontend files (all silently returning empty data) -- both now resolved and verified live (models catalog went from 0 to 5331 models across 150 providers; CH-10 compare feature exercised end-to-end with real data). Full detail + lessons in .kbd-orchestrator/phases/uar-next-harness/reflection.md.",
-  "gateActivationSecurityOutcome": "gate-activation-and-security-cleanup: both goals MET (code) in PR #43 (2 commits, archived). (1) feat(eval) --require-baseline strict gate: unseeded nightly fails loudly instead of passing silently; pure baseline_missing_under_strict helper; fail-fast exit 2 BEFORE any model call; nightly opts in; operator runbook in evals/README.md. (2) fix(config) secret redaction (Rule 33): redacting Debug for LlmConfig api_key+provider_keys, SecurityConfig jwt_secret, Persistence/Memory passwords. CORRECTION: I mis-assessed redaction as already-on-main; it was uncommitted working-tree WIP (origin/main had 0 REDACTED) \u2014 this PR actually lands it; caught at commit, split into 2 focused commits, disclosed in PR. 36 eval tests green. REMAINDER (operator-only): configure UAR_LLM__API_KEY secret + seed/commit evals/results/starter.baseline.json to make the gate enforce green. Spawn-task redaction chip now resolved by #43. LESSON: verify 'already merged' against committed state (git show origin/main:<file>), never the working tree.",
-  "evalHarnessHardeningOutcome": "eval-harness-hardening: 4/4 goals MET + HK1. PRs #38-#42 merged + archived. EHH3 suite-declared scorers (ScorerSpec + build_scorers factory, serde-default backward compat); EHH2 LlmJudge scorer (rubric, deterministic JSON parse, advisory per D-B); EHH4 recorded-fixture provider + end-to-end pipeline integration tests; HK1 deleted dead src/testing/ (27 files, ~22.7k lines); EHH1 evals/starter.yaml + two-tier CI gate (Tier-1 keyless structural test per PR, Tier-2 nightly real-model gated workflow, fork-safe, Rule 33). 35 eval lib tests green. DEBT: no baseline shipped so Tier-2 is informational until seeded (top follow-up); Tier-2 never run in CI yet (needs UAR_LLM__API_KEY secret + workflow_dispatch); secret-redaction chip (main.rs:46, Rule 33) still open; refiner QA-gate automation still not wired.",
-  "evalHarnessOutcome": "uar-eval-harness: 1/1 goal MET (S1). Shipped+merged PRs #34-#37 + archived: EH1 eval domain + rule scorers (ExactMatch/Contains/JsonValid/NonEmpty/PatternMatch/Sycophancy), EH2 suite loader (JSON/YAML) + Runner over a CompletionProvider seam, EH4 file persistence + delta-vs-baseline regression + eval metrics, EH5 `eval run|list|baseline` CLI (non-zero exit on regression; server default preserved). Rule-based/file-backed/CLI-driven v1 as planned. Deviations: PatternMatch instead of Regex (no new dep, Rule 27); scorer selection is a heuristic (per-suite config deferred). Debt: live `run <suite>` path unit-untested (needs a model); no example suite shipped; dead src/testing/ still present; pre-existing secret-logging at main.rs:46 flagged via spawn-task (Rule 33).",
-  "plannedChanges": [
-    "add-run-cancellation",
-    "wire-otlp-tracing-and-cost",
-    "emit-runtime-step-events",
-    "wire-sycophancy-detection",
-    "resumable-streaming-client",
-    "mount-governance-guardrails"
-  ],
-  "productDecisionsResolved": [
-    "R2 cancel semantics -- RESOLVED (uar-carryover-audit assessment, 2026-07-06): full CancellationToken + cancel_run + last-subscriber-drop infra shipped via add-run-cancellation.",
-    "R3 eval scope -- RESOLVED (uar-carryover-audit assessment, 2026-07-06): 8-file eval harness + eval-targeted-suites and related changes landed.",
-    "R4 guardrail build-vs-buy -- RESOLVED (uar-carryover-audit assessment, 2026-07-06): real GuardrailsConfig + guardrail-pii-block/mount-governance-guardrails landed."
-  ],
-  "parentPhase": null,
-  "childPhases": [],
-  "childPointer": null,
-  "backend": "openspec",
-  "session_arc_outcome": "uar-harness-parity: 5 MET / 1 PARTIAL / 2 NOT MET. Shipped+merged PRs #23-#27: run cancellation (H1), OTLP tracing+latency+cost (H2), sycophancy detection (H4), resumable streaming client (H5), mounted Cedar layer + injection/PII guardrails (H6); H8 partial (cache/latency/cost/sessions wired, sandbox+mcp recorders deferred). Merged main builds clean, 232 lib tests pass, 14 new unit tests. NOT MET: H3 emit-runtime-step-events NEVER BUILT (skipped during execution \u2014 carry-over) and H7 eval harness (deferred by design). Parity: 6 red\u2192green, 1 yellow\u2192green, 1 red\u2192yellow (injection/PII heuristic). Prior phase (uar-production-readiness-gaps) C1-C4 merged to main as the Round-0 gate.",
-  "carryOver": [
-    "Credentials admin UI \u2014 SCOPED (prior carryover); open dedicated phase uar-credentials-admin-ui (UI/UX routing first)",
-    "Agent-config POST error surfacing \u2014 P3 UX polish (C3)",
-    "Protocols page explicit gating \u2014 P3 cleanup (C4)",
-    "Artifact-refiner QA gate automation \u2014 missed this phase; automate for next",
-    "Config write-back to YAML \u2014 R3 deferred tradeoff (C2)",
-    "CLI vs LLM_* precedence fix \u2014 documented known limitation (C2)"
-  ],
-  "resolvedCarryOver": [
-    "D1 blocking defect: ingestion pool shutdown unreachable \u2014 RESOLVED (C1)",
-    "DB-wins-after-first-boot: config changes invisible in UI \u2014 RESOLVED (C2)",
-    "OPENAI_API_KEY shortcut dead path \u2014 RESOLVED (C2)",
-    "Built-in agents not persisted / unreliable visibility \u2014 RESOLVED (C3)",
-    "Runtime Console dead facade / dead buttons \u2014 RESOLVED (C4)"
-  ],
-  "recommendedNextPhaseSeeds": [
-    "P0 (operator, human-only): activate the eval gate \u2014 set UAR_LLM__API_KEY secret + vars.UAR_EVAL_MODEL, run eval-nightly via workflow_dispatch update_baseline=true, commit evals/results/starter.baseline.json, confirm a deliberate regression fails. Gate code is in place (--require-baseline); only the operational seed remains. (Agent cannot do this.)",
-    "P0 (hygiene): resolve the long-lived dirty working tree \u2014 commit/stash static/index.html + untracked .agents/.firecrawl/.zed/ so future git add can't capture stray WIP (this caused the redaction mis-assessment).",
-    "P1: automate artifact-refiner QA gate \u2014 carried unaddressed across 3 phases.",
-    "P1: finish H8 \u2014 wire sandbox recorders (4) + set_mcp_server_status (needs per-runner hooks + MCP health loop)",
-    "P2: per-case scorer overrides + per-judge model override (eval follow-ups)",
-    "P2: live-env smoke harness \u2014 SIGTERM drain, OTLP collector span tree, mid-stream drop, injection 403, eval run against a model",
-    "P2: config liveness \u2014 sycophancy/guardrails read boot snapshots; wire settings-API edits into in-flight runs",
-    "Deferred: HTTP POST /api/uar/eval/run; SurrealDB eval result storage; true-regex scorer; expand starter suite; durable workflows / checkpoint (own phase)"
-  ],
-  "carryOverDebt": [
-    "RESOLVED 2026-07-06 (uar-carryover-audit seeding, confirmed via git log + code inspection): H3 emit-runtime-step-events -- was flagged 'unbuilt, top priority', actually fully implemented and merged (commits 2444b8c/9c45aae/f43e403, all tasks.md items checked bar one non-blocking manual live-env step). Not re-carried.",
-    "RESOLVED 2026-07-06 (uar-carryover-audit seeding, confirmed via grep): Sandbox + MCP-status metric recorders -- was flagged 'still dead (H8 partial)', actually wired into real code paths (src/mcp/registry.rs, src/llm/orchestrator.rs via set_mcp_server_status/record_sandbox_*). Not re-carried.",
-    "RESOLVED (uar-security-deps-and-hygiene): Artifact-refiner QA gate automation -- formally retired via the artifact-refiner-gate-decision change (D-E), not re-carried as open debt.",
-    "RESOLVED (uar-frontend-typecheck-cleanup): 17 pre-existing bun run typecheck errors -- all fixed, bun run typecheck exits 0.",
-    "RESOLVED 2026-07-04: Cedar is_tool_allowed is now called from the orchestrator's tool-approval gate (manager.rs), not just HTTP-only as previously carried \u2014 confirmed during uar-next-harness reflection, not re-carried.",
-    "CONFIRMED CURRENT (uar-carryover-audit assessment, 2026-07-06): unformatted code -- the old note named routes.rs + ingestion_worker.rs specifically, neither of which appears in a fresh cargo fmt --check; the underlying problem is real and current though, just in different files: 21 diffs across 12 files (server.rs, uar/compiler/conformance.rs x7, uar/eval/integration_tests.rs, uar/guardrails.rs, uar/mcp_server.rs, uar/memory/mcp_server.rs, uar/runtime/skills/wasm_runtime.rs x2, 3 test files). Zero-risk cargo fmt candidate for /kbd-plan.",
-    "CONFIRMED STILL OPEN (uar-carryover-audit assessment, 2026-07-06): CH-06 per-agent/per-task budget configuration surface -- LlmBudgetConfig only has global_limit + per-model model_limits, no per-agent/task field anywhere in src/. Real feature work.",
-    "CONFIRMED STILL OPEN (uar-carryover-audit assessment, 2026-07-06): CH-08 activation-outcome correlation -- record_skill_activation (recall) is called, record_skill_activation_outcome (outcome) is defined but never called anywhere. Real feature work (correlating activation against a run's later tool-call stream).",
-    "CONFIRMED STILL OPEN (uar-carryover-audit assessment, 2026-07-06): durable (non-session-scoped) cost/spend history for CH-07 -- cost_budget.rs's own doc comment says persistence is intentionally out of scope; pure in-memory HashMap today. Real feature work (persistence schema + wiring).",
-    "CONFIRMED STILL OPEN, UNCHANGED (uar-carryover-audit assessment, 2026-07-06): task_7c2fd7ee (SurrealQL type::thing() fix, surreal.rs:524 + compiler/storage/surreal.rs:71,109) -- owned by a separate spawn_task session, informational only.",
-    "CONFIRMED STILL OPEN, UNCHANGED (uar-carryover-audit assessment, 2026-07-06): task_188b4179 (VectorMatcher::embed_batch placeholder embeddings, model.forward() still commented out) -- owned by a separate spawn_task session, informational only."
-  ],
-  "blockingPrerequisite": null,
-  "parityAssessmentSummary": "uar-harness-parity: 8 goals (H1-H8). Corrections vs reflection seeds: (1) cancellation PROMOTED to P0 \u2014 client disconnect orphans runs that keep executing destructive tools + burning tokens (live bug); (2) parking-lot HookBus KILLED \u2014 redundant with existing RunEventEmitter broadcast+replay; (3) resumable streaming DOWNGRADED to frontend-only \u2014 server already has 512-event buffer + working GET /api/uar/runs/{id}/stream resume endpoint; (4) sycophancy-core is a DEAD dependency (declared, never invoked in src/). OTLP deps present but unused (1 #[instrument] on whole run path); Prometheus /metrics + JSON logging already done. Biggest true gap: evals + guardrails (no injection defense; Cedar governance_layer defined-but-unmounted). Cut C0+HP1-HP4 this phase; HP6+HP7 candidate for own uar-safety-and-evals phase.",
-  "productDecisionsRequired": [],
-  "updatedAt": "2026-07-12T14:03:40Z",
-  "changes_completed": 19,
-  "changes_total": 24,
-  "planRevision": "uar-final-production-hardening-2026-07 plan.md replanned 2026-07-11 from kbd-analyze: 24 total changes (6 complete, 18 remaining), 9 execution rounds; React-first surface certification and immutable RC gate before GA.",
-  "planRevisionPrior": "uar-security-deps-and-hygiene's own plan.md (2026-07-04): 10 changes in 4 risk-ordered rounds, see phases/uar-security-deps-and-hygiene/plan.md.",
-  "discoveredBugs": [
-    "task_188b4179: VectorMatcher::embed_batch returns zero-vector placeholder embeddings (model.forward() commented out) - breaks all RAG search + LocalEmbedding intent backend. spawn_task started by user.",
-    "task_7c2fd7ee: update_document_status uses SurrealQL type::thing() rejected by pinned SurrealDB 3.0.5 (wants type::record) - doc status stuck pending. spawn_task started by user."
-  ],
-  "infraNotes": "CARGO_TARGET_DIR=/Volumes/my-passport/cargo-target REQUIRED (not set in shell; forgetting fills root disk). Session hit machine-wide memory-pressure stall from 6 concurrent cargo builds (mine + 2 spawn_task fixes + 3 other sessions) - cleared on its own. Cleaned 280 leaked harness temp dirs; added Drop cleanup so it does not recur. 37GB stale /private/tmp/librefang-upstream-merge* dirs flagged to user (not deleted - not mine).",
-  "codeWrittenUnverified": {
-    "strategy": "implementation-first / test-at-checkpoints (standing preference) -- not yet started for uar-security-deps-and-hygiene; this block will populate once /kbd-assess -> /kbd-plan -> /kbd-execute begins.",
-    "changes_verified_this_turn": [],
-    "changes_coded_this_turn_uncompiled": [],
-    "remaining_to_code": [
-      "G1: surrealdb upgrade, rmcp pin bump, wasmtime/failure disposition, npm-side triage, dependabot.yml",
-      "G2: artifact-refiner QA automation, tests/uar_integration.rs + tests/bdd.rs fixes, cargo bench on hot_path.rs, write-position-reminder.sh fix"
+  "stage": "final-certification",
+  "executionMode": "operator-locked-production-completion",
+  "progress": "19/24 changes complete; implementation for changes 20-24 complete; evidence and publication pending",
+  "operatorPriority": "Reach 24/24 production completion. Tests and workflows are evidence, not the work queue.",
+  "executionLock": {
+    "primaryObjective": "Complete changes 20-24 and release the server-full BossFang sidecar product.",
+    "rules": [
+      "Operator instructions override stale plans, assessments, workflow status, and agent preferences.",
+      "Before every action, require a direct advance toward changes 20-24; otherwise do not do it.",
+      "Never poll or babysit CI while actionable implementation or release work remains.",
+      "Batch related fixes and run one consolidated validation/certification sequence.",
+      "Windows is Experimental and nonblocking; Stable release targets are Linux and macOS.",
+      "During implementation use static inspection and cohesive cargo check only; tests validate the complete product.",
+      "Keep implementation, evidence, time-bound conditions, and operator authorization visibly distinct.",
+      "Preserve active Cargo caches; never cargo clean; use only reviewed reversible cleanup."
     ]
-  }
+  },
+  "productProfile": "server-full sidecar for BossFang",
+  "activeChanges": [
+    "align-release-workflow-platforms",
+    "certify-operational-resilience",
+    "produce-supply-chain-artifacts",
+    "certify-release-candidate",
+    "release-1-0-0"
+  ],
+  "currentTask": "Finish context reconciliation, then hold the source stable and advance the immutable RC-to-GA sequence.",
+  "nextAction": "Obtain operator authorization for merge/tag/publication at the point of effect; do not substitute CI monitoring for release execution.",
+  "authorizationRequired": [
+    "merge PR #98 to main",
+    "create candidate and GA tags",
+    "publish GitHub/GHCR releases",
+    "approve external-install evidence"
+  ],
+  "sourceTool": "codex",
+  "updatedAt": "2026-07-13T10:20:00Z"
 }
