@@ -263,7 +263,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Type check
-        run: pnpm --filter ./frontend typecheck
+        run: pnpm -C frontend typecheck
 
       - name: Enforce frontend architecture boundaries
         run: pnpm run frontend:boundaries
@@ -275,10 +275,10 @@ jobs:
         run: pnpm run docs:validate
 
       - name: Vitest contract tests
-        run: pnpm --filter ./frontend test
+        run: pnpm -C frontend test
 
       - name: Build frontend
-        run: pnpm --filter ./frontend build
+        run: pnpm -C frontend build
 
       - name: CI grep gates (architectural invariants + aesthetic contract)
         run: bash scripts/ci-grep-gates.sh

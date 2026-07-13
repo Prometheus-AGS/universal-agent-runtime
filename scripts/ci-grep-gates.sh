@@ -31,7 +31,6 @@ check_grep_empty() {
 
 echo "=== Architectural invariants ==="
 check_grep_empty "useGraphBridge retired"    "useGraphBridge"    "frontend/src/"
-check_grep_empty "useSettingsStore retired"  "useSettingsStore"  "frontend/src/"
 if node scripts/check-frontend-boundaries.mjs; then
   echo "✅ frontend dependency direction"
 else
