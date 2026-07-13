@@ -21,7 +21,9 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
   RUST_BACKTRACE: 1
-  UAR_LLM__MODEL: openai/gpt-4o
+  # Match the deterministic BDD fixture model. Archive smoke tests only need a
+  # configured provider and inherit the same non-secret placeholder settings.
+  UAR_LLM__MODEL: openai/gpt-5.4-mini
   UAR_LLM__API_KEY: release-smoke-placeholder
 
 jobs:

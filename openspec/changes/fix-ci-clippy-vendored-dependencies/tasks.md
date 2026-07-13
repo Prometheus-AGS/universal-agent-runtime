@@ -10,4 +10,12 @@
 
 ## 3. Candidate Supersession
 
-- [ ] 3.1 Merge the isolated correction and create a newly signed immutable RC4 from the resulting `main` SHA.
+- [x] 3.1 Merge the isolated correction and create a newly signed immutable RC4 from the resulting `main` SHA.
+
+## 4. Certification Workflow Failures
+
+- [x] 4.1 Align release-test model configuration with deterministic BDD fixtures.
+- [x] 4.2 Install native protobuf prerequisites in the resilience archive job.
+- [x] 4.3 Give Docker shutdown an outer timeout margin and retain the zero-exit assertion.
+- [x] 4.4 Extend static validation for all three demonstrated workflow failures.
+- [ ] 4.5 Supersede canceled RC4 with a newly signed immutable candidate after merge.

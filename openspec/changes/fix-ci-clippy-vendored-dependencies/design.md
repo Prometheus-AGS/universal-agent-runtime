@@ -21,8 +21,12 @@ Supply-chain certification requires a successful `.github/workflows/ci.yml` run 
 - Use `cargo clippy --locked --no-default-features --lib --features server-full --no-deps`, matching the authoritative release workflow. This is preferred over patching 138 dependency warnings because those warnings belong to the excluded vendored crate and are unrelated to the supported UAR source surface.
 - Align the adjacent Cargo check with the locked `server-full` checkpoint so CI and release certification use the same product contract.
 - Extend the existing supply-chain static validator to assert both CI commands because supply-chain evidence consumes the exact-SHA CI result.
+- Use the deterministic BDD fixture model in release-job environment defaults; archive smoke still receives a configured non-secret provider.
+- Install the same Linux build prerequisites in resilience as other server-full jobs, including `protobuf-compiler` for `build.rs`.
+- Give Docker 45 seconds to observe the runtime's 30-second graceful-shutdown contract before escalating to SIGKILL.
 
 ## Risks / Trade-offs
 
 - **Risk:** Removing the old mixed feature set from the primary lint job could reduce coverage. **Mitigation:** the CI release-bundle matrix continues to check the supported bundles independently, while the release gate is explicitly scoped to `server-full`.
 - **Risk:** Any source correction invalidates RC3 evidence. **Mitigation:** merge this isolated fix and create a newly signed RC4; never move RC3.
+- **Risk:** Candidate failures discovered after an immutable tag require another candidate. **Mitigation:** mine every completed failed job before creating the next signed tag and supersede tags rather than moving them.
