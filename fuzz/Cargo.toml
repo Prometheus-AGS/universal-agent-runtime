@@ -1,0 +1,45 @@
+[package]
+name = "uar-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+serde_json = "1"
+serde = "1"
+jsonschema = "0.46"
+
+[dependencies.universal-agent-runtime]
+path = ".."
+default-features = false
+features = ["minimal"]
+
+[[bin]]
+name = "chunker"
+path = "fuzz_targets/chunker.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "rag_verification"
+path = "fuzz_targets/rag_verification.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "mcp_message_parser"
+path = "fuzz_targets/mcp_message_parser.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "json_schema_validator"
+path = "fuzz_targets/json_schema_validator.rs"
+test = false
+doc = false

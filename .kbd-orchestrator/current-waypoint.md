@@ -1,15 +1,28 @@
-# Current Waypoint — Universal Agent Runtime
+# Current Waypoint
 
-> EXECUTION LOCK: Reach 24/24 production completion. CI is asynchronous evidence, not the work queue. Do not monitor workflows while actionable implementation or release work remains. Operator instructions override stale context.
+**Phase**: `perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion`
+**Stage**: `plan_complete`
+**Updated**: 2026-07-13T19:40:00Z
+**Previous phase**: `uar-final-production-hardening-2026-07`
 
-- Phase: `uar-final-production-hardening-2026-07`
-- Stage: final certification and release
-- Product: `server-full` BossFang sidecar
-- Progress: 19/24 changes formally complete; changes 20–24 are implementation-complete and locally validated, and await immutable candidate evidence, time-bound conditions, or operator-authorized publication
-- Stable platforms: Linux and macOS
-- Experimental/nonblocking: Windows
-- Active surface: changes 20–24 only
-- Local validation: authoritative `cargo check`, consolidated Rust formatting/tests, frontend typecheck/lint/tests/build, workflow/schema validators, OpenSpec validation, YAML parsing, and diff hygiene are green
-- Next action: commit and review the validated patch, then hold the source stable, obtain authorization plus a configured signing identity at external-effect gates, and execute one immutable RC → evidence → GA sequence
+## Summary
 
-Before every action ask: **Does this directly advance changes 20–24 toward completion?** If not, do not do it.
+Assessment found UAR not customer-ready (6 CRITICAL / 7 HIGH / 8 MEDIUM). Operator
+decision D1: 1.0 is multi-tenant — user-isolation fixes come first. Plan complete:
+14 ordered changes (10 new, openspec-validated; 4 carried certification changes that
+must be rerun after source changes land).
+
+## Next action
+
+```
+/kbd-execute
+```
+
+First change: `fix-user-isolation-sessions-memory-kb` (C1 threads, C2 memory IDOR,
+C3 global KBs).
+
+## References
+
+- [plan.md](phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/plan.md)
+- [assessment.md](phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/assessment.md)
+- [decision-log.md](phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/decision-log.md)

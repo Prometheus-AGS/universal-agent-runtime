@@ -1,0 +1,1007 @@
+{
+  "$schema": "https://prometheus-ags.dev/schemas/kbd/library-candidates.schema.json",
+  "phase": "uar-grade-a-upgrade-2026-07",
+  "generated_at": "2026-07-13T18:30:00Z",
+  "input_assessment": "docs/assessments/uar_release_readiness_assessment_2026-07-13.md",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": { "tier_1": 6, "tier_2": 6, "tier_3": 4, "tier_4": 8 }
+  },
+  "scorecard_inputs": {
+    "current_grades": {
+      "sdk": "C",
+      "configuration": "B",
+      "rag": "B+",
+      "error_handling": "B",
+      "build_test_lint": "B",
+      "supply_chain": "B+",
+      "license": "C",
+      "documentation_dx": "B+",
+      "a2ui": "not_measured"
+    },
+    "target_grades": {
+      "sdk": "A",
+      "configuration": "A",
+      "rag": "A",
+      "error_handling": "A",
+      "build_test_lint": "A",
+      "supply_chain": "A",
+      "license": "A",
+      "documentation_dx": "A",
+      "a2ui": "A_world_class"
+    }
+  },
+  "candidates": [
+    {
+      "id": "cand-sdk-001",
+      "section": "2",
+      "name": "@a2ui/react (Google, A2UI v0.9+)",
+      "kind": "renderer",
+      "repo_url": "https://github.com/a2ui-project/a2ui",
+      "registry": "npm",
+      "fit_for_gap": "Production-grade A2UI React renderer that UAR can vendor and extend with the UAR-validated catalog (§10).",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://developers.googleblog.com/a2ui-v0-9-generative-ui/", "claim": "v0.9 (April 2026) shipped an official React renderer wrapping @a2ui/web_core/MessageProcessor" },
+        { "tier": 4, "source_url": "https://github.com/a2ui-project/a2ui", "claim": "v0.9.1 is current production; v1.0-rc was last updated June 8, 2026" }
+      ],
+      "risks": [
+        "v1.0-rc is still iterating; vendor @a2ui/web_core (the framework-agnostic processor) instead of @a2ui/react to insulate from renderer breaks",
+        "UAR's approved catalog (9 components) is more restrictive than Google's; mapping work is required"
+      ],
+      "decision_rationale": "Adopt and vendor @a2ui/web_core; build a UAR-owned React renderer on top, cross-test against @a2ui/react as reference impl."
+    },
+    {
+      "id": "cand-sdk-002",
+      "section": "2",
+      "name": "LangChain Streaming Cookbook pattern",
+      "kind": "pattern",
+      "repo_url": "https://github.com/langchain-ai/streaming-cookbook",
+      "registry": "n/a",
+      "fit_for_gap": "SDK design pattern: v2 typed StreamPart, framework SDKs for React/Angular/Svelte/Vue, examples for messages/values/custom modes.",
+      "verdict": "reference",
+      "coverage_estimate": 0.7,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 4, "source_url": "https://github.com/langchain-ai/streaming-cookbook", "claim": "Runnable streaming examples across LangGraph, LangChain, React, Angular, Svelte, Vue; custom:a2ui channel pattern" }
+      ],
+      "risks": ["Pattern only; UAR must implement, not adopt"],
+      "decision_rationale": "The bar UAR's SDKs must clear; informs §2's per-language SDK design."
+    },
+    {
+      "id": "cand-sdk-003",
+      "section": "2",
+      "name": "eventsource-client (TypeScript SSE)",
+      "kind": "library",
+      "repo_url": "https://github.com/Azure/fetch-event-source",
+      "registry": "npm",
+      "fit_for_gap": "Battle-tested SSE client for the TypeScript SDK's streaming chat / runs / events surfaces.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 4, "source_url": "https://github.com/Azure/fetch-event-source", "claim": "Microsoft's @microsoft/fetch-event-source is the de-facto SSE client for browser-based TypeScript SDKs" }
+      ],
+      "risks": ["None significant"],
+      "decision_rationale": "Adopt for TS SDK SSE; pair with zod for typed event parsing."
+    },
+    {
+      "id": "cand-sdk-004",
+      "section": "2",
+      "name": "sse-stream (Rust SSE client)",
+      "kind": "library",
+      "repo_url": "https://github.com/reqwest/reqwest-eventsource",
+      "registry": "cargo",
+      "fit_for_gap": "SSE streaming for the Rust SDK's chat / runs / events surfaces.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.85,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/reqwest-eventsource", "claim": "reqwest-eventsource is the de-facto Rust SSE client built on reqwest" }
+      ],
+      "risks": ["None significant"],
+      "decision_rationale": "Adopt; pair with typed deserialization via serde + thiserror for typed event variants."
+    },
+    {
+      "id": "cand-sdk-005",
+      "section": "2",
+      "name": "zod (TypeScript runtime validation + types)",
+      "kind": "library",
+      "repo_url": "https://github.com/colinhacks/zod",
+      "registry": "npm",
+      "fit_for_gap": "Typed error model + request/response validation for the TypeScript SDK.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://www.npmjs.com/package/zod", "claim": "Zod 3.x is the dominant TS validation library; pairs with TS discriminated unions for error types" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt for TS SDK type system; codegen from UAR's JSON Schema via quicktype (§10)."
+    },
+    {
+      "id": "cand-sdk-006",
+      "section": "2",
+      "name": "pydantic (Python data validation + types)",
+      "kind": "library",
+      "repo_url": "https://github.com/pydantic/pydantic",
+      "registry": "pypi",
+      "fit_for_gap": "Python SDK type system, structured output model class, settings management.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://pypi.org/project/pydantic/", "claim": "Pydantic v2 is the dominant Python data validation library; required dependency of the LangChain Python SDK" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt for Python SDK; pairs with httpx for async HTTP."
+    },
+    {
+      "id": "cand-sdk-007",
+      "section": "2",
+      "name": "miette (Rust typed-error pretty-printing)",
+      "kind": "library",
+      "repo_url": "https://github.com/zkat/miette",
+      "registry": "cargo",
+      "fit_for_gap": "SDK-side pretty-printing of the UarError chain (§5) for the Rust SDK.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.7,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://github.com/zkat/miette", "claim": "Miette is the 2026 standard for typed Rust error display; integrates with thiserror via Source" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt as the Rust SDK's error-display layer; central UarError implements Diagnostic."
+    },
+    {
+      "id": "cand-cfg-001",
+      "section": "3",
+      "name": "figment (Rust layered config)",
+      "kind": "framework",
+      "repo_url": "https://github.com/SergioBenitez/Figment",
+      "registry": "cargo",
+      "fit_for_gap": "Layered configuration (env + file + CLI + defaults) with hot-reload support.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/figment", "claim": "Figment powers Rocket's config; battle-tested; supports hot-reload via Figment::merge" }
+      ],
+      "risks": ["Alternative to config crate; team is more familiar with config (the official intermodal crate)"],
+      "decision_rationale": "Alternative to config; config wins on name recognition but figment has nicer hot-reload story. Final pick: config + manual watch."
+    },
+    {
+      "id": "cand-cfg-002",
+      "section": "3",
+      "name": "config (Rust config + ConfigLayer derive)",
+      "kind": "framework",
+      "repo_url": "https://github.com/rust-cli/config-rs",
+      "registry": "cargo",
+      "fit_for_gap": "Standard Rust config crate; ConfigLayer derive reduces boilerplate; pairs with serde for typed config.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/config", "claim": "config-rs is the de-facto Rust config crate; ConfigLayer derive (0.14+) reduces boilerplate" }
+      ],
+      "risks": ["None significant"],
+      "decision_rationale": "Adopt; replace hand-written #[arg(env=...)] structs in src/config.rs."
+    },
+    {
+      "id": "cand-cfg-003",
+      "section": "3",
+      "name": "secrecy (typed secret wrapper)",
+      "kind": "library",
+      "repo_url": "https://github.com/iqlusioninc/crates/tree/main/secrecy",
+      "registry": "cargo",
+      "fit_for_gap": "Wrap UAR_SECURITY__JWT_SECRET and provider API keys in Secret<String> to prevent accidental log/display.",
+      "verdict": "adopt",
+      "coverage_estimate": 1.0,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/secrecy", "claim": "secrecy is the standard typed-secret crate; zero-cost, prevents accidental Debug/Display leakage" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt for every secret-typed field in config."
+    },
+    {
+      "id": "cand-cfg-004",
+      "section": "3",
+      "name": "schemars (JSON Schema generation)",
+      "kind": "library",
+      "repo_url": "https://github.com/GREsau/schemars",
+      "registry": "cargo",
+      "fit_for_gap": "Generate JSON Schema from Rust types; produces the canonical config schema that the SDKs (§2) consume.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.95,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/schemars", "claim": "schemars 0.8+ generates JSON Schema from serde types; used by apistos, aide, utoipa" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; one source of truth for the canonical config schema."
+    },
+    {
+      "id": "cand-cfg-005",
+      "section": "3",
+      "name": "notify (file watching for hot-reload)",
+      "kind": "library",
+      "repo_url": "https://github.com/notify-rs/notify",
+      "registry": "cargo",
+      "fit_for_gap": "File watcher for config.yaml hot-reload.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.95,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/notify", "claim": "notify is the standard Rust file-watching crate; cross-platform; used by cargo" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; pair with arc-swap for lock-free hot-reload swap."
+    },
+    {
+      "id": "cand-cfg-006",
+      "section": "3",
+      "name": "arc-swap (lock-free hot-reload)",
+      "kind": "library",
+      "repo_url": "https://github.com/vorner/arc-swap",
+      "registry": "cargo",
+      "fit_for_gap": "Atomic swap of Arc'd config snapshots; readers never block writers.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.95,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/arc-swap", "claim": "arc-swap is the standard lock-free Arc swap; readers never block" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; pair with notify for hot-reload."
+    },
+    {
+      "id": "cand-cfg-007",
+      "section": "3",
+      "name": "vaultrs (Vault API client)",
+      "kind": "library",
+      "repo_url": "https://github.com/jmgilman/vaultrs",
+      "registry": "cargo",
+      "fit_for_gap": "HashiCorp Vault client; allows UAR_SECURITY__JWT_SECRET and provider keys to live in Vault with a feature flag.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/vaultrs", "claim": "vaultrs is the only mature Rust Vault client; supports KV v1/v2, transit, auth" }
+      ],
+      "risks": ["Adds a network dependency; only active with --features vault"],
+      "decision_rationale": "Adopt behind a feature flag; documents the threat model in docs/configuration.md."
+    },
+    {
+      "id": "cand-rag-001",
+      "section": "4",
+      "name": "ragas (RAG evaluation framework)",
+      "kind": "framework",
+      "repo_url": "https://github.com/explodinggradients/ragas",
+      "registry": "pypi",
+      "fit_for_gap": "Standard RAG evaluation: faithfulness, answer_relevancy, context_precision, context_recall (4 dimensions).",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://docs.ragas.io/en/stable/howtos/applications/align-llm-as-judge/", "claim": "RAGAS 0.x is the dominant open-source RAG evaluation framework; LLM-as-judge with frozen prompts" },
+        { "tier": 4, "source_url": "https://atlan.com/know/llm-evaluation-frameworks-compared/", "claim": "RAGAS, TruLens, and DeepEval are the three most widely adopted open-source RAG evaluation frameworks" }
+      ],
+      "risks": ["LLM-as-judge noise — must freeze prompt + model + version"],
+      "decision_rationale": "Adopt as primary eval framework; pair with DeepEval as second opinion."
+    },
+    {
+      "id": "cand-rag-002",
+      "section": "4",
+      "name": "deepeval (RAG evaluation second opinion)",
+      "kind": "framework",
+      "repo_url": "https://github.com/confident-ai/deepeval",
+      "registry": "pypi",
+      "fit_for_gap": "Second-opinion RAG evaluation; contextual relevancy, contextual precision/recall, answer relevancy, faithfulness.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://atlan.com/know/llm-evaluation-frameworks-compared/", "claim": "DeepEval provides 5+ RAG metrics covering retriever and generator independently" }
+      ],
+      "risks": ["Same LLM-as-judge noise class"],
+      "decision_rationale": "Adopt as second opinion; cross-validates RAGAS scores in CI."
+    },
+    {
+      "id": "cand-rag-003",
+      "section": "4",
+      "name": "trulens-eval (RAG Triad evaluation)",
+      "kind": "framework",
+      "repo_url": "https://github.com/truera/trulens",
+      "registry": "pypi",
+      "fit_for_gap": "Alternative eval framework; RAG Triad (context relevance, groundedness, answer relevance).",
+      "verdict": "reference",
+      "coverage_estimate": 0.7,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 4, "source_url": "https://atlan.com/know/llm-evaluation-frameworks-compared/", "claim": "TruLens pioneered the RAG Triad; instrumentation-based with OpenTelemetry tracing" }
+      ],
+      "risks": ["Heavier integration than RAGAS / DeepEval"],
+      "decision_rationale": "Reference only; RAGAS + DeepEval cover the need."
+    },
+    {
+      "id": "cand-rag-004",
+      "section": "4",
+      "name": "beir (retrieval benchmark)",
+      "kind": "dataset",
+      "repo_url": "https://github.com/beir-cellar/beir",
+      "registry": "pypi",
+      "fit_for_gap": "Standardized retrieval evaluation; BEIR scifact/nfcorpus/fiqa for public benchmark numbers.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://github.com/beir-cellar/beir", "claim": "BEIR is the standard retrieval benchmark; 18+ datasets; used by every major RAG framework" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt for public benchmark numbers in docs/rag-benchmark/."
+    },
+    {
+      "id": "cand-rag-005",
+      "section": "4",
+      "name": "fastembed-rs (already adopted) + 4 more embedding backends",
+      "kind": "library",
+      "repo_url": "https://github.com/Anush008/fastembed-rs",
+      "registry": "cargo",
+      "fit_for_gap": "Currently single Tier-1 embedding (FastEmbed); add candle-embeddings, OpenAI, Voyage, Cohere.",
+      "verdict": "extend",
+      "coverage_estimate": 0.7,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/fastembed", "claim": "fastembed-rs is the de-facto Rust local-embedding crate; ONNX-backed" }
+      ],
+      "risks": ["Hosted backends (OpenAI/Voyage/Cohere) need API keys and rate-limit handling"],
+      "decision_rationale": "Keep fastembed-rs; add 4 more backends; document each in product-support-matrix.json."
+    },
+    {
+      "id": "cand-err-001",
+      "section": "5",
+      "name": "thiserror 2.0 (already adopted, extend)",
+      "kind": "library",
+      "repo_url": "https://github.com/dtolnay/thiserror",
+      "registry": "cargo",
+      "fit_for_gap": "Library-side typed error enums; one UarError per module, #[non_exhaustive], #[source] chains.",
+      "verdict": "extend",
+      "coverage_estimate": 1.0,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://oneuptime.com/blog/post/2026-01-25-error-types-thiserror-anyhow-rust/view", "claim": "thiserror 2.0 is the standard for library error types; #[non_exhaustive] + #[source] + #[from] is the canonical pattern" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Keep; convert public-API anyhow!() to thiserror; add the central UarError."
+    },
+    {
+      "id": "cand-err-002",
+      "section": "5",
+      "name": "anyhow 1.0 (already adopted, restrict)",
+      "kind": "library",
+      "repo_url": "https://github.com/dtolnay/anyhow",
+      "registry": "cargo",
+      "fit_for_gap": "Application-side error context; restrict to main / CLI code; remove from public crate boundaries.",
+      "verdict": "restrict",
+      "coverage_estimate": 0.9,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://oneuptime.com/blog/post/2026-01-25-error-types-thiserror-anyhow-rust/view", "claim": "anyhow 1.0 is the standard for application code; never expose in library public APIs" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Keep; restrict to main.rs + CLI; convert library-code anyhow!() to UarError variants."
+    },
+    {
+      "id": "cand-err-003",
+      "section": "5",
+      "name": "error-stack (Rust error context with frames)",
+      "kind": "library",
+      "repo_url": "https://github.com/hashintel/error-stack",
+      "registry": "cargo",
+      "fit_for_gap": "Attach source chain + frames to errors; structured context; pairs with thiserror.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://github.com/hashintel/error-stack", "claim": "error-stack is Hash's production error-context crate; provides Report<T> with frames" }
+      ],
+      "risks": ["Some overlap with thiserror's #[source]; pick one to wrap the other"],
+      "decision_rationale": "Adopt; wrap UarError in Report for context; surface frames in miette diagnostic."
+    },
+    {
+      "id": "cand-err-004",
+      "section": "5",
+      "name": "tracing-error (tracing span to error chain)",
+      "kind": "library",
+      "repo_url": "https://github.com/yaahc/tracing-error",
+      "registry": "cargo",
+      "fit_for_gap": "Bridges tracing spans to error chains; ensures request_id / agent_id / run_id context flows with errors.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.85,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/tracing-error", "claim": "tracing-error bridges tracing spans to error chains via SpanTrace" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; ensure every UarError carries the current span trace."
+    },
+    {
+      "id": "cand-err-005",
+      "section": "5",
+      "name": "sentry-sdk (production observability)",
+      "kind": "library",
+      "repo_url": "https://github.com/getsentry/sentry-rust",
+      "registry": "cargo",
+      "fit_for_gap": "Production error observability; pairs with tracing-error; optional but standard for production runtimes.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/sentry", "claim": "sentry-rust is the standard Rust Sentry SDK; pairs with tracing" }
+      ],
+      "risks": ["Network dependency; behind a feature flag"],
+      "decision_rationale": "Adopt behind --features sentry; default off."
+    },
+    {
+      "id": "cand-build-001",
+      "section": "6",
+      "name": "cargo-llvm-cov",
+      "kind": "tool",
+      "repo_url": "https://github.com/taiki-e/cargo-llvm-cov",
+      "registry": "cargo",
+      "fit_for_gap": "Code coverage measurement in CI; --fail-under-lines 80; recommended over tarpaulin.",
+      "verdict": "adopt",
+      "coverage_estimate": 1.0,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 4, "source_url": "https://rustprojectprimer.com/measure/coverage.html", "claim": "cargo-llvm-cov is the recommended Rust coverage tool; uses LLVM source-based instrumentation; --fail-under-lines supported; works on Linux/macOS/Windows via nightly" }
+      ],
+      "risks": ["Requires nightly; CI job can install automatically"],
+      "decision_rationale": "Adopt; replace the .grcovrc with cargo-llvm-cov in CI; Codecov for the dashboard."
+    },
+    {
+      "id": "cand-build-002",
+      "section": "6",
+      "name": "cargo-mutants",
+      "kind": "tool",
+      "repo_url": "https://github.com/sourcefrog/cargo-mutants",
+      "registry": "cargo",
+      "fit_for_gap": "Mutation testing; measures test quality; nightly CI job.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/cargo-mutants", "claim": "cargo-mutants is the standard Rust mutation tester; sourcefrog maintains" }
+      ],
+      "risks": ["Slow on 68K LOC; nightly schedule only"],
+      "decision_rationale": "Adopt; nightly cron; track mutation score over time."
+    },
+    {
+      "id": "cand-build-003",
+      "section": "6",
+      "name": "proptest",
+      "kind": "library",
+      "repo_url": "https://github.com/proptest-rs/proptest",
+      "registry": "cargo",
+      "fit_for_gap": "Property-based testing; serde roundtrips, retrieval RRF invariants, governance policy hot-reload semantics.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/proptest", "claim": "proptest is the standard Rust property-based testing library" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; add property tests for the 3 surfaces identified in §6.4."
+    },
+    {
+      "id": "cand-build-004",
+      "section": "6",
+      "name": "cargo-fuzz",
+      "kind": "tool",
+      "repo_url": "https://github.com/rust-fuzz/cargo-fuzz",
+      "registry": "cargo",
+      "fit_for_gap": "libFuzzer-backed fuzz testing; required for any surface accepting untrusted input (MCP, file_processing, RAG).",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://github.com/rust-fuzz/cargo-fuzz", "claim": "cargo-fuzz is the standard Rust fuzzer; libFuzzer-backed; 24h corpus runs standard" }
+      ],
+      "risks": ["Nightly; 24h corpus runs are slow"],
+      "decision_rationale": "Adopt; 4 fuzz targets (chunker, RAG verification, MCP message parsing, JSON Schema validator)."
+    },
+    {
+      "id": "cand-build-005",
+      "section": "6",
+      "name": "release-plz",
+      "kind": "tool",
+      "repo_url": "https://github.com/release-plz/release-plz",
+      "registry": "cargo",
+      "fit_for_gap": "Conventional commits → SemVer → CHANGELOG → PR automation; replaces manual release notes.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://github.com/release-plz/release-plz", "claim": "release-plz is the standard Rust release automation; conventional commits → SemVer → CHANGELOG → PR" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; add commitlint + lefthook for the JS workspace."
+    },
+    {
+      "id": "cand-build-006",
+      "section": "6",
+      "name": "cargo-deny",
+      "kind": "tool",
+      "repo_url": "https://github.com/EmbarkStudios/cargo-deny",
+      "registry": "cargo",
+      "fit_for_gap": "License + advisory + ban + sources gate; complements UAR's security audit.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://github.com/EmbarkStudios/cargo-deny", "claim": "cargo-deny is the standard Rust dependency policy gate; license + advisory + ban + sources" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; configure for the new license targets (§8)."
+    },
+    {
+      "id": "cand-supply-001",
+      "section": "7",
+      "name": "slsa-github-generator (SLSA Level 3 reusable workflow)",
+      "kind": "tool",
+      "repo_url": "https://github.com/slsa-framework/slsa-github-generator",
+      "registry": "n/a",
+      "fit_for_gap": "SLSA L3 self-attestation; signing in isolated job, separate from build workflow.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.95,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://slsa.dev/blog/2023/02/slsa-github-workflows-container-ga", "claim": "SLSA 3 Container Generator for GitHub Actions is GA; free; produces L3-compliant provenance signed by cosign in an isolated job" },
+        { "tier": 4, "source_url": "https://github.blog/enterprise-software/devsecops/enhance-build-security-and-reach-slsa-level-3-with-github-artifact-attestations/", "claim": "GitHub Artifact Attestations: L2 by default, L3 by using a reusable workflow that runs signing on dedicated infrastructure" }
+      ],
+      "risks": ["Sensitive to runner environment; first integration may flake"],
+      "decision_rationale": "Adopt; add a provenance.yml reusable workflow that runs after every release build."
+    },
+    {
+      "id": "cand-supply-002",
+      "section": "7",
+      "name": "actions/attest-sbom (GitHub first-party)",
+      "kind": "tool",
+      "repo_url": "https://github.com/actions/attest-sbom",
+      "registry": "n/a",
+      "fit_for_gap": "First-party SBOM attestation alongside the SLSA provenance; pairs with syft-generated SBOM.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 4, "source_url": "https://github.blog/enterprise-software/devsecops/enhance-build-security-and-reach-slsa-level-3-with-github-artifact-attestations/", "claim": "actions/attest-sbom is the first-party SBOM attestation step" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; pair with slsa-github-generator."
+    },
+    {
+      "id": "cand-supply-003",
+      "section": "7",
+      "name": "osv-scanner + grype (continuous vuln scanning)",
+      "kind": "tool",
+      "repo_url": "https://github.com/google/osv-scanner",
+      "registry": "n/a",
+      "fit_for_gap": "SBOM-based vulnerability scanning in CI; nightly; block on CVE ≥ HIGH for published artifacts.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://github.com/google/osv-scanner", "claim": "osv-scanner + grype are the standard SBOM-based vulnerability scanners" }
+      ],
+      "risks": ["False positives require triage"],
+      "decision_rationale": "Adopt; nightly cron; block on HIGH+ for published artifacts."
+    },
+    {
+      "id": "cand-supply-004",
+      "section": "7",
+      "name": "slsa-verifier",
+      "kind": "tool",
+      "repo_url": "https://github.com/slsa-framework/slsa-verifier",
+      "registry": "n/a",
+      "fit_for_gap": "CLI verification of SLSA provenance; the official verifier; ships with slsa-github-generator.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://github.com/slsa-framework/slsa-verifier", "claim": "slsa-verifier is the official SLSA provenance verifier" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; wire into the candidate-certification workflow as the verification step."
+    },
+    {
+      "id": "cand-lic-001",
+      "section": "8",
+      "name": "MIT License (Text)",
+      "kind": "license",
+      "repo_url": "https://spdx.org/licenses/MIT.html",
+      "registry": "n/a",
+      "fit_for_gap": "MIT for SDKs to match LangChain/LangGraph/CrewAI/MAF/OpenAI Agents SDK/LlamaIndex/Haystack/Markus.",
+      "verdict": "adopt",
+      "coverage_estimate": 1.0,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://spdx.org/licenses/MIT.html", "claim": "MIT is the dominant SDK license in the 2026 OSS agent ecosystem" }
+      ],
+      "risks": ["No patent grant; no NOTICE file requirement"],
+      "decision_rationale": "Recommended for SDKs. Contested with Apache-2.0 — see §12.1."
+    },
+    {
+      "id": "cand-lic-002",
+      "section": "8",
+      "name": "Apache-2.0 License (Text)",
+      "kind": "license",
+      "repo_url": "https://spdx.org/licenses/Apache-2.0.html",
+      "registry": "n/a",
+      "fit_for_gap": "Apache-2.0 for SDKs if patent clarity is needed; matches agentgateway and the Rust ecosystem (Tokio, axum).",
+      "verdict": "adopt-alternative",
+      "coverage_estimate": 0.9,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://spdx.org/licenses/Apache-2.0.html", "claim": "Apache-2.0 is the dominant Rust ecosystem license; explicit patent grant" }
+      ],
+      "risks": ["NOTICE file boilerplate"],
+      "decision_rationale": "Strong alternative to MIT for SDKs if patent clarity matters; the right answer for the runtime if a permissive license is ever considered."
+    },
+    {
+      "id": "cand-lic-003",
+      "section": "8",
+      "name": "AGPL-3.0 + Commercial dual-license (Markus precedent)",
+      "kind": "license",
+      "repo_url": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "registry": "n/a",
+      "fit_for_gap": "Server-side copyleft preserves the OSS moat; commercial band gives SaaS deployers an exit; matches Markus precedent.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "AGPL-3.0 + commercial",
+      "evidence": [
+        { "tier": 4, "source_url": "https://rywalker.com/research/markus", "claim": "Markus (AGPL-3.0 + commercial) is the only copyleft entrant in the agent-company-platform comparison; pricing is public" }
+      ],
+      "risks": ["Commercial terms must be publicly published with pricing bands"],
+      "decision_rationale": "Recommended for the runtime server; preserves the copyleft moat."
+    },
+    {
+      "id": "cand-doc-001",
+      "section": "9",
+      "name": "Storybook 8 (React component explorer)",
+      "kind": "tool",
+      "repo_url": "https://github.com/storybookjs/storybook",
+      "registry": "npm",
+      "fit_for_gap": "Component explorer + visual regression for every React component in the A2UI library + the chat/console surfaces.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://github.com/storybookjs/storybook", "claim": "Storybook 8 is the de-facto React component explorer; visual regression via Chromatic addon" }
+      ],
+      "risks": ["Heavier than Histoire; Histoire alternative if Vite-native is preferred"],
+      "decision_rationale": "Adopt; integrate with the existing frontend workspace."
+    },
+    {
+      "id": "cand-doc-002",
+      "section": "9",
+      "name": "Hosted rustdoc + typedoc pipeline",
+      "kind": "tool",
+      "repo_url": "https://github.com/rust-lang/rust/blob/master/src/tools/rustdoc",
+      "registry": "n/a",
+      "fit_for_gap": "Auto-publish rustdoc + typedoc to GitHub Pages on every release.",
+      "verdict": "adopt",
+      "coverage_estimate": 1.0,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://doc.rust-lang.org/rustdoc/", "claim": "rustdoc + cargo doc --no-deps is the standard Rust API doc pipeline" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; gh-pages deploy; typedoc for the TS SDK."
+    },
+    {
+      "id": "cand-doc-003",
+      "section": "9",
+      "name": "Docusaurus (already in website/, mature it)",
+      "kind": "tool",
+      "repo_url": "https://github.com/facebook/docusaurus",
+      "registry": "npm",
+      "fit_for_gap": "Existing docs site; mature with the new cookbook, A2UI Inspector, and ADRs.",
+      "verdict": "extend",
+      "coverage_estimate": 0.9,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://docusaurus.io/", "claim": "Docusaurus is the standard OSS docs site; UAR already uses it (website/)" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Keep; expand with the new content from §9."
+    },
+    {
+      "id": "cand-doc-004",
+      "section": "9",
+      "name": "vale.sh (prose lint)",
+      "kind": "tool",
+      "repo_url": "https://github.com/errata-ai/vale",
+      "registry": "go",
+      "fit_for_gap": "Prose lint for consistent terminology across docs/.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://github.com/errata-ai/vale", "claim": "vale is the standard prose linter; CI-friendly; project rules + vocab" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; ship a UAR-specific style config."
+    },
+    {
+      "id": "cand-a2ui-001",
+      "section": "10",
+      "name": "@a2ui/web_core (Google) — vendor",
+      "kind": "renderer",
+      "repo_url": "https://github.com/a2ui-project/a2ui",
+      "registry": "npm",
+      "fit_for_gap": "Framework-agnostic A2UI message processor; the substrate UAR's React/Lit/Svelte renderers build on.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.95,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://github.com/a2ui-project/a2ui", "claim": "@a2ui/web_core exports the MessageProcessor; every renderer consumes it" }
+      ],
+      "risks": ["v1.0-rc still iterating; pin to a specific version"],
+      "decision_rationale": "Adopt; vendor as frontend/packages/a2ui-core; pin version."
+    },
+    {
+      "id": "cand-a2ui-002",
+      "section": "10",
+      "name": "@a2ui/react (Google) — reference impl only",
+      "kind": "renderer",
+      "repo_url": "https://github.com/a2ui-project/a2ui",
+      "registry": "npm",
+      "fit_for_gap": "Reference React implementation; cross-test UAR's renderer against it; do NOT vendor directly (preserves UAR catalog control).",
+      "verdict": "reference",
+      "coverage_estimate": 0.7,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://developers.googleblog.com/a2ui-v0-9-generative-ui/", "claim": "@a2ui/react is the official React renderer (April 2026)" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Use as a cross-test target; do not vendor. UAR's renderer is built on @a2ui/web_core directly."
+    },
+    {
+      "id": "cand-a2ui-003",
+      "section": "10",
+      "name": "react-aria-components (Adobe) for a11y primitives",
+      "kind": "library",
+      "repo_url": "https://github.com/adobe/react-spectrum",
+      "registry": "npm",
+      "fit_for_gap": "WCAG 2.2 AA accessible React primitives; the 2026 gold standard; powers the A2UI component catalog.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.95,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://react-spectrum.adobe.com/react-aria/components.html", "claim": "react-aria-components provides WCAG-compliant React primitives; 2026 default for accessibility-first React libraries" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt as the a11y substrate for the UAR A2UI catalog."
+    },
+    {
+      "id": "cand-a2ui-004",
+      "section": "10",
+      "name": "motion (formerly Framer Motion) for animation",
+      "kind": "library",
+      "repo_url": "https://github.com/motiondivision/motion",
+      "registry": "npm",
+      "fit_for_gap": "Declarative animation for A2UI streaming update transitions; the 2026 standard for React animation.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://motion.dev/", "claim": "motion (formerly Framer Motion) is the 2026 standard for declarative React animation" }
+      ],
+      "risks": ["Bundle size; consider lazy load"],
+      "decision_rationale": "Adopt; use for streaming-update transitions and entrance/exit animations."
+    },
+    {
+      "id": "cand-a2ui-005",
+      "section": "10",
+      "name": "quicktype (codegen from JSON Schema)",
+      "kind": "tool",
+      "repo_url": "https://github.com/glideapps/quicktype",
+      "registry": "npm",
+      "fit_for_gap": "Generate TypeScript types from UAR's Rust JSON Schema; one source of truth across the A2UI boundary.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.85,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://github.com/glideapps/quicktype", "claim": "quicktype is the standard schema-to-types codegen tool; supports JSON Schema → TypeScript" }
+      ],
+      "risks": ["Quicktype's TS output can be verbose; consider generating OpenAPI instead and using openapi-typescript"],
+      "decision_rationale": "Adopt; codegen A2UI TS types in a pre-build step."
+    },
+    {
+      "id": "cand-a2ui-006",
+      "section": "10",
+      "name": "shadcn/ui (Tailwind + Radix)",
+      "kind": "library",
+      "repo_url": "https://github.com/shadcn-ui/ui",
+      "registry": "n/a",
+      "fit_for_gap": "Already in the UAR React/Tailwind stack; provides the catalog base (Button, Card, CheckBox, etc.).",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://ui.shadcn.com/", "claim": "shadcn/ui is the de-facto React 19 + Tailwind + Radix component baseline in 2026" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; use as the catalog base for the A2UI component library."
+    },
+    {
+      "id": "cand-a2ui-007",
+      "section": "10",
+      "name": "cmdk (command-menu UI)",
+      "kind": "library",
+      "repo_url": "https://github.com/pacoWiki/cmdk",
+      "registry": "npm",
+      "fit_for_gap": "The ChoicePicker A2UI component for large option lists; the 2026 best command-menu UI in React.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.85,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://github.com/pacoWiki/cmdk", "claim": "cmdk is the 2026 standard for command-menu UIs in React" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt for ChoicePicker with > 20 options."
+    },
+    {
+      "id": "cand-a2ui-008",
+      "section": "10",
+      "name": "react-hook-form + zod resolver",
+      "kind": "library",
+      "repo_url": "https://github.com/react-hook-form/react-hook-form",
+      "registry": "npm",
+      "fit_for_gap": "Form state + validation for the Form A2UI component; the 2026 de-facto form stack.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://github.com/react-hook-form/react-hook-form", "claim": "react-hook-form + zod is the 2026 de-facto React form stack" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; pair with zod (§2.3) for schema-driven form validation."
+    },
+    {
+      "id": "cand-a2ui-009",
+      "section": "10",
+      "name": "@tanstack/react-virtual",
+      "kind": "library",
+      "repo_url": "https://github.com/TanStack/virtual",
+      "registry": "npm",
+      "fit_for_gap": "List virtualization for the Form A2UI component with many fields; the 2026 standard.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.85,
+      "license": "MIT",
+      "evidence": [
+        { "tier": 3, "source_url": "https://github.com/TanStack/virtual", "claim": "@tanstack/react-virtual is the 2026 standard for list virtualization in React" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt for large forms (> 50 fields)."
+    },
+    {
+      "id": "cand-a2ui-010",
+      "section": "10",
+      "name": "@internationalized/string + react-aria i18n",
+      "kind": "library",
+      "repo_url": "https://github.com/adobe/react-spectrum",
+      "registry": "npm",
+      "fit_for_gap": "i18n framework for the A2UI library; l10n strings + RTL support.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.85,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 3, "source_url": "https://react-spectrum.adobe.com/react-aria/internationalization.html", "claim": "@internationalized/* is the standard i18n stack for React Aria components" }
+      ],
+      "risks": ["None"],
+      "decision_rationale": "Adopt; ship en, es, ja, zh; RTL framework."
+    }
+  ],
+  "build_required": [
+    {
+      "need": "Central pub enum UarError (#[non_exhaustive]) per public module surface",
+      "why_no_candidate": "Domain-specific; requires design decision per UAR module boundary",
+      "section": "5",
+      "estimated_hours": 12
+    },
+    {
+      "need": "Citation stream (Rust SSE type + React renderer component)",
+      "why_no_candidate": "Requires the UAR RAG retrieval integration; no off-the-shelf component ships per-chunk citation UX at this fidelity",
+      "section": "4",
+      "estimated_hours": 18
+    },
+    {
+      "need": "A2UI Inspector (devtools app for SSE message inspection)",
+      "why_no_candidate": "No A2UI devtools exists upstream; Google has not shipped @a2ui/inspector; the deliverable is UAR-specific",
+      "section": "9",
+      "estimated_hours": 18
+    },
+    {
+      "need": "UAR-specific A2UI component catalog (≥ 14 components with animations + a11y)",
+      "why_no_candidate": "UAR's approved catalog is more restrictive than Google's; mapping work is required",
+      "section": "10",
+      "estimated_hours": 40
+    },
+    {
+      "need": "A2UI ↔ AG-UI bridge (typed event mapping + live-update transitions)",
+      "why_no_candidate": "UAR's AG-UI event model is the source of truth; the bridge is UAR-specific",
+      "section": "10",
+      "estimated_hours": 12
+    },
+    {
+      "need": "prometheus-eval (golden set + judge prompt harness for RAG evaluation)",
+      "why_no_candidate": "Project-specific golden set; 300 items spanning UAR's 5 primary intents",
+      "section": "4",
+      "estimated_hours": 10
+    },
+    {
+      "need": "Cookbook (12 runnable examples spanning runtime + SDKs + A2UI)",
+      "why_no_candidate": "UAR-specific examples; not adoptable from a library",
+      "section": "9",
+      "estimated_hours": 30
+    },
+    {
+      "need": "ADR directory (≥ 10 architecture decision records)",
+      "why_no_candidate": "UAR-specific decisions; not adoptable",
+      "section": "9",
+      "estimated_hours": 12
+    }
+  ],
+  "totals": {
+    "active_agent_hours_sequential": 662,
+    "active_agent_hours_parallel_4_agents": 250,
+    "sections": {
+      "2_sdk": 106,
+      "3_configuration": 37,
+      "4_rag": 88,
+      "5_error_handling": 42,
+      "6_build_test_lint": 43,
+      "7_supply_chain": 22,
+      "8_license": 19,
+      "9_documentation_dx": 89,
+      "10_a2ui": 216
+    }
+  },
+  "open_questions": [
+    {
+      "id": "Q1",
+      "section": "8",
+      "question": "SDK license: MIT, BSD-3-Clause, or Apache-2.0?",
+      "recommendation": "MIT (matches 8/8 named competitor SDKs) or Apache-2.0 (if patent clarity matters)"
+    },
+    {
+      "id": "Q2",
+      "section": "10",
+      "question": "A2UI React renderer: vendor Google's @a2ui/react or build UAR-owned on @a2ui/web_core?",
+      "recommendation": "Vendor @a2ui/web_core; build UAR-owned React renderer on top; cross-test against @a2ui/react as reference impl."
+    },
+    {
+      "id": "Q3",
+      "section": "8",
+      "question": "Relicensing approach: open letter to SDK contributors, CLA going forward, or clean-history split?",
+      "recommendation": "Open letter for SDKs (small surface, ~10 known contributors) + clean-history split for runtime"
+    },
+    {
+      "id": "Q4",
+      "section": "6",
+      "question": "Coverage gate threshold: 60% or 80% on day one?",
+      "recommendation": "Start at 60%; grow quarterly to 80% as the test surface matures"
+    },
+    {
+      "id": "Q5",
+      "section": "6",
+      "question": "Property-test / fuzz-test budget: minimum (22h) or follow-up-grade (60+h)?",
+      "recommendation": "Minimum 22h; schedule a follow-up-grade fuzz pass after the grade-A cut"
+    }
+  ]
+}

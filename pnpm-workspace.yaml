@@ -1,2 +1,8 @@
+packages:
+  - .
+  - frontend
+  - frontend/packages/*
+
 allowBuilds:
   '@parcel/watcher': true
+  lefthook: true

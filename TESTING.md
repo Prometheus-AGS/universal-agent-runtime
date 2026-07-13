@@ -282,6 +282,25 @@ tools/
 - Quality gate validation
 - Direct links to detailed reports
 
+## Mutation, fuzz, and property-based testing
+
+### Mutation testing
+- **Tool**: `cargo-mutants`
+- **CI**: `.github/workflows/mutation.yml` nightly cron
+- **Run locally**: `cargo mutants --no-shuffle --features server-full`
+- **Reports**: `docs/mutation-history/`
+- **Summary**: `bash tools/mutation-summarize.sh <report-dir>`
+
+### Fuzz testing
+- **Tool**: `cargo-fuzz`
+- **Targets**: `fuzz/fuzz_targets/{chunker,rag_verification,mcp_message_parser,json_schema_validator}.rs`
+- **Run locally**: `cargo +nightly fuzz run chunker` (requires nightly Rust and `cargo-fuzz`)
+
+### Property-based testing
+- **Tool**: `proptest`
+- **Coverage**: settings store serde roundtrip, retrieval RRF invariants, governance policy hot-reload semantics
+- **Run locally**: included in `cargo test`
+
 ## Quality Gates
 
 ### Automated Checks
@@ -292,6 +311,9 @@ tools/
 5. **Coverage Thresholds**: Configurable per environment
 6. **Performance**: Response time and throughput validation
 7. **Docker Health**: Service connectivity and readiness
+8. **Conventional Commits**: `commitlint` + `lefthook` for the JS workspace
+9. **Mutation Testing**: `cargo-mutants` nightly
+10. **Fuzz and Property Tests**: `cargo-fuzz` and `proptest`
 
 ### Manual Gates
 1. **Code Review**: Required for all PRs

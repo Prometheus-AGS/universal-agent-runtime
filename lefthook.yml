@@ -1,0 +1,13 @@
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm exec commitlint --edit {1}
+
+pre-commit:
+  commands:
+    frontend-lint:
+      run: pnpm -C frontend lint
+      glob: "frontend/**/*.{ts,tsx}"
+    frontend-typecheck:
+      run: pnpm -C frontend typecheck
+      glob: "frontend/**/*.{ts,tsx}"

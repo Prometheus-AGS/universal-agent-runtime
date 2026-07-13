@@ -1,0 +1,69 @@
+{
+  "phase": "uar-grade-a-upgrade-2026-07",
+  "parentPhase": "uar-final-production-hardening-2026-07",
+  "assessment_complete": true,
+  "analysis_complete": true,
+  "plan_complete": true,
+  "execute_started": true,
+  "reflect_complete": false,
+  "sourceTool": "claude",
+  "last_updated": "2026-07-13T22:00:00Z",
+  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Changes 1 (license), 2 (coverage), and 3 (test-quality-mutation-fuzz-property) implementation-complete. Change 3 had one deferred verification item (first cargo-fuzz build/runtime) due to the long initial build time of the surrealdb/axum stack; the fuzz targets and scaffolding are in place and will be exercised in the phase's consolidated validation pass.",
+  "operator_priority": "Operator redirected KBD to this phase ahead of the soak-run phase (2026-07-13): close Grade-A gaps first, soak/tag/install/GA resumes once code-complete here. Changes 1-3 implementation done. Operator directed: call out every harness switch per plan.md's per-change matrix before starting that change; next switch is at Change 4 (central-uar-error-enum) -- switch back to Claude Code + Sonnet 5 from OpenCode + Kimi K2.7 Coding.",
+  "implementation_total": 25,
+  "implementation_completed": 3,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": { "completed": 3, "total": 25, "status": "IN_PROGRESS" },
+    "evidence": { "status": "NOT_TRACKED", "summary": null, "blockers": [] },
+    "certification": { "status": "NOT_TRACKED", "summary": null, "blockers": [] },
+    "publication": { "status": "NOT_TRACKED", "summary": null, "blockers": [] }
+  },
+  "deliverables": {
+    "analysis_md": "analysis.md",
+    "library_candidates_json": "library-candidates.json",
+    "plan_md": "plan.md",
+    "openspec_changes_with_proposals": [
+      "openspec/changes/license-dual-license-agpl-mit/{proposal.md, tasks.md, specs/dual-license-policy/spec.md}",
+      "openspec/changes/coverage-cargo-llvm-cov-60pct/{proposal.md, tasks.md, specs/coverage-baseline/spec.md}",
+      "openspec/changes/test-quality-mutation-fuzz-property/{proposal.md, tasks.md, specs/test-quality-gates/spec.md}",
+      "openspec/changes/central-uar-error-enum/{proposal.md, tasks.md, specs/uar-error-model/spec.md}"
+    ],
+    "openspec_changes_pending_proposal": [
+      "unwrap-sweep-tracing-error-chains",
+      "config-rs-schemars-migration",
+      "config-hot-reload-vault",
+      "slsa-l3-osv-grype-security-txt",
+      "sdk-rust-1.0",
+      "sdk-python-1.0",
+      "sdk-typescript-1.0",
+      "sdk-examples-cookbook-rustdoc",
+      "rag-citation-stream",
+      "rag-eval-ragas-deepeval-golden-set",
+      "rag-embedding-backends-4-more",
+      "a2ui-vendor-google-core-react",
+      "a2ui-uar-renderer-on-webcore",
+      "a2ui-migrate-entity-components-from-prometheus-entity-management",
+      "a2ui-migrate-design-systems-embedder-from-flint-forge",
+      "a2ui-realtime-backbone-from-flint-realtime-fabric",
+      "a2ui-world-class-theming-a11y-i18n",
+      "a2ui-inspector-lit-svelte-renderers",
+      "docs-hosted-rustdoc-typedoc-docusaurus-ia",
+      "docs-cookbook-12-examples",
+      "docs-storybook-visual-regression-perf-budget"
+    ]
+  },
+  "operator_decisions": {
+    "Q1_license": "MIT for SDKs",
+    "Q2_a2ui": "vendor both @a2ui/react + @a2ui/web_core; UAR-owned renderer; component library from flint-forge + prometheus-entity-management + flint-realtime-fabric",
+    "Q3_relicensing": "open letter for SDKs (operator recommendation)",
+    "Q4_coverage": "60% on day one; adjust based on usage",
+    "Q5_property_fuzz": "minimum 22h (operator recommendation)"
+  },
+  "harness_matrix_recommendation": {
+    "architectural": "Claude Code + Sonnet 5 (~50% of hours, 330h)",
+    "bulk_implementation": "OpenCode + Kimi K2.7 Coding (~30% of hours, 200h)",
+    "parallel_isolated": "Codex + GPT-5.6 in git worktrees (~20% of hours, 130h)"
+  },
+  "next_step": "Changes 1-3 implementation-complete (3/25). Deferred evidence items: Change 1 tasks.md 6.1 (pricing, deferred)/6.2 (confirm no-3rd-party-contributor finding)/6.3 (PR review/merge); Change 2 tasks.md 3.1 (record real baseline numbers)/5.1-5.2 (observe workflow on a real PR); Change 3 tasks.md 5.4 (first cargo-fuzz build/runtime) -- all deferred to the phase's consolidated validation pass, not blocking further implementation per the KBD implementation-first policy. Change 4 (central-uar-error-enum) is next: SECOND HARNESS SWITCH of the phase, back to Claude Code + Sonnet 5 from OpenCode + Kimi K2.7 Coding -- must be flagged explicitly before starting."
+}

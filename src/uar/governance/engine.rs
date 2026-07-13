@@ -349,6 +349,9 @@ impl Default for GovernanceEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
+    use std::io::Write;
+    use tempfile::TempDir;
 
     #[tokio::test]
     async fn test_default_permit_allows_all() {
@@ -428,5 +431,44 @@ mod tests {
             denied.tool_decision("agent-1", "read", false).await,
             ToolGovernanceDecision::Deny
         );
+    }
+
+    proptest! {
+        #[test]
+        fn hot_reload_is_deterministic(
+            agent_id in "[a-zA-Z0-9_-]{1,32}",
+            tool_name in "[a-zA-Z0-9_-]{1,32}",
+        ) {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                let dir = TempDir::new().unwrap();
+                let path = dir.path().join("permit.cedar");
+                let mut file = std::fs::File::create(&path).unwrap();
+                file.write_all(b"permit(principal, action, resource);").unwrap();
+
+                let engine = GovernanceEngine::load_from_dir(dir.path()).await.unwrap();
+                let before = engine.is_tool_allowed(&agent_id, &tool_name).await;
+                assert!(before, "permit-all policy should allow any tool");
+
+                // Modify policy to deny the generated tool.
+                let mut file = std::fs::File::create(&path).unwrap();
+                write!(
+                    file,
+                    r#"
+                    permit(principal, action, resource);
+                    forbid(principal, action == Action::"execute_tool", resource == Tool::"{tool_name}");
+                    "#
+                ).unwrap();
+
+                engine.reload().await.unwrap();
+                let after = engine.is_tool_allowed(&agent_id, &tool_name).await;
+                assert!(!after, "reload should pick up the new forbid policy");
+
+                // Re-reload with the same policy file must be deterministic.
+                engine.reload().await.unwrap();
+                let after_again = engine.is_tool_allowed(&agent_id, &tool_name).await;
+                assert_eq!(after, after_again);
+            });
+        }
     }
 }

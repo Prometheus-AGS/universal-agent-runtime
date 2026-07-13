@@ -1,10 +1,17 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-final-production-hardening-2026-07
-Step: 24 of 24
-Stage: implementation-completion
-Next command: unknown
+Phase: uar-grade-a-upgrade-2026-07 (operator-redirected from perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion, which is paused not abandoned)
+Step: Change 2 of 25 (coverage-cargo-llvm-cov-60pct) — implementation complete
+Stage: execute_in_progress
+Next command: /kbd-execute (next change: test-quality-mutation-fuzz-property)
+
+HARNESS SWITCH DUE: Change 3 (test-quality-mutation-fuzz-property) is
+assigned to OpenCode + Kimi K2.7 Coding (Claude review) in plan.md §5 —
+this is the FIRST harness switch of the phase. Flag it explicitly to the
+operator before starting Change 3's work; do not silently continue on
+Claude Code + Sonnet 5. See execution.md's "Harness switch log" for the
+full remaining sequence.
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-final-production-hardening-2026-07 (step 24 of 24)
+  Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (change N of 25)
   [do work]
-  Completed <kbd-skill> — uar-final-production-hardening-2026-07 (step 24 of 24)
+  Completed <kbd-skill> — uar-grade-a-upgrade-2026-07 (change N of 25)

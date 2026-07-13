@@ -79,6 +79,7 @@ pub fn resolve_effective_caching(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
 
     #[test]
     fn session_override_takes_highest_priority() {
@@ -122,5 +123,32 @@ mod tests {
     fn global_setting_is_the_fallback() {
         assert!(resolve_effective_caching(None, None, None, true));
         assert!(!resolve_effective_caching(None, None, None, false));
+    }
+
+    proptest! {
+        #[test]
+        fn user_prompt_caching_settings_serde_roundtrip(
+            user_id in "[a-zA-Z0-9_-]{1,32}",
+            prompt_caching_enabled in proptest::option::of(prop::bool::ANY),
+            preferred_scope in prop::sample::select(&[
+                CachingScope::Session,
+                CachingScope::User,
+                CachingScope::Agent,
+            ]),
+            updated_at in 0i64..4102444800i64,
+        ) {
+            let mut original = UserPromptCachingSettings::new(user_id);
+            original.prompt_caching_enabled = prompt_caching_enabled;
+            original.preferred_scope = preferred_scope;
+            original.updated_at = DateTime::from_timestamp(updated_at, 0).unwrap_or(DateTime::UNIX_EPOCH);
+
+            let json = serde_json::to_string(&original).expect("serialize");
+            let deserialized: UserPromptCachingSettings = serde_json::from_str(&json).expect("deserialize");
+
+            assert_eq!(original.user_id, deserialized.user_id);
+            assert_eq!(original.prompt_caching_enabled, deserialized.prompt_caching_enabled);
+            assert_eq!(original.preferred_scope, deserialized.preferred_scope);
+            assert_eq!(original.updated_at, deserialized.updated_at);
+        }
     }
 }

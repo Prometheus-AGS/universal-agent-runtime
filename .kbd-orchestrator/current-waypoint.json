@@ -1,51 +1,64 @@
 {
-  "phase": "uar-final-production-hardening-2026-07",
+  "phase": "uar-grade-a-upgrade-2026-07",
   "status": "executing",
-  "stage": "implementation-completion",
-  "executionMode": "operator-locked-production-completion",
-  "progress": "24/24 implementation changes complete; consolidated local validation PASSED (fmt, cargo check, cargo test server-full, Node/static contract validators, strict OpenSpec validation, diff hygiene). Release-evidence generation (soak run, candidate tag, external installs, GA publication) is a separate post-implementation track.",
-  "operatorPriority": "24/24 implementation reached. External evidence, soak time, tags, releases, and CI do not block the implementation count.",
-  "executionLock": {
-    "primaryObjective": "Complete the code and integration requirements for changes 21-24 in the server-full BossFang sidecar.",
-    "rules": [
-      "Operator instructions override stale plans, assessments, workflow status, and agent preferences.",
-      "Before every action, require a direct advance toward code completion for changes 21-24; otherwise do not do it.",
-      "Do not poll or babysit CI, create release candidates, publish releases, collect external-install evidence, or wait on soak time during implementation completion.",
-      "Statically classify every remaining requirement, batch all code and integration gaps, then run one consolidated validation sequence after zero known gaps remain.",
-      "Windows is Experimental and nonblocking; Stable release targets are Linux and macOS.",
-      "During implementation use static inspection and cohesive cargo check only; tests validate the complete product.",
-      "Implementation completion is the 24/24 counter; release certification and publication are a separate post-completion track.",
-      "Preserve active Cargo caches; never cargo clean; use only reviewed reversible cleanup."
-    ]
+  "stage": "execute_in_progress",
+  "executionMode": "operator-directed-grade-a-upgrade",
+  "progress": "Operator redirected KBD to this phase ahead of perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion (paused, not abandoned). 25 ordered OpenSpec changes. Changes 1 (license-dual-license-agpl-mit), 2 (coverage-cargo-llvm-cov-60pct), and 3 (test-quality-mutation-fuzz-property) implementation-complete (3/25).",
+  "operatorPriority": "Close all 25 Grade-A gaps before resuming soak run / candidate tag / external installs / GA promotion. Explicitly call out every harness switch from the plan.md per-change matrix before starting that change's work.",
+  "harnessMatrix": {
+    "current": "OpenCode + Kimi K2.7 Coding (completing Change 3)",
+    "changeAssignment": "Changes 1-2: Claude+Sonnet5 (done). Change 3: OpenCode+Kimi K2.7 Coding (done). Change 4: Claude+Sonnet5 (NEXT SWITCH). Change 5: OpenCode+K2.7. Change 6: Claude+Sonnet5. Change 7: OpenCode+K2.7. Change 8: Claude+Sonnet5. Changes 9-11: Codex+GPT-5.6 (worktrees). Change 12: OpenCode+K2.7. Changes 13-14: Claude+Sonnet5. Change 15: OpenCode+K2.7. Changes 16-21: Claude+Sonnet5. Change 22: Codex+GPT-5.6 (Lit/Svelte) + Claude+Sonnet5 (Inspector). Changes 23-24: OpenCode+K2.7. Change 25: Claude+Sonnet5.",
+    "instruction": "Flag every switch to the operator before starting that change; do not silently continue on the prior harness."
   },
-  "productProfile": "server-full sidecar for BossFang",
+  "pausedPhase": {
+    "name": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+    "state": "0/14 changes; plan complete; paused by operator instruction 2026-07-13 in favor of uar-grade-a-upgrade-2026-07",
+    "resumeCondition": "resume once uar-grade-a-upgrade-2026-07 reaches 25/25 implementation; note its own changes 11-14 (certification) must rerun after further source changes land in the meantime"
+  },
   "activeChanges": [
-    "certify-operational-resilience",
-    "produce-supply-chain-artifacts",
-    "certify-release-candidate",
-    "release-1-0-0"
+    "license-dual-license-agpl-mit",
+    "coverage-cargo-llvm-cov-60pct",
+    "test-quality-mutation-fuzz-property",
+    "central-uar-error-enum",
+    "unwrap-sweep-tracing-error-chains",
+    "config-rs-schemars-migration",
+    "config-hot-reload-vault",
+    "slsa-l3-osv-grype-security-txt",
+    "sdk-rust-1.0",
+    "sdk-python-1.0",
+    "sdk-typescript-1.0",
+    "sdk-examples-cookbook-rustdoc",
+    "rag-citation-stream",
+    "rag-eval-ragas-deepeval-golden-set",
+    "rag-embedding-backends-4-more",
+    "a2ui-vendor-google-core-react",
+    "a2ui-uar-renderer-on-webcore",
+    "a2ui-migrate-entity-components-from-prometheus-entity-management",
+    "a2ui-migrate-design-systems-embedder-from-flint-forge",
+    "a2ui-realtime-backbone-from-flint-realtime-fabric",
+    "a2ui-world-class-theming-a11y-i18n",
+    "a2ui-inspector-lit-svelte-renderers",
+    "docs-hosted-rustdoc-typedoc-docusaurus-ia",
+    "docs-cookbook-12-examples",
+    "docs-storybook-visual-regression-perf-budget"
   ],
-  "currentTask": "24/24 implementation complete and consolidated local validation passed. Remaining work is the separate operator-owned release-evidence/certification track.",
-  "nextAction": "Operator decides when to trigger release-evidence generation (soak run, candidate tag v1.0.0-rc.3, signed artifact publication, external installs, GA promotion via scripts/promote-release-candidate.sh). None of that is implementation work and none was performed here.",
-  "implementationAudit": {
-    "method": "Four independent code audits, one per active change (21-24), against tasks.md/spec.md, verified against source file:line evidence.",
-    "genuineGapsFound": 3,
-    "gapsFixed": [
-      "scripts/certify-operational-resilience.sh:39 - stray trailing '}' produced invalid JSON in the resilience results file; removed.",
-      "docs/compatibility-policy.md:23 - dead relative link to docs/upgrade-guide.md (file lives at website/docs/upgrade-guide.md); link corrected.",
-      "tests/anthropic_driver_tests.rs - anthropic_native_driver_default_enabled and anthropic_native_driver_can_be_disabled raced on the process-global ANTHROPIC_NATIVE_DRIVER env var under default parallel test execution (demonstrated by the consolidated cargo test run); merged into one deterministic test."
-    ],
-    "conclusion": "All other requirements across changes 21-24 (resilience harnesses/chaos simulation/soak driver/non-root container checks, SBOM/checksum/SLSA/cosign generation, multi-arch signed image build, independent verify job, candidate-certification matrix and no-checkout install exercises, no-rebuild GA promotion script, version alignment) already have working source implementation. Remaining unchecked tasks.md boxes are the act of running/publishing that already-implemented certification (soak execution, candidate tag cut, external installs, operator-authorized GA publish) - correctly out of the 24/24 implementation scope per the operator lock.",
-    "consolidatedValidation": {
-      "cargo_fmt_check": "PASS",
-      "cargo_check_server_full": "PASS",
-      "cargo_test_server_full": "PASS (404+60+34+... all binaries 0 failed after the test-race fix; first run pre-fix showed 1 failure masked by a tee/pipefail exit-code bug in the ad hoc shell invocation, not in product code)",
-      "node_validators": "PASS (validate-documentation-truth.mjs, validate-release-workflow.mjs, validate-product-support-matrix.mjs, validate-release-capabilities.mjs)",
-      "openspec_validate_strict": "PASS (all four active changes)",
-      "diff_hygiene": "PASS (git diff limited to the 3 fixes above + KBD state files; operator-owned dirty files - AGENTS.md, .claude/settings.json, .mcp.json, opencode.json, docs/claude-24-of-24-handoff.md - untouched; no tags created; branch even with origin, no pushes)"
-    }
-  },
-  "authorizationRequired": [],
-  "sourceTool": "claude",
-  "updatedAt": "2026-07-13T19:30:00Z"
+  "currentTask": "Change 3 (test-quality-mutation-fuzz-property): implementation complete. Deferred: tasks.md 5.4 (first cargo-fuzz build/runtime) to the phase's consolidated validation pass.",
+  "nextAction": "Change 4 (central-uar-error-enum) is next -- SECOND HARNESS SWITCH of the phase, back to Claude Code + Sonnet 5. Flag the switch to the operator and do not silently continue on OpenCode + Kimi K2.7 Coding.",
+  "authorizationRequired": [
+    "Change 1: confirmation that sdks/ has no third-party contributors (audit already run; operator to confirm reading) -- pricing bands deferred, no longer blocking",
+    "Change 1: PR review/merge",
+    "Change 2: none currently blocking (evidence items deferred to consolidated validation)",
+    "Change 3: none currently blocking (cargo-fuzz runtime deferred to consolidated validation)"
+  ],
+  "sourceTool": "opencode",
+  "updatedAt": "2026-07-13T22:00:00Z",
+  "previous_phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+  "last_updated": "2026-07-13T22:00:00Z",
+  "last_updated_by": "opencode",
+  "exact_next_command": "Switch harness to Claude Code + Sonnet 5, then /kbd-execute (Change 4: central-uar-error-enum)",
+  "fallback_command": "Read .kbd-orchestrator/phases/uar-grade-a-upgrade-2026-07/plan.md §2 Order 3",
+  "active_change": "test-quality-mutation-fuzz-property",
+  "next_pending_change": "central-uar-error-enum",
+  "changes_total": 25,
+  "changes_completed": 3
 }

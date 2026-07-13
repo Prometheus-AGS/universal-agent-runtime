@@ -1,0 +1,14 @@
+[workspace]
+# Require conventional commits so release-plz can produce correct changelogs.
+conventional_commits = true
+# Do not release if the commit range doesn't follow the convention.
+commit_parsers = [
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Bug Fixes" },
+  { message = "^docs", group = "Documentation" },
+  { message = "^style", group = "Styling" },
+  { message = "^refactor", group = "Refactor" },
+  { message = "^perf", group = "Performance" },
+  { message = "^test", group = "Tests" },
+  { message = "^chore", group = "Chore" },
+]

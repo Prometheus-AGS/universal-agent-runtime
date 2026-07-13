@@ -40,6 +40,26 @@ The sign-off certifies you have the right to submit the work under the project l
 
 Contributors are expected to collaborate respectfully and professionally.
 
+## Commit message convention
+
+This repo uses [Conventional Commits](https://www.conventionalcommits.org/). All
+commit messages must follow the format:
+
+```
+<type>(<optional scope>): <short description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+Common types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`.
+
+If you have `lefthook` installed (`pnpm exec lefthook install`), the
+`commit-msg` hook runs `commitlint` and blocks non-conventional commits in the
+JS workspace. `release-plz` also uses conventional commits to generate
+changelogs and version bumps.
+
 ## Questions
 
 For licensing or contribution process questions, contact project maintainers.

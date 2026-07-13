@@ -215,6 +215,7 @@ impl Default for HybridRetriever {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     use uuid::Uuid;
 
     fn make_chunk(id: &str, content: &str) -> KnowledgeChunk {
@@ -227,6 +228,27 @@ mod tests {
             embedding: Vec::new(),
             created_at: "2024-01-01".to_string(),
         }
+    }
+
+    fn arb_knowledge_match() -> impl Strategy<Value = KnowledgeMatch> {
+        (
+            "[a-zA-Z0-9_-]{1,32}",
+            "[a-zA-Z0-9 ]{0,200}",
+            prop::sample::select(&["2024-01-01", "2024-06-01", "2025-01-01"]),
+            0.0f32..1.0f32,
+        )
+            .prop_map(|(doc_id, content, created_at, score)| KnowledgeMatch {
+                chunk: KnowledgeChunk {
+                    id: Uuid::new_v4(),
+                    kb_id: "test-kb".to_string(),
+                    document_id: Some(doc_id),
+                    content,
+                    metadata: None,
+                    embedding: Vec::new(),
+                    created_at: created_at.to_string(),
+                },
+                score,
+            })
     }
 
     #[test]
@@ -268,5 +290,40 @@ mod tests {
         assert_eq!(results[0].source, RetrievalSource::Both);
         // Score should be sum of both RRF scores
         assert!(results[0].score > 0.0);
+    }
+
+    proptest! {
+        #[test]
+        fn rrf_scores_are_bounded_and_sorted(
+            vector_results in prop::collection::vec(arb_knowledge_match(), 0..20),
+            graph_results in prop::collection::vec(arb_knowledge_match(), 0..20),
+        ) {
+            let retriever = HybridRetriever::new();
+            let results = retriever.fuse(vector_results, graph_results);
+
+            assert!(results.len() <= retriever.config.max_results);
+
+            for scored in &results {
+                assert!(scored.score >= 0.0);
+                assert!(scored.score <= 1.1); // weights <= 1.0, k = 60, so score <= 1.0
+            }
+
+            for i in 1..results.len() {
+                assert!(
+                    results[i - 1].score >= results[i].score,
+                    "RRF results must be sorted descending"
+                );
+            }
+        }
+
+        #[test]
+        fn rrf_empty_inputs_yield_empty_output(
+            vector_results in prop::collection::vec(arb_knowledge_match(), 0..0),
+            graph_results in prop::collection::vec(arb_knowledge_match(), 0..0),
+        ) {
+            let retriever = HybridRetriever::new();
+            let results = retriever.fuse(vector_results, graph_results);
+            assert!(results.is_empty());
+        }
     }
 }
