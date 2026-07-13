@@ -52,6 +52,9 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
+      - name: Check license declarations
+        run: bash tools/license-check.sh
+
       # Lint the supported release surface, not path dependencies that own
       # independent crate-level lint policies. The release-bundle matrix below
       # retains cross-profile compilation coverage.

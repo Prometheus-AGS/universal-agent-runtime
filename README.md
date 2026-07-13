@@ -71,4 +71,10 @@ Production deployments must configure authentication, non-default secrets, trust
 
 ## License
 
-UAR is version 1.0.0 and licensed under `AGPL-3.0-only`. Separate commercial terms are available for AGPL-incompatible use; see [LICENSE](LICENSE) and [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md).
+UAR is version 1.0.0. Licensing is split by component:
+
+- **Runtime server** (this repository, outside `sdks/`): `AGPL-3.0-only`. Separate commercial terms are available for AGPL-incompatible use; see [LICENSE](LICENSE) and [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md).
+- **SDKs** (`sdks/python`, `sdks/rust`, `sdks/typescript`): `MIT`. See each package's `LICENSE` file. The Rust SDK's optional `embedded` feature links the AGPL-3.0-only runtime crate directly; binaries built with that feature must comply with `AGPL-3.0-only`.
+- **Documentation** (`docs/`, and Markdown elsewhere not covered by a more specific license): `CC-BY-4.0`. See [LICENSE-CC-BY-4.0.md](LICENSE-CC-BY-4.0.md).
+
+See also [TRADEMARKS.md](TRADEMARKS.md) for the project's trademark policy.

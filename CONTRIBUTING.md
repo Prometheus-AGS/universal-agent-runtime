@@ -8,6 +8,24 @@ By submitting a contribution, you represent that you have the right to submit it
 
 This enables maintainers to distribute the open-source version under AGPL and offer separate commercial terms for AGPL-incompatible use.
 
+### CLA-lite: dual-licensing (forward-going)
+
+The runtime (this repository, outside `sdks/`) is dual-licensed AGPL-3.0-only
++ commercial (see `LICENSE-COMMERCIAL.md`). By submitting a contribution to
+any path outside `sdks/`, you additionally agree that Prometheus AGS may
+also license your contribution under the commercial terms in
+`LICENSE-COMMERCIAL.md`, so that commercial licensees receive the same
+functionality as AGPL users.
+
+Contributions to `sdks/python/`, `sdks/rust/`, `sdks/typescript/` are
+licensed MIT (see `sdks/*/LICENSE*`) — no AGPL or commercial dual-license
+obligation applies to SDK contributions.
+
+This clause applies to contributions submitted from this point forward. It
+does not retroactively relicense any contribution made before this clause
+was added; see the open-letter process for existing SDK contributions
+predating the MIT relicensing.
+
 ## Sign-off
 
 Use Developer Certificate of Origin (DCO) sign-off on commits:
