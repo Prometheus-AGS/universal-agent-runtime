@@ -1,197 +1,84 @@
 
-# CLAUDE.md
+# CLAUDE.md - Repository Guidelines
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Active production-completion execution lock
 
-## Project Overview
+For the active KBD phase `uar-final-production-hardening-2026-07`:
 
-This is an agentic streaming LLM application that combines Rust (Axum + Leptos) with HTML-first frontend technologies (HTMX, Web Components, Alpine.js). The application is designed to be tool-first, streaming-native, and Tauri-compatible for web/desktop/mobile deployment.
+- The primary objective is 24/24 production completion for the `server-full` BossFang sidecar.
+- Operator instructions override stale plans, assessments, workflow status, and agent preferences.
+- Before every action ask whether it directly advances changes 20–24; if not, do not do it.
+- CI and tests are asynchronous evidence, not the work queue. Never babysit workflows while actionable implementation or release work remains.
+- Batch related fixes. During implementation use static inspection and cohesive `cargo check` only; validate the completed product in one consolidated sequence.
+- Linux and macOS are Stable. Windows is Experimental and nonblocking for this round.
+- Keep implementation, evidence, time-bound conditions, and operator authorization explicitly distinct.
+- Preserve active Cargo caches; never run `cargo clean`; use only reviewed reversible cleanup.
 
-## Development Commands
+The canonical active state is `.kbd-orchestrator/current-waypoint.json`. Historical KBD detail remains in Git history and must not override it.
 
-### Rust Backend
-```bash
-# Run the server in development mode
-cargo run
 
-# Build the Rust application
-cargo build --release
+## Build, Lint & Test
 
-# Run tests
-cargo test
+- **Rust implementation checkpoint**: `cargo check --locked --no-default-features --features server-full`
+- **Rust final validation**: `cargo fmt --all -- --check`, supported-profile tests and release certification only after implementation is complete
+- **Web**: `pnpm -C frontend install --frozen-lockfile`, `pnpm typecheck`, `pnpm lint`, `pnpm build`
+- **Test All (final validation only)**: `cargo test --locked --no-default-features --features server-full`, `pnpm test`
+- **Single Test**: `cargo test <test_name>`, `pnpm -C frontend test <file_pattern>`
+- **Clean Build**: ZERO warnings/errors allowed. Fix warnings immediately or use `#[expect(lint, reason="...")]`.
 
-# Check for linting issues (extensive clippy configuration)
-cargo clippy
+## Code Style & Conventions
 
-# Format Rust code
-cargo fmt
-```
+- **Rust**: 4-space indent. `snake_case` (fn/mod), `CamelCase` (types). Use `anyhow` for app errors, `tracing` for structured logs.
+- **TypeScript**: 2-space indent, semicolons, TS 5.9.3. React code lives in `frontend/src/` and follows the strict layering contract below.
+- **Imports**: No glob re-exports (`pub use foo::*`). Use `#[doc(inline)]` for public re-exports.
+- **Documentation**: Public items must have `///` docs with `# Examples`, `# Errors`, and `# Panics` sections.
 
-### Frontend Assets
-```bash
-# Build all frontend assets (TypeScript, CSS, WASM)
-bun run build
+## Architecture & UI
 
-# Development mode with file watching
-bun run dev
+- **Structure**: `src/` (Axum runtime/API), `frontend/` (React 19/TypeScript), `static/` (bundled production assets).
+- **UI contract**: React 19 is the authoritative first-party UI; historical HTMX/Web Component material is not present-tense product guidance.
+- **Config**: `.env` (see `.env.example`), `example.config.yaml`, `mcp.json` for MCP tools.
+- **LLM**: All LLM access goes through [liter-llm](https://github.com/GQAdonis/liter-llm) — 142+ providers via unified `provider/model` addressing. Set `UAR_LLM__MODEL` and `UAR_LLM__API_KEY` (or a provider shortcut like `OPENAI_API_KEY`). See `example.config.yaml` for the full `llm:` section.
+- **Model routing**: Use `POST /api/uar/route` with capability requirements (`needs_tools`, `needs_vision`, `min_context`, etc.) to get the best available model. The catalog is built at compile time from models.dev + liter-llm schemas.
 
-# Type check TypeScript without emitting
-bun run check
+### React frontend (`frontend/`)
 
-# Lint TypeScript files
-bun run lint
+Strict layering — do not skip layers:
 
-# Format frontend code
-bun run format
-```
+1. **Components** never call `fetch`, never import Zustand stores directly, and never import `frontend/src/services/`. They only render UI and call **hooks**.
+2. **Hooks** only subscribe to stores and expose store actions; they do not call `fetch` or import service modules. Service calls live inside **stores**.
+3. **Stores** (`frontend/src/stores/`) hold state and call **services** for HTTP/SSE and other I/O.
+4. **Services** (`frontend/src/services/`) are thin wrappers around `fetch` / streams. **Only stores import services** (not hooks or components).
 
-### Individual Asset Building
-```bash
-# Build TypeScript only
-bun run build:ts
+This avoids duplicated data logic, keeps ESLint `react-hooks/*` rules satisfied, and makes testing straightforward.
 
-# Build CSS with Tailwind
-bun run build:css
+## OpenSpec workflow
 
-# Copy WASM files from dependencies
-bun run copy:wasm
-```
+This repo uses **OpenSpec** for spec-driven change management. The `openspec` CLI
+(`@fission-ai/openspec`, v1.5.0) is installed globally and on `PATH`.
 
-## Architecture Overview
-
-### Core Technologies
-- **Backend**: Rust with Axum web framework, Leptos for SSR
-- **Frontend**: HTMX 2.0.8, Web Components (TypeScript), Alpine.js
-- **Streaming**: Server-Sent Events (SSE) with normalized event model
-- **Tools**: MCP (Model Context Protocol) via rmcp Rust SDK
-- **Styling**: Tailwind CSS (ShadCN-inspired design system)
-
-### Key Architectural Patterns
-
-#### Event-Driven Streaming Architecture
-The application uses a normalized event model for LLM interactions that supports:
-- Token streaming (`message.delta`)
-- Tool call streaming (`tool_call.delta`, `tool_call.complete`)
-- Tool results (`tool_result`)
-- Error handling (`error`)
-- Completion signaling (`done`)
-
-All events are mirrored into AG-UI-style events (`agui.*`) for future compatibility.
-
-#### MCP Tool Integration
-- Tools are discovered dynamically from `mcp.json`
-- Supports both stdio and HTTP-based MCP servers
-- Tools are namespaced automatically (e.g., `time::now`, `tavily::search`)
-- Server controls all tool execution (not the model)
-
-#### HTML-First UI Philosophy
-- Uses HTMX for navigation and server interaction
-- Web Components provide client-side programmability
-- Alpine.js handles local UI state only
-- Progressive enhancement over heavy SPA frameworks
-- Identical UI across web/desktop/mobile via Tauri compatibility
-
-### Key Components
-
-#### Rust Backend (`src/`)
-- `main.rs`: Entry point, Axum server configuration
-- `lib.rs`: Core application logic and orchestrator
-- Session management via `SessionStore`
-- LLM orchestration via `Orchestrator`
-- MCP tool registry via `McpRegistry`
-
-#### Frontend (`web/components/`)
-- `<chat-stream>`: Main streaming chat interface
-- `<chat-messages>`: Message container and management
-- `<chat-tool-call>`: Tool call visualization
-- Other specialized components for code blocks, Mermaid diagrams, etc.
-
-#### Static Assets (`static/`)
-- `main.js`: Compiled TypeScript bundle
-- `app.css`: Compiled Tailwind CSS
-- `*.wasm`, `*.data`: PGLite WebAssembly files
-
-## Configuration Files
-
-### MCP Tools Configuration (`mcp.json`)
-Define MCP servers for tool discovery:
-```json
-{
-  "mcpServers": {
-    "time": {
-      "command": "npx",
-      "args": ["-y", "@mcpcentral/mcp-time"]
-    },
-    "tavily": {
-      "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=${TAVILY_API_KEY}",
-      "env": {
-        "TAVILY_API_KEY": "${TAVILY_API_KEY}"
-      }
-    }
-  }
-}
-```
-
-### Environment Variables
-Set up the following in `.env` (copy from `.env.example`):
-- `UAR_LLM__MODEL`: Default model in `provider/model` format (e.g. `openai/gpt-4o`). See models.dev.
-- `UAR_LLM__API_KEY`: API key for the selected provider.
-- Provider-specific shortcuts: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, etc.
-- `TAVILY_API_KEY`: For web search functionality via MCP.
-- `CREDENTIAL_ENCRYPTION_KEY` (optional): Enables multi-tenant provider credentials. When set (32 ASCII bytes or 64 hex chars), users may store their own provider API keys encrypted at rest (AES-256-GCM); requests resolve per-user keys via the scoped chain `session → agent → user → system → env`. Leave unset for single-tenant: provider keys come from the env/config values only (unchanged behavior).
-- Backward-compatible: `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` (still supported, lower priority).
-
-LLM configuration precedence (highest → lowest):
-1. CLI args (`--llm-model`, `--llm-api-key`, `--llm-base-url`)
-2. `UAR_LLM__*` env vars
-3. Legacy `LLM_*` env vars
-4. Provider-specific keys (`OPENAI_API_KEY`, etc.)
-5. `llm:` section in `config.yaml`
-6. Compiled defaults
-
-## Important Development Patterns
-
-### Streaming Implementation
-- All LLM interactions default to streaming mode
-- Events flow: LLM → Orchestrator → SSE → Web Components
-- Protocol-agnostic design supports OpenAI Chat Completions, Responses, and compatible backends
-
-### Tool-First Design
-- Tools are non-optional and always available
-- Server maintains MCP client connections
-- Tool calls are deterministic and server-controlled
-- Dynamic tool discovery at startup
-
-### Component Architecture
-- Web Components consume typed SSE events
-- Components have clear lifecycle hooks and boundaries
-- Zero framework lock-in approach
-
-### Tauri Compatibility
-- No CDN scripts (all assets served locally)
-- No API keys in browser
-- Same codebase for web/desktop/mobile
-- SSE works identically in webview
-
-## Code Quality Standards
-
-The project uses extensive Rust linting (see `Cargo.toml` lints section) including:
-- Clippy with pedantic and performance lints
-- Custom restriction lints for better code quality
-- Structured logging with `tracing`
-- `mimalloc` for performance optimization
-
-## Key Files to Understand
-
-- `src/main.rs`: Server setup and routing
-- `src/lib.rs`: Core orchestration logic
-- `web/main.ts`: Frontend entry point
-- `web/components/chat-stream/chat-stream.ts`: Main streaming interface
-- `mcp.json`: Tool configuration
-- `package.json`: Frontend build scripts
-- `Cargo.toml`: Rust dependencies and linting configuration
-
-This architecture represents a modern approach to building AI applications that prioritizes tool use, streaming interactions, and clean separation between server logic and client presentation.
+- **Specs** live in `openspec/specs/`; **change proposals** in `openspec/changes/<name>/`
+  (`proposal.md` + `tasks.md`, schema `spec-driven`).
+- **Common commands**: `openspec list`, `openspec status --change <name>`,
+  `openspec new change "<name>"`, `openspec instructions <artifact> --change <name>`,
+  `openspec validate <name>`, `openspec archive <name>`.
+- **Every change needs at least one spec delta.** `openspec validate` fails a
+  change with zero deltas under `specs/`, even for CI-only, build-tooling, or
+  pure-verification changes that don't obviously map to a "capability." When
+  a change genuinely doesn't fit an existing capability, either introduce a
+  narrowly-scoped new one (e.g. `frontend-build-tooling` for a bundler config
+  change) or extend an existing requirement with a new scenario relevant to
+  the change (e.g. extending `dependency-security-posture`'s
+  `CI Trigger Actually Fires` requirement for a live-verification change).
+  Don't discover this by writing "Capabilities: none" and hitting a validate
+  failure — plan the delta up front.
+- **Tool integrations** (slash commands / skills) are generated per tool — refresh
+  with `openspec update` after a CLI upgrade. First-class tools include Claude Code
+  (`/opsx:*`), Codex, OpenCode, Cursor, Windsurf, Gemini, RooCode, Kilo Code, Antigravity.
+- **Editors without a native integration** (e.g. **Zed**): use the `openspec` CLI in the
+  integrated terminal; this `AGENTS.md` is the agent context.
+- Change-planning is coordinated with the KBD orchestrator — `.kbd-orchestrator/` is the
+  source of truth (see the Agent rules block below).
 
 ## Worktree convention
 
@@ -209,6 +96,9 @@ The helper refuses any path that would land inside the repo tree and seeds the n
 
 Existing in-repo worktrees under `.claude/worktrees/` are intentionally **not relocated** — the convention applies to every worktree created from now on. The KBD orchestrator surfaces the active worktree path via `/kbd-status` and warns when the current checkout is outside `worktreeRoot` (configured in `.kbd-orchestrator/project.json`).
 
+
+/Users/gqadonis/.rvm/scripts/rvm: line 29: /bin/ps: Operation not permitted
+pyenv: cannot rehash: /Users/gqadonis/.pyenv/shims isn't writable
 ## Prometheus Base Rules Set
 
 > Canonical base rules for Claude Code, Codex, OpenAI agents, Gemini CLI, Roo,
