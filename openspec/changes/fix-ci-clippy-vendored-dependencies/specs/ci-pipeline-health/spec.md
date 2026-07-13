@@ -40,3 +40,25 @@ Integration tests that directly import optional transport dependencies SHALL dec
 #### Scenario: CI compiles the Postgres credential store
 - **WHEN** the alternate CI feature profile enables `postgres-backend`
 - **THEN** the credential-store implementation compiles without unused-import warnings
+
+### Requirement: Stable Archives Satisfy Native Build Prerequisites
+Every Stable platform archive builder SHALL install the native protobuf compiler before building the `server-full` release binary.
+
+#### Scenario: Linux archive build compiles A2A protobuf
+- **WHEN** a Linux x64 or arm64 Stable archive job builds the candidate
+- **THEN** `protobuf-compiler` is installed before Cargo invokes the build script
+
+#### Scenario: macOS archive build compiles A2A protobuf
+- **WHEN** a macOS x64 or arm64 Stable archive job builds the candidate
+- **THEN** Homebrew protobuf tooling is installed before Cargo invokes the build script
+
+### Requirement: Installed MCP Boundary Evidence Is Bounded and Diagnostic
+Installed-artifact certification SHALL wait a bounded interval for the configured MCP fixture to appear and SHALL record actionable status when it does not.
+
+#### Scenario: MCP health becomes observable after readiness
+- **WHEN** the installed server is ready but its configured MCP health projection is not yet observable
+- **THEN** certification retries for a bounded interval while verifying that the candidate process remains alive
+
+#### Scenario: MCP health remains unavailable
+- **WHEN** the bounded MCP health interval expires
+- **THEN** certification fails with the curl status, HTTP status, response body, and server log when the process exited

@@ -336,9 +336,31 @@ certify_failure_recovery() {
 }
 
 certify_mcp_process_boundary() {
-  local code
-  curl --fail --silent "http://127.0.0.1:${port}/api/uar/mcp/health" >"$results/mcp-health.json"
-  grep -q 'resilience' "$results/mcp-health.json"
+  local attempt code health_code health_status
+  health_code="not-requested"
+  health_status=1
+  for attempt in $(seq 1 15); do
+    set +e
+    health_code="$(curl --silent --show-error --max-time 5 \
+      -o "$results/mcp-health.json" -w '%{http_code}' \
+      "http://127.0.0.1:${port}/api/uar/mcp/health")"
+    health_status=$?
+    set -e
+    if [[ $health_status -eq 0 && "$health_code" == 200 ]] && grep -q 'resilience' "$results/mcp-health.json"; then
+      break
+    fi
+    if ! kill -0 "$server_pid" 2>/dev/null; then
+      echo "candidate exited while waiting for MCP health" >&2
+      cat "$results/server.log" >&2
+      return 1
+    fi
+    sleep 1
+  done
+  if [[ $health_status -ne 0 || "$health_code" != 200 ]] || ! grep -q 'resilience' "$results/mcp-health.json"; then
+    echo "MCP health did not expose the resilience fixture (curl=$health_status http=$health_code)" >&2
+    cat "$results/mcp-health.json" >&2 || true
+    return 1
+  fi
 
   read -r code _ < <(chat_request mcp-echo false "$results/mcp-echo.json")
   [[ "$code" == 2* ]] && grep -q mcp-recovered "$results/mcp-echo.json"
