@@ -7,6 +7,11 @@ on:
         description: Candidate tag with complete signed release evidence
         required: true
         type: string
+      previous_ref:
+        description: Distinct prior public source ref used for the in-place upgrade journey
+        required: true
+        default: v1.0.0
+        type: string
 
 permissions:
   contents: write
@@ -18,7 +23,7 @@ jobs:
   installed-sidecar:
     if: startsWith(inputs.tag, 'v') && contains(inputs.tag, '-rc.')
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,13 +35,107 @@ jobs:
         shell: bash
         run: bash scripts/update-submodules.sh
 
+      - name: Validate candidate certification workflow contracts
+        run: |
+          node scripts/validate-candidate-certification-workflow.mjs
+          node --check scripts/validate-candidate-certification-bundle.mjs
+
       - name: Download the published candidate evidence
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p candidate-assets
-          gh release download "${{ inputs.tag }}" --repo "$GITHUB_REPOSITORY" --dir candidate-assets
-          test -f candidate-assets/release-manifest.json
+          gh release download "${{ inputs.tag }}" --repo "$GITHUB_REPOSITORY" \
+            --dir candidate-assets --pattern SHA256SUMS
+          gh attestation verify candidate-assets/SHA256SUMS --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/supply-chain.yml"
+          while read -r _ asset; do
+            [[ "$asset" =~ ^[A-Za-z0-9._@+-]+$ ]]
+            gh release download "${{ inputs.tag }}" --repo "$GITHUB_REPOSITORY" \
+              --dir candidate-assets --pattern "$asset"
+          done < candidate-assets/SHA256SUMS
+          (cd candidate-assets && sha256sum --check SHA256SUMS)
+          node candidate-assets/verify-release.mjs candidate-assets/release-manifest.json
+
+      - name: Resolve the distinct prior public release tag
+        id: previous
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_REF: ${{ inputs.previous_ref }}
+          CANDIDATE_TAG: ${{ inputs.tag }}
+        run: |
+          test "$PREVIOUS_REF" != "$CANDIDATE_TAG"
+          release_json="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${PREVIOUS_REF}")"
+          test "$(jq -r '.tag_name' <<<"$release_json")" = "$PREVIOUS_REF"
+          test "$(jq -r '.draft' <<<"$release_json")" = false
+          published_at="$(jq -er '.published_at' <<<"$release_json")"
+          release_url="$(jq -er '.html_url' <<<"$release_json")"
+          ref_json="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${PREVIOUS_REF}")"
+          tag_object_sha="$(jq -er '.object.sha' <<<"$ref_json")"
+          tag_object_type="$(jq -er '.object.type' <<<"$ref_json")"
+          previous_sha="$tag_object_sha"
+          if test "$tag_object_type" = tag; then
+            previous_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${previous_sha}" --jq '.object.sha')"
+          fi
+          test "$(printf '%s' "$previous_sha" | grep -Ec '^[0-9a-f]{40}$')" -eq 1
+          candidate_sha="$(jq -er '.source.sha' candidate-assets/release-manifest.json)"
+          test "$previous_sha" != "$candidate_sha"
+          echo "sha=$previous_sha" >>"$GITHUB_OUTPUT"
+          echo "release_url=$release_url" >>"$GITHUB_OUTPUT"
+          echo "published_at=$published_at" >>"$GITHUB_OUTPUT"
+          echo "tag_object_sha=$tag_object_sha" >>"$GITHUB_OUTPUT"
+          echo "tag_object_type=$tag_object_type" >>"$GITHUB_OUTPUT"
+
+      - name: Check out the auditable previous source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.previous.outputs.sha }}
+          path: previous-source
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build and identify the controlled previous-source archive
+        env:
+          PREVIOUS_REF: ${{ inputs.previous_ref }}
+          PREVIOUS_SHA: ${{ steps.previous.outputs.sha }}
+          PREVIOUS_RELEASE_URL: ${{ steps.previous.outputs.release_url }}
+          PREVIOUS_PUBLISHED_AT: ${{ steps.previous.outputs.published_at }}
+          PREVIOUS_TAG_OBJECT_SHA: ${{ steps.previous.outputs.tag_object_sha }}
+          PREVIOUS_TAG_OBJECT_TYPE: ${{ steps.previous.outputs.tag_object_type }}
+        run: |
+          pnpm -C previous-source install --frozen-lockfile
+          pnpm -C previous-source/frontend install --frozen-lockfile
+          pnpm -C previous-source/frontend --filter @prometheus-ags/prometheus-entity-management build
+          pnpm -C previous-source build
+          if grep -q '^server-full[[:space:]]*=' previous-source/Cargo.toml; then
+            cargo build --manifest-path previous-source/Cargo.toml --target-dir previous-source/target \
+              --locked --release --no-default-features --bin universal-agent-runtime --features server-full
+          else
+            cargo build --manifest-path previous-source/Cargo.toml --target-dir previous-source/target \
+              --locked --release --bin universal-agent-runtime
+          fi
+          mkdir -p previous-assets/previous-linux-x64/skills
+          cp previous-source/target/release/universal-agent-runtime previous-assets/previous-linux-x64/
+          cp -R previous-source/static previous-assets/previous-linux-x64/static
+          cp -R previous-source/crates/prometheus-skill-system/skills previous-assets/previous-linux-x64/skills/builtin
+          cp -R previous-source/src/uar/runtime/matching/models previous-assets/previous-linux-x64/models
+          tar -czf previous-assets/universal-agent-runtime-linux-x64.tar.gz -C previous-assets previous-linux-x64
+          previous_sha="$(git -C previous-source rev-parse HEAD)"
+          test "$previous_sha" = "$PREVIOUS_SHA"
+          previous_archive_sha="$(sha256sum previous-assets/universal-agent-runtime-linux-x64.tar.gz | cut -d' ' -f1)"
+          jq -n --arg ref "$PREVIOUS_REF" --arg sha "$previous_sha" --arg digest "$previous_archive_sha" \
+            --arg release_url "$PREVIOUS_RELEASE_URL" --arg published_at "$PREVIOUS_PUBLISHED_AT" \
+            --arg tag_object_sha "$PREVIOUS_TAG_OBJECT_SHA" --arg tag_object_type "$PREVIOUS_TAG_OBJECT_TYPE" \
+            '{schema_version:1,source_ref:$ref,source_sha:$sha,tag_object_sha:$tag_object_sha,tag_object_type:$tag_object_type,archive:"universal-agent-runtime-linux-x64.tar.gz",archive_sha256:$digest,build_kind:"controlled-source-rebuild",verified_public_release:true,release_url:$release_url,published_at:$published_at}' \
+            >previous-assets/previous-identity.json
 
       - name: Authenticate to GHCR
         uses: docker/login-action@v3
@@ -49,25 +148,51 @@ jobs:
         run: |
           image="$(jq -r '.image.reference + "@" + .image.digest' candidate-assets/release-manifest.json)"
           UAR_CANDIDATE_IMAGE="$image" \
+          UAR_EXPECTED_CANDIDATE_TAG="${{ inputs.tag }}" \
+          UAR_PREVIOUS_ARTIFACT_DIR=previous-assets \
+          UAR_REQUIRE_UPGRADE_JOURNEY=1 \
+          UAR_SOAK_DURATION_SECONDS=10800 \
             scripts/certify-release-candidate.sh candidate-assets target/release-candidate-certification
 
       - name: Package candidate certification evidence
         run: |
-          tar -czf candidate-certification-${{ inputs.tag }}.tar.gz -C target release-candidate-certification
-          sha256sum candidate-certification-${{ inputs.tag }}.tar.gz >candidate-certification-${{ inputs.tag }}.sha256
+          node scripts/validate-candidate-certification.mjs target/release-candidate-certification
+          mkdir -p certification-assets
+          archive="candidate-certification-${{ inputs.tag }}.tar.gz"
+          tar -czf "certification-assets/$archive" -C target release-candidate-certification
+          archive_sha="$(sha256sum "certification-assets/$archive" | cut -d' ' -f1)"
+          source_sha="$(jq -r .source.sha candidate-assets/release-manifest.json)"
+          release_manifest_sha="$(sha256sum candidate-assets/release-manifest.json | cut -d' ' -f1)"
+          supply_index_sha="$(sha256sum candidate-assets/SHA256SUMS | cut -d' ' -f1)"
+          jq -n \
+            --arg candidate "${{ inputs.tag }}" \
+            --arg source_sha "$source_sha" \
+            --arg workflow_identity "${{ github.workflow_ref }}" \
+            --arg run_url "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --arg release_manifest_sha "$release_manifest_sha" \
+            --arg supply_index_sha "$supply_index_sha" \
+            --arg archive "$archive" \
+            --arg archive_sha "$archive_sha" \
+            '{schema_version:1,candidate:$candidate,source_sha:$source_sha,workflow:{identity:$workflow_identity,run_url:$run_url},supply:{release_manifest_sha256:$release_manifest_sha,checksum_index_sha256:$supply_index_sha},archive:{name:$archive,sha256:$archive_sha}}' \
+            >certification-assets/candidate-certification-manifest.json
+          (
+            cd certification-assets
+            sha256sum "$archive" candidate-certification-manifest.json >CANDIDATE_CERTIFICATION_SHA256SUMS
+          )
+          node scripts/validate-candidate-certification-bundle.mjs \
+            certification-assets candidate-assets/release-manifest.json
 
-      - name: Attest candidate certification evidence
+      - name: Attest candidate certification trust root
         uses: actions/attest@v4
         with:
-          subject-path: candidate-certification-${{ inputs.tag }}.tar.gz
+          subject-path: certification-assets/CANDIDATE_CERTIFICATION_SHA256SUMS
 
       - name: Attach candidate certification to the candidate release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "${{ inputs.tag }}" --repo "$GITHUB_REPOSITORY" --clobber \
-            candidate-certification-${{ inputs.tag }}.tar.gz \
-            candidate-certification-${{ inputs.tag }}.sha256
+            certification-assets/*
 
       - name: Retain candidate installation evidence
         if: always()

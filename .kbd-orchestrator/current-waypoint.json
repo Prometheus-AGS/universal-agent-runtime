@@ -3,7 +3,7 @@
   "status": "executing",
   "stage": "final-certification",
   "executionMode": "operator-locked-production-completion",
-  "progress": "19/24 changes complete; implementation for changes 20-24 complete; evidence and publication pending",
+  "progress": "19/24 changes formally complete; changes 20-24 are implementation-complete and locally validated; immutable candidate evidence, time-bound gates, and publication remain",
   "operatorPriority": "Reach 24/24 production completion. Tests and workflows are evidence, not the work queue.",
   "executionLock": {
     "primaryObjective": "Complete changes 20-24 and release the server-full BossFang sidecar product.",
@@ -26,14 +26,14 @@
     "certify-release-candidate",
     "release-1-0-0"
   ],
-  "currentTask": "Finish context reconciliation, then hold the source stable and advance the immutable RC-to-GA sequence.",
-  "nextAction": "Obtain operator authorization for merge/tag/publication at the point of effect; do not substitute CI monitoring for release execution.",
+  "currentTask": "Freeze the locally validated production-hardening patch for review, then hold the source stable through the immutable RC-to-GA sequence.",
+  "nextAction": "Commit and review the validated patch; obtain operator authorization and a configured signing identity before candidate tag/publication at the point of effect.",
   "authorizationRequired": [
-    "merge PR #98 to main",
-    "create candidate and GA tags",
+    "merge the final production-hardening patch to main",
+    "create signed candidate and GA tags",
     "publish GitHub/GHCR releases",
     "approve external-install evidence"
   ],
   "sourceTool": "codex",
-  "updatedAt": "2026-07-13T10:20:00Z"
+  "updatedAt": "2026-07-13T11:42:00Z"
 }

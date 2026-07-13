@@ -1,6 +1,6 @@
 ## 1. Candidate
 <!-- EVIDENCE: implementation/integration is complete; requires the final immutable candidate. -->
-- [ ] 1.1 Freeze the final `1.0.0` source commit under candidate tag `v1.0.0-rc.1`; record source/lock/catalog digests.
+- [ ] 1.1 Freeze the final `1.0.0` source commit under next unused candidate tag `v1.0.0-rc.3`; record source/lock/catalog digests.
 - [ ] 1.2 Run complete CI, security, offline, platform, UI and resilience matrices.
 - [ ] 1.3 Publish signed candidate artifacts and evidence manifest.
 ## 2. Clean installs

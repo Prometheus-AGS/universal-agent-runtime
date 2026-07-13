@@ -6,12 +6,12 @@ A release SHALL publish a multi-arch container image to GHCR, signed with cosign
 and accompanied by an SBOM and SLSA provenance, at a semantic version matching
 the crate and package manifests.
 
-#### Scenario: Tagging a version publishes a signed image
+#### Scenario: Promoting the certified candidate publishes the GA image
 
-- **When** a `v1.0.0` tag is pushed and the release pipeline runs
-- **Then** it MUST publish `ghcr.io/prometheus-ags/universal-agent-runtime`
-  for linux/amd64 and linux/arm64, sign it with cosign (keyless), and attach an
-  SBOM and SLSA provenance
+- **When** the operator promotes certified candidate `v1.0.0-rc.3` to `v1.0.0`
+- **Then** it MUST publish the exact certified linux/amd64 and linux/arm64 OCI
+  manifest digest as `ghcr.io/prometheus-ags/universal-agent-runtime:1.0.0`,
+  retain its cosign signature, SBOM and SLSA provenance, and perform no rebuild
 
 #### Scenario: Manifest versions agree
 

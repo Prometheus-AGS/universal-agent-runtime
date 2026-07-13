@@ -1,6 +1,6 @@
 {
   "phase": "uar-final-production-hardening-2026-07",
-  "last_updated": "2026-07-13T10:20:00Z",
+  "last_updated": "2026-07-13T11:42:00Z",
   "last_updated_by": "codex",
   "assessment_complete": true,
   "plan_complete": true,
@@ -38,7 +38,7 @@
       "next_task_pending": "Immutable candidate platform evidence and retained artifacts",
       "started_by": "codex",
       "blockers": [],
-      "notes": "IMPLEMENTED; EVIDENCE_PENDING. Linux/macOS Stable; Windows Experimental/nonblocking."
+      "notes": "IMPLEMENTED; LOCALLY_VALIDATED; EVIDENCE_PENDING. Linux/macOS Stable; Windows Experimental/nonblocking."
     },
     "certify-operational-resilience": {
       "status": "IN_PROGRESS",
@@ -47,7 +47,7 @@
       "next_task_pending": "Immutable resilience evidence including non-root and time-bound soak reports",
       "started_by": "codex",
       "blockers": [],
-      "notes": "IMPLEMENTED; EVIDENCE_PENDING; TIME_BOUND."
+      "notes": "IMPLEMENTED; LOCALLY_VALIDATED; EVIDENCE_PENDING; TIME_BOUND."
     },
     "produce-supply-chain-artifacts": {
       "status": "IN_PROGRESS",
@@ -56,7 +56,7 @@
       "next_task_pending": "Generate and independently verify signed candidate evidence",
       "started_by": "codex",
       "blockers": [],
-      "notes": "IMPLEMENTED; EVIDENCE_PENDING."
+      "notes": "IMPLEMENTED; LOCALLY_VALIDATED; EVIDENCE_PENDING."
     },
     "certify-release-candidate": {
       "status": "IN_PROGRESS",
@@ -68,7 +68,7 @@
         "Operator authorization required for candidate tag/publication",
         "Three external installs and specified operating period are external/time-bound"
       ],
-      "notes": "IMPLEMENTED; EVIDENCE_PENDING; TIME_BOUND; OPERATOR_AUTHORIZATION."
+      "notes": "IMPLEMENTED; LOCALLY_VALIDATED; EVIDENCE_PENDING; TIME_BOUND; OPERATOR_AUTHORIZATION; SIGNING_IDENTITY_REQUIRED."
     },
     "release-1-0-0": {
       "status": "IN_PROGRESS",
@@ -80,7 +80,7 @@
         "Operator authorization required for GA tag/publication",
         "Candidate evidence must complete first"
       ],
-      "notes": "IMPLEMENTED; EVIDENCE_PENDING; OPERATOR_AUTHORIZATION."
+      "notes": "IMPLEMENTED; LOCALLY_VALIDATED; EVIDENCE_PENDING; OPERATOR_AUTHORIZATION; SIGNING_IDENTITY_REQUIRED."
     }
   }
 }

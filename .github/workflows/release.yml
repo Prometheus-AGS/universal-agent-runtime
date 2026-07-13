@@ -9,7 +9,9 @@ on:
         default: false
   push:
     tags:
-      - 'v*.*.*'
+      # Candidate tags build the bytes that are certified. GA tags are created
+      # later by promote-release-candidate.sh and must never trigger a rebuild.
+      - 'v*.*.*-rc.*'
       - 'release-test-*'
 
 permissions:
@@ -67,13 +69,14 @@ jobs:
       - name: Validate formatting and supported bundles
         run: |
           cargo fmt --all -- --check
-          cargo clippy --lib --features server-full --no-deps
-          cargo check --locked --lib --features minimal
-          cargo check --locked --lib --features server-full
-          cargo check --locked --lib --features desktop-full
+          cargo clippy --locked --no-default-features --lib --features server-full --no-deps
+          cargo check --locked --no-default-features --lib --features minimal
+          cargo check --locked --no-default-features --lib --features server-full
+          cargo check --locked --no-default-features --lib --features desktop-full
 
       - name: Validate frontend and product contracts
         run: |
+          node scripts/validate-release-workflow.mjs
           pnpm typecheck
           pnpm lint
           pnpm test
@@ -82,8 +85,8 @@ jobs:
           pnpm run docs:validate
           pnpm build
 
-      - name: Test Stable bundle
-        run: cargo test --locked --lib --features minimal
+      - name: Test authoritative server distribution
+        run: cargo test --locked --no-default-features --features server-full
 
   platform-archives:
     name: ${{ matrix.name }} archive install/startup
@@ -156,7 +159,7 @@ jobs:
         run: |
           pnpm build
           node scripts/validate-static-bundle.mjs static
-          cargo build --locked --release --bin universal-agent-runtime --features server-full
+          cargo build --locked --release --no-default-features --bin universal-agent-runtime --features server-full
 
       - name: Package Unix archive
         if: runner.os != 'Windows'
@@ -202,13 +205,14 @@ jobs:
             installed/${{ matrix.name }}/${{ matrix.executable }} --port 1906 >server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=false
           for attempt in $(seq 1 60); do
-            if curl --fail --silent http://127.0.0.1:1906/readyz >/dev/null; then exit 0; fi
+            if curl --fail --silent http://127.0.0.1:1906/readyz >/dev/null; then ready=true; break; fi
             if ! kill -0 "$server_pid" 2>/dev/null; then cat server.log; exit 1; fi
             sleep 1
           done
-          cat server.log
-          exit 1
+          if [ "$ready" != true ]; then cat server.log; exit 1; fi
+          curl --fail --silent http://127.0.0.1:1906/healthz >/dev/null
 
       - name: Install and smoke-test Windows archive
         if: runner.os == 'Windows'
@@ -228,6 +232,7 @@ jobs:
               try { Invoke-WebRequest http://127.0.0.1:1906/readyz -UseBasicParsing | Out-Null; $ready = $true; break } catch { Start-Sleep 1 }
             }
             if (-not $ready) { Get-Content server.log,server-error.log; throw "UAR readiness timeout" }
+            Invoke-WebRequest http://127.0.0.1:1906/healthz -UseBasicParsing | Out-Null
           } finally {
             if (-not $process.HasExited) { Stop-Process -Id $process.Id }
           }

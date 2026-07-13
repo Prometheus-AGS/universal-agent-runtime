@@ -20,13 +20,16 @@ certified release.
 
 ## Decisions
 
-1. The `v1.0.0-rc.1` tag points to source whose manifests and CLI already
+1. The next unused candidate tag, `v1.0.0-rc.3`, points to source whose manifests and CLI already
    report `1.0.0`. The tag denotes candidate status; it does not change product
    bytes or embedded version strings.
 2. GA promotion retags the exact certified commit and reuses the certified
    artifacts. Any source, lockfile, catalog, workflow, or artifact change
    requires a new candidate and complete recertification.
-3. The pre-existing `v1.0.0` tag cannot serve as GA evidence because it points
+3. The archive workflow accepts candidate and `release-test-*` tags, not the GA
+   tag. This prevents a signed `v1.0.0` promotion from racing a tag-triggered
+   rebuild or replacing certified bytes.
+4. The pre-existing `v1.0.0` tag cannot serve as GA evidence because it points
    to an older commit. Replacement requires an explicit, audited tag migration
    immediately before publication.
 

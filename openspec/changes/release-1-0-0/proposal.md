@@ -4,21 +4,21 @@ First stable release. Version was 0.1.0 while SECURITY.md advertises a 1.0.x
 support line; the release pipeline published a single-arch Docker Hub image with
 no SBOM, signing, or provenance — below 2026 supply-chain baselines.
 
-## What Changes (PREPARED — operator cuts the tag)
+## What Changes (PREPARED — operator authorizes promotion)
 
 - Bump versions 0.1.0 -> 1.0.0 (Cargo.toml + root/frontend/sdks package.json).
 - Add CHANGELOG.md (Keep-a-Changelog) with a 1.0.0 entry + a written stability
   statement (SemVer scope for the public HTTP/config/agent-descriptor surface).
-- Extend release.yml with a `publish-ghcr-signed` job: GHCR multi-arch
-  (amd64/arm64) build+push, SLSA provenance (`provenance: mode=max`), SBOM
-  (build-push-action `sbom: true` + cargo-cyclonedx + syft image SBOM), and
-  cosign keyless signing — all via GITHUB_TOKEN + OIDC, no new secrets.
+- Build and certify signed archives and the GHCR amd64/arm64 image under the
+  next unused candidate tag, `v1.0.0-rc.3`.
+- Promote the certified source, archive bytes, evidence, and OCI manifest digest
+  unchanged to `v1.0.0`; the GA tag does not trigger a second build.
 
 ## Not done here (operator action)
 
-- Tagging `v1.0.0` and running the release pipeline for real. Per operator
-  decision, this change PREPARES the release; the operator reviews and triggers
-  it (first release ever — expect pipeline fixes on the first real run).
+- Creating the candidate or GA tags and publishing GitHub/GHCR state. Those are
+  operator-authorized effects. The candidate pipeline produces the bytes once;
+  GA promotion reuses them without rerunning a build workflow.
 
 ## Capabilities
 
@@ -28,5 +28,5 @@ no SBOM, signing, or provenance — below 2026 supply-chain baselines.
 
 ## Impact
 
-Version bumps + CHANGELOG + one additive release.yml job. No runtime code.
-KBD: change 9/9 (prepared; operator triggers the tag).
+Version alignment, candidate release automation, and guarded no-rebuild GA
+promotion. No runtime code.
