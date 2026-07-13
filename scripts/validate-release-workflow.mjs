@@ -57,9 +57,12 @@ const entityBuilds = workflow.match(/pnpm -C frontend --filter @prometheus-ags\/
 if (entityBuilds.length !== 2) {
   failures.push(`expected entity-management build in validation and archive jobs, found ${entityBuilds.length}`);
 }
-const recursiveCheckouts = workflow.match(/submodules: recursive/g) ?? [];
-if (recursiveCheckouts.length !== 3) {
-  failures.push(`expected recursive submodule checkout in all 3 source jobs, found ${recursiveCheckouts.length}`);
+const topLevelCheckouts = workflow.match(/submodules: true/g) ?? [];
+const recursiveRetries = workflow.match(/scripts\/update-submodules\.sh/g) ?? [];
+if (topLevelCheckouts.length !== 3 || recursiveRetries.length !== 3) {
+  failures.push(
+    `expected credentialed top-level checkout plus recursive retry in all 3 source jobs, found ${topLevelCheckouts.length}/${recursiveRetries.length}`,
+  );
 }
 const frontendCacheKeys = workflow.match(/cache-dependency-path:\s*\|[\s\S]*?frontend\/pnpm-lock\.yaml/g) ?? [];
 if (frontendCacheKeys.length !== 2) {
