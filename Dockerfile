@@ -253,6 +253,8 @@ WORKDIR /opt/uar
 ENV UAR_STATIC_DIR=/opt/uar/static \
     UAR_MODELS_DIR=/opt/uar/models \
     UAR_BUILTIN_SKILLS_DIR=/opt/uar/skills/builtin \
+    UAR_PERSISTENCE__PROVIDER=surreal \
+    UAR_PERSISTENCE__DATABASE_URL=surrealkv:///var/lib/uar/data/uar.db \
     UAR_SKILLS_WASM_BUILTIN_DIR=/opt/uar/skills/wasm-builtin \
     UAR_SKILLS_USER_DIR=/var/lib/uar/skills-user \
     UAR_SKILLS_DERIVED_DIR=/var/lib/uar/skills-derived \

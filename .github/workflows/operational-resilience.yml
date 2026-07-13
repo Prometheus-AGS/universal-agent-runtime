@@ -51,8 +51,15 @@ jobs:
             -p 1906:1906 -v "$RUNNER_TEMP/uar-data:/var/lib/uar" uar-resilience
           for attempt in $(seq 1 60); do
             curl --fail --silent http://127.0.0.1:1906/health && break
+            if ! docker inspect -f '{{.State.Running}}' uar-resilience | grep -q true; then
+              docker logs uar-resilience
+              exit 1
+            fi
             sleep 2
           done
-          curl --fail http://127.0.0.1:1906/health
+          curl --fail http://127.0.0.1:1906/health || {
+            docker logs uar-resilience
+            exit 1
+          }
           docker stop --time 30 uar-resilience
           test "$(docker inspect -f '{{.State.ExitCode}}' uar-resilience)" -eq 0
