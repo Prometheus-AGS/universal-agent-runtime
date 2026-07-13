@@ -6,9 +6,11 @@ name: Live Integration Tier
 # backend (real proxy at 127.0.0.1:8181) is operator-only via
 # scripts/live-integration.sh and is intentionally NOT run in CI.
 #
-# Advisory (non-blocking) for now: `continue-on-error: true` on both steps.
-# Promote to blocking once CH-01..CH-04 have each added a MATRIX.md row without
-# drift (see tests/integration/live/MATRIX.md).
+# Both steps remain ADVISORY (`continue-on-error: true`). test-hardening
+# (2026-07-11) found this tier had never actually run in CI — its prior green
+# checkmarks came from continue-on-error masking a build failure (missing
+# protoc, now installed above). Promote the test tier to blocking only after a
+# real run confirms it builds AND the tests pass.
 
 on:
   push:
@@ -31,6 +33,12 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      # build.rs compiles the A2A proto via prost, which needs protoc. Without
+      # this the tier fails at build time (it did — masked by continue-on-error
+      # until test-hardening tried to promote it to blocking).
+      - name: Install build dependencies (protoc, dbus)
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
+
       # Feature-coverage matrix presence check (task 3.2). For each change
       # referenced in the phase plan, MATRIX.md must contain its CH-## token.
       # Advisory: reports drift without failing the build (yet).
@@ -39,5 +47,9 @@ jobs:
         run: bash tools/live-matrix-check.sh
 
       - name: Run live integration tier (recorded backend)
+        # Kept ADVISORY: test-hardening discovered this tier had never actually
+        # run — its prior green checkmarks came from continue-on-error masking a
+        # build failure (missing protoc, fixed above). Promote to blocking only
+        # after a real run confirms the tier builds AND the tests pass.
         continue-on-error: true
         run: "cargo test --test integration live::"

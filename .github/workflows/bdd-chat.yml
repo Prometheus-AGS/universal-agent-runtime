@@ -68,7 +68,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run BDD chat scenario suite
-        continue-on-error: true
+        # Blocking as of test-hardening (2026-07-11): the suite has been green
+        # (6/6) on real CI since fix-embeddings-fastembed landed, so a
+        # regression here should now fail the workflow rather than be advisory.
         run: pnpm test:bdd
 
       - name: Upload certification bundle
