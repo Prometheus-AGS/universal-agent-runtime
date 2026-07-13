@@ -36,6 +36,6 @@ fi
 
 finished="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 cat > "$results_dir/results.json" <<JSON
-{"schema_version":2,"suite":"operational-resilience","started_at":"$started","finished_at":"$finished","source_sha":"${UAR_CANDIDATE_SOURCE_SHA:-$(git rev-parse HEAD)}","candidate_tag":"${UAR_CANDIDATE_TAG:-operational-resilience-${GITHUB_RUN_ID:-local}}","outcome":"$outcome","exit_code":$status,"deterministic_tests":"test.log","installed_runtime_result":$(if [[ "$installed_result" == null ]]; then printf null; else printf '"%s"' "$installed_result"; fi)} }
+{"schema_version":2,"suite":"operational-resilience","started_at":"$started","finished_at":"$finished","source_sha":"${UAR_CANDIDATE_SOURCE_SHA:-$(git rev-parse HEAD)}","candidate_tag":"${UAR_CANDIDATE_TAG:-operational-resilience-${GITHUB_RUN_ID:-local}}","outcome":"$outcome","exit_code":$status,"deterministic_tests":"test.log","installed_runtime_result":$(if [[ "$installed_result" == null ]]; then printf null; else printf '"%s"' "$installed_result"; fi)}
 JSON
 exit "$status"
