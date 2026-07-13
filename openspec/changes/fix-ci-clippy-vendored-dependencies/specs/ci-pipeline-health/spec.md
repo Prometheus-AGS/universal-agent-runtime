@@ -49,6 +49,14 @@ Integration tests that directly import optional transport dependencies SHALL dec
 - **WHEN** the authoritative `server-full` release suite runs
 - **THEN** `local-models` enables and executes the Burn embedding integration target
 
+#### Scenario: Alternate CI executes the shared live integration binary
+- **WHEN** the selected feature profile omits `local-models`
+- **THEN** the RAG ingest/retrieve case is not compiled or executed while the remaining live cases still run
+
+#### Scenario: Server-full executes the shared RAG journey
+- **WHEN** the authoritative `server-full` release suite runs
+- **THEN** `local-models` enables and executes the RAG ingest/retrieve case
+
 ### Requirement: Stable Archives Satisfy Native Build Prerequisites
 Every Stable platform archive builder SHALL install the native protobuf compiler before building the `server-full` release binary.
 

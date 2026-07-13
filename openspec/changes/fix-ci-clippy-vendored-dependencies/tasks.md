@@ -40,3 +40,10 @@
 - [x] 7.2 Require `local-models` for the Burn embedding integration-test target.
 - [x] 7.3 Add a static release-contract assertion for the local-model test guard.
 - [ ] 7.4 Supersede failed RC7 with a newly signed immutable candidate after merge.
+
+## 8. Shared Live-Test Feature Isolation
+
+- [x] 8.1 Statically classify the shared live integration suite against optional runtime capabilities.
+- [x] 8.2 Compile and execute the RAG ingest/retrieve case only when `local-models` is enabled.
+- [x] 8.3 Add a static release-contract assertion for the shared RAG feature guard.
+- [ ] 8.4 Supersede failed RC8 with a newly signed immutable candidate after merge.

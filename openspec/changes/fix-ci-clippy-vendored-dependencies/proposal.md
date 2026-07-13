@@ -12,6 +12,7 @@ The exact-source CI run required by candidate supply-chain certification fails b
 - Declare the optional A2A transport requirement on its gRPC integration-test target so non-A2A CI profiles remain valid.
 - Install protobuf tooling in all Stable archive builders and make installed MCP health certification bounded and diagnostic.
 - Gate the local embedding integration target behind its optional `local-models` capability after statically classifying the remaining tests.
+- Gate the shared live RAG case behind `local-models` so alternate CI profiles do not execute an intentionally unavailable embedding path.
 
 ## Capabilities
 
