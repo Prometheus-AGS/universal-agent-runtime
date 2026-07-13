@@ -42,6 +42,7 @@ async fn main() {
         Ok(c) => Arc::new(c),
         Err(e) => {
             tracing::error!("Failed to load configuration: {:?}", e);
+            eprintln!("Failed to load configuration: {e:?}");
             std::process::exit(1);
         }
     };
@@ -59,6 +60,7 @@ async fn main() {
 
             if let Err(e) = server_result {
                 tracing::error!("Server error: {:?}", e);
+                eprintln!("Server error: {e:?}");
                 std::process::exit(1);
             }
         }

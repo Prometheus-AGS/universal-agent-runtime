@@ -51,15 +51,15 @@ resilience:
   burst_size: 10.0
 
 persistence:
-  # The database provider to use. specific values: "postgres" or "surreal"
-  # Default: "postgres"
+  # The database provider to use. Supported values: "surreal" or "postgres".
+  # Default: "surreal"
   # Env: UAR_PERSISTENCE__PROVIDER
-  provider: "postgres"
+  provider: "surreal"
 
   # Connection string for the primary database.
-  # Default: "postgres://postgres:password@localhost:5432/uar"
+  # Default: "surrealkv://./data/uar.db"
   # Env: UAR_PERSISTENCE__DATABASE_URL
-  database_url: "postgres://postgres:password@localhost:5432/uar"
+  database_url: "surrealkv://./data/uar.db"
 
   # Whether to use an external cache (Redis) for session and token storage.
   # Default: false

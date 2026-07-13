@@ -1021,6 +1021,8 @@ impl AppConfig {
             )?
             .set_default("resilience.retryable_transport_errors", true)?
             .set_default("resilience.retry_budget_ms", 20_000_i64)?
+            .set_default("persistence.provider", "surreal")?
+            .set_default("persistence.database_url", "surrealkv://./data/uar.db")?
             .set_default("persistence.external_cache_enabled", false)?
             // 1536 = text-embedding-3-small; override via UAR_PERSISTENCE__VECTOR_DIMENSION
             .set_default("persistence.vector_dimension", 1536_i64)?
