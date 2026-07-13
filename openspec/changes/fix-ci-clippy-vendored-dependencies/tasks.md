@@ -26,3 +26,10 @@
 - [x] 5.2 Add a static release-contract assertion for the required-feature guard.
 - [x] 5.3 Remove the two unused Postgres credential-store imports exposed by the exact CI profile.
 - [ ] 5.4 Supersede failed RC5 with a newly signed immutable candidate after merge.
+
+## 6. Installed-Artifact Certification Prerequisites
+
+- [x] 6.1 Install protobuf tooling in every Stable release archive builder.
+- [x] 6.2 Make the MCP boundary probe bounded, readiness-aware, and diagnostic.
+- [x] 6.3 Extend the static release contract for Stable archive protobuf prerequisites.
+- [ ] 6.4 Supersede RC6 with a newly signed immutable candidate after merge.

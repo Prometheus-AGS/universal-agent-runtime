@@ -24,6 +24,8 @@ const required = [
   "cargo clippy --locked --no-default-features --lib --features server-full --no-deps",
   "cargo test --locked --no-default-features --features server-full",
   "cargo build --locked --release --no-default-features --bin universal-agent-runtime --features server-full",
+  "sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler",
+  "brew install protobuf",
   "node scripts/validate-release-workflow.mjs",
   "node scripts/validate-static-bundle.mjs static",
   "cp -R static",

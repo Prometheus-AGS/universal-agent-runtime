@@ -135,6 +135,14 @@ jobs:
         shell: bash
         run: bash scripts/update-submodules.sh
 
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: brew install protobuf
+
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: pnpm/action-setup@v4

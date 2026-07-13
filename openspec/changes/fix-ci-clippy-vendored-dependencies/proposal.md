@@ -10,6 +10,7 @@ The exact-source CI run required by candidate supply-chain certification fails b
 - Keep deterministic release tests on their recorded fixture model instead of overriding them with a smoke-test model.
 - Install `protoc` before resilience archive builds and provide an outer Docker shutdown margin beyond the runtime budget.
 - Declare the optional A2A transport requirement on its gRPC integration-test target so non-A2A CI profiles remain valid.
+- Install protobuf tooling in all Stable archive builders and make installed MCP health certification bounded and diagnostic.
 
 ## Capabilities
 
