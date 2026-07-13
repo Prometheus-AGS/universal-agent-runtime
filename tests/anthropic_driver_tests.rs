@@ -17,18 +17,19 @@ mod driver_dispatch {
         assert_eq!(detect_provider("unknown"), "unknown");
     }
 
+    // Both assertions live in one test because `ANTHROPIC_NATIVE_DRIVER` is
+    // process-global mutable state; splitting them into separate #[test]
+    // functions races under the default parallel test runner.
     #[test]
-    fn anthropic_native_driver_default_enabled() {
-        // When env var is not set, should default to true
+    fn anthropic_native_driver_env_var_controls_enablement() {
         unsafe { std::env::remove_var("ANTHROPIC_NATIVE_DRIVER") };
         assert!(anthropic_native_driver_enabled());
-    }
 
-    #[test]
-    fn anthropic_native_driver_can_be_disabled() {
         unsafe { std::env::set_var("ANTHROPIC_NATIVE_DRIVER", "false") };
         assert!(!anthropic_native_driver_enabled());
+
         unsafe { std::env::remove_var("ANTHROPIC_NATIVE_DRIVER") };
+        assert!(anthropic_native_driver_enabled());
     }
 }
 

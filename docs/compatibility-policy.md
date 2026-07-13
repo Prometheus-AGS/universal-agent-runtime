@@ -20,7 +20,7 @@ interfaces.
 ## Upgrade and rollback
 
 Before upgrading, back up persistent data and configuration using the published
-runbooks. Follow [`docs/upgrade-guide.md`](upgrade-guide.md) and verify health,
+runbooks. Follow [`website/docs/upgrade-guide.md`](../website/docs/upgrade-guide.md) and verify health,
 readiness, provider routing, tool policy, and a representative stable journey.
 Rollback uses the previous signed artifact plus the pre-upgrade backup; database
 migrations that cannot be rolled back must state that explicitly in the release

@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-final-production-hardening-2026-07
-Step: 7 of 24
-Stage: executing
-Next command: /kbd-apply establish-react-product-contract
+Step: 24 of 24
+Stage: implementation-completion
+Next command: unknown
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-final-production-hardening-2026-07 (step 7 of 24)
+  Starting <kbd-skill> — uar-final-production-hardening-2026-07 (step 24 of 24)
   [do work]
-  Completed <kbd-skill> — uar-final-production-hardening-2026-07 (step 7 of 24)
+  Completed <kbd-skill> — uar-final-production-hardening-2026-07 (step 24 of 24)
