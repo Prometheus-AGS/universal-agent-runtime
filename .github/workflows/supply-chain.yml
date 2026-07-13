@@ -10,6 +10,14 @@ on:
         description: Existing v-prefixed GitHub release tag
         required: true
         type: string
+      test_run_url:
+        description: Successful consolidated-test run URL for this exact source commit
+        required: true
+        type: string
+      security_audit_run_url:
+        description: Successful security-audit run URL for this exact source commit
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -60,6 +68,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
+          TEST_RUN_URL: ${{ inputs.test_run_url }}
+          SECURITY_AUDIT_RUN_URL: ${{ inputs.security_audit_run_url }}
         run: |
           sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq .object.sha)"
           object_type="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq .object.type)"
@@ -67,7 +77,38 @@ jobs:
             sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${sha}" --jq .object.sha)"
           fi
           test "$(printf '%s' "$sha" | grep -Ec '^[0-9a-f]{40}$')" -eq 1
+          case "$RELEASE_TAG" in
+            v*.*.*-rc.*) ga_tag="${RELEASE_TAG%%-rc.*}" ;;
+            *) echo "supply-chain publication requires an immutable release-candidate tag" >&2; exit 1 ;;
+          esac
+          existing_ga="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${ga_tag}" --jq '[.object.sha,.object.type] | @tsv' 2>/dev/null || true)"
+          if [ -n "$existing_ga" ]; then
+            existing_ga_sha="${existing_ga%%[[:space:]]*}"
+            existing_ga_type="${existing_ga##*[[:space:]]}"
+            if [ "$existing_ga_type" = tag ]; then
+              existing_ga_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${existing_ga_sha}" --jq .object.sha)"
+            fi
+          else
+            existing_ga_sha=null
+          fi
+          for run_contract in \
+            "$TEST_RUN_URL|.github/workflows/ci.yml" \
+            "$SECURITY_AUDIT_RUN_URL|.github/workflows/security-audit.yml"; do
+            run_url="${run_contract%%|*}"
+            expected_path="${run_contract#*|}"
+            case "$run_url" in
+              "https://github.com/${GITHUB_REPOSITORY}/actions/runs/"[0-9]*) ;;
+              *) echo "evidence URL is not an immutable run in this repository: $run_url" >&2; exit 1 ;;
+            esac
+            run_id="${run_url##*/}"
+            test "$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}" --jq .head_sha)" = "$sha"
+            test "$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}" --jq .status)" = completed
+            test "$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}" --jq .conclusion)" = success
+            test "$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}" --jq .path)" = "$expected_path"
+          done
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "ga_tag=$ga_tag" >> "$GITHUB_OUTPUT"
+          echo "existing_ga_sha=$existing_ga_sha" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v4
         with:
@@ -122,15 +163,39 @@ jobs:
       - name: Generate CycloneDX and SPDX SBOMs
         run: |
           for artifact in evidence/*.tar.gz evidence/*.zip; do
-            syft "file:${artifact}" -o "cyclonedx-json=${artifact}.cyclonedx.json" -o "spdx-json=${artifact}.spdx.json"
+            rm -rf archive-input
+            mkdir archive-input
+            case "$artifact" in
+              *.zip) unzip -q "$artifact" -d archive-input ;;
+              *) tar -xzf "$artifact" -C archive-input ;;
+            esac
+            syft dir:archive-input \
+              -o "cyclonedx-json=${artifact}.cyclonedx.json" \
+              -o "spdx-json=${artifact}.spdx.json"
+            if [ "$(basename "$artifact")" = uar-offline-source.tar.gz ]; then
+              continue
+            fi
+            case "$artifact" in
+              *.zip)
+                binary="$(find archive-input -type f -name universal-agent-runtime.exe -print)"
+                ;;
+              *)
+                binary="$(find archive-input -type f -name universal-agent-runtime -print)"
+                ;;
+            esac
+            test "$(printf '%s\n' "$binary" | grep -c .)" -eq 1
+            syft "file:${binary}" -o "cyclonedx-json=${artifact}.binary.cyclonedx.json" -o "spdx-json=${artifact}.binary.spdx.json"
           done
-          syft dir:. -o cyclonedx-json=evidence/source.cyclonedx.json -o spdx-json=evidence/source.spdx.json
+          rm -rf archive-input
+          syft dir:. --exclude evidence \
+            -o cyclonedx-json=evidence/source.cyclonedx.json \
+            -o spdx-json=evidence/source.spdx.json
           syft "${{ steps.image.outputs.image }}@${{ steps.build.outputs.digest }}" \
             -o cyclonedx-json=evidence/image.cyclonedx.json -o spdx-json=evidence/image.spdx.json
 
-      - name: Create payload checksums
+      - name: Create provenance input checksums
         working-directory: evidence
-        run: sha256sum *.tar.gz *.zip > SHA256SUMS
+        run: sha256sum *.tar.gz *.zip > PAYLOAD_SHA256SUMS
 
       - uses: sigstore/cosign-installer@v4.1.2
         with:
@@ -140,14 +205,14 @@ jobs:
         run: |
           while read -r _ artifact; do
             cosign sign-blob --yes --bundle "evidence/${artifact}.sigstore.json" "evidence/${artifact}"
-          done < evidence/SHA256SUMS
+          done < evidence/PAYLOAD_SHA256SUMS
           cosign sign --yes "${{ steps.image.outputs.image }}@${{ steps.build.outputs.digest }}"
 
       - name: Generate SLSA provenance
         id: provenance
         uses: actions/attest@v4
         with:
-          subject-checksums: evidence/SHA256SUMS
+          subject-checksums: evidence/PAYLOAD_SHA256SUMS
 
       - name: Stage provenance and release manifest
         env:
@@ -158,12 +223,29 @@ jobs:
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           IMAGE_REFERENCE: ${{ steps.image.outputs.image }}
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          TEST_RUN_URL: ${{ inputs.test_run_url }}
+          SECURITY_AUDIT_RUN_URL: ${{ inputs.security_audit_run_url }}
+          GA_TAG: ${{ steps.release.outputs.ga_tag }}
+          SUPERSEDED_GA_SHA: ${{ steps.release.outputs.existing_ga_sha }}
         run: |
           bundle="${{ steps.provenance.outputs.bundle-path }}"
-          while read -r _ artifact; do cp "$bundle" "evidence/${artifact}.intoto.jsonl"; done < evidence/SHA256SUMS
-          node scripts/generate-release-manifest.mjs evidence evidence/release-manifest.json
+          while read -r _ artifact; do cp "$bundle" "evidence/${artifact}.intoto.jsonl"; done < evidence/PAYLOAD_SHA256SUMS
           cp scripts/validate-release-manifest.mjs evidence/verify-release.mjs
-          node scripts/validate-release-manifest.mjs evidence/release-manifest.json
+          cp schemas/release-manifest.schema.json evidence/release-manifest.schema.json
+          cp docs/product-support-matrix.json evidence/product-support-matrix.json
+          node scripts/generate-release-manifest.mjs evidence evidence/release-manifest.json
+          (
+            cd evidence
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' \
+              | sort -z \
+              | xargs -0 sha256sum > SHA256SUMS
+          )
+          node evidence/verify-release.mjs evidence/release-manifest.json
+
+      - name: Attest final checksum index
+        uses: actions/attest@v4
+        with:
+          subject-path: evidence/SHA256SUMS
 
       - uses: actions/upload-artifact@v4
         with:
@@ -179,6 +261,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      attestations: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -201,7 +284,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           (cd evidence && sha256sum --check SHA256SUMS)
-          identity="^https://github.com/${GITHUB_REPOSITORY}/.github/workflows/supply-chain.yml@refs/heads/"
+          identity="^https://github.com/${GITHUB_REPOSITORY}/.github/workflows/supply-chain.yml@refs/(heads|tags)/"
           while read -r _ artifact; do
             cosign verify-blob --bundle "evidence/${artifact}.sigstore.json" \
               --certificate-identity-regexp "$identity" \
@@ -209,11 +292,13 @@ jobs:
               "evidence/${artifact}"
             gh attestation verify "evidence/${artifact}" --repo "$GITHUB_REPOSITORY" \
               --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/supply-chain.yml"
-          done < evidence/SHA256SUMS
+          done < evidence/PAYLOAD_SHA256SUMS
+          gh attestation verify evidence/SHA256SUMS --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/supply-chain.yml"
           cosign verify --certificate-identity-regexp "$identity" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             "${{ needs.artifacts-and-image.outputs.image }}@${{ needs.artifacts-and-image.outputs.digest }}"
-          node scripts/validate-release-manifest.mjs evidence/release-manifest.json
+          node evidence/verify-release.mjs evidence/release-manifest.json
 
       - name: Test downloaded Linux archive install
         run: |

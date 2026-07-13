@@ -9,7 +9,7 @@ on:
 jobs:
   deterministic:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,8 +21,43 @@ jobs:
         run: bash scripts/update-submodules.sh
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Certify lifecycle, failures, load, reconnect, and recovery
-        run: bash scripts/certify-operational-resilience.sh
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
+      - name: Build an installed server-full archive and image
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm -C frontend install --frozen-lockfile
+          pnpm -C frontend --filter @prometheus-ags/prometheus-entity-management build
+          pnpm build
+          node scripts/validate-static-bundle.mjs static
+          cargo build --locked --release --no-default-features --bin universal-agent-runtime --features server-full
+          mkdir -p dist/operational-resilience
+          cp target/release/universal-agent-runtime dist/operational-resilience/
+          cp -R static dist/operational-resilience/static
+          mkdir -p dist/operational-resilience/skills
+          cp -R crates/prometheus-skill-system/skills dist/operational-resilience/skills/builtin
+          cp -R src/uar/runtime/matching/models dist/operational-resilience/models
+          cp README.md LICENSE LICENSE-COMMERCIAL.md example.config.yaml dist/operational-resilience/
+          tar -czf dist/universal-agent-runtime-linux-x64.tar.gz -C dist operational-resilience
+          docker build -t uar-operational-resilience .
+      - name: Certify installed lifecycle, failures, load, reconnect, recovery, and soak
+        env:
+          UAR_INSTALLED_ARTIFACT_DIR: dist
+          UAR_CANDIDATE_IMAGE: uar-operational-resilience
+          UAR_CANDIDATE_SOURCE_SHA: ${{ github.sha }}
+          UAR_CANDIDATE_TAG: operational-resilience-${{ github.run_id }}
+          UAR_SOAK_DURATION_SECONDS: 60
+        run: |
+          bash scripts/certify-operational-resilience.sh
+          node scripts/validate-candidate-certification.mjs target/resilience-certification/installed-runtime
       - name: Upload machine-readable evidence and logs
         if: always()
         uses: actions/upload-artifact@v4

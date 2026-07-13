@@ -5,7 +5,7 @@
 ## 2. Publish
 <!-- EVIDENCE: guarded no-rebuild promotion is implemented; requires operator-authorized publication. -->
 - [ ] 2.1 Confirm source equals certified candidate; otherwise rerun certification.
-- [ ] 2.2 Create signed `v1.0.0` tag and run release workflow.
+- [ ] 2.2 Create signed `v1.0.0` tag through guarded no-rebuild promotion of the certified candidate.
 - [ ] 2.3 Publish GitHub release, signed images, SBOM/provenance/checksums and evidence manifest.
 ## 3. Post-release
 <!-- EVIDENCE: possible only after public GA artifacts exist. -->

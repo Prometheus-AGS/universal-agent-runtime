@@ -12,11 +12,13 @@ for (const path of trackedPaths) {
 const required = [
   "node-version: 22",
   "version: 10.33.0",
-  "cargo check --locked --lib --features minimal",
-  "cargo check --locked --lib --features server-full",
-  "cargo check --locked --lib --features desktop-full",
-  "cargo clippy --lib --features server-full --no-deps",
-  "cargo build --locked --release --bin universal-agent-runtime --features server-full",
+  "cargo check --locked --no-default-features --lib --features minimal",
+  "cargo check --locked --no-default-features --lib --features server-full",
+  "cargo check --locked --no-default-features --lib --features desktop-full",
+  "cargo clippy --locked --no-default-features --lib --features server-full --no-deps",
+  "cargo test --locked --no-default-features --features server-full",
+  "cargo build --locked --release --no-default-features --bin universal-agent-runtime --features server-full",
+  "node scripts/validate-release-workflow.mjs",
   "node scripts/validate-static-bundle.mjs static",
   "cp -R static",
   "Copy-Item static",
@@ -25,6 +27,7 @@ const required = [
   "runner: macos-15",
   "windows-latest",
   "http://127.0.0.1:1906/readyz",
+  "http://127.0.0.1:1906/healthz",
   "scripts/package-offline-source.sh",
 ];
 
@@ -44,6 +47,21 @@ const prohibited = [
 
 for (const [value, label] of prohibited) {
   if (workflow.includes(value)) failures.push(`prohibited ${label}`);
+}
+
+const tagTrigger = workflow.match(/push:\s*\n\s*tags:\s*\n([\s\S]*?)\n\s*permissions:/)?.[1] ?? "";
+if (!tagTrigger.includes("'v*.*.*-rc.*'")) failures.push("candidate tag trigger is missing");
+if (!tagTrigger.includes("'release-test-*'")) failures.push("release-test tag trigger is missing");
+if (tagTrigger.includes("'v*.*.*'")) {
+  failures.push("GA semantic-version tags must not trigger a rebuild; promotion reuses candidate assets");
+}
+
+const readyProbes = workflow.match(/http:\/\/127\.0\.0\.1:1906\/readyz/g) ?? [];
+const healthProbes = workflow.match(/http:\/\/127\.0\.0\.1:1906\/healthz/g) ?? [];
+if (readyProbes.length !== 2 || healthProbes.length !== 2) {
+  failures.push(
+    `expected readiness and liveness probes in Unix and Windows archive jobs, found ${readyProbes.length}/${healthProbes.length}`,
+  );
 }
 
 const platformRows = workflow.match(/- name: (?:linux|macos|windows)-/g) ?? [];
