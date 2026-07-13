@@ -3,6 +3,7 @@
 import { readFileSync } from "node:fs";
 
 const workflow = readFileSync(new URL("../.github/workflows/supply-chain.yml", import.meta.url), "utf8");
+const ciWorkflow = readFileSync(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
 const generator = readFileSync(new URL("./generate-release-manifest.mjs", import.meta.url), "utf8");
 const validator = readFileSync(new URL("./validate-release-manifest.mjs", import.meta.url), "utf8");
 const schema = JSON.parse(readFileSync(new URL("../schemas/release-manifest.schema.json", import.meta.url), "utf8"));
@@ -50,6 +51,13 @@ for (const value of requiredWorkflowContracts) {
 
 for (const permission of ["actions: write", "security-events: write"]) {
   if (workflow.includes(permission)) failures.push(`overbroad workflow permission: ${permission}`);
+}
+
+for (const command of [
+  "cargo clippy --locked --no-default-features --lib --features server-full --no-deps",
+  "cargo check --locked --no-default-features --features server-full",
+]) {
+  if (!ciWorkflow.includes(command)) failures.push(`CI does not enforce authoritative command: ${command}`);
 }
 
 const requiredGeneratorContracts = [
