@@ -41,6 +41,14 @@ Integration tests that directly import optional transport dependencies SHALL dec
 - **WHEN** the alternate CI feature profile enables `postgres-backend`
 - **THEN** the credential-store implementation compiles without unused-import warnings
 
+#### Scenario: CI tests a profile without local inference
+- **WHEN** Cargo discovers integration-test targets for a feature profile that omits `local-models`
+- **THEN** the Burn embedding integration target is skipped instead of asserting that an intentionally unavailable local model initializes
+
+#### Scenario: Release tests local inference
+- **WHEN** the authoritative `server-full` release suite runs
+- **THEN** `local-models` enables and executes the Burn embedding integration target
+
 ### Requirement: Stable Archives Satisfy Native Build Prerequisites
 Every Stable platform archive builder SHALL install the native protobuf compiler before building the `server-full` release binary.
 

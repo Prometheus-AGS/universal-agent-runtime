@@ -45,6 +45,13 @@ name = "test_a2a_grpc"
 path = "tests/test_a2a_grpc.rs"
 required-features = ["a2a-transport"]
 
+# The embedding integration suite initializes the optional on-device model.
+# Profiles without local inference must not execute it; `server-full` does.
+[[test]]
+name = "burn_embedding_test"
+path = "tests/burn_embedding_test.rs"
+required-features = ["local-models"]
+
 # CH-20: Criterion benchmarks for the router/dialect/context hot path.
 # harness = false because Criterion drives its own main().
 [[bench]]
