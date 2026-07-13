@@ -9,6 +9,27 @@ Backend entrypoint: `/kbd-apply <change-id>` in plan round order
 OpenSpec available: YES
 Source plan: `.kbd-orchestrator/phases/uar-final-production-hardening-2026-07/plan.md`
 
+## ACTIVE EXECUTION OVERRIDE — IMPLEMENTATION FIRST
+
+The 2026-07-12 plan amendment is authoritative. Execution is now a single cross-change completion batch:
+
+1. Build a static truth matrix for all unchecked requirements in changes 20–24.
+2. Implement all genuine product and integration gaps, using parallel non-overlapping lanes.
+3. Use only cohesive `cargo check` checkpoints during implementation; do not test, push, tag, dispatch CI, or run release workflows yet.
+4. After zero incomplete product requirements remain, run one consolidated local validation loop.
+5. Run one immutable RC/certification/release sequence and attach evidence to the existing changes.
+
+The old per-change dispatch contract and verification requirements below are historical and are superseded where they conflict. Failures found during consolidated validation are fixed directly under their owning existing change; they do not automatically create more changes.
+
+### Lane ownership
+
+- Product composition: `server-full`, startup, frontend embedding, RAG/customer paths, BossFang sidecar contract.
+- Resilience: lifecycle, cancellation, retry/timeout, MCP/provider failure, backup/recovery, soak and non-root evidence.
+- Distribution: platform packaging, SBOM/checksums/provenance/signatures, container and clean-install paths.
+- RC/GA: immutable metadata, evidence manifest, candidate and GA publication gates.
+
+Current stage: **Stage 1 — static truth audit**. Ledger remains honestly at **19/24** until complete changes meet their stated completion rules.
+
 ## EXECUTION SCOPE
 
 Completed and preserved: seven changes through `docs-site-github-pages`.

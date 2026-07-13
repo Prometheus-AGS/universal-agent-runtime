@@ -1,11 +1,11 @@
 # Current Waypoint — Universal Agent Runtime
 
 - **Phase:** `uar-final-production-hardening-2026-07`
-- **Stage:** executing
+- **Stage:** implementation-first completion — final certification
 - **Progress:** 19 of 24 changes complete
 - **Last completed:** `reconcile-product-documentation`
-- **Active/next change:** `align-release-workflow-platforms`
-- **Exact next command:** `/kbd-apply align-release-workflow-platforms`
+- **Active/next change:** cross-change batch `20–24`
+- **Exact next command:** commit/push the validated batch and execute one immutable candidate certification sequence
 - **Plan:** `.kbd-orchestrator/phases/uar-final-production-hardening-2026-07/plan.md`
 
-Canonical documentation now matches the React-first support matrix and is guarded by CI. Continue in plan order with release workflow/platform alignment, then operational resilience, supply-chain artifacts, immutable release-candidate certification, and the final 1.0.0 release gate.
+The 2026-07-12 implementation-first amendment is authoritative. Treat `server-full` as the BossFang/customer sidecar product; batch product composition, resilience, distribution, and RC/GA integration gaps. During implementation run no tests, Clippy, release builds, pushes, tags, or CI workflows; use only cohesive `cargo check` checkpoints. Consolidated validation begins only after zero known product gaps remain.

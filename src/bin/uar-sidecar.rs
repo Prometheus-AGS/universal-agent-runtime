@@ -2,10 +2,9 @@
 //!
 //! Differences from `main.rs`:
 //! - Binds to `127.0.0.1:0` so the OS assigns a free ephemeral port.
-//! - Emits exactly one `READY:{port}` line to stdout after the listener is
-//!   bound, before `axum::serve` begins accepting connections.  The Electron
-//!   main process reads this line via a `readline` interface on the child's
-//!   stdout pipe.
+//! - Retains the OS-assigned listener through initialization and emits exactly
+//!   one `READY:{port}` line only after the HTTP application is ready to serve.
+//!   The Electron main process reads this line from the child's stdout pipe.
 //! - Spawns a background task that reads stdin; when stdin reaches EOF
 //!   (Electron closes the pipe on quit) the process exits cleanly.  This is
 //!   the cross-platform shutdown contract — it works on Windows where SIGTERM
@@ -45,28 +44,53 @@ async fn main() {
     let otel_provider = uar::telemetry::init(&log_format);
     uar::telemetry::metrics::init();
 
-    // Pre-bind on port 0 to let the OS choose a free port.
-    let port = {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .expect("Failed to pre-bind UAR sidecar listener");
-        listener
-            .local_addr()
-            .expect("Failed to read local address of pre-bound socket")
-            .port()
-    };
-    // The pre-bound socket is dropped here, releasing the port briefly.
-    // start_server will immediately re-bind on the same port via the env var
-    // override below.  The race window on loopback is sub-millisecond.
-    //
+    // Bind once and retain ownership until Axum begins serving. This removes
+    // the port-stealing race that existed when startup dropped and re-bound the
+    // OS-assigned listener.
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("Failed to bind UAR sidecar listener");
+    let port = listener
+        .local_addr()
+        .expect("Failed to read UAR sidecar listener address")
+        .port();
     // SAFETY: still single-threaded; tokio runtime has not yet spawned workers.
     unsafe {
         std::env::set_var("UAR_SERVER__PORT", port.to_string());
     }
 
-    // Emit the readiness signal to stdout BEFORE start_server blocks on serve.
+    let config = match AppConfig::load() {
+        Ok(c) => Arc::new(c),
+        Err(e) => {
+            tracing::error!("Failed to load configuration: {:?}", e);
+            std::process::exit(1);
+        }
+    };
+
+    let (ready_tx, mut ready_rx) = tokio::sync::oneshot::channel();
+    let server = server::start_server_sidecar(config, listener, ready_tx);
+    tokio::pin!(server);
+    let ready_addr = tokio::select! {
+        ready = &mut ready_rx => match ready {
+            Ok(addr) => addr,
+            Err(_) => {
+                tracing::error!("UAR sidecar stopped before reporting readiness");
+                std::process::exit(1);
+            }
+        },
+        result = &mut server => {
+            let error = match result {
+                Ok(()) => anyhow::anyhow!("sidecar stopped before reporting readiness"),
+                Err(error) => error,
+            };
+            tracing::error!(error = %error, "UAR sidecar failed during startup");
+            std::process::exit(1);
+        }
+    };
+
+    // Emit readiness only after the runtime and HTTP application initialize.
     // UarSidecarService's readline handler watches for this exact format.
-    let ready_line = format!("READY:{port}\n");
+    let ready_line = format!("READY:{}\n", ready_addr.port());
     std::io::stdout()
         .write_all(ready_line.as_bytes())
         .expect("Failed to write READY signal to stdout");
@@ -88,17 +112,12 @@ async fn main() {
         std::process::exit(0);
     });
 
-    let config = match AppConfig::load() {
-        Ok(c) => Arc::new(c),
-        Err(e) => {
-            tracing::error!("Failed to load configuration: {:?}", e);
+    match server.await {
+        Ok(()) => {}
+        Err(error) => {
+            tracing::error!(error = %error, "UAR sidecar error");
             std::process::exit(1);
         }
-    };
-
-    if let Err(e) = server::start_server_sidecar(config).await {
-        tracing::error!("UAR sidecar error: {:?}", e);
-        std::process::exit(1);
     }
 
     if let Some(provider) = &otel_provider {

@@ -26,7 +26,7 @@ Always upgrade to a supported release rather than tracking an arbitrary commit.
 Do not deploy from a floating tag in production.
 
 - **Container images**: pin an immutable tag or digest rather than `:latest`.
-  For example, deploy `tribehealth/universal-agent-runtime@sha256:<digest>` (or a
+  For example, deploy `ghcr.io/prometheus-ags/universal-agent-runtime@sha256:<digest>` (or a
   specific released version tag) so a redeploy cannot silently change the binary.
 - **From source**: check out a released tag, not `main`:
 
@@ -81,9 +81,12 @@ recreated, so application data carries across the upgrade.
 # 2. Fetch and check out the new tag.
 git fetch --tags && git checkout v1.0.1
 
-# 3. Rebuild frontend + backend.
-bun install && bun run build
-cargo build --release
+# 3. Rebuild frontend + backend from locked dependencies.
+pnpm install --frozen-lockfile
+pnpm -C frontend install --frozen-lockfile
+pnpm -C frontend --filter @prometheus-ags/prometheus-entity-management build
+pnpm build
+cargo build --release --features server-full
 
 # 4. Restart the service against the same persistence configuration.
 sudo systemctl restart uar   # or your process manager
@@ -93,11 +96,11 @@ curl -sf http://localhost:<port>/healthz
 ## Configuration compatibility
 
 - **New settings** generally arrive with compiled defaults, so existing configs
-  keep working. The exceptions are the settings with **no default** —
-  `persistence.provider` and `persistence.database_url` — which must always be
-  present. If a new required field is ever introduced, the server exits on boot
-  with a "missing field" error naming it (see
-  [Troubleshooting](./troubleshooting)).
+  keep working. Packaged binaries default to embedded SurrealDB at
+  `surrealkv://./data/uar.db`; production deployments should keep persistence
+  explicit so upgrades cannot change the intended data path. If a future
+  required field is introduced, the server exits on boot with a configuration
+  error naming it (see [Troubleshooting](./troubleshooting)).
 - **Precedence is stable**: CLI args > `UAR_*__*` env > legacy `LLM_*` env >
   provider shortcut keys > `config.yaml` > defaults. Re-check that an
   environment override you rely on is not being shadowed by a higher-priority
@@ -121,7 +124,7 @@ docker compose -f docker-compose.prod.yaml up -d app
 
 # From source: check out the previous tag and rebuild.
 git checkout v1.0.0
-bun run build && cargo build --release
+pnpm build && cargo build --release --features server-full
 sudo systemctl restart uar
 ```
 

@@ -154,6 +154,7 @@ jobs:
           bundle="${{ steps.provenance.outputs.bundle-path }}"
           while read -r _ artifact; do cp "$bundle" "evidence/${artifact}.intoto.jsonl"; done < evidence/SHA256SUMS
           node scripts/generate-release-manifest.mjs evidence evidence/release-manifest.json
+          cp scripts/validate-release-manifest.mjs evidence/verify-release.mjs
           node scripts/validate-release-manifest.mjs evidence/release-manifest.json
 
       - uses: actions/upload-artifact@v4

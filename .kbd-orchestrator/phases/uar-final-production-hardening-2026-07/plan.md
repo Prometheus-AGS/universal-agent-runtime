@@ -7,6 +7,47 @@ Completed changes preserved: 6
 Changes remaining: 18
 Total phase changes after replan: 24
 
+## IMPLEMENTATION-FIRST COMPLETION AMENDMENT (2026-07-12)
+
+This amendment governs the remaining 19/24 → 24/24 completion work and supersedes the sequential execution rounds and per-change verification loop below wherever they conflict. The objective is a fully implemented `server-full` sidecar product, not repeated proof that an acknowledged incomplete checkout fails.
+
+### Stage 1 — Static truth audit
+
+- Inspect every unchecked requirement in changes 20–24 and classify it as `IMPLEMENTATION`, `INTEGRATION`, `EVIDENCE`, or `TIME_BOUND`.
+- Audit existing code before editing. A stale unchecked task is not evidence of missing implementation.
+- Treat `server-full` as the customer/BossFang sidecar product. `minimal` is only a dependency and compile profile. Windows remains experimental and nonblocking for this round.
+
+### Stage 2 — Batched implementation
+
+- Implement every genuine `IMPLEMENTATION` and `INTEGRATION` gap across all five changes before broad validation.
+- Parallelize independent product-composition, resilience, distribution, and RC/GA-metadata lanes with explicit file ownership.
+- During this stage: no tests, Clippy, release builds, pushes, tags, or CI workflow dispatches. Use static inspection and, only at cohesive checkpoints, `cargo check --locked --no-default-features --features server-full` with build-time network work disabled.
+- Use the Rust skill router and focused Rust skills for affected subsystems. Follow `AGENTS.md` and `CLAUDE.md` as the implementation contract.
+
+### Stage 3 — Consolidated local validation
+
+- Begin only when the static truth matrix contains zero incomplete product requirements.
+- Run formatting, supported-profile checks, frontend validation, then targeted and full tests once against the complete implementation.
+- Fix discovered defects in one consolidated loop; do not create a new OpenSpec change for each failure.
+
+### Stage 4 — Final certification and release
+
+- Execute one release-candidate workflow sequence, collect supply-chain/resilience evidence, and certify supported platforms.
+- `EVIDENCE` tasks complete from retained proof. `TIME_BOUND` tasks complete only after their real duration/external condition is satisfied; they never block implementation progress.
+- Publish GA only from the certified commit. No intermediate release workflow churn.
+
+### Remaining-change classification
+
+| Change | Primary class | Completion rule |
+| --- | --- | --- |
+| 20 align-release-workflow-platforms | INTEGRATION + EVIDENCE | Workflow/config implementation first; dispatch logs only in Stage 4 |
+| 21 certify-operational-resilience | IMPLEMENTATION + EVIDENCE + TIME_BOUND | Close real lifecycle gaps first; soak/container proof in Stages 3–4 |
+| 22 produce-supply-chain-artifacts | INTEGRATION + EVIDENCE | Finish generation/signing/install paths; live artifacts in Stage 4 |
+| 23 certify-release-candidate | EVIDENCE + TIME_BOUND | Immutable candidate and external-install evidence after implementation |
+| 24 release-1-0-0 | INTEGRATION + EVIDENCE | Metadata now; publication and post-release proof in Stage 4 |
+
+Disk policy: run disk-space-guardian dry-runs before cleanup, preserve the active Cargo cache, never use `cargo clean`, and move only reviewed stale artifacts through reversible cleanup.
+
 ## Release success criterion
 
 UAR may be tagged `v1.0.0` only when every stable claim has an executable acceptance test, the React frontend obeys the repository's required layering, AG-UI/A2UI profiles are declared and conformant, public documentation matches the implementation, the supported feature/platform matrix is green, offline locked builds work, and immutable release artifacts include checksums, SBOM, provenance, and signatures.

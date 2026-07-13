@@ -27,7 +27,7 @@ services:
       dockerfile: Dockerfile
       args:
         SKIP_MODEL_BUILD: "1"
-    image: tribehealth/universal-agent-runtime:latest
+    image: ghcr.io/prometheus-ags/universal-agent-runtime:v1.0.0
     restart: always
     env_file: .env
     ports:

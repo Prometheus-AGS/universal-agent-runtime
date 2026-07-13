@@ -4,7 +4,7 @@
   "verified_at": "2026-07-12",
   "features": [
     { "id": "minimal", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features minimal" },
-    { "id": "server-full", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features server-full" },
+    { "id": "server-full", "status": "stable", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
     { "id": "desktop-full", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features desktop-full" },
     { "id": "surreal-backend", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib" },
     { "id": "in-memory-backend", "status": "development-only", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --no-default-features --features in-memory-backend" },
@@ -23,7 +23,7 @@
   ],
   "bundles": [
     { "id": "minimal", "status": "stable", "features": ["surreal-backend"], "gate": "cargo test --lib --features minimal" },
-    { "id": "server-full", "status": "preview", "features": ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"], "gate": "cargo check --lib --features server-full" },
+    { "id": "server-full", "status": "stable", "distribution": true, "features": ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
     { "id": "desktop-full", "status": "preview", "features": ["server-full", "tauri"], "gate": "cargo check --lib --features desktop-full" },
     { "id": "server-postgres", "status": "preview", "features": ["postgres-backend"], "gate": "cargo test --features postgres-backend" },
     { "id": "in-memory-development", "status": "development-only", "features": ["in-memory-backend"], "gate": "cargo test --lib --no-default-features --features in-memory-backend" }

@@ -23,6 +23,9 @@ const canonical = [
   "docs/product-support-matrix.md",
   "website/docs/intro.md",
   "website/docs/api-reference.md",
+  "website/docs/installation.md",
+  "website/docs/troubleshooting.md",
+  "website/docs/upgrade-guide.md",
 ];
 const prohibited = [
   [/142\+ providers/gi, "blanket 142+ provider claim"],
@@ -30,6 +33,9 @@ const prohibited = [
   [/run identically[^\n]*(?:desktop|mobile)/gi, "identical-platform claim"],
   [/build\.rs[^\n]*(?:fetch|download)[^\n]*models\.dev/gi, "networked ordinary-build claim"],
   [/\bproduction[- ]ready\b/gi, "unscoped production-ready claim"],
+  [/tribehealth\/universal-agent-runtime/gi, "retired container registry"],
+  [/\bbun (?:install|run)\b/gi, "retired Bun release toolchain"],
+  [/persistence[^\n]*(?:have|has) no compiled defaults/gi, "retired missing-persistence-default claim"],
 ];
 
 for (const path of canonical) {
@@ -38,6 +44,10 @@ for (const path of canonical) {
     pattern.lastIndex = 0;
     if (pattern.test(body)) failures.push(`${path}: ${label}`);
   }
+}
+
+if (!read("docker-compose.prod.yaml").includes("image: ghcr.io/prometheus-ags/universal-agent-runtime:v1.0.0")) {
+  failures.push("docker-compose.prod.yaml: Stable image is not the pinned GHCR release");
 }
 
 const linkPattern = /\[[^\]]+\]\(([^)]+)\)/g;

@@ -10,8 +10,8 @@ and Experimental rows state narrower expectations.
 
 | Bundle | Status | Feature set |
 |---|---|---|
-| Minimal | Stable | `minimal` → `surreal-backend` (default) |
-| Server full | Preview | `server-full` → Minimal + local models, Cedar, quality, documents, telemetry, A2A, API docs, admin UI, WASM |
+| Minimal headless | Stable | `minimal` → `surreal-backend` (Cargo default; not distributed as the customer archive) |
+| Server full | Stable | Authoritative server/sidecar distribution: Minimal + local models, Cedar, quality, documents, telemetry, A2A, API docs, admin UI, WASM |
 | Desktop full | Preview | `desktop-full` → Server Full + `tauri` |
 | Server + Postgres | Preview | `postgres-backend` (implies `sqlx`) |
 | In-memory development | Development only | `in-memory-backend` without defaults |
@@ -19,6 +19,9 @@ and Experimental rows state narrower expectations.
 The unintegrated `memory-palace` extension is not a UAR feature. Model
 regeneration is an explicit maintainer operation (`cargo run --manifest-path
 tools/uar-model-builder/Cargo.toml`) and is excluded from release bundles.
+Native archives and the container package `server-full` together with the built
+React assets. The `minimal` profile exists for dependency-constrained headless
+deployments and compile-time boundary verification.
 
 ## Provider tiers
 

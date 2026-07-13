@@ -117,7 +117,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
     && apt-get update && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/* \
     && corepack enable \
-    && corepack prepare pnpm@latest --activate \
+    && corepack prepare pnpm@10.33.0 --activate \
     && curl -fsSL https://bun.sh/install | bash \
     && ln -sf /root/.bun/bin/bun /usr/local/bin/bun \
     && npm install -g --no-fund --no-audit \
@@ -200,11 +200,10 @@ COPY . .
 RUN git config --global --add safe.directory '*' \
     && git submodule update --init --recursive --depth 1 || true
 
-# Frontend: pnpm workspace install + build. The pnpm workspace root is `frontend/`
-# (it has pnpm-workspace.yaml + pnpm-lock.yaml; the repo root uses bun and has no
-# pnpm lockfile, which caused ERR_PNPM_NO_LOCKFILE when installing from /src).
+# Frontend: use the same pinned pnpm and immutable frontend lockfile as release
+# validation. The frontend remains an isolated workspace under `frontend/`.
 RUN cd frontend \
-    && pnpm install --no-frozen-lockfile \
+    && pnpm install --frozen-lockfile \
     && pnpm -r --filter "./packages/*" build \
     && pnpm build
 

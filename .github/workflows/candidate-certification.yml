@@ -1,0 +1,75 @@
+name: Installed release-candidate certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Candidate tag with complete signed release evidence
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: read
+  id-token: write
+  attestations: write
+
+jobs:
+  installed-sidecar:
+    if: startsWith(inputs.tag, 'v') && contains(inputs.tag, '-rc.')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Download the published candidate evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p candidate-assets
+          gh release download "${{ inputs.tag }}" --repo "$GITHUB_REPOSITORY" --dir candidate-assets
+          test -f candidate-assets/release-manifest.json
+
+      - name: Authenticate to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Certify installed archive and non-root image
+        run: |
+          image="$(jq -r '.image.reference + "@" + .image.digest' candidate-assets/release-manifest.json)"
+          UAR_CANDIDATE_IMAGE="$image" \
+            scripts/certify-release-candidate.sh candidate-assets target/release-candidate-certification
+
+      - name: Package candidate certification evidence
+        run: |
+          tar -czf candidate-certification-${{ inputs.tag }}.tar.gz -C target release-candidate-certification
+          sha256sum candidate-certification-${{ inputs.tag }}.tar.gz >candidate-certification-${{ inputs.tag }}.sha256
+
+      - name: Attest candidate certification evidence
+        uses: actions/attest@v4
+        with:
+          subject-path: candidate-certification-${{ inputs.tag }}.tar.gz
+
+      - name: Attach candidate certification to the candidate release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ inputs.tag }}" --repo "$GITHUB_REPOSITORY" --clobber \
+            candidate-certification-${{ inputs.tag }}.tar.gz \
+            candidate-certification-${{ inputs.tag }}.sha256
+
+      - name: Retain candidate installation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-installation-${{ inputs.tag }}
+          path: target/release-candidate-certification/
+          if-no-files-found: error
+          retention-days: 90
