@@ -25,3 +25,18 @@ Release and resilience workflows SHALL preserve deterministic test configuration
 #### Scenario: Container receives SIGTERM
 - **WHEN** the non-root resilience job stops the healthy container
 - **THEN** Docker allows more than the runtime's 30-second graceful-shutdown budget before escalating
+
+### Requirement: Optional-Transport Tests Respect Feature Profiles
+Integration tests that directly import optional transport dependencies SHALL declare their required Cargo features.
+
+#### Scenario: CI tests a profile without A2A transport
+- **WHEN** Cargo discovers integration-test targets for a feature profile that omits `a2a-transport`
+- **THEN** the gRPC integration target is skipped instead of failing compilation on intentionally unavailable tonic APIs
+
+#### Scenario: Release tests the server-full product
+- **WHEN** the authoritative `server-full` release suite runs
+- **THEN** `a2a-transport` enables and executes the gRPC integration target
+
+#### Scenario: CI compiles the Postgres credential store
+- **WHEN** the alternate CI feature profile enables `postgres-backend`
+- **THEN** the credential-store implementation compiles without unused-import warnings

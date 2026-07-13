@@ -37,6 +37,14 @@ name = "bdd"
 path = "tests/bdd.rs"
 harness = false
 
+# The gRPC integration suite imports the optional tonic transport directly.
+# Keep it out of feature profiles that intentionally omit A2A networking;
+# `server-full` includes this feature and remains the authoritative release run.
+[[test]]
+name = "test_a2a_grpc"
+path = "tests/test_a2a_grpc.rs"
+required-features = ["a2a-transport"]
+
 # CH-20: Criterion benchmarks for the router/dialect/context hot path.
 # harness = false because Criterion drives its own main().
 [[bench]]

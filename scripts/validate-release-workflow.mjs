@@ -8,6 +8,7 @@ const operationalWorkflow = readFileSync(
   new URL("../.github/workflows/operational-resilience.yml", import.meta.url),
   "utf8",
 );
+const cargoManifest = readFileSync(new URL("../Cargo.toml", import.meta.url), "utf8");
 const failures = [];
 const trackedPaths = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
 for (const path of trackedPaths) {
@@ -42,6 +43,10 @@ for (const value of required) {
 
 for (const value of ["protobuf-compiler", "docker stop --timeout 45 uar-resilience"]) {
   if (!operationalWorkflow.includes(value)) failures.push(`missing operational release contract: ${value}`);
+}
+
+if (!/\[\[test\]\]\s+name = "test_a2a_grpc"\s+path = "tests\/test_a2a_grpc\.rs"\s+required-features = \["a2a-transport"\]/m.test(cargoManifest)) {
+  failures.push("A2A gRPC integration test must require the a2a-transport feature");
 }
 
 const prohibited = [
