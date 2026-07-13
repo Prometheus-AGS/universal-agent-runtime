@@ -60,9 +60,10 @@ Orchestrates test services with proper health checks:
 - Main application with test environment
 
 ### Test Coverage Configuration
-- **Rust**: `.cargo/config.toml` and `.grcovrc` for LLVM instrumentation
-- **TypeScript**: Built-in coverage via Bun and c8
+- **Rust**: `cargo-llvm-cov` via `.github/workflows/coverage.yml`; see `docs/coverage-baseline.md` for the 60% threshold and per-file baseline
+- **TypeScript**: `vitest --coverage` (v8 provider) via `frontend/vitest.config.ts`, same `.github/workflows/coverage.yml`
 - **Playwright**: V8 coverage integration
+- **CI guard**: `tools/coverage-drift.sh` reports per-file drift vs. `docs/coverage-baseline.md`; `.grcovrc` was removed (unused, superseded by `cargo-llvm-cov`)
 
 ## Test Execution
 
@@ -184,7 +185,6 @@ docker-compose -f docker-compose.test.yaml up -d postgres redis surreal
 rustup component add rustfmt clippy llvm-tools-preview
 
 # Coverage tools
-cargo install grcov
 cargo install cargo-llvm-cov
 
 # Node.js and Bun
@@ -262,10 +262,10 @@ tools/
 ## Coverage Tools and Formats
 
 ### Rust Coverage
-**Primary Tool**: `grcov`
-**Alternative**: `cargo-llvm-cov`, `cargo-tarpaulin`
-**Formats**: HTML, LCOV, JSON, Cobertura XML
-**Configuration**: `.grcovrc`, `.cargo/config.toml`
+**Primary Tool**: `cargo-llvm-cov`
+**Alternative**: `cargo-tarpaulin`
+**Formats**: LCOV, HTML
+**Configuration**: `.github/workflows/coverage.yml`, `.cargo/config.toml`
 
 ### TypeScript Coverage
 **Primary Tool**: Bun's built-in coverage
@@ -321,7 +321,6 @@ docker-compose -f docker-compose.test.yaml up -d --build
 #### Coverage Tool Issues
 ```bash
 # Verify tool installation
-grcov --version
 cargo llvm-cov --version
 
 # Check profraw files generated

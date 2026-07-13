@@ -40,7 +40,7 @@ environments:
 # language's threshold block (caught via a dry-run of the parser against
 # this exact file before this fix).
 coverage_tools:
-  rust_coverage_tool: grcov
+  rust_coverage_tool: cargo-llvm-cov
   rust_format: [html, lcov, json]
   rust_exclude_patterns:
     - "build.rs"
