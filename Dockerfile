@@ -267,12 +267,20 @@ COPY --from=builder /out/static /opt/uar/static
 COPY --from=builder /out/skills /opt/uar/skills
 COPY --from=builder /out/models /opt/uar/models
 
-VOLUME ["/var/lib/uar/skills-user", \
-        "/var/lib/uar/skills-derived", \
-        "/var/lib/uar/cache/huggingface", \
-        "/var/lib/uar/cache/cargo", \
-        "/var/lib/uar/cache/pnpm", \
-        "/var/lib/uar/data"]
+RUN mkdir -p /var/lib/uar/skills-user \
+        /var/lib/uar/skills-derived \
+        /var/lib/uar/cache/huggingface \
+        /var/lib/uar/cache/cargo \
+        /var/lib/uar/cache/pnpm \
+        /var/lib/uar/data \
+    && chown -R 65532:65532 /var/lib/uar
+
+# One volume avoids nested anonymous volumes masking a caller's /var/lib/uar
+# bind mount. Numeric ownership keeps the image runtime-agnostic and allows
+# Kubernetes/Docker to enforce the same non-root identity.
+VOLUME ["/var/lib/uar"]
+
+USER 65532:65532
 
 EXPOSE 1906 50051
 
