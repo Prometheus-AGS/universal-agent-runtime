@@ -9,6 +9,10 @@ const operationalWorkflow = readFileSync(
   "utf8",
 );
 const cargoManifest = readFileSync(new URL("../Cargo.toml", import.meta.url), "utf8");
+const liveBaselineCases = readFileSync(
+  new URL("../tests/integration/live/baseline_cases.rs", import.meta.url),
+  "utf8",
+);
 const failures = [];
 const trackedPaths = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
 for (const path of trackedPaths) {
@@ -52,6 +56,9 @@ if (!/\[\[test\]\]\s+name = "test_a2a_grpc"\s+path = "tests\/test_a2a_grpc\.rs"\
 }
 if (!/\[\[test\]\]\s+name = "burn_embedding_test"\s+path = "tests\/burn_embedding_test\.rs"\s+required-features = \["local-models"\]/m.test(cargoManifest)) {
   failures.push("Burn embedding integration test must require the local-models feature");
+}
+if (!/#\[cfg\(feature = "local-models"\)\]\s+#\[tokio::test\]\s+#\[serial\]\s+async fn rag_ingest_then_retrieve\(\)/m.test(liveBaselineCases)) {
+  failures.push("RAG live integration test must require the local-models feature");
 }
 
 const prohibited = [

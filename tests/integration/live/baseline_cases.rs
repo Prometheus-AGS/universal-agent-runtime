@@ -384,6 +384,7 @@ async fn memory_write_then_recall() {
 /// by `fix-embeddings-fastembed` (uar-final-production-hardening-2026-07),
 /// which wired real local BGE-small inference via fastembed — this case now
 /// validates that fix end-to-end exactly as its original disclosure promised.
+#[cfg(feature = "local-models")]
 #[tokio::test]
 #[serial]
 async fn rag_ingest_then_retrieve() {
