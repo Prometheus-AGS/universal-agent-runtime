@@ -4,6 +4,10 @@ import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
 const workflow = readFileSync(new URL("../.github/workflows/release.yml", import.meta.url), "utf8");
+const operationalWorkflow = readFileSync(
+  new URL("../.github/workflows/operational-resilience.yml", import.meta.url),
+  "utf8",
+);
 const failures = [];
 const trackedPaths = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
 for (const path of trackedPaths) {
@@ -12,6 +16,7 @@ for (const path of trackedPaths) {
 const required = [
   "node-version: 22",
   "version: 10.33.0",
+  "UAR_LLM__MODEL: openai/gpt-5.4-mini",
   "cargo check --locked --no-default-features --lib --features minimal",
   "cargo check --locked --no-default-features --lib --features server-full",
   "cargo check --locked --no-default-features --lib --features desktop-full",
@@ -33,6 +38,10 @@ const required = [
 
 for (const value of required) {
   if (!workflow.includes(value)) failures.push(`missing release contract: ${value}`);
+}
+
+for (const value of ["protobuf-compiler", "docker stop --timeout 45 uar-resilience"]) {
+  if (!operationalWorkflow.includes(value)) failures.push(`missing operational release contract: ${value}`);
 }
 
 const prohibited = [

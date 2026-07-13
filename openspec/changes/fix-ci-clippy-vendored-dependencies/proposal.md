@@ -7,6 +7,8 @@ The exact-source CI run required by candidate supply-chain certification fails b
 - Restrict the primary CI Clippy invocation to UAR targets by using Clippy's dependency-exclusion flag.
 - Preserve the project's `Cargo.toml` lint policy and the existing feature coverage.
 - Add a static workflow assertion so dependency linting cannot silently re-enter the release gate.
+- Keep deterministic release tests on their recorded fixture model instead of overriding them with a smoke-test model.
+- Install `protoc` before resilience archive builds and provide an outer Docker shutdown margin beyond the runtime budget.
 
 ## Capabilities
 
@@ -20,6 +22,6 @@ None.
 
 ## Impact
 
-- Affects `.github/workflows/ci.yml` and its static validator only.
+- Affects CI, release, and operational-resilience workflows plus their static validators.
 - No runtime UX, provider compatibility, API, dependency, or realtime-state behavior changes.
 - KBD release state must supersede RC3 with a newly signed immutable candidate after the fix merges.

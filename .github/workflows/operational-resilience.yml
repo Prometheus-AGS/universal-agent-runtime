@@ -19,6 +19,8 @@ jobs:
       - name: Complete recursive submodule checkout
         shell: bash
         run: bash scripts/update-submodules.sh
+      - name: Install Linux build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config protobuf-compiler
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - uses: pnpm/action-setup@v4
@@ -101,5 +103,7 @@ jobs:
             docker logs uar-resilience
             exit 1
           }
-          docker stop --time 30 uar-resilience
+          # The runtime's configured graceful-shutdown budget is 30 seconds;
+          # give Docker an outer margin so it does not send SIGKILL at the same boundary.
+          docker stop --timeout 45 uar-resilience
           test "$(docker inspect -f '{{.State.ExitCode}}' uar-resilience)" -eq 0
