@@ -19,3 +19,10 @@
 - [x] 4.3 Give Docker shutdown an outer timeout margin and retain the zero-exit assertion.
 - [x] 4.4 Extend static validation for all three demonstrated workflow failures.
 - [ ] 4.5 Supersede canceled RC4 with a newly signed immutable candidate after merge.
+
+## 5. Feature-Profile Test Isolation
+
+- [x] 5.1 Require `a2a-transport` for the gRPC integration-test target so profiles that intentionally omit tonic compile cleanly.
+- [x] 5.2 Add a static release-contract assertion for the required-feature guard.
+- [x] 5.3 Remove the two unused Postgres credential-store imports exposed by the exact CI profile.
+- [ ] 5.4 Supersede failed RC5 with a newly signed immutable candidate after merge.

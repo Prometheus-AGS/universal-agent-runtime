@@ -463,7 +463,6 @@ impl CredentialStore for PostgresCredentialStore {
         scope_id: &str,
         provider_id: &str,
     ) -> anyhow::Result<Option<CredentialRecord>> {
-        use sqlx::Row;
         let row = sqlx::query(
             "SELECT scope, scope_id, provider_id, api_key_encrypted, api_key_hint, \
              created_at, updated_at FROM provider_credentials \
@@ -482,7 +481,6 @@ impl CredentialStore for PostgresCredentialStore {
         scope: CredentialScope,
         scope_id: &str,
     ) -> anyhow::Result<Vec<CredentialRecord>> {
-        use sqlx::Row;
         let rows = sqlx::query(
             "SELECT scope, scope_id, provider_id, api_key_encrypted, api_key_hint, \
              created_at, updated_at FROM provider_credentials \

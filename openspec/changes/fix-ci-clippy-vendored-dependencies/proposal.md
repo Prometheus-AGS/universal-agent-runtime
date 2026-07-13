@@ -9,6 +9,7 @@ The exact-source CI run required by candidate supply-chain certification fails b
 - Add a static workflow assertion so dependency linting cannot silently re-enter the release gate.
 - Keep deterministic release tests on their recorded fixture model instead of overriding them with a smoke-test model.
 - Install `protoc` before resilience archive builds and provide an outer Docker shutdown margin beyond the runtime budget.
+- Declare the optional A2A transport requirement on its gRPC integration-test target so non-A2A CI profiles remain valid.
 
 ## Capabilities
 
@@ -22,6 +23,6 @@ None.
 
 ## Impact
 
-- Affects CI, release, and operational-resilience workflows plus their static validators.
+- Affects CI, release, and operational-resilience workflows, the Cargo test manifest, plus their static validators.
 - No runtime UX, provider compatibility, API, dependency, or realtime-state behavior changes.
 - KBD release state must supersede RC3 with a newly signed immutable candidate after the fix merges.
