@@ -2,7 +2,7 @@
 
 Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, model routing, typed streaming, tools, retrieval, and declarative agent UI. Its first-party operator interface is React 19 + TypeScript.
 
-UAR is at version **0.1.0**. The minimal web/server bundle is Stable under the project's evidence-based support policy; broader bundles and platforms have narrower Preview or Experimental status. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
+UAR is at version **1.0.0**. The minimal web/server bundle is Stable under the project's evidence-based support policy; broader bundles and platforms have narrower Preview or Experimental status. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
 
 ## What is supported
 
@@ -71,4 +71,4 @@ Production deployments must configure authentication, non-default secrets, trust
 
 ## License
 
-UAR is version 0.1.0 and licensed under `AGPL-3.0-only`. Separate commercial terms are available for AGPL-incompatible use; see [LICENSE](LICENSE) and [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md).
+UAR is version 1.0.0 and licensed under `AGPL-3.0-only`. Separate commercial terms are available for AGPL-incompatible use; see [LICENSE](LICENSE) and [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md).

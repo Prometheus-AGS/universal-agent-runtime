@@ -1,6 +1,6 @@
 # Security Policy
 
-_Last updated: 2026-07-10._
+_Last updated: 2026-07-12._
 
 Universal Agent Runtime (UAR) is dual-licensed open-source software
 ([AGPL-3.0](LICENSE) / [commercial](LICENSE-COMMERCIAL.md)) developed by
@@ -40,6 +40,11 @@ to the relevant CSIRT/ENISA channels, applicable from 2026-09-11).
 |---|---|
 | 1.0.x | ✅ security fixes |
 | < 1.0 (unreleased development history) | ❌ upgrade to 1.0 |
+
+The supported 1.0.x line covers the published server/archive artifacts and the
+Stable rows in the product support matrix. Preview and Experimental
+capabilities receive best-effort fixes unless a commercial agreement states
+otherwise.
 
 ## Dependency security
 

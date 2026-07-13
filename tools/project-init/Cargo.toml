@@ -1,6 +1,6 @@
 [package]
 name = "project-init"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 description = "Interactive TUI tool for initializing projects from the template"
 authors = ["Developer <dev@example.com>"]

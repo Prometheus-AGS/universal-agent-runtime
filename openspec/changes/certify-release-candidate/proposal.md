@@ -4,7 +4,8 @@ No immutable release candidate has exercised the complete production matrix or e
 
 ## What Changes
 
-- Cut and certify `v1.0.0-rc.1` from an immutable commit.
+- Set all product surfaces to `1.0.0`, then cut and certify candidate tag
+  `v1.0.0-rc.1` from that immutable commit.
 - Install on clean supported platforms and execute the stable matrix.
 - Require external adopter validation and preserve evidence.
 

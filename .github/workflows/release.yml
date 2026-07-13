@@ -176,7 +176,7 @@ jobs:
           version_output="$(installed/${{ matrix.name }}/${{ matrix.executable }} --version 2>&1)"
           echo "$version_output"
           case "$version_output" in
-            *"universal-agent-runtime 0.1.0"*) ;;
+            *"universal-agent-runtime 1.0.0"*) ;;
             *) echo "unexpected version output"; exit 1 ;;
           esac
           installed/${{ matrix.name }}/${{ matrix.executable }} --port 1906 >server.log 2>&1 &
@@ -196,7 +196,7 @@ jobs:
         run: |
           Expand-Archive "dist/${{ matrix.archive }}" -DestinationPath installed
           $binary = "installed/${{ matrix.name }}/${{ matrix.executable }}"
-          (& $binary --version) | Select-String "0.1.0"
+          (& $binary --version) | Select-String "1.0.0"
           $process = Start-Process $binary -ArgumentList "--port", "1906" -PassThru -RedirectStandardOutput server.log -RedirectStandardError server-error.log
           try {
             $ready = $false

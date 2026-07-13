@@ -1,6 +1,6 @@
 {
   "name": "@prometheus-ags/universal-agent-runtime-sdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "TypeScript SDK for universal-agent-runtime - HTTP client for the agentic AI application",
   "type": "module",
   "main": "dist/index.js",

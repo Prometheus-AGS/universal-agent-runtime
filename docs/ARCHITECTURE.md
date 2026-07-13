@@ -1,6 +1,6 @@
 # Architecture Overview
 
-This document is the canonical system architecture for UAR 0.1.0. Support status is defined only by the [product support matrix](product-support-matrix.md).
+This document is the canonical system architecture for UAR 1.0.0. Support status is defined only by the [product support matrix](product-support-matrix.md).
 
 ## Runtime boundaries
 
