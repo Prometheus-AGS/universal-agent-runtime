@@ -62,7 +62,7 @@ jobs:
           node scripts/validate-candidate-certification.mjs target/resilience-certification/installed-runtime
       - name: Upload machine-readable evidence and logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: operational-resilience-${{ github.run_id }}
           path: target/resilience-certification/

@@ -247,7 +247,7 @@ jobs:
             if (-not $process.HasExited) { Stop-Process -Id $process.Id }
           }
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.name }}
           path: dist/${{ matrix.archive }}
@@ -270,7 +270,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Package vendored source
         run: scripts/package-offline-source.sh dist/uar-offline-source.tar.gz
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: offline-source
           path: dist/uar-offline-source.tar.gz
