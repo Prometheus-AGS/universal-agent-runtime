@@ -164,6 +164,9 @@ jobs:
   release-bundles:
     name: Release Bundle (${{ matrix.bundle }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Windows remains an evidence-producing Experimental target and must not
+    # block the Stable Linux/macOS sidecar release profile.
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
       fail-fast: false
       matrix:
