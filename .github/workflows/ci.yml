@@ -262,6 +262,10 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
+      - name: Build entity-management workspace package
+        working-directory: frontend
+        run: pnpm --filter @prometheus-ags/prometheus-entity-management build
+
       - name: Type check
         run: pnpm -C frontend typecheck
 

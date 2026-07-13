@@ -1,9 +1,6 @@
 name: Operational resilience certification
 
 on:
-  push:
-    branches:
-      - production-release
   pull_request:
   workflow_dispatch:
   schedule:
