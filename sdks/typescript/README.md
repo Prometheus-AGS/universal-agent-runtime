@@ -1,43 +1,61 @@
-# universal-agent-runtime TypeScript SDK
+# Universal Agent Runtime TypeScript SDK
 
-TypeScript SDK for universal-agent-runtime.
+Typed, runtime-validated TypeScript client for Universal Agent Runtime 1.0.
+It supports Node.js 20+, modern browsers, serverless runtimes, and Next.js.
 
-## Installation
+## Install
 
 ```bash
 npm install @prometheus-ags/universal-agent-runtime-sdk
-# or
-bun add @prometheus-ags/universal-agent-runtime-sdk
 ```
 
-## Usage
+## Use
 
 ```typescript
-import { Client } from '@prometheus-ags/universal-agent-runtime-sdk';
+import { UarClient } from "@prometheus-ags/universal-agent-runtime-sdk";
 
-const client = new Client('http://localhost:1906');
+const client = new UarClient("http://localhost:1906", {
+  apiKey: process.env.UAR_API_KEY,
+});
 
-// Chat API
-const chat = await client.chat.send('Hello!');
-console.log('Session:', chat.session_id);
+const reply = await client.chat.complete({
+  messages: [{ role: "user", content: "Hello" }],
+});
+console.log(reply.choices[0]?.message.content);
 
-// Knowledge Base API
-const kbs = await client.knowledge.list();
-for (const kb of kbs) {
-  console.log(`KB: ${kb.name} (${kb.id})`);
+for await (const event of client.chat.stream({
+  messages: [{ role: "user", content: "Stream a haiku" }],
+})) {
+  console.log(event);
 }
+```
 
-// Search
-const results = await client.knowledge.search('kb-id', 'query');
-for (const result of results.results) {
-  console.log(`Score: ${result.score.toFixed(2)} - ${result.content}`);
-}
+The public client namespaces cover:
 
-// SSE Streaming
-const eventSource = client.runs.stream('run-id');
-eventSource.onmessage = (event) => {
-  console.log('Event:', event.data);
-};
+- `chat`: completion, SSE streaming, and Zod-validated structured output
+- `tools`: namespaced tool execution
+- `embeddings`: OpenAI-compatible embedding creation
+- `runs`: create, stream, cancel, list checkpoints, and resume
+- `knowledge`: knowledge-base CRUD, documents, and search
+- `ingest`: content ingestion
+
+Every JSON response is validated with Zod. Failed HTTP responses throw
+`UarSdkError` with the HTTP `status` and parsed server `details` intact.
+Streaming methods return `AsyncIterable<SseEvent>` and accept an `AbortSignal`
+and `lastEventId` for cancellation and replay.
+
+Six typechecked examples live in [`examples/`](examples/), including a Next.js
+route-handler example. Generate the API reference with `npm run docs`.
+
+## Verify
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm run docs
+npm run examples
 ```
 
 ## License

@@ -3,21 +3,23 @@
   "version": "1.0.0",
   "description": "TypeScript SDK for universal-agent-runtime - HTTP client for the agentic AI application",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "test": "vitest",
-    "lint": "eslint src/",
-    "typecheck": "tsc --noEmit"
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "test": "vitest run",
+    "lint": "eslint src test examples",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.examples.json --noEmit",
+    "docs": "typedoc",
+    "examples": "tsc -p tsconfig.examples.json --noEmit"
   },
   "repository": {
     "type": "git",
@@ -27,9 +29,20 @@
   "keywords": ["sdk", "api", "client", "llm", "agent", "rag"],
   "author": "Developer",
   "license": "MIT",
+  "files": ["dist", "README.md", "LICENSE"],
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "zod": "^4.4.3"
+  },
   "devDependencies": {
-    "tsup": "^8.0.0",
-    "typescript": "^5.0.0",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.1",
+    "eslint": "^10.7.0",
+    "tsup": "^8.5.1",
+    "typedoc": "^0.28.20",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.64.0",
     "vitest": "^4.1.10"
   },
   "overrides": {
