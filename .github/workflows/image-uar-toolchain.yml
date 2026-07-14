@@ -61,7 +61,7 @@ jobs:
         run: bash scripts/update-submodules.sh
 
       - name: Set up QEMU (multi-arch emulation)
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: arm64
 
