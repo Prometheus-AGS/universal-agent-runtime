@@ -774,6 +774,12 @@ async fn start_server_with_listener(
         state.persistence.clone(),
     );
 
+    // Shared durable-replay backbone for A2UI surface state patches (Change
+    // 20, a2ui-realtime-backbone-from-flint-realtime-fabric). Both A2UI
+    // routers below share one instance so replay is consistent regardless
+    // of which router a request comes through.
+    let a2ui_realtime_backbone = uar::a2ui::realtime::InMemoryReplayBackbone::new();
+
     #[cfg(feature = "a2a-transport")]
     let a2a_routes: axum::Router<AppState> = Router::new()
         .nest(
@@ -914,6 +920,7 @@ async fn start_server_with_listener(
             let a2ui_state = uar::a2ui::routes::A2uiApiState {
                 registry: Arc::clone(&state.a2ui_registry),
                 run_manager: Arc::clone(&state.run_manager),
+                realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
             };
             uar::a2ui::routes::build_schema_router().with_state(a2ui_state)
         })
@@ -922,6 +929,7 @@ async fn start_server_with_listener(
             let a2ui_state = uar::a2ui::routes::A2uiApiState {
                 registry: Arc::clone(&state.a2ui_registry),
                 run_manager: Arc::clone(&state.run_manager),
+                realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
             };
             uar::a2ui::routes::build_response_router().with_state(a2ui_state)
         })

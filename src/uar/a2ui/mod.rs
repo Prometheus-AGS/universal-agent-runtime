@@ -13,6 +13,7 @@
 
 pub mod design_systems;
 pub(crate) mod protocol;
+pub mod realtime;
 pub mod registry;
 pub mod routes;
 pub mod schema;
