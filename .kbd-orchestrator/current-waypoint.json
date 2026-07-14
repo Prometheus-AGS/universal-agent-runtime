@@ -3,13 +3,14 @@
   "status": "executing",
   "stage": "execute_in_progress",
   "executionMode": "operator-directed-grade-a-upgrade",
-  "progress": "Operator redirected KBD to this phase ahead of perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion (paused, not abandoned). 25 ordered OpenSpec changes. Changes 1 (license), 2 (coverage), 3 (test-quality-mutation-fuzz-property), 4 (central-uar-error-enum), and 5 (unwrap-sweep-tracing-error-chains) implementation-complete (5/25).",
+  "progress": "Operator redirected KBD to this phase ahead of perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion (paused, not abandoned). Changes 1-8 are implementation-complete. Changes 9-11 are IN_PROGRESS via Codex in three isolated worktrees based at b9a85515.",
   "operatorPriority": "Close all 25 Grade-A gaps before resuming soak run / candidate tag / external installs / GA promotion. Explicitly call out every harness switch from the plan.md per-change matrix before starting that change's work.",
   "harnessMatrix": {
-    "current": "OpenCode + Kimi K2.7 Coding (completed Change 5)",
-    "changeAssignment": "Changes 1-2: Claude+Sonnet5 (done). Change 3: OpenCode+Kimi K2.7 Coding (done). Change 4: Claude+Sonnet5 (done). Change 5: OpenCode+K2.7 (done). Change 6: Claude+Sonnet5 (NEXT SWITCH). Change 7: OpenCode+K2.7. Change 8: Claude+Sonnet5. Changes 9-11: Codex+GPT-5.6 (worktrees). Change 12: OpenCode+K2.7. Changes 13-14: Claude+Sonnet5. Change 15: OpenCode+K2.7. Changes 16-21: Claude+Sonnet5. Change 22: Codex+GPT-5.6 (Lit/Svelte) + Claude+Sonnet5 (Inspector). Changes 23-24: OpenCode+K2.7. Change 25: Claude+Sonnet5.",
+    "current": "Codex (authorized sixth harness switch): Changes 9-11 dispatched concurrently in isolated worktrees.",
+    "changeAssignment": "Changes 1-2: Claude+Sonnet5 (done). Change 3: OpenCode+Kimi K2.7 Coding (done). Change 4: Claude+Sonnet5 (done). Change 5: OpenCode+K2.7 (done). Change 6: Claude+Sonnet5 (done). Change 7: OpenCode+K2.7 (done). Change 8: Claude+Sonnet5 (done, dispatched out-of-order concurrently with 7 since plan.md marks it independent). Changes 9-11: Codex+GPT-5.6 (worktrees, NEXT SWITCH). Change 12: OpenCode+K2.7. Changes 13-14: Claude+Sonnet5. Change 15: OpenCode+K2.7. Changes 16-21: Claude+Sonnet5. Change 22: Codex+GPT-5.6 (Lit/Svelte) + Claude+Sonnet5 (Inspector). Changes 23-24: OpenCode+K2.7. Change 25: Claude+Sonnet5.",
     "instruction": "Flag every switch to the operator before starting that change; do not silently continue on the prior harness."
   },
+  "concurrencyNote": "Changes 7 (OpenCode) and 8 (Claude) ran at the same time in the same working tree (not isolated worktrees). Transient cross-contamination observed twice in cargo check/test output (each agent's mid-edit errors briefly visible to the other) but resolved itself both times; git status confirms no overlapping file edits. See execution.md's 'CONCURRENCY NOTE' for the full writeup and a recommendation to consider ~/.claude/worktrees/ isolation for future concurrent-eligible change pairs.",
   "pausedPhase": {
     "name": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
     "state": "0/14 changes; plan complete; paused by operator instruction 2026-07-13 in favor of uar-grade-a-upgrade-2026-07",
@@ -42,25 +43,33 @@
     "docs-cookbook-12-examples",
     "docs-storybook-visual-regression-perf-budget"
   ],
-  "currentTask": "Change 5 (unwrap-sweep-tracing-error-chains): implementation complete. Module-level clippy guards added; production hot-path unwrap/expect count reduced to 0 in src/uar/api/, src/uar/runtime/, and src/server.rs; request-span middleware with request_id/agent_id/run_id added; Sentry release build wired; docs/observability.md added; 10/10 UarError unit tests pass. Full-workspace clippy -- -D warnings deferred (511 pre-existing unrelated warnings).",
-  "nextAction": "Change 6 (config-rs-schemars-migration) is next -- FOURTH HARNESS SWITCH of the phase, to Claude Code + Sonnet 5 from OpenCode + Kimi K2.7 Coding. Flag the switch to the operator and do not silently continue on OpenCode + Kimi K2.7 Coding.",
+  "currentTask": "Changes 9-11 (sdk-rust-1.0, sdk-python-1.0, sdk-typescript-1.0) are dispatched to Codex in isolated worktrees on dedicated feature branches.",
+  "nextAction": "Monitor the three SDK dispatches; require focused verification, strict OpenSpec validation, committed handoff, artifact-refiner QA, and reconciliation with uncommitted Changes 6-8 before integration.",
+  "activeDispatches": {
+    "sdk-rust-1.0": { "status": "IN_PROGRESS", "worktree": "/Users/gqadonis/.claude/worktrees/sdk-rust-1-0", "branch": "feat/sdk-rust-1.0", "base": "b9a85515" },
+    "sdk-python-1.0": { "status": "IN_PROGRESS", "worktree": "/Users/gqadonis/.claude/worktrees/sdk-python-1-0", "branch": "feat/sdk-python-1.0", "base": "b9a85515" },
+    "sdk-typescript-1.0": { "status": "IN_PROGRESS", "worktree": "/Users/gqadonis/.claude/worktrees/sdk-typescript-1-0", "branch": "feat/sdk-typescript-1.0", "base": "b9a85515" }
+  },
   "authorizationRequired": [
     "Change 1: confirmation that sdks/ has no third-party contributors (audit already run; operator to confirm reading) -- pricing bands deferred, no longer blocking",
     "Change 1: PR review/merge",
     "Change 2: none currently blocking (evidence items deferred to consolidated validation)",
     "Change 3: none currently blocking (cargo-fuzz runtime deferred to consolidated validation)",
     "Change 4: none currently blocking (deferred items are follow-up work, not implementation gaps)",
-    "Change 5: none currently blocking (full-workspace clippy -- -D warnings deferred to consolidated validation)"
+    "Change 5: none currently blocking (full-workspace clippy -- -D warnings deferred to consolidated validation)",
+    "Change 6: none currently blocking (deferred items are follow-up work: file-split, llm.api_key secrecy, TS codegen)",
+    "Change 7: none currently blocking (deferred items: incremental migration of remaining handlers to ConfigManager::current())",
+    "Change 8: operator to confirm which registry (ghcr.io vs. ACR/deploy.yml) is canonical before wiring vuln-scan.yml to scan the actual last-published image instead of a locally-rebuilt Dockerfile"
   ],
-  "sourceTool": "opencode",
-  "updatedAt": "2026-07-13T23:30:00Z",
+  "sourceTool": "codex",
+  "updatedAt": "2026-07-14T00:00:00-05:00",
   "previous_phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "last_updated": "2026-07-13T23:30:00Z",
-  "last_updated_by": "opencode",
-  "exact_next_command": "Switch harness to Claude Code + Sonnet 5, then /kbd-execute (Change 6: config-rs-schemars-migration)",
-  "fallback_command": "Read .kbd-orchestrator/phases/uar-grade-a-upgrade-2026-07/plan.md §2 Order 4",
-  "active_change": "unwrap-sweep-tracing-error-chains",
-  "next_pending_change": "config-rs-schemars-migration",
+  "last_updated": "2026-07-14T00:00:00-05:00",
+  "last_updated_by": "codex",
+  "exact_next_command": "monitor Codex dispatches for sdk-rust-1.0, sdk-python-1.0, and sdk-typescript-1.0",
+  "fallback_command": "Use each OpenSpec change ledger for clarification and report cross-SDK/runtime contract blockers before expanding scope",
+  "active_change": "sdk-rust-1.0 / sdk-python-1.0 / sdk-typescript-1.0",
+  "next_pending_change": "sdk-examples-cookbook-rustdoc",
   "changes_total": 25,
-  "changes_completed": 5
+  "changes_completed": 8
 }

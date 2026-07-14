@@ -6,18 +6,41 @@
   "plan_complete": true,
   "execute_started": true,
   "reflect_complete": false,
-  "sourceTool": "opencode",
-  "last_updated": "2026-07-13T23:30:00Z",
-  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Changes 1 (license), 2 (coverage), 3 (test-quality), 4 (central-uar-error-enum), and 5 (unwrap-sweep-tracing-error-chains) implementation-complete. Change 5 established module-level clippy guards on src/uar/api/, src/uar/runtime/, and src/server.rs; refactored production hot-path unwraps/expects to zero; added request-span middleware with request_id/agent_id/run_id; wired Sentry release build; and added docs/observability.md. Full-workspace clippy -- -D warnings remains deferred (511 pre-existing unrelated warnings).",
-  "operator_priority": "Operator redirected KBD to this phase ahead of the soak-run phase (2026-07-13): close Grade-A gaps first, soak/tag/install/GA resumes once code-complete here. Changes 1-5 implementation done. Next change is Change 6 (config-rs-schemars-migration) assigned to Claude Code + Sonnet 5 -- FOURTH HARNESS SWITCH of the phase.",
+  "sourceTool": "codex",
+  "last_updated": "2026-07-14T00:00:00-05:00",
+  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Changes 1-8 implementation-complete (8/25 by count). Change 7 (config-hot-reload-vault) implemented by OpenCode + Kimi K2.7 Coding: added ConfigManager with arc-swap + notify hot-reload, --strict-config mode, optional vault feature with vaultrs KV-v2 source, POST /.well-known/uar-config/reload admin endpoint, and unit tests.",
+  "operator_priority": "Operator redirected KBD to this phase ahead of the soak-run phase (2026-07-13): close Grade-A gaps first, soak/tag/install/GA resumes once code-complete here. Changes 1-8 implementation done. Next queued work is Change 9-11 (SDKs, Codex + GPT-5.6 worktrees) per plan.md's dependency graph.",
   "implementation_total": 25,
-  "implementation_completed": 5,
+  "implementation_completed": 8,
   "completion": {
     "primaryCounter": "implementation",
-    "implementation": { "completed": 5, "total": 25, "status": "IN_PROGRESS" },
+    "implementation": { "completed": 8, "total": 25, "status": "IN_PROGRESS" },
     "evidence": { "status": "NOT_TRACKED", "summary": null, "blockers": [] },
     "certification": { "status": "NOT_TRACKED", "summary": null, "blockers": [] },
     "publication": { "status": "NOT_TRACKED", "summary": null, "blockers": [] }
+  },
+  "active_dispatches": {
+    "sdk-rust-1.0": {
+      "status": "IN_PROGRESS",
+      "started_by": "codex",
+      "worktree": "/Users/gqadonis/.claude/worktrees/sdk-rust-1-0",
+      "branch": "feat/sdk-rust-1.0",
+      "base": "b9a85515"
+    },
+    "sdk-python-1.0": {
+      "status": "IN_PROGRESS",
+      "started_by": "codex",
+      "worktree": "/Users/gqadonis/.claude/worktrees/sdk-python-1-0",
+      "branch": "feat/sdk-python-1.0",
+      "base": "b9a85515"
+    },
+    "sdk-typescript-1.0": {
+      "status": "IN_PROGRESS",
+      "started_by": "codex",
+      "worktree": "/Users/gqadonis/.claude/worktrees/sdk-typescript-1-0",
+      "branch": "feat/sdk-typescript-1.0",
+      "base": "b9a85515"
+    }
   },
   "deliverables": {
     "analysis_md": "analysis.md",
@@ -28,13 +51,13 @@
       "openspec/changes/coverage-cargo-llvm-cov-60pct/{proposal.md, tasks.md, specs/coverage-baseline/spec.md}",
       "openspec/changes/test-quality-mutation-fuzz-property/{proposal.md, tasks.md, specs/test-quality-gates/spec.md}",
       "openspec/changes/central-uar-error-enum/{proposal.md, tasks.md, specs/uar-error-model/spec.md}",
-      "openspec/changes/unwrap-sweep-tracing-error-chains/{proposal.md, tasks.md, specs/uar-observability-errors/spec.md}"
+      "openspec/changes/unwrap-sweep-tracing-error-chains/{proposal.md, tasks.md, specs/uar-observability-errors/spec.md}",
+      "openspec/changes/config-rs-schemars-migration/{proposal.md, tasks.md, specs/uar-config-model/spec.md}",
+      "openspec/changes/slsa-l3-osv-grype-security-txt/{proposal.md, tasks.md, specs/slsa-l3-self-attestation/spec.md}",
+      "openspec/changes/config-hot-reload-vault/{proposal.md, tasks.md, specs/config-hot-reload/spec.md}"
     ],
-    "openspec_changes_with_proposals_note": "central-uar-error-enum moved from pending_proposal to with_proposals in the prior entry above (its proposal/tasks/spec already existed pre-phase). unwrap-sweep-tracing-error-chains was created and validated during Change 5 implementation.",
+    "openspec_changes_with_proposals_note": "config-hot-reload-vault (Change 7) proposal, tasks, and spec created and validated during this implementation. The change is now implementation-complete.",
     "openspec_changes_pending_proposal": [
-      "config-rs-schemars-migration",
-      "config-hot-reload-vault",
-      "slsa-l3-osv-grype-security-txt",
       "sdk-rust-1.0",
       "sdk-python-1.0",
       "sdk-typescript-1.0",
@@ -66,5 +89,5 @@
     "bulk_implementation": "OpenCode + Kimi K2.7 Coding (~30% of hours, 200h)",
     "parallel_isolated": "Codex + GPT-5.6 in git worktrees (~20% of hours, 130h)"
   },
-  "next_step": "Changes 1-5 implementation-complete (5/25). Deferred evidence/follow-up items per change: 1 (pricing bands deferred, contributor-audit confirmation, PR merge), 2 (real baseline numbers, real-PR verification), 3 (first cargo-fuzz build/runtime), 4 (tracing::span! completeness sweep now addressed by Change 5 middleware, full-workspace fmt/clippy still deferred, and the corrected-scope anyhow!()/typed-error call-site sweep as candidate future work), 5 (full-workspace `cargo clippy -- -D warnings` has 511 pre-existing unrelated warnings; consolidated validation pass will address them) -- all deferred to the phase's consolidated validation pass or later, not blocking further implementation per the KBD implementation-first policy. Change 6 (config-rs-schemars-migration) is next: FOURTH HARNESS SWITCH of the phase, to Claude Code + Sonnet 5 from OpenCode + Kimi K2.7 Coding -- must be flagged explicitly before starting."
+  "next_step": "Changes 9-11 are dispatched concurrently to Codex in isolated worktrees. Monitor their KBD/OpenSpec handoffs; integrate only after each branch passes its language-specific verification and the completed Changes 6-8 are reconciled."
 }

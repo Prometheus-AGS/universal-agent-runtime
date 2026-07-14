@@ -145,6 +145,8 @@ sqlx = ["dep:sqlx"]
 
 tauri = []
 wasm-runtime = ["dep:wasmtime", "dep:wasmtime-wasi"]
+## HashiCorp Vault KV-v2 config source. Off by default; enables `vault://...` URLs.
+vault = ["dep:vaultrs"]
 
 
 [dependencies]
@@ -290,6 +292,13 @@ opentelemetry_sdk = { version = "0.32.1", optional = true, features = ["rt-tokio
 metrics = { version = "0.24.3", optional = true }
 metrics-exporter-prometheus = { version = "0.18.1", optional = true }
 config = "0.15.22"
+# JSON Schema generation for AppConfig, exposed at GET /.well-known/uar-config
+# (openspec/changes/config-rs-schemars-migration).
+schemars = "1"
+# Lock-free runtime config hot-reload (openspec/changes/config-hot-reload-vault).
+arc-swap = "1.6"
+# Optional HashiCorp Vault KV-v2 source, gated behind the `vault` feature.
+vaultrs = { version = "0.8", optional = true }
 ## Pinned to =3.2.0 (exact) so UAR, librefang, and surreal-memory all link
 ## the same SurrealDB client crate. See Phase 4b of the
 ## librefang `surrealdb-storage-swap` plan for the matching workspace pin.

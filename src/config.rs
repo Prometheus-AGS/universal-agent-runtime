@@ -6,7 +6,10 @@ use std::collections::HashMap;
 use std::env;
 use std::time::Duration;
 
-#[derive(Parser, Debug)]
+#[cfg(feature = "vault")]
+pub mod vault;
+
+#[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// Config file path
@@ -92,6 +95,10 @@ pub struct Cli {
     /// Optional subcommand. When omitted, the binary starts the server.
     #[command(subcommand)]
     pub command: Option<Command>,
+
+    /// Treat config source conflicts (e.g., env var vs config file) as hard errors.
+    #[arg(long, env = "UAR_STRICT_CONFIG")]
+    pub strict_config: bool,
 }
 
 /// Top-level binary subcommands. Absent ⇒ run the server (default).
@@ -155,7 +162,7 @@ pub enum EvalAction {
     },
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct AppConfig {
     pub server: ServerConfig,
     pub security: SecurityConfig,
@@ -216,7 +223,7 @@ pub struct AppConfig {
     pub context_strategy: crate::uar::context::ContextStrategy,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct ServerConfig {
     pub port: u16,
     pub host: String,
@@ -244,7 +251,7 @@ impl ServerConfig {
     }
 }
 
-#[derive(Debug, Deserialize, Clone, Default)]
+#[derive(Debug, Deserialize, Clone, Default, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum LogFormat {
     #[default]
@@ -264,10 +271,17 @@ fn redact_opt(value: &Option<String>) -> Option<&'static str> {
     value.as_ref().map(|_| REDACTED)
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, schemars::JsonSchema)]
 pub struct SecurityConfig {
     pub jwt_required: bool,
-    pub jwt_secret: String,
+    /// The JWT signing secret. Wrapped in `SecretString` (rather than a
+    /// plain `String`) so the value cannot be accidentally logged or
+    /// serialized — callers must explicitly `secrecy::ExposeSecret::expose_secret()`.
+    /// The generated JSON Schema represents this as an opaque `string`
+    /// (`#[schemars(with = "String")]`) since `SecretString` intentionally
+    /// has no `JsonSchema`/`Serialize` impl of its own.
+    #[schemars(with = "String")]
+    pub jwt_secret: secrecy::SecretString,
     /// When true (default), `PUT`/`POST`/`DELETE` on `/api/uar/settings` require the
     /// `X-UAR-Admin-Key` header (value may be any non-empty use of the header today).
     /// Set to `false` for trusted local development only.
@@ -294,7 +308,7 @@ impl SecurityConfig {
     }
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct ResilienceConfig {
     pub rate_limit_enabled: bool,
     #[serde(default)]
@@ -377,7 +391,7 @@ impl ResilienceConfig {
     }
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, schemars::JsonSchema)]
 pub struct PersistenceConfig {
     pub provider: String,
     pub database_url: String,
@@ -417,7 +431,7 @@ impl std::fmt::Debug for PersistenceConfig {
 }
 
 /// Configuration for file processing and uploads.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct FileProcessingConfig {
     /// Provider to use: "kreuzberg" (local), "auto", "unstructured", "mistral", "local"
     pub provider: String,
@@ -451,7 +465,7 @@ impl Default for FileProcessingConfig {
 }
 
 /// Unstructured.io configuration (hosted or self-hosted).
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct UnstructuredConfig {
     /// API URL (default: hosted service)
     #[serde(default = "UnstructuredConfig::default_api_url")]
@@ -476,7 +490,7 @@ impl Default for UnstructuredConfig {
 }
 
 /// Mistral OCR configuration.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct MistralConfig {
     /// Mistral API key
     pub api_key: Option<String>,
@@ -503,7 +517,7 @@ impl Default for MistralConfig {
 /// Kreuzberg text-chunking configuration for RAG pipelines.
 /// Field names use Rust conventions (max_characters/overlap) — differs from the
 /// Python SDK (max_chars/max_overlap). See kreuzberg SKILL.md pitfalls.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct KreuzbergChunkingConfig {
     /// Maximum characters per chunk (default: 1000)
     #[serde(default = "KreuzbergChunkingConfig::default_max_characters")]
@@ -534,7 +548,7 @@ impl Default for KreuzbergChunkingConfig {
 /// Kreuzberg local file processing configuration.
 /// Kreuzberg is a high-performance document intelligence framework with a Rust core.
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct KreuzbergConfig {
     /// Enable OCR for scanned documents and images
     #[serde(default = "KreuzbergConfig::default_ocr_enabled")]
@@ -628,7 +642,7 @@ impl Default for KreuzbergConfig {
 }
 
 /// Vision/Image processing configuration.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct VisionConfig {
     /// Explicit vision model (overrides auto-detection)
     pub model: Option<String>,
@@ -653,7 +667,7 @@ impl Default for VisionConfig {
 }
 
 /// Model files configuration (tokenizer, embeddings, etc.).
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct ModelsConfig {
     /// Directory containing model files (tokenizer.json, etc.)
     #[serde(default = "ModelsConfig::default_models_dir")]
@@ -688,7 +702,7 @@ impl Default for ModelsConfig {
 // =============================================================================
 
 /// Top-level configuration for knowledge bases.
-#[derive(Debug, Deserialize, Clone, Default)]
+#[derive(Debug, Deserialize, Clone, Default, schemars::JsonSchema)]
 pub struct KnowledgeBasesConfig {
     /// Default knowledge base configuration (always exists)
     #[serde(default)]
@@ -699,7 +713,7 @@ pub struct KnowledgeBasesConfig {
 }
 
 /// Configuration for a single knowledge base.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct KnowledgeBaseConfig {
     /// Unique name for the knowledge base
     pub name: String,
@@ -738,7 +752,7 @@ impl KnowledgeBaseConfig {
 }
 
 /// Chunking strategy configuration.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct ChunkingConfig {
     /// Strategy: "fixed", "recursive", "token", "sentence", "semantic", "document"
     #[serde(default = "ChunkingConfig::default_strategy")]
@@ -776,7 +790,7 @@ impl Default for ChunkingConfig {
 // =============================================================================
 
 /// Configuration for the in-process agent memory system, backed by surreal-memory + SurrealDB/SurrealKV.
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, schemars::JsonSchema)]
 pub struct MemoryConfig {
     /// Enable the memory system (default: false — opt-in).
     #[serde(default)]
@@ -931,7 +945,7 @@ impl Default for MemoryConfig {
 // =============================================================================
 
 /// Configuration for the sandboxed code-execution subsystem.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, schemars::JsonSchema)]
 pub struct SandboxRuntimeConfig {
     /// Runner selection: "auto", "wasmtime", "remote".
     #[serde(default = "SandboxRuntimeConfig::default_runner")]
@@ -1276,6 +1290,18 @@ impl AppConfig {
             Cli::try_parse_from(args).map_err(|e| config::ConfigError::Message(e.to_string()))?;
         Self::load_with_cli(cli)
     }
+
+    /// The canonical JSON Schema for `AppConfig`, generated at call time from
+    /// the live struct definitions via `schemars`. Exposed at
+    /// `GET /.well-known/uar-config`; codegen'd into SDK types via
+    /// `pnpm generate-config-types`. Secret fields (e.g. `jwt_secret`) are
+    /// represented as opaque `string`s in the schema — the schema describes
+    /// shape, not values.
+    #[must_use]
+    pub fn json_schema() -> serde_json::Value {
+        let schema = schemars::schema_for!(AppConfig);
+        serde_json::to_value(schema).unwrap_or(serde_json::Value::Null)
+    }
 }
 
 /// Load just the merged [`LlmConfig`] from all layered configuration sources.
@@ -1337,7 +1363,7 @@ pub fn build_client_config(llm: &LlmConfig) -> liter_llm::ClientConfig {
 /// Settings are loaded from all layers via [`load_llm_config`]:
 /// compiled defaults → `config.yaml` `llm:` section → `UAR_LLM__*` env vars →
 /// `LLM_*` legacy env vars → CLI arguments.
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct LlmConfig {
     /// Default model in `provider/model` format (e.g., `"openai/gpt-4o"`).
     #[serde(default = "LlmConfig::default_model")]
@@ -1477,7 +1503,7 @@ impl Default for LlmConfig {
 }
 
 /// Cache configuration for the liter-llm Tower middleware.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct LlmCacheConfig {
     /// Maximum number of cached entries.
     #[serde(default = "LlmCacheConfig::default_max_entries")]
@@ -1497,7 +1523,7 @@ impl LlmCacheConfig {
 }
 
 /// Budget enforcement configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct LlmBudgetConfig {
     /// Global spending limit in USD.
     pub global_limit: f64,
@@ -1516,7 +1542,7 @@ impl LlmBudgetConfig {
 }
 
 /// Rate limiting configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct LlmRateLimitConfig {
     /// Requests per minute.
     #[serde(default)]
@@ -1531,6 +1557,45 @@ mod tests {
     use super::*;
     use std::fs;
     use std::path::PathBuf;
+
+    #[test]
+    fn json_schema_describes_the_top_level_shape() {
+        let schema = AppConfig::json_schema();
+        let properties = schema
+            .get("properties")
+            .expect("schema must have a properties object");
+        for field in ["server", "security", "llm", "context_strategy"] {
+            assert!(
+                properties.get(field).is_some(),
+                "expected top-level field `{field}` in the generated schema"
+            );
+        }
+    }
+
+    #[test]
+    fn json_schema_hides_the_jwt_secret_value_behind_an_opaque_string() {
+        let schema = AppConfig::json_schema();
+        let security = schema["properties"]["security"].clone();
+        // `$ref`-based schemas point at `definitions`/`$defs`; resolve the
+        // reference the same way a schema consumer would.
+        let security_schema = if let Some(reference) = security.get("$ref") {
+            let pointer = reference
+                .as_str()
+                .expect("$ref must be a string")
+                .trim_start_matches('#');
+            schema
+                .pointer(pointer)
+                .cloned()
+                .expect("schema must resolve the $ref for SecurityConfig")
+        } else {
+            security
+        };
+        let jwt_secret_schema = &security_schema["properties"]["jwt_secret"];
+        assert_eq!(
+            jwt_secret_schema["type"], "string",
+            "jwt_secret must be described as an opaque string, not the internal SecretString shape"
+        );
+    }
 
     fn base_cli() -> (Cli, PathBuf) {
         let cfg_path = write_test_config_file();
@@ -1556,6 +1621,7 @@ mod tests {
                 acp_enabled: None,
                 acp_path: None,
                 command: None,
+                strict_config: false,
             },
             cfg_path,
         )
@@ -1657,7 +1723,7 @@ persistence:
 // =============================================================================
 
 /// Selection strategy for picking the next provider when the primary fails.
-#[derive(Debug, Deserialize, Clone, Default, Serialize, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Clone, Default, Serialize, PartialEq, Eq, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum FailoverStrategy {
     /// Try each fallback in declared priority order (default).
@@ -1670,7 +1736,7 @@ pub enum FailoverStrategy {
 }
 
 /// A single entry in the ordered fallback model list.
-#[derive(Debug, Deserialize, Clone, Serialize)]
+#[derive(Debug, Deserialize, Clone, Serialize, schemars::JsonSchema)]
 pub struct FallbackModel {
     /// Model in `provider/model` format, e.g. `"openrouter/anthropic/claude-3.5-sonnet"`.
     pub model: String,
@@ -1687,7 +1753,7 @@ pub struct FallbackModel {
 /// When the primary model returns a non-retryable error (hard 4xx, provider
 /// outage), the orchestrator attempts each `fallback_models` entry in order.
 /// Failed providers enter a cooldown window and are skipped until recovered.
-#[derive(Debug, Deserialize, Clone, Serialize)]
+#[derive(Debug, Deserialize, Clone, Serialize, schemars::JsonSchema)]
 pub struct FailoverConfig {
     /// Enable runtime model failover (default: false — opt-in).
     #[serde(default)]
@@ -1735,7 +1801,7 @@ impl Default for FailoverConfig {
 ///
 /// Native tools bypass MCP serialization for maximum performance. Each category
 /// can be independently enabled/disabled and security-scoped.
-#[derive(Debug, Deserialize, Clone, Serialize)]
+#[derive(Debug, Deserialize, Clone, Serialize, schemars::JsonSchema)]
 pub struct NativeToolsConfig {
     // --- File system tools ---
     /// Enable file_read / file_write / file_patch (default: false — opt-in).
@@ -1850,7 +1916,7 @@ impl Default for NativeToolsConfig {
 /// on whether a reusable skill should be extracted from the interaction. Agent
 /// responses containing a `skill_create` tool call are automatically registered
 /// in the `SkillService`.
-#[derive(Debug, Deserialize, Clone, Serialize)]
+#[derive(Debug, Deserialize, Clone, Serialize, schemars::JsonSchema)]
 pub struct SkillEvolutionConfig {
     /// Enable the skill evolution loop (default: false — opt-in).
     #[serde(default)]
@@ -1918,7 +1984,7 @@ impl Default for SkillEvolutionConfig {
 ///
 /// Controls whether LLM responses are checked for sycophantic patterns and
 /// at what threshold corrections are applied.
-#[derive(Debug, Deserialize, Clone, Serialize)]
+#[derive(Debug, Deserialize, Clone, Serialize, schemars::JsonSchema)]
 pub struct SycophancyConfig {
     /// Enable sycophancy detection on LLM responses (default: true).
     #[serde(default = "SycophancyConfig::default_enabled")]
@@ -1971,7 +2037,7 @@ impl Default for SycophancyConfig {
 
 /// Input guardrail configuration: heuristic prompt-injection and PII/secret
 /// screening of chat input before the LLM call.
-#[derive(Debug, Deserialize, Clone, Serialize)]
+#[derive(Debug, Deserialize, Clone, Serialize, schemars::JsonSchema)]
 pub struct GuardrailsConfig {
     /// Screen chat input for injection/PII patterns (default: true). Screening
     /// is non-blocking by default, so enabling it only adds flag events/metrics.
@@ -2006,7 +2072,7 @@ impl Default for GuardrailsConfig {
 
 /// interface for agent introspection, session management, and streaming run
 /// execution — used by IDEs, debuggers, and the BeeAI platform.
-#[derive(Debug, Deserialize, Clone, Serialize)]
+#[derive(Debug, Deserialize, Clone, Serialize, schemars::JsonSchema)]
 pub struct AcpConfig {
     /// Enable the ACP endpoint (default: false — opt-in).
     #[serde(default)]

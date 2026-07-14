@@ -12,11 +12,12 @@
 //! - Forces JSON log format to avoid ANSI noise in the Electron logger.
 
 use std::io::Write as _;
-use std::sync::Arc;
 
+use clap::Parser as _;
 use dotenvy::dotenv;
 use tokio::io::AsyncReadExt as _;
-use universal_agent_runtime::config::{AppConfig, LogFormat};
+use universal_agent_runtime::config::{Cli, LogFormat};
+use universal_agent_runtime::config_manager::ConfigManager;
 use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
 
@@ -59,8 +60,8 @@ async fn main() {
         std::env::set_var("UAR_SERVER__PORT", port.to_string());
     }
 
-    let config = match AppConfig::load() {
-        Ok(c) => Arc::new(c),
+    let config_manager = match ConfigManager::load(Cli::parse()).await {
+        Ok(m) => m,
         Err(e) => {
             tracing::error!("Failed to load configuration: {:?}", e);
             std::process::exit(1);
@@ -68,7 +69,7 @@ async fn main() {
     };
 
     let (ready_tx, mut ready_rx) = tokio::sync::oneshot::channel();
-    let server = server::start_server_sidecar(config, listener, ready_tx);
+    let server = server::start_server_sidecar(config_manager, listener, ready_tx);
     tokio::pin!(server);
     let ready_addr = tokio::select! {
         ready = &mut ready_rx => match ready {

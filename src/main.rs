@@ -10,8 +10,8 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 use clap::Parser as _;
 use dotenvy::dotenv;
-use std::sync::Arc;
-use universal_agent_runtime::config::{AppConfig, Cli, Command, LogFormat};
+use universal_agent_runtime::config::{Cli, Command, LogFormat};
+use universal_agent_runtime::config_manager::ConfigManager;
 use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
 
@@ -35,23 +35,39 @@ async fn main() {
     uar::telemetry::metrics::init();
 
     let mut cli = Cli::parse();
-    // Take the subcommand out before consuming `cli`; `load_with_cli` ignores it.
+    // Take the subcommand out before consuming `cli`; load_with_cli ignores it.
     let command = cli.command.take();
+    let strict_config = cli.strict_config;
 
-    let config = match AppConfig::load_with_cli(cli) {
-        Ok(c) => Arc::new(c),
+    let config_manager = match ConfigManager::load(cli).await {
+        Ok(m) => {
+            // Strict mode is enabled if the operator passed `--strict-config` or set
+            // `UAR_STRICT_CONFIG=true`. It makes any runtime reload that would change
+            // the effective configuration an error.
+            if strict_config {
+                m.set_strict(true);
+            }
+            m
+        }
         Err(e) => {
             tracing::error!("Failed to load configuration: {:?}", e);
             eprintln!("Failed to load configuration: {e:?}");
             std::process::exit(1);
         }
     };
-    tracing::info!("Configuration loaded: {:?}", config);
+    if config_manager.watched_path().is_some() {
+        tracing::info!(
+            "Configuration loaded and watching {}",
+            config_manager.watched_path().unwrap().display()
+        );
+    } else {
+        tracing::info!("Configuration loaded");
+    }
 
     match command {
         // Default (no subcommand): run the server, unchanged.
         None => {
-            let server_result = server::start_server(config).await;
+            let server_result = server::start_server(config_manager).await;
 
             // Flush buffered OTLP spans before exit.
             if let Some(provider) = &otel_provider {
@@ -66,7 +82,7 @@ async fn main() {
         }
         // `eval …`: run the harness and exit with its status code (CI gate).
         Some(Command::Eval { action }) => {
-            let code = uar::eval::cli::run_eval(&config, &action).await;
+            let code = uar::eval::cli::run_eval(&config_manager.current(), &action).await;
 
             // Flush buffered OTLP spans before the hard exit.
             if let Some(provider) = &otel_provider {

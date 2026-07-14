@@ -1,28 +1,30 @@
 # Current Waypoint
 
-**Phase**: `perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion`
-**Stage**: `plan_complete`
-**Updated**: 2026-07-13T19:40:00Z
-**Previous phase**: `uar-final-production-hardening-2026-07`
+**Phase**: `uar-grade-a-upgrade-2026-07`
+**Stage**: `execute_in_progress`
+**Updated**: 2026-07-14
+**Previous phase**: `perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion` (paused)
 
 ## Summary
 
-Assessment found UAR not customer-ready (6 CRITICAL / 7 HIGH / 8 MEDIUM). Operator
-decision D1: 1.0 is multi-tenant — user-isolation fixes come first. Plan complete:
-14 ordered changes (10 new, openspec-validated; 4 carried certification changes that
-must be rerun after source changes land).
+Changes 1–8 are implementation-complete. Changes 9–11 are concurrently
+dispatched to Codex in three isolated worktrees from checkpoint `b9a85515`.
+KBD progress and the three OpenSpec task ledgers are canonical.
+
+## Active dispatches
+
+- `sdk-rust-1.0` → `/Users/gqadonis/.claude/worktrees/sdk-rust-1-0` (`feat/sdk-rust-1.0`)
+- `sdk-python-1.0` → `/Users/gqadonis/.claude/worktrees/sdk-python-1-0` (`feat/sdk-python-1.0`)
+- `sdk-typescript-1.0` → `/Users/gqadonis/.claude/worktrees/sdk-typescript-1-0` (`feat/sdk-typescript-1.0`)
 
 ## Next action
 
-```
-/kbd-execute
-```
-
-First change: `fix-user-isolation-sessions-memory-kb` (C1 threads, C2 memory IDOR,
-C3 global KBs).
+Monitor the three isolated implementations. Do not merge until focused
+verification, strict OpenSpec validation, artifact-refiner QA, and integration
+reconciliation with the uncommitted Changes 6–8 are complete.
 
 ## References
 
-- [plan.md](phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/plan.md)
-- [assessment.md](phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/assessment.md)
-- [decision-log.md](phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/decision-log.md)
+- [plan.md](phases/uar-grade-a-upgrade-2026-07/plan.md)
+- [execution.md](phases/uar-grade-a-upgrade-2026-07/execution.md)
+- [progress.json](phases/uar-grade-a-upgrade-2026-07/progress.json)

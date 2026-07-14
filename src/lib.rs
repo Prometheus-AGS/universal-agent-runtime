@@ -30,6 +30,7 @@
 #![allow(clippy::unused_async)]
 
 pub mod config;
+pub mod config_manager;
 pub mod llm;
 pub mod mcp;
 pub mod normalized;
@@ -42,6 +43,7 @@ pub mod uar;
 pub use uar::error::{Result, UarError};
 
 use crate::config::AppConfig;
+use crate::config_manager::ConfigManager;
 use crate::uar::security::rate_limit::AppRateLimiter;
 
 use llm::orchestrator::Orchestrator;
@@ -87,6 +89,8 @@ pub struct AppState {
     pub rate_limiter: Arc<AppRateLimiter>,
     /// Global Configuration
     pub config: Arc<AppConfig>,
+    /// Live, reloadable configuration manager.
+    pub config_manager: Arc<ConfigManager>,
     /// Skill Service
     pub skill_service: Arc<SkillService>,
     /// Provider Registry for multi-provider LLM management

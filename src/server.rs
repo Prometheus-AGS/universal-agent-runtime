@@ -13,6 +13,7 @@ use axum::{
 };
 use chrono::Utc;
 use futures::StreamExt as _;
+use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -29,7 +30,7 @@ use tower_http::trace::TraceLayer;
 use tracing::{Instrument, info, warn};
 
 use crate::AppState;
-use crate::config::AppConfig;
+use crate::config_manager::ConfigManager;
 use crate::llm::{LlmDriver, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
@@ -104,17 +105,18 @@ async fn request_span_layer(request: Request, next: Next) -> Response {
     next.run(request).instrument(span).await
 }
 
-/// Start the Axum server with the provided configuration.
-pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
-    start_server_with_listener(config, None, None).await
+/// Start the Axum server with the provided configuration manager.
+pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<()> {
+    start_server_with_listener(config_manager, None, None).await
 }
 
 #[expect(clippy::expect_used, reason = "init-time fatal configuration failure")]
 async fn start_server_with_listener(
-    config: Arc<AppConfig>,
+    config_manager: Arc<ConfigManager>,
     listener: Option<tokio::net::TcpListener>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
 ) -> anyhow::Result<()> {
+    let config = config_manager.current();
     let mut llm_config = config.llm.clone();
     normalize_legacy_openai_base_url(&mut llm_config);
     info!(
@@ -577,7 +579,7 @@ async fn start_server_with_listener(
         Arc::new(InMemoryApiKeyStorage::new());
     let api_key_service = Arc::new(ApiKeyService::new(
         Arc::clone(&api_key_storage),
-        &config.security.jwt_secret,
+        config.security.jwt_secret.expose_secret(),
     ));
     info!("API key service initialized");
 
@@ -678,7 +680,8 @@ async fn start_server_with_listener(
         vector_matcher: Arc::clone(&vector_matcher),
         persistence: persistence.clone(),
         rate_limiter,
-        config: Arc::clone(&config),
+        config: config_manager.current(),
+        config_manager: Arc::clone(&config_manager),
         skill_service: Arc::clone(&skill_service),
         provider_registry: Arc::clone(&provider_registry),
         model_router: Arc::new(crate::llm::ModelRouter::new(Arc::clone(&provider_registry))),
@@ -731,7 +734,7 @@ async fn start_server_with_listener(
                 100, // max queue depth
                 Arc::clone(ingest),
                 Arc::clone(p),
-                Arc::clone(&config),
+                config_manager.current(),
             ) {
                 Ok(pool) => {
                     info!("Shared ingestion worker pool initialized (single instance)");
@@ -793,6 +796,12 @@ async fn start_server_with_listener(
         .route("/health", get(liveness_handler))
         .route("/healthz", get(liveness_handler))
         .route("/readyz", get(readiness_handler))
+        .route("/.well-known/uar-config", get(uar_config_schema_handler))
+        .route(
+            "/.well-known/uar-config/reload",
+            post(uar_config_reload_handler),
+        )
+        .route("/.well-known/security.txt", get(security_txt_handler))
         .route("/api/models", get(api_models))
         .route("/api/catalog", get(api_catalog))
         .route("/api/uar/route", post(api_route_model))
@@ -1274,11 +1283,11 @@ async fn bind_companion_listener(host: &str, port: u16) -> Option<tokio::net::Tc
 /// Returns an error when runtime initialization or serving fails, or when the
 /// supervising process drops the readiness receiver before startup completes.
 pub async fn start_server_sidecar(
-    config: Arc<AppConfig>,
+    config_manager: Arc<ConfigManager>,
     listener: tokio::net::TcpListener,
     ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
 ) -> anyhow::Result<()> {
-    start_server_with_listener(config, Some(listener), Some(ready)).await
+    start_server_with_listener(config_manager, Some(listener), Some(ready)).await
 }
 
 async fn serve_on_listener(
@@ -1556,6 +1565,58 @@ async fn resolve_effective_resilience_policy(
 /// Returns 200 if the process can serve HTTP.
 pub(crate) async fn liveness_handler() -> Json<Value> {
     Json(json!({"status": "ok"}))
+}
+
+/// Serves an RFC 9116 `security.txt` at `GET /.well-known/security.txt`,
+/// mirroring the reporting channel and disclosure SLA already documented in
+/// `SECURITY.md`. Points at GitHub's private vulnerability reporting (the
+/// project's actual reporting mechanism) rather than an email/PGP key, since
+/// that is what this project actually uses.
+pub(crate) async fn security_txt_handler()
+-> ([(axum::http::HeaderName, &'static str); 1], &'static str) {
+    // `Expires` per RFC 9116 SHOULD be no more than a year out; rotate this
+    // value at least annually (operator task) — it does not update itself.
+    const BODY: &str = "\
+Contact: https://github.com/Prometheus-AGS/universal-agent-runtime/security/advisories/new
+Expires: 2027-07-14T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/SECURITY.md
+Policy: https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/SECURITY.md
+";
+    (
+        [(
+            axum::http::header::CONTENT_TYPE,
+            "text/plain; charset=utf-8",
+        )],
+        BODY,
+    )
+}
+
+/// Serves the canonical JSON Schema for `AppConfig` — see
+/// [`crate::config::AppConfig::json_schema`].
+pub(crate) async fn uar_config_schema_handler() -> Json<Value> {
+    Json(crate::config::AppConfig::json_schema())
+}
+
+/// Trigger an explicit configuration reload. Requires the `X-UAR-Admin-Key`
+/// header when `security.settings_mutation_auth_required` is enabled.
+async fn uar_config_reload_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Result<Json<Value>, StatusCode> {
+    if state.config.security.settings_mutation_auth_required
+        && !headers.contains_key("x-uar-admin-key")
+    {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    match state.config_manager.reload().await {
+        Ok(()) => Ok(Json(crate::config::AppConfig::json_schema())),
+        Err(e) => {
+            tracing::error!(name: "config.reload.endpoint_failed", error = %e, "Config reload endpoint failed");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }
 
 /// Readiness probe — verifies core dependencies are operational.
@@ -5101,6 +5162,16 @@ mod tests {
     fn ensure_toolu_id_prefixes_non_prefixed_ids() {
         assert_eq!(ensure_toolu_id("abc"), "toolu_abc");
         assert_eq!(ensure_toolu_id("toolu_xyz"), "toolu_xyz");
+    }
+
+    #[tokio::test]
+    async fn security_txt_has_the_required_rfc9116_fields() {
+        let (headers, body) = security_txt_handler().await;
+        assert_eq!(headers[0].1, "text/plain; charset=utf-8");
+        assert!(body.contains("Contact: https://"));
+        assert!(body.contains("Expires: "));
+        // A real reporting channel, not a fabricated email/PGP key.
+        assert!(body.contains("security/advisories/new"));
     }
 
     #[test]
