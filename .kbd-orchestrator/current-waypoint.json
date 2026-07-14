@@ -3,7 +3,7 @@
   "status": "executing",
   "stage": "execute_in_progress",
   "executionMode": "operator-directed-grade-a-upgrade",
-  "progress": "Operator redirected KBD to this phase ahead of perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion (paused, not abandoned). Changes 1-11, 12, 13, 14, 15, 16, and 17 are merged into main. Change 18 (a2ui-migrate-entity-components-from-prometheus-entity-management) is done on branch feat/a2ui-entity-diff-stream but not yet pushed/PR'd. Change 19 (a2ui-migrate-design-systems-embedder-from-flint-forge) is rebased and open as PR #123 for review.",
+  "progress": "Operator redirected KBD to this phase ahead of perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion (paused, not abandoned). Changes 1-19 are merged into main (PRs #112-#123). That's 19/25 merged. Next: Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric).",
   "operatorPriority": "Close all 25 Grade-A gaps before resuming soak run / candidate tag / external installs / GA promotion. Explicitly call out every harness switch from the plan.md per-change matrix before starting that change's work.",
   "harnessMatrix": {
     "current": "Codex (authorized sixth harness switch): Changes 9-11 dispatched concurrently in isolated worktrees.",
@@ -43,23 +43,9 @@
     "docs-cookbook-12-examples",
     "docs-storybook-visual-regression-perf-budget"
   ],
-  "currentTask": "Change 18 done on branch feat/a2ui-entity-diff-stream; Change 19 in PR #123. Push/PR Change 18 next.",
-  "nextAction": "Rebase feat/a2ui-entity-diff-stream onto origin/main, push, create PR, and review PR #123.",
-  "activeDispatches": {
-    "a2ui-migrate-entity-components-from-prometheus-entity-management": {
-      "status": "DONE",
-      "branch": "feat/a2ui-entity-diff-stream",
-      "base": "ba7df39",
-      "commit": "da89de0"
-    },
-    "a2ui-migrate-design-systems-embedder-from-flint-forge": {
-      "status": "PR_REVIEW",
-      "pr": 123,
-      "worktree": "/Users/gqadonus/.claude/worktrees/a2ui-design-systems-flint",
-      "branch": "feat/a2ui-design-systems-flint",
-      "rebased_onto": "732c530"
-    }
-  },
+  "currentTask": "Changes 17-19 merged into main; dispatch Change 20.",
+  "nextAction": "Dispatch Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric) from main; verify its dependency_graph_findings (may be more independent than the plan implies).",
+  "activeDispatches": {},
   "authorizationRequired": [
     "Change 1: confirmation that sdks/ has no third-party contributors (audit already run; operator to confirm reading) -- pricing bands deferred, no longer blocking",
     "Change 1: PR review/merge",
@@ -72,14 +58,14 @@
     "Change 8: operator to confirm which registry (ghcr.io vs. ACR/deploy.yml) is canonical before wiring vuln-scan.yml to scan the actual last-published image instead of a locally-rebuilt Dockerfile"
   ],
   "sourceTool": "opencode",
-  "updatedAt": "2026-07-14T18:45:00Z",
+  "updatedAt": "2026-07-14T19:30:00Z",
   "previous_phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "last_updated": "2026-07-14T18:45:00Z",
+  "last_updated": "2026-07-14T19:30:00Z",
   "last_updated_by": "opencode",
-  "exact_next_command": "rebase, push, and PR Change 18 (feat/a2ui-entity-diff-stream); review PR #123 for Change 19",
+  "exact_next_command": "dispatch Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric) from main",
   "fallback_command": "Use each OpenSpec change ledger for clarification and report cross-SDK/runtime contract blockers before expanding scope",
-  "active_change": "a2ui-migrate-entity-components-from-prometheus-entity-management",
-  "next_pending_change": "a2ui-realtime-backbone-from-flint-realtime-fabric",
+  "active_change": "a2ui-realtime-backbone-from-flint-realtime-fabric",
+  "next_pending_change": "a2ui-world-class-theming-a11y-i18n",
   "changes_total": 25,
   "changes_completed": 19
 }
