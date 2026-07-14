@@ -4,6 +4,9 @@ Step: 20 of 25 (dispatch Change 20)
 Stage: execute_in_progress
 Next command: dispatch Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric) from main
 
+Status: Change 20 worktree and OpenSpec scaffold created. Awaiting operator authorization for the
+plan.md harness switch (Claude Code + Sonnet 5) before implementation begins.
+
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 20 of 25)
   [do work]

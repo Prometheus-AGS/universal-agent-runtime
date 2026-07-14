@@ -33,7 +33,14 @@
     "a2ui-migrate-entity-components-from-prometheus-entity-management": { "pr": 122, "merge_commit": "732c530" },
     "a2ui-migrate-design-systems-embedder-from-flint-forge": { "pr": 123, "merge_commit": "4406db2" }
   },
-  "active_dispatches": {},
+  "active_dispatches": {
+    "a2ui-realtime-backbone-from-flint-realtime-fabric": {
+      "branch": "change-20/a2ui-realtime-backbone",
+      "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-realtime-backbone-from-flint-realtime-fabric",
+      "status": "DISPATCHED_AWAITING_HARNESS_AUTHORIZATION",
+      "openspec_change": "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/"
+    }
+  },
   "deliverables": {
     "analysis_md": "analysis.md",
     "library_candidates_json": "library-candidates.json",
@@ -82,4 +89,4 @@
     "parallel_isolated": "Codex + GPT-5.6 in git worktrees (~20% of hours, 130h)"
   },
   "dependency_graph_findings": "Several arrows in plan.md's dependency graph turned out to be soft/aspirational rather than hard code dependencies once each change's actual done-condition was read: Change 15 (embedding backends) doesn't need Change 13 (citation stream); Change 14 (RAG eval) doesn't need Change 13; Change 16 (A2UI vendoring) doesn't need Change 13. This let those changes dispatch and complete well ahead of Change 13. Re-check each remaining 'blocked' change's actual done-condition (not just the graph arrow) before assuming it's truly blocked.",
-  "next_step": "Changes 18 and 19 are now merged (PRs #122 and #123). No dispatches in flight. Next: Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric). Re-check its actual done-condition against dependency_graph_findings before assuming it is blocked by earlier A2UI changes — the same pattern that unblocked Changes 15, 16, and 19. 2 follow-up task chips (Pages deployment conflict and resizable.tsx typecheck break) still pending in separate operator sessions."}
+  "next_step": "Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric) has been dispatched to a new worktree and OpenSpec change scaffold. The plan.md harness matrix assigns it to Claude Code + Sonnet 5; we are currently in OpenCode. Await operator authorization for the harness switch (or explicit override) before implementation begins. 2 follow-up task chips (Pages deployment conflict and resizable.tsx typecheck break) still pending in separate operator sessions.",}

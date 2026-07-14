@@ -43,9 +43,16 @@
     "docs-cookbook-12-examples",
     "docs-storybook-visual-regression-perf-budget"
   ],
-  "currentTask": "Changes 17-19 merged into main; dispatch Change 20.",
-  "nextAction": "Dispatch Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric) from main; verify its dependency_graph_findings (may be more independent than the plan implies).",
-  "activeDispatches": {},
+  "currentTask": "Change 20 dispatched to worktree change-20/a2ui-realtime-backbone; awaiting harness switch authorization.",
+  "nextAction": "Obtain operator authorization for harness switch (Claude Code + Sonnet 5) or override before starting implementation.",
+  "activeDispatches": {
+    "a2ui-realtime-backbone-from-flint-realtime-fabric": {
+      "branch": "change-20/a2ui-realtime-backbone",
+      "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-realtime-backbone-from-flint-realtime-fabric",
+      "status": "DISPATCHED_AWAITING_HARNESS_AUTHORIZATION",
+      "openspec_change": "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/"
+    }
+  },
   "authorizationRequired": [
     "Change 1: confirmation that sdks/ has no third-party contributors (audit already run; operator to confirm reading) -- pricing bands deferred, no longer blocking",
     "Change 1: PR review/merge",
@@ -58,9 +65,9 @@
     "Change 8: operator to confirm which registry (ghcr.io vs. ACR/deploy.yml) is canonical before wiring vuln-scan.yml to scan the actual last-published image instead of a locally-rebuilt Dockerfile"
   ],
   "sourceTool": "opencode",
-  "updatedAt": "2026-07-14T19:30:00Z",
+  "updatedAt": "2026-07-14T20:00:00Z",
   "previous_phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "last_updated": "2026-07-14T19:30:00Z",
+  "last_updated": "2026-07-14T20:00:00Z",
   "last_updated_by": "opencode",
   "exact_next_command": "dispatch Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric) from main",
   "fallback_command": "Use each OpenSpec change ledger for clarification and report cross-SDK/runtime contract blockers before expanding scope",
