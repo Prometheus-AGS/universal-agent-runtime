@@ -91,7 +91,7 @@ jobs:
 
       - name: Cache cargo registry
         if: steps.guard.outputs.run == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
