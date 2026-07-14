@@ -38,7 +38,23 @@
       "branch": "change-20/a2ui-realtime-backbone",
       "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-realtime-backbone-from-flint-realtime-fabric",
       "status": "DISPATCHED_AWAITING_HARNESS_AUTHORIZATION",
-      "openspec_change": "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/"
+      "openspec_change": "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/",
+      "harness": "Claude Code + Sonnet 5"
+    },
+    "docs-hosted-rustdoc-typedoc-docusaurus-ia": {
+      "branch": "change-23/docs-hosted-rustdoc-typedoc-docusaurus-ia",
+      "worktree": "/Users/gqadonis/.claude/worktrees/docs-hosted-rustdoc-typedoc-docusaurus-ia",
+      "status": "DISPATCHED_OPENCODE_IMPLEMENTING",
+      "openspec_change": "openspec/changes/docs-hosted-rustdoc-typedoc-docusaurus-ia/",
+      "harness": "OpenCode + K2.7"
+    },
+    "docs-cookbook-12-examples": {
+      "branch": "change-24/docs-cookbook-12-examples",
+      "worktree": "/Users/gqadonis/.claude/worktrees/docs-cookbook-12-examples",
+      "status": "DISPATCHED_OPENCODE_IMPLEMENTING",
+      "openspec_change": "openspec/changes/docs-cookbook-12-examples/",
+      "harness": "OpenCode + K2.7",
+      "note": "Runtime/SDK examples only; A2UI examples blocked pending Changes 21-22."
     }
   },
   "deliverables": {
@@ -89,4 +105,4 @@
     "parallel_isolated": "Codex + GPT-5.6 in git worktrees (~20% of hours, 130h)"
   },
   "dependency_graph_findings": "Several arrows in plan.md's dependency graph turned out to be soft/aspirational rather than hard code dependencies once each change's actual done-condition was read: Change 15 (embedding backends) doesn't need Change 13 (citation stream); Change 14 (RAG eval) doesn't need Change 13; Change 16 (A2UI vendoring) doesn't need Change 13. This let those changes dispatch and complete well ahead of Change 13. Re-check each remaining 'blocked' change's actual done-condition (not just the graph arrow) before assuming it's truly blocked.",
-  "next_step": "Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric) has been dispatched to a new worktree and OpenSpec change scaffold. The plan.md harness matrix assigns it to Claude Code + Sonnet 5; we are currently in OpenCode. Await operator authorization for the harness switch (or explicit override) before implementation begins. 2 follow-up task chips (Pages deployment conflict and resizable.tsx typecheck break) still pending in separate operator sessions.",}
+  "next_step": "Change 20 (a2ui-realtime-backbone) is with Claude Code + Sonnet 5. Changes 23 (docs-hosted-rustdoc-typedoc-docusaurus-ia) and 24 (docs-cookbook-12-examples, runtime/SDK examples only) are now dispatched to OpenCode + K2.7 in isolated worktrees. Implement both; leave A2UI cookbook examples for after Changes 21-22 land. 2 follow-up task chips (Pages deployment conflict and resizable.tsx typecheck break) still pending in separate operator sessions.",,}

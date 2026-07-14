@@ -1,11 +1,12 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-grade-a-upgrade-2026-07
-Step: 20 of 25 (dispatch Change 20)
+Step: 20–24 of 25 (concurrent execution)
 Stage: execute_in_progress
-Next command: dispatch Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric) from main
 
-Status: Change 20 worktree and OpenSpec scaffold created. Awaiting operator authorization for the
-plan.md harness switch (Claude Code + Sonnet 5) before implementation begins.
+Active dispatches:
+- Change 20 (a2ui-realtime-backbone): Claude Code + Sonnet 5 worktree, awaiting harness authorization.
+- Change 23 (docs-hosted-rustdoc-typedoc-docusaurus-ia): OpenCode + K2.7 worktree, implementing.
+- Change 24 (docs-cookbook-12-examples): OpenCode + K2.7 worktree, runtime/SDK examples only.
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 20 of 25)
