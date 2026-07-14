@@ -293,3 +293,41 @@ jobs:
 
       - name: CI grep gates (architectural invariants + aesthetic contract)
         run: bash scripts/ci-grep-gates.sh
+
+  sdk-examples:
+    name: SDK Examples Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry (sdks/rust)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            sdks/rust/target
+          key: ${{ runner.os }}-sdk-rust-cargo-${{ hashFiles('sdks/rust/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-sdk-rust-cargo-
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python SDK
+        working-directory: sdks/python
+        run: pip install -e ".[dev]"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sdks/typescript/package-lock.json
+
+      - name: Run example smoke tests (compile/typecheck; no live server in CI)
+        run: bash tools/validate-examples.sh
