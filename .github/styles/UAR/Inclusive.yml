@@ -1,0 +1,11 @@
+extends: existence
+message: "Consider using inclusive language."
+level: warning
+ignorecase: true
+tokens:
+  - master\b
+  - slave\b
+  - whitelist\b
+  - blacklist\b
+  - sanity\s+check
+  - dummy\s+value

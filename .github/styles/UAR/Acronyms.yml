@@ -1,0 +1,70 @@
+extends: capitalization
+message: "'%s' is not a well-known acronym; define it on first use."
+level: suggestion
+match: $sentence
+style: ALLCAPS
+# Allows common acronyms used in the project.
+exceptions:
+  - API
+  - ADR
+  - AGPL
+  - A2A
+  - A2UI
+  - AGUI
+  - CI
+  - CD
+  - CLI
+  - CPU
+  - CRUD
+  - CVE
+  - DCO
+  - DOM
+  - GA
+  - GDPR
+  - GH
+  - GPU
+  - HTML
+  - HTTP
+  - HTTPS
+  - I18N
+  - IDE
+  - IP
+  - IRSA
+  - JSON
+  - JWT
+  - KB
+  - LLM
+  - MCP
+  - MIT
+  - ML
+  - MVP
+  - OIDC
+  - OSV
+  - PII
+  - PWA
+  - RAG
+  - RFC
+  - RTL
+  - SDK
+  - SLA
+  - SLSA
+  - SME
+  - SOX
+  - SPI
+  - SQL
+  - SSE
+  - SSL
+  - SSO
+  - TLS
+  - TODO
+  - TS
+  - UI
+  - UX
+  - VAT
+  - VCS
+  - VM
+  - WASM
+  - WCAG
+  - XML
+  - YAML
+  - YML
