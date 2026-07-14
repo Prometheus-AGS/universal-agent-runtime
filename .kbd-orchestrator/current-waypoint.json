@@ -3,7 +3,7 @@
   "status": "executing",
   "stage": "execute_in_progress",
   "executionMode": "operator-directed-grade-a-upgrade",
-  "progress": "Operator redirected KBD to this phase ahead of perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion (paused, not abandoned). Changes 1-11, 13, 14, 15, and 16 are merged into main. Changes 12 and 17 are in progress via Claude background agents in isolated worktrees.",
+  "progress": "Operator redirected KBD to this phase ahead of perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion (paused, not abandoned). Changes 1-11, 12, 13, 14, 15, 16, and 17 are merged into main. Change 19 (a2ui-migrate-design-systems-embedder-from-flint-forge) is in progress via a Claude background agent in an isolated worktree.",
   "operatorPriority": "Close all 25 Grade-A gaps before resuming soak run / candidate tag / external installs / GA promotion. Explicitly call out every harness switch from the plan.md per-change matrix before starting that change's work.",
   "harnessMatrix": {
     "current": "Codex (authorized sixth harness switch): Changes 9-11 dispatched concurrently in isolated worktrees.",
@@ -43,9 +43,15 @@
     "docs-cookbook-12-examples",
     "docs-storybook-visual-regression-perf-budget"
   ],
-  "currentTask": "Changes 12 and 17 are rebased, verified, and open as PRs #120 and #121 for review.",
-  "nextAction": "Review PRs #120 (sdk-examples-cookbook-rustdoc) and #121 (a2ui-uar-renderer-on-webcore); merge once CI passes and reconcile Change 18 after merge.",
-  "activeDispatches": {},
+  "currentTask": "Changes 12 and 17 merged; dispatch Change 18 and monitor Change 19.",
+  "nextAction": "Branch Change 18 (a2ui-migrate-entity-components-from-prometheus-entity-management) from main and dispatch; monitor the Change 19 (a2ui-design-systems-flint) worktree.",
+  "activeDispatches": {
+    "a2ui-migrate-design-systems-embedder-from-flint-forge": {
+      "status": "IN_PROGRESS",
+      "worktree": "/Users/gqadonus/.claude/worktrees/a2ui-design-systems-flint",
+      "branch": "feat/a2ui-design-systems-flint"
+    }
+  },
   "authorizationRequired": [
     "Change 1: confirmation that sdks/ has no third-party contributors (audit already run; operator to confirm reading) -- pricing bands deferred, no longer blocking",
     "Change 1: PR review/merge",
@@ -58,14 +64,14 @@
     "Change 8: operator to confirm which registry (ghcr.io vs. ACR/deploy.yml) is canonical before wiring vuln-scan.yml to scan the actual last-published image instead of a locally-rebuilt Dockerfile"
   ],
   "sourceTool": "opencode",
-  "updatedAt": "2026-07-14T16:51:57Z",
+  "updatedAt": "2026-07-14T17:15:00Z",
   "previous_phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "last_updated": "2026-07-14T16:51:57Z",
+  "last_updated": "2026-07-14T17:15:00Z",
   "last_updated_by": "opencode",
-  "exact_next_command": "monitor Claude background dispatches for sdk-examples-cookbook-rustdoc and a2ui-uar-renderer-on-webcore; review/merge each branch once verified",
+  "exact_next_command": "dispatch Change 18 (a2ui-migrate-entity-components-from-prometheus-entity-management) from main and monitor Change 19 (a2ui-design-systems-flint) worktree",
   "fallback_command": "Use each OpenSpec change ledger for clarification and report cross-SDK/runtime contract blockers before expanding scope",
-  "active_change": "pr-review-120-121",
-  "next_pending_change": "a2ui-migrate-entity-components-from-prometheus-entity-management",
+  "active_change": "a2ui-migrate-entity-components-from-prometheus-entity-management",
+  "next_pending_change": "a2ui-realtime-backbone-from-flint-realtime-fabric",
   "changes_total": 25,
-  "changes_completed": 16
+  "changes_completed": 18
 }

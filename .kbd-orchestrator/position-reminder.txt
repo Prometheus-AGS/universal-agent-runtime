@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-grade-a-upgrade-2026-07
-Step: 16 of 25 (PR review)
+Step: 18 of 25 (dispatch Change 18, monitor Change 19)
 Stage: execute_in_progress
-Next command: review PRs #120 (sdk-examples-cookbook-rustdoc) and #121 (a2ui-uar-renderer-on-webcore); merge once CI passes and reconcile Change 18 after merge
+Next command: dispatch Change 18 (a2ui-migrate-entity-components-from-prometheus-entity-management) from main; monitor Change 19 (a2ui-design-systems-flint) worktree
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 16 of 25)
+  Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 18 of 25)
   [do work]
-  Completed <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 16 of 25)
+  Completed <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 18 of 25)

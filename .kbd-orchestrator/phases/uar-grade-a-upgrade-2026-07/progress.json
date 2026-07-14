@@ -7,9 +7,9 @@
   "execute_started": true,
   "reflect_complete": false,
   "sourceTool": "claude",
-  "last_updated": "2026-07-14T16:51:57Z",
-  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Confirmed via `git log` on main (HEAD 6b0f3c9): Changes 1-11, 13, 14, 15, 16 are MERGED into main (PR #118 landed rag-citation-stream since the last update). That's 16/25 merged. Changes 12 and 17 are implementation-complete on their own unmerged branches (feat/sdk-cookbook-rustdoc, feat/a2ui-uar-renderer) -- 18/25 by count. Change 19 (a2ui-migrate-design-systems-embedder-from-flint-forge) newly dispatched (Claude background agent, isolated worktree, based on current main so it does NOT stack on Change 17's unmerged branch -- confirmed independent: backend Rust work in src/uar/a2ui/, sourced from the separate flint-forge repo, no dependency on the frontend a2ui-uar package).",
-  "operator_priority": "Operator redirected KBD to this phase ahead of the soak-run phase (2026-07-13): close Grade-A gaps first, soak/tag/install/GA resumes once code-complete here. 16/25 merged, 18/25 implementation-complete by count. Operator explicitly chose to keep parallelizing further rather than pause for branch reconciliation (asked 2026-07-14) -- branch/merge debt is real and growing (multiple unmerged branches cut at different base commits); prioritize merge/rebase sequencing once the current wave of dispatches lands.",
+  "last_updated": "2026-07-14T17:15:00Z",
+  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Confirmed via `git log` on main (HEAD 2946a25): Changes 1-11, 12, 13, 14, 15, 16, and 17 are MERGED into main (PRs #112-#121). That's 17/25 merged. Change 19 (a2ui-migrate-design-systems-embedder-from-flint-forge) is in progress via a Claude background agent in an isolated worktree.",
+  "operator_priority": "Operator redirected KBD to this phase ahead of the soak-run phase (2026-07-13): close Grade-A gaps first, soak/tag/install/GA resumes once code-complete here. 17/25 merged, 18/25 implementation-complete by count. Branch/merge debt is real and growing; prioritize dispatching Change 18 (which is now unblocked by Change 17's merge) and monitor Change 19.",
   "implementation_total": 25,
   "implementation_completed": 18,
   "completion": {
@@ -27,7 +27,9 @@
     "rag-eval-ragas-deepeval-golden-set": { "pr": 114, "merge_commit": "772360f" },
     "rag-embedding-backends-4-more": { "pr": 112, "merge_commit": "bd3e6b0" },
     "a2ui-vendor-google-core-react": { "pr": 113, "merge_commit": "a2d8724" },
-    "rag-citation-stream": { "pr": 118, "merge_commit": "2a98492" }
+    "rag-citation-stream": { "pr": 118, "merge_commit": "2a98492" },
+    "sdk-examples-cookbook-rustdoc": { "pr": 120, "merge_commit": "24fe357" },
+    "a2ui-uar-renderer-on-webcore": { "pr": 121, "merge_commit": "2946a25" }
   },
   "active_dispatches": {
     "a2ui-migrate-design-systems-embedder-from-flint-forge": {
@@ -37,32 +39,6 @@
       "branch": "feat/a2ui-design-systems-flint",
       "base": "6b0f3c9",
       "note": "Reads sibling repo /Users/gqadonis/Projects/prometheus/flint-forge read-only for migration source. Instructed to verify the plan's claimed source paths (one, fdb-reflection/src/compilers/a2ui.rs, was confirmed NOT to exist before dispatch -- told to find the real equivalent and correct the plan)."
-    },
-    "sdk-examples-cookbook-rustdoc": {
-      "status": "PR_REVIEW",
-      "pr": 120,
-      "started_by": "claude (background agent, worktree isolation)",
-      "worktree": "/Users/gqadonus/.claude/worktrees/sdk-cookbook-rustdoc",
-      "branch": "feat/sdk-cookbook-rustdoc",
-      "base": "09cb3b8",
-      "rebased_onto": "230062e",
-      "commit": "d76872d",
-      "rebased_commit": "2e73674",
-      "verified": "cargo build/clippy/test/fmt --locked clean; cargo doc zero warnings; cargo run --example error_handling passes (only example runnable without a live server); Python ruff+sphinx clean; TS typecheck/lint/build/typedoc clean; tools/validate-examples.sh 19/19; openspec validate --strict PASS.",
-      "notable": "Audited first: Changes 9-11 already shipped 18 examples + working rustdoc/typedoc/sphinx tooling, so real gap was narrower than plan assumed (Rust cookbook was short of 12; sdks/rust and sdks/python had zero CI coverage). Closed both gaps. Found and fixed a pre-existing sdks/rust/Cargo.lock drift that would have broken --locked CI. Found (not fixed, spawned as separate follow-up task) a GitHub Pages deployment conflict between deploy-docs.yml and typescript-sdk-docs.yml from Change 11 -- both target the same github-pages environment."
-    },
-    "a2ui-uar-renderer-on-webcore": {
-      "status": "PR_REVIEW",
-      "pr": 121,
-      "started_by": "claude (background agent, worktree isolation)",
-      "worktree": "/Users/gqadonus/.claude/worktrees/a2ui-uar-renderer",
-      "branch": "feat/a2ui-uar-renderer",
-      "base": "09cb3b8",
-      "rebased_onto": "230062e",
-      "commit": "b05b7b0",
-      "rebased_commit": "2c31425",
-      "verified": "pnpm --filter @prometheus-ags/a2ui-uar typecheck/lint/test/perf all pass (16/16 tests); @prometheus-ags/a2ui-react typecheck pass; root pnpm lint pass; cross-tests run real assertions against the vendored @a2ui/react reference, not stubs.",
-      "notable": "Reverse-engineered the real @a2ui/web_core architecture (Catalog/MessageProcessor/GenericBinder) instead of guessing. Built all 9 uar.a2ui/1 protocol components + the recursive surface renderer, but only 1 of 7 Entity* components (EntityCard) -- 6 deferred, disclosed in README + proposal.md. Full cross-testing matrix, theming, and CI perf-gate wiring also deferred (perf measurement harness built and passing, but not yet a real CI gate). Found and fixed 2 real wire-protocol bugs (ChildList static-vs-templated resolution; nested dynamic-field resolution). Flagged an unrelated pre-existing bug: root `pnpm -C frontend typecheck` fails in src/components/ui/resizable.tsx from a dependabot react-resizable-panels version bump -- not touched, needs separate follow-up."
     }
   },
   "deliverables": {
@@ -83,7 +59,9 @@
       "openspec/changes/sdk-typescript-1-0/",
       "openspec/changes/rag-eval-ragas-deepeval-golden-set/{proposal.md, tasks.md, specs/rag-evaluation-suite/spec.md}",
       "openspec/changes/rag-embedding-backends-4-more/",
-      "openspec/changes/a2ui-vendor-google-core-react/{proposal.md, tasks.md, specs/a2ui-core-vendoring/spec.md}"
+      "openspec/changes/a2ui-vendor-google-core-react/{proposal.md, tasks.md, specs/a2ui-core-vendoring/spec.md}",
+      "openspec/changes/sdk-examples-cookbook-rustdoc/",
+      "openspec/changes/a2ui-uar-renderer-on-webcore/"
     ],
     "openspec_changes_with_proposals_note": "Confirmed present in main's openspec/changes/ directory as of HEAD 09cb3b8 (listed via `ls openspec/changes/`) for the 6 newly-merged changes, alongside the 8 already tracked here. sdk-rust-1-0/sdk-python-1.0/sdk-typescript-1-0/rag-embedding-backends-4-more directory contents not individually re-verified this pass (assume standard proposal.md/tasks.md/specs/ shape; spot-check if working on those changes).",
     "openspec_changes_pending_proposal": [
@@ -110,5 +88,5 @@
     "parallel_isolated": "Codex + GPT-5.6 in git worktrees (~20% of hours, 130h)"
   },
   "dependency_graph_findings": "Several arrows in plan.md's dependency graph turned out to be soft/aspirational rather than hard code dependencies once each change's actual done-condition was read: Change 15 (embedding backends) doesn't need Change 13 (citation stream); Change 14 (RAG eval) doesn't need Change 13; Change 16 (A2UI vendoring) doesn't need Change 13. This let those changes dispatch and complete well ahead of Change 13. Re-check each remaining 'blocked' change's actual done-condition (not just the graph arrow) before assuming it's truly blocked.",
-  "next_step": "1 dispatch in flight: a2ui-migrate-design-systems-embedder-from-flint-forge (Claude bg agent). DONE and unmerged, ready for review: sdk-examples-cookbook-rustdoc (feat/sdk-cookbook-rustdoc, d76872d) and a2ui-uar-renderer-on-webcore (feat/a2ui-uar-renderer, b05b7b0, partial scope). 2 follow-up task chips spawned and picked up by the operator in separate sessions: Pages-deployment conflict (deploy-docs.yml vs typescript-sdk-docs.yml) and a resizable.tsx typecheck break from a dependabot bump -- will notify when those report. Change 18 (a2ui-migrate-entity-components) genuinely needs Change 17's a2ui-uar package to exist -- only startable by branching off feat/a2ui-uar-renderer (not merged) or waiting for merge; not yet dispatched. Changes 20, 21 need re-checking against dependency_graph_findings (may be more independent than the graph implies, similar to how 19 turned out backend-only). 22 needs 16-21; 23-25 need 16-22. Every active/done branch needs review/merge/rebase sequencing against current main (6b0f3c9) -- operator has chosen to keep parallelizing rather than pause for this yet."
+  "next_step": "1 dispatch in flight: Change 19 (a2ui-migrate-design-systems-embedder-from-flint-forge). Change 18 (a2ui-migrate-entity-components-from-prometheus-entity-management) is now unblocked because Change 17 is merged; dispatch it next by branching from current main. Changes 20-25 remain queued behind 18/19. 2 follow-up task chips (Pages deployment conflict and resizable.tsx typecheck break) are still pending operator attention."
 }
