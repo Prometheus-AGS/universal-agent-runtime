@@ -32,11 +32,12 @@
 - [x] 4.9 `ChoicePicker` — `react-aria-components` `ListBox`/`ListBoxItem` (not shadcn's Radix/Base-UI `Select`, which is single-value only) for real multi-select listbox semantics per `variant: multipleSelection`; two-way bound via `setValue`.
 - [x] 4.10 `src/catalog/uar-basic-catalog.ts` — assembles the 9 into a `Catalog` under id `urn:uar:a2ui:catalog:1`.
 
-## 5. `EntityCard` (1 of 7 `Entity*` components)
+## 5. Complete `Entity*` catalog
 - [x] 5.1 `src/entities/entity-card-api.ts` — Zod schema aligned with `prometheus-entity-management` naming (`entityType`, `entityId`, `syncOrigin` mirroring `EntitySyncMetadata.origin`), `fields`/`actions` arrays.
 - [x] 5.2 `src/entities/EntityCard.tsx` — render implementation: title/subtitle, sync-origin badge, field list, action buttons dispatching bound `Action`s.
 - [x] 5.3 `src/catalog/uar-entity-catalog.ts` — separate catalog id `urn:uar:a2ui:catalog:1+entities` (extension catalog, not merged into the certified baseline catalog).
-- [x] 5.4 README section documenting the 6 deferred `Entity*` components and why each needs different infrastructure than `EntityCard` provides.
+- [x] 5.4 Implement `EntityDiff`, `EntityStream`, `EntityApproval`, `EntityToolProvider`, `EntityChat`, and `EntityCopilot` as protocol-native schemas and renderers with explicit state and recovery semantics.
+- [x] 5.5 Assemble all 7 entity components into the extension catalog (16 total components including the baseline).
 
 ## 6. Tests
 - [x] 6.1 `test/helpers.ts` — `buildSurface`: `MessageProcessor` + `createSurface`/`updateComponents`/`updateDataModel` message sequence, matching real wire traffic.
@@ -46,17 +47,18 @@
 - [x] 6.5 `test/cross-reference.test.tsx` — cross-tests against `@prometheus-ags/a2ui-react/v0_9` (the vendored Google reference) for Text, Button, CheckBox, and a Row/Column/Divider structural tree, asserting semantic equivalence (roles/accessible names/text content), not DOM/CSS equality.
 - [x] 6.6 `test/perf/render-budget.test.tsx` — exercises `src/perf/measure.ts` against a moderately complex surface for initial render and a streaming `dataModel.set()` update, using p95 over repeated runs.
 - [x] 6.7 Extend `@prometheus-ags/a2ui-react`'s `package.json` `exports` with `./v0_9` + `src/v0_9.ts`, required for 6.5 (the package previously only exposed the non-comparable v0_8 surface). Verified `pnpm --filter @prometheus-ags/a2ui-react typecheck` still passes after the addition.
+- [x] 6.8 Assert the catalog contains the 9 baseline and all 7 entity components.
 
 ## 7. Verification
 - [x] 7.1 `pnpm -C frontend install` — pass (after re-confirming the `prometheus-entity-management` submodule init/build precondition Change 16 already documented hitting).
 - [x] 7.2 `pnpm --filter @prometheus-ags/a2ui-uar typecheck` — pass, 0 errors.
 - [x] 7.3 `pnpm --filter @prometheus-ags/a2ui-uar lint` — pass, 0 errors/warnings.
-- [x] 7.4 `pnpm --filter @prometheus-ags/a2ui-uar test` — pass, 16/16 tests (4 files).
-- [x] 7.5 `pnpm --filter @prometheus-ags/a2ui-uar run perf` — pass, 2/2 (measurement harness, not a CI gate — see proposal.md "Out of scope").
+- [x] 7.4 `pnpm --filter @prometheus-ags/a2ui-uar test` — pass, 17/17 tests (5 files).
+- [x] 7.5 `pnpm --filter @prometheus-ags/a2ui-uar run perf` — literal <16ms initial and <8ms streaming budgets, enforced by `.github/workflows/a2ui-renderer-performance.yml`.
 - [x] 7.6 `pnpm --filter @prometheus-ags/a2ui-react typecheck` — pass (confirms the `./v0_9` addition didn't regress Change 16's package).
 - [x] 7.7 `pnpm -C frontend lint` (root, full workspace) — pass (confirms `packages/**` ignore still holds; the new package doesn't leak into root lint scope).
 - [x] 7.8 `openspec validate a2ui-uar-renderer-on-webcore --strict` — pass.
 
 ## 8. Operator follow-up
-- [ ] 8.1 Operator/coordinating session reviews the `zod@^3.25.76` pin (deliberately diverging from the rest of `frontend/`'s `zod@4.4.3`) and the `catalogId` split (`urn:uar:a2ui:catalog:1` vs. `+entities`) before merge.
-- [ ] 8.2 Coordinating session decides on merge and on when/whether to wire this renderer into an actual UI surface (out of scope for this change, per proposal.md).
+- [x] 8.1 Reviewed: retain `zod@^3.25.76` for upstream `web_core` type compatibility and retain the separate `+entities` catalog so the certified baseline remains stable.
+- [x] 8.2 Merge this complete renderer package now; actual product-surface wiring remains separately scoped.

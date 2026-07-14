@@ -1,0 +1,25 @@
+name: A2UI renderer performance
+
+on:
+  pull_request:
+    paths:
+      - "frontend/packages/a2ui-uar/**"
+      - ".github/workflows/a2ui-renderer-performance.yml"
+  push:
+    branches: [main]
+    paths:
+      - "frontend/packages/a2ui-uar/**"
+
+jobs:
+  performance-budget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm -C frontend install --frozen-lockfile
+      - run: pnpm --filter @prometheus-ags/a2ui-uar run perf

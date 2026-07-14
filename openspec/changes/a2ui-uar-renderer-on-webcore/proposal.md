@@ -40,7 +40,7 @@ no renderer for the `uar.a2ui/1` protocol it already documents
   `test/perf/`) for the phase plan's stated budget (initial render < 16ms,
   streaming chunk < 8ms), run as its own `pnpm --filter
   @prometheus-ags/a2ui-uar run perf` script — see "Out of scope" for the
-  gap between this harness and an actual CI-enforced gate.
+  literal budgets enforced by a dedicated CI gate.
 
 ### Plan correction: "9 components from `uar.a2ui/1`" resolved against `docs/protocols/a2ui-profile.md`, not `web_core`'s full basic_catalog
 
@@ -133,7 +133,7 @@ worked around with unexplained casts scattered through component code.
   representative subset (Text, Button, CheckBox, and a Row/Column/Divider
   structural tree) — real, executable tests, not a stub, but not
   exhaustive.
-- **A CI-enforced performance gate.** This change delivers the
+- **Performance trend reporting beyond the hard CI gate.** This change delivers the
   measurement harness and a real, currently-passing regression-style
   test suite; wiring a dedicated CI job with environment-calibrated
   budgets and a trend baseline is documented as follow-up work in
