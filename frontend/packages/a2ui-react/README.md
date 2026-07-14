@@ -35,6 +35,19 @@ rather than an ad-hoc devDependency added later, makes that cross-testing
 reproducible and keeps the reference version under the same update
 discipline as `@prometheus-ags/a2ui-core`.
 
+## Exports
+
+- `.` (default) — `@a2ui/react`'s v0_8 surface (its package.json `"main"`).
+- `./v0_9` — `@a2ui/react`'s v0_9 surface (`A2uiSurface`, `basicCatalog`,
+  `createComponentImplementation`, ...), added by Change 17
+  (`a2ui-uar-renderer-on-webcore`) so it can cross-test against a
+  reference implementation on the *same* protocol version the UAR
+  renderer targets — the default v0_8 export uses a different component
+  set (`MultipleChoice`, not `ChoicePicker`) and API shape (provider/hook
+  based, not `MessageProcessor`/`SurfaceModel` based), so it isn't
+  comparable.
+- `./styles` — `@a2ui/react`'s CSS styles module.
+
 ## License
 
 Apache-2.0, © Google LLC (upstream). See [`LICENSE`](./LICENSE).
