@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Prometheus-AGS/universal-agent-runtime/evals/rag-golden-set/schema.json",
+  "title": "RAG golden-set item",
+  "description": "One frozen question/ground-truth item for the prometheus-eval harness (RAGAS + DeepEval). Field names mirror ragas' EvaluationDataset column names (user_input, reference_contexts, reference, retrieved_contexts, response) so items load into ragas.EvaluationDataset.from_list() and deepeval.test_case.LLMTestCase with no reshaping.",
+  "type": "object",
+  "required": ["id", "category", "user_input", "reference_contexts", "reference", "source", "difficulty", "frozen_at"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^rag-[a-z0-9-]+-[0-9]{3}$",
+      "description": "Stable id, e.g. rag-config-001. Never reused, never renumbered after freeze."
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "config-system",
+        "rag-pipeline",
+        "governance-licensing",
+        "model-routing",
+        "api-usage"
+      ],
+      "description": "One of the 5 intents the full 300-item set is stratified across (analysis.md 4.5)."
+    },
+    "user_input": {
+      "type": "string",
+      "description": "The question posed to the RAG system under test. Matches ragas' `user_input` column."
+    },
+    "reference_contexts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Ground-truth source passages the retriever SHOULD surface for this question (used for context_precision/context_recall). Verbatim excerpts from the cited `source` file, not paraphrased."
+    },
+    "reference": {
+      "type": "string",
+      "description": "The ground-truth answer (ragas' `reference` column / DeepEval's `expected_output`), hand-verified against `source` at curation time."
+    },
+    "source": {
+      "type": "string",
+      "description": "Repo-relative path (+ optional line range) the reference_contexts and reference were verified against, e.g. 'docs/ARCHITECTURE.md#L47' or 'src/uar/rag/retrieval.rs'."
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["easy", "medium", "hard"],
+      "description": "easy = single-fact lookup; medium = requires combining 2 passages; hard = multi-hop or requires disambiguating near-duplicate config keys."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional curator notes: why this item is interesting, known retriever traps, etc."
+    },
+    "frozen_at": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO date this item was frozen. Items are append-only after freeze; a correction is a new id with the old id tombstoned in CHANGELOG.md, never an in-place edit (done-condition: 'frozen golden set... version-controlled')."
+    }
+  }
+}

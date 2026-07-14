@@ -1,0 +1,169 @@
+name: RAG Eval (RAGAS + DeepEval)
+
+# Change 14 (rag-eval-ragas-deepeval-golden-set): every PR runs the
+# prometheus-eval harness against evals/rag-golden-set/ and gates on a
+# >2-point regression per metric vs. the committed baseline. Mirrors the
+# existing evals/ two-tier pattern (see evals/README.md): a keyless
+# structural job runs on every PR; the real-model job degrades gracefully
+# (skips, does not fail) without a configured judge API key — exactly like
+# eval-nightly.yml does for the generic suite harness.
+on:
+  pull_request:
+    paths:
+      - 'evals/rag-golden-set/**'
+      - 'tools/prometheus-eval/**'
+      - '.github/workflows/rag-eval.yml'
+      - 'src/uar/rag/**'
+      - 'src/uar/api/knowledge.rs'
+  push:
+    branches: [main]
+    paths:
+      - 'evals/rag-golden-set/**'
+      - 'tools/prometheus-eval/**'
+  workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: 'Update the committed baseline instead of gating (then commit the result manually)'
+        type: boolean
+        default: false
+
+jobs:
+  structural:
+    name: Structural (schema + gate unit tests, no LLM key required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install prometheus-eval (dev extras only — skip the heavy
+          ragas/deepeval/beir deps for this keyless job)
+        working-directory: tools/prometheus-eval
+        run: |
+          uv venv
+          uv pip install -e ".[dev]" --no-deps
+          uv pip install pytest jsonschema PyYAML pydantic httpx
+
+      - name: Validate golden set against schema.json
+        working-directory: tools/prometheus-eval
+        run: |
+          source .venv/bin/activate
+          prometheus-eval validate --golden-set ../../evals/rag-golden-set/golden-set.seed.jsonl
+
+      - name: Run gate/schema unit tests
+        working-directory: tools/prometheus-eval
+        run: |
+          source .venv/bin/activate
+          python -m pytest tests/ -v
+
+  real-model:
+    name: Real-model eval (RAGAS + DeepEval, gated on regression)
+    runs-on: ubuntu-latest
+    needs: structural
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Complete recursive submodule checkout
+        shell: bash
+        run: bash scripts/update-submodules.sh
+
+      - name: Guard — require a judge-model API key
+        id: guard
+        env:
+          UAR_EVAL_JUDGE_API_KEY: ${{ secrets.UAR_EVAL_JUDGE_API_KEY }}
+        run: |
+          if [ -z "${UAR_EVAL_JUDGE_API_KEY}" ]; then
+            echo "No UAR_EVAL_JUDGE_API_KEY secret configured — skipping the real-model RAG eval."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Rust toolchain
+        if: steps.guard.outputs.run == 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-rag-eval-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Build binary + start server
+        if: steps.guard.outputs.run == 'true'
+        env:
+          UAR_LLM__API_KEY: ${{ secrets.UAR_EVAL_JUDGE_API_KEY }}
+          UAR_SERVER__PORT: 1906
+        run: |
+          cargo build --release --bin universal-agent-runtime --features postgres-backend
+          # No subcommand = run the server (src/main.rs); `eval`/`compile` are
+          # the only other subcommands and both exit immediately.
+          ./target/release/universal-agent-runtime &
+          echo $! > server.pid
+          # Give the server a moment to bind before the harness hits it.
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:1906/health && break
+            sleep 1
+          done
+
+      - name: Install uv + prometheus-eval
+        if: steps.guard.outputs.run == 'true'
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install prometheus-eval (full deps)
+        if: steps.guard.outputs.run == 'true'
+        working-directory: tools/prometheus-eval
+        run: |
+          uv venv
+          uv pip install -e .
+
+      - name: Run RAGAS + DeepEval against the golden set
+        if: steps.guard.outputs.run == 'true'
+        env:
+          UAR_EVAL_JUDGE_API_KEY: ${{ secrets.UAR_EVAL_JUDGE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.UAR_EVAL_JUDGE_API_KEY }}
+        working-directory: tools/prometheus-eval
+        run: |
+          source .venv/bin/activate
+          prometheus-eval run \
+            --golden-set ../../evals/rag-golden-set/golden-set.seed.jsonl \
+            --base-url http://127.0.0.1:1906 \
+            --out /tmp/rag-eval-current.json
+
+      - name: Update baseline (workflow_dispatch only)
+        if: steps.guard.outputs.run == 'true' && inputs.update_baseline == true
+        run: |
+          mkdir -p evals/results
+          cp /tmp/rag-eval-current.json evals/results/rag-golden-set.baseline.json
+          echo "Baseline written to evals/results/rag-golden-set.baseline.json — commit it deliberately."
+
+      - name: Gate on regression vs. committed baseline
+        if: steps.guard.outputs.run == 'true' && inputs.update_baseline != true
+        working-directory: tools/prometheus-eval
+        run: |
+          source .venv/bin/activate
+          if [ ! -f ../../evals/results/rag-golden-set.baseline.json ]; then
+            echo "No committed baseline at evals/results/rag-golden-set.baseline.json — blocked until seeded."
+            echo "Seed it via workflow_dispatch with update_baseline=true, then commit the result."
+            exit 1
+          fi
+          prometheus-eval gate \
+            --baseline ../../evals/results/rag-golden-set.baseline.json \
+            --current /tmp/rag-eval-current.json
+
+      - name: Stop server
+        if: always() && steps.guard.outputs.run == 'true'
+        run: kill "$(cat server.pid)" 2>/dev/null || true

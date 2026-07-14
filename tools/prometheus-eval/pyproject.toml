@@ -1,0 +1,54 @@
+[project]
+name = "prometheus-eval"
+version = "0.1.0"
+description = "UAR's custom RAG evaluation harness: wraps RAGAS + DeepEval around evals/rag-golden-set/, runs UAR's own retrieval pipeline via HTTP, and gates CI on regression."
+authors = [{ name = "Prometheus AGS" }]
+readme = "README.md"
+license = { text = "AGPL-3.0-only" }
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+dependencies = [
+    "ragas>=0.4,<0.5",
+    # Pinned below ragas' own resolved default (0.4.2) — ragas 0.4.3 eagerly
+    # imports langchain_community.chat_models.vertexai.ChatVertexAI, which
+    # was removed from langchain-community>=0.4 (moved to the separate
+    # langchain-google-vertexai package). Verified locally 2026-07-14: `import
+    # ragas` raises ModuleNotFoundError without this pin. See
+    # tools/prometheus-eval/README.md "Known-fragile bit".
+    "langchain-community<0.4",
+    "deepeval>=4.1,<5",
+    "beir>=2.2,<3",
+    "httpx>=0.27.0",
+    "pydantic>=2.0.0",
+    "jsonschema>=4.23.0",
+    "PyYAML>=6.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.8.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+prometheus-eval = "prometheus_eval.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Prometheus-AGS/universal-agent-runtime"
+Repository = "https://github.com/Prometheus-AGS/universal-agent-runtime"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["prometheus_eval"]

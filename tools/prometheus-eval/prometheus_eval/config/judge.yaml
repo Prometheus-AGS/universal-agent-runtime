@@ -1,0 +1,33 @@
+# Frozen LLM-judge configuration for the prometheus-eval RAG harness.
+#
+# Per the Change-14 done-condition ("LLM judge prompt frozen; model +
+# temperature pinned") and analysis.md's risk note ("LLM-as-judge
+# evaluators are noisy; judge prompts must be frozen and model/version
+# pinned, otherwise CI flakes"): every field below is a deliberate,
+# version-controlled decision. Changing `model`, `temperature`, or
+# `prompt_version` invalidates the committed baseline in
+# evals/results/rag-golden-set.baseline.json — bump `prompt_version` and
+# re-seed the baseline in the same PR that changes any of these.
+#
+# `model` uses UAR's own liter-llm `provider/model` addressing (see
+# CLAUDE.md "LLM" section) so this harness stays consistent with how the
+# rest of the runtime names models, even though ragas/deepeval each also
+# need their own native client configured from this value (see
+# ragas_runner.py / deepeval_runner.py) — liter-llm is a Rust proxy the
+# runtime uses, not a Python client, so the Python harness talks to the
+# provider directly via this same model string with the provider prefix
+# stripped for the SDK that needs it.
+
+model: "openai/gpt-4o-mini"
+temperature: 0.0
+seed: 42
+prompt_version: "v1"
+prompt_file: "judge_prompt.md"
+frozen_at: "2026-07-14"
+
+# > 2-point regression on a 0-100 scale fails the PR gate (done-condition).
+# Applied per-metric to the mean score across the golden set, comparing
+# against the committed baseline in evals/results/rag-golden-set.baseline.json.
+regression_gate:
+  scale: 100
+  max_regression_points: 2.0

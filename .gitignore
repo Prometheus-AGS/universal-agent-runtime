@@ -112,3 +112,9 @@ evals/results/*.json
 # durability) — deployment data, not project source. The BDD suite creates
 # one on every run.
 skills/dynamic/
+
+# Python build/test artifacts (tools/prometheus-eval/ and sdks/python/).
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
