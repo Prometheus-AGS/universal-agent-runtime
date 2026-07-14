@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "zed-workspace-mcp": {
+      "type": "local",
+      "command": [
+        "zed-workspace-mcp",
+        "--workspace",
+        "flint-platform",
+        "--manifest",
+        "/Users/gqadonis/.config/zed/workspaces/flint-platform.zworkspace.toml"
+      ],
+      "enabled": true
+    }
+  }
+}

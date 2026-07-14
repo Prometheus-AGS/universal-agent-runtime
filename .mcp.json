@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "zed-workspace-mcp": {
+      "command": "zed-workspace-mcp",
+      "args": [
+        "--workspace",
+        "flint-platform",
+        "--manifest",
+        "/Users/gqadonis/.config/zed/workspaces/flint-platform.zworkspace.toml"
+      ]
+    }
+  }
+}

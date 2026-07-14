@@ -75,7 +75,7 @@ fn minimal_config() -> AppConfig {
         },
         security: SecurityConfig {
             jwt_required: false,
-            jwt_secret: "test-secret".to_string(),
+            jwt_secret: "test-secret".to_string().into(),
             settings_mutation_auth_required: true,
         },
         resilience: ResilienceConfig {

@@ -6,6 +6,7 @@ use axum::{
     response::Response,
 };
 use jsonwebtoken::{DecodingKey, Validation, decode};
+use secrecy::ExposeSecret;
 
 use super::claims::{UserClaims, UserContext};
 
@@ -80,7 +81,11 @@ pub async fn auth_middleware(
         .and_then(|h| h.to_str().ok());
 
     // Try JWT first
-    let mut context = resolve_user_context(false, &state.config.security.jwt_secret, auth_header)?;
+    let mut context = resolve_user_context(
+        false,
+        state.config.security.jwt_secret.expose_secret(),
+        auth_header,
+    )?;
 
     // If still anonymous, try X-API-Key header
     if context.user_id == "anonymous" {

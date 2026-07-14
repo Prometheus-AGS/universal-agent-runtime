@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// These strategies are independent of the token-budget–based
 /// [`crate::uar::domain::context::ContextStrategy`] and operate at the
 /// message-count / structural level.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ContextStrategy {
     /// Send the full history unmodified.

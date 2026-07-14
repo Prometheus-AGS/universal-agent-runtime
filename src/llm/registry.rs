@@ -29,7 +29,7 @@ where
 ///
 /// A provider represents an API endpoint (e.g., OpenAI, Groq, Azure)
 /// that can serve one or more models.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ProviderConfig {
     /// Unique identifier (e.g., "openai", "groq-fast", "azure-prod").
     pub id: String,
@@ -64,7 +64,7 @@ fn default_enabled() -> bool {
 }
 
 /// Protocol setting for config deserialization.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ProtocolSetting {
     #[default]
@@ -74,7 +74,7 @@ pub enum ProtocolSetting {
 }
 
 /// Configuration for a single model within a provider.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ModelConfig {
     /// Model identifier (e.g., "gpt-4o", "llama-3.3-70b-versatile").
     pub id: String,

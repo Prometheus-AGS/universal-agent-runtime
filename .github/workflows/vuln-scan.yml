@@ -1,0 +1,69 @@
+name: Vulnerability Scan (OSV + Grype)
+
+# Nightly, ecosystem-wide vulnerability scan, decoupled from security-audit.yml
+# on purpose (openspec/changes/slsa-l3-osv-grype-security-txt): security-audit.yml
+# already runs `cargo audit` weekly for Rust-specific RUSTSEC advisories. This
+# workflow adds osv-scanner (broad, cross-ecosystem OSV-database coverage over
+# every manifest in the repo — Cargo.lock, package-lock.json, pnpm-lock.yaml,
+# etc.) and grype (container-image CVE scanning against the same Dockerfile
+# the release image is built from), both blocking on HIGH+ severity.
+on:
+  schedule:
+    - cron: '0 7 * * *' # nightly, 07:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  osv-scanner:
+    name: OSV-Scanner (source dependencies)
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8
+    with:
+      scan-args: |-
+        --recursive
+        --skip-git
+        .
+      fail-on-vuln: true
+      upload-sarif: true
+
+  grype-image:
+    name: Grype (container image, HIGH+ blocks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Complete recursive submodule checkout
+        shell: bash
+        run: bash scripts/update-submodules.sh
+
+      # Builds the same Dockerfile the release image uses (see
+      # .github/workflows/supply-chain.yml), locally and unpushed, so this
+      # scan needs no registry credentials and can run nightly independent of
+      # the release cadence.
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image for scanning
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: uar-vuln-scan:local
+
+      - name: Scan image with Grype
+        uses: anchore/scan-action@v7
+        id: grype
+        with:
+          image: uar-vuln-scan:local
+          fail-build: true
+          severity-cutoff: high
+          output-format: sarif
+
+      - name: Upload Grype SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: ${{ steps.grype.outputs.sarif }}

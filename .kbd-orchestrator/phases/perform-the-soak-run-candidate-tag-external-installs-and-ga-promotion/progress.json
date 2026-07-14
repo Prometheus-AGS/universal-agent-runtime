@@ -1,0 +1,60 @@
+{
+  "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+  "started": "2026-07-13T17:52:40Z",
+  "last_updated": "2026-07-13T19:40:00Z",
+  "last_updated_by": "claude",
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execution_dispatched": false,
+  "reflection_complete": false,
+  "changes_total": 14,
+  "changes_completed": 0,
+  "changes": {
+    "fix-user-isolation-sessions-memory-kb": {
+      "status": "PENDING"
+    },
+    "harden-jwt-defaults": {
+      "status": "PENDING"
+    },
+    "fix-skills-scope-semantics": {
+      "status": "PENDING"
+    },
+    "ship-skill-pack-install-path": {
+      "status": "PENDING"
+    },
+    "emit-rag-retrieval-events": {
+      "status": "PENDING"
+    },
+    "wire-orchestrator-delegation": {
+      "status": "PENDING"
+    },
+    "complete-agui-event-parity": {
+      "status": "PENDING"
+    },
+    "resolve-sdk-distribution": {
+      "status": "PENDING"
+    },
+    "rewrite-readme-and-docs": {
+      "status": "PENDING"
+    },
+    "screen-by-screen-validation": {
+      "status": "PENDING"
+    },
+    "certify-operational-resilience": {
+      "status": "PENDING",
+      "notes": "Carried from prior phase: implementation complete; evidence/publication work only. Recertification required after changes 1-9 modify source."
+    },
+    "produce-supply-chain-artifacts": {
+      "status": "PENDING",
+      "notes": "Carried from prior phase: implementation complete; evidence/publication work only. Recertification required after changes 1-9 modify source."
+    },
+    "certify-release-candidate": {
+      "status": "PENDING",
+      "notes": "Carried from prior phase: implementation complete; evidence/publication work only. Recertification required after changes 1-9 modify source."
+    },
+    "release-1-0-0": {
+      "status": "PENDING",
+      "notes": "Carried from prior phase: implementation complete; evidence/publication work only. Recertification required after changes 1-9 modify source."
+    }
+  }
+}

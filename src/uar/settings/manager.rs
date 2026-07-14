@@ -20,6 +20,7 @@ use crate::uar::settings::schema::{
 };
 use anyhow::{Context, Result};
 use chrono::Utc;
+use secrecy::ExposeSecret;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -689,7 +690,7 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 &st,
                 "security.jwt_secret",
                 "JWT Secret",
-                json!(config.security.jwt_secret),
+                json!(config.security.jwt_secret.expose_secret()),
             ),
             make_setting(
                 &st,

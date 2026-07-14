@@ -1,0 +1,8 @@
+{
+  "stage": "assess",
+  "completed_at": "2026-07-13T19:05:00Z",
+  "by": "claude",
+  "artifact": "assessment.md",
+  "summary": "Customer-release readiness assessed across 6 audit streams. NOT ready: 6 CRITICAL (3 user-isolation holes C1-C3, SDK licensing C4, no skill-pack install path C5, dormant orchestrator delegation C6), 7 HIGH, 8 MEDIUM. Validation machinery (20-screen inventory, video-proof BDD harness, any-agent selection, intent/skills/context/memory subsystems) is largely in place. Blocking question for plan: O3 - is 1.0 multi-tenant (fix C1-C3) or documented single-tenant sidecar (defer)? Operator decision required before the change list is cut; assessment.md ends with an 11-change seed ordered accordingly.",
+  "open_questions": ["O1 conversation-scope toggles real?", "O2 kb-retrieval BDD vacuous?", "O3 tenancy boundary for 1.0 (operator)", "O4 skills/agents/settings shared-admin by design?"]
+}

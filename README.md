@@ -69,6 +69,28 @@ Flint Gate owns edge auth enforcement, Flint Realtime Fabric owns durable realti
 
 Production deployments must configure authentication, non-default secrets, trusted origins, and an explicit tool policy. Tool execution is server-side and auditable; a Cedar `Deny` cannot be overridden by user approval. Never place provider credentials in frontend code or persisted UI state. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) and [docs/product-support-matrix.md](docs/product-support-matrix.md).
 
+Report vulnerabilities per [SECURITY.md](SECURITY.md) (90-day coordinated-disclosure default); a machine-readable pointer is served at [`/.well-known/security.txt`](https://github.com/Prometheus-AGS/universal-agent-runtime) (RFC 9116).
+
+### Supply-chain provenance (SLSA L3 self-declared)
+
+Tagged releases are built and signed by [`.github/workflows/supply-chain.yml`](.github/workflows/supply-chain.yml): multi-arch container image and release archives, CycloneDX/SPDX SBOMs, keyless [Sigstore](https://www.sigstore.dev/) signatures, and [in-toto](https://in-toto.io/) SLSA provenance + SBOM attestations via GitHub's native `actions/attest`/`actions/attest-sbom`. A separate `verify` job in the same workflow independently re-verifies every signature, attestation, and checksum before evidence is attached to the GitHub release — nothing is self-certified by the job that produced it.
+
+Verify a downloaded release archive yourself:
+
+```bash
+# Verify the archive's checksum + Sigstore signature bundle (ship alongside each release asset)
+cosign verify-blob --bundle universal-agent-runtime-<version>-<platform>.tar.gz.sigstore.json \
+  --certificate-identity-regexp '^https://github.com/Prometheus-AGS/universal-agent-runtime/.github/workflows/supply-chain.yml@refs/(heads|tags)/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  universal-agent-runtime-<version>-<platform>.tar.gz
+
+# Verify the container image's provenance/SBOM attestations
+gh attestation verify oci://ghcr.io/prometheus-ags/universal-agent-runtime:<version> \
+  --repo Prometheus-AGS/universal-agent-runtime
+```
+
+Nightly cross-ecosystem dependency and container-image vulnerability scanning (`osv-scanner` + `grype`, blocking on HIGH+ severity) runs via [`.github/workflows/vuln-scan.yml`](.github/workflows/vuln-scan.yml), independent of the weekly `cargo audit` in [`.github/workflows/security-audit.yml`](.github/workflows/security-audit.yml). Reproducible-source verification (two isolated offline builds compared byte-for-byte) runs on every CI run via the `Offline Reproducible Source` job in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
 ## License
 
 UAR is version 1.0.0. Licensing is split by component:

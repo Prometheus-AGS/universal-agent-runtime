@@ -193,6 +193,38 @@ jobs:
           syft "${{ steps.image.outputs.image }}@${{ steps.build.outputs.digest }}" \
             -o cyclonedx-json=evidence/image.cyclonedx.json -o spdx-json=evidence/image.spdx.json
 
+      # First-party SBOM attestation (openspec/changes/slsa-l3-osv-grype-security-txt):
+      # binds a generated SBOM to its real artifact via GitHub's native
+      # attestation API, separate from the payload/checksum provenance attested
+      # below. actions/attest-sbom takes exactly one subject per call (either
+      # subject-path, or subject-name+subject-digest for an OCI image) — it
+      # cannot batch multiple subjects, so this attests the two canonical
+      # artifacts (the Linux x64 release tarball and the container image)
+      # against their own already-generated per-artifact SBOMs. Attesting every
+      # per-platform tarball too is a straightforward follow-up: repeat the
+      # "Attest Linux x64 tarball SBOM" step with a different `find` pattern.
+      - name: Locate the Linux x64 release tarball
+        id: linux_tarball
+        run: |
+          artifact="$(find evidence -maxdepth 1 -name '*linux-x64.tar.gz' -print -quit)"
+          test -n "$artifact"
+          echo "path=$artifact" >> "$GITHUB_OUTPUT"
+
+      - name: Attest Linux x64 tarball SBOM
+        uses: actions/attest-sbom@v4
+        with:
+          subject-path: ${{ steps.linux_tarball.outputs.path }}
+          sbom-path: ${{ steps.linux_tarball.outputs.path }}.cyclonedx.json
+          push-to-registry: false
+
+      - name: Attest image SBOM
+        uses: actions/attest-sbom@v4
+        with:
+          subject-name: ${{ steps.image.outputs.image }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          sbom-path: evidence/image.cyclonedx.json
+          push-to-registry: false
+
       - name: Create provenance input checksums
         working-directory: evidence
         run: sha256sum *.tar.gz *.zip > PAYLOAD_SHA256SUMS

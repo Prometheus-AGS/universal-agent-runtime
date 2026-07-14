@@ -97,7 +97,7 @@ impl ClassificationResult {
 }
 
 /// Backend type for intent classification.
-#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ClassifierBackend {
     /// Rules-based classification (keyword/tag matching)
@@ -116,7 +116,7 @@ pub enum ClassifierBackend {
 }
 
 /// Configuration for the intent classifier.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct ClassifierConfig {
     /// Which backend to use
     #[serde(default)]

@@ -416,3 +416,12 @@ This routing block is auto-managed; re-run
 `kbd-process-orchestrator/skills/kbd-inject-agent-rules/SKILL.md` for
 the `--pack` flag and the fenced-region machinery.
 <!-- uiux-routing:end -->
+
+<!-- zed-workspace:begin -->
+## Workspace
+
+This project is part of the `flint-platform` multi-root workspace, defined in
+`.zworkspace.toml`. The `zed-workspace-mcp` MCP server exposes the full
+workspace (all roots, tasks, env) — call its `workspace_info` tool to orient
+yourself across every root, not just this folder.
+<!-- zed-workspace:end -->

@@ -1,0 +1,8 @@
+{
+  "stage": "plan",
+  "completed_at": "2026-07-13T19:40:00Z",
+  "by": "claude",
+  "artifact": "plan.md",
+  "summary": "14 ordered changes: 10 new (created and openspec-validated) + 4 carried certification changes. Security first per D1 (fix-user-isolation-sessions-memory-kb is change 1), then product-claim gaps (skills scopes, skill-pack install, RAG provenance events, orchestrator delegation, AG-UI parity), then SDK decision and docs rewrite, then screen-by-screen validation with video, then the certification tail which must be RERUN because changes 1-9 modify source. First change to apply: fix-user-isolation-sessions-memory-kb.",
+  "open_questions": ["Change 8 embeds an operator decision: ship minimal SDKs vs withdraw from 1.0", "M3 thread-sync deferred as documented local-only unless operator objects"]
+}
