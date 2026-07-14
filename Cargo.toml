@@ -326,7 +326,7 @@ mime_guess = "2.0"
 base64 = "0.22"
 
 # Credential encryption — AES-256-GCM for per-user provider API keys at rest
-aes-gcm = "0.10"
+aes-gcm = "0.11"
 
 # Kreuzberg - document intelligence framework with Rust core (v4 upstream)
 # CLI install: cargo install --git https://github.com/kreuzberg-dev/kreuzberg --tag v4.9.8 kreuzberg-cli
