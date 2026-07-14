@@ -1,7 +1,7 @@
 {
   "$schema": "./product-support-matrix.schema.json",
   "version": "1.0.0",
-  "verified_at": "2026-07-12",
+  "verified_at": "2026-07-14",
   "features": [
     { "id": "minimal", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features minimal" },
     { "id": "server-full", "status": "stable", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
@@ -13,6 +13,7 @@
     { "id": "response-quality", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features response-quality" },
     { "id": "admin-ui", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features admin-ui" },
     { "id": "local-models", "status": "stable", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features local-models" },
+    { "id": "candle-embeddings", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features server-full,candle-embeddings" },
     { "id": "document-intelligence", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features document-intelligence" },
     { "id": "api-docs", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features api-docs" },
     { "id": "cedar-governance", "status": "stable", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features cedar-governance" },
@@ -38,7 +39,11 @@
     { "id": "anthropic", "tier": 1, "capabilities": ["chat", "stream", "tools", "vision"], "gate": "anthropic streaming/cache unit suite", "verified_at": "2026-07-11" },
     { "id": "catalog-native", "tier": 2, "capabilities": ["chat", "stream"], "gate": "registry resolution and provider health tests", "verified_at": "2026-07-11" },
     { "id": "catalog-only", "tier": 3, "capabilities": [], "gate": "catalog schema only; no execution promise", "verified_at": "2026-07-11" },
-    { "id": "fastembed-local", "tier": 1, "capabilities": ["embedding"], "gate": "ranked retrieval integration and grounded BDD", "verified_at": "2026-07-10" }
+    { "id": "fastembed-local", "tier": 1, "capabilities": ["embedding"], "gate": "ranked retrieval integration and grounded BDD", "verified_at": "2026-07-10" },
+    { "id": "candle-local", "tier": 2, "capabilities": ["embedding"], "gate": "cargo check --lib --features server-full,candle-embeddings", "verified_at": "2026-07-14" },
+    { "id": "openai-embeddings", "tier": 1, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14" },
+    { "id": "voyage-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14" },
+    { "id": "cohere-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14" }
   ],
   "persistence": [
     { "deployment": "web-default", "authority": "embedded-surrealdb", "client_cache": "pglite", "sync": "server events reconcile graph; PGlite persists local threads/messages", "conflict": "server entity version wins; local unsent chat remains client-owned", "status": "stable", "gate": "cargo test --lib + frontend graph/store tests" },

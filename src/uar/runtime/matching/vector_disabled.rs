@@ -2,26 +2,28 @@
 
 use anyhow::{Result, bail};
 use async_trait::async_trait;
+use std::sync::Arc;
 
 use crate::uar::{
     domain::matching::{SkillMatch, SkillMatcher},
+    rag::embeddings::EmbeddingBackend,
     runtime::skills::SkillRegistry,
 };
 
 /// Vector matcher facade for builds without `local-models`.
 #[derive(Debug)]
 pub struct VectorMatcher {
+    _backend: Arc<dyn EmbeddingBackend>,
     _threshold: f32,
-    _models_dir: String,
 }
 
 impl VectorMatcher {
     /// Create a disabled matcher preserving the runtime construction contract.
     #[must_use]
-    pub fn new(threshold: f32, models_dir: String) -> Self {
+    pub fn new(backend: Arc<dyn EmbeddingBackend>, threshold: f32) -> Self {
         Self {
+            _backend: backend,
             _threshold: threshold,
-            _models_dir: models_dir,
         }
     }
 

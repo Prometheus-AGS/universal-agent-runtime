@@ -1,4 +1,4 @@
-use crate::uar::runtime::matching::VectorMatcher;
+use crate::uar::rag::embeddings::EmbeddingBackend;
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -27,14 +27,14 @@ pub enum ChunkingStrategy {
 pub struct Chunker {
     strategy: ChunkingStrategy,
     // Optional because not all strategies need it
-    vector_matcher: Option<Arc<VectorMatcher>>,
+    embedding_backend: Option<Arc<dyn EmbeddingBackend>>,
 }
 
 impl Chunker {
-    pub fn new(strategy: ChunkingStrategy, vector_matcher: Option<Arc<VectorMatcher>>) -> Self {
+    pub fn new(strategy: ChunkingStrategy, embedding_backend: Option<Arc<dyn EmbeddingBackend>>) -> Self {
         Self {
             strategy,
-            vector_matcher,
+            embedding_backend,
         }
     }
 
@@ -81,10 +81,10 @@ impl Chunker {
     }
 
     async fn semantic_chunk(&self, text: &str, threshold: f32) -> Result<Vec<String>> {
-        let matcher = self
-            .vector_matcher
+        let backend = self
+            .embedding_backend
             .as_ref()
-            .ok_or_else(|| anyhow!("VectorMatcher required for Semantic Chunking"))?;
+            .ok_or_else(|| anyhow!("Embedding backend required for Semantic Chunking"))?;
 
         // 1. Split into "Base Sentences" (using simple sentence strategy)
         let sentences: Vec<String> = text
@@ -98,7 +98,8 @@ impl Chunker {
         }
 
         // 2. Embed all sentences
-        let embeddings = matcher.embed_batch(sentences.clone()).await?;
+        let refs: Vec<&str> = sentences.iter().map(|s| s.as_str()).collect();
+        let embeddings = backend.embed(&refs).await?;
 
         // 3. Iterate and merge
         // Algorithm:

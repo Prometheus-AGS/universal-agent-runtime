@@ -1,7 +1,7 @@
 use crate::uar::domain::knowledge::KnowledgeChunk;
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::rag::chunking::{Chunker, ChunkingStrategy};
-use crate::uar::runtime::matching::VectorMatcher;
+use crate::uar::rag::embeddings::EmbeddingBackend;
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -11,7 +11,7 @@ use walkdir::WalkDir;
 
 pub struct IngestService {
     persistence: Arc<dyn PersistenceLayer>,
-    vector_matcher: Arc<VectorMatcher>,
+    embedding_backend: Arc<dyn EmbeddingBackend>,
     chunker: Chunker,
     // Track processed files to avoid re-ingesting identical content (naive check by path/mtime)
     // For MVP, we just ingest everything on startup or change.
@@ -22,7 +22,7 @@ impl std::fmt::Debug for IngestService {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("IngestService")
             .field("persistence", &"<dyn PersistenceLayer>")
-            .field("vector_matcher", &self.vector_matcher)
+            .field("embedding_backend", &self.embedding_backend)
             .field("chunker", &self.chunker)
             .finish()
     }
@@ -31,13 +31,13 @@ impl std::fmt::Debug for IngestService {
 impl IngestService {
     pub fn new(
         persistence: Arc<dyn PersistenceLayer>,
-        vector_matcher: Arc<VectorMatcher>,
+        embedding_backend: Arc<dyn EmbeddingBackend>,
         strategy: ChunkingStrategy,
     ) -> Self {
-        let chunker = Chunker::new(strategy, Some(Arc::clone(&vector_matcher)));
+        let chunker = Chunker::new(strategy, Some(Arc::clone(&embedding_backend)));
         Self {
             persistence,
-            vector_matcher,
+            embedding_backend,
             chunker,
         }
     }
@@ -67,7 +67,8 @@ impl IngestService {
         }
 
         // 2. Embedding
-        let embeddings = self.vector_matcher.embed_batch(chunks.clone()).await?;
+        let refs: Vec<&str> = chunks.iter().map(|s| s.as_str()).collect();
+        let embeddings = self.embedding_backend.embed(&refs).await?;
 
         // 3. Storage
         for (i, segment) in chunks.into_iter().enumerate() {
@@ -133,7 +134,8 @@ impl IngestService {
         }
 
         // 2. Embedding
-        let embeddings = self.vector_matcher.embed_batch(chunks.clone()).await?;
+        let refs: Vec<&str> = chunks.iter().map(|s| s.as_str()).collect();
+        let embeddings = self.embedding_backend.embed(&refs).await?;
 
         // 3. Storage
         for (i, segment) in chunks.iter().enumerate() {

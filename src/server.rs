@@ -127,9 +127,16 @@ async fn start_server_with_listener(
 
     // Initialize Persistence & RAG
     let mut ingest_service: Option<Arc<IngestService>> = None;
+    let embedding_config = crate::uar::rag::embeddings::EmbeddingConfig::from(&config.llm.embedding);
+    let embedding_backend = match crate::uar::rag::embeddings::build_backend(&embedding_config) {
+        Ok(b) => b,
+        Err(e) => {
+            return Err(anyhow::anyhow!("Failed to build embedding backend: {e}"));
+        }
+    };
     let vector_matcher = Arc::new(VectorMatcher::new(
+        Arc::clone(&embedding_backend),
         config.models.vector_threshold,
-        config.models.models_dir.clone(),
     ));
 
     // Initialize VectorMatcher explicitly (shared)
@@ -286,7 +293,7 @@ async fn start_server_with_listener(
     if let Some(p) = &persistence {
         let ingest = Arc::new(IngestService::new(
             Arc::clone(p),
-            Arc::clone(&vector_matcher),
+            Arc::clone(&embedding_backend),
             ChunkingStrategy::Semantic { threshold: 0.5 },
         ));
         ingest_service = Some(Arc::clone(&ingest));
@@ -678,6 +685,7 @@ async fn start_server_with_listener(
         run_manager,
         ingest_service,
         vector_matcher: Arc::clone(&vector_matcher),
+        embedding_backend,
         persistence: persistence.clone(),
         rate_limiter,
         config: config_manager.current(),
