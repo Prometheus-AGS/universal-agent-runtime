@@ -1,0 +1,90 @@
+name: RAG Benchmark (monthly BEIR)
+
+# Change 14 (rag-eval-ragas-deepeval-golden-set): a monthly public
+# retrieval benchmark against BEIR scifact + nfcorpus + fiqa + hotpotqa
+# (analysis.md 4.4), publishing results under docs/rag-benchmark/.
+# Retrieval-only — exercises UAR's real /api/knowledge/{id}/search path,
+# no LLM judge involved, so this has no dependency on a judge API key.
+on:
+  schedule:
+    - cron: '0 6 1 * *' # 06:00 UTC on the 1st of every month
+  workflow_dispatch: {}
+
+jobs:
+  beir-benchmark:
+    name: BEIR retrieval benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Complete recursive submodule checkout
+        shell: bash
+        run: bash scripts/update-submodules.sh
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-beir-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Build binary + start server
+        env:
+          UAR_SERVER__PORT: 1906
+        run: |
+          cargo build --release --bin universal-agent-runtime --features postgres-backend
+          ./target/release/universal-agent-runtime &
+          echo $! > server.pid
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:1906/health && break
+            sleep 1
+          done
+
+      - name: Install uv + prometheus-eval
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install prometheus-eval (full deps, incl. beir)
+        working-directory: tools/prometheus-eval
+        run: |
+          uv venv
+          uv pip install -e .
+
+      - name: Ingest BEIR corpora + run the benchmark
+        working-directory: tools/prometheus-eval
+        run: |
+          source .venv/bin/activate
+          python -m prometheus_eval.beir_bench \
+            --datasets scifact,nfcorpus,fiqa,hotpotqa \
+            --base-url http://127.0.0.1:1906 \
+            --out-dir ../../docs/rag-benchmark
+
+      - name: Stop server
+        if: always()
+        run: kill "$(cat server.pid)" 2>/dev/null || true
+
+      - name: Open a PR with the new benchmark report
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "docs(rag-benchmark): publish monthly BEIR run"
+          title: "docs(rag-benchmark): publish monthly BEIR run"
+          body: |
+            Automated monthly BEIR retrieval benchmark (scifact, nfcorpus,
+            fiqa, hotpotqa) against UAR's own `/api/knowledge/{id}/search`.
+            Published by `.github/workflows/rag-benchmark-monthly.yml`.
+
+            This is a report-only change — no gate, no regression check.
+            Human review before merge is expected (retrieval quality
+            trends are informational, per Change 14's done-condition).
+          branch: rag-benchmark/monthly-update
+          add-paths: docs/rag-benchmark/**
