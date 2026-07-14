@@ -1,3 +1,5 @@
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, Request, State},
@@ -24,7 +26,7 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 
-use tracing::{info, warn};
+use tracing::{Instrument, info, warn};
 
 use crate::AppState;
 use crate::config::AppConfig;
@@ -78,11 +80,36 @@ use crate::uar::persistence::providers::surreal::SurrealDbProvider;
 #[cfg(feature = "postgres-backend")]
 use crate::uar::persistence::providers::postgres::PostgresProvider;
 
+/// Tower middleware that enters a `tracing` span with request-scoped identifiers
+/// before the request reaches the route handler. The span carries `request_id`,
+/// `agent_id`, and `run_id` fields so that `UarError::into_response` captures a
+/// non-empty `SpanTrace` for observability. `agent_id` and `run_id` are set to
+/// `"none"` here; handlers that have them available can record them into the
+/// current span with `Span::current().record(...)`.
+async fn request_span_layer(request: Request, next: Next) -> Response {
+    let request_id = request
+        .headers()
+        .get("x-request-id")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
+
+    let span = tracing::info_span!(
+        "http_request",
+        request_id = %request_id,
+        agent_id = "none",
+        run_id = "none",
+    );
+
+    next.run(request).instrument(span).await
+}
+
 /// Start the Axum server with the provided configuration.
 pub async fn start_server(config: Arc<AppConfig>) -> anyhow::Result<()> {
     start_server_with_listener(config, None, None).await
 }
 
+#[expect(clippy::expect_used, reason = "init-time fatal configuration failure")]
 async fn start_server_with_listener(
     config: Arc<AppConfig>,
     listener: Option<tokio::net::TcpListener>,
@@ -1032,7 +1059,8 @@ async fn start_server_with_listener(
         ))
         // Apply Timeout Layer if not disabled
         // We use a large timeout if disabled instead of conditional layering to keep types consistent
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
+        .layer(axum::middleware::from_fn(request_span_layer));
 
     // ── ACP (Agent Communication Protocol) endpoint ──────────────────────────
     // Mounted conditionally so zero overhead is incurred when disabled.
@@ -5066,6 +5094,7 @@ pub(crate) async fn api_chat_completion(
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     #[test]

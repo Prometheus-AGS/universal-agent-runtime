@@ -1945,6 +1945,7 @@ impl RunManager {
 
 #[cfg(test)]
 mod approval_gate_tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::{ApprovalWaitOutcome, await_approval, resolve_pending_approval};
     use std::{collections::HashMap, time::Duration};
     use tokio::sync::{Mutex, oneshot};
@@ -1993,6 +1994,7 @@ mod approval_gate_tests {
 
 #[cfg(test)]
 mod activation_outcome_tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::correlate_skill_activation_outcomes;
     use std::collections::{HashMap, HashSet};
 
@@ -2045,6 +2047,7 @@ mod activation_outcome_tests {
 
 #[cfg(test)]
 mod cost_budget_wiring_tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::agent_cost_limit_from_extensions;
     use std::collections::HashMap;
 
@@ -2094,6 +2097,7 @@ mod cost_budget_wiring_tests {
 
 #[cfg(test)]
 mod credential_layer_tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::apply_credential_layer;
     use crate::config::LlmConfig;
     use crate::uar::security::credentials::{

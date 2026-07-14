@@ -329,6 +329,7 @@ impl ContextManager {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     fn make_msg(content: &str, role: MessageRole) -> Message {

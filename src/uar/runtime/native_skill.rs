@@ -152,6 +152,7 @@ impl NativeSkillRegistry {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     struct EchoSkill;

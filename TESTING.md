@@ -301,6 +301,13 @@ tools/
 - **Coverage**: settings store serde roundtrip, retrieval RRF invariants, governance policy hot-reload semantics
 - **Run locally**: included in `cargo test`
 
+## Error handling and observability tests
+
+- **Hot-path unwrap/expect guard**: `src/uar/api/`, `src/uar/runtime/`, and `src/server.rs` deny `clippy::unwrap_used` / `clippy::expect_used` at the module level. Run `cargo clippy --features server-full --no-deps` to verify.
+- **Central error type tests**: `src/uar/error.rs` verifies `UarError` stable codes, JSON response shape, and `tracing-error` span capture.
+- **Sentry feature build**: `cargo check --no-default-features --features server-full,sentry` ensures the optional Sentry integration compiles.
+- **Documentation**: see `docs/observability.md` for operator-facing tracing and Sentry setup guidance.
+
 ## Quality Gates
 
 ### Automated Checks
@@ -314,6 +321,7 @@ tools/
 8. **Conventional Commits**: `commitlint` + `lefthook` for the JS workspace
 9. **Mutation Testing**: `cargo-mutants` nightly
 10. **Fuzz and Property Tests**: `cargo-fuzz` and `proptest`
+11. **Hot-Path Error Handling**: `clippy::unwrap_used` / `clippy::expect_used` denied in `src/uar/api/`, `src/uar/runtime/`, and `src/server.rs`
 
 ### Manual Gates
 1. **Code Review**: Required for all PRs

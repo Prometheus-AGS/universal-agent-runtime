@@ -13,16 +13,21 @@ use axum::{
         sse::{Event, Sse},
     },
 };
-use std::time::{SystemTime, UNIX_EPOCH};
+use serde::Serialize;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
+
+fn unix_now_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or(Duration::ZERO)
+        .as_secs()
+}
 
 pub async fn list_models(State(_state): State<AppState>) -> impl IntoResponse {
     // In a real implementation, we would list all active agents from persistence
     // For now, we return the default/orchestrator agents
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
+    let now = unix_now_secs();
 
     let models = vec![
         ModelCard {
@@ -45,6 +50,16 @@ pub async fn list_models(State(_state): State<AppState>) -> impl IntoResponse {
     })
 }
 
+fn json_event<T: Serialize>(value: T) -> Event {
+    match Event::default().json_data(value) {
+        Ok(event) => event,
+        Err(err) => {
+            tracing::error!("failed to serialize SSE event: {}", err);
+            Event::default().data(r#"{"error":"internal serialization error"}"#)
+        }
+    }
+}
+
 pub async fn chat_completions(
     State(state): State<AppState>,
     Extension(user_context): axum::Extension<UserContext>,
@@ -52,10 +67,7 @@ pub async fn chat_completions(
 ) -> impl IntoResponse {
     let run_manager = &state.run_manager;
     let conversation_id = Uuid::new_v4().to_string();
-    let created = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
+    let created = unix_now_secs();
 
     // Extract last user message
     let last_message = req
@@ -124,7 +136,7 @@ pub async fn chat_completions(
                 finish_reason: None,
             }],
         };
-        yield Ok::<_, std::convert::Infallible>(Event::default().json_data(initial_chunk).unwrap());
+        yield Ok::<_, std::convert::Infallible>(json_event(initial_chunk));
 
         while let Ok(event) = rx.recv().await {
             match event.event {
@@ -143,7 +155,7 @@ pub async fn chat_completions(
                             finish_reason: None,
                         }],
                     };
-                    yield Ok(Event::default().json_data(chunk).unwrap());
+                    yield Ok(json_event(chunk));
                 }
                 NormalizedEvent::RunDone { .. } | NormalizedEvent::RunDoneWithUsage { .. } => {
                      let chunk = ChatCompletionChunk {
@@ -157,7 +169,7 @@ pub async fn chat_completions(
                             finish_reason: Some("stop".to_string()),
                         }],
                     };
-                    yield Ok(Event::default().json_data(chunk).unwrap());
+                    yield Ok(json_event(chunk));
                     yield Ok(Event::default().data("[DONE]"));
                     break;
                 }

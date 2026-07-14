@@ -21,6 +21,10 @@ pub struct A2AClient {
 
 impl A2AClient {
     /// Create a new client with default timeout (30 s).
+    #[expect(
+        clippy::expect_used,
+        reason = "reqwest default builder is infallible in practice"
+    )]
     pub fn new() -> Self {
         Self {
             http: Client::builder()

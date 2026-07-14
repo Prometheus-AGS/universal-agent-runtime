@@ -22,7 +22,10 @@ impl GuestLogs {
 
     /// Get all collected log messages.
     pub fn drain(&self) -> Vec<String> {
-        let mut msgs = self.messages.lock().expect("log mutex poisoned");
+        let mut msgs = match self.messages.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => poisoned.into_inner(),
+        };
         msgs.drain(..).collect()
     }
 }

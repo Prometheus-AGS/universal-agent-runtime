@@ -4,6 +4,10 @@
 
 /// Build the OpenAPI specification as a `serde_json::Value`.
 /// This avoids utoipa builder API version issues by constructing the spec directly.
+#[expect(
+    clippy::expect_used,
+    reason = "static json! literal is guaranteed to parse"
+)]
 pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
     serde_json::from_value(serde_json::json!({
         "openapi": "3.1.0",

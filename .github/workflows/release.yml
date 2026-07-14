@@ -171,6 +171,13 @@ jobs:
           node scripts/validate-static-bundle.mjs static
           cargo build --locked --release --no-default-features --bin universal-agent-runtime --features server-full
 
+      - name: Build Sentry-enabled release bundle
+        run: cargo build --locked --release --no-default-features --bin universal-agent-runtime --features server-full,sentry
+        env:
+          # Sentry is compile-time gated; a DSN is only required at runtime.
+          # This build verifies the feature compiles and links cleanly.
+          SENTRY_DSN: ""
+
       - name: Package Unix archive
         if: runner.os != 'Windows'
         shell: bash

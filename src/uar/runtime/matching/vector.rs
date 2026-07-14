@@ -217,13 +217,14 @@ impl SkillMatcher for VectorMatcher {
                 });
             }
         }
-        matches.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
+        matches.sort_by(|a, b| b.score.total_cmp(&a.score));
         Ok(matches)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
 
     fn matcher() -> VectorMatcher {

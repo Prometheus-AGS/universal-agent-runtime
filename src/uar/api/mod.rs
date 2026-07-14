@@ -1,3 +1,5 @@
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+
 pub mod a2a;
 pub mod acp;
 pub mod actors;

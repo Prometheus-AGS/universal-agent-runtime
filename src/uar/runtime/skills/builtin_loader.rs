@@ -424,6 +424,7 @@ fn split_frontmatter(raw: &str) -> Result<(&str, &str)> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
     use serial_test::serial;
     use std::fs;

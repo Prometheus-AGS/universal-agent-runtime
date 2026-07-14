@@ -497,9 +497,17 @@ pub async fn get_agent_session_config(
 ) -> impl IntoResponse {
     let sessions = state.agent_sessions.read().await;
     match sessions.get(&session_id) {
-        Some(config) => {
-            (StatusCode::OK, Json(serde_json::to_value(config).unwrap())).into_response()
-        }
+        Some(config) => match serde_json::to_value(config) {
+            Ok(value) => (StatusCode::OK, Json(value)).into_response(),
+            Err(err) => {
+                tracing::error!("failed to serialize agent session config: {}", err);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error": "failed to serialize config"})),
+                )
+                    .into_response()
+            }
+        },
         None => (
             StatusCode::NOT_FOUND,
             Json(json!({"error": "No agent session config found for this session"})),
@@ -559,17 +567,18 @@ fn json_merge(target: &mut serde_json::Value, patch: &serde_json::Value) {
         if !target.is_object() {
             *target = serde_json::Value::Object(serde_json::Map::new());
         }
-        let target_map = target.as_object_mut().unwrap();
-        for (key, value) in patch_map {
-            if value.is_null() {
-                target_map.remove(key);
-            } else if value.is_object() {
-                let entry = target_map
-                    .entry(key.clone())
-                    .or_insert(serde_json::Value::Object(serde_json::Map::new()));
-                json_merge(entry, value);
-            } else {
-                target_map.insert(key.clone(), value.clone());
+        if let Some(target_map) = target.as_object_mut() {
+            for (key, value) in patch_map {
+                if value.is_null() {
+                    target_map.remove(key);
+                } else if value.is_object() {
+                    let entry = target_map
+                        .entry(key.clone())
+                        .or_insert(serde_json::Value::Object(serde_json::Map::new()));
+                    json_merge(entry, value);
+                } else {
+                    target_map.insert(key.clone(), value.clone());
+                }
             }
         }
     } else {

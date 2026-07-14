@@ -958,6 +958,8 @@ pub fn to_runtime_entity_event(
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::{
         enrich_agui_spec_payload, to_agui_event, to_agui_spec_event, to_runtime_entity_event,
     };
