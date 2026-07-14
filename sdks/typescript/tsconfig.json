@@ -9,9 +9,12 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "declarationMap": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noUncheckedIndexedAccess": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": ".",
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test/**/*", "examples/**/*"],
   "exclude": ["node_modules", "dist"]
 }
