@@ -4,6 +4,7 @@ pub mod compiler;
 pub mod context;
 pub mod defaults;
 pub mod domain;
+pub mod error;
 pub mod eval;
 pub mod file_processing;
 pub mod governance;

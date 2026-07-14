@@ -123,6 +123,11 @@ cedar-governance = ["dep:cedar-policy"]
 ## OTLP tracing and Prometheus metrics export.
 telemetry = ["dep:tracing-opentelemetry", "dep:opentelemetry", "dep:opentelemetry-otlp", "dep:opentelemetry_sdk", "dep:metrics", "dep:metrics-exporter-prometheus"]
 
+## Reports every UarError to Sentry (src/uar/error.rs). Off by default; DSN
+## configuration and Sentry project setup are operator work (see
+## openspec/changes/central-uar-error-enum/proposal.md).
+sentry = ["dep:sentry"]
+
 ## A2A JSON-RPC, discovery, and gRPC network transports. Internal A2A types and
 ## registry contracts remain available for compiler and graph integration.
 a2a-transport = ["dep:tonic", "dep:tonic-prost", "dep:prost"]
@@ -230,7 +235,13 @@ mimalloc = "0.1"
 # Observability (M-LOG-STRUCTURED)
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+# Span-trace capture for UarError (src/uar/error.rs) — attaches the current
+# tracing span chain to every error logged at the public API boundary.
+tracing-error = "0.2"
 anyhow = "1.0.100"
+# Optional error reporting for UarError, gated behind the `sentry` feature
+# (default off). Actual DSN/project configuration is operator work.
+sentry = { version = "0.48", optional = true, default-features = false, features = ["backtrace", "contexts", "panic", "reqwest", "rustls"] }
 axum-extra = { version = "0.12.3", features = [
   "typed-routing",
   "typed-header",

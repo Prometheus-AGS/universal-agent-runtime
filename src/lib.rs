@@ -38,6 +38,9 @@ pub mod server;
 pub mod session;
 pub mod uar;
 
+/// Central error type for the public API boundary; see [`uar::error`].
+pub use uar::error::{Result, UarError};
+
 use crate::config::AppConfig;
 use crate::uar::security::rate_limit::AppRateLimiter;
 
