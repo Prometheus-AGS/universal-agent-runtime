@@ -98,17 +98,36 @@ now is that Change 18 can re-home rendering logic into components like
 this one without a field-renaming exercise on top of everything else it
 has to do.
 
-### Deferred: `EntityDiff`, `EntityStream`, `EntityApproval`, `EntityToolProvider`, `EntityChat`, `EntityCopilot`
+### `EntityDiff` and `EntityStream` (added in Change 18)
 
-Not implemented in this pass. Each has materially different requirements
-from `EntityCard` (`EntityDiff` needs a diffing data shape and probably
-two data-model snapshots to compare; `EntityStream` needs the
-binderless/imperative pattern — see `createBinderlessUarComponentImplementation`
-— to subscribe to a live stream rather than a single bound value;
-`EntityApproval`/`EntityChat`/`EntityCopilot` are closer to full
-mini-applications than single components). Building all 7 well, plus a
-full cross-testing matrix for each, is out of scope for a single pass —
-see "Scope of this change" below.
+`EntityDiff` and `EntityStream` were added in Change 18
+(`a2ui-migrate-entity-components-from-prometheus-entity-management`) — see
+that change's `proposal.md` for why "migrate" became "build fresh" (the
+plan's assumed source path,
+`prometheus-skill-system/skills/imported/prometheus-entity-management/packages/a2ui-react/src/`,
+does not exist anywhere in this repo, the `prometheus-entity-management`
+submodule, its git history, or sibling repos — there was no component to
+migrate).
+
+- `EntityDiff` — a bound component (`createUarComponentImplementation`,
+  same pattern as `EntityCard`) rendering a before/after field comparison,
+  with changed rows visually distinguished from unchanged ones.
+- `EntityStream` — a binderless component
+  (`createBinderlessUarComponentImplementation`), demonstrating the
+  imperative-subscription pattern this README previously only described:
+  it reads its static `source: { path }` declaration directly off
+  `context.componentModel.properties` and subscribes to that data-model
+  path itself via `context.dataContext.subscribeDynamicValue`, appending
+  new items reactively without `GenericBinder`'s single-value resolution
+  model getting in the way.
+
+### Still deferred: `EntityApproval`, `EntityToolProvider`, `EntityChat`, `EntityCopilot`
+
+Not implemented. These are closer to full mini-applications than single
+components (each would need its own interaction/approval-flow or
+conversational state model, not just a props schema and a render
+function) — building them well is out of scope for Change 18's pass, same
+reasoning Change 17 gave for deferring all 6 originally.
 
 ## Scope of this change (Change 17, `a2ui-uar-renderer-on-webcore`)
 
