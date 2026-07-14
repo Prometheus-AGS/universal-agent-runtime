@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.tag }}
           submodules: true
@@ -87,7 +87,7 @@ jobs:
           echo "tag_object_type=$tag_object_type" >>"$GITHUB_OUTPUT"
 
       - name: Check out the auditable previous source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.previous.outputs.sha }}
           path: previous-source

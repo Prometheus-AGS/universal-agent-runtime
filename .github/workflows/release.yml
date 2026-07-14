@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
@@ -126,7 +126,7 @@ jobs:
             executable: universal-agent-runtime.exe
             experimental: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
@@ -266,7 +266,7 @@ jobs:
     needs: validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}

@@ -17,7 +17,7 @@ jobs:
     name: cargo audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
@@ -67,7 +67,7 @@ jobs:
     name: npm audit (root)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
@@ -92,7 +92,7 @@ jobs:
     name: pnpm audit (frontend)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
@@ -125,7 +125,7 @@ jobs:
     name: npm audit (sdks/typescript)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
