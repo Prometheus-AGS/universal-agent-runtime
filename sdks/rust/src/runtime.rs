@@ -3,9 +3,9 @@
 //! This module allows embedding the full server runtime in another Rust application.
 //! Enable with `features = ["embedded"]`.
 
+use std::sync::Arc;
 #[cfg(feature = "embedded")]
 use universal_agent_runtime::{AppState, config::AppConfig, server};
-use std::sync::Arc;
 
 use crate::error::{Error, Result};
 

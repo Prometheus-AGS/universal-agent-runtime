@@ -1,77 +1,30 @@
-# universal-agent-runtime Rust SDK
+# Universal Agent Runtime Rust SDK 1.0
 
-Rust SDK for universal-agent-runtime - HTTP client and embeddable runtime.
-
-## Features
-
-- **http-client** (default): HTTP client for remote API calls
-- **embedded**: Embed the full runtime in your Rust application
-- **full**: Both features enabled
-
-## Installation
-
-Add to your `Cargo.toml`:
+Typed async access to UAR chat, tools, structured outputs, embeddings, agent
+runs, checkpoints, knowledge bases, documents, search, and ingestion.
 
 ```toml
 [dependencies]
-universal-agent-runtime-sdk = "0.1"
+universal-agent-runtime-sdk = "1"
 ```
 
-For embedded runtime:
-
-```toml
-[dependencies]
-universal-agent-runtime-sdk = { version = "0.1", features = ["embedded"] }
-```
-
-## HTTP Client Usage
-
-```rust
-use universal_agent_runtime_sdk::Client;
+```rust,no_run
+use universal_agent_runtime_sdk::{ChatCompletionRequest, ChatMessage, Client};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::new("http://localhost:1906")?;
-    
-    // Chat API
-    let response = client.chat().send("Hello!").await?;
-    println!("Session: {}", response.session_id);
-    
-    // Knowledge Base API
-    let kbs = client.knowledge().list().await?;
-    for kb in kbs {
-        println!("KB: {} ({})", kb.name, kb.id);
-    }
-    
-    // Search
-    let results = client.knowledge().search("kb-id", "query").await?;
-    for result in results.results {
-        println!("Score: {:.2} - {}", result.score, result.content);
-    }
-    
+    let response = client.chat().complete(ChatCompletionRequest {
+        messages: vec![ChatMessage::text("user", "Hello")],
+        ..Default::default()
+    }).await?;
+    println!("{}", response.id);
     Ok(())
 }
 ```
 
-## Embedded Runtime Usage
+Set a runtime API key with `Client::with_api_key`. Run any sample with
+`UAR_BASE_URL=http://localhost:1906 cargo run --example chat`.
 
-```rust
-use universal_agent_runtime_sdk::Runtime;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let runtime = Runtime::builder()
-        .config_path("config.yaml")
-        .build()
-        .await?;
-    
-    // Start the full HTTP server
-    runtime.start().await?;
-    
-    Ok(())
-}
-```
-
-## License
-
-MIT OR Apache-2.0
+The `embedded` feature links the AGPL runtime; HTTP-client-only consumers use
+the MIT-licensed SDK. See [BREAKING.md](BREAKING.md) for migration notes.

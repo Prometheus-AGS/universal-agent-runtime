@@ -3,7 +3,6 @@ name = "universal-agent-runtime-sdk"
 version = "1.0.0"
 edition = "2024"
 description = "Rust SDK for universal-agent-runtime - HTTP client and embeddable runtime. MIT-licensed; the 'embedded' feature links the AGPL-3.0-only runtime crate, so binaries built with that feature must comply with AGPL-3.0."
-authors = ["Developer <dev@example.com>"]
 repository = "https://github.com/Prometheus-AGS/universal-agent-runtime"
 license = "MIT OR AGPL-3.0"
 keywords = ["sdk", "client", "api", "llm", "agent"]
@@ -19,14 +18,15 @@ full = ["http-client", "embedded"]
 # Shared dependencies
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+miette = "7.6"
 thiserror = "2.0"
 async-trait = "0.1"
 futures = "0.3"
-tokio = { version = "1", features = ["rt-multi-thread", "sync"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
 url = "2.5"
 
 # HTTP client mode
-reqwest = { version = "0.12", features = ["json", "stream"], optional = true }
+reqwest = { version = "0.12", features = ["json", "multipart", "stream"], optional = true }
 tokio-stream = { version = "0.1", optional = true }
 eventsource-client = { version = "0.13", optional = true }
 
@@ -35,3 +35,6 @@ universal-agent-runtime = { path = "../..", optional = true }
 
 [dev-dependencies]
 tokio-test = "0.4"
+
+# The SDK is released independently from the runtime workspace.
+[workspace]
