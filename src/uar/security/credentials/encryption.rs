@@ -104,10 +104,10 @@ impl CredentialEncryption {
         }
 
         let (nonce_bytes, ciphertext) = combined.split_at(12);
-                let nonce_bytes: [u8; 12] = nonce_bytes
-                    .try_into()
-                    .map_err(|_| anyhow::anyhow!("encrypted credential nonce is not 12 bytes"))?;
-                let nonce = Nonce::from(nonce_bytes);
+        let nonce_bytes: [u8; 12] = nonce_bytes
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("encrypted credential nonce is not 12 bytes"))?;
+        let nonce = Nonce::from(nonce_bytes);
 
         let plaintext = self
             .cipher
