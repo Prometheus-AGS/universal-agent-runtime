@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (with submodules — skill pack + entity mgmt)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}

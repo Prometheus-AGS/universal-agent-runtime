@@ -31,7 +31,7 @@ jobs:
     name: Validate supply-chain contracts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
@@ -110,7 +110,7 @@ jobs:
           echo "ga_tag=$ga_tag" >> "$GITHUB_OUTPUT"
           echo "existing_ga_sha=$existing_ga_sha" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ steps.release.outputs.sha }}
           fetch-depth: 1
@@ -295,7 +295,7 @@ jobs:
       packages: read
       attestations: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.artifacts-and-image.outputs.source_sha }}
           submodules: true
