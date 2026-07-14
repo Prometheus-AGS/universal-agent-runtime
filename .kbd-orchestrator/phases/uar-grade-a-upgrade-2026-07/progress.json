@@ -7,14 +7,14 @@
   "execute_started": true,
   "reflect_complete": false,
   "sourceTool": "claude",
-  "last_updated": "2026-07-14T17:15:00Z",
-  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Confirmed via `git log` on main (HEAD 2946a25): Changes 1-11, 12, 13, 14, 15, 16, and 17 are MERGED into main (PRs #112-#121). That's 17/25 merged. Change 19 (a2ui-migrate-design-systems-embedder-from-flint-forge) is in progress via a Claude background agent in an isolated worktree.",
-  "operator_priority": "Operator redirected KBD to this phase ahead of the soak-run phase (2026-07-13): close Grade-A gaps first, soak/tag/install/GA resumes once code-complete here. 17/25 merged, 18/25 implementation-complete by count. Branch/merge debt is real and growing; prioritize dispatching Change 18 (which is now unblocked by Change 17's merge) and monitor Change 19.",
+  "last_updated": "2026-07-14T18:45:00Z",
+  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Confirmed via `git log` on main (HEAD 732c530): Changes 1-11, 12, 13, 14, 15, 16, and 17 are MERGED. That's 17/25 merged. Change 18 (a2ui-migrate-entity-components-from-prometheus-entity-management) is done on branch feat/a2ui-entity-diff-stream (commit da89de0) but not pushed/PR'd. Change 19 (a2ui-migrate-design-systems-embedder-from-flint-forge) is rebased and open as PR #123 for review.",
+  "operator_priority": "Operator redirected KBD to this phase ahead of the soak-run phase (2026-07-13): close Grade-A gaps first, soak/tag/install/GA resumes once code-complete here. 17/25 merged, 19/25 implementation-complete by count. Branch/merge debt is real and growing; push+PR feat/a2ui-entity-diff-stream and monitor Change 19.",
   "implementation_total": 25,
-  "implementation_completed": 18,
+  "implementation_completed": 19,
   "completion": {
     "primaryCounter": "implementation",
-    "implementation": { "completed": 18, "total": 25, "status": "IN_PROGRESS" },
+    "implementation": { "completed": 19, "total": 25, "status": "IN_PROGRESS" },
     "evidence": { "status": "NOT_TRACKED", "summary": null, "blockers": [] },
     "certification": { "status": "NOT_TRACKED", "summary": null, "blockers": [] },
     "publication": { "status": "NOT_TRACKED", "summary": null, "blockers": [] }
@@ -33,12 +33,26 @@
   },
   "active_dispatches": {
     "a2ui-migrate-design-systems-embedder-from-flint-forge": {
-      "status": "IN_PROGRESS",
-      "started_by": "claude (background agent, worktree isolation)",
+      "status": "PR_REVIEW",
+      "pr": 123,
+      "started_by": "claude (background agent, worktree isolation, then opencode completion)",
       "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-design-systems-flint",
       "branch": "feat/a2ui-design-systems-flint",
       "base": "6b0f3c9",
+      "rebased_onto": "732c530",
+      "commit": "5246dd3",
+      "rebased_commit": "96425c5",
       "note": "Reads sibling repo /Users/gqadonis/Projects/prometheus/flint-forge read-only for migration source. Instructed to verify the plan's claimed source paths (one, fdb-reflection/src/compilers/a2ui.rs, was confirmed NOT to exist before dispatch -- told to find the real equivalent and correct the plan)."
+    },
+    "a2ui-migrate-entity-components-from-prometheus-entity-management": {
+      "status": "DONE (partial scope, honestly disclosed)",
+      "started_by": "claude (main coordinating session, directly -- operator explicitly requested this NOT be delegated: 'we must handle change 18 here')",
+      "worktree": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime (main checkout)",
+      "branch": "feat/a2ui-entity-diff-stream",
+      "base": "ba7df39",
+      "commit": "da89de0",
+      "verified": "pnpm --filter @prometheus-ags/a2ui-uar typecheck/lint/test all pass (21/21 tests, 16 pre-existing + 5 new); pre-commit hooks (frontend lint+typecheck, commitlint) passed on commit; openspec validate --strict PASS.",
+      "notable": "MAJOR plan correction: the plan's claimed migration source (prometheus-skill-system/skills/imported/prometheus-entity-management/packages/a2ui-react/src/) does not exist anywhere -- not in the real prometheus-entity-management submodule (v1.2.0-rc-26), not in its git history, not in any sibling repo. There was nothing to migrate. Built EntityDiff (bound component) and EntityStream (binderless component, exercising createBinderlessUarComponentImplementation infrastructure Change 17 built but never used) as NEW components instead, following Change 17's established pattern. EntityApproval/EntityToolProvider/EntityChat/EntityCopilot remain deferred (mini-application scope). NOT yet pushed to remote or PR'd."
     }
   },
   "deliverables": {
@@ -63,9 +77,8 @@
       "openspec/changes/sdk-examples-cookbook-rustdoc/",
       "openspec/changes/a2ui-uar-renderer-on-webcore/"
     ],
-    "openspec_changes_with_proposals_note": "Confirmed present in main's openspec/changes/ directory as of HEAD 09cb3b8 (listed via `ls openspec/changes/`) for the 6 newly-merged changes, alongside the 8 already tracked here. sdk-rust-1-0/sdk-python-1.0/sdk-typescript-1-0/rag-embedding-backends-4-more directory contents not individually re-verified this pass (assume standard proposal.md/tasks.md/specs/ shape; spot-check if working on those changes).",
+    "openspec_changes_with_proposals_note": "Confirmed present in main's openspec/changes/ directory as of HEAD 09cb3b8 (listed via `ls openspec/changes/`) for the 6 newly-merged changes, alongside the 8 already tracked here. sdk-rust-1-0/sdk-python-1.0/sdk-typescript-1-0/rag-embedding-backends-4-more directory contents not individually re-verified this pass (assume standard proposal.md/tasks.md/specs/ shape; spot-check if working on those changes). a2ui-migrate-entity-components-from-prometheus-entity-management's scaffold exists on the unmerged feat/a2ui-entity-diff-stream branch (not in main yet) -- move here once that branch merges.",
     "openspec_changes_pending_proposal": [
-      "a2ui-migrate-entity-components-from-prometheus-entity-management",
       "a2ui-migrate-design-systems-embedder-from-flint-forge",
       "a2ui-realtime-backbone-from-flint-realtime-fabric",
       "a2ui-world-class-theming-a11y-i18n",
@@ -88,5 +101,5 @@
     "parallel_isolated": "Codex + GPT-5.6 in git worktrees (~20% of hours, 130h)"
   },
   "dependency_graph_findings": "Several arrows in plan.md's dependency graph turned out to be soft/aspirational rather than hard code dependencies once each change's actual done-condition was read: Change 15 (embedding backends) doesn't need Change 13 (citation stream); Change 14 (RAG eval) doesn't need Change 13; Change 16 (A2UI vendoring) doesn't need Change 13. This let those changes dispatch and complete well ahead of Change 13. Re-check each remaining 'blocked' change's actual done-condition (not just the graph arrow) before assuming it's truly blocked.",
-  "next_step": "1 dispatch in flight: Change 19 (a2ui-migrate-design-systems-embedder-from-flint-forge). Change 18 (a2ui-migrate-entity-components-from-prometheus-entity-management) is now unblocked because Change 17 is merged; dispatch it next by branching from current main. Changes 20-25 remain queued behind 18/19. 2 follow-up task chips (Pages deployment conflict and resizable.tsx typecheck break) are still pending operator attention."
+  "next_step": "Change 18 done (feat/a2ui-entity-diff-stream, commit da89de0) -- needs push + PR. Change 19 still in flight (Claude bg agent, a2ui-design-systems-flint worktree). Changes 20-25 remain queued: 20/21 need re-checking against actual done-conditions (same pattern that unblocked 19) rather than assumed-blocked from the graph; 22 needs 16-21; 23-25 need 16-22. 2 follow-up task chips (Pages deployment conflict and resizable.tsx typecheck break) still pending in separate operator sessions. Branch/merge debt now spans 2 done-unmerged branches (feat/a2ui-entity-diff-stream, and Change 19 once it lands) -- push+PR both once ready."
 }

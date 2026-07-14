@@ -1,8 +1,8 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-grade-a-upgrade-2026-07
-Step: 18 of 25 (dispatch Change 18, monitor Change 19)
+Step: 18 of 25 (push/PR Change 18, review PR #123 for Change 19)
 Stage: execute_in_progress
-Next command: dispatch Change 18 (a2ui-migrate-entity-components-from-prometheus-entity-management) from main; monitor Change 19 (a2ui-design-systems-flint) worktree
+Next command: rebase, push, and PR Change 18 branch (feat/a2ui-entity-diff-stream); review PR #123 (a2ui-migrate-design-systems-embedder-from-flint-forge)
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 18 of 25)
