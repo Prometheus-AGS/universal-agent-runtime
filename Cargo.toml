@@ -317,7 +317,7 @@ vaultrs = { version = "0.8", optional = true }
 ## surreal-memory's own pin (surrealdb = "3.0.5", a caret range) is
 ## satisfied by 3.2.0 without needing a change in that repo.
 surrealdb = { version = "=3.2.1", optional = true, features = ["kv-surrealkv"] }
-jsonschema = { version = "0.46.10", default-features = false }
+jsonschema = { version = "0.47.0", default-features = false }
 governor = { version = "0.10.4", features = ["std", "jitter", "quanta"] }
 nonzero_ext = "0.3.0"
 
