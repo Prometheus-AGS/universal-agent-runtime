@@ -51,6 +51,7 @@ import { cn } from "@/lib/utils";
 import { CapabilityToggles } from "@/features/chat/capability-toggles";
 import { useAgentConfig } from "@/features/chat/agent-config-context";
 import { selectMessageById, type ChatMessageStoreState, useChatMessageSelector, useThreadUi } from "@/hooks/use-thread-ui";
+import { MessageCitations } from "@/components/citations/citation-hover-panel";
 import { useAgent } from "@/entities/hooks/use-agents";
 import { useAgentStatus } from "@/hooks/use-agent-status";
 import { AgentStatusIndicator } from "@/features/chat/components/AgentStatusIndicator";
@@ -411,6 +412,7 @@ const AssistantMessage: FC = () => (
         <div className="wrap-break-word rounded-2xl rounded-tl-sm bg-muted/60 px-4 py-3 font-body text-sm text-foreground leading-relaxed shadow-sm">
           <AssistantMessageBody />
         </div>
+        <AssistantMessageCitations />
       </div>
     </div>
     <div className="ml-11 flex"><BranchPicker /><AssistantActionBar /></div>
@@ -695,6 +697,18 @@ const AssistantActionBar: FC = () => (
     <MessageMetaChips />
   </ActionBarPrimitive.Root>
 );
+
+// ─── RAG citation sources row ────────────────────────────────────────────────
+// Renders the [1], [2], ... hover-to-source badges for this message's RAG
+// citation stream (see `CitationStream` / `NormalizedEvent::RagCitations` on
+// the backend). Sits alongside the action bar so citations stay visible
+// without cluttering the message body itself.
+
+const AssistantMessageCitations: FC = () => {
+  const messageId = useMessage((m) => m.id);
+  const { activeThreadId } = useThreadUi();
+  return <MessageCitations threadId={activeThreadId} messageId={messageId} />;
+};
 
 // ─── Edit Composer ────────────────────────────────────────────────────────────
 

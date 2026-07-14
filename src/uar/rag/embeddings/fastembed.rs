@@ -118,10 +118,7 @@ impl EmbeddingBackend for FastEmbedBackend {
         self.vector_dimension
     }
 
-    async fn embed(
-        &self,
-        texts: &[&str],
-    ) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+    async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         if texts.is_empty() {
             return Ok(vec![]);
         }
@@ -161,11 +158,12 @@ mod tests {
             assert!((norm - 1.0).abs() < 1e-3, "expected ~unit norm, got {norm}");
         }
 
-        let near = crate::uar::runtime::matching::cosine_similarity(&out[0], &out[1],
+        let near = crate::uar::runtime::matching::cosine_similarity(&out[0], &out[1]);
+        let far = crate::uar::runtime::matching::cosine_similarity(&out[0], &out[2]);
+        assert!(
+            near > far,
+            "near-duplicate pair ({near}) must beat unrelated pair ({far})"
         );
-        let far = crate::uar::runtime::matching::cosine_similarity(&out[0], &out[2],
-        );
-        assert!(near > far, "near-duplicate pair ({near}) must beat unrelated pair ({far})");
         assert!(near > 0.8, "near-duplicate similarity too low: {near}");
     }
 

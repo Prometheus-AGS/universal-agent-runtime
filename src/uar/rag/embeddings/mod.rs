@@ -19,16 +19,12 @@ pub trait EmbeddingBackend: Send + Sync + Debug {
     /// Embed a batch of texts. The returned outer vector has the same length as
     /// `texts` (unless `texts` is empty, in which case an empty vector is
     /// returned). Each inner vector has `vector_dimension()` elements.
-    async fn embed(&self,
-        texts: &[&str],
-    ) -> Result<Vec<Vec<f32>>, EmbeddingError>;
+    async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError>;
 }
 
 impl dyn EmbeddingBackend {
     /// Embed a single text and return the first (only) embedding.
-    pub async fn embed_one(&self,
-        text: &str,
-    ) -> Result<Vec<f32>, EmbeddingError> {
+    pub async fn embed_one(&self, text: &str) -> Result<Vec<f32>, EmbeddingError> {
         let mut batch = self.embed(&[text]).await?;
         batch.pop().ok_or(EmbeddingError::EmptyResponse)
     }
@@ -119,10 +115,10 @@ impl From<&crate::config::EmbeddingBackendConfig> for EmbeddingConfig {
     }
 }
 
+#[cfg(feature = "candle-embeddings")]
+pub mod candle;
 pub mod cohere;
 #[cfg(feature = "local-models")]
 pub mod fastembed;
-#[cfg(feature = "candle-embeddings")]
-pub mod candle;
 pub mod openai;
 pub mod voyage;

@@ -48,10 +48,7 @@ impl EmbeddingBackend for VoyageEmbeddingBackend {
         self.vector_dimension
     }
 
-    async fn embed(
-        &self,
-        texts: &[&str],
-    ) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+    async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         if texts.is_empty() {
             return Ok(vec![]);
         }
@@ -106,10 +103,7 @@ struct VoyageEmbedding {
     embedding: Vec<f32>,
 }
 
-fn resolve_api_key(
-    config: &EmbeddingConfig,
-    backend: &str,
-) -> Result<String, EmbeddingError> {
+fn resolve_api_key(config: &EmbeddingConfig, backend: &str) -> Result<String, EmbeddingError> {
     if let Some(key) = config.api_key.clone() {
         return Ok(key);
     }

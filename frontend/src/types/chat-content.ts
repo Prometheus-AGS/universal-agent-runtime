@@ -14,6 +14,24 @@ export interface CitationContentBlock {
   content: string;
   url?: string;
 }
+/** One numbered citation marker ([1], [2], ...) referencing a retrieved RAG
+ * knowledge chunk. Mirrors the backend `RagCitation` wire shape
+ * (`src/uar/domain/events.rs`). */
+export interface RagCitationMarker {
+  /** 1-based marker number, matching the `[n]` shown in the response text. */
+  marker: number;
+  chunkId: string;
+  documentId?: string;
+  documentName: string;
+  relevanceScore: number;
+  snippet: string;
+}
+/** The full numbered citation set for one RAG-augmented assistant message,
+ * rendered as a hover-to-source panel (see `CitationHoverPanel`). */
+export interface RagCitationsContentBlock {
+  type: "rag-citations";
+  citations: RagCitationMarker[];
+}
 export interface SkillActivationContentBlock {
   type: "skill-activation";
   skillId: string;
@@ -37,6 +55,7 @@ export type ContentBlock =
   | ReasoningContentBlock
   | ToolCallContentBlock
   | CitationContentBlock
+  | RagCitationsContentBlock
   | SkillActivationContentBlock
   | ContextUpdateContentBlock
   | ImageContentBlock

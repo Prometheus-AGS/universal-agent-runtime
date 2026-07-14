@@ -2875,32 +2875,11 @@ dependencies = [
 
 [[package]]
 name = "dirs"
-version = "5.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44c45a9d03d6676652bcb5e724c7e988de1acad23a711b5217ab9cbecbec2225"
-dependencies = [
- "dirs-sys 0.4.1",
-]
-
-[[package]]
-name = "dirs"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3e8aa94d75141228480295a7d0e7feb620b1a5ad9f12bc40be62411e38cce4e"
 dependencies = [
- "dirs-sys 0.5.0",
-]
-
-[[package]]
-name = "dirs-sys"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "520f05a5cbd335fae5a99ff7a6ab8627577660ee5cfd6a94a6a929b52ff0321c"
-dependencies = [
- "libc",
- "option-ext",
- "redox_users 0.4.6",
- "windows-sys 0.48.0",
+ "dirs-sys",
 ]
 
 [[package]]
@@ -4749,7 +4728,7 @@ version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "629d8f3bbeda9d148036d6b0de0a3ab947abd08ce90626327fc3547a49d59d97"
 dependencies = [
- "dirs 6.0.0",
+ "dirs",
  "http 1.4.2",
  "indicatif 0.17.11",
  "libc",
@@ -4768,7 +4747,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aef3982638978efa195ff11b305f51f1f22f4f0a6cabee7af79b383ebee6a213"
 dependencies = [
- "dirs 6.0.0",
+ "dirs",
  "futures",
  "http 1.4.2",
  "indicatif 0.18.6",
@@ -5803,7 +5782,7 @@ dependencies = [
  "comrak",
  "dashmap",
  "dbase",
- "dirs 6.0.0",
+ "dirs",
  "encoding_rs",
  "fast_image_resize",
  "flate2",
@@ -10997,7 +10976,7 @@ dependencies = [
  "candle-nn",
  "candle-transformers",
  "chrono",
- "dirs 6.0.0",
+ "dirs",
  "hf-hub 0.5.0",
  "rand 0.10.2",
  "reqwest 0.13.4",
@@ -12500,7 +12479,7 @@ dependencies = [
  "anyhow",
  "axum",
  "clap",
- "dirs 6.0.0",
+ "dirs",
  "futures-util",
  "http 1.4.2",
  "jsonwebtoken",
@@ -12723,7 +12702,7 @@ dependencies = [
  "config",
  "criterion",
  "cucumber",
- "dirs 6.0.0",
+ "dirs",
  "dotenvy",
  "ed25519-dalek 3.0.0",
  "fastembed",

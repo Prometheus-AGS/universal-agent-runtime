@@ -48,10 +48,7 @@ impl EmbeddingBackend for CohereEmbeddingBackend {
         self.vector_dimension
     }
 
-    async fn embed(
-        &self,
-        texts: &[&str],
-    ) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+    async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         if texts.is_empty() {
             return Ok(vec![]);
         }
@@ -112,10 +109,7 @@ struct CohereEmbeddings {
     float: Option<Vec<Vec<f32>>>,
 }
 
-fn resolve_api_key(
-    config: &EmbeddingConfig,
-    backend: &str,
-) -> Result<String, EmbeddingError> {
+fn resolve_api_key(config: &EmbeddingConfig, backend: &str) -> Result<String, EmbeddingError> {
     if let Some(key) = config.api_key.clone() {
         return Ok(key);
     }

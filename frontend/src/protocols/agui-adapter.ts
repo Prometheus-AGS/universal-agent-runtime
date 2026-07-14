@@ -85,6 +85,8 @@ function customToLegacy(wire: UarAguiEvent): [string, Record<string, unknown>] {
   switch (wire.name) {
     case "uar.citation.added":
       return ["agui.citation.added", { kind: "citation", phase: "added", request_id, citation: value.citation }];
+    case "uar.rag_citations":
+      return ["agui.rag_citations", { kind: "rag_citations", phase: "added", request_id, citations: value.citations }];
     case "uar.memory.recall":
       return ["agui.memory.recall", { kind: "memory", phase: "recall", request_id, ...value }];
     case "uar.memory.mutation":

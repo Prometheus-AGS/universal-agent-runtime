@@ -53,7 +53,10 @@ impl VectorMatcher {
             .context("embedding backend failed")
     }
 
-    pub async fn index_skills(&self, registry: &crate::uar::runtime::skills::SkillRegistry) -> Result<()> {
+    pub async fn index_skills(
+        &self,
+        registry: &crate::uar::runtime::skills::SkillRegistry,
+    ) -> Result<()> {
         let skills = registry.list();
         if skills.is_empty() {
             return Ok(());
@@ -71,7 +74,10 @@ impl VectorMatcher {
         for (i, emb) in embeddings.into_iter().enumerate() {
             cache.push((skills[i].skill_id.clone(), emb));
         }
-        info!("Skill vector index built ({}).", self.backend.backend_name());
+        info!(
+            "Skill vector index built ({}).",
+            self.backend.backend_name()
+        );
 
         Ok(())
     }
@@ -124,7 +130,8 @@ mod tests {
 
     fn matcher() -> VectorMatcher {
         let cfg = EmbeddingConfig::default();
-        VectorMatcher::from_config(&cfg, 0.75).expect("VectorMatcher should build from default config")
+        VectorMatcher::from_config(&cfg, 0.75)
+            .expect("VectorMatcher should build from default config")
     }
 
     #[tokio::test]

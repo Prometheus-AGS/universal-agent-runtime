@@ -1,4 +1,5 @@
 pub mod chunking;
+pub mod citation_stream;
 pub mod decomposition;
 pub mod embeddings;
 pub mod extraction;

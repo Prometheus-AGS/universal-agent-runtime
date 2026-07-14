@@ -31,7 +31,10 @@ pub struct Chunker {
 }
 
 impl Chunker {
-    pub fn new(strategy: ChunkingStrategy, embedding_backend: Option<Arc<dyn EmbeddingBackend>>) -> Self {
+    pub fn new(
+        strategy: ChunkingStrategy,
+        embedding_backend: Option<Arc<dyn EmbeddingBackend>>,
+    ) -> Self {
         Self {
             strategy,
             embedding_backend,
