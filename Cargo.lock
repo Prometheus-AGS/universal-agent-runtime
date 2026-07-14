@@ -12507,7 +12507,7 @@ dependencies = [
  "anyhow",
  "axum",
  "clap",
- "dirs 5.0.1",
+ "dirs 6.0.0",
  "futures-util",
  "http 1.4.2",
  "jsonwebtoken",
