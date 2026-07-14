@@ -1,49 +1,51 @@
-"""universal-agent-runtime Python SDK.
+"""Typed asynchronous Python SDK for Universal Agent Runtime."""
 
-Provides a typed async HTTP client for interacting with the server.
-
-Example:
-    >>> import asyncio
-    >>> from universal_agent_runtime_sdk import Client
-    >>>
-    >>> async def main():
-    ...     client = Client("http://localhost:1906")
-    ...     
-    ...     # Chat API
-    ...     response = await client.chat("Hello!")
-    ...     print(f"Stream URL: {response.stream_url}")
-    ...     
-    ...     # Knowledge API
-    ...     kbs = await client.list_knowledge_bases()
-    ...     for kb in kbs:
-    ...         print(f"KB: {kb.name} ({kb.id})")
-    >>>
-    >>> asyncio.run(main())
-"""
-
-from .client import Client
+from .client import ApiError, Client, TransportError, UarError
 from .types import (
-    ChatResponse,
+    CancelRunResponse,
+    ChatChoice,
+    ChatCompletion,
+    Checkpoint,
+    CheckpointList,
     CreateKnowledgeBaseRequest,
     Document,
+    Embedding,
+    EmbeddingResponse,
+    IngestResponse,
     KnowledgeBase,
     KnowledgeBaseConfig,
     Message,
     RunResponse,
     SearchResponse,
     SearchResult,
+    StreamEvent,
+    ToolCall,
+    ToolDefinition,
 )
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 __all__ = [
+    "ApiError",
+    "CancelRunResponse",
+    "ChatChoice",
+    "ChatCompletion",
+    "Checkpoint",
+    "CheckpointList",
     "Client",
-    "ChatResponse",
     "CreateKnowledgeBaseRequest",
     "Document",
+    "Embedding",
+    "EmbeddingResponse",
+    "IngestResponse",
     "KnowledgeBase",
     "KnowledgeBaseConfig",
     "Message",
     "RunResponse",
     "SearchResponse",
     "SearchResult",
+    "StreamEvent",
+    "ToolCall",
+    "ToolDefinition",
+    "TransportError",
+    "UarError",
 ]
