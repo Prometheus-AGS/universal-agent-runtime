@@ -15,6 +15,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./v0_9": {
+      "types": "./src/v0_9.ts",
+      "default": "./src/v0_9.ts"
+    },
     "./styles": {
       "default": "./src/styles.ts"
     }
