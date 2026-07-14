@@ -147,3 +147,57 @@ DEFINE FIELD cost_usd ON cost_ledger TYPE float;
 DEFINE FIELD recorded_at ON cost_ledger TYPE datetime;
 DEFINE INDEX idx_cost_ledger_scope ON cost_ledger FIELDS scope, scope_id;
 DEFINE INDEX idx_cost_ledger_recorded_at ON cost_ledger FIELDS recorded_at;
+
+-- =============================================================================
+-- A2UI design-system bridge (migrated from flint-forge, see
+-- src/uar/a2ui/design_systems/ and
+-- openspec/changes/a2ui-migrate-design-systems-embedder-from-flint-forge/)
+-- =============================================================================
+
+DEFINE TABLE design_systems SCHEMAFULL;
+DEFINE FIELD name ON design_systems TYPE string;
+DEFINE FIELD tokens ON design_systems TYPE object;
+DEFINE FIELD source_format ON design_systems TYPE string
+    ASSERT $value IN ["design_md", "w3c_tokens", "figma_tokens", "manual"];
+DEFINE FIELD source_content ON design_systems TYPE option<string>;
+DEFINE FIELD imported_at ON design_systems TYPE option<datetime>;
+DEFINE FIELD created_at ON design_systems TYPE datetime;
+DEFINE FIELD updated_at ON design_systems TYPE datetime;
+DEFINE INDEX idx_design_systems_name ON design_systems FIELDS name;
+
+-- Minimal component catalog sufficient to host per-design-system overrides
+-- and embeddings. The full curated component library (vendored from
+-- flint-forge / prometheus-entity-management / flint-realtime-fabric per the
+-- grade-A plan's Change 18) is out of scope here; see this change's
+-- proposal.md for the scope note.
+DEFINE TABLE components SCHEMAFULL;
+DEFINE FIELD slug ON components TYPE string;
+DEFINE FIELD primitive_type ON components TYPE string;
+DEFINE FIELD category ON components TYPE string;
+DEFINE FIELD schema ON components TYPE object;
+DEFINE FIELD description ON components TYPE option<string>;
+DEFINE FIELD usage_examples ON components TYPE option<object>;
+DEFINE FIELD renderers ON components TYPE object;
+DEFINE FIELD created_at ON components TYPE datetime;
+DEFINE FIELD updated_at ON components TYPE datetime;
+DEFINE INDEX idx_components_slug ON components FIELDS slug UNIQUE;
+
+DEFINE TABLE component_overrides SCHEMAFULL;
+DEFINE FIELD design_system_id ON component_overrides TYPE string;
+DEFINE FIELD component_id ON component_overrides TYPE string;
+DEFINE FIELD prop_defaults ON component_overrides TYPE object;
+DEFINE FIELD css_vars ON component_overrides TYPE object;
+DEFINE FIELD react_component ON component_overrides TYPE option<string>;
+DEFINE FIELD flutter_widget ON component_overrides TYPE option<string>;
+DEFINE FIELD htmx_template ON component_overrides TYPE option<string>;
+DEFINE FIELD created_at ON component_overrides TYPE datetime;
+DEFINE FIELD updated_at ON component_overrides TYPE datetime;
+DEFINE INDEX idx_component_overrides_ds ON component_overrides FIELDS design_system_id;
+
+-- One embedding row per component ("description" aspect only). Keyed by the
+-- component id itself (see `SurrealDesignSystemStore::set_component_embedding`).
+DEFINE TABLE component_embeddings SCHEMAFULL;
+DEFINE FIELD component_id ON component_embeddings TYPE string;
+DEFINE FIELD embedding ON component_embeddings TYPE array<float>;
+DEFINE FIELD model ON component_embeddings TYPE string;
+DEFINE INDEX idx_component_embeddings_component ON component_embeddings FIELDS component_id UNIQUE;
