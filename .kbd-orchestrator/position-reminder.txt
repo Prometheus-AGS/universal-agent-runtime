@@ -2,7 +2,7 @@ POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-grade-a-upgrade-2026-07
 Step: 12 of 25
 Stage: execute_in_progress
-Next command: monitor Claude background dispatches for sdk-examples-cookbook-rustdoc, rag-citation-stream, and a2ui-uar-renderer-on-webcore; review/merge each branch once verified
+Next command: monitor Claude background dispatches for sdk-examples-cookbook-rustdoc and a2ui-uar-renderer-on-webcore; review/merge each branch once verified
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 12 of 25)
