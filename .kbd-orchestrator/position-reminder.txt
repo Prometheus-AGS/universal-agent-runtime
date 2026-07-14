@@ -1,10 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-grade-a-upgrade-2026-07
-Step: 12 of 25
+Step: 16 of 25 (PR review)
 Stage: execute_in_progress
-Next command: monitor Claude background dispatches for sdk-examples-cookbook-rustdoc and a2ui-uar-renderer-on-webcore; review/merge each branch once verified
+Next command: review PRs #120 (sdk-examples-cookbook-rustdoc) and #121 (a2ui-uar-renderer-on-webcore); merge once CI passes and reconcile Change 18 after merge
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 12 of 25)
+  Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 16 of 25)
   [do work]
-  Completed <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 12 of 25)
+  Completed <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 16 of 25)

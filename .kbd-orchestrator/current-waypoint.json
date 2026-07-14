@@ -43,8 +43,8 @@
     "docs-cookbook-12-examples",
     "docs-storybook-visual-regression-perf-budget"
   ],
-  "currentTask": "Changes 12 (sdk-examples-cookbook-rustdoc) and 17 (a2ui-uar-renderer-on-webcore) are dispatched to Claude background agents in isolated worktrees.",
-  "nextAction": "Monitor the two background dispatches; require focused verification, strict OpenSpec validation, committed handoff, artifact-refiner QA, and reconciliation before integration.",
+  "currentTask": "Changes 12 and 17 are rebased, verified, and open as PRs #120 and #121 for review.",
+  "nextAction": "Review PRs #120 (sdk-examples-cookbook-rustdoc) and #121 (a2ui-uar-renderer-on-webcore); merge once CI passes and reconcile Change 18 after merge.",
   "activeDispatches": {},
   "authorizationRequired": [
     "Change 1: confirmation that sdks/ has no third-party contributors (audit already run; operator to confirm reading) -- pricing bands deferred, no longer blocking",
@@ -58,13 +58,13 @@
     "Change 8: operator to confirm which registry (ghcr.io vs. ACR/deploy.yml) is canonical before wiring vuln-scan.yml to scan the actual last-published image instead of a locally-rebuilt Dockerfile"
   ],
   "sourceTool": "opencode",
-  "updatedAt": "2026-07-14T10:15:32-05:00",
+  "updatedAt": "2026-07-14T16:51:57Z",
   "previous_phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "last_updated": "2026-07-14T10:15:32-05:00",
+  "last_updated": "2026-07-14T16:51:57Z",
   "last_updated_by": "opencode",
   "exact_next_command": "monitor Claude background dispatches for sdk-examples-cookbook-rustdoc and a2ui-uar-renderer-on-webcore; review/merge each branch once verified",
   "fallback_command": "Use each OpenSpec change ledger for clarification and report cross-SDK/runtime contract blockers before expanding scope",
-  "active_change": "sdk-examples-cookbook-rustdoc / a2ui-uar-renderer-on-webcore",
+  "active_change": "pr-review-120-121",
   "next_pending_change": "a2ui-migrate-entity-components-from-prometheus-entity-management",
   "changes_total": 25,
   "changes_completed": 16
