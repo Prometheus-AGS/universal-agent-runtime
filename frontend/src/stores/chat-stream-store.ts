@@ -10,7 +10,7 @@ import { fetchResilienceSettings } from "@/services/settings-api";
 import { onSettingsChanged } from "@/services/settings-change-bus";
 import { useChatMessageStore } from "@/stores/chat-message-store";
 import { useAgentStatusStore } from "@/stores/agent-status-store";
-import type { ToolCallContentBlock } from "@/types/chat-content";
+import type { RagCitationMarker, ToolCallContentBlock } from "@/types/chat-content";
 import type { AttachmentPayload } from "@/types";
 import { ingestAgUiEvent, ingestRuntimeEvent } from "@/entities/runtime-ingest";
 import {
@@ -59,6 +59,24 @@ interface AguiCitationAdded {
   phase: "added";
   request_id: string;
   citation: { index: number; url?: string; title?: string; snippet?: string };
+}
+/** Wire shape of one citation marker, as serialized by the backend's
+ * `RagCitation` (snake_case, no camelCase rename — see
+ * `src/uar/domain/events.rs`). Converted to `RagCitationMarker` (camelCase)
+ * before it reaches the message store. */
+interface AguiRagCitationWire {
+  marker: number;
+  chunk_id: string;
+  document_id?: string;
+  document_name: string;
+  relevance_score: number;
+  snippet: string;
+}
+interface AguiRagCitations {
+  kind: "rag_citations";
+  phase: "added";
+  request_id: string;
+  citations: AguiRagCitationWire[];
 }
 interface AguiToolCallDelta {
   kind: "tool_call";
@@ -178,6 +196,7 @@ type AguiPayload =
   | AguiThinkingDelta
   | AguiReasoningDelta
   | AguiCitationAdded
+  | AguiRagCitations
   | AguiToolCallDelta
   | AguiToolCallComplete
   | AguiToolResult
@@ -795,6 +814,25 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                       content: e.citation.snippet ?? "",
                       url: e.citation.url,
                     });
+                  break;
+                }
+                case "agui.rag_citations": {
+                  const e = agui as AguiRagCitations;
+                  if (e.citations?.length)
+                    store.addRagCitations(
+                      threadId,
+                      runId,
+                      e.citations.map(
+                        (c): RagCitationMarker => ({
+                          marker: c.marker,
+                          chunkId: c.chunk_id,
+                          documentId: c.document_id,
+                          documentName: c.document_name,
+                          relevanceScore: c.relevance_score,
+                          snippet: c.snippet,
+                        }),
+                      ),
+                    );
                   break;
                 }
                 case "agui.tool_call.delta": {

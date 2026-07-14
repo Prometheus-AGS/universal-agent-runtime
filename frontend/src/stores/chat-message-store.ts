@@ -5,6 +5,7 @@ import type {
   ContentBlock,
   ContextUpdateContentBlock,
   MessageUsage,
+  RagCitationMarker,
   RichMessage,
   SkillActivationContentBlock,
   StreamingState,
@@ -35,6 +36,10 @@ interface ChatMessageActions {
   addToolCall(threadId: string, runId: string, toolCall: ToolCallContentBlock): void;
   updateToolCall(threadId: string, toolCallId: string, update: Partial<Omit<ToolCallContentBlock, "type">>): void;
   addCitation(threadId: string, runId: string, citation: { source: string; content: string; url?: string }): void;
+  /** Attach the full numbered citation set ([1], [2], ...) for a RAG-augmented
+   * run to the streaming message, so the hover-to-source panel can resolve
+   * `[n]` markers appearing in the response text. */
+  addRagCitations(threadId: string, runId: string, citations: RagCitationMarker[]): void;
   addSkillActivation(threadId: string, runId: string, skill: { skillId: string; skillName: string; selectionMethod?: string; status: "active" | "complete" }): void;
   addContextUpdate(threadId: string, runId: string, update: Omit<ContextUpdateContentBlock, "type">): void;
   /** Attach agent/model/usage metadata to the in-flight streaming message. Must run before finishStream so it is persisted. */
@@ -264,6 +269,33 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === undefined || idx === -1) return;
         messages[idx].content.push({ type: "citation", ...citation });
+      }),
+
+    addRagCitations: (threadId, runId, citations) =>
+      set((state) => {
+        ensureThread(state, threadId);
+        const streaming = ensureStreaming(state, threadId);
+        if (!streaming.isStreaming || streaming.runId !== runId) {
+          state.streamingByThread[threadId] = {
+            isStreaming: true,
+            runId,
+            streamingMessageId: null,
+            awaitingFirstToken: false,
+            retryAttempt: 0,
+            retryMaxAttempts: 0,
+            retryDelayMs: 0,
+          };
+        } else {
+          streaming.awaitingFirstToken = false;
+          streaming.retryAttempt = 0;
+          streaming.retryMaxAttempts = 0;
+          streaming.retryDelayMs = 0;
+        }
+        const msg = getOrCreateStreamingMessage(state, threadId, runId);
+        const messages = state.messagesByThread[threadId];
+        const idx = messages.findIndex((m) => m.id === msg.id);
+        if (idx === undefined || idx === -1) return;
+        messages[idx].content.push({ type: "rag-citations", citations });
       }),
 
     addSkillActivation: (threadId, runId, skill) =>

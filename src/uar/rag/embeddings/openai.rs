@@ -48,10 +48,7 @@ impl EmbeddingBackend for OpenAiEmbeddingBackend {
         self.vector_dimension
     }
 
-    async fn embed(
-        &self,
-        texts: &[&str],
-    ) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+    async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         if texts.is_empty() {
             return Ok(vec![]);
         }
@@ -91,11 +88,7 @@ impl EmbeddingBackend for OpenAiEmbeddingBackend {
             .await
             .map_err(|e| EmbeddingError::RequestFailed(format!("failed to parse response: {e}")))?;
 
-        Ok(resp
-            .data
-            .into_iter()
-            .map(|d| d.embedding)
-            .collect())
+        Ok(resp.data.into_iter().map(|d| d.embedding).collect())
     }
 }
 
@@ -118,10 +111,7 @@ struct OpenAiEmbedding {
 }
 
 /// Resolve the API key from config or the named environment variable.
-fn resolve_api_key(
-    config: &EmbeddingConfig,
-    backend: &str,
-) -> Result<String, EmbeddingError> {
+fn resolve_api_key(config: &EmbeddingConfig, backend: &str) -> Result<String, EmbeddingError> {
     if let Some(key) = config.api_key.clone() {
         return Ok(key);
     }

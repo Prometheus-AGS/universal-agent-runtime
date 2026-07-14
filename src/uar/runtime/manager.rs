@@ -8,6 +8,7 @@ use crate::uar::domain::{
     events::{CitationSource, MemoryItem, NormalizedEvent, StatePatchOp},
     runs::{Run, RunStatus},
 };
+use crate::uar::rag::citation_stream::CitationStream;
 use crate::uar::runtime::context::manager::ContextManager;
 use crate::uar::runtime::matching::{ClassifierConfig, IntentClassifier, create_classifier};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
@@ -16,7 +17,6 @@ use crate::uar::runtime::skills::service::SkillService;
 use futures::StreamExt;
 use std::{
     collections::{HashMap, HashSet, VecDeque},
-    fmt::Write,
     sync::Arc,
     time::Duration,
 };
@@ -762,9 +762,36 @@ impl RunManager {
                         match search_result {
                             Ok(matches) => {
                                 if !matches.is_empty() {
-                                    system_prompt.push_str("\n\n[RELEVANT KNOWLEDGE]\n");
-                                    for m in matches {
-                                        let _ = writeln!(system_prompt, "- {}", m.chunk.content);
+                                    // Resolve document names for the citation
+                                    // panel (best-effort; falls back to the
+                                    // document/chunk id when a document
+                                    // record can't be found or has none).
+                                    let mut document_names: HashMap<String, String> =
+                                        HashMap::new();
+                                    let mut seen_document_ids: HashSet<String> = HashSet::new();
+                                    for m in &matches {
+                                        if let Some(did) = &m.chunk.document_id
+                                            && seen_document_ids.insert(did.clone())
+                                            && let Ok(Some(doc)) = db.get_document(did).await
+                                        {
+                                            document_names.insert(did.clone(), doc.filename);
+                                        }
+                                    }
+
+                                    // Assign [1], [2], ... markers matching
+                                    // retrieval order, inject the numbered
+                                    // block so the model has a reason to cite
+                                    // back with `[n]`, and emit the same
+                                    // numbered set on the SSE stream so the
+                                    // client can resolve `[n]` to a
+                                    // hover-to-source panel.
+                                    let citation_stream =
+                                        CitationStream::from_matches(&matches, &document_names);
+                                    system_prompt.push_str(&citation_stream.prompt_block());
+                                    if let Some(event) =
+                                        citation_stream.to_normalized_event(run_id.clone())
+                                    {
+                                        emitter.emit(event).await;
                                     }
                                 }
                             }

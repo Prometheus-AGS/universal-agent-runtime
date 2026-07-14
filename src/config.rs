@@ -1082,7 +1082,10 @@ impl AppConfig {
             .set_default("llm.embedding.model", "bge-small-en-v1.5")?
             .set_default("llm.embedding.vector_dimension", 384_i64)?
             .set_default("llm.embedding.batch_size", 32_i64)?
-            .set_default("llm.embedding.models_dir", "src/uar/runtime/matching/models")?;
+            .set_default(
+                "llm.embedding.models_dir",
+                "src/uar/runtime/matching/models",
+            )?;
 
         // 2. Config File Loading (Explicit > Implicit)
         if let Some(config_path) = &cli.config {

@@ -127,7 +127,8 @@ async fn start_server_with_listener(
 
     // Initialize Persistence & RAG
     let mut ingest_service: Option<Arc<IngestService>> = None;
-    let embedding_config = crate::uar::rag::embeddings::EmbeddingConfig::from(&config.llm.embedding);
+    let embedding_config =
+        crate::uar::rag::embeddings::EmbeddingConfig::from(&config.llm.embedding);
     let embedding_backend = match crate::uar::rag::embeddings::build_backend(&embedding_config) {
         Ok(b) => b,
         Err(e) => {

@@ -102,6 +102,20 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
                 }),
             ))
         }
+        NormalizedEvent::RagCitations { run_id, citations } => {
+            if citations.is_empty() {
+                return None;
+            }
+            Some((
+                "agui.rag_citations",
+                serde_json::json!({
+                    "kind": "rag_citations",
+                    "phase": "added",
+                    "request_id": run_id,
+                    "citations": citations
+                }),
+            ))
+        }
         NormalizedEvent::MemoryRecall { run_id, items } => {
             // Distinguish pre-call context hits (source == "memory_context") from
             // model-provided memory updates so clients can render them differently.
@@ -498,6 +512,11 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
             "uar.citation.added",
             Some(run_id),
             serde_json::json!({ "citation": sources }),
+        ),
+        NormalizedEvent::RagCitations { run_id, citations } => custom(
+            "uar.rag_citations",
+            Some(run_id),
+            serde_json::json!({ "citations": citations }),
         ),
         NormalizedEvent::MemoryRecall { run_id, items } => custom(
             "uar.memory.recall",

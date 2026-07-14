@@ -24,6 +24,17 @@ pub enum NormalizedEvent {
         run_id: String,
         sources: Vec<CitationSource>,
     },
+    /// Numbered citation markers (`[1]`, `[2]`, ...) for a RAG-augmented run,
+    /// each referencing one retrieved knowledge chunk. Emitted once retrieval
+    /// completes and before the assistant's response streams, so the client
+    /// can resolve `[n]` markers that appear in the response text to a
+    /// hover-to-source panel. Built by [`crate::uar::rag::citation_stream::CitationStream`].
+    /// Distinct from [`Self::Citation`], which carries LLM-native web
+    /// citations (URL sources) rather than RAG chunk citations.
+    RagCitations {
+        run_id: String,
+        citations: Vec<RagCitation>,
+    },
     MemoryRecall {
         run_id: String,
         items: Vec<MemoryItem>,
@@ -206,6 +217,28 @@ pub struct CitationSource {
     pub title: String,
     pub url: String,
     pub snippet: Option<String>,
+}
+
+/// A single numbered citation marker referencing one retrieved RAG chunk.
+///
+/// `marker` is the 1-based number that appears in the assistant's response
+/// text as `[marker]` (e.g. `marker: 1` for `[1]`). Carried on the wire by
+/// [`NormalizedEvent::RagCitations`] and constructed by
+/// [`crate::uar::rag::citation_stream::CitationStream`].
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RagCitation {
+    /// 1-based marker number, matching the `[n]` shown in the response text.
+    pub marker: usize,
+    /// ID of the retrieved knowledge chunk this marker attributes to.
+    pub chunk_id: String,
+    /// ID of the source document (if the chunk was ingested from one).
+    pub document_id: Option<String>,
+    /// Human-readable document name (filename, or a fallback label).
+    pub document_name: String,
+    /// Retrieval relevance score (0.0-1.0-ish, retriever-dependent).
+    pub relevance_score: f32,
+    /// Short snippet of the cited chunk's content, for the hover panel.
+    pub snippet: String,
 }
 
 /// A single sycophancy pattern match (a compact, serializable summary of a

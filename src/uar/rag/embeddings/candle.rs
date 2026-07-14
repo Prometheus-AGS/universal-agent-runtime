@@ -47,8 +47,7 @@ impl CandleEmbeddingBackend {
         })
     }
 
-    async fn ensure_loaded(&self,
-    ) -> Result<&Arc<Mutex<CandleBackendInner>>, EmbeddingError> {
+    async fn ensure_loaded(&self) -> Result<&Arc<Mutex<CandleBackendInner>>, EmbeddingError> {
         self.inner
             .get_or_try_init(|| async {
                 let device = Self::pick_device()?;
@@ -83,10 +82,7 @@ impl EmbeddingBackend for CandleEmbeddingBackend {
         self.expected_dimension
     }
 
-    async fn embed(
-        &self,
-        texts: &[&str],
-    ) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+    async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
         if texts.is_empty() {
             return Ok(vec![]);
         }
@@ -100,11 +96,7 @@ impl EmbeddingBackend for CandleEmbeddingBackend {
             let inner = inner_mutex.blocking_lock();
             let mut embeddings = Vec::with_capacity(texts.len());
             for text in &texts {
-                let emb = compute_one(
-                    &inner,
-                    text,
-                    expected_dimension,
-                )?;
+                let emb = compute_one(&inner, text, expected_dimension)?;
                 embeddings.push(emb);
             }
             Ok(embeddings)
@@ -133,19 +125,15 @@ fn build_inner(
     let safetensors_path = models_dir.join(SAFE_WEIGHTS_NAME);
     let pytorch_path = models_dir.join(PYTORCH_WEIGHTS_NAME);
 
-    let tokenizer =
-        Tokenizer::from_file(&tokenizer_path).map_err(|e| {
-            EmbeddingError::BackendUnavailable(format!(
-                "failed to load tokenizer from {}: {e}",
-                tokenizer_path.display()
-            ))
-        })?;
+    let tokenizer = Tokenizer::from_file(&tokenizer_path).map_err(|e| {
+        EmbeddingError::BackendUnavailable(format!(
+            "failed to load tokenizer from {}: {e}",
+            tokenizer_path.display()
+        ))
+    })?;
 
     let config_file = std::fs::File::open(&config_path).map_err(|e| {
-        EmbeddingError::BackendUnavailable(format!(
-            "failed to open {}: {e}",
-            config_path.display()
-        ))
+        EmbeddingError::BackendUnavailable(format!("failed to open {}: {e}", config_path.display()))
     })?;
     let config: BertConfig = serde_json::from_reader(config_file).map_err(|e| {
         EmbeddingError::BackendUnavailable(format!(
@@ -173,24 +161,27 @@ fn build_inner(
         )));
     };
 
-    let vb = if weights_path.extension().is_some_and(|ext| ext == "safetensors") {
+    let vb = if weights_path
+        .extension()
+        .is_some_and(|ext| ext == "safetensors")
+    {
         // SAFETY: weights_path points to a file in a user-provided model directory
         // that is not concurrently modified during loading.
         unsafe {
-            VarBuilder::from_mmaped_safetensors(
-                &[weights_path.as_path()],
-                DType::F32,
-                &device,
-            )
-            .map_err(|e| EmbeddingError::BackendUnavailable(format!("failed to load weights: {e}")))?
+            VarBuilder::from_mmaped_safetensors(&[weights_path.as_path()], DType::F32, &device)
+                .map_err(|e| {
+                    EmbeddingError::BackendUnavailable(format!("failed to load weights: {e}"))
+                })?
         }
     } else {
-        VarBuilder::from_pth(&weights_path, DType::F32, &device)
-            .map_err(|e| EmbeddingError::BackendUnavailable(format!("failed to load weights: {e}")))?
+        VarBuilder::from_pth(&weights_path, DType::F32, &device).map_err(|e| {
+            EmbeddingError::BackendUnavailable(format!("failed to load weights: {e}"))
+        })?
     };
 
-    let model = BertModel::load(vb, &config)
-        .map_err(|e| EmbeddingError::BackendUnavailable(format!("failed to build BERT model: {e}")))?;
+    let model = BertModel::load(vb, &config).map_err(|e| {
+        EmbeddingError::BackendUnavailable(format!("failed to build BERT model: {e}"))
+    })?;
 
     Ok(CandleBackendInner {
         model,
@@ -221,8 +212,8 @@ fn compute_one(
         .map_err(candle_err)?
         .unsqueeze(0)
         .map_err(candle_err)?;
-    let token_type_ids = Tensor::zeros(token_ids.shape(), DType::I64, &inner.device)
-        .map_err(candle_err)?;
+    let token_type_ids =
+        Tensor::zeros(token_ids.shape(), DType::I64, &inner.device).map_err(candle_err)?;
 
     let embeddings = inner
         .model

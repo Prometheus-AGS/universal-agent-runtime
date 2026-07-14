@@ -8,7 +8,7 @@
 
 use aes_gcm::{
     Aes256Gcm, Key, Nonce,
-    aead::{Aead, AeadCore, KeyInit, OsRng},
+    aead::{Aead, Generate, KeyInit},
 };
 use anyhow::{Context, Result, bail};
 use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
@@ -34,9 +34,9 @@ impl CredentialEncryption {
     /// reading an environment variable.
     #[must_use]
     pub fn from_key(key_bytes: &[u8; 32]) -> Self {
-        let key = Key::<Aes256Gcm>::from_slice(key_bytes);
+        let key = Key::<Aes256Gcm>::from(*key_bytes);
         Self {
-            cipher: Aes256Gcm::new(key),
+            cipher: Aes256Gcm::new(&key),
         }
     }
 
@@ -68,8 +68,11 @@ impl CredentialEncryption {
                         );
                     };
 
-                let key = Key::<Aes256Gcm>::from_slice(&key_bytes);
-                let cipher = Aes256Gcm::new(key);
+                let key_bytes: [u8; 32] = key_bytes
+                    .try_into()
+                    .map_err(|_| anyhow::anyhow!("credential encryption key is not 32 bytes"))?;
+                let key = Key::<Aes256Gcm>::from(key_bytes);
+                let cipher = Aes256Gcm::new(&key);
                 Ok(Some(Self { cipher }))
             }
         }
@@ -77,7 +80,7 @@ impl CredentialEncryption {
 
     /// Encrypt `plaintext` and return `base64(nonce || ciphertext)`.
     pub fn encrypt(&self, plaintext: &str) -> Result<String> {
-        let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
+        let nonce = Nonce::generate();
         let ciphertext = self
             .cipher
             .encrypt(&nonce, plaintext.as_bytes())
@@ -101,11 +104,14 @@ impl CredentialEncryption {
         }
 
         let (nonce_bytes, ciphertext) = combined.split_at(12);
-        let nonce = Nonce::from_slice(nonce_bytes);
+        let nonce_bytes: [u8; 12] = nonce_bytes
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("encrypted credential nonce is not 12 bytes"))?;
+        let nonce = Nonce::from(nonce_bytes);
 
         let plaintext = self
             .cipher
-            .decrypt(nonce, ciphertext)
+            .decrypt(&nonce, ciphertext)
             .map_err(|e| anyhow::anyhow!("AES-GCM decrypt error: {e}"))?;
 
         String::from_utf8(plaintext).context("decrypted credential is not valid UTF-8")
