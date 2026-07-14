@@ -83,6 +83,8 @@ pub struct AppState {
     pub ingest_service: Option<Arc<IngestService>>,
     /// Vector Matcher (for embeddings)
     pub vector_matcher: Arc<VectorMatcher>,
+    /// Embedding backend shared by RAG, memory, and matching.
+    pub embedding_backend: Arc<dyn crate::uar::rag::embeddings::EmbeddingBackend>,
     /// Persistence Layer
     pub persistence: Option<Arc<dyn PersistenceLayer>>,
     /// Global Rate Limiter

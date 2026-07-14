@@ -1077,7 +1077,12 @@ impl AppConfig {
             .set_default("llm.timeout_secs", 60_i64)?
             .set_default("llm.max_retries", 3_i64)?
             .set_default("llm.cost_tracking", false)?
-            .set_default("llm.tracing", true)?;
+            .set_default("llm.tracing", true)?
+            .set_default("llm.embedding.backend", "fastembed")?
+            .set_default("llm.embedding.model", "bge-small-en-v1.5")?
+            .set_default("llm.embedding.vector_dimension", 384_i64)?
+            .set_default("llm.embedding.batch_size", 32_i64)?
+            .set_default("llm.embedding.models_dir", "src/uar/runtime/matching/models")?;
 
         // 2. Config File Loading (Explicit > Implicit)
         if let Some(config_path) = &cli.config {
@@ -1417,6 +1422,9 @@ pub struct LlmConfig {
     /// Anthropic models with the specified token budget.
     #[serde(default)]
     pub thinking_budget: Option<u32>,
+    /// Embedding backend configuration for RAG and memory.
+    #[serde(default)]
+    pub embedding: EmbeddingBackendConfig,
     /// Per-provider API keys loaded from env shortcuts (OPENAI_API_KEY, etc.).
     ///
     /// Keyed by provider id (e.g. `"openai"`, `"anthropic"`). Populated at
@@ -1455,6 +1463,7 @@ impl std::fmt::Debug for LlmConfig {
             .field("cooldown_secs", &self.cooldown_secs)
             .field("health_check_secs", &self.health_check_secs)
             .field("thinking_budget", &self.thinking_budget)
+            .field("embedding", &self.embedding)
             .field("provider_keys", &provider_keys)
             .finish()
     }
@@ -1497,7 +1506,74 @@ impl Default for LlmConfig {
             cooldown_secs: None,
             health_check_secs: None,
             thinking_budget: None,
+            embedding: EmbeddingBackendConfig::default(),
             provider_keys: std::collections::HashMap::new(),
+        }
+    }
+}
+
+/// Embedding backend configuration for RAG and memory.
+#[derive(Debug, Clone, Serialize, Deserialize, schemars::JsonSchema)]
+pub struct EmbeddingBackendConfig {
+    /// Backend identifier: `fastembed`, `candle`, `openai`, `voyage`, `cohere`.
+    #[serde(default = "EmbeddingBackendConfig::default_backend")]
+    pub backend: String,
+    /// Model identifier for the selected backend.
+    #[serde(default = "EmbeddingBackendConfig::default_model")]
+    pub model: String,
+    /// API key for hosted backends.
+    #[serde(default)]
+    pub api_key: Option<String>,
+    /// Environment variable name that contains the API key.
+    #[serde(default)]
+    pub api_key_env: Option<String>,
+    /// Base URL override for hosted backends.
+    #[serde(default)]
+    pub base_url: Option<String>,
+    /// Output vector dimension.
+    #[serde(default = "EmbeddingBackendConfig::default_vector_dimension")]
+    pub vector_dimension: usize,
+    /// Maximum number of texts sent per request.
+    #[serde(default = "EmbeddingBackendConfig::default_batch_size")]
+    pub batch_size: usize,
+    /// Local model directory for FastEmbed/Candle.
+    #[serde(default = "EmbeddingBackendConfig::default_models_dir")]
+    pub models_dir: String,
+}
+
+impl EmbeddingBackendConfig {
+    fn default_backend() -> String {
+        "fastembed".to_string()
+    }
+
+    fn default_model() -> String {
+        "bge-small-en-v1.5".to_string()
+    }
+
+    fn default_vector_dimension() -> usize {
+        384
+    }
+
+    fn default_batch_size() -> usize {
+        32
+    }
+
+    fn default_models_dir() -> String {
+        "src/uar/runtime/matching/models".to_string()
+    }
+}
+
+impl Default for EmbeddingBackendConfig {
+    fn default() -> Self {
+        Self {
+            backend: Self::default_backend(),
+            model: Self::default_model(),
+            api_key: None,
+            api_key_env: None,
+            base_url: None,
+            vector_dimension: Self::default_vector_dimension(),
+            batch_size: Self::default_batch_size(),
+            models_dir: Self::default_models_dir(),
         }
     }
 }
