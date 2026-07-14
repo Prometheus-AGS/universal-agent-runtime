@@ -6,15 +6,15 @@
   "plan_complete": true,
   "execute_started": true,
   "reflect_complete": false,
-  "sourceTool": "codex",
-  "last_updated": "2026-07-14T00:00:00-05:00",
-  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Changes 1-8 implementation-complete (8/25 by count). Change 7 (config-hot-reload-vault) implemented by OpenCode + Kimi K2.7 Coding: added ConfigManager with arc-swap + notify hot-reload, --strict-config mode, optional vault feature with vaultrs KV-v2 source, POST /.well-known/uar-config/reload admin endpoint, and unit tests.",
-  "operator_priority": "Operator redirected KBD to this phase ahead of the soak-run phase (2026-07-13): close Grade-A gaps first, soak/tag/install/GA resumes once code-complete here. Changes 1-8 implementation done. Next queued work is Change 9-11 (SDKs, Codex + GPT-5.6 worktrees) per plan.md's dependency graph.",
+  "sourceTool": "claude",
+  "last_updated": "2026-07-14T07:00:00Z",
+  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Changes 1-8, 15, and 16 implementation-complete (11/25 by count). Changes 9-11 (SDKs, Codex), 13 (rag-citation-stream), 14 (rag-eval-golden-set) are IN PROGRESS concurrently in isolated ~/.claude/worktrees/ checkouts. Change 15 (rag-embedding-backends-4-more) is implementation-complete on branch change/rag-embedding-backends-4-more (commit 6be8405) and pushed; merge pending.",
+  "operator_priority": "Operator redirected KBD to this phase ahead of the soak-run phase (2026-07-13): close Grade-A gaps first, soak/tag/install/GA resumes once code-complete here. Changes 1-8, 15, 16 implementation done. Changes 9,10,11,13,14 in progress across separate worktrees -- reconcile/merge each branch back into the main line once reviewed, since none of this is committed to the main checkout yet.",
   "implementation_total": 25,
-  "implementation_completed": 8,
+  "implementation_completed": 11,
   "completion": {
     "primaryCounter": "implementation",
-    "implementation": { "completed": 8, "total": 25, "status": "IN_PROGRESS" },
+    "implementation": { "completed": 11, "total": 25, "status": "IN_PROGRESS" },
     "evidence": { "status": "NOT_TRACKED", "summary": null, "blockers": [] },
     "certification": { "status": "NOT_TRACKED", "summary": null, "blockers": [] },
     "publication": { "status": "NOT_TRACKED", "summary": null, "blockers": [] }
@@ -40,6 +40,41 @@
       "worktree": "/Users/gqadonis/.claude/worktrees/sdk-typescript-1-0",
       "branch": "feat/sdk-typescript-1.0",
       "base": "b9a85515"
+    },
+    "rag-citation-stream": {
+      "status": "IN_PROGRESS",
+      "started_by": "claude (background agent, worktree isolation)",
+      "worktree": "/Users/gqadonis/.claude/worktrees/rag-citation-stream",
+      "branch": "feat/rag-citation-stream",
+      "base": "b9a8551"
+    },
+    "rag-eval-ragas-deepeval-golden-set": {
+      "status": "DONE",
+      "started_by": "claude (background agent, worktree isolation)",
+      "worktree": "/Users/gqadonis/.claude/worktrees/rag-eval-golden-set",
+      "branch": "feat/rag-eval-golden-set",
+      "base": "f53b988",
+      "commit": "94508c7",
+      "verified": "py_compile all files, 12/12 pytest, prometheus-eval validate+gate CLI run end-to-end, openspec validate --strict PASS. NOT verified: real RAGAS/DeepEval scoring run, BEIR benchmark, CI workflows firing for real (no live LLM key/server in that worktree).",
+      "notable": "Seeded 14 real golden-set items (not the plan's 300 -- deferred as content-curation work, disclosed in tasks.md/proposal.md). Found and fixed a real upstream bug: ragas 0.4.3 breaks on langchain-community>=0.4; pinned langchain-community<0.4."
+    },
+    "rag-embedding-backends-4-more": {
+      "status": "DONE",
+      "started_by": "OpenCode + Kimi K2.7 Coding",
+      "worktree": "/Users/gqadonis/.claude/worktrees/rag-embedding-backends-4-more",
+      "branch": "change/rag-embedding-backends-4-more",
+      "base": "f53b988",
+      "commit": "6be8405",
+      "verified": "cargo check --no-default-features --features server-full PASS; cargo check --no-default-features --features server-full,candle-embeddings PASS; cargo test --no-default-features --features server-full --lib embeddings PASS (12 tests); candle backend tests PASS (2 tests); openspec validate --strict --changes rag-embedding-backends-4-more PASS."
+    },
+    "a2ui-vendor-google-core-react": {
+      "status": "DONE",
+      "started_by": "claude (background agent, worktree isolation)",
+      "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-vendor-webcore",
+      "branch": "feat/a2ui-vendor-webcore",
+      "base": "f53b988",
+      "commit": "4795715",
+      "verified": "pnpm install/typecheck/lint clean, openspec validate --strict PASS"
     }
   },
   "deliverables": {
@@ -56,7 +91,7 @@
       "openspec/changes/slsa-l3-osv-grype-security-txt/{proposal.md, tasks.md, specs/slsa-l3-self-attestation/spec.md}",
       "openspec/changes/config-hot-reload-vault/{proposal.md, tasks.md, specs/config-hot-reload/spec.md}"
     ],
-    "openspec_changes_with_proposals_note": "config-hot-reload-vault (Change 7) proposal, tasks, and spec created and validated during this implementation. The change is now implementation-complete.",
+    "openspec_changes_with_proposals_note": "config-hot-reload-vault (Change 7) proposal, tasks, and spec created and validated during this implementation. The change is now implementation-complete. Changes 9-11, 13, 14, 15, 16 each have their own OpenSpec scaffold created inside their own isolated worktree (see active_dispatches above) -- these are NOT yet present in this main checkout's openspec/changes/ since none of those branches are merged. Move each into this with_proposals list once its branch merges.",
     "openspec_changes_pending_proposal": [
       "sdk-rust-1.0",
       "sdk-python-1.0",
@@ -89,5 +124,5 @@
     "bulk_implementation": "OpenCode + Kimi K2.7 Coding (~30% of hours, 200h)",
     "parallel_isolated": "Codex + GPT-5.6 in git worktrees (~20% of hours, 130h)"
   },
-  "next_step": "Changes 9-11 are dispatched concurrently to Codex in isolated worktrees. Monitor their KBD/OpenSpec handoffs; integrate only after each branch passes its language-specific verification and the completed Changes 6-8 are reconciled."
+  "next_step": "3 dispatches still in flight: sdk-rust-1.0/sdk-python-1.0/sdk-typescript-1.0 (Codex), rag-citation-stream (Claude background agent, finishing its own test-compile verification). Change 15 (rag-embedding-backends-4-more) is DONE and verified (branch change/rag-embedding-backends-4-more, commit 6be8405) -- ready for review/merge. a2ui-vendor-google-core-react and rag-eval-ragas-deepeval-golden-set are also DONE and verified (branches feat/a2ui-vendor-webcore, feat/rag-eval-golden-set) -- ready for review/merge. None of these branches are merged into main yet; each worktree is isolated at a slightly different base commit so merges will need sequencing/rebasing. Once a branch is reviewed and merged, update this file's active_dispatches entry to DONE and move its openspec scaffold into openspec_changes_with_proposals."
 }

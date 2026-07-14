@@ -7,7 +7,7 @@
 
 ## Summary
 
-Changes 1–8 are implementation-complete. Changes 9–11 are concurrently
+Changes 1–8 and 15 are implementation-complete. Changes 9–11 remain concurrently
 dispatched to Codex in three isolated worktrees from checkpoint `b9a85515`.
 KBD progress and the three OpenSpec task ledgers are canonical.
 
@@ -17,11 +17,16 @@ KBD progress and the three OpenSpec task ledgers are canonical.
 - `sdk-python-1.0` → `/Users/gqadonis/.claude/worktrees/sdk-python-1-0` (`feat/sdk-python-1.0`)
 - `sdk-typescript-1.0` → `/Users/gqadonis/.claude/worktrees/sdk-typescript-1-0` (`feat/sdk-typescript-1.0`)
 
+## Completed (merge pending)
+
+- `rag-embedding-backends-4-more` → `/Users/gqadonis/.claude/worktrees/rag-embedding-backends-4-more` (`change/rag-embedding-backends-4-more`, commit `6be8405`)
+
 ## Next action
 
-Monitor the three isolated implementations. Do not merge until focused
-verification, strict OpenSpec validation, artifact-refiner QA, and integration
-reconciliation with the uncommitted Changes 6–8 are complete.
+Monitor the three isolated SDK implementations. Review/merge Change 15 when
+convenient. Do not merge until focused verification, strict OpenSpec validation,
+artifact-refiner QA, and integration reconciliation with the uncommitted
+Changes 6–8 are complete.
 
 ## References
 

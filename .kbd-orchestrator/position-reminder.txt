@@ -1,20 +1,10 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-grade-a-upgrade-2026-07 (operator-redirected from perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion, which is paused not abandoned)
-Step: Change 7 of 25 (config-hot-reload-vault) — implementation complete by OpenCode + Kimi K2.7 Coding
+Phase: uar-grade-a-upgrade-2026-07
+Step: 11 of 25
 Stage: execute_in_progress
-Next command: operator authorization for SIXTH HARNESS SWITCH to Codex + GPT-5.6 in isolated git worktrees for Changes 9-11 (SDKs)
-
-CONCURRENCY: Changes 7 (OpenCode) and 8 (Claude) ran at the same time
-in the same working tree. See execution.md's "CONCURRENCY NOTE" —
-transient cross-contamination in build output was observed twice but
-resolved on its own; no actual file-edit conflicts occurred.
-
-HARNESS SWITCH DUE: Changes 9-11 (the 3 SDKs) go to Codex + GPT-5.6
-in isolated git worktrees per plan.md §5 — the SIXTH harness switch
-of the phase and the first worktree-isolated dispatch. Flag it
-explicitly before starting.
+Next command: monitor Codex dispatches for sdk-rust-1.0, sdk-python-1.0, and sdk-typescript-1.0; review/merge Change 15 (rag-embedding-backends-4-more) on branch change/rag-embedding-backends-4-more (commit 6be8405)
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (change N of 25)
+  Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 11 of 25)
   [do work]
-  Completed <kbd-skill> — uar-grade-a-upgrade-2026-07 (change N of 25)
+  Completed <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 11 of 25)
