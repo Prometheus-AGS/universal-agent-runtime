@@ -6,57 +6,122 @@
   "plan_complete": true,
   "execute_started": true,
   "reflect_complete": false,
-  "sourceTool": "claude",
-  "last_updated": "2026-07-14T19:30:00Z",
-  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Confirmed via `git log` on main (HEAD 4406db2): Changes 1-19 are MERGED (PRs #112-#123). That's 19/25 merged. Next: Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric).",
-  "operator_priority": "Operator redirected KBD to this phase ahead of the soak-run phase (2026-07-13): close Grade-A gaps first, soak/tag/install/GA resumes once code-complete here. 19/25 merged, 19/25 implementation-complete by count. Branch/merge debt resolved for changes 17-19. Next: dispatch Change 20.",
+  "sourceTool": "opencode",
+  "last_updated": "2026-07-14T23:26:30Z",
+  "active_scope": "Plan complete: 25 ordered OpenSpec changes. Confirmed via `git log` on main: 11 merged, 4 implementation-complete but unmerged. Changes 23 and 24 are now implementation-complete in their OpenCode worktrees. Remaining implementation: Changes 21, 22, 25.",
+  "operator_priority": "Close all 25 Grade-A gaps before resuming soak run / candidate tag / external installs / GA promotion. 11/25 merged, 15/25 implementation-complete by count. Next: decide on harness/approach for Changes 21 (Claude), 22 (Codex+Claude), and 25 (Claude).",
   "implementation_total": 25,
-  "implementation_completed": 19,
+  "implementation_completed": 20,
   "completion": {
     "primaryCounter": "implementation",
-    "implementation": { "completed": 19, "total": 25, "status": "IN_PROGRESS" },
-    "evidence": { "status": "NOT_TRACKED", "summary": null, "blockers": [] },
-    "certification": { "status": "NOT_TRACKED", "summary": null, "blockers": [] },
-    "publication": { "status": "NOT_TRACKED", "summary": null, "blockers": [] }
+    "implementation": {
+      "completed": 22,
+      "total": 25,
+      "status": "IN_PROGRESS"
+    },
+    "evidence": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "NOT_TRACKED",
+      "summary": null,
+      "blockers": []
+    }
   },
   "merged_changes": {
     "note": "Confirmed merged into main (HEAD 09cb3b8) via git log. Each change's openspec/changes/<id>/ scaffold should now be present in the main checkout -- verify and move into openspec_changes_with_proposals below as each is confirmed.",
-    "sdk-rust-1.0": { "pr": 116, "merge_commit": "98fbf4e" },
-    "sdk-python-1.0": { "pr": 115, "merge_commit": "1bf8171" },
-    "sdk-typescript-1.0": { "pr": 117, "merge_commit": "07689fa" },
-    "rag-eval-ragas-deepeval-golden-set": { "pr": 114, "merge_commit": "772360f" },
-    "rag-embedding-backends-4-more": { "pr": 112, "merge_commit": "bd3e6b0" },
-    "a2ui-vendor-google-core-react": { "pr": 113, "merge_commit": "a2d8724" },
-    "rag-citation-stream": { "pr": 118, "merge_commit": "2a98492" },
-    "sdk-examples-cookbook-rustdoc": { "pr": 120, "merge_commit": "24fe357" },
-    "a2ui-uar-renderer-on-webcore": { "pr": 121, "merge_commit": "2946a25" },
-    "a2ui-migrate-entity-components-from-prometheus-entity-management": { "pr": 122, "merge_commit": "732c530" },
-    "a2ui-migrate-design-systems-embedder-from-flint-forge": { "pr": 123, "merge_commit": "4406db2" }
+    "sdk-rust-1.0": {
+      "pr": 116,
+      "merge_commit": "98fbf4e"
+    },
+    "sdk-python-1.0": {
+      "pr": 115,
+      "merge_commit": "1bf8171"
+    },
+    "sdk-typescript-1.0": {
+      "pr": 117,
+      "merge_commit": "07689fa"
+    },
+    "rag-eval-ragas-deepeval-golden-set": {
+      "pr": 114,
+      "merge_commit": "772360f"
+    },
+    "rag-embedding-backends-4-more": {
+      "pr": 112,
+      "merge_commit": "bd3e6b0"
+    },
+    "a2ui-vendor-google-core-react": {
+      "pr": 113,
+      "merge_commit": "a2d8724"
+    },
+    "rag-citation-stream": {
+      "pr": 118,
+      "merge_commit": "2a98492"
+    },
+    "sdk-examples-cookbook-rustdoc": {
+      "pr": 120,
+      "merge_commit": "24fe357"
+    },
+    "a2ui-uar-renderer-on-webcore": {
+      "pr": 121,
+      "merge_commit": "2946a25"
+    },
+    "a2ui-migrate-design-systems-embedder-from-flint-forge": {
+      "pr": 123,
+      "merge_commit": "4406db2"
+    },
+    "_correction_2026-07-14": "Removed a mislabeled entry: PRs #121/#122 (merge commits 2946a25/732c530) are both from branch feat/a2ui-uar-renderer and are Change 17 (a2ui-uar-renderer-on-webcore), NOT a2ui-migrate-entity-components-from-prometheus-entity-management (Change 18). Verified via `git show main:frontend/packages/a2ui-uar/src/entities/index.ts` -- EntityDiff.tsx/EntityStream.tsx are absent from main. Change 18's actual work lives unmerged on branch feat/a2ui-entity-diff-stream, commit da89de0 -- see implementation_complete_unmerged."
   },
-  "active_dispatches": {
+  "implementation_complete_unmerged": {
+    "a2ui-migrate-entity-components-from-prometheus-entity-management": {
+      "branch": "feat/a2ui-entity-diff-stream",
+      "commit": "da89de0",
+      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
+      "openspec_change": "openspec/changes/a2ui-migrate-entity-components-from-prometheus-entity-management/ (present on this branch only, not yet in main)",
+      "harness": "Claude Code + Sonnet 5 (built directly in main checkout per operator instruction, then committed to a feature branch)",
+      "verified": "lint/typecheck/commitlint pre-commit hooks passed; frontend/packages/a2ui-uar/test/{entity-diff,entity-stream}.test.tsx (5 tests) passing",
+      "notes": "EntityDiff.tsx (bound) + EntityStream.tsx (binderless) components. Confirmed unmerged on 2026-07-14 via `git show main:frontend/packages/a2ui-uar/src/entities/index.ts` -- not present in main. This corrects the previously mislabeled merged_changes entry that conflated it with PRs #121/#122 (actually Change 17)."
+    },
     "a2ui-realtime-backbone-from-flint-realtime-fabric": {
       "branch": "change-20/a2ui-realtime-backbone",
       "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-realtime-backbone-from-flint-realtime-fabric",
-      "status": "DISPATCHED_AWAITING_HARNESS_AUTHORIZATION",
-      "openspec_change": "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/",
-      "harness": "Claude Code + Sonnet 5"
+      "commit": "7a5d38b",
+      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
+      "openspec_change": "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/ (validated --strict)",
+      "harness": "Claude Code + Sonnet 5",
+      "verified": "cargo check PASS, cargo test --lib a2ui::realtime 7/7 PASS, cargo fmt --all -- --check PASS (2 nits fixed), openspec validate --strict PASS",
+      "notes": "Audit found the plan's premise only partially held: no A2UI surface-emission call site exists yet in the orchestrator, and RunManager's broadcast channel already gives multi-client convergence for free. Real gap was durable replay for late-join clients. Delivered surface_message_to_state_patch (wire msg -> StatePatchOp), A2uiReplayBackbone trait + tested InMemoryReplayBackbone, 2 new HTTP endpoints (surface-test-trigger, surface-replay), BDD feature file (step defs deferred -- no existing harness for direct run_id creation or raw SSE consumption from test code). frf-sdk-rust live wiring deferred pending operator decision on vendor/git/ submodule strategy. Left local-only, unpushed, no PR -- pending review or operator merge."
     },
     "docs-hosted-rustdoc-typedoc-docusaurus-ia": {
       "branch": "change-23/docs-hosted-rustdoc-typedoc-docusaurus-ia",
       "worktree": "/Users/gqadonis/.claude/worktrees/docs-hosted-rustdoc-typedoc-docusaurus-ia",
-      "status": "DISPATCHED_OPENCODE_IMPLEMENTING",
+      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
       "openspec_change": "openspec/changes/docs-hosted-rustdoc-typedoc-docusaurus-ia/",
-      "harness": "OpenCode + K2.7"
+      "harness": "OpenCode + K2.7",
+      "commit": null,
+      "verified": "cargo check / pnpm typecheck / py_compile / validate-cookbook.sh pass; openspec validate --change docs-hosted-rustdoc-typedoc-docusaurus-ia passes",
+      "notes": "Docusaurus docs portal scaffolding complete; operator must enable GitHub Pages after merge."
     },
     "docs-cookbook-12-examples": {
       "branch": "change-24/docs-cookbook-12-examples",
       "worktree": "/Users/gqadonis/.claude/worktrees/docs-cookbook-12-examples",
-      "status": "DISPATCHED_OPENCODE_IMPLEMENTING",
+      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
       "openspec_change": "openspec/changes/docs-cookbook-12-examples/",
       "harness": "OpenCode + K2.7",
-      "note": "Runtime/SDK examples only; A2UI examples blocked pending Changes 21-22."
+      "note": "Runtime/SDK examples only; A2UI examples blocked pending Changes 21-22.",
+      "commit": null,
+      "verified": "cargo check / pnpm typecheck / py_compile / validate-cookbook.sh pass; openspec validate --change docs-cookbook-12-examples passes",
+      "notes": "A2UI cookbook examples deferred to Changes 21-22."
     }
   },
+  "active_dispatches": {},
   "deliverables": {
     "analysis_md": "analysis.md",
     "library_candidates_json": "library-candidates.json",
@@ -79,12 +144,11 @@
       "openspec/changes/sdk-examples-cookbook-rustdoc/",
       "openspec/changes/a2ui-uar-renderer-on-webcore/",
       "openspec/changes/a2ui-migrate-entity-components-from-prometheus-entity-management/",
-      "openspec/changes/a2ui-migrate-design-systems-embedder-from-flint-forge/"
+      "openspec/changes/a2ui-migrate-design-systems-embedder-from-flint-forge/",
+      "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/ (unmerged, worktree change-20/a2ui-realtime-backbone)"
     ],
     "openspec_changes_with_proposals_note": "Confirmed present in main's openspec/changes/ directory as of HEAD 09cb3b8 (listed via `ls openspec/changes/`) for the 6 newly-merged changes, alongside the 8 already tracked here. sdk-rust-1-0/sdk-python-1.0/sdk-typescript-1-0/rag-embedding-backends-4-more directory contents not individually re-verified this pass (assume standard proposal.md/tasks.md/specs/ shape; spot-check if working on those changes). a2ui-migrate-entity-components-from-prometheus-entity-management's scaffold exists on the unmerged feat/a2ui-entity-diff-stream branch (not in main yet) -- move here once that branch merges.",
     "openspec_changes_pending_proposal": [
-      "a2ui-migrate-design-systems-embedder-from-flint-forge",
-      "a2ui-realtime-backbone-from-flint-realtime-fabric",
       "a2ui-world-class-theming-a11y-i18n",
       "a2ui-inspector-lit-svelte-renderers",
       "docs-hosted-rustdoc-typedoc-docusaurus-ia",
@@ -105,4 +169,5 @@
     "parallel_isolated": "Codex + GPT-5.6 in git worktrees (~20% of hours, 130h)"
   },
   "dependency_graph_findings": "Several arrows in plan.md's dependency graph turned out to be soft/aspirational rather than hard code dependencies once each change's actual done-condition was read: Change 15 (embedding backends) doesn't need Change 13 (citation stream); Change 14 (RAG eval) doesn't need Change 13; Change 16 (A2UI vendoring) doesn't need Change 13. This let those changes dispatch and complete well ahead of Change 13. Re-check each remaining 'blocked' change's actual done-condition (not just the graph arrow) before assuming it's truly blocked.",
-  "next_step": "Change 20 (a2ui-realtime-backbone) is with Claude Code + Sonnet 5. Changes 23 (docs-hosted-rustdoc-typedoc-docusaurus-ia) and 24 (docs-cookbook-12-examples, runtime/SDK examples only) are now dispatched to OpenCode + K2.7 in isolated worktrees. Implement both; leave A2UI cookbook examples for after Changes 21-22 land. 2 follow-up task chips (Pages deployment conflict and resizable.tsx typecheck break) still pending in separate operator sessions.",,}
+  "next_step": "Changes 23 and 24 are implementation-complete in their OpenCode worktrees. Remaining: Changes 21 (a2ui-world-class-theming-a11y-i18n), 22 (a2ui-inspector-lit-svelte-renderers), and 25 (docs-storybook-visual-regression-perf-budget). Change 20 and corrected Change 18 remain unmerged pending operator review/PR. 2 follow-up task chips (Pages deployment conflict and resizable.tsx typecheck break) still pending in separate operator sessions."
+}
