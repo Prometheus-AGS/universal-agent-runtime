@@ -1,194 +1,296 @@
-//! Shared types for the SDK.
-//!
-//! These types mirror the server's API DTOs and are used for both
-//! HTTP client and embedded runtime modes.
+//! Version-one request and response models.
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
-// =============================================================================
-// Chat API Types
-// =============================================================================
+/// OpenAI-compatible chat message.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ChatMessage {
+    /// Role (`system`, `user`, `assistant`, or `tool`).
+    pub role: String,
+    /// Text or structured content.
+    pub content: Value,
+}
 
-/// Request to start a chat session.
+impl ChatMessage {
+    /// Construct a text message.
+    pub fn text(role: impl Into<String>, content: impl Into<String>) -> Self {
+        Self {
+            role: role.into(),
+            content: Value::String(content.into()),
+        }
+    }
+}
+
+/// Chat completion request, including tool and structured-output controls.
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct ChatCompletionRequest {
+    /// Conversation messages.
+    pub messages: Vec<ChatMessage>,
+    /// Optional provider/model selector.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    /// Stream response chunks.
+    #[serde(default)]
+    pub stream: bool,
+    /// OpenAI-compatible tool declarations.
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub tools: Vec<Value>,
+    /// Structured-output declaration.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_format: Option<Value>,
+}
+
+/// Chat completion response. Unknown provider fields are retained.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ChatCompletionResponse {
+    /// Completion identifier.
+    #[serde(default)]
+    pub id: String,
+    /// Provider response body.
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, Value>,
+}
+
+/// Embedding request.
 #[derive(Debug, Clone, Serialize)]
-pub struct ChatRequest {
-    /// The user's message.
-    pub message: String,
-    /// Optional session ID to continue an existing conversation.
+pub struct EmbeddingRequest {
+    /// Input strings.
+    pub input: Vec<String>,
+    /// Optional embedding model.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+}
+/// One embedding vector.
+#[derive(Debug, Clone, Deserialize)]
+pub struct Embedding {
+    /// Position in input.
+    pub index: usize,
+    /// Vector values.
+    pub embedding: Vec<f32>,
+}
+/// Embedding response.
+#[derive(Debug, Clone, Deserialize)]
+pub struct EmbeddingResponse {
+    /// Generated vectors.
+    pub data: Vec<Embedding>,
+}
+
+/// Run creation request.
+#[derive(Debug, Clone, Serialize)]
+pub struct CreateRunRequest {
+    /// Compiled agent artifact.
+    pub artifact: Value,
+    /// User input.
+    pub input: String,
+    /// Optional session identifier.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
 }
-
-/// Response from starting a chat.
-#[derive(Debug, Clone, Deserialize)]
-pub struct ChatResponse {
-    /// The session ID for this conversation.
-    pub session_id: String,
-    /// URL to stream chat events from.
-    pub stream_url: String,
-}
-
-/// A message in a conversation.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Message {
-    /// The role of the message sender.
-    pub role: String,
-    /// The message content.
-    pub content: String,
-}
-
-// =============================================================================
-// Runs API Types
-// =============================================================================
-
-/// Request to create a new agent run.
-#[derive(Debug, Clone, Serialize)]
-pub struct CreateRunRequest {
-    /// The input prompt for the run.
-    pub input: String,
-    /// Optional context or configuration.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub context: Option<serde_json::Value>,
-}
-
-/// Response from creating a run.
+/// Run creation/resume response.
 #[derive(Debug, Clone, Deserialize)]
 pub struct RunResponse {
-    /// The unique run ID.
-    pub id: String,
-    /// URL to stream run events from.
+    /// New run identifier.
+    pub run_id: String,
+    /// Relative stream URL.
     pub stream_url: String,
-}
-
-// =============================================================================
-// Knowledge Base API Types
-// =============================================================================
-
-/// A knowledge base.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct KnowledgeBase {
-    /// Unique identifier.
-    pub id: String,
-    /// Human-readable name.
-    pub name: String,
-    /// Optional description.
-    pub description: Option<String>,
-    /// Configuration settings.
+    /// Source run when resumed.
     #[serde(default)]
-    pub config: KnowledgeBaseConfig,
+    pub resumed_from_run_id: Option<String>,
+    /// Source checkpoint.
+    #[serde(default)]
+    pub checkpoint_id: Option<String>,
+}
+/// Resume request.
+#[derive(Debug, Clone, Serialize)]
+pub struct ResumeRunRequest {
+    /// Compiled agent artifact.
+    pub artifact: Value,
+    /// Optional replacement input.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input: Option<String>,
+    /// Optional session.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+}
+/// Cancellation result.
+#[derive(Debug, Clone, Deserialize)]
+pub struct CancelRunResponse {
+    /// Whether a live run was cancelled.
+    pub cancelled: bool,
+}
+/// Persisted run checkpoint.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Checkpoint {
+    /// Checkpoint identifier.
+    pub id: String,
+    /// Owning run.
+    pub run_id: String,
+    /// Graph node.
+    pub node_id: String,
+    /// Iteration number.
+    pub iteration: usize,
+    /// Saved graph state.
+    pub state: Value,
     /// Creation timestamp.
     pub created_at: String,
-    /// Last update timestamp.
-    pub updated_at: String,
+}
+/// Checkpoint listing.
+#[derive(Debug, Clone, Deserialize)]
+pub struct CheckpointListResponse {
+    /// Owning run.
+    pub run_id: String,
+    /// Ordered checkpoints.
+    pub checkpoints: Vec<Checkpoint>,
+}
+
+/// A decoded server-sent event.
+#[derive(Debug, Clone, PartialEq)]
+pub struct StreamEvent {
+    /// Optional event identifier.
+    pub id: Option<String>,
+    /// Optional event type.
+    pub event: Option<String>,
+    /// Parsed JSON payload or string fallback.
+    pub data: Value,
+}
+
+/// Tool execution request.
+#[derive(Debug, Clone, Serialize)]
+pub struct ToolCallRequest {
+    /// Tool arguments.
+    pub arguments: Value,
+}
+/// Tool execution result.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ToolCallResponse {
+    /// Result body.
+    #[serde(flatten)]
+    pub result: serde_json::Map<String, Value>,
 }
 
 /// Knowledge base configuration.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct KnowledgeBaseConfig {
-    /// Embedding provider name.
+    /// Embedding provider.
     #[serde(default)]
     pub embedding_provider: String,
-    /// Embedding model name.
+    /// Embedding model.
     #[serde(default)]
     pub embedding_model: String,
-    /// Vector dimensions (if known).
+    /// Vector dimensions.
     pub vector_dimensions: Option<usize>,
-    /// File processor to use.
+    /// File processor.
     #[serde(default)]
     pub file_processor: String,
-    /// Chunking strategy.
+    /// Chunk strategy.
     #[serde(default)]
     pub chunk_strategy: String,
 }
-
-/// Request to create a knowledge base.
-#[derive(Debug, Clone, Serialize)]
-pub struct CreateKnowledgeBaseRequest {
-    /// Name of the knowledge base.
+/// Knowledge base.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KnowledgeBase {
+    /// Identifier.
+    pub id: String,
+    /// Display name.
     pub name: String,
     /// Optional description.
+    pub description: Option<String>,
+    /// Configuration.
+    #[serde(default)]
+    pub config: KnowledgeBaseConfig,
+    /// Created timestamp.
+    pub created_at: String,
+    /// Updated timestamp.
+    pub updated_at: String,
+    /// Stored documents.
+    #[serde(default)]
+    pub document_count: usize,
+}
+/// Create a knowledge base.
+#[derive(Debug, Clone, Serialize)]
+pub struct CreateKnowledgeBaseRequest {
+    /// Name.
+    pub name: String,
+    /// Description.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// Optional config.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub config: Option<KnowledgeBaseConfig>,
 }
-
-/// A document in a knowledge base.
+/// Update a knowledge base.
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct UpdateKnowledgeBaseRequest {
+    /// New name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// New description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// New config.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub config: Option<KnowledgeBaseConfig>,
+}
+/// Knowledge document.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Document {
-    /// Unique identifier.
+    /// Identifier.
     pub id: String,
-    /// Knowledge base ID.
+    /// Knowledge-base identifier.
     pub kb_id: String,
-    /// Original filename.
+    /// Filename.
     pub filename: String,
     /// MIME type.
     pub mime_type: Option<String>,
-    /// Number of chunks created.
+    /// Chunk count.
     pub chunk_count: usize,
     /// Processing status.
     pub status: String,
-    /// Error message if failed.
+    /// Failure detail.
     pub error_message: Option<String>,
 }
-
-/// Request to search a knowledge base.
+/// Search request.
 #[derive(Debug, Clone, Serialize)]
 pub struct SearchRequest {
-    /// The search query.
+    /// Query text.
     pub query: String,
-    /// Maximum number of results.
-    #[serde(default = "default_limit")]
+    /// Maximum results.
     pub limit: usize,
-    /// Minimum similarity score.
-    #[serde(default = "default_min_score")]
+    /// Minimum score.
     pub min_score: f32,
 }
-
-fn default_limit() -> usize {
-    5
-}
-fn default_min_score() -> f32 {
-    0.7
-}
-
-/// Response from a knowledge base search.
-#[derive(Debug, Clone, Deserialize)]
-pub struct SearchResponse {
-    /// The search results.
-    pub results: Vec<SearchResult>,
-}
-
-/// A single search result.
+/// Search result.
 #[derive(Debug, Clone, Deserialize)]
 pub struct SearchResult {
-    /// The content of the matching chunk.
+    /// Chunk content.
     pub content: String,
     /// Similarity score.
     pub score: f32,
-    /// Additional metadata.
-    pub metadata: serde_json::Value,
-    /// Optional document ID.
+    /// Metadata.
+    pub metadata: Value,
+    /// Source document.
     pub document_id: Option<String>,
 }
-
-// =============================================================================
-// Ingest API Types
-// =============================================================================
-
-/// Request to ingest content.
+/// Search response.
+#[derive(Debug, Clone, Deserialize)]
+pub struct SearchResponse {
+    /// Matching chunks.
+    pub results: Vec<SearchResult>,
+}
+/// Ingest request.
 #[derive(Debug, Clone, Serialize)]
 pub struct IngestRequest {
-    /// The content to ingest.
+    /// Source content.
     pub content: String,
     /// Optional metadata.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Value>,
+    pub metadata: Option<Value>,
 }
-
-/// Response from ingestion.
+/// Ingest response (runtime fields are retained for compatibility).
 #[derive(Debug, Clone, Deserialize)]
 pub struct IngestResponse {
-    /// Whether ingestion was successful.
-    pub success: bool,
-    /// Number of chunks created.
-    pub chunk_count: usize,
+    /// Runtime response.
+    #[serde(flatten)]
+    pub result: serde_json::Map<String, Value>,
 }
