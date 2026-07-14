@@ -45,7 +45,7 @@ jobs:
       # .github/workflows/supply-chain.yml), locally and unpushed, so this
       # scan needs no registry credentials and can run nightly independent of
       # the release cadence.
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Build image for scanning
         uses: docker/build-push-action@v6
         with:
