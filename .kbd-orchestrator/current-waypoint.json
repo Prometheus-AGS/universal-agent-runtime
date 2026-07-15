@@ -3,7 +3,7 @@
   "status": "executing",
   "stage": "execute_in_progress",
   "executionMode": "operator-directed-grade-a-upgrade",
-  "progress": "Operator redirected KBD to this phase ahead of perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion (paused, not abandoned). 23/25 merged; 2/25 implementation-complete unmerged; total 25/25 implementation-complete.",
+  "progress": "Operator redirected KBD to this phase ahead of perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion (paused, not abandoned). 25/25 merged (verified via gh pr list on 2026-07-15T13:46:13Z: PR #131 Change 21, PR #129/#130 Change 22 — both previously tracked as unmerged were already MERGED). Phase implementation and merge are fully complete.",
   "operatorPriority": "Close all 25 Grade-A gaps before resuming soak run / candidate tag / external installs / GA promotion. Explicitly call out every harness switch from the plan.md per-change matrix before starting that change's work.",
   "harnessMatrix": {
     "current": "Codex (authorized sixth harness switch): Changes 9-11 dispatched concurrently in isolated worktrees.",
@@ -43,26 +43,9 @@
     "docs-cookbook-12-examples",
     "docs-storybook-visual-regression-perf-budget"
   ],
-  "currentTask": "All 25 Grade-A changes are implementation-complete. Change 21 is strictly validated and preparing its PR; Change 22 remains implementation-complete unmerged.",
-  "nextAction": "Review and merge the remaining Change 21 and Change 22 PRs, then resume the paused production certification phase.",
-  "implementationCompleteUnmerged": {
-    "a2ui-inspector-lit-svelte-renderers": {
-      "branch": "feat/a2ui-inspector-lit-svelte",
-      "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-inspector-lit-svelte",
-      "status": "IMPLEMENTATION_COMPLETE_PENDING_PR",
-      "openspec_change": "openspec/changes/a2ui-inspector-lit-svelte-renderers/ (validated --strict)",
-      "harness": "Codex operator-authorized full-change override; mandatory dual-agent Inspector critique completed",
-      "verified": "Lit, Svelte, and Inspector typecheck/lint/test/build pass; 11 tests pass; frontend typecheck/lint pass; cross-renderer semantic conformance and artifact-refiner QA pass"
-    },
-    "a2ui-world-class-theming-a11y-i18n": {
-      "branch": "change-21/a2ui-world-class-theming-a11y-i18n",
-      "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-world-class-theming-a11y-i18n",
-      "status": "IMPLEMENTATION_COMPLETE_PENDING_PR",
-      "openspec_change": "openspec/changes/a2ui-world-class-theming-a11y-i18n/ (validated --strict)",
-      "harness": "Codex operator-authorized override; mandatory dual-agent Impeccable critique completed",
-      "verified": "A2UI UAR typecheck/lint/tests/perf pass (26 functional and 2 performance tests); frontend typecheck/lint/build pass; entity-management 3.0.0-alpha.0 core and React builds pass; direct validation substitutes for the formally retired artifact-refiner gate"
-    }
-  },
+  "currentTask": "All 25 Grade-A changes are implementation-complete AND merged. PR #131 (Change 21) and PR #129/#130 (Change 22) were found already merged on 2026-07-15, correcting prior stale tracker state that listed them as pending.",
+  "nextAction": "Confirm with operator whether to resume the paused phase 'perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion' now that its resume condition (25/25 implementation) is met, noting that phase's own certification changes 11-14 must rerun since further source changes landed while it was paused.",
+  "implementationCompleteUnmerged": {},
   "activeDispatches": {},
   "authorizationRequired": [
     "Change 1: confirmation that sdks/ has no third-party contributors (audit already run; operator to confirm reading) -- pricing bands deferred, no longer blocking",
@@ -75,14 +58,14 @@
     "Change 7: none currently blocking (deferred items: incremental migration of remaining handlers to ConfigManager::current())",
     "Change 8: operator to confirm which registry (ghcr.io vs. ACR/deploy.yml) is canonical before wiring vuln-scan.yml to scan the actual last-published image instead of a locally-rebuilt Dockerfile"
   ],
-  "sourceTool": "opencode",
-  "updatedAt": "2026-07-15T00:35:00Z",
+  "sourceTool": "claude",
+  "updatedAt": "2026-07-15T13:46:13Z",
   "previous_phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "last_updated": "2026-07-15T00:35:00Z",
-  "last_updated_by": "codex",
-  "exact_next_command": "open the Change 21 PR from change-21/a2ui-world-class-theming-a11y-i18n",
+  "last_updated": "2026-07-15T13:46:13Z",
+  "last_updated_by": "claude",
+  "exact_next_command": "Operator decision: resume perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion, since all 25 Grade-A changes are merged",
   "fallback_command": "Use each OpenSpec change ledger for clarification and report cross-SDK/runtime contract blockers before expanding scope",
-  "active_change": "a2ui-world-class-theming-a11y-i18n",
+  "active_change": null,
   "next_pending_change": null,
   "changes_total": 25,
   "changes_completed": 25
