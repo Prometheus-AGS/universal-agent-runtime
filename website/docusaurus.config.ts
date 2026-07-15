@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Universal Agent Runtime',
-  tagline: 'A tool-first, streaming-native agent runtime for 142+ LLM providers',
+  tagline: 'A governed, streaming-native agent runtime with typed protocol surfaces: MCP, A2A, AG-UI, and A2UI',
   favicon: 'img/favicon.ico',
 
   future: {

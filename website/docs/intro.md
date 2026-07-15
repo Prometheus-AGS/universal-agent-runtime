@@ -7,7 +7,7 @@ title: Introduction
 
 Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, typed streaming, model routing, tools, retrieval, and declarative agent UI. The first-party interface is React 19 + TypeScript.
 
-UAR is version **0.1.0**. The minimal web/server bundle is Stable under the project's evidence policy; server-full, desktop, WASM, mobile, and provider capabilities have narrower statuses. The [product support matrix](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/product-support-matrix.md) is the public release contract.
+UAR is version **1.0.0**. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. The [product support matrix](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/product-support-matrix.md) is the public release contract.
 
 ## Core contracts
 
@@ -44,4 +44,4 @@ React -> hooks -> stores/entity graph -> services -> Axum REST/SSE
 
 ## Licensing
 
-UAR is licensed under `AGPL-3.0-only`; separate commercial terms are available for AGPL-incompatible usage. See the repository's `LICENSE` and `LICENSE-COMMERCIAL.md`.
+Licensing is split by component: the runtime server is `AGPL-3.0-only` (separate commercial terms are available for AGPL-incompatible use), the SDKs under `sdks/` are `MIT`, and documentation is `CC-BY-4.0`. See the repository's `LICENSE`, `LICENSE-COMMERCIAL.md`, and `LICENSE-CC-BY-4.0.md`.
