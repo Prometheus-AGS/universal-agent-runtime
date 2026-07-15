@@ -1,0 +1,34 @@
+name: A2UI cross-renderer conformance
+on:
+  pull_request:
+    paths:
+      - "frontend/packages/a2ui-core/**"
+      - "frontend/packages/a2ui-uar/**"
+      - "frontend/packages/a2ui-lit/**"
+      - "frontend/packages/a2ui-svelte/**"
+      - "frontend/packages/a2ui-inspector/**"
+      - "frontend/pnpm-lock.yaml"
+      - ".github/workflows/a2ui-cross-renderer.yml"
+  push:
+    branches: [main]
+    paths:
+      - "frontend/packages/a2ui-{core,uar,lit,svelte,inspector}/**"
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: true }
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm -C frontend install --frozen-lockfile
+      - run: pnpm --filter @prometheus-ags/a2ui-lit typecheck
+      - run: pnpm --filter @prometheus-ags/a2ui-lit test
+      - run: pnpm --filter @prometheus-ags/a2ui-svelte typecheck
+      - run: pnpm --filter @prometheus-ags/a2ui-svelte test
+      - run: pnpm --filter @prometheus-ags/a2ui-inspector typecheck
+      - run: pnpm --filter @prometheus-ags/a2ui-inspector test

@@ -121,3 +121,8 @@ __pycache__/
 
 *storybook.log
 storybook-static
+
+# Frontend workspace packages build to dist/ (a2ui-lit, a2ui-svelte,
+# a2ui-inspector); source-only packages (a2ui-uar, a2ui-core) point their
+# main/types at src/ directly and never produce one.
+frontend/packages/*/dist/
