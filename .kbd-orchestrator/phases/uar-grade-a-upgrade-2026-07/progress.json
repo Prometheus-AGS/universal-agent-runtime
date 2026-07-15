@@ -7,7 +7,7 @@
   "execute_started": true,
   "reflect_complete": false,
   "sourceTool": "opencode",
-  "last_updated": "2026-07-14T23:26:30Z",
+  "last_updated": "2026-07-15T00:23:36Z",
   "active_scope": "Plan complete: 25 ordered OpenSpec changes. Confirmed via `git log` on main: 11 merged, 4 implementation-complete but unmerged. Changes 23 and 24 are now implementation-complete in their OpenCode worktrees. Remaining implementation: Changes 21, 22, 25.",
   "operator_priority": "Close all 25 Grade-A gaps before resuming soak run / candidate tag / external installs / GA promotion. 11/25 merged, 15/25 implementation-complete by count. Next: decide on harness/approach for Changes 21 (Claude), 22 (Codex+Claude), and 25 (Claude).",
   "implementation_total": 25,
@@ -83,42 +83,46 @@
     "a2ui-migrate-entity-components-from-prometheus-entity-management": {
       "branch": "feat/a2ui-entity-diff-stream",
       "commit": "da89de0",
-      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
+      "status": "PR_OPEN_PENDING_REVIEW",
       "openspec_change": "openspec/changes/a2ui-migrate-entity-components-from-prometheus-entity-management/ (present on this branch only, not yet in main)",
       "harness": "Claude Code + Sonnet 5 (built directly in main checkout per operator instruction, then committed to a feature branch)",
       "verified": "lint/typecheck/commitlint pre-commit hooks passed; frontend/packages/a2ui-uar/test/{entity-diff,entity-stream}.test.tsx (5 tests) passing",
-      "notes": "EntityDiff.tsx (bound) + EntityStream.tsx (binderless) components. Confirmed unmerged on 2026-07-14 via `git show main:frontend/packages/a2ui-uar/src/entities/index.ts` -- not present in main. This corrects the previously mislabeled merged_changes entry that conflated it with PRs #121/#122 (actually Change 17)."
+      "notes": "EntityDiff.tsx (bound) + EntityStream.tsx (binderless) components. Confirmed unmerged on 2026-07-14 via `git show main:frontend/packages/a2ui-uar/src/entities/index.ts` -- not present in main. This corrects the previously mislabeled merged_changes entry that conflated it with PRs #121/#122 (actually Change 17).",
+      "pr": 124
     },
     "a2ui-realtime-backbone-from-flint-realtime-fabric": {
       "branch": "change-20/a2ui-realtime-backbone",
       "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-realtime-backbone-from-flint-realtime-fabric",
       "commit": "7a5d38b",
-      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
+      "status": "PR_OPEN_PENDING_REVIEW",
       "openspec_change": "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/ (validated --strict)",
       "harness": "Claude Code + Sonnet 5",
       "verified": "cargo check PASS, cargo test --lib a2ui::realtime 7/7 PASS, cargo fmt --all -- --check PASS (2 nits fixed), openspec validate --strict PASS",
-      "notes": "Audit found the plan's premise only partially held: no A2UI surface-emission call site exists yet in the orchestrator, and RunManager's broadcast channel already gives multi-client convergence for free. Real gap was durable replay for late-join clients. Delivered surface_message_to_state_patch (wire msg -> StatePatchOp), A2uiReplayBackbone trait + tested InMemoryReplayBackbone, 2 new HTTP endpoints (surface-test-trigger, surface-replay), BDD feature file (step defs deferred -- no existing harness for direct run_id creation or raw SSE consumption from test code). frf-sdk-rust live wiring deferred pending operator decision on vendor/git/ submodule strategy. Left local-only, unpushed, no PR -- pending review or operator merge."
+      "notes": "Audit found the plan's premise only partially held: no A2UI surface-emission call site exists yet in the orchestrator, and RunManager's broadcast channel already gives multi-client convergence for free. Real gap was durable replay for late-join clients. Delivered surface_message_to_state_patch (wire msg -> StatePatchOp), A2uiReplayBackbone trait + tested InMemoryReplayBackbone, 2 new HTTP endpoints (surface-test-trigger, surface-replay), BDD feature file (step defs deferred -- no existing harness for direct run_id creation or raw SSE consumption from test code). frf-sdk-rust live wiring deferred pending operator decision on vendor/git/ submodule strategy. Left local-only, unpushed, no PR -- pending review or operator merge.",
+      "pr": 125
     },
     "docs-hosted-rustdoc-typedoc-docusaurus-ia": {
       "branch": "change-23/docs-hosted-rustdoc-typedoc-docusaurus-ia",
       "worktree": "/Users/gqadonis/.claude/worktrees/docs-hosted-rustdoc-typedoc-docusaurus-ia",
-      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
+      "status": "PR_OPEN_PENDING_REVIEW",
       "openspec_change": "openspec/changes/docs-hosted-rustdoc-typedoc-docusaurus-ia/",
       "harness": "OpenCode + K2.7",
       "commit": null,
       "verified": "cargo check / pnpm typecheck / py_compile / validate-cookbook.sh pass; openspec validate --change docs-hosted-rustdoc-typedoc-docusaurus-ia passes",
-      "notes": "Docusaurus docs portal scaffolding complete; operator must enable GitHub Pages after merge."
+      "notes": "Docusaurus docs portal scaffolding complete; operator must enable GitHub Pages after merge.",
+      "pr": 126
     },
     "docs-cookbook-12-examples": {
       "branch": "change-24/docs-cookbook-12-examples",
       "worktree": "/Users/gqadonis/.claude/worktrees/docs-cookbook-12-examples",
-      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
+      "status": "PR_OPEN_PENDING_REVIEW",
       "openspec_change": "openspec/changes/docs-cookbook-12-examples/",
       "harness": "OpenCode + K2.7",
       "note": "Runtime/SDK examples only; A2UI examples blocked pending Changes 21-22.",
       "commit": null,
       "verified": "cargo check / pnpm typecheck / py_compile / validate-cookbook.sh pass; openspec validate --change docs-cookbook-12-examples passes",
-      "notes": "A2UI cookbook examples deferred to Changes 21-22."
+      "notes": "A2UI cookbook examples deferred to Changes 21-22.",
+      "pr": 127
     }
   },
   "active_dispatches": {},

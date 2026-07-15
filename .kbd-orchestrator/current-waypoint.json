@@ -43,37 +43,40 @@
     "docs-cookbook-12-examples",
     "docs-storybook-visual-regression-perf-budget"
   ],
-  "currentTask": "Changes 23 and 24 are implementation-complete (unmerged). Change 20 is implementation-complete (unmerged). Remaining: Changes 21, 22, 25.",
-  "nextAction": "Decide harness/approach for Changes 21 (Claude+Sonnet5), 22 (Codex+Claude), and 25 (Claude+Sonnet5); review/PR the 3 implementation-complete unmerged branches (Changes 18, 20, 23, 24).",
+  "currentTask": "PRs opened for implementation-complete Changes 18, 20, 23, 24. Awaiting review/merge. Remaining implementation: Changes 21, 22, 25.",
+  "nextAction": "Review/merge PRs #124-#127; decide harness approach for remaining Changes 21/22/25.",
   "implementationCompleteUnmerged": {
     "a2ui-realtime-backbone-from-flint-realtime-fabric": {
       "branch": "change-20/a2ui-realtime-backbone",
       "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-realtime-backbone-from-flint-realtime-fabric",
       "commit": "7a5d38b",
-      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
+      "status": "PR_OPEN_PENDING_REVIEW",
       "openspec_change": "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/ (validated --strict)",
-      "harness": "Claude Code + Sonnet 5"
+      "harness": "Claude Code + Sonnet 5",
+      "pr": 125
     },
     "docs-hosted-rustdoc-typedoc-docusaurus-ia": {
       "branch": "change-23/docs-hosted-rustdoc-typedoc-docusaurus-ia",
       "worktree": "/Users/gqadonis/.claude/worktrees/docs-hosted-rustdoc-typedoc-docusaurus-ia",
-      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
+      "status": "PR_OPEN_PENDING_REVIEW",
       "openspec_change": "openspec/changes/docs-hosted-rustdoc-typedoc-docusaurus-ia/",
       "harness": "OpenCode + K2.7",
       "commit": null,
       "verified": "cargo check / pnpm typecheck / py_compile / validate-cookbook.sh pass; openspec validate passes",
-      "notes": "Docusaurus docs portal scaffolding complete; operator must enable GitHub Pages after merge."
+      "notes": "Docusaurus docs portal scaffolding complete; operator must enable GitHub Pages after merge.",
+      "pr": 126
     },
     "docs-cookbook-12-examples": {
       "branch": "change-24/docs-cookbook-12-examples",
       "worktree": "/Users/gqadonis/.claude/worktrees/docs-cookbook-12-examples",
-      "status": "IMPLEMENTATION_COMPLETE_UNMERGED",
+      "status": "PR_OPEN_PENDING_REVIEW",
       "openspec_change": "openspec/changes/docs-cookbook-12-examples/",
       "harness": "OpenCode + K2.7",
       "note": "Runtime/SDK examples only; A2UI examples blocked pending Changes 21-22.",
       "commit": null,
       "verified": "cargo check / pnpm typecheck / py_compile / validate-cookbook.sh pass; openspec validate passes",
-      "notes": "A2UI cookbook examples deferred to Changes 21-22."
+      "notes": "A2UI cookbook examples deferred to Changes 21-22.",
+      "pr": 127
     }
   },
   "activeDispatches": {},
@@ -89,9 +92,9 @@
     "Change 8: operator to confirm which registry (ghcr.io vs. ACR/deploy.yml) is canonical before wiring vuln-scan.yml to scan the actual last-published image instead of a locally-rebuilt Dockerfile"
   ],
   "sourceTool": "opencode",
-  "updatedAt": "2026-07-14T23:26:42Z",
+  "updatedAt": "2026-07-15T00:23:52Z",
   "previous_phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "last_updated": "2026-07-14T23:26:42Z",
+  "last_updated": "2026-07-15T00:23:52Z",
   "last_updated_by": "opencode",
   "exact_next_command": "dispatch Change 20 (a2ui-realtime-backbone-from-flint-realtime-fabric) from main",
   "fallback_command": "Use each OpenSpec change ledger for clarification and report cross-SDK/runtime contract blockers before expanding scope",
