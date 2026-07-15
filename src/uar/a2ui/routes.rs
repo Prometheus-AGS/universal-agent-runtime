@@ -8,6 +8,8 @@
 //! | GET | `/api/uar/a2ui/schemas/{schema_id}` | Get a single schema by ID |
 //! | POST | `/api/uar/runs/{run_id}/artifact-response` | Submit user response to an input artifact |
 //! | POST | `/api/uar/runs/{run_id}/a2ui/test-trigger` | Trigger a real artifact input request for testing |
+//! | POST | `/api/uar/runs/{run_id}/a2ui/surface-test-trigger` | Trigger a real A2UI surface state-patch event for testing (Change 20) |
+//! | GET | `/api/uar/runs/{run_id}/a2ui/surface-replay` | Replay every surface state-patch published for this run so far (Change 20 late-join reattach) |
 
 use std::sync::Arc;
 
@@ -20,6 +22,9 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
+use super::realtime::{
+    A2uiReplayBackbone, A2uiWireKind, InMemoryReplayBackbone, surface_message_to_state_patch,
+};
 use super::registry::A2uiRegistry;
 use crate::uar::{
     domain::events::{ArtifactPayload, NormalizedEvent},
@@ -32,6 +37,11 @@ use crate::uar::{
 pub struct A2uiApiState {
     pub registry: Arc<A2uiRegistry>,
     pub run_manager: Arc<RunManager>,
+    /// Durable-replay backbone for A2UI surface state patches (Change 20,
+    /// `a2ui-realtime-backbone-from-flint-realtime-fabric`). In-memory for
+    /// now — see `realtime.rs` module docs for the deferred
+    /// `flint-realtime-fabric`-backed implementation.
+    pub realtime_backbone: Arc<InMemoryReplayBackbone>,
 }
 
 // ── Request / response types ──────────────────────────────────────────────────
@@ -67,6 +77,24 @@ pub struct TestTriggerPayload {
     pub content: String,
     #[serde(default)]
     pub metadata: serde_json::Value,
+}
+
+/// Request body for `POST /api/uar/runs/{run_id}/a2ui/surface-test-trigger`
+/// (Change 20). `kind` is one of `"createSurface" | "updateComponents" |
+/// "updateDataModel" | "deleteSurface"`.
+#[derive(Debug, Deserialize)]
+pub struct SurfaceTestTriggerPayload {
+    pub surface_id: String,
+    pub kind: String,
+    #[serde(default)]
+    pub payload: serde_json::Value,
+}
+
+#[derive(Debug, Serialize)]
+struct SurfaceTestTriggerAck {
+    run_id: String,
+    surface_id: String,
+    status: &'static str,
 }
 
 #[derive(Debug, Serialize)]
@@ -201,6 +229,91 @@ async fn test_trigger_artifact(
         .into_response()
 }
 
+/// `POST /api/uar/runs/{run_id}/a2ui/surface-test-trigger` (Change 20).
+///
+/// Converts the given A2UI surface message into a
+/// `NormalizedEvent::StatePatch` (via [`surface_message_to_state_patch`]),
+/// publishes it to the durable replay backbone (so a subsequent
+/// `GET .../surface-replay` call — or, once wired, a
+/// `flint-realtime-fabric` late-joining subscriber — sees it), and emits it
+/// onto the run's live SSE broadcast via the same [`RunManager::emit_to_run`]
+/// path every other run event uses, so every currently-connected client
+/// converges on it immediately.
+async fn surface_test_trigger(
+    State(state): State<A2uiApiState>,
+    Path(run_id): Path<String>,
+    Json(payload): Json<SurfaceTestTriggerPayload>,
+) -> impl IntoResponse {
+    let run = match state.run_manager.get_run(&run_id).await {
+        Some(r) => r,
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({ "error": format!("run '{}' not found or not active", run_id) })),
+            )
+                .into_response();
+        }
+    };
+
+    let kind = match payload.kind.as_str() {
+        "createSurface" => A2uiWireKind::CreateSurface,
+        "updateComponents" => A2uiWireKind::UpdateComponents,
+        "updateDataModel" => A2uiWireKind::UpdateDataModel,
+        "deleteSurface" => A2uiWireKind::DeleteSurface,
+        other => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({
+                    "error": format!(
+                        "unknown kind '{other}' -- expected one of createSurface, updateComponents, updateDataModel, deleteSurface"
+                    )
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let op = surface_message_to_state_patch(&payload.surface_id, kind, payload.payload);
+
+    state.realtime_backbone.publish(&run.run_id, op.clone());
+
+    state
+        .run_manager
+        .emit_to_run(
+            &run.run_id,
+            NormalizedEvent::StatePatch {
+                run_id: run.run_id.clone(),
+                patch: vec![op],
+            },
+        )
+        .await;
+
+    (
+        StatusCode::OK,
+        Json(SurfaceTestTriggerAck {
+            run_id: run.run_id,
+            surface_id: payload.surface_id,
+            status: "triggered",
+        }),
+    )
+        .into_response()
+}
+
+/// `GET /api/uar/runs/{run_id}/a2ui/surface-replay` (Change 20).
+///
+/// Returns every A2UI surface state-patch op published for this run so far,
+/// in publish order — the "late-join reattach" read path: a client that
+/// connects to the run's SSE stream after some surface updates already
+/// happened calls this once to catch up, then relies on the live SSE
+/// broadcast for anything published from that point on.
+async fn surface_replay(
+    State(state): State<A2uiApiState>,
+    Path(run_id): Path<String>,
+) -> impl IntoResponse {
+    let ops = state.realtime_backbone.replay(&run_id);
+    (StatusCode::OK, Json(ops)).into_response()
+}
+
 // ── Router builders ───────────────────────────────────────────────────────────
 
 /// Build the A2UI schema listing router (mounted at `/api/uar/a2ui`).
@@ -221,4 +334,9 @@ pub fn build_response_router() -> Router<A2uiApiState> {
             post(submit_artifact_response),
         )
         .route("/{run_id}/a2ui/test-trigger", post(test_trigger_artifact))
+        .route(
+            "/{run_id}/a2ui/surface-test-trigger",
+            post(surface_test_trigger),
+        )
+        .route("/{run_id}/a2ui/surface-replay", get(surface_replay))
 }
