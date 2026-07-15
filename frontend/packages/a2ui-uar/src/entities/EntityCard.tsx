@@ -36,10 +36,10 @@ export const UarEntityCard: FC<{ props: EntityCardProps }> = ({ props }) => {
               className={cn(
                 "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
                 props.syncOrigin === "optimistic"
-                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                  ? "bg-amber-500/15 text-amber-800 dark:text-amber-400"
                   : props.syncOrigin === "client"
-                    ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
-                    : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+                    ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                    : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
               )}
             >
               {SYNC_ORIGIN_LABEL[props.syncOrigin]}
