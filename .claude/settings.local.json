@@ -597,5 +597,8 @@
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "zed-workspace-mcp"
+  ]
 }
