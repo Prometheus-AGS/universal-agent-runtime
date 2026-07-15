@@ -43,9 +43,7 @@ export {
 // The 9 uar.a2ui/1 protocol-standard components.
 export * from "./components";
 
-// UAR-specific Entity* components (EntityCard implemented; see README for
-// EntityDiff/EntityStream/EntityApproval/EntityToolProvider/EntityChat/
-// EntityCopilot deferral).
+// UAR-specific Entity* component schemas and renderers.
 export * from "./entities";
 
 // Performance-measurement harness (see README's "Performance budget" section).

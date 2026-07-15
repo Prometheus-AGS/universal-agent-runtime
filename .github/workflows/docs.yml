@@ -1,0 +1,119 @@
+name: Docs
+
+# Builds the Docusaurus site in website/, runs prose lint with Vale, optionally
+# generates rustdoc/TypeDoc/Sphinx outputs, and deploys to GitHub Pages.
+# Requires Pages to be enabled for the repo with "GitHub Actions" as the source
+# (Settings → Pages → Build and deployment → Source: GitHub Actions).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'docs/**'
+      - 'docs/adr/**'
+      - '.github/workflows/docs.yml'
+      - '.vale.ini'
+      - '.github/styles/**'
+      - 'sdks/**'
+      - 'src/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; don't cancel an in-progress production deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Vale
+        uses: errata-ai/vale-action@v2
+        with:
+          version: '3.11.0'
+
+      - name: Lint docs prose with Vale
+        run: |
+          vale --config=.vale.ini \
+            docs/ \
+            docs/adr/ \
+            README.md
+
+      - name: Copy ADRs into Docusaurus content
+        run: cp -r docs/adr website/docs/adr
+
+      - name: Install website dependencies
+        working-directory: website
+        run: npm ci
+
+      - name: Build Docusaurus site
+        working-directory: website
+        run: npm run build
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-action@stable
+        with:
+          toolchain: stable
+
+      - name: Generate rustdoc (runtime + Rust SDK)
+        run: cargo doc --no-deps --workspace --features server-full
+
+      - name: Stage rustdoc into Docusaurus build directory
+        run: |
+          mkdir -p website/build/docs/api/rust
+          cp -r target/doc/* website/build/docs/api/rust/ || true
+
+      - name: Install TypeScript SDK dependencies
+        working-directory: sdks/typescript
+        run: npm ci
+
+      - name: Generate TypeDoc for TypeScript SDK
+        working-directory: sdks/typescript
+        run: |
+          if [ -f typedoc.json ]; then
+            npm run build:docs
+          else
+            echo "TypeDoc not configured for sdks/typescript yet; skipping"
+          fi
+
+      - name: Stage TypeDoc into Docusaurus build directory
+        run: |
+          mkdir -p website/build/docs/api/typescript
+          if [ -d sdks/typescript/docs ]; then
+            cp -r sdks/typescript/docs/* website/build/docs/api/typescript/
+          elif [ -d sdks/typescript/dist/docs ]; then
+            cp -r sdks/typescript/dist/docs/* website/build/docs/api/typescript/
+          else
+            echo "TypeDoc output not found; creating placeholder"
+            echo "# TypeScript API reference" > website/build/docs/api/typescript/index.html
+          fi
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

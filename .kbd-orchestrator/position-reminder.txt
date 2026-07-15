@@ -1,10 +1,20 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-grade-a-upgrade-2026-07
-Step: 18 of 25 (dispatch Change 18, monitor Change 19)
+Step: 22 of 25 implementation-complete (3 remaining: 21, 22, 25)
 Stage: execute_in_progress
-Next command: dispatch Change 18 (a2ui-migrate-entity-components-from-prometheus-entity-management) from main; monitor Change 19 (a2ui-design-systems-flint) worktree
+
+Implementation-complete but unmerged:
+- Change 18 (a2ui-migrate-entity-components): branch feat/a2ui-entity-diff-stream
+- Change 20 (a2ui-realtime-backbone): branch change-20/a2ui-realtime-backbone
+- Change 23 (docs-hosted-rustdoc-typedoc-docusaurus-ia): branch change-23/docs-hosted-rustdoc-typedoc-docusaurus-ia
+- Change 24 (docs-cookbook-12-examples): branch change-24/docs-cookbook-12-examples (A2UI examples deferred)
+
+Remaining implementation:
+- Change 21 (a2ui-world-class-theming-a11y-i18n): Claude Code + Sonnet 5
+- Change 22 (a2ui-inspector-lit-svelte-renderers): Codex + GPT-5.6 + Claude
+- Change 25 (docs-storybook-visual-regression-perf-budget): Claude Code + Sonnet 5
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 18 of 25)
+  Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 22 of 25)
   [do work]
-  Completed <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 18 of 25)
+  Completed <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 22 of 25)

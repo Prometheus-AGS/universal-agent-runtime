@@ -5,14 +5,16 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
-    "build": "docusaurus build",
+    "copy:adr": "node -e \"require('fs').cpSync('../docs/adr', './docs/adr', {recursive: true, force: true})\"",
+    "build": "pnpm copy:adr && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "lint": "node scripts/lint-docs.mjs"
   },
   "dependencies": {
     "@docusaurus/core": "3.10.2",

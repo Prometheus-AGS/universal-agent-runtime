@@ -11,7 +11,9 @@
 //! - [`registry::A2uiRegistry`] — in-memory store of all registered schemas
 //! - [`routes`] — REST endpoints for schema listing and user response ingestion
 
+pub mod design_systems;
 pub(crate) mod protocol;
+pub mod realtime;
 pub mod registry;
 pub mod routes;
 pub mod schema;

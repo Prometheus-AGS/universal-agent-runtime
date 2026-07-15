@@ -1,0 +1,15 @@
+extends: substitution
+message: "Use '%s' instead of '%s'."
+level: error
+ignorecase: true
+swap:
+  uar: UAR
+  universal agent runtime: Universal Agent Runtime
+  openai: OpenAI
+  anthropic: Anthropic
+  github: GitHub
+  gitlab: GitLab
+  docker: Docker
+  kubernetes: Kubernetes
+  rustdoc: rustdoc
+  typedoc: TypeDoc

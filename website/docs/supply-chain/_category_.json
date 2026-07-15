@@ -1,0 +1,8 @@
+{
+  "label": "Supply Chain",
+  "position": 10,
+  "link": {
+    "type": "generated-index",
+    "description": "SLSA, SBOMs, vulnerability scanning, and reproducible builds."
+  }
+}

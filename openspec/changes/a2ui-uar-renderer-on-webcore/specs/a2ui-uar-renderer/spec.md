@@ -172,15 +172,11 @@ test suite.
 #### Scenario: A developer runs the performance harness
 - **WHEN** a developer runs `pnpm --filter @prometheus-ags/a2ui-uar run perf`
 - **THEN** it measures initial-render and streaming-update durations for
-  a representative surface and asserts they stay under a documented,
-  environment-scaled budget, independent of `pnpm test`'s functional
+  a representative surface and asserts they stay below 16ms and 8ms,
+  independent of `pnpm test`'s functional
   suite
 
-#### Scenario: The harness's relationship to a CI-enforced gate is documented, not silently assumed complete
-- **WHEN** a developer reads `frontend/packages/a2ui-uar/README.md`'s
-  "Performance budget" section
-- **THEN** they find the current CI-scaled thresholds used in place of
-  the literal 16ms/8ms product budget, and an explicit list of what
-  remains before this harness becomes a real CI-enforced gate (a
-  dedicated CI job, environment-realistic or headless-browser-based
-  budgets, and a trend baseline)
+#### Scenario: CI enforces the performance budget
+- **WHEN** renderer code changes in a pull request or on `main`
+- **THEN** a dedicated CI job fails unless initial render is below 16ms
+  and the p95 streaming update is below 8ms

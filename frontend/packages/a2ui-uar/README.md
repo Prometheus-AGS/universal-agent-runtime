@@ -98,41 +98,16 @@ now is that Change 18 can re-home rendering logic into components like
 this one without a field-renaming exercise on top of everything else it
 has to do.
 
-### `EntityDiff` and `EntityStream` (added in Change 18)
+### Complete entity extension catalog
 
-`EntityDiff` and `EntityStream` were added in Change 18
-(`a2ui-migrate-entity-components-from-prometheus-entity-management`) — see
-that change's `proposal.md` for why "migrate" became "build fresh" (the
-plan's assumed source path,
-`prometheus-skill-system/skills/imported/prometheus-entity-management/packages/a2ui-react/src/`,
-does not exist anywhere in this repo, the `prometheus-entity-management`
-submodule, its git history, or sibling repos — there was no component to
-migrate).
-
-- `EntityDiff` — a bound component (`createUarComponentImplementation`,
-  same pattern as `EntityCard`) rendering a before/after field comparison,
-  with changed rows visually distinguished from unchanged ones.
-- `EntityStream` — a binderless component
-  (`createBinderlessUarComponentImplementation`), demonstrating the
-  imperative-subscription pattern this README previously only described:
-  it reads its static `source: { path }` declaration directly off
-  `context.componentModel.properties` and subscribes to that data-model
-  path itself via `context.dataContext.subscribeDynamicValue`, appending
-  new items reactively without `GenericBinder`'s single-value resolution
-  model getting in the way.
-
-### Still deferred: `EntityApproval`, `EntityToolProvider`, `EntityChat`, `EntityCopilot`
-
-Not implemented. These are closer to full mini-applications than single
-components (each would need its own interaction/approval-flow or
-conversational state model, not just a props schema and a render
-function) — building them well is out of scope for Change 18's pass, same
-reasoning Change 17 gave for deferring all 6 originally.
+The extension catalog includes `EntityCard`, `EntityDiff`, `EntityStream`,
+`EntityApproval`, `EntityToolProvider`, `EntityChat`, and `EntityCopilot`.
+Each has a strict protocol schema and focused semantic renderer.
 
 ## Scope of this change (Change 17, `a2ui-uar-renderer-on-webcore`)
 
 The phase plan estimates this at ~40 hours; this pass delivers a real,
-tested vertical slice, not a complete 14+ component catalog:
+tested 16-component catalog:
 
 **Done:**
 - Package skeleton correctly wired to `@prometheus-ags/a2ui-core`
@@ -141,8 +116,8 @@ tested vertical slice, not a complete 14+ component catalog:
   TextField, CheckBox, ChoicePicker, Row, Column, Card, Divider —
   including the two-way-bound inputs (TextField/CheckBox/ChoicePicker via
   `GenericBinder`'s generated setters) and action dispatch (Button).
-- 1 of 7 `Entity*` components (`EntityCard`), demonstrating the pattern
-  and the naming alignment with `prometheus-entity-management`.
+- All 7 `Entity*` components, with naming aligned to
+  `prometheus-entity-management`.
 - `UarSurface`/`UarDeferredChild`: the full recursive surface renderer,
   including structural (`ChildList`) traversal, reactive re-render on
   data-model changes, and fail-closed behavior for unknown component
@@ -157,8 +132,8 @@ tested vertical slice, not a complete 14+ component catalog:
   to Change 16's package, not a full re-scope of it.
 - A performance-measurement harness (`src/perf/measure.ts`) and a real
   test suite exercising it (`test/perf/`) — see "Performance budget"
-  below for the gap between this and a CI-enforced gate.
-- 16 passing tests total (`pnpm test`), zero ESLint warnings/errors
+  below for its CI-enforced gate.
+- Passing functional and catalog tests, zero ESLint warnings/errors
   (`pnpm lint`), zero TypeScript errors (`pnpm typecheck`).
 
 **Deferred (tracked, not silently dropped):**
@@ -166,12 +141,9 @@ tested vertical slice, not a complete 14+ component catalog:
   `Slider`, `DateTimeInput` — outside the certified `uar.a2ui/1` catalog
   per `docs/protocols/a2ui-profile.md`; not part of this change's scope
   regardless of remaining budget.
-- `EntityDiff`, `EntityStream`, `EntityApproval`, `EntityToolProvider`,
-  `EntityChat`, `EntityCopilot` — see above.
 - Full cross-testing matrix (all 9 protocol components × every prop
   variant) against `@a2ui/react` — only a representative subset is
   covered.
-- A real CI-enforced performance gate (see below).
 - Theming (`theme` payload on `createSurface`) is accepted by
   `web_core`/`MessageProcessor` but not yet threaded into any of this
   package's components — every component currently uses UAR's static
@@ -189,8 +161,8 @@ complex surface (a `Column` of `Row`s containing `Card`, `TextField`,
 `dataModel.set()` update, using `percentile()` for p95 over repeated
 runs rather than a single noisy sample.
 
-**What this is not yet:** a CI-enforced gate. Concretely, turning this
-into one needs:
+The dedicated `a2ui-renderer-performance.yml` workflow enforces these
+literal budgets for relevant pull requests and pushes to `main`.
 
 1. **A dedicated CI job** running `pnpm --filter @prometheus-ags/a2ui-uar
    run perf` (already wired as its own script/`vitest.perf.config.ts`,
@@ -211,7 +183,8 @@ into one needs:
    either too loose to catch real regressions or too tight to survive
    CI noise.
 
-None of that CI wiring exists yet — this pass delivers the harness and a
+The test remains intentionally small and deterministic; longer-term trend
+reporting may supplement this hard regression gate without weakening it.
 working, currently-passing regression-style check, explicitly scoped
 short of the "real CI gate" infrastructure work.
 
