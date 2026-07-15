@@ -1,0 +1,12 @@
+{
+  "extends": "../../../../sdks/typescript/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "../../../../",
+    "outDir": "./dist",
+    "types": ["node"],
+    "typeRoots": ["../../../../sdks/typescript/node_modules/@types"]
+  },
+  "include": ["examples/**/*.ts", "../../../../sdks/typescript/src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

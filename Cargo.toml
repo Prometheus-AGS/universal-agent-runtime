@@ -30,6 +30,24 @@ path = "src/main.rs"
 name = "uar-sidecar"
 path = "src/bin/uar-sidecar.rs"
 
+# Cookbook examples live in docs/cookbook/runtime/ but are built as examples of
+# the runtime crate so they share the workspace build cache.
+[[example]]
+name = "cookbook_01_start_server"
+path = "docs/cookbook/runtime/src/bin/01_start_server.rs"
+
+[[example]]
+name = "cookbook_02_load_config"
+path = "docs/cookbook/runtime/src/bin/02_load_config.rs"
+
+[[example]]
+name = "cookbook_03_mcp_tool_call"
+path = "docs/cookbook/runtime/src/bin/03_mcp_tool_call.rs"
+
+[[example]]
+name = "cookbook_04_streaming_sse"
+path = "docs/cookbook/runtime/src/bin/04_streaming_sse.rs"
+
 # Gherkin/BDD suite (tests/bdd.rs) drives its own main() via the Cucumber
 # runner instead of libtest's harness, so it needs harness = false — Cargo's
 # default auto-discovered test target assumes libtest and fails to build
