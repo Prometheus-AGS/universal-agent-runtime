@@ -36,7 +36,7 @@ React -> hooks -> stores/entity graph -> services -> Axum REST/SSE
 ## Next steps
 
 - [Installation](./installation)
-- [Configuration](./configuration)
+- [Configuration](./configuration/intro.md)
 - [API reference](./api-reference)
 - [Backup and restore](./backup-and-restore)
 - [Upgrade guide](./upgrade-guide)

@@ -16,21 +16,129 @@ The machine-readable source of truth is [docs/product-support-matrix.json](docs/
 
 ## Architecture
 
-```text
-React component
-  -> hook/view model
-    -> Zustand store/entity domain
-      -> typed service
-        -> Axum REST/SSE API on port 1906
-          -> run manager/orchestrator
-            -> liter-llm / governed tools / persistence
+UAR is a single Rust/Axum process that owns inference routing, agent
+execution, governance, retrieval, and event distribution, with a strictly
+layered React 19 frontend. The frontend never talks to providers, tools,
+or storage directly — everything crosses one governed REST/SSE boundary
+on port 1906.
+
+```mermaid
+flowchart TB
+    subgraph Browser["Frontend (React 19 + TypeScript, strict layering)"]
+        C[Components<br/><i>render only</i>] --> H[Hooks / view models]
+        H --> S[Zustand stores / entity graph]
+        S --> SV[Typed services<br/><i>fetch + SSE, only stores import these</i>]
+        PG[(PGlite<br/>local thread/message cache)]
+        S <--> PG
+    end
+
+    SV -->|REST + SSE :1906| API[Axum API layer]
+
+    subgraph Runtime["UAR runtime (Rust, server-full bundle)"]
+        API --> RM[Run manager / orchestrator<br/><i>per-run broadcast channels</i>]
+        API --> GOV[Cedar governance engine<br/><i>hot-reloaded PolicySet; Deny is final</i>]
+        RM --> LLM[liter-llm<br/><i>unified provider/model addressing,<br/>capability routing</i>]
+        RM --> TOOLS[Tool execution<br/><i>MCP + native, schema-validated,<br/>policy-gated, audited</i>]
+        RM --> RAG[RAG pipeline<br/><i>hybrid RRF + lexical verification,<br/>citation stream, 5 embedding backends</i>]
+        RM --> MEM[Memory / knowledge bases<br/><i>tenant-isolated</i>]
+        GOV -.->|allow / deny| TOOLS
+        GOV -.->|allow / deny| RM
+    end
+
+    RAG --> DB[(SurrealDB<br/><i>authoritative store</i>)]
+    MEM --> DB
+    RM --> DB
 ```
 
-The browser consumes normalized runtime events. **AG-UI is the event transport vocabulary**; **A2UI is the validated declarative rendering contract**. A2UI artifacts map to an approved React component catalog and never execute model-provided HTML or JavaScript.
+The browser consumes normalized runtime events. **AG-UI is the event
+transport vocabulary**; **A2UI is the validated declarative rendering
+contract**. A2UI artifacts map to an approved component catalog and never
+execute model-provided HTML or JavaScript.
 
-SurrealDB is authoritative in the Stable default server bundle. PGlite is a local browser/desktop cache for threads and messages. Versioned server events reconcile the reactive entity graph; server entity versions win conflicts while unsent drafts remain client-owned.
+### Protocol surfaces
 
-Read [the system architecture](docs/ARCHITECTURE.md), [frontend ownership rules](docs/frontend-architecture.md), and the [AG-UI](docs/protocols/ag-ui-profile.md) and [A2UI](docs/protocols/a2ui-profile.md) profiles.
+```mermaid
+flowchart LR
+    subgraph Peers["External peers"]
+        OAI[OpenAI-compatible clients]
+        A2AP[A2A agents]
+        MCPS[MCP servers / tools]
+    end
+
+    subgraph UAR["UAR protocol boundary"]
+        COMPAT["/v1 OpenAI-compatible API"]
+        A2A[A2A endpoint]
+        MCP[MCP client + governed tool bridge]
+        AGUI[AG-UI event stream<br/><i>SSE, normalized run events</i>]
+        A2UI[A2UI surfaces<br/><i>validated declarative UI</i>]
+    end
+
+    subgraph Renderers["A2UI renderers (semantic-conformance tested)"]
+        R1[React — first-party product UI]
+        R2[Lit]
+        R3[Svelte]
+    end
+
+    OAI --> COMPAT
+    A2AP <--> A2A
+    MCPS <--> MCP
+    AGUI --> R1
+    A2UI --> R1
+    A2UI --> R2
+    A2UI --> R3
+```
+
+The A2UI catalog is certified per profile: 9 protocol components
+(`Text`, `Button`, `TextField`, `CheckBox`, `ChoicePicker`, `Row`,
+`Column`, `Card`, `Divider`) under `urn:uar:a2ui:catalog:1`, plus 7 UAR
+entity extension components under `urn:uar:a2ui:catalog:1+entities`.
+Unknown component types fail closed. All three renderers are built on the
+same vendored `@a2ui/web_core` state model and share a semantic
+conformance fixture asserting equivalent roles, accessible names, states,
+and text across frameworks.
+
+### Run lifecycle and live UI updates
+
+```mermaid
+sequenceDiagram
+    participant Client as Client (any A2UI renderer)
+    participant API as Axum API
+    participant RM as Run manager
+    participant Cedar as Cedar governance
+    participant LLM as liter-llm provider
+
+    Client->>API: POST /api/uar/runs (create)
+    API->>RM: register run (broadcast channel)
+    Client->>API: GET run SSE stream
+    API-->>Client: normalized AG-UI events
+
+    RM->>Cedar: authorize tool / action
+    Cedar-->>RM: Allow (Deny is not overridable)
+    RM->>LLM: routed completion (capability match)
+    LLM-->>RM: stream chunks
+    RM-->>Client: TextDelta / ToolStart / ToolEnd / Citation events
+
+    Note over RM,Client: A2UI surface changes travel as<br/>StatePatch events; late-joining clients<br/>catch up via GET .../a2ui/surface-replay
+```
+
+SurrealDB is authoritative in the Stable default server bundle. PGlite is
+a local browser/desktop cache for threads and messages. Versioned server
+events reconcile the reactive entity graph; server entity versions win
+conflicts while unsent drafts remain client-owned.
+
+### Quality gates in CI
+
+Every PR crosses: workspace build + tests, 60% line-coverage gate
+(`cargo-llvm-cov` + vitest v8), RAG evaluation (RAGAS + DeepEval against a
+frozen golden set), A2UI render-budget enforcement (16ms initial / 8ms
+streaming chunk), Storybook story-level functional + axe accessibility
+checks in headless Chromium, cross-renderer semantic conformance, frontend
+architecture-boundary checks, and reproducible-source verification.
+Nightly: `cargo-mutants` mutation testing and cross-ecosystem
+vulnerability scanning (`osv-scanner` + `grype`, blocking on HIGH+).
+Monthly: BEIR retrieval benchmarks published to `docs/rag-benchmark/`.
+
+Read [the system architecture](docs/ARCHITECTURE.md), [frontend ownership rules](docs/frontend-architecture.md), the [AG-UI](docs/protocols/ag-ui-profile.md) and [A2UI](docs/protocols/a2ui-profile.md) profiles, and the [architecture decision records](docs/adr/index.md).
 
 ## Run locally
 
@@ -71,9 +179,21 @@ Production deployments must configure authentication, non-default secrets, trust
 
 Report vulnerabilities per [SECURITY.md](SECURITY.md) (90-day coordinated-disclosure default); a machine-readable pointer is served at [`/.well-known/security.txt`](https://github.com/Prometheus-AGS/universal-agent-runtime) (RFC 9116).
 
-### Supply-chain provenance (SLSA L3 self-declared)
+### Supply-chain provenance (SLSA Build L2 attested, L3-track)
 
 Tagged releases are built and signed by [`.github/workflows/supply-chain.yml`](.github/workflows/supply-chain.yml): multi-arch container image and release archives, CycloneDX/SPDX SBOMs, keyless [Sigstore](https://www.sigstore.dev/) signatures, and [in-toto](https://in-toto.io/) SLSA provenance + SBOM attestations via GitHub's native `actions/attest`/`actions/attest-sbom`. A separate `verify` job in the same workflow independently re-verifies every signature, attestation, and checksum before evidence is attached to the GitHub release — nothing is self-certified by the job that produced it.
+
+GitHub-native artifact attestations from an in-repo build workflow provide [SLSA v1.0 Build Level 2](https://docs.github.com/en/actions/concepts/security/artifact-attestations); reaching Build Level 3 additionally requires the build steps to run in a [dedicated reusable workflow](https://docs.github.com/actions/security-guides/using-artifact-attestations-and-reusable-workflows-to-achieve-slsa-v1-build-level-3) so provenance is non-falsifiable by the build-step author. Migrating the build/sign steps into a reusable workflow is planned; until then this project claims L2, not L3.
+
+```mermaid
+flowchart LR
+    TAG[Release tag] --> BUILD[Build job<br/><i>multi-arch image + archives</i>]
+    BUILD --> SBOM[SBOM generation<br/><i>CycloneDX + SPDX</i>]
+    SBOM --> ATTEST["actions/attest + attest-sbom<br/><i>SLSA provenance, in-toto</i>"]
+    ATTEST --> SIGN[cosign keyless signing<br/><i>Sigstore bundles</i>]
+    SIGN --> VERIFY[Independent verify job<br/><i>re-checks every signature,<br/>attestation, checksum</i>]
+    VERIFY --> REL[Evidence attached to<br/>GitHub release]
+```
 
 Verify a downloaded release archive yourself:
 

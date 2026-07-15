@@ -32,7 +32,7 @@ Before you start, decide two things:
    with `authentication failed: no API key provided …`** — the key is required
    to boot, not just to serve requests.
 
-See the **[Configuration reference](./configuration)** for the full list.
+See the **[Configuration reference](./configuration/intro.md)** for the full list.
 
 ## Option 1 — Docker Compose (recommended)
 
