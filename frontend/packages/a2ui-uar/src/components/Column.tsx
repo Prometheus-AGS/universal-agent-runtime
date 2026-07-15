@@ -36,7 +36,7 @@ export const UarColumn: FC<{ props: ColumnProps; buildChild: BuildChild }> = ({ 
       )}
     >
       {children.map((child) => (
-        <div key={child.id} style={props.weight ? { flexGrow: props.weight } : undefined}>
+        <div className="min-w-0 max-w-full" key={child.id} style={props.weight ? { flexGrow: props.weight } : undefined}>
           {buildChild(child.id, child.basePath)}
         </div>
       ))}

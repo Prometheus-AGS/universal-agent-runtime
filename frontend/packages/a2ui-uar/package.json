@@ -5,14 +5,15 @@
   "type": "module",
   "description": "UAR-owned React renderer for the A2UI protocol (uar.a2ui/1), built directly on @prometheus-ags/a2ui-core (@a2ui/web_core). Uses shadcn/ui as the visual baseline and react-aria-components for accessibility primitives that shadcn/Base UI does not cover (multi-select ChoicePicker). This is the renderer UAR product code should import — @prometheus-ags/a2ui-react is a reference implementation only.",
   "license": "Apache-2.0",
-  "sideEffects": false,
+  "sideEffects": ["./src/styles.css"],
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
-    }
+    },
+    "./styles.css": "./src/styles.css"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -22,11 +23,13 @@
     "perf": "vitest run --config vitest.perf.config.ts"
   },
   "dependencies": {
-    "@prometheus-ags/a2ui-core": "workspace:*",
     "@base-ui/react": "1.6.0",
+    "@prometheus-ags/a2ui-core": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "i18next": "26.3.6",
     "lucide-react": "^0.575.0",
+    "motion": "12.42.2",
     "react-aria-components": "^1.19.0",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.25.76"
@@ -44,6 +47,7 @@
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
+    "axe-core": "4.12.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.7.0",

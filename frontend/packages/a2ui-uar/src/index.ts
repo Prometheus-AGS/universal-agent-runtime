@@ -27,6 +27,10 @@ export type {
 
 // The surface renderer.
 export { UarSurface, UarDeferredChild, getRootComponentId, UnknownUarComponentError } from "./react/UarSurface";
+export type { UarSurfaceProps, UarTheme } from "./react/UarSurface";
+export { SurfaceErrorBoundary } from "./react/SurfaceErrorBoundary";
+export { UarI18nProvider, useUarI18n, uarI18nResources } from "./i18n";
+export type { UarLocale, UarDirection, UarMessageKey } from "./i18n";
 
 // Catalogs.
 export {

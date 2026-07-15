@@ -1,0 +1,82 @@
+.uar-a2ui-surface {
+  --background: 0 0% 98%;
+  --foreground: 214 20% 20%;
+  --card: 0 0% 100%;
+  --card-foreground: 214 20% 20%;
+  --primary: 20 100% 43%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 214 15% 92%;
+  --secondary-foreground: 214 20% 25%;
+  --muted: 214 12% 94%;
+  --muted-foreground: 214 12% 40%;
+  --accent: 214 12% 94%;
+  --accent-foreground: 214 20% 20%;
+  --destructive: 4 90% 43%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 15% 80%;
+  --input: 214 15% 80%;
+  --ring: 20 100% 38%;
+  min-inline-size: 0;
+  color: hsl(var(--foreground));
+  color-scheme: light;
+}
+
+.uar-a2ui-surface[data-a2ui-theme="dark"] {
+  --background: 214 28% 10%;
+  --foreground: 210 20% 88%;
+  --card: 214 24% 13%;
+  --card-foreground: 210 20% 88%;
+  --primary: 20 100% 62%;
+  --primary-foreground: 214 28% 8%;
+  --secondary: 214 20% 20%;
+  --secondary-foreground: 210 20% 82%;
+  --muted: 214 22% 17%;
+  --muted-foreground: 210 14% 68%;
+  --accent: 214 22% 17%;
+  --accent-foreground: 210 20% 88%;
+  --destructive: 4 90% 65%;
+  --destructive-foreground: 214 28% 8%;
+  --border: 214 18% 34%;
+  --input: 214 18% 34%;
+  --ring: 20 100% 68%;
+  color-scheme: dark;
+}
+
+.uar-a2ui-surface[data-a2ui-theme="high-contrast"] {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 0%;
+  --card-foreground: 0 0% 100%;
+  --primary: 55 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 12%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 88%;
+  --accent: 0 0% 12%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 100% 65%;
+  --destructive-foreground: 0 0% 0%;
+  --border: 0 0% 100%;
+  --input: 0 0% 100%;
+  --ring: 55 100% 50%;
+  color-scheme: dark;
+}
+
+.uar-a2ui-surface [data-a2ui-component="Row"] { flex-wrap: wrap; }
+.uar-a2ui-surface [data-a2ui-component="Row"] > * { min-inline-size: min(100%, 12rem); }
+.uar-a2ui-surface :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+
+@media (forced-colors: active) {
+  .uar-a2ui-surface { forced-color-adjust: auto; }
+  .uar-a2ui-surface :focus-visible { outline: 2px solid Highlight; }
+  .uar-a2ui-surface [role="alert"] { border: 1px solid Mark; color: MarkText; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uar-a2ui-surface *, .uar-a2ui-surface *::before, .uar-a2ui-surface *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -30,13 +30,13 @@ export const UarRow: FC<{ props: RowProps; buildChild: BuildChild }> = ({ props,
     <div
       data-a2ui-component="Row"
       className={cn(
-        "flex flex-row gap-2",
+        "flex min-w-0 flex-row flex-wrap gap-2",
         JUSTIFY[props.justify ?? "start"],
         ALIGN[props.align ?? "stretch"],
       )}
     >
       {children.map((child) => (
-        <div key={child.id} style={props.weight ? { flexGrow: props.weight } : undefined}>
+        <div className="min-w-0 max-w-full" key={child.id} style={props.weight ? { flexGrow: props.weight } : undefined}>
           {buildChild(child.id, child.basePath)}
         </div>
       ))}

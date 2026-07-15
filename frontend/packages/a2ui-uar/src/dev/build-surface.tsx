@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { MessageProcessor, type Catalog } from "@prometheus-ags/a2ui-core/v0_9";
 import type { UarComponentImplementation } from "../react/types";
-import { UarSurface } from "../react/UarSurface";
+import { UarSurface, type UarSurfaceProps } from "../react/UarSurface";
 
 /**
  * Storybook-only counterpart of `test/helpers.ts`'s `buildSurface`: drives
@@ -15,6 +15,7 @@ export function renderStorySurface(
   catalog: Catalog<UarComponentImplementation>,
   components: Record<string, unknown>[],
   data: Record<string, unknown> = {},
+  options: Omit<UarSurfaceProps, "surface"> = {},
 ): ReactElement {
   const processor = new MessageProcessor([catalog]);
   processor.processMessages([
@@ -26,5 +27,5 @@ export function renderStorySurface(
   if (!surface) {
     throw new Error('Story surface "story" was not created.');
   }
-  return <UarSurface surface={surface} />;
+  return <UarSurface surface={surface} {...options} />;
 }

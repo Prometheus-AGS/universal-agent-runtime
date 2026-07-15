@@ -9,17 +9,19 @@ type CheckBoxProps = UarComponentProps<typeof CheckBoxApi>;
 /** `CheckBox` — two-way bound boolean input via the generated `setValue` setter. */
 export const UarCheckBox: FC<{ props: CheckBoxProps }> = ({ props }) => {
   const id = useId();
+  const errorId = `${id}-error`;
   return (
-    <div data-a2ui-component="CheckBox" className="flex items-center gap-2">
+    <div data-a2ui-component="CheckBox" className="flex flex-wrap items-center gap-x-2 gap-y-1">
       <Checkbox
         id={id}
         checked={!!props.value}
         onCheckedChange={(checked: boolean) => props.setValue(checked === true)}
         aria-invalid={props.isValid === false || undefined}
+        aria-describedby={props.validationErrors?.length ? errorId : undefined}
       />
       <Label htmlFor={id}>{props.label}</Label>
       {props.validationErrors?.length ? (
-        <span role="alert" className="text-xs text-destructive">
+        <span id={errorId} role="alert" className="basis-full ps-6 text-xs text-destructive">
           {props.validationErrors.join(" ")}
         </span>
       ) : null}

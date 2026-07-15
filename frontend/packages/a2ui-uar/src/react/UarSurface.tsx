@@ -1,10 +1,16 @@
 import { useMemo, useSyncExternalStore, type FC } from "react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import {
   ComponentContext,
   type ComponentApi,
   type SurfaceModel,
 } from "@prometheus-ags/a2ui-core/v0_9";
 import type { BuildChild, UarComponentImplementation } from "./types";
+import { UarI18nProvider, useUarI18n, type UarDirection, type UarLocale } from "../i18n";
+import { SurfaceErrorBoundary } from "./SurfaceErrorBoundary";
+import "../styles.css";
+
+export type UarTheme = "light" | "dark" | "high-contrast";
 
 /**
  * The A2UI concept & renderer-development docs establish `"root"` as the
@@ -97,9 +103,16 @@ export const UarDeferredChild: FC<{
  * Pass the `SurfaceModel` produced by `web_core`'s `MessageProcessor` after
  * it has processed a `createSurface`/`updateComponents` message pair.
  */
-export const UarSurface: FC<{
+interface UarSurfaceContentProps {
   surface: SurfaceModel<UarComponentImplementation<ComponentApi>>;
-}> = ({ surface }) => {
+  theme: UarTheme;
+  onRetry?: () => void;
+  resetKey?: string | number;
+  transitionKey?: string | number;
+}
+
+const UarSurfaceContent: FC<UarSurfaceContentProps> = ({ surface, theme, onRetry, resetKey, transitionKey }) => {
+  const { dir, locale, t } = useUarI18n();
   const rootId = useSyncExternalStore(
     (onStoreChange) => {
       const created = surface.componentsModel.onCreated.subscribe(() => onStoreChange());
@@ -114,8 +127,36 @@ export const UarSurface: FC<{
   );
 
   if (!rootId) {
-    return null;
+    return <div className="uar-a2ui-surface rounded-md border border-border bg-background p-4 text-sm text-muted-foreground" data-a2ui-theme={theme} data-a2ui-surface-state="empty" dir={dir} lang={locale} role="status">{t("empty")}</div>;
   }
 
-  return <UarDeferredChild surface={surface} id={rootId} basePath="/" />;
+  return (
+    <div className="uar-a2ui-surface min-w-0" data-a2ui-theme={theme} data-a2ui-surface-state="ready" dir={dir} lang={locale}>
+      <SurfaceErrorBoundary resetKey={resetKey} onRetry={onRetry} title={t("errorTitle")} body={t("errorBody")} retryLabel={t("retry")}>
+        <MotionConfig reducedMotion="user" transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}>
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div key={transitionKey ?? rootId} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -2 }}>
+              <UarDeferredChild surface={surface} id={rootId} basePath="/" />
+            </motion.div>
+          </AnimatePresence>
+        </MotionConfig>
+      </SurfaceErrorBoundary>
+    </div>
+  );
 };
+
+export interface UarSurfaceProps {
+  surface: SurfaceModel<UarComponentImplementation<ComponentApi>>;
+  theme?: UarTheme;
+  locale?: UarLocale;
+  direction?: UarDirection;
+  onRetry?: () => void;
+  resetKey?: string | number;
+  transitionKey?: string | number;
+}
+
+export const UarSurface: FC<UarSurfaceProps> = ({ surface, theme = "light", locale = "en", direction = "auto", ...props }) => (
+  <UarI18nProvider locale={locale} direction={direction}>
+    <UarSurfaceContent surface={surface} theme={theme} {...props} />
+  </UarI18nProvider>
+);

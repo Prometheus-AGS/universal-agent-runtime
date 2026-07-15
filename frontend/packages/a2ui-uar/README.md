@@ -9,6 +9,31 @@ React renderer, vendored in `../a2ui-react`) is a **reference
 implementation only** — this package cross-tests against it but nothing
 in UAR product code should import it.
 
+## Accessible surface options (Change 21)
+
+`UarSurface` remains source-compatible with existing callers and accepts optional host-independent UX settings:
+
+```tsx
+import { UarSurface } from "@prometheus-ags/a2ui-uar";
+import "@prometheus-ags/a2ui-uar/styles.css";
+
+<UarSurface
+  surface={surface}
+  theme="high-contrast" // light | dark | high-contrast
+  locale="ja"           // en | es | ja | zh
+  direction="auto"      // auto | ltr | rtl
+  resetKey={surfaceVersion}
+  transitionKey={surfaceVersion}
+  onRetry={() => reloadSurface()}
+/>
+```
+
+Defaults are `theme="light"`, `locale="en"`, and `direction="auto"`. Theme variables are scoped below `.uar-a2ui-surface`; the renderer never mutates the host document theme. Only renderer-owned fallback/status strings are translated—agent-authored payload text is preserved verbatim. Automatic direction uses the locale, while explicit `rtl` lets hosts certify future right-to-left locales before they are added to the bundled resource set.
+
+Every surface owns an empty state and render error boundary. Unsupported catalog components still fail closed, but the failure remains inside the surface and exposes localized retry when `onRetry` is provided. Motion transitions are bounded to surface lifecycle/status changes and honor `prefers-reduced-motion`; forced-colors rules preserve system focus, border, and error affordances.
+
+The certified accessibility contract is exercised by package keyboard/association tests and direct `axe-core` fixtures for all three themes. Arbitrary host token overrides are outside that certification boundary.
+
 ## Architecture: what "built on `web_core`" actually means
 
 `@a2ui/web_core` is **framework-agnostic core**, not a component library.

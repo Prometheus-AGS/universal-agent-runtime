@@ -76,7 +76,7 @@ describe("UarSurface", () => {
     expect(onAction.mock.calls[0][0]).toMatchObject({ name: "submit" });
   });
 
-  it("throws UnknownUarComponentError for a component type outside the catalog (fail-closed security boundary)", () => {
+  it("contains an unknown component in a visible fail-closed surface boundary", () => {
     const { surface } = buildSurface(uarBasicCatalog, [
       { id: "root", component: "NotARealComponent" },
     ]);
@@ -84,7 +84,8 @@ describe("UarSurface", () => {
     // React logs the thrown error to console.error even when caught by our
     // assertion — silence that expected noise for this one test.
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    expect(() => render(<UarSurface surface={surface} />)).toThrow(/Unknown A2UI component type/);
+    render(<UarSurface surface={surface} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("This surface could not be displayed");
     consoleError.mockRestore();
   });
 });
