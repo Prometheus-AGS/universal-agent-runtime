@@ -41,6 +41,7 @@ const config: Config = {
       'classic',
       {
         docs: {
+          routeBasePath: '/docs',
           sidebarPath: './sidebars.ts',
           editUrl:
             'https://github.com/Prometheus-AGS/universal-agent-runtime/tree/main/website/',
@@ -72,6 +73,20 @@ const config: Config = {
           label: 'Docs',
         },
         {
+          type: 'dropdown',
+          label: 'API Reference',
+          position: 'left',
+          items: [
+            { label: 'Rust', href: 'https://prometheus-ags.github.io/universal-agent-runtime/docs/api/rust' },
+            { label: 'TypeScript', href: 'https://prometheus-ags.github.io/universal-agent-runtime/docs/api/typescript' },
+          ],
+        },
+        {
+          to: '/docs/adr',
+          label: 'ADRs',
+          position: 'left',
+        },
+        {
           href: 'https://github.com/Prometheus-AGS/universal-agent-runtime',
           label: 'GitHub',
           position: 'right',
@@ -84,17 +99,26 @@ const config: Config = {
         {
           title: 'Docs',
           items: [
-            {label: 'Introduction', to: '/docs/intro'},
-            {label: 'Installation', to: '/docs/installation'},
-            {label: 'Configuration', to: '/docs/configuration'},
+            {label: 'Architecture', to: '/docs/architecture/intro'},
+            {label: 'Configuration', to: '/docs/configuration/intro'},
+            {label: 'Contributing', to: '/docs/contributing/intro'},
           ],
         },
         {
-          title: 'Operations',
+          title: 'SDKs',
           items: [
-            {label: 'Backup & Restore', to: '/docs/backup-and-restore'},
-            {label: 'Upgrade Guide', to: '/docs/upgrade-guide'},
-            {label: 'Troubleshooting', to: '/docs/troubleshooting'},
+            {label: 'Rust', to: '/docs/sdk-rust/intro'},
+            {label: 'Python', to: '/docs/sdk-python/intro'},
+            {label: 'TypeScript', to: '/docs/sdk-typescript/intro'},
+          ],
+        },
+        {
+          title: 'Reference',
+          items: [
+            {label: 'API Reference', to: '/docs/api'},
+            {label: 'Architecture Decisions', to: '/docs/adr'},
+            {label: 'RAG', to: '/docs/rag/intro'},
+            {label: 'A2UI', to: '/docs/a2ui/intro'},
           ],
         },
         {

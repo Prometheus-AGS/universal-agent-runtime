@@ -8,6 +8,9 @@
 .docusaurus
 .cache-loader
 
+# Copied ADRs (source of truth is ../docs/adr)
+/docs/adr
+
 # Misc
 .DS_Store
 .env.local
