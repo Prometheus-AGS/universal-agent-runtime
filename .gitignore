@@ -118,3 +118,6 @@ __pycache__/
 *.pyc
 *.egg-info/
 .pytest_cache/
+
+*storybook.log
+storybook-static
