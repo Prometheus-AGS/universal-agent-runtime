@@ -1,9 +1,10 @@
-import type { FC } from "react";
+import { useId, type FC } from "react";
 import { ListBox, ListBoxItem, type Selection } from "react-aria-components";
 import type { ChoicePickerApi } from "@prometheus-ags/a2ui-core/v0_9/basic_catalog";
 import type { UarComponentProps } from "../react/types";
 import { cn } from "../lib/cn";
 import { resolvedText } from "../lib/resolved";
+import { useUarI18n } from "../i18n";
 
 type ChoicePickerProps = UarComponentProps<typeof ChoicePickerApi>;
 
@@ -18,6 +19,9 @@ type ChoicePickerProps = UarComponentProps<typeof ChoicePickerApi>;
  * alongside the shadcn/ui visual baseline.
  */
 export const UarChoicePicker: FC<{ props: ChoicePickerProps }> = ({ props }) => {
+  const id = useId();
+  const errorId = `${id}-error`;
+  const { t } = useUarI18n();
   const selectionMode = props.variant === "multipleSelection" ? "multiple" : "single";
   const selectedKeys = new Set(props.value ?? []);
 
@@ -30,7 +34,9 @@ export const UarChoicePicker: FC<{ props: ChoicePickerProps }> = ({ props }) => 
     <div data-a2ui-component="ChoicePicker" className="flex flex-col gap-1.5">
       {props.label ? <span className="text-sm font-medium">{props.label}</span> : null}
       <ListBox
-        aria-label={props.label ?? resolvedText(props.accessibility?.label) ?? "Choices"}
+        aria-label={props.label ?? resolvedText(props.accessibility?.label) ?? t("choices")}
+        aria-invalid={props.isValid === false || undefined}
+        aria-describedby={props.validationErrors?.length ? errorId : undefined}
         selectionMode={selectionMode}
         selectedKeys={selectedKeys}
         onSelectionChange={handleSelectionChange}
@@ -43,9 +49,9 @@ export const UarChoicePicker: FC<{ props: ChoicePickerProps }> = ({ props }) => 
             textValue={resolvedText(option.label)}
             className={({ isSelected, isFocused }: { isSelected: boolean; isFocused: boolean }) =>
               cn(
-                "cursor-pointer rounded-sm px-2 py-1 text-sm outline-none",
+                "flex min-h-11 cursor-pointer items-center rounded-sm px-2 py-2 text-sm outline-none",
                 isFocused && "bg-muted",
-                isSelected && "bg-primary text-primary-foreground",
+                isSelected && "bg-primary font-semibold text-primary-foreground before:me-2 before:content-['✓']",
               )
             }
           >
@@ -54,7 +60,7 @@ export const UarChoicePicker: FC<{ props: ChoicePickerProps }> = ({ props }) => 
         ))}
       </ListBox>
       {props.validationErrors?.length ? (
-        <span role="alert" className="text-xs text-destructive">
+        <span id={errorId} role="alert" className="text-xs text-destructive">
           {props.validationErrors.join(" ")}
         </span>
       ) : null}

@@ -26,6 +26,10 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm -C frontend install --frozen-lockfile
+      - run: pnpm --filter @prometheus-ags/a2ui-uar typecheck
+      - run: pnpm --filter @prometheus-ags/a2ui-uar lint
+      - run: pnpm --filter @prometheus-ags/a2ui-uar test
+      - run: pnpm --filter @prometheus-ags/a2ui-uar perf
       - run: pnpm --filter @prometheus-ags/a2ui-lit typecheck
       - run: pnpm --filter @prometheus-ags/a2ui-lit test
       - run: pnpm --filter @prometheus-ags/a2ui-svelte typecheck

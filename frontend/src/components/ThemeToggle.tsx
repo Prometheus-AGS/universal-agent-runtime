@@ -1,19 +1,21 @@
 import { type FC } from "react";
-import { Moon, Monitor, Sun } from "lucide-react";
+import { Contrast, Moon, Monitor, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type Theme, useTheme } from "@/hooks/use-theme";
 
-const themeOrder: Theme[] = ["dark", "light", "system"];
+const themeOrder: Theme[] = ["dark", "light", "high-contrast", "system"];
 
 const themeIcons = {
   light: Sun,
   dark: Moon,
+  "high-contrast": Contrast,
   system: Monitor,
 } as const;
 
 const themeLabels = {
   light: "Light mode",
   dark: "Dark mode",
+  "high-contrast": "High contrast mode",
   system: "System theme",
 } as const;
 

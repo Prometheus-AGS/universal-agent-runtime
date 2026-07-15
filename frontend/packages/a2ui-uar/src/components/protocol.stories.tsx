@@ -121,3 +121,16 @@ export const Divider: Story = {
   render: () =>
     renderStorySurface(uarBasicCatalog, [{ id: "root", component: "Divider" }]),
 };
+
+export const HighContrastLongTranslation: Story = {
+  parameters: { viewport: { defaultViewport: "mobile1" } },
+  render: () => {
+    const surface = renderStorySurface(uarBasicCatalog, [
+      { id: "root", component: "Column", children: ["heading", "field", "choice"] },
+      { id: "heading", component: "Text", variant: "h2", text: "アクセシビリティ設定を確認してください" },
+      { id: "field", component: "TextField", label: "共同作業者に表示する名前", variant: "longText" },
+      { id: "choice", component: "ChoicePicker", options: [{ label: "標準", value: "standard" }, { label: "緊急", value: "urgent" }] },
+    ], {}, { theme: "high-contrast", locale: "ja", direction: "rtl" });
+    return <div className="max-w-sm">{surface}</div>;
+  },
+};

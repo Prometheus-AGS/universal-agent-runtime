@@ -11,7 +11,7 @@ import { cn } from "../../lib/cn";
  * reaching across the workspace into `frontend/src`.
  */
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-[background-color,color,border-color,box-shadow,transform] outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -21,7 +21,7 @@ const buttonVariants = cva(
         ghost: "hover:bg-muted hover:text-foreground dark:hover:bg-muted/50",
       },
       size: {
-        default: "h-9 gap-1.5 px-2.5",
+        default: "min-h-11 gap-1.5 px-3 py-2",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

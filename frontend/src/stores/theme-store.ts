@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark" | "high-contrast" | "system";
 
 interface ThemeState {
   theme: Theme;
@@ -17,7 +17,7 @@ const STORAGE_KEY = "uar-theme";
 function getStoredTheme(): Theme {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "light" || stored === "dark" || stored === "system") {
+    if (stored === "light" || stored === "dark" || stored === "high-contrast" || stored === "system") {
       return stored;
     }
   } catch {
@@ -33,14 +33,14 @@ function getSystemPreference(): "light" | "dark" {
     : "dark";
 }
 
-export function resolveTheme(theme: Theme): "light" | "dark" {
+export function resolveTheme(theme: Theme): "light" | "dark" | "high-contrast" {
   return theme === "system" ? getSystemPreference() : theme;
 }
 
 function applyTheme(theme: Theme) {
   const resolved = resolveTheme(theme);
   const root = document.documentElement;
-  root.classList.remove("light", "dark");
+  root.classList.remove("light", "dark", "high-contrast");
   root.classList.add(resolved);
 }
 
