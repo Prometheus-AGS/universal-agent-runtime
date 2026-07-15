@@ -6,6 +6,12 @@
       "runtimeExecutable": "uar-jwt-proxy",
       "runtimeArgs": ["--listen", "127.0.0.1:8089"],
       "port": 8089
+    },
+    {
+      "name": "docusaurus",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "website", "run", "start"],
+      "port": 3000
     }
   ]
 }

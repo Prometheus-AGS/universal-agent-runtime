@@ -123,7 +123,7 @@ LLM_BASE_URL=https://api.openai.com/v1
 ./universal-agent-runtime \
   --llm-model openai/gpt-4o \
   --llm-api-key sk-... \
-  --llm-base-url https://api.openai.com \
+  --llm-base-url https://api.openai.com/v1 \
   --llm-protocol auto \
   --llm-budget-limit 5.0
 ```
@@ -240,14 +240,14 @@ You can configure additional provider overrides (e.g., custom API keys per team,
 providers:
   - id: "openai"
     display_name: "OpenAI (Production)"
-    base_url: "https://api.openai.com"
+    base_url: "https://api.openai.com/v1"
     api_key: "${OPENAI_API_KEY}"
     default_model: "gpt-4o"
     enabled: true
 
   - id: "groq"
     display_name: "Groq (Fast)"
-    base_url: "https://api.groq.com/openai"
+    base_url: "https://api.groq.com/openai/v1"
     api_key: "${GROQ_API_KEY}"
     default_model: "llama-3.3-70b-versatile"
     enabled: true

@@ -54,7 +54,7 @@ intent_classifier:
 providers:
   - id: openai
     display_name: "OpenAI"
-    base_url: "https://api.openai.com"
+    base_url: "https://api.openai.com/v1"
     api_key: "${LLM_API_KEY}"
     protocol: "auto"
     enabled: true

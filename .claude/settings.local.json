@@ -593,7 +593,9 @@
       "Bash(npm --version)",
       "Bash(npm install *)",
       "Bash(npm ci *)",
-      "Bash(echo \"npm ci dry-run exit: $?\")"
+      "Bash(echo \"npm ci dry-run exit: $?\")",
+      "Bash(git log *)",
+      "Bash(command -v uar-jwt-proxy)"
     ],
     "deny": [],
     "ask": []

@@ -1,4 +1,4 @@
-use crate::mcp::config::{McpServerEntry, expand_env_map, load_mcp_config};
+use crate::mcp::config::{McpServerEntry, expand_env_map, expand_env_placeholders, load_mcp_config};
 use anyhow::{Context, anyhow};
 use async_trait::async_trait;
 use rmcp::{
@@ -47,16 +47,7 @@ async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<Dy
         }
         McpServerEntry::RemoteHttp { url, env } => {
             let env = expand_env_map(env);
-            let api_key = env
-                .get("TAVILY_API_KEY")
-                .cloned()
-                .filter(|key| !key.is_empty())
-                .ok_or_else(|| anyhow!("remote MCP '{name}' missing TAVILY_API_KEY"))?;
-            let mut endpoint = Url::parse(url)
-                .with_context(|| format!("invalid url for remote MCP '{name}': {url}"))?;
-            endpoint
-                .query_pairs_mut()
-                .append_pair("tavilyApiKey", &api_key);
+            let endpoint = resolve_remote_http_url(name, url, &env)?;
             ().into_dyn()
                 .serve(StreamableHttpClientTransport::from_uri(
                     endpoint.to_string(),
@@ -65,6 +56,32 @@ async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<Dy
                 .with_context(|| format!("failed to connect remote MCP server '{name}'"))
         }
     }
+}
+
+/// Expands `${VAR}` placeholders in a remote MCP server's `url` (per the
+/// process environment, same as its `env` map). Tavily's config style embeds
+/// `${TAVILY_API_KEY}` directly in the URL and additionally declares it in
+/// `env`; if the placeholder is still present after process-env expansion,
+/// this substitutes it from the entry's own `env` map, matching that
+/// convention. Any other `RemoteHttp` entry (e.g. `surreal_memory`, which has
+/// no `TAVILY_API_KEY` at all) is left alone -- requiring a Tavily-specific
+/// key for every remote server was the bug that took down the whole registry
+/// whenever a non-Tavily entry was present.
+fn resolve_remote_http_url(
+    name: &str,
+    url: &str,
+    env: &HashMap<String, String>,
+) -> anyhow::Result<Url> {
+    let mut expanded = expand_env_placeholders(url);
+    if expanded.contains("${TAVILY_API_KEY}") {
+        let api_key = env
+            .get("TAVILY_API_KEY")
+            .cloned()
+            .filter(|key| !key.is_empty())
+            .ok_or_else(|| anyhow!("remote MCP '{name}' missing TAVILY_API_KEY"))?;
+        expanded = expanded.replace("${TAVILY_API_KEY}", &api_key);
+    }
+    Url::parse(&expanded).with_context(|| format!("invalid url for remote MCP '{name}': {expanded}"))
 }
 
 #[derive(Clone)]
@@ -118,110 +135,15 @@ impl McpRegistry {
         let mut services: HashMap<String, Arc<DynClientService>> = HashMap::new();
 
         for (name, entry) in &cfg.mcp_servers {
-            let svc = match entry {
-                McpServerEntry::Stdio {
-                    command, args, env, ..
-                } => {
-                    let env = expand_env_map(env);
-
-                    let mut command_path = resolve_mcp_command(command);
-                    // Provisioning: only attempted when the configured
-                    // command isn't already resolvable (preserves the fast
-                    // path for the common case where it's already
-                    // installed). A curated ToolSpec exists for `kreuzberg`;
-                    // any other name gets an Adopt-only spec, so this never
-                    // silently installs something for an uncurated tool —
-                    // it just surfaces a clearer error than the raw spawn
-                    // failure below would.
-                    if !crate::uar::orchestrator::provisioning::is_on_path(
-                        &command_path.to_string_lossy(),
-                    ) {
-                        let spec = crate::uar::orchestrator::provisioning::known_tool_spec(command);
-                        let opts =
-                            crate::uar::orchestrator::provisioning::ProvisionOptions::default();
-                        match crate::uar::orchestrator::provisioning::ToolProvisioner::resolve(
-                            &spec, &opts,
-                        )
-                        .await
-                        {
-                            Ok(outcome) => {
-                                tracing::info!(
-                                    server = %name,
-                                    command = %command,
-                                    strategy = ?outcome.strategy,
-                                    path = %outcome.path.display(),
-                                    "provisioned MCP server command"
-                                );
-                                command_path = outcome.path;
-                            }
-                            Err(e) => {
-                                tracing::warn!(
-                                    server = %name,
-                                    command = %command,
-                                    error = %e,
-                                    "could not provision MCP server command; falling back to spawning it as configured"
-                                );
-                            }
-                        }
-                    }
-                    let mut cmd = Command::new(&command_path);
-                    cmd.args(args);
-
-                    for (k, v) in env {
-                        cmd.env(k, v);
-                    }
-
-                    // rmcp docs show TokioChildProcess + configure pattern for adding args
-                    let transport = TokioChildProcess::new(cmd)?;
-                    // store as dyn to keep a homogeneous collection
-                    match ().into_dyn().serve(transport).await {
-                        Ok(svc) => {
-                            crate::uar::telemetry::metrics::set_mcp_server_status(name, true);
-                            svc
-                        }
-                        Err(e) => {
-                            crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
-                            return Err(e).with_context(|| {
-                                format!("failed to connect stdio MCP server '{name}'")
-                            });
-                        }
-                    }
-                }
-
-                McpServerEntry::RemoteHttp { url, env } => {
-                    let env = expand_env_map(env);
-
-                    // Tavily expects ?tavilyApiKey=... (per your config contract).
-                    // Keep the key OUT of logs.
-                    let api_key = env
-                        .get("TAVILY_API_KEY")
-                        .cloned()
-                        .filter(|s| !s.is_empty())
-                        .ok_or_else(|| anyhow!("remote MCP '{name}' missing TAVILY_API_KEY"))?;
-
-                    let mut u = Url::parse(url)
-                        .with_context(|| format!("invalid url for remote MCP '{name}': {url}"))?;
-
-                    // If URL already has query, we just append.
-                    u.query_pairs_mut().append_pair("tavilyApiKey", &api_key);
-
-                    // rmcp streamable http transport from_uri
-                    let transport = StreamableHttpClientTransport::from_uri(u.to_string());
-                    match ().into_dyn().serve(transport).await {
-                        Ok(svc) => {
-                            crate::uar::telemetry::metrics::set_mcp_server_status(name, true);
-                            svc
-                        }
-                        Err(e) => {
-                            crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
-                            return Err(e).with_context(|| {
-                                format!("failed to connect remote MCP server '{name}'")
-                            });
-                        }
-                    }
+            let svc = match Self::connect_configured_server(name, entry).await {
+                Ok(svc) => svc,
+                Err(e) => {
+                    crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
+                    tracing::warn!(server = %name, error = ?e, "MCP server failed to connect; skipping it, registry continues without it");
+                    continue;
                 }
             };
-
+            crate::uar::telemetry::metrics::set_mcp_server_status(name, true);
             services.insert(name.clone(), Arc::new(svc));
         }
 
@@ -231,10 +153,13 @@ impl McpRegistry {
 
         for (server_name, svc) in &services {
             // list_tools exists on the rmcp running service in examples
-            let result = svc
-                .list_tools(Default::default())
-                .await
-                .with_context(|| format!("tools/list failed for MCP server '{server_name}'"))?;
+            let result = match svc.list_tools(Default::default()).await {
+                Ok(result) => result,
+                Err(e) => {
+                    tracing::warn!(server = %server_name, error = ?e, "tools/list failed for MCP server; skipping its tools, registry continues without them");
+                    continue;
+                }
+            };
 
             for t in result.tools {
                 let tool_name = t.name.to_string();
@@ -254,6 +179,90 @@ impl McpRegistry {
             tools: Arc::new(all_tools),
             native_tools: Arc::new(HashMap::new()),
         })
+    }
+
+    /// Connects a single configured MCP server. Split out of `from_config` so
+    /// one server's failure (bad URL, unreachable process, missing key) can
+    /// be caught and logged per-server instead of aborting the whole
+    /// registry load -- previously any single misconfigured entry (e.g. a
+    /// non-Tavily `RemoteHttp` server tripping the old hardcoded
+    /// `TAVILY_API_KEY` requirement) took every other server down with it.
+    async fn connect_configured_server(
+        name: &str,
+        entry: &McpServerEntry,
+    ) -> anyhow::Result<DynClientService> {
+        match entry {
+            McpServerEntry::Stdio {
+                command, args, env, ..
+            } => {
+                let env = expand_env_map(env);
+
+                let mut command_path = resolve_mcp_command(command);
+                // Provisioning: only attempted when the configured
+                // command isn't already resolvable (preserves the fast
+                // path for the common case where it's already
+                // installed). A curated ToolSpec exists for `kreuzberg`;
+                // any other name gets an Adopt-only spec, so this never
+                // silently installs something for an uncurated tool —
+                // it just surfaces a clearer error than the raw spawn
+                // failure below would.
+                if !crate::uar::orchestrator::provisioning::is_on_path(
+                    &command_path.to_string_lossy(),
+                ) {
+                    let spec = crate::uar::orchestrator::provisioning::known_tool_spec(command);
+                    let opts = crate::uar::orchestrator::provisioning::ProvisionOptions::default();
+                    match crate::uar::orchestrator::provisioning::ToolProvisioner::resolve(
+                        &spec, &opts,
+                    )
+                    .await
+                    {
+                        Ok(outcome) => {
+                            tracing::info!(
+                                server = %name,
+                                command = %command,
+                                strategy = ?outcome.strategy,
+                                path = %outcome.path.display(),
+                                "provisioned MCP server command"
+                            );
+                            command_path = outcome.path;
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                server = %name,
+                                command = %command,
+                                error = %e,
+                                "could not provision MCP server command; falling back to spawning it as configured"
+                            );
+                        }
+                    }
+                }
+                let mut cmd = Command::new(&command_path);
+                cmd.args(args);
+
+                for (k, v) in env {
+                    cmd.env(k, v);
+                }
+
+                // rmcp docs show TokioChildProcess + configure pattern for adding args
+                let transport = TokioChildProcess::new(cmd)?;
+                // store as dyn to keep a homogeneous collection
+                ().into_dyn()
+                    .serve(transport)
+                    .await
+                    .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
+            }
+
+            McpServerEntry::RemoteHttp { url, env } => {
+                let env = expand_env_map(env);
+                let endpoint = resolve_remote_http_url(name, url, &env)?;
+                ().into_dyn()
+                    .serve(StreamableHttpClientTransport::from_uri(
+                        endpoint.to_string(),
+                    ))
+                    .await
+                    .with_context(|| format!("failed to connect remote MCP server '{name}'"))
+            }
+        }
     }
 
     /// Creates an empty registry for testing.

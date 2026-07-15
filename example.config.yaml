@@ -172,7 +172,7 @@ providers: []
   # Example: uncomment and configure as needed
   # - id: "openai"
   #   display_name: "OpenAI"
-  #   base_url: "https://api.openai.com"
+  #   base_url: "https://api.openai.com/v1"
   #   api_key: "sk-..."            # Or use env: OPENAI_API_KEY
   #   protocol: auto               # auto | chat | responses
   #   default_model: "gpt-4o"
@@ -191,7 +191,7 @@ providers: []
   #
   # - id: "groq"
   #   display_name: "Groq"
-  #   base_url: "https://api.groq.com/openai"
+  #   base_url: "https://api.groq.com/openai/v1"
   #   api_key: "gsk_..."           # Or use env: GROQ_API_KEY
   #   protocol: chat
   #   default_model: "llama-3.3-70b-versatile"

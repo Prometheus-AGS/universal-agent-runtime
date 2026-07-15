@@ -1348,8 +1348,16 @@ async fn serve_on_listener(
             // emit a terminal Cancelled event before connections are drained.
             run_cancellation_root.cancel();
             // Drain and cancel any wedged ingestion workers before closing sockets.
+            // `pool.shutdown()` blocks synchronously (std::sync::mpsc::recv_timeout,
+            // up to 2s per worker) -- calling it directly here would stall this
+            // tokio worker thread without yielding at an .await point, which can
+            // hang the whole graceful-shutdown sequence indefinitely (the runtime
+            // has nothing else to poll on this thread and Ctrl-C/SIGTERM appears
+            // to do nothing). Run it on the blocking thread pool instead.
             if let Some(pool) = pool_for_shutdown {
-                pool.shutdown();
+                if let Err(e) = tokio::task::spawn_blocking(move || pool.shutdown()).await {
+                    tracing::warn!(error = %e, "ingestion pool shutdown task panicked");
+                }
             }
             info!(name: "server.shutdown.pool_drained", "Ingestion pool shut down — closing HTTP connections");
             // Signal Axum (both listeners) to stop accepting and drain open connections.
