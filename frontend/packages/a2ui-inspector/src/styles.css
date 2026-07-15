@@ -1,0 +1,33 @@
+.a2ui-inspector { --inspector-border: color-mix(in srgb, currentColor 18%, transparent); color: var(--foreground, #172033); background: var(--background, #fff); min-height: 32rem; font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; }
+.a2ui-inspector button, .a2ui-inspector input { min-height: 2.75rem; font: inherit; }
+.a2ui-inspector button { border: 1px solid var(--inspector-border); border-radius: .5rem; background: var(--background, #fff); color: inherit; padding: .55rem .75rem; cursor: pointer; }
+.a2ui-inspector button:hover:not(:disabled) { background: var(--accent, #eaf0ff); }
+.a2ui-inspector button:active:not(:disabled) { translate: 0 1px; }
+.a2ui-inspector button:focus-visible, .a2ui-inspector input:focus-visible, .a2ui-inspector pre:focus-visible { outline: 2px solid var(--ring, #2457d6); outline-offset: 2px; }
+.a2ui-inspector button:disabled { cursor: not-allowed; opacity: .5; }
+.a2ui-inspector__toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; padding: .75rem 1rem; border-bottom: 1px solid var(--inspector-border); background: var(--muted, #f4f6f9); }
+.a2ui-inspector__toolbar > div { display: flex; align-items: center; gap: .6rem; margin-right: auto; min-height: 2.75rem; }
+.a2ui-inspector__toolbar label { display: grid; gap: .2rem; font-size: .78rem; }
+.a2ui-inspector__toolbar input { width: min(18rem, 70vw); border: 1px solid var(--inspector-border); border-radius: .5rem; padding: .45rem .65rem; color: inherit; background: var(--background, #fff); }
+.a2ui-inspector__status { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted-foreground, #536176); text-transform: capitalize; }
+.a2ui-inspector__status::before { content: ""; width: .55rem; height: .55rem; border-radius: 999px; background: currentColor; }
+.a2ui-inspector__status.is-connected { color: var(--success, #147a45); }
+.a2ui-inspector__status.is-error, .a2ui-inspector__status.is-disconnected { color: var(--destructive, #b42318); }
+.a2ui-inspector__freeze { display: flex; flex-wrap: wrap; gap: .5rem 1rem; padding: .6rem 1rem; color: var(--warning-foreground, #713b00); background: var(--warning-muted, #fff4d6); border-bottom: 1px solid var(--inspector-border); }
+.a2ui-inspector__workspace { display: grid; grid-template-columns: minmax(13rem, 22rem) minmax(18rem, 1fr) minmax(18rem, 1fr); min-height: 28rem; }
+.a2ui-inspector__workspace > * { min-width: 0; padding: 1rem; }
+.a2ui-inspector__workspace > * + * { border-left: 1px solid var(--inspector-border); }
+.a2ui-inspector h2 { margin: 0 0 .75rem; font-size: .9rem; }
+.a2ui-inspector__timeline { padding: .5rem; overflow: auto; background: var(--muted, #f4f6f9); }
+.a2ui-inspector__timeline-meta { display: flex; justify-content: space-between; padding: .4rem .5rem; color: var(--muted-foreground, #536176); font-size: .78rem; }
+.a2ui-inspector__timeline ol { list-style: none; margin: 0; padding: 0; }
+.a2ui-inspector__timeline li button { display: grid; grid-template-columns: 1fr auto; width: 100%; border-color: transparent; text-align: left; }
+.a2ui-inspector__timeline li button.is-selected { border-color: var(--ring, #2457d6); background: var(--accent, #eaf0ff); }
+.a2ui-inspector__timeline time, .a2ui-inspector__invalid { color: var(--muted-foreground, #536176); font-size: .75rem; }
+.a2ui-inspector__invalid { color: var(--destructive, #b42318); }
+.a2ui-inspector__preview, .a2ui-inspector__source { overflow: auto; }
+.a2ui-inspector__source > div { display: flex; justify-content: space-between; gap: 1rem; }
+.a2ui-inspector__source pre { overflow: auto; margin: 0; padding: .75rem; border-radius: .5rem; background: var(--muted, #f4f6f9); font: 12px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.a2ui-inspector__empty, .a2ui-inspector__error { max-width: 65ch; padding: 1rem; border: 1px solid var(--inspector-border); border-radius: .5rem; }
+.a2ui-inspector__error { color: var(--destructive, #b42318); background: var(--destructive-muted, #fff0ee); }
+@media (max-width: 900px) { .a2ui-inspector__workspace { grid-template-columns: 1fr; } .a2ui-inspector__workspace > * + * { border-left: 0; border-top: 1px solid var(--inspector-border); } .a2ui-inspector__timeline { max-height: 18rem; } }

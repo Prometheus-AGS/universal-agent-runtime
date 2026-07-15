@@ -26,6 +26,14 @@
     "./v0_9/basic_catalog": {
       "types": "./src/v0_9-basic-catalog.ts",
       "default": "./src/v0_9-basic-catalog.ts"
+    },
+    "./semantic-dom": {
+      "types": "./src/semantic-dom.ts",
+      "default": "./src/semantic-dom.ts"
+    },
+    "./conformance": {
+      "types": "./src/conformance.ts",
+      "default": "./src/conformance.ts"
     }
   },
   "scripts": {
