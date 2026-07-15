@@ -24,9 +24,18 @@ pub fn default_agent() -> AgentArtifact {
         },
         policy: AgentPolicy {
             provider: ProviderPolicy {
+                // Empty provider/model defers to the system-wide registry
+                // default (see `ProviderRegistry::default_id`/`default_model`
+                // and `resolve_requested_model`'s empty-model fallback)
+                // instead of pinning a specific model here. A hardcoded model
+                // name goes stale the moment a provider's catalog changes
+                // (e.g. renamed/deprecated), and `seed_builtin_agents` re-seeds
+                // this value on every server restart, silently undoing any
+                // runtime override — so pin nothing rather than pin
+                // something wrong.
                 default: ProviderSelection {
-                    provider: "openai".to_string(),
-                    model: "gpt-5.2".to_string(),
+                    provider: String::new(),
+                    model: String::new(),
                 },
                 fallbacks: vec![],
             },
