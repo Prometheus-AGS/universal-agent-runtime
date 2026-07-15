@@ -8,6 +8,8 @@ exclude = [
   "vendor/git/surreal-memory-server/crates/surreal-memory",
   "vendor/git/sycophancy-correction",
   "vendor/git/sycophancy-correction/crates/sycophancy-core",
+  "vendor/git/liter-llm",
+  "vendor/git/liter-llm/crates/liter-llm",
 ]
 resolver = "2"
 
@@ -398,7 +400,15 @@ notify = "8"
 # Microsandbox — hardware VM isolation for sandboxed code execution (feature-gated)
 
 # Universal LLM client — 142+ providers, streaming, tool calling
-liter-llm = { version = "=1.9.3", features = ["full"] }
+#
+# Vendored as a git submodule (vendor/git/liter-llm, tracking GQAdonis/liter-llm)
+# instead of the crates.io release so provider/streaming bugs can be fixed and
+# consumed immediately without waiting on an upstream publish. See
+# 2026-07-15 fix: ChatCompletionChunk.id (and object/created/model/choices)
+# were non-optional, so any OpenAI-compatible backend that omits one of those
+# fields on a chunk (many self-hosted/proxy backends do) hard-failed the
+# entire stream with "missing field `id`".
+liter-llm = { path = "vendor/git/liter-llm/crates/liter-llm", features = ["full"] }
 secrecy = { version = "0.10", features = ["serde"] }
 
 # OpenAPI / Swagger documentation

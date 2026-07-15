@@ -7,3 +7,6 @@
 [submodule "frontend/packages/prometheus-entity-management"]
 	path = frontend/packages/prometheus-entity-management
 	url = git@github.com:Prometheus-AGS/prometheus-entity-management.git
+[submodule "vendor/git/liter-llm"]
+	path = vendor/git/liter-llm
+	url = git@github.com:GQAdonis/liter-llm.git
