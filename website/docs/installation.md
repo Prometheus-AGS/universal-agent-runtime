@@ -134,6 +134,10 @@ cargo build --release --features server-full
 `config.embedded.yaml` uses `surrealkv://./data/uar-dev-db`, binds to
 `127.0.0.1:1906`, and disables JWT for local development.
 
+If you're running against a config with `jwt_required: true` instead, see
+[Dev Tools → uar-jwt-proxy](./dev-tools/intro.md) — it mints and injects a
+valid JWT automatically rather than requiring you to disable auth.
+
 ## First-run checklist
 
 1. **`.env` created** from `.env.example`.

@@ -167,6 +167,8 @@ pnpm run docs:validate
 
 For a fully disconnected source build, see [docs/build-reproducibility.md](docs/build-reproducibility.md).
 
+By default UAR requires a JWT on every API request (`security.jwt_required: true`). For local development, `tools/uar-jwt-proxy` is a local-only reverse proxy that mints and injects a valid JWT automatically, so a browser or client can talk to UAR without ever handling a token. See [docs/dev-tools.md](docs/dev-tools.md).
+
 ## Deployment and integrations
 
 UAR can run as a server, container, or supervised local service. BossFang should currently supervise UAR out of process and use the OpenAI-compatible API first, adding A2A or AG-UI where richer task/event semantics are needed. A linked library should be reconsidered only after a narrow dependency-light kernel is extracted and profiling demonstrates a material IPC bottleneck. The detailed analysis is in the [BossFang integration guide](docs/librefang-integration.md#6-deployment-decision-library-or-supervised-service).

@@ -93,6 +93,11 @@ LLM_PROTOCOL=auto
 | `UAR_SECURITY__JWT_REQUIRED` | `true` | Require JWT on API requests |
 | `UAR_SECURITY__JWT_SECRET` | — | JWT signing secret |
 
+For local development against a `jwt_required: true` instance, see
+[docs/dev-tools.md](dev-tools.md)'s `uar-jwt-proxy` — it mints and injects a
+valid JWT automatically instead of requiring you to disable auth or mint
+tokens by hand.
+
 ### Persistence
 
 | Env Var | Default | Description |

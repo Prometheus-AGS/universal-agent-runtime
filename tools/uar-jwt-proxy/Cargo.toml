@@ -15,7 +15,7 @@ tokio = { version = "1", features = ["full"] }
 tower = "0.5"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "http2"] }
 tokio-tungstenite = { version = "0.29", default-features = false, features = ["connect", "rustls-tls-native-roots"] }
-jsonwebtoken = "10"
+jsonwebtoken = { version = "10", default-features = false, features = ["rust_crypto"] }
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
 clap = { version = "4", features = ["derive", "env"] }

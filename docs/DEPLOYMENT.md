@@ -112,3 +112,6 @@ endpoints.
   git commits rather than crates.io versions (D-D).
 - `docs/ARCHITECTURE.md` — system design, including the "Architectural
   Decisions" section (D-A through D-D).
+- `docs/dev-tools.md` — `uar-jwt-proxy`, a local-only reverse proxy that
+  injects a JWT for development; not a production auth gateway and out of
+  scope for the deployment paths above.

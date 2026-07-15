@@ -1,0 +1,8 @@
+{
+  "label": "Dev Tools",
+  "position": 13,
+  "link": {
+    "type": "generated-index",
+    "description": "Local-development-only tooling that ships alongside the runtime but is not part of the distributed server/sidecar product."
+  }
+}

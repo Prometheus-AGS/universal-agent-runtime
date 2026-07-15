@@ -105,9 +105,15 @@ UAR_PERSISTENCE__DATABASE_URL=rocksdb://./data/uar-db
 **Cause** — `security.jwt_required` is `true` (the default) and the request has
 no valid JWT.
 
-**Fix** — either send a valid `Authorization: Bearer <jwt>` token signed with
-`UAR_SECURITY__JWT_SECRET`, or, for trusted local development only, disable the
-requirement:
+**Fix** — three options, in order of preference for local development:
+
+1. Run [`uar-jwt-proxy`](./dev-tools/intro.md) in front of UAR — it mints and
+   injects a valid JWT into every request automatically, so you never have to
+   handle a token or disable auth checking.
+2. Send a valid `Authorization: Bearer <jwt>` token signed with
+   `UAR_SECURITY__JWT_SECRET` yourself.
+3. For trusted local development only, disable the requirement entirely
+   (this also removes auth for any other client that connects directly):
 
 ```bash
 UAR_SECURITY__JWT_REQUIRED=false   # equivalently: JWT_REQUIRED=false or --jwt-required=false
