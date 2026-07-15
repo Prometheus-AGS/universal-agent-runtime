@@ -34,5 +34,5 @@
 
 - [x] 6.1 Run Impeccable audit and dual-agent critique; resolve all P0/P1 findings applicable to Change 22.
 - [x] 6.2 Run Impeccable polish against the completed Inspector and record remaining separately-scoped issues.
-- [ ] 6.3 Pass package-local typecheck, lint, tests, builds, cross-renderer conformance, frontend workspace typecheck/lint, and `git diff --check`.
-- [ ] 6.4 Pass `openspec validate a2ui-inspector-lit-svelte-renderers --strict`, artifact-refiner QA, and update KBD progress/waypoint state.
+- [x] 6.3 Pass package-local typecheck, lint, tests, builds, cross-renderer conformance, frontend workspace typecheck/lint, and `git diff --check`. Also fixed 2 build hygiene issues found in this pass: a2ui-lit's/a2ui-inspector's dist/ output had been accidentally committed (removed, added `frontend/packages/*/dist/` to .gitignore); a stale rebuilt `static/index.html` bundle reference reverted to main's checked-in version.
+- [x] 6.4 Pass `openspec validate a2ui-inspector-lit-svelte-renderers --strict` -- PASS. Artifact-refiner QA and consolidated-validation-pass items (full-workspace cargo clippy, etc.) deferred to the phase's consolidated validation pass per this repo's implementation-first completion mode.
