@@ -1,0 +1,7 @@
+{
+  "audit_trail": { "executed_at": "2026-07-15T23:26:25.168205Z", "skill_id": "sycophancy.correction", "strictness": "standard", "version": "1.0.0", "passes": 0, "hook_log": [], "agent_did": null },
+  "classifications": [],
+  "correction_mandatory": false,
+  "delta_summary": "No changes needed: score below clean threshold and no sycophancy patterns were detected.",
+  "sycophancy_score": 0.0
+}

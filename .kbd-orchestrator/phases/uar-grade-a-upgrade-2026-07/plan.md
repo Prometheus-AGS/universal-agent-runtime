@@ -523,3 +523,218 @@ Change 1 via Claude Code with Sonnet 5. Per the agent-work-estimation-rule,
 all estimates above assume current frontier coding models (GPT-5.6,
 Claude Sonnet 5, GLM 5.2, Kimi K2.7 Coding, MiniMax M3) — none of the
 harness recommendations in §5 use a model outside that set.*
+
+---
+
+## Supplemental Plan — Admin/Agents UI defects (operator-directed, 2026-07-15)
+
+> **Phase:** `uar-grade-a-upgrade-2026-07` (supplemental — outside the original
+> 24-change scope above, which remains unchanged and fully merged)
+>
+> **Input:** `assessment.md`'s operator-directed investigation into 4 reported
+> Admin console defects + service-worker console errors (written
+> 2026-07-15T20:37:54Z).
+>
+> **library-candidates.json applicability:** the existing file covers the
+> original 24 changes' build-vs-adopt decisions and does not cover these
+> findings. All 6 changes below are first-party bugfixes/UX gaps in code
+> already in this repo, not net-new capability — no library evaluation
+> applies.
+>
+> **OpenSpec available:** YES (`openspec/` exists at project root). Changes
+> below are OpenSpec change-ids; scaffolding (`openspec new change`) happens
+> in the Spec stage, not here.
+
+### Sycophancy self-check
+
+- **S-02**: The plan does not assume the "provider then model" and "Edit
+  Agent panel" complaints are fully valid as stated — Finding 3 in the
+  assessment already established the Default Model field works correctly,
+  and Change 3 below scopes to the real gap (missing two-step UX,
+  catalog/registered-model mismatch) rather than a blanket "rewrite the
+  panel" that the literal complaint would imply.
+- **S-07**: Scope is held to the 6 findings in the assessment; no adjacent
+  "while we're in there" work was added (e.g., not bundling a Providers-page
+  redesign, not adding new governance policy authoring UI beyond what's
+  needed to reconcile the observed Deny behavior).
+- **S-03**: Explicit trade-off surfaced below — Change 5 (governance) and
+  Change 6 (freeze) are marked **investigation-first**, not "fix," because
+  the assessment could not confirm root cause for either. Committing to an
+  implementation estimate for unconfirmed root causes would be the kind of
+  caveat collapse this check exists to catch.
+
+### CHANGE LIST (ordered)
+
+1. `admin-sw-scheme-safe-caching`: skip `cache.put()` for any non-http(s)
+   request scheme in the service worker's fetch handler
+   - Scope: frontend (sw.js only)
+   - Depends on: NONE
+   - Recommended agent: OpenCode + Kimi K2.7 Coding (matches this phase's
+     established pattern for small, well-scoped, single-file fixes — see
+     Changes 3/5/7/12/15/23/24 in the original plan)
+   - Est. complexity: S (< 1 hour)
+   - Complexity score: Low
+   - Model class: small
+   - Customer value: MEDIUM (removes console noise; not user-blocking, but
+     is the most visible/alarming symptom in the original bug report)
+   - Details: Add a scheme check (`new URL(event.request.url).protocol`)
+     alongside the existing method/path filters at sw.js:40-47; only attempt
+     `cache.put()` for `http:`/`https:` requests. No behavior change for the
+     app's own assets. Root cause and fix location fully confirmed in
+     assessment Finding 1 — this is close to a mechanical fix.
+
+2. `admin-agent-model-warning-clarity`: distinguish "defers to system
+   default" from "broken" in the agent list/detail warning UI
+   - Scope: frontend (Admin Agents list + detail panel)
+   - Depends on: NONE
+   - Recommended agent: Claude Code + Sonnet 5 (small but requires reading
+     the actual runtime-resolution semantics correctly to avoid a
+     misleading fix — see note below)
+   - Est. complexity: S (< 1 hour)
+   - Complexity score: Low
+   - Model class: small
+   - Customer value: HIGH (this is the exact confusion that triggered
+     today's bug report; a copy/logic fix here directly prevents recurrence)
+   - Details: An agent with empty `policy.provider.default` is not
+     necessarily broken — it correctly falls through to the system-wide
+     registry default (confirmed in assessment Finding 4). Change the
+     warning condition and/or copy so it only fires when the agent has no
+     usable resolution path at all (i.e., also no registry default
+     configured), not merely "no explicit per-agent override." Where an
+     override is genuinely absent, prefer neutral wording ("Using system
+     default") over a yellow warning triangle.
+
+3. `admin-agent-provider-first-model-picker`: two-step provider-then-model
+   selection in the Edit Agent Identity tab, scoped to registered models
+   - Scope: frontend (Edit Agent Identity tab) + api (verify `/api/agents`
+     response already carries enough data; likely no backend change needed)
+   - Depends on: NONE (independent of Change 2, though they address the
+     same screen — sequencing them together in one PR is reasonable if the
+     assignee prefers, but each is independently shippable)
+   - Recommended agent: Claude Code + Sonnet 5 (UI pattern reuse across
+     the Providers page and the agent editor; needs to reason about shared
+     component extraction, not just a local fix)
+   - Est. complexity: M (1–4 hours)
+   - Complexity score: Medium
+   - Model class: medium
+   - Customer value: HIGH (this is the operator's primary, explicitly
+     stated ask: "Agents need to be configurable for their provider and
+     model — in that order")
+   - Details: Reuse the Providers page's existing "select a provider, then
+     see its models" pattern (assessment Finding 2 confirms this pattern
+     already exists in the codebase) inside the Edit Agent Identity tab,
+     replacing the current single flat "Default Model" combobox. Scope the
+     model list to models actually registered for the selected provider
+     (per `GET /api/uar/providers`), not the full static catalog — this
+     closes the secondary gap where a catalog-only model (e.g. the original
+     "gpt-5.2") can be selected and silently fail at chat time.
+
+4. `admin-agent-edit-panel-verification`: complete save-path verification
+   for Prompt / Capabilities / Memory tabs
+   - Scope: frontend + api (whichever save endpoints are found broken)
+   - Depends on: `admin-agent-provider-first-model-picker` (run after,
+     since Change 3 touches the same dialog and re-verifying beforehand
+     would need re-verifying again after)
+   - Recommended agent: Claude Code + Sonnet 5
+   - Est. complexity: M (1–4 hours)
+   - Complexity score: Medium
+   - Model class: medium
+   - Customer value: MEDIUM (closes out the "nothing works" claim with
+     certainty; assessment Finding 3 already disproved it for the model
+     field specifically, but Prompt/Capabilities/Memory save-paths were
+     not exhaustively tested)
+   - Details: For each tab, make an edit, save, reload, and confirm the
+     edit persisted and (where applicable — e.g. system prompt) took
+     effect in a real chat turn. Fix whichever specific save paths are
+     found broken; do not assume the whole panel needs a rewrite going in.
+
+5. `governance-tool-approval-reconciliation`: reconcile the Governance
+   tab's "Tool Approval: auto" control with the observed native tool-denial
+   behavior — **investigation-first**
+   - Scope: api (governance engine, `src/uar/governance/engine.rs`) +
+     frontend (Governance tab) — exact scope depends on investigation outcome
+   - Depends on: NONE
+   - Recommended agent: Claude Code + Sonnet 5 (security-adjacent; per this
+     project's own priority rules, security/data-integrity work outranks
+     convenience features and should not go to a smaller model)
+   - Est. complexity: L (4–8 hours) — includes the investigation, not just
+     the fix
+   - Complexity score: High
+   - Model class: frontier
+   - Customer value: MEDIUM-HIGH (tool-call approval is a trust/safety
+     boundary; an operator who can't predict which tools will silently fail
+     mid-conversation can't reason about what the agent will actually do)
+   - Details: First determine which of the two explanations in assessment
+     Finding 5 is correct — (a) an intentional fail-closed default for
+     specific built-in tools when zero Cedar policies are loaded, or (b) the
+     "auto" UI control is genuinely disconnected from the real enforcement
+     path. Only after that's confirmed should the fix be scoped: either
+     surface the fail-closed default explicitly in the UI (if (a)), or wire
+     the "auto"/"manual" control to the real enforcement mechanism (if (b)).
+     This is flagged High/frontier specifically because implementing a fix
+     against the wrong explanation would create a new, harder-to-diagnose
+     security-UX mismatch.
+
+6. `admin-ui-freeze-diagnostics`: reproduce and instrument the reported UI
+   freeze — **investigation-first, not a fix**
+   - Scope: frontend (Admin console) + possibly build config (Web Worker
+     boundary for PGLite)
+   - Depends on: NONE
+   - Recommended agent: Claude Code + Sonnet 5, working session with the
+     operator present (freeze was not reproduced without the original
+     reporter's exact interaction sequence)
+   - Est. complexity: M (1–4 hours) for diagnostics; the fix itself (if
+     PGLite/main-thread WASM is confirmed as cause) is unscoped pending
+     that result
+   - Complexity score: Medium (diagnostics) / unscored (fix, pending root
+     cause)
+   - Model class: medium
+   - Customer value: HIGH (a frozen admin console blocks all other
+     configuration work, including Changes 2-5 above)
+   - Details: Assessment Finding 6 could not reproduce the freeze and
+     identified PGLite (WASM Postgres) loading on the Admin/Agents route as
+     a plausible but unconfirmed factor. Next step is a live session with
+     the operator reproducing the exact sequence, with a Long Task
+     PerformanceObserver and main-thread profiling active, plus confirming
+     whether PGLite initialization is confined to a Web Worker. Do not
+     attempt a blind fix (e.g. "move PGLite to a worker") without
+     confirming it's actually implicated — that risks masking the real
+     cause.
+
+### EXECUTION ROUND ORDER
+
+Round 1 (parallel): `admin-sw-scheme-safe-caching`,
+`admin-agent-model-warning-clarity`, `admin-agent-provider-first-model-picker`,
+`governance-tool-approval-reconciliation`, `admin-ui-freeze-diagnostics`
+Round 2 (after Round 1's Change 3 lands): `admin-agent-edit-panel-verification`
+
+### COMMANDS TO RUN
+
+```
+/opsx:new admin-sw-scheme-safe-caching
+/opsx:new admin-agent-model-warning-clarity
+/opsx:new admin-agent-provider-first-model-picker
+/opsx:new admin-agent-edit-panel-verification
+/opsx:new governance-tool-approval-reconciliation
+/opsx:new admin-ui-freeze-diagnostics
+```
+
+### Trade-offs and scope cuts (explicit, per S-03)
+
+- Changes 5 and 6 are deliberately NOT scoped as fixes yet — the
+  assessment's evidence supports two competing explanations for the
+  governance gap and zero reproductions for the freeze. Sizing either as a
+  confident implementation task would be a caveat collapse.
+- The 24-change original plan above is untouched by this supplemental plan;
+  none of these 6 changes were part of that scope, and none block or are
+  blocked by it.
+- No change here proposes a broader Admin console redesign, even though
+  Finding 2/3 together suggest the underlying pattern (provider-scoped
+  pickers) could be extracted into a shared component used by both the
+  Providers page and the Agent editor. That extraction is a reasonable
+  follow-up but is out of scope for closing the 4 reported complaints —
+  flagging it here rather than silently expanding Change 3's scope.
+
+*Supplemental plan complete. Recommended first change:
+`admin-sw-scheme-safe-caching` — smallest, safest, fully-confirmed root
+cause, unblocks nothing else but ships a clean win immediately.*

@@ -6,8 +6,15 @@
   "plan_complete": true,
   "execute_started": true,
   "reflect_complete": false,
-  "sourceTool": "opencode",
-  "last_updated": "2026-07-15T08:00:00Z",
+  "sourceTool": "claude",
+  "last_updated": "2026-07-15T20:37:54Z",
+  "last_updated_by": "claude",
+  "supplementalAssessment": {
+    "trigger": "Operator-directed /kbd-assess investigation into Admin/Agents UI defects reported live (console chrome-extension cache errors, agent provider/model configuration, yellow warning icons, Edit Agent panel, UI freeze). Outside the original 25-change goal set.",
+    "date": "2026-07-15",
+    "file": "assessment.md",
+    "summary": "Root-caused sw.js chrome-extension cache TypeError (scheme check missing before cache.put). Confirmed yellow warning icons are a direct side effect of today's earlier defaults.rs fix (empty provider/model = 'no model configured' in the UI, though functionally correct). Confirmed the Edit Agent Default Model field DOES save and take effect (refutes 'nothing works' as an absolute claim); confirmed gap is the missing provider-first-then-model two-step flow (exists on the Providers page, not reused in the agent editor) and catalog/registered-model mismatch. Surfaced a new, unlisted finding: governance shows policy_count=0 at startup yet denies native__memory_* tool calls at runtime, and the Governance tab's 'auto' setting doesn't reflect this. UI freeze not reproduced this session; PGLite (WASM Postgres) loading on the Admin/Agents route flagged as a plausible but unconfirmed contributing factor."
+  },
   "active_scope": "All 25 ordered OpenSpec changes are implementation-complete. Change 21 is strictly validated and preparing its PR; remaining unmerged changes require operator review/merge before production certification resumes.",
   "operator_priority": "Review and merge the remaining Grade-A PRs, then resume soak run / candidate tag / external installs / GA promotion.",
   "implementation_total": 25,

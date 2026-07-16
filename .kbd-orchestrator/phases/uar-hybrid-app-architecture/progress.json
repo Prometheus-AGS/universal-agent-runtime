@@ -1,0 +1,23 @@
+{
+  "phase": "uar-hybrid-app-architecture",
+  "parentPhase": null,
+  "childPhases": [],
+  "childPointer": null,
+  "assessment_complete": true,
+  "plan_complete": true,
+  "execute_complete": false,
+  "reflect_complete": false,
+  "changes_total": 12,
+  "changes_completed": 2,
+  "completed_changes": [
+    "desktop-stable-port",
+    "pglite-oxide-intel-mac-spike"
+  ],
+  "active_change": null,
+  "blocked_changes": [],
+  "sourceTool": "claude",
+  "createdBy": "kbd-new-phase",
+  "updatedAt": "2026-07-16T08:45:00Z",
+  "last_updated_by": "claude",
+  "analysis_complete": true
+}

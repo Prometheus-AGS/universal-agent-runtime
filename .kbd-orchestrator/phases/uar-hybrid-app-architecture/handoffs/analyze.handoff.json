@@ -1,0 +1,12 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-07-15T23:21:49Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "9 candidates: 8 adopt, 1 adapt, 0 reject. Key calls: pglite-oxide ADOPT gated on an Intel-mac portability spike (no x86_64-apple-darwin AOT asset in 0.5.1 — new finding beyond the skill doc); TS 7.0 ADAPT as hybrid (tsc on 7, typescript-eslint/typedoc on @typescript/typescript6 — both blocked upstream), sequenced after UI waves; sidecar pattern ADOPT with sidecar-lifetime as an open operator decision; all four mobile candidates ADOPT per TJ-ARCH-MOB-001 with child-phase split decided at plan time. Build-required: stable-port fix, impeccable program, 6 supplemental changes.",
+  "skipped": false,
+  "skipReason": null
+}

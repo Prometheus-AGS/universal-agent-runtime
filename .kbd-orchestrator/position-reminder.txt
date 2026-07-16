@@ -1,10 +1,18 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
-Phase: uar-grade-a-upgrade-2026-07
-Step: 25 of 25
-Stage: execute_in_progress
-Next command: Operator decision: resume perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion, since all 25 Grade-A changes are merged
+Phase: uar-hybrid-app-architecture
+Step: 2 of 12 (pglite-oxide-intel-mac-spike complete, archived)
+Stage: executing
+Next command: /opsx:new admin-sw-scheme-safe-caching
+
+Context: pglite-oxide-intel-mac-spike ran live and returned FAIL — pglite-oxide
+0.5.1 does not compile on x86_64-apple-darwin (wasmer-wasix/virtual-net
+version incompatibility, E0004). library-candidates.json cand-001 downgraded
+adopt->adapt; desktop-data-layer-pglite-oxide (change 11) now treats Intel
+Mac as SurrealDB-only, no retry pending an upstream fix. Spike kept as a
+reproducible reference at spikes/pglite-oxide-intel-mac-spike/ (not a
+workspace member, verified isolated).
 
 Required signal format (emit BEFORE any tool call):
-  Starting <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 25 of 25)
+  Starting <kbd-skill> — uar-hybrid-app-architecture (step N of T)
   [do work]
-  Completed <kbd-skill> — uar-grade-a-upgrade-2026-07 (step 25 of 25)
+  Completed <kbd-skill> — uar-hybrid-app-architecture (step N of T)

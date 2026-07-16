@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-15T23:26:49Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "12 changes in 3 rounds + a mobile child-phase action. Round 1 runs six independent changes in parallel (P0 stable-port fix, Intel-mac pglite-oxide spike, two S admin fixes, the frontier-model impeccable audit, the provider-first picker) plus the investigation track (governance, freeze). Gates: change 10 blocked on the operator's sidecar-lifetime decision; change 11 on spike PASS (documented fallback); change 12 sequenced after UI wave 1. First change to apply: desktop-stable-port.",
+  "skipped": false,
+  "skipReason": null
+}

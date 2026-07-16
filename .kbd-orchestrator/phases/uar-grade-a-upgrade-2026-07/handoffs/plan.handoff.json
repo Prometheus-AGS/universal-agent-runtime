@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-07-15T21:23:07Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "6 supplemental changes ordered by risk/confidence: 2 mechanical fixes (sw.js scheme check, warning-icon copy/logic), 1 core UX change (provider-first model picker, the operator's primary ask), 1 verification pass (remaining Edit Agent tabs, depends on the picker change), and 2 investigation-first spikes (governance tool-approval reconciliation, UI freeze diagnostics) that deliberately do not commit to a fix pending root-cause confirmation. First change to apply: admin-sw-scheme-safe-caching.",
+  "skipped": false,
+  "skipReason": null
+}

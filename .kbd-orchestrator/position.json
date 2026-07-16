@@ -1,29 +1,18 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-12T11:30:17Z",
+  "updatedAt": "2026-07-16T01:49:33Z",
   "cursor": [
-    "uar-final-production-hardening-2026-07",
-    "reconcile-product-documentation"
+    "uar-hybrid-app-architecture"
   ],
   "root": {
     "type": "phase",
-    "id": "uar-final-production-hardening-2026-07",
-    "status": "executing",
+    "id": "uar-hybrid-app-architecture",
+    "status": "planned",
     "progress": {
-      "done": 18,
-      "total": 24
+      "done": 0,
+      "total": 12
     },
-    "children": [
-      {
-        "type": "change",
-        "id": "reconcile-product-documentation",
-        "status": "PENDING",
-        "progress": {
-          "done": 0,
-          "total": 0
-        }
-      }
-    ],
+    "children": [],
     "annotations": [
       {
         "source": "evolver",

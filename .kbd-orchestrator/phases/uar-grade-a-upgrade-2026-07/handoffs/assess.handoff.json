@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-07-15T20:38:57Z",
+  "outputs": [
+    "assessment.md"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "Investigated 4 reported Admin/Agents UI defects plus service-worker console errors. Confirmed: sw.js cache.put() lacks a URL-scheme check (root cause of chrome-extension TypeErrors); yellow warning icons are a side effect of today's defaults.rs fix (UI conflates 'defers to default' with 'broken'); Default Model save-and-effect path works (refutes 'nothing works'); missing provider-first-then-model UX (pattern exists on Providers page, not reused). New finding: governance denies native__memory_* tools at runtime despite policy_count=0 and a disconnected 'auto' Governance-tab control. UI freeze not reproduced; PGLite WASM Postgres loading on the Admin route flagged as unconfirmed risk. Open questions for planning: should the agent editor be refactored to reuse the Providers page's two-step flow; should the warning-icon logic distinguish deferred-default from broken; should governance enforcement and its UI be reconciled; does the freeze need a live reproduction session with the reporter.",
+  "skipped": false,
+  "skipReason": null
+}

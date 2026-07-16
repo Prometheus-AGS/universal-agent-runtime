@@ -4,7 +4,7 @@
   "sourceOfTruth": ".kbd-orchestrator",
   "specSystem": "openspec",
   "activeChange": "central-uar-error-enum",
-  "activePhase": "uar-grade-a-upgrade-2026-07",
+  "activePhase": "uar-hybrid-app-architecture",
   "memoryMirror": {
     "provider": "surreal_memory",
     "mcpServer": "surreal_memory",
@@ -18,5 +18,5 @@
     "opencode"
   ],
   "worktreeRoot": "${HOME}/.claude/worktrees",
-  "updatedAt": "2026-07-13T22:00:00Z"
+  "updatedAt": "2026-07-15T23:05:46Z"
 }
