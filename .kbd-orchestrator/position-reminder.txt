@@ -1,15 +1,21 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-hybrid-app-architecture
-Step: 3 of 12 (admin-sw-scheme-safe-caching complete, archived)
+Step: 4 of 12 (admin-agent-model-warning-clarity complete, archived)
 Stage: executing
-Next command: /opsx:new admin-agent-model-warning-clarity
+Next command: /opsx:new admin-agent-provider-first-model-picker
 
-Context: admin-sw-scheme-safe-caching shipped — guarded both cache.put()
-call sites in sw.js/static-sw.js against non-http(s) request schemes.
-Fixed a pre-existing structural bug in openspec/specs/pwa-offline/spec.md
-(missing title/Purpose, wrong section header) that blocked archiving.
-Verified live in a browser against this checkout's own static/ assets
-(not the separately-installed ~/.uar/static production instance).
+Context: admin-agent-model-warning-clarity shipped -- three-way agent
+model-status classification (configured/system-default/unresolved)
+replacing the old binary warning. Fixed two more pre-existing,
+genuinely-blocking infra gaps discovered during verification: stale
+pnpm-lock.yaml (pnpm-workspace.yaml missing a nested glob for the vendored
+prometheus-entity-management sub-monorepo) and Vite server.fs.allow not
+reaching the pnpm-hoisted node_modules/.pnpm store (blocked pglite wasm
+assets, hung app boot). Both kept as necessary fixes, not reverted.
+Full pixel-level icon verification was blocked by an auth wall (no
+credentials available, none entered per standing rules) -- substituted a
+standalone node -e run of the exact classification logic across all 6
+input combinations as real-data-shaped verification instead.
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-hybrid-app-architecture (step N of T)
