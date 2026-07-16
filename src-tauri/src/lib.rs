@@ -106,10 +106,14 @@ pub fn run() {
                 let app_handle = app_handle.clone();
                 let host = host.clone();
                 async move {
-                    if wait_for_ready(&host, port, Duration::from_secs(20)).await {
+                    // Cold boot loads the full skill/governance/RAG stack (140+
+                    // skills, WASM sandbox, DB reconciliation) before the HTTP
+                    // listener binds — observed ~27s in a debug build, so 20s
+                    // was too tight and left the webview on a blank page.
+                    if wait_for_ready(&host, port, Duration::from_secs(120)).await {
                         if let Some(window) = app_handle.get_webview_window("main") {
                             let _ =
-                                window.eval(&format!("window.location.replace('{}')", server_url));
+                                window.eval(format!("window.location.replace('{}')", server_url));
                         }
                     } else {
                         log::error!("Timed out waiting for local server to start");
@@ -166,10 +170,10 @@ fn write_persisted_port(app_config_dir: &Path, port: u16) {
 /// 4. A fresh OS-assigned ephemeral port, persisted via
 ///    [`write_persisted_port`] so step 3 can reuse it next launch.
 fn resolve_localhost_port(fallback: u16, app_config_dir: Option<&Path>) -> u16 {
-    if let Ok(port) = std::env::var("TAURI_LOCALHOST_PORT") {
-        if let Ok(parsed) = port.parse::<u16>() {
-            return parsed;
-        }
+    if let Ok(port) = std::env::var("TAURI_LOCALHOST_PORT")
+        && let Ok(parsed) = port.parse::<u16>()
+    {
+        return parsed;
     }
 
     if TcpListener::bind(("127.0.0.1", fallback)).is_ok() {
@@ -179,22 +183,21 @@ fn resolve_localhost_port(fallback: u16, app_config_dir: Option<&Path>) -> u16 {
     // Configured port is unavailable — reuse a previously-persisted fallback
     // if it still binds, so the origin stays stable across this specific
     // conflict rather than re-randomizing on every launch.
-    if let Some(dir) = app_config_dir {
-        if let Some(persisted) = read_persisted_port(dir) {
-            if TcpListener::bind(("127.0.0.1", persisted)).is_ok() {
-                return persisted;
-            }
-        }
+    if let Some(dir) = app_config_dir
+        && let Some(persisted) = read_persisted_port(dir)
+        && TcpListener::bind(("127.0.0.1", persisted)).is_ok()
+    {
+        return persisted;
     }
 
-    if let Ok(listener) = TcpListener::bind("127.0.0.1:0") {
-        if let Ok(addr) = listener.local_addr() {
-            let resolved = addr.port();
-            if let Some(dir) = app_config_dir {
-                write_persisted_port(dir, resolved);
-            }
-            return resolved;
+    if let Ok(listener) = TcpListener::bind("127.0.0.1:0")
+        && let Ok(addr) = listener.local_addr()
+    {
+        let resolved = addr.port();
+        if let Some(dir) = app_config_dir {
+            write_persisted_port(dir, resolved);
         }
+        return resolved;
     }
 
     fallback
