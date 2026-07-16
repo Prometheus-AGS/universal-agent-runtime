@@ -1,10 +1,5 @@
-# pwa-offline Specification
+## MODIFIED Requirements
 
-## Purpose
-Offline-capable Progressive Web App behavior for the UAR frontend via a
-service worker that caches static assets and gracefully degrades
-online-only features when the network is unavailable.
-## Requirements
 ### Requirement: Service worker for offline asset caching
 The frontend SHALL register a service worker that caches static assets for offline availability.
 
@@ -26,4 +21,3 @@ The frontend SHALL register a service worker that caches static assets for offli
   browser extension's content script)
 - **THEN** the service worker returns the fetched response to the caller
   without attempting `cache.put()`, and no error is thrown or logged
-

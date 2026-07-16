@@ -1,16 +1,15 @@
 POSITION REMINDER — read this as your FIRST tool call every turn
 Phase: uar-hybrid-app-architecture
-Step: 2 of 12 (pglite-oxide-intel-mac-spike complete, archived)
+Step: 3 of 12 (admin-sw-scheme-safe-caching complete, archived)
 Stage: executing
-Next command: /opsx:new admin-sw-scheme-safe-caching
+Next command: /opsx:new admin-agent-model-warning-clarity
 
-Context: pglite-oxide-intel-mac-spike ran live and returned FAIL — pglite-oxide
-0.5.1 does not compile on x86_64-apple-darwin (wasmer-wasix/virtual-net
-version incompatibility, E0004). library-candidates.json cand-001 downgraded
-adopt->adapt; desktop-data-layer-pglite-oxide (change 11) now treats Intel
-Mac as SurrealDB-only, no retry pending an upstream fix. Spike kept as a
-reproducible reference at spikes/pglite-oxide-intel-mac-spike/ (not a
-workspace member, verified isolated).
+Context: admin-sw-scheme-safe-caching shipped — guarded both cache.put()
+call sites in sw.js/static-sw.js against non-http(s) request schemes.
+Fixed a pre-existing structural bug in openspec/specs/pwa-offline/spec.md
+(missing title/Purpose, wrong section header) that blocked archiving.
+Verified live in a browser against this checkout's own static/ assets
+(not the separately-installed ~/.uar/static production instance).
 
 Required signal format (emit BEFORE any tool call):
   Starting <kbd-skill> — uar-hybrid-app-architecture (step N of T)
