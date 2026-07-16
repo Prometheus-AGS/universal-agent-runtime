@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "tools/uar-jwt-proxy"]
+members = [".", "tools/uar-jwt-proxy", "tools/mcp-server-fetch"]
 exclude = [
   "crates/prometheus-skill-system",
   ".claude/worktrees",
@@ -10,6 +10,8 @@ exclude = [
   "vendor/git/sycophancy-correction/crates/sycophancy-core",
   "vendor/git/liter-llm",
   "vendor/git/liter-llm/crates/liter-llm",
+  "vendor/git/rust-mcp-filesystem",
+  "src-tauri",
 ]
 resolver = "2"
 
