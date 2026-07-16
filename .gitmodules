@@ -10,3 +10,6 @@
 [submodule "vendor/git/liter-llm"]
 	path = vendor/git/liter-llm
 	url = git@github.com:GQAdonis/liter-llm.git
+[submodule "vendor/git/rust-mcp-filesystem"]
+	path = vendor/git/rust-mcp-filesystem
+	url = git@github.com:GQAdonis/rust-mcp-filesystem.git

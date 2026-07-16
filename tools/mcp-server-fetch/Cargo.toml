@@ -1,0 +1,25 @@
+[package]
+name = "mcp-server-fetch"
+version = "1.0.0"
+edition = "2024"
+license = "AGPL-3.0-only"
+description = "Rust MCP server exposing a single `fetch` tool for retrieving and converting web content, packaged as a Tauri sidecar binary."
+
+[[bin]]
+name = "mcp-server-fetch"
+path = "src/main.rs"
+
+[dependencies]
+# Pinned to match the workspace root's rmcp version (Cargo.toml) -- keeping a
+# single rmcp major version in the tree avoids duplicate-version bloat across
+# every crate that depends on it.
+rmcp = { version = "=1.8.0", features = ["server", "macros", "transport-io"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "gzip"] }
+html2text = "0.17"
+tokio = { version = "1", features = ["full"] }
+schemars = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
