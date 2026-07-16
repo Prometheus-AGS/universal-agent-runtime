@@ -2,6 +2,7 @@ packages:
   - .
   - frontend
   - frontend/packages/*
+  - frontend/packages/prometheus-entity-management/packages/*
 
 allowBuilds:
   '@parcel/watcher': true

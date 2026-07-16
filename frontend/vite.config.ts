@@ -43,6 +43,14 @@ export default defineConfig({
   server: {
     host: "::",
     port: 8080,
+    fs: {
+      // pnpm hoists dependencies into the repo-root node_modules/.pnpm
+      // store; Vite's default fs.allow is scoped to this package alone
+      // and denies (403) requests for assets like @electric-sql/pglite's
+      // .wasm files that live one level up. Explicitly allow the repo
+      // root (one level above this package).
+      allow: [path.resolve(__dirname, "..")],
+    },
     proxy: {
       "/api": {
         target: process.env.UAR_BACKEND_URL ?? "http://127.0.0.1:1906",
