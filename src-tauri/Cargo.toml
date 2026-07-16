@@ -26,3 +26,6 @@ tauri = { version = "2.9.5" }
 tauri-plugin-log = "2"
 universal-agent-runtime = { path = "..", features = ["tauri"] }
 tokio = { version = "1", features = ["full"] }
+# Matches the root crate's pin exactly — Cli must construct identically to
+# how main.rs / uar-sidecar.rs build it.
+clap = { version = "4.6.0", features = ["derive", "env"] }
