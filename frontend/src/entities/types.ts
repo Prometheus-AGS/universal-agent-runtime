@@ -17,13 +17,15 @@ export interface ProviderEntity extends Record<string, unknown> {
 }
 
 /**
- * Singleton entity holding global provider metadata (currently just the
- * default provider id). Keyed by the literal string `"current"`. Backed by
- * the `/api/uar/providers` response's `default_id` field on each fetch.
+ * Singleton entity holding global provider metadata (the default provider
+ * id and that provider's default model). Keyed by the literal string
+ * `"current"`. Backed by the `/api/uar/providers` response's `default_id`
+ * field and the matching provider's `default_model` field on each fetch.
  */
 export interface ProviderMetaEntity extends Record<string, unknown> {
   id: "current";
   default_id: string | null;
+  default_model: string | null;
 }
 
 export interface ModelEntity extends Record<string, unknown> {

@@ -1,5 +1,5 @@
 import { type FC, useEffect, useState } from "react";
-import { AlertTriangle, ArrowLeft, Bot, Brain, Loader2, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Bot, Brain, Info, Loader2, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import { AgentAiBuilder } from "@/admin/components/agent-ai-builder";
 import { AgentEditor } from "@/admin/components/agent-editor";
 import { cn } from "@/lib/utils";
 import { useAgents } from "@/entities/hooks/use-agents";
+import { useHasWorkingSystemDefault } from "@/entities/hooks/use-provider-default";
 import { useAgentsAdmin } from "@/hooks/use-agents-admin";
 import type { UarAgent } from "@/types";
 
@@ -188,13 +189,22 @@ function AgentMemorySection({
   );
 }
 
-/** Returns true if an agent has no model configured in its policy. */
-function agentLacksModel(a: UarAgent): boolean {
+type AgentModelStatus = "configured" | "system-default" | "unresolved";
+
+/**
+ * Classifies an agent's model-resolution status: `"configured"` when it has
+ * an explicit per-agent provider/model override; otherwise `"system-default"`
+ * when a working system-wide default resolves (no icon vs. a warning icon —
+ * see the render site), or `"unresolved"` when no resolution path exists at
+ * all.
+ */
+function agentModelStatus(a: UarAgent, hasWorkingSystemDefault: boolean): AgentModelStatus {
   const raw = a as unknown as Record<string, unknown>;
   const policy = (raw.policy as Record<string, unknown>) ?? {};
   const providerPolicy = (policy.provider as Record<string, unknown>) ?? {};
   const def = (providerPolicy.default as Record<string, unknown>) ?? {};
-  return !def.provider || !def.model;
+  if (def.provider && def.model) return "configured";
+  return hasWorkingSystemDefault ? "system-default" : "unresolved";
 }
 
 // ── Main Agents Page ───────────────────────────────────────────────────────
@@ -205,6 +215,7 @@ export const AgentsPage: FC = () => {
   // until the next change in this phase migrates them too.
   const agentsView = useAgents();
   const agents = agentsView.items as unknown as UarAgent[];
+  const hasWorkingSystemDefault = useHasWorkingSystemDefault();
   const admin = useAgentsAdmin();
   const { loading, error, load } = admin;
   const [selected, setSelected] = useState<UarAgent | null>(null);
@@ -309,7 +320,14 @@ export const AgentsPage: FC = () => {
                   </p>
                   <p className="font-mono text-xs text-muted-foreground">{a.kind ?? "agent"}</p>
                 </div>
-                {agentLacksModel(a) && (
+                {agentModelStatus(a, hasWorkingSystemDefault) === "system-default" && (
+                  <Info
+                    size={13}
+                    className="shrink-0 text-muted-foreground"
+                    aria-label="Using system default"
+                  />
+                )}
+                {agentModelStatus(a, hasWorkingSystemDefault) === "unresolved" && (
                   <AlertTriangle
                     size={13}
                     className="shrink-0 text-amber-500"

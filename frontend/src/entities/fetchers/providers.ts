@@ -53,10 +53,13 @@ export async function loadProvidersIntoGraph(): Promise<void> {
   }
 
   // Upsert the singleton ProviderMeta entity (id "current") with the
-  // currently-default provider id. Consumers read this via useProviderDefault().
+  // currently-default provider id and that provider's default model.
+  // Consumers read this via useProviderDefault() / useHasWorkingSystemDefault().
+  const defaultProvider = configured.providers.find((p) => p.id === configured.default_id);
   upsertEntity("ProviderMeta", "current", {
     id: "current",
     default_id: configured.default_id ?? null,
+    default_model: defaultProvider?.default_model ?? null,
   });
 }
 

@@ -16,3 +16,17 @@ export function useProviderDefault(): string | null {
     return meta?.default_id ?? null;
   });
 }
+
+/**
+ * True when the system-wide provider registry has both a default provider
+ * id and that provider has a default model configured — i.e. an agent
+ * with no per-agent override can actually resolve a model at chat time.
+ */
+export function useHasWorkingSystemDefault(): boolean {
+  return useGraphStore((state) => {
+    const meta = state.entities["ProviderMeta"]?.["current"] as
+      | ProviderMetaEntity
+      | undefined;
+    return Boolean(meta?.default_id) && Boolean(meta?.default_model);
+  });
+}
