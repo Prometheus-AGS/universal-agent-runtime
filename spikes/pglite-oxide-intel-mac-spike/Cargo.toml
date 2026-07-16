@@ -1,0 +1,14 @@
+[workspace]
+
+[package]
+name = "pglite-oxide-intel-mac-spike"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Throwaway spike verifying pglite-oxide's portable-wasix fallback boots and serves queries on x86_64-apple-darwin. See openspec/changes/pglite-oxide-intel-mac-spike/."
+
+[dependencies]
+pglite-oxide = "0.5.1"
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+anyhow = "1"

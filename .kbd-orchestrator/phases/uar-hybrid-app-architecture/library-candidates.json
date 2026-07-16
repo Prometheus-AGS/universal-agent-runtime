@@ -1,0 +1,165 @@
+{
+  "$schema": "https://prometheus-ags.dev/schemas/kbd/library-candidates.schema.json",
+  "phase": "uar-hybrid-app-architecture",
+  "generated_at": "2026-07-15T23:20:00Z",
+  "input_assessment": "assessment.md",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": { "tier1": 2, "tier2": 0, "tier3": 3, "tier4": 2 }
+  },
+  "gaps_addressed": ["G2-sidecar", "G3-desktop-data", "G3-web-data", "G4-mobile", "G7-typescript7"],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "pglite-oxide",
+      "kind": "library",
+      "repo_url": "https://github.com/f0rr0/pglite-oxide",
+      "registry": "crates",
+      "fit_for_gap": "G3-desktop-data: OPTIONAL ENHANCEMENT over the embedded-SurrealDB baseline (cand-009) on platforms where it works — embedded PostgreSQL 17.5 (PGlite WASI guest in Rust host), PG wire protocol so sqlx connects unchanged. RESOLVED 2026-07-16 (pglite-oxide-intel-mac-spike): FAILS TO COMPILE on x86_64-apple-darwin — not usable on this platform, not merely unverified. See open_questions.",
+      "verdict": "adapt",
+      "coverage_estimate": 0.3,
+      "license": "MIT",
+      "maintenance": { "last_release": "2026-06-04 (0.5.1)", "stars": 90, "open_issues": 7, "last_push": "2026-07-15", "crates_downloads": 4192 },
+      "evidence": [
+        { "tier": 1, "source_url": "https://github.com/f0rr0/pglite-oxide", "claim": "MIT, 90 stars, pushed 2026-07-15 (same day as this analysis) — small but actively developed" },
+        { "tier": 1, "source_url": "https://github.com/f0rr0/pglite-oxide/releases/tag/0.5.1", "claim": "AOT assets: aarch64-apple-darwin, aarch64/x86_64-linux-gnu, x86_64-windows-msvc, portable-wasix. NO x86_64-apple-darwin AOT — this project's primary dev machine is an Intel Mac; portable WASIX fallback unverified there. GATING SPIKE REQUIRED before adoption is irreversible." },
+        { "tier": 3, "source_url": "https://crates.io/crates/pglite-oxide", "claim": "0.5.1 on crates.io, 4,192 downloads; companion pglite-oxide-assets crate 3,183" },
+        { "tier": 1, "source_url": "openspec/changes/pglite-oxide-intel-mac-spike/design.md#result-2026-07-16", "claim": "LIVE SPIKE RESULT (2026-07-16): FAIL. `cargo run` on x86_64-apple-darwin fails during dependency compilation — wasmer-wasix 0.702.0-alpha.3 (pglite-oxide's own transitive WASIX-runtime dep, the only path available since no AOT crate exists for this triple) has a non-exhaustive match against virtual-net 0.702.0's NetworkError enum (E0004, missing NetworkError::MessageSize arm). A real upstream version-incompatibility bug between two of pglite-oxide's own pinned deps, not a platform-support gap this project can work around. Boot/query timings were never obtainable — compilation never succeeded." }
+      ],
+      "open_questions": ["RESOLVED 2026-07-16 (pglite-oxide-intel-mac-spike, live spike, not just analysis): pglite-oxide is NOT usable on x86_64-apple-darwin in any configuration — desktop-data-layer-pglite-oxide (change 11) treats this platform as SurrealDB-only, no retry needed unless upstream ships a wasmer-wasix/virtual-net compatibility fix. Still viable on aarch64-apple-darwin, Linux, and Windows per its AOT assets (unverified by this spike, which was scoped to Intel Mac only). Second-engine concern remains resolved on platforms where it does work: SurrealDB was already a UAR dependency, so pglite-oxide is genuinely additive there, not a second required engine."]
+    },
+    {
+      "id": "cand-002",
+      "name": "@electric-sql/pglite",
+      "kind": "library",
+      "repo_url": "https://github.com/electric-sql/pglite",
+      "registry": "npm",
+      "fit_for_gap": "G3-web-data: browser-side local-first store at idb://uar-threads",
+      "verdict": "adopt",
+      "coverage_estimate": 1.0,
+      "license": "Apache-2.0",
+      "maintenance": { "note": "already in use in frontend at ^0.5.4; status-quo adopt, matrix-compliant" },
+      "evidence": [
+        { "tier": 1, "claim": "frontend/src/lib/db.ts already implements the skill's web matrix row exactly (PGlite idb:// + fsBundle); no change required" }
+      ]
+    },
+    {
+      "id": "cand-003",
+      "name": "flutter_rust_bridge",
+      "kind": "library",
+      "repo_url": "https://github.com/fzyzcjy/flutter_rust_bridge",
+      "registry": "crates",
+      "fit_for_gap": "G4-mobile: Dart<->Rust FFI seam for gen_ui_core per TJ-ARCH-MOB-001",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT",
+      "maintenance": { "last_release": "2026-07-11 (2.12.0)" },
+      "evidence": [
+        { "tier": 3, "source_url": "https://crates.io/crates/flutter_rust_bridge", "claim": "2.12.0 stable, updated 2026-07-11; the skill's scaffold scripts assume it (>=2.3)" }
+      ]
+    },
+    {
+      "id": "cand-004",
+      "name": "sqlite-vec",
+      "kind": "library",
+      "repo_url": "https://github.com/asg017/sqlite-vec",
+      "registry": "none",
+      "fit_for_gap": "G4-mobile: vector search on iOS/Android where pglite-oxide cannot run",
+      "verdict": "adopt",
+      "coverage_estimate": 0.8,
+      "license": "Apache-2.0",
+      "maintenance": { "stars": 7886, "last_push": "2026-05-18" },
+      "evidence": [
+        { "tier": 1, "source_url": "https://github.com/asg017/sqlite-vec", "claim": "7,886 stars, Apache-2.0; skill doc confirms prebuilt iOS/Android libs; last push ~2 months ago — watch cadence" }
+      ]
+    },
+    {
+      "id": "cand-005",
+      "name": "tauri externalBin + plugin-shell sidecar pattern",
+      "kind": "pattern",
+      "repo_url": "https://tauri.app/develop/sidecar/",
+      "registry": "none",
+      "fit_for_gap": "G2-sidecar: spawn uar-sidecar as a managed Tauri sidecar with a fixed OS-exposed port",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "MIT/Apache-2.0",
+      "evidence": [
+        { "tier": 1, "claim": "bundle.externalBin already ships two MCP servers in this repo (packaging path proven); @tauri-apps/plugin-shell already a frontend dependency; uar-sidecar binary exists and is cargo-installed today" }
+      ],
+      "open_questions": ["operator decision: sidecar lifetime after app exit (die-with-app vs persist for other OS consumers)"]
+    },
+    {
+      "id": "cand-006",
+      "name": "TypeScript 7.0 (Go-native compiler)",
+      "kind": "framework",
+      "repo_url": "https://github.com/microsoft/typescript-go",
+      "registry": "npm",
+      "fit_for_gap": "G7-typescript7: build/typecheck migration from 5.9.3",
+      "verdict": "adapt",
+      "coverage_estimate": 0.6,
+      "license": "Apache-2.0",
+      "maintenance": { "last_release": "2026-07-08 (7.0 GA)" },
+      "evidence": [
+        { "tier": 4, "source_url": "https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/", "claim": "GA 2026-07-08; standard `typescript` package now ships the Go compiler; ~8-12x faster; strict mode + 6.0 deprecations become hard defaults; NO stable programmatic API until 7.1" },
+        { "tier": 4, "source_url": "https://github.com/typescript-eslint/typescript-eslint/issues/12518", "claim": "typescript-eslint supports >=4.8.4 <6.1.0 — TS 7 unsupported, crashes reported. typedoc requires rewrite (TypeStrong/typedoc#3098). Full adoption blocked; hybrid via cand-007 is the viable path" }
+      ],
+      "open_questions": ["hybrid now vs defer to 7.1 era — recommendation: hybrid, sequenced after UI remediation waves"]
+    },
+    {
+      "id": "cand-007",
+      "name": "@typescript/typescript6",
+      "kind": "library",
+      "registry": "npm",
+      "fit_for_gap": "G7-typescript7: compat package (tsc6 + TS 6.0 API re-export) letting typescript-eslint/typedoc run on the 6.x API while tsc builds on 7",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "Apache-2.0",
+      "evidence": [
+        { "tier": 4, "source_url": "https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/", "claim": "Microsoft-published compatibility package explicitly built for the side-by-side scenario this repo needs" }
+      ]
+    },
+    {
+      "id": "cand-008",
+      "name": "hybrid-mobile-architecture-skill (scaffold scripts + arch standard)",
+      "kind": "skeleton",
+      "repo_url": "https://github.com/Know-Me-Tools/hybrid-mobile-architecture-skill",
+      "registry": "none",
+      "fit_for_gap": "G4-mobile: scaffold-hybrid.sh / scaffold-flutter.sh entry point; references/arch-standard.md (TJ-ARCH-MOB-001) is the decision authority; Flutter/Rust templates in assets/templates/",
+      "verdict": "adopt",
+      "coverage_estimate": 0.7,
+      "license": "see repo LICENSE.txt",
+      "evidence": [
+        { "tier": 1, "source_url": "https://github.com/Know-Me-Tools/hybrid-mobile-architecture-skill", "claim": "operator's own published standard; docs/pglite-oxide-tauri-hybrid.md corrected 2026-07-15 carries the authoritative per-target data matrix used throughout this analysis" }
+      ]
+    },
+    {
+      "id": "cand-009",
+      "name": "SurrealDB kv-rocksdb (mobile graph tier + desktop universal data-layer baseline)",
+      "kind": "library",
+      "repo_url": "https://github.com/surrealdb/surrealdb",
+      "registry": "crates",
+      "fit_for_gap": "G4-mobile: graph RAG tier on-device. G3-desktop-data: REVISED 2026-07-15 (operator decision) — also the universal baseline for the desktop local-first data layer (repository-trait concrete impl), replacing the earlier 'webview PGlite on stable origin' fallback plan. pglite-oxide (cand-001) layers on top as an optional, platform-gated enhancement, not a requirement.",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "BSL-1.1",
+      "evidence": [
+        { "tier": 2, "claim": "per skill doc matrix (verified today); UAR pins surrealdb =3.2.1 with kv-surrealkv already — no new dependency for the persistence core, kv-rocksdb feature flag is additive for mobile graph tier and now also the desktop data-layer baseline" }
+      ],
+      "open_questions": ["Repository trait design (change 11) must accommodate two concrete backends (SurrealDB baseline, pglite-oxide enhancement) behind one interface"]
+    }
+  ],
+  "build_required": [
+    { "gap": "G1-stable-port", "reason": "internal src-tauri change; no library applies" },
+    { "gap": "G5-impeccable-uiux", "reason": "internal skill execution (/impeccable audit->critique->polish/harden) + remediation waves" },
+    { "gap": "G6-supplemental-admin-ui", "reason": "six changes already specified in prior phase's supplemental plan; internal fixes" },
+    { "gap": "governance-tool-approval-reconciliation", "reason": "internal investigation-first change (absorbed via G6)" }
+  ],
+  "totals": { "candidates": 9, "adopt": 7, "adapt": 2, "reference": 0, "reject": 0 },
+  "open_questions": [
+    "Sidecar lifetime policy after app exit (operator)",
+    "RESOLVED 2026-07-16 (live spike, supersedes the 2026-07-15 analysis-only note): pglite-oxide FAILS TO COMPILE on x86_64-apple-darwin (wasmer-wasix/virtual-net version incompatibility, not a mere unverified-fallback gap) — desktop-data-layer-pglite-oxide treats Intel Mac as SurrealDB-only, no retry pending upstream fix. cand-009 (embedded SurrealDB) remains the desktop baseline regardless.",
+    "Mobile (G4) as child phase vs in-phase changes — decide at plan time",
+    "TS 7 hybrid now vs defer to 7.1 (recommendation: hybrid after UI waves)"
+  ]
+}
