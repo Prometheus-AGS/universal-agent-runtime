@@ -96,7 +96,7 @@ jobs:
             org.opencontainers.image.documentation=https://github.com/${{ github.repository }}/blob/main/.kbd-orchestrator/phases/runtime-image-polyglot-toolchain-completion/assessment.md
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
