@@ -95,7 +95,7 @@ jobs:
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
 
       - uses: dtolnay/rust-toolchain@stable
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.33.0
       - uses: actions/setup-node@v4
