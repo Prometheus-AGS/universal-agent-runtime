@@ -74,7 +74,7 @@ jobs:
         run: kill "$(cat server.pid)" 2>/dev/null || true
 
       - name: Open a PR with the new benchmark report
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "docs(rag-benchmark): publish monthly BEIR run"
           title: "docs(rag-benchmark): publish monthly BEIR run"
