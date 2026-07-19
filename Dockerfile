@@ -21,7 +21,7 @@
 # Toolchain pins — bump via a new KBD change so drift is auditable.
 # Rust nightly is dated (matches rust-toolchain.toml at repo root).
 # Go follows the latest stable per go.dev/doc/devel/release.
-ARG RUST_TOOLCHAIN=nightly-2026-05-01
+ARG RUST_TOOLCHAIN=nightly-2026-07-18
 ARG NODE_MAJOR=24
 ARG PYTHON_VERSION=3.13
 ARG GO_VERSION=1.26.3
@@ -117,7 +117,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
     && apt-get update && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/* \
     && corepack enable \
-    && corepack prepare pnpm@10.33.0 --activate \
+    && corepack prepare pnpm@11.15.0 --activate \
     && curl -fsSL https://bun.sh/install | bash \
     && ln -sf /root/.bun/bin/bun /usr/local/bin/bun \
     && npm install -g --no-fund --no-audit \

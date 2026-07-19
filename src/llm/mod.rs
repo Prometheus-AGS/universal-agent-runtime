@@ -20,6 +20,7 @@ pub mod anthropic_types;
 pub mod benchmarks;
 pub mod capability_registry;
 pub mod catalog;
+pub mod external_driver;
 pub mod health;
 pub mod liter_driver;
 pub mod mock_driver;
@@ -32,6 +33,7 @@ pub mod tool_normalizer;
 pub mod xml_tool_injector;
 
 pub use catalog::ModelCatalog;
+pub use external_driver::{ExternalDriverHandler, ExternalDriverStream, ExternalLlmDriver};
 pub use health::{ProviderHealthMonitor, ProviderHealthSnapshot};
 pub use liter_driver::LiterLlmDriver;
 pub use orchestrator::{Orchestrator, ToolApprovalGate, ToolApprovalResult};
