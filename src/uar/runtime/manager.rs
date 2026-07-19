@@ -1,5 +1,5 @@
 use crate::config::{LlmConfig, SkillEvolutionConfig};
-use crate::llm::{LiterLlmDriver, Message, MessageRole, Orchestrator};
+use crate::llm::{LiterLlmDriver, LlmDriver, Message, MessageRole, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::session::SessionStore;
 use crate::uar::domain::{
@@ -139,6 +139,10 @@ pub struct RunManager {
     provider_service: Option<Arc<crate::uar::security::credentials::ProviderService>>,
     /// Native skill registry for in-process tool execution
     native_skills: Arc<NativeSkillRegistry>,
+    /// Optional host-supplied primary LLM driver. Used by embedded/library
+    /// deployments that keep provider credentials and local model runtimes
+    /// outside UAR while letting UAR own the agent/tool/skill loop.
+    primary_driver: Option<Arc<dyn LlmDriver>>,
     /// Pending tool-call approval channels: run_id -> oneshot sender.
     /// When a tool call requires approval, a oneshot channel is inserted here.
     /// The approval endpoint sends `true` (approved) or `false` (rejected) through it.
@@ -473,6 +477,7 @@ impl RunManager {
             provider_registry: None,
             provider_service: None,
             native_skills,
+            primary_driver: None,
             pending_approvals: Arc::new(Mutex::new(HashMap::new())),
             root_cancellation: CancellationToken::new(),
             run_cancellations: Arc::new(RwLock::new(HashMap::new())),
@@ -519,6 +524,18 @@ impl RunManager {
     /// Set the provider registry for per-agent LLM provider resolution.
     pub fn with_provider_registry(mut self, registry: Arc<crate::llm::ProviderRegistry>) -> Self {
         self.provider_registry = Some(registry);
+        self
+    }
+
+    /// Set a host-supplied primary LLM driver for embedded deployments.
+    ///
+    /// The default service/runtime path still constructs `LiterLlmDriver` from
+    /// `LlmConfig`. This override is intentionally explicit so mobile hosts can
+    /// register a local provider via `ExternalLlmDriver` without changing UAR's
+    /// default cloud/provider behavior.
+    #[must_use]
+    pub fn with_llm_driver(mut self, driver: Arc<dyn LlmDriver>) -> Self {
+        self.primary_driver = Some(driver);
         self
     }
 
@@ -1097,6 +1114,7 @@ impl RunManager {
         // Clone for graph context before values are moved into Orchestrator
         let llm_config_for_graph = run_llm_config.clone();
         let mcp_for_graph = Arc::clone(&mcp);
+        let primary_driver_for_graph = self.primary_driver.clone();
         // CH-08: clone for activation-outcome correlation at run end (resolves
         // invoked tool names back to their owning MCP server).
         let mcp_for_outcome = Arc::clone(&mcp);
@@ -1107,11 +1125,15 @@ impl RunManager {
         // Whether to compute per-request cost (captured before run_llm_config moves).
         let cost_tracking_enabled = run_llm_config.cost_tracking;
 
-        let orchestrator = match Orchestrator::new(
-            run_llm_config,
-            mcp,
-            Arc::clone(&self.native_skills),
-        ) {
+        let orchestrator = match match self.primary_driver.clone() {
+            Some(driver) => Ok(Orchestrator::from_driver(
+                run_llm_config,
+                mcp,
+                Arc::clone(&self.native_skills),
+                driver,
+            )),
+            None => Orchestrator::new(run_llm_config, mcp, Arc::clone(&self.native_skills)),
+        } {
             Ok(o) => {
                 // CH-03: attach the shared provider-health monitor (always,
                 // when a registry is configured) and, if failover is enabled,
@@ -1336,29 +1358,33 @@ impl RunManager {
             // Graph execution branch — runs instead of the simple tool loop when a
             // graph is attached. On completion we emit RunEnd and return early.
             if let Some(graph) = graph_for_run {
-                let graph_driver: std::sync::Arc<dyn crate::llm::LlmDriver> = {
-                    let client_cfg = crate::config::build_client_config(&llm_config_for_graph);
-                    match LiterLlmDriver::new(
-                        client_cfg,
-                        llm_config_for_graph.model.clone(),
-                        llm_config_for_graph.parallel_tool_calls,
-                    ) {
-                        Ok(d) => std::sync::Arc::new(d),
-                        Err(e) => {
-                            tracing::error!(
-                                run_id = %execute_run_id,
-                                error = %e,
-                                "Failed to create LLM driver for graph execution"
-                            );
-                            emitter
-                                .emit(NormalizedEvent::RunDone {
-                                    run_id: execute_run_id.clone(),
-                                })
-                                .await;
-                            return;
+                let graph_driver: std::sync::Arc<dyn crate::llm::LlmDriver> =
+                    match primary_driver_for_graph.clone() {
+                        Some(driver) => driver,
+                        None => {
+                            let client_cfg = crate::config::build_client_config(&llm_config_for_graph);
+                            match LiterLlmDriver::new(
+                                client_cfg,
+                                llm_config_for_graph.model.clone(),
+                                llm_config_for_graph.parallel_tool_calls,
+                            ) {
+                                Ok(d) => std::sync::Arc::new(d),
+                                Err(e) => {
+                                    tracing::error!(
+                                        run_id = %execute_run_id,
+                                        error = %e,
+                                        "Failed to create LLM driver for graph execution"
+                                    );
+                                    emitter
+                                        .emit(NormalizedEvent::RunDone {
+                                            run_id: execute_run_id.clone(),
+                                        })
+                                        .await;
+                                    return;
+                                }
+                            }
                         }
-                    }
-                };
+                    };
 
                 let graph_ctx = crate::uar::runtime::graph::GraphContext {
                     run_id: execute_run_id.clone(),

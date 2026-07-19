@@ -280,7 +280,23 @@ impl Orchestrator {
             llm_config.parallel_tool_calls,
         )?);
 
-        Ok(Self {
+        Ok(Self::from_driver(llm_config, mcp, native_skills, driver))
+    }
+
+    /// Create a new orchestrator with a host-supplied LLM driver.
+    ///
+    /// This is the embedding seam for environments that own a local model
+    /// runtime outside UAR, such as KnowMe mobile. UAR still owns the agent
+    /// loop, tool governance, skills, and normalized events; the host-supplied
+    /// driver only provides model streaming.
+    #[must_use]
+    pub fn from_driver(
+        llm_config: LlmConfig,
+        mcp: Arc<McpRegistry>,
+        native_skills: Arc<NativeSkillRegistry>,
+        driver: Arc<dyn LlmDriver>,
+    ) -> Self {
+        Self {
             llm_config,
             mcp,
             driver,
@@ -293,7 +309,7 @@ impl Orchestrator {
             sandbox_runner: None,
             tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode::default(),
             resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
-        })
+        }
     }
 
     /// Attach a fallback driver and failover configuration.
@@ -1283,5 +1299,35 @@ impl Orchestrator {
         );
 
         Ok(content)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::llm::mock_driver::MockLlmDriver;
+
+    #[tokio::test]
+    async fn from_driver_uses_host_supplied_driver() {
+        let driver = Arc::new(MockLlmDriver::echo());
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            driver.clone(),
+        );
+
+        let response = orchestrator
+            .chat_non_streaming(vec![Message {
+                role: MessageRole::User,
+                content: MessageContent::text("hello"),
+                tool_call_id: None,
+                tool_calls: None,
+            }])
+            .await
+            .unwrap();
+
+        assert_eq!(response, "Hello from mock!");
+        assert_eq!(driver.call_count(), 1);
     }
 }
