@@ -39,11 +39,12 @@ pub mod runtime;
 pub use error::{Error, UarError};
 #[doc(inline)]
 pub use types::{
-    CancelRunResponse, ChatCompletionRequest, ChatCompletionResponse, ChatMessage, Checkpoint,
-    CheckpointListResponse, CreateKnowledgeBaseRequest, CreateRunRequest, Document, Embedding,
-    EmbeddingRequest, EmbeddingResponse, IngestRequest, IngestResponse, KnowledgeBase,
-    KnowledgeBaseConfig, ResumeRunRequest, RunResponse, SearchRequest, SearchResponse,
-    SearchResult, StreamEvent, ToolCallRequest, ToolCallResponse, UpdateKnowledgeBaseRequest,
+    ArtifactResponseAck, ArtifactResponseRequest, CancelRunResponse, ChatCompletionRequest,
+    ChatCompletionResponse, ChatMessage, Checkpoint, CheckpointListResponse,
+    CreateKnowledgeBaseRequest, CreateRunRequest, Document, Embedding, EmbeddingRequest,
+    EmbeddingResponse, IngestRequest, IngestResponse, KnowledgeBase, KnowledgeBaseConfig,
+    ResumeRunRequest, RunResponse, SearchRequest, SearchResponse, SearchResult, StreamEvent,
+    ToolCallRequest, ToolCallResponse, UpdateKnowledgeBaseRequest,
 };
 
 #[cfg(feature = "http-client")]

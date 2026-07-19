@@ -308,6 +308,23 @@ impl RunsApi<'_> {
             )?)
             .await
     }
+    /// Submit a response to an A2UI input artifact and let the paused run continue.
+    pub async fn submit_artifact_response(
+        &self,
+        run_id: &str,
+        request: ArtifactResponseRequest,
+    ) -> Result<ArtifactResponseAck> {
+        self.0
+            .json(
+                self.0
+                    .request(
+                        reqwest::Method::POST,
+                        &format!("/api/uar/runs/{run_id}/artifact-response"),
+                    )?
+                    .json(&request),
+            )
+            .await
+    }
     /// List persisted checkpoints.
     pub async fn checkpoints(&self, run_id: &str) -> Result<CheckpointListResponse> {
         self.0

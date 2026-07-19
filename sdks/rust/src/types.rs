@@ -119,6 +119,24 @@ pub struct CancelRunResponse {
     /// Whether a live run was cancelled.
     pub cancelled: bool,
 }
+/// Response submitted for a UAR A2UI input artifact.
+#[derive(Debug, Clone, Serialize)]
+pub struct ArtifactResponseRequest {
+    /// Artifact id that generated the input request.
+    pub artifact_id: String,
+    /// User response payload.
+    pub response: Value,
+}
+/// Acknowledgement for an accepted A2UI artifact response.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ArtifactResponseAck {
+    /// Owning run id.
+    pub run_id: String,
+    /// Artifact id that accepted the response.
+    pub artifact_id: String,
+    /// Acceptance status.
+    pub status: String,
+}
 /// Persisted run checkpoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Checkpoint {
