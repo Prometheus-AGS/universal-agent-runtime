@@ -39,7 +39,7 @@ jobs:
       - name: Complete recursive submodule checkout
         shell: bash
         run: bash scripts/update-submodules.sh
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Validate workflow, schema, and generators
