@@ -285,7 +285,7 @@ serde_norway = "0.9.42"
 # never hf-hub. (mempalace's default features still union `online` into the
 # shared build; UAR's embedding path performs no runtime downloads.)
 # ort-download-binaries fetches prebuilt ONNX Runtime at BUILD time only.
-fastembed = { version = "4", optional = true, default-features = false, features = [
+fastembed = { version = "5", optional = true, default-features = false, features = [
   "ort-download-binaries",
 ] }
 # Local embedding inference via Candle (optional, gated by `candle-embeddings`).
