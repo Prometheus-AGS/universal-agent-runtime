@@ -318,8 +318,8 @@ mod tests {
 
         #[test]
         fn rrf_empty_inputs_yield_empty_output(
-            vector_results in prop::collection::vec(arb_knowledge_match(), 0..0),
-            graph_results in prop::collection::vec(arb_knowledge_match(), 0..0),
+            vector_results in prop::collection::vec(arb_knowledge_match(), 0..=0),
+            graph_results in prop::collection::vec(arb_knowledge_match(), 0..=0),
         ) {
             let retriever = HybridRetriever::new();
             let results = retriever.fuse(vector_results, graph_results);

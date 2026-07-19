@@ -101,6 +101,31 @@ pub enum NormalizedEvent {
         operation: String,
     },
 
+    /// A skill or skill-like provider capability was activated.
+    ///
+    /// UAR proper owns real skill routing/execution. This lower-level event is
+    /// for external/local drivers that need to preserve provider-emitted skill
+    /// activation chunks without flattening them into assistant prose.
+    #[serde(rename = "skill.activation")]
+    SkillActivation {
+        /// Skill identifier or display name.
+        name: String,
+        /// Lifecycle/status label such as `activated`, `running`, `complete`,
+        /// or `failed`.
+        status: String,
+    },
+
+    /// Provider-specific semantic event that should remain inspectable.
+    #[serde(rename = "custom")]
+    Custom {
+        /// Provider/source namespace.
+        source: String,
+        /// Provider event name.
+        event_name: String,
+        /// Original payload.
+        payload: serde_json::Value,
+    },
+
     // ─────────────────────────────────────────────────────────────────────
     // Tool Calls
     // ─────────────────────────────────────────────────────────────────────
@@ -257,6 +282,8 @@ pub fn event_name(evt: &NormalizedEvent) -> &'static str {
         NormalizedEvent::ReasoningDelta { .. } => "reasoning.delta",
         NormalizedEvent::CitationAdded { .. } => "citation.added",
         NormalizedEvent::MemoryUpdate { .. } => "memory.update",
+        NormalizedEvent::SkillActivation { .. } => "skill.activation",
+        NormalizedEvent::Custom { .. } => "custom",
         NormalizedEvent::ToolCallDelta { .. } => "tool_call.delta",
         NormalizedEvent::ToolCallComplete { .. } => "tool_call.complete",
         NormalizedEvent::ToolResult { .. } => "tool_result",
@@ -331,6 +358,34 @@ pub fn agui_sse_event(evt: &NormalizedEvent, request_id: &str) -> String {
                 "key": key,
                 "value": value,
                 "operation": operation
+            }),
+        ),
+        NormalizedEvent::SkillActivation { name, status } => (
+            "agui.custom",
+            serde_json::json!({
+                "kind": "custom",
+                "request_id": request_id,
+                "name": "uar.skill.activated",
+                "value": {
+                    "skill": {"id": name},
+                    "status": status
+                }
+            }),
+        ),
+        NormalizedEvent::Custom {
+            source,
+            event_name,
+            payload,
+        } => (
+            "agui.custom",
+            serde_json::json!({
+                "kind": "custom",
+                "request_id": request_id,
+                "name": event_name,
+                "value": {
+                    "source": source,
+                    "payload": payload
+                }
             }),
         ),
         NormalizedEvent::ToolCallDelta {
@@ -502,5 +557,32 @@ mod tests {
         let sse = agui_sse_event(&event, "req-123");
         assert!(sse.contains("agui.message.delta"));
         assert!(sse.contains("req-123"));
+    }
+
+    #[test]
+    fn test_skill_activation_and_custom_events_are_serialized() {
+        let skill = NormalizedEvent::SkillActivation {
+            name: "knowme_diagnostics".to_string(),
+            status: "running".to_string(),
+        };
+        assert_eq!(event_name(&skill), "skill.activation");
+        let normalized = sse_event(&skill);
+        assert!(normalized.contains("skill.activation"));
+        assert!(normalized.contains("knowme_diagnostics"));
+
+        let agui = agui_sse_event(&skill, "req-123");
+        assert!(agui.contains("agui.custom"));
+        assert!(agui.contains("uar.skill.activated"));
+        assert!(agui.contains("knowme_diagnostics"));
+
+        let custom = NormalizedEvent::Custom {
+            source: "knowme".to_string(),
+            event_name: "knowme.provider_event".to_string(),
+            payload: serde_json::json!({"ok": true}),
+        };
+        assert_eq!(event_name(&custom), "custom");
+        let custom_sse = agui_sse_event(&custom, "req-123");
+        assert!(custom_sse.contains("knowme.provider_event"));
+        assert!(custom_sse.contains("\"ok\":true"));
     }
 }

@@ -5,7 +5,7 @@ use crate::session::SessionStore;
 use crate::uar::domain::{
     artifact::AgentArtifact,
     context::ContextConfig,
-    events::{CitationSource, MemoryItem, NormalizedEvent, StatePatchOp},
+    events::{ArtifactPayload, CitationSource, MemoryItem, NormalizedEvent, StatePatchOp},
     runs::{Run, RunStatus},
 };
 use crate::uar::rag::citation_stream::CitationStream;
@@ -1499,6 +1499,36 @@ impl RunManager {
                                     value,
                                     source: operation,
                                 }],
+                            }),
+                            crate::normalized::NormalizedEvent::SkillActivation {
+                                name,
+                                status,
+                            } => Some(NormalizedEvent::SkillActivated {
+                                run_id: execute_run_id.clone(),
+                                skill_id: name.clone(),
+                                title: name,
+                                selection_method: status,
+                            }),
+                            crate::normalized::NormalizedEvent::Custom {
+                                source,
+                                event_name,
+                                payload,
+                            } => Some(NormalizedEvent::Artifact {
+                                run_id: execute_run_id.clone(),
+                                artifact: ArtifactPayload {
+                                    artifact_id: format!("{source}:{event_name}"),
+                                    artifact_type: "provider_event".to_string(),
+                                    title: event_name,
+                                    content: serde_json::json!({
+                                        "source": source,
+                                        "payload": payload,
+                                    })
+                                    .to_string(),
+                                    language: Some("json".to_string()),
+                                    metadata: serde_json::json!({
+                                        "source": "external_llm_driver",
+                                    }),
+                                },
                             }),
                             crate::normalized::NormalizedEvent::ToolCallDelta {
                                 call_index,
