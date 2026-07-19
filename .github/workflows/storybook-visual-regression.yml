@@ -101,7 +101,7 @@ jobs:
 
       - name: Publish to Chromatic
         if: ${{ env.CHROMATIC_PROJECT_TOKEN != '' }}
-        uses: chromaui/action@v1
+        uses: chromaui/action@v18
         with:
           workingDir: frontend
           projectToken: ${{ env.CHROMATIC_PROJECT_TOKEN }}
