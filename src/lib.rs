@@ -129,7 +129,8 @@ pub struct AppState {
     pub a2ui_registry: Arc<uar::a2ui::registry::A2uiRegistry>,
     /// Model router — selects optimal model based on capability requirements from the catalog.
     pub model_router: Arc<llm::ModelRouter>,
-    /// Per-session agent configuration overrides (in-memory).
+    /// Read-through compatibility cache for legacy per-session agent configuration.
+    /// Durable conversation policy lives in `PersistenceLayer`.
     pub agent_sessions:
         Arc<tokio::sync::RwLock<HashMap<String, uar::api::discovery::AgentSessionConfig>>>,
     /// Wasm sandbox runtime for executing Wasm agents (feature-gated)

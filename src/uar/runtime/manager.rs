@@ -2,10 +2,15 @@ use crate::config::{LlmConfig, SkillEvolutionConfig};
 use crate::llm::{LiterLlmDriver, LlmDriver, Message, MessageRole, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::session::SessionStore;
+use crate::uar::a2ui::realtime::A2uiReplayBackbone;
 use crate::uar::domain::{
     artifact::AgentArtifact,
     context::ContextConfig,
     events::{ArtifactPayload, CitationSource, MemoryItem, NormalizedEvent, StatePatchOp},
+    policy::{
+        ChatMode, EffectiveRunPolicy, ModelRoute, PolicyResolutionInput, PolicyUniverse,
+        SelectionMode, ToolApprovalPolicy, policy_from_agent_artifact, resolve_run_policy,
+    },
     runs::{Run, RunStatus},
 };
 use crate::uar::rag::citation_stream::CitationStream;
@@ -139,6 +144,9 @@ pub struct RunManager {
     provider_service: Option<Arc<crate::uar::security::credentials::ProviderService>>,
     /// Native skill registry for in-process tool execution
     native_skills: Arc<NativeSkillRegistry>,
+    /// Shared A2UI replay stream. Agent tool output and REST message ingress
+    /// publish through the same backbone so every client sees one surface.
+    a2ui_backbone: Arc<crate::uar::a2ui::realtime::InMemoryReplayBackbone>,
     /// Optional host-supplied primary LLM driver. Used by embedded/library
     /// deployments that keep provider credentials and local model runtimes
     /// outside UAR while letting UAR own the agent/tool/skill loop.
@@ -432,11 +440,6 @@ impl RunManager {
         classifier_config: ClassifierConfig,
         native_skills: Arc<NativeSkillRegistry>,
     ) -> Self {
-        // Initialize vector matcher if not already (caller should ideally do this)
-        if let Err(e) = vector_matcher.initialize().await {
-            tracing::error!("Failed to initialize VectorMatcher: {:?}", e);
-        }
-
         let tag_matcher = Arc::new(crate::uar::runtime::matching::TagMatcher::new());
         let context_manager = Arc::new(ContextManager::new(ContextConfig::default()));
 
@@ -477,6 +480,7 @@ impl RunManager {
             provider_registry: None,
             provider_service: None,
             native_skills,
+            a2ui_backbone: crate::uar::a2ui::realtime::InMemoryReplayBackbone::new(),
             primary_driver: None,
             pending_approvals: Arc::new(Mutex::new(HashMap::new())),
             root_cancellation: CancellationToken::new(),
@@ -608,6 +612,15 @@ impl RunManager {
         self
     }
 
+    #[must_use]
+    pub fn with_a2ui_backbone(
+        mut self,
+        backbone: Arc<crate::uar::a2ui::realtime::InMemoryReplayBackbone>,
+    ) -> Self {
+        self.a2ui_backbone = backbone;
+        self
+    }
+
     /// Resolve a pending tool-call approval for the given run.
     /// Returns `true` if an approval was pending and the decision was delivered,
     /// `false` if no pending approval was found for that run_id.
@@ -643,6 +656,23 @@ impl RunManager {
         true
     }
 
+    /// Cancel the current in-flight run associated with a conversation session.
+    ///
+    /// Service clients receive a stable session identifier before the first
+    /// streamed event reveals UAR's internal run id. Resolving the mapping in
+    /// the runtime keeps cancellation reliable without asking clients to parse
+    /// transport-specific event payloads.
+    pub async fn cancel_session_run(&self, session_id: &str) -> bool {
+        let run_id = {
+            let session_runs = self.session_current_run.read().await;
+            session_runs.get(session_id).cloned()
+        };
+        match run_id {
+            Some(run_id) => self.cancel_run(&run_id).await,
+            None => false,
+        }
+    }
+
     /// A clone of the root cancellation token.
     ///
     /// Cancelling it aborts ALL in-flight runs at once; used to wire run
@@ -650,6 +680,81 @@ impl RunManager {
     #[must_use]
     pub fn root_cancellation_token(&self) -> CancellationToken {
         self.root_cancellation.clone()
+    }
+
+    async fn resolve_legacy_run_policy(
+        &self,
+        artifact: &AgentArtifact,
+        conversation_id: &str,
+    ) -> EffectiveRunPolicy {
+        let skills = match &self.skill_service {
+            Some(service) => service
+                .get_enabled_skills()
+                .await
+                .into_iter()
+                .map(|skill| skill.skill_id)
+                .collect(),
+            None => self
+                .skills
+                .read()
+                .await
+                .list_enabled()
+                .into_iter()
+                .map(|skill| skill.skill_id)
+                .collect(),
+        };
+        let mut tools = self
+            .global_mcp
+            .tools()
+            .iter()
+            .map(|(name, _)| name.clone())
+            .collect::<std::collections::BTreeSet<_>>();
+        for tool in self.native_skills.openai_tools_json().await {
+            if let Some(name) = tool
+                .get("function")
+                .and_then(|function| function.get("name"))
+                .and_then(serde_json::Value::as_str)
+            {
+                tools.insert(name.to_string());
+            }
+        }
+        let mut knowledge_bases = std::collections::BTreeSet::new();
+        let conversation = if let Some(persistence) = &self.persistence {
+            if let Ok(records) = persistence.list_knowledge_bases().await {
+                for knowledge_base in records {
+                    knowledge_bases.insert(knowledge_base.id);
+                    knowledge_bases.insert(knowledge_base.name);
+                }
+            }
+            persistence
+                .load_conversation_policy(conversation_id)
+                .await
+                .ok()
+                .flatten()
+                .map(|record| record.policy)
+        } else {
+            None
+        };
+        let default_model = ModelRoute {
+            provider_id: artifact.policy.provider.default.provider.clone(),
+            model_id: artifact.policy.provider.default.model.clone(),
+        };
+
+        resolve_run_policy(PolicyResolutionInput {
+            agent: Some(policy_from_agent_artifact(artifact)),
+            conversation,
+            universe: PolicyUniverse {
+                skills,
+                tools,
+                mcp_servers: self.global_mcp.server_names().into_iter().collect(),
+                knowledge_bases,
+            },
+            default_chat_mode: ChatMode::Agent,
+            default_context_strategy: self.message_context_strategy.clone(),
+            default_agent_id: Some(artifact.id.clone()),
+            default_model: Some(default_model),
+            ..PolicyResolutionInput::default()
+        })
     }
 
     #[instrument(
@@ -669,6 +774,67 @@ impl RunManager {
         session_id: Option<String>,
         user_id: Option<String>,
         memory_hits: Vec<MemoryItem>,
+    ) -> String {
+        self.start_run_with_policy(artifact, input, session_id, user_id, memory_hits, None)
+            .await
+    }
+
+    /// Continue an existing run after a user responds to an interactive A2UI
+    /// surface. A continuation is a real agent run in the same conversation,
+    /// not a synthetic event injected into a completed stream.
+    pub async fn continue_with_interaction(
+        &self,
+        run_id: &str,
+        interaction: serde_json::Value,
+    ) -> Result<String, String> {
+        let run = self
+            .get_run(run_id)
+            .await
+            .ok_or_else(|| format!("run '{run_id}' not found"))?;
+        let persistence = self
+            .persistence
+            .as_ref()
+            .ok_or_else(|| "agent persistence is unavailable".to_string())?;
+        let artifact = persistence
+            .load_agent(&run.agent_id)
+            .await
+            .map_err(|error| format!("failed to load agent '{}': {error}", run.agent_id))?
+            .ok_or_else(|| format!("agent '{}' not found", run.agent_id))?;
+        let input = serde_json::json!({
+            "type": "a2ui.user_action",
+            "sourceRunId": run_id,
+            "interaction": interaction,
+        })
+        .to_string();
+        let effective_policy = run
+            .context
+            .get("effective_run_policy")
+            .cloned()
+            .and_then(|value| serde_json::from_value(value).ok());
+        Ok(self
+            .start_run_with_policy(
+                artifact,
+                input,
+                run.conversation_id,
+                run.user_id,
+                Vec::new(),
+                effective_policy,
+            )
+            .await)
+    }
+
+    /// Start a run using an immutable policy already resolved by UAR's control
+    /// plane. When omitted, a backward-compatible policy is resolved from the
+    /// artifact, persisted conversation policy, and currently available
+    /// resources.
+    pub async fn start_run_with_policy(
+        &self,
+        artifact: AgentArtifact,
+        input: String,
+        session_id: Option<String>,
+        user_id: Option<String>,
+        memory_hits: Vec<MemoryItem>,
+        resolved_policy: Option<EffectiveRunPolicy>,
     ) -> String {
         let run_id = Uuid::new_v4().to_string();
         tracing::Span::current().record("run_id", &run_id);
@@ -690,6 +856,14 @@ impl RunManager {
             self.sessions.create()
         };
 
+        let effective_policy = match resolved_policy {
+            Some(policy) => policy,
+            None => {
+                self.resolve_legacy_run_policy(&artifact, session.id())
+                    .await
+            }
+        };
+
         // 2. Add User Message
         session.add_user_message(&input);
 
@@ -704,7 +878,10 @@ impl RunManager {
             conversation_id: Some(session.id().to_string()),
             user_id,
             status: RunStatus::Running,
-            context: serde_json::json!({ "input": input }),
+            context: serde_json::json!({
+                "input": input,
+                "effective_run_policy": effective_policy,
+            }),
         };
 
         {
@@ -718,6 +895,24 @@ impl RunManager {
                 },
             );
         }
+
+        emitter
+            .emit(NormalizedEvent::Artifact {
+                run_id: run_id.clone(),
+                artifact: ArtifactPayload {
+                    artifact_id: format!("run-policy-{run_id}"),
+                    artifact_type: "effective_run_policy".to_string(),
+                    title: "Effective run policy".to_string(),
+                    content: serde_json::to_string(&effective_policy)
+                        .unwrap_or_else(|_| "{}".to_string()),
+                    language: Some("json".to_string()),
+                    metadata: serde_json::json!({
+                        "version": effective_policy.version,
+                        "warnings": effective_policy.warnings,
+                    }),
+                },
+            })
+            .await;
         {
             let mut session_runs = self.session_current_run.write().await;
             session_runs.insert(session.id().to_string(), run_id.clone());
@@ -739,41 +934,43 @@ impl RunManager {
         let mut system_prompt = artifact.prompt.system.clone();
 
         // RAG Retrieval - scoped to agent's configured knowledge bases
-        if artifact.memory.kb.enabled
+        if !effective_policy.knowledge_bases.ids.is_empty()
             && let Some(db) = &self.persistence
         {
             match self.vector_matcher.embed_batch(vec![input.clone()]).await {
                 Ok(embeddings) => {
                     if let Some(query_vec) = embeddings.first() {
-                        // Get agent's configured KBs (or use all if empty)
-                        let kb_names = &artifact.memory.kb.knowledge_bases;
-
-                        let search_result = if kb_names.is_empty() {
-                            // No specific KBs configured - search all
-                            db.search_knowledge(query_vec, 3, 0.7).await
-                        } else {
-                            // Resolve KB names to IDs and search scoped
-                            let mut kb_ids = Vec::new();
-                            for name in kb_names {
-                                if let Ok(Some(kb)) = db.get_knowledge_base_by_name(name).await {
-                                    kb_ids.push(kb.id);
-                                } else {
-                                    tracing::warn!("Knowledge base not found: {}", name);
-                                }
-                            }
-
-                            if kb_ids.is_empty() {
-                                // All configured KBs were not found - fallback to all
-                                tracing::warn!(
-                                    "No configured knowledge bases found, searching all"
-                                );
-                                db.search_knowledge(query_vec, 3, 0.7).await
-                            } else {
-                                let kb_id_refs: Vec<&str> =
-                                    kb_ids.iter().map(String::as_str).collect();
-                                db.search_knowledge_scoped(&kb_id_refs, query_vec, 3, 0.7)
+                        let mut kb_ids = Vec::new();
+                        for id_or_name in &effective_policy.knowledge_bases.ids {
+                            let resolved = db
+                                .get_knowledge_base(id_or_name)
+                                .await
+                                .ok()
+                                .flatten()
+                                .or_else(|| None);
+                            let resolved = match resolved {
+                                Some(kb) => Some(kb),
+                                None => db
+                                    .get_knowledge_base_by_name(id_or_name)
                                     .await
+                                    .ok()
+                                    .flatten(),
+                            };
+                            if let Some(kb) = resolved
+                                && !kb_ids.contains(&kb.id)
+                            {
+                                kb_ids.push(kb.id);
                             }
+                        }
+
+                        // A configured selection that resolves to nothing is a
+                        // safe empty result, never an implicit search-all.
+                        let search_result = if kb_ids.is_empty() {
+                            Ok(Vec::new())
+                        } else {
+                            let kb_id_refs: Vec<&str> = kb_ids.iter().map(String::as_str).collect();
+                            db.search_knowledge_scoped(&kb_id_refs, query_vec, 3, 0.7)
+                                .await
                         };
 
                         match search_result {
@@ -821,9 +1018,10 @@ impl RunManager {
         }
 
         // SKILL INJECTION: Use SkillService if available, otherwise intent classifier
-        let (matched_skills, skill_selection_method): (Vec<_>, String) = if let Some(
+        let (mut matched_skills, skill_selection_method): (Vec<_>, String) = if let Some(
             ref skill_service,
-        ) = self.skill_service
+        ) =
+            self.skill_service
         {
             // Delegate to SkillService for coordinated matching.
             let agent_id = artifact.id.clone();
@@ -946,6 +1144,9 @@ impl RunManager {
             }
         };
 
+        let allowed_skill_ids = effective_policy.skills.ids.iter().collect::<HashSet<_>>();
+        matched_skills.retain(|skill| allowed_skill_ids.contains(&skill.skill_id));
+
         // Collect registries to merge (starting with global)
         let mut registries_to_merge = Vec::new();
         // CH-08: record which MCP server(s) each matched skill introduces,
@@ -998,13 +1199,18 @@ impl RunManager {
         // driver is built from the same default config only when the
         // resolved strategy actually needs one.
         let effective_strategy = {
-            let (provider_id, model_id) =
-                crate::llm::registry::split_model_string_pub(&self.llm_config.model);
+            let (provider_id, model_id) = effective_policy
+                .model
+                .as_ref()
+                .map(|route| (route.provider_id.clone(), route.model_id.clone()))
+                .unwrap_or_else(|| {
+                    crate::llm::registry::split_model_string_pub(&self.llm_config.model)
+                });
             let effective_context_tokens = crate::llm::catalog::ModelCatalog::global()
                 .model(&provider_id, &model_id)
                 .map(|m| (m.limits.context_window as f64 * 0.7) as u32);
             crate::uar::context::resolve_effective_strategy(
-                &self.message_context_strategy,
+                &effective_policy.context_strategy,
                 effective_context_tokens,
             )
         };
@@ -1030,8 +1236,17 @@ impl RunManager {
         .await;
 
         // Token-budget context management (summarization, etc.)
+        let context_limit = effective_policy
+            .model
+            .as_ref()
+            .and_then(|route| {
+                crate::llm::catalog::ModelCatalog::global()
+                    .model(&route.provider_id, &route.model_id)
+                    .map(|model| model.limits.context_window as usize)
+            })
+            .unwrap_or(8_192);
         let (optimized_messages, context_action) =
-            self.context_manager.apply(messages, 128_000).await;
+            self.context_manager.apply(messages, context_limit).await;
         let messages = optimized_messages;
         if let Some(act) = context_action {
             emitter.emit(NormalizedEvent::ContextAction(act)).await;
@@ -1055,18 +1270,46 @@ impl RunManager {
         for reg in registries_to_merge {
             final_mcp = final_mcp.merge(&reg);
         }
-        let mcp = Arc::new(final_mcp);
+        let selected_servers = effective_policy
+            .mcp_servers
+            .ids
+            .iter()
+            .cloned()
+            .collect::<HashSet<_>>();
+        let selected_tools = effective_policy
+            .tools
+            .ids
+            .iter()
+            .cloned()
+            .collect::<HashSet<_>>();
+        let server_filter = matches!(
+            effective_policy.mcp_servers.mode,
+            SelectionMode::None | SelectionMode::Selected
+        )
+        .then_some(&selected_servers);
+        let tool_filter = matches!(
+            effective_policy.tools.mode,
+            SelectionMode::None | SelectionMode::Selected
+        )
+        .then_some(&selected_tools);
+        let mcp = Arc::new(final_mcp.filtered(server_filter, tool_filter));
+        let native_skills = Arc::new(self.native_skills.filtered(tool_filter).await);
 
         // Resolve per-agent LLM config via provider registry, falling back to global
         let run_llm_config = if let Some(ref registry) = self.provider_registry {
+            let mut provider_policy = artifact.policy.provider.clone();
+            if let Some(route) = &effective_policy.model {
+                provider_policy.default.provider = route.provider_id.clone();
+                provider_policy.default.model = route.model_id.clone();
+            }
             match registry
-                .resolve_llm_config_from_policy(&artifact.policy.provider)
+                .resolve_llm_config_from_policy(&provider_policy)
                 .await
             {
                 Some(resolved) => {
                     tracing::info!(
-                        provider = %artifact.policy.provider.default.provider,
-                        model = %artifact.policy.provider.default.model,
+                        provider = %provider_policy.default.provider,
+                        model = %provider_policy.default.model,
                         "Using per-agent provider settings"
                     );
                     resolved
@@ -1129,10 +1372,10 @@ impl RunManager {
             Some(driver) => Ok(Orchestrator::from_driver(
                 run_llm_config,
                 mcp,
-                Arc::clone(&self.native_skills),
+                Arc::clone(&native_skills),
                 driver,
             )),
-            None => Orchestrator::new(run_llm_config, mcp, Arc::clone(&self.native_skills)),
+            None => Orchestrator::new(run_llm_config, mcp, Arc::clone(&native_skills)),
         } {
             Ok(o) => {
                 // CH-03: attach the shared provider-health monitor (always,
@@ -1175,6 +1418,7 @@ impl RunManager {
                 let approval_pending = Arc::clone(&self.pending_approvals);
                 let approval_agent_id = artifact.id.clone();
                 let approval_governance = self.governance_engine.clone();
+                let effective_tool_approval = effective_policy.tool_approval;
                 let gate: crate::llm::ToolApprovalGate = Arc::new(
                     move |tool_call_id, tool_name, arguments_json, call_index| {
                         let run_id = approval_run_id.clone();
@@ -1183,7 +1427,23 @@ impl RunManager {
                         let agent_id = approval_agent_id.clone();
                         let governance = approval_governance.clone();
                         Box::pin(async move {
-                            let heuristic_flag = tool_requires_approval(&tool_name);
+                            if effective_tool_approval == ToolApprovalPolicy::Deny {
+                                let reason = format!(
+                                    "Tool '{tool_name}' is denied by the effective run policy"
+                                );
+                                emitter
+                                    .emit(NormalizedEvent::ToolCallDenied {
+                                        run_id: run_id.clone(),
+                                        call_index,
+                                        tool_call_id: tool_call_id.clone(),
+                                        name: tool_name.clone(),
+                                        reason: reason.clone(),
+                                    })
+                                    .await;
+                                return crate::llm::ToolApprovalResult::Rejected { reason };
+                            }
+                            let heuristic_flag = effective_tool_approval == ToolApprovalPolicy::Ask
+                                || tool_requires_approval(&tool_name);
                             let decision = match &governance {
                                 Some(engine) => engine
                                     .tool_decision(&agent_id, &tool_name, heuristic_flag)
@@ -1298,6 +1558,7 @@ impl RunManager {
         }
         let graph_for_run = self.agent_graph.clone();
         let persistence_for_run = self.persistence.clone();
+        let a2ui_backbone_for_run = Arc::clone(&self.a2ui_backbone);
         // Cancellation: the run's child token (selected on in the consumption loop,
         // moved into the task below) and the registry used to deregister it on
         // terminal state.
@@ -1630,14 +1891,73 @@ impl RunManager {
                                     .get(&id)
                                     .cloned()
                                     .unwrap_or_else(|| "tool".to_string());
+                                let output = serde_json::from_str(&content)
+                                    .unwrap_or_else(|_| serde_json::Value::String(content));
+
+                                // `a2ui_render` is a first-class UAR tool. Its
+                                // validated output becomes both canonical state
+                                // patches and a renderable AG-UI artifact before
+                                // the ordinary ToolEnd is published.
+                                if tool == "a2ui_render" && success {
+                                    if let Some(messages) = output
+                                        .get("a2uiMessages")
+                                        .and_then(serde_json::Value::as_array)
+                                    {
+                                        let mut source = Vec::new();
+                                        let mut surface_ids = Vec::new();
+                                        for raw in messages {
+                                            match crate::uar::a2ui::protocol::parse_message(raw.clone()) {
+                                                Ok(message) => {
+                                                    if !surface_ids.contains(&message.surface_id) {
+                                                        surface_ids.push(message.surface_id.clone());
+                                                    }
+                                                    let op = crate::uar::a2ui::realtime::surface_message_to_state_patch(
+                                                        &message.surface_id,
+                                                        message.kind,
+                                                        message.payload,
+                                                    );
+                                                    a2ui_backbone_for_run.publish(&execute_run_id, op.clone());
+                                                    emitter.emit(NormalizedEvent::StatePatch {
+                                                        run_id: execute_run_id.clone(),
+                                                        patch: vec![op],
+                                                    }).await;
+                                                    source.push(message.raw.to_string());
+                                                }
+                                                Err(error) => {
+                                                    emitter.emit(NormalizedEvent::Error {
+                                                        run_id: execute_run_id.clone(),
+                                                        code: "a2ui_protocol_error".to_string(),
+                                                        message: error,
+                                                    }).await;
+                                                }
+                                            }
+                                        }
+                                        if !source.is_empty() {
+                                            emitter.emit(NormalizedEvent::ArtifactDisplay {
+                                                run_id: execute_run_id.clone(),
+                                                artifact: ArtifactPayload {
+                                                    artifact_id: format!("a2ui:{}", uuid::Uuid::new_v4()),
+                                                    artifact_type: "a2ui".to_string(),
+                                                    title: "Interactive UI".to_string(),
+                                                    content: source.join("\n"),
+                                                    language: Some("application/a2ui+json".to_string()),
+                                                    metadata: serde_json::json!({
+                                                        "profile": "uar.a2ui/1",
+                                                        "surfaceIds": surface_ids,
+                                                        "sourceTool": "a2ui_render",
+                                                    }),
+                                                },
+                                            }).await;
+                                        }
+                                    }
+                                }
 
                                 Some(NormalizedEvent::ToolEnd {
                                     run_id: execute_run_id.clone(),
                                     call_index,
                                     tool_call_id: id,
                                     tool,
-                                    output: serde_json::from_str(&content)
-                                        .unwrap_or(serde_json::Value::String(content)),
+                                    output,
                                     ok: success,
                                 })
                             }

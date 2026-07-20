@@ -12,6 +12,7 @@ use std::sync::{Arc, Mutex};
 pub struct MockLlmDriver {
     responses: Arc<Mutex<Vec<Vec<NormalizedEvent>>>>,
     call_count: Arc<Mutex<usize>>,
+    requests: Arc<Mutex<Vec<LlmRequest>>>,
 }
 
 impl MockLlmDriver {
@@ -22,6 +23,7 @@ impl MockLlmDriver {
         Self {
             responses: Arc::new(Mutex::new(responses)),
             call_count: Arc::new(Mutex::new(0)),
+            requests: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -39,6 +41,11 @@ impl MockLlmDriver {
     pub fn call_count(&self) -> usize {
         *self.call_count.lock().unwrap()
     }
+
+    /// Requests captured in call order for deterministic adapter assertions.
+    pub fn requests(&self) -> Vec<LlmRequest> {
+        self.requests.lock().unwrap().clone()
+    }
 }
 
 impl std::fmt::Debug for MockLlmDriver {
@@ -53,12 +60,13 @@ impl std::fmt::Debug for MockLlmDriver {
 impl LlmDriver for MockLlmDriver {
     async fn stream(
         &self,
-        _req: LlmRequest,
+        req: LlmRequest,
     ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>> {
         let mut count = self.call_count.lock().unwrap();
         let idx = *count;
         *count += 1;
         drop(count);
+        self.requests.lock().unwrap().push(req);
 
         let responses = self.responses.lock().unwrap();
         let events = responses

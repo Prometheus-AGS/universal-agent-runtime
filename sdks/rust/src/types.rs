@@ -3,6 +3,68 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// Secret-free configured provider returned by UAR administration APIs.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ProviderView {
+    pub id: String,
+    pub display_name: String,
+    pub base_url: String,
+    pub protocol: Value,
+    pub default_model: Option<String>,
+    #[serde(default)]
+    pub models: Vec<ProviderModelConfig>,
+    pub enabled: bool,
+    pub credential_configured: bool,
+}
+
+/// Provider model route with UAR-owned enablement.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ProviderModelConfig {
+    pub id: String,
+    pub display_name: Option<String>,
+    pub context_window: Option<u32>,
+    pub supports_vision: bool,
+    pub supports_tools: bool,
+    pub max_output_tokens: Option<u32>,
+    #[serde(default = "sdk_default_true")]
+    pub enabled: bool,
+}
+
+const fn sdk_default_true() -> bool {
+    true
+}
+
+/// Provider configuration mutation. API keys are write-only.
+#[derive(Debug, Clone, Serialize)]
+pub struct SaveProviderConfig {
+    pub id: String,
+    pub display_name: String,
+    pub base_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+    pub protocol: Value,
+    pub default_model: Option<String>,
+    pub models: Vec<ProviderModelConfig>,
+    pub enabled: bool,
+}
+
+/// Configured-provider list envelope.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ProvidersResponse {
+    pub providers: Vec<ProviderView>,
+    pub default_id: Option<String>,
+}
+
+/// Result from a live provider credential/endpoint validation call.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ProviderTestResponse {
+    pub ok: bool,
+    pub provider_id: String,
+    pub model_id: String,
+    pub latency_ms: u128,
+    pub received_text: bool,
+}
+
 /// OpenAI-compatible chat message.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ChatMessage {
@@ -39,6 +101,18 @@ pub struct ChatCompletionRequest {
     /// Structured-output declaration.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub response_format: Option<Value>,
+    /// Stable conversation/session id used for history and scoped policy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    /// Persisted UAR agent id. Omit to use the protected orchestrator/default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    /// Typed per-turn scoped run policy.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub run_policy: Option<Value>,
+    /// Streaming vocabulary (`openai`, `agui`, `dual`, or `agui_spec`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stream_mode: Option<String>,
 }
 
 /// Chat completion response. Unknown provider fields are retained.
@@ -134,7 +208,28 @@ pub struct ArtifactResponseAck {
     pub run_id: String,
     /// Artifact id that accepted the response.
     pub artifact_id: String,
+    /// New run that continues the same conversation after the interaction.
+    pub continuation_run_id: String,
     /// Acceptance status.
+    pub status: String,
+}
+/// Standard A2UI user action sent back to a rendered surface.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct A2uiActionRequest {
+    pub surface_id: String,
+    pub name: String,
+    pub source_component_id: String,
+    pub timestamp: Option<String>,
+    pub context: Value,
+    pub a2ui_client_data_model: Option<Value>,
+}
+
+/// Acknowledgement containing the real continuation run.
+#[derive(Debug, Clone, Deserialize)]
+pub struct A2uiActionAck {
+    pub run_id: String,
+    pub continuation_run_id: String,
     pub status: String,
 }
 /// Persisted run checkpoint.

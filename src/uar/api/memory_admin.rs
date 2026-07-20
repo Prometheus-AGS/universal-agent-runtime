@@ -106,11 +106,10 @@ pub async fn list_memories_handler(
     Query(query): Query<ListMemoriesQuery>,
 ) -> impl IntoResponse {
     let Some(svc) = &state.memory_service else {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            Json(json!({"error": "Memory system not enabled"})),
-        )
-            .into_response();
+        // Disabled memory is a valid administrative state, not an outage.  A
+        // settings client must be able to render the empty collection and let
+        // the user enable it without producing a failed network request.
+        return Json(json!({"enabled": false, "total": 0, "items": []})).into_response();
     };
 
     let ctx = admin_ctx(query.user_id.as_deref());

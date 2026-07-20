@@ -54,9 +54,7 @@ impl std::fmt::Debug for FetchMcpServer {
 
 impl FetchMcpServer {
     fn new() -> anyhow::Result<Self> {
-        let client = reqwest::Client::builder()
-            .user_agent(USER_AGENT)
-            .build()?;
+        let client = reqwest::Client::builder().user_agent(USER_AGENT).build()?;
         Ok(Self {
             client,
             tool_router: Self::tool_router(),
@@ -87,13 +85,13 @@ impl FetchMcpServer {
     #[tool(
         description = "Fetch a URL from the internet and return its content as text (HTML is converted to readable plain text unless raw=true)"
     )]
-    async fn fetch(&self, Parameters(p): Parameters<FetchParams>) -> Result<CallToolResult, McpError> {
-        let response = self
-            .client
-            .get(&p.url)
-            .send()
-            .await
-            .map_err(|e| McpError::internal_error(format!("failed to fetch '{}': {e}", p.url), None))?;
+    async fn fetch(
+        &self,
+        Parameters(p): Parameters<FetchParams>,
+    ) -> Result<CallToolResult, McpError> {
+        let response = self.client.get(&p.url).send().await.map_err(|e| {
+            McpError::internal_error(format!("failed to fetch '{}': {e}", p.url), None)
+        })?;
 
         let status = response.status();
         let content_type = response
@@ -103,10 +101,9 @@ impl FetchMcpServer {
             .unwrap_or("")
             .to_string();
 
-        let body = response
-            .text()
-            .await
-            .map_err(|e| McpError::internal_error(format!("failed to read response body: {e}"), None))?;
+        let body = response.text().await.map_err(|e| {
+            McpError::internal_error(format!("failed to read response body: {e}"), None)
+        })?;
 
         if !status.is_success() {
             return Err(McpError::internal_error(
@@ -116,7 +113,8 @@ impl FetchMcpServer {
         }
 
         let raw = p.raw.unwrap_or(false);
-        let is_html = content_type.contains("text/html") || content_type.contains("application/xhtml");
+        let is_html =
+            content_type.contains("text/html") || content_type.contains("application/xhtml");
         let converted = if raw || !is_html {
             body
         } else {

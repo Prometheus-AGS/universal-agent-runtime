@@ -585,7 +585,8 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
                 "artifactId": artifact.artifact_id,
                 "artifactType": artifact.artifact_type,
                 "title": artifact.title, "content": artifact.content,
-                "language": artifact.language, "metadata": artifact.metadata
+                "language": artifact.language, "metadata": artifact.metadata,
+                "sourceRunId": run_id
             }),
         ),
         NormalizedEvent::ArtifactInputRequest { run_id, artifact } => custom(
@@ -595,7 +596,8 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
                 "artifactId": artifact.artifact_id,
                 "artifactType": artifact.artifact_type,
                 "title": artifact.title, "content": artifact.content,
-                "metadata": artifact.metadata
+                "metadata": artifact.metadata,
+                "sourceRunId": run_id
             }),
         ),
         NormalizedEvent::Error {

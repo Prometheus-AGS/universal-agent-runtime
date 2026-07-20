@@ -93,6 +93,9 @@ pub struct ModelConfig {
     /// Maximum output tokens.
     #[serde(default)]
     pub max_output_tokens: Option<u32>,
+    /// Whether UAR may route runs to this model.
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
 }
 
 fn default_supports_tools() -> bool {
@@ -173,6 +176,7 @@ impl ProviderRegistry {
                     } else {
                         None
                     },
+                    enabled: true,
                 })
         });
         let models = if let Some(m) = catalog_model {
@@ -186,6 +190,7 @@ impl ProviderRegistry {
                 supports_vision: false,
                 supports_tools: true,
                 max_output_tokens: None,
+                enabled: true,
             }]
         };
 
@@ -414,6 +419,16 @@ impl ProviderRegistry {
             model.to_string()
         };
 
+        if config
+            .models
+            .iter()
+            .find(|candidate| candidate.id == resolved_model)
+            .is_some_and(|candidate| !candidate.enabled)
+        {
+            tracing::debug!(provider_id, model = %resolved_model, "Model is disabled, skipping");
+            return None;
+        }
+
         // When base_url is explicitly set, the provider routing is already handled
         // and the API expects just the model ID (e.g., "gpt-4o" not "openai/gpt-4o").
         // Only use provider/model format when liter-llm needs to auto-detect the provider.
@@ -574,6 +589,7 @@ fn models_from_catalog(provider: &ProviderInfo) -> Vec<ModelConfig> {
             } else {
                 None
             },
+            enabled: true,
         })
         .collect()
 }
@@ -714,6 +730,29 @@ mod tests {
 
         let llm = registry.resolve_to_llm_config("disabled", "model").await;
         assert!(llm.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_resolve_disabled_model() {
+        let registry = ProviderRegistry::new();
+        let mut config = make_test_config("openai", "https://api.openai.com");
+        config.models = vec![ModelConfig {
+            id: "test-model".to_string(),
+            display_name: Some("Test model".to_string()),
+            context_window: Some(8_192),
+            supports_vision: false,
+            supports_tools: true,
+            max_output_tokens: Some(1_024),
+            enabled: false,
+        }];
+        registry.register(config).await.unwrap();
+
+        assert!(
+            registry
+                .resolve_to_llm_config("openai", "test-model")
+                .await
+                .is_none()
+        );
     }
 
     #[tokio::test]

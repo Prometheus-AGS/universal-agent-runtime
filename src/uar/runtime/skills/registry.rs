@@ -71,10 +71,27 @@ impl SkillRegistry {
         self.skills.insert(skill.skill_id.clone(), skill);
     }
 
+    /// Register a skill that has already been loaded from durable storage.
+    ///
+    /// Startup hydration must not re-persist or eagerly embed every skill. In
+    /// addition to duplicating storage writes, doing so makes the UAR listener
+    /// depend on optional ONNX initialization. Embeddings are created only by
+    /// explicit mutations or when an embedding-backed operation is requested.
+    pub fn register_loaded(&mut self, skill: Skill) {
+        self.skills.insert(skill.skill_id.clone(), skill);
+    }
+
     /// Bulk register skills.
     pub async fn register_all(&mut self, skills: Vec<Skill>) {
         for skill in skills {
             self.register(skill).await;
+        }
+    }
+
+    /// Hydrate a batch that already belongs to a configured storage provider.
+    pub fn register_all_loaded(&mut self, skills: Vec<Skill>) {
+        for skill in skills {
+            self.register_loaded(skill);
         }
     }
 

@@ -22,6 +22,41 @@ pub trait EmbeddingBackend: Send + Sync + Debug {
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError>;
 }
 
+/// Non-fatal placeholder used when an optional embedding implementation is
+/// not compiled into the current UAR profile. Chat, tools, AG-UI and A2UI must
+/// remain available; an operation that actually requires embeddings receives
+/// the original, actionable backend error at that boundary.
+#[derive(Debug)]
+pub struct UnavailableEmbeddingBackend {
+    dimension: usize,
+    reason: String,
+}
+
+impl UnavailableEmbeddingBackend {
+    #[must_use]
+    pub fn new(dimension: usize, reason: impl Into<String>) -> Self {
+        Self {
+            dimension,
+            reason: reason.into(),
+        }
+    }
+}
+
+#[async_trait]
+impl EmbeddingBackend for UnavailableEmbeddingBackend {
+    fn backend_name(&self) -> &str {
+        "unavailable"
+    }
+
+    fn vector_dimension(&self) -> usize {
+        self.dimension
+    }
+
+    async fn embed(&self, _texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+        Err(EmbeddingError::BackendUnavailable(self.reason.clone()))
+    }
+}
+
 impl dyn EmbeddingBackend {
     /// Embed a single text and return the first (only) embedding.
     pub async fn embed_one(&self, text: &str) -> Result<Vec<f32>, EmbeddingError> {

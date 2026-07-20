@@ -3,6 +3,11 @@
 use crate::AppState;
 use crate::uar::api::a2a::registry::AgentInfo;
 use crate::uar::domain::artifact::AgentArtifact;
+use crate::uar::domain::policy::{
+    ChatMode, ConversationPolicyRecord, EffectiveRunPolicy, ModelRoute, PolicyResolutionInput,
+    PolicyUniverse, ResourceSelection, RunPolicy, SelectionMode, ToolApprovalPolicy,
+    policy_from_agent_artifact, resolve_run_policy,
+};
 use crate::uar::domain::runs::RunStatus;
 use crate::uar::domain::skills::{SkillConstraints, SkillTriggers};
 use axum::{
@@ -358,6 +363,12 @@ pub async fn delete_agent(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+    if is_protected_agent_id(&id) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            format!("Agent '{id}' is built in and cannot be deleted"),
+        ));
+    }
     let persistence = state.persistence.as_ref().ok_or((
         StatusCode::SERVICE_UNAVAILABLE,
         "No persistence layer".to_string(),
@@ -369,6 +380,22 @@ pub async fn delete_agent(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+fn is_protected_agent_id(id: &str) -> bool {
+    matches!(id, "default-agent" | "orchestrator-agent")
+}
+
+#[cfg(test)]
+mod protected_agent_tests {
+    use super::is_protected_agent_id;
+
+    #[test]
+    fn built_in_agents_cannot_be_deleted() {
+        assert!(is_protected_agent_id("default-agent"));
+        assert!(is_protected_agent_id("orchestrator-agent"));
+        assert!(!is_protected_agent_id("user-agent"));
+    }
 }
 
 // =========================================================================
@@ -476,18 +503,232 @@ pub struct AgentSessionConfig {
     pub tool_approval: Option<String>,
 }
 
+impl AgentSessionConfig {
+    fn into_run_policy(self) -> RunPolicy {
+        let model = self.model.as_deref().and_then(|value| {
+            value
+                .split_once('/')
+                .map(|(provider_id, model_id)| ModelRoute {
+                    provider_id: provider_id.to_string(),
+                    model_id: model_id.to_string(),
+                })
+        });
+        RunPolicy {
+            chat_mode: Some(ChatMode::Agent),
+            agent_id: Some(self.agent_id),
+            model,
+            tools: optional_selection(self.tools),
+            skills: optional_selection(self.skills),
+            knowledge_bases: optional_selection(self.knowledge_bases),
+            mcp_servers: optional_selection(self.mcp_servers),
+            tool_approval: parse_tool_approval(self.tool_approval.as_deref()),
+            ..RunPolicy::default()
+        }
+    }
+
+    fn from_run_policy(policy: &RunPolicy) -> Self {
+        Self {
+            agent_id: policy
+                .agent_id
+                .clone()
+                .unwrap_or_else(|| "default-agent".to_string()),
+            model: policy
+                .model
+                .as_ref()
+                .map(|route| format!("{}/{}", route.provider_id, route.model_id)),
+            tools: selected_ids(&policy.tools),
+            skills: selected_ids(&policy.skills),
+            knowledge_bases: selected_ids(&policy.knowledge_bases),
+            mcp_servers: selected_ids(&policy.mcp_servers),
+            tool_approval: match policy.tool_approval {
+                ToolApprovalPolicy::Inherit => None,
+                ToolApprovalPolicy::Auto => Some("auto".into()),
+                ToolApprovalPolicy::Ask => Some("ask".into()),
+                ToolApprovalPolicy::Deny => Some("deny".into()),
+            },
+        }
+    }
+}
+
+fn optional_selection(ids: Option<Vec<String>>) -> ResourceSelection {
+    ids.map(ResourceSelection::selected).unwrap_or_default()
+}
+
+fn selected_ids(selection: &ResourceSelection) -> Option<Vec<String>> {
+    (selection.mode == SelectionMode::Selected).then(|| selection.ids.clone())
+}
+
+fn parse_tool_approval(value: Option<&str>) -> ToolApprovalPolicy {
+    match value {
+        Some("ask") => ToolApprovalPolicy::Ask,
+        Some("deny") => ToolApprovalPolicy::Deny,
+        Some("auto") => ToolApprovalPolicy::Auto,
+        _ => ToolApprovalPolicy::Inherit,
+    }
+}
+
+fn policy_from_agent(agent: &AgentArtifact) -> RunPolicy {
+    policy_from_agent_artifact(agent)
+}
+
+async fn load_conversation_policy(state: &AppState, conversation_id: &str) -> Option<RunPolicy> {
+    if let Some(persistence) = &state.persistence {
+        match persistence.load_conversation_policy(conversation_id).await {
+            Ok(Some(record)) => return Some(record.policy),
+            Ok(None) => {}
+            Err(error) => {
+                tracing::warn!(%error, %conversation_id, "failed to load conversation policy")
+            }
+        }
+    }
+    state
+        .agent_sessions
+        .read()
+        .await
+        .get(conversation_id)
+        .cloned()
+        .map(AgentSessionConfig::into_run_policy)
+}
+
+async fn policy_universe(state: &AppState) -> PolicyUniverse {
+    let disabled_skills = match &state.settings_manager {
+        Some(manager) => manager
+            .list_namespace_with_meta("skill_config")
+            .await
+            .into_iter()
+            .filter(|entry| {
+                entry
+                    .setting
+                    .data
+                    .get("enabled")
+                    .and_then(serde_json::Value::as_bool)
+                    == Some(false)
+            })
+            .filter_map(|entry| {
+                entry
+                    .setting
+                    .key
+                    .strip_prefix("skill_config.")
+                    .map(str::to_owned)
+            })
+            .collect::<std::collections::BTreeSet<_>>(),
+        None => std::collections::BTreeSet::new(),
+    };
+    let skills = state
+        .skill_service
+        .get_skills()
+        .await
+        .into_iter()
+        .filter(|skill| skill.enabled)
+        .filter(|skill| {
+            let short_id = skill
+                .skill_id
+                .rsplit("::")
+                .next()
+                .unwrap_or(&skill.skill_id);
+            !disabled_skills.contains(short_id) && !disabled_skills.contains(&skill.skill_id)
+        })
+        .map(|skill| skill.skill_id)
+        .collect();
+    let mut tools = state
+        .mcp
+        .tools()
+        .iter()
+        .map(|(name, _)| name.clone())
+        .collect::<std::collections::BTreeSet<_>>();
+    for tool in state.native_skill_registry.openai_tools_json().await {
+        if let Some(name) = tool
+            .get("function")
+            .and_then(|function| function.get("name"))
+            .and_then(serde_json::Value::as_str)
+        {
+            tools.insert(name.to_string());
+        }
+    }
+    let mut knowledge_bases = std::collections::BTreeSet::new();
+    if let Some(persistence) = &state.persistence
+        && let Ok(records) = persistence.list_knowledge_bases().await
+    {
+        for knowledge_base in records {
+            knowledge_bases.insert(knowledge_base.id);
+            knowledge_bases.insert(knowledge_base.name);
+        }
+    }
+    PolicyUniverse {
+        skills,
+        tools,
+        mcp_servers: state.mcp.server_names().into_iter().collect(),
+        knowledge_bases,
+    }
+}
+
+/// Resolve the effective policy that UAR will use for a conversation and turn.
+pub async fn resolve_effective_run_policy(
+    state: &AppState,
+    conversation_id: &str,
+    agent: &AgentArtifact,
+    turn: Option<RunPolicy>,
+) -> EffectiveRunPolicy {
+    let agent_default = &agent.policy.provider.default;
+    let default_model = (!agent_default.provider.trim().is_empty()
+        && !agent_default.model.trim().is_empty())
+    .then(|| ModelRoute {
+        provider_id: agent_default.provider.clone(),
+        model_id: agent_default.model.clone(),
+    });
+    let global = match &state.settings_manager {
+        Some(manager) => manager
+            .get_typed::<RunPolicy>("run_policy.global")
+            .await
+            .map_err(|error| {
+                tracing::warn!(%error, "failed to load global run policy; using inherited defaults");
+                error
+            })
+            .ok()
+            .flatten(),
+        None => None,
+    };
+    let agent_policy = policy_from_agent(agent);
+    let conversation = load_conversation_policy(state, conversation_id).await;
+    resolve_run_policy(PolicyResolutionInput {
+        global,
+        agent: Some(agent_policy),
+        conversation,
+        turn,
+        universe: policy_universe(state).await,
+        default_chat_mode: ChatMode::Agent,
+        default_context_strategy: state.config.context_strategy.clone(),
+        default_agent_id: Some(agent.id.clone()),
+        default_model,
+        ..PolicyResolutionInput::default()
+    })
+}
+
 /// POST /api/sessions/{id}/agent-config
 pub async fn save_agent_session_config(
     State(state): State<AppState>,
     Path(session_id): Path<String>,
     Json(config): Json<AgentSessionConfig>,
 ) -> impl IntoResponse {
+    let policy = config.clone().into_run_policy();
+    if let Some(persistence) = &state.persistence
+        && let Err(error) = persistence
+            .save_conversation_policy(&ConversationPolicyRecord::new(session_id.clone(), policy))
+            .await
+    {
+        tracing::error!(%error, %session_id, "failed to persist conversation policy");
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "failed to persist conversation policy"})),
+        )
+            .into_response();
+    }
     state
         .agent_sessions
         .write()
         .await
         .insert(session_id, config.clone());
-    (StatusCode::OK, Json(config))
+    (StatusCode::OK, Json(config)).into_response()
 }
 
 /// GET /api/sessions/{id}/agent-config
@@ -495,6 +736,13 @@ pub async fn get_agent_session_config(
     State(state): State<AppState>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
+    if let Some(policy) = load_conversation_policy(&state, &session_id).await {
+        return (
+            StatusCode::OK,
+            Json(AgentSessionConfig::from_run_policy(&policy)),
+        )
+            .into_response();
+    }
     let sessions = state.agent_sessions.read().await;
     match sessions.get(&session_id) {
         Some(config) => match serde_json::to_value(config) {
@@ -523,8 +771,7 @@ pub async fn get_effective_config(
     State(state): State<AppState>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
-    let sessions = state.agent_sessions.read().await;
-    let Some(config) = sessions.get(&session_id) else {
+    let Some(policy) = load_conversation_policy(&state, &session_id).await else {
         return (
             StatusCode::NOT_FOUND,
             Json(json!({"error": "No agent session config found for this session"})),
@@ -533,32 +780,84 @@ pub async fn get_effective_config(
     };
 
     // Load the base agent definition from persistence (or built-in defaults).
-    let agent = resolve_agent_artifact(&state, &config.agent_id).await;
+    let agent_id = policy
+        .agent_id
+        .clone()
+        .unwrap_or_else(|| "default-agent".to_string());
+    let agent = resolve_agent_for_run(&state, &agent_id).await;
+    let effective = resolve_effective_run_policy(&state, &session_id, &agent, None).await;
+    (
+        StatusCode::OK,
+        Json(json!({
+            "session_id": session_id,
+            "agent": agent,
+            "requested_policy": policy,
+            "effective_policy": effective,
+        })),
+    )
+        .into_response()
+}
 
-    // Build effective config: agent defaults + session overrides.
-    let mut effective = serde_json::to_value(&agent).unwrap_or_else(|_| serde_json::json!({}));
-    if let Some(model) = &config.model {
-        effective["model_override"] = json!(model);
+/// PUT `/api/uar/conversations/{id}/policy`.
+pub async fn save_conversation_policy(
+    State(state): State<AppState>,
+    Path(conversation_id): Path<String>,
+    Json(policy): Json<RunPolicy>,
+) -> impl IntoResponse {
+    let record = ConversationPolicyRecord::new(conversation_id.clone(), policy);
+    let Some(persistence) = &state.persistence else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "persistence not configured"})),
+        )
+            .into_response();
+    };
+    match persistence.save_conversation_policy(&record).await {
+        Ok(()) => (StatusCode::OK, Json(record)).into_response(),
+        Err(error) => {
+            tracing::error!(%error, %conversation_id, "failed to persist conversation policy");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": "failed to persist conversation policy"})),
+            )
+                .into_response()
+        }
     }
-    if let Some(tools) = &config.tools {
-        effective["tools_override"] = json!(tools);
-    }
-    if let Some(skills) = &config.skills {
-        effective["skills_override"] = json!(skills);
-    }
-    if let Some(kbs) = &config.knowledge_bases {
-        effective["knowledge_bases_override"] = json!(kbs);
-    }
-    if let Some(mcp_servers) = &config.mcp_servers {
-        effective["mcp_servers_override"] = json!(mcp_servers);
-    }
-    if let Some(tool_approval) = &config.tool_approval {
-        effective["tool_approval_override"] = json!(tool_approval);
-    }
-    effective["session_id"] = json!(session_id);
-    effective["agent_id"] = json!(config.agent_id);
+}
 
-    (StatusCode::OK, Json(effective)).into_response()
+/// GET `/api/uar/conversations/{id}/policy`.
+pub async fn get_conversation_policy(
+    State(state): State<AppState>,
+    Path(conversation_id): Path<String>,
+) -> impl IntoResponse {
+    match load_conversation_policy(&state, &conversation_id).await {
+        Some(policy) => (StatusCode::OK, Json(policy)).into_response(),
+        // Missing means "inherit global/agent policy", not an exceptional
+        // resource failure. Returning JSON null keeps first-run web/mobile
+        // clients quiet while preserving the same typed optional contract.
+        None => (StatusCode::OK, Json(serde_json::Value::Null)).into_response(),
+    }
+}
+
+/// DELETE `/api/uar/conversations/{id}/policy`.
+pub async fn delete_conversation_policy(
+    State(state): State<AppState>,
+    Path(conversation_id): Path<String>,
+) -> impl IntoResponse {
+    if let Some(persistence) = &state.persistence
+        && let Err(error) = persistence
+            .delete_conversation_policy(&conversation_id)
+            .await
+    {
+        tracing::error!(%error, %conversation_id, "failed to delete conversation policy");
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": "failed to delete conversation policy"})),
+        )
+            .into_response();
+    }
+    state.agent_sessions.write().await.remove(&conversation_id);
+    StatusCode::NO_CONTENT.into_response()
 }
 
 /// RFC 7396 JSON Merge Patch: recursively merge `patch` into `target`.

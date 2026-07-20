@@ -2,6 +2,7 @@ use crate::session::Session;
 use crate::uar::domain::knowledge::{
     DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeMatch,
 };
+use crate::uar::domain::policy::ConversationPolicyRecord;
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::settings::schema::{Settings, SettingsType};
 use anyhow::Result;
@@ -36,6 +37,18 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     // Session Management
     async fn save_session(&self, session: &Session) -> Result<()>;
     async fn load_session(&self, id: &str) -> Result<Option<Session>>;
+
+    /// Save or replace a conversation-scoped chat policy.
+    async fn save_conversation_policy(&self, record: &ConversationPolicyRecord) -> Result<()>;
+
+    /// Load a conversation-scoped chat policy.
+    async fn load_conversation_policy(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Option<ConversationPolicyRecord>>;
+
+    /// Delete a conversation-scoped chat policy.
+    async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()>;
 
     // Skill Management
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()>;

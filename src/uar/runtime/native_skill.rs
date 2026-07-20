@@ -34,7 +34,7 @@
 //! registry.register(MyTool);
 //! ```
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use tokio::sync::RwLock;
@@ -129,12 +129,29 @@ impl NativeSkillRegistry {
         self.skills.read().await.is_empty()
     }
 
+    /// Clone a policy-filtered registry snapshot.
+    ///
+    /// `None` preserves every registered native skill. `Some` keeps only the
+    /// explicitly eligible names, matching the MCP registry's filtering
+    /// contract so scoped run policies govern both tool backends identically.
+    pub async fn filtered(&self, allowed: Option<&HashSet<String>>) -> Self {
+        let skills = self.skills.read().await;
+        let filtered = skills
+            .iter()
+            .filter(|(name, _)| allowed.is_none_or(|names| names.contains(*name)))
+            .map(|(name, skill)| (name.clone(), Arc::clone(skill)))
+            .collect();
+        Self {
+            skills: RwLock::new(filtered),
+        }
+    }
+
     /// Generate OpenAI-compatible tool definitions for all registered native skills.
     ///
     /// This allows native skills to be announced to the LLM alongside MCP tools.
     pub async fn openai_tools_json(&self) -> Vec<serde_json::Value> {
         let skills = self.skills.read().await;
-        skills
+        let mut tools = skills
             .values()
             .map(|skill| {
                 serde_json::json!({
@@ -146,7 +163,13 @@ impl NativeSkillRegistry {
                     }
                 })
             })
-            .collect()
+            .collect::<Vec<_>>();
+        tools.sort_by(|left, right| {
+            left["function"]["name"]
+                .as_str()
+                .cmp(&right["function"]["name"].as_str())
+        });
+        tools
     }
 }
 

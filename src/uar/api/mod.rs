@@ -11,6 +11,7 @@ pub mod discovery;
 pub mod ingest;
 pub mod knowledge;
 pub mod live;
+pub mod mcp_admin;
 pub mod memory;
 pub mod memory_admin;
 pub mod openai;

@@ -14,6 +14,7 @@ use crate::{
                 DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeMatch,
             },
             memory::{Memory, MemoryMatch},
+            policy::ConversationPolicyRecord,
             skills::{Skill, SkillMatch},
         },
         persistence::PersistenceLayer,
@@ -24,6 +25,7 @@ use crate::{
 #[derive(Debug, Default)]
 pub struct InMemoryProvider {
     sessions: RwLock<HashMap<String, Session>>,
+    conversation_policies: RwLock<HashMap<String, ConversationPolicyRecord>>,
     skills: RwLock<HashMap<String, Skill>>,
     knowledge_bases: RwLock<HashMap<String, KnowledgeBase>>,
     chunks: RwLock<HashMap<String, KnowledgeChunk>>,
@@ -58,6 +60,22 @@ impl PersistenceLayer for InMemoryProvider {
     }
     async fn load_session(&self, id: &str) -> Result<Option<Session>> {
         Ok(read(&self.sessions)?.get(id).cloned())
+    }
+    async fn save_conversation_policy(&self, record: &ConversationPolicyRecord) -> Result<()> {
+        write(&self.conversation_policies)?.insert(record.conversation_id.clone(), record.clone());
+        Ok(())
+    }
+    async fn load_conversation_policy(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Option<ConversationPolicyRecord>> {
+        Ok(read(&self.conversation_policies)?
+            .get(conversation_id)
+            .cloned())
+    }
+    async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()> {
+        write(&self.conversation_policies)?.remove(conversation_id);
+        Ok(())
     }
     async fn save_skill(&self, skill: &Skill, _embedding: &[f32]) -> Result<()> {
         write(&self.skills)?.insert(skill.skill_id.clone(), skill.clone());
@@ -201,6 +219,37 @@ mod tests {
                 .unwrap()
                 .id(),
             session.id()
+        );
+    }
+
+    #[tokio::test]
+    async fn conversation_policy_round_trips_without_durable_storage() {
+        let provider = InMemoryProvider::new();
+        let record = ConversationPolicyRecord::new(
+            "conversation-1",
+            crate::uar::domain::policy::RunPolicy {
+                memory_enabled: Some(false),
+                ..crate::uar::domain::policy::RunPolicy::default()
+            },
+        );
+        provider.save_conversation_policy(&record).await.unwrap();
+        assert_eq!(
+            provider
+                .load_conversation_policy("conversation-1")
+                .await
+                .unwrap(),
+            Some(record)
+        );
+        provider
+            .delete_conversation_policy("conversation-1")
+            .await
+            .unwrap();
+        assert!(
+            provider
+                .load_conversation_policy("conversation-1")
+                .await
+                .unwrap()
+                .is_none()
         );
     }
 

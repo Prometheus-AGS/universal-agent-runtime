@@ -22,6 +22,11 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
+use super::design_systems::{
+    store::SharedDesignSystemStore,
+    types::{Component as LibraryComponent, Renderers},
+};
+use super::protocol::parse_message;
 use super::realtime::{
     A2uiReplayBackbone, A2uiWireKind, InMemoryReplayBackbone, surface_message_to_state_patch,
 };
@@ -42,6 +47,9 @@ pub struct A2uiApiState {
     /// now — see `realtime.rs` module docs for the deferred
     /// `flint-realtime-fabric`-backed implementation.
     pub realtime_backbone: Arc<InMemoryReplayBackbone>,
+    /// UAR-owned durable A2UI component library. Clients may promote a
+    /// rendered artifact into this library, but never own the canonical data.
+    pub design_system_store: SharedDesignSystemStore,
 }
 
 // ── Request / response types ──────────────────────────────────────────────────
@@ -63,7 +71,38 @@ pub struct ArtifactResponsePayload {
 struct ArtifactResponseAck {
     run_id: String,
     artifact_id: String,
+    continuation_run_id: String,
     status: &'static str,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct A2uiActionPayload {
+    pub surface_id: String,
+    pub name: String,
+    pub source_component_id: String,
+    #[serde(default)]
+    pub timestamp: Option<String>,
+    #[serde(default)]
+    pub context: serde_json::Value,
+    #[serde(default)]
+    pub a2ui_client_data_model: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize)]
+struct A2uiContinuationAck {
+    run_id: String,
+    continuation_run_id: String,
+    status: &'static str,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PromoteComponentPayload {
+    pub title: String,
+    pub source: String,
+    #[serde(default)]
+    pub description: Option<String>,
 }
 
 /// Request body for `POST /api/uar/runs/{run_id}/a2ui/test-trigger`.
@@ -154,14 +193,13 @@ async fn submit_artifact_response(
         }
     };
 
-    // Emit the artifact response as a tool result event into the run's event stream.
-    // The RunManager will route this to the agent's ongoing tool-call loop.
+    // Preserve the response on the source run for every live/late subscriber.
     let tool_result_event = NormalizedEvent::ToolEnd {
         run_id: run.run_id.clone(),
         call_index: 0,
         tool_call_id: payload.artifact_id.clone(),
         tool: "a2ui.collect_input".to_string(),
-        output: payload.response,
+        output: payload.response.clone(),
         ok: true,
     };
 
@@ -170,15 +208,335 @@ async fn submit_artifact_response(
         .emit_to_run(&run.run_id, tool_result_event)
         .await;
 
+    // Resume agent execution through a real continuation run in the same
+    // conversation. The previous implementation stopped at the synthetic
+    // ToolEnd above and therefore never actually returned control to the LLM.
+    let continuation_run_id = match state
+        .run_manager
+        .continue_with_interaction(
+            &run.run_id,
+            serde_json::json!({
+                "artifactId": payload.artifact_id,
+                "response": payload.response,
+            }),
+        )
+        .await
+    {
+        Ok(value) => value,
+        Err(error) => {
+            return (
+                StatusCode::CONFLICT,
+                Json(serde_json::json!({ "error": error })),
+            )
+                .into_response();
+        }
+    };
+
     (
         StatusCode::OK,
         Json(ArtifactResponseAck {
             run_id: run.run_id,
             artifact_id: payload.artifact_id,
+            continuation_run_id,
             status: "accepted",
         }),
     )
         .into_response()
+}
+
+fn message_values(value: serde_json::Value) -> Result<Vec<serde_json::Value>, String> {
+    match value {
+        serde_json::Value::Array(values) => Ok(values),
+        serde_json::Value::Object(mut value) if value.contains_key("messages") => value
+            .remove("messages")
+            .and_then(|value| value.as_array().cloned())
+            .ok_or_else(|| "messages must be an array".to_string()),
+        value @ serde_json::Value::Object(_) => Ok(vec![value]),
+        _ => Err("A2UI payload must be a message, array, or { messages } object".to_string()),
+    }
+}
+
+async fn publish_messages(
+    state: &A2uiApiState,
+    run_id: &str,
+    body: serde_json::Value,
+) -> Result<(String, Vec<String>), String> {
+    let values = message_values(body)?;
+    if values.is_empty() {
+        return Err("at least one A2UI message is required".to_string());
+    }
+    let validated = values
+        .into_iter()
+        .map(parse_message)
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut surface_ids = Vec::new();
+    let mut source_lines = Vec::new();
+    for message in validated {
+        if !surface_ids.contains(&message.surface_id) {
+            surface_ids.push(message.surface_id.clone());
+        }
+        let op = surface_message_to_state_patch(&message.surface_id, message.kind, message.payload);
+        state.realtime_backbone.publish(run_id, op.clone());
+        state
+            .run_manager
+            .emit_to_run(
+                run_id,
+                NormalizedEvent::StatePatch {
+                    run_id: run_id.to_string(),
+                    patch: vec![op],
+                },
+            )
+            .await;
+        source_lines.push(message.raw.to_string());
+    }
+
+    let artifact_id = format!("a2ui:{}", uuid::Uuid::new_v4());
+    state
+        .run_manager
+        .emit_to_run(
+            run_id,
+            NormalizedEvent::ArtifactDisplay {
+                run_id: run_id.to_string(),
+                artifact: ArtifactPayload {
+                    artifact_id: artifact_id.clone(),
+                    artifact_type: "a2ui".to_string(),
+                    title: "Interactive UI".to_string(),
+                    content: source_lines.join("\n"),
+                    language: Some("application/a2ui+json".to_string()),
+                    metadata: serde_json::json!({
+                        "profile": "uar.a2ui/1",
+                        "surfaceIds": surface_ids,
+                    }),
+                },
+            },
+        )
+        .await;
+    Ok((artifact_id, surface_ids))
+}
+
+/// Accept validated A2UI messages from the orchestrator/tool loop and publish
+/// both replayable state patches and a directly renderable AG-UI artifact.
+async fn submit_messages(
+    State(state): State<A2uiApiState>,
+    Path(run_id): Path<String>,
+    Json(body): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    if state.run_manager.get_run(&run_id).await.is_none() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "error": format!("run '{run_id}' not found") })),
+        )
+            .into_response();
+    }
+    match publish_messages(&state, &run_id, body).await {
+        Ok((artifact_id, surface_ids)) => (
+            StatusCode::ACCEPTED,
+            Json(serde_json::json!({
+                "runId": run_id,
+                "artifactId": artifact_id,
+                "surfaceIds": surface_ids,
+                "status": "published",
+            })),
+        )
+            .into_response(),
+        Err(error) => (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": error })),
+        )
+            .into_response(),
+    }
+}
+
+fn json_contains_string(value: &serde_json::Value, expected: &str) -> bool {
+    match value {
+        serde_json::Value::String(value) => value == expected,
+        serde_json::Value::Array(values) => values
+            .iter()
+            .any(|value| json_contains_string(value, expected)),
+        serde_json::Value::Object(values) => values
+            .values()
+            .any(|value| json_contains_string(value, expected)),
+        _ => false,
+    }
+}
+
+/// Receive a standard A2UI action, validate it against the published surface,
+/// persist/broadcast the action state, and resume the agent in a continuation run.
+async fn submit_action(
+    State(state): State<A2uiApiState>,
+    Path(run_id): Path<String>,
+    Json(payload): Json<A2uiActionPayload>,
+) -> impl IntoResponse {
+    let run = match state.run_manager.get_run(&run_id).await {
+        Some(run) => run,
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({ "error": format!("run '{run_id}' not found") })),
+            )
+                .into_response();
+        }
+    };
+    let surface_path = format!("/a2ui/surfaces/{}", payload.surface_id);
+    let replay = state.realtime_backbone.replay(&run_id);
+    let surface_exists = replay
+        .iter()
+        .any(|op| op.path.starts_with(&surface_path) && op.op != "remove");
+    let action_exists = replay.iter().any(|op| {
+        op.path.starts_with(&surface_path)
+            && op
+                .value
+                .as_ref()
+                .is_some_and(|value| json_contains_string(value, &payload.name))
+    });
+    if !surface_exists || !action_exists {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(serde_json::json!({
+                "error": "action is not declared by the active A2UI surface"
+            })),
+        )
+            .into_response();
+    }
+
+    let interaction = serde_json::json!({
+        "surfaceId": payload.surface_id,
+        "name": payload.name,
+        "sourceComponentId": payload.source_component_id,
+        "timestamp": payload.timestamp,
+        "context": payload.context,
+        "a2uiClientDataModel": payload.a2ui_client_data_model,
+    });
+    let action_op = crate::uar::domain::events::StatePatchOp {
+        op: "add".to_string(),
+        path: format!("/a2ui/actions/{}", uuid::Uuid::new_v4()),
+        value: Some(interaction.clone()),
+    };
+    state.realtime_backbone.publish(&run_id, action_op.clone());
+    state
+        .run_manager
+        .emit_to_run(
+            &run_id,
+            NormalizedEvent::StatePatch {
+                run_id: run_id.clone(),
+                patch: vec![action_op],
+            },
+        )
+        .await;
+    let continuation_run_id = match state
+        .run_manager
+        .continue_with_interaction(&run.run_id, interaction)
+        .await
+    {
+        Ok(value) => value,
+        Err(error) => {
+            return (
+                StatusCode::CONFLICT,
+                Json(serde_json::json!({ "error": error })),
+            )
+                .into_response();
+        }
+    };
+    (
+        StatusCode::ACCEPTED,
+        Json(A2uiContinuationAck {
+            run_id,
+            continuation_run_id,
+            status: "continued",
+        }),
+    )
+        .into_response()
+}
+
+async fn list_library_components(State(state): State<A2uiApiState>) -> impl IntoResponse {
+    match state.design_system_store.list_components().await {
+        Ok(components) => (StatusCode::OK, Json(serde_json::json!(components))).into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
+        )
+            .into_response(),
+    }
+}
+
+async fn promote_library_component(
+    State(state): State<A2uiApiState>,
+    Json(payload): Json<PromoteComponentPayload>,
+) -> impl IntoResponse {
+    let values = match payload
+        .source
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| serde_json::from_str::<serde_json::Value>(line).map_err(|e| e.to_string()))
+        .collect::<Result<Vec<_>, _>>()
+        .and_then(|values| {
+            values
+                .into_iter()
+                .map(parse_message)
+                .collect::<Result<Vec<_>, _>>()
+        }) {
+        Ok(values) if !values.is_empty() => values,
+        Ok(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({ "error": "A2UI source is empty" })),
+            )
+                .into_response();
+        }
+        Err(error) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({ "error": error })),
+            )
+                .into_response();
+        }
+    };
+    let slug = payload
+        .title
+        .to_ascii_lowercase()
+        .chars()
+        .map(|ch| if ch.is_ascii_alphanumeric() { ch } else { '-' })
+        .collect::<String>()
+        .split('-')
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("-");
+    let now = chrono::Utc::now();
+    let component = LibraryComponent {
+        id: uuid::Uuid::new_v4().to_string(),
+        slug: if slug.is_empty() {
+            format!("a2ui-{}", uuid::Uuid::new_v4())
+        } else {
+            slug
+        },
+        primitive_type: "A2uiSurface".to_string(),
+        category: "artifact".to_string(),
+        schema: serde_json::json!({
+            "profile": "uar.a2ui/1",
+            "messages": values.iter().map(|message| &message.raw).collect::<Vec<_>>(),
+        }),
+        description: payload.description,
+        usage_examples: Some(serde_json::json!({ "source": payload.source })),
+        renderers: Renderers {
+            react: true,
+            flutter: true,
+            htmx: false,
+        },
+        created_at: now,
+        updated_at: now,
+    };
+    match state
+        .design_system_store
+        .put_component(component.clone())
+        .await
+    {
+        Ok(()) => (StatusCode::CREATED, Json(serde_json::json!(component))).into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": error.to_string() })),
+        )
+            .into_response(),
+    }
 }
 
 /// `POST /api/uar/runs/{run_id}/a2ui/test-trigger`
@@ -321,6 +679,10 @@ pub fn build_schema_router() -> Router<A2uiApiState> {
     Router::new()
         .route("/schemas", get(list_schemas))
         .route("/schemas/{schema_id}", get(get_schema))
+        .route(
+            "/components",
+            get(list_library_components).post(promote_library_component),
+        )
 }
 
 /// Build the artifact-response router (mounted at `/api/uar/runs`).
@@ -339,4 +701,6 @@ pub fn build_response_router() -> Router<A2uiApiState> {
             post(surface_test_trigger),
         )
         .route("/{run_id}/a2ui/surface-replay", get(surface_replay))
+        .route("/{run_id}/a2ui/messages", post(submit_messages))
+        .route("/{run_id}/a2ui/actions", post(submit_action))
 }

@@ -8,6 +8,7 @@
 //! - Terminal     → `native_tools.terminal_exec_enabled`
 //! - Session search → `native_tools.session_search_enabled`
 
+pub mod a2ui_render;
 pub mod echo;
 pub mod system_info;
 
@@ -31,6 +32,7 @@ pub async fn register_builtins(
     // ── Core always-on skills ─────────────────────────────────────────────
     registry.register(echo::EchoSkill).await;
     registry.register(system_info::SystemInfoSkill).await;
+    registry.register(a2ui_render::A2uiRenderSkill).await;
 
     // ── Compiler skills ───────────────────────────────────────────────────
     let key_provider: Arc<dyn KeyProvider> = Arc::new(LocalKeyProvider::ephemeral());
