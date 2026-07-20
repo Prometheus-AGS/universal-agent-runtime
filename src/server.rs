@@ -181,8 +181,8 @@ async fn start_server_with_listener(
                 None,
                 None,
                 None,
-                Arc::new(uar::a2ui::design_systems::store::InMemoryDesignSystemStore::new()),
                 None,
+                Arc::new(uar::a2ui::design_systems::store::InMemoryDesignSystemStore::new()),
             )
         }
         #[cfg(not(feature = "in-memory-backend"))]

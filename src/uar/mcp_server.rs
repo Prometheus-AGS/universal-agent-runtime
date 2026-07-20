@@ -30,7 +30,7 @@ use axum::Router;
 use rmcp::{
     ErrorData as McpError, ServerHandler,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{CallToolResult, Content, Implementation, ServerCapabilities, ServerInfo},
+    model::{CallToolResult, ContentBlock, Implementation, ServerCapabilities, ServerInfo},
     tool, tool_handler, tool_router,
     transport::streamable_http_server::{
         StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
@@ -48,7 +48,7 @@ use crate::uar::{
 fn ok_json<T: serde::Serialize>(value: &T) -> CallToolResult {
     let json =
         serde_json::to_string_pretty(value).unwrap_or_else(|e| format!("{{\"error\":\"{e}\"}}"));
-    CallToolResult::success(vec![Content::text(json)])
+    CallToolResult::success(vec![ContentBlock::text(json)])
 }
 
 fn err_mcp(e: impl std::fmt::Display) -> McpError {

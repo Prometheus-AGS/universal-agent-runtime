@@ -21,7 +21,7 @@ use axum::Router;
 use rmcp::{
     ErrorData as McpError, ServerHandler,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
-    model::{CallToolResult, Content, Implementation, ServerCapabilities, ServerInfo},
+    model::{CallToolResult, ContentBlock, Implementation, ServerCapabilities, ServerInfo},
     tool, tool_handler, tool_router,
     transport::streamable_http_server::{
         StreamableHttpServerConfig, StreamableHttpService, session::local::LocalSessionManager,
@@ -41,7 +41,7 @@ use super::service::MemoryService;
 fn ok_json<T: serde::Serialize>(value: &T) -> CallToolResult {
     let json =
         serde_json::to_string_pretty(value).unwrap_or_else(|e| format!("{{\"error\":\"{e}}}\")"));
-    CallToolResult::success(vec![Content::text(json)])
+    CallToolResult::success(vec![ContentBlock::text(json)])
 }
 
 fn err_mcp(e: impl std::fmt::Display) -> McpError {
@@ -418,7 +418,7 @@ impl UarMemoryMcpServer {
         Parameters(p): Parameters<MemoryIdParams>,
     ) -> Result<CallToolResult, McpError> {
         self.storage.delete_memory(&p.id).await.map_err(err_mcp)?;
-        Ok(CallToolResult::success(vec![Content::text(format!(
+        Ok(CallToolResult::success(vec![ContentBlock::text(format!(
             "Memory '{}' deleted",
             p.id
         ))]))
@@ -438,7 +438,7 @@ impl UarMemoryMcpServer {
             )
             .await
             .map_err(err_mcp)?;
-        Ok(CallToolResult::success(vec![Content::text(format!(
+        Ok(CallToolResult::success(vec![ContentBlock::text(format!(
             "Deleted {} memories",
             count
         ))]))
@@ -639,7 +639,7 @@ impl UarMemoryMcpServer {
                 .map_err(err_mcp)?;
         }
         self.storage.delete_entity(&p.name).await.map_err(err_mcp)?;
-        Ok(CallToolResult::success(vec![Content::text(format!(
+        Ok(CallToolResult::success(vec![ContentBlock::text(format!(
             "Deleted '{}' and {} relation(s)",
             p.name,
             relations.len()
@@ -655,7 +655,7 @@ impl UarMemoryMcpServer {
             .delete_relation(&p.from, &p.to, &p.relation_type)
             .await
             .map_err(err_mcp)?;
-        Ok(CallToolResult::success(vec![Content::text(
+        Ok(CallToolResult::success(vec![ContentBlock::text(
             "Relation deleted".to_string(),
         )]))
     }

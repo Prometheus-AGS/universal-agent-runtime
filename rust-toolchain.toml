@@ -10,6 +10,9 @@
 channel = "nightly-2026-07-18"
 components = ["rustfmt", "clippy", "rust-src", "rust-analyzer"]
 targets = [
+    "aarch64-apple-ios",
+    "aarch64-apple-ios-sim",
+    "aarch64-linux-android",
     "wasm32-unknown-unknown",
     "wasm32-wasip1",
     "wasm32-wasip2",

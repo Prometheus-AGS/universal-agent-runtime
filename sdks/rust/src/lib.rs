@@ -32,7 +32,7 @@ pub mod types;
 
 #[cfg(feature = "http-client")]
 pub mod client;
-#[cfg(feature = "embedded")]
+#[cfg(any(feature = "embedded", feature = "server"))]
 pub mod runtime;
 
 #[doc(inline)]
@@ -52,6 +52,6 @@ pub use types::{
 #[cfg(feature = "http-client")]
 #[doc(inline)]
 pub use client::{Client, EventStream};
-#[cfg(feature = "embedded")]
+#[cfg(any(feature = "embedded", feature = "server"))]
 #[doc(inline)]
 pub use runtime::Runtime;

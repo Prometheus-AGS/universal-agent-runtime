@@ -1,153 +1,351 @@
-//! Embeddable runtime for the SDK.
+//! Direct, transport-independent UAR embedding API.
 //!
-//! This module allows embedding the full server runtime in another Rust application.
-//! Enable with `features = ["embedded"]`.
+//! Enable `embedded` to link the UAR application kernel into the host process.
+//! This module never opens a socket. The optional `server` feature exposes an
+//! explicit server entry point for hosts that intentionally want HTTP.
 
 use std::sync::Arc;
+
 #[cfg(feature = "embedded")]
-use universal_agent_runtime::{AppState, config::AppConfig, server};
+use tokio::sync::broadcast;
+#[cfg(feature = "embedded")]
+use universal_agent_runtime::{
+    config::LlmConfig,
+    embedded::{EmbeddedRuntime, EmbeddedRuntimeBuilder},
+    llm::{LlmDriver, ProviderConfig},
+    mcp::registry::McpRegistry,
+    uar::{
+        a2ui::registry::A2uiRegistry,
+        domain::{artifact::AgentArtifact, events::MemoryItem},
+        persistence::PersistenceLayer,
+        rag::embeddings::EmbeddingBackend,
+        runtime::{
+            manager::{RunManager, StreamEvent},
+            native_skill::NativeSkillRegistry,
+        },
+    },
+};
 
 use crate::error::{Error, Result};
 
-/// Embeddable runtime that replicates the standalone server behavior.
+/// A fully initialized in-process UAR runtime.
 ///
-/// # Example
-///
-/// ```rust,ignore
-/// use universal_agent_runtime_sdk::Runtime;
-///
-/// #[tokio::main]
-/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-///     let runtime = Runtime::builder()
-///         .config_path("config.yaml")
-///         .build()
-///         .await?;
-///
-///     // Option 1: Start the full HTTP server
-///     runtime.start().await?;
-///
-///     // Option 2: Access components directly
-///     if let Some(orchestrator) = runtime.orchestrator() {
-///         // Use the orchestrator for LLM calls
-///     }
-///
-///     Ok(())
-/// }
-/// ```
-#[derive(Debug)]
+/// Successful construction is the readiness guarantee: accessors return live
+/// components rather than the previous `Option<AppState>` placeholder.
+#[derive(Debug, Clone)]
 pub struct Runtime {
     #[cfg(feature = "embedded")]
-    config: Arc<AppConfig>,
-    #[cfg(feature = "embedded")]
-    state: Option<AppState>,
+    inner: Arc<EmbeddedRuntime>,
 }
 
 impl Runtime {
-    /// Create a new runtime builder.
+    /// Create a new direct-runtime builder.
+    #[must_use]
     pub fn builder() -> RuntimeBuilder {
         RuntimeBuilder::default()
     }
 
-    /// Start the runtime (HTTP server + background workers).
-    ///
-    /// This blocks until the server is shut down.
+    /// Access the complete UAR application kernel.
     #[cfg(feature = "embedded")]
-    pub async fn start(&self) -> Result<()> {
-        let settings = self.config.llm.clone();
-        server::start_server(self.config.clone(), settings)
-            .await
-            .map_err(|e| Error::Runtime(e.to_string()))
+    #[must_use]
+    pub fn inner(&self) -> &EmbeddedRuntime {
+        &self.inner
     }
 
-    /// Get a reference to the application configuration.
     #[cfg(feature = "embedded")]
-    pub fn config(&self) -> &AppConfig {
-        &self.config
+    #[must_use]
+    pub fn orchestrator(&self) -> Arc<universal_agent_runtime::llm::orchestrator::Orchestrator> {
+        self.inner.orchestrator()
     }
 
-    /// Get a reference to the internal AppState for direct API access.
     #[cfg(feature = "embedded")]
-    pub fn state(&self) -> Option<&AppState> {
-        self.state.as_ref()
+    #[must_use]
+    pub fn run_manager(&self) -> Arc<RunManager> {
+        self.inner.run_manager()
     }
 
-    /// Access the LLM orchestrator directly (for programmatic LLM calls).
     #[cfg(feature = "embedded")]
-    pub fn orchestrator(
-        &self,
-    ) -> Option<Arc<universal_agent_runtime::llm::orchestrator::Orchestrator>> {
-        self.state.as_ref().map(|s| s.orchestrator.clone())
+    #[must_use]
+    pub fn provider_registry(&self) -> Arc<universal_agent_runtime::llm::ProviderRegistry> {
+        self.inner.provider_registry()
     }
 
-    /// Access the run manager directly.
     #[cfg(feature = "embedded")]
-    pub fn run_manager(
-        &self,
-    ) -> Option<Arc<universal_agent_runtime::uar::runtime::manager::RunManager>> {
-        self.state.as_ref().map(|s| s.run_manager.clone())
+    #[must_use]
+    pub fn persistence(&self) -> Arc<dyn PersistenceLayer> {
+        self.inner.persistence()
     }
 
-    /// Access the vector matcher for embedding operations.
     #[cfg(feature = "embedded")]
+    #[must_use]
     pub fn vector_matcher(
         &self,
-    ) -> Option<Arc<universal_agent_runtime::uar::runtime::matching::VectorMatcher>> {
-        self.state.as_ref().map(|s| s.vector_matcher.clone())
+    ) -> Arc<universal_agent_runtime::uar::runtime::matching::VectorMatcher> {
+        self.inner.vector_matcher()
     }
 
-    /// Access the persistence layer.
     #[cfg(feature = "embedded")]
-    pub fn persistence(
+    #[must_use]
+    pub fn skill_service(
         &self,
-    ) -> Option<Arc<dyn universal_agent_runtime::uar::persistence::PersistenceLayer>> {
-        self.state.as_ref().and_then(|s| s.persistence.clone())
+    ) -> Arc<universal_agent_runtime::uar::runtime::skills::service::SkillService> {
+        self.inner.skill_service()
+    }
+
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn native_skills(&self) -> Arc<NativeSkillRegistry> {
+        self.inner.native_skills()
+    }
+
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn a2ui_registry(&self) -> Arc<A2uiRegistry> {
+        self.inner.a2ui_registry()
+    }
+
+    /// Start a run from an already-resolved UAR agent artifact.
+    #[cfg(feature = "embedded")]
+    pub async fn start_run(
+        &self,
+        artifact: AgentArtifact,
+        input: impl Into<String>,
+        conversation_id: Option<String>,
+        user_id: Option<String>,
+        memory: Vec<MemoryItem>,
+    ) -> String {
+        self.inner
+            .run_manager()
+            .start_run(artifact, input.into(), conversation_id, user_id, memory)
+            .await
+    }
+
+    /// Resolve a persisted agent by id and start a run.
+    #[cfg(feature = "embedded")]
+    pub async fn start_agent_run(
+        &self,
+        agent_id: &str,
+        input: impl Into<String>,
+        conversation_id: Option<String>,
+        user_id: Option<String>,
+        memory: Vec<MemoryItem>,
+    ) -> Result<String> {
+        let artifact = self
+            .inner
+            .persistence()
+            .load_agent(agent_id)
+            .await
+            .map_err(runtime_error)?
+            .ok_or_else(|| Error::Runtime(format!("UAR agent '{agent_id}' was not found")))?;
+        Ok(self
+            .start_run(artifact, input, conversation_id, user_id, memory)
+            .await)
+    }
+
+    /// Subscribe to canonical run events without SSE serialization.
+    #[cfg(feature = "embedded")]
+    pub async fn subscribe(&self, run_id: &str) -> Result<broadcast::Receiver<StreamEvent>> {
+        self.inner
+            .run_manager()
+            .subscribe(run_id)
+            .await
+            .ok_or_else(|| Error::Runtime(format!("UAR run '{run_id}' was not found")))
+    }
+
+    /// Replay canonical run events after an optional event id.
+    #[cfg(feature = "embedded")]
+    pub async fn history_since(
+        &self,
+        run_id: &str,
+        last_event_id: Option<u64>,
+    ) -> Result<Vec<StreamEvent>> {
+        self.inner
+            .run_manager()
+            .history_since(run_id, last_event_id)
+            .await
+            .ok_or_else(|| Error::Runtime(format!("UAR run '{run_id}' was not found")))
+    }
+
+    #[cfg(feature = "embedded")]
+    pub async fn cancel_run(&self, run_id: &str) -> bool {
+        self.inner.run_manager().cancel_run(run_id).await
+    }
+
+    #[cfg(feature = "embedded")]
+    pub async fn resolve_tool_approval(&self, run_id: &str, approved: bool) -> bool {
+        self.inner
+            .run_manager()
+            .resolve_approval(run_id, approved)
+            .await
+    }
+
+    /// Continue a conversation from a user interaction with an A2UI surface.
+    #[cfg(feature = "embedded")]
+    pub async fn continue_with_a2ui_interaction(
+        &self,
+        run_id: &str,
+        interaction: serde_json::Value,
+    ) -> Result<String> {
+        self.inner
+            .run_manager()
+            .continue_with_interaction(run_id, interaction)
+            .await
+            .map_err(Error::Runtime)
+    }
+
+    /// Explicitly start UAR's HTTP server. This is not part of embedded mode
+    /// and is unavailable unless the separate `server` feature is enabled.
+    #[cfg(feature = "server")]
+    pub async fn start_server(
+        config_manager: Arc<universal_agent_runtime::config_manager::ConfigManager>,
+    ) -> Result<()> {
+        universal_agent_runtime::server::start_server(config_manager)
+            .await
+            .map_err(runtime_error)
     }
 }
 
-/// Builder for creating a Runtime.
+/// Builder for the direct runtime.
 #[derive(Default)]
 pub struct RuntimeBuilder {
-    config_path: Option<String>,
     #[cfg(feature = "embedded")]
-    config: Option<AppConfig>,
+    llm_config: Option<LlmConfig>,
+    #[cfg(feature = "embedded")]
+    driver: Option<Arc<dyn LlmDriver>>,
+    #[cfg(feature = "embedded")]
+    provider: Option<ProviderConfig>,
+    #[cfg(feature = "embedded")]
+    persistence: Option<Arc<dyn PersistenceLayer>>,
+    #[cfg(feature = "embedded")]
+    embedding_backend: Option<Arc<dyn EmbeddingBackend>>,
+    #[cfg(feature = "embedded")]
+    mcp: Option<Arc<McpRegistry>>,
+    #[cfg(feature = "embedded")]
+    native_skills: Option<Arc<NativeSkillRegistry>>,
+    #[cfg(feature = "embedded")]
+    a2ui_registry: Option<Arc<A2uiRegistry>>,
+    #[cfg(feature = "embedded")]
+    seed_defaults: Option<bool>,
+    #[cfg(feature = "embedded")]
+    vector_threshold: Option<f32>,
 }
 
 impl RuntimeBuilder {
-    /// Set the path to the configuration file.
-    pub fn config_path(mut self, path: impl Into<String>) -> Self {
-        self.config_path = Some(path.into());
-        self
-    }
-
-    /// Provide a configuration directly (instead of loading from file).
     #[cfg(feature = "embedded")]
-    pub fn config(mut self, config: AppConfig) -> Self {
-        self.config = Some(config);
+    #[must_use]
+    pub fn llm_config(mut self, config: LlmConfig) -> Self {
+        self.llm_config = Some(config);
         self
     }
 
-    /// Build the runtime.
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn local_provider(mut self, driver: Arc<dyn LlmDriver>, provider: ProviderConfig) -> Self {
+        self.driver = Some(driver);
+        self.provider = Some(provider);
+        self
+    }
+
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn persistence(mut self, persistence: Arc<dyn PersistenceLayer>) -> Self {
+        self.persistence = Some(persistence);
+        self
+    }
+
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn embedding_backend(mut self, backend: Arc<dyn EmbeddingBackend>) -> Self {
+        self.embedding_backend = Some(backend);
+        self
+    }
+
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn mcp(mut self, registry: Arc<McpRegistry>) -> Self {
+        self.mcp = Some(registry);
+        self
+    }
+
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn native_skills(mut self, registry: Arc<NativeSkillRegistry>) -> Self {
+        self.native_skills = Some(registry);
+        self
+    }
+
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn a2ui_registry(mut self, registry: Arc<A2uiRegistry>) -> Self {
+        self.a2ui_registry = Some(registry);
+        self
+    }
+
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn seed_defaults(mut self, enabled: bool) -> Self {
+        self.seed_defaults = Some(enabled);
+        self
+    }
+
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn vector_threshold(mut self, threshold: f32) -> Self {
+        self.vector_threshold = Some(threshold);
+        self
+    }
+
     #[cfg(feature = "embedded")]
     pub async fn build(self) -> Result<Runtime> {
-        let config = match self.config {
-            Some(c) => c,
-            None => {
-                // Load config (implementation depends on your config loading)
-                AppConfig::load().map_err(|e| Error::Config(e.to_string()))?
-            }
-        };
+        let driver = self
+            .driver
+            .ok_or_else(|| Error::Config("embedded UAR requires a host local LLM driver".into()))?;
+        let provider = self.provider.ok_or_else(|| {
+            Error::Config("embedded UAR requires local provider/model metadata".into())
+        })?;
+        let persistence = self.persistence.ok_or_else(|| {
+            Error::Config("embedded UAR requires a host persistence layer".into())
+        })?;
 
+        let mut builder = EmbeddedRuntimeBuilder::new()
+            .local_provider(driver, provider)
+            .persistence(persistence);
+        if let Some(config) = self.llm_config {
+            builder = builder.llm_config(config);
+        }
+        if let Some(backend) = self.embedding_backend {
+            builder = builder.embedding_backend(backend);
+        }
+        if let Some(mcp) = self.mcp {
+            builder = builder.mcp(mcp);
+        }
+        if let Some(native_skills) = self.native_skills {
+            builder = builder.native_skills(native_skills);
+        }
+        if let Some(a2ui_registry) = self.a2ui_registry {
+            builder = builder.a2ui_registry(a2ui_registry);
+        }
+        if let Some(seed_defaults) = self.seed_defaults {
+            builder = builder.seed_defaults(seed_defaults);
+        }
+        if let Some(vector_threshold) = self.vector_threshold {
+            builder = builder.vector_threshold(vector_threshold);
+        }
+
+        let inner = builder.build().await.map_err(runtime_error)?;
         Ok(Runtime {
-            config: Arc::new(config),
-            state: None,
+            inner: Arc::new(inner),
         })
     }
 
-    /// Build the runtime (stub for when embedded feature is disabled).
     #[cfg(not(feature = "embedded"))]
     pub async fn build(self) -> Result<Runtime> {
         Err(Error::Config(
-            "Embedded runtime requires the 'embedded' feature".to_string(),
+            "embedded runtime requires the 'embedded' feature".into(),
         ))
     }
+}
+
+fn runtime_error(error: impl std::fmt::Display) -> Error {
+    Error::Runtime(error.to_string())
 }
