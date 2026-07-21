@@ -46,7 +46,7 @@ export const ContextUsageBar: FC<ContextUsageBarProps> = ({
         {formatTokens(used)}/{formatTokens(total)}
       </span>
       {strategy && (
-        <span className="font-mono text-[9px] text-muted-foreground/60">
+        <span className="font-mono text-[9px] text-fg-faint">
           {strategy}
         </span>
       )}

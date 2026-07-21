@@ -128,7 +128,7 @@ function DbLoadingScreen({ steps, current, error }: DbLoadingScreenProps) {
       {completedSteps.length > 0 && (
         <div
           ref={logRef}
-          className="w-full max-w-sm overflow-y-auto rounded-lg border border-border bg-card px-4 py-3 shadow-sm"
+          className="w-full max-w-sm overflow-y-auto rounded-lg bg-card px-4 py-3"
           style={{ maxHeight: "160px" }}
           aria-label="Initialization log"
           role="log"
