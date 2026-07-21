@@ -40,7 +40,7 @@ export const UarChoicePicker: FC<{ props: ChoicePickerProps }> = ({ props }) => 
         selectionMode={selectionMode}
         selectedKeys={selectedKeys}
         onSelectionChange={handleSelectionChange}
-        className="flex flex-col gap-1 rounded-md border border-input p-1"
+        className="flex flex-col gap-1 rounded-md bg-surface p-1"
       >
         {props.options.map((option) => (
           <ListBoxItem
