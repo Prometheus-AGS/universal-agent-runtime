@@ -25,15 +25,15 @@ export const ContextUpdateBlock: FC<ContextUpdateBlockProps> = ({ strategy, mess
   if (summaryGenerated) parts.push("summary saved");
 
   return (
-    <div className="my-1.5 flex items-center gap-2 rounded-lg border border-border/40 bg-muted/30 px-3 py-2">
-      <DatabaseZapIcon size={11} className="shrink-0 text-muted-foreground/70" />
-      <span className="font-mono text-[10px] text-muted-foreground/70">Context managed</span>
-      <span className="font-mono text-[10px] text-muted-foreground/50">·</span>
-      <span className="font-mono text-[10px] text-muted-foreground/60">{strategyLabel}</span>
+    <div className="my-1.5 flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
+      <DatabaseZapIcon size={11} className="shrink-0 text-fg-faint" />
+      <span className="font-mono text-[10px] text-fg-sub">Context managed</span>
+      <span className="font-mono text-[10px] text-fg-faint">·</span>
+      <span className="font-mono text-[10px] text-fg-sub">{strategyLabel}</span>
       {parts.length > 0 && (
         <>
-          <span className="font-mono text-[10px] text-muted-foreground/50">·</span>
-          <span className="font-mono text-[10px] text-muted-foreground/50">{parts.join(" · ")}</span>
+          <span className="font-mono text-[10px] text-fg-faint">·</span>
+          <span className="font-mono text-[10px] text-fg-faint">{parts.join(" · ")}</span>
         </>
       )}
     </div>

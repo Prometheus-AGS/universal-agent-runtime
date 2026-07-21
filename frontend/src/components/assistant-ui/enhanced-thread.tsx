@@ -5,10 +5,11 @@ import {
   ComposerPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
+  groupPartByType,
   type ThreadMessageLike,
   type ToolCallMessagePartProps,
+  useAuiState,
   useMessage,
-  useMessagePartText,
 } from "@assistant-ui/react";
 import {
   AlertTriangleIcon,
@@ -23,23 +24,19 @@ import {
   ChevronRightIcon,
   ClipboardIcon,
   CopyIcon,
-  Loader2Icon,
+  LoaderIcon,
   PaperclipIcon,
   PencilIcon,
   SparklesIcon,
   SquareIcon,
-  UserIcon,
   ZapIcon,
 } from "lucide-react";
 import { type FC, type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { EnhancedMarkdownText } from "@/components/assistant-ui/enhanced-markdown-text";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { KnowMeLogo, KnowMeWordmark } from "@/components/KnowMeLogo";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Separator } from "@/components/ui/separator";
 import { ContextUpdateBlock } from "@/features/chat/components/context-update-block";
 import { SkillActivationBlock } from "@/features/chat/components/skill-activation-block";
 import { MemoryMutationBlock, MemoryRecallBlock, MemoryUpdateBlock } from "@/features/chat/components/memory-chunk-block";
@@ -107,29 +104,44 @@ const ThreadAgentStatus: FC = () => {
 export const EnhancedThread: FC = () => {
   const { activeThreadId } = useThreadUi();
   const agentConfig = useAgentConfig();
+  const isEmpty = useAuiState(condThreadEmpty);
 
   return (
     <ThreadPrimitive.Root
       className="aui-root aui-thread-root @container flex min-h-0 flex-1 flex-col bg-background"
-      style={{ ["--thread-max-width" as string]: "48rem" }}
+      style={{
+        ["--thread-max-width" as string]: "44rem",
+        ["--composer-bg" as string]: "hsl(var(--surface))",
+        ["--composer-radius" as string]: "1.5rem",
+        ["--composer-padding" as string]: "10px",
+      }}
     >
       <ThreadPrimitive.Viewport
         turnAnchor="top"
-        className="aui-thread-viewport relative flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth px-4 pt-4"
+        className="aui-thread-viewport relative flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto scroll-smooth"
       >
-        <AuiIf condition={condThreadEmpty}>
-          <UarWelcome />
-        </AuiIf>
+        <div
+          className={cn(
+            "mx-auto flex w-full max-w-(--thread-max-width) flex-1 flex-col px-4 pt-4",
+            isEmpty && "justify-center",
+          )}
+        >
+          <AuiIf condition={condThreadEmpty}>
+            <UarWelcome />
+          </AuiIf>
 
-        <ThreadPrimitive.Messages components={THREAD_COMPONENTS} />
+          <div data-slot="aui_message-group" className="mb-14 flex flex-col gap-y-6 empty:hidden">
+            <ThreadPrimitive.Messages components={THREAD_COMPONENTS} />
+          </div>
 
-        <ThreadAgentStatus />
+          <ThreadAgentStatus />
 
-        <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer sticky bottom-0 mx-auto mt-auto flex w-full max-w-(--thread-max-width) flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
-          <ThreadScrollToBottom />
-          <EnhancedComposer />
-          <CapabilityToggles threadId={activeThreadId} agentConfig={agentConfig} className="mx-2" />
-        </ThreadPrimitive.ViewportFooter>
+          <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer sticky bottom-0 mt-auto flex w-full flex-col gap-3 overflow-visible rounded-t-(--composer-radius) bg-background/95 pb-4 md:pb-6">
+            <ThreadScrollToBottom />
+            <EnhancedComposer />
+            <CapabilityToggles threadId={activeThreadId} agentConfig={agentConfig} className="mx-2" />
+          </ThreadPrimitive.ViewportFooter>
+        </div>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
   );
@@ -138,21 +150,19 @@ export const EnhancedThread: FC = () => {
 // ─── Welcome Screen ───────────────────────────────────────────────────────────
 
 const UarWelcome: FC = () => (
-  <div className="mx-auto my-auto flex w-full max-w-(--thread-max-width) grow flex-col">
-    <div className="flex w-full grow flex-col items-center justify-center">
-      <div className="flex size-full flex-col items-center justify-center gap-4 px-4 text-center">
-        <div className="flex items-center justify-center rounded-2xl bg-card p-4">
-          <KnowMeLogo size={28} className="text-foreground" />
-        </div>
-        <div className="space-y-1">
-          <h1 className="font-display font-semibold text-2xl tracking-tight text-foreground"><KnowMeWordmark /></h1>
-          <p className="font-mono text-[11px] text-primary">{"// Ready to assist"}</p>
-        </div>
-        <p className="max-w-sm font-body text-sm text-muted-foreground leading-relaxed">
-          Send a message to start a new conversation. Your agent is configured and ready.
-        </p>
-        <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">Start typing below</p>
+  <div className="flex w-full flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+      <div className="flex items-center justify-center rounded-2xl bg-card p-4">
+        <KnowMeLogo size={28} className="text-foreground" />
       </div>
+      <div className="space-y-1">
+        <h1 className="font-display font-semibold text-2xl tracking-tight text-foreground"><KnowMeWordmark /></h1>
+        <p className="font-mono text-[11px] text-primary">{"// Ready to assist"}</p>
+      </div>
+      <p className="max-w-sm font-body text-sm text-muted-foreground leading-relaxed">
+        Send a message to start a new conversation. Your agent is configured and ready.
+      </p>
+      <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">Start typing below</p>
     </div>
   </div>
 );
@@ -163,8 +173,8 @@ const ThreadScrollToBottom: FC = () => (
   <ThreadPrimitive.ScrollToBottom asChild>
     <TooltipIconButton
       tooltip="Scroll to bottom"
-      variant="outline"
-      className="absolute -top-12 z-10 self-center rounded-full p-4 disabled:invisible dark:bg-background dark:hover:bg-accent"
+      variant="secondary"
+      className="absolute -top-12 z-10 self-center rounded-full p-4 shadow-none disabled:invisible"
     >
       <ArrowDownIcon />
     </TooltipIconButton>
@@ -172,6 +182,8 @@ const ThreadScrollToBottom: FC = () => (
 );
 
 // ─── Composer ────────────────────────────────────────────────────────────────
+// KnowMe idiom: a filled surface, never an outlined input. Flat 2.0 — no
+// border, ring, blur, or elevation; focus shifts the fill one ladder step.
 
 const EnhancedComposer: FC = () => {
   const attachmentManager = useAttachmentContext();
@@ -229,14 +241,7 @@ const EnhancedComposer: FC = () => {
         aria-hidden
       />
 
-      <ComposerPrimitive.AttachmentDropzone className="relative flex w-full flex-col rounded-2xl border border-input bg-background/80 px-1 pt-2 backdrop-blur-sm outline-none transition-shadow has-[textarea:focus-visible]:border-ring has-[textarea:focus-visible]:ring-2 has-[textarea:focus-visible]:ring-ring/20 overflow-hidden">
-
-        {/* Animated progress bar — only visible while waiting for first streamed token */}
-        {isAwaitingFirstToken && (
-          <div className="absolute inset-x-0 top-0 h-[2px] overflow-hidden rounded-t-2xl">
-            <div className="h-full w-1/2 animate-[shimmer_1.4s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-primary to-transparent" />
-          </div>
-        )}
+      <ComposerPrimitive.AttachmentDropzone className="relative flex w-full flex-col gap-2 overflow-hidden rounded-(--composer-radius) bg-(--composer-bg) p-(--composer-padding) shadow-none outline-none transition-colors focus-within:bg-card-hov data-[dragging=true]:bg-accent">
 
         {/* Attachment preview strip */}
         {attachmentManager && attachmentManager.pending.length > 0 && (
@@ -247,14 +252,15 @@ const EnhancedComposer: FC = () => {
         )}
 
         <ComposerPrimitive.Input
-          placeholder="Send a message to the agent…"
-          className="mb-1 max-h-48 min-h-[3.5rem] w-full resize-none bg-transparent px-4 pt-3 pb-3 font-body text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-40 transition-opacity"
+          placeholder="Send a message…"
+          className="max-h-32 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 font-body text-base text-foreground caret-primary outline-none placeholder:text-fg-faint focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-40 transition-opacity"
           rows={1}
           autoFocus
+          enterKeyHint="send"
           aria-label="Message input"
         />
 
-        <div className="relative mx-2 mb-2 flex items-center gap-2">
+        <div className="relative mx-1 mb-0.5 flex items-center gap-1.5">
           {/* Attach file button */}
           {attachmentManager && (
             <TooltipIconButton
@@ -290,10 +296,14 @@ const EnhancedComposer: FC = () => {
             <BrainIcon className="size-4" />
           </TooltipIconButton>
 
-          {/* Request in-flight indicator (pre-stream) */}
+          {/* Request in-flight indicator (pre-stream) — run-phase text, no spinner */}
           {isAwaitingFirstToken && (
             <span className="ml-auto flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/70">
-              <Loader2Icon size={11} className="animate-spin text-primary" />
+              <span className="inline-flex items-center gap-0.5">
+                <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
+                <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.2s_infinite]" />
+                <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.4s_infinite]" />
+              </span>
               {retryAttempt > 0
                 ? `Retrying (${retryAttempt}/${Math.max(retryMaxAttempts, retryAttempt)}) in ${(retryDelayMs / 1000).toFixed(1)}s…`
                 : "Waiting for model…"}
@@ -335,139 +345,200 @@ const EnhancedComposer: FC = () => {
   );
 };
 
-// ─── Avatars ──────────────────────────────────────────────────────────────────
-
-const UserAvatar: FC = () => (
-  <div className="flex flex-col items-center gap-1 pt-0.5">
-    <Avatar className="size-8 ring-1 ring-zinc-600">
-      <AvatarFallback className="bg-zinc-700 text-zinc-200">
-        <UserIcon size={14} />
-      </AvatarFallback>
-    </Avatar>
-    <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground/60">You</span>
-  </div>
-);
-
-const AgentAvatar: FC = () => (
-  <div className="flex flex-col items-center gap-1 pt-0.5">
-    <Avatar className="size-8 ring-1 ring-primary/30">
-      <AvatarFallback className="bg-primary/15 text-primary">
-        <SparklesIcon size={14} />
-      </AvatarFallback>
-    </Avatar>
-    <span className="font-mono text-[9px] uppercase tracking-wider text-primary/70">Agent</span>
-  </div>
-);
-
 // ─── User Message ─────────────────────────────────────────────────────────────
+// KnowMe anatomy: trailing ember-soft bubble, no avatar, hover action bar
+// beside the bubble, branch picker on the row below.
 
 const UserMessage: FC = () => (
-  <MessagePrimitive.Root className="fade-in slide-in-from-bottom-1 mx-auto flex w-full max-w-(--thread-max-width) animate-in flex-col gap-0.5 px-4 py-2 duration-150" data-role="user">
-    <div className="flex w-full items-start gap-3">
-      <UserActionBar />
-      <div className="min-w-0 flex-1">
-        <div className="wrap-break-word rounded-2xl rounded-tr-sm bg-zinc-800 px-4 py-3 font-body text-sm text-foreground leading-relaxed shadow-sm">
-          <MessagePrimitive.Parts components={USER_MESSAGE_PARTS_COMPONENTS} />
-        </div>
+  <MessagePrimitive.Root
+    data-slot="aui_user-message-root"
+    data-role="user"
+    className="fade-in slide-in-from-bottom-1 animate-in grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [&:where(>*)]:col-start-2"
+  >
+    <div className="relative col-start-2 min-w-0">
+      <div className="peer max-w-[80%] rounded-2xl rounded-ee-md bg-ember-soft px-4 py-3 font-body text-sm leading-relaxed text-foreground wrap-break-word empty:hidden">
+        <MessagePrimitive.Parts components={USER_MESSAGE_PARTS_COMPONENTS} />
       </div>
-      <UserAvatar />
+      <div className="absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full">
+        <UserActionBar />
+      </div>
     </div>
-    <div className="pr-11"><BranchPicker /></div>
+
+    <BranchPicker className="col-span-full col-start-1 row-start-3 -me-1 justify-end" />
   </MessagePrimitive.Root>
 );
 
 const UserActionBar: FC = () => (
-  <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" className="flex shrink-0 flex-col items-end pt-2">
+  <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" className="flex flex-col items-end text-muted-foreground">
+    <ActionBarPrimitive.Copy asChild>
+      <TooltipIconButton tooltip="Copy"><CopyIcon /></TooltipIconButton>
+    </ActionBarPrimitive.Copy>
     <ActionBarPrimitive.Edit asChild>
-      <TooltipIconButton tooltip="Edit" className="p-2"><PencilIcon /></TooltipIconButton>
+      <TooltipIconButton tooltip="Edit"><PencilIcon /></TooltipIconButton>
     </ActionBarPrimitive.Edit>
   </ActionBarPrimitive.Root>
 );
 
 // ─── Assistant Message ────────────────────────────────────────────────────────
 
-/** Shows a spinner when the assistant message is still empty (pre-first-token). */
+/** Shows a run-phase line when the assistant message is still empty (pre-first-token). */
 const AssistantMessageBody: FC = () => {
   const isEmptyAndRunning = useMessage(selectIsEmptyAndRunning);
 
+  if (isEmptyAndRunning) {
+    return (
+      <div className="flex items-center gap-2.5 py-1 text-muted-foreground/70">
+        <span className="inline-flex items-center gap-0.5">
+          <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_infinite]" />
+          <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.2s_infinite]" />
+          <span className="h-1 w-1 rounded-full bg-primary/70 animate-[pulse_1.2s_ease-in-out_0.4s_infinite]" />
+        </span>
+        <span className="font-mono text-[11px]">Agent is thinking…</span>
+      </div>
+    );
+  }
+
   return (
     <>
-      {isEmptyAndRunning ? (
-        <div className="flex items-center gap-2.5 py-1 text-muted-foreground/70">
-          <Loader2Icon size={14} className="animate-spin text-primary" />
-          <span className="font-mono text-[11px]">Agent is thinking…</span>
-        </div>
-      ) : (
-        <MessagePrimitive.Parts components={ASSISTANT_MESSAGE_PARTS_COMPONENTS} />
-      )}
+      <MessagePrimitive.GroupedParts groupBy={GROUP_BY}>
+        {({ part, children }) => {
+          switch (part.type) {
+            case "group-chainOfThought":
+              return <div data-slot="aui_chain-of-thought">{children}</div>;
+            case "group-tool":
+              return (
+                <ToolGroup
+                  count={part.indices.length}
+                  active={part.status.type === "running"}
+                >
+                  {children}
+                </ToolGroup>
+              );
+            case "group-reasoning":
+              return (
+                <ReasoningGroup streaming={part.status.type === "running"}>
+                  {children}
+                </ReasoningGroup>
+              );
+            case "text":
+              return (
+                <div className="my-2 w-fit max-w-[80%] rounded-2xl rounded-es-md bg-card px-4 py-3 text-foreground">
+                  <EnhancedMarkdownText />
+                </div>
+              );
+            case "reasoning":
+              return (
+                <pre className="m-0 whitespace-pre-wrap break-words font-body text-sm leading-relaxed text-muted-foreground select-text">
+                  {(part as { text?: string }).text}
+                </pre>
+              );
+            case "tool-call":
+              return (
+                (part as { toolUI?: ReactNode }).toolUI ?? (
+                  <ToolCallPart {...(part as unknown as ToolCallMessagePartProps)} />
+                )
+              );
+            case "data":
+              return (part as { dataRendererUI?: ReactNode }).dataRendererUI ?? <>{children}</>;
+            case "indicator":
+              return (
+                <span data-slot="aui_assistant-message-indicator" className="animate-pulse" aria-label="Assistant is working">
+                  {"●"}
+                </span>
+              );
+            default:
+              return <>{children}</>;
+          }
+        }}
+      </MessagePrimitive.GroupedParts>
       <MessageError />
     </>
   );
 };
 
 const AssistantMessage: FC = () => (
-  <MessagePrimitive.Root className="fade-in slide-in-from-bottom-1 mx-auto flex w-full max-w-(--thread-max-width) animate-in flex-col gap-0.5 px-4 py-2 duration-150" data-role="assistant">
-    <div className="flex w-full items-start gap-3">
-      <AgentAvatar />
-      <div className="min-w-0 flex-1">
-        <div className="wrap-break-word rounded-2xl rounded-tl-sm bg-muted/60 px-4 py-3 font-body text-sm text-foreground leading-relaxed shadow-sm">
-          <AssistantMessageBody />
-        </div>
-        <AssistantMessageCitations />
-      </div>
+  <MessagePrimitive.Root
+    data-slot="aui_assistant-message-root"
+    data-role="assistant"
+    className="fade-in slide-in-from-bottom-1 animate-in relative duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto]"
+  >
+    <div data-slot="aui_assistant-message-content" className="px-2 leading-relaxed text-foreground wrap-break-word">
+      <AssistantMessageBody />
+      <AssistantMessageCitations />
     </div>
-    <div className="ml-11 flex"><BranchPicker /><AssistantActionBar /></div>
+    <div data-slot="aui_assistant-message-footer" className="ms-2 flex min-h-7.5 items-center pt-1.5">
+      <BranchPicker />
+      <AssistantActionBar />
+    </div>
   </MessagePrimitive.Root>
 );
 
-// ─── Reasoning Part ───────────────────────────────────────────────────────────
+// ─── Reasoning group ──────────────────────────────────────────────────────────
+// KnowMe idiom: collapsed by default on a cyan-tinted surface; auto-opens
+// while streaming and auto-collapses when streaming ends, until the user
+// takes over manually.
 
-const ReasoningPart: FC = () => {
-  const { text, status } = useMessagePartText();
-  const isStreaming = status.type === "running";
-  const [isOpen, setIsOpen] = useState(isStreaming);
+const ReasoningGroup: FC<{ streaming: boolean; children: ReactNode }> = ({ streaming, children }) => {
+  const [userOpen, setUserOpen] = useState<boolean | null>(null);
+  const isOpen = userOpen ?? streaming;
 
   return (
-    <Card className="my-2 overflow-hidden rounded-lg border-border/50 bg-muted/20 shadow-none">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+    <div className="my-2 w-full max-w-[80%] rounded-xl bg-[hsl(var(--cyan)_/_0.07)] px-3 py-2">
+      <Collapsible open={isOpen} onOpenChange={(open) => setUserOpen(open)}>
         <CollapsibleTrigger
-          render={
-            <Button
-              variant="ghost"
-              className="flex h-auto w-full items-center justify-start gap-2 rounded-none px-3 py-2 hover:bg-muted/30"
-              aria-expanded={isOpen}
-            />
-          }
+          className="group/trigger flex max-w-[75%] origin-left items-center gap-2 py-1.5 text-sm text-[hsl(var(--cyan))] transition-colors hover:text-foreground"
+          aria-expanded={isOpen}
         >
-          <BrainIcon size={13} className="shrink-0 text-muted-foreground" />
-          <span className="flex-1 font-mono text-[11px] text-muted-foreground">
-            {isStreaming ? (
-              <span className="flex items-center gap-2">
-                {"// Reasoning"}
-                <span className="inline-flex gap-0.5">
-                  <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60" />
-                  <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60 [animation-delay:0.2s]" />
-                  <span className="h-1 w-1 animate-pulse rounded-full bg-primary/60 [animation-delay:0.4s]" />
-                </span>
-              </span>
-            ) : "// Reasoning"}
+          <BrainIcon className="size-4 shrink-0" />
+          <span className="leading-none tabular-nums">
+            {streaming ? "Reasoning…" : "Reasoning"}
           </span>
           <ChevronDownIcon
-            size={13}
-            className={cn("shrink-0 text-muted-foreground transition-transform duration-150", isOpen && "rotate-180")}
+            className={cn(
+              "mt-0.5 size-4 shrink-0 transition-transform duration-200 motion-reduce:transition-none",
+              isOpen ? "rotate-0" : "-rotate-90",
+            )}
           />
         </CollapsibleTrigger>
-        <CollapsibleContent>
-          <Separator className="opacity-30" />
-          <CardContent className="px-3 pb-3 pt-2">
-            <p className="whitespace-pre-wrap font-body text-sm leading-relaxed text-muted-foreground">
-              {text}
-              {isStreaming && <span className="ml-0.5 inline-block h-3.5 w-0.5 animate-[pulse_1s_step-end_infinite] bg-primary" />}
-            </p>
-          </CardContent>
+        <CollapsibleContent
+          aria-busy={streaming}
+          className="relative overflow-hidden text-sm text-muted-foreground outline-none data-[state=closed]:animate-none"
+        >
+          <div className="max-h-64 overflow-y-auto ps-6 pt-2 pb-2 leading-relaxed">{children}</div>
         </CollapsibleContent>
       </Collapsible>
-    </Card>
+    </div>
+  );
+};
+
+// ─── Tool group ───────────────────────────────────────────────────────────────
+// Consecutive tool calls collapse into one disclosure with a count trigger.
+
+const ToolGroup: FC<{ count: number; active: boolean; children: ReactNode }> = ({ count, active, children }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const label = `${count} tool ${count === 1 ? "call" : "calls"}`;
+
+  return (
+    <div className="my-1 w-full">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger
+          className="group/trigger flex origin-left items-center gap-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          aria-expanded={isOpen}
+        >
+          {active && <LoaderIcon className="size-3 shrink-0 animate-spin [animation-duration:0.6s]" />}
+          <span className="text-xs leading-none">{label}</span>
+          <ChevronDownIcon
+            className={cn(
+              "size-3 shrink-0 transition-transform duration-200 motion-reduce:transition-none",
+              isOpen ? "rotate-0" : "-rotate-90",
+            )}
+          />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="relative overflow-hidden text-sm outline-none">
+          <div className="mt-1 flex flex-col gap-1">{children}</div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
   );
 };
 
@@ -557,6 +628,7 @@ const ToolCallPart: FC<ToolCallMessagePartProps> = ({ toolName, args, result, st
 };
 
 // ─── Message Error ────────────────────────────────────────────────────────────
+// Flat 2.0: destructive-tinted surface, no border or Card chrome.
 
 const MessageError: FC = () => {
   const [copied, setCopied] = useState(false);
@@ -575,10 +647,10 @@ const MessageError: FC = () => {
   if (!errorText) return null;
 
   return (
-    <Card className="mt-3 overflow-hidden rounded-xl border-destructive/60 bg-destructive/5 shadow-sm">
+    <div className="mt-2 overflow-hidden rounded-md bg-destructive/10">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         {/* Error header */}
-        <div className="flex items-center gap-2 border-b border-destructive/30 bg-destructive/10 px-3 py-2">
+        <div className="flex items-center gap-2 px-3 py-2">
           <AlertTriangleIcon size={14} className="shrink-0 text-destructive" />
           <span className="flex-1 font-mono text-[11px] font-semibold uppercase tracking-widest text-destructive">
             Agent Error
@@ -609,14 +681,14 @@ const MessageError: FC = () => {
         </div>
         {/* Error body */}
         <CollapsibleContent>
-          <CardContent className="px-3 py-3">
+          <div className="px-3 pb-3">
             <pre className="whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed text-destructive/90">
               {errorText}
             </pre>
-          </CardContent>
+          </div>
         </CollapsibleContent>
       </Collapsible>
-    </Card>
+    </div>
   );
 };
 
@@ -626,7 +698,7 @@ const MessageError: FC = () => {
 // message. Each chip hides when its datum is absent (older messages, no usage).
 
 const MetaChip: FC<{ icon: ReactNode; label: string; title: string }> = ({ icon, label, title }) => (
-  <span title={title} className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+  <span title={title} className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
     {icon}
     {label}
   </span>
@@ -667,7 +739,7 @@ const MessageMetaChips: FC = () => {
       {message.usage && (
         <span
           title={`Tokens — in: ${message.usage.inputTokens}, out: ${message.usage.outputTokens}, total: ${message.usage.totalTokens}`}
-          className="inline-flex items-center gap-0.5 rounded-md bg-muted/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+          className="inline-flex items-center gap-0.5 rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
         >
           <ArrowUpIcon className="size-3" />
           {message.usage.inputTokens}
@@ -688,7 +760,7 @@ const MessageMetaChips: FC = () => {
 // ─── Assistant Action Bar ─────────────────────────────────────────────────────
 
 const AssistantActionBar: FC = () => (
-  <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" autohideFloat="single-branch" className="col-start-3 row-start-2 -ml-1 flex items-center gap-1 text-muted-foreground">
+  <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" autohideFloat="single-branch" className="-ml-1 flex items-center gap-1 text-muted-foreground">
     <ActionBarPrimitive.Copy asChild>
       <TooltipIconButton tooltip="Copy">
         <AuiIf condition={condMessageCopied}><CheckIcon /></AuiIf>
@@ -714,13 +786,13 @@ const AssistantMessageCitations: FC = () => {
 // ─── Edit Composer ────────────────────────────────────────────────────────────
 
 const EditComposer: FC = () => (
-  <MessagePrimitive.Root className="mx-auto flex w-full max-w-(--thread-max-width) flex-col px-2 py-3">
-    <ComposerPrimitive.Root className="ml-auto flex w-full max-w-[85%] flex-col rounded-2xl bg-muted">
-      <ComposerPrimitive.Input className="min-h-14 w-full resize-none bg-transparent p-4 font-body text-foreground text-sm outline-none" autoFocus />
-      <CardFooter className="mx-3 mb-3 flex items-center gap-2 self-end p-0">
-        <ComposerPrimitive.Cancel asChild><Button variant="ghost" size="sm">Cancel</Button></ComposerPrimitive.Cancel>
-        <ComposerPrimitive.Send asChild><Button size="sm">Update</Button></ComposerPrimitive.Send>
-      </CardFooter>
+  <MessagePrimitive.Root className="flex flex-col px-2 [contain-intrinsic-size:auto_200px] [content-visibility:auto]">
+    <ComposerPrimitive.Root className="ms-auto flex w-full max-w-[85%] flex-col rounded-(--composer-radius) bg-(--composer-bg) shadow-none">
+      <ComposerPrimitive.Input className="min-h-14 w-full resize-none bg-transparent px-4 pt-3 pb-1 font-body text-base text-foreground outline-none" autoFocus />
+      <div className="mx-2.5 mb-2.5 flex items-center gap-1.5 self-end">
+        <ComposerPrimitive.Cancel asChild><Button variant="ghost" size="sm" className="h-8 rounded-full px-3.5">Cancel</Button></ComposerPrimitive.Cancel>
+        <ComposerPrimitive.Send asChild><Button size="sm" className="h-8 rounded-full px-3.5">Update</Button></ComposerPrimitive.Send>
+      </div>
     </ComposerPrimitive.Root>
   </MessagePrimitive.Root>
 );
@@ -741,9 +813,9 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({ className, ...rest
 // which causes assistant-ui's context/subscription machinery to re-render
 // indefinitely (React error #185). Module-level constants are created once.
 const USER_MESSAGE_PARTS_COMPONENTS = { Text: EnhancedMarkdownText };
-const ASSISTANT_MESSAGE_PARTS_COMPONENTS = {
-  Text: EnhancedMarkdownText,
-  Reasoning: ReasoningPart,
-  tools: { Fallback: ToolCallPart },
-};
+const GROUP_BY = groupPartByType({
+  reasoning: ["group-chainOfThought", "group-reasoning"],
+  "tool-call": ["group-chainOfThought", "group-tool"],
+  "standalone-tool-call": [],
+});
 const THREAD_COMPONENTS = { UserMessage, EditComposer, AssistantMessage };
