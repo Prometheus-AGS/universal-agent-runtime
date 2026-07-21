@@ -4,10 +4,226 @@
 
 @layer base {
   /* ──────────────────────────────────────────────────────────────────────
+   * KnowMe design tokens (ported from desktop/src/index.css — the binding
+   * standard in docs/knowme-ui-ux-standard.md). Values match KnowMe exactly;
+   * the mechanism stays Tailwind 3 `hsl(var(--token))` channels by operator
+   * decision (2026-07-21, see openspec/changes/uar-ui-token-convergence).
+   *
+   * Flat 2.0 is ENFORCED below: borders/shadows are transparent by CSS rule,
+   * regions separate by background color alone.
+   * ────────────────────────────────────────────────────────────────────── */
+  :root {
+    /* KnowMe Dark — 4-step surface ladder: canvas → chrome → surface → raised */
+    --background: 213 29% 6%;          /* #0B0F14 canvas */
+    --chrome: 220 31% 10%;             /* #111620 chrome (sidebar/header) */
+    --surface: 218 30% 12%;            /* #161D29 surface */
+    --foreground: 213 31% 93%;         /* #E8EDF3 */
+    --fg-sub: 214 14% 70%;             /* #A7B0BC secondary text */
+    --fg-faint: 220 9% 46%;            /* #6B7280 faint text */
+
+    --card: 218 31% 16%;               /* #1C2535 raised */
+    --card-foreground: 213 31% 93%;
+    --card-hov: 219 33% 19%;           /* #202B40 hover */
+
+    --popover: 218 31% 16%;
+    --popover-foreground: 213 31% 93%;
+
+    --primary: 14 100% 62%;            /* #FF6A3D ember */
+    --primary-foreground: 213 29% 6%;  /* #0B0F14 on ember */
+
+    --secondary: 218 30% 12%;
+    --secondary-foreground: 213 31% 93%;
+
+    --muted: 219 30% 21%;              /* #253044 inputs/skeletons */
+    --muted-foreground: 216 26% 40%;   /* #4B6080 */
+
+    --accent: 219 33% 19%;             /* card-hov */
+    --accent-foreground: 213 31% 93%;
+
+    --destructive: 0 84% 60%;          /* #EF4444 */
+    --destructive-foreground: 213 31% 93%;
+
+    /* Flat 2.0: controls separate by filled surfaces, never strokes. */
+    --border: transparent;
+    --input: 218 30% 12%;              /* surface */
+    --ring: 14 100% 62%;               /* ember focus */
+
+    --radius: 0.75rem;
+
+    --ember: 14 100% 62%;              /* #FF6A3D */
+    --ember-2: 12 75% 52%;             /* #E04E28 */
+    --ember-soft: 6 28% 13%;           /* #2B1A18 selection surface */
+    --cyan: 187 100% 43%;              /* #00C2DC reasoning/citations/streaming */
+    --success: 142 71% 45%;            /* #22C55E */
+    --warning: 38 92% 50%;             /* #F59E0B */
+
+    /* Layout tokens */
+    --sidebar-w: 240px;
+    --right-w: 280px;
+
+    /* Sidebar rides the chrome step of the ladder */
+    --sidebar-background: 220 31% 10%;
+    --sidebar-foreground: 214 14% 70%;
+    --sidebar-primary: 14 100% 62%;
+    --sidebar-primary-foreground: 213 29% 6%;
+    --sidebar-accent: 219 33% 19%;
+    --sidebar-accent-foreground: 213 31% 93%;
+    --sidebar-border: transparent;
+    --sidebar-ring: 14 100% 62%;
+  }
+
+  .light {
+    --background: 240 7% 97%;             /* #F7F7F8 */
+    --chrome: 0 0% 100%;                  /* #FFFFFF */
+    --surface: 210 25% 98%;               /* #FAFBFC */
+    --foreground: 213 29% 6%;             /* #0B0F14 */
+    --fg-sub: 215 14% 34%;                /* #4B5563 */
+    --fg-faint: 220 9% 46%;               /* #6B7280 */
+
+    --card: 0 0% 100%;
+    --card-foreground: 213 29% 6%;
+    --card-hov: 216 24% 96%;              /* #F2F4F7 */
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 213 29% 6%;
+
+    --primary: 12 75% 52%;                /* #E04E28 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 25% 98%;
+    --secondary-foreground: 213 29% 6%;
+
+    --muted: 216 24% 96%;
+    /* Mirrors KnowMe's `--muted-foreground: var(--color-fg-sub)` (desktop/src/index.css).
+       The lighter #9AA3B0 is KnowMe's separate --color-muted-fg and only reaches
+       4.5:1 AA on dark surfaces; on this light ladder it measures 2.38:1. */
+    --muted-foreground: 215 14% 34%;      /* #4B5563 — fg-sub, 7.06:1 on #F7F7F8 */
+
+    --accent: 216 24% 96%;
+    --accent-foreground: 213 29% 6%;
+
+    --destructive: 0 72% 51%;             /* #DC2626 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: transparent;
+    --input: 210 25% 98%;
+    --ring: 12 75% 52%;
+
+    --ember: 12 75% 52%;
+    --ember-2: 12 73% 44%;                /* #C13E1E */
+    --ember-soft: 16 76% 93%;             /* #FBE8E1 */
+    --cyan: 192 91% 36%;                  /* #0891B2 */
+    --success: 142 76% 36%;               /* #16A34A */
+    --warning: 32 95% 44%;                /* #D97706 */
+    --warning-foreground: 32 95% 10%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 14% 34%;
+    --sidebar-primary: 12 75% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 216 24% 96%;
+    --sidebar-accent-foreground: 213 29% 6%;
+    --sidebar-border: transparent;
+    --sidebar-ring: 12 75% 52%;
+  }
+
+  /* High-contrast rebased onto the ladder structure; monochrome + yellow,
+     body text pairs stay ≥7:1. UAR-specific accessibility theme (no KnowMe
+     counterpart) — kept by design. */
+  .high-contrast {
+    --background: 0 0% 0%;
+    --chrome: 0 0% 6%;
+    --surface: 0 0% 10%;
+    --foreground: 0 0% 100%;
+    --fg-sub: 0 0% 88%;
+    --fg-faint: 0 0% 70%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 100%;
+    --card-hov: 0 0% 18%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 55 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 85%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 100% 65%;
+    --destructive-foreground: 0 0% 0%;
+    --border: 0 0% 100%;   /* HC exception: visible lines are the accessibility feature */
+    --input: 0 0% 14%;
+    --ring: 55 100% 50%;
+    --ember: 55 100% 50%;
+    --ember-2: 55 100% 42%;
+    --ember-soft: 0 0% 16%;
+    --cyan: 187 100% 60%;
+    --success: 120 100% 50%;
+    --warning: 55 100% 50%;
+    --warning-foreground: 0 0% 0%;
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 88%;
+    --sidebar-primary: 55 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 18%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100%;
+    --sidebar-ring: 55 100% 50%;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not(.dark) {
+      --background: 240 7% 97%;
+      --chrome: 0 0% 100%;
+      --surface: 210 25% 98%;
+      --foreground: 213 29% 6%;
+      --fg-sub: 215 14% 34%;
+      --fg-faint: 220 9% 46%;
+      --card: 0 0% 100%;
+      --card-foreground: 213 29% 6%;
+      --card-hov: 216 24% 96%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 213 29% 6%;
+      --primary: 12 75% 52%;
+      --primary-foreground: 0 0% 100%;
+      --secondary: 210 25% 98%;
+      --secondary-foreground: 213 29% 6%;
+      --muted: 216 24% 96%;
+      --muted-foreground: 215 14% 34%;   /* #4B5563 — matches .light, AA on the light ladder */
+      --accent: 216 24% 96%;
+      --accent-foreground: 213 29% 6%;
+      --destructive: 0 72% 51%;
+      --destructive-foreground: 0 0% 100%;
+      --border: transparent;
+      --input: 210 25% 98%;
+      --ring: 12 75% 52%;
+      --ember: 12 75% 52%;
+      --ember-2: 12 73% 44%;
+      --ember-soft: 16 76% 93%;
+      --cyan: 192 91% 36%;
+      --success: 142 76% 36%;
+      --warning: 32 95% 44%;
+      --warning-foreground: 32 95% 10%;
+      --sidebar-background: 0 0% 100%;
+      --sidebar-foreground: 215 14% 34%;
+      --sidebar-primary: 12 75% 52%;
+      --sidebar-primary-foreground: 0 0% 100%;
+      --sidebar-accent: 216 24% 96%;
+      --sidebar-accent-foreground: 213 29% 6%;
+      --sidebar-border: transparent;
+      --sidebar-ring: 12 75% 52%;
+    }
+  }
+
+  /* ──────────────────────────────────────────────────────────────────────
    * Admin terminal aesthetic
    *
    * Scoped to :root[data-admin-theme="terminal"] so it never bleeds into
-   * the chat surface. See docs/admin-aesthetic-spec.md for the full contract.
+   * the chat surface. Declared AFTER the KnowMe tokens so these scoped
+   * overrides always win on admin routes. Deliberate exception to the
+   * KnowMe standard (operator decision 2026-07-21). See
+   * docs/admin-aesthetic-spec.md for the full contract.
    * ────────────────────────────────────────────────────────────────────── */
   :root[data-admin-theme="terminal"] {
     /* Surfaces */
@@ -65,194 +281,13 @@
   @media (prefers-reduced-motion: reduce) {
     .terminal-scanlines::after { display: none; }
   }
-
-  :root {
-    /* UAR Dark Theme (Flat 2.0 — travisjames.ai brand) */
-    --background: 214 28% 10%;         /* #0F1923 deep navy */
-    --foreground: 210 20% 85%;         /* #C8D0DA near-white */
-
-    --card: 214 24% 13%;               /* #141E28 surface */
-    --card-foreground: 210 20% 85%;
-
-    --popover: 214 24% 13%;
-    --popover-foreground: 210 20% 85%;
-
-    --primary: 20 100% 56%;            /* #FF6A3D ember orange */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 214 20% 20%;          /* #233041 */
-    --secondary-foreground: 210 20% 75%;
-
-    --muted: 214 22% 17%;              /* #1B2636 */
-    --muted-foreground: 210 14% 55%;   /* #7A8A9A */
-
-    --accent: 214 22% 17%;
-    --accent-foreground: 210 20% 85%;
-
-    --destructive: 4 90% 58%;          /* #F2483A */
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 214 18% 22%;             /* #293848 */
-    --input: 214 20% 20%;
-    --ring: 20 100% 56%;
-
-    --radius: 0.625rem;
-
-    --ember: 20 100% 56%;              /* #FF6A3D */
-    --success: 142 70% 45%;
-    --warning: 38 92% 50%;
-
-    /* Sidebar widths */
-    --sidebar-w: 240px;
-    --right-w: 280px;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-  .dark {
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .light {
-    --background: 0 0% 98%;               /* #FAFAFA near-white */
-    --foreground: 214 20% 20%;            /* #283848 dark navy text */
-
-    --card: 0 0% 100%;                     /* #FFFFFF white surface */
-    --card-foreground: 214 20% 20%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 214 20% 20%;
-
-    --primary: 20 100% 50%;               /* #FF5722 ember orange (slightly deeper for contrast) */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 214 15% 92%;             /* #E8ECF0 */
-    --secondary-foreground: 214 20% 30%;
-
-    --muted: 214 12% 94%;                 /* #EEF0F3 */
-    --muted-foreground: 214 10% 45%;      /* #6A7585 */
-
-    --accent: 214 12% 94%;
-    --accent-foreground: 214 20% 20%;
-
-    --destructive: 4 90% 50%;             /* #E53935 */
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 214 15% 88%;               /* #D8DDE4 */
-    --input: 214 15% 90%;
-    --ring: 20 100% 50%;
-
-    --ember: 20 100% 50%;
-    --success: 142 70% 38%;
-    --warning: 38 92% 45%;
-    --warning-foreground: 38 92% 10%;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .high-contrast {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 0%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 0%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 55 100% 50%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 88%;
-    --accent: 0 0% 12%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 100% 65%;
-    --destructive-foreground: 0 0% 0%;
-    --border: 0 0% 100%;
-    --input: 0 0% 100%;
-    --ring: 55 100% 50%;
-    --ember: 55 100% 50%;
-    --success: 120 100% 50%;
-    --warning: 55 100% 50%;
-    --warning-foreground: 0 0% 0%;
-    --sidebar-background: 0 0% 0%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 55 100% 50%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 12%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 100%;
-    --sidebar-ring: 55 100% 50%;
-  }
-
-  @media (prefers-color-scheme: light) {
-    :root:not(.dark) {
-      --background: 0 0% 98%;
-      --foreground: 214 20% 20%;
-
-      --card: 0 0% 100%;
-      --card-foreground: 214 20% 20%;
-
-      --popover: 0 0% 100%;
-      --popover-foreground: 214 20% 20%;
-
-      --primary: 20 100% 50%;
-      --primary-foreground: 0 0% 100%;
-
-      --secondary: 214 15% 92%;
-      --secondary-foreground: 214 20% 30%;
-
-      --muted: 214 12% 94%;
-      --muted-foreground: 214 10% 45%;
-
-      --accent: 214 12% 94%;
-      --accent-foreground: 214 20% 20%;
-
-      --destructive: 4 90% 50%;
-      --destructive-foreground: 0 0% 100%;
-
-      --border: 214 15% 88%;
-      --input: 214 15% 90%;
-      --ring: 20 100% 50%;
-
-      --ember: 20 100% 50%;
-      --success: 142 70% 38%;
-      --warning: 38 92% 45%;
-      --warning-foreground: 38 92% 10%;
-
-      --sidebar-background: 0 0% 98%;
-      --sidebar-foreground: 240 5.3% 26.1%;
-      --sidebar-primary: 240 5.9% 10%;
-      --sidebar-primary-foreground: 0 0% 98%;
-      --sidebar-accent: 240 4.8% 95.9%;
-      --sidebar-accent-foreground: 240 5.9% 10%;
-      --sidebar-border: 220 13% 91%;
-      --sidebar-ring: 217.2 91.2% 59.8%;
-    }
-  }
 }
 
 @layer base {
+  /* Flat 2.0 enforcement: no visible borders anywhere (high-contrast theme
+     re-enables them via its own --border, applied through component classes). */
   * {
-    @apply border-border;
+    @apply border-transparent;
   }
 
   html {
@@ -262,7 +297,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
     height: 100dvh;
     overflow: hidden;
   }
@@ -274,19 +309,19 @@
     overflow: hidden;
   }
 
-  /* Scrollbar styling */
+  /* Scrollbar styling — muted surface, never a border color */
   * {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--border)) transparent;
+    scrollbar-color: hsl(var(--muted)) transparent;
   }
   *::-webkit-scrollbar { width: 6px; height: 6px; }
   *::-webkit-scrollbar-track { background: transparent; }
   *::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--border));
+    background-color: hsl(var(--muted));
     border-radius: 3px;
   }
 
-  /* Focus visible */
+  /* Focus visible — ember ring is the one allowed "line" */
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-1 ring-offset-background;
   }
@@ -328,36 +363,62 @@
   --aui-thread-max-width: 48rem;
 }
 
-/* Highlight.js code block theme (dark) */
+/* Flat 2.0 enforcement on the assistant-ui skin: no elevation, markdown
+   rules/tables separate by spacing and background, never strokes. */
+.aui-root *,
+.aui-root *::before,
+.aui-root *::after {
+  box-shadow: none !important;
+}
+
+.aui-md blockquote,
+.aui-md hr,
+.aui-md td,
+.aui-md tr,
+.aui-md pre {
+  border-color: transparent !important;
+}
+
+/* KnowMe eyebrow label utility (mono, 10px, ember) */
+.eyebrow {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: hsl(var(--ember));
+}
+
+/* Highlight.js code block theme (dark) — rides the surface step */
 .hljs {
-  background: hsl(214 28% 8%) !important;
-  color: hsl(210 20% 82%) !important;
+  background: hsl(var(--surface)) !important;
+  color: hsl(var(--foreground)) !important;
   border-radius: 0.5rem;
   padding: 1rem;
   font-size: 0.8125rem;
   line-height: 1.6;
   overflow-x: auto;
 }
-.hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: hsl(20 100% 56%); }
-.hljs-string, .hljs-attr { color: hsl(140 60% 65%); }
-.hljs-number, .hljs-literal { color: hsl(200 80% 65%); }
-.hljs-comment { color: hsl(210 14% 45%); font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: hsl(var(--ember)); }
+.hljs-string, .hljs-attr { color: hsl(142 60% 65%); }
+.hljs-number, .hljs-literal { color: hsl(var(--cyan)); }
+.hljs-comment { color: hsl(var(--fg-faint)); font-style: italic; }
 .hljs-function, .hljs-title { color: hsl(40 90% 65%); }
 .hljs-type, .hljs-class { color: hsl(260 60% 75%); }
-.hljs-variable, .hljs-params { color: hsl(210 20% 82%); }
+.hljs-variable, .hljs-params { color: hsl(var(--foreground)); }
 
 /* Highlight.js code block theme (light) */
 .light .hljs {
-  background: hsl(214 12% 96%) !important;
-  color: hsl(214 20% 25%) !important;
+  background: hsl(216 24% 96%) !important;   /* #F2F4F7 */
+  color: hsl(213 29% 6%) !important;
 }
-.light .hljs-keyword, .light .hljs-selector-tag, .light .hljs-built_in { color: hsl(20 100% 42%); }
+.light .hljs-keyword, .light .hljs-selector-tag, .light .hljs-built_in { color: hsl(var(--ember)); }
 .light .hljs-string, .light .hljs-attr { color: hsl(142 60% 32%); }
-.light .hljs-number, .light .hljs-literal { color: hsl(200 80% 40%); }
-.light .hljs-comment { color: hsl(210 10% 55%); font-style: italic; }
+.light .hljs-number, .light .hljs-literal { color: hsl(var(--cyan)); }
+.light .hljs-comment { color: hsl(var(--fg-faint)); font-style: italic; }
 .light .hljs-function, .light .hljs-title { color: hsl(40 80% 40%); }
 .light .hljs-type, .light .hljs-class { color: hsl(260 50% 50%); }
-.light .hljs-variable, .light .hljs-params { color: hsl(214 20% 25%); }
+.light .hljs-variable, .light .hljs-params { color: hsl(213 29% 6%); }
 
 /* Mobile safe areas */
 @supports (padding: max(0px)) {

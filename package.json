@@ -65,10 +65,5 @@
   "bugs": {
     "url": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues"
   },
-  "homepage": "https://github.com/Prometheus-AGS/universal-agent-runtime#readme",
-  "pnpm": {
-    "overrides": {
-      "esbuild": "0.28.1"
-    }
-  }
+  "homepage": "https://github.com/Prometheus-AGS/universal-agent-runtime#readme"
 }

@@ -1,5 +1,6 @@
 import { Bot, Info, Menu, Settings2, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { KnowMeLogo, KnowMeWordmark } from "@/components/KnowMeLogo";
 import { Button } from "@/components/ui/button";
 import { useUiState } from "@/hooks/use-ui-state";
 import { cn } from "@/lib/utils";
@@ -38,11 +39,8 @@ export function TopNav() {
 
       {/* Brand */}
       <div className="flex items-center gap-2 mr-4">
-        <div className="flex size-7 items-center justify-center rounded-md bg-primary/20">
-          <Bot size={14} className="text-primary" />
-        </div>
-        <span className="font-display text-sm font-semibold text-foreground hidden sm:block">Universal Agent Runtime</span>
-        <span className="font-display text-sm font-semibold text-foreground sm:hidden">UAR</span>
+        <KnowMeLogo size={22} className="text-foreground" />
+        <KnowMeWordmark className="text-sm" />
       </div>
 
       {/* Nav links */}
