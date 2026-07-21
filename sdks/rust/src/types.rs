@@ -25,6 +25,12 @@ pub struct ProviderModelConfig {
     pub context_window: Option<u32>,
     pub supports_vision: bool,
     pub supports_tools: bool,
+    #[serde(default)]
+    pub supports_reasoning: bool,
+    #[serde(default)]
+    pub supports_structured_output: bool,
+    #[serde(default = "sdk_default_true")]
+    pub supports_streaming: bool,
     pub max_output_tokens: Option<u32>,
     #[serde(default = "sdk_default_true")]
     pub enabled: bool,
@@ -406,4 +412,31 @@ pub struct IngestResponse {
     /// Runtime response.
     #[serde(flatten)]
     pub result: serde_json::Map<String, Value>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ProviderModelConfig;
+
+    #[test]
+    fn provider_model_capabilities_round_trip() {
+        let model = ProviderModelConfig {
+            id: "gemma-4-e2b".to_owned(),
+            display_name: Some("Gemma 4 E2B".to_owned()),
+            context_window: Some(8_192),
+            supports_vision: false,
+            supports_tools: true,
+            supports_reasoning: true,
+            supports_structured_output: true,
+            supports_streaming: true,
+            max_output_tokens: Some(1_024),
+            enabled: true,
+        };
+
+        let json = serde_json::to_value(&model).expect("model should serialize");
+        let restored: ProviderModelConfig =
+            serde_json::from_value(json).expect("model should deserialize");
+
+        assert_eq!(restored, model);
+    }
 }

@@ -331,11 +331,14 @@ pub struct CapabilityFilter {
 }
 
 impl CapabilityFilter {
-    fn matches(&self, caps: &ModelCapabilities, limits: &ModelLimits) -> bool {
+    pub(crate) fn matches(&self, caps: &ModelCapabilities, limits: &ModelLimits) -> bool {
         if self.needs_tools && !caps.tool_call {
             return false;
         }
         if self.needs_reasoning && !caps.reasoning {
+            return false;
+        }
+        if self.needs_vision && !caps.attachment {
             return false;
         }
         if self.needs_structured_output && !caps.structured_output {

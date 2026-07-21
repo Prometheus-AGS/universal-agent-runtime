@@ -90,6 +90,15 @@ pub struct ModelConfig {
     /// Whether this model supports tool/function calling.
     #[serde(default = "default_supports_tools")]
     pub supports_tools: bool,
+    /// Whether this model exposes a distinct reasoning/thinking capability.
+    #[serde(default)]
+    pub supports_reasoning: bool,
+    /// Whether this model/runtime can enforce structured JSON output.
+    #[serde(default)]
+    pub supports_structured_output: bool,
+    /// Whether this model/runtime can emit incremental response chunks.
+    #[serde(default = "default_supports_streaming")]
+    pub supports_streaming: bool,
     /// Maximum output tokens.
     #[serde(default)]
     pub max_output_tokens: Option<u32>,
@@ -99,6 +108,10 @@ pub struct ModelConfig {
 }
 
 fn default_supports_tools() -> bool {
+    true
+}
+
+fn default_supports_streaming() -> bool {
     true
 }
 
@@ -171,6 +184,9 @@ impl ProviderRegistry {
                     },
                     supports_vision: m.modalities.input.iter().any(|s| s == "image"),
                     supports_tools: m.capabilities.tool_call,
+                    supports_reasoning: m.capabilities.reasoning,
+                    supports_structured_output: m.capabilities.structured_output,
+                    supports_streaming: m.capabilities.streaming,
                     max_output_tokens: if m.limits.max_output > 0 {
                         Some(u32::try_from(m.limits.max_output).unwrap_or(u32::MAX))
                     } else {
@@ -189,6 +205,9 @@ impl ProviderRegistry {
                 context_window: None,
                 supports_vision: false,
                 supports_tools: true,
+                supports_reasoning: false,
+                supports_structured_output: false,
+                supports_streaming: true,
                 max_output_tokens: None,
                 enabled: true,
             }]
@@ -584,6 +603,9 @@ fn models_from_catalog(provider: &ProviderInfo) -> Vec<ModelConfig> {
             },
             supports_vision: m.modalities.input.iter().any(|i| i == "image"),
             supports_tools: m.capabilities.tool_call,
+            supports_reasoning: m.capabilities.reasoning,
+            supports_structured_output: m.capabilities.structured_output,
+            supports_streaming: m.capabilities.streaming,
             max_output_tokens: if m.limits.max_output > 0 {
                 u32::try_from(m.limits.max_output).ok()
             } else {
@@ -742,6 +764,9 @@ mod tests {
             context_window: Some(8_192),
             supports_vision: false,
             supports_tools: true,
+            supports_reasoning: false,
+            supports_structured_output: false,
+            supports_streaming: true,
             max_output_tokens: Some(1_024),
             enabled: false,
         }];
