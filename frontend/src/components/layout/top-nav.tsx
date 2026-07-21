@@ -1,6 +1,7 @@
 import { Bot, Info, Menu, Settings2, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { KnowMeLogo, KnowMeWordmark } from "@/components/KnowMeLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useUiState } from "@/hooks/use-ui-state";
 import { cn } from "@/lib/utils";
@@ -64,6 +65,11 @@ export function TopNav() {
           </Button>
         ))}
       </nav>
+
+      {/* Theme cycle — dark / light / high-contrast / system */}
+      <div className="ml-auto">
+        <ThemeToggle />
+      </div>
     </header>
   );
 }

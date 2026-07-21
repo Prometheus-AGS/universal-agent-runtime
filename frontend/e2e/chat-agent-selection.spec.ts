@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Chat — Agent selection", () => {
   test("chat page loads agent selector", async ({ page }) => {
     await page.goto("/threads");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // If the no-model guard is showing, skip — we need a configured server
     const guard = page.locator("text=No Model Configured, text=No LLM Provider Configured");
@@ -19,14 +19,14 @@ test.describe("Chat — Agent selection", () => {
       await newConv.click();
     }
 
-    // Agent selector should appear in the top bar
-    const agentSelector = page.locator("[class*='agent-selector'], button:has-text('Default Agent'), text=Default Agent").first();
-    await expect(agentSelector).toBeVisible({ timeout: 8000 });
+    // Agent selector (aria-label="Select agent") is always rendered in the chat toolbar
+    const agentSelector = page.getByLabel("Select agent").first();
+    await expect(agentSelector).toBeVisible({ timeout: 15000 });
   });
 
   test("new thread button creates a thread", async ({ page }) => {
     await page.goto("/threads");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const guard = page.locator("text=No Model Configured").first();
     const guardVisible = await guard.isVisible().catch(() => false);

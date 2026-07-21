@@ -51,7 +51,9 @@ export default defineConfig({
       },
       url: `${appBaseUrl}/readyz`,
       reuseExistingServer: false,
-      timeout: 60_000,
+      // Cold boot is slow on dev machines (SurrealKV init + MCP stdio spawn
+      // measure ~66s on first run); 60s was intermittently too short.
+      timeout: 180_000,
     },
   ],
 });

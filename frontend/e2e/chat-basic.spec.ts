@@ -10,7 +10,7 @@ test.describe("Chat — Basic smoke tests", () => {
 
   test("chat UI is functional when model is configured", async ({ page }) => {
     await page.goto("/threads");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const guard = page.locator("text=No Model Configured, text=No LLM Provider Configured");
     const guardVisible = await guard.first().isVisible().catch(() => false);
