@@ -34,6 +34,7 @@ import {
 import { type FC, type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { EnhancedMarkdownText } from "@/components/assistant-ui/enhanced-markdown-text";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
+import { KnowMeLogo, KnowMeWordmark } from "@/components/KnowMeLogo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -140,11 +141,11 @@ const UarWelcome: FC = () => (
   <div className="mx-auto my-auto flex w-full max-w-(--thread-max-width) grow flex-col">
     <div className="flex w-full grow flex-col items-center justify-center">
       <div className="flex size-full flex-col items-center justify-center gap-4 px-4 text-center">
-        <div className="flex items-center justify-center rounded-2xl border border-border/50 bg-muted/30 p-4">
-          <SparklesIcon size={28} className="text-primary" />
+        <div className="flex items-center justify-center rounded-2xl bg-card p-4">
+          <KnowMeLogo size={28} className="text-foreground" />
         </div>
         <div className="space-y-1">
-          <h1 className="font-display font-semibold text-2xl tracking-tight text-foreground">Universal Agent Runtime</h1>
+          <h1 className="font-display font-semibold text-2xl tracking-tight text-foreground"><KnowMeWordmark /></h1>
           <p className="font-mono text-[11px] text-primary">{"// Ready to assist"}</p>
         </div>
         <p className="max-w-sm font-body text-sm text-muted-foreground leading-relaxed">

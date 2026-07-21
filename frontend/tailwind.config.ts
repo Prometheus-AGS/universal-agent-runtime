@@ -1,17 +1,25 @@
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 
+// KnowMe token bindings (uar-ui-token-convergence). Token VALUES live in
+// src/index.css; this file only maps them to utilities. `--border` and
+// `--sidebar-border` are the literal `transparent` (Flat 2.0), so they bind
+// as raw var() instead of hsl() channels.
 const config: Config = {
 	darkMode: ["class"],
 	content: ["./index.html", "./src/**/*.{ts,tsx}", "./packages/a2ui-uar/src/**/*.{ts,tsx}"],
 	theme: {
 		extend: {
 			colors: {
-				border: 'hsl(var(--border))',
+				border: 'var(--border)',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
+				chrome: 'hsl(var(--chrome))',
+				surface: 'hsl(var(--surface))',
 				foreground: 'hsl(var(--foreground))',
+				'fg-sub': 'hsl(var(--fg-sub))',
+				'fg-faint': 'hsl(var(--fg-faint))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
@@ -38,9 +46,15 @@ const config: Config = {
 				},
 				card: {
 					DEFAULT: 'hsl(var(--card))',
-					foreground: 'hsl(var(--card-foreground))'
+					foreground: 'hsl(var(--card-foreground))',
+					hov: 'hsl(var(--card-hov))'
 				},
-				ember: 'hsl(var(--ember))',
+				ember: {
+					DEFAULT: 'hsl(var(--ember))',
+					2: 'hsl(var(--ember-2))',
+					soft: 'hsl(var(--ember-soft))'
+				},
+				cyan: 'hsl(var(--cyan))',
 				success: 'hsl(var(--success))',
 				warning: 'hsl(var(--warning))',
 				sidebar: {
@@ -50,21 +64,25 @@ const config: Config = {
 					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
 					accent: 'hsl(var(--sidebar-accent))',
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
+					border: 'var(--sidebar-border)',
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
 			borderRadius: {
+				sm: 'calc(var(--radius) * 0.6)',
+				md: 'calc(var(--radius) * 0.8)',
 				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				xl: 'calc(var(--radius) * 1.4)',
+				'2xl': 'calc(var(--radius) * 1.8)',
+				'3xl': 'calc(var(--radius) * 2.2)',
+				'4xl': 'calc(var(--radius) * 2.6)'
 			},
 			fontFamily: {
-				sans: ['Inter', 'system-ui', 'sans-serif'],
+				sans: ['Geist Variable', 'Inter', 'system-ui', 'sans-serif'],
 				mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
 				display: ['Space Grotesk', 'Inter', 'sans-serif'],
-				body: ['Inter', 'system-ui', 'sans-serif'],
-				ui: ['Inter', 'system-ui', 'sans-serif']
+				body: ['Geist Variable', 'Inter', 'system-ui', 'sans-serif'],
+				ui: ['Geist Variable', 'Inter', 'system-ui', 'sans-serif']
 			},
 			keyframes: {
 				'accordion-down': {
