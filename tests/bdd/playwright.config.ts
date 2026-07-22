@@ -49,7 +49,9 @@ export default defineConfig({
     cucumberReporter('json', { outputFile: 'cucumber-report.json' }),
   ],
   use: {
-    baseURL: APP_BASE_URL,
+    // Tests open the page through the dev proxy (see webServer below), not
+    // the backend's static serve — same shape as local development.
+    baseURL: 'http://127.0.0.1:8085',
     trace: 'on-first-retry',
     video: 'on',
   },
@@ -90,9 +92,26 @@ export default defineConfig({
         // `security.jwt_required` in config.rs. `UAR_SECURITY__JWT_REQUIRED`
         // (config-rs `Environment` source) is what actually works.
         UAR_SECURITY__JWT_REQUIRED: 'false',
+        // JWT is configured (secret present) but not required — the suite
+        // opens the web page and calls the API without a token.
+        UAR_SECURITY__JWT_SECRET: 'bdd-dev-secret-at-least-32-characters-long',
       },
       reuseExistingServer: !process.env.CI,
-      timeout: 30_000,
+      // Cold boot (SurrealKV init + MCP stdio spawn) measures ~66s on dev
+      // machines; 30s raced it every time (same fix as
+      // frontend/playwright.real-server.config.ts).
+      timeout: 180_000,
+    },
+    {
+      // Frontend dev proxy (vite): the page is served from source and its
+      // /api, /healthz, /readyz calls are proxied to the backend above —
+      // the same shape as local development, no JWT in the browser.
+      command: 'bun run dev --host 127.0.0.1 --port 8085 --strictPort',
+      cwd: path.join(REPO_ROOT, 'frontend'),
+      env: { UAR_BACKEND_URL: APP_BASE_URL },
+      url: 'http://127.0.0.1:8085/threads',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
     },
   ],
 });
