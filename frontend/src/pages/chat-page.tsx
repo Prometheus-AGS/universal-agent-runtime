@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useThreadUi } from "@/hooks/use-thread-ui";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Settings2 } from "lucide-react";
+import { AlertTriangle, Menu, Settings2, X } from "lucide-react";
 import { useChatPage } from "@/hooks/use-chat-page";
 
 /** Thread detail view — wraps chat runtime for the store-selected thread. */
@@ -57,7 +57,7 @@ function NoThreadSelected() {
 
 export function ChatPage() {
   const { activeThreadId } = useThreadUi();
-  const { mobileSidebarOpen, setMobileSidebarOpen } = useUiState();
+  const { mobileSidebarOpen, setMobileSidebarOpen, toggleMobileSidebar } = useUiState();
   const [configOpen, setConfigOpen] = useState(false);
   const [agentConfigState, setAgentConfigState] = useState<{
     threadId: string | null;
@@ -119,8 +119,8 @@ export function ChatPage() {
       {/* Left sidebar */}
       <LeftSidebar
         className={cn(
-          "shrink-0 border-r border-border transition-transform duration-200 ease-in-out",
-          "fixed inset-y-0 left-0 top-12 z-40 md:relative md:top-auto md:z-auto",
+          "shrink-0 bg-chrome transition-transform duration-200 ease-in-out",
+          "fixed inset-y-0 left-0 z-40 md:relative md:z-auto",
           mobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
           "w-[var(--sidebar-w)]",
         )}
@@ -130,7 +130,16 @@ export function ChatPage() {
       <main className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Agent selector toolbar — always visible so users can pick an agent
             before starting a thread (threadId null is handled inside the component). */}
-        <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+        <div className="flex items-center gap-2 bg-background px-4 py-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 md:hidden"
+            onClick={toggleMobileSidebar}
+            aria-label={mobileSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          >
+            {mobileSidebarOpen ? <X size={18} /> : <Menu size={18} />}
+          </Button>
           <AgentSelector threadId={activeThreadId} onAgentConfigChange={handleAgentConfigChange} className="flex-1" />
           <Button
             variant="ghost"
