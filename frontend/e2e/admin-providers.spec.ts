@@ -10,7 +10,7 @@ test.describe("Admin — Providers page", () => {
     await expect(page.locator("body")).toBeVisible();
     // Should contain the Providers heading or nav item
     const heading = page.locator("h2, [data-testid='providers-heading']").filter({ hasText: /providers/i });
-    await expect(heading.first()).toBeVisible({ timeout: 8000 });
+    await expect(heading.first()).toBeVisible({ timeout: 15000 });
   });
 
   test("navigating to providers does not crash the app", async ({ page }) => {

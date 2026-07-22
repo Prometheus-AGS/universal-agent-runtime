@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test("admin page loads with Providers nav item", async ({ page }) => {
   await page.goto("/admin");
-  await expect(page.locator("text=Providers")).toBeVisible();
+  await expect(page.locator("text=Providers").first()).toBeVisible();
 });
 
 test("chat page loads", async ({ page }) => {

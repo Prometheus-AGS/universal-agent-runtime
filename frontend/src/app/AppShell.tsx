@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
 import { KnowMeLogo, KnowMeWordmark } from "@/components/KnowMeLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useHealthz } from "@/hooks/use-healthz";
 import { cn } from "@/lib/utils";
 import { DESTINATIONS, isDestinationActive } from "./navigation";
@@ -81,6 +82,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-3 px-5 pb-2 pt-6 text-foreground">
             <KnowMeLogo size={28} />
             <KnowMeWordmark className="text-xl" />
+            <div className="ml-auto">
+              <ThemeToggle />
+            </div>
           </div>
           <p className="pb-4 pl-12 font-mono text-[10px] uppercase tracking-widest text-fg-faint">
             Universal Agent Runtime

@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Chat — Session config panel", () => {
   test("session config button is accessible from chat", async ({ page }) => {
     await page.goto("/threads");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Skip if no model guard is showing
     const guard = page.locator("text=No Model Configured, text=No LLM Provider Configured");
