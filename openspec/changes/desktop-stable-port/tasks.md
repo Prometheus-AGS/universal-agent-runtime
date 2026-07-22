@@ -23,7 +23,7 @@
 ## 4. Shell stability + A2UI parity
 
 - [ ] 4.1 Boot the desktop app on macOS to an interactive state; confirm a not-yet-downloaded model shows a download/progress state, not a hang or panic (runtime — needs a launched app)
-- [ ] 4.2 Run an agent turn on a macOS local model end-to-end without crashing (runtime — needs a launched app + downloaded model)
+- [~] 4.2 App launched on macOS via `tauri dev` and booted clean (migrations/host/sync ready, no crash). Runtime config bug found + FIXED (commit fc7b8d0): the desktop DEFAULT_LOCAL_MODEL was a GGUF id, but macOS now runs MlxcEngine which resolves ids against the MLX catalog → "failed to prepare local inference". Split the cfg (macOS→MLX id qwen3.5-4b-mlx-4bit, Win/Linux→GGUF). App relaunched with NO prepare error. REMAINING: the actual on-device generation (model download + token stream) needs an operator to send a Local-lane message — the `tauri dev` binary can't be driven by computer-use. Live diagnostics-log monitor is ready to certify when triggered.
 - [x] 4.3 Verified by inspection: `spawn_chat_event_forwarder` (`tauri-plugin-gen-ui/src/lib.rs:146`) emits the ENTIRE `A2uiEvent` to `gen-ui://chat-event` unconditionally — the `match` at 134-144 is logging-only, not a filter. All ContentBlock variants (thinking/toolUse/toolResult/citation/memory/skill) reach the webview. Runtime confirmation folds into 4.2.
 - [ ] 4.4 Confirm the runtime ops console updates runs/steps/tool-calls live from the local run's event stream (runtime — folds into 4.2)
 

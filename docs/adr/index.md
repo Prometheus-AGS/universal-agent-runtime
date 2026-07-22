@@ -17,6 +17,7 @@ This directory contains the architecture decision records (ADRs) for the Univers
 | [ADR-0009](0009-a2ui-vendor-webcore.md) | Vendor `@a2ui/web_core` and `@a2ui/react` and build a UAR-owned renderer | 2026-07-13 | Accepted |
 | [ADR-0010](0010-a2ui-renderer-on-webcore.md) | Build the A2UI renderer on webcore with React and shadcn/ui | 2026-07-13 | Accepted |
 | [ADR-0011](0011-docs-visual-regression.md) | Host a unified docs portal with Docusaurus and add visual regression | 2026-07-14 | Accepted |
+| [ADR-0012](0012-transport-free-ag-ui-adapter.md) | Transport-free AG-UI adapter reachable from the embedded runtime | 2026-07-22 | Accepted |
 
 ## Process
 
