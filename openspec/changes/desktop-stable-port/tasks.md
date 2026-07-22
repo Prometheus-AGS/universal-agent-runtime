@@ -18,7 +18,7 @@
 
 - [x] 3.1 Per-target engine selection at the construction site (`tauri-plugin-gen-ui/src/commands.rs:397`): `#[cfg(target_os="macos")]` → `MlxcEngine::new(model-cache/mlx)`, `#[cfg(not(macos))]` → `LlamaCppEngine::new(model-cache)`. VERIFIED: full `tauri-plugin-gen-ui` build on macOS at the 14.0 floor (arm64-apple-macosx14.0.0), exit 0.
 - [x] 3.2 Per-target Cargo features (`tauri-plugin-gen-ui/Cargo.toml`): moved `gen_ui_inference` into `[target.'cfg(target_os="macos")']` → `local-mlxc` and `[target.'cfg(not(macos))']` → `local-llama`. Verified by the successful macOS plugin build.
-- [ ] 3.3 Verify a Windows/Linux desktop build still selects and runs the llama.cpp lane (no regression) — cross-compile check (deferred; macOS build verified first)
+- [~] 3.3 Win/Linux no-regression: verified by construction — the `not(target_os="macos")` Cargo block is the UNCHANGED prior `local-llama` config, and the two target blocks are mutually exclusive, so non-macOS resolution is unaffected. A real cross-build needs a Linux/Windows toolchain + tauri system libs (gtk/webkit) not available on this macOS host; the authoritative gate is CI's Linux/Windows runners. FLAGGED: not built here.
 
 ## 4. Shell stability + A2UI parity
 
@@ -29,6 +29,6 @@
 
 ## 5. Certify + finalize
 
-- [ ] 5.1 Make MLX the macOS default local lane; drop the llama.cpp macOS fallback once certified
+- [x] 5.1 MLX IS the macOS default: the `#[cfg(target_os="macos")]` construction builds only `MlxcEngine` and the macOS Cargo block pulls only `local-mlxc` — there is no llama.cpp fallback on macOS. (Live-run certification of the generation path is task 4.2, device-cert territory like iOS.)
 - [ ] 5.2 Update KBD waypoint (`.kbd-orchestrator/`) and mirror to Surreal Memory MCP
-- [ ] 5.3 Record a progress log in the karpathy wiki; document the new macOS minimum
+- [x] 5.3 Karpathy wiki progress log written (`rust/.prometheus/knowledge/wiki/desktop-macos-mlx-floor-raise-and-ios-thinking-split.md`, commit e83fd63) documenting the new macOS 14.0 minimum + the floor-raise/mlex-unblock/engine-matrix milestone.
