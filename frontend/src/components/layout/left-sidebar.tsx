@@ -96,18 +96,18 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
 
   return (
     <>
-      <aside className={cn("flex h-full flex-col bg-card", className)}>
+      <aside className={cn("flex h-full flex-col bg-chrome", className)}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-3 py-3">
+      <div className="flex items-center justify-between px-3 py-3">
         <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">Threads</span>
-        <Button variant="outline" size="sm" onClick={handleNewThread} className="h-7 gap-1.5 px-2.5 font-ui text-xs font-semibold text-muted-foreground hover:border-primary hover:text-primary" aria-label="New thread">
+        <Button variant="ghost" size="sm" onClick={handleNewThread} className="h-7 gap-1.5 px-2.5 font-ui text-xs font-semibold text-muted-foreground hover:bg-ember-soft hover:text-ember" aria-label="New thread">
           <Plus size={14} />New thread
         </Button>
       </div>
 
       {/* Search */}
       <div className="px-3 py-2">
-        <div className="flex items-center gap-2 rounded-md border border-border bg-background px-2.5 py-1.5">
+        <div className="flex items-center gap-2 rounded-md bg-surface px-2.5 py-1.5">
           <Search size={14} className="text-muted-foreground" />
           <input
             type="text"
@@ -138,8 +138,8 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
                 className={cn(
                   "h-auto w-full cursor-pointer justify-start gap-2 rounded-md px-2.5 py-2 pr-9 text-left",
                   activeThreadId === thread.id
-                    ? "border-l-[3px] border-l-primary bg-accent hover:bg-accent"
-                    : "hover:bg-muted/50",
+                    ? "bg-ember-soft hover:bg-ember-soft"
+                    : "hover:bg-card-hov",
                 )}
                 aria-current={activeThreadId === thread.id ? "page" : undefined}
               >

@@ -28,7 +28,7 @@ export function AboutPage() {
           <p className="mt-3 font-mono text-sm text-primary">{"Agentic streaming AI infrastructure · powered by the Universal Agent Runtime"}</p>
 
           {health && (
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-4 py-1.5">
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-success/10 px-4 py-1.5">
               <div className="size-2 rounded-full bg-success animate-pulse" />
               <span className="font-mono text-[11px] text-success">
                 {health.status ?? "online"}{health.version ? ` · v${health.version}` : ""}
@@ -38,7 +38,7 @@ export function AboutPage() {
         </div>
 
         {/* Description */}
-        <div className="mb-12 rounded-xl border border-border bg-card p-6">
+        <div className="mb-12 rounded-xl bg-card p-6">
           <p className="font-body text-base leading-relaxed text-foreground">
             The Universal Agent Runtime is an agentic streaming LLM application built on{" "}
             <span className="text-primary">Rust (Axum)</span> with a{" "}
@@ -57,7 +57,7 @@ export function AboutPage() {
         <h2 className="mb-4 font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">Capabilities</h2>
         <div className="mb-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
           {features.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="rounded-xl border border-border bg-card p-5">
+            <div key={title} className="rounded-xl bg-card p-5">
               <div className="mb-3 flex size-9 items-center justify-center rounded-lg bg-primary/15">
                 <Icon size={16} className="text-primary" />
               </div>
@@ -69,15 +69,15 @@ export function AboutPage() {
 
         {/* Tech stack */}
         <h2 className="mb-4 font-mono text-[11px] font-medium uppercase tracking-widest text-muted-foreground">Stack</h2>
-        <div className="mb-12 overflow-hidden rounded-xl border border-border">
+        <div className="mb-12 overflow-hidden rounded-xl bg-card">
           {[
             ["Backend", "Rust · Axum · Leptos SSR · rmcp · tokio · mimalloc"],
             ["Frontend", "React 19 · Vite 7 · TypeScript · Tailwind CSS · Zustand"],
             ["Streaming", "Server-Sent Events · AG-UI protocol · dual stream mode"],
             ["AI", "OpenAI Chat Completions API · MCP (Model Context Protocol)"],
             ["Persistence", "SQLite · Zustand localStorage · thread registry"],
-          ].map(([label, value], i, arr) => (
-            <div key={label} className={`flex items-start gap-4 px-5 py-3.5 ${i < arr.length - 1 ? "border-b border-border" : ""}`}>
+          ].map(([label, value]) => (
+            <div key={label} className="flex items-start gap-4 px-5 py-3.5">
               <span className="w-24 shrink-0 font-mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{label}</span>
               <span className="font-body text-sm text-foreground">{value}</span>
             </div>
