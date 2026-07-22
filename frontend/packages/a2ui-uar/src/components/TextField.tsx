@@ -41,7 +41,7 @@ export const UarTextField: FC<{ props: TextFieldProps }> = ({ props }) => {
       {isLongText ? (
         <textarea
           {...sharedProps}
-          className="min-h-24 w-full rounded-md border border-input bg-transparent px-2.5 py-2 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
+          className="min-h-24 w-full rounded-md bg-surface px-2.5 py-2 text-base outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
         />
       ) : (
         <Input type={HTML_TYPE[props.variant ?? "shortText"]} {...sharedProps} />

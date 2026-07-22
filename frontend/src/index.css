@@ -35,7 +35,7 @@
     --secondary-foreground: 213 31% 93%;
 
     --muted: 219 30% 21%;              /* #253044 inputs/skeletons */
-    --muted-foreground: 216 26% 40%;   /* #4B6080 */
+    --muted-foreground: 214 14% 70%;   /* #A7B0BC — mirrors KnowMe's --muted-foreground: var(--color-fg-sub) */
 
     --accent: 219 33% 19%;             /* card-hov */
     --accent-foreground: 213 31% 93%;
