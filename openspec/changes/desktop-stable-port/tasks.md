@@ -16,16 +16,16 @@
 
 ## 3. Desktop engine matrix
 
-- [ ] 3.1 Wire per-target engine selection at the desktop construction site: macOS → `MlxcEngine`, Windows/Linux → llama.cpp
-- [ ] 3.2 Set per-target Cargo features so one codebase builds the correct lane per platform
-- [ ] 3.3 Verify a Windows/Linux desktop build still selects and runs the llama.cpp lane (no regression)
+- [x] 3.1 Per-target engine selection at the construction site (`tauri-plugin-gen-ui/src/commands.rs:397`): `#[cfg(target_os="macos")]` → `MlxcEngine::new(model-cache/mlx)`, `#[cfg(not(macos))]` → `LlamaCppEngine::new(model-cache)`. VERIFIED: full `tauri-plugin-gen-ui` build on macOS at the 14.0 floor (arm64-apple-macosx14.0.0), exit 0.
+- [x] 3.2 Per-target Cargo features (`tauri-plugin-gen-ui/Cargo.toml`): moved `gen_ui_inference` into `[target.'cfg(target_os="macos")']` → `local-mlxc` and `[target.'cfg(not(macos))']` → `local-llama`. Verified by the successful macOS plugin build.
+- [ ] 3.3 Verify a Windows/Linux desktop build still selects and runs the llama.cpp lane (no regression) — cross-compile check (deferred; macOS build verified first)
 
 ## 4. Shell stability + A2UI parity
 
-- [ ] 4.1 Boot the desktop app on macOS to an interactive state; confirm a not-yet-downloaded model shows a download/progress state, not a hang or panic
-- [ ] 4.2 Run an agent turn on a macOS local model end-to-end without crashing
-- [ ] 4.3 Confirm the Tauri `spawn_chat_event_forwarder` streams `thinking`, `toolUse`, `toolResult`, `citation`, `memory`, and `skill` ContentBlocks live from the local run
-- [ ] 4.4 Confirm the runtime ops console updates runs/steps/tool-calls live from the local run's event stream
+- [ ] 4.1 Boot the desktop app on macOS to an interactive state; confirm a not-yet-downloaded model shows a download/progress state, not a hang or panic (runtime — needs a launched app)
+- [ ] 4.2 Run an agent turn on a macOS local model end-to-end without crashing (runtime — needs a launched app + downloaded model)
+- [x] 4.3 Verified by inspection: `spawn_chat_event_forwarder` (`tauri-plugin-gen-ui/src/lib.rs:146`) emits the ENTIRE `A2uiEvent` to `gen-ui://chat-event` unconditionally — the `match` at 134-144 is logging-only, not a filter. All ContentBlock variants (thinking/toolUse/toolResult/citation/memory/skill) reach the webview. Runtime confirmation folds into 4.2.
+- [ ] 4.4 Confirm the runtime ops console updates runs/steps/tool-calls live from the local run's event stream (runtime — folds into 4.2)
 
 ## 5. Certify + finalize
 
