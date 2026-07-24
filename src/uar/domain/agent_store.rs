@@ -68,10 +68,7 @@ pub async fn replace_agent(
 /// # Errors
 ///
 /// Returns an error if the persistence write fails.
-pub async fn upsert_agent(
-    persistence: &dyn PersistenceLayer,
-    agent: &AgentArtifact,
-) -> Result<()> {
+pub async fn upsert_agent(persistence: &dyn PersistenceLayer, agent: &AgentArtifact) -> Result<()> {
     persistence
         .save_agent(agent)
         .await

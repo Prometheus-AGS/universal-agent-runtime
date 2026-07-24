@@ -797,7 +797,9 @@ impl RunManager {
         conversation_id: &str,
     ) -> EffectiveRunPolicy {
         let Some(settings_manager) = self.settings_manager.as_ref() else {
-            return self.resolve_legacy_run_policy(artifact, conversation_id).await;
+            return self
+                .resolve_legacy_run_policy(artifact, conversation_id)
+                .await;
         };
         let (universe, conversation) = self.build_universe_and_conversation(conversation_id).await;
         let ctx = PolicyResolutionContext {
