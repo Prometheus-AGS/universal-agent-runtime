@@ -16,15 +16,30 @@ use universal_agent_runtime::{
     mcp::registry::McpRegistry,
     uar::{
         a2ui::registry::A2uiRegistry,
-        domain::{artifact::AgentArtifact, events::MemoryItem},
+        domain::{agent_store, artifact::AgentArtifact, events::MemoryItem},
         persistence::PersistenceLayer,
         rag::embeddings::EmbeddingBackend,
         runtime::{
             manager::{RunManager, StreamEvent},
             native_skill::NativeSkillRegistry,
         },
+        settings::schema::{SettingsType, SettingsWithMeta},
     },
 };
+
+/// A point-in-time view of the embedded runtime's settings.
+///
+/// Mirrors the shape the HTTP admin surface exposes: the current setting values
+/// (with their transient source/drift metadata) and the registered setting types
+/// (JSON Schemas) that describe and validate them.
+#[cfg(feature = "embedded")]
+#[derive(Debug, Clone)]
+pub struct SettingsSnapshot {
+    /// Current setting values with their transient metadata.
+    pub values: Vec<SettingsWithMeta>,
+    /// Registered setting types (JSON Schema per namespace).
+    pub types: Vec<SettingsType>,
+}
 
 use crate::error::{Error, Result};
 
@@ -191,6 +206,107 @@ impl Runtime {
             .continue_with_interaction(run_id, interaction)
             .await
             .map_err(Error::Runtime)
+    }
+
+    // =====================================================================
+    // Embedded administration surface
+    //
+    // Typed settings and agent-definition management backed by the runtime's
+    // own SettingsManager + persistence, so an embedded host can run its
+    // control plane with no HTTP service.
+    // =====================================================================
+
+    /// Read a typed setting by key (e.g. `run_policy.global`).
+    ///
+    /// Returns the raw JSON value, or `None` when the setting is unset.
+    ///
+    /// # Errors
+    ///
+    /// Currently infallible for reads; returns `Result` for forward
+    /// compatibility with validating backends.
+    #[cfg(feature = "embedded")]
+    pub async fn get_setting(&self, key: &str) -> Result<Option<serde_json::Value>> {
+        Ok(self.inner.settings_manager().get_value(key).await)
+    }
+
+    /// Write a typed setting by key (e.g. `run_policy.global`).
+    ///
+    /// The value is validated against the setting type's JSON Schema before it
+    /// is persisted. The next resolved run observes the new value.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the key is unknown or the value fails schema
+    /// validation.
+    #[cfg(feature = "embedded")]
+    pub async fn set_setting(&self, key: &str, value: serde_json::Value) -> Result<()> {
+        self.inner
+            .settings_manager()
+            .set_value(key, value)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Snapshot the current settings values and their registered types.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the registered types cannot be listed.
+    #[cfg(feature = "embedded")]
+    pub async fn settings_snapshot(&self) -> Result<SettingsSnapshot> {
+        let settings_manager = self.inner.settings_manager();
+        let values = settings_manager.list_all_with_meta().await;
+        let types = settings_manager.list_types().await.map_err(runtime_error)?;
+        Ok(SettingsSnapshot { values, types })
+    }
+
+    /// List persisted agent definitions.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the persistence read fails.
+    #[cfg(feature = "embedded")]
+    pub async fn list_agents(&self) -> Result<Vec<AgentArtifact>> {
+        agent_store::list_agents(self.inner.persistence().as_ref())
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Load a single agent definition by id.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the persistence read fails.
+    #[cfg(feature = "embedded")]
+    pub async fn get_agent(&self, id: &str) -> Result<Option<AgentArtifact>> {
+        agent_store::get_agent(self.inner.persistence().as_ref(), id)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Insert or replace an agent definition as provided (id and kind preserved).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the persistence write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn upsert_agent(&self, agent: AgentArtifact) -> Result<()> {
+        agent_store::upsert_agent(self.inner.persistence().as_ref(), &agent)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Delete an agent definition by id.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for built-in agents (which cannot be deleted) or if the
+    /// persistence delete fails.
+    #[cfg(feature = "embedded")]
+    pub async fn delete_agent(&self, id: &str) -> Result<()> {
+        agent_store::delete_agent(self.inner.persistence().as_ref(), id)
+            .await
+            .map_err(runtime_error)
     }
 
     /// Explicitly start UAR's HTTP server. This is not part of embedded mode
