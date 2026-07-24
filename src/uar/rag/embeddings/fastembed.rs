@@ -4,7 +4,7 @@ use fastembed::{
     InitOptionsUserDefined, Pooling, TextEmbedding, TokenizerFiles, UserDefinedEmbeddingModel,
 };
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex as StdMutex};
 use tokio::sync::Mutex;
 use tracing::info;
 
@@ -21,7 +21,10 @@ const MODEL_FILES: [&str; 5] = [
 pub struct FastEmbedBackend {
     models_dir: String,
     vector_dimension: usize,
-    engine: Mutex<Option<Arc<TextEmbedding>>>,
+    // fastembed 5.x's `TextEmbedding::embed` takes `&mut self`, so the shared
+    // engine is wrapped in a std Mutex for exclusive per-call access from the
+    // blocking inference thread. The outer async Mutex guards lazy init only.
+    engine: Mutex<Option<Arc<StdMutex<TextEmbedding>>>>,
 }
 
 impl std::fmt::Debug for FastEmbedBackend {
@@ -67,7 +70,7 @@ impl FastEmbedBackend {
         )))
     }
 
-    async fn ensure_initialized(&self) -> Result<Arc<TextEmbedding>, EmbeddingError> {
+    async fn ensure_initialized(&self) -> Result<Arc<StdMutex<TextEmbedding>>, EmbeddingError> {
         let mut guard = self.engine.lock().await;
         if let Some(engine) = guard.as_ref() {
             return Ok(Arc::clone(engine));
@@ -102,7 +105,7 @@ impl FastEmbedBackend {
         .map_err(|e| EmbeddingError::BackendUnavailable(format!("init task panicked: {e}")))?;
 
         let engine = engine?;
-        let engine = Arc::new(engine);
+        let engine = Arc::new(StdMutex::new(engine));
         *guard = Some(Arc::clone(&engine));
         Ok(engine)
     }
@@ -125,6 +128,11 @@ impl EmbeddingBackend for FastEmbedBackend {
         let engine = self.ensure_initialized().await?;
         let texts: Vec<String> = texts.iter().map(|s| s.to_string()).collect();
         tokio::task::spawn_blocking(move || {
+            // fastembed 5.x `embed` needs `&mut self`; lock the std Mutex for
+            // exclusive access on this blocking thread.
+            let mut engine = engine
+                .lock()
+                .map_err(|e| EmbeddingError::RequestFailed(format!("engine lock poisoned: {e}")))?;
             engine
                 .embed(texts, None)
                 .map_err(|e| EmbeddingError::RequestFailed(format!("inference failed: {e}")))
