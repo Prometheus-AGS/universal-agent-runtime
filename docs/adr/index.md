@@ -19,6 +19,7 @@ This directory contains the architecture decision records (ADRs) for the Univers
 | [ADR-0011](0011-docs-visual-regression.md) | Host a unified docs portal with Docusaurus and add visual regression | 2026-07-14 | Accepted |
 | [ADR-0012](0012-transport-free-ag-ui-adapter.md) | Transport-free AG-UI adapter reachable from the embedded runtime | 2026-07-22 | Accepted |
 | [ADR-0013](0013-embedded-run-policy-and-admin-surface.md) | Embedded run-policy resolution + embedded admin surface | 2026-07-24 | Accepted |
+| [ADR-0014](0014-effective-policy-model-backfill.md) | Backfill the effective-run-policy model route from the registry default | 2026-07-24 | Accepted |
 
 ## Process
 

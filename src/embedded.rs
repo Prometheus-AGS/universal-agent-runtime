@@ -615,6 +615,59 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn effective_run_policy_artifact_backfills_the_registry_default_model() {
+        // The seeded/default agent leaves `provider.default` empty (it defers to
+        // the registry default). Without the backfill the emitted
+        // `effective_run_policy` artifact would carry an empty ModelRoute and the
+        // downstream provenance chip (agent/provider/model) would show a blank
+        // model. Assert the artifact reports the true executing route instead.
+        let driver = Arc::new(MockLlmDriver::new(vec![vec![
+            ProviderEvent::MessageDelta {
+                text: "answer".to_string(),
+            },
+            ProviderEvent::Done,
+        ]]));
+        let runtime = build_runtime(driver, Arc::new(InMemoryProvider::new()), None).await;
+
+        let run_id = runtime
+            .run_manager()
+            .start_run(
+                test_agent(),
+                "who produced this?".to_string(),
+                Some("provenance-conversation".to_string()),
+                None,
+                Vec::new(),
+            )
+            .await;
+        let history = wait_for_event(&runtime, &run_id, |event| {
+            matches!(
+                event,
+                NormalizedEvent::Artifact { artifact, .. }
+                    if artifact.artifact_type == "effective_run_policy"
+            )
+        })
+        .await;
+
+        let artifact = history
+            .iter()
+            .find_map(|event| match &event.event {
+                NormalizedEvent::Artifact { artifact, .. }
+                    if artifact.artifact_type == "effective_run_policy" =>
+                {
+                    Some(artifact.clone())
+                }
+                _ => None,
+            })
+            .expect("effective_run_policy artifact is emitted");
+
+        let policy: serde_json::Value =
+            serde_json::from_str(&artifact.content).expect("policy content is JSON");
+        assert_eq!(policy["model"]["provider_id"], "embedded-local");
+        assert_eq!(policy["model"]["model_id"], "offline-agent-model");
+        assert_eq!(policy["agent_id"], "embedded-test-agent");
+    }
+
     #[derive(Debug)]
     struct PendingDriver;
 

@@ -936,10 +936,29 @@ impl RunManager {
             self.sessions.create()
         };
 
-        let effective_policy = match resolved_policy {
+        let mut effective_policy = match resolved_policy {
             Some(policy) => policy,
             None => self.resolve_effective_policy(&artifact, session.id()).await,
         };
+
+        // Backfill the model route so the `effective_run_policy` artifact
+        // reports the model that will actually execute the run. Built-in agents
+        // seed an empty `provider.default` (they defer to the registry/global
+        // default, see `defaults::default_agent`), which otherwise leaves the
+        // resolved route empty — and downstream provenance surfaces (the
+        // assistant-bubble agent/provider/model chip) then show a blank model.
+        // The registry default is the on-device provider on embedded builds and
+        // the configured `llm_config.model` on service builds, so this yields
+        // the true executing route on every deployment mode.
+        if effective_policy.model.as_ref().is_none_or(|route| {
+            route.provider_id.trim().is_empty() || route.model_id.trim().is_empty()
+        }) && let Some((provider_id, model_id)) = self.resolve_default_model().await
+        {
+            effective_policy.model = Some(ModelRoute {
+                provider_id,
+                model_id,
+            });
+        }
 
         // 2. Add User Message
         session.add_user_message(&input);
