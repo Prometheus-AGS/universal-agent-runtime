@@ -2,11 +2,12 @@
 
 use crate::AppState;
 use crate::uar::api::a2a::registry::AgentInfo;
+use crate::uar::domain::agent_store;
 use crate::uar::domain::artifact::AgentArtifact;
 use crate::uar::domain::policy::{
-    ChatMode, ConversationPolicyRecord, EffectiveRunPolicy, ModelRoute, PolicyResolutionInput,
+    ChatMode, ConversationPolicyRecord, EffectiveRunPolicy, ModelRoute, PolicyResolutionContext,
     PolicyUniverse, ResourceSelection, RunPolicy, SelectionMode, ToolApprovalPolicy,
-    policy_from_agent_artifact, resolve_run_policy,
+    resolve_effective_run_policy_core,
 };
 use crate::uar::domain::runs::RunStatus;
 use crate::uar::domain::skills::{SkillConstraints, SkillTriggers};
@@ -280,45 +281,36 @@ pub async fn resolve_agent_for_run(state: &AppState, agent_id: &str) -> AgentArt
 /// POST /api/agents — create a new agent
 pub async fn create_agent(
     State(state): State<AppState>,
-    Json(mut agent): Json<AgentArtifact>,
+    Json(agent): Json<AgentArtifact>,
 ) -> Result<(StatusCode, Json<AgentArtifact>), (StatusCode, String)> {
-    if agent.id.is_empty() {
-        agent.id = Uuid::new_v4().to_string();
-    }
-    agent.kind = "agent".to_string();
-
     let persistence = state.persistence.as_ref().ok_or((
         StatusCode::SERVICE_UNAVAILABLE,
         "No persistence layer".to_string(),
     ))?;
 
-    persistence
-        .save_agent(&agent)
+    let saved = agent_store::create_agent(persistence.as_ref(), agent)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok((StatusCode::CREATED, Json(agent)))
+    Ok((StatusCode::CREATED, Json(saved)))
 }
 
 /// PUT /api/agents/{id} — full replacement update
 pub async fn update_agent_full(
     State(state): State<AppState>,
     Path(id): Path<String>,
-    Json(mut agent): Json<AgentArtifact>,
+    Json(agent): Json<AgentArtifact>,
 ) -> Result<Json<AgentArtifact>, (StatusCode, String)> {
-    agent.id = id;
-
     let persistence = state.persistence.as_ref().ok_or((
         StatusCode::SERVICE_UNAVAILABLE,
         "No persistence layer".to_string(),
     ))?;
 
-    persistence
-        .save_agent(&agent)
+    let saved = agent_store::replace_agent(persistence.as_ref(), id, agent)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(Json(agent))
+    Ok(Json(saved))
 }
 
 /// PATCH /api/agents/{id} — partial update (merge fields into existing agent)
@@ -332,30 +324,11 @@ pub async fn patch_agent(
         "No persistence layer".to_string(),
     ))?;
 
-    let existing = persistence
-        .load_agent(&id)
+    let saved = agent_store::patch_agent(persistence.as_ref(), &id, &patch)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-        .ok_or((StatusCode::NOT_FOUND, format!("Agent '{id}' not found")))?;
+        .map_err(patch_error_response)?;
 
-    let mut base = serde_json::to_value(&existing)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    json_merge(&mut base, &patch);
-
-    let mut agent: AgentArtifact = serde_json::from_value(base).map_err(|e| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!("Invalid agent after merge: {e}"),
-        )
-    })?;
-    agent.id = id;
-
-    persistence
-        .save_agent(&agent)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    Ok(Json(agent))
+    Ok(Json(saved))
 }
 
 /// DELETE /api/agents/{id}
@@ -363,38 +336,51 @@ pub async fn delete_agent(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    if is_protected_agent_id(&id) {
-        return Err((
-            StatusCode::FORBIDDEN,
-            format!("Agent '{id}' is built in and cannot be deleted"),
-        ));
-    }
     let persistence = state.persistence.as_ref().ok_or((
         StatusCode::SERVICE_UNAVAILABLE,
         "No persistence layer".to_string(),
     ))?;
 
-    persistence
-        .delete_agent(&id)
+    agent_store::delete_agent(persistence.as_ref(), &id)
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(delete_error_response)?;
 
     Ok(StatusCode::NO_CONTENT)
 }
 
-fn is_protected_agent_id(id: &str) -> bool {
-    matches!(id, "default-agent" | "orchestrator-agent")
+/// Map an [`agent_store::AgentStoreError`] from a patch to the HTTP status the
+/// previous inline handler produced (404 not found, 400 invalid, 500 backend).
+fn patch_error_response(error: agent_store::AgentStoreError) -> (StatusCode, String) {
+    match error {
+        agent_store::AgentStoreError::NotFound(id) => {
+            (StatusCode::NOT_FOUND, format!("Agent '{id}' not found"))
+        }
+        agent_store::AgentStoreError::Invalid(message) => (StatusCode::BAD_REQUEST, message),
+        agent_store::AgentStoreError::Protected(id) => (
+            StatusCode::FORBIDDEN,
+            format!("Agent '{id}' is built in and cannot be deleted"),
+        ),
+        agent_store::AgentStoreError::Backend(error) => {
+            (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
+        }
+    }
 }
 
-#[cfg(test)]
-mod protected_agent_tests {
-    use super::is_protected_agent_id;
-
-    #[test]
-    fn built_in_agents_cannot_be_deleted() {
-        assert!(is_protected_agent_id("default-agent"));
-        assert!(is_protected_agent_id("orchestrator-agent"));
-        assert!(!is_protected_agent_id("user-agent"));
+/// Map an [`agent_store::AgentStoreError`] from a delete to the HTTP status the
+/// previous inline handler produced (403 for built-in agents, 500 otherwise).
+fn delete_error_response(error: agent_store::AgentStoreError) -> (StatusCode, String) {
+    match error {
+        agent_store::AgentStoreError::Protected(id) => (
+            StatusCode::FORBIDDEN,
+            format!("Agent '{id}' is built in and cannot be deleted"),
+        ),
+        agent_store::AgentStoreError::Backend(error) => {
+            (StatusCode::INTERNAL_SERVER_ERROR, error.to_string())
+        }
+        agent_store::AgentStoreError::NotFound(id) => {
+            (StatusCode::NOT_FOUND, format!("Agent '{id}' not found"))
+        }
+        agent_store::AgentStoreError::Invalid(message) => (StatusCode::BAD_REQUEST, message),
     }
 }
 
@@ -567,10 +553,6 @@ fn parse_tool_approval(value: Option<&str>) -> ToolApprovalPolicy {
     }
 }
 
-fn policy_from_agent(agent: &AgentArtifact) -> RunPolicy {
-    policy_from_agent_artifact(agent)
-}
-
 async fn load_conversation_policy(state: &AppState, conversation_id: &str) -> Option<RunPolicy> {
     if let Some(persistence) = &state.persistence {
         match persistence.load_conversation_policy(conversation_id).await {
@@ -663,45 +645,25 @@ async fn policy_universe(state: &AppState) -> PolicyUniverse {
 }
 
 /// Resolve the effective policy that UAR will use for a conversation and turn.
+///
+/// Thin service-path wrapper: it builds the [`PolicyUniverse`] and the
+/// conversation scope from `AppState` (the conversation scope still consults the
+/// in-memory session map as a fallback), then delegates precedence resolution to
+/// the transport-free [`resolve_effective_run_policy_core`] shared with the
+/// embedded runtime. Behavior is identical to the previous inline resolution.
 pub async fn resolve_effective_run_policy(
     state: &AppState,
     conversation_id: &str,
     agent: &AgentArtifact,
     turn: Option<RunPolicy>,
 ) -> EffectiveRunPolicy {
-    let agent_default = &agent.policy.provider.default;
-    let default_model = (!agent_default.provider.trim().is_empty()
-        && !agent_default.model.trim().is_empty())
-    .then(|| ModelRoute {
-        provider_id: agent_default.provider.clone(),
-        model_id: agent_default.model.clone(),
-    });
-    let global = match &state.settings_manager {
-        Some(manager) => manager
-            .get_typed::<RunPolicy>("run_policy.global")
-            .await
-            .map_err(|error| {
-                tracing::warn!(%error, "failed to load global run policy; using inherited defaults");
-                error
-            })
-            .ok()
-            .flatten(),
-        None => None,
-    };
-    let agent_policy = policy_from_agent(agent);
     let conversation = load_conversation_policy(state, conversation_id).await;
-    resolve_run_policy(PolicyResolutionInput {
-        global,
-        agent: Some(agent_policy),
-        conversation,
-        turn,
+    let ctx = PolicyResolutionContext {
+        settings_manager: state.settings_manager.as_deref(),
         universe: policy_universe(state).await,
-        default_chat_mode: ChatMode::Agent,
         default_context_strategy: state.config.context_strategy.clone(),
-        default_agent_id: Some(agent.id.clone()),
-        default_model,
-        ..PolicyResolutionInput::default()
-    })
+    };
+    resolve_effective_run_policy_core(ctx, agent, conversation, turn).await
 }
 
 /// POST /api/sessions/{id}/agent-config
@@ -858,29 +820,4 @@ pub async fn delete_conversation_policy(
     }
     state.agent_sessions.write().await.remove(&conversation_id);
     StatusCode::NO_CONTENT.into_response()
-}
-
-/// RFC 7396 JSON Merge Patch: recursively merge `patch` into `target`.
-fn json_merge(target: &mut serde_json::Value, patch: &serde_json::Value) {
-    if let serde_json::Value::Object(patch_map) = patch {
-        if !target.is_object() {
-            *target = serde_json::Value::Object(serde_json::Map::new());
-        }
-        if let Some(target_map) = target.as_object_mut() {
-            for (key, value) in patch_map {
-                if value.is_null() {
-                    target_map.remove(key);
-                } else if value.is_object() {
-                    let entry = target_map
-                        .entry(key.clone())
-                        .or_insert(serde_json::Value::Object(serde_json::Map::new()));
-                    json_merge(entry, value);
-                } else {
-                    target_map.insert(key.clone(), value.clone());
-                }
-            }
-        }
-    } else {
-        *target = patch.clone();
-    }
 }

@@ -29,6 +29,7 @@ use crate::{
             native_skill::NativeSkillRegistry,
             skills::{service::SkillService, storage::DatabaseStorageProvider},
         },
+        settings::manager::SettingsManager,
     },
 };
 
@@ -45,6 +46,7 @@ pub struct EmbeddedRuntime {
     orchestrator: Arc<Orchestrator>,
     run_manager: Arc<RunManager>,
     persistence: Arc<dyn PersistenceLayer>,
+    settings_manager: Arc<SettingsManager>,
     provider_registry: Arc<ProviderRegistry>,
     mcp: Arc<McpRegistry>,
     native_skills: Arc<NativeSkillRegistry>,
@@ -62,6 +64,7 @@ impl std::fmt::Debug for EmbeddedRuntime {
             .field("provider_registry", &self.provider_registry)
             .field("run_manager", &self.run_manager)
             .field("persistence", &self.persistence)
+            .field("settings_manager", &self.settings_manager)
             .field("mcp", &self.mcp)
             .field("native_skills", &self.native_skills)
             .field("skill_service", &self.skill_service)
@@ -97,6 +100,15 @@ impl EmbeddedRuntime {
     #[must_use]
     pub fn persistence(&self) -> Arc<dyn PersistenceLayer> {
         Arc::clone(&self.persistence)
+    }
+
+    /// The runtime settings manager, backing the embedded admin surface and the
+    /// Global run-policy scope. It is the same instance the run manager uses to
+    /// resolve `run_policy.global`, so settings written here take effect on the
+    /// next resolved run.
+    #[must_use]
+    pub fn settings_manager(&self) -> Arc<SettingsManager> {
+        Arc::clone(&self.settings_manager)
     }
 
     #[must_use]
@@ -316,6 +328,16 @@ impl EmbeddedRuntimeBuilder {
             .await?;
         provider_registry.set_default(&provider.id).await?;
 
+        // One shared settings manager backs both the Global run-policy scope
+        // (via the run manager) and the embedded admin surface (via the SDK), so
+        // a setting written through the admin surface is observed by the next
+        // resolved run without a second cache. The embedded runtime has no
+        // `AppConfig`, so instead of the full bootstrap it seeds only the
+        // `run_policy` namespace (idempotently) so `run_policy.global` exists for
+        // reads and writes.
+        let settings_manager = Arc::new(SettingsManager::new(Arc::clone(&persistence)));
+        settings_manager.ensure_run_policy_seed().await?;
+
         let governance = Arc::new(GovernanceEngine::with_default_permit()?);
         let sessions = SessionStore::new();
         let orchestrator = Arc::new(Orchestrator::from_driver(
@@ -340,7 +362,8 @@ impl EmbeddedRuntimeBuilder {
             .with_provider_registry(Arc::clone(&provider_registry))
             .with_native_skills(Arc::clone(&native_skills))
             .with_a2ui_backbone(Arc::clone(&a2ui_backbone))
-            .with_governance_engine(governance),
+            .with_governance_engine(governance)
+            .with_settings_manager(Arc::clone(&settings_manager)),
         );
 
         Ok(EmbeddedRuntime {
@@ -348,6 +371,7 @@ impl EmbeddedRuntimeBuilder {
             orchestrator,
             run_manager,
             persistence,
+            settings_manager,
             provider_registry,
             mcp,
             native_skills,
