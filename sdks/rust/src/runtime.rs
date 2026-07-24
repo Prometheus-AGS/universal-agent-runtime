@@ -16,11 +16,16 @@ use universal_agent_runtime::{
     mcp::registry::McpRegistry,
     uar::{
         a2ui::registry::A2uiRegistry,
-        domain::{agent_store, artifact::AgentArtifact, events::MemoryItem},
+        domain::{
+            agent_store,
+            artifact::AgentArtifact,
+            events::MemoryItem,
+            policy::{ConversationPolicyRecord, RunPolicy},
+        },
         persistence::PersistenceLayer,
         rag::embeddings::EmbeddingBackend,
         runtime::{
-            manager::{RunManager, StreamEvent},
+            manager::{EffectiveConfig, RunManager, StreamEvent},
             native_skill::NativeSkillRegistry,
         },
         settings::schema::{SettingsType, SettingsWithMeta},
@@ -307,6 +312,73 @@ impl Runtime {
         agent_store::delete_agent(self.inner.persistence().as_ref(), id)
             .await
             .map_err(runtime_error)
+    }
+
+    /// Save or replace the per-conversation run policy. This is the third scope
+    /// (Conversation) of the Global → Agent → Conversation → Turn precedence, so
+    /// a model set here overrides the agent and global defaults for that
+    /// conversation only.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the persistence write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn save_conversation_policy(
+        &self,
+        conversation_id: &str,
+        policy: RunPolicy,
+    ) -> Result<ConversationPolicyRecord> {
+        let record = ConversationPolicyRecord::new(conversation_id.to_string(), policy);
+        self.inner
+            .persistence()
+            .save_conversation_policy(&record)
+            .await
+            .map_err(runtime_error)?;
+        Ok(record)
+    }
+
+    /// Load the per-conversation run policy, if one has been saved.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the persistence read fails.
+    #[cfg(feature = "embedded")]
+    pub async fn get_conversation_policy(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Option<ConversationPolicyRecord>> {
+        self.inner
+            .persistence()
+            .load_conversation_policy(conversation_id)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Delete the per-conversation run policy, reverting the conversation to the
+    /// agent and global scopes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the persistence delete fails.
+    #[cfg(feature = "embedded")]
+    pub async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()> {
+        self.inner
+            .persistence()
+            .delete_conversation_policy(conversation_id)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Resolve the effective configuration for a conversation: the agent it
+    /// resolves to, the stored requested policy (if any), and the effective run
+    /// policy after full-precedence resolution and model backfill. Mirrors the
+    /// service path's `GET /conversations/{id}/effective-config`.
+    #[cfg(feature = "embedded")]
+    pub async fn effective_config(&self, conversation_id: &str) -> EffectiveConfig {
+        self.inner
+            .run_manager()
+            .effective_config(conversation_id)
+            .await
     }
 
     /// Explicitly start UAR's HTTP server. This is not part of embedded mode

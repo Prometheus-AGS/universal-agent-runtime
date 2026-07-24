@@ -668,6 +668,82 @@ mod tests {
         assert_eq!(policy["agent_id"], "embedded-test-agent");
     }
 
+    #[tokio::test]
+    async fn conversation_policy_round_trips_and_effective_config_reflects_the_override() {
+        use crate::uar::domain::policy::{ModelRoute, RunPolicy};
+
+        let runtime = build_runtime(
+            Arc::new(MockLlmDriver::echo()),
+            Arc::new(InMemoryProvider::new()),
+            None,
+        )
+        .await;
+        let conversation_id = "conv-model-override";
+        let persistence = runtime.persistence();
+
+        // No conversation policy yet: effective_config resolves the default agent
+        // and backfills the registry-default model (the M6c behavior).
+        let baseline = runtime
+            .run_manager()
+            .effective_config(conversation_id)
+            .await;
+        assert!(baseline.requested_policy.is_none());
+        let baseline_model = baseline.effective_policy.model.expect("model backfilled");
+        assert_eq!(baseline_model.provider_id, "embedded-local");
+        assert_eq!(baseline_model.model_id, "offline-agent-model");
+
+        // Save a conversation-scoped model override and confirm it round-trips and
+        // wins over the (empty) agent/global scopes.
+        let mut policy = RunPolicy::default();
+        policy.model = Some(ModelRoute {
+            provider_id: "openai".to_string(),
+            model_id: "gpt-4o".to_string(),
+        });
+        let record =
+            crate::uar::domain::policy::ConversationPolicyRecord::new(conversation_id, policy);
+        persistence
+            .save_conversation_policy(&record)
+            .await
+            .expect("conversation policy persists");
+
+        let loaded = persistence
+            .load_conversation_policy(conversation_id)
+            .await
+            .expect("load ok")
+            .expect("record present");
+        assert_eq!(
+            loaded.policy.model.as_ref().map(|m| m.model_id.as_str()),
+            Some("gpt-4o")
+        );
+
+        let overridden = runtime
+            .run_manager()
+            .effective_config(conversation_id)
+            .await;
+        assert!(overridden.requested_policy.is_some());
+        let effective_model = overridden
+            .effective_policy
+            .model
+            .expect("conversation model resolves");
+        assert_eq!(effective_model.provider_id, "openai");
+        assert_eq!(effective_model.model_id, "gpt-4o");
+
+        // Deleting the override reverts to the backfilled registry default.
+        persistence
+            .delete_conversation_policy(conversation_id)
+            .await
+            .expect("delete ok");
+        let reverted = runtime
+            .run_manager()
+            .effective_config(conversation_id)
+            .await;
+        assert!(reverted.requested_policy.is_none());
+        assert_eq!(
+            reverted.effective_policy.model.map(|m| m.model_id),
+            Some("offline-agent-model".to_string())
+        );
+    }
+
     #[derive(Debug)]
     struct PendingDriver;
 

@@ -8,9 +8,10 @@ use crate::uar::domain::{
     context::ContextConfig,
     events::{ArtifactPayload, CitationSource, MemoryItem, NormalizedEvent, StatePatchOp},
     policy::{
-        ChatMode, EffectiveRunPolicy, ModelRoute, PolicyResolutionContext, PolicyResolutionInput,
-        PolicyUniverse, RunPolicy, SelectionMode, ToolApprovalPolicy, policy_from_agent_artifact,
-        resolve_effective_run_policy_core, resolve_run_policy,
+        ChatMode, ConversationPolicyRecord, EffectiveRunPolicy, ModelRoute,
+        PolicyResolutionContext, PolicyResolutionInput, PolicyUniverse, RunPolicy, SelectionMode,
+        ToolApprovalPolicy, policy_from_agent_artifact, resolve_effective_run_policy_core,
+        resolve_run_policy,
     },
     runs::{Run, RunStatus},
 };
@@ -810,6 +811,55 @@ impl RunManager {
         resolve_effective_run_policy_core(ctx, artifact, conversation, None).await
     }
 
+    /// Compute the effective configuration for a conversation, mirroring the
+    /// service path's `GET /conversations/{id}/effective-config`: it resolves the
+    /// agent named by the stored conversation policy (or the default agent),
+    /// resolves the effective run policy for that agent + conversation (Global →
+    /// Agent → Conversation → Turn), and backfills the model route from the
+    /// registry default so the reported model is the one that will execute.
+    ///
+    /// Returns the resolved agent, the stored requested policy (if any), and the
+    /// effective policy — the pieces an embedded admin surface needs without a
+    /// service.
+    pub async fn effective_config(&self, conversation_id: &str) -> EffectiveConfig {
+        let requested = if let Some(persistence) = &self.persistence {
+            persistence
+                .load_conversation_policy(conversation_id)
+                .await
+                .ok()
+                .flatten()
+        } else {
+            None
+        };
+        let agent_id = requested
+            .as_ref()
+            .and_then(|record| record.policy.agent_id.clone())
+            .unwrap_or_else(|| "default-agent".to_string());
+        let agent = self.resolve_agent_or_default(&agent_id).await;
+        let mut effective = self.resolve_effective_policy(&agent, conversation_id).await;
+        self.backfill_effective_model(&mut effective).await;
+        EffectiveConfig {
+            agent,
+            requested_policy: requested,
+            effective_policy: effective,
+        }
+    }
+
+    /// Resolve an agent artifact by id: persisted definition first, then the
+    /// two built-ins, then the default agent as a last resort. Mirrors the
+    /// service path's `resolve_agent_for_run`.
+    async fn resolve_agent_or_default(&self, agent_id: &str) -> AgentArtifact {
+        if let Some(persistence) = &self.persistence
+            && let Ok(Some(agent)) = persistence.load_agent(agent_id).await
+        {
+            return agent;
+        }
+        match agent_id {
+            "orchestrator-agent" => crate::uar::defaults::orchestrator_agent(),
+            _ => crate::uar::defaults::default_agent(),
+        }
+    }
+
     /// Backward-compatible agent + conversation resolution (no Global scope).
     ///
     /// Retained as the fallback used when no settings manager is available so
@@ -941,24 +991,7 @@ impl RunManager {
             None => self.resolve_effective_policy(&artifact, session.id()).await,
         };
 
-        // Backfill the model route so the `effective_run_policy` artifact
-        // reports the model that will actually execute the run. Built-in agents
-        // seed an empty `provider.default` (they defer to the registry/global
-        // default, see `defaults::default_agent`), which otherwise leaves the
-        // resolved route empty — and downstream provenance surfaces (the
-        // assistant-bubble agent/provider/model chip) then show a blank model.
-        // The registry default is the on-device provider on embedded builds and
-        // the configured `llm_config.model` on service builds, so this yields
-        // the true executing route on every deployment mode.
-        if effective_policy.model.as_ref().is_none_or(|route| {
-            route.provider_id.trim().is_empty() || route.model_id.trim().is_empty()
-        }) && let Some((provider_id, model_id)) = self.resolve_default_model().await
-        {
-            effective_policy.model = Some(ModelRoute {
-                provider_id,
-                model_id,
-            });
-        }
+        self.backfill_effective_model(&mut effective_policy).await;
 
         // 2. Add User Message
         session.add_user_message(&input);
@@ -2440,6 +2473,43 @@ impl RunManager {
 
         None
     }
+
+    /// Backfill the model route so a resolved [`EffectiveRunPolicy`] reports the
+    /// model that will actually execute. Built-in agents seed an empty
+    /// `provider.default` (they defer to the registry/global default, see
+    /// `defaults::default_agent`), which otherwise leaves the resolved route
+    /// empty — and downstream provenance surfaces (the assistant-bubble
+    /// agent/provider/model chip) then show a blank model. The registry default
+    /// is the on-device provider on embedded builds and the configured
+    /// `llm_config.model` on service builds, so this yields the true executing
+    /// route on every deployment mode. A route that already names a non-empty
+    /// provider and model is left untouched, preserving precedence.
+    pub(crate) async fn backfill_effective_model(&self, policy: &mut EffectiveRunPolicy) {
+        let needs_backfill = policy.model.as_ref().is_none_or(|route| {
+            route.provider_id.trim().is_empty() || route.model_id.trim().is_empty()
+        });
+        if needs_backfill && let Some((provider_id, model_id)) = self.resolve_default_model().await
+        {
+            policy.model = Some(ModelRoute {
+                provider_id,
+                model_id,
+            });
+        }
+    }
+}
+
+/// The effective configuration for a conversation: the resolved agent, the
+/// stored requested policy (if any), and the effective run policy after
+/// Global → Agent → Conversation → Turn resolution + model backfill. Mirrors the
+/// JSON the service path returns from `GET /conversations/{id}/effective-config`.
+#[derive(Debug, Clone)]
+pub struct EffectiveConfig {
+    /// The agent definition the conversation resolves to.
+    pub agent: AgentArtifact,
+    /// The stored conversation-scoped policy, if one was saved.
+    pub requested_policy: Option<ConversationPolicyRecord>,
+    /// The resolved effective policy (model route backfilled).
+    pub effective_policy: EffectiveRunPolicy,
 }
 
 #[cfg(test)]
