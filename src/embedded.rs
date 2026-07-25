@@ -744,6 +744,103 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn cold_started_session_is_seeded_from_supplied_history() {
+        use crate::uar::runtime::manager::SeedMessage;
+
+        // Echo driver returns the last user message, so the request the model
+        // receives is observable through the driver's recorded requests.
+        let driver = Arc::new(MockLlmDriver::echo());
+        let runtime = build_runtime(driver.clone(), Arc::new(InMemoryProvider::new()), None).await;
+        let conversation_id = "cold-start-conversation".to_string();
+
+        // First turn: the session is empty (cold start), so the supplied history
+        // must be replayed before the current input.
+        let seed = vec![
+            SeedMessage {
+                role: "user".to_string(),
+                content: "my name is Ada".to_string(),
+                tool_call_id: None,
+            },
+            SeedMessage {
+                role: "assistant".to_string(),
+                content: "Nice to meet you, Ada.".to_string(),
+                tool_call_id: None,
+            },
+        ];
+        let run_id = runtime
+            .run_manager()
+            .start_run_with_history(
+                test_agent(),
+                "what is my name?".to_string(),
+                Some(conversation_id.clone()),
+                None,
+                Vec::new(),
+                seed.clone(),
+            )
+            .await;
+        wait_for_event(&runtime, &run_id, |event| {
+            matches!(event, NormalizedEvent::RunDone { .. })
+        })
+        .await;
+
+        // The model's request contains the seeded prior turns AND the new input.
+        let first = driver.requests();
+        let rendered = first
+            .last()
+            .expect("a request reached the driver")
+            .messages
+            .iter()
+            .map(|message| message.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            rendered.contains("my name is Ada"),
+            "seeded user turn present"
+        );
+        assert!(
+            rendered.contains("Nice to meet you, Ada."),
+            "seeded assistant turn present"
+        );
+        assert!(
+            rendered.contains("what is my name?"),
+            "current input present"
+        );
+
+        // Second turn on the SAME (now warm) session: seeding must NOT duplicate
+        // the history — the session already holds the prior turns plus the first
+        // exchange, so passing the same seed again is a no-op.
+        let run_id_2 = runtime
+            .run_manager()
+            .start_run_with_history(
+                test_agent(),
+                "and again?".to_string(),
+                Some(conversation_id.clone()),
+                None,
+                Vec::new(),
+                seed,
+            )
+            .await;
+        wait_for_event(&runtime, &run_id_2, |event| {
+            matches!(event, NormalizedEvent::RunDone { .. })
+        })
+        .await;
+        let second = driver.requests();
+        let rendered_2 = second
+            .last()
+            .expect("a second request reached the driver")
+            .messages
+            .iter()
+            .map(|message| message.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert_eq!(
+            rendered_2.matches("my name is Ada").count(),
+            1,
+            "warm session is not re-seeded (no duplicate history)"
+        );
+    }
+
     #[derive(Debug)]
     struct PendingDriver;
 

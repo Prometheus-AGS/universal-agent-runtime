@@ -909,6 +909,30 @@ impl RunManager {
             .await
     }
 
+    /// [`Self::start_run`] plus a `seed_history` of prior turns used to
+    /// repopulate an empty (cold-started) session. See
+    /// [`Self::start_run_with_policy_and_history`].
+    pub async fn start_run_with_history(
+        &self,
+        artifact: AgentArtifact,
+        input: String,
+        session_id: Option<String>,
+        user_id: Option<String>,
+        memory_hits: Vec<MemoryItem>,
+        seed_history: Vec<SeedMessage>,
+    ) -> String {
+        self.start_run_with_policy_and_history(
+            artifact,
+            input,
+            session_id,
+            user_id,
+            memory_hits,
+            None,
+            seed_history,
+        )
+        .await
+    }
+
     /// Continue an existing run after a user responds to an interactive A2UI
     /// surface. A continuation is a real agent run in the same conversation,
     /// not a synthetic event injected into a completed stream.
@@ -966,6 +990,34 @@ impl RunManager {
         memory_hits: Vec<MemoryItem>,
         resolved_policy: Option<EffectiveRunPolicy>,
     ) -> String {
+        self.start_run_with_policy_and_history(
+            artifact,
+            input,
+            session_id,
+            user_id,
+            memory_hits,
+            resolved_policy,
+            Vec::new(),
+        )
+        .await
+    }
+
+    /// [`Self::start_run_with_policy`] plus a `seed_history` of prior turns used
+    /// to repopulate an **empty** session (a cold-started conversation whose
+    /// durable history lives in the host, not the in-process store). A session
+    /// that already holds messages is never re-seeded, so this is idempotent
+    /// across warm turns.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn start_run_with_policy_and_history(
+        &self,
+        artifact: AgentArtifact,
+        input: String,
+        session_id: Option<String>,
+        user_id: Option<String>,
+        memory_hits: Vec<MemoryItem>,
+        resolved_policy: Option<EffectiveRunPolicy>,
+        seed_history: Vec<SeedMessage>,
+    ) -> String {
         let run_id = Uuid::new_v4().to_string();
         tracing::Span::current().record("run_id", &run_id);
         tracing::info!("Starting new run");
@@ -985,6 +1037,26 @@ impl RunManager {
         } else {
             self.sessions.create()
         };
+
+        // 1b. Seed prior turns into an empty session. The in-process session
+        // store is not durable, so a cold-started conversation resolves to an
+        // empty session even though the host still holds the full thread. Replay
+        // the host-supplied history so the model receives prior context rather
+        // than only the current message. Only seed when empty so warm sessions
+        // (which already accumulated their turns) are never duplicated.
+        if session.message_count() == 0 {
+            for message in &seed_history {
+                match message.role.as_str() {
+                    "assistant" => session.add_assistant_message(&message.content),
+                    "tool" => session.add_tool_result(
+                        message.tool_call_id.clone().unwrap_or_default(),
+                        &message.content,
+                    ),
+                    "system" => {} // system prompt is owned by the agent artifact
+                    _ => session.add_user_message(&message.content),
+                }
+            }
+        }
 
         let mut effective_policy = match resolved_policy {
             Some(policy) => policy,
@@ -2496,6 +2568,25 @@ impl RunManager {
             });
         }
     }
+}
+
+/// A prior conversation turn used to seed an empty embedded session.
+///
+/// Embedded hosts keep their durable conversation history in their own store
+/// (e.g. the mobile UI's local database). The in-process [`SessionStore`] is not
+/// durable, so after a cold start the session for a conversation is empty even
+/// though the host still holds the full thread. Passing the host's history as
+/// `SeedMessage`s lets [`RunManager::start_run_with_history`] repopulate an empty
+/// session so the model receives prior turns instead of only the current one.
+#[derive(Debug, Clone)]
+pub struct SeedMessage {
+    /// `"user"`, `"assistant"`, `"tool"`, or `"system"` (unknown roles are
+    /// treated as `user`).
+    pub role: String,
+    /// The message text.
+    pub content: String,
+    /// The tool-call id when `role == "tool"`.
+    pub tool_call_id: Option<String>,
 }
 
 /// The effective configuration for a conversation: the resolved agent, the

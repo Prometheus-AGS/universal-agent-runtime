@@ -25,7 +25,7 @@ use universal_agent_runtime::{
         persistence::PersistenceLayer,
         rag::embeddings::EmbeddingBackend,
         runtime::{
-            manager::{EffectiveConfig, RunManager, StreamEvent},
+            manager::{EffectiveConfig, RunManager, SeedMessage, StreamEvent},
             native_skill::NativeSkillRegistry,
         },
         settings::schema::{SettingsType, SettingsWithMeta},
@@ -137,6 +137,32 @@ impl Runtime {
         self.inner
             .run_manager()
             .start_run(artifact, input.into(), conversation_id, user_id, memory)
+            .await
+    }
+
+    /// Start a run, seeding an empty (cold-started) session with `seed_history`
+    /// so the model receives prior turns. A session that already holds messages
+    /// is not re-seeded. See [`SeedMessage`].
+    #[cfg(feature = "embedded")]
+    pub async fn start_run_with_history(
+        &self,
+        artifact: AgentArtifact,
+        input: impl Into<String>,
+        conversation_id: Option<String>,
+        user_id: Option<String>,
+        memory: Vec<MemoryItem>,
+        seed_history: Vec<SeedMessage>,
+    ) -> String {
+        self.inner
+            .run_manager()
+            .start_run_with_history(
+                artifact,
+                input.into(),
+                conversation_id,
+                user_id,
+                memory,
+                seed_history,
+            )
             .await
     }
 
