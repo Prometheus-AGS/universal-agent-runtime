@@ -9,6 +9,13 @@ use std::sync::Arc;
 #[cfg(feature = "embedded")]
 use tokio::sync::broadcast;
 #[cfg(feature = "embedded")]
+// Aliased so the admin methods below read as `uar_admin::skills::list(...)`,
+// making it obvious at each call site that the SDK delegates to the shared
+// transport-free services rather than reimplementing them.
+use universal_agent_runtime::uar::admin as uar_admin;
+use universal_agent_runtime::uar::domain::knowledge as uar_knowledge;
+use universal_agent_runtime::uar::domain::memory as uar_memory;
+use universal_agent_runtime::uar::domain::skills as uar_skills;
 use universal_agent_runtime::{
     config::LlmConfig,
     embedded::{EmbeddedRuntime, EmbeddedRuntimeBuilder},
@@ -336,6 +343,178 @@ impl Runtime {
     #[cfg(feature = "embedded")]
     pub async fn delete_agent(&self, id: &str) -> Result<()> {
         agent_store::delete_agent(self.inner.persistence().as_ref(), id)
+            .await
+            .map_err(runtime_error)
+    }
+
+    // =========================================================================
+    // Resource administration
+    //
+    // These exist so an EMBEDDED container (mobile, macOS) can administer the
+    // same registries a remote one can. Before this, the admin logic lived only
+    // in the axum handlers, so an embedded host had no listener to call and its
+    // control plane had to report skills/MCP/knowledge/memory as unavailable.
+    //
+    // Every method delegates to `uar::admin::*`, the transport-free services the
+    // HTTP layer also calls — one implementation, two containers.
+    // =========================================================================
+
+    /// List every skill known to this runtime.
+    ///
+    /// # Errors
+    /// Returns an error if the persistence read fails.
+    #[cfg(feature = "embedded")]
+    pub async fn list_skills(&self) -> Result<Vec<uar_skills::Skill>> {
+        uar_admin::skills::list(&self.inner.persistence())
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Persist a skill together with the embedding used for semantic matching.
+    ///
+    /// The embedding is supplied by the caller because the embedding backend is
+    /// a runtime concern: an embedded device may use a different one than a
+    /// server, and the admin layer has no business choosing.
+    ///
+    /// # Errors
+    /// Returns an error if the persistence write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn save_skill(&self, skill: &uar_skills::Skill, embedding: &[f32]) -> Result<()> {
+        uar_admin::skills::save(&self.inner.persistence(), skill, embedding)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Delete a skill by id.
+    ///
+    /// # Errors
+    /// Returns an error if the persistence write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn delete_skill(&self, id: &str) -> Result<()> {
+        uar_admin::skills::delete(&self.inner.persistence(), id)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// List every knowledge base.
+    ///
+    /// # Errors
+    /// Returns an error if the persistence read fails.
+    #[cfg(feature = "embedded")]
+    pub async fn list_knowledge_bases(&self) -> Result<Vec<uar_knowledge::KnowledgeBase>> {
+        uar_admin::knowledge::list(&self.inner.persistence())
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Load one knowledge base by id.
+    ///
+    /// # Errors
+    /// Returns an error if the persistence read fails.
+    #[cfg(feature = "embedded")]
+    pub async fn get_knowledge_base(
+        &self,
+        id: &str,
+    ) -> Result<Option<uar_knowledge::KnowledgeBase>> {
+        uar_admin::knowledge::get(&self.inner.persistence(), id)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Create or replace a knowledge base.
+    ///
+    /// # Errors
+    /// Returns an error if the persistence write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn save_knowledge_base(&self, kb: &uar_knowledge::KnowledgeBase) -> Result<()> {
+        uar_admin::knowledge::save(&self.inner.persistence(), kb)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Delete a knowledge base by id.
+    ///
+    /// # Errors
+    /// Returns an error if the persistence write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn delete_knowledge_base(&self, id: &str) -> Result<()> {
+        uar_admin::knowledge::delete(&self.inner.persistence(), id)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Semantic memory search.
+    ///
+    /// Read-only by design: memory WRITES go through the memory service, which
+    /// owns scoping, embedding and auto-capture. An admin surface that wrote
+    /// rows directly would bypass those invariants.
+    ///
+    /// # Errors
+    /// Returns an error if the persistence read fails.
+    #[cfg(feature = "embedded")]
+    pub async fn search_memory(
+        &self,
+        agent_id: Option<&str>,
+        query_vec: &[f32],
+        limit: usize,
+        min_score: f32,
+    ) -> Result<Vec<uar_memory::MemoryMatch>> {
+        uar_admin::memory::search(&self.inner.persistence(), agent_id, query_vec, limit, min_score)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// List configured MCP servers.
+    ///
+    /// Reads the database. Config files seed it once at boot; the store is
+    /// authoritative afterwards, which is what lets a runtime change take
+    /// effect without a restart or a file-polling loop.
+    #[cfg(feature = "embedded")]
+    pub async fn list_mcp_servers(
+        &self,
+    ) -> std::collections::HashMap<String, uar_admin::mcp::StoredMcpServer> {
+        uar_admin::mcp::list(&self.inner.mcp(), Some(&self.inner.settings_manager())).await
+    }
+
+    /// Save an MCP server.
+    ///
+    /// Returns a [`SaveResult`] rather than `()` because the outcome is not
+    /// always "applied": editing an ALREADY-CONNECTED server is stored durably
+    /// but deferred to the next session, so a live connection is not torn down
+    /// mid-flight. Callers should surface `Deferred` rather than implying the
+    /// change took effect.
+    ///
+    /// # Errors
+    /// Returns an error if settings storage is unavailable or the write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn save_mcp_server(
+        &self,
+        name: String,
+        server: uar_admin::mcp::StoredMcpServer,
+    ) -> Result<uar_admin::mcp::SaveResult> {
+        uar_admin::mcp::save(
+            &self.inner.mcp(),
+            Some(&self.inner.settings_manager()),
+            name,
+            server,
+        )
+        .await
+        .map_err(runtime_error)
+    }
+
+    /// Remove an MCP server from the store and from the live registry.
+    ///
+    /// Unlike an edit, a removal applies immediately even when connected: the
+    /// caller's intent is that the server stop being used.
+    ///
+    /// # Errors
+    /// Returns an error if settings storage is unavailable or the write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn delete_mcp_server(
+        &self,
+        name: &str,
+    ) -> Result<uar_admin::mcp::SaveResult> {
+        uar_admin::mcp::delete(&self.inner.mcp(), Some(&self.inner.settings_manager()), name)
             .await
             .map_err(runtime_error)
     }
