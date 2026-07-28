@@ -267,6 +267,43 @@ mod guard_wiring_tests {
         );
     }
 
+    /// The operator asked for enable/disable at system, agent AND conversation
+    /// level. System level is `native_cfg.web_fetch_enabled`, which gates
+    /// registration. The other two are the run policy's `tools` selection,
+    /// resolved Global -> Agent -> Conversation and applied by
+    /// `NativeSkillRegistry::filtered` on the run path (see runtime/manager.rs,
+    /// which filters BOTH the MCP registry and native skills with the same
+    /// tool_filter).
+    ///
+    /// This asserts that mechanism actually excludes web_fetch, rather than
+    /// trusting that it does.
+    #[tokio::test]
+    async fn a_scoped_policy_can_exclude_web_fetch() {
+        use crate::uar::runtime::native_skill::NativeSkillRegistry;
+        use std::collections::HashSet;
+
+        let registry = NativeSkillRegistry::new();
+        registry.register(tool()).await;
+        assert!(
+            registry.contains("web_fetch").await,
+            "precondition: the tool is registered"
+        );
+
+        // A policy that allows some other tool must drop web_fetch entirely.
+        let allowed: HashSet<String> = ["some_other_tool".to_string()].into_iter().collect();
+        let scoped = registry.filtered(Some(&allowed)).await;
+        assert!(
+            !scoped.contains("web_fetch").await,
+            "an agent- or conversation-scoped policy must be able to disable internet access"
+        );
+
+        // And a policy that names it keeps it, so the control is a real switch
+        // rather than something that always denies.
+        let allowed: HashSet<String> = ["web_fetch".to_string()].into_iter().collect();
+        let scoped = registry.filtered(Some(&allowed)).await;
+        assert!(scoped.contains("web_fetch").await);
+    }
+
     #[tokio::test]
     async fn a_missing_url_is_still_a_clean_refusal() {
         let out = tool().execute(json!({})).await.expect("no panic");
