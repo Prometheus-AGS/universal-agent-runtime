@@ -16,9 +16,11 @@
 //! and the store is authoritative afterwards, which is what lets a runtime API
 //! change take effect without a restart or a file-polling loop.
 
+pub mod a2ui;
 pub mod knowledge;
 pub mod pack_sync;
 pub mod mcp;
 pub mod memory;
 pub mod skill_exec;
 pub mod skills;
+pub mod tools;
