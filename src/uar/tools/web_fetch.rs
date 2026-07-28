@@ -34,6 +34,73 @@ impl WebFetchTool {
 }
 
 impl WebFetchTool {
+    /// Turn a binary document (PDF, docx, xlsx...) into text.
+    ///
+    /// Anthropic's reference `mcp-server-fetch` leaves non-HTML handling
+    /// undefined. Extracting here is what makes a linked PDF usable as
+    /// conversation context rather than bytes the model cannot read.
+    ///
+    /// Gated on `document-intelligence`, which `server-full` enables and
+    /// `embedded-mobile` does NOT. Both arms are written out so a phone reports
+    /// the limitation with a reason instead of returning lossy-decoded
+    /// nonsense that looks like content.
+    #[allow(unused_variables)]
+    async fn extract_document(
+        url: &str,
+        content_type: &str,
+        status: u16,
+        bytes: &[u8],
+    ) -> Value {
+        #[cfg(feature = "document-intelligence")]
+        {
+            // Go through UAR's OWN kreuzberg wrapper rather than calling the
+            // crate directly: it already owns the config mapping, the input-size
+            // limit and the OCR setup. A second integration point would drift
+            // from the one uploaded attachments already use.
+            // `process_bytes` is re-exported from file_processing; the module
+            // itself is private, and reaching through it was the mistake here.
+            use crate::uar::file_processing::process_bytes;
+
+            let config = crate::config::KreuzbergConfig::default();
+            match process_bytes(bytes, content_type, &config).await {
+                Ok(result) => {
+                    return json!({
+                        "ok": status < 400,
+                        "status": status,
+                        "content_type": content_type,
+                        "url": url,
+                        "body": result.content,
+                        "extraction": "document",
+                        "size_bytes": bytes.len(),
+                    });
+                }
+                Err(error) => {
+                    return json!({
+                        "ok": false,
+                        "status": status,
+                        "content_type": content_type,
+                        "url": url,
+                        "error": format!("could not extract text from this document: {error}"),
+                    });
+                }
+            }
+        }
+        #[cfg(not(feature = "document-intelligence"))]
+        {
+            json!({
+                "ok": false,
+                "status": status,
+                "content_type": content_type,
+                "url": url,
+                "error": format!(
+                    "`{content_type}` needs document extraction, which this build does not \
+                     include. Fetch it from a server deployment, or request a text format."
+                ),
+                "platformLimitation": true,
+            })
+        }
+    }
+
     /// Parse, resolve, and refuse the URL if it points at address space this
     /// tool must never reach.
     ///
@@ -175,6 +242,14 @@ impl NativeSkill for WebFetchTool {
                 "error": format!("Response {}KB exceeds limit {}KB", size_kb, self.max_size_kb)
             }));
         }
+        // Route by content type BEFORE decoding. `from_utf8_lossy` on a PDF
+        // yields mojibake that still looks like text, so the model reasons over
+        // garbage instead of failing honestly -- worse than an error.
+        let extraction = super::fetch_guard::extraction_for(&content_type, raw);
+        if matches!(extraction, super::fetch_guard::Extraction::Document) {
+            return Ok(Self::extract_document(&url, &content_type, status, &bytes).await);
+        }
+
         let body_text = String::from_utf8_lossy(&bytes).to_string();
         let content = if !raw && content_type.contains("text/html") {
             let mut out = String::with_capacity(body_text.len());
@@ -302,6 +377,31 @@ mod guard_wiring_tests {
         let allowed: HashSet<String> = ["web_fetch".to_string()].into_iter().collect();
         let scoped = registry.filtered(Some(&allowed)).await;
         assert!(scoped.contains("web_fetch").await);
+    }
+
+    /// A build without `document-intelligence` (embedded-mobile, i.e. a phone)
+    /// must SAY it cannot extract, not return lossy-decoded bytes. Emitting
+    /// mojibake that looks like prose is worse than an error, because the model
+    /// reasons over it instead of reporting failure.
+    #[cfg(not(feature = "document-intelligence"))]
+    #[tokio::test]
+    async fn a_build_without_extraction_reports_the_limitation() {
+        let out = WebFetchTool::extract_document(
+            "https://example.com/report.pdf",
+            "application/pdf",
+            200,
+            b"%PDF-1.7 fake",
+        )
+        .await;
+        assert_eq!(out.get("ok").and_then(Value::as_bool), Some(false));
+        assert_eq!(out.get("platformLimitation").and_then(Value::as_bool), Some(true));
+        let error = out.get("error").and_then(Value::as_str).unwrap_or_default();
+        assert!(
+            error.contains("document extraction"),
+            "the reason must name the missing capability, got: {error}"
+        );
+        // The lossy bytes must NOT be passed off as content.
+        assert!(out.get("body").is_none());
     }
 
     #[tokio::test]
