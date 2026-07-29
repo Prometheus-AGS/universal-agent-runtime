@@ -315,10 +315,20 @@ rules. Project-specific `CLAUDE.md`, `AGENTS.md`, README, architecture docs, or
 task instructions may add stricter requirements, and may override these only
 when explicit and non-contradictory with safety, correctness, and user intent.
 
-**30. Tests Are Part of Completion** — Implementation is not complete until
-verified. Where available, run unit/integration tests, type checks, linters, and
-build checks; add tests for new behavior; update tests when behavior
-intentionally changes. If tests cannot be run, state why.
+**30. Test at Phase Completion, Not Continuously** — Verification belongs at the
+END of a phase, immediately before reflection. Testing code not yet certified to
+provide value is waste: a half-built phase will change before it is done, so
+every expensive run is paid twice. DURING implementation run only what is cheap
+and stops a defect from propagating — compiler/type checks, linters, and unit
+tests for the unit just written. AT phase completion run the full battery:
+integration tests, build checks, release cross-compiles, device and end-to-end
+certification; add tests for new behavior and update them when behavior
+intentionally changes. Never start an expensive verification while
+implementation on the same surface is still in flight, and serialize builds —
+parallel ones contend for the same toolchain locks and finish later than if run
+in sequence. If tests cannot be run, state why AND say which claims are
+therefore unverified; an unverified claim reported as verified is worse than no
+test at all.
 
 **31. Prefer Small, Reviewable Changes** — Keep commits focused and diffs small.
 Avoid broad rewrites and unrelated cleanup. Separate mechanical changes from
