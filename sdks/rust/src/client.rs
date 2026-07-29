@@ -319,6 +319,36 @@ impl AdminApi<'_> {
             .await
     }
 
+    /// Add a memory.
+    ///
+    /// Mirrors the embedded runtime's `add_memory`, so a served deployment and
+    /// an on-device one expose the same capability rather than the remote one
+    /// being read-and-delete only.
+    pub async fn add_memory(&self, content: &str) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::POST, "/api/admin/memories")?
+                    .json(&serde_json::json!({ "content": content })),
+            )
+            .await
+    }
+
+    /// Replace a memory's content. The service records history, so the previous
+    /// text stays recoverable rather than being overwritten destructively.
+    pub async fn update_memory(&self, id: &str, content: &str) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(
+                        reqwest::Method::PATCH,
+                        &format!("/api/admin/memories/{id}"),
+                    )?
+                    .json(&serde_json::json!({ "content": content })),
+            )
+            .await
+    }
+
     /// Delete one governed memory record.
     pub async fn delete_memory(&self, id: &str) -> Result<Value> {
         self.0

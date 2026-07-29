@@ -21,6 +21,7 @@ use crate::{
         a2ui::{realtime::InMemoryReplayBackbone, registry::A2uiRegistry},
         defaults::{ensure_default_knowledge_base, seed_builtin_agents},
         governance::engine::GovernanceEngine,
+        memory::service::MemoryService,
         persistence::PersistenceLayer,
         rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend},
         runtime::{
@@ -55,6 +56,9 @@ pub struct EmbeddedRuntime {
     embedding_backend: Arc<dyn EmbeddingBackend>,
     a2ui_registry: Arc<A2uiRegistry>,
     a2ui_backbone: Arc<InMemoryReplayBackbone>,
+    /// Owns a SECOND embedded SurrealKV store, separate from `persistence`.
+    /// `None` when memory is disabled.
+    memory_service: Option<Arc<MemoryService>>,
 }
 
 impl std::fmt::Debug for EmbeddedRuntime {
@@ -141,6 +145,20 @@ impl EmbeddedRuntime {
         Arc::clone(&self.embedding_backend)
     }
 
+    /// The agent memory service, when this runtime was built with one.
+    ///
+    /// `None` when memory is disabled in config. Optional rather than required
+    /// so a host that does not want memory still builds, and so a caller can
+    /// report "memory is off" instead of a runtime panic.
+    ///
+    /// NOTE: this owns a SECOND embedded SurrealKV store, separate from the
+    /// persistence layer's `uar-db`. Both take an exclusive directory lock, so
+    /// they must never be pointed at the same path.
+    #[must_use]
+    pub fn memory_service(&self) -> Option<Arc<MemoryService>> {
+        self.memory_service.clone()
+    }
+
     #[must_use]
     pub fn a2ui_registry(&self) -> Arc<A2uiRegistry> {
         Arc::clone(&self.a2ui_registry)
@@ -167,6 +185,7 @@ pub struct EmbeddedRuntimeBuilder {
     mcp: Option<Arc<McpRegistry>>,
     native_skills: Option<Arc<NativeSkillRegistry>>,
     a2ui_registry: Option<Arc<A2uiRegistry>>,
+    memory_service: Option<Arc<MemoryService>>,
     seed_defaults: bool,
     vector_threshold: Option<f32>,
 }
@@ -239,6 +258,22 @@ impl EmbeddedRuntimeBuilder {
     #[must_use]
     pub fn a2ui_registry(mut self, registry: Arc<A2uiRegistry>) -> Self {
         self.a2ui_registry = Some(registry);
+        self
+    }
+
+    /// Attach an agent memory service.
+    ///
+    /// The caller constructs it (`MemoryService::new(MemoryConfig)`) so the host
+    /// controls the store path and the embedding provider. That matters on a
+    /// device: the default provider is Local, which needs no API key and works
+    /// offline, but a host that wants OpenAI embeddings must opt in explicitly
+    /// rather than have a network dependency appear by default.
+    ///
+    /// The store path MUST differ from the persistence layer's — both take an
+    /// exclusive SurrealKV directory lock.
+    #[must_use]
+    pub fn memory_service(mut self, service: Arc<MemoryService>) -> Self {
+        self.memory_service = Some(service);
         self
     }
 
@@ -380,6 +415,7 @@ impl EmbeddedRuntimeBuilder {
             embedding_backend,
             a2ui_registry,
             a2ui_backbone,
+            memory_service: self.memory_service,
         })
     }
 }

@@ -7,8 +7,10 @@
 //!
 //! ```text
 //! GET    /api/admin/memories         — paginated list (scope filters)
+//! POST   /api/admin/memories         — add a memory
 //! GET    /api/admin/memories/stats   — count + scope breakdown
 //! GET    /api/admin/memories/:id     — get single memory by ID
+//! PATCH  /api/admin/memories/:id     — replace a memory's content
 //! DELETE /api/admin/memories/:id     — delete a single memory
 //! DELETE /api/admin/memories         — bulk-delete by scope filter
 //! GET    /api/admin/memories/search  — semantic/text search
@@ -34,6 +36,19 @@ pub struct ListMemoriesQuery {
     pub user_id: Option<String>,
     pub agent_id: Option<String>,
     pub session_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateMemoryRequest {
+    pub content: String,
+    pub user_id: Option<String>,
+    pub agent_id: Option<String>,
+    pub session_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateMemoryRequest {
+    pub content: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -254,6 +269,72 @@ pub async fn delete_memory_handler(
     }
 }
 
+/// `POST /api/admin/memories` — add a memory
+///
+/// Exists so the REMOTE container has the same memory capability the embedded
+/// one does. Before this the HTTP surface was read-and-delete only, so a served
+/// deployment could show a user what was remembered about them and let them
+/// erase it, but never correct it — the two containers were not at parity.
+pub async fn create_memory_handler(
+    State(state): State<AppState>,
+    Json(body): Json<CreateMemoryRequest>,
+) -> impl IntoResponse {
+    let Some(svc) = &state.memory_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "Memory system not enabled"})),
+        )
+            .into_response();
+    };
+
+    let ctx = admin_ctx(body.user_id.as_deref());
+    match crate::uar::admin::memory::add(
+        Some(svc),
+        body.content,
+        crate::uar::domain::memory::MemoryScope::default(),
+        crate::uar::domain::memory::MemoryType::default(),
+        &ctx,
+        body.agent_id.as_deref(),
+        body.session_id.as_deref(),
+    )
+    .await
+    {
+        Ok(memory) => (StatusCode::CREATED, Json(memory_to_json(&memory))).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": format!("{e}")})),
+        )
+            .into_response(),
+    }
+}
+
+/// `PATCH /api/admin/memories/{id}` — replace a memory's content
+///
+/// The service records a history entry, so an edit is auditable rather than
+/// destructive: the previous text stays recoverable.
+pub async fn update_memory_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(body): Json<UpdateMemoryRequest>,
+) -> impl IntoResponse {
+    let Some(svc) = &state.memory_service else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "Memory system not enabled"})),
+        )
+            .into_response();
+    };
+
+    match crate::uar::admin::memory::update(Some(svc), &id, body.content).await {
+        Ok(memory) => Json(memory_to_json(&memory)).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": format!("{e}")})),
+        )
+            .into_response(),
+    }
+}
+
 /// `DELETE /api/admin/memories` — bulk delete by scope filters
 pub async fn bulk_delete_memories_handler(
     State(state): State<AppState>,
@@ -289,12 +370,16 @@ pub fn build_router() -> Router<AppState> {
     Router::new()
         .route(
             "/",
-            get(list_memories_handler).delete(bulk_delete_memories_handler),
+            get(list_memories_handler)
+                .post(create_memory_handler)
+                .delete(bulk_delete_memories_handler),
         )
         .route("/stats", get(memory_stats_handler))
         .route("/search", get(search_memories_handler))
         .route(
             "/{id}",
-            get(get_memory_handler).delete(delete_memory_handler),
+            get(get_memory_handler)
+                .patch(update_memory_handler)
+                .delete(delete_memory_handler),
         )
 }

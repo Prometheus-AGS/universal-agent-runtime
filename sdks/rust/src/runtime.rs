@@ -15,6 +15,10 @@ use tokio::sync::broadcast;
 use universal_agent_runtime::uar::admin as uar_admin;
 use universal_agent_runtime::uar::domain::knowledge as uar_knowledge;
 use universal_agent_runtime::uar::domain::memory as uar_memory;
+// Re-exported: the memory admin API takes a `UserContext`, so a consumer would
+// otherwise have to depend on the UAR crate directly just to call the SDK.
+pub use universal_agent_runtime::uar::security::claims::{UserClaims, UserContext};
+use universal_agent_runtime::uar::a2ui::schema as uar_a2ui;
 use universal_agent_runtime::uar::domain::skills as uar_skills;
 use universal_agent_runtime::{
     config::LlmConfig,
@@ -443,25 +447,133 @@ impl Runtime {
             .map_err(runtime_error)
     }
 
-    /// Semantic memory search.
-    ///
-    /// Read-only by design: memory WRITES go through the memory service, which
-    /// owns scoping, embedding and auto-capture. An admin surface that wrote
-    /// rows directly would bypass those invariants.
+    // -------------------------------------------------------------------------
+    // Memory
+    //
+    // Full CRUD, not search-only. A user must be able to see what the runtime
+    // remembered about them and correct or remove it, and that has to hold on
+    // every deployment — a phone with no server is exactly where a wrong or
+    // stale memory is least reviewable, not most.
+    //
+    // Every call goes through `MemoryService` rather than `PersistenceLayer`.
+    // That is not a stylistic choice: `PersistenceLayer::save_memory` and
+    // `search_memory` are documented NO-OP stubs on `SurrealDbProvider` that
+    // return `Ok(())` / `vec![]`. Routing writes there would compile, run, and
+    // silently discard the data. The service also owns EMBEDDING, so a row
+    // written around it is invisible to every later semantic search.
+    // -------------------------------------------------------------------------
+
+    /// Memories visible to a user, optionally narrowed to an agent or session.
     ///
     /// # Errors
-    /// Returns an error if the persistence read fails.
+    /// Returns an error if the runtime has no memory service, or the read fails.
+    #[cfg(feature = "embedded")]
+    pub async fn list_memories(
+        &self,
+        user_ctx: &UserContext,
+        agent_id: Option<&str>,
+        session_id: Option<&str>,
+    ) -> Result<Vec<uar_memory::Memory>> {
+        uar_admin::memory::list(
+            self.inner.memory_service().as_ref(),
+            user_ctx,
+            agent_id,
+            session_id,
+        )
+        .await
+        .map_err(runtime_error)
+    }
+
+    /// Load one memory by id.
+    ///
+    /// # Errors
+    /// Returns an error if the runtime has no memory service, or the read fails.
+    #[cfg(feature = "embedded")]
+    pub async fn get_memory(&self, id: &str) -> Result<Option<uar_memory::Memory>> {
+        uar_admin::memory::get(self.inner.memory_service().as_ref(), id)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Add a memory.
+    ///
+    /// # Errors
+    /// Returns an error if the runtime has no memory service, or the write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn add_memory(
+        &self,
+        content: impl Into<String>,
+        scope: uar_memory::MemoryScope,
+        memory_type: uar_memory::MemoryType,
+        user_ctx: &UserContext,
+        agent_id: Option<&str>,
+        session_id: Option<&str>,
+    ) -> Result<uar_memory::Memory> {
+        uar_admin::memory::add(
+            self.inner.memory_service().as_ref(),
+            content,
+            scope,
+            memory_type,
+            user_ctx,
+            agent_id,
+            session_id,
+        )
+        .await
+        .map_err(runtime_error)
+    }
+
+    /// Replace a memory's content. The service records a history entry, so an
+    /// edit is auditable rather than destructive.
+    ///
+    /// # Errors
+    /// Returns an error if the runtime has no memory service, or the write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn update_memory(&self, id: &str, content: String) -> Result<uar_memory::Memory> {
+        uar_admin::memory::update(self.inner.memory_service().as_ref(), id, content)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Delete a memory by id.
+    ///
+    /// # Errors
+    /// Returns an error if the runtime has no memory service, or the write fails.
+    #[cfg(feature = "embedded")]
+    pub async fn delete_memory(&self, id: &str) -> Result<()> {
+        uar_admin::memory::delete(self.inner.memory_service().as_ref(), id)
+            .await
+            .map_err(runtime_error)
+    }
+
+    /// Semantic search over a user's memories.
+    ///
+    /// Takes a TEXT query, not a precomputed vector: the service owns the
+    /// embedding backend, and a caller that had to embed the query itself would
+    /// have to match the store's model exactly or get silently wrong results.
+    ///
+    /// # Errors
+    /// Returns an error if the runtime has no memory service, or the read fails.
     #[cfg(feature = "embedded")]
     pub async fn search_memory(
         &self,
+        query: &str,
+        user_ctx: &UserContext,
         agent_id: Option<&str>,
-        query_vec: &[f32],
+        session_id: Option<&str>,
         limit: usize,
-        min_score: f32,
-    ) -> Result<Vec<uar_memory::MemoryMatch>> {
-        uar_admin::memory::search(&self.inner.persistence(), agent_id, query_vec, limit, min_score)
-            .await
-            .map_err(runtime_error)
+        categories: Option<&[String]>,
+    ) -> Result<Vec<uar_memory::Memory>> {
+        uar_admin::memory::search(
+            self.inner.memory_service().as_ref(),
+            query,
+            user_ctx,
+            agent_id,
+            session_id,
+            limit,
+            categories,
+        )
+        .await
+        .map_err(runtime_error)
     }
 
     /// List configured MCP servers.
@@ -500,6 +612,25 @@ impl Runtime {
         )
         .await
         .map_err(runtime_error)
+    }
+
+    /// Every tool this runtime can dispatch, from both backends.
+    ///
+    /// Each entry carries its `source`, because native tools work with no
+    /// network while MCP tools need a reachable server — a client that cannot
+    /// tell them apart cannot explain why some tools survive going offline.
+    #[cfg(feature = "embedded")]
+    pub async fn list_tools(&self) -> Vec<uar_admin::tools::ToolEntry> {
+        uar_admin::tools::list(&self.inner.native_skills(), &self.inner.mcp()).await
+    }
+
+    /// A2UI artifact schemas this runtime can render.
+    ///
+    /// Read-only: registering a schema changes how every future artifact
+    /// renders, so that belongs to composition rather than an admin call.
+    #[cfg(feature = "embedded")]
+    pub async fn list_a2ui_schemas(&self) -> Vec<uar_a2ui::ArtifactSchema> {
+        uar_admin::a2ui::list(&self.inner.a2ui_registry()).await
     }
 
     /// Remove an MCP server from the store and from the live registry.
@@ -617,6 +748,7 @@ pub struct RuntimeBuilder {
     native_skills: Option<Arc<NativeSkillRegistry>>,
     #[cfg(feature = "embedded")]
     a2ui_registry: Option<Arc<A2uiRegistry>>,
+    memory_service: Option<Arc<universal_agent_runtime::uar::memory::service::MemoryService>>,
     #[cfg(feature = "embedded")]
     seed_defaults: Option<bool>,
     #[cfg(feature = "embedded")]
@@ -674,6 +806,21 @@ impl RuntimeBuilder {
         self
     }
 
+    /// Attach an agent memory service.
+    ///
+    /// The caller constructs it so the host controls the store path and the
+    /// embedding provider. Its path MUST differ from the persistence layer's:
+    /// both take an exclusive SurrealKV directory lock.
+    #[cfg(feature = "embedded")]
+    #[must_use]
+    pub fn memory_service(
+        mut self,
+        service: Arc<universal_agent_runtime::uar::memory::service::MemoryService>,
+    ) -> Self {
+        self.memory_service = Some(service);
+        self
+    }
+
     #[cfg(feature = "embedded")]
     #[must_use]
     pub fn seed_defaults(mut self, enabled: bool) -> Self {
@@ -714,6 +861,9 @@ impl RuntimeBuilder {
         }
         if let Some(native_skills) = self.native_skills {
             builder = builder.native_skills(native_skills);
+        }
+        if let Some(memory_service) = self.memory_service {
+            builder = builder.memory_service(memory_service);
         }
         if let Some(a2ui_registry) = self.a2ui_registry {
             builder = builder.a2ui_registry(a2ui_registry);
