@@ -21,6 +21,7 @@ use crate::{
         a2ui::{realtime::InMemoryReplayBackbone, registry::A2uiRegistry},
         defaults::{ensure_default_knowledge_base, seed_builtin_agents},
         governance::engine::GovernanceEngine,
+        memory::service::MemoryService,
         persistence::PersistenceLayer,
         rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend},
         runtime::{
@@ -29,6 +30,7 @@ use crate::{
             native_skill::NativeSkillRegistry,
             skills::{service::SkillService, storage::DatabaseStorageProvider},
         },
+        settings::manager::SettingsManager,
     },
 };
 
@@ -45,6 +47,7 @@ pub struct EmbeddedRuntime {
     orchestrator: Arc<Orchestrator>,
     run_manager: Arc<RunManager>,
     persistence: Arc<dyn PersistenceLayer>,
+    settings_manager: Arc<SettingsManager>,
     provider_registry: Arc<ProviderRegistry>,
     mcp: Arc<McpRegistry>,
     native_skills: Arc<NativeSkillRegistry>,
@@ -53,6 +56,9 @@ pub struct EmbeddedRuntime {
     embedding_backend: Arc<dyn EmbeddingBackend>,
     a2ui_registry: Arc<A2uiRegistry>,
     a2ui_backbone: Arc<InMemoryReplayBackbone>,
+    /// Owns a SECOND embedded SurrealKV store, separate from `persistence`.
+    /// `None` when memory is disabled.
+    memory_service: Option<Arc<MemoryService>>,
 }
 
 impl std::fmt::Debug for EmbeddedRuntime {
@@ -62,6 +68,7 @@ impl std::fmt::Debug for EmbeddedRuntime {
             .field("provider_registry", &self.provider_registry)
             .field("run_manager", &self.run_manager)
             .field("persistence", &self.persistence)
+            .field("settings_manager", &self.settings_manager)
             .field("mcp", &self.mcp)
             .field("native_skills", &self.native_skills)
             .field("skill_service", &self.skill_service)
@@ -99,6 +106,15 @@ impl EmbeddedRuntime {
         Arc::clone(&self.persistence)
     }
 
+    /// The runtime settings manager, backing the embedded admin surface and the
+    /// Global run-policy scope. It is the same instance the run manager uses to
+    /// resolve `run_policy.global`, so settings written here take effect on the
+    /// next resolved run.
+    #[must_use]
+    pub fn settings_manager(&self) -> Arc<SettingsManager> {
+        Arc::clone(&self.settings_manager)
+    }
+
     #[must_use]
     pub fn provider_registry(&self) -> Arc<ProviderRegistry> {
         Arc::clone(&self.provider_registry)
@@ -129,6 +145,20 @@ impl EmbeddedRuntime {
         Arc::clone(&self.embedding_backend)
     }
 
+    /// The agent memory service, when this runtime was built with one.
+    ///
+    /// `None` when memory is disabled in config. Optional rather than required
+    /// so a host that does not want memory still builds, and so a caller can
+    /// report "memory is off" instead of a runtime panic.
+    ///
+    /// NOTE: this owns a SECOND embedded SurrealKV store, separate from the
+    /// persistence layer's `uar-db`. Both take an exclusive directory lock, so
+    /// they must never be pointed at the same path.
+    #[must_use]
+    pub fn memory_service(&self) -> Option<Arc<MemoryService>> {
+        self.memory_service.clone()
+    }
+
     #[must_use]
     pub fn a2ui_registry(&self) -> Arc<A2uiRegistry> {
         Arc::clone(&self.a2ui_registry)
@@ -155,6 +185,7 @@ pub struct EmbeddedRuntimeBuilder {
     mcp: Option<Arc<McpRegistry>>,
     native_skills: Option<Arc<NativeSkillRegistry>>,
     a2ui_registry: Option<Arc<A2uiRegistry>>,
+    memory_service: Option<Arc<MemoryService>>,
     seed_defaults: bool,
     vector_threshold: Option<f32>,
 }
@@ -227,6 +258,22 @@ impl EmbeddedRuntimeBuilder {
     #[must_use]
     pub fn a2ui_registry(mut self, registry: Arc<A2uiRegistry>) -> Self {
         self.a2ui_registry = Some(registry);
+        self
+    }
+
+    /// Attach an agent memory service.
+    ///
+    /// The caller constructs it (`MemoryService::new(MemoryConfig)`) so the host
+    /// controls the store path and the embedding provider. That matters on a
+    /// device: the default provider is Local, which needs no API key and works
+    /// offline, but a host that wants OpenAI embeddings must opt in explicitly
+    /// rather than have a network dependency appear by default.
+    ///
+    /// The store path MUST differ from the persistence layer's — both take an
+    /// exclusive SurrealKV directory lock.
+    #[must_use]
+    pub fn memory_service(mut self, service: Arc<MemoryService>) -> Self {
+        self.memory_service = Some(service);
         self
     }
 
@@ -316,6 +363,16 @@ impl EmbeddedRuntimeBuilder {
             .await?;
         provider_registry.set_default(&provider.id).await?;
 
+        // One shared settings manager backs both the Global run-policy scope
+        // (via the run manager) and the embedded admin surface (via the SDK), so
+        // a setting written through the admin surface is observed by the next
+        // resolved run without a second cache. The embedded runtime has no
+        // `AppConfig`, so instead of the full bootstrap it seeds only the
+        // `run_policy` namespace (idempotently) so `run_policy.global` exists for
+        // reads and writes.
+        let settings_manager = Arc::new(SettingsManager::new(Arc::clone(&persistence)));
+        settings_manager.ensure_run_policy_seed().await?;
+
         let governance = Arc::new(GovernanceEngine::with_default_permit()?);
         let sessions = SessionStore::new();
         let orchestrator = Arc::new(Orchestrator::from_driver(
@@ -340,7 +397,8 @@ impl EmbeddedRuntimeBuilder {
             .with_provider_registry(Arc::clone(&provider_registry))
             .with_native_skills(Arc::clone(&native_skills))
             .with_a2ui_backbone(Arc::clone(&a2ui_backbone))
-            .with_governance_engine(governance),
+            .with_governance_engine(governance)
+            .with_settings_manager(Arc::clone(&settings_manager)),
         );
 
         Ok(EmbeddedRuntime {
@@ -348,6 +406,7 @@ impl EmbeddedRuntimeBuilder {
             orchestrator,
             run_manager,
             persistence,
+            settings_manager,
             provider_registry,
             mcp,
             native_skills,
@@ -356,6 +415,7 @@ impl EmbeddedRuntimeBuilder {
             embedding_backend,
             a2ui_registry,
             a2ui_backbone,
+            memory_service: self.memory_service,
         })
     }
 }
@@ -588,6 +648,232 @@ mod tests {
                 .messages
                 .iter()
                 .any(|message| message.to_string().contains("answer without a network"))
+        );
+    }
+
+    #[tokio::test]
+    async fn effective_run_policy_artifact_backfills_the_registry_default_model() {
+        // The seeded/default agent leaves `provider.default` empty (it defers to
+        // the registry default). Without the backfill the emitted
+        // `effective_run_policy` artifact would carry an empty ModelRoute and the
+        // downstream provenance chip (agent/provider/model) would show a blank
+        // model. Assert the artifact reports the true executing route instead.
+        let driver = Arc::new(MockLlmDriver::new(vec![vec![
+            ProviderEvent::MessageDelta {
+                text: "answer".to_string(),
+            },
+            ProviderEvent::Done,
+        ]]));
+        let runtime = build_runtime(driver, Arc::new(InMemoryProvider::new()), None).await;
+
+        let run_id = runtime
+            .run_manager()
+            .start_run(
+                test_agent(),
+                "who produced this?".to_string(),
+                Some("provenance-conversation".to_string()),
+                None,
+                Vec::new(),
+            )
+            .await;
+        let history = wait_for_event(&runtime, &run_id, |event| {
+            matches!(
+                event,
+                NormalizedEvent::Artifact { artifact, .. }
+                    if artifact.artifact_type == "effective_run_policy"
+            )
+        })
+        .await;
+
+        let artifact = history
+            .iter()
+            .find_map(|event| match &event.event {
+                NormalizedEvent::Artifact { artifact, .. }
+                    if artifact.artifact_type == "effective_run_policy" =>
+                {
+                    Some(artifact.clone())
+                }
+                _ => None,
+            })
+            .expect("effective_run_policy artifact is emitted");
+
+        let policy: serde_json::Value =
+            serde_json::from_str(&artifact.content).expect("policy content is JSON");
+        assert_eq!(policy["model"]["provider_id"], "embedded-local");
+        assert_eq!(policy["model"]["model_id"], "offline-agent-model");
+        assert_eq!(policy["agent_id"], "embedded-test-agent");
+    }
+
+    #[tokio::test]
+    async fn conversation_policy_round_trips_and_effective_config_reflects_the_override() {
+        use crate::uar::domain::policy::{ModelRoute, RunPolicy};
+
+        let runtime = build_runtime(
+            Arc::new(MockLlmDriver::echo()),
+            Arc::new(InMemoryProvider::new()),
+            None,
+        )
+        .await;
+        let conversation_id = "conv-model-override";
+        let persistence = runtime.persistence();
+
+        // No conversation policy yet: effective_config resolves the default agent
+        // and backfills the registry-default model (the M6c behavior).
+        let baseline = runtime
+            .run_manager()
+            .effective_config(conversation_id)
+            .await;
+        assert!(baseline.requested_policy.is_none());
+        let baseline_model = baseline.effective_policy.model.expect("model backfilled");
+        assert_eq!(baseline_model.provider_id, "embedded-local");
+        assert_eq!(baseline_model.model_id, "offline-agent-model");
+
+        // Save a conversation-scoped model override and confirm it round-trips and
+        // wins over the (empty) agent/global scopes.
+        let mut policy = RunPolicy::default();
+        policy.model = Some(ModelRoute {
+            provider_id: "openai".to_string(),
+            model_id: "gpt-4o".to_string(),
+        });
+        let record =
+            crate::uar::domain::policy::ConversationPolicyRecord::new(conversation_id, policy);
+        persistence
+            .save_conversation_policy(&record)
+            .await
+            .expect("conversation policy persists");
+
+        let loaded = persistence
+            .load_conversation_policy(conversation_id)
+            .await
+            .expect("load ok")
+            .expect("record present");
+        assert_eq!(
+            loaded.policy.model.as_ref().map(|m| m.model_id.as_str()),
+            Some("gpt-4o")
+        );
+
+        let overridden = runtime
+            .run_manager()
+            .effective_config(conversation_id)
+            .await;
+        assert!(overridden.requested_policy.is_some());
+        let effective_model = overridden
+            .effective_policy
+            .model
+            .expect("conversation model resolves");
+        assert_eq!(effective_model.provider_id, "openai");
+        assert_eq!(effective_model.model_id, "gpt-4o");
+
+        // Deleting the override reverts to the backfilled registry default.
+        persistence
+            .delete_conversation_policy(conversation_id)
+            .await
+            .expect("delete ok");
+        let reverted = runtime
+            .run_manager()
+            .effective_config(conversation_id)
+            .await;
+        assert!(reverted.requested_policy.is_none());
+        assert_eq!(
+            reverted.effective_policy.model.map(|m| m.model_id),
+            Some("offline-agent-model".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn cold_started_session_is_seeded_from_supplied_history() {
+        use crate::uar::runtime::manager::SeedMessage;
+
+        // Echo driver returns the last user message, so the request the model
+        // receives is observable through the driver's recorded requests.
+        let driver = Arc::new(MockLlmDriver::echo());
+        let runtime = build_runtime(driver.clone(), Arc::new(InMemoryProvider::new()), None).await;
+        let conversation_id = "cold-start-conversation".to_string();
+
+        // First turn: the session is empty (cold start), so the supplied history
+        // must be replayed before the current input.
+        let seed = vec![
+            SeedMessage {
+                role: "user".to_string(),
+                content: "my name is Ada".to_string(),
+                tool_call_id: None,
+            },
+            SeedMessage {
+                role: "assistant".to_string(),
+                content: "Nice to meet you, Ada.".to_string(),
+                tool_call_id: None,
+            },
+        ];
+        let run_id = runtime
+            .run_manager()
+            .start_run_with_history(
+                test_agent(),
+                "what is my name?".to_string(),
+                Some(conversation_id.clone()),
+                None,
+                Vec::new(),
+                seed.clone(),
+            )
+            .await;
+        wait_for_event(&runtime, &run_id, |event| {
+            matches!(event, NormalizedEvent::RunDone { .. })
+        })
+        .await;
+
+        // The model's request contains the seeded prior turns AND the new input.
+        let first = driver.requests();
+        let rendered = first
+            .last()
+            .expect("a request reached the driver")
+            .messages
+            .iter()
+            .map(|message| message.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            rendered.contains("my name is Ada"),
+            "seeded user turn present"
+        );
+        assert!(
+            rendered.contains("Nice to meet you, Ada."),
+            "seeded assistant turn present"
+        );
+        assert!(
+            rendered.contains("what is my name?"),
+            "current input present"
+        );
+
+        // Second turn on the SAME (now warm) session: seeding must NOT duplicate
+        // the history — the session already holds the prior turns plus the first
+        // exchange, so passing the same seed again is a no-op.
+        let run_id_2 = runtime
+            .run_manager()
+            .start_run_with_history(
+                test_agent(),
+                "and again?".to_string(),
+                Some(conversation_id.clone()),
+                None,
+                Vec::new(),
+                seed,
+            )
+            .await;
+        wait_for_event(&runtime, &run_id_2, |event| {
+            matches!(event, NormalizedEvent::RunDone { .. })
+        })
+        .await;
+        let second = driver.requests();
+        let rendered_2 = second
+            .last()
+            .expect("a second request reached the driver")
+            .messages
+            .iter()
+            .map(|message| message.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert_eq!(
+            rendered_2.matches("my name is Ada").count(),
+            1,
+            "warm session is not re-seeded (no duplicate history)"
         );
     }
 

@@ -55,3 +55,6 @@ pub use client::{Client, EventStream};
 #[cfg(any(feature = "embedded", feature = "server"))]
 #[doc(inline)]
 pub use runtime::Runtime;
+#[cfg(feature = "embedded")]
+#[doc(inline)]
+pub use universal_agent_runtime::uar::runtime::manager::SeedMessage;

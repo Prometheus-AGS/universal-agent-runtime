@@ -5,12 +5,15 @@
 //! it assembles context or exposes tools to a model.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::uar::context::ContextStrategy;
 use crate::uar::domain::artifact::AgentArtifact;
+use crate::uar::persistence::PersistenceLayer;
+use crate::uar::settings::manager::SettingsManager;
 
 /// Current serialized policy schema version.
 pub const RUN_POLICY_VERSION: u32 = 1;
@@ -508,6 +511,98 @@ pub fn resolve_run_policy(input: PolicyResolutionInput) -> EffectiveRunPolicy {
         tool_approval,
         provenance,
         warnings,
+    }
+}
+
+/// Transport-free inputs shared by the service and embedded resolvers.
+///
+/// Both the Axum `AppState` path and the in-process `RunManager` path build this
+/// context from the components they already own (a settings manager, a resolved
+/// [`PolicyUniverse`], and a default context strategy) so that policy resolution
+/// runs through one shared core with no dependency on a web framework.
+#[derive(Debug)]
+pub struct PolicyResolutionContext<'a> {
+    /// Runtime-wide settings source for the Global scope (`run_policy.global`).
+    pub settings_manager: Option<&'a SettingsManager>,
+    /// Resources enabled and available on the current runtime.
+    pub universe: PolicyUniverse,
+    /// Compatibility context strategy used when no scope selects one.
+    pub default_context_strategy: ContextStrategy,
+}
+
+/// Resolve the effective policy for a conversation and turn using the full
+/// Global → Agent → Conversation → Turn precedence.
+///
+/// This is the transport-free core shared by the HTTP service path and the
+/// embedded runtime. It reads the Global scope from `run_policy.global` via the
+/// supplied [`SettingsManager`], derives the Agent scope from `agent`, applies the
+/// caller-resolved `conversation` scope, and applies `turn` last. When no settings
+/// manager is available the Global scope is simply absent, which is the
+/// backward-compatible agent+conversation behavior.
+///
+/// The conversation scope is passed in (not loaded here) because callers differ in
+/// where a conversation policy lives: the service path also consults an in-memory
+/// session map, while the embedded path uses [`load_persisted_conversation_policy`].
+/// The resolution itself delegates to [`resolve_run_policy`], so identical inputs
+/// always yield an identical [`EffectiveRunPolicy`] regardless of caller.
+pub async fn resolve_effective_run_policy_core(
+    ctx: PolicyResolutionContext<'_>,
+    agent: &AgentArtifact,
+    conversation: Option<RunPolicy>,
+    turn: Option<RunPolicy>,
+) -> EffectiveRunPolicy {
+    let agent_default = &agent.policy.provider.default;
+    let default_model = (!agent_default.provider.trim().is_empty()
+        && !agent_default.model.trim().is_empty())
+    .then(|| ModelRoute {
+        provider_id: agent_default.provider.clone(),
+        model_id: agent_default.model.clone(),
+    });
+    let global = match ctx.settings_manager {
+        Some(manager) => manager
+            .get_typed::<RunPolicy>("run_policy.global")
+            .await
+            .map_err(|error| {
+                tracing::warn!(%error, "failed to load global run policy; using inherited defaults");
+                error
+            })
+            .ok()
+            .flatten(),
+        None => None,
+    };
+    let agent_policy = policy_from_agent_artifact(agent);
+    resolve_run_policy(PolicyResolutionInput {
+        global,
+        agent: Some(agent_policy),
+        conversation,
+        turn,
+        universe: ctx.universe,
+        default_chat_mode: ChatMode::Agent,
+        default_context_strategy: ctx.default_context_strategy,
+        default_agent_id: Some(agent.id.clone()),
+        default_model,
+        ..PolicyResolutionInput::default()
+    })
+}
+
+/// Load the durable conversation-scoped policy from persistence, if present.
+///
+/// Returns `None` when persistence is absent, the record is missing, or the load
+/// fails (a load error is logged and treated as "inherit"). Callers that also
+/// maintain an in-memory conversation policy (e.g. the service path) resolve that
+/// fallback themselves and pass the result as the conversation scope.
+pub async fn load_persisted_conversation_policy(
+    persistence: Option<&Arc<dyn PersistenceLayer>>,
+    conversation_id: &str,
+) -> Option<RunPolicy> {
+    let persistence = persistence?;
+    match persistence.load_conversation_policy(conversation_id).await {
+        Ok(Some(record)) => Some(record.policy),
+        Ok(None) => None,
+        Err(error) => {
+            tracing::warn!(%error, %conversation_id, "failed to load conversation policy");
+            None
+        }
     }
 }
 

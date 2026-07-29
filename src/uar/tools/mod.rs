@@ -1,3 +1,4 @@
+pub mod fetch_guard;
 pub mod file_patch;
 pub mod file_tools;
 pub mod memory;

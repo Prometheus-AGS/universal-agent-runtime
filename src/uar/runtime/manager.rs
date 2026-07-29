@@ -8,8 +8,10 @@ use crate::uar::domain::{
     context::ContextConfig,
     events::{ArtifactPayload, CitationSource, MemoryItem, NormalizedEvent, StatePatchOp},
     policy::{
-        ChatMode, EffectiveRunPolicy, ModelRoute, PolicyResolutionInput, PolicyUniverse,
-        SelectionMode, ToolApprovalPolicy, policy_from_agent_artifact, resolve_run_policy,
+        ChatMode, ConversationPolicyRecord, EffectiveRunPolicy, ModelRoute,
+        PolicyResolutionContext, PolicyResolutionInput, PolicyUniverse, RunPolicy, SelectionMode,
+        ToolApprovalPolicy, policy_from_agent_artifact, resolve_effective_run_policy_core,
+        resolve_run_policy,
     },
     runs::{Run, RunStatus},
 };
@@ -181,6 +183,12 @@ pub struct RunManager {
     /// cheap no-op warning check).
     cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker,
     resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
+    /// Optional runtime settings source for the Global policy scope
+    /// (`run_policy.global`). Built from `persistence` at construction when
+    /// persistence is present. When `None`, policy resolution falls back to the
+    /// legacy agent+conversation path, so callers without settings storage keep
+    /// their existing behavior.
+    settings_manager: Option<Arc<crate::uar::settings::manager::SettingsManager>>,
 }
 
 /// Memory mutation tool name sets — used to detect side effects in ToolEnd events.
@@ -462,6 +470,16 @@ impl RunManager {
             "Intent classifier initialized"
         );
 
+        // Build a settings manager from the same persistence the run manager
+        // owns so the embedded path can read `run_policy.global` (the Global
+        // policy scope). Absent persistence ⇒ no settings manager ⇒ legacy
+        // agent+conversation resolution.
+        let settings_manager = persistence.as_ref().map(|p| {
+            Arc::new(crate::uar::settings::manager::SettingsManager::new(
+                Arc::clone(p),
+            ))
+        });
+
         Self {
             active_runs: Arc::new(RwLock::new(HashMap::new())),
             session_current_run: Arc::new(RwLock::new(HashMap::new())),
@@ -475,6 +493,7 @@ impl RunManager {
             intent_classifier,
             classifier_config,
             persistence,
+            settings_manager,
             skill_service: None,
             skill_evolution_config: SkillEvolutionConfig::default(),
             provider_registry: None,
@@ -516,6 +535,22 @@ impl RunManager {
     /// Set the skill service for coordinated skill management.
     pub fn with_skill_service(mut self, service: Arc<SkillService>) -> Self {
         self.skill_service = Some(service);
+        self
+    }
+
+    /// Override the settings manager used to read the Global policy scope.
+    ///
+    /// [`RunManager::with_classifier_config`] builds a settings manager from the
+    /// supplied persistence by default. Embedded hosts that build and seed a
+    /// single shared [`SettingsManager`](crate::uar::settings::manager::SettingsManager)
+    /// (so runtime resolution and the admin surface observe the same cache) pass
+    /// it here to replace the auto-built instance.
+    #[must_use]
+    pub fn with_settings_manager(
+        mut self,
+        settings_manager: Arc<crate::uar::settings::manager::SettingsManager>,
+    ) -> Self {
+        self.settings_manager = Some(settings_manager);
         self
     }
 
@@ -682,11 +717,16 @@ impl RunManager {
         self.root_cancellation.clone()
     }
 
-    async fn resolve_legacy_run_policy(
+    /// Build the runtime resource universe and the persisted conversation scope
+    /// for policy resolution.
+    ///
+    /// Shared by [`Self::resolve_legacy_run_policy`] and
+    /// [`Self::resolve_effective_policy`] so both the legacy fallback and the
+    /// global-aware path see an identical universe + conversation scope.
+    async fn build_universe_and_conversation(
         &self,
-        artifact: &AgentArtifact,
         conversation_id: &str,
-    ) -> EffectiveRunPolicy {
+    ) -> (PolicyUniverse, Option<RunPolicy>) {
         let skills = match &self.skill_service {
             Some(service) => service
                 .get_enabled_skills()
@@ -735,6 +775,101 @@ impl RunManager {
         } else {
             None
         };
+        let universe = PolicyUniverse {
+            skills,
+            tools,
+            mcp_servers: self.global_mcp.server_names().into_iter().collect(),
+            knowledge_bases,
+        };
+        (universe, conversation)
+    }
+
+    /// Resolve the effective run policy for an agent + conversation.
+    ///
+    /// When a settings manager is available (the embedded path builds one from
+    /// its persistence), resolution runs through the shared transport-free core
+    /// [`resolve_effective_run_policy_core`], which includes the Global scope
+    /// (`run_policy.global`) — matching the HTTP service path exactly. Without a
+    /// settings manager it falls back to [`Self::resolve_legacy_run_policy`]
+    /// (agent + conversation only), preserving the prior behavior.
+    async fn resolve_effective_policy(
+        &self,
+        artifact: &AgentArtifact,
+        conversation_id: &str,
+    ) -> EffectiveRunPolicy {
+        let Some(settings_manager) = self.settings_manager.as_ref() else {
+            return self
+                .resolve_legacy_run_policy(artifact, conversation_id)
+                .await;
+        };
+        let (universe, conversation) = self.build_universe_and_conversation(conversation_id).await;
+        let ctx = PolicyResolutionContext {
+            settings_manager: Some(settings_manager.as_ref()),
+            universe,
+            default_context_strategy: self.message_context_strategy.clone(),
+        };
+        resolve_effective_run_policy_core(ctx, artifact, conversation, None).await
+    }
+
+    /// Compute the effective configuration for a conversation, mirroring the
+    /// service path's `GET /conversations/{id}/effective-config`: it resolves the
+    /// agent named by the stored conversation policy (or the default agent),
+    /// resolves the effective run policy for that agent + conversation (Global →
+    /// Agent → Conversation → Turn), and backfills the model route from the
+    /// registry default so the reported model is the one that will execute.
+    ///
+    /// Returns the resolved agent, the stored requested policy (if any), and the
+    /// effective policy — the pieces an embedded admin surface needs without a
+    /// service.
+    pub async fn effective_config(&self, conversation_id: &str) -> EffectiveConfig {
+        let requested = if let Some(persistence) = &self.persistence {
+            persistence
+                .load_conversation_policy(conversation_id)
+                .await
+                .ok()
+                .flatten()
+        } else {
+            None
+        };
+        let agent_id = requested
+            .as_ref()
+            .and_then(|record| record.policy.agent_id.clone())
+            .unwrap_or_else(|| "default-agent".to_string());
+        let agent = self.resolve_agent_or_default(&agent_id).await;
+        let mut effective = self.resolve_effective_policy(&agent, conversation_id).await;
+        self.backfill_effective_model(&mut effective).await;
+        EffectiveConfig {
+            agent,
+            requested_policy: requested,
+            effective_policy: effective,
+        }
+    }
+
+    /// Resolve an agent artifact by id: persisted definition first, then the
+    /// two built-ins, then the default agent as a last resort. Mirrors the
+    /// service path's `resolve_agent_for_run`.
+    async fn resolve_agent_or_default(&self, agent_id: &str) -> AgentArtifact {
+        if let Some(persistence) = &self.persistence
+            && let Ok(Some(agent)) = persistence.load_agent(agent_id).await
+        {
+            return agent;
+        }
+        match agent_id {
+            "orchestrator-agent" => crate::uar::defaults::orchestrator_agent(),
+            _ => crate::uar::defaults::default_agent(),
+        }
+    }
+
+    /// Backward-compatible agent + conversation resolution (no Global scope).
+    ///
+    /// Retained as the fallback used when no settings manager is available so
+    /// callers that never opted into global policy keep identical behavior.
+    async fn resolve_legacy_run_policy(
+        &self,
+        artifact: &AgentArtifact,
+        conversation_id: &str,
+    ) -> EffectiveRunPolicy {
+        let (universe, conversation) = self.build_universe_and_conversation(conversation_id).await;
         let default_model = ModelRoute {
             provider_id: artifact.policy.provider.default.provider.clone(),
             model_id: artifact.policy.provider.default.model.clone(),
@@ -743,12 +878,7 @@ impl RunManager {
         resolve_run_policy(PolicyResolutionInput {
             agent: Some(policy_from_agent_artifact(artifact)),
             conversation,
-            universe: PolicyUniverse {
-                skills,
-                tools,
-                mcp_servers: self.global_mcp.server_names().into_iter().collect(),
-                knowledge_bases,
-            },
+            universe,
             default_chat_mode: ChatMode::Agent,
             default_context_strategy: self.message_context_strategy.clone(),
             default_agent_id: Some(artifact.id.clone()),
@@ -777,6 +907,30 @@ impl RunManager {
     ) -> String {
         self.start_run_with_policy(artifact, input, session_id, user_id, memory_hits, None)
             .await
+    }
+
+    /// [`Self::start_run`] plus a `seed_history` of prior turns used to
+    /// repopulate an empty (cold-started) session. See
+    /// [`Self::start_run_with_policy_and_history`].
+    pub async fn start_run_with_history(
+        &self,
+        artifact: AgentArtifact,
+        input: String,
+        session_id: Option<String>,
+        user_id: Option<String>,
+        memory_hits: Vec<MemoryItem>,
+        seed_history: Vec<SeedMessage>,
+    ) -> String {
+        self.start_run_with_policy_and_history(
+            artifact,
+            input,
+            session_id,
+            user_id,
+            memory_hits,
+            None,
+            seed_history,
+        )
+        .await
     }
 
     /// Continue an existing run after a user responds to an interactive A2UI
@@ -836,6 +990,34 @@ impl RunManager {
         memory_hits: Vec<MemoryItem>,
         resolved_policy: Option<EffectiveRunPolicy>,
     ) -> String {
+        self.start_run_with_policy_and_history(
+            artifact,
+            input,
+            session_id,
+            user_id,
+            memory_hits,
+            resolved_policy,
+            Vec::new(),
+        )
+        .await
+    }
+
+    /// [`Self::start_run_with_policy`] plus a `seed_history` of prior turns used
+    /// to repopulate an **empty** session (a cold-started conversation whose
+    /// durable history lives in the host, not the in-process store). A session
+    /// that already holds messages is never re-seeded, so this is idempotent
+    /// across warm turns.
+    #[allow(clippy::too_many_arguments)]
+    pub async fn start_run_with_policy_and_history(
+        &self,
+        artifact: AgentArtifact,
+        input: String,
+        session_id: Option<String>,
+        user_id: Option<String>,
+        memory_hits: Vec<MemoryItem>,
+        resolved_policy: Option<EffectiveRunPolicy>,
+        seed_history: Vec<SeedMessage>,
+    ) -> String {
         let run_id = Uuid::new_v4().to_string();
         tracing::Span::current().record("run_id", &run_id);
         tracing::info!("Starting new run");
@@ -856,13 +1038,32 @@ impl RunManager {
             self.sessions.create()
         };
 
-        let effective_policy = match resolved_policy {
-            Some(policy) => policy,
-            None => {
-                self.resolve_legacy_run_policy(&artifact, session.id())
-                    .await
+        // 1b. Seed prior turns into an empty session. The in-process session
+        // store is not durable, so a cold-started conversation resolves to an
+        // empty session even though the host still holds the full thread. Replay
+        // the host-supplied history so the model receives prior context rather
+        // than only the current message. Only seed when empty so warm sessions
+        // (which already accumulated their turns) are never duplicated.
+        if session.message_count() == 0 {
+            for message in &seed_history {
+                match message.role.as_str() {
+                    "assistant" => session.add_assistant_message(&message.content),
+                    "tool" => session.add_tool_result(
+                        message.tool_call_id.clone().unwrap_or_default(),
+                        &message.content,
+                    ),
+                    "system" => {} // system prompt is owned by the agent artifact
+                    _ => session.add_user_message(&message.content),
+                }
             }
+        }
+
+        let mut effective_policy = match resolved_policy {
+            Some(policy) => policy,
+            None => self.resolve_effective_policy(&artifact, session.id()).await,
         };
+
+        self.backfill_effective_model(&mut effective_policy).await;
 
         // 2. Add User Message
         session.add_user_message(&input);
@@ -2344,6 +2545,62 @@ impl RunManager {
 
         None
     }
+
+    /// Backfill the model route so a resolved [`EffectiveRunPolicy`] reports the
+    /// model that will actually execute. Built-in agents seed an empty
+    /// `provider.default` (they defer to the registry/global default, see
+    /// `defaults::default_agent`), which otherwise leaves the resolved route
+    /// empty — and downstream provenance surfaces (the assistant-bubble
+    /// agent/provider/model chip) then show a blank model. The registry default
+    /// is the on-device provider on embedded builds and the configured
+    /// `llm_config.model` on service builds, so this yields the true executing
+    /// route on every deployment mode. A route that already names a non-empty
+    /// provider and model is left untouched, preserving precedence.
+    pub(crate) async fn backfill_effective_model(&self, policy: &mut EffectiveRunPolicy) {
+        let needs_backfill = policy.model.as_ref().is_none_or(|route| {
+            route.provider_id.trim().is_empty() || route.model_id.trim().is_empty()
+        });
+        if needs_backfill && let Some((provider_id, model_id)) = self.resolve_default_model().await
+        {
+            policy.model = Some(ModelRoute {
+                provider_id,
+                model_id,
+            });
+        }
+    }
+}
+
+/// A prior conversation turn used to seed an empty embedded session.
+///
+/// Embedded hosts keep their durable conversation history in their own store
+/// (e.g. the mobile UI's local database). The in-process [`SessionStore`] is not
+/// durable, so after a cold start the session for a conversation is empty even
+/// though the host still holds the full thread. Passing the host's history as
+/// `SeedMessage`s lets [`RunManager::start_run_with_history`] repopulate an empty
+/// session so the model receives prior turns instead of only the current one.
+#[derive(Debug, Clone)]
+pub struct SeedMessage {
+    /// `"user"`, `"assistant"`, `"tool"`, or `"system"` (unknown roles are
+    /// treated as `user`).
+    pub role: String,
+    /// The message text.
+    pub content: String,
+    /// The tool-call id when `role == "tool"`.
+    pub tool_call_id: Option<String>,
+}
+
+/// The effective configuration for a conversation: the resolved agent, the
+/// stored requested policy (if any), and the effective run policy after
+/// Global → Agent → Conversation → Turn resolution + model backfill. Mirrors the
+/// JSON the service path returns from `GET /conversations/{id}/effective-config`.
+#[derive(Debug, Clone)]
+pub struct EffectiveConfig {
+    /// The agent definition the conversation resolves to.
+    pub agent: AgentArtifact,
+    /// The stored conversation-scoped policy, if one was saved.
+    pub requested_policy: Option<ConversationPolicyRecord>,
+    /// The resolved effective policy (model route backfilled).
+    pub effective_policy: EffectiveRunPolicy,
 }
 
 #[cfg(test)]

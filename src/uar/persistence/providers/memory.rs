@@ -4,6 +4,7 @@ use std::{collections::HashMap, sync::RwLock};
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
+use uuid::Uuid;
 
 use crate::{
     session::Session,
@@ -18,6 +19,7 @@ use crate::{
             skills::{Skill, SkillMatch},
         },
         persistence::PersistenceLayer,
+        settings::schema::{Settings, SettingsType},
     },
 };
 
@@ -32,6 +34,10 @@ pub struct InMemoryProvider {
     documents: RwLock<HashMap<String, KnowledgeDocument>>,
     agents: RwLock<HashMap<String, AgentArtifact>>,
     memories: RwLock<Vec<Memory>>,
+    /// Registered settings types keyed by their slug (e.g. `run_policy`).
+    settings_types: RwLock<HashMap<String, SettingsType>>,
+    /// Setting values keyed by their dotted key (e.g. `run_policy.global`).
+    settings: RwLock<HashMap<String, Settings>>,
 }
 
 impl InMemoryProvider {
@@ -40,6 +46,26 @@ impl InMemoryProvider {
     pub fn new() -> Self {
         Self::default()
     }
+}
+
+/// Validate a setting's data against a JSON Schema, mirroring the durable
+/// providers so the in-memory provider honors the same write contract.
+fn validate_setting_against_schema(
+    data: &serde_json::Value,
+    schema: &serde_json::Value,
+    setting_key: &str,
+) -> Result<()> {
+    let validator = jsonschema::validator_for(schema)
+        .map_err(|e| anyhow::anyhow!("Invalid JSON Schema for setting '{setting_key}': {e}"))?;
+    let errors: Vec<String> = validator.iter_errors(data).map(|e| e.to_string()).collect();
+    if !errors.is_empty() {
+        return Err(anyhow::anyhow!(
+            "Setting '{}' data failed JSON Schema validation:\n{}",
+            setting_key,
+            errors.join("\n")
+        ));
+    }
+    Ok(())
 }
 
 fn read<T>(lock: &RwLock<T>) -> Result<std::sync::RwLockReadGuard<'_, T>> {
@@ -187,6 +213,81 @@ impl PersistenceLayer for InMemoryProvider {
         write(&self.agents)?.remove(id);
         Ok(())
     }
+
+    // -------------------------------------------------------------------------
+    // Settings storage
+    //
+    // The default trait methods are no-ops; the in-memory provider implements
+    // real storage so the embedded admin surface (typed settings get/set) and
+    // the Global run-policy scope work against in-process persistence. On a key
+    // conflict the original type's id is preserved, matching the durable
+    // providers' `ON CONFLICT` semantics.
+    // -------------------------------------------------------------------------
+    async fn upsert_settings_type(&self, st: &SettingsType) -> Result<Uuid> {
+        let mut types = write(&self.settings_types)?;
+        let actual_id = types.get(&st.key).map_or(st.id, |existing| existing.id);
+        let stored = SettingsType {
+            id: actual_id,
+            ..st.clone()
+        };
+        types.insert(st.key.clone(), stored);
+        Ok(actual_id)
+    }
+
+    async fn list_settings_types(&self) -> Result<Vec<SettingsType>> {
+        Ok(read(&self.settings_types)?.values().cloned().collect())
+    }
+
+    async fn get_settings_type(&self, key: &str) -> Result<Option<SettingsType>> {
+        Ok(read(&self.settings_types)?.get(key).cloned())
+    }
+
+    async fn upsert_setting(&self, setting: &Settings) -> Result<()> {
+        // Validate against the leaf property schema extracted from the parent
+        // type, mirroring the durable providers. Keys are dotted: `run_policy.global`
+        // → type key `run_policy`, leaf key `global`. Validate only when a matching
+        // leaf schema exists so namespace-level schemas without a 1:1 property map
+        // do not cause false failures.
+        let type_key = setting.key.split('.').next().unwrap_or("unknown");
+        let leaf_key = setting.key.splitn(2, '.').nth(1).unwrap_or(&setting.key);
+        if let Some(st) = read(&self.settings_types)?.get(type_key).cloned()
+            && let Some(leaf_schema) = st
+                .schema
+                .get("properties")
+                .and_then(|props| props.get(leaf_key))
+                .or_else(|| st.schema.get("additionalProperties"))
+        {
+            validate_setting_against_schema(&setting.data, leaf_schema, &setting.key)?;
+        }
+        write(&self.settings)?.insert(setting.key.clone(), setting.clone());
+        Ok(())
+    }
+
+    async fn get_setting(&self, key: &str) -> Result<Option<Settings>> {
+        Ok(read(&self.settings)?.get(key).cloned())
+    }
+
+    async fn list_settings(
+        &self,
+        type_key: Option<&str>,
+        parent_id: Option<Uuid>,
+    ) -> Result<Vec<Settings>> {
+        Ok(read(&self.settings)?
+            .values()
+            .filter(|s| {
+                let type_ok = type_key.is_none_or(|tk| s.key.starts_with(&format!("{tk}.")));
+                let parent_ok = parent_id.is_none_or(|pid| s.parent_id == Some(pid));
+                type_ok && parent_ok
+            })
+            .cloned()
+            .collect())
+    }
+
+    async fn delete_setting(&self, key: &str) -> Result<()> {
+        write(&self.settings)?.remove(key);
+        Ok(())
+    }
+
     async fn save_memory(&self, memory: &Memory) -> Result<()> {
         write(&self.memories)?.push(memory.clone());
         Ok(())

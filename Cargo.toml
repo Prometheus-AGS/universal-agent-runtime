@@ -36,6 +36,21 @@ name = "uar-sidecar"
 path = "src/bin/uar-sidecar.rs"
 required-features = ["server"]
 
+# Cargo AUTO-DISCOVERS src/bin/*.rs. Without these declarations both binaries
+# build under every profile including `embedded-mobile`, where they have no
+# business existing: stub-llm opens a TcpListener and test_db_setup needs
+# PostgresProvider. Declaring them with required-features is what excludes
+# them — an auto-discovered bin cannot be gated any other way.
+[[bin]]
+name = "stub-llm"
+path = "src/bin/stub-llm.rs"
+required-features = ["server"]
+
+[[bin]]
+name = "test_db_setup"
+path = "src/bin/test_db_setup.rs"
+required-features = ["server"]
+
 # Cookbook examples live in docs/cookbook/runtime/ but are built as examples of
 # the runtime crate so they share the workspace build cache.
 [[example]]

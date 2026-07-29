@@ -39,6 +39,13 @@ universal-agent-runtime = { path = "../..", optional = true, default-features = 
 
 [dev-dependencies]
 tokio-test = "0.4"
+# Test-only: enable the runtime's in-memory persistence backend so embedded
+# admin/policy tests can build a Runtime without a real database. This does NOT
+# widen the shipped `embedded` feature set — it only affects `cargo test`.
+universal-agent-runtime = { path = "../..", default-features = false, features = [
+    "host-persistence",
+    "in-memory-backend",
+] }
 
 # The SDK is released independently from the runtime workspace.
 [workspace]

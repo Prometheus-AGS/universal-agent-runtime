@@ -209,6 +209,25 @@ impl SettingsManager {
         Ok(stats)
     }
 
+    /// Seed only the `run_policy` namespace (type + `run_policy.global` default),
+    /// idempotently.
+    ///
+    /// The embedded runtime has no `AppConfig` to run the full [`Self::initialize`]
+    /// bootstrap, but it still needs the Global run policy row to exist so hosts
+    /// can read and write `run_policy.global`. This registers the same canonical
+    /// schema and inherit-everything default that [`Self::initialize`] seeds, and
+    /// (via [`Self::register_extension`]) inserts the default only when the row is
+    /// absent — so it never clobbers a value already written by a host.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the underlying persistence upsert of the settings type
+    /// or default value fails.
+    pub async fn ensure_run_policy_seed(&self) -> Result<()> {
+        let (settings_type, defaults) = run_policy_schema_and_defaults();
+        self.register_extension(settings_type, defaults).await
+    }
+
     // =========================================================================
     // Public: Plugin/Extension API
     // =========================================================================
@@ -1505,72 +1524,7 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
     // -------------------------------------------------------------------------
     // run_policy — runtime-wide policy consumed by the UAR policy resolver
     // -------------------------------------------------------------------------
-    {
-        let resource_selection = json!({
-            "type": "object",
-            "properties": {
-                "mode": {
-                    "type": "string",
-                    "enum": ["inherit", "auto", "all", "none", "selected"]
-                },
-                "ids": { "type": "array", "items": { "type": "string" } },
-                "denied_ids": { "type": "array", "items": { "type": "string" } }
-            },
-            "required": ["mode", "ids", "denied_ids"]
-        });
-        let schema = json!({
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "title": "Global Run Policy",
-            "x-uar-ui": {
-                "category": "Governance & Agents",
-                "icon": "sliders-horizontal",
-                "order": 10,
-                "display_mode": "form"
-            },
-            "type": "object",
-            "properties": {
-                "version": { "type": "integer", "minimum": 1 },
-                "chat_mode": { "type": ["string", "null"], "enum": ["local", "uar", "agent", null] },
-                "agent_id": { "type": ["string", "null"] },
-                "model": { "type": ["object", "null"] },
-                "skills": resource_selection,
-                "tools": resource_selection,
-                "mcp_servers": resource_selection,
-                "knowledge_bases": resource_selection,
-                "memory_enabled": { "type": ["boolean", "null"] },
-                "context_strategy": { "type": ["object", "null"] },
-                "tool_approval": {
-                    "type": "string",
-                    "enum": ["inherit", "auto", "ask", "deny"]
-                }
-            },
-            "required": [
-                "version", "skills", "tools", "mcp_servers",
-                "knowledge_bases", "tool_approval"
-            ]
-        });
-        let st = make_type("Global Run Policy", "run_policy", schema);
-        let inherit = json!({ "mode": "inherit", "ids": [], "denied_ids": [] });
-        let settings = vec![make_setting(
-            &st,
-            "run_policy.global",
-            "Global Run Policy",
-            json!({
-                "version": 1,
-                "chat_mode": null,
-                "agent_id": null,
-                "model": null,
-                "skills": inherit,
-                "tools": inherit,
-                "mcp_servers": inherit,
-                "knowledge_bases": inherit,
-                "memory_enabled": null,
-                "context_strategy": null,
-                "tool_approval": "inherit"
-            }),
-        )];
-        result.push((st, settings));
-    }
+    result.push(run_policy_schema_and_defaults());
 
     // -------------------------------------------------------------------------
     // rag — retrieval-augmented generation / chunking / embedding config
@@ -2654,6 +2608,79 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
 // =============================================================================
 // Helpers
 // =============================================================================
+
+/// Build the canonical `run_policy` settings type and its seeded
+/// `run_policy.global` default.
+///
+/// Shared by [`build_core_schema`] (service bootstrap) and
+/// [`SettingsManager::ensure_run_policy_seed`] (embedded seeding) so both paths
+/// register one identical schema and one identical inherit-everything default.
+fn run_policy_schema_and_defaults() -> (SettingsType, Vec<Settings>) {
+    let resource_selection = json!({
+        "type": "object",
+        "properties": {
+            "mode": {
+                "type": "string",
+                "enum": ["inherit", "auto", "all", "none", "selected"]
+            },
+            "ids": { "type": "array", "items": { "type": "string" } },
+            "denied_ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["mode", "ids", "denied_ids"]
+    });
+    let schema = json!({
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Global Run Policy",
+        "x-uar-ui": {
+            "category": "Governance & Agents",
+            "icon": "sliders-horizontal",
+            "order": 10,
+            "display_mode": "form"
+        },
+        "type": "object",
+        "properties": {
+            "version": { "type": "integer", "minimum": 1 },
+            "chat_mode": { "type": ["string", "null"], "enum": ["local", "uar", "agent", null] },
+            "agent_id": { "type": ["string", "null"] },
+            "model": { "type": ["object", "null"] },
+            "skills": resource_selection,
+            "tools": resource_selection,
+            "mcp_servers": resource_selection,
+            "knowledge_bases": resource_selection,
+            "memory_enabled": { "type": ["boolean", "null"] },
+            "context_strategy": { "type": ["object", "null"] },
+            "tool_approval": {
+                "type": "string",
+                "enum": ["inherit", "auto", "ask", "deny"]
+            }
+        },
+        "required": [
+            "version", "skills", "tools", "mcp_servers",
+            "knowledge_bases", "tool_approval"
+        ]
+    });
+    let st = make_type("Global Run Policy", "run_policy", schema);
+    let inherit = json!({ "mode": "inherit", "ids": [], "denied_ids": [] });
+    let settings = vec![make_setting(
+        &st,
+        "run_policy.global",
+        "Global Run Policy",
+        json!({
+            "version": 1,
+            "chat_mode": null,
+            "agent_id": null,
+            "model": null,
+            "skills": inherit,
+            "tools": inherit,
+            "mcp_servers": inherit,
+            "knowledge_bases": inherit,
+            "memory_enabled": null,
+            "context_strategy": null,
+            "tool_approval": "inherit"
+        }),
+    )];
+    (st, settings)
+}
 
 fn make_type(name: &str, key: &str, schema: Value) -> SettingsType {
     SettingsType {

@@ -1,4 +1,5 @@
 pub mod a2ui;
+pub mod admin;
 pub mod api;
 pub mod compiler;
 pub mod context;

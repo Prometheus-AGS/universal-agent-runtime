@@ -249,41 +249,8 @@ pub async fn hydrate_registry(
     registry: &Arc<McpRegistry>,
     manager: &Arc<SettingsManager>,
 ) -> anyhow::Result<()> {
-    let current = registry
-        .server_entries()
-        .into_iter()
-        .map(|(name, entry)| {
-            (
-                name,
-                StoredMcpServer {
-                    enabled: true,
-                    entry,
-                },
-            )
-        })
-        .collect::<HashMap<_, _>>();
-    let stored = manager
-        .get_value(SETTINGS_KEY)
-        .await
-        .and_then(|value| serde_json::from_value::<HashMap<String, StoredMcpServer>>(value).ok())
-        .unwrap_or_default();
-    let effective = if stored.is_empty() && !current.is_empty() {
-        manager
-            .set_value(SETTINGS_KEY, serde_json::to_value(&current)?)
-            .await?;
-        current
-    } else {
-        stored
-    };
-    for name in registry.server_names() {
-        registry.remove_server(&name);
-    }
-    for (name, server) in effective {
-        if server.enabled {
-            if let Err(error) = registry.upsert_server(name.clone(), server.entry).await {
-                tracing::warn!(server = %name, %error, "persisted MCP server could not reconnect");
-            }
-        }
-    }
-    Ok(())
+    // Delegates to the transport-free service so the HTTP path and the
+    // embedded SDK path run the SAME code. Keeping a second copy here is how
+    // the two containers would silently drift apart.
+    crate::uar::admin::mcp::hydrate(registry, manager).await
 }
