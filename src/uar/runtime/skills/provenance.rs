@@ -203,6 +203,50 @@ mod tests {
         std::fs::remove_dir_all(&d).ok();
     }
 
+    /// The exact JSON `SkillOrigin::Builtin` serialises to.
+    ///
+    /// A DB trigger guarding builtin deletion must match this string EXACTLY.
+    /// `#[serde(rename_all = "lowercase")]` on the enum means the wire value is
+    /// `"builtin"`, not `"Builtin"` — a trigger written against the Rust
+    /// variant's spelling would silently never fire, which is worse than no
+    /// trigger because it reads as protection.
+    #[test]
+    fn builtin_origin_serialises_lowercase() {
+        use crate::uar::domain::skills::SkillOrigin;
+        let json = serde_json::to_string(&SkillOrigin::Builtin).unwrap();
+        assert_eq!(json, "\"builtin\"", "DB guards must match this literal");
+    }
+
+    /// A real `Skill` must serialise to JSON the DB trigger can act on.
+    ///
+    /// The trigger in `20260731000000_builtin_skill_delete_guard.sql` reads
+    /// `definition->>'origin' = 'builtin'`. `postgres.rs:77` writes that column
+    /// with `serde_json::to_value(skill)`. This test closes the loop: if the
+    /// serialised shape ever stops producing a top-level lowercase `origin`,
+    /// the guard silently stops matching and builtins become deletable — a
+    /// regression that would otherwise surface only as data loss.
+    #[test]
+    fn a_serialised_skill_carries_the_origin_the_db_guard_matches() {
+        use crate::uar::domain::skills::{Skill, SkillOrigin};
+
+        let mut skill = Skill::default();
+        skill.skill_id = "b1".into();
+        skill.origin = SkillOrigin::Builtin;
+        skill.enabled = true;
+
+        let v = serde_json::to_value(&skill).expect("skill serialises");
+        assert_eq!(
+            v.get("origin").and_then(|o| o.as_str()),
+            Some("builtin"),
+            "the DB trigger matches definition->>'origin' = 'builtin'"
+        );
+        assert_eq!(
+            v.get("enabled").and_then(|e| e.as_bool()),
+            Some(true),
+            "enabled must round-trip so a builtin can be disabled but not deleted"
+        );
+    }
+
     #[test]
     fn the_359_commit_drift_would_have_been_visible() {
         // The regression this whole change exists to prevent, reproduced from
