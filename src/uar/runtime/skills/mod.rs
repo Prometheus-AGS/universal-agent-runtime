@@ -8,6 +8,7 @@
 
 pub mod builtin_loader;
 pub mod pack_detection;
+pub mod provenance;
 pub mod registry;
 pub mod service;
 pub mod storage;

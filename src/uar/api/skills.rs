@@ -4,6 +4,7 @@
 //! and per-agent skill bindings.
 
 use crate::uar::domain::skills::{Skill, SkillExecutionConfig, SkillTriggers};
+use crate::uar::runtime::skills::provenance::{read_provenance, PackProvenance};
 use crate::uar::runtime::skills::service::{SkillMatchingConfig, SkillService, SkillUpdate};
 use axum::{
     Json, Router,
@@ -29,11 +30,59 @@ pub fn build_router() -> Router<Arc<SkillService>> {
         .route("/{id}", delete(delete_skill))
         .route("/{id}/toggle", post(toggle_skill))
         .route("/match", get(match_skills))
+        // Which pack version is loaded. See `provenance` module for why this
+        // exists: UAR ran 359 commits stale and nothing could report it.
+        .route("/provenance", get(get_provenance))
         .route("/refresh", post(refresh_skills))
         // Matching configuration
         .route("/import", post(import_skill_from_disk))
         .route("/config", get(get_config))
         .route("/config", put(set_config))
+}
+
+/// `GET /api/uar/skills/provenance` — which skill pack version is loaded.
+///
+/// Answers the question nothing could answer before `change-uhe-005`: UAR ran
+/// for two months on a pack 359 commits stale, exposing 161 skills where the
+/// pack shipped 220, and no surface reported it.
+///
+/// `loaded_skill_count` is what this runtime actually registered;
+/// `pack.skill_count` is what the pack believes it ships. **A mismatch between
+/// them is the drift signal** — which is why both are returned rather than one
+/// "skills" number that could quietly be either.
+async fn get_provenance(State(service): State<Arc<SkillService>>) -> impl IntoResponse {
+    let root = crate::uar::runtime::skills::builtin_loader::builtin_dir();
+    // SKILLS.md lives one level above the `skills/` directory.
+    let pack_root = root.parent().unwrap_or(&root).to_path_buf();
+    let pack = read_provenance(&pack_root);
+    let loaded = service.get_skills().await.len();
+
+    let drift = match pack.skill_count {
+        Some(n) if n != loaded => Some(format!(
+            "pack reports {n} skills, runtime loaded {loaded}"
+        )),
+        Some(_) => None,
+        // Unknown is NOT "no drift": an older pack states nothing, and saying
+        // "no drift" there would be a false assurance.
+        None => Some("pack version unknown — cannot compare".to_string()),
+    };
+
+    Json(ProvenanceResponse {
+        pack,
+        loaded_skill_count: loaded,
+        drift,
+    })
+}
+
+/// Provenance response body.
+#[derive(Debug, Serialize)]
+struct ProvenanceResponse {
+    /// What the pack says about itself.
+    pack: PackProvenance,
+    /// What this runtime actually loaded.
+    loaded_skill_count: usize,
+    /// Human-readable drift note, or `null` when pack and runtime agree.
+    drift: Option<String>,
 }
 
 /// Build the agent-skills binding router.
