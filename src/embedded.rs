@@ -130,6 +130,19 @@ impl EmbeddedRuntime {
         Arc::clone(&self.native_skills)
     }
 
+    /// The supported skill API for embedders (R4).
+    ///
+    /// Prefer this over [`Self::skill_service`]: it exposes the five operations
+    /// an embedded host actually needs (list / get / install / toggle / query)
+    /// without naming runtime internals in your code. `SkillService` remains
+    /// available for advanced use, but its signature is not part of the
+    /// embedding contract.
+    #[must_use]
+    pub fn skills(&self) -> crate::skills_api::SkillsApi {
+        crate::skills_api::SkillsApi::new(Arc::clone(&self.skill_service))
+    }
+
+    /// The underlying service. Advanced use — see [`Self::skills`] first.
     #[must_use]
     pub fn skill_service(&self) -> Arc<SkillService> {
         Arc::clone(&self.skill_service)

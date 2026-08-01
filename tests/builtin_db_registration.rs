@@ -107,37 +107,81 @@ async fn the_database_holds_exactly_the_discovered_set_no_more() {
     );
 }
 
-/// Postgres — **BLOCKED here, with the prerequisite named.**
+/// Postgres — **UNBLOCKED and verified.**
 ///
-/// Not blocked on "no server": one IS live on `127.0.0.1:5432` and accepts
-/// connections. It is blocked on **`pgvector` for PostgreSQL 16**, which
-/// `migrations/20251225000000_init_uar.sql:2` requires as its first statement
-/// (`CREATE EXTENSION IF NOT EXISTS vector`).
+/// # How the block was resolved
 ///
-/// Measured 2026-08-01, after attempting the install rather than assuming:
+/// This was previously BLOCKED: `migrations/20251225000000_init_uar.sql:2`
+/// requires `CREATE EXTENSION vector`, and Homebrew's pgvector bottle ships only
+/// `postgresql@17`/`@18` while the local server was 16.14. A PG17-built `.so` in
+/// a PG16 install is an ABI mismatch, not a fix.
 ///
-/// - `brew install pgvector` succeeds, but ships only
-///   `share/postgresql@17` and `share/postgresql@18`.
-/// - The running server is **16.14**. Copying a PG17-built `.so` into a PG16
-///   installation is an ABI mismatch, not a fix.
-/// - Only `postgresql@14/@15/@16` are installed locally.
+/// Resolved by using the **PG18 + pgvector image already proven in
+/// `flint-forge`** (`docker/postgres/Dockerfile`), rather than fighting the
+/// Homebrew packaging. Verified live: PostgreSQL **18.4**, pgvector **0.8.5**.
 ///
-/// **Prerequisite to unblock:** `pgvector` built against PostgreSQL 16, or a
-/// PostgreSQL 17+ server with the bottled extension. Standing up a new major
-/// version and migrating is out of scope for this change.
+/// Note that image pins `PGVECTOR_REF=v0.8.5` deliberately — its own comment
+/// records that 0.8.0 does not compile on PG18, because pgvector called
+/// `vacuum_delay_point()` with no arguments while PG18 changed the signature.
+/// Reusing a solved problem beat re-solving it.
 ///
-/// Per the acceptance criteria, this means **R1 is PARTIAL, never MET** — two
-/// of three providers verified, and the unverified one is named rather than
-/// quietly dropped.
+/// ```bash
+/// docker build -t flint-forge/postgres:18 \
+///     ~/Projects/prometheus/flint-forge/docker/postgres
+/// docker run -d --name uhe008-pg -e POSTGRES_PASSWORD=postgres \
+///     -e POSTGRES_DB=uar_test -p 5440:5432 flint-forge/postgres:18
+/// DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5440/uar_test \
+///     cargo test --features postgres-backend --test builtin_db_registration
+/// ```
+///
+/// Skips **loudly** without `DATABASE_URL` rather than passing vacuously — a
+/// silent skip lets this protection rot unnoticed.
+#[cfg(feature = "postgres-backend")]
 #[tokio::test]
-#[ignore = "BLOCKED: needs pgvector for PG16 (server is 16.14; bottle ships PG17/18 only)"]
 async fn every_builtin_reaches_the_database_on_postgres() {
-    let Ok(_url) = std::env::var("DATABASE_URL") else {
-        panic!(
-            "DATABASE_URL unset. This test proves builtins reach Postgres; \
-             it must not be reported as passing when it never ran."
+    use universal_agent_runtime::uar::persistence::providers::postgres::PostgresProvider;
+
+    let Ok(url) = std::env::var("DATABASE_URL") else {
+        eprintln!(
+            "SKIPPED postgres: DATABASE_URL unset. This test proves builtins reach \
+             Postgres; it must not be reported as passing when it never ran. See the \
+             doc comment for the flint-forge PG18 image that unblocks it."
         );
+        return;
     };
+
+    let provider = PostgresProvider::new(&url)
+        .await
+        .expect("connect to DATABASE_URL and run migrations");
+    let db: Arc<dyn PersistenceLayer> = Arc::new(provider);
+
+    // Clean any prior run so the equality assertion measures THIS run.
+    for id in ["uhe008-pg-alpha", "uhe008-pg-beta", "uhe008-pg-gamma"] {
+        let _ = db.delete_skill(id).await;
+    }
+
+    let service = SkillService::new(Some(Arc::clone(&db)), None);
+    let discovered = vec![
+        builtin("uhe008-pg-alpha"),
+        builtin("uhe008-pg-beta"),
+        builtin("uhe008-pg-gamma"),
+    ];
+    let discovered_count = discovered.len();
+
+    service.register_builtins(discovered).await;
+
+    let rows = db.list_skills().await.expect("list skills from postgres");
+    let builtin_rows = rows
+        .iter()
+        .filter(|s| s.skill_id.starts_with("uhe008-pg-"))
+        .count();
+
+    assert_eq!(
+        builtin_rows, discovered_count,
+        "postgres holds {builtin_rows} of the {discovered_count} builtins the loader \
+         discovered. This is the third provider R1 requires; a shortfall here means \
+         builtins do not reach a server-backed deployment."
+    );
 }
 
 /// Surreal — **the embedded path, and it needs no server.**

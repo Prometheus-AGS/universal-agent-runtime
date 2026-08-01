@@ -120,7 +120,29 @@ impl PersistenceLayer for PostgresProvider {
     }
 
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()> {
-        let embedding_vector = Vector::from(embedding.to_vec());
+        // An EMPTY slice must become SQL NULL, not `'[]'::vector`.
+        //
+        // The column is `vector(384)`, and pgvector rejects a zero-length
+        // value outright:
+        //
+        //     ERROR:  vector must have at least 1 dimension
+        //
+        // A host with no embedding backend — the embedded/mobile case — calls
+        // this with an empty slice by design: an embedding enriches vector
+        // search, it is not a precondition for the skill existing. Writing
+        // `'[]'` failed the whole INSERT, and because `SkillRegistry::register`
+        // logs persist failures without propagating them, the skill vanished
+        // silently. Measured: 0 rows in Postgres while memory and SurrealDB
+        // held all 3.
+        //
+        // NULL is the correct representation of "not embedded yet": the column
+        // is nullable, and vector search simply does not match the row until
+        // something backfills it.
+        let embedding_vector = if embedding.is_empty() {
+            None
+        } else {
+            Some(Vector::from(embedding.to_vec()))
+        };
         let definition = serde_json::to_value(skill)?;
 
         sqlx::query(

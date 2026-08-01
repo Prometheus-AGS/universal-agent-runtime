@@ -40,10 +40,14 @@ pub mod sandbox;
 #[cfg(feature = "server")]
 pub mod server;
 pub mod session;
+pub mod skills_api;
 pub mod uar;
 
 /// Central error type for the public API boundary; see [`uar::error`].
 pub use uar::error::{Result, UarError};
+
+/// The embedder-facing skill surface (R4). See [`skills_api`].
+pub use skills_api::SkillsApi;
 
 #[cfg(feature = "server")]
 use {
