@@ -176,7 +176,7 @@ export function A2uiSurfaceRenderer({
       case "Column":
         return <div className="flex flex-col gap-3">{component.children.map((id) => <Fragment key={id}>{renderComponent(id, nextAncestors)}</Fragment>)}</div>;
       case "Card":
-        return <div className="rounded-lg border border-border bg-card p-4">{renderComponent(component.child, nextAncestors)}</div>;
+        return <div className="rounded-xl bg-card p-4">{renderComponent(component.child, nextAncestors)}</div>;
       case "Divider":
         return <Separator orientation={component.axis === "vertical" ? "vertical" : "horizontal"} />;
     }

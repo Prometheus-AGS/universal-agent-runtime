@@ -3,6 +3,7 @@
 //! Uses `prometheus_parking_lot` `WorkerPool` for scalable document ingestion.
 //! This ensures CPU-bound document processing doesn't block the async HTTP server.
 
+use crate::config::{AppConfig, FileProcessingConfig};
 #[cfg(feature = "document-intelligence")]
 use crate::uar::file_processing::{FileProcessor, KreuzbergProvider, process_bytes};
 use crate::uar::{
@@ -11,7 +12,6 @@ use crate::uar::{
     persistence::PersistenceLayer,
     rag::ingest::IngestService,
 };
-use crate::{AppConfig, config::FileProcessingConfig};
 use anyhow::Result;
 use async_trait::async_trait;
 use prometheus_parking_lot::{

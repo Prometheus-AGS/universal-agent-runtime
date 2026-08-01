@@ -1,4 +1,6 @@
-use crate::mcp::config::{McpServerEntry, expand_env_map, expand_env_placeholders, load_mcp_config};
+use crate::mcp::config::{
+    McpServerEntry, expand_env_map, expand_env_placeholders, load_mcp_config,
+};
 use anyhow::{Context, anyhow};
 use async_trait::async_trait;
 use rmcp::{
@@ -81,16 +83,17 @@ fn resolve_remote_http_url(
             .ok_or_else(|| anyhow!("remote MCP '{name}' missing TAVILY_API_KEY"))?;
         expanded = expanded.replace("${TAVILY_API_KEY}", &api_key);
     }
-    Url::parse(&expanded).with_context(|| format!("invalid url for remote MCP '{name}': {expanded}"))
+    Url::parse(&expanded)
+        .with_context(|| format!("invalid url for remote MCP '{name}': {expanded}"))
 }
 
 #[derive(Clone)]
 pub struct McpRegistry {
     services: Arc<RwLock<HashMap<String, Arc<DynClientService>>>>,
-    server_config: Arc<HashMap<String, McpServerEntry>>,
+    server_config: Arc<RwLock<HashMap<String, McpServerEntry>>>,
     // namespaced_tool_name -> (server_name, tool_name)
-    tool_index: Arc<HashMap<String, (String, String)>>,
-    tools: Arc<Vec<(String, Tool)>>, // (namespaced_name, Tool)
+    tool_index: Arc<RwLock<HashMap<String, (String, String)>>>,
+    tools: Arc<RwLock<Vec<(String, Tool)>>>, // (namespaced_name, Tool)
     // namespaced_tool_name -> NativeTool
     native_tools: Arc<HashMap<String, Arc<dyn NativeTool>>>,
 }
@@ -98,7 +101,14 @@ pub struct McpRegistry {
 impl std::fmt::Debug for McpRegistry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("McpRegistry")
-            .field("tool_count", &self.tools.len())
+            .field(
+                "tool_count",
+                &self
+                    .tools
+                    .read()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .len(),
+            )
             .field(
                 "service_count",
                 &self
@@ -117,9 +127,9 @@ impl McpRegistry {
     pub fn empty() -> Self {
         Self {
             services: Arc::new(RwLock::new(HashMap::new())),
-            server_config: Arc::new(HashMap::new()),
-            tool_index: Arc::new(HashMap::new()),
-            tools: Arc::new(Vec::new()),
+            server_config: Arc::new(RwLock::new(HashMap::new())),
+            tool_index: Arc::new(RwLock::new(HashMap::new())),
+            tools: Arc::new(RwLock::new(Vec::new())),
             native_tools: Arc::new(HashMap::new()),
         }
     }
@@ -174,9 +184,9 @@ impl McpRegistry {
 
         Ok(Self {
             services: Arc::new(RwLock::new(services)),
-            server_config: Arc::new(cfg.mcp_servers.clone()),
-            tool_index: Arc::new(tool_index),
-            tools: Arc::new(all_tools),
+            server_config: Arc::new(RwLock::new(cfg.mcp_servers.clone())),
+            tool_index: Arc::new(RwLock::new(tool_index)),
+            tools: Arc::new(RwLock::new(all_tools)),
             native_tools: Arc::new(HashMap::new()),
         })
     }
@@ -269,9 +279,9 @@ impl McpRegistry {
     pub fn new_empty() -> Self {
         Self {
             services: Arc::new(RwLock::new(HashMap::new())),
-            server_config: Arc::new(HashMap::new()),
-            tool_index: Arc::new(HashMap::new()),
-            tools: Arc::new(Vec::new()),
+            server_config: Arc::new(RwLock::new(HashMap::new())),
+            tool_index: Arc::new(RwLock::new(HashMap::new())),
+            tools: Arc::new(RwLock::new(Vec::new())),
             native_tools: Arc::new(HashMap::new()),
         }
     }
@@ -302,9 +312,9 @@ impl McpRegistry {
 
         Self {
             services: Arc::new(RwLock::new(HashMap::new())),
-            server_config: Arc::new(HashMap::new()),
-            tool_index: Arc::new(tool_index),
-            tools: Arc::new(tools),
+            server_config: Arc::new(RwLock::new(HashMap::new())),
+            tool_index: Arc::new(RwLock::new(tool_index)),
+            tools: Arc::new(RwLock::new(tools)),
             native_tools: Arc::new(HashMap::new()),
         }
     }
@@ -324,8 +334,11 @@ impl McpRegistry {
     }
 
     /// Return namespaced tools as `(namespaced_name, Tool)`
-    pub fn tools(&self) -> &[(String, Tool)] {
-        &self.tools
+    pub fn tools(&self) -> Vec<(String, Tool)> {
+        self.tools
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
 
     /// Return configured MCP server names.
@@ -345,7 +358,105 @@ impl McpRegistry {
 
     /// Resolve the backing MCP server and raw tool name for a namespaced tool.
     pub fn resolve_mcp_tool(&self, namespaced_name: &str) -> Option<(String, String)> {
-        self.tool_index.get(namespaced_name).cloned()
+        self.tool_index
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(namespaced_name)
+            .cloned()
+    }
+
+    /// Return persisted runtime MCP definitions without exposing connected handles.
+    pub fn server_entries(&self) -> HashMap<String, McpServerEntry> {
+        self.server_config
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+    }
+
+    /// Add or replace one MCP server and immediately refresh its advertised tools.
+    pub async fn upsert_server(&self, name: String, entry: McpServerEntry) -> anyhow::Result<()> {
+        let service = Arc::new(Self::connect_configured_server(&name, &entry).await?);
+        let result = service
+            .list_tools(Default::default())
+            .await
+            .with_context(|| format!("tools/list failed for MCP server '{name}'"))?;
+
+        let mut discovered = Vec::new();
+        let mut indexed = Vec::new();
+        for tool in result.tools {
+            let raw_name = tool.name.to_string();
+            let namespaced = Self::sanitize_tool_name(&format!("{name}__{raw_name}"));
+            indexed.push((namespaced.clone(), (name.clone(), raw_name)));
+            discovered.push((namespaced, tool));
+        }
+
+        self.services
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(name.clone(), service);
+        self.server_config
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .insert(name.clone(), entry);
+        {
+            let mut index = self
+                .tool_index
+                .write()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            index.retain(|_, (server, _)| server != &name);
+            index.extend(indexed);
+        }
+        {
+            let mut tools = self
+                .tools
+                .write()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            tools.retain(|(tool_name, _)| {
+                self.native_tools.contains_key(tool_name)
+                    || self
+                        .tool_index
+                        .read()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .get(tool_name)
+                        .is_some_and(|(server, _)| server != &name)
+            });
+            tools.extend(discovered);
+        }
+        crate::uar::telemetry::metrics::set_mcp_server_status(&name, true);
+        Ok(())
+    }
+
+    /// Remove one MCP server and every tool it contributed.
+    pub fn remove_server(&self, name: &str) -> bool {
+        let removed = self
+            .services
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .remove(name)
+            .is_some();
+        self.server_config
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .remove(name);
+        let removed_names = {
+            let mut index = self
+                .tool_index
+                .write()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let names = index
+                .iter()
+                .filter(|(_, (server, _))| server == name)
+                .map(|(tool, _)| tool.clone())
+                .collect::<std::collections::HashSet<_>>();
+            index.retain(|_, (server, _)| server != name);
+            names
+        };
+        self.tools
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .retain(|(tool, _)| !removed_names.contains(tool));
+        crate::uar::telemetry::metrics::set_mcp_server_status(name, false);
+        removed
     }
 
     /// Merge another registry into this one, returning a new registry.
@@ -365,23 +476,95 @@ impl McpRegistry {
                 .clone(),
         );
 
-        let mut server_config = (*self.server_config).clone();
-        server_config.extend((*other.server_config).clone());
+        let mut server_config = self.server_entries();
+        server_config.extend(other.server_entries());
 
-        let mut tool_index = (*self.tool_index).clone();
-        tool_index.extend((*other.tool_index).clone());
+        let mut tool_index = self
+            .tool_index
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
+        tool_index.extend(
+            other
+                .tool_index
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .clone(),
+        );
 
-        let mut tools = (*self.tools).clone();
-        tools.extend((*other.tools).clone());
+        let mut tools = self.tools();
+        tools.extend(other.tools());
 
         let mut native_tools = (*self.native_tools).clone();
         native_tools.extend((*other.native_tools).clone());
 
         Self {
             services: Arc::new(RwLock::new(services)),
-            server_config: Arc::new(server_config),
-            tool_index: Arc::new(tool_index),
-            tools: Arc::new(tools),
+            server_config: Arc::new(RwLock::new(server_config)),
+            tool_index: Arc::new(RwLock::new(tool_index)),
+            tools: Arc::new(RwLock::new(tools)),
+            native_tools: Arc::new(native_tools),
+        }
+    }
+
+    /// Return a registry narrowed to the server and tool sets allowed by the
+    /// resolved run policy.
+    ///
+    /// `None` means "all currently registered values" while `Some(empty)`
+    /// means "none". Native tools are governed by `allowed_tools` because they
+    /// do not belong to an MCP server.
+    #[must_use]
+    pub fn filtered(
+        &self,
+        allowed_servers: Option<&std::collections::HashSet<String>>,
+        allowed_tools: Option<&std::collections::HashSet<String>>,
+    ) -> Self {
+        let server_allowed =
+            |server: &str| allowed_servers.is_none_or(|allowed| allowed.contains(server));
+        let tool_allowed = |tool: &str| allowed_tools.is_none_or(|allowed| allowed.contains(tool));
+
+        let services = self
+            .services
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+            .filter(|(name, _)| server_allowed(name))
+            .map(|(name, service)| (name.clone(), service.clone()))
+            .collect();
+        let server_config = self
+            .server_entries()
+            .into_iter()
+            .filter(|(name, _)| server_allowed(name))
+            .map(|(name, config)| (name.clone(), config.clone()))
+            .collect();
+        let tool_index = self
+            .tool_index
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+            .filter(|(name, (server, _))| server_allowed(server) && tool_allowed(name))
+            .map(|(name, target)| (name.clone(), target.clone()))
+            .collect::<HashMap<_, _>>();
+        let native_tools = self
+            .native_tools
+            .iter()
+            .filter(|(name, _)| tool_allowed(name))
+            .map(|(name, tool)| (name.clone(), Arc::clone(tool)))
+            .collect::<HashMap<_, _>>();
+        let tools = self
+            .tools()
+            .into_iter()
+            .filter(|(name, _)| {
+                tool_allowed(name)
+                    && (native_tools.contains_key(name) || tool_index.contains_key(name))
+            })
+            .collect();
+
+        Self {
+            services: Arc::new(RwLock::new(services)),
+            server_config: Arc::new(RwLock::new(server_config)),
+            tool_index: Arc::new(RwLock::new(tool_index)),
+            tools: Arc::new(RwLock::new(tools)),
             native_tools: Arc::new(native_tools),
         }
     }
@@ -390,7 +573,7 @@ impl McpRegistry {
     pub fn with_native_tool(self, tool: Arc<dyn NativeTool>) -> Self {
         let ns_name = Self::sanitize_tool_name(&format!("native__{}", tool.name()));
 
-        let mut tools = (*self.tools).clone();
+        let mut tools = self.tools();
         let mcp_tool = Tool::new(
             tool.name().to_string(),
             tool.description().to_string(),
@@ -408,14 +591,14 @@ impl McpRegistry {
             services: self.services, // Keep ref
             server_config: self.server_config,
             tool_index: self.tool_index, // Keep ref
-            tools: Arc::new(tools),
+            tools: Arc::new(RwLock::new(tools)),
             native_tools: Arc::new(native_tools),
         }
     }
 
     pub fn openai_tools_json(&self) -> Vec<serde_json::Value> {
-        self.tools
-            .iter()
+        self.tools()
+            .into_iter()
             .map(|(ns_name, t)| {
                 // rmcp Tool uses input_schema as an Arc<JsonObject>; convert to serde_json.
                 let params = serde_json::to_value(&*t.input_schema)
@@ -455,6 +638,8 @@ impl McpRegistry {
         // 1. Lookup server + raw_tool_name
         let (server_name, raw_tool_name) = self
             .tool_index
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .get(namespaced_tool)
             .ok_or_else(|| anyhow!("unknown tool: {namespaced_tool}"))?
             .clone();
@@ -528,8 +713,14 @@ impl McpRegistry {
                 crate::uar::telemetry::metrics::set_mcp_server_status(&server_name, false);
                 // Re-establish the transport for future calls. Never replay the
                 // failed call: it may have completed remotely before transport loss.
-                if let Some(entry) = self.server_config.get(&server_name) {
-                    match connect_server(&server_name, entry).await {
+                let reconnect_entry = self
+                    .server_config
+                    .read()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .get(&server_name)
+                    .cloned();
+                if let Some(entry) = reconnect_entry {
+                    match connect_server(&server_name, &entry).await {
                         Ok(replacement) => {
                             self.services
                                 .write()

@@ -8,6 +8,9 @@ export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
   retries: 1,
+  // Cold Vite transforms of heavy admin chunks can exceed the 5s default
+  // expect timeout on dev machines; give assertions room.
+  expect: { timeout: 12_000 },
   use: {
     baseURL,
     headless: true,

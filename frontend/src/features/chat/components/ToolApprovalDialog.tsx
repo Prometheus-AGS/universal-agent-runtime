@@ -117,7 +117,7 @@ export const ToolApprovalDialog: FC<ToolApprovalDialogProps> = ({
             <Label className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
               Arguments
             </Label>
-            <ScrollArea className="max-h-48 rounded-md border border-border">
+            <ScrollArea className="max-h-48 rounded-md bg-surface">
               <pre className="hljs p-3 text-[11px]">
                 <code>{argsJson}</code>
               </pre>

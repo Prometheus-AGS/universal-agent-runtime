@@ -241,3 +241,15 @@ Sycophancy self-check
   early-adopter risk accepted consciously and sequenced last.
 
 PLAN COMPLETE
+
+## Operator-directed scoped chat control-plane change (2026-07-19)
+
+- OpenSpec change: `uar-scoped-chat-control-plane`
+- Trigger: KnowMe requires UAR-owned global, agent, conversation, and turn policy for
+  provider/model routing, skills, MCP servers, knowledge bases, context management,
+  memory, tool approval, and embedded host local-model providers.
+- Execution order: UAR typed contract and persistence first; desktop Tauri certification
+  second; Flutter Android certification third. This operator-directed work supersedes
+  stale plan sequencing where it conflicts and does not authorize a mobile sidecar.
+- Evidence contract: no setting is complete until the effective run-policy audit and
+  emitted runtime events prove that it changed the real run path.

@@ -28,12 +28,12 @@ export const SkillActivationBlock: FC<SkillActivationBlockProps> = ({ skillName,
   const isActive = status === "active";
   const methodLabel = selectionMethod ? (METHOD_LABELS[selectionMethod] ?? selectionMethod) : null;
   return (
-    <div className="my-1.5 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-      <ZapIcon size={12} className={cn("shrink-0 text-primary", isActive && "animate-pulse")} />
-      <span className="font-mono text-[11px] font-medium text-primary">{skillName}</span>
-      {methodLabel && <span className="rounded-full bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] text-primary/70">{methodLabel}</span>}
+    <div className="my-1.5 flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
+      <ZapIcon size={12} className={cn("shrink-0 text-warning", isActive && "animate-pulse")} />
+      <span className="font-mono text-[11px] font-medium text-warning">{skillName}</span>
+      {methodLabel && <span className="rounded-full bg-warning/10 px-1.5 py-0.5 font-mono text-[9px] text-warning/70">{methodLabel}</span>}
       <span className="ml-auto">
-        {isActive ? <Loader2Icon size={10} className="animate-spin text-primary/60" /> : <CheckCircle2Icon size={10} className="text-primary/60" />}
+        {isActive ? <Loader2Icon size={10} className="animate-spin text-warning/60" /> : <CheckCircle2Icon size={10} className="text-warning/60" />}
       </span>
     </div>
   );

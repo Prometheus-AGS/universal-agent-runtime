@@ -132,7 +132,17 @@ async fn start_server_with_listener(
     let embedding_backend = match crate::uar::rag::embeddings::build_backend(&embedding_config) {
         Ok(b) => b,
         Err(e) => {
-            return Err(anyhow::anyhow!("Failed to build embedding backend: {e}"));
+            warn!(
+                backend = %embedding_config.backend,
+                error = %e,
+                "Embedding backend is unavailable; chat and agent interfaces will start without vector retrieval"
+            );
+            Arc::new(
+                crate::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+                    embedding_config.vector_dimension,
+                    e.to_string(),
+                ),
+            )
         }
     };
     let vector_matcher = Arc::new(VectorMatcher::new(
@@ -140,14 +150,20 @@ async fn start_server_with_listener(
         config.models.vector_threshold,
     ));
 
-    // Initialize VectorMatcher explicitly (shared)
-    if let Err(e) = vector_matcher.initialize().await {
-        tracing::error!("Failed to initialize VectorMatcher: {:?}", e);
-    }
+    // Embeddings are intentionally lazy. UAR must bind its public interfaces
+    // before optional ONNX/model preparation begins; keyword/TF-IDF skill
+    // selection and chat do not require an embedding backend at startup.
 
     // Initialize persistence based on config.
     // All three branches produce trait-object arcs so the types unify across arms.
-    let (persistence_layer, compiler_storage, agent_registry, live_bus, credential_store): (
+    let (
+        persistence_layer,
+        compiler_storage,
+        agent_registry,
+        live_bus,
+        credential_store,
+        a2ui_design_system_store,
+    ): (
         Arc<dyn PersistenceLayer>,
         Option<(
             Arc<dyn crate::uar::compiler::storage::SpecStorage>,
@@ -156,6 +172,7 @@ async fn start_server_with_listener(
         Option<Arc<dyn crate::uar::api::a2a::AgentRegistry>>,
         Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
         Option<Arc<dyn uar::security::credentials::CredentialStore>>,
+        uar::a2ui::design_systems::store::SharedDesignSystemStore,
     ) = if config.persistence.provider == "memory" {
         #[cfg(feature = "in-memory-backend")]
         {
@@ -165,6 +182,7 @@ async fn start_server_with_listener(
                 None,
                 None,
                 None,
+                Arc::new(uar::a2ui::design_systems::store::InMemoryDesignSystemStore::new()),
             )
         }
         #[cfg(not(feature = "in-memory-backend"))]
@@ -197,6 +215,10 @@ async fn start_server_with_listener(
 
             // Create compiler storage sharing the same DB connection
             let db = provider.client();
+            let a2ui_store = Arc::new(
+                uar::a2ui::design_systems::store::SurrealDesignSystemStore::new(db.clone()),
+            )
+                as uar::a2ui::design_systems::store::SharedDesignSystemStore;
             let compiler_store = Arc::new(
                 crate::uar::compiler::storage::surreal::SurrealCompilerStorage::new(db.clone()),
             );
@@ -226,6 +248,7 @@ async fn start_server_with_listener(
                 Some(registry),
                 live_bus,
                 credential_store,
+                a2ui_store,
             )
         }
         #[cfg(not(feature = "surreal-backend"))]
@@ -244,6 +267,10 @@ async fn start_server_with_listener(
                 .await
                 .expect("Failed to initialize Postgres");
             let pool = provider.get_pool().clone();
+            let a2ui_store = Arc::new(
+                uar::a2ui::design_systems::store::PostgresDesignSystemStore::new(pool.clone()),
+            )
+                as uar::a2ui::design_systems::store::SharedDesignSystemStore;
 
             // Start the Postgres LISTEN/NOTIFY realtime bus on the same pool.
             let live_bus = Some(Arc::new(
@@ -275,6 +302,7 @@ async fn start_server_with_listener(
                 Some(registry),
                 live_bus,
                 credential_store,
+                a2ui_store,
             )
         }
         #[cfg(not(feature = "postgres-backend"))]
@@ -525,6 +553,8 @@ async fn start_server_with_listener(
         }
     };
 
+    let a2ui_realtime_backbone = uar::a2ui::realtime::InMemoryReplayBackbone::new();
+
     let run_manager = Arc::new({
         let mut rm = RunManager::new(
             llm_config.clone(),
@@ -538,6 +568,7 @@ async fn start_server_with_listener(
         .with_skill_service(Arc::clone(&skill_service))
         .with_provider_registry(Arc::clone(&provider_registry))
         .with_native_skills(Arc::clone(&native_skill_registry))
+        .with_a2ui_backbone(Arc::clone(&a2ui_realtime_backbone))
         .with_message_context_strategy(config.context_strategy.clone())
         .with_governance_engine(Arc::clone(&governance_engine))
         .with_failover_config(config.failover.clone())
@@ -654,6 +685,9 @@ async fn start_server_with_listener(
                             error = ?e,
                             "Failed to hydrate provider registry from settings database"
                         );
+                    }
+                    if let Err(e) = crate::uar::api::mcp_admin::hydrate_registry(&mcp, &mgr).await {
+                        tracing::error!(error = ?e, "Failed to hydrate MCP registry from settings database");
                     }
                 }
                 Err(e) => {
@@ -778,8 +812,6 @@ async fn start_server_with_listener(
     // 20, a2ui-realtime-backbone-from-flint-realtime-fabric). Both A2UI
     // routers below share one instance so replay is consistent regardless
     // of which router a request comes through.
-    let a2ui_realtime_backbone = uar::a2ui::realtime::InMemoryReplayBackbone::new();
-
     #[cfg(feature = "a2a-transport")]
     let a2a_routes: axum::Router<AppState> = Router::new()
         .nest(
@@ -921,6 +953,7 @@ async fn start_server_with_listener(
                 registry: Arc::clone(&state.a2ui_registry),
                 run_manager: Arc::clone(&state.run_manager),
                 realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
+                design_system_store: Arc::clone(&a2ui_design_system_store),
             };
             uar::a2ui::routes::build_schema_router().with_state(a2ui_state)
         })
@@ -930,6 +963,7 @@ async fn start_server_with_listener(
                 registry: Arc::clone(&state.a2ui_registry),
                 run_manager: Arc::clone(&state.run_manager),
                 realtime_backbone: Arc::clone(&a2ui_realtime_backbone),
+                design_system_store: Arc::clone(&a2ui_design_system_store),
             };
             uar::a2ui::routes::build_response_router().with_state(a2ui_state)
         })
@@ -1021,6 +1055,10 @@ async fn start_server_with_listener(
             post(uar::api::discovery::execute_tool),
         )
         .route("/api/uar/mcp/health", get(api_mcp_health))
+        .nest(
+            "/api/uar/mcp",
+            uar::api::mcp_admin::build_router().with_state(state.clone()),
+        )
         .route(
             "/api/uar/sessions/{id}/context-stats",
             get(api_context_stats),
@@ -1034,6 +1072,12 @@ async fn start_server_with_listener(
         .route(
             "/api/uar/sessions/{id}/effective-config",
             get(uar::api::discovery::get_effective_config),
+        )
+        .route(
+            "/api/uar/conversations/{id}/policy",
+            get(uar::api::discovery::get_conversation_policy)
+                .put(uar::api::discovery::save_conversation_policy)
+                .delete(uar::api::discovery::delete_conversation_policy),
         )
         .route("/api/uar/skills/reload", post(api_skills_reload))
         // ────────────────────────────────────────────────────────────────────────────
@@ -1782,20 +1826,29 @@ async fn api_generate_title(Json(req): Json<GenerateTitleRequest>) -> Response {
 /// ```
 async fn api_models(State(state): State<AppState>) -> Response {
     let catalog = crate::llm::ModelCatalog::global();
-    let configured_ids: std::collections::HashSet<String> = state
+    let configured_providers = state
         .provider_registry
         .list()
         .await
         .into_iter()
-        .filter(|p| p.enabled)
-        .map(|p| p.id)
-        .collect();
+        .map(|provider| (provider.id.clone(), provider))
+        .collect::<std::collections::HashMap<_, _>>();
 
     let mut root = serde_json::Map::new();
 
     for provider in catalog.all_providers() {
         let mut models = serde_json::Map::new();
         for model in &provider.models {
+            let enabled = configured_providers
+                .get(&provider.id)
+                .filter(|configured| configured.enabled)
+                .and_then(|configured| {
+                    configured
+                        .models
+                        .iter()
+                        .find(|configured_model| configured_model.id == model.id)
+                })
+                .is_some_and(|configured_model| configured_model.enabled);
             let input_cost = model.cost.as_ref().map(|c| c.input).unwrap_or(0.0);
             let output_cost = model.cost.as_ref().map(|c| c.output).unwrap_or(0.0);
             let context = if model.limits.context_window > 0 {
@@ -1849,6 +1902,7 @@ async fn api_models(State(state): State<AppState>) -> Response {
                     "structured_output": model.capabilities.structured_output,
                     "streaming": model.capabilities.streaming,
                     "open_weights": model.open_weights,
+                    "enabled": enabled,
                     "benchmarks": benchmarks
                 }),
             );
@@ -1859,7 +1913,7 @@ async fn api_models(State(state): State<AppState>) -> Response {
             json!({
                 "display_name": provider.display_name,
                 "base_url": provider.base_url,
-                "configured": configured_ids.contains(&provider.id),
+                "configured": configured_providers.get(&provider.id).is_some_and(|configured| configured.enabled),
                 "models": models
             }),
         );
@@ -3645,6 +3699,9 @@ pub(crate) struct ChatCompletionRequest {
     /// Falls through to session → default-agent in the absence of this field.
     #[serde(default)]
     agent_id: Option<String>,
+    /// Typed per-turn UAR policy override.
+    #[serde(default)]
+    run_policy: Option<uar::domain::policy::RunPolicy>,
 }
 
 #[inline]
@@ -4171,6 +4228,47 @@ pub(crate) async fn api_chat_completion(
     };
     agent.policy.provider.default.provider = resolved_model.provider_id.clone();
     agent.policy.provider.default.model = resolved_model.model_id.clone();
+
+    let mut turn_policy = req.run_policy.clone().unwrap_or_default();
+    if let Some(agent_id) = &req.agent_id {
+        turn_policy.agent_id = Some(agent_id.clone());
+        turn_policy.chat_mode = Some(
+            if matches!(agent_id.as_str(), "default-agent" | "orchestrator-agent") {
+                uar::domain::policy::ChatMode::Uar
+            } else {
+                uar::domain::policy::ChatMode::Agent
+            },
+        );
+    }
+    if req.model.is_some() {
+        turn_policy.model = Some(uar::domain::policy::ModelRoute {
+            provider_id: resolved_model.provider_id.clone(),
+            model_id: resolved_model.model_id.clone(),
+        });
+    }
+    if !req.memory_enabled {
+        turn_policy.memory_enabled = Some(false);
+    }
+
+    let mut effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
+        &state,
+        &session_id,
+        &agent,
+        Some(turn_policy.clone()),
+    )
+    .await;
+    if let Some(effective_agent_id) = effective_run_policy.agent_id.clone()
+        && effective_agent_id != agent.id
+    {
+        agent = uar::api::discovery::resolve_agent_for_run(&state, &effective_agent_id).await;
+        effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
+            &state,
+            &session_id,
+            &agent,
+            Some(turn_policy),
+        )
+        .await;
+    }
     let agent_id_for_policy = agent.id.clone();
     let (effective_resilience_policy, policy_source) =
         resolve_effective_resilience_policy(&state, &agent_id_for_policy).await;
@@ -4239,7 +4337,7 @@ pub(crate) async fn api_chat_completion(
 
     // --- Memory: context injection (pre-LLM-call) ---
     // Build context block and collect the raw hits so we can stream them to the client.
-    let (memory_context_block, memory_recall_items) = if req.memory_enabled {
+    let (memory_context_block, memory_recall_items) = if effective_run_policy.memory_enabled {
         if let Some(svc) = &state.memory_service {
             let result = context_builder::build_context_with_hits(
                 svc,
@@ -4302,12 +4400,13 @@ pub(crate) async fn api_chat_completion(
 
     let run_id = state
         .run_manager
-        .start_run(
+        .start_run_with_policy(
             agent,
             effective_input_with_memory,
             Some(session_id.clone()),
             None,
             memory_recall_items,
+            Some(effective_run_policy),
         )
         .await;
 

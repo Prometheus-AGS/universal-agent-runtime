@@ -32,24 +32,29 @@ pub mod types;
 
 #[cfg(feature = "http-client")]
 pub mod client;
-#[cfg(feature = "embedded")]
+#[cfg(any(feature = "embedded", feature = "server"))]
 pub mod runtime;
 
 #[doc(inline)]
 pub use error::{Error, UarError};
 #[doc(inline)]
 pub use types::{
-    ArtifactResponseAck, ArtifactResponseRequest, CancelRunResponse, ChatCompletionRequest,
-    ChatCompletionResponse, ChatMessage, Checkpoint, CheckpointListResponse,
-    CreateKnowledgeBaseRequest, CreateRunRequest, Document, Embedding, EmbeddingRequest,
-    EmbeddingResponse, IngestRequest, IngestResponse, KnowledgeBase, KnowledgeBaseConfig,
-    ResumeRunRequest, RunResponse, SearchRequest, SearchResponse, SearchResult, StreamEvent,
-    ToolCallRequest, ToolCallResponse, UpdateKnowledgeBaseRequest,
+    A2uiActionAck, A2uiActionRequest, ArtifactResponseAck, ArtifactResponseRequest,
+    CancelRunResponse, ChatCompletionRequest, ChatCompletionResponse, ChatMessage, Checkpoint,
+    CheckpointListResponse, CreateKnowledgeBaseRequest, CreateRunRequest, Document, Embedding,
+    EmbeddingRequest, EmbeddingResponse, IngestRequest, IngestResponse, KnowledgeBase,
+    KnowledgeBaseConfig, ProviderModelConfig, ProviderTestResponse, ProviderView,
+    ProvidersResponse, ResumeRunRequest, RunResponse, SaveProviderConfig, SearchRequest,
+    SearchResponse, SearchResult, StreamEvent, ToolCallRequest, ToolCallResponse,
+    UpdateKnowledgeBaseRequest,
 };
 
 #[cfg(feature = "http-client")]
 #[doc(inline)]
 pub use client::{Client, EventStream};
-#[cfg(feature = "embedded")]
+#[cfg(any(feature = "embedded", feature = "server"))]
 #[doc(inline)]
 pub use runtime::Runtime;
+#[cfg(feature = "embedded")]
+#[doc(inline)]
+pub use universal_agent_runtime::uar::runtime::manager::SeedMessage;

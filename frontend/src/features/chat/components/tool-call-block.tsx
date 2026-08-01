@@ -26,7 +26,7 @@ export const ToolCallBlock: FC<ToolCallBlockProps> = ({ toolName, args, result, 
   const hasArgs = argsJson !== "{}";
 
   return (
-    <div className="my-2 overflow-hidden rounded-lg border border-border/50 bg-card">
+    <div className="my-2 overflow-hidden rounded-lg bg-card">
       <Button variant="ghost" onClick={() => setIsExpanded((e) => !e)} className="flex h-auto w-full items-center justify-start gap-2.5 rounded-none px-3 py-2.5 hover:bg-muted/20" aria-expanded={isExpanded}>
         <WrenchIcon size={13} className="shrink-0 text-primary" />
         <span className="font-mono text-xs font-medium text-primary">{toolName}</span>
@@ -36,7 +36,7 @@ export const ToolCallBlock: FC<ToolCallBlockProps> = ({ toolName, args, result, 
         <ChevronDownIcon size={13} className={cn("shrink-0 text-muted-foreground transition-transform duration-150", isExpanded && "rotate-180")} />
       </Button>
       {isExpanded && (
-        <div className="divide-y divide-border/30 border-t border-border/30">
+        <div className="flex flex-col gap-1 px-1 pb-1">
           {hasArgs && (
             <div className="px-3 pb-3 pt-2">
               <p className="mb-1.5 font-mono text-xs uppercase tracking-widest text-muted-foreground">{"Arguments"}</p>

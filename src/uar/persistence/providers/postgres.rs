@@ -2,6 +2,7 @@ use crate::session::Session;
 use crate::uar::domain::knowledge::{
     DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeMatch,
 };
+use crate::uar::domain::policy::ConversationPolicyRecord;
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::persistence::PersistenceLayer;
 use anyhow::Result;
@@ -70,6 +71,52 @@ impl PersistenceLayer for PostgresProvider {
         } else {
             Ok(None)
         }
+    }
+
+    async fn save_conversation_policy(&self, record: &ConversationPolicyRecord) -> Result<()> {
+        sqlx::query(
+            r"
+            INSERT INTO conversation_policies (conversation_id, policy, updated_at)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (conversation_id) DO UPDATE SET
+                policy = EXCLUDED.policy,
+                updated_at = EXCLUDED.updated_at
+            ",
+        )
+        .bind(&record.conversation_id)
+        .bind(serde_json::to_value(&record.policy)?)
+        .bind(record.updated_at)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn load_conversation_policy(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Option<ConversationPolicyRecord>> {
+        let row = sqlx::query(
+            "SELECT conversation_id, policy, updated_at FROM conversation_policies WHERE conversation_id = $1",
+        )
+        .bind(conversation_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        row.map(|row| {
+            Ok(ConversationPolicyRecord {
+                conversation_id: row.try_get("conversation_id")?,
+                policy: serde_json::from_value(row.try_get("policy")?)?,
+                updated_at: row.try_get("updated_at")?,
+            })
+        })
+        .transpose()
+    }
+
+    async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()> {
+        sqlx::query("DELETE FROM conversation_policies WHERE conversation_id = $1")
+            .bind(conversation_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()> {

@@ -17,6 +17,11 @@ This directory contains the architecture decision records (ADRs) for the Univers
 | [ADR-0009](0009-a2ui-vendor-webcore.md) | Vendor `@a2ui/web_core` and `@a2ui/react` and build a UAR-owned renderer | 2026-07-13 | Accepted |
 | [ADR-0010](0010-a2ui-renderer-on-webcore.md) | Build the A2UI renderer on webcore with React and shadcn/ui | 2026-07-13 | Accepted |
 | [ADR-0011](0011-docs-visual-regression.md) | Host a unified docs portal with Docusaurus and add visual regression | 2026-07-14 | Accepted |
+| [ADR-0012](0012-transport-free-ag-ui-adapter.md) | Transport-free AG-UI adapter reachable from the embedded runtime | 2026-07-22 | Accepted |
+| [ADR-0013](0013-embedded-run-policy-and-admin-surface.md) | Embedded run-policy resolution + embedded admin surface | 2026-07-24 | Accepted |
+| [ADR-0014](0014-effective-policy-model-backfill.md) | Backfill the effective-run-policy model route from the registry default | 2026-07-24 | Accepted |
+| [ADR-0015](0015-embedded-conversation-policy-surface.md) | Embedded conversation-policy admin surface + effective-config resolver | 2026-07-24 | Accepted |
+| [ADR-0016](0016-seed-embedded-session-from-host-history.md) | Seed the embedded session from host-supplied conversation history | 2026-07-25 | Accepted |
 
 ## Process
 

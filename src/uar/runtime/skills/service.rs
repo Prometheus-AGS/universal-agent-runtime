@@ -159,7 +159,7 @@ impl SkillService {
         let mut registry = self.registry.write().await;
         let count = skills.len();
         for s in skills {
-            registry.register(s).await;
+            registry.register_loaded(s);
         }
         info!(count, "registered builtin skills");
     }
@@ -182,7 +182,7 @@ impl SkillService {
                         skills.len(),
                         provider.name()
                     );
-                    registry.register_all(skills).await;
+                    registry.register_all_loaded(skills);
                 }
                 Err(e) => {
                     error!(
@@ -221,7 +221,7 @@ impl SkillService {
             match provider.refresh().await {
                 Ok(skills) => {
                     all_skills.extend(skills.clone());
-                    registry.register_all(skills).await;
+                    registry.register_all_loaded(skills);
                 }
                 Err(e) => {
                     error!("Failed to refresh provider '{}': {:?}", provider.name(), e);

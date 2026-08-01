@@ -135,8 +135,16 @@ impl SettingsManager {
                         };
 
                         let data_differs = existing.data != desired_setting.data;
+                        // API mutations carry an updated_at timestamp in the
+                        // persistent record. Source metadata is intentionally
+                        // transient, so reconstruct API ownership from that
+                        // durable marker on restart; otherwise bootstrap would
+                        // overwrite user/provider settings with config defaults.
+                        let persisted_api_value = existing.updated_at.is_some();
 
-                        if cached_source == SettingSource::Api && data_differs {
+                        if (cached_source == SettingSource::Api || persisted_api_value)
+                            && data_differs
+                        {
                             // API-controlled value — preserve DB, mark drift.
                             new_cache.insert(
                                 key.clone(),
@@ -171,7 +179,11 @@ impl SettingsManager {
                                 key.clone(),
                                 CacheEntry {
                                     setting: existing,
-                                    meta: SettingsMeta::from_config(cached_source),
+                                    meta: SettingsMeta::from_config(if persisted_api_value {
+                                        SettingSource::Api
+                                    } else {
+                                        cached_source
+                                    }),
                                 },
                             );
                         }
@@ -195,6 +207,25 @@ impl SettingsManager {
         );
 
         Ok(stats)
+    }
+
+    /// Seed only the `run_policy` namespace (type + `run_policy.global` default),
+    /// idempotently.
+    ///
+    /// The embedded runtime has no `AppConfig` to run the full [`Self::initialize`]
+    /// bootstrap, but it still needs the Global run policy row to exist so hosts
+    /// can read and write `run_policy.global`. This registers the same canonical
+    /// schema and inherit-everything default that [`Self::initialize`] seeds, and
+    /// (via [`Self::register_extension`]) inserts the default only when the row is
+    /// absent — so it never clobbers a value already written by a host.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the underlying persistence upsert of the settings type
+    /// or default value fails.
+    pub async fn ensure_run_policy_seed(&self) -> Result<()> {
+        let (settings_type, defaults) = run_policy_schema_and_defaults();
+        self.register_extension(settings_type, defaults).await
     }
 
     // =========================================================================
@@ -388,16 +419,11 @@ impl SettingsManager {
     /// into the DB on **first boot**, then persist the default provider id.
     ///
     /// Source-of-truth rule: **DB-wins-after-first-boot.** A provider whose
-    /// Reconcile configured providers from the registry into the settings DB.
+    /// Seed configured providers from the registry into the settings DB.
     ///
-    /// **Config-authoritative-on-boot** (R3 decision, 2026-06-02): every boot
-    /// re-seeds `provider.{id}` rows from the live registry, overwriting any
-    /// previously persisted value. This ensures env/YAML edits are immediately
-    /// reflected in the UI without requiring a "re-sync" action.
-    ///
-    /// Trade-off: provider/model config edited via the admin UI does NOT survive
-    /// a server restart unless also written back to env/YAML. A write-back path
-    /// (P3) is deferred to a future phase.
+    /// UAR storage is authoritative after the first successful write. Existing
+    /// rows are deliberately preserved so credentials, endpoint overrides,
+    /// provider enablement, and per-model enablement survive restarts.
     ///
     /// Call this AFTER [`Self::initialize`] and BEFORE
     /// `hydrate_provider_registry_from_settings`.
@@ -419,22 +445,13 @@ impl SettingsManager {
         let mut seeded = 0usize;
         for config in &configured {
             let key = format!("provider.{}", config.id);
-            // Config-authoritative: always upsert from registry (no skip).
-            // The row id is stable (keyed by `key`) so updates don't grow the table.
+            if self.persistence.get_setting(&key).await?.is_some() {
+                continue;
+            }
             let data = serde_json::to_value(config).context("serialize ProviderConfig")?;
             let now = Utc::now();
-            // Preserve the existing row id if the row already exists so that
-            // FK relationships in the DB (if any) are not broken.
-            let existing_id = self
-                .persistence
-                .get_setting(&key)
-                .await
-                .ok()
-                .flatten()
-                .map(|s| s.id)
-                .unwrap_or_else(Uuid::new_v4);
             let setting = Settings {
-                id: existing_id,
+                id: Uuid::new_v4(),
                 settings_type_id: st.id,
                 name: config.display_name.clone(),
                 key: key.clone(),
@@ -458,17 +475,21 @@ impl SettingsManager {
             seeded += 1;
         }
 
-        // Always reconcile the default provider id from the registry so the UI
-        // reflects the active default even after env/YAML changes.
-        if let Some(default_id) = registry.default_id().await {
-            if let Err(e) = self.set_default_provider_id(&default_id).await {
-                tracing::warn!(error = ?e, "failed to persist default provider id");
+        // Seed the default only once. After first boot the persisted UAR value
+        // is authoritative; writing the config registry default here would
+        // reset an API-selected provider on every restart immediately before
+        // provider hydration reads it back.
+        if self.get_default_provider_id().await.is_none() {
+            if let Some(default_id) = registry.default_id().await {
+                if let Err(e) = self.set_default_provider_id(&default_id).await {
+                    tracing::warn!(error = ?e, "failed to seed default provider id");
+                }
             }
         }
 
         tracing::info!(
-            reconciled = seeded,
-            "Reconciled configured providers into the settings DB (config-authoritative)"
+            seeded,
+            "Seeded previously unknown providers into UAR storage"
         );
         Ok(seeded)
     }
@@ -1501,6 +1522,11 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
     }
 
     // -------------------------------------------------------------------------
+    // run_policy — runtime-wide policy consumed by the UAR policy resolver
+    // -------------------------------------------------------------------------
+    result.push(run_policy_schema_and_defaults());
+
+    // -------------------------------------------------------------------------
     // rag — retrieval-augmented generation / chunking / embedding config
     // -------------------------------------------------------------------------
     {
@@ -2411,6 +2437,36 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
     }
 
     // -------------------------------------------------------------------------
+    // mcp — user-managed Model Context Protocol servers
+    // -------------------------------------------------------------------------
+    {
+        let schema = json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "MCP Servers",
+            "x-uar-ui": {
+                "category": "Connections", "icon": "plug",
+                "order": 17, "display_mode": "custom"
+            },
+            "type": "object",
+            "properties": {
+                "servers": {
+                    "type": "object",
+                    "title": "Configured MCP servers",
+                    "additionalProperties": { "type": "object" }
+                }
+            }
+        });
+        let st = make_type("MCP Servers", "mcp", schema);
+        let settings = vec![make_setting(
+            &st,
+            "mcp.servers",
+            "Configured MCP Servers",
+            json!({}),
+        )];
+        result.push((st, settings));
+    }
+
+    // -------------------------------------------------------------------------
     // skill_evolution — Hermes learning cycle / auto-skill creation
     // -------------------------------------------------------------------------
     {
@@ -2552,6 +2608,79 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
 // =============================================================================
 // Helpers
 // =============================================================================
+
+/// Build the canonical `run_policy` settings type and its seeded
+/// `run_policy.global` default.
+///
+/// Shared by [`build_core_schema`] (service bootstrap) and
+/// [`SettingsManager::ensure_run_policy_seed`] (embedded seeding) so both paths
+/// register one identical schema and one identical inherit-everything default.
+fn run_policy_schema_and_defaults() -> (SettingsType, Vec<Settings>) {
+    let resource_selection = json!({
+        "type": "object",
+        "properties": {
+            "mode": {
+                "type": "string",
+                "enum": ["inherit", "auto", "all", "none", "selected"]
+            },
+            "ids": { "type": "array", "items": { "type": "string" } },
+            "denied_ids": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["mode", "ids", "denied_ids"]
+    });
+    let schema = json!({
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Global Run Policy",
+        "x-uar-ui": {
+            "category": "Governance & Agents",
+            "icon": "sliders-horizontal",
+            "order": 10,
+            "display_mode": "form"
+        },
+        "type": "object",
+        "properties": {
+            "version": { "type": "integer", "minimum": 1 },
+            "chat_mode": { "type": ["string", "null"], "enum": ["local", "uar", "agent", null] },
+            "agent_id": { "type": ["string", "null"] },
+            "model": { "type": ["object", "null"] },
+            "skills": resource_selection,
+            "tools": resource_selection,
+            "mcp_servers": resource_selection,
+            "knowledge_bases": resource_selection,
+            "memory_enabled": { "type": ["boolean", "null"] },
+            "context_strategy": { "type": ["object", "null"] },
+            "tool_approval": {
+                "type": "string",
+                "enum": ["inherit", "auto", "ask", "deny"]
+            }
+        },
+        "required": [
+            "version", "skills", "tools", "mcp_servers",
+            "knowledge_bases", "tool_approval"
+        ]
+    });
+    let st = make_type("Global Run Policy", "run_policy", schema);
+    let inherit = json!({ "mode": "inherit", "ids": [], "denied_ids": [] });
+    let settings = vec![make_setting(
+        &st,
+        "run_policy.global",
+        "Global Run Policy",
+        json!({
+            "version": 1,
+            "chat_mode": null,
+            "agent_id": null,
+            "model": null,
+            "skills": inherit,
+            "tools": inherit,
+            "mcp_servers": inherit,
+            "knowledge_bases": inherit,
+            "memory_enabled": null,
+            "context_strategy": null,
+            "tool_approval": "inherit"
+        }),
+    )];
+    (st, settings)
+}
 
 fn make_type(name: &str, key: &str, schema: Value) -> SettingsType {
     SettingsType {

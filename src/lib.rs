@@ -30,11 +30,14 @@
 #![allow(clippy::unused_async)]
 
 pub mod config;
+#[cfg(feature = "server")]
 pub mod config_manager;
+pub mod embedded;
 pub mod llm;
 pub mod mcp;
 pub mod normalized;
 pub mod sandbox;
+#[cfg(feature = "server")]
 pub mod server;
 pub mod session;
 pub mod uar;
@@ -42,33 +45,36 @@ pub mod uar;
 /// Central error type for the public API boundary; see [`uar::error`].
 pub use uar::error::{Result, UarError};
 
-use crate::config::AppConfig;
-use crate::config_manager::ConfigManager;
-use crate::uar::security::rate_limit::AppRateLimiter;
-
-use llm::orchestrator::Orchestrator;
-use mcp::registry::McpRegistry;
-use session::SessionStore;
-use std::collections::HashMap;
-use std::sync::Arc;
-use uar::api::a2a::AgentRegistry;
-use uar::compiler::CompilerService;
-use uar::governance::engine::GovernanceEngine;
-use uar::memory::service::MemoryService;
-use uar::persistence::PersistenceLayer;
-use uar::prompt_cache::PromptCacheProvider;
-use uar::rag::ingest::IngestService;
-use uar::runtime::actor::system::ActorCollaboration;
-use uar::runtime::manager::RunManager;
-use uar::runtime::matching::VectorMatcher;
-use uar::runtime::native_skill::NativeSkillRegistry;
-use uar::runtime::skills::service::SkillService;
-use uar::runtime::user_settings_store::UserSettingsStore;
-use uar::security::api_keys::ApiKeyService;
-use uar::settings::manager::SettingsManager;
+#[cfg(feature = "server")]
+use {
+    crate::{
+        config::AppConfig, config_manager::ConfigManager, uar::security::rate_limit::AppRateLimiter,
+    },
+    llm::orchestrator::Orchestrator,
+    mcp::registry::McpRegistry,
+    session::SessionStore,
+    std::{collections::HashMap, sync::Arc},
+    uar::{
+        api::a2a::AgentRegistry,
+        compiler::CompilerService,
+        governance::engine::GovernanceEngine,
+        memory::service::MemoryService,
+        persistence::PersistenceLayer,
+        prompt_cache::PromptCacheProvider,
+        rag::ingest::IngestService,
+        runtime::{
+            actor::system::ActorCollaboration, manager::RunManager, matching::VectorMatcher,
+            native_skill::NativeSkillRegistry, skills::service::SkillService,
+            user_settings_store::UserSettingsStore,
+        },
+        security::api_keys::ApiKeyService,
+        settings::manager::SettingsManager,
+    },
+};
 
 /// Application state shared across all handlers.
 #[derive(Clone, Debug)]
+#[cfg(feature = "server")]
 pub struct AppState {
     /// MCP server registry for tool discovery and execution.
     #[allow(dead_code)]
@@ -129,7 +135,8 @@ pub struct AppState {
     pub a2ui_registry: Arc<uar::a2ui::registry::A2uiRegistry>,
     /// Model router — selects optimal model based on capability requirements from the catalog.
     pub model_router: Arc<llm::ModelRouter>,
-    /// Per-session agent configuration overrides (in-memory).
+    /// Read-through compatibility cache for legacy per-session agent configuration.
+    /// Durable conversation policy lives in `PersistenceLayer`.
     pub agent_sessions:
         Arc<tokio::sync::RwLock<HashMap<String, uar::api::discovery::AgentSessionConfig>>>,
     /// Wasm sandbox runtime for executing Wasm agents (feature-gated)
@@ -139,7 +146,8 @@ pub struct AppState {
 #[cfg(not(any(
     feature = "surreal-backend",
     feature = "postgres-backend",
-    feature = "in-memory-backend"
+    feature = "in-memory-backend",
+    feature = "host-persistence"
 )))]
 compile_error!(
     "enable at least one persistence backend: surreal-backend, postgres-backend, or in-memory-backend"

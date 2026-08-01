@@ -8,6 +8,9 @@ const metadata = JSON.parse(
   execFileSync("cargo", ["metadata", "--format-version", "1"], {
     cwd: root,
     encoding: "utf8",
+    // `cargo metadata` output has grown past Node's default 1 MB stdout cap
+    // (ENOBUFS); allow up to 128 MB so the full JSON is captured.
+    maxBuffer: 128 * 1024 * 1024,
   }),
 );
 const liter = metadata.packages.find((pkg) => pkg.name === "liter-llm");

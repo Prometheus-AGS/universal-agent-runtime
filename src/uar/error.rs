@@ -8,11 +8,13 @@
 //! error matching — codes are part of the public API and MUST NOT change
 //! without a SemVer major bump.
 
+#[cfg(feature = "server")]
 use axum::{
     Json,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+#[cfg(feature = "server")]
 use serde::Serialize;
 
 /// The crate's central error type for the public API boundary.
@@ -158,6 +160,7 @@ impl UarError {
 
     /// The HTTP status code this error maps to.
     #[must_use]
+    #[cfg(feature = "server")]
     pub fn status_code(&self) -> StatusCode {
         match self {
             Self::Auth { .. } => StatusCode::UNAUTHORIZED,
@@ -178,11 +181,13 @@ pub type Result<T> = std::result::Result<T, UarError>;
 
 /// The public JSON shape of a `UarError` HTTP response body.
 #[derive(Debug, Serialize)]
+#[cfg(feature = "server")]
 struct ErrorBody {
     code: &'static str,
     message: String,
 }
 
+#[cfg(feature = "server")]
 impl IntoResponse for UarError {
     fn into_response(self) -> Response {
         // Full error chain + span trace go to the server-side log only; the
@@ -208,7 +213,7 @@ impl IntoResponse for UarError {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "server"))]
 mod tests {
     use super::*;
 

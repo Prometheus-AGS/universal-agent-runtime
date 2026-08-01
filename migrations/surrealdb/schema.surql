@@ -13,6 +13,16 @@ DEFINE FIELD updated_at ON sessions TYPE datetime;
 DEFINE INDEX idx_sessions_id ON sessions FIELDS id UNIQUE;
 
 -- =============================================================================
+-- Conversation-scoped run policy
+-- =============================================================================
+
+DEFINE TABLE conversation_policies SCHEMAFULL;
+DEFINE FIELD conversation_id ON conversation_policies TYPE string;
+DEFINE FIELD policy ON conversation_policies FLEXIBLE TYPE object;
+DEFINE FIELD updated_at ON conversation_policies TYPE datetime;
+DEFINE INDEX idx_conversation_policy_id ON conversation_policies FIELDS conversation_id UNIQUE;
+
+-- =============================================================================
 -- Skills
 -- =============================================================================
 

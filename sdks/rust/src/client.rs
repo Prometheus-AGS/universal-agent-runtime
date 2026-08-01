@@ -61,10 +61,30 @@ impl Client {
     pub fn chat(&self) -> ChatApi<'_> {
         ChatApi(self)
     }
+    /// Provider catalog and persisted provider administration API.
+    #[must_use]
+    pub fn providers(&self) -> ProvidersApi<'_> {
+        ProvidersApi(self)
+    }
+    /// Scoped chat policy and discovery control plane.
+    #[must_use]
+    pub fn control_plane(&self) -> ControlPlaneApi<'_> {
+        ControlPlaneApi(self)
+    }
+    /// UAR-owned administration API for settings and runtime resources.
+    #[must_use]
+    pub fn admin(&self) -> AdminApi<'_> {
+        AdminApi(self)
+    }
     /// Run API.
     #[must_use]
     pub fn runs(&self) -> RunsApi<'_> {
         RunsApi(self)
+    }
+    /// A2UI artifact/component library API.
+    #[must_use]
+    pub fn a2ui(&self) -> A2uiApi<'_> {
+        A2uiApi(self)
     }
     /// Knowledge API.
     #[must_use]
@@ -157,6 +177,305 @@ impl Client {
                 }
             },
         )))
+    }
+}
+
+/// A2UI component library operations.
+pub struct A2uiApi<'a>(&'a Client);
+impl A2uiApi<'_> {
+    pub async fn list_components(&self) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::GET, "/api/uar/a2ui/components")?,
+            )
+            .await
+    }
+
+    pub async fn promote_component(
+        &self,
+        title: &str,
+        source: &str,
+        description: Option<&str>,
+    ) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::POST, "/api/uar/a2ui/components")?
+                    .json(&serde_json::json!({
+                        "title": title,
+                        "source": source,
+                        "description": description,
+                    })),
+            )
+            .await
+    }
+}
+
+/// Runtime administration operations used by first-party KnowMe settings UIs.
+pub struct AdminApi<'a>(&'a Client);
+impl AdminApi<'_> {
+    /// Return all persisted UAR settings with schema/source metadata.
+    pub async fn settings(&self) -> Result<Value> {
+        self.0
+            .json(self.0.request(reqwest::Method::GET, "/api/uar/settings")?)
+            .await
+    }
+
+    /// Return registered settings namespaces and their JSON schemas.
+    pub async fn setting_types(&self) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::GET, "/api/uar/settings/types")?,
+            )
+            .await
+    }
+
+    /// Update one dotted UAR setting key.
+    pub async fn update_setting(&self, key: &str, value: &Value) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::PUT, &format!("/api/uar/settings/{key}"))?
+                    .json(&serde_json::json!({ "value": value })),
+            )
+            .await
+    }
+
+    /// Create a UAR-owned agent definition.
+    pub async fn create_agent(&self, agent: &Value) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::POST, "/api/agents")?
+                    .json(agent),
+            )
+            .await
+    }
+
+    /// Replace a UAR-owned agent definition.
+    pub async fn update_agent(&self, id: &str, agent: &Value) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::PUT, &format!("/api/agents/{id}"))?
+                    .json(agent),
+            )
+            .await
+    }
+
+    /// Delete a non-protected agent.
+    pub async fn delete_agent(&self, id: &str) -> Result<()> {
+        self.0
+            .no_content(
+                self.0
+                    .request(reqwest::Method::DELETE, &format!("/api/agents/{id}"))?,
+            )
+            .await
+    }
+
+    /// Return configured MCP servers and live connection/tool status.
+    pub async fn mcp_servers(&self) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::GET, "/api/uar/mcp/servers")?,
+            )
+            .await
+    }
+
+    /// Add or replace an MCP server and connect it immediately when enabled.
+    pub async fn save_mcp_server(&self, name: &str, server: &Value) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(
+                        reqwest::Method::PUT,
+                        &format!("/api/uar/mcp/servers/{name}"),
+                    )?
+                    .json(server),
+            )
+            .await
+    }
+
+    /// Delete an MCP server from UAR storage and the live registry.
+    pub async fn delete_mcp_server(&self, name: &str) -> Result<Value> {
+        self.0
+            .json(self.0.request(
+                reqwest::Method::DELETE,
+                &format!("/api/uar/mcp/servers/{name}"),
+            )?)
+            .await
+    }
+
+    /// List user-visible memories owned by UAR.
+    pub async fn memories(&self) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::GET, "/api/admin/memories")?,
+            )
+            .await
+    }
+
+    /// Add a memory.
+    ///
+    /// Mirrors the embedded runtime's `add_memory`, so a served deployment and
+    /// an on-device one expose the same capability rather than the remote one
+    /// being read-and-delete only.
+    pub async fn add_memory(&self, content: &str) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::POST, "/api/admin/memories")?
+                    .json(&serde_json::json!({ "content": content })),
+            )
+            .await
+    }
+
+    /// Replace a memory's content. The service records history, so the previous
+    /// text stays recoverable rather than being overwritten destructively.
+    pub async fn update_memory(&self, id: &str, content: &str) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(
+                        reqwest::Method::PATCH,
+                        &format!("/api/admin/memories/{id}"),
+                    )?
+                    .json(&serde_json::json!({ "content": content })),
+            )
+            .await
+    }
+
+    /// Delete one governed memory record.
+    pub async fn delete_memory(&self, id: &str) -> Result<Value> {
+        self.0
+            .json(self.0.request(
+                reqwest::Method::DELETE,
+                &format!("/api/admin/memories/{id}"),
+            )?)
+            .await
+    }
+
+    /// Create a UAR-owned knowledge base.
+    pub async fn create_knowledge_base(&self, request: &Value) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::POST, "/api/uar/knowledge-bases/")?
+                    .json(request),
+            )
+            .await
+    }
+
+    /// Delete a UAR-owned knowledge base and its governed documents.
+    pub async fn delete_knowledge_base(&self, id: &str) -> Result<()> {
+        self.0
+            .no_content(self.0.request(
+                reqwest::Method::DELETE,
+                &format!("/api/uar/knowledge-bases/{id}"),
+            )?)
+            .await
+    }
+}
+
+/// Agent/resource discovery and scoped conversation-policy operations.
+pub struct ControlPlaneApi<'a>(&'a Client);
+impl ControlPlaneApi<'_> {
+    /// Runtime agents, including the protected orchestrator/default agents.
+    pub async fn agents(&self) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::GET, "/api/uar/discovery/agents")?,
+            )
+            .await
+    }
+
+    /// Enabled skill definitions available to policy resolution.
+    pub async fn skills(&self) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::GET, "/api/uar/discovery/skills")?,
+            )
+            .await
+    }
+
+    /// MCP servers, MCP tools, and built-in tools.
+    pub async fn tools(&self) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::GET, "/api/uar/discovery/tools")?,
+            )
+            .await
+    }
+
+    /// Knowledge bases owned by UAR.
+    pub async fn knowledge_bases(&self) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::GET, "/api/uar/knowledge-bases")?,
+            )
+            .await
+    }
+
+    /// Load a conversation policy. Missing policy resolves to JSON null.
+    pub async fn conversation_policy(&self, conversation_id: &str) -> Result<Value> {
+        let response = self
+            .0
+            .request(
+                reqwest::Method::GET,
+                &format!("/api/uar/conversations/{conversation_id}/policy"),
+            )?
+            .send()
+            .await?;
+        if response.status() == reqwest::StatusCode::NOT_FOUND {
+            return Ok(Value::Null);
+        }
+        decode(response).await
+    }
+
+    /// Persist conversation-scoped intent in UAR storage.
+    pub async fn save_conversation_policy(
+        &self,
+        conversation_id: &str,
+        policy: &Value,
+    ) -> Result<Value> {
+        self.0
+            .json(
+                self.0
+                    .request(
+                        reqwest::Method::PUT,
+                        &format!("/api/uar/conversations/{conversation_id}/policy"),
+                    )?
+                    .json(policy),
+            )
+            .await
+    }
+
+    /// Delete conversation policy and return to inherited policy.
+    pub async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()> {
+        self.0
+            .no_content(self.0.request(
+                reqwest::Method::DELETE,
+                &format!("/api/uar/conversations/{conversation_id}/policy"),
+            )?)
+            .await
+    }
+
+    /// Resolve the immutable effective policy used for the next turn.
+    pub async fn effective_config(&self, conversation_id: &str) -> Result<Value> {
+        self.0
+            .json(self.0.request(
+                reqwest::Method::GET,
+                &format!("/api/uar/sessions/{conversation_id}/effective-config"),
+            )?)
+            .await
     }
 }
 
@@ -273,6 +592,91 @@ impl ChatApi<'_> {
     }
 }
 
+/// Provider catalog and configuration operations.
+pub struct ProvidersApi<'a>(&'a Client);
+impl ProvidersApi<'_> {
+    /// Return the complete compile-time provider/model catalog with metadata.
+    pub async fn catalog(&self) -> Result<Value> {
+        self.0
+            .json(self.0.request(reqwest::Method::GET, "/api/models")?)
+            .await
+    }
+
+    /// Return all configured providers (credentials are never returned).
+    pub async fn list(&self) -> Result<ProvidersResponse> {
+        self.0
+            .json(self.0.request(reqwest::Method::GET, "/api/uar/providers")?)
+            .await
+    }
+
+    /// Return only enabled provider/model routes.
+    pub async fn list_enabled(&self) -> Result<ProvidersResponse> {
+        self.0
+            .json(
+                self.0
+                    .request(reqwest::Method::GET, "/api/uar/providers/enabled")?,
+            )
+            .await
+    }
+
+    /// Create or update a provider configuration in UAR-owned storage.
+    pub async fn save(&self, config: SaveProviderConfig) -> Result<ProviderView> {
+        let exists = self
+            .list()
+            .await?
+            .providers
+            .iter()
+            .any(|item| item.id == config.id);
+        let path = if exists {
+            format!("/api/uar/providers/{}", config.id)
+        } else {
+            "/api/uar/providers".to_string()
+        };
+        let method = if exists {
+            reqwest::Method::PUT
+        } else {
+            reqwest::Method::POST
+        };
+        self.0
+            .json(self.0.request(method, &path)?.json(&config))
+            .await
+    }
+
+    /// Delete a configured provider.
+    pub async fn delete(&self, id: &str) -> Result<()> {
+        self.0
+            .no_content(
+                self.0
+                    .request(reqwest::Method::DELETE, &format!("/api/uar/providers/{id}"))?,
+            )
+            .await
+    }
+
+    /// Perform a minimal live request using the configured provider.
+    pub async fn test(&self, id: &str, model: Option<&str>) -> Result<ProviderTestResponse> {
+        self.0
+            .json(
+                self.0
+                    .request(
+                        reqwest::Method::POST,
+                        &format!("/api/uar/providers/{id}/test"),
+                    )?
+                    .json(&serde_json::json!({ "model": model })),
+            )
+            .await
+    }
+
+    /// Select the provider as UAR's default route.
+    pub async fn set_default(&self, id: &str) -> Result<()> {
+        self.0
+            .no_content(self.0.request(
+                reqwest::Method::POST,
+                &format!("/api/uar/providers/{id}/default"),
+            )?)
+            .await
+    }
+}
+
 /// Agent-run lifecycle operations.
 pub struct RunsApi<'a>(&'a Client);
 impl RunsApi<'_> {
@@ -308,6 +712,15 @@ impl RunsApi<'_> {
             )?)
             .await
     }
+    /// Cancel the current run associated with a stable conversation session.
+    pub async fn cancel_session(&self, session_id: &str) -> Result<CancelRunResponse> {
+        self.0
+            .json(self.0.request(
+                reqwest::Method::POST,
+                &format!("/api/uar/sessions/{session_id}/cancel"),
+            )?)
+            .await
+    }
     /// Submit a response to an A2UI input artifact and let the paused run continue.
     pub async fn submit_artifact_response(
         &self,
@@ -320,6 +733,23 @@ impl RunsApi<'_> {
                     .request(
                         reqwest::Method::POST,
                         &format!("/api/uar/runs/{run_id}/artifact-response"),
+                    )?
+                    .json(&request),
+            )
+            .await
+    }
+    /// Submit an action from a rendered A2UI surface and continue the agent.
+    pub async fn submit_a2ui_action(
+        &self,
+        run_id: &str,
+        request: A2uiActionRequest,
+    ) -> Result<A2uiActionAck> {
+        self.0
+            .json(
+                self.0
+                    .request(
+                        reqwest::Method::POST,
+                        &format!("/api/uar/runs/{run_id}/a2ui/actions"),
                     )?
                     .json(&request),
             )

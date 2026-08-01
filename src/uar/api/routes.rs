@@ -21,6 +21,10 @@ pub fn build_router() -> Router<Arc<RunManager>> {
         .route("/runs/{id}/stream", get(stream_run))
         .route("/runs/{run_id}/tool-approval", post(api_tool_approval))
         .route("/runs/{run_id}/cancel", post(api_cancel_run))
+        .route(
+            "/sessions/{session_id}/cancel",
+            post(api_cancel_session_run),
+        )
         .route("/runs/{run_id}/checkpoints", get(list_checkpoints))
         .route("/runs/{run_id}/resume", post(resume_run))
         .route(
@@ -146,6 +150,17 @@ async fn api_cancel_run(
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
     let cancelled = manager.cancel_run(&run_id).await;
+    Json(serde_json::json!({ "cancelled": cancelled }))
+}
+
+/// POST /api/uar/sessions/{session_id}/cancel
+///
+/// Cancel the active run projected through a stable conversation session id.
+async fn api_cancel_session_run(
+    State(manager): State<Arc<RunManager>>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    let cancelled = manager.cancel_session_run(&session_id).await;
     Json(serde_json::json!({ "cancelled": cancelled }))
 }
 

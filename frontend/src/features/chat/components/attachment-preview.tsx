@@ -53,11 +53,11 @@ const AttachmentChip: FC<ChipProps> = ({ attachment, onRemove }) => {
         <div
             title={isError ? (errorMessage ?? "Upload failed. Try again or use a smaller file.") : file.name}
             className={[
-                "relative flex items-center gap-2 rounded-xl border bg-background/90 p-1.5 shadow-sm transition-all",
+                "relative flex items-center gap-2 rounded-xl p-1.5 transition-colors",
                 "h-14 min-w-[120px] max-w-[180px]",
                 isError
-                    ? "border-destructive/60 bg-destructive/5"
-                    : "border-border",
+                    ? "bg-destructive/10"
+                    : "bg-muted",
             ].join(" ")}
         >
             {/* Thumbnail / icon */}
@@ -100,8 +100,8 @@ const AttachmentChip: FC<ChipProps> = ({ attachment, onRemove }) => {
             {!isUploading && (
                 <span
                     className={[
-                        "absolute bottom-1 right-1 h-2 w-2 rounded-full border border-background",
-                        isError ? "bg-destructive" : "bg-emerald-500",
+                        "absolute bottom-1 right-1 h-2 w-2 rounded-full",
+                        isError ? "bg-destructive" : "bg-success",
                     ].join(" ")}
                 />
             )}
@@ -155,14 +155,14 @@ const ImageThumbnail: FC<ImgProps> = ({ file, uploaded }) => {
 
 const DocIcon: FC<{ mimeType: string }> = ({ mimeType }) => {
     if (mimeType === "application/pdf")
-        return <FileText className="h-5 w-5 text-red-500" />;
+        return <FileText className="h-5 w-5 text-destructive" />;
     if (
         mimeType === "application/msword" ||
         mimeType.includes("wordprocessingml")
     )
-        return <FileText className="h-5 w-5 text-blue-500" />;
+        return <FileText className="h-5 w-5 text-cyan" />;
     if (mimeType.startsWith("text/"))
-        return <FileText className="h-5 w-5 text-gray-400" />;
+        return <FileText className="h-5 w-5 text-fg-faint" />;
     return <File className="h-5 w-5" />;
 };
 

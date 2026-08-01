@@ -1,12 +1,12 @@
 # Provider catalog snapshot
 
 - File: `provider_catalog.json`
-- Snapshot date: 2026-07-11
-- SHA-256: `03e5d5fa05c8cbdcd5e200943481b73073b25a18401015dfb520e2409171f7ae`
-- Entries: 269 providers
+- Snapshot date: 2026-07-24
+- SHA-256: `4b613e87de884e5741aaa281fc64e16c8fe280bc6c769fb6d2f89d1b3ba5afe1`
+- Entries: 297 providers
 - Sources:
   - `https://models.dev/api.json`
-  - liter-llm provider schemas, commit `d8223de3e07615c899b2658309d15d01c242940b`
+  - liter-llm provider schemas, commit `c37e98411ff154fb2c256856428c15d7340b1325`
 
 The file is the reviewed merged output previously produced by the UAR catalog
 builder. Release builds copy it verbatim and perform no network access. Refresh

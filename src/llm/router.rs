@@ -9,7 +9,10 @@ use std::sync::Arc;
 use serde::Deserialize;
 
 use super::benchmarks::{self, BenchmarkDimension};
-use super::catalog::{CapabilityFilter, ModelCatalog, ModelInfo, ProviderInfo};
+use super::catalog::{
+    CapabilityFilter, Modalities, ModelCapabilities, ModelCatalog, ModelInfo, ModelLimits,
+    ProviderInfo,
+};
 use super::registry::ProviderRegistry;
 
 /// Routes requests to the most appropriate model based on capability requirements.
@@ -43,22 +46,79 @@ impl ModelRouter {
             max_cost_per_1m_input: requirements.max_cost_per_1m_input,
         };
 
-        let candidates: Vec<(&ProviderInfo, &ModelInfo)> =
-            self.catalog.models_with_capabilities(&filter);
+        // Runtime registrations are first-class catalog candidates. This is
+        // essential for embedded/local models, which intentionally do not live
+        // in Liter-LLM's compile-time remote-provider catalog.
+        let mut candidates = Vec::<(ProviderInfo, ModelInfo)>::new();
+        for provider in self.registry.list().await {
+            if !provider.enabled || !self.registry.health().is_available(&provider.id).await {
+                continue;
+            }
+            for model in provider.models.iter().filter(|model| model.enabled) {
+                let model = ModelInfo {
+                    id: model.id.clone(),
+                    name: model
+                        .display_name
+                        .clone()
+                        .unwrap_or_else(|| model.id.clone()),
+                    capabilities: ModelCapabilities {
+                        tool_call: model.supports_tools,
+                        reasoning: model.supports_reasoning,
+                        structured_output: model.supports_structured_output,
+                        attachment: model.supports_vision,
+                        temperature: true,
+                        streaming: model.supports_streaming,
+                    },
+                    modalities: Modalities {
+                        input: if model.supports_vision {
+                            vec!["text".to_string(), "image".to_string()]
+                        } else {
+                            vec!["text".to_string()]
+                        },
+                        output: vec!["text".to_string()],
+                    },
+                    limits: ModelLimits {
+                        context_window: model.context_window.map_or(0, u64::from),
+                        max_output: model.max_output_tokens.map_or(0, u64::from),
+                    },
+                    open_weights: provider.api_key.is_none() && provider.base_url.is_empty(),
+                    ..ModelInfo::default()
+                };
+                if filter.matches(&model.capabilities, &model.limits) {
+                    candidates.push((
+                        ProviderInfo {
+                            id: provider.id.clone(),
+                            display_name: provider.display_name.clone(),
+                            base_url: (!provider.base_url.is_empty())
+                                .then(|| provider.base_url.clone()),
+                            models: vec![model.clone()],
+                            source: Some("runtime-registry".to_string()),
+                            ..ProviderInfo::default()
+                        },
+                        model,
+                    ));
+                }
+            }
+        }
 
-        // Filter to only configured, healthy providers — check each async.
-        // CH-03: a provider in an active failover cooldown is excluded from
-        // selection entirely (not just deprioritized), so a struggling
-        // provider doesn't keep winning ties against healthy alternatives.
-        let mut configured_candidates = Vec::new();
-        for (provider, model) in candidates {
+        // Add compile-time catalog entries that are configured but were not
+        // already represented by their runtime registration metadata.
+        let catalog_candidates = self.catalog.models_with_capabilities(&filter);
+        for (provider, model) in catalog_candidates {
+            if candidates
+                .iter()
+                .any(|(candidate_provider, candidate_model)| {
+                    candidate_provider.id == provider.id && candidate_model.id == model.id
+                })
+            {
+                continue;
+            }
             if self.registry.is_configured(&provider.id).await
                 && self.registry.health().is_available(&provider.id).await
             {
-                configured_candidates.push((provider, model));
+                candidates.push((provider.clone(), model.clone()));
             }
         }
-        let mut candidates = configured_candidates;
 
         // Apply cost filter
         if let Some(max_cost) = requirements.max_cost_per_1m_input {
@@ -149,7 +209,7 @@ fn compare_candidates(
 #[cfg(test)]
 mod compare_candidates_tests {
     use super::*;
-    use crate::llm::catalog::{ModelCost, ModelLimits};
+    use crate::llm::catalog::ModelCost;
 
     fn provider(id: &str) -> ProviderInfo {
         ProviderInfo {

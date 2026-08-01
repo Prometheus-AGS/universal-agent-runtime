@@ -454,7 +454,21 @@ impl Orchestrator {
         messages: Vec<Message>,
     ) -> anyhow::Result<impl Stream<Item = NormalizedEvent> + Send + 'static> {
         let request_id = Uuid::new_v4().to_string();
-        let tools = self.mcp.openai_tools_json();
+        let mut tools = self.mcp.openai_tools_json();
+        // Native skills execute in the same governed tool loop as MCP tools,
+        // so they must also be declared to the model. Previously they were
+        // executable only if a model somehow guessed their names, leaving
+        // registered tools such as `a2ui_render` impossible to call.
+        for native_tool in self.native_skills.openai_tools_json().await {
+            let native_name = native_tool["function"]["name"].as_str();
+            tools.retain(|tool| tool["function"]["name"].as_str() != native_name);
+            tools.push(native_tool);
+        }
+        tools.sort_by(|left, right| {
+            left["function"]["name"]
+                .as_str()
+                .cmp(&right["function"]["name"].as_str())
+        });
 
         tracing::info!(
             request_id = %request_id,
@@ -1306,6 +1320,25 @@ impl Orchestrator {
 mod tests {
     use super::*;
     use crate::llm::mock_driver::MockLlmDriver;
+    use crate::uar::runtime::native_skill::NativeSkill;
+
+    struct RenderSkill;
+
+    #[async_trait::async_trait]
+    impl NativeSkill for RenderSkill {
+        fn name(&self) -> &str {
+            "a2ui_render"
+        }
+        fn description(&self) -> &str {
+            "Render an A2UI surface"
+        }
+        fn parameters_schema(&self) -> serde_json::Value {
+            serde_json::json!({"type":"object","properties":{"messages":{"type":"array"}}})
+        }
+        async fn execute(&self, _: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+            Ok(serde_json::json!({"ok": true}))
+        }
+    }
 
     #[tokio::test]
     async fn from_driver_uses_host_supplied_driver() {
@@ -1329,5 +1362,27 @@ mod tests {
 
         assert_eq!(response, "Hello from mock!");
         assert_eq!(driver.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn declares_registered_native_skills_to_the_model() {
+        let driver = Arc::new(MockLlmDriver::echo());
+        let native_skills = Arc::new(NativeSkillRegistry::new());
+        native_skills.register(RenderSkill).await;
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            native_skills,
+            driver.clone(),
+        );
+
+        let stream = orchestrator.chat("render a card").await.unwrap();
+        futures::pin_mut!(stream);
+        while stream.next().await.is_some() {}
+
+        let requests = driver.requests();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(requests[0].tools.len(), 1);
+        assert_eq!(requests[0].tools[0]["function"]["name"], "a2ui_render");
     }
 }

@@ -7,9 +7,22 @@
 
 use serde::Deserialize;
 
+use super::realtime::A2uiWireKind;
+
 pub(crate) const PROFILE: &str = "uar.a2ui/1";
 pub(crate) const VERSION: &str = "v0.9.1";
+pub(crate) const COMPAT_VERSION: &str = "v0.9";
 pub(crate) const CATALOG_ID: &str = "urn:uar:a2ui:catalog:1";
+pub(crate) const BASIC_CATALOG_ID: &str =
+    "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
+
+#[derive(Debug)]
+pub(crate) struct ValidatedA2uiMessage {
+    pub surface_id: String,
+    pub kind: A2uiWireKind,
+    pub payload: serde_json::Value,
+    pub raw: serde_json::Value,
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -24,7 +37,8 @@ pub(crate) enum A2uiMessage {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct CreateMessage {
     pub version: String,
-    pub profile: String,
+    #[serde(default)]
+    pub profile: Option<String>,
     pub create_surface: CreateSurface,
 }
 
@@ -39,7 +53,8 @@ pub(crate) struct CreateSurface {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct ComponentsMessage {
     pub version: String,
-    pub profile: String,
+    #[serde(default)]
+    pub profile: Option<String>,
     pub update_components: UpdateComponents,
 }
 
@@ -183,7 +198,8 @@ pub(crate) struct DataPath {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct DataMessage {
     pub version: String,
-    pub profile: String,
+    #[serde(default)]
+    pub profile: Option<String>,
     pub update_data_model: UpdateDataModel,
 }
 
@@ -199,7 +215,8 @@ pub(crate) struct UpdateDataModel {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct DeleteMessage {
     pub version: String,
-    pub profile: String,
+    #[serde(default)]
+    pub profile: Option<String>,
     pub delete_surface: DeleteSurface,
 }
 
@@ -209,7 +226,7 @@ pub(crate) struct DeleteSurface {
     pub surface_id: String,
 }
 
-pub(crate) fn parse_message(value: serde_json::Value) -> Result<A2uiMessage, String> {
+pub(crate) fn parse_message(value: serde_json::Value) -> Result<ValidatedA2uiMessage, String> {
     fn contains_executable(value: &serde_json::Value) -> bool {
         match value {
             serde_json::Value::String(value) => {
@@ -228,25 +245,28 @@ pub(crate) fn parse_message(value: serde_json::Value) -> Result<A2uiMessage, Str
     if contains_executable(&value) {
         return Err("executable HTML or JavaScript is not allowed in A2UI data".to_string());
     }
-    let message: A2uiMessage = serde_json::from_value(value).map_err(|error| error.to_string())?;
+    let message: A2uiMessage =
+        serde_json::from_value(value.clone()).map_err(|error| error.to_string())?;
     let (version, profile, catalog) = match &message {
         A2uiMessage::Create(value) => (
             value.version.as_str(),
-            value.profile.as_str(),
+            value.profile.as_deref(),
             Some(value.create_surface.catalog_id.as_str()),
         ),
-        A2uiMessage::Components(value) => (value.version.as_str(), value.profile.as_str(), None),
-        A2uiMessage::Data(value) => (value.version.as_str(), value.profile.as_str(), None),
-        A2uiMessage::Delete(value) => (value.version.as_str(), value.profile.as_str(), None),
+        A2uiMessage::Components(value) => (value.version.as_str(), value.profile.as_deref(), None),
+        A2uiMessage::Data(value) => (value.version.as_str(), value.profile.as_deref(), None),
+        A2uiMessage::Delete(value) => (value.version.as_str(), value.profile.as_deref(), None),
     };
-    if version != VERSION || profile != PROFILE {
+    if !matches!(version, VERSION | COMPAT_VERSION) || profile.is_some_and(|value| value != PROFILE)
+    {
         return Err("unsupported A2UI version or profile".to_string());
     }
-    if catalog.is_some_and(|value| value != CATALOG_ID) {
+    if catalog.is_some_and(|value| value != CATALOG_ID && value != BASIC_CATALOG_ID) {
         return Err("unapproved A2UI catalog".to_string());
     }
     if let A2uiMessage::Components(value) = &message {
         let mut ids = std::collections::HashSet::new();
+        let mut has_root = false;
         for component in &value.update_components.components {
             let id = match component {
                 Component::Text(value) => &value.id,
@@ -261,9 +281,47 @@ pub(crate) fn parse_message(value: serde_json::Value) -> Result<A2uiMessage, Str
             if !ids.insert(id) {
                 return Err("A2UI component IDs must be unique within an update".to_string());
             }
+            has_root |= id == "root";
+        }
+        if !has_root {
+            return Err(
+                "A2UI updateComponents must contain exactly one component with id `root`"
+                    .to_string(),
+            );
         }
     }
-    Ok(message)
+    let (surface_id, kind, payload_key) = match &message {
+        A2uiMessage::Create(value) => (
+            value.create_surface.surface_id.clone(),
+            A2uiWireKind::CreateSurface,
+            "createSurface",
+        ),
+        A2uiMessage::Components(value) => (
+            value.update_components.surface_id.clone(),
+            A2uiWireKind::UpdateComponents,
+            "updateComponents",
+        ),
+        A2uiMessage::Data(value) => (
+            value.update_data_model.surface_id.clone(),
+            A2uiWireKind::UpdateDataModel,
+            "updateDataModel",
+        ),
+        A2uiMessage::Delete(value) => (
+            value.delete_surface.surface_id.clone(),
+            A2uiWireKind::DeleteSurface,
+            "deleteSurface",
+        ),
+    };
+    let payload = value
+        .get(payload_key)
+        .cloned()
+        .ok_or_else(|| format!("missing {payload_key} payload"))?;
+    Ok(ValidatedA2uiMessage {
+        surface_id,
+        kind,
+        payload,
+        raw: value,
+    })
 }
 
 #[cfg(test)]
@@ -310,5 +368,19 @@ mod tests {
             ]}
         });
         assert!(parse_message(duplicate).is_err());
+    }
+
+    #[test]
+    fn rejects_component_update_without_required_root() {
+        let message = serde_json::json!({
+            "version": "v0.9.1", "profile": "uar.a2ui/1",
+            "updateComponents": { "surfaceId": "surface-1", "components": [
+                { "id": "card", "component": "Text", "text": "Ready" }
+            ]}
+        });
+        assert_eq!(
+            parse_message(message).unwrap_err(),
+            "A2UI updateComponents must contain exactly one component with id `root`"
+        );
     }
 }

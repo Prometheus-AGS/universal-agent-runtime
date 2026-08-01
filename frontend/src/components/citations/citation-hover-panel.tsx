@@ -22,7 +22,7 @@ export const CitationBadge: FC<{ citation: RagCitationMarker }> = ({ citation })
       render={
         <button
           type="button"
-          className="inline-flex size-4 items-center justify-center rounded-full bg-muted align-super font-mono text-[10px] font-medium text-muted-foreground hover:bg-primary hover:text-primary-foreground"
+          className="inline-flex size-4 items-center justify-center rounded-full bg-ember-soft align-super font-mono text-[10px] font-medium text-foreground hover:bg-primary hover:text-primary-foreground"
         />
       }
     >
@@ -57,7 +57,7 @@ export const MessageCitations: FC<{ threadId: string | null; messageId: string }
 
   return (
     <div className="ml-1 flex flex-wrap items-center gap-1 pt-1" aria-label="Sources">
-      <span className="text-[10px] text-muted-foreground">Sources:</span>
+      <span className="eyebrow">Sources</span>
       {citations.map((c) => (
         <CitationBadge key={`${c.chunkId}-${c.marker}`} citation={c} />
       ))}

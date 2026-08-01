@@ -157,11 +157,11 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
 
   const resolved = status === "complete" || submitted;
   return (
-    <section className="my-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-3" aria-label="A2UI input">
-      <div className="mb-3 flex items-center gap-2 text-xs text-primary">
-        <PanelTopOpenIcon size={14} aria-hidden="true" />
-        <span className="font-medium">A2UI input</span>
-        <span className="ml-auto font-mono text-muted-foreground">{artifactType}</span>
+    <section className="my-2 rounded-xl bg-card px-3 py-3" aria-label="A2UI input">
+      <div className="mb-3 flex items-center gap-2">
+        <PanelTopOpenIcon size={14} className="text-primary" aria-hidden="true" />
+        <span className="eyebrow">A2UI input</span>
+        <span className="ml-auto font-mono text-[10px] text-fg-faint">{artifactType}</span>
       </div>
       {surface ? (
         <A2uiSurfaceRenderer
@@ -177,7 +177,7 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
       )}
       {submitting ? <Loader2Icon size={14} className="mt-2 animate-spin text-muted-foreground" aria-hidden="true" /> : null}
       {resolved ? <CheckCircle2Icon size={14} className="mt-2 text-success" aria-hidden="true" /> : null}
-      {result ? <pre className="mt-2 overflow-x-auto rounded-md bg-background p-2 text-xs text-muted-foreground">{result}</pre> : null}
+      {result ? <pre className="mt-2 overflow-x-auto rounded-md bg-surface p-2 text-xs text-fg-sub">{result}</pre> : null}
     </section>
   );
 };
@@ -196,11 +196,11 @@ export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({ artifactType, titl
     { id: "root", component: "Column", children: ["title", "content"] },
   ];
   return (
-    <section className="my-2 rounded-lg border border-border bg-muted/20 px-3 py-3" aria-label="A2UI display artifact">
-      <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-        <PanelTopOpenIcon size={14} aria-hidden="true" />
-        <span className="font-medium">Artifact</span>
-        <span className="ml-auto font-mono">{artifactType}{language ? ` · ${language}` : ""}</span>
+    <section className="my-2 rounded-xl bg-card px-3 py-3" aria-label="A2UI display artifact">
+      <div className="mb-3 flex items-center gap-2">
+        <PanelTopOpenIcon size={14} className="text-primary" aria-hidden="true" />
+        <span className="eyebrow">Artifact</span>
+        <span className="ml-auto font-mono text-[10px] text-fg-faint">{artifactType}{language ? ` · ${language}` : ""}</span>
       </div>
       <A2uiSurfaceRenderer components={components} data={{}} onDataChange={() => undefined} onAction={() => undefined} />
     </section>

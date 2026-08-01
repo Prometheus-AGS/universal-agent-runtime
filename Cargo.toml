@@ -29,28 +29,49 @@ path = "src/lib.rs"
 [[bin]]
 name = "universal-agent-runtime"
 path = "src/main.rs"
+required-features = ["server"]
 
 [[bin]]
 name = "uar-sidecar"
 path = "src/bin/uar-sidecar.rs"
+required-features = ["server"]
+
+# Cargo AUTO-DISCOVERS src/bin/*.rs. Without these declarations both binaries
+# build under every profile including `embedded-mobile`, where they have no
+# business existing: stub-llm opens a TcpListener and test_db_setup needs
+# PostgresProvider. Declaring them with required-features is what excludes
+# them — an auto-discovered bin cannot be gated any other way.
+[[bin]]
+name = "stub-llm"
+path = "src/bin/stub-llm.rs"
+required-features = ["server"]
+
+[[bin]]
+name = "test_db_setup"
+path = "src/bin/test_db_setup.rs"
+required-features = ["server"]
 
 # Cookbook examples live in docs/cookbook/runtime/ but are built as examples of
 # the runtime crate so they share the workspace build cache.
 [[example]]
 name = "cookbook_01_start_server"
 path = "docs/cookbook/runtime/src/bin/01_start_server.rs"
+required-features = ["server"]
 
 [[example]]
 name = "cookbook_02_load_config"
 path = "docs/cookbook/runtime/src/bin/02_load_config.rs"
+required-features = ["server"]
 
 [[example]]
 name = "cookbook_03_mcp_tool_call"
 path = "docs/cookbook/runtime/src/bin/03_mcp_tool_call.rs"
+required-features = ["server"]
 
 [[example]]
 name = "cookbook_04_streaming_sse"
 path = "docs/cookbook/runtime/src/bin/04_streaming_sse.rs"
+required-features = ["server"]
 
 # Gherkin/BDD suite (tests/bdd.rs) drives its own main() via the Cucumber
 # runner instead of libtest's harness, so it needs harness = false — Cargo's
@@ -111,9 +132,28 @@ tonic-prost-build = "0.14"
 default = ["minimal"]
 
 ## Supported release products. Capability features remain additive.
-minimal = ["surreal-backend"]
+minimal = ["server", "surreal-backend"]
 server-full = ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"]
 desktop-full = ["server-full", "tauri"]
+
+## Transport-free library profile for Android/iOS and other embedding hosts.
+## Persistence and inference are supplied through public traits, so this profile
+## does not select a built-in database or remote LLM provider.
+embedded-mobile = ["host-persistence"]
+
+## A host supplies `Arc<dyn PersistenceLayer>` to `EmbeddedRuntimeBuilder`.
+## This satisfies the persistence invariant without selecting a built-in store.
+host-persistence = []
+
+## HTTP/SSE/A2A endpoint surface and server composition root. Embedded hosts
+## call the same runtime services directly and do not enable these transports.
+server = [
+  "dep:axum",
+  "dep:axum-extra",
+  "dep:tower",
+  "dep:tower-http",
+  "dep:utoipa",
+]
 
 ## SurrealDB-only persistence + compiler storage + A2A registry. SurrealKV-backed,
 ## fully embedded — no external services required. Required for UAR to function
@@ -176,8 +216,8 @@ vault = ["dep:vaultrs"]
 
 [dependencies]
 # Web framework
-axum = { version = "0.8", features = ["multipart"] }
-tower-http = { version = "0.7.0", features = [
+axum = { version = "0.8", optional = true, features = ["multipart"] }
+tower-http = { version = "0.7.0", optional = true, features = [
   "fs",
   "cors",
   "trace",
@@ -220,7 +260,7 @@ wasmtime = { version = "46", optional = true }
 wasmtime-wasi = { version = "46", optional = true }
 
 # HTTP client
-reqwest = { version = "0.12", features = [
+reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "stream",
   "rustls-tls-native-roots",
@@ -289,11 +329,11 @@ anyhow = "1.0.100"
 # Optional error reporting for UarError, gated behind the `sentry` feature
 # (default off). Actual DSN/project configuration is operator work.
 sentry = { version = "0.48", optional = true, default-features = false, features = ["backtrace", "contexts", "panic", "reqwest", "rustls"] }
-axum-extra = { version = "0.12.3", features = [
+axum-extra = { version = "0.12.3", optional = true, features = [
   "typed-routing",
   "typed-header",
 ] }
-tower = "0.5.2"
+tower = { version = "0.5.2", optional = true }
 tokio-stream = { version = "0.1.17", features = ["net", "sync"] }
 serde_norway = "0.9.42"
 # Real local embedding inference (BGE-small-en-v1.5) — fix-embeddings-fastembed.
@@ -358,7 +398,7 @@ vaultrs = { version = "0.8", optional = true }
 ## 3.1.5 dedicated security-patch release per explicit user direction).
 ## surreal-memory's own pin (surrealdb = "3.0.5", a caret range) is
 ## satisfied by 3.2.0 without needing a change in that repo.
-surrealdb = { version = "=3.2.1", optional = true, features = ["kv-surrealkv"] }
+surrealdb = { version = "=3.2.3", optional = true, features = ["kv-surrealkv"] }
 jsonschema = { version = "0.48.1", default-features = false }
 governor = { version = "0.10.4", features = ["std", "jitter", "quanta"] }
 nonzero_ext = "0.3.0"
@@ -434,7 +474,7 @@ liter-llm = { path = "vendor/git/liter-llm/crates/liter-llm", features = ["full"
 secrecy = { version = "0.10", features = ["serde"] }
 
 # OpenAPI / Swagger documentation
-utoipa = { version = "5", features = ["axum_extras"] }
+utoipa = { version = "5", optional = true, features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "9", optional = true, features = ["axum", "vendored"] }
 
 # Leptos SSR (minimal templating)

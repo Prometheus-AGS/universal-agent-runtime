@@ -157,6 +157,37 @@ impl PersistenceLayer for SurrealDbProvider {
         from_db_opt(session)
     }
 
+    async fn save_conversation_policy(
+        &self,
+        record: &crate::uar::domain::policy::ConversationPolicyRecord,
+    ) -> Result<()> {
+        let payload = to_db_value(record)?;
+        let _: Option<surrealdb::types::Value> = self
+            .db
+            .upsert(("conversation_policies", record.conversation_id.clone()))
+            .content(payload)
+            .await?;
+        Ok(())
+    }
+
+    async fn load_conversation_policy(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Option<crate::uar::domain::policy::ConversationPolicyRecord>> {
+        let record = self
+            .fetch_one("conversation_policies", conversation_id)
+            .await?;
+        from_db_opt(record)
+    }
+
+    async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()> {
+        let _: Option<surrealdb::types::Value> = self
+            .db
+            .delete(("conversation_policies", conversation_id))
+            .await?;
+        Ok(())
+    }
+
     // Skill Management
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()> {
         // We need to store embedding alongside skill.

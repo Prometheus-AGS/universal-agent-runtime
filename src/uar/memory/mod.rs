@@ -40,6 +40,7 @@
 pub mod auto_capture;
 pub mod background;
 pub mod context_builder;
+#[cfg(feature = "server")]
 pub mod mcp_server;
 pub mod scopes;
 pub mod service;
