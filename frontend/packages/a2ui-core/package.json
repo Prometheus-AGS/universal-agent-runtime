@@ -40,7 +40,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@a2ui/web_core": "0.10.4"
+    "@a2ui/web_core": "0.10.5"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
