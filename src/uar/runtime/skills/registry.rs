@@ -46,25 +46,52 @@ impl SkillRegistry {
         }
     }
 
-    /// Register a skill in the in-memory index.
+    /// Register a skill in the in-memory index, and persist it when a database
+    /// is configured.
+    ///
+    /// # Persistence is NOT gated on the embedder
+    ///
+    /// This previously read `if let (Some(db), Some(vm)) = …`, so a host with a
+    /// database but no [`VectorMatcher`] persisted **nothing** — silently, with
+    /// no error, because the tuple pattern simply did not match. Measured on the
+    /// embedded path: 3 skills discovered, **0 rows written**.
+    ///
+    /// That is the embedded case, which has no embedding service by definition,
+    /// so the platform R1 exists for was exactly the one that never reached the
+    /// database. Any consumer reading skills from persistence — the admin UI,
+    /// the REST API, a mobile host — saw an empty catalogue from a process that
+    /// looked healthy.
+    ///
+    /// An embedding is an enrichment for vector search. Failing to compute one
+    /// is not a reason to discard the skill, so the two concerns are now
+    /// independent: persist whenever there is a database, and attach an
+    /// embedding when one can be produced.
     pub async fn register(&mut self, skill: Skill) {
-        // Persist + embed if backends available
-        if let (Some(db), Some(vm)) = (&self.persistence, &self.vector_matcher) {
-            let text = format!("{}: {}", skill.title, skill.description);
-            match vm.embed_batch(vec![text]).await {
-                Ok(embeddings) => {
-                    if let Some(emb) = embeddings.first()
-                        && let Err(e) = db.save_skill(&skill, emb).await
-                    {
-                        error!("Failed to persist skill {}: {:?}", skill.skill_id, e);
+        if let Some(db) = &self.persistence {
+            // Best-effort embedding. `None` (no matcher) and `Err` (matcher
+            // failed) both degrade to persisting without one, rather than to
+            // dropping the skill.
+            let embedding: Vec<f32> = match &self.vector_matcher {
+                Some(vm) => {
+                    let text = format!("{}: {}", skill.title, skill.description);
+                    match vm.embed_batch(vec![text]).await {
+                        Ok(embeddings) => embeddings.into_iter().next().unwrap_or_default(),
+                        Err(e) => {
+                            error!(
+                                "Failed to generate embedding for skill {}: {:?} — \
+                                 persisting without one; vector search will not match it \
+                                 until it is re-embedded",
+                                skill.skill_id, e
+                            );
+                            Vec::new()
+                        }
                     }
                 }
-                Err(e) => {
-                    error!(
-                        "Failed to generate embedding for skill {}: {:?}",
-                        skill.skill_id, e
-                    );
-                }
+                None => Vec::new(),
+            };
+
+            if let Err(e) = db.save_skill(&skill, &embedding).await {
+                error!("Failed to persist skill {}: {:?}", skill.skill_id, e);
             }
         }
 
@@ -77,11 +104,19 @@ impl SkillRegistry {
     /// addition to duplicating storage writes, doing so makes the UAR listener
     /// depend on optional ONNX initialization. Embeddings are created only by
     /// explicit mutations or when an embedding-backed operation is requested.
+    ///
+    /// There is a second reason this must not route through [`Self::register`]:
+    /// `save_skill` upserts `embedding = EXCLUDED.embedding`, so a host with no
+    /// [`VectorMatcher`] would overwrite a good stored embedding with an empty
+    /// one on **every restart** — silently degrading vector search on a
+    /// database that was previously fine. Load and save are separate
+    /// operations, not one operation that happens to be idempotent when an
+    /// embedder is configured.
     pub fn register_loaded(&mut self, skill: Skill) {
         self.skills.insert(skill.skill_id.clone(), skill);
     }
 
-    /// Bulk register skills.
+    /// Bulk register skills, persisting each one.
     pub async fn register_all(&mut self, skills: Vec<Skill>) {
         for skill in skills {
             self.register(skill).await;

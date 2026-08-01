@@ -153,13 +153,29 @@ impl SkillService {
     }
 
     /// Register a batch of `Skill { kind = Manifest, origin = Builtin }` into
-    /// the in-memory registry. Used at startup by the builtin-loader; these
-    /// skills are not persisted via storage providers.
+    /// the registry, persisting each one when a database is configured.
+    ///
+    /// Used at startup by the builtin-loader. Builtins are **not** written back
+    /// through the storage providers in [`Self::initialize`] — that would make
+    /// the pack a provider — but they DO reach the persistence layer, which is
+    /// what the admin UI, the REST API, and embedded hosts read.
+    ///
+    /// This doc comment previously claimed "these skills are not persisted via
+    /// storage providers", which read as *not persisted at all* and matched the
+    /// behaviour: nothing reached the database. See
+    /// [`super::registry::SkillRegistry::register`] for the defect.
     pub async fn register_builtins(&self, skills: Vec<crate::uar::domain::skills::Skill>) {
         let mut registry = self.registry.write().await;
         let count = skills.len();
         for s in skills {
-            registry.register_loaded(s);
+            // `register`, NOT `register_loaded`. Builtins are ENTERING the
+            // system from the pack on disk — they were not read out of the
+            // database, so there is nothing to "re-hydrate" and skipping the
+            // write is what left the embedded catalogue empty (R1).
+            //
+            // `register_loaded` is for the opposite direction: skills read FROM
+            // a provider, which must not be written straight back.
+            registry.register(s).await;
         }
         info!(count, "registered builtin skills");
     }
