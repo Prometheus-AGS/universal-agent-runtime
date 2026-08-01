@@ -1,16 +1,17 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource-variable/geist";
-// Side-effect import: initializes the theme store so the user's stored theme
-// (uar-theme localStorage) is applied at boot. Without this the module never
-// loads and index.html's class="dark" always wins (found by the
-// uar-ui-verify-gates screenshot matrix: light theme was unreachable).
-import "@/stores/theme-store";
 import "./index.css";
 import { App } from "./App";
 import { DbProvider } from "@/lib/db-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { bootstrapEntityGraph } from "@/entities/bootstrap";
+import { bootstrapTheme } from "@/lib/theme-boot";
+
+// Apply the user's stored theme (uar-theme localStorage) before first paint.
+// Without this, index.html's class="dark" always wins and light theme is
+// unreachable (found by the uar-ui-verify-gates screenshot matrix).
+bootstrapTheme();
 
 // Bootstrap the entity graph engine before rendering. The settings
 // change-bus is now driven directly by the SSE adapter in
