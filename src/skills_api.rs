@@ -48,6 +48,9 @@ use crate::uar::runtime::skills::SkillService;
 #[derive(Clone)]
 pub struct SkillsApi {
     inner: Arc<SkillService>,
+    /// `None` = defer to `UAR_REGISTER_GENERATED_SKILLS`; `Some` = explicit
+    /// override. Never defaults to enabled — see [`SkillsApi::install_generated`].
+    register_generated: Option<bool>,
 }
 
 impl std::fmt::Debug for SkillsApi {
@@ -63,7 +66,22 @@ impl SkillsApi {
     /// [`crate::embedded::EmbeddedRuntime::skills`], which guarantees the
     /// service was built and initialised correctly.
     pub(crate) fn new(inner: Arc<SkillService>) -> Self {
-        Self { inner }
+        Self {
+            inner,
+            register_generated: None,
+        }
+    }
+
+    /// Build a facade directly from a service.
+    ///
+    /// Production hosts go through [`crate::embedded::EmbeddedRuntime::skills`],
+    /// which guarantees the service was built and initialised correctly. This
+    /// exists so an **integration test** — which is a separate crate and cannot
+    /// reach `pub(crate)` — can exercise the facade without standing up a whole
+    /// runtime (and, notably, without supplying an LLM driver it has no use for).
+    #[must_use]
+    pub fn for_test(inner: Arc<SkillService>) -> Self {
+        Self::new(inner)
     }
 
     /// Every skill known to the runtime, enabled or not.
@@ -95,15 +113,73 @@ impl SkillsApi {
     /// Install a skill, registering it in the database when persistence is
     /// configured.
     ///
-    /// This is the path R4 calls out for *dynamically created* skills: a host
-    /// that generates a skill at runtime can persist it here and have it appear
-    /// in the admin UI and REST API like any other.
+    /// This is the explicit path: the caller asked for an install, so it
+    /// happens. For skills a tool *generates* on the fly, see
+    /// [`Self::install_generated`], which is gated.
     ///
     /// # Errors
     ///
     /// Propagates validation and storage failures from the underlying service.
     pub async fn install(&self, skill: Skill) -> anyhow::Result<Skill> {
         self.inner.create_skill(skill).await
+    }
+
+    /// Register a skill that was **generated at runtime** — only when the host
+    /// has opted in.
+    ///
+    /// # Why this is separate from [`Self::install`], and off by default
+    ///
+    /// R4 says dynamic skill creation should register in the database
+    /// **optionally**. "Optionally" has to live in the default, not just in the
+    /// documentation: a generator that writes to the database by default
+    /// silently grows a user's skill catalogue with artifacts they never asked
+    /// to keep, and a `skills` table that fills up on its own is far harder to
+    /// diagnose than one that stays empty.
+    ///
+    /// So the default is **off**. Opt in with either:
+    ///
+    /// - `UAR_REGISTER_GENERATED_SKILLS=true` (or `1`), or
+    /// - [`Self::with_generated_registration`] for programmatic control, which
+    ///   an embedded host can set without touching process environment.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(None)` when registration is **not** enabled — this is a normal,
+    /// successful outcome, not a failure. `Ok(Some(skill))` when it is.
+    ///
+    /// # Errors
+    ///
+    /// Propagates validation and storage failures, but only on the enabled
+    /// path — the disabled path cannot fail because it does nothing.
+    pub async fn install_generated(&self, skill: Skill) -> anyhow::Result<Option<Skill>> {
+        if !self.generated_registration_enabled() {
+            return Ok(None);
+        }
+        self.inner.create_skill(skill).await.map(Some)
+    }
+
+    /// Is registration of generated skills currently enabled?
+    ///
+    /// Explicit override wins; otherwise the environment decides; otherwise
+    /// **false**.
+    #[must_use]
+    pub fn generated_registration_enabled(&self) -> bool {
+        if let Some(explicit) = self.register_generated {
+            return explicit;
+        }
+        std::env::var("UAR_REGISTER_GENERATED_SKILLS")
+            .map(|v| v.eq_ignore_ascii_case("true") || v == "1")
+            .unwrap_or(false)
+    }
+
+    /// Set generated-skill registration explicitly, overriding the environment.
+    ///
+    /// For embedded hosts that decide this per-session rather than per-process
+    /// — a mobile app cannot usefully set an env var on itself.
+    #[must_use]
+    pub fn with_generated_registration(mut self, enabled: bool) -> Self {
+        self.register_generated = Some(enabled);
+        self
     }
 
     /// Enable or disable a skill. Returns `false` when no such skill exists.

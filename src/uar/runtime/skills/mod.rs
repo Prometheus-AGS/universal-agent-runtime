@@ -12,6 +12,7 @@ pub mod provenance;
 pub mod registry;
 pub mod service;
 pub mod storage;
+pub mod update_check;
 #[cfg(feature = "wasm-runtime")]
 pub mod wasm_runtime;
 pub mod watcher;

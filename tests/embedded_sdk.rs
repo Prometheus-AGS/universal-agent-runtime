@@ -261,3 +261,89 @@ async fn an_embedder_can_use_the_skill_api_with_a_real_llm_driver() {
         matches.iter().map(|s| &s.skill_id).collect::<Vec<_>>()
     );
 }
+
+// ---------------------------------------------------------------------------
+// R4: dynamic skill registration is OPTIONAL — and the default encodes that
+// ---------------------------------------------------------------------------
+
+/// WITHOUT the opt-in, a generated skill writes **nothing**.
+///
+/// This is the assertion that matters. "Optionally" has to live in the default,
+/// not just the documentation: a generator that registers by default silently
+/// grows a user's skill catalogue with artifacts they never asked to keep, and
+/// a `skills` table that fills on its own is far harder to diagnose than one
+/// that stays empty.
+///
+/// Asserted against the **database**, not the return value — a function can
+/// return `None` while still having written a row.
+#[cfg(feature = "in-memory-backend")]
+#[tokio::test]
+async fn without_the_opt_in_a_generated_skill_is_not_registered() {
+    use universal_agent_runtime::uar::persistence::PersistenceLayer;
+    use universal_agent_runtime::uar::persistence::providers::memory::InMemoryProvider;
+    use universal_agent_runtime::uar::runtime::skills::service::SkillService;
+
+    let db: Arc<dyn PersistenceLayer> = Arc::new(InMemoryProvider::new());
+    let service = Arc::new(SkillService::new(Some(Arc::clone(&db)), None));
+
+    // Explicit `false` rather than relying on an unset env var: tests share a
+    // process, so another test setting UAR_REGISTER_GENERATED_SKILLS would
+    // otherwise make this pass or fail depending on execution order.
+    let skills = universal_agent_runtime::SkillsApi::for_test(Arc::clone(&service))
+        .with_generated_registration(false);
+
+    assert!(
+        !skills.generated_registration_enabled(),
+        "the default must be OFF; 'optionally' is a property of the default, \
+         not of the docs"
+    );
+
+    let outcome = skills
+        .install_generated(skill("gen-not-registered", "Generated"))
+        .await
+        .expect("the disabled path does nothing, so it cannot fail");
+
+    assert!(
+        outcome.is_none(),
+        "a disabled registration must report that it did not register"
+    );
+
+    let rows = db.list_skills().await.expect("list skills");
+    assert!(
+        rows.is_empty(),
+        "the database must hold NO rows when registration is off; found {:?}. \
+         Returning None while still writing would be the worst outcome — the \
+         caller believes nothing happened.",
+        rows.iter().map(|s| &s.skill_id).collect::<Vec<_>>()
+    );
+}
+
+/// WITH the opt-in, the generated skill is registered and durable.
+#[cfg(feature = "in-memory-backend")]
+#[tokio::test]
+async fn with_the_opt_in_a_generated_skill_is_registered() {
+    use universal_agent_runtime::uar::persistence::PersistenceLayer;
+    use universal_agent_runtime::uar::persistence::providers::memory::InMemoryProvider;
+    use universal_agent_runtime::uar::runtime::skills::service::SkillService;
+
+    let db: Arc<dyn PersistenceLayer> = Arc::new(InMemoryProvider::new());
+    let service = Arc::new(SkillService::new(Some(Arc::clone(&db)), None));
+
+    let skills = universal_agent_runtime::SkillsApi::for_test(Arc::clone(&service))
+        .with_generated_registration(true);
+
+    assert!(skills.generated_registration_enabled());
+
+    let registered = skills
+        .install_generated(skill("gen-registered", "Generated"))
+        .await
+        .expect("registration must succeed when enabled")
+        .expect("an enabled registration must return the skill");
+    assert_eq!(registered.skill_id, "gen-registered");
+
+    let rows = db.list_skills().await.expect("list skills");
+    assert!(
+        rows.iter().any(|s| s.skill_id == "gen-registered"),
+        "an opted-in registration must reach the database, not just the registry"
+    );
+}

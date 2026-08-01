@@ -33,6 +33,8 @@ pub fn build_router() -> Router<Arc<SkillService>> {
         // Which pack version is loaded. See `provenance` module for why this
         // exists: UAR ran 359 commits stale and nothing could report it.
         .route("/provenance", get(get_provenance))
+        .route("/update-check", get(check_for_update))
+        .route("/update", post(initiate_update))
         .route("/refresh", post(refresh_skills))
         // Matching configuration
         .route("/import", post(import_skill_from_disk))
@@ -646,4 +648,87 @@ async fn remove_agent_skill(
 ) -> StatusCode {
     service.remove_skill_from_agent(&agent_id, &skill_id).await;
     StatusCode::NO_CONTENT
+}
+
+// ---------------------------------------------------------------------------
+// R5: update check and update initiation
+// ---------------------------------------------------------------------------
+
+/// `GET /update-check` — is a newer skill pack available?
+///
+/// Reports `up-to-date`, `behind`, or `unknown`. **A network failure is
+/// `unknown`, never `up-to-date`** — see
+/// [`update_check`](crate::uar::runtime::skills::update_check) for why that
+/// distinction is load-bearing rather than pedantic.
+///
+/// Always returns `200`: "we could not tell you" is a successful answer to the
+/// question asked, and surfacing it as a 5xx would push callers toward retry
+/// loops for a condition that is often permanent (offline device, rate limit).
+async fn check_for_update() -> impl IntoResponse {
+    use crate::uar::runtime::skills::update_check;
+
+    let root = crate::uar::runtime::skills::builtin_loader::builtin_dir();
+    let pack_root = root.parent().unwrap_or(&root).to_path_buf();
+    let local = read_provenance(&pack_root);
+    let repo = update_check::default_repo();
+
+    let status = update_check::check_for_update(&local, &repo).await;
+    (StatusCode::OK, Json(serde_json::json!({
+        "repo": repo,
+        "local_commit": local.commit,
+        "result": status,
+    })))
+}
+
+/// `POST /update` — initiate a pack update on desktop/server.
+///
+/// # Why this reports rather than executes, for now
+///
+/// Updating the pack means moving a git submodule the *host process is running
+/// from*. Doing that under a live server risks the runtime reading a
+/// half-updated tree, and the safe sequence (fetch → verify → swap → reload)
+/// needs a restart boundary this endpoint does not own.
+///
+/// Rather than ship a command that half-works, this returns the exact steps and
+/// the current status. **An endpoint that claims to have updated when it has
+/// not is the same failure class as a check that reports `up-to-date` offline.**
+///
+/// Mobile hosts cannot run this at all — see `change-uhe-014`.
+async fn initiate_update() -> impl IntoResponse {
+    use crate::uar::runtime::skills::update_check;
+
+    let root = crate::uar::runtime::skills::builtin_loader::builtin_dir();
+    let pack_root = root.parent().unwrap_or(&root).to_path_buf();
+    let local = read_provenance(&pack_root);
+    let repo = update_check::default_repo();
+    let status = update_check::check_for_update(&local, &repo).await;
+
+    // Refuse to hand out update instructions we know are unnecessary or
+    // unfounded. Acting on an `unknown` is how a user ends up "updating" to the
+    // version they already have.
+    let (code, actionable) = match &status {
+        update_check::UpdateStatus::Behind { .. } => (StatusCode::OK, true),
+        update_check::UpdateStatus::UpToDate { .. } => (StatusCode::OK, false),
+        update_check::UpdateStatus::Unknown { .. } => (StatusCode::SERVICE_UNAVAILABLE, false),
+    };
+
+    let steps: Vec<String> = if actionable {
+        vec![
+            format!("git -C {} fetch origin", pack_root.display()),
+            format!("git -C {} checkout origin/main", pack_root.display()),
+            "restart the runtime so builtins reload from the new tree".to_string(),
+        ]
+    } else {
+        Vec::new()
+    };
+
+    (code, Json(serde_json::json!({
+        "repo": repo,
+        "result": status,
+        "actionable": actionable,
+        "pack_root": pack_root.display().to_string(),
+        "steps": steps,
+        "note": "This endpoint reports the update path; it does not swap the \
+                 tree under a live process. See change-uhe-013.",
+    })))
 }
