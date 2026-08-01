@@ -244,6 +244,26 @@ rmcp = { version = "=2.2.0", features = [
   "transport-streamable-http-server-session",
 ] }
 
+# FLOOR for a transitive dependency of rmcp, declared here because rmcp cannot
+# be fixed from this repo.
+#
+# rmcp 2.2.0 declares `sse-stream = "^0.2"`, which is too loose DOWNWARD: it
+# permits 0.2.0-0.2.3, none of which have `SseStream::from_bytes_stream` — a
+# function rmcp calls. Any fresh resolution therefore picks a version that
+# cannot compile, and the failure surfaces inside rmcp with no hint that the
+# cause is a version range in someone else's manifest.
+#
+# This is a FLOOR, not a pin: "0.2.4" means ^0.2.4 (>=0.2.4, <0.3.0), so 0.2.5+
+# remain available. Verified by building against 0.2.5 — it compiles. What the
+# floor excludes is exactly the broken range, which is all it needs to do; it
+# does not defend against some future 0.2.x removing the API again.
+#
+# The committed Cargo.lock is NOT sufficient on its own. A lockfile records a
+# resolution; it does not constrain the next one. tools/surreal-memory-server
+# demonstrates the difference: it has a committed lockfile and still fails
+# `rm Cargo.lock && cargo check` for this exact reason.
+sse-stream = "0.2.4"
+
 # Memory system — surreal-memory library backed by embedded SurrealDB (SurrealKV).
 #
 # The optional palace graph extension is intentionally excluded: UAR has no
