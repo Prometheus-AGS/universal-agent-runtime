@@ -1,0 +1,55 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-opus-5",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment incorrectly says ADR infrastructure is absent even though the packet file tree shows the ADR directory exists.",
+      "evidence": "Assessment quotes: \"`docs/adr/` does not exist\" and \"No ADR infrastructure \u2014 `docs/adr/` does not exist\". Packet file_tree includes `./docs/adr`.",
+      "suggested_fix": "Revise the finding to distinguish between an existing ADR directory and any missing ADR template/format/content; do not instruct Plan to create a directory that already exists."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment misses several Wave 3 chat goals, so a downstream plan could omit required work.",
+      "evidence": "Goals require: \"regenerate-as-variant and branch-from-message; ContentBlock exhaustiveness with compile-time enforcement; lane labeling; first-run recovery replacing the blocking No-Model gate; dedicated error surfaces\". The assessment's Wave 3 status only cites: \"`runId` threaded but not a store-keying dimension; no drafts, no FTS, no pin/archive/export; ContentBlock contract is split\" and contains no gap analysis for regenerate-as-variant, branch-from-message, lane labeling, first-run recovery, or dedicated error surfaces.",
+      "suggested_fix": "Add explicit current-state findings for each omitted Wave 3 feature, with file-level evidence or mark each UNKNOWN if blocked by the workspace failure."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment does not actually assess the Wave 5 React boundary gate or responsive sweep goals.",
+      "evidence": "Goals require: \"close the React boundary gate to an empty production allowlist\" and \"responsive sweep at 320/768/1024/1440 in both themes\". The assessment's Wave 5 entry says only: \"Cannot begin \u2014 build does not run (H1); ~10% coverage; no axe/keyboard/responsive evidence\", without identifying the current boundary allowlist, gate location, or current responsive-test coverage by breakpoint/theme.",
+      "suggested_fix": "Add a Wave 5 gap section that locates the React boundary gate/allowlist and inventories existing responsive coverage at the specified breakpoints and themes, or marks each as UNKNOWN with the blocker."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment asserts a standing 80% coverage requirement that is not present in the packet constraints or goals.",
+      "evidence": "Packet has `\"constraints\": null`; the goals do not state an 80% coverage threshold. The assessment nevertheless says: \"test coverage: MINIMAL \u2014 29 test files / 288 sources \u2248 10%, against an 80% standing requirement\" and \"Standing 80% coverage requirement: VIOLATED at ~10%\".",
+      "suggested_fix": "Either cite the specific project rule source included in the packet, or downgrade this to an observed low test-file ratio rather than a violated blocking requirement."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The assessment under-assesses Wave 4 by omitting the A2UI KnowMe retheming requirement.",
+      "evidence": "Goals require: \"A2UI KnowMe retheming and retirement of A2UI Testing from production nav\". The assessment mentions \"A2UI Testing retirement\" in H3 and Wave 4 status, but provides no current-state assessment for A2UI KnowMe retheming.",
+      "suggested_fix": "Add evidence for the current A2UI styling/theme surface and identify what must change for KnowMe retheming, separately from the production-nav retirement."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "claude-opus-5",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "Wave 3 library-upgrade requirements are only partially assessed, omitting recency grouping, running/failed/unread badges, and undo-delete.",
+      "evidence": "Goals require: \"library upgrade (PGlite FTS over titles+bodies, recency grouping, pin/archive/export, running/failed/unread badges, undo-delete)\". The assessment row only covers: \"Library FTS / pin / archive / export | MISSING | No FTS in `src/lib/db.ts`\".",
+      "suggested_fix": "Add separate gap analysis for recency grouping, running/failed/unread badge state/surfaces, and undo-delete, with current files or confirmed absence."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "Wave 5 screen-by-screen validation and video-proof evidence bundle requirements are not assessed.",
+      "evidence": "Goals require: \"execute screen-by-screen-validation across the 20-screen inventory with video-proof evidence bundles\". The assessment's Wave 5 discussion only states build/coverage are blocked, boundary gate has 1 violation, responsive coverage exists only at 1440, and accessibility is not started; it does not assess whether the 20-screen inventory exists, which screens are covered, or whether video-proof tooling/evidence bundle generation exists.",
+      "suggested_fix": "Assess the 20-screen inventory source, current validation coverage per screen, and the presence or absence of video capture/evidence bundle tooling."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The dev-flag gating part of the Wave 1 Console IA goal is identified as remaining work but not actually assessed.",
+      "evidence": "Goals require: \"Console IA regroup into 5 nav groups with dev-flag gating\". The assessment says: \"What remains from that goal is the dev-flag gating and the A2UI Testing retirement\", but provides no current-state evidence for existing flags, missing flags, affected nav items, or files beyond the already-done 5-group regroup.",
+      "suggested_fix": "Add a concrete assessment of nav dev-flag gating in `admin-shell.tsx` or related config, including which destinations should be gated and which currently are not."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 0,
+      "claim": "The claim that coverage is enforced by `.github/workflows/coverage.yml` is contradicted by the packet file tree.",
+      "evidence": "Assessment states: \"enforced in `.github/workflows/coverage.yml` via `--fail-under-lines 60` / vitest thresholds\". The provided file tree contains no `.github` directory or `.github/workflows/coverage.yml` entry.",
+      "suggested_fix": "Either cite an existing enforcement file from the provided tree or downgrade the CI-enforcement claim to unverified while retaining only the documented floor from existing docs."
+    }
+  ]
+}
