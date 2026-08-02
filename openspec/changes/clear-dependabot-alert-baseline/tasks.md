@@ -25,4 +25,4 @@
 - [x] 5.1 Update dependency-management documentation with the authoritative lockfile and remediation baseline
 - [x] 5.2 Validate OpenSpec artifacts and run focused frontend/Rust checks
 - [x] 5.3 Run consolidated npm, pnpm, Cargo, and supported-profile security validation
-- [ ] 5.4 Commit and push the remediation, then verify the live Dependabot API reports zero open alerts
+- [x] 5.4 Commit and push the remediation, then verify the live Dependabot API reports zero open alerts
