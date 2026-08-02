@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { AdminShell, type AdminSection } from "@/admin/admin-shell";
 import { AdminWelcome } from "@/admin/components/admin-welcome";
 import { ProvidersPage } from "@/admin/pages/providers-page";

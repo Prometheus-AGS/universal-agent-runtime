@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import type { ReactNode } from "react";
 import { KnowMeLogo, KnowMeWordmark } from "@/components/KnowMeLogo";
 import { ThemeToggle } from "@/components/ThemeToggle";

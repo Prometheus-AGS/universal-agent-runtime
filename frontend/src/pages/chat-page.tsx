@@ -9,7 +9,7 @@ import { AgentSelector, type AgentConfig } from "@/features/chat/agent-selector"
 import { AgentConfigContext } from "@/features/chat/agent-config-context";
 import { SessionConfigPanel } from "@/features/chat/session-config-panel";
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useThreadUi } from "@/hooks/use-thread-ui";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

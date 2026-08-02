@@ -63,8 +63,8 @@ jobs:
             --ignore RUSTSEC-2026-0195 `# same quick-xml copy as above` \
             --ignore RUSTSEC-2023-0071 `# rsa Marvin: accepted risk, patched=[] (no fix exists)`
 
-  npm-root-audit:
-    name: npm audit (root)
+  pnpm-root-audit:
+    name: pnpm audit (root)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -76,17 +76,23 @@ jobs:
         shell: bash
         run: bash scripts/update-submodules.sh
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.15.0
+
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
-      - name: npm audit
-        run: npm audit
+      - name: pnpm audit
+        run: pnpm audit
 
   frontend-audit:
     name: pnpm audit (frontend)
