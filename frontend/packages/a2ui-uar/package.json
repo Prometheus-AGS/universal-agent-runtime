@@ -23,20 +23,20 @@
     "perf": "vitest run --config vitest.perf.config.ts"
   },
   "dependencies": {
-    "@base-ui/react": "1.6.0",
+    "@base-ui/react": "1.7.0",
     "@prometheus-ags/a2ui-core": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "i18next": "26.3.6",
     "lucide-react": "^0.575.0",
     "motion": "12.42.2",
-    "react-aria-components": "^1.19.0",
+    "react-aria-components": "^1.20.0",
     "tailwind-merge": "^2.6.0",
     "zod": "^4.4.3"
   },
   "peerDependencies": {
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -46,16 +46,16 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.3",
+    "@vitejs/plugin-react": "^6.0.5",
     "axe-core": "4.12.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^17.7.0",
-    "happy-dom": "^20.9.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "globals": "^17.9.0",
+    "happy-dom": "^20.11.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.64.0",
+    "typescript-eslint": "^8.66.0",
     "vitest": "^4.1.10"
   }
 }
