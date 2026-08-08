@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "profile": "performance-playwright",
+  "command": "pnpm -C frontend budget:performance",
+  "inputDigest": {
+    "algorithm": "sha256",
+    "command": "shasum -a 256 frontend/playwright.performance.config.ts frontend/e2e/performance-budget.spec.ts frontend/performance-budgets.json static/.vite/manifest.json | shasum -a 256",
+    "sha256": "33e2f63a5a5644ee55a444702a5bb039763a4ae770d96a62936753d0972c9fca"
+  },
+  "attempts": [
+    {
+      "sequence": 1,
+      "observedAt": "2026-08-08T08:35:19Z",
+      "exitCode": 1,
+      "measurement": { "name": "coldThreadListFirstPaint", "observedMs": 1008.7999999970198, "limitMs": 1000, "verdict": "fail" },
+      "nativeReceiptRetained": false,
+      "retentionNote": "The Playwright reporter path was overwritten by the unchanged rerun; this exact measurement and failure were retained from the command output immediately after observation."
+    },
+    {
+      "sequence": 2,
+      "startedAt": "2026-08-08T08:35:32.333Z",
+      "exitCode": 0,
+      "measurement": { "name": "coldThreadListFirstPaint", "observedMs": 942.2000000029802, "limitMs": 1000, "verdict": "pass" },
+      "nativeReceipt": "performance-playwright.json",
+      "nativeReceiptSha256": "d294d58168ac19c360b9a8faea1578a546fb486e00b9a30fb530fc133293a48d"
+    }
+  ],
+  "retryPolicy": "One unchanged rerun was permitted to distinguish a sub-1% miss from sustained regression. Both results remain blocking evidence; no threshold change and no further retries are permitted for this closeout."
+}

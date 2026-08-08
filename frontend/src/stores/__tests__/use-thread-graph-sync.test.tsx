@@ -10,12 +10,12 @@
  */
 import { act, render } from "@testing-library/react";
 import { describe, expect, test, beforeEach, vi } from "vitest";
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@/platform/entities";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 import { useThreadGraphSync } from "@/stores/use-thread-graph-sync";
 
 // PGlite is not available in the happy-dom test env; stub the DB layer.
-vi.mock("@/lib/db", () => ({
+vi.mock("@/platform/pglite/client", () => ({
   getDbInstance: () => ({
     getThreads: async () => [],
     upsertThread: async () => undefined,

@@ -8,7 +8,7 @@
  * swallow updates without any compile-time signal.
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import type { ChangeSet } from "@prometheus-ags/prometheus-entity-management";
+import type { ChangeSet } from "@/platform/entities";
 
 import { __resetUarSseConnections, createUarSseAdapter } from "../uar-sse-adapter";
 

@@ -1,0 +1,288 @@
+{
+  "phase": "uar-uiux-full-migration-2026-08",
+  "generated_at": "2026-08-07T00:00:00Z",
+  "gaps_addressed": [
+    "component-primitive-layer",
+    "design-tokens-tailwind4",
+    "markdown-render-pipeline",
+    "run-and-run-event-persistence",
+    "entity-state-layer",
+    "chat-thread-primitives",
+    "flat2-mechanical-enforcement",
+    "run-trace-timeline-virtualization",
+    "command-palette",
+    "chart-block-rendering"
+  ],
+  "research_budget": {
+    "tiers_run": ["tier1", "tier2", "tier3"],
+    "tier4_run": false,
+    "notes": "Stack is specified by docs/ui/uar-frontend-migration-plan.md and operator decision D1 settled the only contested library choice, so no tier-4 stack comparison was required. Within query and time caps."
+  },
+  "build_required": [
+    {
+      "gap": "flat2-mechanical-enforcement",
+      "what": "ESLint no-restricted-syntax Flat 2.0 style gate plus unicorn/filename-case, wired alongside the existing scripts/check-frontend-boundaries.mjs harness.",
+      "why_not_adopt": "Plan §4.3 supplies the rule verbatim and the repo already proves the gate-harness pattern (root package.json:22). Importing a dependency would add surface for no benefit.",
+      "risk": "Gate must land with or before the codemod, or violations re-accumulate."
+    },
+    {
+      "gap": "run-and-run-event-persistence",
+      "what": "PGlite migrations for run and run_event tables plus delta-coalescing write policy.",
+      "why_not_adopt": "PGlite is already installed at latest; the gap is schema, not tooling.",
+      "risk": "Without coalescing TEXT_MESSAGE_CONTENT/REASONING_MESSAGE_CONTENT deltas, a long run writes tens of thousands of rows (plan §5.1)."
+    }
+  ],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "@base-ui/react",
+      "kind": "library",
+      "registry": "npm",
+      "repo_url": "https://github.com/mui/base-ui",
+      "verdict": "adopt",
+      "fit_for_gap": "component-primitive-layer",
+      "coverage_estimate": "high",
+      "license": "MIT",
+      "maintenance": "active; latest 1.7.0 published 2026-08-04; pinned here at 1.6.0",
+      "decision_rationale": "Operator decision D1 keeps Base UI, overriding the KnowMe standard §6.1/§6.3 which name Shadcn UI as the required owner for general controls. This is a RECORDED DIVERGENCE from the standard, not compliance with it. Base UI is technically adequate for Flat 2.0: it is unstyled, so no default border/shadow chrome arrives to be removed, and its data-attribute state model (data-checked, data-highlighted, data-popup-open) maps onto the standard §3.2 rule that state be a fill change. It is NOT established that Base UI is less total work than shadcn — shadcn copies editable source into the repo rather than shipping CSS as a dependency, so its stripping cost is a one-time edit of owned files. No effort comparison was performed.",
+      "evidence": [
+        { "tier": "tier1", "claim": "Already migrated in code: 0 @radix-ui imports in frontend/src, 34 files importing @base-ui/react." },
+        { "tier": "tier1", "claim": "OpenSpec base-ui-foundation is 24/24 complete; base-ui-composition-patterns 0/40, base-ui-icon-migration 0/28, base-ui-verification 0/33 remain." },
+        { "tier": "tier2", "claim": "Context7 /mui/base-ui/v1.6.0 handbook: 'Base UI components are unstyled and do not bundle CSS.'" },
+        { "tier": "tier3", "claim": "npm view @base-ui/react version -> 1.7.0; time.modified 2026-08-04." }
+      ],
+      "risks": [
+        "DIVERGENCE: KnowMe standard §6.1 and §6.3 (line 227) name Shadcn UI as required owner for general controls. D1 overrides this; the divergence must be recorded in the vendored standard's header, which currently claims §6.3 applies verbatim.",
+        "Goal 4 still names 'shadcn' and must be amended, or every downstream change reads as off-spec.",
+        "27 declared @radix-ui/* packages have no direct src imports, BUT cmdk, @assistant-ui/react, @assistant-ui/react-markdown and storybook depend on Radix transitively. A prune requires a dependency-graph check, not a declaration sweep.",
+        "Remaining base-ui-* work (0/40, 0/28, 0/33) becomes this phase's scope."
+      ]
+    },
+    {
+      "id": "cand-002",
+      "name": "tailwindcss + @tailwindcss/vite",
+      "kind": "library",
+      "registry": "npm",
+      "repo_url": "https://github.com/tailwindlabs/tailwindcss",
+      "verdict": "adopt",
+      "fit_for_gap": "design-tokens-tailwind4",
+      "coverage_estimate": "high",
+      "license": "MIT",
+      "maintenance": "active; 4.3.3 published, time.modified 2026-08-06; @tailwindcss/vite version-matched at 4.3.3",
+      "decision_rationale": "Plan §4.2 requires deleting tailwind.config.ts and postcss.config.js and moving tokens into @theme. Tailwind 4 compiles theme variables into real CSS custom properties on :root, which is the token model KnowMe standard §4.1 specifies (complete colors, not channel triplets). NOT a small migration: the hsl(var()) channel indirection appears 237 times across 12 files, not 15.",
+      "evidence": [
+        { "tier": "tier2", "claim": "Context7 /tailwindlabs/tailwindcss.com upgrade guide: vite.config.ts gains the @tailwindcss/vite plugin; @theme replaces the JS config; theme vars compile to :root custom properties." },
+        { "tier": "tier3", "claim": "npm view @tailwindcss/vite version -> 4.3.3, version-matched to tailwindcss 4.3.3." },
+        { "tier": "tier1", "claim": "Measured migration surface: 3 @apply directives (index.css:290,300,326), 121-line tailwind.config.ts, 429-line index.css, and 237 hsl(var()) occurrences across 12 files." }
+      ],
+      "risks": [
+        "237 hsl(var()) occurrences, ~175 of them inside the 13 admin pages (models-page 60, memory-page 56, cost-dashboard 31, skills-page 15, compiler-page 13). This materially raises the cost of the admin-page workstream.",
+        "The 3 @apply directives reference legacy shadcn token names (bg-background, ring-ring) that must be renamed to KnowMe token names.",
+        "index.css:9 records a deliberate operator decision of 2026-07-21 to keep the Tailwind 3 channel mechanism. This phase reverses it; the reversal must be explicit in the change record."
+      ]
+    },
+    {
+      "id": "cand-003",
+      "name": "rehype-sanitize",
+      "kind": "library",
+      "registry": "npm",
+      "repo_url": "https://github.com/rehypejs/rehype-sanitize",
+      "verdict": "adopt",
+      "fit_for_gap": "markdown-render-pipeline",
+      "coverage_estimate": "high",
+      "license": "MIT",
+      "maintenance": "active",
+      "decision_rationale": "HARD PREREQUISITE for rehype-raw under A-3. There is no current vulnerability: without rehype-raw, react-markdown escapes raw HTML by default, verified empirically for both renderer sites. But plan §7.2 deliberately ENABLES rehype-raw so agents can emit inline SVG, converting model output into a live trust boundary. rehype-sanitize must land in the SAME change as rehype-raw; splitting them ships a window in which agent output can inject script.",
+      "evidence": [
+        { "tier": "tier1", "claim": "Absent from package.json. Current renderer enhanced-markdown-text.tsx:71 passes only remarkPlugins={[remarkGfm]} with no rehype chain." },
+        { "tier": "tier1", "claim": "Second renderer admin/pages/skills-page.tsx:84 uses bare ReactMarkdown with remarkGfm only — same escaping property, also currently safe." },
+        { "tier": "tier2", "claim": "Plan §7.2 requires rehypeSanitize immediately after rehypeRaw on every path; sanitize schema is a single reviewed file with XSS fixtures." }
+      ],
+      "risks": [
+        "Must not be sequenced separately from rehype-raw.",
+        "Schema too strict breaks legitimate agent SVG; too loose reopens XSS. Requires unit tests with XSS fixtures.",
+        "components/ui/chart.tsx:96 uses dangerouslySetInnerHTML for CSS custom-property injection from developer-authored ChartConfig. Benign as configured; the invariant to enforce is that ChartConfig.color/.theme never accept model or user input."
+      ]
+    },
+    {
+      "id": "cand-004",
+      "name": "remark-math + rehype-katex + katex + remark-breaks + rehype-raw",
+      "kind": "library",
+      "registry": "npm",
+      "verdict": "adopt",
+      "fit_for_gap": "markdown-render-pipeline",
+      "coverage_estimate": "high",
+      "license": "MIT",
+      "maintenance": "active; all mainstream unified/remark ecosystem packages",
+      "decision_rationale": "Plan §7.2 fixes the exact plugin chain. All are absent today. KaTeX additionally requires its stylesheet and font loading strategy, which is not yet specified anywhere.",
+      "evidence": [
+        { "tier": "tier1", "claim": "Measured absent from package.json: remark-math, rehype-katex, katex, rehype-raw, dompurify. Only remark-gfm@^4.0.1 present." },
+        { "tier": "tier2", "claim": "Plan §7.2 specifies remarkChain = [remarkGfm, remarkBreaks, remarkMath] and rehypeChain = [rehypeRaw, [rehypeSanitize, schema], rehypeKatex]." }
+      ],
+      "risks": [
+        "KaTeX CSS and font loading strategy unspecified; naive import adds render-blocking CSS and font weight.",
+        "rehype-raw is the plugin that opens the trust boundary — see cand-003."
+      ]
+    },
+    {
+      "id": "cand-005",
+      "name": "mermaid + shiki",
+      "kind": "library",
+      "registry": "npm",
+      "verdict": "adopt",
+      "fit_for_gap": "markdown-render-pipeline",
+      "coverage_estimate": "medium",
+      "license": "MIT",
+      "maintenance": "active",
+      "decision_rationale": "Plan §7.1/§7.3 require one shared MermaidBlock (a ```mermaid fence and a mermaid artifact must render identically) and Shiki superseding highlight.js. Both must be lazy-loaded via import() and must never enter the initial chunk.",
+      "evidence": [
+        { "tier": "tier1", "claim": "Both absent from package.json. highlight.js is also not installed, so there is nothing to remove." },
+        { "tier": "tier1", "claim": "Build already emits a >1100 kB chunk warning BEFORE adding either library." },
+        { "tier": "tier2", "claim": "Plan §3.2 lists vendor-mermaid and vendor-shiki as separate manualChunks; §7.1 requires mermaid securityLevel 'strict' and finalize-only rendering." }
+      ],
+      "risks": [
+        "Bundle weight against goal 12's 250 KB gzip initial-JS budget, which is already at risk given the existing >1100 kB chunk warning.",
+        "Mermaid must never render mid-stream (partial fences fail to parse) — finalize-only per plan §7.4.",
+        "Every renderer needs an error boundary and source fallback (plan §7.1 rule 3)."
+      ]
+    },
+    {
+      "id": "cand-006",
+      "name": "@electric-sql/pglite",
+      "kind": "library",
+      "registry": "npm",
+      "repo_url": "https://github.com/electric-sql/pglite",
+      "verdict": "adopt",
+      "fit_for_gap": "run-and-run-event-persistence",
+      "coverage_estimate": "high",
+      "license": "Apache-2.0",
+      "maintenance": "active; installed version ^0.5.4 IS latest (time.modified 2026-07-02)",
+      "decision_rationale": "No dependency change required — already present at latest with the live extension available in node_modules. The gap is schema (no run or run_event table), not tooling. This is the critical path for the phase's headline feature: the run-trace bar, timeline, inspector, and replay all depend on a persisted append-only event record.",
+      "evidence": [
+        { "tier": "tier1", "claim": "Schema today is threads, messages, schema_migrations only; grep run_event returns 0." },
+        { "tier": "tier1", "claim": "Threads and messages ARE written incrementally (chat-message-store.ts, thread-registry-store.ts), so the incremental-persistence pattern is already proven in this codebase." },
+        { "tier": "tier3", "claim": "npm view @electric-sql/pglite version -> 0.5.4, matching the installed range." }
+      ],
+      "risks": [
+        "Plan §5.2 proposes deleting the hand-rolled outbox in favour of PEM's startLocalFirstGraph — unverified, see open question OQ-PEM-API.",
+        "Multi-tab ownership: standard §6.2 prefers a shared worker; not currently used."
+      ]
+    },
+    {
+      "id": "cand-007",
+      "name": "@prometheus-ags/prometheus-entity-management",
+      "kind": "library",
+      "registry": "workspace",
+      "verdict": "adopt",
+      "fit_for_gap": "entity-state-layer",
+      "coverage_estimate": "high",
+      "license": "proprietary/workspace",
+      "maintenance": "vendored submodule, resolved as workspace:*",
+      "decision_rationale": "Keep as-is. The plan's 'pin an exact next version' risk row assumes npm resolution; this repo vendors PEM as a pnpm workspace package, so drift is governed by the submodule pointer instead. Pinning to an npm 'next' tag would be a regression from the current setup. Required owner per standard §6.3.",
+      "evidence": [
+        { "tier": "tier1", "claim": "56 files already import it; package.json resolves it as workspace:*." },
+        { "tier": "tier2", "claim": "KnowMe standard §6.2: 'TanStack Query is not part of the KnowMe architecture'; PEM 3.x is the required entity/reactivity layer." }
+      ],
+      "risks": [
+        "OQ-PEM-API: createPGlitePersistenceAdapter, startLocalFirstGraph and registerEntityFromSql are named by plan §5.2 but unverified in the vendored version. Verify before any change depends on them."
+      ]
+    },
+    {
+      "id": "cand-008",
+      "name": "@tanstack/react-query",
+      "kind": "library",
+      "registry": "npm",
+      "verdict": "reject",
+      "fit_for_gap": "entity-state-layer",
+      "coverage_estimate": "none",
+      "decision_rationale": "Explicitly excluded by KnowMe standard §6.2. Already effectively dead in this repo — exactly one call site remains (the provider in App.tsx:2). Removal is trivial and unblocks goal 11.",
+      "evidence": [
+        { "tier": "tier1", "claim": "Declared at ^5.90.21; exactly 1 importing file (src/App.tsx)." },
+        { "tier": "tier2", "claim": "KnowMe standard §6.2 states plainly: 'TanStack Query is not part of the KnowMe architecture.'" }
+      ],
+      "risks": []
+    },
+    {
+      "id": "cand-009",
+      "name": "@assistant-ui/react",
+      "kind": "library",
+      "registry": "npm",
+      "verdict": "adopt",
+      "fit_for_gap": "chat-thread-primitives",
+      "coverage_estimate": "high",
+      "license": "MIT",
+      "maintenance": "active; 0.15.8 latest, pinned at 0.14.26",
+      "decision_rationale": "Required owner per standard §6.3 for thread, composer, attachments, message actions, streaming lifecycle and thread list — contractual, not preference. Defer the 0.14 to 0.15 bump to its own change: the imported surface is narrow so the bump is low-risk, but it is not a prerequisite for the rebuild and sequencing it separately keeps the diff readable.",
+      "evidence": [
+        { "tier": "tier1", "claim": "Only 4 files import it; imported symbols are useExternalStoreRuntime, AssistantRuntimeProvider, AppendMessage, ThreadMessageLike." },
+        { "tier": "tier1", "claim": "No file mixes @assistant-ui and @base-ui imports — the layers are cleanly separated today." },
+        { "tier": "tier3", "claim": "npm view @assistant-ui/react version -> 0.15.8; time.modified 2026-08-06." }
+      ],
+      "risks": [
+        "Standard §6.2 warns presence is not satisfaction: primitives must be mounted at the real interaction boundary. Verify actual mounting rather than dependency presence.",
+        "@assistant-ui/react depends on Radix transitively — relevant to the cand-001 prune."
+      ]
+    },
+    {
+      "id": "cand-010",
+      "name": "@tanstack/react-virtual",
+      "kind": "library",
+      "registry": "npm",
+      "repo_url": "https://github.com/TanStack/virtual",
+      "verdict": "reference",
+      "fit_for_gap": "run-trace-timeline-virtualization",
+      "coverage_estimate": "medium",
+      "license": "MIT",
+      "maintenance": "active",
+      "decision_rationale": "Plan §8.5 requires the run-trace timeline to virtualize past ~200 rows, and goal 12 sets a budget of a 500-event run rendering in <=100ms. Nothing virtualization-capable is installed. Marked REFERENCE rather than ADOPT because the choice was not researched to tier-2/3 depth in this stage and should be confirmed against the actual timeline component shape (variable row heights, nested tree) before adoption. Note @tanstack/react-table IS already installed, so the TanStack ecosystem is not new to the repo — but react-table is not a virtualizer.",
+      "evidence": [
+        { "tier": "tier1", "claim": "No virtualization library in package.json; @tanstack/react-table ^8.21.3 is present but does not provide row virtualization." },
+        { "tier": "tier2", "claim": "Plan §8.5 requires timeline virtualization past ~200 rows; goal 12 budgets a 500-event trace render at <=100ms." }
+      ],
+      "risks": [
+        "UNRESEARCHED AT DEPTH — this is a genuine gap in this analyze stage. The plan stage must not treat it as a settled adoption.",
+        "The trace timeline is hierarchical (plan §8.5 tree), which constrains virtualizer choice more than a flat list would."
+      ]
+    },
+    {
+      "id": "cand-011",
+      "name": "cmdk",
+      "kind": "library",
+      "registry": "npm",
+      "verdict": "reference",
+      "fit_for_gap": "command-palette",
+      "coverage_estimate": "medium",
+      "license": "MIT",
+      "maintenance": "active",
+      "decision_rationale": "Already installed and used; plan §6.1 and goal 9 require a command palette in the shell. Flagged REFERENCE rather than adopt because cmdk depends on Radix transitively, which interacts directly with the cand-001 prune and with D1's move to Base UI. Base UI is likely to have its own equivalent primitive; that comparison was not made in this stage.",
+      "evidence": [
+        { "tier": "tier1", "claim": "cmdk is present in package.json and depends on Radix transitively, so it survives any @radix-ui declaration prune." },
+        { "tier": "tier2", "claim": "Plan §6.1 lists command-palette.tsx in the app shell directory tree." }
+      ],
+      "risks": [
+        "Keeping cmdk keeps Radix in the bundle after D1 moved primitives to Base UI — a mixed-primitive shell.",
+        "Not compared against a Base UI equivalent. The plan stage should resolve this before building the shell."
+      ]
+    },
+    {
+      "id": "cand-012",
+      "name": "recharts",
+      "kind": "library",
+      "registry": "npm",
+      "verdict": "reference",
+      "fit_for_gap": "chart-block-rendering",
+      "coverage_estimate": "medium",
+      "license": "MIT",
+      "maintenance": "active; installed at ^3.10.1",
+      "decision_rationale": "Plan §8.3 requires a chart-block renderer. recharts is already installed and used in 2 files, so there is an incumbent — but no keep/replace verdict was reached in this stage. The KnowMe standard's design-quality expectations treat data visualisation as part of the design system, which may or may not be satisfiable by restyling recharts under Flat 2.0.",
+      "evidence": [
+        { "tier": "tier1", "claim": "recharts ^3.10.1 installed and imported by 2 files including components/ui/chart.tsx." },
+        { "tier": "tier2", "claim": "Plan §8.3 requires chart-block.tsx as a registered block renderer." }
+      ],
+      "risks": [
+        "UNRESEARCHED AT DEPTH — carried as an open item, not a decision.",
+        "components/ui/chart.tsx injects CSS custom properties via dangerouslySetInnerHTML; any chart decision must preserve the invariant that its config never accepts model input."
+      ]
+    }
+  ]
+}

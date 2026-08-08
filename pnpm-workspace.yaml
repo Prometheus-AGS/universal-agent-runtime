@@ -6,6 +6,7 @@ packages:
 
 overrides:
   esbuild: 0.28.1
+  vite: 8.1.4
   'js-yaml@>=4.0.0 <4.3.0': 4.3.0
   'valibot@<=1.4.1': 1.4.2
 

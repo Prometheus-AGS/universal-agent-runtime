@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "@chromatic-com/playwright";
 
 test.describe("Admin — Knowledge page", () => {
   test("knowledge page loads", async ({ page }) => {

@@ -1,0 +1,31 @@
+{
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "generated_at": "2026-08-08T08:12:00Z",
+  "variants": [
+    {
+      "name": "c-15-certification",
+      "file": ".refiner/artifacts/a11y-and-responsive-certification/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Accessibility, responsive, scope-integrity, and phase-gate evidence for C-15"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "The certified accessibility command passed a structural Storybook suppression gate with five rejecting syntax fixtures, then passed 16/16 serial Chromium tests across the required matrix, both-theme representative focus checks, and interaction checks.",
+      "The fail-closed Vitest and Storybook suite passed 69 files and 331 tests with no accessibility suppressions.",
+      "Default Playwright passed 42 tests with 3 explicit skips; dedicated real-server Playwright passed both provider-routing and knowledge-RAG tests.",
+      "Production bundle accounting passed at 217630 of 250000 gzip bytes; the retained final performance run passed all three budgets after one disclosed 1008.8ms cold-start variance sample.",
+      "Coverage improved from the 19.45% phase baseline to 33.68% lines but remains below the pre-existing 60% target.",
+      "Protected-path digest exactly matches the C-15 entry baseline, with a reproducible per-path manifest.",
+      "Every final test profile has a durable JSON receipt plus command, timestamp, exit-code, input-hash, and receipt-hash metadata."
+    ]
+  }
+}

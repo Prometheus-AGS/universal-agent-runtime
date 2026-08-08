@@ -4,7 +4,10 @@ Date: 2026-07-13
 
 ## Status
 
-Accepted
+**Superseded** by [ADR-0017](0017-relicense-runtime-to-mit.md) (2026-08-07), which
+relicensed the entire repository — runtime, SDKs, and tools — under `MIT` and removed
+the commercial dual-license and the CLA-lite clause. The record below is retained as
+the historical rationale and no longer describes the project's licensing.
 
 ## Context
 

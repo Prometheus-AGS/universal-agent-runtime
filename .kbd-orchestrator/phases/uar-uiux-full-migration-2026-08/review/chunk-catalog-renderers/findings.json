@@ -1,0 +1,79 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/stores/chat-message-store.ts",
+      "line": 311,
+      "claim": "updateToolCall only matches chunks of kind \"tool-call\", so the a2ui-input and a2ui-display chunks created in addToolCall for __a2ui_input__/__a2ui_display__ never receive their tool result or terminal status \u2014 a2ui-input stays \"awaiting\" forever and a2ui-display's payload.content stays undefined when the result arrives after the call.",
+      "evidence": "addToolCall pushes `{ ...base, kind: \"a2ui-input\", ..., status: \"awaiting\" }` and `{ ...base, kind: \"a2ui-display\", ..., payload: { ...toolCall.args, content: toolCall.result } }` (result is undefined at call time); updateToolCall was rewritten to `chunks.find((item) => item.kind === \"tool-call\" && item.toolCallId === toolCallId)` with no branch updating a2ui chunks. This breaks AC 4.4 (A2UI display/input renderers) and AC 6.3 (preserve live A2UI chat rendering).",
+      "suggested_fix": "In updateToolCall, also match `item.kind === \"a2ui-input\"` / `\"a2ui-display\"` by correlating id (e.g. requestId/toolCallId stored on the chunk) and merge result/status, or route a2ui result events through a dedicated store action that updates the a2ui chunks."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "line": 1087,
+      "claim": "RunEventPersistence.finish() is never awaited on the two primary AG-UI completion return paths or the in-stream run-error path, so persisted runs are left in a non-terminal state on the most common stream outcomes.",
+      "evidence": "The two completion branches (hunks @@ -1046,6 +1087,7 @@ and @@ -1077,49 +1119,56 @@) do `clearTimeout(...); store.finishStream(...); releaseRunPersistence(runPersistence); callbacks?.onComplete?.(); return;` with no `await runPersistence?.finish(\"finished\")`, and the error-frame branch (@@ -896,6 +936,7 @@) does `store.setStreamError(...); releaseRunPersistence(runPersistence); return;` with no finalizeRunPersistence(\"error\"). Only the [DONE], loop-exit, AbortError, and catch paths finalize the writer.",
+      "suggested_fix": "Call `await runPersistence?.finish(\"finished\")` before each completion `releaseRunPersistence(runPersistence)`, and `await finalizeRunPersistence(runPersistence, \"error\")` in the run-error frame branch before releasing."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/stores/chat-message-store.ts",
+      "line": 456,
+      "claim": "setMessageMeta's usage-chunk upsert overwrites the existing chunk's id and seq with a fresh chunkBase computed from the current chunks.length, mutating the chunk's durable identity and potentially colliding with another chunk's id/seq.",
+      "evidence": "`const usageChunk = { ...chunkBase(messages[idx], runId), kind: \"usage\" as const, ...meta.usage, ... }; if (existing?.kind === \"usage\") Object.assign(existing, usageChunk);` \u2014 chunkBase returns `id: \\`${message.id}:chunk:${seq}\\`` with seq = chunks.length at call time, which differs from the id assigned when the usage chunk was first pushed. AC 3.2 requires stable ids in the chunk projection.",
+      "suggested_fix": "For the existing case, merge only the usage payload fields (e.g. `Object.assign(existing, { ...meta.usage, model })`) and keep the original id/at/runId/seq."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/stores/chat-message-store.ts",
+      "line": 285,
+      "claim": "The memory-update chunk discards the memory key and operation from the tool args, hardcoding scope \"session\" and itemCount 1, so the renderer cannot show which key was mutated or whether it was an update vs delete \u2014 a regression from the removed MemoryUpdateBlock rendering.",
+      "evidence": "`const memoryKey = String(toolCall.args.key ?? \"\"); ... chunks.push({ ...base, kind: \"memory-update\", scope: \"session\", summary: value, itemCount: 1 });` \u2014 memoryKey and `toolCall.args.operation` are only written to the content block, never to the chunk the renderer consumes (ToolCallPart's `__memory_update__` branch that passed key/operation/value to MemoryUpdateBlock was deleted in enhanced-thread.tsx).",
+      "suggested_fix": "Include the operation and memory key on the memory-update chunk (or extend the chunk kind to carry them) so the renderer has parity with the previous MemoryUpdateBlock output."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/stores/chat-message-store.ts",
+      "line": 350,
+      "claim": "addCitation drops the citation URL from the persisted portable content block, so after a reload the citation chunk re-derived by toChunks at the PGlite boundary permanently loses the link.",
+      "evidence": "`message.content.push({ type: \"citation\", source: citation.source, quote: citation.content });` while the live chunk keeps `url: citation.url`. AC 2.3/3.2 make the portable block the storage source of truth for the chunk projection; fields not written there do not survive rehydration.",
+      "suggested_fix": "Persist `url` on the portable citation block (extend the shared citation variant if needed) so the reloaded projection matches the live chunk."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "line": 780,
+      "claim": "Every adapted AG-UI frame \u2014 including high-frequency token deltas \u2014 now performs an awaited PGlite write (runPersistence.ingest) on the SSE hot loop before text is appended to the message store, adding per-token database latency to the streaming render path.",
+      "evidence": "`if (adapted.eventRow) { await runPersistence.ingest(adapted.eventRow, adapted.phaseTimings); ingestAgUiEvent(durableRunId, adapted.eventRow); }` precedes the `agui.message.delta` switch branch that calls `store.appendTextDelta`; the removed code explicitly excluded high-frequency events (`if (!isHighFrequencyAguiEvent(event))`) from this mirroring, and that guard plus its import were deleted.",
+      "suggested_fix": "Make persistence fire-and-forget with backpressure handling (queue + flush), or batch/skip durable writes for high-frequency delta frames so token rendering is not gated on IndexedDB/PGlite latency."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/admin/admin-shell.tsx",
+      "line": 279,
+      "claim": "The admin content area's <main> landmark was replaced with a plain <div>, removing the page's primary landmark and regressing screen-reader navigation.",
+      "evidence": "`-      <main className=\"flex flex-1 flex-col overflow-hidden min-w-0\">` / `+      <div className=\"flex min-w-0 flex-1 flex-col overflow-hidden\">` with no role=\"main\" or replacement landmark added. AC 7.4 requires accessibility checks on the migrated surfaces.",
+      "suggested_fix": "Restore `<main>` (or add role=\"main\") on the admin content container."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/stores/chat-message-store.ts",
+      "line": 515,
+      "claim": "setStreamError writes the error artifact with a fixed id `${message.id}:error`, so a message that errors more than once (e.g. retried stream that fails again) produces duplicate artifact ids in content.",
+      "evidence": "`message.content.push({ type: \"artifact\", id: \\`${message.id}:error\\`, kind: \"application/vnd.uar.error+json\", ... });` \u2014 unlike the citation/context artifacts that suffix `message.content.length`, the error id is not uniquified.",
+      "suggested_fix": "Suffix the error artifact id with the content length or a counter, matching the pattern used for rag/context artifacts."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

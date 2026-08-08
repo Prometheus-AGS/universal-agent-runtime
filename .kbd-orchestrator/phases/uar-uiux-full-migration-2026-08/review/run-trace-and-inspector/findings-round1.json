@@ -1,0 +1,103 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/features/chat/ui/run-trace-timeline.tsx",
+      "line": 168,
+      "claim": "Tree keyboard navigation moves selection but never moves DOM focus, so focus stays on the stale row and every subsequent Arrow key press re-computes from that old row's index \u2014 selection can never advance more than one step and the roving tab stop is broken.",
+      "evidence": "handleKey's ArrowDown/ArrowUp/Home/End branches call only onSelectNode(target.id); TraceRow sets tabIndex={selected ? 0 : -1} but nothing focuses the newly selected row (the useEffect only calls scrollIntoView/virtualizer.scrollToIndex). Contrast run-trace-bar.tsx move() which explicitly calls items.current[next]?.focus(). This violates criterion 6.2 ('ARIA tree and roving tab stop, full tree keyboard handling').",
+      "suggested_fix": "After onSelectNode(target.id), focus the target row element (e.g. keep a rowElements map for all rows \u2014 not just the non-virtual path \u2014 and call rowElements.current.get(target.id)?.focus(), or focus in the scroll effect for the selected row)."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/chat/ui/run-trace-timeline.tsx",
+      "line": 219,
+      "claim": "The timeline scroll container's inline style={{ height: 256 }} overrides the flex-1 class, so the event tree is permanently pinned to 256px and can never grow within the min-h-[32rem] panel column.",
+      "evidence": "className=\"h-64 min-h-0 flex-1 overflow-auto ...\" combined with style={{ height: 256, minHeight: 0 }} \u2014 inline style wins over the utility classes, defeating the flexible layout required by criterion 6.5.",
+      "suggested_fix": "Remove the inline height and let flex-1/min-h-0 size the region, keeping only an explicit flex-basis or min-height if needed."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/chat/ui/run-inspector.tsx",
+      "line": 162,
+      "claim": "Checkpoint selection is a dead affordance: clicking a checkpoint only toggles aria-pressed; no checkpoint state/messages are rendered anywhere, and resumeLatestCheckpoint always resumes the latest checkpoint regardless of selectedCheckpointId.",
+      "evidence": "run-inspector.tsx checkpoint section renders only the list and a 'Resume latest checkpoint' button; run-trace-store.ts resumeLatestCheckpoint ignores state.selectedCheckpointId entirely and POSTs only artifact/input/session_id. Criterion 5.3 requires 'inert checkpoint inspection' \u2014 there is nothing to inspect.",
+      "suggested_fix": "Render the selected checkpoint's node_id/iteration/created_at (and optionally its state/messages as inert JSON) in the inspector, or remove the selectable buttons and show a static list."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/chat/model/use-run-trace.ts",
+      "line": 22,
+      "claim": "The effect cleanup unconditionally disposes the module-singleton store's subscription, so any future second consumer of useRunTrace (or a remount ordering change) will tear down the live subscription out from under other mounted consumers.",
+      "evidence": "useRunTraceStore is created via zustand create() at module scope (run-trace-store.ts), while use-run-trace.ts runs `return () => { void useRunTraceStore.getState().dispose(); }` on every consumer unmount. The store API and generation guard suggest multi-context safety was intended, but unmount disposal is not reference-counted.",
+      "suggested_fix": "Scope disposal to context replacement (selectContext already unsubscribes the previous subscription), or track consumers and only dispose when the last one unmounts."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/chat/model/run-trace-projection.ts",
+      "line": 42,
+      "claim": "replayEnvelope only accepts three coarse path shapes (/a2ui/surfaces/{id}, .../components, .../dataModel) and throws on anything deeper, so any fine-grained JSON-patch path emitted by the backend (e.g. /a2ui/surfaces/main/components/root/children/0) makes the entire replay fail with 'Invalid A2UI replay path'.",
+      "evidence": "SURFACE_PATH = /^\\/a2ui\\/surfaces\\/([^/]+)(?:\\/(components|dataModel))?$/ and the final `throw new Error(\\`Unsupported A2UI replay operation...\\`)` in replayEnvelope; projectA2uiReplay propagates the throw, and refreshReplay surfaces it as a replay error state. The diff contains no evidence the backend restricts patches to these three shapes.",
+      "suggested_fix": "Support nested paths (apply value at the parsed sub-path) or document/verify the backend contract that replay patches are only whole-surface/whole-components/whole-dataModel replacements."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/chat/api/run-trace-api.ts",
+      "line": 26,
+      "claim": "Response schemas use .strict(), so any additive backend field on checkpoints or the resume response (a backward-compatible wire change) fails validation and takes down the checkpoints/resume features entirely.",
+      "evidence": "checkpointSchema, checkpointListSchema, resumeResponseSchema and replayPatchSchema all end in .strict(); parseResponse throws 'returned an invalid response' on any unrecognized key. Criterion 3.2 requires typed validation but not strict-mode rejection of additive fields.",
+      "suggested_fix": "Use non-strict (strip) parsing for wire responses, or catch and log unknown keys without rejecting the payload."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/components/assistant-ui/enhanced-thread.tsx",
+      "line": 329,
+      "claim": "useMessage is consumed in UserMessage and AssistantMessage but none of the shown import hunks add a useMessage import; if it was not already imported, the file fails typecheck.",
+      "evidence": "Hunks add `const messageId = useMessage((message) => message.id);` in two components, while the only import changes shown are MarkdownBubble, UarWordmark and chatMessageAnchorId \u2014 no addition to the @assistant-ui/react import is present in the diff.",
+      "suggested_fix": "Verify/ensure `useMessage` is imported from @assistant-ui/react."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/admin/pages/runtime-console-page.tsx",
+      "line": 307,
+      "claim": "The diff removes the only usages of RuntimeRunStepEntity, steps and TimelineRow but does not remove their import or the TimelineRow definition, leaving dead code that likely trips noUnusedLocals/lint gates.",
+      "evidence": "The hunk deletes `const steps = useEntities<RuntimeRunStepEntity>(\"RuntimeRunStep\");` and the TimelineRow rendering, while the unchanged context still shows `} from \"@/entities/types\";` (the import of RuntimeRunStepEntity) and no hunk removes the TimelineRow function elsewhere in the file.",
+      "suggested_fix": "Remove the RuntimeRunStepEntity import, the TimelineRow component and any now-unused helpers (statusTone/Badge if applicable)."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/admin/pages/runtime-console-page.tsx",
+      "line": 411,
+      "claim": "Run handoff after resume updates only local state, not the ?run= query param, so refresh/back/share loses the resumed run selection \u2014 contrary to criterion 6.7's requirement to preserve route/query behavior.",
+      "evidence": "onRunHandoff={setSelectedRunId} is wired to RunTracePanel, but the only synchronization in the page is the one-way useEffect searchParams \u2192 setSelectedRunId; nothing calls setSearchParams when the selection changes.",
+      "suggested_fix": "In the handoff (and run selection generally), write the new run id into the search params (setSearchParams({ run: runId }))."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/chat/model/run-trace-store.ts",
+      "line": 196,
+      "claim": "selectPhase expands the phase node but not the root; if the user collapsed the root row, the phase stays invisible and projectRunTrace's visibility-based selection fallback silently replaces the requested selection with the first visible event.",
+      "evidence": "selectPhase does `new Set(current.expandedNodeIds).add(nodeId)` only for the phase id, and projectRunTrace computes selectedNodeId as `input.selectedNodeId && visibleRows.some(...) ? input.selectedNodeId : <fallback>`, so a collapsed root makes the phase selection vanish.",
+      "suggested_fix": "In selectPhase, also add the root id (projection.rootId) to expandedNodeIds before reprojecting."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/features/chat/ui/run-inspector.tsx",
+      "line": 63,
+      "claim": "The polite live region announces the identical string on every successful copy, so consecutive copies produce no DOM text change and screen readers will not re-announce.",
+      "evidence": "setAnnouncement(\"Copied inspector JSON\") sets the same literal each time into <p aria-live=\"polite\">{announcement}</p>.",
+      "suggested_fix": "Clear the announcement before setting it (e.g. setAnnouncement(\"\") then set the message), or append a varying token."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,36 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "use-optimistic-patch-helper-extraction",
-  "createdAt": "2026-05-27T09:50:00-05:00",
-  "updatedAt": "2026-05-27T10:25:00-05:00",
-  "sourceTool": "claude-code",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "reflection_path": ".kbd-orchestrator/phases/use-optimistic-patch-helper-extraction/reflection.md",
-  "goal_achievement_percent": 100,
-  "decisions": {
-    "module_name": "frontend/src/lib/realtime/optimistic.ts",
-    "error_contract": "re-throw on rejection; callers wrap",
-    "singleton_specialization": "generic optimisticUpsert (no dedicated optimisticSetField)",
-    "post_success_refetch": "none — rely on SSE reconciliation"
+  "phaseId": "use-optimistic-patch-helper-extraction",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
   },
-  "changes_total": 3,
-  "changes_completed": 3,
-  "changes_ordered": [
-    "add-optimistic-helpers-module",
-    "migrate-providers-page-to-helpers",
-    "migrate-agents-page-to-helpers"
-  ],
-  "change_status": {
-    "add-optimistic-helpers-module": "DONE",
-    "migrate-providers-page-to-helpers": "DONE",
-    "migrate-agents-page-to-helpers": "DONE"
-  },
-  "next_change": null,
-  "verification": {
-    "frontend_tests": "36/36 passed",
-    "frontend_build": "clean",
-    "grep_useGraphStore_in_admin_pages": "empty"
-  }
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

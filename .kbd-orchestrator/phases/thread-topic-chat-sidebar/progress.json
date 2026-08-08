@@ -1,27 +1,45 @@
 {
-  "phase": "thread-topic-chat-sidebar",
-  "createdAt": "2026-05-27T12:35:00-05:00",
-  "updatedAt": "2026-05-27T12:50:00-05:00",
-  "sourceTool": "claude-code",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "reflection_path": ".kbd-orchestrator/phases/thread-topic-chat-sidebar/reflection.md",
-  "goal_achievement_percent": 100,
-  "changes_total": 2,
-  "changes_completed": 2,
-  "changes_ordered": [
-    "add-thread-graph-sync-hook",
-    "flip-thread-audit-row-to-direct"
-  ],
-  "change_status": {
-    "add-thread-graph-sync-hook": "DONE",
-    "flip-thread-audit-row-to-direct": "DONE"
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
   },
-  "verification": {
-    "frontend_tests": "40/40 (37 + 3 new sync contract tests)",
-    "frontend_build": "clean",
-    "new_pattern_documented": "SSE-reconciler (sibling to Direct migration playbook)"
-  }
+  "conflictCount": 0,
+  "phase": "thread-topic-chat-sidebar",
+  "phaseId": "thread-topic-chat-sidebar",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

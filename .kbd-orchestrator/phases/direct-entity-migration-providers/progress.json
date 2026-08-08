@@ -1,43 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "direct-entity-migration-providers",
-  "createdAt": "2026-05-27T04:30:00-05:00",
-  "updatedAt": "2026-05-27T05:30:00-05:00",
-  "sourceTool": "claude-code",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "reflection_path": ".kbd-orchestrator/phases/direct-entity-migration-providers/reflection.md",
-  "goal_achievement_percent": 80,
-  "decisions": {
-    "default_id_storage": "ProviderMeta singleton (id current, field default_id)",
-    "configure_provider_optimistic": "non-optimistic for create",
-    "audit_doc_format": "status-only",
-    "pilot_scope": "stop after Providers; evaluate before planning Agents/Models/Skills/Settings"
+  "phaseId": "direct-entity-migration-providers",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
   },
-  "changes_total": 4,
-  "changes_completed": 4,
-  "changes_ordered": [
-    "provider-meta-singleton",
-    "providers-page-direct-reads",
-    "providers-page-direct-mutations",
-    "retire-providers-admin-store"
-  ],
-  "change_status": {
-    "provider-meta-singleton": "DONE",
-    "providers-page-direct-reads": "DONE",
-    "providers-page-direct-mutations": "DONE",
-    "retire-providers-admin-store": "DONE"
-  },
-  "next_change": null,
-  "scope_summary": {
-    "consumer_pages": 1,
-    "files_deleted": [
-      "frontend/src/hooks/use-providers-admin.ts",
-      "frontend/src/stores/providers-admin-store.ts"
-    ],
-    "new_hooks": ["useProviderDefault"],
-    "new_entity_types": ["ProviderMeta"],
-    "loc_net_delta": -50
-  }
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

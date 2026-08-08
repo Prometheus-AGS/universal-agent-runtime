@@ -1,5 +1,6 @@
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
-import type { EntityType } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@/platform/entities";
+import type { EntityType } from "@/platform/entities";
+import type { AguiEventRow } from "@/platform/agui/agui-normalizer";
 
 const EVENT_TYPE_MAP: Record<string, EntityType> = {
   run_started: "RuntimeRun",
@@ -72,14 +73,15 @@ export function ingestRuntimeEvent(raw: unknown) {
   useGraphStore.getState().upsertEntity(entityType, id, data);
 }
 
-export function ingestAgUiEvent(runId: string, event: RuntimeEventEnvelope) {
-  const id = eventId(event, "RuntimeAgUiEvent");
-  useGraphStore.getState().upsertEntity("RuntimeAgUiEvent", id, {
-    id,
+export function ingestAgUiEvent(runId: string, row: AguiEventRow) {
+  useGraphStore.getState().upsertEntity("RuntimeAgUiEvent", row.id, {
+    id: row.id,
     run_id: runId,
-    event_type: event.type ?? "ag_ui_event",
-    sequence: event.sequence ?? Date.now(),
-    payload: event.payload ?? event.data ?? {},
+    event_type: row.type,
+    sequence: row.sequence,
+    phase: row.phase,
+    received_at: new Date(row.receivedAt).toISOString(),
+    payload: row.payload,
     updated_at: now(),
   });
 }

@@ -1,5 +1,5 @@
 import { MessageSquare, MoreHorizontal, Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
@@ -38,9 +38,8 @@ function getLastMessagePreview(messages: RichMessage[] | undefined): string {
     }
   }
   if (last.role === "assistant") {
-    for (const block of last.content) {
-      if (block.type === "tool-call") return `Used ${block.toolName}`;
-    }
+    const tool = last.chunks?.find((chunk) => chunk.kind === "tool-call");
+    if (tool?.kind === "tool-call") return `Used ${tool.toolName}`;
   }
   return "";
 }
@@ -53,7 +52,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
   const [renameValue, setRenameValue] = useState("");
   const [deleteThreadId, setDeleteThreadId] = useState<string | null>(null);
   const { setMobileSidebarOpen } = useUiState();
-  const { threads, activeThreadId, registerThread, setTitle, setActive, removeThread, messagesByThread, clearThread } = useThreadUi();
+  const { threads, activeThreadId, hydrated, registerThread, setTitle, setActive, removeThread, messagesByThread, clearThread } = useThreadUi();
 
   const visibleThreads: LocalThread[] = Object.values(threads)
     .filter((t) => !t.isEphemeral)
@@ -61,6 +60,14 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   const deleteThread = deleteThreadId ? threads[deleteThreadId] : null;
+
+  useLayoutEffect(() => {
+    if (!hydrated) return;
+    const frame = requestAnimationFrame(() => {
+      performance.mark("uar-thread-list:first-paint-frame");
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [hydrated]);
 
   const handleNewThread = () => {
     const id = crypto.randomUUID();
@@ -121,7 +128,11 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
       </div>
 
       {/* Thread list */}
-      <div className="flex-1 overflow-y-auto px-1.5 py-1">
+      <div
+        className="flex-1 overflow-y-auto px-1.5 py-1"
+        aria-busy={!hydrated}
+        aria-label="Thread list"
+      >
         {visibleThreads.length === 0 ? (
           <div className="px-3 py-8 text-center">
             <p className="font-mono text-[11px] text-primary">{"No threads yet"}</p>

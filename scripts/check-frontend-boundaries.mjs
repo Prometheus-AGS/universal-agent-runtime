@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { dirname, relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const src = resolve(root, "frontend/src");
@@ -11,7 +11,7 @@ const infrastructureFetchExceptions = new Set([
   // Shared transport bootstrap, not feature/domain I/O.
   "frontend/src/entities/sync.ts",
   // Loads the PGlite WASM/data assets used to initialize client persistence.
-  "frontend/src/lib/pglite-assets.ts",
+  "frontend/src/platform/pglite/assets.ts",
 ]);
 
 function walk(dir) {
@@ -31,8 +31,8 @@ function isProductionTs(path) {
 
 function layerFor(path) {
   const name = path.split("/").at(-1) ?? "";
-  if (path.includes("/services/")) return "service";
-  if (path.includes("/stores/")) return "store";
+  if (path.includes("/services/") || path.includes("/api/")) return "service";
+  if (path.includes("/stores/") || /-store\.(?:ts|tsx)$/.test(name)) return "store";
   if (path.includes("/hooks/") || /^use(?:-|[A-Z])[^.]*\.(ts|tsx)$/.test(name)) return "hook";
   if (path.endsWith(".tsx")) return "component";
   return "module";
@@ -47,10 +47,90 @@ function importedModules(content) {
   return modules;
 }
 
-function importsLayer(modules, layer) {
+function importsSingleLayer(specifier, layer) {
+  if (!specifier.startsWith("@/") && !specifier.startsWith(".")) return false;
+  const name = specifier.split("/").at(-1) ?? "";
+  if (layer === "services") {
+    return /(?:^|\/)services(?:\/|$)/.test(specifier)
+      || /(?:^|\/)api(?:\/|$)/.test(specifier)
+      || /-api$/.test(name);
+  }
+  if (layer === "stores") {
+    return /(?:^|\/)stores(?:\/|$)/.test(specifier) || /-store$/.test(name);
+  }
+  if (layer === "hooks") {
+    return /(?:^|\/)hooks(?:\/|$)/.test(specifier) || /^use(?:-|[A-Z])/.test(name);
+  }
+  return new RegExp(`(?:^|/)${layer}(?:/|$)`).test(specifier);
+}
+
+function importsLayer(modules, layers) {
+  const candidates = layers.split("|");
   return modules.some((specifier) =>
-    new RegExp(`(?:^|/)(?:${layer})(?:/|$)`).test(specifier),
+    candidates.some((layer) => importsSingleLayer(specifier, layer)),
   );
+}
+
+function importTargetPath(sourcePath, specifier) {
+  if (specifier.startsWith("@/")) {
+    return resolve(scanRoot, specifier.slice(2));
+  }
+  if (specifier.startsWith(".")) {
+    return resolve(dirname(sourcePath), specifier);
+  }
+  return null;
+}
+
+function architectureLayer(targetPath) {
+  if (!targetPath) return null;
+  const relativePath = relative(scanRoot, targetPath).replaceAll("\\", "/");
+  if (relativePath === "app" || relativePath.startsWith("app/")) return "app";
+  if (relativePath === "features" || relativePath.startsWith("features/")) return "feature";
+  if (relativePath === "shared" || relativePath.startsWith("shared/")) return "shared";
+  if (relativePath === "platform" || relativePath.startsWith("platform/")) return "platform";
+  return null;
+}
+
+function featureName(targetPath) {
+  if (!targetPath) return null;
+  const parts = relative(scanRoot, targetPath).replaceAll("\\", "/").split("/");
+  return parts[0] === "features" ? parts[1] ?? null : null;
+}
+
+function isPublicFeatureEntry(specifier, targetPath) {
+  if (!targetPath || !specifier.startsWith("@/features/")) return false;
+  const relativeParts = relative(scanRoot, targetPath).replaceAll("\\", "/").split("/");
+  const namedRootEntry = relativeParts.length === 3
+    && [".ts", ".tsx"].some((suffix) => {
+      try {
+        return statSync(`${targetPath}${suffix}`).isFile();
+      } catch {
+        return false;
+      }
+    });
+  const directoryIndex = !/\.(?:ts|tsx)$/.test(targetPath)
+    && (
+      relativeParts.length === 2
+      || (relativeParts.length === 3 && ["api", "model"].includes(relativeParts[2]))
+    )
+    && ["/index.ts", "/index.tsx"].some((suffix) => {
+      try {
+        return statSync(`${targetPath}${suffix}`).isFile();
+      } catch {
+        return false;
+      }
+    });
+  return namedRootEntry || directoryIndex;
+}
+
+function isUpwardImport(sourceLayer, targetLayer) {
+  if (sourceLayer === "platform") {
+    return targetLayer === "feature" || targetLayer === "app";
+  }
+  if (sourceLayer === "shared") {
+    return targetLayer === "feature" || targetLayer === "app";
+  }
+  return sourceLayer === "feature" && targetLayer === "app";
 }
 
 const violations = [];
@@ -59,6 +139,7 @@ for (const path of walk(scanRoot).filter(isProductionTs)) {
   const file = repoPath(path);
   const layer = layerFor(path);
   const modules = importedModules(content);
+  const sourceArchitectureLayer = architectureLayer(path);
 
   if (
     layer !== "service" &&
@@ -81,6 +162,31 @@ for (const path of walk(scanRoot).filter(isProductionTs)) {
   }
   if (layer === "service" && importsLayer(modules, "components|hooks|stores")) {
     violations.push(`${file}|service-upward-import`);
+  }
+
+  for (const specifier of modules) {
+    const targetPath = importTargetPath(path, specifier);
+    const targetArchitectureLayer = architectureLayer(targetPath);
+    if (
+      sourceArchitectureLayer &&
+      targetArchitectureLayer &&
+      isUpwardImport(sourceArchitectureLayer, targetArchitectureLayer)
+    ) {
+      violations.push(
+        `${file}|${sourceArchitectureLayer}-upward-${targetArchitectureLayer}-import`,
+      );
+    }
+
+    const sourceFeature = featureName(path);
+    const targetFeature = featureName(targetPath);
+    if (
+      sourceFeature &&
+      targetFeature &&
+      sourceFeature !== targetFeature &&
+      !isPublicFeatureEntry(specifier, targetPath)
+    ) {
+      violations.push(`${file}|feature-cross-implementation-import`);
+    }
   }
 }
 

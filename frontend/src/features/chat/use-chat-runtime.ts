@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useExternalStoreRuntime, type AppendMessage, type ThreadMessageLike } from "@assistant-ui/react";
+import { useExternalStoreRuntime, type AppendMessage, type ThreadAssistantMessagePart, type ThreadMessageLike } from "@assistant-ui/react";
 import { useChatMessageStore, selectIsStreaming } from "@/stores/chat-message-store";
 import { useChatIntentStore } from "@/stores/chat-intent-store";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
@@ -8,6 +8,8 @@ import { useChatMessages } from "./use-chat-messages";
 import { useMessageStream } from "./use-message-stream";
 import { useThreadTitleStore } from "@/stores/thread-title-store";
 import type { RichMessage, ContentBlock } from "@/types/chat-content";
+import { CHUNK_BUBBLE_VISIBLE, type Chunk } from "@/features/chat/model/chunk";
+import { toChunks } from "@/features/chat/model/to-chunks";
 import { useAttachmentManager } from "./use-attachment-manager";
 import type { AttachmentManager } from "./use-attachment-manager";
 import { useMemoryContext } from "./memory-context";
@@ -28,22 +30,18 @@ function richMessageToThreadMessageLike(msg: RichMessage): ThreadMessageLike {
     return { role: "system", id: msg.id, content: [{ type: "text", text }], createdAt: toDate(msg.createdAt), metadata: baseMetadata };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const parts: any[] = [];
-  for (const block of msg.content) {
-    switch (block.type) {
-      case "text": parts.push({ type: "text", text: block.text }); break;
-      case "reasoning": parts.push({ type: "reasoning", text: block.text }); break;
-      case "tool-call": parts.push({ type: "tool-call", toolCallId: block.toolCallId, toolName: block.toolName, args: block.args, result: block.result, isError: block.status === "failed" }); break;
-      case "skill-activation": parts.push({ type: "tool-call", toolCallId: `skill-${block.skillId}`, toolName: "__skill__", args: { skillId: block.skillId, skillName: block.skillName, selectionMethod: block.selectionMethod, status: block.status }, result: undefined, isError: false }); break;
-      case "context-update": parts.push({ type: "tool-call", toolCallId: `ctx-${block.strategy}-${block.messagesRemoved}`, toolName: "__context__", args: { strategy: block.strategy, messagesRemoved: block.messagesRemoved, tokensSaved: block.tokensSaved, wasApplied: block.wasApplied, summaryGenerated: block.summaryGenerated }, result: undefined, isError: false }); break;
-      default: break;
-    }
+  const chunks = msg.chunks ?? toChunks(msg.content, { messageId: msg.id, at: toDate(msg.createdAt).toISOString(), finalized: msg.status !== "in_progress" });
+  const parts: ThreadAssistantMessagePart[] = [];
+  for (const chunk of chunks) {
+    if (chunk.kind === "text") parts.push({ type: "text", text: chunk.text });
+    else if (chunk.kind === "markdown") parts.push({ type: "text", text: chunk.source });
+    else if (chunk.kind === "reasoning" || chunk.kind === "thinking") parts.push({ type: "reasoning", text: chunk.text });
+    else if (CHUNK_BUBBLE_VISIBLE[chunk.kind]) parts.push({ type: "data", name: chunk.kind, data: chunk });
   }
   if (parts.length === 0) parts.push({ type: "text", text: "" });
 
   const errorText = msg.status === "failed"
-    ? (msg.content.find((b): b is Extract<ContentBlock, { type: "error" }> => b.type === "error") as { type: "error"; message: string } | undefined)?.message ?? "An error occurred."
+    ? (chunks.find((chunk): chunk is Extract<Chunk, { kind: "error" }> => chunk.kind === "error")?.message ?? "An error occurred.")
     : undefined;
 
   return {

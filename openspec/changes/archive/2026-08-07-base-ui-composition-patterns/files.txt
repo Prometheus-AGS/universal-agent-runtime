@@ -1,0 +1,10 @@
+frontend/src/components/assistant-ui/enhanced-thread.tsx
+frontend/src/components/ui/composition-patterns.test.tsx
+frontend/src/components/ui/form.test.tsx
+frontend/src/components/ui/form.tsx
+openspec/changes/base-ui-composition-patterns/design.md
+openspec/changes/base-ui-composition-patterns/files.txt
+openspec/changes/base-ui-composition-patterns/proposal.md
+openspec/changes/base-ui-composition-patterns/specs/frontend-component-primitives/spec.md
+openspec/changes/base-ui-composition-patterns/tasks.md
+openspec/changes/base-ui-composition-patterns/verification.md

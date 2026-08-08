@@ -47,7 +47,7 @@ jobs:
           mkdir -p dist/operational-resilience/skills
           cp -R crates/prometheus-skill-system/skills dist/operational-resilience/skills/builtin
           cp -R src/uar/runtime/matching/models dist/operational-resilience/models
-          cp README.md LICENSE LICENSE-COMMERCIAL.md example.config.yaml dist/operational-resilience/
+          cp README.md LICENSE example.config.yaml dist/operational-resilience/
           tar -czf dist/universal-agent-runtime-linux-x64.tar.gz -C dist operational-resilience
           docker build -t uar-operational-resilience .
       - name: Certify installed lifecycle, failures, load, reconnect, recovery, and soak

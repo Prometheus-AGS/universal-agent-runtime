@@ -1,0 +1,66 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/index.html",
+      "line": 12,
+      "claim": "The unconditional third favicon link always wins icon selection over the two media-scoped links, so the light-scheme favicon is never selected and the 'document head SHALL select delivered light and dark favicons using color-scheme media queries' requirement is dead in practice.",
+      "evidence": "The hunk adds, in order: light (media=light), dark (media=dark), then a media-less `/brand/uar-favicon-dark.svg` last. Browsers evaluate icon links in document order and the *last* link whose media matches wins; the media-less link matches every color scheme, so it always overrides the light link. The new test in uar-logo.test.ts even codifies this broken ordering (`lastIndexOf(fallback) > indexOf(dark media)`).",
+      "suggested_fix": "Either drop the unconditional link, or place it first so the media-scoped links override it in supporting browsers."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/ui/uar-logo.tsx",
+      "line": 40,
+      "claim": "The wordmark SVGs are consumed via `<img>`, which sandboxes the SVG document from page-loaded Google Fonts, so the `font-family=\"Space Grotesk \u2026\"` / `\"JetBrains Mono \u2026\"` text silently falls back to system fonts and the binding typeface contract is not rendered.",
+      "evidence": "frontend/public/brand/uar-wordmark-*.svg declare `font-family=\"Space Grotesk, Inter, system-ui, sans-serif\"` and `\"JetBrains Mono, ui-monospace, monospace\"` in `<text>` elements; UarWordmark/UarAppIcon load them with `<img src=\"/brand/uar-wordmark-light.svg\">`. SVG referenced via `<img>` cannot access fonts loaded by the host page (Google Fonts links in index.html) and cannot fetch external resources, so the brand text renders in fallback fonts everywhere it is used (nav rail, titlebar, about page).",
+      "suggested_fix": "Convert the wordmark text to vector paths in the delivered assets, embed the fonts in the SVG, or inline the SVG markup in React so page fonts apply."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/app/shell/app-shell.tsx",
+      "line": 13,
+      "claim": "isEditableTarget only matches `[contenteditable='true']`, so Control/Meta+K is still intercepted (preventDefault + palette opens) inside elements with `contenteditable=\"\"` or `contenteditable=\"plaintext-only\"`, which are valid editable states.",
+      "evidence": "`target.closest(\"input, textarea, select, [contenteditable='true']\")` \u2014 the HTML contenteditable attribute is an enumerated attribute whose empty string and `plaintext-only` values also make the element editable but do not match the selector.",
+      "suggested_fix": "Use `target instanceof HTMLElement && (target.isContentEditable || target.closest(\"input, textarea, select\"))`, or `[contenteditable]:not([contenteditable='false'])`."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/app/shell/mobile-sheet-host.tsx",
+      "line": 20,
+      "claim": "The Configure sheet's open state is viewport-independent: if the sheet is open and the viewport crosses the 901px breakpoint (rotation, window resize, desktop mode toggle), the Base UI Dialog remains open \u2014 with its modal focus trap/inert behavior \u2014 while the Backdrop and Viewport become `display:none` via `min-[901px]:hidden`, leaving an invisible modal that swallows keyboard interaction.",
+      "evidence": "`open = shellSheet === \"configure\"` is derived purely from the store, and the only viewport handling is CSS hiding (`min-[901px]:hidden` on Backdrop/Viewport). Nothing closes `shellSheet` on breakpoint change; the only closer is the dialog's own onOpenChange, which the now-invisible UI cannot trigger except via Esc.",
+      "suggested_fix": "Close the sheet when the desktop breakpoint becomes active (matchMedia listener or a resize-driven effect calling setShellSheet(null)), or gate the Dialog.Root open prop on the compact breakpoint instead of hiding via CSS."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/pages/about-page.tsx",
+      "line": 24,
+      "claim": "The hero announces the product name twice to assistive technology: UarWordmark defaults to `decorative=false` (role=\"img\" aria-label=\"Universal Agent Runtime\") and is immediately followed by `<h1 className=\"sr-only\">Universal Agent Runtime</h1>`.",
+      "evidence": "`<UarWordmark className=\"mx-auto mb-6 h-20 w-full max-w-md\" />` uses the default `decorative = false` in uar-logo.tsx, so screen readers read both the img label and the visually-hidden h1.",
+      "suggested_fix": "Render `<UarWordmark decorative \u2026 />` here since the sr-only h1 already provides the accessible name."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/shared/ui/uar-logo.tsx",
+      "line": 48,
+      "claim": "UarWordmark and UarAppIcon render both light and dark `<img>` variants simultaneously, so every mount downloads both assets even though exactly one is always `display:none`.",
+      "evidence": "Two sibling `<img>` elements (light with `dark:hidden`, dark with `hidden dark:block`); browsers fetch `display:none` images, so the rail, titlebar, and about page each trigger duplicate brand requests on every load.",
+      "suggested_fix": "Use `<picture><source media=\"(prefers-color-scheme: dark)\" \u2026>` or a CSS `content`/mask approach so only the active variant is fetched."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/app/shell/breadcrumb-header.tsx",
+      "line": 52,
+      "claim": "The command button's keyboard hint always renders `\u2318K`, but the handler binds Control+K on non-macOS platforms, so Windows/Linux users see a shortcut hint that does not work as displayed.",
+      "evidence": "`<kbd \u2026>\u2318K</kbd>` is unconditional, while app-shell.tsx binds `(event.metaKey || event.ctrlKey) && key === 'k'`; the spec scenario requires both Control+K and Meta+K.",
+      "suggested_fix": "Pick the hint from platform (e.g., `navigator.platform`/`userAgent` check) and render `Ctrl K` on non-Apple platforms."
+    }
+  ]
+}

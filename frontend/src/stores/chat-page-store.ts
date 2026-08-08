@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { fetchResolveModel } from "@/services/models-api";
+import { fetchResolveModel } from "@/features/models/api";
 
 interface ChatPageState {
   modelCheck: { loading: boolean; ok: boolean; error?: string };

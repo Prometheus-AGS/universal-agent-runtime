@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "command": "pnpm -C frontend build:manifest",
+  "manifest": "static/.vite/manifest.json",
+  "manifestSha256": "e061bbc40cf7b9d3d8368a3f154a0fe821481eef078080bd23faab9289ec1440",
+  "manifestEntries": 524,
+  "query": "case-insensitive match of key plus entry JSON for a2ui-testing-page or A2uiTestingPage",
+  "matches": [],
+  "verdict": "pass"
+}

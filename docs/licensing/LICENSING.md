@@ -1,38 +1,62 @@
 # UAR Licensing Model
 
-This project uses a dual-license model:
+UAR is **MIT** licensed. That is the whole model.
 
-- Open source: `AGPL-3.0-only` (see `LICENSE`)
-- Commercial: separate commercial agreement (see `LICENSE-COMMERCIAL.md`)
+- **Code** — runtime, SDKs, everything in this repository: `MIT` (see `LICENSE`)
+- **Documentation** — `CC-BY-4.0` (see `LICENSE-CC-BY-4.0.md`)
+
+You may use, modify, embed, redistribute, and offer UAR as a hosted service,
+commercially or otherwise, with no obligation beyond preserving the copyright
+notice. There is no commercial license to purchase and no copyleft trigger.
 
 ## Why this model
 
-UAR is runtime-layer infrastructure that may be embedded in products and deployed as a hosted service.
-This model is intended to:
+UAR is runtime-layer infrastructure, and it is designed to run **decentralized**
+— on phones, laptops, and small always-on machines in homes and offices that
+find and serve each other peer-to-peer. A license that makes people think before
+running a node works against that directly. MIT removes the question.
 
-- Preserve open-source collaboration for the core runtime
-- Ensure network-deployed modifications remain available under AGPL terms
-- Provide a commercial path for proprietary/closed-source deployments
+## What changed, and what it cost
 
-## AGPL obligations at a glance
+Until 2026-08-07 the runtime was `AGPL-3.0-only` with a separate commercial
+exception. The copyleft was the commercial moat: network-deployed modifications
+had to be offered back, and organizations who could not accept that bought their
+way out.
 
-If you modify UAR and make it available to users over a network, AGPL Section 13 requires offering corresponding source to those users.
+**MIT removes that moat deliberately.** Anyone may now run and offer UAR as a
+service with no obligation to Prometheus AGS. This is a real trade, made on
+purpose: adoption of a decentralized runtime matters more than a licensing toll,
+and a toll is unenforceable in the topology we are aiming at anyway.
 
-You should review the full AGPL text and consult counsel for your specific situation.
+## Where Prometheus AGS's commercial offering sits now
 
-## Commercial license path
+Not in the software — in **coordination**. The peer-to-peer data plane is fully
+open and complete: any node can derive its identity, pair with another node,
+verify credentials, and route work to a peer **using only MIT code and open
+protocols, with no paid service and no account**.
 
-If your intended use is incompatible with AGPL obligations, request a commercial license.
-See `LICENSE-COMMERCIAL.md`.
+What Prometheus AGS sells is the control plane around a fleet of nodes:
+
+| Open (MIT), always | Commercial service |
+|---|---|
+| Node identity, pairing, LAN discovery | Finding your nodes across networks |
+| Credential issuance and verification | Cross-organization trust brokering |
+| Routing work to a paired peer | Mesh orchestration and fleet configuration |
+| Per-node logs | Observability across the mesh |
+
+The rule we hold ourselves to: **every paid feature must be a convenience over
+something the open core can already do manually.** A directory service saves you
+from exchanging addresses by hand; it is never the only way to pair. If a paid
+feature ever becomes the *only* path to a capability, we have broken this rule.
 
 ## Contributor expectations
 
-By contributing to this repository, you agree your contribution is licensed under `AGPL-3.0-only` unless explicitly agreed otherwise in writing.
+By contributing you agree your contribution is MIT. No CLA, no copyright
+assignment, no dual-licensing clause. See `CONTRIBUTING.md`.
 
 ## Trademark note
 
-Code licensing does not grant trademark rights.
-See `TRADEMARKS.md`.
+Code licensing does not grant trademark rights. See `TRADEMARKS.md`.
 
 ## Disclaimer
 

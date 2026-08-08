@@ -1,0 +1,39 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/platform/pglite/run-event-persistence.ts",
+      "line": 130,
+      "claim": "Content buffers are keyed only by `${runId}:${kind}` and ignore the wire `messageId`, so on the documented current transport (no `*_END` frames) every distinct logical text span in a run \u2014 e.g. assistant text, tool call, more assistant text \u2014 is merged into a single coalesced durable row instead of one row per logical span.",
+      "evidence": "`bufferContent` computes `const key = `${runId}:${kind}`` and concatenates `delta` without inspecting `row.payload.messageId`, while the normalizer emits `messageChunk.messageId` and design.md explicitly states \"The current backend emits content deltas and run terminal frames but does not emit text/reasoning end frames.\" The spec scenario in `specs/frontend-local-first-persistence/spec.md` requires \"each buffered logical span is persisted once before the terminal event,\" which is unimplementable with a single buffer per kind per run. The writer tests only cover a single span, so this is untested.",
+      "suggested_fix": "Key the buffer by `${runId}:${kind}:${messageId}` (messageId is present on TEXT_MESSAGE_CONTENT/REASONING_MESSAGE_CONTENT wire frames), and/or flush the current span when a `TEXT_MESSAGE_START`/`REASONING_START` frame or a different messageId arrives. Add a writer test with two interleaved/sequential messageIds and no END frames asserting two aggregate rows."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/platform/pglite/run-event-persistence.ts",
+      "line": 88,
+      "claim": "An explicit `TEXT_MESSAGE_END` / `REASONING_MESSAGE_END` frame arriving with an empty buffer is silently dropped \u2014 `flushBuffer` returns early on `if (!buffered)` and `ingest` then `return`s without persisting the END row \u2014 so a zero-delta message span leaves its persisted START frame with no matching END and a hole in the durable event sequence.",
+      "evidence": "`if (row.type === \"TEXT_MESSAGE_END\") { await this.flushBuffer(runId, \"message\", row); return; }` combined with `flushBuffer`'s `if (!buffered) return;` means the boundary frame itself is never passed to `persistRow` when there is nothing buffered. All other accepted rows (including `TEXT_MESSAGE_START`) persist via `persistRow`, so the durable trace is asymmetric for empty spans.",
+      "suggested_fix": "When the buffer is empty and an explicit boundary frame exists, persist the END frame as a normal row via `persistRow(runId, row)` instead of dropping it, preserving the START/END pairing in the durable record."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "line": 672,
+      "claim": "`stopStream` fires `void finalizeRunPersistence(persistence, \"cancelled\")` without awaiting loop termination, so a terminal `RUN_FINISHED` row already in flight in the stream loop can be ingested after the cancelled `finishRun` and overwrite the run status from `cancelled` back to `finished`.",
+      "evidence": "`stopStream` sets `activeRunPersistence = null`, calls `void finalizeRunPersistence(persistence, \"cancelled\")`, and only then calls `streamAbortRef?.abort()`; the abort is observed asynchronously inside the async iterator, and any `await runPersistence.ingest(...)` already processing a `RUN_FINISHED` row calls `store.finishRun({ status: \"finished\", ... })` (run-event-persistence.ts terminal branch), which issues an unconditional `UPDATE run SET status = $2` with no guard against a prior terminal status.",
+      "suggested_fix": "Either make `finishRun` refuse to transition out of a terminal status (`WHERE id = $1 AND status = 'running'`), or have `stopStream` abort first and let the loop's AbortError path perform the single cancellation finalization."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

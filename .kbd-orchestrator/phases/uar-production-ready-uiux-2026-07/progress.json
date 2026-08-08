@@ -1,74 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "uar-production-ready-uiux-2026-07",
-  "createdAt": "2026-07-08T16:42:58Z",
-  "updatedAt": "2026-07-10T02:20:00Z",
+  "phaseId": "uar-production-ready-uiux-2026-07",
   "parentPhase": null,
-  "childPhases": [],
-  "childPointer": null,
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execution_dispatched": true,
-  "execution_backend": "openspec",
-  "execute_complete": true,
-  "reflect_complete": true,
-  "previousPhase": "uar-security-audit-alerts-gate-2026-07",
-  "seedNote": "Created manually via /kbd-new-phase (2026-07-08) at the user's direct request: 'production-ready with UI/UX full capable and tested.' Deliberately broad -- goals.md states intent (close remaining production-readiness gaps, audit UI/UX completeness per CLAUDE.md's routing rules, close test coverage gaps); the concrete gap list is expected from /kbd-assess, not pre-guessed. Not seeded from a prior phase's reflection recommendation -- uar-security-audit-alerts-gate-2026-07's reflection had no single dominant recommendation, so this phase was opened on direct user instruction instead of via /kbd-next-phase.",
-  "decisions": {
-    "docusaurus_scope": "RESOLVED via AskUserQuestion (2026-07-08): no Docusaurus site existed anywhere in the repo/submodules -- user confirmed bootstrap a brand-new one from existing docs/ markdown, styled with the travisjames.ai/Prometheus branding guide.",
-    "bdd_scope_added_at_plan_time": "User expanded scope when invoking /kbd-plan: BDD (Cucumber+Gherkin+Playwright) scenario suite with video-proof evidence (bdd-testing + bdd-video-proof skills) covering all chat use cases (KB/no-KB, skills activated, tool calls, agent switching, provider/model config), plus Docusaurus site + README diagram/branding refresh. Folded into plan as Rounds 3-4.",
-    "runtime_console_fix_vs_remove": "RESOLVED via AskUserQuestion (2026-07-09): user chose the cheap fix for both resolve-runtime-protocols-page-facade and resolve-runtime-cockpit-dead-panels -- add an honest 'not yet implemented' gating banner rather than building real backend AG-UI/model-route/A2UI/provider-health/memory-activity event emission. Real backend wiring deferred to a future phase if wanted.",
-    "phase_structure": "RESOLVED via AskUserQuestion (2026-07-08): user chose to keep this as ONE FLAT PHASE rather than splitting the BDD (Round 3) or Docusaurus (Round 4) tracks into child phases. All 9 changes execute + reflect under uar-production-ready-uiux-2026-07 directly.",
-    "a2ui_testing_page_rescoped": "RESOLVED via AskUserQuestion (2026-07-09): user rejected the plan's default 'remove A2uiTestingPage' recommendation for retire-a2ui-testing-page-from-prod -- 'It seems we need something like that.' Investigation found the real A2UI round-trip (agent requests input -> A2uiInputBlock renders -> real /artifact-response endpoint -> agent resumes) already works end-to-end in production chat; the actual gap was narrower (no way to trigger it on demand for testing). User chose to reuse the real chat components against a real run (new backend test-trigger endpoint + reworked test page), not a standalone mock preview. Change renamed retire-a2ui-testing-page-from-prod -> upgrade-a2ui-testing-live-round-trip; original openspec change dir deleted (3/7 tasks had been done then reverted -- nav/PAGE_MAP edits restored to original before renaming)."
-  },
-  "changes_total": 8,
-  "changes_completed": 8,
-  "changes_ordered": [
-    "fix-comprehensive-tests-ci-gate",
-    "fix-auth-revoke-key-error-surfacing",
-    "upgrade-a2ui-testing-live-round-trip",
-    "resolve-runtime-protocols-page-facade",
-    "resolve-runtime-cockpit-dead-panels",
-    "resolve-runs-artifacts-and-inspect-button",
-    "bdd-chat-scenario-suite",
-    "bootstrap-docusaurus-site",
-    "refresh-readme-diagrams-and-branding"
-  ],
-  "change_status": {
-    "fix-comprehensive-tests-ci-gate": "DONE (2026-07-08) -- archived openspec/changes/archive/2026-07-08-fix-comprehensive-tests-ci-gate/. Root cause was deeper than assessment found: test-config.yaml was BOTH never created AND listed in .gitignore since the initial commit (confirmed via git log -S), so no local copy could ever have reached CI. Fixed both. Created test-config.yaml with honest low interim coverage thresholds (not the abandoned spec's 90%+ aspirational figures); a dry-run of tools/check-coverage.mjs's naive regex parser caught 2 real bugs before they ever reached CI (section-name collisions -- both a coverage_tools sub-key AND an explanatory comment mentioning 'typescript:' caused the parser to return rust's values for typescript). Verified live on GitHub Actions for the first time ever: comprehensive-tests.yml's Pre-flight Checks PASSED (47s, run 28966990812) -- but Security Audit and Code Quality then failed for real, newly-surfaced reasons (unfiltered inline cargo audit hitting already-disclosed advisories; frozen root bun.lockb drift). tests-full.yml (run 28967666152) got 8 minutes into real work (previously failed in <1 min) before failing on Docker Compose surreal/unstructured health-check timeout. Per design.md's explicit non-goal, none of these 3 newly-surfaced issues were fixed in this narrowly-scoped change -- documented in findings.md as follow-up work. 9/9 tasks complete, verify PASS, QA gate skipped (2 files changed).",
-    "fix-auth-revoke-key-error-surfacing": "DONE (2026-07-08) -- archived openspec/changes/archive/2026-07-08-fix-auth-revoke-key-error-surfacing/. auth-keys-store.ts's revokeKey catch block now sets error: (e as Error).message before clearing revoking, matching load/createKey's existing pattern. auth-page.tsx already renders error via <AdminError>, no template changes needed. 3/3 tasks complete, pnpm run build clean, verify PASS, QA gate skipped (1 file changed).",
-    "upgrade-a2ui-testing-live-round-trip": "DONE (2026-07-09) -- archived openspec/changes/archive/2026-07-09-upgrade-a2ui-testing-live-round-trip/. Added POST /api/uar/runs/{run_id}/a2ui/test-trigger (src/uar/a2ui/routes.rs) emitting a real ArtifactInputRequest via the same RunManager::emit_to_run path a live agent tool call uses; reworked A2uiTestingPage.tsx to target a real active run (useGraphEntities<RuntimeRunEntity>) and hand off to the real /threads chat UI on success rather than rendering a parallel mock. Also fixed the existing schema browser, which silently read stale field names (schema.id/type/fields) never matching the real ArtifactSchema shape (schema_id/artifact_type/json_schema) -- always fell through to 'Unknown schema type'. Live-verified via new tests/integration/live/a2ui_test_trigger_cases.rs (2 tests, both passing against the real booted server + stub LLM): full trigger->submit round trip, and 404-on-nonexistent-run. Confirmed empirically (not just by code read) that RunManager::emit_to_run does not lose the event when no SSE client is subscribed at trigger time, resolving design.md's stated buffering risk. git status scope check caught and removed one stray untracked frontend/vite.config.js (a non-gitignored compiled duplicate of the tracked vite.config.ts, unrelated to this change) before archiving. 13/13 tasks complete, openspec validate --strict PASS, archived.",
-    "resolve-runtime-protocols-page-facade": "DONE (2026-07-09) -- archived openspec/changes/archive/2026-07-09-resolve-runtime-protocols-page-facade/. Fix-vs-remove decision resolved via AskUserQuestion: cheap gating banner. Added NotWiredRuntimeState (built on the project's existing, previously-unused Alert/AlertTitle/AlertDescription shadcn primitive) in runtime-console-page.tsx, applied to RuntimeProtocolsPage's 3 dead panels (AG-UI Events, Model Routing, A2UI Surfaces). New runtime-console-ux capability spec added. pnpm run build clean, verify PASS.",
-    "resolve-runtime-cockpit-dead-panels": "DONE (2026-07-09) -- archived openspec/changes/archive/2026-07-09-resolve-runtime-cockpit-dead-panels/. Reused NotWiredRuntimeState for RuntimeCockpitPage's Provider Health + Memory Activity panels; Live Runs/Execution Timeline/stat tiles untouched (real data). pnpm run build clean, verify PASS.",
-    "resolve-runs-artifacts-and-inspect-button": "DONE (2026-07-09) -- archived openspec/changes/archive/2026-07-09-resolve-runs-artifacts-and-inspect-button/. Artifacts panel gated with NotWiredRuntimeState. Inspect button (previously dead, no onClick) now real: RunRow takes an onInspect(runId) prop; RuntimeRunsPage tracks selectedRunId (seeded from a new ?run= search param) and renders that run's detail instead of always runs[0]; RuntimeCockpitPage's Inspect navigates to /admin/runs?run=<id> since Cockpit has no detail column. pnpm run build + pnpm run typecheck clean, verify PASS. Round 2 (Runtime Console dead-facade cluster) now fully complete, 3/3.",
-    "bdd-chat-scenario-suite": "DONE (2026-07-09/10) -- TWO complementary tracks landed concurrently by separate sessions (see reflection.md's 2026-07-10 addendum): (1) archived openspec/changes/archive/2026-07-09-bdd-chat-scenario-suite/ -- API-level, extends the existing Rust cucumber-rs harness (tests/bdd.rs + tests/features/chat.feature), 5 scenarios, 9/9 scenarios green. (2) openspec/changes/bdd-chat-scenario-suite/ -- browser-level Playwright+Cucumber.js suite (tests/bdd/), 6 scenarios, 5/6 pass (1 confirmed real product bug, disclosed not weakened), verified on real GitHub Actions after 6 rounds of CI-config fixes. Track 2 also fixed a real, previously-undiscovered production bug: the agent-selector's agent list was permanently broken for every user (frontend/src/entities/hooks/use-agents.ts, deprecated useEntityView never populated the list index it read from). Both tracks merged as complementary per operator decision (AskUserQuestion) after a real git-divergence conflict.",
-    "bootstrap-docusaurus-site": "DEFERRED (2026-07-09) -- blocked on hosting/deployment target not provided; see deferred[] below.",
-    "refresh-readme-diagrams-and-branding": "DONE (2026-07-09) -- archived openspec/changes/archive/2026-07-09-refresh-readme-diagrams-and-branding/. README hero + status badges + architecture mermaid render fix."
-  },
-  "completed_changes": [
-    "fix-comprehensive-tests-ci-gate",
-    "fix-auth-revoke-key-error-surfacing",
-    "upgrade-a2ui-testing-live-round-trip",
-    "resolve-runtime-protocols-page-facade",
-    "resolve-runtime-cockpit-dead-panels",
-    "resolve-runs-artifacts-and-inspect-button",
-    "bdd-chat-scenario-suite",
-    "refresh-readme-diagrams-and-branding"
-  ],
-  "active_change": null,
-  "blocked_changes": [],
-  "next_change": null,
-  "sourceTool": "claude-code",
-  "createdBy": "kbd-new-phase",
-  "assessmentSummary": "HEADLINE FINDING: comprehensive-tests.yml + tests-full.yml have NEVER passed their Pre-flight/Prerequisite check since the initial commit (2026-01-19) -- both require test-config.yaml, which has never existed. Traces to an abandoned Spec Kit feature (specs/001-testing-infrastructure/, 0/74 tasks complete) whose partial dead-code (src/testing/) was already deleted in a prior phase without cleaning up the spec or the 2 broken workflows referencing it. This exact bug was already found by docs/CODEX_ASSESSMENT.md (2025-12-31) and never fixed. Both user-mandated load-bearing capabilities (chat+agent-config, provider/model-config) confirmed genuinely solid, no facades. Found 4 concrete dead facades in Runtime Console (Protocols page entirely, Cockpit's Provider Health + Memory Activity panels, Runs page Artifacts panel, 1 dead Inspect button with no onClick) plus 1 non-essential page (A2uiTestingPage, dev-only tooling shipping to prod nav) and 1 minor bug (auth revokeKey swallows errors). Re-verified 5 old carryover items: 3 resolved (credentials UI, agent-config error surfacing, skill-activation-outcome now recorded backend-side), 2 still open (CH-06 per-agent budget config UI, Protocols page gating). cargo test --lib 387/1/0, frontend vitest 46/46 but thin (12/206 files ~5.8%), e2e Playwright 40 tests/12 files parse cleanly but not executed live this session. Sycophancy self-check: 0.018.",
-  "next_session_priorities": [
-    "Round 1 + Round 2 COMPLETE (6/9 total). Round 2 (Runtime Console dead-facade cluster) resolved via AskUserQuestion: cheap gating-banner fix for all 3 changes, plus a real fix for the previously-dead Inspect button (now wired to real run selection/navigation). Next: Round 3 -- bdd-chat-scenario-suite (independent, no blockers). Then Round 4 -- bootstrap-docusaurus-site (needs hosting/deployment target from the user), refresh-readme-diagrams-and-branding (no blockers). 3 follow-up items surfaced by the Round-1 CI fix remain untriaged into this phase's plan: (a) comprehensive-tests.yml's inline cargo audit needs the same --ignore list as security-audit.yml, (b) root bun.lockb needs regenerating (frozen-lockfile drift), (c) docker-compose.test.yaml's surreal/unstructured health checks need longer timeout or startup-time investigation. Also noted during Round-1 push: 2 new GitHub Dependabot alerts (1 high, 1 moderate) not yet triaged into any phase."
-  ],
-  "deferred": [
-    {
-      "change": "bootstrap-docusaurus-site",
-      "reason": "blocked on hosting/deployment target not provided; deferred to a future phase",
-      "date": "2026-07-09"
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
     }
-  ],
-  "rescope_note": "changes_total 9->8 on 2026-07-09 per operator decision: bootstrap-docusaurus-site deferred (blocked on hosting target). Phase now 8/8 complete."
+  },
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

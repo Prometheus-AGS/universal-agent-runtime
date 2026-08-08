@@ -1,44 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "vitest-contract-test-suite",
-  "createdAt": "2026-05-27T07:00:00-05:00",
-  "updatedAt": "2026-05-27T07:45:00-05:00",
-  "sourceTool": "claude-code",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "reflection_path": ".kbd-orchestrator/phases/vitest-contract-test-suite/reflection.md",
-  "goal_achievement_percent": 90,
-  "decisions": {
-    "runner": "vitest 4.1.7 (matches submodule)",
-    "dom_env": "happy-dom",
-    "existing_tests": "migrated 6 bun:test files in this phase",
-    "ci_integration": "punted to a separate phase"
+  "phaseId": "vitest-contract-test-suite",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
   },
-  "changes_total": 6,
-  "changes_completed": 6,
-  "changes_ordered": [
-    "vitest-runner-stand-up",
-    "migrate-existing-bun-tests-to-vitest",
-    "contract-graph-propagation",
-    "contract-optimistic-rollback",
-    "contract-bridge-refetch",
-    "contract-sse-adapter"
-  ],
-  "change_status": {
-    "vitest-runner-stand-up": "DONE",
-    "migrate-existing-bun-tests-to-vitest": "DONE — 6 files migrated; setup.ts merge-vs-replace fix surfaced as a side benefit",
-    "contract-graph-propagation": "DONE — 3 tests",
-    "contract-optimistic-rollback": "DONE — 5 tests (upsert+remove rollback, success path, ProviderMeta singleton)",
-    "contract-bridge-refetch": "DONE — 3 tests; FOUND A REAL BRIDGE BUG (initial `last=\"\"` triggered refetch on first unrelated event). Fix in use-graph-bridge.ts",
-    "contract-sse-adapter": "DONE — 5 tests"
-  },
-  "results_summary": {
-    "test_files_total": 10,
-    "test_files_passing": 9,
-    "tests_total": 36,
-    "tests_passing": 34,
-    "remaining_failures": "2 in skills-page.utils.test.ts — preferredModel fixture missing; pre-existing debt"
-  },
-  "next_change": null
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { useAgents } from "@/entities/hooks/use-agents";
+import { useAgents } from "@/features/agents/model";
 import { useChatSessionConfigStore } from "@/stores/chat-session-config-store";
 
 /** Coordinate agent selection and session configuration for chat components. */

@@ -1,0 +1,31 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "scripts/ci-grep-gates.sh",
+      "line": 35,
+      "claim": "The new \"no direct radix-ui imports\" gate uses a `+` quantifier that is a literal character under grep's default BRE mode, so if `check_grep_empty` invokes plain `grep -r` (as its existing literal-string usages like \"useGraphBridge\" suggest), the pattern can never match and the gate is silently dead.",
+      "evidence": "Added hunk: `check_grep_empty \"no direct radix-ui imports\" \"from[[:space:]]+['\\\"]radix-ui['\\\"]\" \"frontend/src/\"`. BRE requires `\\+` for one-or-more; unescaped `+` matches a literal '+', which never appears between `from` and the quote in real imports. The helper's implementation is not in the packet, and every pre-existing call site passes only literal strings, so nothing in the script demonstrates ERE mode. The same line-based pattern also misses a legal multi-line form where `from` ends one line and `\"radix-ui\"` begins the next.",
+      "suggested_fix": "Confirm the helper uses `grep -E`, or rewrite the pattern mode-agnostically as `from[[:space:]][[:space:]]*['\"]radix-ui['\"]`, and add a negative test (a fixture with a `radix-ui` import that must fail) the same way `test-flat2-style-negative.mjs` covers the Flat 2.0 gate."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "scripts/ci-grep-gates.sh",
+      "line": 36,
+      "claim": "The CI gates added for this change never scan `frontend/pnpm-lock.yaml` or the root `pnpm-lock.yaml`, so a future stale reintroduction of `@radix-ui/react-icons` into either lockfile (e.g., a bad merge or hand edit) would not trip any gate even though lockfile exclusion is a named acceptance criterion of this change.",
+      "evidence": "The new gates cover only `frontend/src/` (twice) and `frontend/package.json`: `check_grep_empty \"no Radix icon dependency\" \"\\\"@radix-ui/react-icons\\\"[[:space:]]*:\" \"frontend/package.json\"`. Acceptance criteria in the same diff state: \"`frontend/package.json`, `frontend/pnpm-lock.yaml`, and the root `pnpm-lock.yaml` contain no `@radix-ui/react-icons` entry.\" A `--frozen-lockfile` install validates manifest/lockfile coherence but does not reject an orphaned or re-added package entry.",
+      "suggested_fix": "Add `check_grep_empty \"no Radix icons in lockfiles\" \"@radix-ui/react-icons\" \"frontend/pnpm-lock.yaml\"` and the equivalent for the root `pnpm-lock.yaml`."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

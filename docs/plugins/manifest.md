@@ -17,7 +17,7 @@ name = "transcription"
 version = "1.0.0"
 description = "Real-time audio/video transcription and summarization"
 author = "Prometheus AGS"
-license = "AGPL-3.0"
+license = "MIT"
 
 # Plugin type: "wasm", "sandbox", or "external"
 type = "sandbox"

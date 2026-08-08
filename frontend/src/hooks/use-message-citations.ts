@@ -10,7 +10,7 @@ const EMPTY_CITATIONS: RagCitationMarker[] = [];
  * via `selectMessageById` — components never touch the store directly.
  *
  * Returns a stable empty array reference when the thread/message isn't
- * resolved yet or carries no `rag-citations` content block, so consumers can
+ * resolved yet or carries no `rag-citations` chunk, so consumers can
  * safely check `.length` without an extra null-guard.
  */
 export function useMessageCitations(threadId: string | null, messageId: string): RagCitationMarker[] {
@@ -22,7 +22,7 @@ export function useMessageCitations(threadId: string | null, messageId: string):
 
   return useMemo(() => {
     if (!message) return EMPTY_CITATIONS;
-    const block = message.content.find((b) => b.type === "rag-citations");
-    return block && block.type === "rag-citations" ? block.citations : EMPTY_CITATIONS;
+    const chunk = message.chunks?.find((item) => item.kind === "rag-citations");
+    return chunk?.kind === "rag-citations" ? chunk.citations : EMPTY_CITATIONS;
   }, [message]);
 }

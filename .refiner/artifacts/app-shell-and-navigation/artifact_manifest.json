@@ -1,0 +1,34 @@
+{
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "generated_at": "2026-08-08T00:11:22Z",
+  "variants": [
+    {
+      "name": "c-10-verification",
+      "file": "dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic and rendered validation receipt for the responsive UAR application shell"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": true,
+    "notes": [
+      "The integrated shell was rendered in the in-app browser at 1440, 901, 900, 390, and 320 CSS pixels.",
+      "The rendered audit measured a 240px expanded rail, 60px collapsed rail, the exact 900px presentation switch, four 44px compact targets, one main landmark, a 3px ember focus outline, and zero horizontal overflow.",
+      "The Base UI command palette and Configure sheet were visually inspected and exercised through navigation.",
+      "Frontend typecheck, lint, boundaries, Flat 2.0, 28 focused tests, and strict OpenSpec validation pass.",
+      "The first isolated review passed with no critical findings; its actionable keyboard, dialog-stacking, breadcrumb, current-state, favicon, manifest, and design-artifact findings were remediated and covered before the final review round.",
+      "The second isolated review found a critical duplicate-current-route defect in the broad /admin matcher; exact root matching and a one-current-link assertion now close it.",
+      "The route-corrected review passed with no critical findings; its shortcut-toggle, modal-scope, and PWA-size polish items were applied before the final receipt.",
+      "The next isolated review exposed incorrect favicon precedence; the fallback now precedes media-specific choices, and all concrete typography, editable-target, breakpoint-modal, announcement, duplicate-download, and shortcut-label findings are resolved.",
+      "Expected local API proxy failures were excluded from console validation because the backend was intentionally not running; the application correctly projected the resulting Unreachable readiness state.",
+      "Full frontend tests and production build remain deferred to the Wave 4 boundary after C-12 under the repository tier contract."
+    ]
+  }
+}

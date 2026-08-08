@@ -279,6 +279,9 @@ jobs:
       - name: Enforce frontend architecture boundaries
         run: pnpm run frontend:boundaries
 
+      - name: Prove frontend budget gates fail closed
+        run: pnpm -C frontend budget:proofs
+
       - name: Validate product support matrix
         run: pnpm run support-matrix:validate
 
@@ -288,8 +291,28 @@ jobs:
       - name: Vitest contract tests
         run: pnpm -C frontend test
 
-      - name: Build frontend
-        run: pnpm -C frontend build
+      - name: Build frontend with production manifest
+        run: pnpm -C frontend build:manifest
+
+      - name: Enforce initial JavaScript and lazy-engine budgets
+        run: pnpm -C frontend budget:bundle --output test-results/frontend-bundle-budget.json
+
+      - name: Install Chromium for frontend performance budgets
+        run: pnpm -C frontend exec playwright install --with-deps chromium
+
+      - name: Enforce serial Chromium performance budgets
+        run: pnpm -C frontend budget:performance
+
+      - name: Upload frontend performance evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: frontend-performance-evidence
+          path: |
+            frontend/test-results/frontend-bundle-budget.json
+            frontend/test-results/performance-playwright
+            frontend/test-results/performance-storybook.json
+          if-no-files-found: warn
 
       - name: CI grep gates (architectural invariants + aesthetic contract)
         run: bash scripts/ci-grep-gates.sh

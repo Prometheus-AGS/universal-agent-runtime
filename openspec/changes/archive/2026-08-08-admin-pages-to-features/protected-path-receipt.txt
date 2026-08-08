@@ -1,0 +1,18 @@
+C-14a protected-path closeout receipt
+Run date: 2026-08-08
+
+Command: git diff --cached --name-status -- LICENSE-COMMERCIAL.md sdks/rust/LICENSE-AGPL
+D	LICENSE-COMMERCIAL.md
+D	sdks/rust/LICENSE-AGPL
+
+Command: git status --short -- .gitmodules crates/prometheus-skill-system src/uar LICENSE-COMMERCIAL.md sdks/rust/LICENSE-AGPL
+ M .gitmodules
+D  LICENSE-COMMERCIAL.md
+ M crates/prometheus-skill-system
+D  sdks/rust/LICENSE-AGPL
+ M src/uar/api/adapters.rs
+ M src/uar/api/openapi.rs
+ M src/uar/api/routes.rs
+ M src/uar/api/sse.rs
+
+The status matches the protected-path baseline recorded before C-14a implementation in migration-inventory.md. C-14a did not stage, commit, or modify these paths.

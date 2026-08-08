@@ -26,5 +26,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 Set a runtime API key with `Client::with_api_key`. Run any sample with
 `UAR_BASE_URL=http://localhost:1906 cargo run --example chat`.
 
-The `embedded` feature links the AGPL runtime; HTTP-client-only consumers use
-the MIT-licensed SDK. See [BREAKING.md](BREAKING.md) for migration notes.
+The `embedded` feature links the runtime crate directly; both it and the
+HTTP-client-only path are MIT, so neither carries an extra licensing obligation.
+See [BREAKING.md](BREAKING.md) for migration notes.

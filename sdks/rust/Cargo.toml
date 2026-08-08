@@ -2,9 +2,9 @@
 name = "universal-agent-runtime-sdk"
 version = "1.0.0"
 edition = "2024"
-description = "Rust SDK for universal-agent-runtime - HTTP client and embeddable runtime. MIT-licensed; the 'embedded' feature links the AGPL-3.0-only runtime crate, so binaries built with that feature must comply with AGPL-3.0."
+description = "Rust SDK for universal-agent-runtime - HTTP client and embeddable runtime. MIT-licensed, including the 'embedded' feature that links the runtime crate directly."
 repository = "https://github.com/Prometheus-AGS/universal-agent-runtime"
-license = "MIT OR AGPL-3.0"
+license = "MIT"
 keywords = ["sdk", "client", "api", "llm", "agent"]
 categories = ["api-bindings", "web-programming"]
 

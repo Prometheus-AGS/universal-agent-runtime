@@ -1,6 +1,6 @@
 // Branded custom titlebar (uar-ui-shell-navigation). tauri.conf.json sets
 // decorations:false, so the OS draws no chrome — this component owns drag,
-// minimize/maximize/close, and the KnowMe lockup. Control placement follows
+// minimize/maximize/close, and the UAR lockup. Control placement follows
 // platform convention: left (traffic-light order) on macOS, right on
 // Windows/Linux.
 //
@@ -14,7 +14,7 @@
 import { useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow, type Window as TauriWindow } from "@tauri-apps/api/window";
-import { KnowMeLogo, KnowMeWordmark } from "@/components/KnowMeLogo";
+import { UarWordmark } from "@/shared/ui/uar-logo";
 
 const inTauri = isTauri();
 const appWindow: TauriWindow | null = inTauri ? getCurrentWindow() : null;
@@ -97,9 +97,8 @@ export function Titlebar() {
       className="flex h-9 shrink-0 select-none items-center bg-chrome"
     >
       {isMac && <WindowControlsMac />}
-      <div className="flex flex-1 items-center justify-center gap-2 text-foreground">
-        <KnowMeLogo size={16} className="text-foreground" />
-        <KnowMeWordmark className="text-[13px]" />
+      <div className="flex flex-1 items-center justify-center text-foreground">
+        <UarWordmark className="h-7 w-40" />
       </div>
       {!isMac && <WindowControlsWindows />}
     </header>

@@ -73,13 +73,6 @@ export const EntityStreamError: Story = {
         retry: { event: { name: "retryStream", context: {} } },
       },
     ]),
-  parameters: {
-    // Same pre-existing --primary/--primary-foreground contrast gap as
-    // src/components/ui/ui-primitives.stories.tsx's ButtonPrimary/BadgeDefault
-    // (the Retry button uses the shared shadcn Button default variant).
-    // Flagged as a follow-up in this change's proposal.md.
-    a11y: { test: "off" },
-  },
 };
 
 export const EntityApproval: Story = {

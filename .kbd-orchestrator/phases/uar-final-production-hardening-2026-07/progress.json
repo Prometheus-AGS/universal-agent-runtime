@@ -1,90 +1,310 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "uar-final-production-hardening-2026-07",
-  "last_updated": "2026-07-13T18:00:00Z",
-  "last_updated_by": "claude",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execution_dispatched": true,
-  "reflection_complete": false,
-  "execution_mode": "operator-locked-production-completion",
+  "phaseId": "uar-final-production-hardening-2026-07",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
   "changes_total": 24,
-  "changes_completed": 24,
-  "active_scope": "changes 21-24 implementation complete; consolidated local validation PASSED; release-evidence/publication is a separate post-completion track",
-  "operator_priority": "24/24 implementation reached; release certification and publication are a separate post-completion track.",
-  "changes": {
-    "fix-embeddings-fastembed": { "status": "DONE" },
-    "green-main-ci": { "status": "DONE" },
-    "re-remediate-stale-rustsec": { "status": "DONE" },
-    "security-policy-and-community-files": { "status": "DONE" },
-    "runtime-console-wire-or-remove": { "status": "DONE" },
-    "fix-config-passthroughs": { "status": "DONE" },
-    "docs-site-github-pages": { "status": "DONE" },
-    "establish-react-product-contract": { "status": "DONE" },
-    "certify-provider-model-settings-flow": { "status": "DONE" },
-    "certify-knowledge-rag-flow": { "status": "DONE" },
-    "certify-agui-chat-flow": { "status": "DONE" },
-    "certify-a2ui-react-flow": { "status": "DONE" },
-    "certify-runtime-console-governance": { "status": "DONE" },
-    "certify-remaining-admin-surfaces": { "status": "DONE" },
-    "close-react-boundary-gate": { "status": "DONE" },
-    "publish-capability-support-matrix": { "status": "DONE" },
-    "modularize-release-capabilities": { "status": "DONE" },
-    "make-build-offline-reproducible": { "status": "DONE" },
-    "reconcile-product-documentation": { "status": "DONE" },
-    "align-release-workflow-platforms": {
-      "status": "DONE",
-      "tasks_total": 9,
-      "tasks_done": 9,
-      "next_task_pending": null,
-      "started_by": "codex",
-      "blockers": [],
-      "notes": "IMPLEMENTATION_COMPLETE; LOCALLY_VALIDATED. Linux/macOS Stable; Windows Experimental/nonblocking. Immutable release evidence is tracked separately."
+  "changes_completed": 20,
+  "implementation_total": 24,
+  "implementation_completed": 20,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 20,
+      "total": 24,
+      "status": "IN_PROGRESS"
     },
-    "certify-operational-resilience": {
-      "status": "IMPLEMENTATION_COMPLETE",
-      "tasks_total": 9,
-      "tasks_done": 1,
-      "next_task_pending": "Immutable resilience evidence including non-root and time-bound soak reports",
-      "started_by": "codex",
-      "completed_by": "claude",
-      "blockers": [],
-      "notes": "IMPLEMENTATION_COMPLETE (audited file:line against tasks 1.1-3.1: tests/operational_resilience.rs, scripts/certify-release-candidate.sh, src/uar/settings/resilience_policy.rs, src/mcp/registry.rs, Dockerfile non-root USER + .github/workflows/operational-resilience.yml non-root-container job all present and wired). Fixed one defect: stray '}' produced invalid JSON in scripts/certify-operational-resilience.sh:39. Remaining unchecked tasks are running/publishing the already-implemented certification (TIME_BOUND soak, EVIDENCE upload) - separate post-implementation track."
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
     },
-    "produce-supply-chain-artifacts": {
-      "status": "IMPLEMENTATION_COMPLETE",
-      "tasks_total": 8,
-      "tasks_done": 2,
-      "next_task_pending": "Generate and independently verify signed candidate evidence",
-      "started_by": "codex",
-      "completed_by": "claude",
-      "blockers": [],
-      "notes": "IMPLEMENTATION_COMPLETE (audited: .github/workflows/supply-chain.yml generates CycloneDX/SPDX SBOMs via syft, SHA256SUMS checksums, SLSA provenance via actions/attest, multi-arch buildx+cosign signing, non-root verification, and an independent verify job with checksum/cosign/gh-attestation re-verification). No code gaps found. Remaining unchecked tasks require a real candidate run - separate post-implementation track."
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
     },
-    "certify-release-candidate": {
-      "status": "IMPLEMENTATION_COMPLETE",
-      "tasks_total": 9,
-      "tasks_done": 0,
-      "next_task_pending": "Operator-authorized immutable RC, clean installs, and external/time-bound validation",
-      "started_by": "codex",
-      "completed_by": "claude",
-      "blockers": [
-        "Operator authorization required for candidate tag/publication",
-        "Three external installs and specified operating period are external/time-bound"
-      ],
-      "notes": "IMPLEMENTATION_COMPLETE (audited: release.yml/candidate-certification.yml/ci.yml/security-audit.yml compose the full CI/security/offline/platform/UI/resilience matrix; scripts/certify-release-candidate.sh drives no-checkout clean installs, docs install/config/backup/restore/upgrade paths, and stable smoke certification against published artifacts). No code gaps found. Remaining tasks are inherently operator-authorized/time-bound (tag cut, 3 external installs, 1 week operation) - separate post-implementation track."
-    },
-    "release-1-0-0": {
-      "status": "IMPLEMENTATION_COMPLETE",
-      "tasks_total": 9,
-      "tasks_done": 3,
-      "next_task_pending": "Operator-authorized no-rebuild GA promotion and public verification",
-      "started_by": "codex",
-      "completed_by": "claude",
-      "blockers": [
-        "Operator authorization required for GA tag/publication",
-        "Candidate evidence must complete first"
-      ],
-      "notes": "IMPLEMENTATION_COMPLETE (audited version alignment across every Cargo.toml/package.json/docs/support-matrix/schema/CLI/CHANGELOG/SECURITY.md surface - all report 1.0.0 correctly; scripts/promote-release-candidate.sh is a real guarded no-rebuild promotion: verifies source==certified candidate via git verify-tag + gh attestation verify, refuses rebuild, retags the OCI digest via buildx imagetools without a docker build, requires exact UAR_CONFIRM_GA_PROMOTION string match). Fixed one defect: docs/compatibility-policy.md:23 dead link to docs/upgrade-guide.md corrected to website/docs/upgrade-guide.md. Remaining tasks require operator-authorized tag/publish and post-publication public verification - separate post-implementation track."
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
     }
-  }
+  },
+  "changes": [
+    {
+      "id": "fix-embeddings-fastembed",
+      "title": "fix-embeddings-fastembed",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "green-main-ci",
+      "title": "green-main-ci",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "re-remediate-stale-rustsec",
+      "title": "re-remediate-stale-rustsec",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "security-policy-and-community-files",
+      "title": "security-policy-and-community-files",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "runtime-console-wire-or-remove",
+      "title": "runtime-console-wire-or-remove",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "fix-config-passthroughs",
+      "title": "fix-config-passthroughs",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "docs-site-github-pages",
+      "title": "docs-site-github-pages",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "establish-react-product-contract",
+      "title": "establish-react-product-contract",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-provider-model-settings-flow",
+      "title": "certify-provider-model-settings-flow",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-knowledge-rag-flow",
+      "title": "certify-knowledge-rag-flow",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-agui-chat-flow",
+      "title": "certify-agui-chat-flow",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-a2ui-react-flow",
+      "title": "certify-a2ui-react-flow",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-runtime-console-governance",
+      "title": "certify-runtime-console-governance",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-remaining-admin-surfaces",
+      "title": "certify-remaining-admin-surfaces",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "close-react-boundary-gate",
+      "title": "close-react-boundary-gate",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "publish-capability-support-matrix",
+      "title": "publish-capability-support-matrix",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "modularize-release-capabilities",
+      "title": "modularize-release-capabilities",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "make-build-offline-reproducible",
+      "title": "make-build-offline-reproducible",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "reconcile-product-documentation",
+      "title": "reconcile-product-documentation",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "align-release-workflow-platforms",
+      "title": "align-release-workflow-platforms",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-operational-resilience",
+      "title": "certify-operational-resilience",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "produce-supply-chain-artifacts",
+      "title": "produce-supply-chain-artifacts",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-release-candidate",
+      "title": "certify-release-candidate",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "release-1-0-0",
+      "title": "release-1-0-0",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
 }

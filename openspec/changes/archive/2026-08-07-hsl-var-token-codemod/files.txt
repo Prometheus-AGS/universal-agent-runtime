@@ -1,0 +1,17 @@
+frontend/src/index.css
+frontend/src/components/assistant-ui/enhanced-thread.tsx
+frontend/src/components/admin/loading-cursor.tsx
+frontend/src/components/admin/error-bar.tsx
+frontend/src/components/admin/empty-frame.tsx
+frontend/src/components/KnowMeLogo.tsx
+scripts/frontend-flat2-style-allowlist.txt
+scripts/check-hsl-token-codemod.mjs
+scripts/fixtures/hsl-token-codemod/case-variant.tsx
+scripts/ci-grep-gates.sh
+scripts/test-hsl-token-codemod-negative.mjs
+openspec/changes/hsl-var-token-codemod/proposal.md
+openspec/changes/hsl-var-token-codemod/design.md
+openspec/changes/hsl-var-token-codemod/specs/frontend-design-system/spec.md
+openspec/changes/hsl-var-token-codemod/tasks.md
+openspec/changes/hsl-var-token-codemod/verification.md
+openspec/changes/hsl-var-token-codemod/files.txt

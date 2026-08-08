@@ -1,0 +1,56 @@
+{
+  "artifact_type": "ui",
+  "constraints": [
+    {
+      "id": "c15-wcag-fail-closed",
+      "description": "Representative integrated React surfaces and component stories must run fail-closed accessibility checks with no disabled Storybook a11y tests and no in-scope axe violations.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Dedicated Playwright axe suite plus full Vitest/Storybook suite"
+      }
+    },
+    {
+      "id": "c15-keyboard-focus-semantics",
+      "description": "Desktop and compact interactions remain keyboard operable, modal focus returns to the trigger, one main landmark remains, status is textual, and focused actions expose a 3px ember indicator.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Playwright keyboard, computed-style, landmark, status, and target-size assertions"
+      }
+    },
+    {
+      "id": "c15-responsive-matrix",
+      "description": "The runtime surface must pass at 320, 768, 1024, and 1440 CSS pixels in light and dark themes without page overflow, shell overlap, inaccessible targets, or an incorrect navigation mode.",
+      "severity": "blocking",
+      "type": "responsive",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Eight-cell serial Chromium matrix plus a representative high-contrast pass"
+      }
+    },
+    {
+      "id": "c15-honest-phase-closeout",
+      "description": "The complete frontend, browser, real-server, build, budget, coverage, OpenSpec, acceptance-classification, and protected-scope evidence must be reported without converting known or separately owned gaps into passes.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Verification report, KnowMe checklist, file inventory, strict OpenSpec, and protected digest"
+      }
+    }
+  ],
+  "global_rules": [
+    "Remediate only accessibility or responsive defects reproduced by C-15 probes.",
+    "Do not claim axe is a manual screen-reader usability study.",
+    "Keep real-backend, Flutter, and separately owned product assertions explicitly classified.",
+    "Do not modify .gitmodules, the Prometheus skill-system submodule, protected Rust API files, or operator-owned staged license deletions."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints have repeatable evidence.",
+    "Strict OpenSpec validation and protected-scope verification pass.",
+    "No critical finding remains after fresh artifact-only adversarial review."
+  ]
+}

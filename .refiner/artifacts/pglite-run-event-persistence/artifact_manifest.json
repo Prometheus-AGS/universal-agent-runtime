@@ -1,0 +1,30 @@
+{
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "generated_at": "2026-08-07T20:56:00Z",
+  "variants": [
+    {
+      "name": "c-07-verification",
+      "file": ".refiner/artifacts/pglite-run-event-persistence/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic validation receipt for C-07 PGlite run/event persistence and PEM local-first bootstrap"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "C-07 implementation tasks 1.1 through 4.1 are complete; task 4.2 is the verification gate represented by this receipt.",
+      "Frontend typecheck, lint, architecture boundaries, six focused test files, strict OpenSpec validation, and diff integrity pass.",
+      "PGlite migration and repository tests cover additive idempotency, repeated wire sequences, duplicate event identities, and offline ordered reads.",
+      "The persistence writer coalesces content spans, preserves server run identity, retains RAW rows, and records terminal phase timings.",
+      "The PEM local-first bootstrap test proves hydration completes before realtime subscription and no application outbox schema is introduced.",
+      "The full frontend suite was accidentally run earlier in C-07 by an extra argument separator and passed at that point; it is not used as final Wave 3 evidence."
+    ]
+  }
+}

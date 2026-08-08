@@ -7,13 +7,12 @@ name: Storybook visual regression
 # `frontend/packages/a2ui-uar/**`, which covers this change's new stories --
 # not duplicated here.
 #
-# Requires a CHROMATIC_PROJECT_TOKEN repo secret (Chromatic project settings
-# -> Manage -> Configure -> project token). Until that secret is set, the
-# `chromatic` job's publish step is skipped rather than failing the workflow
-# -- wiring the token is an operator credential decision (a Chromatic
-# account/project must exist first), the same pattern used for this repo's
-# other external-service secrets (see Change 8's vuln-scan.yml canonical-
-# registry note).
+# The CHROMATIC_PROJECT_TOKEN repo secret IS configured (set 2026-08-07), so
+# the `chromatic` job publishes on every triggering run. The empty-token guard
+# on the publish step is retained deliberately: it keeps forks and any future
+# token rotation from failing the workflow, degrading to a skip notice instead.
+# To rotate: Chromatic project settings -> Manage -> Configure -> project token,
+# then `gh secret set CHROMATIC_PROJECT_TOKEN`.
 
 on:
   pull_request:
@@ -21,7 +20,7 @@ on:
       - 'frontend/src/**'
       - 'frontend/packages/a2ui-uar/**'
       - 'frontend/.storybook/**'
-      - 'frontend/tailwind.config.ts'
+      - 'frontend/src/shared/theme/tokens.css'
       - '.github/workflows/storybook-visual-regression.yml'
   push:
     branches: [main]
@@ -29,7 +28,7 @@ on:
       - 'frontend/src/**'
       - 'frontend/packages/a2ui-uar/**'
       - 'frontend/.storybook/**'
-      - 'frontend/tailwind.config.ts'
+      - 'frontend/src/shared/theme/tokens.css'
       - '.github/workflows/storybook-visual-regression.yml'
 
 jobs:
@@ -107,6 +106,6 @@ jobs:
           projectToken: ${{ env.CHROMATIC_PROJECT_TOKEN }}
           onlyChanged: true
 
-      - name: Skip notice (no Chromatic project token configured)
+      - name: Skip notice (Chromatic project token unavailable)
         if: ${{ env.CHROMATIC_PROJECT_TOKEN == '' }}
-        run: echo "::notice::CHROMATIC_PROJECT_TOKEN is not set -- skipping Chromatic publish. See this workflow's header comment."
+        run: echo "::notice::CHROMATIC_PROJECT_TOKEN resolved empty -- skipping Chromatic publish. The secret is configured on the canonical repo, so this normally means a fork run (secrets are not exposed to forks) or a rotated/removed secret. See this workflow's header comment."

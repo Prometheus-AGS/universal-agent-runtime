@@ -1,0 +1,48 @@
+{
+  "refinement_id": "c08-markdown-pipeline-single-renderer-20260807",
+  "artifact_name": "markdown-pipeline-single-renderer",
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "started_at": "2026-08-07T21:36:42Z",
+  "updated_at": "2026-08-07T22:03:01Z",
+  "current_iteration": 2,
+  "max_iterations": 5,
+  "goals": [
+    "Validate C-08 against its OpenSpec requirements, untrusted-HTML boundary, and per-change frontend gates"
+  ],
+  "constraints": [
+    { "id": "c08-single-renderer" },
+    { "id": "c08-sanitizer-boundary" },
+    { "id": "c08-content-features" },
+    { "id": "c08-repository-gates" }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-07T21:36:42Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-07T22:03:01Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null
+}

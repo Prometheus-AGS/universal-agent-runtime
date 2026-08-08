@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
-import { loadAgentsIntoGraph } from "@/entities/fetchers/agents";
-import { fetchConfiguredProviders } from "@/services/providers-api";
+import { loadAgentsIntoGraph } from "@/features/agents/model";
+import { fetchConfiguredProviders } from "@/features/providers/api";
 import { saveSessionAgentConfig } from "@/services/session-config-api";
 
 interface ChatSessionConfigState {

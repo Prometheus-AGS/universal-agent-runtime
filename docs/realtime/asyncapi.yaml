@@ -16,8 +16,8 @@ info:
     **Protocol version:** `uar.realtime.v1`
     **Wire format:** JSON (v1), MessagePack (v2, planned)
   license:
-    name: Prometheus Commercial License
-    url: https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/LICENSE-COMMERCIAL.md
+    name: MIT
+    url: https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/LICENSE
   contact:
     name: Prometheus AGS
     url: https://github.com/Prometheus-AGS/universal-agent-runtime

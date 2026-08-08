@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "entry": {
+    "key": "index.html",
+    "file": "assets/index-D21CxG2_.js"
+  },
+  "files": [
+    {
+      "key": "index.html",
+      "file": "assets/index-D21CxG2_.js",
+      "rawBytes": 247011,
+      "gzipBytes": 74852,
+      "accounting": "counted"
+    },
+    {
+      "key": "_model-BW0J59ou.js",
+      "file": "assets/model-BW0J59ou.js",
+      "rawBytes": 31,
+      "gzipBytes": 51,
+      "accounting": "counted"
+    },
+    {
+      "key": "_models-api-C1sust__.js",
+      "file": "assets/models-api-C1sust__.js",
+      "rawBytes": 62753,
+      "gzipBytes": 20600,
+      "accounting": "counted"
+    },
+    {
+      "key": "_rolldown-runtime-BUR9erT_.js",
+      "file": "assets/rolldown-runtime-BUR9erT_.js",
+      "rawBytes": 751,
+      "gzipBytes": 442,
+      "accounting": "counted"
+    },
+    {
+      "key": "_settings-change-bus-606CJT0f.js",
+      "file": "assets/settings-change-bus-606CJT0f.js",
+      "rawBytes": 22466,
+      "gzipBytes": 7642,
+      "accounting": "counted"
+    },
+    {
+      "key": "_textarea-BObokcBj.js",
+      "file": "assets/textarea-BObokcBj.js",
+      "rawBytes": 133318,
+      "gzipBytes": 44506,
+      "accounting": "counted"
+    },
+    {
+      "key": "_use-chat-session-config-C3nW67TD.js",
+      "file": "assets/use-chat-session-config-C3nW67TD.js",
+      "rawBytes": 1601,
+      "gzipBytes": 797,
+      "accounting": "counted"
+    },
+    {
+      "key": "_utils-CtSQxi4S.js",
+      "file": "assets/utils-CtSQxi4S.js",
+      "rawBytes": 22464,
+      "gzipBytes": 7991,
+      "accounting": "counted"
+    },
+    {
+      "key": "_vendor-entities-D6hRnCbv.js",
+      "file": "assets/vendor-entities-D6hRnCbv.js",
+      "rawBytes": 78570,
+      "gzipBytes": 26136,
+      "accounting": "counted"
+    },
+    {
+      "key": "_vendor-pglite-k8-BK5CR.js",
+      "file": "assets/vendor-pglite-k8-BK5CR.js",
+      "rawBytes": 627670,
+      "gzipBytes": 144419,
+      "accounting": "excluded-pglite"
+    },
+    {
+      "key": "_vendor-query-D9rFxO9U.js",
+      "file": "assets/vendor-query-D9rFxO9U.js",
+      "rawBytes": 9480,
+      "gzipBytes": 3902,
+      "accounting": "counted"
+    },
+    {
+      "key": "_vendor-react-_jFgFCr6.js",
+      "file": "assets/vendor-react-_jFgFCr6.js",
+      "rawBytes": 178325,
+      "gzipBytes": 55599,
+      "accounting": "counted"
+    }
+  ],
+  "rawBytes": 756770,
+  "gzipBytes": 242518,
+  "limitBytes": 250000,
+  "exclusions": {
+    "pgliteJavaScript": [
+      {
+        "key": "_vendor-pglite-k8-BK5CR.js",
+        "file": "assets/vendor-pglite-k8-BK5CR.js",
+        "rawBytes": 627670,
+        "gzipBytes": 144419,
+        "accounting": "excluded-pglite"
+      }
+    ],
+    "pgliteNonJavaScriptAssets": [
+      {
+        "key": "node_modules/.pnpm/@electric-sql+pglite@0.5.4/node_modules/@electric-sql/pglite/dist/initdb.wasm",
+        "file": "assets/initdb-D0MRRSih.wasm",
+        "source": "node_modules/.pnpm/@electric-sql+pglite@0.5.4/node_modules/@electric-sql/pglite/dist/initdb.wasm",
+        "rawBytes": 395059,
+        "kind": "pglite-runtime-support"
+      },
+      {
+        "key": "node_modules/.pnpm/@electric-sql+pglite@0.5.4/node_modules/@electric-sql/pglite/dist/pglite.data",
+        "file": "assets/pglite-CY5zdaUl.data",
+        "source": "node_modules/.pnpm/@electric-sql+pglite@0.5.4/node_modules/@electric-sql/pglite/dist/pglite.data",
+        "rawBytes": 6293225,
+        "kind": "pglite-data"
+      },
+      {
+        "key": "node_modules/.pnpm/@electric-sql+pglite@0.5.4/node_modules/@electric-sql/pglite/dist/pglite.wasm",
+        "file": "assets/pglite-DpXrfFIn.wasm",
+        "source": "node_modules/.pnpm/@electric-sql+pglite@0.5.4/node_modules/@electric-sql/pglite/dist/pglite.wasm",
+        "rawBytes": 10087563,
+        "kind": "pglite-wasm"
+      },
+      {
+        "key": "src/platform/pglite/pglite-seed-v3.tar.gz",
+        "file": "assets/pglite-seed-v3.tar-BPt0NHwM.gz",
+        "source": "src/platform/pglite/pglite-seed-v3.tar.gz",
+        "rawBytes": 4605535,
+        "kind": "schema-seed"
+      }
+    ],
+    "lazyMarkdownEngines": [
+      "mermaid",
+      "shiki"
+    ]
+  },
+  "verdict": "pass"
+}

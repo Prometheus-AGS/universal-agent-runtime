@@ -2,6 +2,7 @@ import { type FC } from "react";
 import { Contrast, Moon, Monitor, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type Theme, useTheme } from "@/hooks/use-theme";
+import { cn } from "@/lib/utils";
 
 const themeOrder: Theme[] = ["dark", "light", "high-contrast", "system"];
 
@@ -19,7 +20,11 @@ const themeLabels = {
   system: "System theme",
 } as const;
 
-export const ThemeToggle: FC = () => {
+interface ThemeToggleProps {
+  className?: string;
+}
+
+export const ThemeToggle: FC<ThemeToggleProps> = ({ className }) => {
   const { theme, resolved, setTheme } = useTheme();
   const Icon = themeIcons[theme];
 
@@ -36,7 +41,7 @@ export const ThemeToggle: FC = () => {
       onClick={cycle}
       aria-label={themeLabels[theme]}
       title={`${themeLabels[theme]}${theme === "system" ? ` (${resolved})` : ""}`}
-      className="h-8 w-8"
+      className={cn("h-8 w-8", className)}
     >
       <Icon size={15} />
     </Button>

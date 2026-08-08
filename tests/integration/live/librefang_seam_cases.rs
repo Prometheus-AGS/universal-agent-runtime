@@ -148,10 +148,12 @@ async fn agui_spec_mode_emits_official_event_vocabulary() {
     .await
     .expect("resume emits a terminal frame");
     assert!(
-        replay_body.contains("event: RUN_STARTED")
+        replay_body.contains("event: STATE_SNAPSHOT")
+            && replay_body.contains("event: MESSAGES_SNAPSHOT")
+            && replay_body.contains("event: RUN_STARTED")
             && replay_body.contains("event: RUN_FINISHED")
             && !replay_body.contains("event: agui."),
-        "resume must preserve the negotiated AG-UI profile, got: {replay_body}"
+        "resume must snapshot before preserving the negotiated AG-UI replay profile, got: {replay_body}"
     );
 }
 

@@ -1,0 +1,137 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.nvm/versions/node/v24.16.0/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/node_modules/@playwright/test/cli.js",
+      "test",
+      "-c",
+      "playwright.performance.config.ts",
+      "--workers=1"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/playwright.performance.config.ts",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/test-results/performance-playwright/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "performance-budget.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../openspec/changes/a11y-and-responsive-certification/receipts/performance-playwright.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 1,
+    "webServer": {
+      "command": "pnpm run preview --host 127.0.0.1 --port 4174 --strictPort",
+      "url": "http://127.0.0.1:4174",
+      "reuseExistingServer": false,
+      "timeout": 60000
+    }
+  },
+  "suites": [
+    {
+      "title": "performance-budget.spec.ts",
+      "file": "performance-budget.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "cold IndexedDB thread list reaches its first hydrated browser-frame boundary within budget",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1078,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "[performance-budget] {\"schemaVersion\":1,\"name\":\"coldThreadListFirstPaint\",\"observedMs\":942.2000000029802,\"limitMs\":1000,\"verdict\":\"pass\"}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-08-08T08:35:33.439Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "coldThreadListFirstPaint",
+                      "contentType": "application/json",
+                      "body": "ewogICJuYW1lIjogImNvbGRUaHJlYWRMaXN0Rmlyc3RQYWludCIsCiAgIm9ic2VydmVkTXMiOiA5NDIuMjAwMDAwMDAyOTgwMiwKICAibGltaXRNcyI6IDEwMDAsCiAgImluZGV4ZWREYXRhYmFzZXMiOiBbCiAgICAiL3BnbGl0ZS91YXItdGhyZWFkcyIKICBdLAogICJib290TWFya3MiOiBbCiAgICB7CiAgICAgICJuYW1lIjogInVhci1kYjpPcGVuaW5nIGxvY2FsIGRhdGFiYXNl4oCmIiwKICAgICAgInN0YXJ0VGltZSI6IDEzMS43MDAwMDAwMDI5ODAyMwogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAidWFyLWRiOlZlcnNpb25lZCBzY2hlbWEgc2VlZCBsb2FkZWQiLAogICAgICAic3RhcnRUaW1lIjogODE5Ljc5OTk5OTk5NzAxOTgKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInVhci1kYjpNaWdyYXRpbmcgbGVnYWN5IGRhdGEgZnJvbSBsb2NhbFN0b3JhZ2XigKYiLAogICAgICAic3RhcnRUaW1lIjogODIwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJ1YXItZGI6Tm8gbGVnYWN5IHRocmVhZCByZWdpc3RyeSBmb3VuZCIsCiAgICAgICJzdGFydFRpbWUiOiA4MjAKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInVhci1kYjpObyBsZWdhY3kgbWVzc2FnZXMgZm91bmQiLAogICAgICAic3RhcnRUaW1lIjogODIwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJ1YXItZGI6TGVnYWN5IG1pZ3JhdGlvbiBjb21wbGV0ZSDigJQgbG9jYWxTdG9yYWdlIGNsZWFyZWQiLAogICAgICAic3RhcnRUaW1lIjogODIwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJ1YXItZGI6RGF0YWJhc2UgcmVhZHkiLAogICAgICAic3RhcnRUaW1lIjogODIwLjA5OTk5OTk5NDAzOTUKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogInVhci1kYjpIeWRyYXRpbmcgbG9jYWwgZW50aXR5IGdyYXBo4oCmIiwKICAgICAgInN0YXJ0VGltZSI6IDgyMC4wOTk5OTk5OTQwMzk1CiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJ1YXItZGI6TG9jYWwgZW50aXR5IGdyYXBoIHJlYWR5IiwKICAgICAgInN0YXJ0VGltZSI6IDg5My4yOTk5OTk5OTcwMTk4CiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJ1YXItZGI6SHlkcmF0aW5nIHRocmVhZCByZWdpc3RyeeKApiIsCiAgICAgICJzdGFydFRpbWUiOiA5MDYuMjAwMDAwMDAyOTgwMgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAidWFyLWRiOlRocmVhZCByZWdpc3RyeSByZWFkeSIsCiAgICAgICJzdGFydFRpbWUiOiA5MzkuNzAwMDAwMDAyOTgwMgogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAidWFyLXRocmVhZC1saXN0OmZpcnN0LXBhaW50LWZyYW1lIiwKICAgICAgInN0YXJ0VGltZSI6IDk0Mi4yMDAwMDAwMDI5ODAyCiAgICB9CiAgXSwKICAicGdsaXRlUmVzb3VyY2VzIjogWwogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzQvYXNzZXRzL3ZlbmRvci1wZ2xpdGUtM2FfWjFmdHIuanMiLAogICAgICAic3RhcnRUaW1lIjogNi41LAogICAgICAiZHVyYXRpb24iOiAyOC4wOTk5OTk5OTQwMzk1MzYsCiAgICAgICJ0cmFuc2ZlclNpemUiOiAxNDQ4OTQKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3NC9hc3NldHMvcGdsaXRlLUNZNXpkYVVsLmRhdGEiLAogICAgICAic3RhcnRUaW1lIjogMTMyLjA5OTk5OTk5NDAzOTU0LAogICAgICAiZHVyYXRpb24iOiAxNTMuMTAwMDAwMDA4OTQwNywKICAgICAgInRyYW5zZmVyU2l6ZSI6IDIxNDI0ODgKICAgIH0sCiAgICB7CiAgICAgICJuYW1lIjogImh0dHA6Ly8xMjcuMC4wLjE6NDE3NC9hc3NldHMvcGdsaXRlLURwWHJmRkluLndhc20iLAogICAgICAic3RhcnRUaW1lIjogMTMyLjIwMDAwMDAwMjk4MDIzLAogICAgICAiZHVyYXRpb24iOiAyOS4wOTk5OTk5OTQwMzk1MzYsCiAgICAgICJ0cmFuc2ZlclNpemUiOiAxMDA4Nzg2MwogICAgfSwKICAgIHsKICAgICAgIm5hbWUiOiAiaHR0cDovLzEyNy4wLjAuMTo0MTc0L2Fzc2V0cy9wZ2xpdGUtc2VlZC12My50YXItQlB0ME5Id00uZ3oiLAogICAgICAic3RhcnRUaW1lIjogMTM4LjIwMDAwMDAwMjk4MDIzLAogICAgICAiZHVyYXRpb24iOiA1NS41OTk5OTk5OTQwMzk1MzYsCiAgICAgICJ0cmFuc2ZlclNpemUiOiAwCiAgICB9LAogICAgewogICAgICAibmFtZSI6ICJodHRwOi8vMTI3LjAuMC4xOjQxNzQvYXNzZXRzL2luaXRkYi1EME1SUlNpaC53YXNtIiwKICAgICAgInN0YXJ0VGltZSI6IDI4Ni41LAogICAgICAiZHVyYXRpb24iOiAyNTQuNzAwMDAwMDAyOTgwMjMsCiAgICAgICJ0cmFuc2ZlclNpemUiOiAwCiAgICB9CiAgXQp9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "16720243974542c321d1-8c7645d322f6a96f665e",
+          "file": "performance-budget.spec.ts",
+          "line": 8,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-08T08:35:32.333Z",
+    "duration": 2327.4590000000003,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

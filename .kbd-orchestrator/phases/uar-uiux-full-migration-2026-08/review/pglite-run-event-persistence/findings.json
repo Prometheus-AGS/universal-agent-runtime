@@ -1,0 +1,84 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "line": 1046,
+      "claim": "The primary terminal paths (agui.done, agui.error, and the second completion block) return early after releaseRunPersistence() without ever calling RunEventPersistence.finish(), so terminal run status and the final coalesced content flush are never persisted on the happy path.",
+      "evidence": "Acceptance criteria 3.1 ('terminal run updates') and 3.2 ('flush once at explicit end or current-transport terminal fallback'). In the diff, `case \"agui.done\"` and `case \"agui.error\"` both do `releaseRunPersistence(runPersistence); callbacks?.onComplete?.()/onError?.(); return;` with no `finish()` call, while only the `[DONE]` and loop-exhaustion paths do `await runPersistence?.finish(\"finished\")`. In agui_spec mode the terminal frame is agui.done, so the durable run record is left non-terminal and buffered spans unflushed whenever agui.done (or agui.error) arrives before [DONE].",
+      "suggested_fix": "Call `await runPersistence?.finish(\"finished\")` (or finalize with \"error\" for agui.error) before `releaseRunPersistence` and `return` in every terminal case, mirroring the [DONE] path."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "(packet)",
+      "claim": "The diff does not contain the implementation for acceptance criteria 1.1\u20133.3, and criterion 4.2 is self-marked unmet ([ ]), so the change as presented does not satisfy the stated spec.",
+      "evidence": "acceptance_criteria lists `[ ] 4.2 Pass frontend typecheck, lint, architecture boundaries, focused tests, strict OpenSpec validation, artifact refinement, diff integrity, and isolated adversarial review.` The diff imports `frontend/src/platform/pglite/run-event-persistence`, `@/platform/pglite/migrations` (RUN_TABLE_SQL/RUN_EVENT_TABLE_SQL), `@/platform/pglite/client`, `@/platform/entities` (createPGlitePersistenceAdapter, startLocalFirstGraph, registerEntityFromSql), and `@/platform/agui/*`, but no hunk creates any of those files \u2014 no migration 002 SQL (1.1), no UarDb run/event methods (1.2), no PEM adapter/local-first runtime (2.1\u20132.2), and no persistence writer (3.1\u20133.3) are reviewable or even present in the diff. The deleted `frontend/src/protocols/agui-adapter.ts`/`agui-schema.ts` are likewise only replaced by imports of absent platform modules.",
+      "suggested_fix": "Include the new platform/pglite, platform/entities, and platform/agui source files (and their tests) in the change under review, and do not mark criteria 1.x\u20133.x satisfied until 4.2's gates actually run."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-final-production-hardening-2026-07/progress.json",
+      "claim": "The kbd-runtime projection migration silently rewrites recorded completion state: phases previously recorded as complete are now persisted as 0/0 PENDING, and four changes previously recorded IMPLEMENTATION_COMPLETE are flipped to PENDING.",
+      "evidence": "Diff of `.kbd-orchestrator/phases/ci-frontend-tests/progress.json`: `changes_total: 3, changes_completed: 3, all DONE` \u2192 `changes_total: 0, changes_completed: 0, status: PENDING`. Same pattern in `uar-grade-a-upgrade-2026-07` (implementation 25/25 COMPLETE \u2192 0/0 PENDING), `uar-security-deps-and-hygiene` (10/10 \u2192 0/0), `settings-store-retirement`, `use-optimistic-patch-helper-extraction`, `direct-entity-migration-*`, etc. In `uar-final-production-hardening-2026-07`, `certify-operational-resilience`/`produce-supply-chain-artifacts`/`certify-release-candidate`/`release-1-0-0` change from `IMPLEMENTATION_COMPLETE` with audit notes to `PENDING` with zeroed tasks. position.json mirrors this (root roll-up 35/72 with those phases as PENDING children).",
+      "suggested_fix": "Preserve per-phase completion when projecting legacy state (carry changes_completed/implementation_completed through the migration), or keep legacy files byte-identical and store projections separately; at minimum do not regress IMPLEMENTATION_COMPLETE changes to PENDING."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/entities/bootstrap.ts",
+      "line": 66,
+      "claim": "bootstrapEntityGraph() no longer initializes the realtime sync transport, so any consumer that bootstraps the engine without the durable PGlite path silently loses all realtime sync.",
+      "evidence": "The diff removes `syncCleanup = await initSyncTransport();` from `bootstrapEntityGraph` and only calls `dependencies.startSync()` (= initSyncTransport) inside `initializeDurableEntityGraph`, which runs only via `bootstrapDurableEntityGraph(db)`. Nothing in the diff shows another caller that starts sync for non-PGlite/embedder/test contexts.",
+      "suggested_fix": "Either keep a sync-start fallback in bootstrapEntityGraph (skipped when the durable path already started it), or assert/document that DbProvider is the only supported bootstrap path and fail loudly otherwise."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/entities/bootstrap.ts",
+      "line": 88,
+      "claim": "bootstrapDurableEntityGraph caches the in-flight promise with `??=` but never clears it on rejection, so a single transient failure permanently poisons durable bootstrap, and db-context couples that failure to overall app DB readiness.",
+      "evidence": "`durableBootstrap ??= initializeDurableEntityGraph(...)` has no `.catch` that resets `durableBootstrap`; only `teardownEntityGraph()` resets it, and the DbProvider open path (`frontend/src/lib/db-context.tsx` ~line 192, `await bootstrapDurableEntityGraph(...)` inside `UarDb.open().then`) never calls teardown on error. A rejected first attempt means every retry returns the same rejected promise, and the rejection also prevents `setDbInstance(db)` \u2014 the whole app stays on the loading screen because an additive feature (entity-graph durability) failed.",
+      "suggested_fix": "On rejection, reset `durableBootstrap = null` (and `localFirstRuntime = null`) so retry works; consider degrading gracefully (mark graph non-durable) instead of failing the entire DB open."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/lib/db.ts",
+      "claim": "The diff deletes lib/db.ts, including the only visible implementation of the one-time localStorage\u2192PGlite data migration (migrateFromLocalStorage), and the replacement client module is not included in the diff, so preservation of that migration path cannot be confirmed.",
+      "evidence": "Deleted hunk contains `migrateFromLocalStorage` handling `uar-thread-registry`/`uar-chat-messages` with the `uar-pglite-migrated-v1` flag; `frontend/src/lib/db-context.tsx` now imports UarDb from `@/platform/pglite/client`, a file absent from the diff. If the new client dropped or renamed the migration, users with pre-PGlite localStorage data lose it silently.",
+      "suggested_fix": "Include platform/pglite/client.ts in the reviewed change and show that the localStorage migration (including the v1 flag semantics) is preserved or deliberately superseded."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/position-reminder.txt",
+      "line": 3,
+      "claim": "The operator steering file contradicts the canonical state: it instructs 'NEXT WORK: C-01 amend-goal4-base-ui-divergence' and 'THIS PHASE IS 1/21', while position.json marks C-01 through C-06 COMPLETE, C-07 IN_PROGRESS, and progress 9/21.",
+      "evidence": "position-reminder.txt hunk: 'Step: 1 of 21 ... Next command: /opsx:new amend-goal4-base-ui-divergence' and 'THIS PHASE IS 1/21'. position.json hunk: `\"uar-uiux-full-migration-2026-08\" ... \"done\": 9, \"total\": 21` with C-00..C-06 `\"status\": \"COMPLETE\"` and C-07 `\"IN_PROGRESS\"`. An agent following the reminder would redo C-01 or skip the actually-in-progress C-07.",
+      "suggested_fix": "Regenerate position-reminder.txt from the same projection as position.json, or update it to point at C-07 completion (the actual open work per the acceptance criteria)."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".claude/settings.local.json",
+      "line": 637,
+      "claim": "The change commits a personal local-settings file containing ~70 new blanket pre-approved tool permissions, including `Bash(gh secret *)`, codesigning, and overwriting binaries in ~/.local/bin, plus absolute paths from one developer's machine.",
+      "evidence": "Added allowlist entries include `\"Bash(gh secret *)\"` (matches `gh secret set/delete`, not just list), `\"Bash(codesign --force --sign - /Users/gqadonis/.local/bin/prometheus)\"`, `\"Bash(cp -f /Users/gqadonis/Projects/prometheus/... /Users/gqadonis/.local/bin/prometheus)\"`, and `\"Bash(/Users/gqadonis/.claude/skills/kbd-new-phase/kbd-new-phase.sh ...)\"`. settings.local.json is conventionally user-local; committing it exports one operator's pre-approvals (including secret-mutation capability) to every checkout.",
+      "suggested_fix": "Revert this file from the change; keep machine-local permission grants out of version control (add to .gitignore) or curate a minimal shared settings.json."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "src/uar/api/sse.rs",
+      "line": 187,
+      "claim": "AguiSpecProjector buffers ToolDelta frames for unseen tool_call_ids with no bound or eviction, so a stream that emits deltas for a tool call that never reaches ToolStart/ToolEnd grows pending_tool_args for the life of the connection.",
+      "evidence": "`pending_tool_args.entry(tool_call_id.clone()).or_default().push(...)` in the ToolDelta early-return branch; entries are only removed in the ToolStart/ToolEnd branch. Aborted or malformed runs never drain the map.",
+      "suggested_fix": "Cap buffered frames per tool_call_id (or total), and/or drain pending entries when the run terminates, logging the drop."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

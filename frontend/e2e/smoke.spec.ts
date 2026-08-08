@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "@chromatic-com/playwright";
 
 test("admin page loads with Providers nav item", async ({ page }) => {
   await page.goto("/admin");

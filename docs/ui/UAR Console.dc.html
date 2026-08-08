@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="app">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Roboto:wght@400;500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #0B0F14; }
+  body { -webkit-font-smoothing: antialiased; }
+  * { box-sizing: border-box; }
+  a { color: #FF6A3D; text-decoration: none; }
+  a:hover { color: #FFB199; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: #233041; border-radius: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  @keyframes uarPulse { 0%,100% { opacity: .25 } 50% { opacity: 1 } }
+  @keyframes uarRise { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: none } }
+  @keyframes uarSpin { to { transform: rotate(360deg) } }
+</style>
+</helmet>
+
+<div style="display:flex;height:100vh;width:100%;overflow:hidden;background:#0B0F14;color:#E8EDF3;font-family:'Inter',system-ui,sans-serif;font-size:13px">
+
+  <!-- ══ RAIL ══ -->
+  <nav style="width:60px;flex-shrink:0;background:#0F1620;display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:6px">
+    <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#E04E28 0%,#FF6A3D 100%);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:#3B1410;margin-bottom:12px">//</div>
+
+    <button type="button" onClick="{{ goChat }}" title="Chat" style="{{ navChat }}" style-hover="color:#E8EDF3">
+      <i data-lucide="message-square" style="width:19px;height:19px"></i>
+    </button>
+    <button type="button" onClick="{{ goKnowledge }}" title="Knowledge" style="{{ navKb }}" style-hover="color:#E8EDF3">
+      <i data-lucide="database" style="width:19px;height:19px"></i>
+    </button>
+    <button type="button" title="Agents" style="width:40px;height:40px;border:0;border-radius:10px;background:transparent;color:#6B7280;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="color:#E8EDF3">
+      <i data-lucide="bot" style="width:19px;height:19px"></i>
+    </button>
+    <button type="button" title="Runs" style="width:40px;height:40px;border:0;border-radius:10px;background:transparent;color:#6B7280;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="color:#E8EDF3">
+      <i data-lucide="activity" style="width:19px;height:19px"></i>
+    </button>
+
+    <div style="margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <button type="button" onClick="{{ openSettings }}" title="Settings" style="width:40px;height:40px;border:0;border-radius:10px;background:transparent;color:#A7B0BC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="color:#FF6A3D">
+        <i data-lucide="sliders-horizontal" style="width:19px;height:19px"></i>
+      </button>
+      <div title="Runtime healthy · v1.9.3" style="width:8px;height:8px;border-radius:99px;background:#22C55E;margin:6px 0 2px"></div>
+    </div>
+  </nav>
+
+  <!-- ══ CHAT SCREEN ══ -->
+  <sc-if value="{{ isChat }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;flex:1;min-width:0;overflow-x:auto">
+
+    <!-- threads -->
+    <aside style="width:266px;flex-shrink:0;background:#0F1620;display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 14px 10px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#FF6A3D">// Threads</span>
+        <button type="button" style="display:flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:0;border-radius:999px;background:#2A1B17;color:#FFB199;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer" style-hover="background:#3B1410">
+          <i data-lucide="plus" style="width:13px;height:13px"></i>New
+        </button>
+      </div>
+      <div style="padding:0 12px 10px">
+        <div style="display:flex;align-items:center;gap:8px;background:#141C26;border-radius:8px;padding:7px 10px">
+          <i data-lucide="search" style="width:14px;height:14px;color:#6B7280"></i>
+          <span style="color:#6B7280;font-size:12.5px">Search threads, runs, tools…</span>
+          <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">⌘K</span>
+        </div>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:2px 8px 8px;display:flex;flex-direction:column;gap:2px;min-height:0">
+        <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280;padding:10px 8px 6px">Today</div>
+
+        <div style="display:flex;gap:9px;padding:9px 10px;border-radius:8px;background:#2A1B17;cursor:pointer">
+          <div style="width:2px;border-radius:99px;background:#FF6A3D;flex-shrink:0"></div>
+          <div style="min-width:0;flex:1">
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EDF3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Zone routing regression</span>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;flex-shrink:0">2m</span>
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#A7B0BC;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ops-triage · sonnet-4.5 · 6 runs</div>
+            <div style="display:flex;gap:3px;margin-top:6px">
+              <span style="width:14px;height:3px;border-radius:99px;background:#A7B0BC"></span>
+              <span style="width:22px;height:3px;border-radius:99px;background:#60A5FA"></span>
+              <span style="width:10px;height:3px;border-radius:99px;background:#F59E0B"></span>
+              <span style="width:26px;height:3px;border-radius:99px;background:#22C55E"></span>
+              <span style="width:34px;height:3px;border-radius:99px;background:#FF6A3D"></span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer" style-hover="background:#141C26">
+          <div style="width:2px;flex-shrink:0"></div>
+          <div style="min-width:0;flex:1">
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EDF3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Draft Q3 provisioning runbook</span>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;flex-shrink:0">41m</span>
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">writer · gpt-5.4 · 3 runs</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer" style-hover="background:#141C26">
+          <div style="width:2px;flex-shrink:0"></div>
+          <div style="min-width:0;flex:1">
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EDF3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Kratos identity schema diff</span>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;flex-shrink:0">3h</span>
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ops-triage · haiku-4.5 · 11 runs</div>
+          </div>
+        </div>
+
+        <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280;padding:14px 8px 6px">Earlier</div>
+
+        <div style="display:flex;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer" style-hover="background:#141C26">
+          <div style="width:2px;flex-shrink:0"></div>
+          <div style="min-width:0;flex:1">
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EDF3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">MCP filesystem audit</span>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;flex-shrink:0">Fri</span>
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">sre-agent · sonnet-4.5 · 8 runs</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer" style-hover="background:#141C26">
+          <div style="width:2px;flex-shrink:0"></div>
+          <div style="min-width:0;flex:1">
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EDF3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Chunking strategy benchmark</span>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;flex-shrink:0">Thu</span>
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">rag-lab · gpt-5.4 · 22 runs</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin:10px;padding:11px 12px;border-radius:10px;background:#141C26">
+        <div style="display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:#E8EDF3">
+          <span style="width:7px;height:7px;border-radius:99px;background:#22C55E"></span>Runtime ready
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;margin-top:5px;line-height:1.6">embedded · local:1906 · v1.9.3<br>4 providers · 9 MCP servers · 41 tools</div>
+      </div>
+    </aside>
+
+    <!-- thread column -->
+    <main style="flex:1;min-width:560px;display:flex;flex-direction:column;background:#0B0F14">
+
+      <header style="display:flex;align-items:center;gap:10px;padding:11px 16px;background:#0B0F14">
+        <button type="button" style="display:flex;align-items:center;gap:9px;padding:5px 9px 5px 7px;border:0;border-radius:8px;background:#141C26;cursor:pointer;text-align:left" style-hover="background:#1A2432">
+          <span style="width:26px;height:26px;border-radius:7px;background:#2A1B17;color:#FF6A3D;display:flex;align-items:center;justify-content:center">
+            <i data-lucide="bot" style="width:15px;height:15px"></i>
+          </span>
+          <span style="display:block">
+            <span style="display:block;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EDF3">ops-triage</span>
+            <span style="display:block;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">anthropic/claude-sonnet-4.5</span>
+          </span>
+          <i data-lucide="chevron-down" style="width:13px;height:13px;color:#6B7280"></i>
+        </button>
+
+        <div style="display:flex;align-items:center;gap:7px;padding:5px 10px;border-radius:999px;background:#141C26">
+          <span style="width:6px;height:6px;border-radius:99px;background:#FF6A3D;animation:uarPulse 1.2s ease-in-out infinite"></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#A7B0BC">run 04 · generating</span>
+        </div>
+
+        <div style="margin-left:auto;display:flex;align-items:center;gap:4px">
+          <button type="button" title="Trace density" style="display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:8px;background:#2A1B17;color:#FFB199;font-size:11.5px;font-weight:600;cursor:pointer">
+            <i data-lucide="list-tree" style="width:14px;height:14px"></i>Trace
+          </button>
+          <button type="button" title="Inspector" style="width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:#A7B0BC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#141C26">
+            <i data-lucide="panel-right" style="width:15px;height:15px"></i>
+          </button>
+          <button type="button" title="More" style="width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:#A7B0BC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#141C26">
+            <i data-lucide="more-horizontal" style="width:15px;height:15px"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- scroll -->
+      <div style="flex:1;overflow-y:auto;min-height:0;padding:8px 0 4px">
+        <div style="max-width:820px;margin:0 auto;padding:0 24px;display:flex;flex-direction:column;gap:26px">
+
+          <!-- user turn -->
+          <div style="display:flex;justify-content:flex-end">
+            <div style="max-width:78%;background:#2A1B17;border-radius:14px 14px 6px 14px;padding:11px 15px;font-family:'Roboto',sans-serif;font-size:14.5px;line-height:1.65;color:#E8EDF3">
+              Zone routing started 404-ing for tenant <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#FFB199">acme-eu</span> after the 14:02 deploy. What changed, and is the fix safe to roll forward?
+            </div>
+          </div>
+
+          <!-- assistant turn 1 -->
+          <div style="display:flex;flex-direction:column;gap:12px">
+
+            <!-- RUN BAR: the waterfall -->
+            <div style="background:#0F1620;border-radius:12px;padding:12px 14px 11px">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#FF6A3D">// Run 03</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">01JH·9F2A</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#A7B0BC">4.82s</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#A7B0BC">3,142↑ 812↓</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#A7B0BC">$0.019</span>
+                <span style="margin-left:auto;display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#22C55E">
+                  <i data-lucide="circle-check" style="width:11px;height:11px"></i>finished
+                </span>
+              </div>
+
+              <div style="display:flex;height:8px;gap:2px;border-radius:99px;overflow:hidden">
+                <div title="Context management · 0.14s" style="width:4%;background:#A7B0BC;border-radius:99px;cursor:pointer"></div>
+                <div title="Skill activation · 0.21s" style="width:6%;background:#F59E0B;border-radius:99px;cursor:pointer"></div>
+                <div title="Memory recall · 0.18s" style="width:5%;background:#8B5CF6;border-radius:99px;cursor:pointer"></div>
+                <div title="Knowledge retrieval · 0.72s" style="width:15%;background:#60A5FA;border-radius:99px;cursor:pointer"></div>
+                <div title="Reasoning · 1.31s" style="width:27%;background:#2563EB;border-radius:99px;cursor:pointer"></div>
+                <div title="Tool calls · 1.04s" style="width:21%;background:#22C55E;border-radius:99px;cursor:pointer"></div>
+                <div title="Generation · 1.22s" style="width:22%;background:#FF6A3D;border-radius:99px;cursor:pointer"></div>
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:9px">
+                <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280"><span style="width:6px;height:6px;border-radius:2px;background:#A7B0BC"></span>ctx 0.14</span>
+                <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280"><span style="width:6px;height:6px;border-radius:2px;background:#F59E0B"></span>skill 0.21</span>
+                <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280"><span style="width:6px;height:6px;border-radius:2px;background:#8B5CF6"></span>mem 0.18</span>
+                <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280"><span style="width:6px;height:6px;border-radius:2px;background:#60A5FA"></span>kb 0.72</span>
+                <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280"><span style="width:6px;height:6px;border-radius:2px;background:#2563EB"></span>reason 1.31</span>
+                <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280"><span style="width:6px;height:6px;border-radius:2px;background:#22C55E"></span>tools 1.04</span>
+                <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280"><span style="width:6px;height:6px;border-radius:2px;background:#FF6A3D"></span>gen 1.22</span>
+                <button type="button" onClick="{{ toggleTrace }}" style="margin-left:auto;display:flex;align-items:center;gap:5px;border:0;background:transparent;color:#A7B0BC;font-family:'JetBrains Mono',monospace;font-size:9.5px;cursor:pointer;padding:0" style-hover="color:#FF6A3D">
+                  <i data-lucide="chevron-right" style="width:11px;height:11px"></i>12 events
+                </button>
+              </div>
+            </div>
+
+            <!-- inline trace timeline (expanded) -->
+            <sc-if value="{{ traceOpen }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:12px;padding-left:2px">
+              <div style="width:1px;background:#233041;margin:6px 0 6px 6px;flex-shrink:0"></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+
+                <div onClick="{{ pickCtx }}" style="display:flex;align-items:center;gap:9px;padding:7px 11px;border-radius:9px;background:#0F1620;cursor:pointer" style-hover="background:#141C26">
+                  <i data-lucide="scissors" style="width:12px;height:12px;color:#A7B0BC"></i>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">context.update</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">progressive_summarization · 8 messages compacted · ~4,180 tokens freed</span>
+                  <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">0.14s</span>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:9px;padding:7px 11px;border-radius:9px;background:#0F1620;cursor:pointer" style-hover="background:#141C26">
+                  <i data-lucide="zap" style="width:12px;height:12px;color:#F59E0B"></i>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#F59E0B">skill.activated</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#E8EDF3">incident-triage</span>
+                  <span style="padding:1px 6px;border-radius:999px;background:rgba(245,158,11,.12);font-family:'JetBrains Mono',monospace;font-size:9px;color:#F59E0B">hybrid · 0.91</span>
+                  <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">0.21s</span>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:9px;padding:7px 11px;border-radius:9px;background:#0F1620;cursor:pointer" style-hover="background:#141C26">
+                  <i data-lucide="brain" style="width:12px;height:12px;color:#8B5CF6"></i>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#8B5CF6">memory.recall</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">3 items · scope agent · tenant-acme-eu, zone-policy, oncall-pref</span>
+                  <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">0.18s</span>
+                </div>
+
+                <div onClick="{{ pickKb }}" style="display:flex;align-items:center;gap:9px;padding:7px 11px;border-radius:9px;background:#141C26;cursor:pointer;box-shadow:inset 0 0 0 1px #233041">
+                  <i data-lucide="book-text" style="width:12px;height:12px;color:#60A5FA"></i>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#60A5FA">rag.citations</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">4 chunks from runtime-docs, incident-log · top score 0.87</span>
+                  <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">0.72s</span>
+                </div>
+
+                <div style="padding:9px 11px;border-radius:9px;background:#0F1620">
+                  <div style="display:flex;align-items:center;gap:9px;cursor:pointer">
+                    <i data-lucide="sparkles" style="width:12px;height:12px;color:#2563EB"></i>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#60A5FA">reasoning</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">1,904 thinking tokens</span>
+                    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">1.31s</span>
+                  </div>
+                  <p style="margin:7px 0 0;font-family:'Roboto',sans-serif;font-size:12.5px;line-height:1.65;color:#A7B0BC;border-left:1px solid #233041;padding-left:11px">The 404 appears tenant-scoped, so the likely culprit is a zone resolver change rather than the proxy itself. Check the deploy diff for zone precedence, then confirm against the routing table before recommending roll-forward…</p>
+                </div>
+
+                <div onClick="{{ pickTool }}" style="display:flex;align-items:center;gap:9px;padding:7px 11px;border-radius:9px;background:#2A1B17;cursor:pointer;box-shadow:inset 0 0 0 1px #FF6A3D">
+                  <i data-lucide="wrench" style="width:12px;height:12px;color:#FF6A3D"></i>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#FFB199">tool.call</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#E8EDF3">git__diff_range</span>
+                  <span style="padding:1px 6px;border-radius:999px;background:rgba(34,197,94,.14);font-family:'JetBrains Mono',monospace;font-size:9px;color:#22C55E">ok · 214 lines</span>
+                  <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">0.61s</span>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:9px;padding:7px 11px;border-radius:9px;background:#0F1620;cursor:pointer" style-hover="background:#141C26">
+                  <i data-lucide="wrench" style="width:12px;height:12px;color:#FF6A3D"></i>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#FFB199">tool.call</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#E8EDF3">k8s__get_routes</span>
+                  <span style="padding:1px 6px;border-radius:999px;background:rgba(34,197,94,.14);font-family:'JetBrains Mono',monospace;font-size:9px;color:#22C55E">ok</span>
+                  <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">0.43s</span>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:9px;padding:7px 11px;border-radius:9px;background:#0F1620;cursor:pointer" style-hover="background:#141C26">
+                  <i data-lucide="brain" style="width:12px;height:12px;color:#8B5CF6"></i>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#8B5CF6">memory.mutation</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">upsert · zone-precedence-regression · scope agent</span>
+                  <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">0.06s</span>
+                </div>
+              </div>
+            </div>
+            </sc-if>
+
+            <!-- answer -->
+            <div style="font-family:'Roboto',sans-serif;font-size:15px;line-height:1.75;color:#E8EDF3;max-width:65ch">
+              <p style="margin:0 0 12px">The 14:02 deploy reordered zone precedence. <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#FFB199">zone.match_order</span> moved from <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#FFB199">specific → wildcard</span> to alphabetical, so <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#FFB199">acme-eu</span> now resolves to the catch-all zone that has no upstream bound.<a href="#src1" style="font-family:'JetBrains Mono',monospace;font-size:10px;vertical-align:super;padding:1px 4px;border-radius:4px;background:#141C26;color:#60A5FA;text-decoration:none;margin-left:2px">1</a><a href="#src2" style="font-family:'JetBrains Mono',monospace;font-size:10px;vertical-align:super;padding:1px 4px;border-radius:4px;background:#141C26;color:#60A5FA;text-decoration:none;margin-left:2px">2</a></p>
+              <p style="margin:0 0 12px">Rolling forward is safe with one guard: pin <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:#FFB199">match_order: specificity</span> in the zone config before the next reconcile, otherwise the next deploy re-applies the regression for every tenant whose slug sorts after the wildcard entry.<a href="#src3" style="font-family:'JetBrains Mono',monospace;font-size:10px;vertical-align:super;padding:1px 4px;border-radius:4px;background:#141C26;color:#60A5FA;text-decoration:none;margin-left:2px">3</a></p>
+            </div>
+
+            <!-- A2UI surface -->
+            <div style="background:#0F1620;border-radius:12px;overflow:hidden;max-width:640px">
+              <div style="display:flex;align-items:center;gap:8px;padding:9px 13px;background:#141C26">
+                <i data-lucide="layers" style="width:13px;height:13px;color:#FF6A3D"></i>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#FF6A3D">// A2UI surface</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">zone-precedence · interactive</span>
+                <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">schema v2</span>
+              </div>
+              <div style="padding:14px">
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EDF3;margin-bottom:11px">Apply the guarded fix?</div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:13px">
+                  <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;background:#141C26">
+                    <span style="width:15px;height:15px;border-radius:99px;background:#FF6A3D;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="width:5px;height:5px;border-radius:99px;background:#0B0F14"></span></span>
+                    <span style="font-size:12.5px;color:#E8EDF3">Pin <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#FFB199">match_order: specificity</span>, then roll forward</span>
+                    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#22C55E">recommended</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;background:#141C26">
+                    <span style="width:15px;height:15px;border-radius:99px;box-shadow:inset 0 0 0 1.5px #6B7280;flex-shrink:0"></span>
+                    <span style="font-size:12.5px;color:#A7B0BC">Roll back deploy 14:02 and re-plan</span>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <button type="button" style="height:32px;padding:0 14px;border:0;border-radius:8px;background:#FF6A3D;color:#0B0F14;font-size:12.5px;font-weight:600;cursor:pointer" style-hover="opacity:.9">Submit to agent</button>
+                  <button type="button" style="height:32px;padding:0 14px;border:0;border-radius:8px;background:#1A2432;color:#A7B0BC;font-size:12.5px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">Dismiss</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- citations row -->
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span style="display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#141C26;font-family:'JetBrains Mono',monospace;font-size:10px;color:#60A5FA;cursor:pointer">
+                <i data-lucide="book-text" style="width:11px;height:11px"></i>1 · zones.md#precedence · 0.87
+              </span>
+              <span style="display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#141C26;font-family:'JetBrains Mono',monospace;font-size:10px;color:#60A5FA;cursor:pointer">
+                <i data-lucide="book-text" style="width:11px;height:11px"></i>2 · incident-4412 · 0.81
+              </span>
+              <span style="display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#141C26;font-family:'JetBrains Mono',monospace;font-size:10px;color:#60A5FA;cursor:pointer">
+                <i data-lucide="book-text" style="width:11px;height:11px"></i>3 · reconcile-loop.md · 0.74
+              </span>
+            </div>
+
+            <!-- footer -->
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+              <button type="button" title="Copy" style="width:26px;height:26px;border:0;border-radius:7px;background:transparent;color:#6B7280;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="color:#E8EDF3;background:#141C26"><i data-lucide="copy" style="width:13px;height:13px"></i></button>
+              <button type="button" title="Branch" style="width:26px;height:26px;border:0;border-radius:7px;background:transparent;color:#6B7280;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="color:#E8EDF3;background:#141C26"><i data-lucide="git-branch" style="width:13px;height:13px"></i></button>
+              <button type="button" title="Rerun with another model" style="width:26px;height:26px;border:0;border-radius:7px;background:transparent;color:#6B7280;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="color:#E8EDF3;background:#141C26"><i data-lucide="refresh-cw" style="width:13px;height:13px"></i></button>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;margin-left:4px">ops-triage · sonnet-4.5 · 1 skill · 3 citations</span>
+            </div>
+          </div>
+
+          <!-- user turn 2 -->
+          <div style="display:flex;justify-content:flex-end">
+            <div style="max-width:78%;background:#2A1B17;border-radius:14px 14px 6px 14px;padding:11px 15px;font-family:'Roboto',sans-serif;font-size:14.5px;line-height:1.65;color:#E8EDF3">
+              Pin it. Then write the postmortem stub into the incident KB.
+            </div>
+          </div>
+
+          <!-- streaming turn -->
+          <div style="display:flex;flex-direction:column;gap:12px;animation:uarRise 400ms cubic-bezier(0.16,1,0.3,1)">
+            <div style="background:#0F1620;border-radius:12px;padding:12px 14px 11px">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#FF6A3D">// Run 04</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">01JH·9F4C</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#A7B0BC">2.10s</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#A7B0BC">1,918↑ 204↓</span>
+                <span style="margin-left:auto;display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#FF6A3D">
+                  <i data-lucide="loader-circle" style="width:11px;height:11px;animation:uarSpin 900ms linear infinite"></i>tool running
+                </span>
+              </div>
+              <div style="display:flex;height:8px;gap:2px;border-radius:99px">
+                <div title="Context · 0.09s" style="width:3%;background:#A7B0BC;border-radius:99px"></div>
+                <div title="Skill · 0.15s" style="width:5%;background:#F59E0B;border-radius:99px"></div>
+                <div title="Reasoning · 0.62s" style="width:20%;background:#2563EB;border-radius:99px"></div>
+                <div title="Tool · running" style="width:26%;background:#22C55E;border-radius:99px;animation:uarPulse 1.4s ease-in-out infinite"></div>
+                <div style="flex:1;background:#141C26;border-radius:99px"></div>
+              </div>
+            </div>
+
+            <div style="padding:9px 12px;border-radius:10px;background:rgba(96,165,250,.07);max-width:640px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <i data-lucide="sparkles" style="width:12px;height:12px;color:#60A5FA"></i>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#60A5FA">reasoning · streaming</span>
+                <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">412 tok</span>
+              </div>
+              <p style="margin:6px 0 0;font-family:'Roboto',sans-serif;font-size:12.5px;line-height:1.65;color:#A7B0BC">Writing the config patch first so the postmortem can reference the exact commit. The KB write should target the incident-log base with the postmortem chunking profile<span style="display:inline-block;width:6px;height:13px;background:#60A5FA;vertical-align:-2px;margin-left:3px;animation:uarPulse 1s steps(2) infinite"></span></p>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:9px;background:#0F1620;max-width:640px">
+              <i data-lucide="wrench" style="width:12px;height:12px;color:#FF6A3D"></i>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#FFB199">kb__upsert_document</span>
+              <span style="padding:1px 6px;border-radius:999px;background:rgba(245,158,11,.14);font-family:'JetBrains Mono',monospace;font-size:9px;color:#F59E0B">awaiting approval</span>
+              <span style="margin-left:auto;display:flex;gap:5px">
+                <button type="button" style="height:22px;padding:0 9px;border:0;border-radius:6px;background:#FF6A3D;color:#0B0F14;font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;cursor:pointer">Approve</button>
+                <button type="button" style="height:22px;padding:0 9px;border:0;border-radius:6px;background:#1A2432;color:#A7B0BC;font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;cursor:pointer">Deny</button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ COMPOSER ══ -->
+      <div style="padding:0 24px 14px">
+        <div style="max-width:820px;margin:0 auto;position:relative">
+
+          <!-- tools popover -->
+          <sc-if value="{{ toolsOpen }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;bottom:calc(100% + 8px);left:min(112px,4%);right:0;max-width:328px;background:#0F1620;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,.5),inset 0 0 0 1px #233041;overflow:hidden;z-index:20">
+            <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#141C26">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#FF6A3D">// Tools</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">18 of 41 enabled</span>
+              <button type="button" onClick="{{ closeTools }}" style="margin-left:auto;width:20px;height:20px;border:0;border-radius:5px;background:transparent;color:#6B7280;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="color:#E8EDF3"><i data-lucide="x" style="width:12px;height:12px"></i></button>
+            </div>
+            <div style="padding:9px 12px">
+              <div style="display:flex;align-items:center;gap:7px;background:#141C26;border-radius:7px;padding:6px 9px">
+                <i data-lucide="search" style="width:12px;height:12px;color:#6B7280"></i>
+                <span style="font-size:12px;color:#6B7280">Filter tools…</span>
+              </div>
+            </div>
+            <div style="max-height:264px;overflow-y:auto;padding:0 6px 8px">
+              <div style="display:flex;align-items:center;gap:8px;padding:7px 8px">
+                <i data-lucide="terminal" style="width:12px;height:12px;color:#22C55E"></i>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#A7B0BC">git · stdio</span>
+                <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#22C55E">healthy</span>
+              </div>
+              <label style="display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:7px;cursor:pointer" style-hover="background:#141C26">
+                <span style="width:14px;height:14px;border-radius:4px;background:#FF6A3D;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="check" style="width:10px;height:10px;color:#0B0F14"></i></span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E8EDF3">git__diff_range</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:7px;cursor:pointer" style-hover="background:#141C26">
+                <span style="width:14px;height:14px;border-radius:4px;background:#FF6A3D;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="check" style="width:10px;height:10px;color:#0B0F14"></i></span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E8EDF3">git__blame</span>
+              </label>
+              <div style="display:flex;align-items:center;gap:8px;padding:9px 8px 7px">
+                <i data-lucide="terminal" style="width:12px;height:12px;color:#22C55E"></i>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#A7B0BC">k8s · sse</span>
+                <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#22C55E">healthy</span>
+              </div>
+              <label style="display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:7px;cursor:pointer" style-hover="background:#141C26">
+                <span style="width:14px;height:14px;border-radius:4px;background:#FF6A3D;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i data-lucide="check" style="width:10px;height:10px;color:#0B0F14"></i></span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E8EDF3">k8s__get_routes</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:9px;padding:6px 9px;border-radius:7px;cursor:pointer" style-hover="background:#141C26">
+                <span style="width:14px;height:14px;border-radius:4px;box-shadow:inset 0 0 0 1.5px #6B7280;flex-shrink:0"></span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A7B0BC">k8s__delete_pod</span>
+                <span style="margin-left:auto;padding:1px 5px;border-radius:999px;background:rgba(239,68,68,.14);font-family:'JetBrains Mono',monospace;font-size:9px;color:#EF4444">destructive</span>
+              </label>
+              <div style="display:flex;align-items:center;gap:8px;padding:9px 8px 7px">
+                <i data-lucide="terminal" style="width:12px;height:12px;color:#EF4444"></i>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#A7B0BC">jira · http</span>
+                <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#EF4444">401 unreachable</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#141C26">
+              <button type="button" style="border:0;background:transparent;color:#A7B0BC;font-size:11.5px;font-weight:600;cursor:pointer;padding:0" style-hover="color:#FF6A3D">Enable all</button>
+              <span style="color:#233041">·</span>
+              <button type="button" style="border:0;background:transparent;color:#A7B0BC;font-size:11.5px;font-weight:600;cursor:pointer;padding:0" style-hover="color:#FF6A3D">Only this server</button>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">applies to this thread</span>
+            </div>
+          </div>
+          </sc-if>
+
+          <div style="background:#141C26;border-radius:16px;padding:10px 10px 8px">
+            <div style="display:flex;align-items:center;gap:7px;padding:0 4px 8px">
+              <span style="display:flex;align-items:center;gap:7px;padding:4px 9px;border-radius:7px;background:#1A2432">
+                <i data-lucide="file-text" style="width:12px;height:12px;color:#A7B0BC"></i>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#E8EDF3">deploy-1402.log</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">18 KB · parsed</span>
+                <i data-lucide="x" style="width:11px;height:11px;color:#6B7280;cursor:pointer"></i>
+              </span>
+            </div>
+
+            <div style="padding:2px 6px 10px;font-family:'Roboto',sans-serif;font-size:14.5px;line-height:1.6;color:#6B7280">Ask, or press <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:1px 5px;border-radius:4px;background:#1A2432;color:#A7B0BC">/</span> for skills, <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:1px 5px;border-radius:4px;background:#1A2432;color:#A7B0BC">@</span> for tools, <span style="font-family:'JetBrains Mono',monospace;font-size:12px;padding:1px 5px;border-radius:4px;background:#1A2432;color:#A7B0BC">#</span> for knowledge…</div>
+
+            <!-- TOOLBAR ROW 1 -->
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+              <button type="button" style="display:flex;align-items:center;gap:6px;height:27px;padding:0 9px;border:0;border-radius:999px;background:#1A2432;color:#E8EDF3;font-size:11.5px;font-weight:600;cursor:pointer" style-hover="background:#233041">
+                <i data-lucide="cpu" style="width:13px;height:13px;color:#FF6A3D"></i>sonnet-4.5
+                <i data-lucide="chevron-down" style="width:11px;height:11px;color:#6B7280"></i>
+              </button>
+              <button type="button" onClick="{{ openTools }}" style="display:flex;align-items:center;gap:6px;height:27px;padding:0 9px;border:0;border-radius:999px;background:#2A1B17;color:#FFB199;font-size:11.5px;font-weight:600;cursor:pointer">
+                <i data-lucide="wrench" style="width:13px;height:13px"></i>Tools
+                <span style="padding:0 5px;border-radius:999px;background:rgba(255,106,61,.2);font-family:'JetBrains Mono',monospace;font-size:9.5px">18</span>
+              </button>
+              <button type="button" style="display:flex;align-items:center;gap:6px;height:27px;padding:0 9px;border:0;border-radius:999px;background:#2A1B17;color:#FFB199;font-size:11.5px;font-weight:600;cursor:pointer">
+                <i data-lucide="zap" style="width:13px;height:13px"></i>Skills
+                <span style="padding:0 5px;border-radius:999px;background:rgba(255,106,61,.2);font-family:'JetBrains Mono',monospace;font-size:9.5px">3</span>
+              </button>
+              <button type="button" style="display:flex;align-items:center;gap:6px;height:27px;padding:0 9px;border:0;border-radius:999px;background:#2A1B17;color:#FFB199;font-size:11.5px;font-weight:600;cursor:pointer">
+                <i data-lucide="database" style="width:13px;height:13px"></i>Knowledge
+                <span style="padding:0 5px;border-radius:999px;background:rgba(255,106,61,.2);font-family:'JetBrains Mono',monospace;font-size:9.5px">2</span>
+              </button>
+              <button type="button" style="display:flex;align-items:center;gap:6px;height:27px;padding:0 9px;border:0;border-radius:999px;background:#1A2432;color:#A7B0BC;font-size:11.5px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">
+                <i data-lucide="globe" style="width:13px;height:13px"></i>Web
+              </button>
+              <button type="button" style="display:flex;align-items:center;gap:6px;height:27px;padding:0 9px;border:0;border-radius:999px;background:#2A1B17;color:#FFB199;font-size:11.5px;font-weight:600;cursor:pointer">
+                <i data-lucide="brain" style="width:13px;height:13px"></i>Memory
+              </button>
+              <button type="button" style="display:flex;align-items:center;gap:6px;height:27px;padding:0 9px;border:0;border-radius:999px;background:#1A2432;color:#A7B0BC;font-size:11.5px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">
+                <i data-lucide="sparkles" style="width:13px;height:13px"></i>Thinking
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">high</span>
+              </button>
+              <button type="button" style="display:flex;align-items:center;gap:6px;height:27px;padding:0 9px;border:0;border-radius:999px;background:#1A2432;color:#A7B0BC;font-size:11.5px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">
+                <i data-lucide="scissors" style="width:13px;height:13px"></i>Context
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">summarize</span>
+              </button>
+              <button type="button" style="display:flex;align-items:center;gap:6px;height:27px;padding:0 9px;border:0;border-radius:999px;background:#1A2432;color:#A7B0BC;font-size:11.5px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">
+                <i data-lucide="shield" style="width:13px;height:13px"></i>Approve
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">ask</span>
+              </button>
+              <button type="button" title="More conversation options" style="width:27px;height:27px;border:0;border-radius:999px;background:#1A2432;color:#A7B0BC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="color:#E8EDF3">
+                <i data-lucide="more-horizontal" style="width:14px;height:14px"></i>
+              </button>
+
+              <span style="margin-left:auto;display:flex;align-items:center;gap:4px">
+                <button type="button" title="Attach" style="width:28px;height:28px;border:0;border-radius:999px;background:transparent;color:#A7B0BC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#1A2432;color:#E8EDF3"><i data-lucide="paperclip" style="width:15px;height:15px"></i></button>
+                <button type="button" title="Dictate" style="width:28px;height:28px;border:0;border-radius:999px;background:transparent;color:#A7B0BC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#1A2432;color:#E8EDF3"><i data-lucide="mic" style="width:15px;height:15px"></i></button>
+                <button type="button" title="Send" style="width:30px;height:30px;border:0;border-radius:999px;background:#FF6A3D;color:#0B0F14;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="opacity:.9"><i data-lucide="arrow-up" style="width:16px;height:16px"></i></button>
+              </span>
+            </div>
+          </div>
+
+          <!-- budget lane -->
+          <div style="display:flex;align-items:center;gap:10px;padding:7px 8px 0">
+            <div style="flex:1;max-width:260px;height:3px;border-radius:99px;background:#1A2432;overflow:hidden">
+              <div style="width:34%;height:100%;background:#FF6A3D;border-radius:99px"></div>
+            </div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">18.4k / 54k window · 200k model</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">thread $0.118</span>
+            <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">⌘↵ send · ⇧↵ newline</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- inspector -->
+    <aside style="width:344px;flex-shrink:0;background:#0F1620;display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;align-items:center;gap:8px;padding:14px 14px 10px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#FF6A3D">// Inspector</span>
+        <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">run 03 · event 07</span>
+      </div>
+
+      <div style="display:flex;gap:2px;padding:0 12px 10px">
+        <button type="button" style="flex:1;height:26px;border:0;border-radius:7px;background:#2A1B17;color:#FFB199;font-size:11px;font-weight:600;cursor:pointer">Payload</button>
+        <button type="button" style="flex:1;height:26px;border:0;border-radius:7px;background:transparent;color:#6B7280;font-size:11px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">Timing</button>
+        <button type="button" style="flex:1;height:26px;border:0;border-radius:7px;background:transparent;color:#6B7280;font-size:11px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">Raw AG-UI</button>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:0 12px 14px;display:flex;flex-direction:column;gap:10px;min-height:0">
+        <div style="background:#141C26;border-radius:10px;padding:12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+            <i data-lucide="wrench" style="width:13px;height:13px;color:#FF6A3D"></i>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#E8EDF3">git__diff_range</span>
+            <span style="margin-left:auto;padding:1px 6px;border-radius:999px;background:rgba(34,197,94,.14);font-family:'JetBrains Mono',monospace;font-size:9px;color:#22C55E">complete</span>
+          </div>
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-family:'JetBrains Mono',monospace;font-size:10px">
+            <span style="color:#6B7280">server</span><span style="color:#A7B0BC">git · stdio · pid 4193</span>
+            <span style="color:#6B7280">latency</span><span style="color:#A7B0BC">612 ms</span>
+            <span style="color:#6B7280">approval</span><span style="color:#A7B0BC">auto · non-destructive</span>
+            <span style="color:#6B7280">tokens</span><span style="color:#A7B0BC">418 in result</span>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280;margin-bottom:6px">Arguments</div>
+          <pre style="margin:0;background:#141C26;border-radius:10px;padding:11px;font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.7;color:#A7B0BC;overflow-x:auto">{
+  "<span style="color:#60A5FA">repo</span>": "<span style="color:#22C55E">prometheus/uar</span>",
+  "<span style="color:#60A5FA">from</span>": "<span style="color:#22C55E">v1.9.2</span>",
+  "<span style="color:#60A5FA">to</span>": "<span style="color:#22C55E">v1.9.3</span>",
+  "<span style="color:#60A5FA">paths</span>": ["<span style="color:#22C55E">zones/</span>"]
+}</pre>
+        </div>
+
+        <div>
+          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280;margin-bottom:6px">Result</div>
+          <pre style="margin:0;background:#141C26;border-radius:10px;padding:11px;font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.7;color:#A7B0BC;overflow-x:auto">zones/resolver.rs  <span style="color:#F59E0B">+18 −6</span>
+<span style="color:#EF4444">- order = MatchOrder::Specificity</span>
+<span style="color:#22C55E">+ order = MatchOrder::Alpha</span>
+zones/config.yaml  <span style="color:#F59E0B">+2 −0</span></pre>
+        </div>
+
+        <div>
+          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280;margin-bottom:6px">Cited chunk · 0.87</div>
+          <div style="background:#141C26;border-radius:10px;padding:11px">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px">
+              <i data-lucide="book-text" style="width:12px;height:12px;color:#60A5FA"></i>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#60A5FA">runtime-docs / zones.md</span>
+              <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;color:#6B7280">chunk 12/48</span>
+            </div>
+            <p style="margin:0;font-family:'Roboto',sans-serif;font-size:12px;line-height:1.7;color:#A7B0BC">Zone precedence resolves most-specific first. <span style="background:rgba(96,165,250,.16);color:#E8EDF3">A wildcard zone must never precede a tenant zone, or tenant traffic falls through to the catch-all upstream.</span></p>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280;margin-bottom:6px">Event stream</div>
+          <div style="background:#141C26;border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:4px">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">RUN_STARTED · seq 1</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">CUSTOM uar.context.update · seq 4</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">CUSTOM uar.skill.activated · seq 6</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">CUSTOM uar.rag_citations · seq 9</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">REASONING_MESSAGE_CONTENT ×212</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#E8EDF3">TOOL_CALL_END · seq 231</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">TOOL_CALL_RESULT · seq 232</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">RUN_FINISHED · seq 488</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+  </sc-if>
+
+  <!-- ══ KNOWLEDGE SCREEN ══ -->
+  <sc-if value="{{ isKnowledge }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;flex:1;min-width:0;overflow-x:auto">
+    <aside style="width:266px;flex-shrink:0;background:#0F1620;display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 14px 10px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#FF6A3D">// Knowledge</span>
+        <button type="button" style="display:flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:0;border-radius:999px;background:#2A1B17;color:#FFB199;font-size:11px;font-weight:600;cursor:pointer">
+          <i data-lucide="plus" style="width:13px;height:13px"></i>Base
+        </button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:2px 8px;display:flex;flex-direction:column;gap:2px">
+        <div style="padding:10px;border-radius:9px;background:#2A1B17;cursor:pointer">
+          <div style="display:flex;align-items:center;gap:7px">
+            <i data-lucide="database" style="width:13px;height:13px;color:#FF6A3D"></i>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EDF3">runtime-docs</span>
+            <span style="margin-left:auto;width:7px;height:7px;border-radius:99px;background:#22C55E"></span>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#A7B0BC;margin-top:5px">148 docs · 3,912 chunks · 11.4 MB</div>
+        </div>
+        <div style="padding:10px;border-radius:9px;cursor:pointer" style-hover="background:#141C26">
+          <div style="display:flex;align-items:center;gap:7px">
+            <i data-lucide="database" style="width:13px;height:13px;color:#6B7280"></i>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EDF3">incident-log</span>
+            <span style="margin-left:auto;width:7px;height:7px;border-radius:99px;background:#F59E0B"></span>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;margin-top:5px">412 docs · 9,180 chunks · indexing 61%</div>
+        </div>
+        <div style="padding:10px;border-radius:9px;cursor:pointer" style-hover="background:#141C26">
+          <div style="display:flex;align-items:center;gap:7px">
+            <i data-lucide="database" style="width:13px;height:13px;color:#6B7280"></i>
+            <span style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;color:#E8EDF3">contracts</span>
+            <span style="margin-left:auto;width:7px;height:7px;border-radius:99px;background:#22C55E"></span>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;margin-top:5px">36 docs · 1,044 chunks · 4.2 MB</div>
+        </div>
+      </div>
+    </aside>
+
+    <main style="flex:1;min-width:640px;display:flex;flex-direction:column;overflow-y:auto">
+      <div style="padding:22px 26px 0;max-width:1100px">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#FF6A3D">// Knowledge base</span>
+            <h2 style="margin:6px 0 0;font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.02em;color:#E8EDF3">runtime-docs</h2>
+            <p style="margin:6px 0 0;font-family:'Roboto',sans-serif;font-size:13.5px;line-height:1.7;color:#A7B0BC;max-width:60ch">Runtime architecture, zone routing, provisioning runbooks. Retrieved by ops-triage and sre-agent.</p>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button type="button" style="display:flex;align-items:center;gap:6px;height:30px;padding:0 11px;border:0;border-radius:8px;background:#1A2432;color:#A7B0BC;font-size:12px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3"><i data-lucide="play" style="width:13px;height:13px"></i>Test retrieval</button>
+            <button type="button" style="display:flex;align-items:center;gap:6px;height:30px;padding:0 11px;border:0;border-radius:8px;background:#FF6A3D;color:#0B0F14;font-size:12px;font-weight:600;cursor:pointer" style-hover="opacity:.9"><i data-lucide="upload" style="width:13px;height:13px"></i>Ingest</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px">
+          <div style="background:#0F1620;border-radius:12px;padding:13px 15px">
+            <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280">Chunks</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;color:#E8EDF3;margin-top:4px">3,912</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;margin-top:2px">avg 512 tok · 64 overlap</div>
+          </div>
+          <div style="background:#0F1620;border-radius:12px;padding:13px 15px">
+            <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280">Embedding</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#E8EDF3;margin-top:7px">text-embed-4</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;margin-top:2px">1536 dim · cosine</div>
+          </div>
+          <div style="background:#0F1620;border-radius:12px;padding:13px 15px">
+            <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280">Strategy</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:#E8EDF3;margin-top:7px">Semantic + heading</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;margin-top:2px">hybrid rerank on</div>
+          </div>
+          <div style="background:#0F1620;border-radius:12px;padding:13px 15px">
+            <div style="font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280">Hit rate · 7d</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:600;color:#22C55E;margin-top:4px">78%</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;margin-top:2px">1,204 retrievals</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:4px;margin-top:22px">
+          <button type="button" style="height:29px;padding:0 12px;border:0;border-radius:8px;background:#2A1B17;color:#FFB199;font-size:12px;font-weight:600;cursor:pointer">Documents</button>
+          <button type="button" style="height:29px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#6B7280;font-size:12px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">Chunks</button>
+          <button type="button" style="height:29px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#6B7280;font-size:12px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">Retrieval log</button>
+          <button type="button" style="height:29px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#6B7280;font-size:12px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">Settings</button>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:7px;background:#141C26;border-radius:8px;padding:6px 10px">
+            <i data-lucide="search" style="width:13px;height:13px;color:#6B7280"></i>
+            <span style="font-size:12px;color:#6B7280">Filter 148 documents…</span>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;background:#0F1620;border-radius:12px;overflow:hidden;margin-bottom:26px">
+          <div style="display:grid;grid-template-columns:1fr 110px 130px 96px 84px 32px;gap:12px;padding:10px 14px;background:#141C26;font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280">
+            <span>Document</span><span>Chunks</span><span>Strategy</span><span>Status</span><span>Updated</span><span></span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 110px 130px 96px 84px 32px;gap:12px;padding:11px 14px;align-items:center" style-hover="background:#141C26">
+            <span style="display:flex;align-items:center;gap:8px;min-width:0"><i data-lucide="file-text" style="width:13px;height:13px;color:#6B7280;flex-shrink:0"></i><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#E8EDF3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">zones.md</span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A7B0BC">48</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">heading · 512</span>
+            <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#22C55E"><i data-lucide="circle-check" style="width:11px;height:11px"></i>indexed</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">2h</span>
+            <i data-lucide="more-horizontal" style="width:14px;height:14px;color:#6B7280;cursor:pointer"></i>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 110px 130px 96px 84px 32px;gap:12px;padding:11px 14px;align-items:center;background:#141C26">
+            <span style="display:flex;align-items:center;gap:8px;min-width:0"><i data-lucide="file-text" style="width:13px;height:13px;color:#6B7280;flex-shrink:0"></i><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#E8EDF3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">provisioning-runbook.pdf</span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A7B0BC">212</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">semantic · 768</span>
+            <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#F59E0B"><i data-lucide="loader-circle" style="width:11px;height:11px;animation:uarSpin 900ms linear infinite"></i>embedding</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">now</span>
+            <i data-lucide="more-horizontal" style="width:14px;height:14px;color:#6B7280;cursor:pointer"></i>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 110px 130px 96px 84px 32px;gap:12px;padding:11px 14px;align-items:center" style-hover="background:#141C26">
+            <span style="display:flex;align-items:center;gap:8px;min-width:0"><i data-lucide="file-text" style="width:13px;height:13px;color:#6B7280;flex-shrink:0"></i><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#E8EDF3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">reconcile-loop.md</span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A7B0BC">31</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">heading · 512</span>
+            <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#22C55E"><i data-lucide="circle-check" style="width:11px;height:11px"></i>indexed</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">1d</span>
+            <i data-lucide="more-horizontal" style="width:14px;height:14px;color:#6B7280;cursor:pointer"></i>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 110px 130px 96px 84px 32px;gap:12px;padding:11px 14px;align-items:center" style-hover="background:#141C26">
+            <span style="display:flex;align-items:center;gap:8px;min-width:0"><i data-lucide="file-text" style="width:13px;height:13px;color:#6B7280;flex-shrink:0"></i><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#E8EDF3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">oathkeeper-rules.yaml</span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#A7B0BC">—</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">code · 1024</span>
+            <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#EF4444"><i data-lucide="triangle-alert" style="width:11px;height:11px"></i>failed</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">3d</span>
+            <i data-lucide="more-horizontal" style="width:14px;height:14px;color:#6B7280;cursor:pointer"></i>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  </sc-if>
+
+  <!-- ══ SETTINGS ══ -->
+  <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;background:rgba(11,15,20,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:60;padding:32px">
+    <div style="width:100%;max-width:1120px;height:min(760px,92vh);background:#0B0F14;border-radius:16px;box-shadow:0 10px 15px -3px rgba(0,0,0,.6),inset 0 0 0 1px #233041;display:flex;overflow:hidden;animation:uarRise 320ms cubic-bezier(0.16,1,0.3,1)">
+
+      <div style="width:232px;flex-shrink:0;background:#0F1620;display:flex;flex-direction:column;padding:16px 10px">
+        <div style="padding:0 8px 14px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#FF6A3D">// Runtime config</span>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;margin-top:5px">v1.9.3 · 4 unsaved</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1px">
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;background:#2A1B17;color:#FFB199;font-size:12.5px;font-weight:600;cursor:pointer"><i data-lucide="cpu" style="width:14px;height:14px"></i>Providers &amp; models</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="scissors" style="width:14px;height:14px"></i>Context management</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="brain" style="width:14px;height:14px"></i>Memory</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="zap" style="width:14px;height:14px"></i>Skills &amp; selection</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="terminal" style="width:14px;height:14px"></i>MCP servers</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="database" style="width:14px;height:14px"></i>Knowledge &amp; chunking</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="file-text" style="width:14px;height:14px"></i>System prompt</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="layers" style="width:14px;height:14px"></i>A2UI surfaces</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="shield" style="width:14px;height:14px"></i>Approvals &amp; safety</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="coins" style="width:14px;height:14px"></i>Budgets &amp; cost</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="activity" style="width:14px;height:14px"></i>Observability</span>
+          <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;color:#A7B0BC;font-size:12.5px;font-weight:500;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="key" style="width:14px;height:14px"></i>API keys</span>
+        </div>
+        <div style="margin-top:auto;padding:10px 10px 0;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280;line-height:1.7">Config source<br>uar.toml · db override</div>
+      </div>
+
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;gap:12px;padding:18px 22px 14px">
+          <div>
+            <h3 style="margin:0;font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;letter-spacing:-.02em;color:#E8EDF3">Providers &amp; models</h3>
+            <p style="margin:4px 0 0;font-family:'Roboto',sans-serif;font-size:12.5px;color:#A7B0BC">LiteLLM-compatible routing. Test a model to confirm credentials and latency before making it the default.</p>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+            <button type="button" style="display:flex;align-items:center;gap:6px;height:30px;padding:0 11px;border:0;border-radius:8px;background:#1A2432;color:#A7B0BC;font-size:12px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3"><i data-lucide="play" style="width:13px;height:13px"></i>Test all</button>
+            <button type="button" onClick="{{ closeSettings }}" style="width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:#A7B0BC;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:#141C26;color:#E8EDF3"><i data-lucide="x" style="width:16px;height:16px"></i></button>
+          </div>
+        </div>
+
+        <div style="flex:1;overflow-y:auto;padding:0 22px 18px;display:flex;flex-direction:column;gap:12px;min-height:0">
+
+          <div style="background:#0F1620;border-radius:12px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 15px;background:#141C26">
+              <span style="width:26px;height:26px;border-radius:7px;background:#2A1B17;color:#FF6A3D;display:flex;align-items:center;justify-content:center"><i data-lucide="cpu" style="width:14px;height:14px"></i></span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;color:#E8EDF3">anthropic</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">api.anthropic.com · sk-ant-…f2c9</span>
+              <span style="display:flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;background:rgba(34,197,94,.14);font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#22C55E"><i data-lucide="circle-check" style="width:10px;height:10px"></i>reachable 214ms</span>
+              <span style="margin-left:auto;display:flex;align-items:center;gap:8px">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">enabled</span>
+                <span style="width:30px;height:17px;border-radius:999px;background:#FF6A3D;display:flex;align-items:center;justify-content:flex-end;padding:2px;cursor:pointer"><span style="width:13px;height:13px;border-radius:99px;background:#0B0F14"></span></span>
+              </span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 76px 108px 168px 84px 92px;gap:10px;padding:9px 15px;font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280">
+              <span>Model</span><span>Context</span><span>$ / M tok</span><span>Capabilities</span><span>Default</span><span>Test</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 76px 108px 168px 84px 92px;gap:10px;padding:10px 15px;align-items:center;background:#141C26">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#E8EDF3">claude-sonnet-4.5</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">200k</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">3.00 / 15.00</span>
+              <span style="display:flex;gap:4px;flex-wrap:wrap">
+                <span style="padding:1px 6px;border-radius:999px;background:#1A2432;font-family:'JetBrains Mono',monospace;font-size:9px;color:#A7B0BC">tools</span>
+                <span style="padding:1px 6px;border-radius:999px;background:#1A2432;font-family:'JetBrains Mono',monospace;font-size:9px;color:#A7B0BC">think</span>
+                <span style="padding:1px 6px;border-radius:999px;background:#1A2432;font-family:'JetBrains Mono',monospace;font-size:9px;color:#A7B0BC">vision</span>
+              </span>
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:99px;background:#FF6A3D;display:flex;align-items:center;justify-content:center"><span style="width:5px;height:5px;border-radius:99px;background:#0B0F14"></span></span><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#FFB199">chat</span></span>
+              <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#22C55E"><i data-lucide="circle-check" style="width:11px;height:11px"></i>198ms</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 76px 108px 168px 84px 92px;gap:10px;padding:10px 15px;align-items:center">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#E8EDF3">claude-haiku-4.5</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">200k</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">0.80 / 4.00</span>
+              <span style="display:flex;gap:4px;flex-wrap:wrap">
+                <span style="padding:1px 6px;border-radius:999px;background:#1A2432;font-family:'JetBrains Mono',monospace;font-size:9px;color:#A7B0BC">tools</span>
+                <span style="padding:1px 6px;border-radius:999px;background:#1A2432;font-family:'JetBrains Mono',monospace;font-size:9px;color:#A7B0BC">vision</span>
+              </span>
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:99px;box-shadow:inset 0 0 0 1.5px #6B7280"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">title</span></span>
+              <button type="button" style="height:22px;padding:0 9px;border:0;border-radius:6px;background:#1A2432;color:#A7B0BC;font-family:'Inter',sans-serif;font-size:10.5px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">Test</button>
+            </div>
+          </div>
+
+          <div style="background:#0F1620;border-radius:12px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:10px;padding:12px 15px;background:#141C26">
+              <span style="width:26px;height:26px;border-radius:7px;background:#1A2432;color:#A7B0BC;display:flex;align-items:center;justify-content:center"><i data-lucide="cpu" style="width:14px;height:14px"></i></span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;color:#E8EDF3">openai</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">api.openai.com · sk-…9a41</span>
+              <span style="display:flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;background:rgba(239,68,68,.14);font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#EF4444"><i data-lucide="triangle-alert" style="width:10px;height:10px"></i>401 invalid key</span>
+              <span style="margin-left:auto;display:flex;align-items:center;gap:8px">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">enabled</span>
+                <span style="width:30px;height:17px;border-radius:999px;background:#FF6A3D;display:flex;align-items:center;justify-content:flex-end;padding:2px;cursor:pointer"><span style="width:13px;height:13px;border-radius:99px;background:#0B0F14"></span></span>
+              </span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 76px 108px 168px 84px 92px;gap:10px;padding:10px 15px;align-items:center">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#E8EDF3">gpt-5.4</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">400k</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#A7B0BC">2.50 / 10.00</span>
+              <span style="display:flex;gap:4px;flex-wrap:wrap">
+                <span style="padding:1px 6px;border-radius:999px;background:#1A2432;font-family:'JetBrains Mono',monospace;font-size:9px;color:#A7B0BC">tools</span>
+                <span style="padding:1px 6px;border-radius:999px;background:#1A2432;font-family:'JetBrains Mono',monospace;font-size:9px;color:#A7B0BC">reason</span>
+              </span>
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:99px;box-shadow:inset 0 0 0 1.5px #6B7280"></span><span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">—</span></span>
+              <span style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#EF4444"><i data-lucide="circle-x" style="width:11px;height:11px"></i>failed</span>
+            </div>
+          </div>
+
+          <div style="background:#0F1620;border-radius:12px;padding:14px 15px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:26px;height:26px;border-radius:7px;background:#1A2432;color:#A7B0BC;display:flex;align-items:center;justify-content:center"><i data-lucide="hard-drive" style="width:14px;height:14px"></i></span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;color:#E8EDF3">ollama · local</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6B7280">127.0.0.1:11434 · 3 models · no key</span>
+              <span style="margin-left:auto;display:flex;align-items:center;gap:8px">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">disabled</span>
+                <span style="width:30px;height:17px;border-radius:999px;background:#233041;display:flex;align-items:center;padding:2px;cursor:pointer"><span style="width:13px;height:13px;border-radius:99px;background:#6B7280"></span></span>
+              </span>
+            </div>
+          </div>
+
+          <button type="button" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:12px;border:0;border-radius:12px;background:#0F1620;color:#A7B0BC;font-size:12.5px;font-weight:600;cursor:pointer" style-hover="color:#FF6A3D">
+            <i data-lucide="plus" style="width:14px;height:14px"></i>Add provider · OpenAI-compatible, Bedrock, Vertex, Azure, custom base URL
+          </button>
+
+          <div style="background:#0F1620;border-radius:12px;padding:14px 15px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#FF6A3D;margin-bottom:12px">// Routing defaults</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px">
+              <div>
+                <div style="font-size:12px;font-weight:600;color:#E8EDF3">Chat default</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;background:#141C26;border-radius:7px;padding:7px 10px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E8EDF3">anthropic/claude-sonnet-4.5</span><i data-lucide="chevron-down" style="width:12px;height:12px;color:#6B7280;margin-left:auto"></i></div>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:#E8EDF3">Fallback chain</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;background:#141C26;border-radius:7px;padding:7px 10px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E8EDF3">haiku-4.5 → gpt-5.4</span><i data-lucide="chevron-down" style="width:12px;height:12px;color:#6B7280;margin-left:auto"></i></div>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:#E8EDF3">Embeddings</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;background:#141C26;border-radius:7px;padding:7px 10px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E8EDF3">openai/text-embed-4</span><i data-lucide="chevron-down" style="width:12px;height:12px;color:#6B7280;margin-left:auto"></i></div>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:#E8EDF3">Thread titles</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:6px;background:#141C26;border-radius:7px;padding:7px 10px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#E8EDF3">anthropic/claude-haiku-4.5</span><i data-lucide="chevron-down" style="width:12px;height:12px;color:#6B7280;margin-left:auto"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 22px;background:#0F1620">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6B7280">4 pending changes · applied without restart</span>
+          <span style="margin-left:auto;display:flex;gap:7px">
+            <button type="button" onClick="{{ closeSettings }}" style="height:31px;padding:0 14px;border:0;border-radius:8px;background:#1A2432;color:#A7B0BC;font-size:12.5px;font-weight:600;cursor:pointer" style-hover="color:#E8EDF3">Discard</button>
+            <button type="button" onClick="{{ closeSettings }}" style="height:31px;padding:0 16px;border:0;border-radius:8px;background:#FF6A3D;color:#0B0F14;font-size:12.5px;font-weight:600;cursor:pointer" style-hover="opacity:.9">Apply configuration</button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1600,&quot;height&quot;:980},&quot;traceExpanded&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Chat&quot;},&quot;showToolPopover&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Chat&quot;}}">
+const NAV_BASE = "width:40px;height:40px;border:0;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;";
+
+class Component extends DCLogic {
+  state = { screen: "chat", settingsOpen: false, traceOpen: true, toolsOpen: true };
+
+  componentDidMount() { this.paintIcons(); }
+  componentDidUpdate() { this.paintIcons(); }
+
+  paintIcons() {
+    const run = () => {
+      if (window.lucide && window.lucide.createIcons) {
+        try { window.lucide.createIcons({ attrs: { "stroke-width": 1.75 } }); } catch (e) { /* noop */ }
+      }
+    };
+    run();
+    if (!this._retried) { this._retried = true; setTimeout(run, 400); setTimeout(run, 1200); }
+    else { setTimeout(run, 60); }
+  }
+
+  navStyle(active) {
+    return NAV_BASE + (active
+      ? "background:#2A1B17;color:#FF6A3D;"
+      : "background:transparent;color:#6B7280;");
+  }
+
+  renderVals() {
+    const screen = this.state.screen;
+    return {
+      isChat: screen === "chat",
+      isKnowledge: screen === "knowledge",
+      navChat: this.navStyle(screen === "chat"),
+      navKb: this.navStyle(screen === "knowledge"),
+      settingsOpen: this.state.settingsOpen,
+      traceOpen: this.props.traceExpanded ?? this.state.traceOpen,
+      toolsOpen: this.props.showToolPopover ?? this.state.toolsOpen,
+      goChat: () => this.setState({ screen: "chat" }),
+      goKnowledge: () => this.setState({ screen: "knowledge" }),
+      openSettings: () => this.setState({ settingsOpen: true }),
+      closeSettings: () => this.setState({ settingsOpen: false }),
+      toggleTrace: () => this.setState((s) => ({ traceOpen: !s.traceOpen })),
+      openTools: () => this.setState({ toolsOpen: true }),
+      closeTools: () => this.setState({ toolsOpen: false }),
+      pickCtx: () => {},
+      pickKb: () => {},
+      pickTool: () => {},
+    };
+  }
+}
+</script>
+</body>
+</html>

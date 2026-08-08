@@ -1,60 +1,200 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "started": "2026-07-13T17:52:40Z",
-  "last_updated": "2026-07-13T19:40:00Z",
-  "last_updated_by": "claude",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execution_dispatched": false,
-  "reflection_complete": false,
+  "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
   "changes_total": 14,
   "changes_completed": 0,
-  "changes": {
-    "fix-user-isolation-sessions-memory-kb": {
+  "implementation_total": 14,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 14,
       "status": "PENDING"
     },
-    "harden-jwt-defaults": {
-      "status": "PENDING"
-    },
-    "fix-skills-scope-semantics": {
-      "status": "PENDING"
-    },
-    "ship-skill-pack-install-path": {
-      "status": "PENDING"
-    },
-    "emit-rag-retrieval-events": {
-      "status": "PENDING"
-    },
-    "wire-orchestrator-delegation": {
-      "status": "PENDING"
-    },
-    "complete-agui-event-parity": {
-      "status": "PENDING"
-    },
-    "resolve-sdk-distribution": {
-      "status": "PENDING"
-    },
-    "rewrite-readme-and-docs": {
-      "status": "PENDING"
-    },
-    "screen-by-screen-validation": {
-      "status": "PENDING"
-    },
-    "certify-operational-resilience": {
+    "evidence": {
       "status": "PENDING",
-      "notes": "Carried from prior phase: implementation complete; evidence/publication work only. Recertification required after changes 1-9 modify source."
+      "summary": null,
+      "blockers": []
     },
-    "produce-supply-chain-artifacts": {
+    "certification": {
       "status": "PENDING",
-      "notes": "Carried from prior phase: implementation complete; evidence/publication work only. Recertification required after changes 1-9 modify source."
+      "summary": null,
+      "blockers": []
     },
-    "certify-release-candidate": {
+    "publication": {
       "status": "PENDING",
-      "notes": "Carried from prior phase: implementation complete; evidence/publication work only. Recertification required after changes 1-9 modify source."
-    },
-    "release-1-0-0": {
-      "status": "PENDING",
-      "notes": "Carried from prior phase: implementation complete; evidence/publication work only. Recertification required after changes 1-9 modify source."
+      "summary": null,
+      "blockers": []
     }
-  }
+  },
+  "changes": [
+    {
+      "id": "fix-user-isolation-sessions-memory-kb",
+      "title": "fix-user-isolation-sessions-memory-kb",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "harden-jwt-defaults",
+      "title": "harden-jwt-defaults",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "fix-skills-scope-semantics",
+      "title": "fix-skills-scope-semantics",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "ship-skill-pack-install-path",
+      "title": "ship-skill-pack-install-path",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "emit-rag-retrieval-events",
+      "title": "emit-rag-retrieval-events",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "wire-orchestrator-delegation",
+      "title": "wire-orchestrator-delegation",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "complete-agui-event-parity",
+      "title": "complete-agui-event-parity",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "resolve-sdk-distribution",
+      "title": "resolve-sdk-distribution",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "rewrite-readme-and-docs",
+      "title": "rewrite-readme-and-docs",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "screen-by-screen-validation",
+      "title": "screen-by-screen-validation",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-operational-resilience",
+      "title": "certify-operational-resilience",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "produce-supply-chain-artifacts",
+      "title": "produce-supply-chain-artifacts",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-release-candidate",
+      "title": "certify-release-candidate",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "release-1-0-0",
+      "title": "release-1-0-0",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
 }

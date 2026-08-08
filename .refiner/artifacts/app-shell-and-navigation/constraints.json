@@ -1,0 +1,55 @@
+{
+  "artifact_type": "ui",
+  "constraints": [
+    {
+      "id": "c10-single-responsive-shell",
+      "description": "One typed destination inventory drives a single mounted content tree, a 240/60px rail above 900px, and four 44px compact targets at or below 900px.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused inventory/shell tests plus rendered breakpoint and overflow measurements"
+      }
+    },
+    {
+      "id": "c10-base-ui-and-layering",
+      "description": "The new palette and compact sheet use Base UI, shell state flows through the hook/store boundary, and shell components do not import stores, services, or transports directly.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Frontend architecture gate, source import census, and focused interaction tests"
+      }
+    },
+    {
+      "id": "c10-brand-and-accessibility",
+      "description": "Delivered UAR assets replace the retired KnowMe identity; the shell has one main landmark, skip navigation, text-backed readiness, accessible collapsed controls, 3px focus, and reduced-motion-safe transitions.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Brand inventory tests, DOM interaction tests, Flat 2.0 gate, and rendered keyboard/visual inspection"
+      }
+    },
+    {
+      "id": "c10-change-gates",
+      "description": "C-10 passes frontend typecheck, lint, boundaries, Flat 2.0, focused tests, strict OpenSpec validation, and diff integrity without running wave-boundary-only suites early.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded C-10 command receipts"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the C-10 frontend-app-shell delta and the vendored UAR UI standard as acceptance authority.",
+    "Do not move C-14-owned admin pages, services, stores, or legacy command consumers in this change.",
+    "Keep cmdk installed for existing consumers; the new top-level shell must use Base UI Autocomplete and Dialog."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "The rendered desktop, breakpoint, and compact shell evidence has no horizontal overflow or semantic duplication.",
+    "No critical finding remains after isolated adversarial review."
+  ]
+}

@@ -32,16 +32,13 @@ import {
   ZapIcon,
 } from "lucide-react";
 import { type FC, type ReactNode, useCallback, useMemo, useRef, useState } from "react";
-import { EnhancedMarkdownText } from "@/components/assistant-ui/enhanced-markdown-text";
+import { MarkdownBubble } from "@/shared/markdown";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
-import { KnowMeLogo, KnowMeWordmark } from "@/components/KnowMeLogo";
+import { UarWordmark } from "@/shared/ui/uar-logo";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ContextUpdateBlock } from "@/features/chat/components/context-update-block";
-import { SkillActivationBlock } from "@/features/chat/components/skill-activation-block";
-import { MemoryMutationBlock, MemoryRecallBlock, MemoryUpdateBlock } from "@/features/chat/components/memory-chunk-block";
-import { A2uiDisplayBlock, A2uiInputBlock } from "@/features/chat/components/a2ui-artifact-block";
 import { ToolCallBlockWrapper } from "@/features/chat/components/tool-call-block";
+import { chatMessageAnchorId } from "@/features/chat/model/message-anchor";
 import { AttachmentPreviewStrip } from "@/features/chat/components/attachment-preview";
 import { useAttachmentContext } from "@/features/chat/attachment-context";
 import { useMemoryContext } from "@/features/chat/memory-context";
@@ -50,9 +47,10 @@ import { CapabilityToggles } from "@/features/chat/capability-toggles";
 import { useAgentConfig } from "@/features/chat/agent-config-context";
 import { selectMessageById, type ChatMessageStoreState, useChatMessageSelector, useThreadUi } from "@/hooks/use-thread-ui";
 import { MessageCitations } from "@/components/citations/citation-hover-panel";
-import { useAgent } from "@/entities/hooks/use-agents";
+import { useAgent } from "@/features/agents/model";
 import { useAgentStatus } from "@/hooks/use-agent-status";
 import { AgentStatusIndicator } from "@/features/chat/components/AgentStatusIndicator";
+import { RichDataRenderers } from "@/features/chat/ui/chunks";
 
 // ─── Stable AuiIf condition predicates ────────────────────────────────────────
 // Defined at module level so their references are stable across renders.
@@ -107,11 +105,13 @@ export const EnhancedThread: FC = () => {
   const isEmpty = useAuiState(condThreadEmpty);
 
   return (
-    <ThreadPrimitive.Root
+    <>
+      <RichDataRenderers />
+      <ThreadPrimitive.Root
       className="aui-root aui-thread-root @container flex min-h-0 flex-1 flex-col bg-background"
       style={{
         ["--thread-max-width" as string]: "44rem",
-        ["--composer-bg" as string]: "hsl(var(--surface))",
+        ["--composer-bg" as string]: "var(--color-surface)",
         ["--composer-radius" as string]: "1.5rem",
         ["--composer-padding" as string]: "10px",
       }}
@@ -143,7 +143,8 @@ export const EnhancedThread: FC = () => {
           </ThreadPrimitive.ViewportFooter>
         </div>
       </ThreadPrimitive.Viewport>
-    </ThreadPrimitive.Root>
+      </ThreadPrimitive.Root>
+    </>
   );
 };
 
@@ -152,11 +153,9 @@ export const EnhancedThread: FC = () => {
 const UarWelcome: FC = () => (
   <div className="flex w-full flex-col items-center justify-center">
     <div className="flex flex-col items-center justify-center gap-4 px-4 py-16 text-center">
-      <div className="flex items-center justify-center rounded-2xl bg-card p-4">
-        <KnowMeLogo size={28} className="text-foreground" />
-      </div>
+      <UarWordmark className="h-16 w-full max-w-sm" />
       <div className="space-y-1">
-        <h1 className="font-display font-semibold text-2xl tracking-tight text-foreground"><KnowMeWordmark /></h1>
+        <h1 className="sr-only">Universal Agent Runtime</h1>
         <p className="font-mono text-[11px] text-primary">{"// Ready to assist"}</p>
       </div>
       <p className="max-w-sm font-body text-sm text-muted-foreground leading-relaxed">
@@ -170,14 +169,16 @@ const UarWelcome: FC = () => (
 // ─── Scroll to bottom ─────────────────────────────────────────────────────────
 
 const ThreadScrollToBottom: FC = () => (
-  <ThreadPrimitive.ScrollToBottom asChild>
-    <TooltipIconButton
-      tooltip="Scroll to bottom"
-      variant="secondary"
-      className="absolute -top-12 z-10 self-center rounded-full p-4 shadow-none disabled:invisible"
-    >
-      <ArrowDownIcon />
-    </TooltipIconButton>
+  <ThreadPrimitive.ScrollToBottom
+    render={
+      <TooltipIconButton
+        tooltip="Scroll to bottom"
+        variant="secondary"
+        className="absolute -top-12 z-10 self-center rounded-full p-4 shadow-none disabled:invisible"
+      />
+    }
+  >
+    <ArrowDownIcon />
   </ThreadPrimitive.ScrollToBottom>
 );
 
@@ -324,19 +325,37 @@ const EnhancedComposer: FC = () => {
 
           {/* Send button — hidden while running */}
           <AuiIf condition={condThreadNotRunning}>
-            <ComposerPrimitive.Send asChild>
-              <TooltipIconButton tooltip="Send message" side="bottom" type="submit" variant="default" size="icon" className="size-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 ml-auto" aria-label="Send message">
-                <ArrowUpIcon className="size-4" />
-              </TooltipIconButton>
+            <ComposerPrimitive.Send
+              render={
+                <TooltipIconButton
+                  tooltip="Send message"
+                  side="bottom"
+                  type="submit"
+                  variant="default"
+                  size="icon"
+                  className="ml-auto size-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  aria-label="Send message"
+                />
+              }
+            >
+              <ArrowUpIcon className="size-4" />
             </ComposerPrimitive.Send>
           </AuiIf>
 
           {/* Cancel button — shown while running */}
           <AuiIf condition={condThreadRunning}>
-            <ComposerPrimitive.Cancel asChild>
-              <Button type="button" variant="default" size="icon" className="size-8 rounded-full" aria-label="Stop generating">
-                <SquareIcon className="size-3 fill-current" />
-              </Button>
+            <ComposerPrimitive.Cancel
+              render={
+                <Button
+                  type="button"
+                  variant="default"
+                  size="icon"
+                  className="size-8 rounded-full"
+                  aria-label="Stop generating"
+                />
+              }
+            >
+              <SquareIcon className="size-3 fill-current" />
             </ComposerPrimitive.Cancel>
           </AuiIf>
         </div>
@@ -349,32 +368,38 @@ const EnhancedComposer: FC = () => {
 // KnowMe anatomy: trailing ember-soft bubble, no avatar, hover action bar
 // beside the bubble, branch picker on the row below.
 
-const UserMessage: FC = () => (
-  <MessagePrimitive.Root
-    data-slot="aui_user-message-root"
-    data-role="user"
-    className="fade-in slide-in-from-bottom-1 animate-in grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [&:where(>*)]:col-start-2"
-  >
-    <div className="relative col-start-2 min-w-0">
-      <div className="peer max-w-[80%] rounded-2xl rounded-ee-md bg-ember-soft px-4 py-3 font-body text-sm leading-relaxed text-foreground wrap-break-word empty:hidden">
-        <MessagePrimitive.Parts components={USER_MESSAGE_PARTS_COMPONENTS} />
+const UserMessage: FC = () => {
+  const messageId = useMessage((message) => message.id);
+  return (
+    <MessagePrimitive.Root
+      id={chatMessageAnchorId(messageId)}
+      data-message-id={messageId}
+      data-slot="aui_user-message-root"
+      data-role="user"
+      tabIndex={-1}
+      className="fade-in slide-in-from-bottom-1 animate-in grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ember [&:where(>*)]:col-start-2"
+    >
+      <div className="relative col-start-2 min-w-0">
+        <div className="peer max-w-[80%] rounded-2xl rounded-ee-md bg-ember-soft px-4 py-3 font-body text-sm leading-relaxed text-foreground wrap-break-word empty:hidden">
+          <MessagePrimitive.Parts components={USER_MESSAGE_PARTS_COMPONENTS} />
+        </div>
+        <div className="absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full">
+          <UserActionBar />
+        </div>
       </div>
-      <div className="absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full">
-        <UserActionBar />
-      </div>
-    </div>
 
-    <BranchPicker className="col-span-full col-start-1 row-start-3 -me-1 justify-end" />
-  </MessagePrimitive.Root>
-);
+      <BranchPicker className="col-span-full col-start-1 row-start-3 -me-1 justify-end" />
+    </MessagePrimitive.Root>
+  );
+};
 
 const UserActionBar: FC = () => (
   <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" className="flex flex-col items-end text-muted-foreground">
-    <ActionBarPrimitive.Copy asChild>
-      <TooltipIconButton tooltip="Copy"><CopyIcon /></TooltipIconButton>
+    <ActionBarPrimitive.Copy render={<TooltipIconButton tooltip="Copy" />}>
+      <CopyIcon />
     </ActionBarPrimitive.Copy>
-    <ActionBarPrimitive.Edit asChild>
-      <TooltipIconButton tooltip="Edit"><PencilIcon /></TooltipIconButton>
+    <ActionBarPrimitive.Edit render={<TooltipIconButton tooltip="Edit" />}>
+      <PencilIcon />
     </ActionBarPrimitive.Edit>
   </ActionBarPrimitive.Root>
 );
@@ -423,7 +448,7 @@ const AssistantMessageBody: FC = () => {
             case "text":
               return (
                 <div className="my-2 w-fit max-w-[80%] rounded-2xl rounded-es-md bg-card px-4 py-3 text-foreground">
-                  <EnhancedMarkdownText />
+                  <MarkdownBubble />
                 </div>
               );
             case "reasoning":
@@ -456,22 +481,28 @@ const AssistantMessageBody: FC = () => {
   );
 };
 
-const AssistantMessage: FC = () => (
-  <MessagePrimitive.Root
-    data-slot="aui_assistant-message-root"
-    data-role="assistant"
-    className="fade-in slide-in-from-bottom-1 animate-in relative duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto]"
-  >
-    <div data-slot="aui_assistant-message-content" className="px-2 leading-relaxed text-foreground wrap-break-word">
-      <AssistantMessageBody />
-      <AssistantMessageCitations />
-    </div>
-    <div data-slot="aui_assistant-message-footer" className="ms-2 flex min-h-7.5 items-center pt-1.5">
-      <BranchPicker />
-      <AssistantActionBar />
-    </div>
-  </MessagePrimitive.Root>
-);
+const AssistantMessage: FC = () => {
+  const messageId = useMessage((message) => message.id);
+  return (
+    <MessagePrimitive.Root
+      id={chatMessageAnchorId(messageId)}
+      data-message-id={messageId}
+      data-slot="aui_assistant-message-root"
+      data-role="assistant"
+      tabIndex={-1}
+      className="fade-in slide-in-from-bottom-1 animate-in relative duration-150 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ember [contain-intrinsic-size:auto_200px] [content-visibility:auto]"
+    >
+      <div data-slot="aui_assistant-message-content" className="px-2 leading-relaxed text-foreground wrap-break-word">
+        <AssistantMessageBody />
+        <AssistantMessageCitations />
+      </div>
+      <div data-slot="aui_assistant-message-footer" className="ms-2 flex min-h-7.5 items-center pt-1.5">
+        <BranchPicker />
+        <AssistantActionBar />
+      </div>
+    </MessagePrimitive.Root>
+  );
+};
 
 // ─── Reasoning group ──────────────────────────────────────────────────────────
 // KnowMe idiom: collapsed by default on a cyan-tinted surface; auto-opens
@@ -483,10 +514,10 @@ const ReasoningGroup: FC<{ streaming: boolean; children: ReactNode }> = ({ strea
   const isOpen = userOpen ?? streaming;
 
   return (
-    <div className="my-2 w-full max-w-[80%] rounded-xl bg-[hsl(var(--cyan)_/_0.07)] px-3 py-2">
+    <div className="my-2 w-full max-w-[80%] rounded-xl bg-[color-mix(in_srgb,var(--color-cyan)_7%,transparent)] px-3 py-2">
       <Collapsible open={isOpen} onOpenChange={(open) => setUserOpen(open)}>
         <CollapsibleTrigger
-          className="group/trigger flex max-w-[75%] origin-left items-center gap-2 py-1.5 text-sm text-[hsl(var(--cyan))] transition-colors hover:text-foreground"
+          className="group/trigger flex max-w-[75%] origin-left items-center gap-2 py-1.5 text-sm text-[var(--color-cyan)] transition-colors hover:text-foreground"
           aria-expanded={isOpen}
         >
           <BrainIcon className="size-4 shrink-0" />
@@ -545,85 +576,6 @@ const ToolGroup: FC<{ count: number; active: boolean; children: ReactNode }> = (
 // ─── Tool Call Part ───────────────────────────────────────────────────────────
 
 const ToolCallPart: FC<ToolCallMessagePartProps> = ({ toolName, args, result, status }) => {
-  if (toolName === "__skill__") {
-    const a = args as { skillId: string; skillName: string; selectionMethod?: string; status: "active" | "complete" };
-    return <SkillActivationBlock skillId={a.skillId} skillName={a.skillName} selectionMethod={a.selectionMethod} status={a.status} />;
-  }
-  if (toolName === "__context__") {
-    const a = args as { strategy: string; messagesRemoved: number; tokensSaved: number; wasApplied: boolean; summaryGenerated: boolean };
-    return <ContextUpdateBlock strategy={a.strategy} messagesRemoved={a.messagesRemoved} tokensSaved={a.tokensSaved} wasApplied={a.wasApplied} summaryGenerated={a.summaryGenerated} />;
-  }
-  if (toolName === "__memory_recall__") {
-    const a = args as {
-      items: Array<{
-        key: string;
-        value: string;
-        source: string;
-        scope?: string;
-        memory_type?: string;
-        importance?: number;
-      }>;
-      count?: number;
-    };
-    return <MemoryRecallBlock items={a.items ?? []} count={a.count} />;
-  }
-  if (toolName === "__memory_mutation__") {
-    const a = args as {
-      operation: string;
-      memoryId: string;
-      content: string;
-      scope: string;
-      memoryType: string;
-    };
-    return (
-      <MemoryMutationBlock
-        operation={a.operation}
-        memoryId={a.memoryId}
-        content={a.content}
-        scope={a.scope}
-        memoryType={a.memoryType}
-      />
-    );
-  }
-  if (toolName === "__memory_update__") {
-    const a = args as { key: string; operation: string; value: string };
-    return <MemoryUpdateBlock memoryKey={a.key} operation={a.operation} value={a.value} />;
-  }
-  if (toolName === "__a2ui_input__") {
-    const a = args as {
-      runId: string;
-      artifactId: string;
-      artifactType: string;
-      title: string;
-      content: string;
-      metadata: Record<string, unknown>;
-    };
-    const artifactStatus: "running" | "complete" | "failed" =
-      status.type === "running" ? "running" : status.type === "incomplete" ? "failed" : "complete";
-    return (
-      <A2uiInputBlock
-        runId={a.runId}
-        artifactId={a.artifactId}
-        artifactType={a.artifactType}
-        title={a.title}
-        content={a.content}
-        metadata={a.metadata}
-        status={artifactStatus}
-        result={typeof result === "string" ? result : result ? JSON.stringify(result) : undefined}
-      />
-    );
-  }
-  if (toolName === "__a2ui_display__") {
-    const a = args as { artifactType: string; title: string; language?: string };
-    return (
-      <A2uiDisplayBlock
-        artifactType={a.artifactType}
-        title={a.title}
-        language={a.language}
-        content={typeof result === "string" ? result : result ? JSON.stringify(result, null, 2) : ""}
-      />
-    );
-  }
   return <ToolCallBlockWrapper toolName={toolName} args={args as Record<string, unknown>} result={result} status={status} />;
 };
 
@@ -721,7 +673,7 @@ const MessageMetaChips: FC = () => {
   const agentLabel = message.agentId
     ? (answeringAgent?.metadata?.title ?? message.agentId)
     : null;
-  const skillCount = message.content.filter((b) => b.type === "skill-activation").length;
+  const skillCount = message.chunks?.filter((chunk) => chunk.kind === "skill-activation").length ?? 0;
   const citationCount = message.content.filter((b) => b.type === "citation").length;
 
   const hasAny =
@@ -761,11 +713,9 @@ const MessageMetaChips: FC = () => {
 
 const AssistantActionBar: FC = () => (
   <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" autohideFloat="single-branch" className="-ml-1 flex items-center gap-1 text-muted-foreground">
-    <ActionBarPrimitive.Copy asChild>
-      <TooltipIconButton tooltip="Copy">
-        <AuiIf condition={condMessageCopied}><CheckIcon /></AuiIf>
-        <AuiIf condition={condMessageNotCopied}><CopyIcon /></AuiIf>
-      </TooltipIconButton>
+    <ActionBarPrimitive.Copy render={<TooltipIconButton tooltip="Copy" />}>
+      <AuiIf condition={condMessageCopied}><CheckIcon /></AuiIf>
+      <AuiIf condition={condMessageNotCopied}><CopyIcon /></AuiIf>
     </ActionBarPrimitive.Copy>
     <MessageMetaChips />
   </ActionBarPrimitive.Root>
@@ -790,8 +740,12 @@ const EditComposer: FC = () => (
     <ComposerPrimitive.Root className="ms-auto flex w-full max-w-[85%] flex-col rounded-(--composer-radius) bg-(--composer-bg) shadow-none">
       <ComposerPrimitive.Input className="min-h-14 w-full resize-none bg-transparent px-4 pt-3 pb-1 font-body text-base text-foreground outline-none" autoFocus />
       <div className="mx-2.5 mb-2.5 flex items-center gap-1.5 self-end">
-        <ComposerPrimitive.Cancel asChild><Button variant="ghost" size="sm" className="h-8 rounded-full px-3.5">Cancel</Button></ComposerPrimitive.Cancel>
-        <ComposerPrimitive.Send asChild><Button size="sm" className="h-8 rounded-full px-3.5">Update</Button></ComposerPrimitive.Send>
+        <ComposerPrimitive.Cancel render={<Button variant="ghost" size="sm" className="h-8 rounded-full px-3.5" />}>
+          Cancel
+        </ComposerPrimitive.Cancel>
+        <ComposerPrimitive.Send render={<Button size="sm" className="h-8 rounded-full px-3.5" />}>
+          Update
+        </ComposerPrimitive.Send>
       </div>
     </ComposerPrimitive.Root>
   </MessagePrimitive.Root>
@@ -801,9 +755,13 @@ const EditComposer: FC = () => (
 
 const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({ className, ...rest }) => (
   <BranchPickerPrimitive.Root hideWhenSingleBranch className={cn("mr-2 -ml-2 inline-flex items-center text-muted-foreground text-xs", className)} {...rest}>
-    <BranchPickerPrimitive.Previous asChild><TooltipIconButton tooltip="Previous branch"><ChevronLeftIcon /></TooltipIconButton></BranchPickerPrimitive.Previous>
+    <BranchPickerPrimitive.Previous render={<TooltipIconButton tooltip="Previous branch" />}>
+      <ChevronLeftIcon />
+    </BranchPickerPrimitive.Previous>
     <span className="font-mono font-medium"><BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count /></span>
-    <BranchPickerPrimitive.Next asChild><TooltipIconButton tooltip="Next branch"><ChevronRightIcon /></TooltipIconButton></BranchPickerPrimitive.Next>
+    <BranchPickerPrimitive.Next render={<TooltipIconButton tooltip="Next branch" />}>
+      <ChevronRightIcon />
+    </BranchPickerPrimitive.Next>
   </BranchPickerPrimitive.Root>
 );
 
@@ -812,7 +770,7 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({ className, ...rest
 // Object literals created inline inside JSX are new references on every render,
 // which causes assistant-ui's context/subscription machinery to re-render
 // indefinitely (React error #185). Module-level constants are created once.
-const USER_MESSAGE_PARTS_COMPONENTS = { Text: EnhancedMarkdownText };
+const USER_MESSAGE_PARTS_COMPONENTS = { Text: MarkdownBubble };
 const GROUP_BY = groupPartByType({
   reasoning: ["group-chainOfThought", "group-reasoning"],
   "tool-call": ["group-chainOfThought", "group-tool"],

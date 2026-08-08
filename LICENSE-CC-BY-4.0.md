@@ -12,6 +12,5 @@ and indicate if changes were made.
 
 Full license text: https://creativecommons.org/licenses/by/4.0/legalcode
 
-This documentation license is independent of the code licenses that apply
-to the runtime (AGPL-3.0-only, see `LICENSE`) and the SDKs (MIT, see
-`sdks/*/LICENSE*`).
+This documentation license is independent of the code license that applies to
+the runtime and the SDKs (MIT, see `LICENSE`).

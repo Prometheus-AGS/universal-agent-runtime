@@ -1,0 +1,26 @@
+{
+  "note": "Operator/dispatch context that the canonical kbd-runtime waypoint schema does not carry. current-waypoint.json is now generatedBy=kbd-runtime and is rewritten on every projection, so do NOT hand-edit it. This sidecar is authored by tools/operators and is never overwritten by the runtime.",
+  "phase": "uar-uiux-full-migration-2026-08",
+  "activeDispatches": {
+    "codex": {
+      "phase": "uar-uiux-full-migration-2026-08",
+      "dispatchedAt": "2026-08-07T00:00:00Z",
+      "dispatchedBy": "claude",
+      "scope": "all 21 changes, plan.md order",
+      "handoffDoc": ".kbd-orchestrator/phases/uar-uiux-full-migration-2026-08/execution.md"
+    }
+  },
+  "executionMode": "openspec-per-change-loop",
+  "operatorPriority": "Full UI/UX migration to docs/ui spec. Per-surface scoping (D2), Base UI kept over shadcn (D1 — a recorded divergence from KnowMe standard 6.1/6.3), KnowMe standard vendored into docs/ (D3).",
+  "nextPendingChange": "C-00 archive-completed-ui-changes",
+  "nextAction": "Archive a2ui-uar-renderer-on-webcore, base-ui-foundation, a2ui-inspector-lit-svelte-renderers, and a2ui-world-class-theming-a11y-i18n in plan order, then begin C-01.",
+  "counterSemantics": "current-waypoint.json implementationTotal/Completed (72/26) is a PROJECT-WIDE roll-up across all 47 phases, not this phase. This phase is 0/21 — read .kbd-orchestrator/phases/uar-uiux-full-migration-2026-08/progress.json for phase-scoped counters.",
+  "decisionsPending": [
+    "D1-base-ui-over-shadcn",
+    "D2-per-surface-scoping",
+    "D3-vendor-knowme-standard"
+  ],
+  "decisionsPendingReason": "prometheus kbd decision record requires the TCP control endpoint. The daemon serves over a Unix socket only (no --tcp in the managed LaunchAgent) and reqwest cannot speak unix://. Decisions remain authoritative in decision-log.md until that is wired.",
+  "updatedAt": "2026-08-07T11:15:00Z",
+  "updatedBy": "claude"
+}

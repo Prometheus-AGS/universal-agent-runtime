@@ -1,96 +1,45 @@
 {
-  "phase": "uar-next-harness",
-  "previousPhase": "gate-activation-and-security-cleanup",
-  "backend": "openspec",
-  "sourceTool": "claude-code",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": false,
-  "reflect_complete": true,
-  "origin": "Manual entry via /kbd-new-phase: implement every recommendation in docs/uar-next.md (commit f58514e) — dynamic model router, prompt dialect engine, A2A/gRPC fix + LibreFang integration, Knowledge Service RAG extraction, agent spec v2.0, Prometheus Skill Pack, plus the full §17 five-sub-phase plan — to make UAR the world's best agent harness.",
-  "goals": [
-    "G1 Foundation (P0): fix A2A gRPC, Postgres credential store, dynamic model router, prompt dialect engine, MemPalace fix, unpin deps, Docker Compose, §14 gap fixes",
-    "G2 Intelligence (P1): Cedar in tool loop, per-model context strategy, cost tracking, skill activation metrics, skill schema transformation, Knowledge Service RAG, provider health monitoring, model capability registry",
-    "G3 UX & Integration (P2): web UI config redesign, model comparison dashboard, agent state visualization, cost dashboard, LibreFang A2A/AG-UI/shared-router integration, Prometheus Skill Pack (§18)",
-    "G4 Specification & Distribution (P2): agent spec v2.0 + compiler update, conformance testing, template library, docs overhaul + deployment guide, benchmark suite",
-    "G5 Polish & Release (P3): hot-path performance, security audit, load testing, docs finalization, RC → GA"
-  ],
-  "candidateChanges": [
-    "HK0-commit-live-sse-dualstack",
-    "proxy-integration-gate",
-    "live-integration-baseline-coverage",
-    "a2a-grpc-enable",
-    "postgres-credential-store",
-    "provider-health-failover",
-    "prompt-dialect-engine",
-    "per-model-context-strategy",
-    "cost-budgets-backend",
-    "cost-dashboard",
-    "skill-activation-metrics",
-    "capability-registry-benchmarks",
-    "model-comparison-dashboard",
-    "rag-hardening",
-    "agent-spec-v2",
-    "compiler-v2-stages",
-    "conformance-testing",
-    "agent-template-library",
-    "skill-pack-bundling",
-    "eval-targeted-suites",
-    "agui-spec-alignment",
-    "librefang-a2a-agui-bridge",
-    "docs-overhaul-deploy-guide",
-    "perf-security-load"
-  ],
-  "updatedAt": "2026-07-04T00:15:00Z",
-  "changes_completed": 16,
-  "changes_total": 24,
-  "changes_completed_note": "16 = proxy-integration-gate + live-integration-baseline-coverage + a2a-grpc-enable (CH-01) + capability-registry-benchmarks (CH-09) + rag-hardening (CH-11) + skill-pack-bundling loader upgrades (CH-16) + librefang-a2a-agui-bridge (CH-18) + postgres-credential-store (CH-02) + provider-health-failover (CH-03) + prompt-dialect-engine (CH-04) + cost-budgets-backend (CH-06) + skill-activation-metrics (CH-08) + agui-spec-alignment (CH-21, disclosed scope note) + per-model-context-strategy (CH-05, real Summarize/Hierarchical + Auto model-aware selection) + cost-dashboard (CH-07) + model-comparison-dashboard (CH-10). G1+G2+G3 are now FULLY CLOSED for this phase's candidateChanges list -- only G4 (CH-12..17 spec-v2 chain) and G5 (CH-19/20) remain, both explicitly out of scope for this operator directive. RECONCILIATION 2026-07-03: prior count of 7 was stale -- CH-02/04/05/06/08/21 were already committed in earlier turns but never counted; a research pass found CH-02/04/06/08 committed-but-UNWIRED, CH-03 genuinely unstarted, CH-05 genuinely incomplete (all now real). CH-07/CH-10 required fixing a real environment blocker first: the @prometheus-ags/prometheus-entity-management submodule was uninitialized (empty) for this entire phase -- initializing+building it fixed the frontend build (was failing since session start) but also surfaced a pre-existing, disclosed bug: the submodule's useEntityList/useEntity hooks now take an options-object API, but 5+ existing call sites (use-models.ts, use-compiler-sessions.ts, use-mcp-status.ts, use-memory.ts, use-settings-entity.ts) still call the old bare-string API and silently get empty results -- this predates CH-07/CH-10, is NOT something either change caused, and is out of scope to fix here (flagged as a phase follow-up). CH-07's cost-dashboard avoids the broken hook (uses useGraphStore directly like runtime-console-page.tsx) and was confirmed rendering correctly via a live server + Playwright screenshot (zero console errors, correct empty states). CH-10's compare feature is correctly wired against types but could not be interactively exercised with real catalog data in this environment due to the pre-existing hook bug affecting the models-page's EXISTING catalog list. Full-suite checkpoints: 318/318 after CH-02/03/04/06/08, 330/330 after CH-05 (backend). Frontend: bun run build green both times; live server smoke test via Playwright screenshots of /admin/cost and /admin/models, zero console errors on both.",
-  "planAmendments": [
-    "A1 2026-07-01: docs/uar-next-fable.md supersedes docs/uar-next.md as recommendation source; CH-03/04/09/16/18/20 amended, CH-21 agui-spec-alignment added (see plan.md Amendment A1)",
-    "A2 2026-07-01: proxy-integration-gate (CH-22) added as first Round-1 change — live integration tier against local OpenAI proxy 127.0.0.1:8181 (recorded-fixture mirror in CI), 100% FEATURE coverage contract (every CH ships a live case, MATRIX.md), line coverage stays at 80% llvm-cov gate; 100% line coverage explicitly rejected (operator may override before Round 2)",
-    "A3 2026-07-01: proxy-integration-gate (CH-22) split during implementation. CH-22 narrowed to its shipped scope (stub LLM server + backend selection + health-check script) and is DONE (10/10 tasks, 9 tests, 4 commits). New CH-22b live-integration-baseline-coverage carries the minimal server-boot harness + 8 baseline cases + MATRIX.md + CI wiring (fully planned, 0/23 tasks implemented). Total changes 23 -> 24."
-  ],
-  "hk0_complete": true,
-  "hk0_commits": [
-    "240daf1",
-    "930f507",
-    "8374ae0",
-    "10079db",
-    "5d13d71",
-    "0751e88",
-    "c4ed8c9"
-  ],
-  "batchVerification2026_07_02": {
-    "machine": "handoff higher-mem Linux box (previous handoff was targeting a Mac with /Volumes/my-passport; that path does not exist here — built with default CARGO_TARGET_DIR instead)",
-    "toolchainGapsFixed": [
-      "cmake (apt) — required by kreuzberg-tesseract native build, unrelated to this turn's code",
-      "protobuf-compiler / protoc (apt) — required by CH-01's new tonic-prost-build proto codegen"
-    ],
-    "codeFixCommit": "2e1f153 fix(build): resolve tonic-prost/prost version mismatch for A2A gRPC codegen (added tonic-prost=0.14 dep, bumped prost 0.13->0.14; also ran cargo fmt)",
-    "result": "cargo build --lib clean; cargo test --lib 276/276 green (was 268 baseline); cargo clippy --lib has 477 warnings, all warn-level per this repo's own Cargo.toml lint config (no -D warnings gate) — not a regression, includes ~15 new warnings in this turn's files (doc backticks, collapsible-if, map().unwrap_or()) left as-is, consistent with existing repo-wide warning debt",
-    "changeStatusCorrection": "CH-01 a2a-grpc-enable tasks.md updated to reflect reality: code compiles (proto-codegen approach, deviating from the planned manual-service-builder) but is NOT feature-complete — open gaps are 2.3 graceful shutdown (gRPC serve task is a bare detached tokio::spawn, not joined into the try_join!/CancellationToken shutdown path) and 3.1/3.3 (no integration test, no MATRIX.md row). CH-02/03/04/05/06/08/CH-21 have no tasks.md (coded directly, no formal OpenSpec task breakdown) — compiling + lib-test-green is the only verification signal available for those.",
-    "notYetVerified": "No end-to-end/live server smoke test was run this pass (would need MCP/DB/provider creds); this was a cargo build+test+clippy+fmt static verification only."
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
   },
-  "g1g2g3CompletionPass_2026_07_03": {
-    "operatorDirective": "Complete G1, G2, and G3 (explicitly excluding G4 CH-12..17 and G5 CH-19/20).",
-    "wiredThisTurn": [
-      "postgres-credential-store (CH-02)",
-      "provider-health-failover (CH-03)",
-      "prompt-dialect-engine (CH-04)",
-      "cost-budgets-backend (CH-06)",
-      "skill-activation-metrics (CH-08)",
-      "per-model-context-strategy (CH-05, real Summarize/Hierarchical + Auto model-aware selection, after initial verification found it genuinely incomplete)",
-      "cost-dashboard (CH-07)",
-      "model-comparison-dashboard (CH-10)"
-    ],
-    "verifiedAlreadyComplete": [
-      "agui-spec-alignment (CH-21) -- mostly complete, disclosed scope note"
-    ],
-    "verifiedIncomplete": [],
-    "remainingForG1G2G3": [],
-    "g1g2g3Status": "CLOSED 2026-07-03T22:30:00Z. All candidateChanges tagged G1/G2/G3 are done (16/24 total phase changes). Environment fix along the way: initialized+built the previously-empty prometheus-entity-management submodule, which had been silently breaking `cargo build`'s embedded frontend step (and thus any full binary build) since before this phase started.",
-    "discoveredBug_entityManagementHookApiDrift": "RESOLVED 2026-07-04 (see openspec/changes/fix-entity-hook-api-drift). Root cause: useEntityList/useEntity are deprecated in the library's own 2.0 (JSDoc @deprecated, CLAUDE.md) in favor of a transport-registry-driven useEntities/useEntityQuery pair that this app never wired (registerEntityTransport is Supabase/PostgREST-shaped, not a fit for UAR's plain-fetch Rust REST API without per-entity custom transports). Fix: new shared useGraphEntities<T>(type)/useGraphEntity<T>(type,id) (frontend/src/entities/hooks/use-graph-entities.ts) -- thin useGraphStore selectors matching the pattern this app already used successfully in runtime-console-page.tsx and the new cost-dashboard-page.tsx. Migrated all 6 affected call sites (use-models.ts, use-compiler-sessions.ts, use-mcp-status.ts, use-memory.ts, use-settings-entity.ts, tools-page.tsx). Also fixed an adjacent bug in useSettingsEntity (r.value -> r.data, SettingWithMeta has no value field) and a CompareDialog width bug found while verifying this fix live (max-w-3xl vs base sm:max-w-md -- tailwind-merge doesn't treat mismatched modifiers as conflicting; fixed to sm:max-w-3xl). Verified live: models catalog now shows 5331/5331 in catalog, 150 providers (was 0); CH-10 compare feature exercised end-to-end with real data, zero console errors. bun run typecheck: all hook-shape errors gone (17 unrelated pre-existing errors remain -- Base UI Select nullability, react-resizable-panels drift, recharts type-export drift).",
-    "ch05Note": "src/uar/context/strategy.rs's Summarize/Hierarchical now call the existing LLM-backed summarizer::summarize_messages (already used by the separate token-budget ContextManager) instead of a sliding-window stub. New ContextStrategy::Auto + resolve_effective_strategy wire model-aware selection via strategy_for_model, keyed off RunManager's default model's cataloged context window (approximation -- per-agent-resolved model isn't known yet at that point in the pipeline). keep_first_last kept as a correct standalone utility rather than force-wired onto raw chat turns (would break causal order); its placement principle is applied structurally via Hierarchical's tier ordering instead. 18/18 new uar::context:: tests green.",
-    "compileCheckpoints": "This epoch's nominal 3-checkpoint budget was used for the CH-02/03/04/06/08 batch (llm:: tests, cost_budget tests, full-suite 318/318); CH-05 was implemented as a distinct follow-on unit with its own targeted (uar::context:: 18/18) + full-suite (330/330) verification, per explicit operator direction to continue after the G1/G2/G3 status check-in. All green. cargo fmt run (pre-existing unrelated tests/bdd.rs module-path error blocked full fmt completion but src/ files were formatted before it hit that file)."
-  }
+  "conflictCount": 0,
+  "phase": "uar-next-harness",
+  "phaseId": "uar-next-harness",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

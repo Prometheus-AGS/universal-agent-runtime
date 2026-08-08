@@ -1,0 +1,47 @@
+{
+  "refinement_id": "c06-agui-event-parity-and-normalizer-20260807",
+  "artifact_name": "agui-event-parity-and-normalizer",
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "started_at": "2026-08-07T19:25:20Z",
+  "updated_at": "2026-08-07T20:24:22Z",
+  "current_iteration": 3,
+  "max_iterations": 5,
+  "goals": [
+    "Validate C-06 against its OpenSpec requirements and Wave 2 gates"
+  ],
+  "constraints": [
+    "c06-single-pass-projections",
+    "c06-replay-snapshots",
+    "c06-tool-raw-parity",
+    "c06-repository-gates"
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "status": "pass",
+      "completed_at": "2026-08-07T19:25:20Z"
+    },
+    {
+      "iteration": 2,
+      "status": "pass",
+      "completed_at": "2026-08-07T19:48:13Z"
+    },
+    {
+      "iteration": 3,
+      "status": "pass",
+      "completed_at": "2026-08-07T20:24:22Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null
+}

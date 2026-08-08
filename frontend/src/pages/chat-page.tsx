@@ -1,14 +1,7 @@
-import { AssistantRuntimeProvider } from "@assistant-ui/react";
-import { EnhancedThread } from "@/components/assistant-ui/enhanced-thread";
 import { LeftSidebar } from "@/components/layout/left-sidebar";
 import { useUiState } from "@/hooks/use-ui-state";
-import { useChatRuntime } from "@/features/chat/use-chat-runtime";
-import { AttachmentContext } from "@/features/chat/attachment-context";
-import { MemoryContextProvider } from "@/features/chat/memory-context";
 import { AgentSelector, type AgentConfig } from "@/features/chat/agent-selector";
-import { AgentConfigContext } from "@/features/chat/agent-config-context";
-import { SessionConfigPanel } from "@/features/chat/session-config-panel";
-import { useEffect, useState, useCallback } from "react";
+import { lazy, Suspense, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useThreadUi } from "@/hooks/use-thread-ui";
 import { cn } from "@/lib/utils";
@@ -16,19 +9,12 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Menu, Settings2, X } from "lucide-react";
 import { useChatPage } from "@/hooks/use-chat-page";
 
-/** Thread detail view — wraps chat runtime for the store-selected thread. */
-function ThreadView({ threadId }: { threadId: string }) {
-  const { runtime, attachmentManager } = useChatRuntime(threadId);
-  return (
-    <MemoryContextProvider>
-      <AssistantRuntimeProvider runtime={runtime}>
-        <AttachmentContext.Provider value={attachmentManager}>
-          <EnhancedThread />
-        </AttachmentContext.Provider>
-      </AssistantRuntimeProvider>
-    </MemoryContextProvider>
-  );
-}
+const LazyChatThreadView = lazy(() => import("@/features/chat/chat-thread-view").then((module) => ({
+  default: module.ChatThreadView,
+})));
+const LazySessionConfigPanel = lazy(() => import("@/features/chat/session-config-panel").then((module) => ({
+  default: module.SessionConfigPanel,
+})));
 
 /** Empty state shown when no thread is selected. */
 function NoThreadSelected() {
@@ -47,7 +33,7 @@ function NoThreadSelected() {
         onClick={handleNew}
         type="button"
         variant="outline"
-        className="rounded-lg border border-primary/30 bg-primary/10 px-6 py-3 font-display text-sm font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="rounded-lg border border-primary/30 bg-primary/10 px-6 py-3 font-display text-sm font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring"
       >
         New conversation
       </Button>
@@ -127,7 +113,7 @@ export function ChatPage() {
       />
 
       {/* Main chat area */}
-      <main className="flex flex-1 flex-col overflow-hidden min-w-0">
+      <section aria-label="Conversation" className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Agent selector toolbar — always visible so users can pick an agent
             before starting a thread (threadId null is handled inside the component). */}
         <div className="flex items-center gap-2 bg-background px-4 py-2">
@@ -154,20 +140,28 @@ export function ChatPage() {
         </div>
         {activeThreadId ? (
           <>
-            <SessionConfigPanel
-              threadId={activeThreadId}
-              agentConfig={agentConfig}
-              open={configOpen}
-              onOpenChange={setConfigOpen}
-            />
-            <AgentConfigContext.Provider value={agentConfig}>
-              <ThreadView threadId={activeThreadId} />
-            </AgentConfigContext.Provider>
+            <Suspense fallback={null}>
+              <LazySessionConfigPanel
+                threadId={activeThreadId}
+                agentConfig={agentConfig}
+                open={configOpen}
+                onOpenChange={setConfigOpen}
+              />
+            </Suspense>
+            <Suspense
+              fallback={(
+                <div className="flex flex-1 items-center justify-center p-6" role="status" aria-live="polite">
+                  <span className="font-mono text-xs text-muted-foreground">Loading conversation…</span>
+                </div>
+              )}
+            >
+              <LazyChatThreadView threadId={activeThreadId} agentConfig={agentConfig} />
+            </Suspense>
           </>
         ) : (
           <NoThreadSelected />
         )}
-      </main>
+      </section>
     </div>
   );
 }

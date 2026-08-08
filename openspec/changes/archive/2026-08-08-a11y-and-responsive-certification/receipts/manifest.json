@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-08T08:53:11Z",
+  "workingDirectory": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+  "profiles": [
+    {
+      "name": "full-vitest-and-storybook",
+      "command": "pnpm -C frontend exec vitest run --reporter=default --reporter=json --outputFile=../openspec/changes/a11y-and-responsive-certification/receipts/vitest.json",
+      "startedAt": "2026-08-08T08:32:40.779Z",
+      "exitCode": 0,
+      "result": "69 files, 331 passed, 0 failed",
+      "receipt": "vitest.json",
+      "sha256": "c5cad3ff0a6ac0cdda93207e3502ae5f270274e3576c515d07c5177176cab5fd"
+    },
+    {
+      "name": "default-playwright",
+      "command": "pnpm -C frontend test:e2e",
+      "startedAt": "2026-08-08T08:33:15.564Z",
+      "exitCode": 0,
+      "result": "42 passed, 3 explicitly skipped, 0 failed",
+      "receipt": "default-playwright.json",
+      "sha256": "8bc8959eee297aa0673fef31446ed6764c50b98ace407a6219a5ed31bafcacf1"
+    },
+    {
+      "name": "accessibility-playwright",
+      "command": "pnpm -C frontend test:a11y",
+      "startedAt": "2026-08-08T08:48:21.504Z",
+      "exitCode": 0,
+      "result": "16 passed, 0 failed",
+      "receipt": "accessibility-playwright.json",
+      "sha256": "77d1fb7ea47b6227a1f30a30ec03007c2c1403ee54c054a24a7ede5234255009"
+    },
+    {
+      "name": "storybook-suppression-gate",
+      "command": "node scripts/run-storybook-a11y-suppression-gate.mjs --output openspec/changes/a11y-and-responsive-certification/receipts/storybook-suppression-gate.json",
+      "startedAt": "2026-08-08T08:49:43.837Z",
+      "exitCode": 0,
+      "result": "576 production story/config sources clean; 5 quoted, unquoted, computed, and assignment syntax fixtures rejected",
+      "receipt": "storybook-suppression-gate.json",
+      "sha256": "78177a88a48baaa23c0f19e0f0b28a072bd62548b505b98e8e72f9d78275181e"
+    },
+    {
+      "name": "performance-playwright",
+      "command": "pnpm -C frontend budget:performance",
+      "startedAt": "2026-08-08T08:35:32.333Z",
+      "exitCode": 0,
+      "result": "1 passed; coldThreadListFirstPaint 942.2/1000ms",
+      "receipt": "performance-playwright.json",
+      "sha256": "d294d58168ac19c360b9a8faea1578a546fb486e00b9a30fb530fc133293a48d",
+      "attemptHistory": "performance-attempts.json",
+      "attemptHistorySha256": "a1cdd88be7844878d12a5bc9163eeda40b249b0fe20fd90d73f1cfa7b8f0ddf0"
+    },
+    {
+      "name": "performance-storybook",
+      "command": "pnpm -C frontend budget:performance",
+      "startedAt": "2026-08-08T08:35:36.241Z",
+      "exitCode": 0,
+      "result": "2 passed; trace 14.1/100ms, Markdown 137/250ms",
+      "receipt": "performance-storybook.json",
+      "sha256": "85e1600373783df7ef7ad90e2f62c3d8f1eebf27bc0fe95ff2f980f96a6858f4"
+    },
+    {
+      "name": "real-server-playwright",
+      "command": "pnpm -C frontend exec playwright test -c playwright.real-server.config.ts e2e/knowledge-rag-real.spec.ts e2e/provider-route-real.spec.ts",
+      "startedAt": "2026-08-08T08:35:46.908Z",
+      "exitCode": 0,
+      "result": "2 passed, 0 failed",
+      "receipt": "real-server-playwright.json",
+      "sha256": "6a0275dd5bd2dc0c890016f5d84e95188b183074e46f9e40b5a1ebbb6e18166c"
+    },
+    {
+      "name": "unit-coverage",
+      "command": "pnpm -C frontend exec vitest run --coverage --project=unit --reporter=default --reporter=json --outputFile=../openspec/changes/a11y-and-responsive-certification/receipts/coverage-vitest.json",
+      "startedAt": "2026-08-08T08:36:41.829Z",
+      "exitCode": 1,
+      "result": "63 files and 288 tests passed; coverage gate failed only at the inherited 60% thresholds (33.68% lines)",
+      "receipt": "coverage-vitest.json",
+      "sha256": "b67b98b1397b757596d69f988339893c568880b593cab399cea9c74caef0e169"
+    }
+  ],
+  "inputs": [
+    { "path": "frontend/package.json", "sha256": "c387c34bb930d1e5350188b802d153f718dd608095db43f854fe4d8cf338ecfd" },
+    { "path": "frontend/playwright.config.ts", "sha256": "1c39b388cb35a97b8a608518d379fb2a838577b8855826df74a183aeff4c1ef1" },
+    { "path": "frontend/playwright.accessibility.config.ts", "sha256": "838b66b5db2104d4d794eb9e39eb7dccc1a741adefcfd63e0a13387d8a60d0fc" },
+    { "path": "frontend/playwright.performance.config.ts", "sha256": "ae17ba9696f7b8f2267acd23b506cd84688db5a0aba71de5c6acf919ef14ba4a" },
+    { "path": "frontend/playwright.real-server.config.ts", "sha256": "922bc3881f02cd62dd7c7d9ae3a9ac48a96ab3021362f109f1f5d39e41e38a91" },
+    { "path": "frontend/vitest.config.ts", "sha256": "13deea727549702ecb3c10716220f7dd2188862d20f5df5ca9098360077270b6" },
+    { "path": "frontend/performance-budgets.json", "sha256": "601934e8c83c120a18a76c4b328e3cc3058a05d5b2d591f59bd89419f5c18057" },
+    { "path": "frontend/e2e/a11y-responsive-certification.spec.ts", "sha256": "de2c55d88ffdf5701f033cd529a3c7574b2e5ac4015c450d91b7da85a09d2343" },
+    { "path": "frontend/e2e/performance-budget.spec.ts", "sha256": "b7750934fcc3e8a8bf89451a8edb2b8e9b2ab2bae8a3cfb2875b2dbf197bdb51" },
+    { "path": "scripts/check-storybook-a11y-suppressions.mjs", "sha256": "65394ac9df7a6a76b33be4f025fdd6a0b6c4e4028e076b88a1dc67cbba780ca2" },
+    { "path": "scripts/test-storybook-a11y-suppressions-negative.mjs", "sha256": "4592eb738f8271c48cd17d3fe31827999a757772cdcfbf8668c2cbf11023b652" },
+    { "path": "scripts/run-storybook-a11y-suppression-gate.mjs", "sha256": "c088f3cfee3d421939882b4cf4792a048071b4254cb58f216ce3d4e3c42ebb90" },
+    { "path": "scripts/fixtures/storybook-a11y-suppression/disabled.stories.tsx", "sha256": "24a448553ba9357d879e02f540e842857e7fd825d076db62172de2156277d700" },
+    { "path": "scripts/fixtures/storybook-a11y-suppression/disabled-assignment.stories.tsx", "sha256": "a1f338b64103da0d74e81800923382e46ed8460b7e74383657f434baddb1cb5b" },
+    { "path": "scripts/fixtures/storybook-a11y-suppression/disabled-computed.stories.tsx", "sha256": "22ef27235a1d5cb7aa5b508a36839d2e0f48e779be520c797ff489deaf46897d" },
+    { "path": "scripts/fixtures/storybook-a11y-suppression/disabled-double-quoted.stories.tsx", "sha256": "def5553a316c41679ceebef83e61249fea32adff0e2f5cc2a1335a95db572d9a" },
+    { "path": "scripts/fixtures/storybook-a11y-suppression/disabled-single-quoted.stories.tsx", "sha256": "a238117cfa54fb847fe6bb2c1f639c50d96ce292f2954eeb69a20729fa276234" }
+  ]
+}

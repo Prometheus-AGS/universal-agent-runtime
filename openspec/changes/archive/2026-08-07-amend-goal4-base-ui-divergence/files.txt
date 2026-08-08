@@ -1,0 +1,11 @@
+.kbd-orchestrator/phases/uar-uiux-full-migration-2026-08/goals.md
+docs/ui-design-authority.md
+openspec/changes/amend-goal4-base-ui-divergence/.openspec.yaml
+openspec/changes/amend-goal4-base-ui-divergence/design.md
+openspec/changes/amend-goal4-base-ui-divergence/evidence/goals-before.md
+openspec/changes/amend-goal4-base-ui-divergence/files.txt
+openspec/changes/amend-goal4-base-ui-divergence/proposal.md
+openspec/changes/amend-goal4-base-ui-divergence/specs/frontend-design-authority/spec.md
+openspec/changes/amend-goal4-base-ui-divergence/tasks.md
+openspec/changes/amend-goal4-base-ui-divergence/verification.md
+.refiner/artifacts/amend-goal4-base-ui-divergence/refinement_log.md

@@ -1,0 +1,3 @@
+# C-14c UI routing summary
+
+Memory recall was attempted and produced the mandated filesystem stub because the memory service was unreachable. UI Pro Max, Impeccable, ux-designer, and the named Vercel skills are not available in this harness. The available frontend-design guidance constrains C-14c to structural retirement: the C-10 shared shell remains the sole navigation/responsive owner; migrated feature bodies, route URLs, accessible loading/empty/error behavior, and live state remain unchanged; the C-12 A2UI tester remains development-only under feature ownership; and no aesthetic redesign is introduced. Manual audit, critique, and polish therefore verify the absence of duplicate shell/theme behavior and regressions rather than inventing new visual treatment.

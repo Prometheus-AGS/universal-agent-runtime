@@ -1,0 +1,77 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/app/shell/app-shell.tsx",
+      "line": 33,
+      "claim": "The global shortcut handler calls event.preventDefault() before the editable-target and open-dialog guards, so Cmd/Ctrl+K is swallowed (browser/editor default blocked) inside inputs, textareas, selects, and contenteditable controls even though the palette does not open.",
+      "evidence": "openCommandPalette: `if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === \"k\") { event.preventDefault(); if (!isEditableTarget(event.target) && !hasOpenDialog()) { setCommandPaletteOpen(true); } }` \u2014 preventDefault runs unconditionally on every matching keydown.",
+      "suggested_fix": "Move the guards before preventDefault: `if (isEditableTarget(event.target) || hasOpenDialog()) return; event.preventDefault(); setCommandPaletteOpen(true);`"
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/app/shell/app-shell.tsx",
+      "line": 18,
+      "claim": "hasOpenDialog() disables the global palette shortcut whenever ANY element with role=\"dialog\" is mounted anywhere in the document \u2014 including non-modal or CSS-hidden dialogs \u2014 silently dead-keying Cmd/Ctrl+K app-wide.",
+      "evidence": "`function hasOpenDialog(): boolean { return document.querySelector('[role=\"dialog\"]') !== null; }` \u2014 a DOM-global presence check with no visibility/modality filtering; any feature dialog (e.g., the chat ToolApprovalDialog present in the repo) or a permanently-mounted hidden dialog suppresses the shortcut.",
+      "suggested_fix": "Restrict the check to visible modal dialogs (e.g., query for `[role=\"dialog\"][aria-modal=\"true\"]` and verify offsetParent/getClientRects), or track open dialogs in the UI store instead of scraping the DOM."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/ui/uar-logo.test.ts",
+      "line": 20,
+      "claim": "The brand-parity test reads `../docs/ui/logo`, escaping the frontend package root; that directory is absent from the packet file tree (only `./docs/ui` is listed) and from any frontend-isolated context (frontend/Dockerfile, frontend CI boundary checks), so the test throws ENOENT or fails outside a full monorepo checkout.",
+      "evidence": "`const delivered = filesBelow(resolve(projectRoot, \"../docs/ui/logo\"))` where projectRoot is `frontend`; the diff adds no files under `docs/ui/logo/`, so the assertion depends on untracked-in-this-change state.",
+      "suggested_fix": "Assert against a manifest checked into the frontend package (e.g., an explicit expected-file list in the test), or copy the delivered inventory into `frontend/public/brand/` and compare against that."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/public/manifest.json",
+      "line": 10,
+      "claim": "The manifest now ships a single 512x512 icon with purpose \"any\", dropping the previous 180x180 \"any maskable\" entry; Chrome's PWA installability criteria expect both a ~192px-class and a 512px icon, and removing \"maskable\" causes adaptive-icon cropping on Android.",
+      "evidence": "Diff: `- \"src\": \"/apple-touch-icon.png\", \"sizes\": \"180x180\", \"purpose\": \"any maskable\"` replaced by `+ \"src\": \"/brand/png/uar-appicon-dark-512.png\", \"sizes\": \"512x512\", \"purpose\": \"any\"` \u2014 despite 128/256px PNGs being added in the same diff and left unreferenced.",
+      "suggested_fix": "Add a 192 (or 256) entry alongside the 512, and mark at least one icon `\"purpose\": \"maskable\"` (or \"any maskable\")."
+    },
+    {
+      "severity": "WARNING",
+      "file": "static/index.html",
+      "claim": "The checked-in built bundle under `static/` (index.html, manifest.json, apple-touch-icon.png \u2014 present in the file tree, with `src/embedded.rs` suggesting it is embedded into the server binary) is not updated, so it still references the retired `/favicon.svg` and `/apple-touch-icon.png` and contains none of the new `/brand/*` assets; until a rebuild is committed, the served/embedded artifact 404s the new favicon/manifest paths or shows stale branding.",
+      "evidence": "File tree lists `./static/index.html`, `./static/apple-touch-icon.png`, `./static/manifest.json`, `./static/.vite`; the diff changes only `frontend/index.html` and `frontend/public/manifest.json` and adds brand assets only under `frontend/public/brand/`.",
+      "suggested_fix": "Either regenerate and commit `static/` in this change, or remove `static/` from version control and document that it is build output."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/app/shell/nav-rail.tsx",
+      "claim": "The spec's motion-accessibility requirement ('Interactive state transitions ... SHALL become effectively immediate under reduced-motion preference') is not implemented: every new shell transition uses plain `transition-*`/`duration-200` utilities with no `motion-reduce:` variant or reduced-motion CSS anywhere in the diff.",
+      "evidence": "specs/frontend-app-shell/spec.md Requirement 'Shell interactions preserve Flat 2.0 and motion accessibility' vs. `transition-[width] duration-200` (nav-rail), `transition-opacity duration-200`, `transition-[translate,opacity] duration-200` (command-palette, mobile-sheet-host), `transition-transform duration-200` (skip link in app-shell.tsx) \u2014 none carry `motion-reduce:` guards and no global reduced-motion rule is added in the diff.",
+      "suggested_fix": "Add `motion-reduce:transition-none motion-reduce:transform-none` to the transitioning shell elements, or add a global `@media (prefers-reduced-motion: reduce)` rule zeroing transition duration."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/app/shell/nav-destinations.ts",
+      "line": 111,
+      "claim": "runtime-settings claims the bare `/admin` path via exactMatchPaths, so the admin landing route's breadcrumb and Configure-tab state read 'Configure / Runtime settings' regardless of which default admin surface actually renders there.",
+      "evidence": "`exactMatchPaths: [\"/admin\"]` on the `runtime-settings` destination; BreadcrumbHeader derives section/label from findDestinationForPath, so `/admin` resolves to 'Runtime settings' even though the legacy shell treated `/admin` as a generic landing.",
+      "suggested_fix": "Point `/admin` at the destination that actually renders there, or add a redirect from `/admin` to a concrete destination and drop the exactMatchPaths entry."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/app/shell/app-shell.tsx",
+      "line": 33,
+      "claim": "Cmd/Ctrl+K cannot close the palette once open: the open palette itself satisfies hasOpenDialog() and its input satisfies isEditableTarget(), so the shortcut is a no-op \u2014 a regression from the removed admin-shell handler which toggled `setCommandOpen((open) => !open)`.",
+      "evidence": "Deleted admin-shell hunk: `setCommandOpen((open) => !open)` toggle; new handler only ever calls `setCommandPaletteOpen(true)` and both guards block re-entry while the palette dialog is mounted.",
+      "suggested_fix": "Allow the shortcut to toggle: if the command palette is the only open dialog, call `setCommandPaletteOpen(false)` instead of returning."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

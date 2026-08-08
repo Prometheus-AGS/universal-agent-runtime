@@ -1,0 +1,50 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "harness-native/default",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "harness-native",
+  "cross_model_check": "same-model-collision",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/stores/chat-message-store.ts",
+      "claim": "Completed A2UI input responses are written only to the transient chunk projection, so persistence loses the response and terminal state.",
+      "evidence": "The __a2ui_input__ add branch persists only JSON.stringify(toolCall.args) in an artifact, while updateToolCall sets chunk.status and chunk.response and immediately returns without updating that artifact; RichMessage.content is explicitly designated as the portable wire/storage representation and chunks as an optional view projection, violating criteria 2.4 and 4.4 after reload.",
+      "suggested_fix": "Update the persisted A2UI input artifact with a canonical envelope containing the request, response, and terminal status whenever the tool result arrives, then derive the chunk from that envelope."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/stores/chat-message-store.ts",
+      "claim": "A2UI display persistence uses the component name as the artifact MIME kind and omits the metadata needed to reconstruct the display chunk.",
+      "evidence": "The __a2ui_display__ branch persists kind: String(toolCall.args.artifactType ?? application/vnd.uar.a2ui+json) and raw result content, while the adjacent test supplies artifactType: Card; therefore a valid flow stores Card as the artifact kind and drops title/profile/component metadata even though criteria 2.4, 4.4, and 6.3 require canonical portable persistence and preserved live A2UI rendering.",
+      "suggested_fix": "Persist a fixed application-owned A2UI MIME kind and a JSON envelope containing component/artifactType, title, profile, payload, validation state, and result."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "claim": "The official thinking-delta path can discard normalized thinking chunks and otherwise collapses thinking into reasoning.",
+      "evidence": "The shared agui.thinking.delta/agui.reasoning.delta branch accepts adapted.messageChunk only when kind === reasoning; because legacyDelta is disabled whenever adapted.eventRow exists, an adapted chunk with kind thinking produces no delta. The called appendThinkingDelta path in chat-message-store.ts also always appends a chunk with kind reasoning. This contradicts criteria 3.1, 3.4, and 3.6, which require distinct complete thinking and reasoning chunk coverage.",
+      "suggested_fix": "Dispatch normalized thinking and reasoning chunks separately and preserve their respective kinds through streaming; use legacy payload fallback only when no normalized message chunk exists."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "claim": "A local run-persistence failure aborts the primary chat stream and can retry an already-started upstream model request.",
+      "evidence": "Both await runPersistence.ingest(...) inside the frame loop and await runPersistence.finish(finished) on normal completion execute inside the outer request try; any rejection falls into the same catch and shouldRetryStream path used for transport failures, which can reissue the chat request after model output has already begun or completed.",
+      "suggested_fix": "Isolate persistence errors from transport errors, record an explicit persistence failure, and never route them through upstream stream retry logic."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/stores/chat-message-store.ts",
+      "claim": "A tool call that reaches a terminal status without a result loses that status when reconstructed from persisted content.",
+      "evidence": "ToolCallContentBlock.result is optional, but updateToolCall creates a canonical toolResult block only when update.result !== undefined; for a complete or failed no-output call, content retains only toolUse while the terminal status exists solely in the optional chunks projection, undermining criteria 2.4 and 3.2.",
+      "suggested_fix": "Persist a canonical terminal toolResult for every terminal update, using an explicit null/empty output representation when the tool has no payload."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

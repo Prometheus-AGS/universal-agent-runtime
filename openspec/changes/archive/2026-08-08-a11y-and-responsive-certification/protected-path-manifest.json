@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-08-08T08:37:00Z",
+  "algorithm": "sha256",
+  "commands": {
+    "status": "git status --short -- <path>",
+    "unstaged": "git diff -- <path> | shasum -a 256",
+    "staged": "git diff --cached -- <path> | shasum -a 256",
+    "combined": "protected_paths=(.gitmodules LICENSE-COMMERCIAL.md crates/prometheus-skill-system sdks/rust/LICENSE-AGPL src/uar/api/adapters.rs src/uar/api/openapi.rs src/uar/api/routes.rs src/uar/api/sse.rs); { git status --short -- \"${protected_paths[@]}\"; git diff -- \"${protected_paths[@]}\"; git diff --cached -- \"${protected_paths[@]}\"; } | shasum -a 256"
+  },
+  "paths": [
+    { "path": ".gitmodules", "status": " M .gitmodules", "statusSha256": "9a17fba03bad6da2d77c9d705ef27ece16541e5467a322085d67f31261b4a2a3", "unstagedDiffSha256": "a428d3146301a587dcc7dd66005f1e1b111b542a7417045e5fa5d2505df4c381", "stagedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "LICENSE-COMMERCIAL.md", "status": "D  LICENSE-COMMERCIAL.md", "statusSha256": "7fa13cdae98cba18886642d0369c925a56438e2879cb9996c035b1a2514adde5", "unstagedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "stagedDiffSha256": "93eba1dd07d23b2160bb28de4fd5459ad798f30b025869c62e7428d73dfa182c" },
+    { "path": "crates/prometheus-skill-system", "status": " M crates/prometheus-skill-system", "statusSha256": "04bf60b5553173ec9a67c862ee28f6b406e7de21392af7168e4c7f61dffc088b", "unstagedDiffSha256": "6a001575a4f670c963ff2683e5143861d8979b2d853f4060564ee0cce5b1c96a", "stagedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "sdks/rust/LICENSE-AGPL", "status": "D  sdks/rust/LICENSE-AGPL", "statusSha256": "279c83dde13c750895f1664ad477a3d817fd1c0a92f2bc51aef5d93b2efbd0fc", "unstagedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "stagedDiffSha256": "9b657f149bd674aa879db9578ac6679227d95592560e712903b1bf85c1d4ba9d" },
+    { "path": "src/uar/api/adapters.rs", "status": " M src/uar/api/adapters.rs", "statusSha256": "3d56458b31d07f9e45995752bdd287a382d82a78f5ab2de97185ed4fdebbbdc6", "unstagedDiffSha256": "56e2167262dced0f3c100cf1e95ab964c9f9f66685c99cef9e9839f66fd59510", "stagedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "src/uar/api/openapi.rs", "status": " M src/uar/api/openapi.rs", "statusSha256": "dd44c1659596ae253ced26b90847a6c48fccc2253b39cb1f4588071371ef823f", "unstagedDiffSha256": "95d78a1249a98e54a6cccb4903d6edacad237d9e1921c5632e02965a1ac4f208", "stagedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "src/uar/api/routes.rs", "status": " M src/uar/api/routes.rs", "statusSha256": "bce72806fd1f21467ae32c94c95160e0aba065189bbb81424af9ee78362b6f95", "unstagedDiffSha256": "e70d8487db0798be1124efa7a4f59b746da36711c852082f63e95a7204103343", "stagedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+    { "path": "src/uar/api/sse.rs", "status": " M src/uar/api/sse.rs", "statusSha256": "462c5377d0510e91ba322342e3bfc84024097c1852c98e90fae3db616d90115a", "unstagedDiffSha256": "e75999a8eeb292627aba443b117d856c8528c41b59f94eb4c03388a3924c7724", "stagedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" }
+  ],
+  "combinedSha256": "07e74ad94dc137e9574e411bc99d6f0fcd631879c5a0e52a1b87ca999cf43dc4"
+}

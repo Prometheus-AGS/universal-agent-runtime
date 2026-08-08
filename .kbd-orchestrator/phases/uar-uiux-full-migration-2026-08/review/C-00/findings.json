@@ -1,0 +1,47 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/base-ui-foundation/verify-archive-readiness.sh",
+      "line": 30,
+      "claim": "The Radix-import gate treats ripgrep errors (exit code 2) as 'no matches found', so if frontend/src is missing, unreadable, or rg itself fails, the central zero-Radix assertion silently passes.",
+      "evidence": "`if rg -l '@radix-ui/' frontend/src --glob '!**/ui-radix-backup/**' >/dev/null; then ... exit 1; fi` \u2014 rg exits 0 on match, 1 on no match, and 2 on error. Inside an `if` condition, `set -e`/`pipefail` do not apply, so exit code 2 takes the false branch identically to exit code 1 and the gate proceeds to print PASS. The earlier `base_ui_wrappers` pipeline (line 27) is protected by pipefail; this one is not. An absent or renamed frontend/src therefore converts the gate's core check into a vacuous pass.",
+      "suggested_fix": "Check the exit status explicitly, e.g. `if rg -l ... >/dev/null; then exit 1; elif [ $? -eq 2 ]; then echo 'rg error' >&2; exit 2; fi`, or assert `test -d frontend/src` before the search."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/base-ui-foundation/verify-archive-readiness.sh",
+      "line": 30,
+      "claim": "The gate verifies the acceptance criterion 'Production frontend source contains no direct @radix-ui/* imports' only within frontend/src, leaving the pnpm-workspace package tree frontend/packages (and e2e) unexamined, so the criterion is certified for only part of the production frontend source.",
+      "evidence": "Line 30 searches only `frontend/src`. The file tree shows `./frontend/packages` and `./frontend/pnpm-workspace.yaml`, i.e. additional workspace source that ships with the frontend but is outside the gate's search scope; nothing else in the diff covers it. The Base UI wrapper count (line 27) is likewise scoped to `frontend/src/components/ui` only. A Radix import reintroduced under frontend/packages would pass the gate and contradict the recorded 'zero direct production @radix-ui/* imports' verdict in verification.md.",
+      "suggested_fix": "Search `frontend/` with targeted exclusions (e.g. `--glob '!**/ui-radix-backup/**' --glob '!.storybook/**' --glob '!node_modules/**'`), or document in verification.md why frontend/packages is out of scope for the production-source claim."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/base-ui-foundation/verification.md",
+      "line": 24,
+      "claim": "verification-output.txt is described as 'the successful command transcript' of the gate, but the script emits no such output for most of the file's contents, so the artifact is hand-assembled rather than a captured transcript and cannot independently evidence the recorded digests.",
+      "evidence": "verify-archive-readiness.sh's only stdout is `openspec validate`'s 'Change ... is valid' line and the final `printf 'base-ui-foundation archive readiness: PASS (%s Base UI wrappers)'`. Yet verification-output.txt contains 'Base commit: a91cd5b...', 'Exit status: 0', and two 'git hash-object' digests \u2014 none of which the script prints or verifies. verification.md lines 24-25 claim the file 'records the successful command transcript used for this archive decision.' The recorded hash-object values therefore remain author-supplied assertions, only partially addressing the prior self-attestation finding; a reader cannot distinguish which lines were machine-captured and which were typed.",
+      "suggested_fix": "Either make the script itself print the base commit, exit status, and hash-object values (so the file is a genuine `script | tee` transcript), or relabel the file as a manually assembled verification summary and drop the word 'transcript' from verification.md."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "openspec/changes/base-ui-foundation/verify-archive-readiness.sh",
+      "line": 27,
+      "claim": "The spec's wrapper-boundary requirement \u2014 feature/page code SHALL import local wrappers 'rather than importing a headless primitive package directly' \u2014 is unenforced: direct @base-ui/react imports outside frontend/src/components/ui would violate the new capability spec while the gate still passes.",
+      "evidence": "specs/frontend-component-primitives/spec.md scenario 'A product feature consumes an interactive primitive' asserts feature code imports the local wrapper, but the gate only counts `@base-ui/react` matches inside `frontend/src/components/ui` (line 27) and greps for `@radix-ui/` (line 30); nothing flags `@base-ui/react` imports in feature/page code. verification.md line 9 calls the script 'the executable gate for the assertions below', yet this spec assertion has no executable counterpart.",
+      "suggested_fix": "Add a check such as `! rg -l '@base-ui/react' frontend/src --glob '!components/ui/**'` (with an allowlist if legitimate exceptions exist), or scope the verification claim in verification.md to only the assertions the gate actually executes."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

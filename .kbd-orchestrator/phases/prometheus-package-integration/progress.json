@@ -1,69 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "prometheus-package-integration",
-  "createdAt": "2026-05-26T22:55:00-05:00",
-  "updatedAt": "2026-07-06T19:30:00Z",
-  "sourceTool": "claude-code",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "resumedAt": "2026-07-06T18:00:00Z",
-  "resumeNote": "Resumed after being stale since 2026-05-26. Fresh /kbd-assess (2026-07-06) directly re-verified all 14 original items: 12/14 confirmed DONE (some via an evolved direct-hooks design). Two corrections made and user-confirmed during assessment: (1) #13 (dockerfile-multistage-with-submodules) was INITIALLY misjudged as incomplete (a shallow `grep -c '^FROM'` check was misread) -- corrected after direct content inspection confirmed the polyglot 5-toolchain Dockerfile is fully shipped and wired into 5 docker-compose files + 5 GitHub Actions workflows; user confirmed leave it alone. (2) surreal-memory-server and liter-llm are NOT separate spawnable processes -- both are linked Rust libraries used in-process; 'binary-instance-discovery' cannot mean spawning them, dropped from scope. Final confirmed scope for #4 (plan.md, 2026-07-06): a new focused module (src/uar/orchestrator/provisioning.rs, NOT a modification of process_supervisor.rs which solves a different TCP-service-shaped problem with no current call site) implementing 4-strategy resolution (Adopt/NativePackageManager/GitInstall/PrebuiltBinary), wired into MCP stdio server spawning (mcp/registry.rs) and skill-compilation toolchain resolution (Rust/Node/Python/Go/wasmtime) for local dev outside the container. changes_total/changes_completed below now track this NEW 4-change plan going forward -- the original 14-item list's final disposition (12 done, #13 done-not-touched, #4 replaced) is preserved in changes_ordered/change_status/plan-2026-05-26-original.md for historical record.",
-  "changes_total": 3,
-  "changes_completed": 3,
-  "changes_in_progress": null,
-  "executeCompleteNote": "All 3 rounds done: provisioning-strategy-core (555252d), wire-mcp-server-provisioning incl. toolchain recipes (b99cab7), provisioning-tests-and-docs (9489cb9). Final: cargo test --lib 385/385 green (1 ignored, run explicitly and confirmed green), cargo clippy --lib 502 warnings (baseline unchanged). docs/PROVISIONING.md + docs/ARCHITECTURE.md D-E entry added. Ready for /kbd-reflect.",
-  "round2_note": "wire-toolchain-provisioning's originally-planned scope (wiring toolchain resolution into wasm_runtime.rs/builtin_loader.rs) turned out to have no real integration point -- no code path in UAR compiles a skill from source; the Dockerfile's own comment confirms its toolchains are for manual, human-driven skill authoring inside the container. Rather than invent a fake caller, the 5 toolchain ToolSpecs were added as ready-to-use, tested recipes (skill_toolchain_specs()) in the same commit as wire-mcp-server-provisioning (b99cab7), and the plan's change count reduced from 4 to 3 accordingly. User confirmed this scope reduction.",
-  "decisions": {
-    "waypoint": "replaces runtime-provider-protocol-hardening (stale)",
-    "frontend_workspace_tool": "pnpm",
-    "skill_model": "extend Skill with kind: Wasm | Manifest | Native plus origin: Builtin | User",
-    "skill_system_submodule_path": "crates/prometheus-skill-system",
-    "default_assistant_skill_binding": "opt-in per agent",
-    "realtime_db_primitive": "surrealdb .select().live() -> LiveQueryBus -> SSE /api/live/{topic}",
-    "plugin_model": "WASM Component Model via wasmtime::component + WIT world uar:skill@0.1.0; Cranelift AOT precompile to .cwasm",
-    "runtime_image": "polyglot - Rust nightly, Node 24+ (npm/pnpm/bun), Python 3.13 (uv, pyo3), Go latest, wasmtime CLI",
-    "binary_supervision": "probe-then-adopt rather than double-spawn for Surreal, MCP servers, liter-llm, forge"
+  "phaseId": "prometheus-package-integration",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
   },
-  "changes_ordered": [
-    "fix-kb-document-count",
-    "surreal-live-query-bus",
-    "add-skill-kind-and-origin",
-    "binary-instance-discovery",
-    "add-skill-system-submodule",
-    "wasm-component-skill-runtime",
-    "frontend-pnpm-workspace-migration",
-    "add-entity-management-submodule",
-    "configure-entity-engine-and-realtime-bridge",
-    "migrate-admin-knowledge-to-entity-mgmt",
-    "migrate-providers-models-agents-to-entity-mgmt",
-    "builtin-skills-ui-affordance",
-    "dockerfile-multistage-with-submodules",
-    "integration-tests-and-docs"
-  ],
-  "change_status": {
-    "fix-kb-document-count": "DONE",
-    "surreal-live-query-bus": "DONE",
-    "add-skill-kind-and-origin": "DONE",
-    "binary-instance-discovery": "REPLACED -- see the new 4-change plan (provisioning-strategy-core, wire-mcp-server-provisioning, wire-toolchain-provisioning, provisioning-tests-and-docs) in plan.md. process_supervisor.rs itself is left untouched (solves a different TCP-service-shaped problem with no current call site); the real gap (MCP stdio spawn + toolchain resolution have zero provisioning logic) is addressed by a new, separate module.",
-    "add-skill-system-submodule": "DONE",
-    "wasm-component-skill-runtime": "DONE (WIT world pinned, runtime scaffolded; wit-bindgen dispatch deferred)",
-    "frontend-pnpm-workspace-migration": "DONE",
-    "add-entity-management-submodule": "DONE",
-    "configure-entity-engine-and-realtime-bridge": "DONE (infrastructure shipped; main.tsx wiring deferred to migrations)",
-    "migrate-admin-knowledge-to-entity-mgmt": "DONE (2026-07-06 re-verify) -- delivered via useKnowledgePage direct hook, not the originally-planned generic useEntityList call. Confirmed in knowledge-page.tsx.",
-    "migrate-providers-models-agents-to-entity-mgmt": "DONE (2026-07-06 re-verify) -- delivered via direct per-entity hooks (useAgents etc.), confirmed directly in agents-page.tsx.",
-    "builtin-skills-ui-affordance": "DONE (2026-07-06 re-verify) -- isBuiltin-disabled edit/delete confirmed in skills-page.tsx:317+",
-    "dockerfile-multistage-with-submodules": "DONE (2026-07-06 re-verify, CORRECTED an initial mis-check this session) -- full 5-toolchain polyglot Dockerfile confirmed shipped and wired into CI/deploy. Not a gap.",
-    "integration-tests-and-docs": "PARTIAL -- docs/realtime.md + docs/skill-authoring.md shipped; system tests for live-bus latency and builtin-409 still not found. Remaining scope now just needs to cover whatever #4's redesign becomes."
-  },
-  "next_change": "provisioning-tests-and-docs",
-  "planned_changes": [
-    "provisioning-strategy-core",
-    "wire-mcp-server-provisioning (includes toolchain recipes, folded in)",
-    "provisioning-tests-and-docs"
-  ],
-  "next_session_priorities": [
-    "Round 3: provisioning-tests-and-docs -- new docs/PROVISIONING.md documenting the 4-strategy precedence + explicit non-goals (no DB engines); close any remaining test gaps"
-  ]
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

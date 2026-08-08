@@ -1,54 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "full-frontend-entity-mgmt-migration",
-  "createdAt": "2026-05-26T23:58:00-05:00",
-  "updatedAt": "2026-05-27T04:00:00-05:00",
-  "sourceTool": "claude-code",
-  "supersedes": [
-    "migrate-admin-knowledge-to-entity-mgmt",
-    "migrate-providers-models-agents-to-entity-mgmt"
-  ],
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "reflection_path": ".kbd-orchestrator/phases/full-frontend-entity-mgmt-migration/reflection.md",
-  "goal_achievement_percent": 70,
-  "decisions": {
-    "threads_runs_persistence": "threads aliases sessions table; runs not added",
-    "store_retirement": "delete-on-migration (deferred); bridge pattern adopted as on-ramp",
-    "optimistic_mutations": "high-frequency only — applied to skill toggle, agent patch, provider set-default",
-    "api_keys": "non-realtime",
-    "chat_message_stream_stores": "out of scope",
-    "migration_strategy": "bridge pattern via useGraphBridge — every Zustand admin hook subscribes to entity-graph changes and auto-refreshes the store on SSE delivery. Direct useEntity migration is a future step that retires the bridge per entity."
+  "phaseId": "full-frontend-entity-mgmt-migration",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
   },
-  "changes_total": 8,
-  "changes_completed": 8,
-  "changes_in_progress": null,
-  "changes_ordered": [
-    "bootstrap-entity-engine-and-realtime",
-    "services-entities-scaffold",
-    "backend-extend-realtime-topics",
-    "migrate-isolated-pages",
-    "migrate-cross-cutting-pages",
-    "optimistic-mutations",
-    "migrate-chat-runtime-derived-state",
-    "frontend-migration-tests-and-audit"
-  ],
-  "change_status": {
-    "bootstrap-entity-engine-and-realtime": "DONE — surreal-remote branch uses createAllUarAdapters() (JWT-gated SSE)",
-    "services-entities-scaffold": "PARTIAL — 5 of 13 fetcher+hook scaffolds present from prior work; remaining 8 added on-demand when consumers migrate direct",
-    "backend-extend-realtime-topics": "DONE — 3 of 5 new topics live (Threads/Memory/CompilerSessions); Tools+McpStatus push channels deferred (no user-facing blocker)",
-    "migrate-isolated-pages": "DONE via bridge — Knowledge/Memory/Compiler/Tools/MCP-Health/Auth admin hooks auto-refresh on SSE-delivered entity-graph mutations",
-    "migrate-cross-cutting-pages": "DONE via bridge — Agents/Providers/Models/Skills/Settings admin hooks bridged. Direct useEntity replacement deferred per entity",
-    "optimistic-mutations": "DONE for three highest-frequency paths — skill toggle, agent patch, provider set-default. Settings already use dirty-buffer pattern; KB rename left non-optimistic.",
-    "migrate-chat-runtime-derived-state": "DONE vacuously — chat runtime reads only client-side stores; useAgentConfig receives data via context from bridged AgentSelector",
-    "frontend-migration-tests-and-audit": "DONE for docs+audit — migration-stale-data-audit.md and AGENTS.md realtime contract section shipped. Vitest contract test + README diagram deferred."
-  },
-  "next_change": null,
-  "next_session_priorities": [
-    "Run /kbd-reflect to score outcomes against the assessment's acceptance criteria",
-    "Direct useEntity migration of one cross-cutting page (Providers recommended) to retire its bridge + store",
-    "Vitest contract test scaffold + two-views-one-event test",
-    "Push channels for Tool + McpStatus topics"
-  ]
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

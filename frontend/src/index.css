@@ -1,13 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "./shared/theme/tokens.css";
 
 @layer base {
   /* ──────────────────────────────────────────────────────────────────────
    * KnowMe design tokens (ported from desktop/src/index.css — the binding
-   * standard in docs/knowme-ui-ux-standard.md). Values match KnowMe exactly;
-   * the mechanism stays Tailwind 3 `hsl(var(--token))` channels by operator
-   * decision (2026-07-21, see openspec/changes/uar-ui-token-convergence).
+   * standard in docs/knowme-ui-ux-standard.md). Values match KnowMe exactly.
+   * CSS-first complete-color tokens now live in shared/theme/tokens.css;
+   * these HSL channels remain only as staged compatibility until C-05 and
+   * C-14a migrate their owned call sites.
    *
    * Flat 2.0 is ENFORCED below: borders/shadows are transparent by CSS rule,
    * regions separate by background color alone.
@@ -19,7 +18,7 @@
     --surface: 218 30% 12%;            /* #161D29 surface */
     --foreground: 213 31% 93%;         /* #E8EDF3 */
     --fg-sub: 214 14% 70%;             /* #A7B0BC secondary text */
-    --fg-faint: 220 9% 46%;            /* #6B7280 faint text */
+    --fg-faint: 215 10% 57%;           /* #87909D faint text, AA on raised dark surfaces */
 
     --card: 218 31% 16%;               /* #1C2535 raised */
     --card-foreground: 213 31% 93%;
@@ -70,6 +69,18 @@
     --sidebar-accent-foreground: 213 31% 93%;
     --sidebar-border: transparent;
     --sidebar-ring: 14 100% 62%;
+
+    /* Transitional aliases for migrated dense configuration surfaces. These
+       follow the shared theme instead of activating the retired CRT theme. */
+    --color-terminal-bg: var(--color-bg);
+    --color-terminal-surface: var(--color-surface);
+    --color-terminal-fg: var(--color-fg);
+    --color-terminal-fg-dim: var(--color-fg-sub);
+    --color-phosphor: var(--color-ember);
+    --color-phosphor-glow: var(--color-focus-ring);
+    --color-signal-red: var(--color-red);
+    --color-terminal-line: color-mix(in srgb, var(--color-fg) 18%, transparent);
+    --color-terminal-line-strong: color-mix(in srgb, var(--color-fg) 34%, transparent);
   }
 
   .light {
@@ -87,7 +98,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 213 29% 6%;
 
-    --primary: 12 75% 52%;                /* #E04E28 */
+    --primary: 12 74% 42%;                /* #B93C1C accessible light-theme ember */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 25% 98%;
@@ -107,9 +118,9 @@
 
     --border: transparent;
     --input: 210 25% 98%;
-    --ring: 12 75% 52%;
+    --ring: 12 74% 42%;
 
-    --ember: 12 75% 52%;
+    --ember: 12 74% 42%;
     --ember-2: 12 73% 44%;                /* #C13E1E */
     --ember-soft: 16 76% 93%;             /* #FBE8E1 */
     --cyan: 192 91% 36%;                  /* #0891B2 */
@@ -119,12 +130,12 @@
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 215 14% 34%;
-    --sidebar-primary: 12 75% 52%;
+    --sidebar-primary: 12 74% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 216 24% 96%;
     --sidebar-accent-foreground: 213 29% 6%;
     --sidebar-border: transparent;
-    --sidebar-ring: 12 75% 52%;
+    --sidebar-ring: 12 74% 42%;
   }
 
   /* High-contrast rebased onto the ladder structure; monochrome + yellow,
@@ -185,7 +196,7 @@
       --card-hov: 216 24% 96%;
       --popover: 0 0% 100%;
       --popover-foreground: 213 29% 6%;
-      --primary: 12 75% 52%;
+      --primary: 12 74% 42%;
       --primary-foreground: 0 0% 100%;
       --secondary: 210 25% 98%;
       --secondary-foreground: 213 29% 6%;
@@ -197,8 +208,8 @@
       --destructive-foreground: 0 0% 100%;
       --border: transparent;
       --input: 210 25% 98%;
-      --ring: 12 75% 52%;
-      --ember: 12 75% 52%;
+      --ring: 12 74% 42%;
+      --ember: 12 74% 42%;
       --ember-2: 12 73% 44%;
       --ember-soft: 16 76% 93%;
       --cyan: 192 91% 36%;
@@ -207,51 +218,13 @@
       --warning-foreground: 32 95% 10%;
       --sidebar-background: 0 0% 100%;
       --sidebar-foreground: 215 14% 34%;
-      --sidebar-primary: 12 75% 52%;
+      --sidebar-primary: 12 74% 42%;
       --sidebar-primary-foreground: 0 0% 100%;
       --sidebar-accent: 216 24% 96%;
       --sidebar-accent-foreground: 213 29% 6%;
       --sidebar-border: transparent;
-      --sidebar-ring: 12 75% 52%;
+      --sidebar-ring: 12 74% 42%;
     }
-  }
-
-  /* ──────────────────────────────────────────────────────────────────────
-   * Admin terminal aesthetic
-   *
-   * Scoped to :root[data-admin-theme="terminal"] so it never bleeds into
-   * the chat surface. Declared AFTER the KnowMe tokens so these scoped
-   * overrides always win on admin routes. Deliberate exception to the
-   * KnowMe standard (operator decision 2026-07-21). See
-   * docs/admin-aesthetic-spec.md for the full contract.
-   * ────────────────────────────────────────────────────────────────────── */
-  :root[data-admin-theme="terminal"] {
-    /* Surfaces */
-    --terminal-bg: 165 18% 5%;
-    --terminal-surface: 168 14% 8%;
-    --terminal-fg: 155 14% 80%;
-    --terminal-fg-dim: 155 10% 55%;
-
-    /* Accents — CRT phosphor */
-    --phosphor: 140 100% 75%;
-    --phosphor-glow: 140 100% 65%;
-    --amber: 35 100% 64%;
-    --signal-red: 0 100% 68%;
-
-    /* Lines */
-    --terminal-line: 155 14% 80% / 0.18;
-    --terminal-line-strong: 155 14% 80% / 0.34;
-
-    /* Type */
-    --font-mono-display: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
-    --font-mono-body: "Berkeley Mono", "JetBrains Mono", ui-monospace, monospace;
-
-    /* Density */
-    --size-body: 13px;
-    --size-chip: 12px;
-    --size-headline: 20px;
-    --leading-body: 1.5;
-    --leading-headline: 1.2;
   }
 
   /* Loading cursor flicker — used by <LoadingCursor> */
@@ -260,27 +233,6 @@
     42%, 100% { opacity: 0; }
   }
 
-  /* Scanline overlay — optional, applied via .terminal-scanlines on a container */
-  .terminal-scanlines {
-    position: relative;
-  }
-  .terminal-scanlines::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      transparent 1px,
-      hsl(var(--terminal-fg) / 0.06) 1px,
-      hsl(var(--terminal-fg) / 0.06) 2px
-    );
-    mix-blend-mode: overlay;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .terminal-scanlines::after { display: none; }
-  }
 }
 
 @layer base {
@@ -312,18 +264,18 @@
   /* Scrollbar styling — muted surface, never a border color */
   * {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--muted)) transparent;
+    scrollbar-color: var(--color-muted) transparent;
   }
   *::-webkit-scrollbar { width: 6px; height: 6px; }
   *::-webkit-scrollbar-track { background: transparent; }
   *::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--muted));
+    background-color: var(--color-muted);
     border-radius: 3px;
   }
 
   /* Focus visible — ember ring is the one allowed "line" */
   *:focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-1 ring-offset-background;
+    @apply outline-none ring-3 ring-ring ring-offset-1 ring-offset-background;
   }
 
   /* Pointer cursor on all interactive elements */
@@ -386,36 +338,36 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: hsl(var(--ember));
+  color: var(--color-ember);
 }
 
 /* Highlight.js code block theme (dark) — rides the surface step */
 .hljs {
-  background: hsl(var(--surface)) !important;
-  color: hsl(var(--foreground)) !important;
+  background: var(--color-surface) !important;
+  color: var(--color-foreground) !important;
   border-radius: 0.5rem;
   padding: 1rem;
   font-size: 0.8125rem;
   line-height: 1.6;
   overflow-x: auto;
 }
-.hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: hsl(var(--ember)); }
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: var(--color-ember); }
 .hljs-string, .hljs-attr { color: hsl(142 60% 65%); }
-.hljs-number, .hljs-literal { color: hsl(var(--cyan)); }
-.hljs-comment { color: hsl(var(--fg-faint)); font-style: italic; }
+.hljs-number, .hljs-literal { color: var(--color-cyan); }
+.hljs-comment { color: var(--color-fg-faint); font-style: italic; }
 .hljs-function, .hljs-title { color: hsl(40 90% 65%); }
 .hljs-type, .hljs-class { color: hsl(260 60% 75%); }
-.hljs-variable, .hljs-params { color: hsl(var(--foreground)); }
+.hljs-variable, .hljs-params { color: var(--color-foreground); }
 
 /* Highlight.js code block theme (light) */
 .light .hljs {
   background: hsl(216 24% 96%) !important;   /* #F2F4F7 */
   color: hsl(213 29% 6%) !important;
 }
-.light .hljs-keyword, .light .hljs-selector-tag, .light .hljs-built_in { color: hsl(var(--ember)); }
+.light .hljs-keyword, .light .hljs-selector-tag, .light .hljs-built_in { color: var(--color-ember); }
 .light .hljs-string, .light .hljs-attr { color: hsl(142 60% 32%); }
-.light .hljs-number, .light .hljs-literal { color: hsl(var(--cyan)); }
-.light .hljs-comment { color: hsl(var(--fg-faint)); font-style: italic; }
+.light .hljs-number, .light .hljs-literal { color: var(--color-cyan); }
+.light .hljs-comment { color: var(--color-fg-faint); font-style: italic; }
 .light .hljs-function, .light .hljs-title { color: hsl(40 80% 40%); }
 .light .hljs-type, .light .hljs-class { color: hsl(260 50% 50%); }
 .light .hljs-variable, .light .hljs-params { color: hsl(213 29% 6%); }

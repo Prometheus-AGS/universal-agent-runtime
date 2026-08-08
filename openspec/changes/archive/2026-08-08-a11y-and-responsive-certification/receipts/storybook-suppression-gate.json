@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "startedAt": "2026-08-08T08:49:43.837Z",
+  "completedAt": "2026-08-08T08:49:44.597Z",
+  "exitCode": 0,
+  "results": [
+    {
+      "command": "/Users/gqadonis/.nvm/versions/node/v24.16.0/bin/node /Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/check-storybook-a11y-suppressions.mjs",
+      "exitCode": 0,
+      "stdout": "Storybook accessibility suppression gate passed (576 story/config source files, 0 disabled checks).\n",
+      "stderr": ""
+    },
+    {
+      "command": "/Users/gqadonis/.nvm/versions/node/v24.16.0/bin/node /Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/test-storybook-a11y-suppressions-negative.mjs",
+      "exitCode": 0,
+      "stdout": "Storybook accessibility negative fixtures passed (5 syntax forms rejected).\n",
+      "stderr": ""
+    }
+  ]
+}

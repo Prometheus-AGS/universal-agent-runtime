@@ -1,0 +1,55 @@
+{
+  "artifact_type": "ui",
+  "constraints": [
+    {
+      "id": "c11-reactive-trace-contract",
+      "description": "The selected run is projected reactively from PGlite into a typed run-to-phase-to-event tree with factual timing, stable selection, and independently scoped remote states.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused repository, service, projection, and store tests"
+      }
+    },
+    {
+      "id": "c11-accessible-responsive-surface",
+      "description": "One responsive trace/inspector tree provides complete keyboard and ARIA semantics, 44px compact targets, semantic theme tokens, and bounded virtualization above 200 visible rows.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused DOM interaction tests, Chromium mount story, source audit, lint, and Flat 2.0 gate"
+      }
+    },
+    {
+      "id": "c11-inert-inspector-boundary",
+      "description": "Raw AG-UI and replay data remain escaped or validated inert metadata; loading and failure states never claim successful validation or execute payload content.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Replay projection, executable-content rejection, inspector rendering, and status-state tests"
+      }
+    },
+    {
+      "id": "c11-change-gates",
+      "description": "C-11 passes its compiler, lint, boundary, Flat 2.0, focused test, strict OpenSpec, and diff-integrity gates without running Wave 4 aggregate tests or build early.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded C-11 command receipts and scoped repository status inspection"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the run-trace-and-inspector runtime-console delta and the vendored UI authority as acceptance criteria.",
+    "Do not alter provider/protocol contracts, backend routes, the Prometheus skill-system submodule, .gitmodules, or user-staged license deletions.",
+    "Keep full frontend Vitest and production build at the Wave 4 boundary after C-12."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "The supported Chromium 500-event mount remains below 100 milliseconds with a viewport-bounded mounted row count.",
+    "No critical finding remains after isolated adversarial review."
+  ]
+}

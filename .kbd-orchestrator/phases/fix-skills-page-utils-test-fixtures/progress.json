@@ -1,26 +1,45 @@
 {
-  "phase": "fix-skills-page-utils-test-fixtures",
-  "createdAt": "2026-05-27T08:10:00-05:00",
-  "updatedAt": "2026-05-27T08:25:00-05:00",
-  "sourceTool": "claude-code",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "reflection_path": ".kbd-orchestrator/phases/fix-skills-page-utils-test-fixtures/reflection.md",
-  "goal_achievement_percent": 100,
-  "changes_total": 1,
-  "changes_completed": 1,
-  "changes_ordered": [
-    "add-preferred-model-to-skill-form-fixtures"
-  ],
-  "change_status": {
-    "add-preferred-model-to-skill-form-fixtures": "DONE"
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
   },
-  "next_change": null,
-  "results_summary": {
-    "tests_total": 36,
-    "tests_passing": 36,
-    "remaining_failures": 0
-  }
+  "conflictCount": 0,
+  "phase": "fix-skills-page-utils-test-fixtures",
+  "phaseId": "fix-skills-page-utils-test-fixtures",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

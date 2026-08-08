@@ -1,0 +1,15 @@
+frontend/package.json
+frontend/src/admin/pages/skills-page.tsx
+frontend/src/components/assistant-ui/enhanced-markdown-text.tsx
+frontend/src/components/assistant-ui/enhanced-thread.tsx
+frontend/src/shared/markdown/index.ts
+frontend/src/shared/markdown/markdown-bubble.test.tsx
+frontend/src/shared/markdown/markdown-bubble.tsx
+frontend/src/shared/markdown/markdown-components.tsx
+frontend/src/shared/markdown/plugins/rehype-chain.ts
+frontend/src/shared/markdown/plugins/remark-chain.ts
+frontend/src/shared/markdown/plugins/sanitize-raw-svg.ts
+frontend/src/shared/markdown/plugins/sanitize-schema.ts
+scripts/frontend-flat2-style-allowlist.txt
+openspec/changes/markdown-pipeline-single-renderer/dependency-evidence.md
+openspec/changes/markdown-pipeline-single-renderer/design.md

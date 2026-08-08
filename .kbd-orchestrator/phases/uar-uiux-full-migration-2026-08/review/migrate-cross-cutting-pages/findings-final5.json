@@ -1,0 +1,55 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/app/shell/nav-destinations.ts",
+      "line": 78,
+      "claim": "The new `runs` destination navigates to `/admin/runs`, but nothing in the packet evidences that this route exists \u2014 the Flat 2.0 allowlist enumerates the admin pages (agents, auth, compiler, cost-dashboard, credentials, knowledge, memory, models, providers, runtime-console, settings, skills, tools) with no runs page \u2014 so the rail link, palette command, and breadcrumb may point at an unhandled route.",
+      "evidence": "nav-destinations.ts adds `{ id: \"runs\", path: \"/admin/runs\", ... }` with no matchPaths fallback; scripts/frontend-flat2-style-allowlist.txt lists frontend/src/admin/pages/*.tsx and contains no runs page, only runtime-console-page.tsx. Spec requirement 'Compact navigation retains complete route access' and the proposal's 'current /threads, /admin/*, and /about routes remain valid' assume the target is real.",
+      "suggested_fix": "Confirm `/admin/runs` is registered in App.tsx routes; if the runs surface is actually the runtime console, point the destination at that path (or add matchPaths) before shipping."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/ui/uar-logo.test.ts",
+      "line": 17,
+      "claim": "The brand contract test asserts exact equality between `frontend/public/brand/` and `docs/ui/logo/`, but the diff does not add any `docs/ui/logo/` assets and the file tree shows only the unexpanded `./docs/ui` directory \u2014 if the delivered source assets are not committed, `readdirSync` throws and the test fails in CI; it also makes frontend unit tests depend on files outside the frontend workspace root.",
+      "evidence": "uar-logo.test.ts: `filesBelow(resolve(projectRoot, \"../docs/ui/logo\"))` with `expect(publicAssets).toEqual(delivered)`; the diff's new files cover only `frontend/public/brand/*` and `openspec/*`, never `docs/ui/logo/*`; the file_tree lists `./docs/ui` with no visible `logo` children.",
+      "suggested_fix": "Either commit `docs/ui/logo/` as part of this change (and list it in files.txt), or replace the directory-equality assertion with an explicit expected asset list rooted inside frontend/."
+    },
+    {
+      "severity": "WARNING",
+      "file": "scripts/frontend-flat2-style-allowlist.txt",
+      "line": 1,
+      "claim": "This change introduces a 391-entry ESLint baseline that suppresses the Flat 2.0 style gate for pre-existing violations \u2014 including files this diff itself touches (admin-shell.tsx border-b/backdrop-blur entries, ThemeToggle.tsx filename-case) \u2014 so acceptance criterion 5.2's 'Pass \u2026 Flat 2.0' is achieved by masking the gate rather than by the touched code complying, and any reviewer can no longer distinguish 'gate passes' from 'gate suppressed'.",
+      "evidence": "New file scripts/frontend-flat2-style-allowlist.txt header: 'Generated baseline for C-03 flat2-style-gate\u2026 Entries are exact ESLint findings'; it contains entries for frontend/src/admin/admin-shell.tsx (4 no-restricted-syntax findings) and frontend/src/components/ThemeToggle.tsx, both modified in this diff; tasks.md criterion 5.2 claims the Flat 2.0 check passes.",
+      "suggested_fix": "Verify the allowlist was generated from the base commit (not from this branch's working tree), and confirm the new shell files (app/shell/*, shared/ui/*) produce zero gated findings without allowlist coverage; state that explicitly in the change's verification evidence."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/app/shell/app-shell.tsx",
+      "line": 35,
+      "claim": "The global Ctrl/Cmd+K handler does not guard against `event.repeat`, so holding the keys down auto-repeat-toggles the palette open and closed.",
+      "evidence": "app-shell.tsx `openCommandPalette` toggles `commandPaletteOpen` on every keydown with no `event.repeat` check.",
+      "suggested_fix": "Add `if (event.repeat) return;` before the toggle branch."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/index.html",
+      "line": 12,
+      "claim": "All favicon links are SVG-only; browsers without SVG favicon support get no icon even though the diff ships raster 16/32px PNGs under /brand/png/.",
+      "evidence": "index.html replaces `/favicon.svg` with three `/brand/uar-favicon-*.svg` links; frontend/public/brand/png/uar-appicon-dark-16.png and -32.png are added but never referenced in the head.",
+      "suggested_fix": "Add a raster fallback such as `<link rel=\"alternate icon\" type=\"image/png\" sizes=\"32x32\" href=\"/brand/png/uar-appicon-dark-32.png\" />`."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

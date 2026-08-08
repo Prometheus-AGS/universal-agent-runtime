@@ -4,27 +4,18 @@ Thanks for contributing to Universal Agent Runtime (UAR).
 
 ## License for Contributions
 
-By submitting a contribution, you represent that you have the right to submit it and agree that it is licensed under `AGPL-3.0-only` as part of this repository.
+By submitting a contribution, you represent that you have the right to submit it and agree that it is licensed under `MIT` as part of this repository.
 
-This enables maintainers to distribute the open-source version under AGPL and offer separate commercial terms for AGPL-incompatible use.
+That is the whole obligation. There is no CLA, no copyright assignment, and no
+dual-licensing clause: the runtime, the SDKs under `sdks/`, and everything else
+in this repository are MIT.
 
-### CLA-lite: dual-licensing (forward-going)
-
-The runtime (this repository, outside `sdks/`) is dual-licensed AGPL-3.0-only
-+ commercial (see `LICENSE-COMMERCIAL.md`). By submitting a contribution to
-any path outside `sdks/`, you additionally agree that Prometheus AGS may
-also license your contribution under the commercial terms in
-`LICENSE-COMMERCIAL.md`, so that commercial licensees receive the same
-functionality as AGPL users.
-
-Contributions to `sdks/python/`, `sdks/rust/`, `sdks/typescript/` are
-licensed MIT (see `sdks/*/LICENSE*`) — no AGPL or commercial dual-license
-obligation applies to SDK contributions.
-
-This clause applies to contributions submitted from this point forward. It
-does not retroactively relicense any contribution made before this clause
-was added; see the open-letter process for existing SDK contributions
-predating the MIT relicensing.
+> **Relicensed 2026-08-07.** The runtime was previously `AGPL-3.0-only` with a
+> separate commercial exception, which required a CLA-lite clause so commercial
+> licensees could receive the same functionality as AGPL users. MIT removes the
+> reason for that machinery entirely. Contributions made before this date were
+> made under the previous terms; the relicense applies going forward and git
+> history is left intact.
 
 ## Sign-off
 

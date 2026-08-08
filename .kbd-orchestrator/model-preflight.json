@@ -1,13 +1,13 @@
 {
   "status": "ok",
-  "gateway": "http://localhost:8181/v1",
+  "gateway": "http://localhost:4000/v1",
   "roles": {
     "judge": {
-      "model": "kbd-judge",
+      "model": "k3",
       "source": "/Users/gqadonis/.prometheus/kbd/models.toml"
     },
     "critic": {
-      "model": "kbd-critic",
+      "model": "MiniMax-M3",
       "source": "/Users/gqadonis/.prometheus/kbd/models.toml"
     },
     "generator": {
@@ -31,5 +31,5 @@
   "config_path": "/Users/gqadonis/.config/liter-llm/liter-llm-proxy.toml",
   "config_exists": true,
   "config_defects": [],
-  "checked_at": "2026-08-01T11:36:14Z"
+  "checked_at": "2026-08-07T13:49:44Z"
 }

@@ -1,0 +1,220 @@
+@import "tailwindcss" source("../../..");
+@import "tw-animate-css";
+
+@source "../../../packages/a2ui-uar/src";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-sans: "Geist Variable", "Inter", system-ui, sans-serif;
+  --font-body: "Geist Variable", "Inter", system-ui, sans-serif;
+  --font-ui: "Geist Variable", "Inter", system-ui, sans-serif;
+  --font-reading: "Roboto", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  --color-bg: #0b0f14;
+  --color-bg-2: #111620;
+  --color-surface: #161d29;
+  --color-card: #1c2535;
+  --color-card-hov: #202b40;
+  --color-muted: #253044;
+  --color-fg: #e8edf3;
+  --color-fg-sub: #a7b0bc;
+  --color-fg-faint: #87909d;
+  --color-ember: #ff6a3d;
+  --color-ember-fg: #0b0f14;
+  --color-ember-tint: #2a1b17;
+  --color-cyan: #00c2dc;
+  --color-green: #22c55e;
+  --color-amber: #f59e0b;
+  --color-red: #ef4444;
+  --color-focus-ring: #ff6a3d;
+
+  --color-phase-context: #a7b0bc;
+  --color-phase-skill: #f59e0b;
+  --color-phase-memory: #8b5cf6;
+  --color-phase-retrieval: #60a5fa;
+  --color-phase-reasoning: #2563eb;
+  --color-phase-tool: #22c55e;
+  --color-phase-generate: #ff6a3d;
+
+  --animate-accordion-down: accordion-down 200ms var(--ease-emphasis);
+  --animate-accordion-up: accordion-up 200ms var(--ease-emphasis);
+  --animate-fade-in: fade-in 150ms var(--ease-emphasis);
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--accordion-panel-height); }
+  }
+
+  @keyframes accordion-up {
+    from { height: var(--accordion-panel-height); }
+    to { height: 0; }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-200%); }
+    100% { transform: translateX(300%); }
+  }
+}
+
+/* Compatibility utilities for call sites migrated in C-05 and C-14a. */
+@theme inline {
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --color-border: var(--border);
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-chrome: hsl(var(--chrome));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-ember-2: hsl(var(--ember-2));
+  --color-ember-soft: hsl(var(--ember-soft));
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+}
+
+:root,
+.dark {
+  color-scheme: dark;
+}
+
+.light {
+  color-scheme: light;
+  --color-bg: #f7f7f8;
+  --color-bg-2: #ffffff;
+  --color-surface: #fafbfc;
+  --color-card: #ffffff;
+  --color-card-hov: #f2f4f7;
+  --color-muted: #f2f4f7;
+  --color-fg: #0b0f14;
+  --color-fg-sub: #4b5563;
+  --color-fg-faint: #6b7280;
+  --color-ember: #b93c1c;
+  --color-ember-fg: #ffffff;
+  --color-ember-tint: #f7dcd3;
+  --color-cyan: #0891b2;
+  --color-green: #16a34a;
+  --color-amber: #d97706;
+  --color-red: #dc2626;
+  --color-focus-ring: #b93c1c;
+  --color-phase-context: #6b7280;
+  --color-phase-skill: #d97706;
+  --color-phase-memory: #7c3aed;
+  --color-phase-retrieval: #2563eb;
+  --color-phase-reasoning: #1d4ed8;
+  --color-phase-tool: #16a34a;
+  --color-phase-generate: #b93c1c;
+}
+
+.high-contrast {
+  color-scheme: dark;
+  --color-bg: #000000;
+  --color-bg-2: #0f0f0f;
+  --color-surface: #1a1a1a;
+  --color-card: #1f1f1f;
+  --color-card-hov: #2e2e2e;
+  --color-muted: #242424;
+  --color-fg: #ffffff;
+  --color-fg-sub: #e0e0e0;
+  --color-fg-faint: #b3b3b3;
+  --color-ember: #ffea00;
+  --color-ember-fg: #000000;
+  --color-ember-tint: #292929;
+  --color-cyan: #33e6ff;
+  --color-green: #00ff00;
+  --color-amber: #ffea00;
+  --color-red: #ff4d4d;
+  --color-focus-ring: #ffea00;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not(.dark, .high-contrast) {
+    color-scheme: light;
+    --color-bg: #f7f7f8;
+    --color-bg-2: #ffffff;
+    --color-surface: #fafbfc;
+    --color-card: #ffffff;
+    --color-card-hov: #f2f4f7;
+    --color-muted: #f2f4f7;
+    --color-fg: #0b0f14;
+    --color-fg-sub: #4b5563;
+    --color-fg-faint: #6b7280;
+    --color-ember: #b93c1c;
+    --color-ember-fg: #ffffff;
+    --color-ember-tint: #f7dcd3;
+    --color-cyan: #0891b2;
+    --color-green: #16a34a;
+    --color-amber: #d97706;
+    --color-red: #dc2626;
+    --color-focus-ring: #b93c1c;
+    --color-phase-context: #6b7280;
+    --color-phase-skill: #d97706;
+    --color-phase-memory: #7c3aed;
+    --color-phase-retrieval: #2563eb;
+    --color-phase-reasoning: #1d4ed8;
+    --color-phase-tool: #16a34a;
+    --color-phase-generate: #b93c1c;
+  }
+}
+
+@layer base {
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+    }
+  }
+}
+
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-ember);
+}

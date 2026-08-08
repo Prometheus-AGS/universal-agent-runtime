@@ -1,0 +1,53 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "c06-single-pass-projections",
+      "description": "Validated official frames produce message chunks, event rows, and terminal phase timings from one normalizer.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused Vitest normalizer and adapter suite"
+      }
+    },
+    {
+      "id": "c06-replay-snapshots",
+      "description": "AG-UI replay snapshots represent the selected cursor and invalid state patches do not claim synchronization.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused Rust replay snapshot tests"
+      }
+    },
+    {
+      "id": "c06-tool-raw-parity",
+      "description": "Replay emits exactly one tool start and RAW remains opaque to domain consumers.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused Rust tool projection and frontend RAW passthrough tests"
+      }
+    },
+    {
+      "id": "c06-repository-gates",
+      "description": "The change passes frontend and Rust compiler gates, Wave 2 tests/build, strict OpenSpec validation, and diff integrity.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded commands in verification-summary.md"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the C-06 OpenSpec delta as the acceptance authority because the project constraint file is absent.",
+    "Do not treat the unrelated live harness strict_config compile defect as passing evidence."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "All nine OpenSpec tasks are complete."
+  ]
+}

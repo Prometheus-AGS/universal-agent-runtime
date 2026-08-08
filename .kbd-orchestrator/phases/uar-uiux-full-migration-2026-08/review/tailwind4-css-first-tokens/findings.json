@@ -1,0 +1,87 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/theme/tokens.css",
+      "line": 57,
+      "claim": "Accordion keyframes now animate to `var(--accordion-panel-height)` (Base UI's variable) instead of the deleted config's `var(--radix-accordion-content-height)` (Radix's variable), so any remaining Radix/shadcn accordion using `animate-accordion-down/up` silently loses its height animation.",
+      "evidence": "Deleted `frontend/tailwind.config.ts` keyframes used `var(--radix-accordion-content-height)` (the canonical shadcn/Radix accordion pattern, matching the repo's `components.json` shadcn setup); new `tokens.css` @keyframes use `var(--accordion-panel-height)`. design.md asserts \"Base UI wrappers\" but nothing in the packet verifies which accordion implementation is live.",
+      "suggested_fix": "Grep frontend/src and frontend/packages/a2ui-uar/src for the accordion implementation; if Radix, restore `--radix-accordion-content-height` in the keyframes (or define both keyframe pairs)."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/theme/tokens.css",
+      "line": 26,
+      "claim": "Same-named colors that previously resolved per-theme via `hsl(var(--\u2026))` channels (surface, card, card-hov, muted, fg-sub, fg-faint, ember, cyan, success, warning) are now hard-coded hex values, and the claimed theme equivalence is never verified \u2014 the verify script only greps that token names exist.",
+      "evidence": "Deleted tailwind.config.ts mapped `surface: 'hsl(var(--surface))'`, `muted.DEFAULT: 'hsl(var(--muted))'`, `card: hsl(var(--card))`, `'fg-sub'`, `'fg-faint'`, `ember`, `cyan` etc. to HSL channels; tokens.css @theme redefines the same utility names as fixed hex (`--color-surface: #161d29`, `--color-muted: #253044`, \u2026). Proposal Impact requires \"dark, light, and high-contrast semantics must remain equivalent\", but `verify-token-foundation.sh` asserts only `--color-${token}:` presence, never that the hex equals the corresponding HSL channel values in the unchanged portion of `index.css`.",
+      "suggested_fix": "Extend verify-token-foundation.sh to convert each legacy HSL channel triple in index.css to hex and diff it against the new --color-* values for all three themes."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/theme/tokens.css",
+      "line": 9,
+      "claim": "The typography contract changes the app-wide default typeface: `--font-sans` drops \"Geist Variable\" (the v3 default document font via preflight) and `--font-body` switches from Geist Variable to Roboto, with no evidence Roboto is among the bundled fonts.",
+      "evidence": "Deleted tailwind.config.ts: `sans: ['Geist Variable', 'Inter', \u2026]`, `body: ['Geist Variable', \u2026]`, `mono: ['JetBrains Mono', 'Fira Code', \u2026]`. New tokens.css: `--font-sans: \"Inter\", system-ui, sans-serif;`, `--font-body: \"Roboto\", \u2026`, `--font-mono: \"JetBrains Mono\", ui-monospace, \u2026`. In Tailwind v4, preflight's default font-family derives from --font-sans, so this is a runtime visual change in a change described as a \"plumbing change\" whose semantics \"must remain equivalent\"; the repo loads fonts via scripts/download-fonts.sh and nothing in the packet shows Roboto is included.",
+      "suggested_fix": "Either restore Geist Variable as the primary sans/body family for this plumbing step (defer typography changes to the theme change that owns them), or document the intentional change and confirm Roboto is downloaded/bundled."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/theme/tokens.css",
+      "line": 14,
+      "claim": "The radius scale no longer derives from `var(--radius)` and drops the 2xl/3xl/4xl mappings, so components using `rounded-2xl/3xl/4xl` (or any non-default --radius) get different geometry than before.",
+      "evidence": "Deleted tailwind.config.ts borderRadius: `sm: calc(var(--radius)*0.6)`, `md: *0.8`, `lg: var(--radius)`, `xl: *1.4`, plus `2xl: *1.8`, `3xl: *2.2`, `4xl: *2.6`. New tokens.css defines only fixed `--radius-sm/md/lg/xl: 6/8/12/16px`; 2xl/3xl/4xl revert to Tailwind v4 built-in defaults, decoupled from the --radius variable still defined in index.css.",
+      "suggested_fix": "Define --radius-2xl/3xl/4xl (and sm\u2013xl) as calc() expressions of var(--radius) in `@theme inline`, or audit all rounded-2xl/3xl/4xl call sites and record the intentional value change."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/tailwind4-css-first-tokens/verify-token-foundation.sh",
+      "line": 80,
+      "claim": "The dangling-reference check backing acceptance criterion 3.3 only scans `.github/workflows`, `frontend/*.json`, and `frontend/*.ts`, leaving nested live configuration (`frontend/.storybook/**`, `frontend/eslint.config.js`, `frontend/packages/**` configs, Dockerfile/CI scripts) unchecked.",
+      "evidence": "Script: `rg -n 'tailwind\\.config|postcss\\.config' .github/workflows frontend/*.json frontend/*.ts`. Criterion 3.3 / spec requirement \"Deleted configuration references do not dangle\" cover all live frontend configuration; `frontend/*.ts` does not glob `frontend/.storybook/main.ts` or `preview.ts`, and no `*.js`/`*.mjs` config is included.",
+      "suggested_fix": "Widen the check to e.g. `rg -n 'tailwind\\.config|postcss\\.config' .github/workflows frontend --glob '!node_modules' --glob '!dist' --glob '!test-results' --glob '!coverage'` with allowlists for docs."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/package.json",
+      "line": 22,
+      "claim": "Chromatic tooling (chromatic@^18.1.0, @chromatic-com/playwright, three new scripts) is added without appearing anywhere in the proposal, spec, or tasks for this change, and chromatic@18.1.0 requires Node >=22 with no Node baseline established in the packet.",
+      "evidence": "package.json adds `\"chromatic\"`, `\"chromatic:playwright\"`, `\"test:e2e:chromatic\"` scripts and devDependencies `chromatic: ^18.1.0`, `@chromatic-com/playwright: ^0.14.11`; the lockfile hunk shows `chromatic@18.1.0: engines: {node: '>=22.0.0'}`. The proposal's \"What Changes\" and tasks.md mention only Tailwind/tw-animate dependency work (1.1 even says \"preserve unrelated package/lockfile changes\").",
+      "suggested_fix": "Split the Chromatic CLI/Playwright additions into the change that owns visual-regression tooling, or document them in the proposal and confirm the repo/CI Node version satisfies >=22."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/shared/theme/tokens.css",
+      "line": 1,
+      "claim": "Relying on Tailwind v4 automatic content detection from a CSS file nested in a monorepo whose git root is the repository root risks scanning unrelated packages (website/, models.dev/, docs/*.html), bloating the emitted CSS beyond the old explicit content array.",
+      "evidence": "Deleted tailwind.config.ts restricted scanning to `./index.html`, `./src/**`, `./packages/a2ui-uar/src/**`; tokens.css uses a bare `@import \"tailwindcss\"` plus one `@source` for a2ui-uar, so automatic detection governs everything else, and v4's heuristic base is derived from the nearest VCS root (repo root here, per the file tree).",
+      "suggested_fix": "Scope detection explicitly, e.g. `@import \"tailwindcss\" source(\"../../..\")`-style base or additional `@source` directives mirroring the old content array."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/shared/theme/tokens.css",
+      "line": 20,
+      "claim": "`--ease-out` in @theme overrides Tailwind's built-in `ease-out` timing utility globally, silently changing every existing `ease-out` transition in the app.",
+      "evidence": "tokens.css defines `--ease-out: cubic-bezier(0.16, 1, 0.3, 1);` inside @theme; Tailwind v4's default ease-out is a different curve, and all pre-existing `ease-out` class usages now resolve to the new curve.",
+      "suggested_fix": "Rename to a project-specific token (e.g. `--ease-emphasis`) or record the global easing change as intentional in the spec's preserved-behavior requirement."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/shared/theme/tokens.css",
+      "line": 193,
+      "claim": "A new global `:focus-visible { box-shadow: 0 0 0 3px var(--color-focus-ring) }` rule is introduced in a plumbing change and is imported before index.css, whose visible header comment states Flat 2.0 \"borders/shadows are transparent by CSS rule\" \u2014 a later index.css rule may silently nullify the focus ring (a11y), or this is new global styling outside C-02's scope.",
+      "evidence": "tokens.css @layer base adds the :focus-visible box-shadow; index.css begins with `@import \"./shared/theme/tokens.css\";` so all subsequent index.css base rules (including the Flat 2.0 shadow enforcement referenced in its unchanged header comment) take precedence at equal specificity.",
+      "suggested_fix": "Verify the computed focus ring in the running app (and in .light/.high-contrast); if Flat 2.0 enforcement overrides it, move or exempt the focus-ring rule and document it."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/shared/markdown/plugins/rehype-chain.ts",
+      "line": 1,
+      "claim": "The diff imports six new packages (rehype-raw, rehype-sanitize, rehype-katex, remark-math, remark-breaks, katex) but contains no package.json or pnpm-lock.yaml hunk, so criterion 1.2's 'one dependency update' is not present in the packet and, if the manifest was not actually changed, the frontend build fails on unresolvable imports.",
+      "evidence": "New imports at frontend/src/shared/markdown/plugins/rehype-chain.ts lines 1-4, remark-chain.ts lines 1-4, and markdown-bubble.tsx ('katex/dist/katex.min.css'); criterion 1.2 ('Add remark-math, remark-breaks, rehype-raw, rehype-sanitize, rehype-katex, katex, and dompurify in one dependency update'); the only supporting artifact is the prose assertion in dependency-evidence.md, not a manifest diff.",
+      "suggested_fix": "Include the frontend/package.json and frontend/pnpm-lock.yaml hunks in the change packet so the dependency transaction is verifiable, or confirm the manifest already declares these packages."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "openspec/changes/markdown-pipeline-single-renderer/dependency-evidence.md",
+      "line": 7,
+      "claim": "dompurify is claimed as part of the C-08 trust-boundary dependency set but is never imported anywhere in the diff, making it a dead, unaudited dependency added to the supply chain for no functional purpose.",
+      "evidence": "dependency-evidence.md lists `dompurify` `^3.4.13` first in the trust-boundary set, yet sanitization is implemented entirely via rehype-sanitize (sanitize-schema.ts, rehype-chain.ts) and no file in the diff imports 'dompurify'.",
+      "suggested_fix": "Remove dompurify from the dependency update, or actually wire it into the pipeline and justify why two sanitizers are needed."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/markdown/markdown-components.tsx",
+      "line": 15,
+      "claim": "The migration deletes highlight.js-based syntax highlighting and the language-label header for fenced code blocks and replaces them with a plain <pre>, a presentation regression that criterion 3.1 ('move the shared typography/code/table presentation map') does not authorize.",
+      "evidence": "Deleted enhanced-markdown-text.tsx contained CodeBlock with hljs.highlight/hljs.highlightAuto and a language header bar; new MarkdownPre/MarkdownCode (markdown-components.tsx lines 10-31) render only 'my-3 overflow-x-auto rounded-lg bg-muted/50 p-4 font-mono text-sm' with no highlighting and no language display.",
+      "suggested_fix": "Port the hljs highlighting (or a stated replacement) and the language header into MarkdownPre/MarkdownCode, or explicitly record the removal of syntax highlighting as an accepted behavior change."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/markdown/markdown-components.tsx",
+      "line": 78,
+      "claim": "The hr renderer now emits an empty invisible div (h-3 spacer with no border/background) instead of a visible rule, so horizontal rules in markdown silently disappear.",
+      "evidence": "Old map: `hr: ({ className, ...props }) => <hr className={cn(\"my-4 border-border/30\", className)} .../>`; new map: `hr: () => <div className=\"my-5 h-3\" role=\"separator\" />` \u2014 no border, background, or <hr> element, and it also drops the className prop.",
+      "suggested_fix": "Render an actual rule, e.g. <hr className=\"my-4 border-border/30\" role=\"separator\" /> or a div with a border/bg class that is visually a separator."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/markdown/plugins/sanitize-schema.ts",
+      "line": 84,
+      "claim": "Attributes are whitelisted for the <source> element but 'source' is never added to tagNames, so <source> children of the newly allowed <video> element are stripped and multi-source videos cannot load.",
+      "evidence": "tagNames is extended with LIMITED_HTML_TAGS ([\"figure\",\"figcaption\",\"mark\",\"video\"]) plus SVG and pm-* tags \u2014 'source' is absent \u2014 while attributes includes `source: appendUnique(defaultSchema.attributes?.source, [\"src\", \"type\"])`, which is dead configuration.",
+      "suggested_fix": "Add 'source' (and consider 'track') to LIMITED_HTML_TAGS, or remove the dead source-attribute whitelist."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/markdown/plugins/rehype-chain.ts",
+      "line": 14,
+      "claim": "rehype-katex is registered with no error-handling options and no test covers malformed math, so a model emitting invalid LaTeX inside $...$ delimiters can propagate a KaTeX ParseError through react-markdown and crash the entire message render (no error boundary wraps MarkdownBubble in enhanced-thread.tsx).",
+      "evidence": "rehype-chain.ts: bare `rehypeKatex` with no options object; markdown-bubble.test.tsx exercises only valid math ($x^2$); AssistantMessageBody in enhanced-thread.tsx renders <MarkdownBubble /> directly inside the message bubble with no boundary.",
+      "suggested_fix": "Configure rehype-katex with non-throwing options (e.g. throwOnError: false / strict: 'ignore') and add a malformed-math fixture test asserting the message still renders."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/markdown/plugins/sanitize-schema.ts",
+      "line": 100,
+      "claim": "The sanitizer whitelists eight pm-* custom elements with freeform attributes (spec, data, options, markers, center) but no component in the diff renders or defines these elements, so untrusted markdown can emit arbitrary pm-* payloads whose behavior is undefined \u2014 a latent injection surface if any global custom-element registry later defines them.",
+      "evidence": "sanitize-schema.ts CONTENT_ELEMENT_TAGS and per-tag attribute whitelists ('pm-chart': [\"type\",\"spec\",\"data\",\"options\",\"title\"], 'pm-map': [\"center\",\"zoom\",\"markers\"], etc.); markdown-components.tsx has no renderer for any pm-* tag; criterion 2.2 only authorizes 'approved limited HTML/SVG'.",
+      "suggested_fix": "Either remove the pm-* tags from the schema until a renderer exists, or add the consuming components and document why these elements belong in the untrusted-content allowlist."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/shared/markdown/plugins/sanitize-schema.ts",
+      "line": 90,
+      "claim": "Untrusted markdown is permitted to autoplay looping videos because autoPlay and loop are whitelisted on <video>.",
+      "evidence": "video: [\"src\",\"poster\",\"controls\",\"autoPlay\",\"loop\",\"muted\",\"playsInline\",\"width\",\"height\"] in sanitize-schema.ts.",
+      "suggested_fix": "Drop autoPlay (and possibly loop) from the video attribute allowlist, or gate autoplay behind muted+playsInline enforcement."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/shared/markdown/markdown-bubble.tsx",
+      "line": 14,
+      "claim": "The public props interface declares a `text` prop that the implementation never reads, creating dead API surface that implies a supported usage (passing text directly) which silently renders from context instead.",
+      "evidence": "MarkdownBubbleProps includes `text?: string` but MarkdownBubbleImpl destructures only ({ source, className }); a caller passing text= gets the assistant-ui context primitive, not their text.",
+      "suggested_fix": "Either remove the text prop from the interface or treat an explicitly passed text value as an alias for source."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

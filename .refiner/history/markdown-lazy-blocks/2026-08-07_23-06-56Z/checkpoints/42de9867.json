@@ -1,0 +1,61 @@
+{
+  "refinement_id": "d80bd76d-cf9c-42c4-8001-16101ebc2e63",
+  "artifact_name": "markdown-lazy-blocks",
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "started_at": "2026-08-07T22:35:02Z",
+  "updated_at": "2026-08-07T22:36:17Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate C-09 against finalized-only rendering, engine security, lazy production-graph, and Wave 3 repository requirements"
+  ],
+  "constraints": [
+    {
+      "id": "c09-finalization-and-fallbacks"
+    },
+    {
+      "id": "c09-engine-security"
+    },
+    {
+      "id": "c09-lazy-production-graph"
+    },
+    {
+      "id": "c09-wave-three-gates"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-07T22:35:14Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "cf2b3b93",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-07T22:36:17Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

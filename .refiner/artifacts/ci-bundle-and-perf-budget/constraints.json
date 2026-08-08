@@ -1,0 +1,60 @@
+{
+  "artifact_type": "ui",
+  "constraints": [
+    {
+      "id": "c13-initial-javascript-budget",
+      "description": "The production manifest gate charges the complete static /threads JavaScript closure at no more than 250000 gzip bytes while reporting exactly one named PGlite JavaScript exclusion, all PGlite non-JavaScript assets, and lazy Mermaid/Shiki ownership.",
+      "severity": "blocking",
+      "type": "performance",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Production manifest build, fail-closed fixture proofs, and bundle evidence JSON"
+      },
+      "target_metric": {
+        "metric": "initial JavaScript gzip bytes",
+        "operator": "<=",
+        "value": 250000
+      }
+    },
+    {
+      "id": "c13-browser-latency-budgets",
+      "description": "The supported serial Chromium fixtures commit the cold PGlite thread list within 1000ms, the 500-event trace lane within 100ms, and 2000 finalized Markdown lines within 250ms with structural assertions.",
+      "severity": "blocking",
+      "type": "performance",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Playwright production preview and Chromium Storybook measurements"
+      }
+    },
+    {
+      "id": "c13-production-seed-integrity",
+      "description": "A fresh browser database may load only the semantically reproducible versioned schema seed with exact current migration versions, an ordered-definition digest, and zero rows in every product table; existing IndexedDB databases retain ordinary resume and migration behavior.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "PGlite seed build/check command, real fresh-context browser fixture, and source inspection"
+      }
+    },
+    {
+      "id": "c13-ci-and-scope-integrity",
+      "description": "Ordinary pull-request CI runs negative proofs, one manifest build, bundle enforcement, and serial performance budgets without changing provider, backend, realtime, C-14, submodule, .gitmodules, or staged license-deletion surfaces.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Workflow/source audit, full frontend verification, strict OpenSpec validation, and scoped status inspection"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the binding C-13 limits without a CI multiplier.",
+    "Measure the product render boundary rather than test-runner polling latency.",
+    "Do not touch C-14-owned removals, .gitmodules, crates/prometheus-skill-system, src/uar, or user-staged license deletions."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass deterministic validation.",
+    "Strict OpenSpec validation passes and the artifact packet contains exact evidence.",
+    "No critical finding remains after isolated adversarial review."
+  ]
+}

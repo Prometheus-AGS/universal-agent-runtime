@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "@chromatic-com/playwright";
 
 test("configured provider and default model drive routing and its UI decision", async ({
   page,

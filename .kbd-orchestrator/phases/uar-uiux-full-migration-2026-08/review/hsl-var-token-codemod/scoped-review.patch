@@ -1,0 +1,195 @@
+C-05 SCOPED REVIEW PATCH
+
+Context: The worktree contains accepted, uncommitted Wave 1 changes. This packet
+deliberately excludes those prior hunks. The changes below are the complete C-05
+delta. A pre-edit literal census found 29 non-admin hsl(var( call sites in six
+files; frontend/src/admin/pages contains 307 and is untouched.
+
+--- frontend/src/index.css
++++ frontend/src/index.css
+@@ terminal-theme-scoped complete-color aliases
++    --color-terminal-fg: hsl(155 14% 80%);
++    --color-terminal-fg-dim: hsl(155 10% 55%);
++    --color-phosphor: hsl(140 100% 75%);
++    --color-phosphor-glow: hsl(140 100% 65%);
++    --color-signal-red: hsl(0 100% 68%);
+@@ terminal scanline alpha
+-      hsl(var(--terminal-fg) / 0.06) 1px,
+-      hsl(var(--terminal-fg) / 0.06) 2px
++      color-mix(in srgb, var(--color-terminal-fg) 6%, transparent) 1px,
++      color-mix(in srgb, var(--color-terminal-fg) 6%, transparent) 2px
+@@ scrollbar
+-    scrollbar-color: hsl(var(--muted)) transparent;
++    scrollbar-color: var(--color-muted) transparent;
+-    background-color: hsl(var(--muted));
++    background-color: var(--color-muted);
+@@ shared brand and highlight theme (ten further replacements shown below)
+-  color: hsl(var(--ember));
++  color: var(--color-ember);
+-  background: hsl(var(--surface)) !important;
+-  color: hsl(var(--foreground)) !important;
++  background: var(--color-surface) !important;
++  color: var(--color-foreground) !important;
+- hsl(var(--ember))
++ var(--color-ember)
+- hsl(var(--cyan))
++ var(--color-cyan)
+- hsl(var(--fg-faint))
++ var(--color-fg-faint)
+- hsl(var(--foreground))
++ var(--color-foreground)
+- .light selector: hsl(var(--ember))
++ .light selector: var(--color-ember)
+- .light selector: hsl(var(--cyan))
++ .light selector: var(--color-cyan)
+- .light selector: hsl(var(--fg-faint))
++ .light selector: var(--color-fg-faint)
+Together with the two scanline and two scrollbar replacements, the measured
+index.css total is 14.
+
+--- frontend/src/components/assistant-ui/enhanced-thread.tsx
++++ frontend/src/components/assistant-ui/enhanced-thread.tsx
+-        ["--composer-bg" as string]: "hsl(var(--surface))",
++        ["--composer-bg" as string]: "var(--color-surface)",
+-    <div className="my-2 w-full max-w-[80%] rounded-xl bg-[hsl(var(--cyan)_/_0.07)] px-3 py-2">
++    <div className="my-2 w-full max-w-[80%] rounded-xl bg-[color-mix(in_srgb,var(--color-cyan)_7%,transparent)] px-3 py-2">
+-          className="group/trigger flex max-w-[75%] origin-left items-center gap-2 py-1.5 text-sm text-[hsl(var(--cyan))] transition-colors hover:text-foreground"
++          className="group/trigger flex max-w-[75%] origin-left items-center gap-2 py-1.5 text-sm text-[var(--color-cyan)] transition-colors hover:text-foreground"
+
+--- frontend/src/components/admin/loading-cursor.tsx
++++ frontend/src/components/admin/loading-cursor.tsx
+-        "inline-flex items-center gap-2 text-[hsl(var(--terminal-fg-dim))]",
++        "inline-flex items-center gap-2 text-[var(--color-terminal-fg-dim)]",
+-        className="inline-block text-[hsl(var(--phosphor))]"
++        className="inline-block text-[var(--color-phosphor)]"
+
+--- frontend/src/components/admin/error-bar.tsx
++++ frontend/src/components/admin/error-bar.tsx
+-        "flex items-center gap-3 border-b border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.08)] px-6 py-2 text-xs text-[hsl(var(--signal-red))]",
++        "flex items-center gap-3 border-b border-[var(--color-signal-red)] bg-[color-mix(in_srgb,var(--color-signal-red)_8%,transparent)] px-6 py-2 text-xs text-[var(--color-signal-red)]",
+-          className="rounded border border-[hsl(var(--signal-red)/0.4)] px-2 py-0.5 text-xs hover:bg-[hsl(var(--signal-red)/0.15)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--phosphor-glow))]"
++          className="rounded border border-[color-mix(in_srgb,var(--color-signal-red)_40%,transparent)] px-2 py-0.5 text-xs hover:bg-[color-mix(in_srgb,var(--color-signal-red)_15%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-phosphor-glow)]"
+
+--- frontend/src/components/admin/empty-frame.tsx
++++ frontend/src/components/admin/empty-frame.tsx
+-        className="select-none text-xs leading-[1.2] text-[hsl(var(--terminal-fg-dim))] opacity-60"
++        className="select-none text-xs leading-[1.2] text-[var(--color-terminal-fg-dim)] opacity-60"
+-        <p className="mt-3 text-xs leading-relaxed text-[hsl(var(--terminal-fg-dim))]">
++        <p className="mt-3 text-xs leading-relaxed text-[var(--color-terminal-fg-dim)]">
+
+--- frontend/src/components/KnowMeLogo.tsx
++++ frontend/src/components/KnowMeLogo.tsx
+-        <circle cx="18" cy="62" r="10" fill="hsl(var(--ember))" />
++        <circle cx="18" cy="62" r="10" fill="var(--color-ember)" />
+-      Know<span style={{ color: "hsl(var(--ember))" }}>Me</span>
++      Know<span style={{ color: "var(--color-ember)" }}>Me</span>
+
+--- scripts/check-hsl-token-codemod.mjs
++++ scripts/check-hsl-token-codemod.mjs
+#!/usr/bin/env node
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
+const root = resolve(import.meta.dirname, "..");
+const fixtureIndex = process.argv.indexOf("--fixture-file");
+const fixtureFile = fixtureIndex >= 0 ? process.argv[fixtureIndex + 1] : null;
+if (fixtureIndex >= 0 && !fixtureFile) {
+  console.error("HSL token codemod gate requires a path after --fixture-file.");
+  process.exit(2);
+}
+const migratedFiles = fixtureFile ? [fixtureFile] : [
+  "frontend/src/index.css",
+  "frontend/src/components/assistant-ui/enhanced-thread.tsx",
+  "frontend/src/components/admin/loading-cursor.tsx",
+  "frontend/src/components/admin/error-bar.tsx",
+  "frontend/src/components/admin/empty-frame.tsx",
+  "frontend/src/components/KnowMeLogo.tsx",
+];
+const legacyCall = /hsla?\s*\(\s*var\s*\(/gi;
+const violations = [];
++const semanticDefinitions = new Set(
++  ["frontend/src/shared/theme/tokens.css", "frontend/src/index.css"].flatMap((file) =>
++    [...readFileSync(resolve(root, file), "utf8").matchAll(/(--color-[a-z0-9-]+)\s*:/gi)].map(
++      (match) => match[1],
++    ),
++  ),
++);
++function walk(dir) {
++  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
++    const path = resolve(dir, entry.name);
++    return entry.isDirectory() ? walk(path) : [path];
++  });
++}
+for (const file of migratedFiles) {
+  const content = readFileSync(resolve(root, file), "utf8");
+  const count = [...content.matchAll(legacyCall)].length;
+  if (count) violations.push(`${file}: ${count} legacy HSL-channel call site(s)`);
+  for (const match of content.matchAll(/var\((--color-[a-z0-9-]+)\)/gi)) {
+    if (!semanticDefinitions.has(match[1])) {
+      violations.push(`${file}: undefined semantic token ${match[1]}`);
+    }
+  }
+}
+const deferredCount = fixtureFile
+  ? null
+  : walk(resolve(root, "frontend/src/admin/pages"))
+      .filter((file) => file.endsWith(".tsx"))
+      .reduce(
+        (count, file) => count + [...readFileSync(file, "utf8").matchAll(legacyCall)].length,
+        0,
+      );
+if (violations.length) {
+  console.error("HSL token codemod scope violations:");
+  for (const violation of violations) console.error(`  + ${violation}`);
+  process.exit(1);
+}
+if (fixtureFile) {
+  console.log("HSL token codemod fixture passed.");
+} else {
+  console.log(`HSL token codemod gate passed (migrated file set clean; ${deferredCount} admin-page call sites currently deferred).`);
+}
+
+--- scripts/fixtures/hsl-token-codemod/case-variant.tsx
++++ scripts/fixtures/hsl-token-codemod/case-variant.tsx
++export const legacyColor = "HSL(var(--legacy-channel))";
++export const legacyAlphaColor = "HSLA(var(--legacy-alpha-channel))";
+
+--- scripts/test-hsl-token-codemod-negative.mjs
++++ scripts/test-hsl-token-codemod-negative.mjs
++import { spawnSync } from "node:child_process";
++import { resolve } from "node:path";
++const root = resolve(import.meta.dirname, "..");
++const fixture = "scripts/fixtures/hsl-token-codemod/case-variant.tsx";
++const result = spawnSync(
++  process.execPath,
++  ["scripts/check-hsl-token-codemod.mjs", "--fixture-file", fixture],
++  { cwd: root, encoding: "utf8" },
++);
++const output = `${result.stdout}\n${result.stderr}`;
++if (result.status === 0 || !output.includes(fixture) || !output.includes("2 legacy")) {
++  throw new Error("HSL token codemod gate accepted a case-variant HSL/HSLA call site");
++}
++console.log("HSL token codemod negative fixture passed (case-variant HSL and HSLA syntax rejected).");
+
+--- scripts/ci-grep-gates.sh
++++ scripts/ci-grep-gates.sh
++if node scripts/check-hsl-token-codemod.mjs && node scripts/test-hsl-token-codemod-negative.mjs; then
++  echo "✅ semantic color token migration"
++else
++  echo "❌ semantic color token migration"
++  status=1
++fi
+
+--- scripts/frontend-flat2-style-allowlist.txt
++++ scripts/frontend-flat2-style-allowlist.txt
+-frontend/src/components/admin/error-bar.tsx|no-restricted-syntax|"\"flex items-center gap-3 border-b border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.08)] px-6 py-2 text-xs text-[hsl(var(--signal-red))]\""|occurrence=1
+-frontend/src/components/admin/error-bar.tsx|no-restricted-syntax|"\"rounded border border-[hsl(var(--signal-red)/0.4)] px-2 py-0.5 text-xs hover:bg-[hsl(var(--signal-red)/0.15)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[hsl(var(--phosphor-glow))]\""|occurrence=1
++frontend/src/components/admin/error-bar.tsx|no-restricted-syntax|"\"flex items-center gap-3 border-b border-[var(--color-signal-red)] bg-[color-mix(in_srgb,var(--color-signal-red)_8%,transparent)] px-6 py-2 text-xs text-[var(--color-signal-red)]\""|occurrence=1
++frontend/src/components/admin/error-bar.tsx|no-restricted-syntax|"\"rounded border border-[color-mix(in_srgb,var(--color-signal-red)_40%,transparent)] px-2 py-0.5 text-xs hover:bg-[color-mix(in_srgb,var(--color-signal-red)_15%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-phosphor-glow)]\""|occurrence=1
+The rule names and occurrence counts are unchanged; the verified baseline remains
+400 because C-05 does not remove the existing border debt.
+
+--- openspec/changes/hsl-var-token-codemod/
++++ openspec/changes/hsl-var-token-codemod/
+Adds proposal.md, design.md, specs/frontend-design-system/spec.md, tasks.md,
+verification.md, and files.txt. The packet acceptance criteria contains the full
+proposal, tasks, verification, design, and delta spec.

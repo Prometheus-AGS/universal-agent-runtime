@@ -1,4 +1,5 @@
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, test } from "@chromatic-com/playwright";
+import type { Locator, Page } from "@playwright/test";
 
 async function expectNoErrorBoundary(page: Page) {
   await expect(page.getByText("Oops! Page not found")).not.toBeVisible();
@@ -36,9 +37,8 @@ test.describe("Runtime console visual verification", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/admin/runtime");
 
-    await expect(page.getByTestId("admin-shell")).toBeVisible();
-    await expect(page.getByTestId("admin-navigation")).toBeVisible();
-    await expect(page.getByTestId("admin-topbar")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
+    await expect(page.getByRole("banner")).toBeVisible();
     await expect(page.getByTestId("admin-section-runtime")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Live Runs" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Provider Health" })).toBeVisible();
@@ -47,11 +47,11 @@ test.describe("Runtime console visual verification", () => {
     await expect(page.getByText("No provider health reported yet")).toBeVisible();
 
     await expectNoOverlap(
-      page.getByTestId("admin-navigation"),
+      page.getByRole("navigation", { name: "Primary navigation" }),
       page.getByTestId("admin-section-runtime"),
     );
     await expectNoOverlap(
-      page.getByTestId("admin-topbar"),
+      page.getByRole("banner"),
       page.getByRole("heading", { name: "Live Runs" }),
     );
     await expectNoErrorBoundary(page);
@@ -71,7 +71,7 @@ test.describe("Runtime console visual verification", () => {
     ] as const;
 
     for (const surface of surfaces) {
-      await page.getByTestId(`admin-nav-${surface.id}`).click();
+      await page.goto(`/admin/${surface.id}`);
       await expect(page).toHaveURL(surface.path);
       await expect(page.getByTestId(`admin-section-${surface.id}`)).toBeVisible();
       await expect(
@@ -85,52 +85,42 @@ test.describe("Runtime console visual verification", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/admin/runtime");
 
-    await expect(page.getByTestId("admin-mobile-nav-trigger")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Compact navigation" })).toBeVisible();
     await expect(page.getByTestId("admin-section-runtime")).toBeVisible();
 
-    await page.getByTestId("admin-mobile-nav-trigger").click();
-    await expect(page.getByTestId("admin-mobile-nav-overlay")).toBeVisible();
-    await expect(page.getByTestId("admin-navigation")).toBeVisible();
-
-    await page.getByTestId("admin-nav-protocols").click();
-    await expect(page).toHaveURL(/\/admin\/protocols/);
-    await expect(page.getByTestId("admin-section-protocols")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Compatibility Console" })).toBeVisible();
-    await expect(page.getByTestId("admin-mobile-nav-overlay")).not.toBeVisible();
+    await page.getByRole("button", { name: "Configure" }).click();
+    const configureDialog = page.getByRole("dialog");
+    await expect(configureDialog).toBeVisible();
+    await configureDialog.getByRole("link", { name: /Runtime settings/ }).click();
+    await expect(page).toHaveURL(/\/admin\/settings/);
+    await expect(page.getByTestId("admin-section-settings")).toBeVisible();
 
     await expectNoOverlap(
-      page.getByTestId("admin-mobile-nav-trigger"),
-      page.getByRole("heading", { name: "Compatibility Console" }),
+      page.getByRole("button", { name: "Open command palette" }),
+      page.getByTestId("admin-section-settings"),
     );
     await expectNoErrorBoundary(page);
   });
 
-  test("command palette opens and routes to provider diagnostics", async ({ page }) => {
+  test("command palette filters and routes with keyboard activation", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/admin/runtime");
 
-    await expect(page.getByTestId("admin-shell")).toBeVisible();
-    await expect(page.getByTestId("admin-command-trigger")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open command palette" })).toBeVisible();
 
-    const commandInput = page.getByPlaceholder("Search runtime, providers, protocols...");
-    await page.evaluate(() => {
-      document.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "k",
-          ctrlKey: true,
-          bubbles: true,
-        }),
-      );
-    });
-    await commandInput.waitFor({ state: "visible", timeout: 1000 }).catch(async () => {
-      await page.getByTestId("admin-command-trigger").click();
-    });
+    const commandInput = page.getByPlaceholder("Search routes and commands…");
+    await page.getByRole("button", { name: "Open command palette" }).click();
     await expect(commandInput).toBeVisible();
 
-    await page
-      .getByRole("dialog")
-      .getByText("Providers", { exact: true })
-      .click();
+    await commandInput.fill("credentials");
+    await expect(
+      page.getByRole("dialog").getByText("Providers", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("dialog").getByText("Skills", { exact: true }),
+    ).not.toBeVisible();
+    await commandInput.press("Enter");
     await expect(page).toHaveURL(/\/admin\/providers/);
     await expect(page.getByTestId("admin-section-providers")).toBeVisible();
     await expect(page.getByText(/providers connect this runtime|select a provider|no providers configured/i).first()).toBeVisible();

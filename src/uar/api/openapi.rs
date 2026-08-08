@@ -15,7 +15,7 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
             "title": "Universal Agent Runtime",
             "version": "0.1.0",
             "description": "Agentic streaming LLM runtime with MCP tool integration, A2A/AG-UI/A2UI protocol support, and 142+ LLM provider coverage.",
-            "license": { "name": "AGPL-3.0-only" }
+            "license": { "name": "MIT" }
         },
         "tags": [
             {"name": "health", "description": "Liveness and readiness probes"},

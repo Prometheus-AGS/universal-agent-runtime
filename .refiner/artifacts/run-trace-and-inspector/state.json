@@ -1,0 +1,51 @@
+{
+  "refinement_id": "c11-run-trace-and-inspector-20260808",
+  "artifact_name": "run-trace-and-inspector",
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "started_at": "2026-08-08T01:18:00Z",
+  "updated_at": "2026-08-08T01:40:00Z",
+  "finalized_at": "2026-08-08T01:40:00Z",
+  "current_iteration": 3,
+  "max_iterations": 5,
+  "goals": [
+    "Validate C-11 against its reactive trace, accessibility, performance, inert-data, and per-change gate requirements"
+  ],
+  "constraints": [
+    { "id": "c11-reactive-trace-contract" },
+    { "id": "c11-accessible-responsive-surface" },
+    { "id": "c11-inert-inspector-boundary" },
+    { "id": "c11-change-gates" }
+  ],
+  "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-08T01:20:00Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-08T01:31:00Z"
+    },
+    {
+      "iteration": 3,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-08T01:40:00Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null
+}

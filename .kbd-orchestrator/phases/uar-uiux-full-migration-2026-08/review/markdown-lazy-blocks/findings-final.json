@@ -1,0 +1,31 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "openai/gpt-5",
+  "isolation_mode": "harness-native",
+  "producer_model": "openai/gpt-5",
+  "cross_model_check": "same-model-collision",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "scripts/check-markdown-lazy-chunks.mjs",
+      "line": 24,
+      "claim": "The production-manifest gate can pass when Mermaid or Shiki is bundled into a statically reachable chunk whose manifest key does not name the engine, so it does not deterministically prove that the engines are outside the initial graph.",
+      "evidence": "Acceptance criteria 3.4 and 4.2 require deterministic initial-graph assertions, but `forbiddenStatic` only applies `/vendor-(?:mermaid|shiki)|node_modules\\/.+(?:mermaid|shiki)/` to reachable manifest keys; the checker never inspects the modules or emitted code inside a generically named reachable chunk.",
+      "suggested_fix": "Emit or consume build metadata that records each reachable chunk's module IDs and fail when any statically reachable chunk contains a Mermaid or Shiki module; retain the existing facade-name checks as a separate assertion."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/markdown/blocks/code-block.tsx",
+      "line": 46,
+      "claim": "A mounted code block can continue to display `Copied` after its source changes even though the newly displayed source has not been copied.",
+      "evidence": "`copied` is component state, the `[language, source, theme]` effect resets only `highlighted` and `failed`, and no source-change path resets `copied`; only the copy-button promise updates it.",
+      "suggested_fix": "Reset `copied` to false whenever `source` changes, while preserving the current tokenization cancellation behavior."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,38 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "settings-store-retirement",
-  "createdAt": "2026-05-27T11:50:00-05:00",
-  "updatedAt": "2026-05-27T12:05:00-05:00",
-  "sourceTool": "claude-code",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "reflection_path": ".kbd-orchestrator/phases/settings-store-retirement/reflection.md",
-  "goal_achievement_percent": 100,
-  "decisions": {
-    "vitest_contract_test": "added — 4 tests in settings-form-cache contract",
-    "settings_types_meta_store": "kept (out of scope)",
-    "bulk_save_semantics": "preserved bulk POST with snapshot rollback",
-    "conflict_ui_signal": "preserved Record<string, unknown> shape"
+  "phaseId": "settings-store-retirement",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
   },
-  "changes_total": 4,
-  "changes_completed": 4,
-  "changes_ordered": [
-    "add-settings-form-cache",
-    "rewrite-use-settings-hook",
-    "retire-settings-store-and-bus-source",
-    "audit-doc-flip-settings-direct"
-  ],
-  "change_status": {
-    "add-settings-form-cache": "DONE",
-    "rewrite-use-settings-hook": "DONE",
-    "retire-settings-store-and-bus-source": "DONE",
-    "audit-doc-flip-settings-direct": "DONE"
-  },
-  "verification": {
-    "frontend_tests": "40/40 (was 36/36; +4 new tests)",
-    "frontend_build": "clean",
-    "useSettingsStore_grep": "empty",
-    "initSettingsRealtimeBridge_grep": "empty"
-  }
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

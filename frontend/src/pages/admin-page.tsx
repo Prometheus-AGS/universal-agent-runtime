@@ -1,29 +1,33 @@
-import { type ReactNode, useEffect } from "react";
-import { useNavigate } from "react-router";
-import { AdminShell, type AdminSection } from "@/admin/admin-shell";
-import { AdminWelcome } from "@/admin/components/admin-welcome";
-import { ProvidersPage } from "@/admin/pages/providers-page";
-import { CredentialsPage } from "@/admin/pages/credentials-page";
-import { ModelsPage } from "@/admin/pages/models-page";
-import { SkillsPage } from "@/admin/pages/skills-page";
-import { AgentsPage } from "@/admin/pages/agents-page";
-import { ToolsPage } from "@/admin/pages/tools-page";
-import { AuthPage } from "@/admin/pages/auth-page";
-import { KnowledgePage } from "@/admin/pages/knowledge-page";
-import { MemoryPage } from "@/admin/pages/memory-page";
-import { CompilerPage } from "@/admin/pages/compiler-page";
-import { SettingsPage } from "@/admin/pages/settings-page";
-import { A2uiTestingPage } from "@/admin/A2uiTestingPage";
-import { McpHealthPage } from "@/admin/McpHealthPage";
-import { CostDashboardPage } from "@/admin/pages/cost-dashboard-page";
+import { lazy, Suspense, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router";
+
+import { AgentsPage } from "@/features/agents";
+import { AuthPage } from "@/features/auth";
+import { CompilerPage } from "@/features/compiler";
+import { CostDashboardPage } from "@/features/cost";
+import { CredentialsPage } from "@/features/credentials";
+import { KnowledgePage } from "@/features/knowledge";
+import { MemoryPage } from "@/features/memory";
+import { ModelsPage } from "@/features/models";
+import { AdminWelcome, ProvidersPage } from "@/features/providers";
 import {
   RuntimeApprovalsPage,
   RuntimeCockpitPage,
   RuntimeProtocolsPage,
   RuntimeRunsPage,
-} from "@/admin/pages/runtime-console-page";
+} from "@/features/runtime";
+import { useRuntimeConsoleFeeds } from "@/features/runtime/model/runtime-console-feeds";
+import { SettingsPage } from "@/features/settings";
+import { SkillsPage } from "@/features/skills";
+import { McpHealthPage, ToolsPage } from "@/features/tools";
 
-const PAGE_MAP: Record<AdminSection, () => ReactNode> = {
+const LazyA2uiTestingPage = import.meta.env.DEV
+  ? lazy(() => import("@/features/a2ui/testing").then((module) => ({
+      default: module.A2uiTestingPage,
+    })))
+  : null;
+
+const PAGE_MAP = {
   runtime: () => <RuntimeCockpitPage />,
   runs: () => <RuntimeRunsPage />,
   approvals: () => <RuntimeApprovalsPage />,
@@ -39,42 +43,43 @@ const PAGE_MAP: Record<AdminSection, () => ReactNode> = {
   memory: () => <MemoryPage />,
   compiler: () => <CompilerPage />,
   settings: () => <SettingsPage />,
-  "a2ui-testing": () => <A2uiTestingPage />,
   "mcp-health": () => <McpHealthPage />,
   cost: () => <CostDashboardPage />,
-};
+} satisfies Record<string, () => ReactNode>;
+
+type AdminSection = keyof typeof PAGE_MAP | "a2ui-testing";
+
+function sectionFromPath(pathname: string): AdminSection {
+  const segment = pathname.replace(/^\/admin\/?/, "").split("/")[0];
+  if (segment in PAGE_MAP) return segment as keyof typeof PAGE_MAP;
+  if (segment === "a2ui-testing" && LazyA2uiTestingPage) return segment;
+  return "runtime";
+}
 
 export function AdminPage() {
+  const { pathname } = useLocation();
   const navigate = useNavigate();
+  const section = sectionFromPath(pathname);
 
-  // Apply terminal aesthetic theme only while on an /admin route.
-  // See docs/admin-aesthetic-spec.md for the contract.
-  useEffect(() => {
-    const root = document.documentElement;
-    const prev = root.getAttribute("data-admin-theme");
-    root.setAttribute("data-admin-theme", "terminal");
-    return () => {
-      if (prev) root.setAttribute("data-admin-theme", prev);
-      else root.removeAttribute("data-admin-theme");
-    };
-  }, []);
+  useRuntimeConsoleFeeds();
 
-  function renderAdminContent(section: AdminSection) {
-    return (
-      <div
-        className="flex flex-1 flex-col overflow-hidden"
-        data-testid={`admin-section-${section}`}
-      >
-        {/* Welcome banner — keep provider onboarding on that page only. */}
-        {section === "providers" && (
-          <AdminWelcome onNavigate={(path) => navigate(path)} />
-        )}
-        <div className="flex flex-1 overflow-hidden">
-          {PAGE_MAP[section]?.() ?? null}
-        </div>
-      </div>
-    );
-  }
+  const content = section === "a2ui-testing" && LazyA2uiTestingPage
+    ? (
+        <Suspense fallback={<div className="flex flex-1 items-center justify-center" role="status">Loading A2UI testing…</div>}>
+          <LazyA2uiTestingPage />
+        </Suspense>
+      )
+    : PAGE_MAP[section as keyof typeof PAGE_MAP]();
 
-  return <AdminShell renderContent={renderAdminContent} />;
+  return (
+    <div
+      className="flex min-w-0 flex-1 flex-col overflow-hidden"
+      data-testid={`admin-section-${section}`}
+    >
+      {section === "providers" && (
+        <AdminWelcome onNavigate={(path) => navigate(path)} />
+      )}
+      <div className="flex min-h-0 flex-1 overflow-hidden">{content}</div>
+    </div>
+  );
 }

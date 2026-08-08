@@ -1,7 +1,7 @@
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
-import type { EntityType } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@/platform/entities";
+import type { EntityType } from "@/platform/entities";
 import { ingestAgUiEvent, ingestRuntimeEvent } from "./runtime-ingest";
-import { UarAguiAdapter } from "@/protocols/agui-adapter";
+import { UarAguiAdapter } from "@/platform/agui/agui-adapter";
 
 export interface RuntimeReplayEvent {
   type: string;
@@ -284,13 +284,7 @@ export function replayAgUiEvents(events = agUiReplayEvents) {
       }),
       event.sequence,
     );
-    if (!adapted) continue;
-    ingestAgUiEvent(RUNTIME_REPLAY_RUN_ID, {
-      type: adapted.event,
-      id: adapted.eventId,
-      sequence: adapted.sequence,
-      payload: adapted.payload,
-    });
+    if (adapted?.eventRow) ingestAgUiEvent(RUNTIME_REPLAY_RUN_ID, adapted.eventRow);
   }
 }
 

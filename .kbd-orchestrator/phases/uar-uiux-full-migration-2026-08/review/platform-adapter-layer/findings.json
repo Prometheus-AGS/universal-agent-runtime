@@ -1,0 +1,63 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "scripts/test-platform-adapters-negative.mjs",
+      "line": 9,
+      "claim": "The negative harness never exercises two of the three platform-react-boundary triggers: no fixture is a `.tsx` file under `platform/`, and no fixture imports plain `react`, so a regression that deletes the `file.endsWith(\".tsx\")` branch or narrows the react regex would still pass the harness and CI.",
+      "evidence": "Criterion 5.2 requires 'negative fixtures that prove each platform-adapter rule rejects a violation', but the only React-boundary fixture is `scripts/fixtures/platform-adapters/platform/react-dom.ts` (a `.ts` file importing `react-dom/client`); `expectedRules` only asserts the rule name appears, so one trigger firing satisfies the test for all three.",
+      "suggested_fix": "Add `scripts/fixtures/platform-adapters/platform/widget.tsx` (JSX, no react import string needed beyond the transform) and a fixture importing `\"react\"`, and assert the violating file names appear in output so each trigger is independently proven."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "scripts/check-platform-adapters.mjs",
+      "line": 64,
+      "claim": "Retired-path rules only match the exact legacy prefixes (`protocols/agui-`, `lib/db`, `lib/pglite-assets`), so the retired entry points can silently return in directory form such as `protocols/agui/index.ts` or `lib/pglite/client.ts`.",
+      "evidence": "The regexes `/^(?:@\\/|.*\\/)protocols\\/agui-/` and `/(?:^|\\/)lib\\/(?:db|pglite-assets)(?:\\.ts|\\/|$)/` require the literal `agui-`/`db`/`pglite-assets` segment; `protocols/agui/` and `lib/pglite/` match neither the import checks nor the file checks.",
+      "suggested_fix": "Widen the retired-path patterns to cover the namespaces, e.g. `protocols/agui(?:-|\\/|$)` and `lib/(?:db|pglite)(?:[-.\\/]|$)`, and add a negative fixture for a directory-form retired path."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "scripts/check-platform-adapters.mjs",
+      "line": 47,
+      "claim": "The scan filter `/\\.(ts|tsx)$/` lets `.js`/`.jsx` files under `frontend/src` or `frontend/e2e` bypass every rule, including direct PEM imports and React usage inside `platform/`.",
+      "evidence": "The repo already contains plain-JS config at the frontend root (`frontend/vite.config.js` in the file tree), so JS files in the tree are a realistic occurrence; the gate's only file filter is `walk(scanRoot).filter((file) => /\\.(ts|tsx)$/.test(file))`.",
+      "suggested_fix": "Extend the filter to `/\\.(ts|tsx|js|jsx|mts|cts)$/` or document why JS sources are out of scope for this gate."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "scripts/check-platform-adapters.mjs",
+      "line": 34,
+      "claim": "The dynamic-import regex `import\\s*\\(\\s*[\"']` misses specifiers preceded by a comment, so `await import(/* chunk */ \"@prometheus-ags/prometheus-entity-management\")` evades the sole-facade rule.",
+      "evidence": "`/\\bimport\\s*\\(\\s*[\"']([^\"']+)[\"']\\s*\\)/g` requires the quote immediately after optional whitespace; any `/* ... */` between `(` and the quote prevents a match, and no negative fixture covers dynamic PEM imports at all.",
+      "suggested_fix": "Allow comments in the pattern (e.g. `import\\s*\\(\\s*(?:/\\*[^*]*\\*/\\s*)*[\"']`) or flag any `import(` in scanned files whose specifier cannot be extracted."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "scripts/check-platform-adapters.mjs",
+      "line": 32,
+      "claim": "The static-import regex matches the words `import`/`export` inside comments and string literals, so a test or fixture embedding a code sample like `\"import { x } from '@/lib/db'\"` would trip the gate with a false positive and block CI on unrelated content.",
+      "evidence": "`/\\b(?:import|export)\\s*(?:[^\"'`;]*?\\bfrom\\s*)?[\"']([^\"']+)[\"']/g` runs over raw file content with no comment/string awareness; a string literal containing `import ... from '@/lib/db'` yields the module `@/lib/db` and a `retired-pglite-import` violation.",
+      "suggested_fix": "Strip line/block comments and quoted strings before matching, or require the match to start at a statement boundary (line start after optional whitespace)."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "scripts/test-platform-adapters-negative.mjs",
+      "line": 5,
+      "claim": "The harness has no positive-control fixture, so a checker regression that reports all six rule names unconditionally (or on any input) would pass the negative test; the only passing-path control is incidental ordering in `ci-grep-gates.sh`.",
+      "evidence": "Every spawnSync assertion in `test-platform-adapters-negative.mjs` checks `status !== 0` plus output content; no invocation asserts that a clean tree exits 0, while the real-tree pass in `scripts/ci-grep-gates.sh` only guards the current repo state, not checker behavior on arbitrary clean input.",
+      "suggested_fix": "Add a minimal clean fixture directory and assert the gate exits 0 on it before running the violating fixtures."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

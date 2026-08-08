@@ -1,0 +1,62 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/theme/tokens.css",
+      "line": 197,
+      "claim": "The reduced-motion override collapses infinite animations to a 1ms duration without capping their iteration count, turning utilities like `animate-shimmer` (declared `infinite` in the same file) into a continuous 1ms strobe for users who requested reduced motion \u2014 the opposite of the rule's purpose and a WCAG 2.3.1 flashing-content risk.",
+      "evidence": "tokens.css hunk: `@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; } }` combined with `--animate-shimmer: shimmer 1.4s ease-in-out infinite;` in the same file. No `animation-iteration-count: 1` is set.",
+      "suggested_fix": "Add `animation-iteration-count: 1 !important;` inside the reduced-motion block (and consider `animation: none` for purely decorative infinite utilities) so infinite animations play once or not at all instead of looping at 1ms."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/vite.config.ts",
+      "claim": "A compiled `frontend/vite.config.js` artifact exists alongside `vite.config.ts`, and Vite's default config resolution checks `vite.config.js` before `vite.config.ts`; this diff updates only the `.ts` file, so any stale committed/cached `.js` artifact silently drops the `tailwindcss()` plugin registration and the entire Tailwind build with no error.",
+      "evidence": "file_tree lists `./frontend/vite.config.js` and `./frontend/vite.config.d.ts`; the diff adds `import tailwindcss from \"@tailwindcss/vite\"` and `plugins: [react(), tailwindcss()]` only to `vite.config.ts`, with no corresponding update or deletion of the compiled artifact. The verification probe that showed Tailwind output ran in the same session as `tsc -b` (`pnpm -C frontend typecheck`), which would have regenerated the artifact locally \u2014 masking the fresh-checkout case.",
+      "suggested_fix": "Delete the compiled `vite.config.js`/`.d.ts` from the tree and gitignore them, or regenerate and commit them atomically with `vite.config.ts` changes, or rename the source so only one resolvable config file exists."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/package.json",
+      "line": 22,
+      "claim": "The diff bundles Chromatic tooling that the producer's own refinement log declares is owned by a different change (C-00): three new npm scripts and two new devDependencies (`chromatic`, `@chromatic-com/playwright`) plus the workflow header rewrite ship inside C-02 even though none of the proposal's 'What Changes' bullets or task-list criteria cover them, inflating rollback scope and creating a duplicate-ownership conflict with C-00.",
+      "evidence": "package.json hunks adding `\"chromatic\"`, `\"chromatic:playwright\"`, `\"test:e2e:chromatic\"` scripts and `chromatic ^18.1.0` / `@chromatic-com/playwright ^0.14.11` devDeps; `.refiner/artifacts/tailwind4-css-first-tokens/refinement_log.md` states 'C-00's pre-existing Chromatic dependency/workflow edits remain outside C-02 ownership'; the design.md rollback plan enumerates only Tailwind/PostCSS/Vite/CSS items and never mentions these additions.",
+      "suggested_fix": "Split the Chromatic script/dependency hunks and the workflow secret-header rewrite into the C-00 change set, leaving in C-02 only the storybook workflow path-filter repointing that its spec actually requires."
+    },
+    {
+      "severity": "WARNING",
+      "file": "pnpm-lock.yaml",
+      "line": 357,
+      "claim": "The two maintained lockfiles now resolve the same `frontend` importer to different Vite toolchains \u2014 `frontend/pnpm-lock.yaml` pins vite 8.1.3 while the root `pnpm-lock.yaml` pins vite 8.1.4 (with divergent transitive peer graphs throughout) \u2014 so installing at repo root versus inside `frontend/` builds the same package with different compiler versions, undermining the exact-pin reproducibility this change's spec demands ('exact `tailwindcss` 4.3.3 and `@tailwindcss/vite` 4.3.3').",
+      "evidence": "frontend/pnpm-lock.yaml hunk: `vite: version: 8.1.3(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)`; root pnpm-lock.yaml hunk: `vite: version: 8.1.4(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0)` for the same importer, and `@tailwindcss/vite@4.3.3` is resolved against 8.1.3 in one file and 8.1.4 in the other.",
+      "suggested_fix": "Decide which workspace root owns the frontend package and regenerate that lockfile only, or align both lockfiles to the same resolved vite version in a single install operation."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/pnpm-lock.yaml",
+      "line": 10236,
+      "claim": "Two chromatic major versions are now installed simultaneously (direct `chromatic@18.1.0` for the CLI scripts and `chromatic@16.10.0` hoisted through `@chromatic-com/storybook@5.2.1`), so local `pnpm chromatic` publishes and Storybook-addon-driven publishes run different client majors with potentially different baselining/upload behavior.",
+      "evidence": "Lockfile snapshots: `chromatic@18.1.0(...)` and `chromatic@16.10.0(@chromatic-com/playwright@...)` both retained; `@chromatic-com/storybook@5.2.1` snapshot still depends on `chromatic: 16.10.0`.",
+      "suggested_fix": "Upgrade `@chromatic-com/storybook` to a release that peers chromatic 18, or add a pnpm override so a single chromatic major serves both entry points."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".github/workflows/storybook-visual-regression.yml",
+      "line": 23,
+      "claim": "The repointed path filter is redundant \u2014 `frontend/src/shared/theme/tokens.css` already matches the existing `frontend/src/**` filter \u2014 and the paired verification hard-codes `test \"${workflow_hits}\" -eq 2`, so the assertion will fail if the workflow ever legitimately references the token file a third time (e.g., a Chromatic rebuild comment) while proving nothing about filter correctness today.",
+      "evidence": "Workflow hunk keeps `'frontend/src/**'` and adds `'frontend/src/shared/theme/tokens.css'` under both `pull_request` and `push`; verify-token-foundation.sh asserts `workflow_hits=\"$(rg -c ...)\"; test \"${workflow_hits}\" -eq 2`.",
+      "suggested_fix": "Keep the explicit entry for documentation value but change the assertion to `>= 2` (presence, not exact count), or drop the redundant path and assert the spec scenario differently."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

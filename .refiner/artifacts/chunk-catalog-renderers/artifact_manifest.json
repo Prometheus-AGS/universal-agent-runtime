@@ -1,0 +1,31 @@
+{
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "generated_at": "2026-08-08T03:07:02Z",
+  "variants": [
+    {
+      "name": "c-12-verification",
+      "file": ".refiner/artifacts/chunk-catalog-renderers/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic validation and UI review receipt for the C-12 chunk catalog and Wave 4 boundary"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Frontend typecheck, lint, architecture boundaries, and Flat 2.0 pass with 385 tracked legacy findings and zero new findings.",
+      "Six focused files pass with 42 tests; the full frontend suite passes 59 files and 300 tests, including Storybook axe.",
+      "Both frozen installs, the normal production build, manifest build, lazy-engine graph audit, and static bundle validation pass.",
+      "The aggregate axe finding for duplicate generic landmarks was corrected; 320/768/1024/1440 catalog screenshots show no horizontal clipping.",
+      "Historical row decoding covers every prior discriminant without duplicate bubble projection.",
+      "Untrusted artifacts preserve their existing sanitizer, sandbox, policy, escaped-text, closed-chart, or trace-only boundary; provider-authored DOM URLs pass through an explicit scheme and data-MIME gate.",
+      "Two review rounds completed. All reported defects were remediated and aggregate gates rerun; the final receipt remains BLOCK as the immutable pre-remediation report and records the harness-native same-family limitation."
+    ]
+  }
+}

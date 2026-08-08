@@ -1,0 +1,93 @@
+{
+  "refinement_id": "f38d54f6-3af0-4b23-ba1b-e3e457acd174",
+  "artifact_name": "app-shell-and-navigation",
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "started_at": "2026-08-07T23:37:32Z",
+  "updated_at": "2026-08-08T00:11:22Z",
+  "current_iteration": 5,
+  "max_iterations": 5,
+  "goals": [
+    "Validate C-10 against the shared navigation, responsive shell, Base UI, brand, accessibility, and repository-gate requirements"
+  ],
+  "constraints": [
+    { "id": "c10-single-responsive-shell" },
+    { "id": "c10-base-ui-and-layering" },
+    { "id": "c10-brand-and-accessibility" },
+    { "id": "c10-change-gates" }
+  ],
+  "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-07T23:37:32Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-07T23:46:29Z"
+    },
+    {
+      "iteration": 3,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-07T23:53:41Z"
+    },
+    {
+      "iteration": 4,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-08T00:01:24Z"
+    },
+    {
+      "iteration": 5,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-08T00:11:22Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    { "checkpoint_id": "a4907c00", "phase": "specify", "iteration": 1, "timestamp": "2026-08-07T23:37:32Z" },
+    { "checkpoint_id": "069fa08d", "phase": "plan", "iteration": 1, "timestamp": "2026-08-07T23:37:32Z" },
+    { "checkpoint_id": "27052dc7", "phase": "execute", "iteration": 1, "timestamp": "2026-08-07T23:37:32Z" },
+    { "checkpoint_id": "671493f8", "phase": "reflect", "iteration": 1, "timestamp": "2026-08-07T23:37:32Z" },
+    { "checkpoint_id": "aaeff5e8", "phase": "persist", "iteration": 1, "timestamp": "2026-08-07T23:37:32Z" },
+    { "checkpoint_id": "0e3bd42f", "phase": "specify", "iteration": 2, "timestamp": "2026-08-07T23:46:29Z" },
+    { "checkpoint_id": "c73b80f5", "phase": "plan", "iteration": 2, "timestamp": "2026-08-07T23:46:29Z" },
+    { "checkpoint_id": "8034f558", "phase": "execute", "iteration": 2, "timestamp": "2026-08-07T23:46:29Z" },
+    { "checkpoint_id": "a9920be5", "phase": "reflect", "iteration": 2, "timestamp": "2026-08-07T23:46:29Z" },
+    { "checkpoint_id": "16e3c892", "phase": "persist", "iteration": 2, "timestamp": "2026-08-07T23:46:29Z" },
+    { "checkpoint_id": "f6c96c11", "phase": "specify", "iteration": 3, "timestamp": "2026-08-07T23:53:41Z" },
+    { "checkpoint_id": "31ec1ca0", "phase": "plan", "iteration": 3, "timestamp": "2026-08-07T23:53:41Z" },
+    { "checkpoint_id": "cea56064", "phase": "execute", "iteration": 3, "timestamp": "2026-08-07T23:53:41Z" },
+    { "checkpoint_id": "8fbdd177", "phase": "reflect", "iteration": 3, "timestamp": "2026-08-07T23:53:41Z" },
+    { "checkpoint_id": "250c376c", "phase": "persist", "iteration": 3, "timestamp": "2026-08-07T23:53:41Z" },
+    { "checkpoint_id": "458d5323", "phase": "specify", "iteration": 4, "timestamp": "2026-08-08T00:01:24Z" },
+    { "checkpoint_id": "4bb3b31f", "phase": "plan", "iteration": 4, "timestamp": "2026-08-08T00:01:24Z" },
+    { "checkpoint_id": "30fd7dba", "phase": "execute", "iteration": 4, "timestamp": "2026-08-08T00:01:24Z" },
+    { "checkpoint_id": "e3e6611e", "phase": "reflect", "iteration": 4, "timestamp": "2026-08-08T00:01:24Z" },
+    { "checkpoint_id": "8029f838", "phase": "persist", "iteration": 4, "timestamp": "2026-08-08T00:01:24Z" },
+    { "checkpoint_id": "f0a7cc5e", "phase": "specify", "iteration": 5, "timestamp": "2026-08-08T00:11:22Z" },
+    { "checkpoint_id": "485255a7", "phase": "plan", "iteration": 5, "timestamp": "2026-08-08T00:11:22Z" },
+    { "checkpoint_id": "40aa435e", "phase": "execute", "iteration": 5, "timestamp": "2026-08-08T00:11:22Z" },
+    { "checkpoint_id": "1bb8b77b", "phase": "reflect", "iteration": 5, "timestamp": "2026-08-08T00:11:22Z" },
+    { "checkpoint_id": "abe4edf2", "phase": "persist", "iteration": 5, "timestamp": "2026-08-08T00:11:22Z" }
+  ],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-08T00:11:22Z"
+}

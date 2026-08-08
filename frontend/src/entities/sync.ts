@@ -1,13 +1,13 @@
 // frontend/src/entities/sync.ts
-import { getRealtimeManager } from "@prometheus-ags/prometheus-entity-management";
+import { getRealtimeManager } from "@/platform/entities";
 import type {
   RealtimeAdapter,
   ChangeSet,
   SubscriptionConfig,
   ChannelConfig,
   ChangeOperation,
-} from "@prometheus-ags/prometheus-entity-management";
-import { emitSettingsChanged } from "@/services/settings-change-bus";
+} from "@/platform/entities";
+import { emitSettingsChanged } from "@/features/settings/api";
 
 interface PersistenceInfo {
   provider: "surreal" | "postgres";

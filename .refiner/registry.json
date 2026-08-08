@@ -1,0 +1,25 @@
+{
+  "artifacts": {
+    "markdown-lazy-blocks": {
+      "path": ".refiner/artifacts/markdown-lazy-blocks",
+      "artifact_type": "code",
+      "content_type": "direct:code",
+      "updated_at": "2026-08-07T23:13:08Z",
+      "finalized_at": "2026-08-07T23:13:08Z"
+    },
+    "app-shell-and-navigation": {
+      "path": ".refiner/artifacts/app-shell-and-navigation",
+      "artifact_type": "code",
+      "content_type": "direct:code",
+      "updated_at": "2026-08-08T00:11:22Z",
+      "finalized_at": "2026-08-08T00:11:22Z"
+    },
+    "ci-bundle-and-perf-budget": {
+      "path": ".refiner/artifacts/ci-bundle-and-perf-budget",
+      "artifact_type": "code",
+      "content_type": "direct:code",
+      "updated_at": "2026-08-08T04:54:50Z",
+      "finalized_at": "2026-08-08T04:54:50Z"
+    }
+  }
+}

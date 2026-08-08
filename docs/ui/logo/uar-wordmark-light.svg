@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="96" viewBox="0 0 520 96" fill="none" role="img" aria-label="Universal Agent Runtime">
+  <g transform="translate(0,6)">
+  <path d="M40 22 L24 74" stroke="#E04E28" stroke-width="9" stroke-linecap="round"></path>
+  <path d="M68 22 L52 74" stroke="#0B0F14" stroke-width="9" stroke-linecap="round"></path>
+  <circle cx="70" cy="68" r="6" fill="#0B0F14"></circle>
+  </g>
+  <text x="112" y="46" font-family="Space Grotesk, Inter, system-ui, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.9" fill="#0B0F14">Universal Agent Runtime</text>
+  <text x="112" y="70" font-family="JetBrains Mono, ui-monospace, monospace" font-size="13" font-weight="500" letter-spacing="2.6" fill="#E04E28">// UAR RUNTIME</text>
+</svg>

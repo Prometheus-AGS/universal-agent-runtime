@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "bundle": {
+    "initialJavaScriptGzipBytes": 250000
+  },
+  "latencyMs": {
+    "coldThreadListFirstPaint": 1000,
+    "fiveHundredEventTraceLane": 100,
+    "twoThousandLineMarkdownFinalize": 250
+  }
+}

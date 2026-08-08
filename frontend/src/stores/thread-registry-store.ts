@@ -2,11 +2,12 @@ import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { useEffect } from "react";
 import type { LocalThread } from "@/types";
-import { getDbInstance } from "@/lib/db";
+import { getDbInstance } from "@/platform/pglite/client";
 
 interface ThreadRegistryState {
   threads: Record<string, LocalThread>;
   activeThreadId: string | null;
+  hydrated: boolean;
 }
 
 interface ThreadRegistryActions {
@@ -27,8 +28,10 @@ export const useThreadRegistryStore = create<ThreadRegistryStore>()(
   immer((set, get) => ({
     threads: {},
     activeThreadId: null,
+    hydrated: false,
 
     hydrateFromDb: async () => {
+      performance.mark("uar-db:Hydrating thread registry…");
       const db = getDbInstance();
       const threads = await db.getThreads();
       set((state) => {
@@ -36,7 +39,9 @@ export const useThreadRegistryStore = create<ThreadRegistryStore>()(
         for (const t of threads) {
           state.threads[t.id] = t;
         }
+        state.hydrated = true;
       });
+      performance.mark("uar-db:Thread registry ready");
     },
 
     registerThread: (id) => {

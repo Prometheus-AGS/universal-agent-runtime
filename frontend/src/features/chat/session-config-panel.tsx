@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ModelSelector } from "@/components/model-selector";
+import { ModelSelector } from "@/features/models/model-selector";
 import type { AgentConfig } from "@/features/chat/agent-selector";
 import { useChatSessionConfig } from "@/hooks/use-chat-session-config";
 

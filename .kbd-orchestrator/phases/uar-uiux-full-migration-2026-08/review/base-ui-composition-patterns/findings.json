@@ -1,0 +1,63 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/components/ui/form.tsx",
+      "line": 90,
+      "claim": "`touched` and `dirty` are not input props of Base UI `Field.Root` (they are read-only entries in its internal field state), so they are either silently ignored \u2014 making the design's claim that React Hook Form touched/dirty state is supplied to Field.Root dead code \u2014 or, if Field.Root spreads unknown props onto its rendered div, they leak to the DOM as invalid attributes and trigger React unknown-prop warnings.",
+      "evidence": "form.tsx hunk: `<Field.Root ref={ref} name={name} invalid={invalid} touched={isTouched} dirty={isDirty} ...>`; design.md states 'Supply `name`, `invalid`, `touched`, and `dirty` from `getFieldState`' as the mechanism for Field/RHF state agreement. Base UI's Field.Root accepts `invalid`/`name`/`validate`/`validationMode` as external inputs but derives `touched`/`dirty` internally from control interactions.",
+      "suggested_fix": "Remove `touched={isTouched}` and `dirty={isDirty}` (Base UI tracks them from control events), or verify against the installed @base-ui/react types that they are accepted and meaningful; update design.md to match reality."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/components/assistant-ui/enhanced-thread.tsx",
+      "line": 173,
+      "claim": "None of the ten assistant-ui `asChild` \u2192 `render` migrations has any runtime test: the new test files only cover Button, BreadcrumbLink, Sidebar, and Select, so the delta-spec scenario 'An action primitive renders a local button \u2026 merges its behavior onto that render element without adding a wrapper element' is unverified, and verification.md's claim of '7/7 scenarios covered' is inaccurate.",
+      "evidence": "composition-patterns.test.tsx imports only from `@/components/ui/{breadcrumb,button,select,sidebar}` \u2014 nothing mounts `ThreadPrimitive.ScrollToBottom`, `ComposerPrimitive.Send/Cancel`, `ActionBarPrimitive.*`, or `BranchPickerPrimitive.*`. spec.md scenario requires merged behavior with no added wrapper; verification.md 'Correctness' section cites only the ui/ composition test and the form test as interaction evidence.",
+      "suggested_fix": "Add a focused render test for at least the representative primitives (e.g. ComposerPrimitive.Send and ActionBarPrimitive.Copy) asserting the TooltipIconButton/Button element receives the primitive's onClick/disabled and that children render inside the render element."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/components/ui/form.tsx",
+      "line": 82,
+      "claim": "`FormItem` now calls `useFormFieldState()`, which throws when there is no `FormFieldContext` and requires an RHF `FormProvider`; previously FormItem rendered a plain div with only a generated id and worked standalone, so any existing or future standalone use of `FormItem` now crashes at render.",
+      "evidence": "form.tsx hunk: `const { name, invalid, isTouched, isDirty } = useFormFieldState()` added inside FormItem, and `useFormFieldState` throws `new Error(\"useFormField should be used within <FormField>\")` when `!fieldContext` and calls `useFormContext()` unconditionally. Pre-diff FormItem body was only `const id = React.useId()` + `<div>`.",
+      "suggested_fix": "Either document the tightened contract explicitly, or make FormItem tolerate a missing field context (e.g. only pass name/invalid/touched/dirty when context exists)."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/components/ui/form.tsx",
+      "line": 40,
+      "claim": "Splitting `useFormFieldState` into FormItem means every FormItem now subscribes to `formState` via `getFieldState(name, formState)`, so invalid/touched/dirty transitions re-render the entire field subtree where previously FormItem was render-stable.",
+      "evidence": "form.tsx hunk: FormItem body gained `useFormFieldState()` which reads `getFieldState(fieldContext.name, formState)`; pre-diff only FormLabel/FormControl/FormMessage subscribed via `useFormField`.",
+      "suggested_fix": "Acceptable if intentional, but consider reading state via a narrower subscription or noting the re-render cost in design.md risks."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/components/ui/form.tsx",
+      "line": 177,
+      "claim": "`match={Boolean(body)}` on `Field.Error` is dead logic: the early `if (!body) return null` above guarantees `body` is truthy at this point, so `match` is always `true` and conveys nothing.",
+      "evidence": "form.tsx hunk retains `const body = error ? ... : children` / `if (!body) { return null }` context and adds `match={Boolean(body)}` to Field.Error.",
+      "suggested_fix": "Use `match` (i.e. `match={true}`) or drop the prop if Base UI's default rendering already handles presence; alternatively remove the early return and let `match={Boolean(body)}` do the gating, but not both."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/components/ui/form.tsx",
+      "line": 108,
+      "claim": "FormLabel now inlines a copy of the Label component's class string instead of composing the existing `Label`, creating a styling fork that will drift if label.tsx is restyled.",
+      "evidence": "form.tsx hunk removes `import { Label } from \"@/components/ui/label\"` and hardcodes `\"flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:...\"` into FormLabel's className.",
+      "suggested_fix": "Extract the shared label class string (e.g. export `labelVariants` from label.tsx) and reuse it in FormLabel."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

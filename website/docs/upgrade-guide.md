@@ -136,5 +136,5 @@ starting the older binary against the datastore. Restore into the same
 ## Getting help
 
 - Community: GitHub Issues and Discussions (best-effort triage).
-- Commercial licensees receive contractual upgrade assistance — see
-  `SUPPORT.md` and `LICENSE-COMMERCIAL.md`.
+- Paid support contracts include contractual upgrade assistance — see
+  `SUPPORT.md`.

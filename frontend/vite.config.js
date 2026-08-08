@@ -1,8 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import { markdownEngineGraphPlugin } from "./build/markdown-engine-graph-plugin";
 export default defineConfig({
-    plugins: [react()],
+    plugins: [react(), tailwindcss(), markdownEngineGraphPlugin()],
     optimizeDeps: {
         exclude: ["@electric-sql/pglite"],
     },
@@ -23,8 +25,11 @@ export default defineConfig({
                                 if (/node_modules\/(react|react-dom|react-router-dom)\//.test(moduleId)) {
                                     return "vendor-react";
                                 }
-                                if (/node_modules\/@assistant-ui\/(react|react-markdown)\//.test(moduleId)) {
-                                    return "vendor-assistant";
+                                if (/node_modules\/@electric-sql\/pglite\//.test(moduleId)) {
+                                    return "vendor-pglite";
+                                }
+                                if (moduleId.includes("packages/prometheus-entity-management/")) {
+                                    return "vendor-entities";
                                 }
                                 if (/node_modules\/(@tanstack\/react-query|zustand|immer)\//.test(moduleId)) {
                                     return "vendor-query";

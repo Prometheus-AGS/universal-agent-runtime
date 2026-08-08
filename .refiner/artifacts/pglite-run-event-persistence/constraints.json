@@ -1,0 +1,53 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "c07-versioned-local-schema",
+      "description": "Migration 002 adds durable run and ordered run-event storage without rewriting existing thread/message data.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused PGlite migration and repository tests"
+      }
+    },
+    {
+      "id": "c07-bounded-event-writes",
+      "description": "Normalized events persist in adapter order while text and reasoning deltas are coalesced at explicit or terminal boundaries.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused run-event persistence writer tests"
+      }
+    },
+    {
+      "id": "c07-local-first-lifecycle",
+      "description": "PEM graph hydration precedes realtime sync and uses package persistence without an application outbox.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused entity bootstrap and schema tests"
+      }
+    },
+    {
+      "id": "c07-repository-gates",
+      "description": "The change passes frontend compiler/lint/boundary gates, focused tests, strict OpenSpec validation, and diff integrity.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded commands in verification-summary.md"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the C-07 OpenSpec delta as the acceptance authority because .kbd-orchestrator/constraints.md and the refiner generic fallback are absent.",
+    "Do not claim a final Wave 3 full-suite or production-build result from the earlier accidental full test run."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "Implementation tasks 1.1 through 4.1 are complete and the task 4.2 verification receipt exists."
+  ]
+}

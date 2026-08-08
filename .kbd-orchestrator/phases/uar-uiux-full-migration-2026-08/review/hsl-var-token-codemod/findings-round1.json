@@ -1,0 +1,36 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/shared/theme/tokens.css",
+      "claim": "The five new aliases are declared inside an `@theme inline` block but every migrated consumer references them as `var(--color-*)`, so the variables will not resolve at runtime and roughly 12 of the 29 migrated call sites render with invalid/unset colors.",
+      "evidence": "The tokens.css hunk header reads `@@ @theme inline semantic compatibility aliases` and adds `--color-terminal-fg: hsl(var(--terminal-fg));` etc. In Tailwind v4, `@theme inline` inlines theme values into generated utilities and does NOT emit the corresponding CSS custom properties; even if emitted at `:root`, `var(--terminal-fg)` would be resolved at `:root` where \u2014 per the design's own risk section \u2014 'their current channel variables are scoped to the terminal theme', producing an invalid-at-computed-value-time result that inherits. Yet the diff migrates consumers to direct variable reads: `text-[var(--color-terminal-fg-dim)]` (loading-cursor.tsx, empty-frame.tsx), `var(--color-signal-red)`/`var(--color-phosphor-glow)` (error-bar.tsx), and `color-mix(in srgb, var(--color-terminal-fg) 6%, transparent)` (index.css scanline). These resolve to guaranteed-invalid, silently dropping colors. The verification evidence (`Vite 8.1.4 development compilation served main.tsx, tokens.css, and index.css successfully`) is compilation/HTTP-only and cannot detect unresolved custom properties, so the claimed 'Runtime UX: colors ... remain visually equivalent' and criterion 2.5 are unverified against rendered output.",
+      "suggested_fix": "Do not alias scoped channel variables through `@theme inline` for `var()` consumption. Define the five aliases as plain custom properties inside the same scope where `--terminal-fg`/`--signal-red`/etc. are defined (e.g., the terminal theme selector block: `--color-terminal-fg: hsl(var(--terminal-fg));`), so the var() chain resolves within scope, and verify with a computed-style check in the running app, not just compilation."
+    },
+    {
+      "severity": "WARNING",
+      "file": "scripts/check-hsl-token-codemod.mjs",
+      "claim": "The deferred-scope gate hardcodes an exact count of 307 and scans `frontend/src/admin/pages` non-recursively, making it brittle against any legitimate future edit and blind to nested files.",
+      "evidence": "`const deferredCount = readdirSync(adminRoot).filter((file) => file.endsWith(\".tsx\")).reduce(...)` uses `readdirSync` without `{ recursive: true }`, so any `.tsx` files in subdirectories of `admin/pages` are silently excluded from the '307 deferred' proof, and `if (deferredCount !== 307)` will fail CI for any unrelated legitimate change to admin pages \u2014 including C-14a, which the proposal itself designates as the owner of those occurrences \u2014 until someone edits the magic number.",
+      "suggested_fix": "Scan recursively (or reuse whatever census method produced 307), and replace the exact-count equality with a check that C-05-owned files stay clean plus a documented, dated snapshot constant for the deferred set, or scope the 307 assertion to the C-05 phase only."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "scripts/check-hsl-token-codemod.mjs",
+      "claim": "The legacy-syntax detector misses the `hsla(var(` variant, so the gate does not fully enforce the 'no legacy HSL-channel call site' contract it claims to own.",
+      "evidence": "`const legacyCall = /hsl\\s*\\(\\s*var\\s*\\(/g;` matches only `hsl(`; a contributor adding `hsla(var(--muted) / 0.5)` to any of the six gated files would pass the gate even though the OpenSpec scenario requires the harness to reject legacy channel syntax in the migrated file set.",
+      "suggested_fix": "Widen the pattern to `/hsla?\\s*\\(\\s*var\\s*\\(/g`."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}
