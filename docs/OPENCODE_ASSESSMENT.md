@@ -4,10 +4,45 @@
 > **HISTORICAL — SUPERSEDED.** This assessment predates the React-first
 > architecture. Use [frontend-architecture.md](frontend-architecture.md) and
 > [product-support-matrix.md](product-support-matrix.md).
+>
+> **The scores and status below are not evidence of current capability.** Two
+> classes of claim have since been checked against the tree and do not hold:
+>
+> - **The "30+ API test cases" claim (§3) counts test *declarations*, not
+>   executed tests.** It refers to
+>   [`tests/integration/api/comprehensive.rs`](../tests/integration/api/comprehensive.rs),
+>   which declares 24 `ApiEndpointTest` structs but whose only three `#[test]`s
+>   assert on the suite's own struct fields, `Vec` contents, and JSON helpers
+>   over inline literals. The file *does* carry `reqwest` request-dispatch code,
+>   but no `#[test]` calls it — so the suite issues no HTTP request when run.
+>   An audit found 21 of the 24 declared paths absent from the router, and 6
+>   target `/api/chat/*` and `/api/sessions/*`, which
+>   [`src/server.rs:864-867`](../src/server.rs#L864) deliberately routes to
+>   `legacy_chat_route_disabled` / `legacy_sessions_route_disabled` returning
+>   404. The "✅ Testing" key finding (§Key Findings) rests on this same signal.
+> - **The "HTMX and Web Components" / "thin islands" description (§Executive
+>   Summary, §1) is not present-tense product guidance.** React 19 is the
+>   authoritative first-party UI per `CLAUDE.md`.
+>
+> This document is retained as a dated artifact, not corrected in place — the
+> rest of its claims have *not* been re-verified and carry the same risk.
+>
+> **Real executing coverage** lives in
+> [`tests/integration/live/baseline_cases.rs`](../tests/integration/live/baseline_cases.rs),
+> whose tests boot a real server via
+> [`harness.rs::boot_test_server`](../tests/integration/live/harness.rs#L162)
+> and assert on real HTTP status codes and response bodies. That is the standard
+> a claim of endpoint coverage has to meet. Work extending this tier to
+> per-capability endpoint cases is in flight on a separate branch and is
+> deliberately not cited here — it is not on `main` as of this commit.
+>
+> Counting declared-but-unexecuted tests as coverage is the test-level form of
+> the flaw [`SPECIFICATION.md`](SPECIFICATION.md) §"Adversarially reviewed"
+> names as central: *counting mounted routes as delivered capability*.
 
 **Date**: January 1, 2026
 **Assessment Type**: Full-Stack Architecture, Code Quality, and Testing Infrastructure Review
-**Status**: **S-Tier / Production-Ready**
+**Status**: **S-Tier / Production-Ready** *(as claimed on the date above; see banner — not current)*
 
 ---
 
@@ -21,7 +56,7 @@ This assessment provides a comprehensive analysis of the `universal-agent-runtim
 - ✅ **Architecture**: Exceptional use of Axum, HTMX, and Web Components. The "thin islands" approach over a hypermedia core is perfectly executed for performance and maintainability.
 - ✅ **Streaming**: Industry-leading streaming implementation with dual-protocol support (Normalized + AG-UI), optimized with RAF batching and incremental markdown parsing.
 - ✅ **Persistence**: Sophisticated use of PGlite for client-side ACID-compliant storage, enabling robust multi-conversation management without server-side state bloat.
-- ✅ **Testing**: One of the most comprehensive testing infrastructures observed, covering unit, integration, API, and E2E tests with unified coverage reporting and quality gates.
+- ~~✅ **Testing**: One of the most comprehensive testing infrastructures observed, covering unit, integration, API, and E2E tests with unified coverage reporting and quality gates.~~ — **RETRACTED**, see banner: the "API tests" leg of this claim counted declarations that never issued a request.
 - ✅ **Code Quality**: Rigorous adherence to Rust and TypeScript best practices, with extensive linting and type safety.
 
 ---
@@ -67,7 +102,7 @@ The `StreamingOptimizer` (`web/utils/streaming-optimizer.ts`) implements advance
 The project employs a multi-layered testing strategy:
 1.  **Unit Tests**: Fast, isolated tests for both Rust and TypeScript.
 2.  **Integration Tests**: Verify interactions between modules, including real database and service connections.
-3.  **API Tests**: 30+ comprehensive test cases for all REST and SSE endpoints, including security and rate-limiting checks.
+3.  ~~**API Tests**: 30+ comprehensive test cases for all REST and SSE endpoints, including security and rate-limiting checks.~~ — **RETRACTED.** These are declarations, not executed tests: no `#[test]` in `comprehensive.rs` issues an HTTP request, and 21 of its 24 declared paths do not exist in the router. See the banner at the top of this document for what actually executes.
 4.  **E2E Tests**: Playwright-based browser automation covering real user journeys.
 5.  **Certification Suite**: A high-level manager that orchestrates tests to certify the system's production readiness.
 
