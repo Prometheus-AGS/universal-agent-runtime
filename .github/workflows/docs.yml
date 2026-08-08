@@ -42,7 +42,7 @@ jobs:
           node-version: 20
 
       - name: Install Vale
-        uses: errata-ai/vale-action@v2
+        uses: errata-ai/vale-action@v3
         with:
           version: '3.11.0'
 
