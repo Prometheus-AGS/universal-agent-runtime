@@ -81,7 +81,7 @@
       "Bash(UAR_SERVER__LOG_FORMAT=json UAR_LLM__API_KEY=test UAR_SECURITY__JWT_REQUIRED=false timeout 5 /home/gqadonis/Projects/prometheus/universal-agent-runtime/target/debug/universal-agent-runtime)",
       "Bash(UAR_SERVER__LOG_FORMAT=json UAR_LLM__API_KEY=test timeout 3 cargo run)",
       "Bash(UAR_SERVER__LOG_FORMAT=json UAR_LLM__API_KEY=test timeout 5 cargo run)",
-      "Bash(UAR__SECURITY__JWT_SECRET=test UAR__PERSISTENCE__PROVIDER=postgres UAR__PERSISTENCE__DATABASE_URL=\"postgres://user:pass@localhost/db\" UAR__PERSISTENCE__VECTOR_DIMENSION=384 cargo test --test config_integration)",
+      "Bash(UAR_SECURITY__JWT_SECRET=test UAR_PERSISTENCE__PROVIDER=postgres UAR_PERSISTENCE__DATABASE_URL=\"postgres://user:pass@localhost/db\" UAR_PERSISTENCE__VECTOR_DIMENSION=384 cargo test --test config_integration)",
       "Bash([ -d \"openspec/changes/$id\" ])",
       "Bash(apt list *)",
       "Bash(apt-cache policy *)",

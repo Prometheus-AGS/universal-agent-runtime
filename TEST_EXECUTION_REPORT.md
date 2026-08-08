@@ -85,15 +85,25 @@ for i in 0..seq_len {
 **Location**: `playwright.config.ts` + server startup
 **Error**: `Failed to initialize Postgres: error communicating with database: failed to lookup address information`
 
-**Root Cause**: The application server requires PostgreSQL database connection even when configured for memory provider. The persistence layer initialization is not properly respecting the `UAR__PERSISTENCE__PROVIDER="memory"` setting.
+**Root Cause**: The application server requires PostgreSQL database connection even when configured for memory provider. The persistence layer initialization is not properly respecting the `UAR_PERSISTENCE__PROVIDER="memory"` setting.
+
+> **Correction (2026-08-08):** the env vars in this section were originally written
+> as `UAR__SECTION__KEY` (double underscore after the prefix), which the config
+> loader silently ignores — `src/config.rs` uses `.prefix_separator("_")` with
+> `.separator("__")`, so only the single-underscore `UAR_SECTION__KEY` form binds.
+> The commands below have been corrected to the working form. This also means the
+> root cause recorded above is suspect: the memory-provider setting never reached
+> the config at all, so the Postgres fallback may simply be the default taking
+> effect rather than the persistence layer ignoring an applied setting.
+> See `docs/configuration.md` for authoritative env var naming.
 
 **Current Blocker**:
 ```bash
 # Server startup attempt
-UAR__SERVER__PORT=3001 \
-UAR__SECURITY__JWT_SECRET="test_secret" \
-UAR__PERSISTENCE__PROVIDER="memory" \
-UAR__PERSISTENCE__DATABASE_URL="memory://test" \
+UAR_SERVER__PORT=3001 \
+UAR_SECURITY__JWT_SECRET="test_secret" \
+UAR_PERSISTENCE__PROVIDER="memory" \
+UAR_PERSISTENCE__DATABASE_URL="memory://test" \
 cargo run
 
 # Error: still attempts Postgres connection despite memory config
