@@ -242,7 +242,7 @@ async-stream = "0.3"
 async-trait = "0.1"
 
 # Actor model
-ractor = "0.15.12"
+ractor = "0.16.3"
 
 # Governance policy engine
 cedar-policy = { version = "4.9.1", optional = true }
