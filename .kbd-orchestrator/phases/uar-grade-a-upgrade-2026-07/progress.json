@@ -1,193 +1,45 @@
 {
-  "phase": "uar-grade-a-upgrade-2026-07",
-  "parentPhase": "uar-final-production-hardening-2026-07",
-  "assessment_complete": true,
-  "analysis_complete": true,
-  "plan_complete": true,
-  "execute_started": true,
-  "reflect_complete": false,
-  "sourceTool": "claude",
-  "last_updated": "2026-07-15T20:37:54Z",
-  "last_updated_by": "claude",
-  "supplementalAssessment": {
-    "trigger": "Operator-directed /kbd-assess investigation into Admin/Agents UI defects reported live (console chrome-extension cache errors, agent provider/model configuration, yellow warning icons, Edit Agent panel, UI freeze). Outside the original 25-change goal set.",
-    "date": "2026-07-15",
-    "file": "assessment.md",
-    "summary": "Root-caused sw.js chrome-extension cache TypeError (scheme check missing before cache.put). Confirmed yellow warning icons are a direct side effect of today's earlier defaults.rs fix (empty provider/model = 'no model configured' in the UI, though functionally correct). Confirmed the Edit Agent Default Model field DOES save and take effect (refutes 'nothing works' as an absolute claim); confirmed gap is the missing provider-first-then-model two-step flow (exists on the Providers page, not reused in the agent editor) and catalog/registered-model mismatch. Surfaced a new, unlisted finding: governance shows policy_count=0 at startup yet denies native__memory_* tool calls at runtime, and the Governance tab's 'auto' setting doesn't reflect this. UI freeze not reproduced this session; PGLite (WASM Postgres) loading on the Admin/Agents route flagged as a plausible but unconfirmed contributing factor."
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
   },
-  "active_scope": "All 25 ordered OpenSpec changes are implementation-complete. Change 21 is strictly validated and preparing its PR; remaining unmerged changes require operator review/merge before production certification resumes.",
-  "operator_priority": "Review and merge the remaining Grade-A PRs, then resume soak run / candidate tag / external installs / GA promotion.",
-  "implementation_total": 25,
-  "implementation_completed": 25,
+  "conflictCount": 0,
+  "phase": "uar-grade-a-upgrade-2026-07",
+  "phaseId": "uar-grade-a-upgrade-2026-07",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 25,
-      "total": 25,
-      "status": "COMPLETE"
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
     },
     "evidence": {
-      "status": "NOT_TRACKED",
+      "status": "PENDING",
       "summary": null,
       "blockers": []
     },
     "certification": {
-      "status": "NOT_TRACKED",
+      "status": "PENDING",
       "summary": null,
       "blockers": []
     },
     "publication": {
-      "status": "NOT_TRACKED",
+      "status": "PENDING",
       "summary": null,
       "blockers": []
     }
   },
-  "merged_changes": {
-    "note": "Confirmed merged into main (HEAD 09cb3b8) via git log. Each change's openspec/changes/<id>/ scaffold should now be present in the main checkout -- verify and move into openspec_changes_with_proposals below as each is confirmed.",
-    "sdk-rust-1.0": {
-      "pr": 116,
-      "merge_commit": "98fbf4e"
-    },
-    "sdk-python-1.0": {
-      "pr": 115,
-      "merge_commit": "1bf8171"
-    },
-    "sdk-typescript-1.0": {
-      "pr": 117,
-      "merge_commit": "07689fa"
-    },
-    "rag-eval-ragas-deepeval-golden-set": {
-      "pr": 114,
-      "merge_commit": "772360f"
-    },
-    "rag-embedding-backends-4-more": {
-      "pr": 112,
-      "merge_commit": "bd3e6b0"
-    },
-    "a2ui-vendor-google-core-react": {
-      "pr": 113,
-      "merge_commit": "a2d8724"
-    },
-    "rag-citation-stream": {
-      "pr": 118,
-      "merge_commit": "2a98492"
-    },
-    "sdk-examples-cookbook-rustdoc": {
-      "pr": 120,
-      "merge_commit": "24fe357"
-    },
-    "a2ui-uar-renderer-on-webcore": {
-      "pr": 121,
-      "merge_commit": "2946a25"
-    },
-    "a2ui-migrate-design-systems-embedder-from-flint-forge": {
-      "pr": 123,
-      "merge_commit": "4406db2"
-    },
-    "_correction_2026-07-14": "Removed a mislabeled entry: PRs #121/#122 (merge commits 2946a25/732c530) are both from branch feat/a2ui-uar-renderer and are Change 17 (a2ui-uar-renderer-on-webcore), NOT a2ui-migrate-entity-components-from-prometheus-entity-management (Change 18). Verified via `git show main:frontend/packages/a2ui-uar/src/entities/index.ts` -- EntityDiff.tsx/EntityStream.tsx are absent from main. Change 18's actual work lives unmerged on branch feat/a2ui-entity-diff-stream, commit da89de0 -- see implementation_complete_unmerged."
-  },
-  "implementation_complete_unmerged": {
-    "a2ui-migrate-entity-components-from-prometheus-entity-management": {
-      "branch": "feat/a2ui-entity-diff-stream",
-      "commit": "da89de0",
-      "status": "PR_OPEN_PENDING_REVIEW",
-      "openspec_change": "openspec/changes/a2ui-migrate-entity-components-from-prometheus-entity-management/ (present on this branch only, not yet in main)",
-      "harness": "Claude Code + Sonnet 5 (built directly in main checkout per operator instruction, then committed to a feature branch)",
-      "verified": "lint/typecheck/commitlint pre-commit hooks passed; frontend/packages/a2ui-uar/test/{entity-diff,entity-stream}.test.tsx (5 tests) passing",
-      "notes": "EntityDiff.tsx (bound) + EntityStream.tsx (binderless) components. Confirmed unmerged on 2026-07-14 via `git show main:frontend/packages/a2ui-uar/src/entities/index.ts` -- not present in main. This corrects the previously mislabeled merged_changes entry that conflated it with PRs #121/#122 (actually Change 17).",
-      "pr": 124
-    },
-    "a2ui-realtime-backbone-from-flint-realtime-fabric": {
-      "branch": "change-20/a2ui-realtime-backbone",
-      "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-realtime-backbone-from-flint-realtime-fabric",
-      "commit": "7a5d38b",
-      "status": "PR_OPEN_PENDING_REVIEW",
-      "openspec_change": "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/ (validated --strict)",
-      "harness": "Claude Code + Sonnet 5",
-      "verified": "cargo check PASS, cargo test --lib a2ui::realtime 7/7 PASS, cargo fmt --all -- --check PASS (2 nits fixed), openspec validate --strict PASS",
-      "notes": "Audit found the plan's premise only partially held: no A2UI surface-emission call site exists yet in the orchestrator, and RunManager's broadcast channel already gives multi-client convergence for free. Real gap was durable replay for late-join clients. Delivered surface_message_to_state_patch (wire msg -> StatePatchOp), A2uiReplayBackbone trait + tested InMemoryReplayBackbone, 2 new HTTP endpoints (surface-test-trigger, surface-replay), BDD feature file (step defs deferred -- no existing harness for direct run_id creation or raw SSE consumption from test code). frf-sdk-rust live wiring deferred pending operator decision on vendor/git/ submodule strategy. Left local-only, unpushed, no PR -- pending review or operator merge.",
-      "pr": 125
-    },
-    "docs-hosted-rustdoc-typedoc-docusaurus-ia": {
-      "branch": "change-23/docs-hosted-rustdoc-typedoc-docusaurus-ia",
-      "worktree": "/Users/gqadonis/.claude/worktrees/docs-hosted-rustdoc-typedoc-docusaurus-ia",
-      "status": "PR_OPEN_PENDING_REVIEW",
-      "openspec_change": "openspec/changes/docs-hosted-rustdoc-typedoc-docusaurus-ia/",
-      "harness": "OpenCode + K2.7",
-      "commit": null,
-      "verified": "cargo check / pnpm typecheck / py_compile / validate-cookbook.sh pass; openspec validate --change docs-hosted-rustdoc-typedoc-docusaurus-ia passes",
-      "notes": "Docusaurus docs portal scaffolding complete; operator must enable GitHub Pages after merge.",
-      "pr": 126
-    },
-    "docs-cookbook-12-examples": {
-      "branch": "change-24/docs-cookbook-12-examples",
-      "worktree": "/Users/gqadonis/.claude/worktrees/docs-cookbook-12-examples",
-      "status": "PR_OPEN_PENDING_REVIEW",
-      "openspec_change": "openspec/changes/docs-cookbook-12-examples/",
-      "harness": "OpenCode + K2.7",
-      "note": "Runtime/SDK examples only; A2UI examples blocked pending Changes 21-22.",
-      "commit": null,
-      "verified": "cargo check / pnpm typecheck / py_compile / validate-cookbook.sh pass; openspec validate --change docs-cookbook-12-examples passes",
-      "notes": "A2UI cookbook examples deferred to Changes 21-22.",
-      "pr": 127
-    },
-    "a2ui-world-class-theming-a11y-i18n": {
-      "branch": "change-21/a2ui-world-class-theming-a11y-i18n",
-      "worktree": "/Users/gqadonis/.claude/worktrees/a2ui-world-class-theming-a11y-i18n",
-      "commit": null,
-      "status": "IMPLEMENTATION_COMPLETE_PENDING_PR",
-      "openspec_change": "openspec/changes/a2ui-world-class-theming-a11y-i18n/ (validated --strict)",
-      "harness": "Codex operator-authorized override with dual-agent Impeccable critique",
-      "verified": "A2UI UAR typecheck/lint/tests/perf, frontend typecheck/lint/build, entity-management 3.0.0-alpha.0 core/React builds, strict OpenSpec validation, and direct QA per the retired artifact-refiner decision"
-    }
-  },
-  "active_dispatches": {},
-  "deliverables": {
-    "analysis_md": "analysis.md",
-    "library_candidates_json": "library-candidates.json",
-    "plan_md": "plan.md",
-    "openspec_changes_with_proposals": [
-      "openspec/changes/license-dual-license-agpl-mit/{proposal.md, tasks.md, specs/dual-license-policy/spec.md}",
-      "openspec/changes/coverage-cargo-llvm-cov-60pct/{proposal.md, tasks.md, specs/coverage-baseline/spec.md}",
-      "openspec/changes/test-quality-mutation-fuzz-property/{proposal.md, tasks.md, specs/test-quality-gates/spec.md}",
-      "openspec/changes/central-uar-error-enum/{proposal.md, tasks.md, specs/uar-error-model/spec.md}",
-      "openspec/changes/unwrap-sweep-tracing-error-chains/{proposal.md, tasks.md, specs/uar-observability-errors/spec.md}",
-      "openspec/changes/config-rs-schemars-migration/{proposal.md, tasks.md, specs/uar-config-model/spec.md}",
-      "openspec/changes/slsa-l3-osv-grype-security-txt/{proposal.md, tasks.md, specs/slsa-l3-self-attestation/spec.md}",
-      "openspec/changes/config-hot-reload-vault/{proposal.md, tasks.md, specs/config-hot-reload/spec.md}",
-      "openspec/changes/sdk-rust-1-0/",
-      "openspec/changes/sdk-python-1.0/",
-      "openspec/changes/sdk-typescript-1-0/",
-      "openspec/changes/rag-eval-ragas-deepeval-golden-set/{proposal.md, tasks.md, specs/rag-evaluation-suite/spec.md}",
-      "openspec/changes/rag-embedding-backends-4-more/",
-      "openspec/changes/a2ui-vendor-google-core-react/{proposal.md, tasks.md, specs/a2ui-core-vendoring/spec.md}",
-      "openspec/changes/sdk-examples-cookbook-rustdoc/",
-      "openspec/changes/a2ui-uar-renderer-on-webcore/",
-      "openspec/changes/a2ui-migrate-entity-components-from-prometheus-entity-management/",
-      "openspec/changes/a2ui-migrate-design-systems-embedder-from-flint-forge/",
-      "openspec/changes/a2ui-realtime-backbone-from-flint-realtime-fabric/ (unmerged, worktree change-20/a2ui-realtime-backbone)"
-    ],
-    "openspec_changes_with_proposals_note": "Confirmed present in main's openspec/changes/ directory as of HEAD 09cb3b8 (listed via `ls openspec/changes/`) for the 6 newly-merged changes, alongside the 8 already tracked here. sdk-rust-1-0/sdk-python-1.0/sdk-typescript-1-0/rag-embedding-backends-4-more directory contents not individually re-verified this pass (assume standard proposal.md/tasks.md/specs/ shape; spot-check if working on those changes). a2ui-migrate-entity-components-from-prometheus-entity-management's scaffold exists on the unmerged feat/a2ui-entity-diff-stream branch (not in main yet) -- move here once that branch merges.",
-    "openspec_changes_pending_proposal": [
-      "a2ui-world-class-theming-a11y-i18n",
-      "a2ui-inspector-lit-svelte-renderers",
-      "docs-hosted-rustdoc-typedoc-docusaurus-ia",
-      "docs-cookbook-12-examples",
-      "docs-storybook-visual-regression-perf-budget"
-    ]
-  },
-  "operator_decisions": {
-    "Q1_license": "MIT for SDKs",
-    "Q2_a2ui": "vendor both @a2ui/react + @a2ui/web_core; UAR-owned renderer; component library from flint-forge + prometheus-entity-management + flint-realtime-fabric",
-    "Q3_relicensing": "open letter for SDKs (operator recommendation)",
-    "Q4_coverage": "60% on day one; adjust based on usage",
-    "Q5_property_fuzz": "minimum 22h (operator recommendation)"
-  },
-  "harness_matrix_recommendation": {
-    "architectural": "Claude Code + Sonnet 5 (~50% of hours, 330h)",
-    "bulk_implementation": "OpenCode + Kimi K2.7 Coding (~30% of hours, 200h)",
-    "parallel_isolated": "Codex + GPT-5.6 in git worktrees (~20% of hours, 130h)"
-  },
-  "dependency_graph_findings": "Several arrows in plan.md's dependency graph turned out to be soft/aspirational rather than hard code dependencies once each change's actual done-condition was read: Change 15 (embedding backends) doesn't need Change 13 (citation stream); Change 14 (RAG eval) doesn't need Change 13; Change 16 (A2UI vendoring) doesn't need Change 13. This let those changes dispatch and complete well ahead of Change 13. Re-check each remaining 'blocked' change's actual done-condition (not just the graph arrow) before assuming it's truly blocked.",
-  "next_step": "All 25 changes are implementation-complete. Review and merge remaining PRs, then resume the paused production certification phase."
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

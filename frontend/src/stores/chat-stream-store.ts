@@ -6,17 +6,15 @@ import {
   resumeRunStream,
   CHAT_COMPLETION_URL,
 } from "@/services/chat-stream-api";
-import { fetchResilienceSettings } from "@/services/settings-api";
-import { onSettingsChanged } from "@/services/settings-change-bus";
+import { fetchResilienceSettings, onSettingsChanged } from "@/features/settings/api";
 import { useChatMessageStore } from "@/stores/chat-message-store";
 import { useAgentStatusStore } from "@/stores/agent-status-store";
 import type { RagCitationMarker, ToolCallContentBlock } from "@/types/chat-content";
 import type { AttachmentPayload } from "@/types";
 import { ingestAgUiEvent, ingestRuntimeEvent } from "@/entities/runtime-ingest";
-import {
-  isHighFrequencyAguiEvent,
-  UarAguiAdapter,
-} from "@/protocols/agui-adapter";
+import { UarAguiAdapter } from "@/platform/agui/agui-adapter";
+import { getDbInstance } from "@/platform/pglite/client";
+import { RunEventPersistence } from "@/platform/pglite/run-event-persistence";
 
 export interface UarChatPayload {
   message: string;
@@ -628,6 +626,45 @@ let streamAbortRef: AbortController | null = null;
 // stop action request deterministic server-side cancellation rather than
 // relying solely on the last-subscriber-drop guard that fires on disconnect.
 let serverRunIdRef: string | null = null;
+let activeRunPersistence: RunEventPersistence | null = null;
+
+function releaseRunPersistence(writer: RunEventPersistence | null): void {
+  if (activeRunPersistence !== writer) return;
+  activeRunPersistence = null;
+  serverRunIdRef = null;
+}
+
+async function finalizeRunPersistence(
+  writer: RunEventPersistence | null,
+  status: "cancelled" | "error" | "finished",
+): Promise<void> {
+  if (!writer) return;
+  try {
+    await writer.finish(status);
+  } catch (error) {
+    console.error("[run-persistence] terminal finalization failed", {
+      status,
+      errorType: error instanceof Error ? error.name : typeof error,
+    });
+  }
+}
+
+async function persistRunEvent(
+  writer: RunEventPersistence,
+  row: Parameters<RunEventPersistence["ingest"]>[0],
+  phaseTimings: Parameters<RunEventPersistence["ingest"]>[1],
+): Promise<boolean> {
+  try {
+    await writer.ingest(row, phaseTimings);
+    return true;
+  } catch (error) {
+    console.error("[run-persistence] event ingest failed", {
+      eventType: row.type,
+      errorType: error instanceof Error ? error.name : typeof error,
+    });
+    return false;
+  }
+}
 
 interface ChatStreamActions {
   startStream: (
@@ -663,7 +700,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
     // Build user message content: text + any image attachments for in-thread display
     const imageBlocks = (payload.attachments ?? [])
       .filter((a) => a.content_type.startsWith("image/"))
-      .map((a) => ({ type: "image" as const, url: a.url, alt: a.filename }));
+      .map((a) => ({ type: "image" as const, url: a.url, dataBase64: null, mime: a.content_type, alt: a.filename }));
     useChatMessageStore.getState().initThread(threadId, [
       ...(useChatMessageStore.getState().messagesByThread[threadId] ?? []),
       {
@@ -701,6 +738,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
       streamAbortRef = controller;
       let sawFirstStreamChunk = false;
       let streamStartTimedOut = false;
+      let runPersistence: RunEventPersistence | null = null;
       pendingArgs.clear();
       const streamStartTimer = setTimeout(() => {
         if (!sawFirstStreamChunk) {
@@ -729,6 +767,14 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
 
         // Capture the server-assigned run id so the stop action can cancel it.
         serverRunIdRef = res.headers.get("x-uar-run-id");
+        runPersistence = new RunEventPersistence(getDbInstance(), {
+          threadId,
+          fallbackRunId:
+            serverRunIdRef ?? (attempt === 0 ? runId : `${runId}:retry-${attempt}`),
+          model: payload.model,
+        });
+        activeRunPersistence = runPersistence;
+        let persistenceHealthy = true;
 
         const reader = res.body.getReader();
 
@@ -737,23 +783,26 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
           signal: controller.signal,
           maxReconnects: STREAM_MAX_RECONNECTS,
         })) {
-            let { event } = frame;
-            const { data } = frame;
-            const adapted = aguiAdapter.ingest(event, data, frame.id);
-            if (adapted) {
+          let { event } = frame;
+          const { data } = frame;
+          const adapted = aguiAdapter.ingest(event, data, frame.id);
+          if (adapted) {
               event = adapted.event;
               const agui = adapted.payload as AguiPayload;
 
-              // Mirror AG-UI frames into the Runtime Console entity graph so the
-              // Protocols (AG-UI Events), Memory Activity, and Artifacts panels
-              // render live. High-frequency token deltas are excluded to keep the
-              // AG-UI events panel readable. Chat rendering below is unaffected.
-              if (!isHighFrequencyAguiEvent(event)) {
-                ingestAgUiEvent(runId, {
-                  type: event,
-                  id: adapted.eventId,
-                  sequence: adapted.sequence,
-                  payload: agui as unknown as Record<string, unknown>,
+              // The adapter normalizes every validated official frame once for
+              // Runtime Console ingestion, including high-frequency content rows.
+              const durableRunId = adapted.eventRow?.runId ?? serverRunIdRef ?? runId;
+              if (adapted.eventRow) {
+                persistenceHealthy = await persistRunEvent(runPersistence, adapted.eventRow, adapted.phaseTimings) && persistenceHealthy;
+                ingestAgUiEvent(durableRunId, adapted.eventRow);
+              }
+              if (adapted.phaseTimings) {
+                ingestRuntimeEvent({
+                  type: "run_updated",
+                  id: durableRunId,
+                  run_id: durableRunId,
+                  payload: { phase_timings: adapted.phaseTimings },
                 });
               }
               if (
@@ -793,17 +842,30 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
 
               switch (event) {
                 case "agui.message.delta": {
-                  const e = agui as AguiMessageDelta;
-                  if (e.delta?.text)
-                    store.appendTextDelta(threadId, runId, e.delta.text);
+                  const legacyDelta = !adapted.eventRow
+                    ? (agui as AguiMessageDelta).delta?.text
+                    : undefined;
+                  const delta = adapted.messageChunk?.kind === "text"
+                    ? adapted.messageChunk.delta
+                    : legacyDelta;
+                  if (delta) store.appendTextDelta(threadId, runId, delta);
                   useAgentStatusStore.getState().setThinking();
                   break;
                 }
                 case "agui.thinking.delta":
                 case "agui.reasoning.delta": {
-                  const e = agui as AguiThinkingDelta | AguiReasoningDelta;
-                  if (e.delta?.text)
-                    store.appendThinkingDelta(threadId, runId, e.delta.text);
+                  const legacyDelta = !adapted.eventRow
+                    ? (agui as AguiThinkingDelta | AguiReasoningDelta).delta?.text
+                    : undefined;
+                  const delta = adapted.messageChunk?.kind === "reasoning"
+                    ? adapted.messageChunk.delta
+                    : legacyDelta;
+                  if (delta) store.appendThinkingDelta(
+                    threadId,
+                    runId,
+                    delta,
+                    event === "agui.thinking.delta" ? "thinking" : "reasoning",
+                  );
                   break;
                 }
                 case "agui.citation.added": {
@@ -896,6 +958,8 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                     .filter(Boolean)
                     .join("\n");
                   store.setStreamError(threadId, detail);
+                  if (!adapted.eventRow) await finalizeRunPersistence(runPersistence, "error");
+                  releaseRunPersistence(runPersistence);
                   callbacks?.onError?.(new Error(detail));
                   return;
                 }
@@ -1046,6 +1110,8 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                   clearTimeout(streamStartTimer);
                   store.finishStream(threadId);
                   useAgentStatusStore.getState().setIdle();
+                  if (!adapted.eventRow) await finalizeRunPersistence(runPersistence, "cancelled");
+                  releaseRunPersistence(runPersistence);
                   callbacks?.onComplete?.();
                   return;
                 }
@@ -1077,49 +1143,57 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                   clearTimeout(streamStartTimer);
                   store.finishStream(threadId);
                   useAgentStatusStore.getState().setIdle();
+                  if (!adapted.eventRow || !persistenceHealthy) await finalizeRunPersistence(runPersistence, "finished");
+                  releaseRunPersistence(runPersistence);
                   callbacks?.onComplete?.();
                   return;
                 }
                 default:
                   break;
               }
-              continue;
-            }
+            continue;
+          }
 
             // Runtime entity events — feed the Runtime Console (Cockpit/Runs/Approvals).
             // These are emitted alongside agui.* events from the backend for run/step/
             // tool-call/approval lifecycle. ingestRuntimeEvent() upserts into the entity
             // graph so the Runtime Console panels update in real-time.
-            if (event.startsWith("runtime.")) {
-              try {
-                const payload = JSON.parse(data);
-                ingestRuntimeEvent(payload);
-              } catch {
-                // Malformed runtime event — skip.
-              }
-              continue;
+          if (event.startsWith("runtime.")) {
+            try {
+              const payload = JSON.parse(data);
+              ingestRuntimeEvent(payload);
+            } catch {
+              // Malformed runtime event — skip.
             }
+            continue;
+          }
 
-            if (event === "message" && data === "[DONE]") {
-              clearTimeout(streamStartTimer);
-              useChatMessageStore.getState().finishStream(threadId);
-              useAgentStatusStore.getState().setIdle();
-              callbacks?.onComplete?.();
-              return;
-            }
-            sawFirstStreamChunk = true;
+          if (event === "message" && data === "[DONE]") {
             clearTimeout(streamStartTimer);
-            useChatMessageStore.getState().markStreamStarted(threadId, runId);
+            await finalizeRunPersistence(runPersistence, "finished");
+            useChatMessageStore.getState().finishStream(threadId);
+            useAgentStatusStore.getState().setIdle();
+            releaseRunPersistence(runPersistence);
+            callbacks?.onComplete?.();
+            return;
+          }
+          sawFirstStreamChunk = true;
+          clearTimeout(streamStartTimer);
+          useChatMessageStore.getState().markStreamStarted(threadId, runId);
         }
 
         clearTimeout(streamStartTimer);
+        await finalizeRunPersistence(runPersistence, "finished");
         useChatMessageStore.getState().finishStream(threadId);
+        releaseRunPersistence(runPersistence);
         callbacks?.onComplete?.();
         return;
       } catch (err) {
         clearTimeout(streamStartTimer);
         if ((err as Error).name === "AbortError" && !streamStartTimedOut) {
+          await finalizeRunPersistence(runPersistence, "cancelled");
           useChatMessageStore.getState().finishStream(threadId);
+          releaseRunPersistence(runPersistence);
           return;
         }
         const normalizedError = streamStartTimedOut
@@ -1139,6 +1213,8 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
           cumulativeRetryDelayMs,
         );
         if (retryDecision.retry) {
+          await finalizeRunPersistence(runPersistence, "error");
+          releaseRunPersistence(runPersistence);
           console.warn("[uar.stream.retry]", {
             threadId,
             attempt: attempt + 1,
@@ -1191,7 +1267,9 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
             : error.message.startsWith("[20")
               ? error.message
               : `[${ts}] Unexpected error\n  ${error.message}\n  Session: ${threadId}`;
+        await finalizeRunPersistence(runPersistence, "error");
         useChatMessageStore.getState().setStreamError(threadId, detail);
+        releaseRunPersistence(runPersistence);
         callbacks?.onError?.(new Error(detail));
         return;
       }

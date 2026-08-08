@@ -154,6 +154,15 @@ export type RuntimeStatus =
   | "failed"
   | "cancelled";
 
+export type RuntimeRunPhase =
+  | "context"
+  | "skill"
+  | "memory"
+  | "retrieval"
+  | "reasoning"
+  | "tool"
+  | "generate";
+
 export interface RuntimeRunEntity extends Record<string, unknown> {
   id: string;
   thread_id?: string;
@@ -170,6 +179,8 @@ export interface RuntimeRunEntity extends Record<string, unknown> {
   input_tokens?: number | null;
   output_tokens?: number | null;
   total_tokens?: number | null;
+  /** Transport-observed phase durations in milliseconds, completed at run terminal. */
+  phase_timings?: Record<RuntimeRunPhase, number>;
 }
 
 export interface RuntimeRunStepEntity extends Record<string, unknown> {
@@ -231,6 +242,8 @@ export interface RuntimeAgUiEventEntity extends Record<string, unknown> {
   run_id: string;
   event_type: string;
   sequence: number;
+  phase?: RuntimeRunPhase | null;
+  received_at?: string;
   payload: Record<string, unknown>;
   updated_at: string;
 }

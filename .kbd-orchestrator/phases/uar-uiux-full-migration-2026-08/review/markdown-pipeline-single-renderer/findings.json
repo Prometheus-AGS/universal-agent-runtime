@@ -1,0 +1,71 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/package.json",
+      "line": 118,
+      "claim": "The diff swaps Tailwind v3 (with postcss/autoprefixer/tailwindcss-animate) for Tailwind v4 (@tailwindcss/vite 4.3.3, tailwindcss 4.3.3, tw-animate-css) but contains no corresponding changes to vite.config.ts, any CSS entry file, or any tailwind config, so the existing PostCSS-based build (`@tailwind` directives, config requiring tailwindcss-animate) will fail or render unstyled.",
+      "evidence": "package.json hunks remove `\"tailwindcss-animate\": \"^1.0.7\"`, `\"autoprefixer\": \"^10.4.24\"`, `\"postcss\": \"^8.5.6\"`, `\"tailwindcss\": \"^3.4.19\"` and add `\"@tailwindcss/vite\": \"4.3.3\"`, `\"tailwindcss\": \"4.3.3\"`, `\"tw-animate-css\"`; no hunk in the diff wires `@tailwindcss/vite` into `frontend/vite.config.ts` (present in file tree) or migrates CSS to `@import \"tailwindcss\"`. The enhanced-thread.tsx hunks also silently depend on new v4 tokens (`var(--color-surface)`, `var(--color-cyan)`) that no diff hunk defines.",
+      "suggested_fix": "Either include the vite config + CSS migration (add the @tailwindcss/vite plugin, replace @tailwind directives with @import \"tailwindcss\", port tailwindcss-animate usage to tw-animate-css, define --color-surface/--color-cyan) in this change, or split the Tailwind v4 migration out of the markdown-pipeline diff entirely."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/package.json",
+      "line": 45,
+      "claim": "`@radix-ui/react-icons` is removed from dependencies with no hunk removing its imports anywhere in the source, so any remaining importer produces a module-not-found build/typecheck failure.",
+      "evidence": "package.json hunk deletes `\"@radix-ui/react-icons\": \"^1.3.2\"` and the diff contains no frontend/src changes removing usage of that package (the file tree does not let one confirm zero importers, and the deleted enhanced-markdown-text.tsx did not import it).",
+      "suggested_fix": "Grep the frontend for `@radix-ui/react-icons` and include the codemod to lucide-react in this diff, or restore the dependency."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/markdown/markdown-components.tsx",
+      "line": 58,
+      "claim": "The shared `code` component no longer distinguishes block code from inline code (the old `useIsMarkdownCodeBlock` branching was deleted), so fenced code blocks receive the inline pill styling (`rounded-md bg-muted px-1.5 py-0.5`) inside the padded `pre`, and hljs syntax highlighting is silently dropped while `highlight.js` remains a dependency.",
+      "evidence": "Deleted enhanced-markdown-text.tsx contained `EnhancedCodeBlock` using `useIsMarkdownCodeBlock` and hljs highlighting; the new markdown-components.tsx has a single `code: ({ className, ...props }) => <code className={cn(\"rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.85em]\", ...)} />` applied to both inline and block code, and package.json still lists `\"highlight.js\": \"^11.10.0\"`. Criterion 3.1 only authorizes moving the presentation map, not removing highlighting.",
+      "suggested_fix": "Restore block/inline differentiation (e.g., via node.position or a pre/code pair check) and either re-implement highlighting in the shared map or explicitly remove highlight.js and document the regression."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/markdown/markdown-components.tsx",
+      "line": 8,
+      "claim": "All components spread `{...props}` onto DOM elements, but react-markdown passes a `node` property to components in explicit-source mode, producing React unknown-prop warnings and potential invalid attributes on every rendered element in the Skills preview path.",
+      "evidence": "markdown-bubble.tsx passes `components={markdownComponents}` directly to `<ReactMarkdown>`; react-markdown v9+ invokes components with `{ node, ... }` and the components here destructure only `className` before spreading the rest (e.g., `h1: ({ className, ...props }) => <h1 ... {...props} />`).",
+      "suggested_fix": "Destructure and discard `node` in each component (`({ node, className, ...props })`) or wrap the map for the ReactMarkdown path."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/markdown/markdown-bubble.test.tsx",
+      "line": 1,
+      "claim": "Every test exercises only the explicit-`source` ReactMarkdown path; the assistant-ui context mode (`MarkdownTextPrimitive` with the same rehypeChain and `defer`) has zero coverage, so a prop-forwarding or ordering failure in the actual chat rendering path ships untested despite criterion 4.1.",
+      "evidence": "All seven tests render `<MarkdownBubble source={...} />`; none mounts `MarkdownBubble` inside an assistant-ui message-part context or asserts that `MarkdownTextPrimitive` applies `rehypePlugins`/`remarkPlugins` in the required raw\u2192sanitize\u2192katex order.",
+      "suggested_fix": "Add a test rendering the context mode (via assistant-ui test harness or a MarkdownTextPrimitive mock) asserting the chain order and XSS stripping hold there too."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/package.json",
+      "line": 69,
+      "claim": "`dompurify` is added as a runtime dependency to satisfy criterion 1.2 but is never imported anywhere in the diff; sanitization is implemented entirely via rehype-sanitize, leaving a dead dependency in the production bundle graph.",
+      "evidence": "package.json adds `\"dompurify\": \"^3.4.13\"` under dependencies; no file in the diff imports `dompurify`, and sanitize-schema.ts/rehype-chain.ts use only rehype-sanitize.",
+      "suggested_fix": "Remove dompurify (and amend criterion 1.2's evidence) or document the concrete consumer that requires it."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/shared/markdown/markdown-components.tsx",
+      "line": 52,
+      "claim": "The `hr` component drops all props and renders an empty `<div className=\"my-5 h-3\" role=\"separator\" />`, removing the visible rule and any sanitized attributes the old `<hr>` carried.",
+      "evidence": "Old map: `hr: ({ className, ...props }) => <hr className={cn(\"my-4 border-border/30\", className)} {...props} />`; new map: `hr: () => <div className=\"my-5 h-3\" role=\"separator\" />`.",
+      "suggested_fix": "Keep an `<hr>` (or give the div a visible border) and forward className/props."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -8,7 +8,7 @@
  */
 import { act, render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@/platform/entities";
 
 function Reader({ id, tag }: { id: string; tag: string }) {
   const entity = useGraphStore(

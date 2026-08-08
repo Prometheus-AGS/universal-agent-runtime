@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
-import type { EntityType } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@/platform/entities";
+import type { EntityType } from "@/platform/entities";
 import { ingestRuntimeEvent } from "./runtime-ingest";
 import {
   RUNTIME_REPLAY_AGUI_ID,
@@ -80,6 +80,27 @@ describe("runtime event replay entity sync", () => {
     expect(entity("RuntimeProviderHealth", "provider-health-openai")?.latency_ms).toBe(42);
   });
 
+  test("run updates persist terminal phase timings on the runtime run entity", () => {
+    const phaseTimings = {
+      context: 10,
+      skill: 0,
+      memory: 20,
+      retrieval: 0,
+      reasoning: 30,
+      tool: 40,
+      generate: 50,
+    };
+
+    ingestRuntimeEvent({
+      type: "run_updated",
+      id: RUNTIME_REPLAY_RUN_ID,
+      run_id: RUNTIME_REPLAY_RUN_ID,
+      payload: { phase_timings: phaseTimings },
+    });
+
+    expect(entity("RuntimeRun", RUNTIME_REPLAY_RUN_ID)?.phase_timings).toEqual(phaseTimings);
+  });
+
   test("replayed ids are stable across explicit ids, payload ids, and sequence fallback", () => {
     ingestRuntimeEvent({
       type: "provider_health",
@@ -145,9 +166,11 @@ describe("runtime event replay entity sync", () => {
 
     const event = entity("RuntimeAgUiEvent", RUNTIME_REPLAY_AGUI_ID);
     expect(event?.run_id).toBe(RUNTIME_REPLAY_RUN_ID);
-    expect(event?.event_type).toBe("agui.stream.start");
+    expect(event?.event_type).toBe("RUN_STARTED");
     expect(event?.sequence).toBe(1);
-    expect(event?.payload).toMatchObject({ request_id: RUNTIME_REPLAY_RUN_ID, agent_id: "replay-agent" });
+    expect(event?.payload).toMatchObject({ runId: RUNTIME_REPLAY_RUN_ID, input: { agentId: "replay-agent" } });
+    expect(event?.phase).toBeNull();
+    expect(typeof event?.received_at).toBe("string");
     expect(typeof event?.updated_at).toBe("string");
   });
 

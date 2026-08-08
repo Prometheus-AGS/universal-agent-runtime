@@ -13,7 +13,7 @@
  * capture) so an extraction to a shared helper can be done with confidence.
  */
 import { describe, expect, test, vi } from "vitest";
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@/platform/entities";
 import { optimisticUpsert, optimisticRemove } from "../optimistic";
 
 describe("optimistic rollback", () => {

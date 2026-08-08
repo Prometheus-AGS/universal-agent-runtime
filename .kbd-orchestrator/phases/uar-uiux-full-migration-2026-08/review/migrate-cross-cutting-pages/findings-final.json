@@ -1,0 +1,79 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/app/shell/nav-destinations.ts",
+      "line": 140,
+      "claim": "The runtime-settings destination's matchPaths include the broad \"/admin\" prefix, so `isDestinationActive(runtime-settings, pathname)` returns true for every /admin/* route, causing the desktop rail to mark both the real destination (e.g. Knowledge) and \"Runtime settings\" as active with duplicate aria-current=\"page\".",
+      "evidence": "matchPaths: [\"/admin\", \"/admin/runtime\", \"/admin/approvals\", \"/admin/protocols\", \"/admin/settings\", ...] combined with `matchesPath` (`pathname === candidate || pathname.startsWith(`${candidate}/`)`) means /admin/knowledge, /admin/agents, /admin/runs, /admin/providers etc. all match. The ordering guard only helps `findDestinationForPath` (first-match wins); `nav-rail.tsx` RailLink calls `isDestinationActive(destination, pathname)` per link, bypassing that guard. Spec violation: spec.md Scenario \"Admin-backed work route is active\" states \"the generic Configure destination MUST NOT claim that route\".",
+      "suggested_fix": "Match \"/admin\" exactly only (e.g. split matchPaths into exactPaths/prefixPaths, or make isDestinationActive return false when an earlier destination in NAV_DESTINATIONS also matches the pathname). Add a test asserting isDestinationActive(runtimeSettings, \"/admin/knowledge\") === false and that only one rail link has aria-current on /admin/* work routes."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/app/shell/app-shell.tsx",
+      "line": 33,
+      "claim": "`event.preventDefault()` is only called inside the gated branch, so Ctrl+K pressed from an editable control or while any dialog is open falls through to the browser default (Chrome/Edge jump to the omnibox/search bar), yanking focus out of the app.",
+      "evidence": "`if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === \"k\" && !isEditableTarget(event.target) && !hasOpenDialog()) { event.preventDefault(); ... }` \u2014 when isEditableTarget or hasOpenDialog is true, no preventDefault runs. The new test \"does not intercept the global shortcut from an editable control\" only asserts the palette doesn't open; it doesn't assert the browser default was suppressed.",
+      "suggested_fix": "Call `event.preventDefault()` unconditionally once the modifier+K chord matches, then gate only the `setCommandPaletteOpen(true)` action on editable-target/dialog checks."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/admin/admin-shell.tsx",
+      "line": 151,
+      "claim": "The diff removes the only Cmd/Ctrl+K keydown handler from AdminShell but keeps the `commandOpen` state and `setCommandOpen` setter, so the admin cmdk command palette may now be unreachable via keyboard (and if no other trigger exists, entirely dead) while coexisting with the new global Base UI palette.",
+      "evidence": "Removed hunk: `useEffect(() => { const onKeyDown = (event) => { if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === \"k\") { event.preventDefault(); setCommandOpen((open) => !open); } }; document.addEventListener(\"keydown\", onKeyDown); ... }, []);` with `import { type FC, useEffect, useMemo, useState }` reduced to drop useEffect, yet `setCommandOpen(false)` remains in the file. No replacement trigger is added in this diff.",
+      "suggested_fix": "Either wire the admin palette's open state to a visible trigger, or remove the now-orphaned commandOpen state/palette and let the shell's global palette own the shortcut (design.md says the app-wide shell is the authoritative top-level chrome)."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/components/assistant-ui/enhanced-thread.tsx",
+      "line": 171,
+      "claim": "The diff silently migrates every assistant-ui primitive (ScrollToBottom, Composer.Send/Cancel, ActionBar.Copy/Edit, BranchPicker) from the `asChild` composition API to Base UI's `render` prop; if the installed @assistant-ui/react version still uses the Radix-style `asChild` API, the send/cancel/copy/branch controls lose their primitive behavior and children render unwrapped, and nothing in the diff's tests exercises this file.",
+      "evidence": "Hunks like `<ThreadPrimitive.ScrollToBottom render={<TooltipIconButton .../>}>` replacing `<ThreadPrimitive.ScrollToBottom asChild>`, repeated for Composer.Send, Composer.Cancel, ActionBar.Copy, ActionBar.Edit, BranchPicker.Previous/Next. This API migration is outside the stated C-10 scope (shell + brand) and no test or acceptance criterion covers enhanced-thread; the package version cannot be confirmed from the packet.",
+      "suggested_fix": "Verify the installed assistant-ui version supports the `render` prop (post-Base-UI-migration release); if not, revert these hunks and keep only the logo/token changes. Add at least a smoke test rendering EnhancedThread composer controls."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/index.html",
+      "line": 12,
+      "claim": "An unconditioned dark favicon link is placed before the media-scoped light/dark links, so browsers that select the first matching icon link will always pick the dark icon and never evaluate the prefers-color-scheme variants, defeating the light/dark favicon selection.",
+      "evidence": "`<link rel=\"icon\" ... href=\"/brand/uar-favicon-dark.svg\" />` (no media) appears before `<link ... media=\"(prefers-color-scheme: light)\">` and `<link ... media=\"(prefers-color-scheme: dark)\">`; the unconditioned link matches every color scheme. The new uar-logo.test.ts only asserts the strings are present, not their order or exclusivity.",
+      "suggested_fix": "Emit only the two media-scoped links (light + dark), or move the unconditioned fallback after them."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/app/shell/readiness-status.tsx",
+      "line": 40,
+      "claim": "The collapsed readiness indicator puts `aria-label` on a plain `<div>` with no role, which ARIA prohibits on generic elements and assistive technologies ignore, so the collapsed rail's readiness status has no accessible name.",
+      "evidence": "Collapsed branch: `<div className=\"mx-auto mb-4 ...\" aria-label={`${statusText}. ${modeText}${versionText}`} title={...}>` with only an aria-hidden dot inside \u2014 no role attribute, so the label is not exposed.",
+      "suggested_fix": "Add `role=\"img\"` (or `role=\"status\"`) to the collapsed container so the aria-label is valid and announced."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/public/manifest.json",
+      "line": 10,
+      "claim": "The PWA icon set regresses: the sole remaining icon drops the `maskable` purpose, so Android install/adaptive-icon treatment is lost, and the only shipped icon is the dark-variant 512px PNG.",
+      "evidence": "Replaced `{ src: \"/apple-touch-icon.png\", sizes: \"180x180\", purpose: \"any maskable\" }` with `{ src: \"/brand/png/uar-appicon-dark-512.png\", sizes: \"512x512\", purpose: \"any\" }` \u2014 no maskable entry remains anywhere in the manifest.",
+      "suggested_fix": "Add a second icon entry with `\"purpose\": \"maskable\"` backed by a safe-zone-aware asset (e.g. the appicon PNGs with padding), keeping the 512 \"any\" entry."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/ui/uar-logo.test.ts",
+      "line": 21,
+      "claim": "The brand-contract test hard-couples the frontend suite to `docs/ui/logo/` and only filters a top-level `.DS_Store`, so a nested metadata file (e.g. `png/.DS_Store`) or any drift in the docs directory breaks the frontend build's tests for reasons unrelated to frontend code.",
+      "evidence": "`filesBelow(resolve(projectRoot, \"../docs/ui/logo\")).filter((file) => file !== \".DS_Store\")` \u2014 the filter matches only the exact top-level name, while `filesBelow` returns slash-joined relative paths, so nested `.DS_Store` entries slip through; `docs/ui/logo` contents are not part of this diff and cannot be verified.",
+      "suggested_fix": "Filter with `!file.split(\"/\").includes(\".DS_Store\")` (or basename check) and record the expected asset manifest explicitly in the test rather than deriving it from a mutable docs directory."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

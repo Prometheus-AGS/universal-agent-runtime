@@ -17,7 +17,7 @@
  * Mount once at the SPA root (`App.tsx`). No render-time return value.
  */
 import { useEffect, useRef } from "react";
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@/platform/entities";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
 
 interface ServerThreadRow {

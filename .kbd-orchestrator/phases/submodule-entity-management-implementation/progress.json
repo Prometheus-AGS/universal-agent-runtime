@@ -1,213 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "submodule-entity-management-implementation",
+  "phaseId": "submodule-entity-management-implementation",
   "parentPhase": null,
-  "childPhases": [],
-  "childPointer": null,
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "backend": "openspec",
-  "changes_total": 11,
-  "changes_completed": 11,
-  "completed_changes": [
-    "seim-skill-system-pr-bundle",
-    "seim-surreal-live-spec-correction",
-    "seim-em-worktree-setup",
-    "seim-em-surreal-live-adapter-impl",
-    "seim-em-engine-devtools-tap",
-    "seim-em-explorer-preflight-research",
-    "seim-em-explorer-event-bus-registry",
-    "seim-em-explorer-panel-components",
-    "seim-em-explorer-production-treeshake-check",
-    "seim-em-extension-architecture-notes",
-    "seim-em-extension-scaffold"
-  ],
-  "active_change": null,
-  "active_change_state": null,
-  "entity_mgmt_worktree_local_commits": [
-    {
-      "sha": "9f314ba",
-      "subject": "feat(adapters): SurrealDB LIVE SELECT adapter (createSurrealLiveAdapter)",
-      "files": 3,
-      "insertions": 917,
-      "tests": "20/20 file; 104/104 full suite",
-      "pushed": true,
-      "change": "seim-em-surreal-live-adapter-impl"
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
     },
-    {
-      "sha": "b65e74f",
-      "subject": "feat(engine): devtools push stream + per-op tap",
-      "files": 4,
-      "insertions": 440,
-      "tests": "19/19 + 1 todo; 124/124 + 1 todo full suite",
-      "pushed": true,
-      "change": "seim-em-engine-devtools-tap"
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
     },
-    {
-      "sha": "bc51bfa",
-      "subject": "docs(explorer): preflight research notes \u2014 UI/UX routing discipline W4",
-      "files": 1,
-      "insertions": 373,
-      "tests": "docs-only \u2014 no test delta",
-      "pushed": true,
-      "change": "seim-em-explorer-preflight-research"
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
     },
-    {
-      "sha": "3af47b2",
-      "subject": "feat(devtools): DevtoolsEventBus ring-buffer + fan-out + burst coalescing + store registry (W5)",
-      "files": 4,
-      "insertions": 495,
-      "tests": "23 new; 147/147 full suite",
-      "pushed": true,
-      "change": "seim-em-explorer-event-bus-registry"
-    },
-    {
-      "sha": "3d2c147",
-      "subject": "feat(ui): Entity Explorer FAB + 4-tab panel (W6)",
-      "files": 14,
-      "insertions": 1493,
-      "tests": "159/159 full suite (15 new jsdom tests)",
-      "pushed": true,
-      "change": "seim-em-explorer-panel-components"
-    },
-    {
-      "sha": "ddb4c44",
-      "subject": "chore(build): add treeshake gate for devtools exports (W7a)",
-      "files": 1,
-      "insertions": 2,
-      "tests": "159/159 full suite",
-      "pushed": true,
-      "change": "seim-em-explorer-production-treeshake-check"
-    },
-    {
-      "sha": "5a1f388",
-      "subject": "docs(extension): Chrome MV3 architecture notes + window bridge stub (W7b)",
-      "files": 2,
-      "insertions": 212,
-      "tests": "159/159 full suite",
-      "pushed": true,
-      "change": "seim-em-extension-architecture-notes"
-    },
-    {
-      "sha": "f37faed",
-      "subject": "feat(extension): Chrome MV3 extension scaffold + bus.inject() (W8)",
-      "files": 11,
-      "insertions": 246,
-      "tests": "159/159 full suite",
-      "pushed": true,
-      "change": "seim-em-extension-scaffold"
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
     }
-  ],
-  "open_cross_repo_prs": [],
-  "merged_cross_repo_prs": [
-    {
-      "repo": "prometheus-entity-management",
-      "pr_url": "https://github.com/Prometheus-AGS/prometheus-entity-management/pull/1",
-      "pr_number": 1,
-      "branch": "feat/seim-entity-management-impl",
-      "commits": [
-        "9f314ba",
-        "b65e74f"
-      ],
-      "changes": [
-        "seim-em-surreal-live-adapter-impl",
-        "seim-em-engine-devtools-tap"
-      ],
-      "title": "feat(entity): SurrealDB live adapter + engine devtools tap (W3)",
-      "merged_at": "2026-05-28"
-    }
-  ],
-  "blocked_changes": [],
-  "deferred_tasks": [
-    {
-      "change": "seim-surreal-live-spec-correction",
-      "tasks": [
-        "\u00a72.4 \u2014 companion-skill correction"
-      ],
-      "reason": "Shipped entity-realtime-surreal-live/SKILL.md uses registerAdapter \u2014 the same incorrect API the spec was using. Requires follow-up skill-system PR."
-    },
-    {
-      "change": "seim-em-worktree-setup",
-      "tasks": [
-        "\u00a76.2 \u2014 orchestrator SKILL.md phase-sidecar doc"
-      ],
-      "reason": "worktrees.json convention introduced here is not yet documented in orchestrator SKILL.md. Filed for a future change."
-    }
-  ],
-  "lessons_learned": [
-    {
-      "id": "bash-cwd-tracking",
-      "summary": "Bash tool shell cwd does not always reset after a previous invocation's cd. For cross-worktree writes, every bash invocation that writes files MUST start with an explicit cd <abs-path>. Surfaced during seim-em-worktree-setup \u00a73; recovered cleanly via mv + rmdir."
-    },
-    {
-      "id": "bash-relative-path-failures-during-archive",
-      "summary": "During /opsx:archive of seim-em-surreal-live-adapter-impl, relative-path ls/mv commands ran from the entity-mgmt worktree (cwd from prior bash invocation) instead of UAR, producing false 'directory missing' errors. Lesson: archive operations should use full absolute paths."
-    },
-    {
-      "id": "rtl-portal-cleanup",
-      "summary": "React Testing Library auto-cleanup does not remove portal content from document.body when vitest globals:false is used. Fix: add explicit afterEach(() => { cleanup(); document.body.innerHTML = ''; }) in every jsdom test file that renders portals."
-    }
-  ],
-  "completed_cross_repo_commits": [
-    {
-      "repo": "prometheus-skill-system",
-      "change": "seim-skill-system-pr-bundle",
-      "branch": "feat/kbd-orchestrator-w1-w3-2026-05-27",
-      "local_sha": "0d62578ecbbf6950afb8a64da3a47203912ab556",
-      "merged_squash_sha": "eb3134bce2b1f1a956acfd6d264f2b7d8862974f",
-      "merged_at": "2026-05-27T20:22:44Z",
-      "pr_url": "https://github.com/Prometheus-AGS/prometheus-skill-system/pull/3",
-      "pr_number": 3
-    }
-  ],
-  "pending_cross_repo_commits": [
-    {
-      "repo": "prometheus-skill-system",
-      "change_id_proposed": "seim-skill-followup-surreal-live-skill-correction",
-      "scope": "rewrite entity-realtime-surreal-live/SKILL.md usage block per corrected spec",
-      "next_step": "scaffold in a future wave; not blocking current phase"
-    }
-  ],
-  "worktrees_recorded_in": ".kbd-orchestrator/phases/submodule-entity-management-implementation/worktrees.json",
-  "default_decisions": {
-    "spec_reconciliation": "delta change",
-    "worktree": "new under ~/.claude/worktrees/seim-entity-management",
-    "extension_scope": "scaffold-only this phase",
-    "treeshake_gate": "hard fail in prepublishOnly"
   },
-  "waves": {
-    "W0": [
-      "seim-skill-system-pr-bundle"
-    ],
-    "W1": [
-      "seim-surreal-live-spec-correction"
-    ],
-    "W2": [
-      "seim-em-worktree-setup"
-    ],
-    "W3": [
-      "seim-em-surreal-live-adapter-impl",
-      "seim-em-engine-devtools-tap"
-    ],
-    "W4": [
-      "seim-em-explorer-preflight-research"
-    ],
-    "W5": [
-      "seim-em-explorer-event-bus-registry"
-    ],
-    "W6": [
-      "seim-em-explorer-panel-components"
-    ],
-    "W7": [
-      "seim-em-explorer-production-treeshake-check",
-      "seim-em-extension-architecture-notes"
-    ],
-    "W8": [
-      "seim-em-extension-scaffold"
-    ]
-  },
-  "sourceTool": "claude-code",
-  "notes": "Phase complete. All 11 changes merged. Reflection written.",
-  "updatedAt": "2026-05-28T08:10:00Z"
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

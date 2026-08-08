@@ -1,0 +1,56 @@
+{
+  "artifact_type": "ui",
+  "constraints": [
+    {
+      "id": "c14d-command-ownership",
+      "description": "Application command/search primitives use Base UI and cmdk is absent without changing the stable command facade exports.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Source and dependency audits, focused unit tests, and deterministic browser selection"
+      }
+    },
+    {
+      "id": "c14d-third-party-ownership",
+      "description": "Every retained Radix dependency is attributed to a named third-party owner, with no direct application import or declaration.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "pnpm dependency graph and zero-match source/manifest audits"
+      }
+    },
+    {
+      "id": "c14d-product-regression-gates",
+      "description": "Compiler, lint, architecture, focused browser, full unit, build, and bundle gates pass for the changed surface.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded repository command evidence and strict OpenSpec validation"
+      }
+    },
+    {
+      "id": "c14d-scope-integrity",
+      "description": "The protected skill-system, Rust API, and staged license surfaces remain byte-for-byte equivalent to the recorded entry state.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Exact combined protected status and diff SHA-256 comparison"
+      }
+    }
+  ],
+  "global_rules": [
+    "Do not alter the protected skill-system, Rust API, or staged license surfaces.",
+    "Do not claim the unrelated no-backend E2E failures are command migration failures.",
+    "Do not stage or commit without operator authorization."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "Strict change and target-capability validation pass.",
+    "No critical artifact-only review finding remains."
+  ]
+}
+

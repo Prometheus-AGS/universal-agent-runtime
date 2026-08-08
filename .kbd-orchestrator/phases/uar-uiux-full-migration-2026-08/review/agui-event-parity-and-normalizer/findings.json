@@ -1,0 +1,84 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "line": 746,
+      "claim": "Terminal phase_timings are upserted via ingestRuntimeEvent({ type: \"run_updated\", ... }), but this diff never adds \"run_updated\" to EVENT_TYPE_MAP in runtime-ingest.ts, so the event is dropped by the unknown-type guard and criterion 2.2 (typed phase_timings on runtime runs via the entity graph) silently never lands.",
+      "evidence": "chat-stream-store.ts hunk: `if (adapted.phaseTimings) { ingestRuntimeEvent({ type: \"run_updated\", id: runId, run_id: runId, payload: { phase_timings: adapted.phaseTimings } }); }` \u2014 while the runtime-ingest.ts hunk shows `const EVENT_TYPE_MAP: Record<string, EntityType> = { run_started: \"RuntimeRun\", ...` with no added `run_updated` key (the map region is unchanged context, so any addition would appear as a `+` line). \"run_updated\" appears nowhere else in the diff. Acceptance criterion 2.2 requires the terminal timing projection to be upserted through the entity graph.",
+      "suggested_fix": "Add `run_updated: \"RuntimeRun\"` (or reuse an existing mapped type) to EVENT_TYPE_MAP in frontend/src/entities/runtime-ingest.ts and add a unit test asserting phase_timings arrive on the RuntimeRun entity."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "line": 745,
+      "claim": "The high-frequency exclusion for Runtime Console ingestion was removed, so every per-token message/reasoning delta now upserts a distinct RuntimeAgUiEvent entity, regressing the documented 'keep the AG-UI events panel readable' behavior and growing the entity graph unboundedly during streaming.",
+      "evidence": "Old code: `if (!isHighFrequencyAguiEvent(event)) { ingestAgUiEvent(...) }` with the comment 'High-frequency token deltas are excluded to keep the AG-UI events panel readable.' New code: `if (adapted.eventRow) ingestAgUiEvent(runId, adapted.eventRow);` with the replacement comment 'including high-frequency content rows.' The isHighFrequencyAguiEvent helper and its import were deleted.",
+      "suggested_fix": "Either bound RuntimeAgUiEvent accumulation (e.g., collapse delta rows per message id, or cap retained rows per run) or restore a projection-level filter if panel readability/graph size was a real requirement."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/index.css",
+      "line": 1,
+      "claim": "tailwind.config.ts (which defined the accordion-down/up, fade-in, slide-in-from-bottom, and shimmer keyframes/animations) is deleted and the replacement dependency tw-animate-css is never imported anywhere in the diff, so all animate-* utilities that relied on those definitions silently stop generating.",
+      "evidence": "frontend/tailwind.config.ts deleted (contained `keyframes`/`animation` blocks and `plugins: [tailwindcssAnimate]`); frontend/package.json removes tailwindcss-animate and adds `tw-animate-css: 1.4.0`; the only CSS import added is `@import \"./shared/theme/tokens.css\";` in index.css \u2014 no `@import \"tw-animate-css\"` appears in the diff, and tokens.css content is not shown.",
+      "suggested_fix": "Verify tokens.css (or another CSS-first entry) redefines the removed keyframes/animations and/or add `@import \"tw-animate-css\";` to index.css; otherwise animate-accordion-down/animate-fade-in/animate-shimmer consumers render without animation."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/protocols/agui-adapter.ts",
+      "claim": "The core deliverables of criteria 1.1/1.2 (the normalizer and extended adapter under frontend/src/platform/agui/) and the moved PGlite client/assets are nowhere in this diff, while the implementations they replace are deleted, so the packet provides no evidence the central criterion is implemented and the build depends on files whose existence cannot be verified.",
+      "evidence": "Deleted: frontend/src/protocols/agui-adapter.ts (224 lines), agui-schema.ts, their tests, frontend/src/lib/db.ts (300-line UarDb), frontend/src/lib/pglite-assets.ts. Dozens of hunks import from `@/platform/agui/agui-adapter`, `@/platform/agui/agui-normalizer`, `@/platform/entities`, `@/platform/pglite/client`, and scripts/check-frontend-boundaries.mjs now expects `frontend/src/platform/pglite/assets.ts` \u2014 but no `diff --git` entry creates any file under frontend/src/platform/. The file_tree does not expand frontend/src, so existence is unverifiable from the packet.",
+      "suggested_fix": "Include the new platform/* sources in the review packet (or cite the prior landed change that added them); absent that, criteria 1.1/1.2 are unverifiable and the deleted-file imports are a build risk."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "line": 791,
+      "claim": "The `agui.thinking.delta` case now requires `messageChunk?.kind === \"reasoning\"`, so if the normalizer distinguishes thinking chunks from reasoning chunks, thinking deltas are silently dropped from the UI.",
+      "evidence": "New switch: `case \"agui.thinking.delta\": case \"agui.reasoning.delta\": { if (adapted.messageChunk?.kind === \"reasoning\") { store.appendThinkingDelta(...) } }` \u2014 the two legacy event names previously each read their own `delta.text` unconditionally; the shared `kind === \"reasoning\"` guard makes the thinking path dependent on normalizer kind mapping, which is not in the diff.",
+      "suggested_fix": "Confirm the normalizer maps both THINKING_* and REASONING_* frames to kind \"reasoning\" (or accept both kinds here), and add a regression test for the thinking path."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/position.json",
+      "claim": "position.json and position-reminder.txt in the same commit contradict each other on the active phase's state \u2014 position.json shows uar-uiux-full-migration at 8/21 with C-01..C-05 COMPLETE and C-06 IN_PROGRESS, while position-reminder.txt says 'Step: 1 of 21' with NEXT WORK: C-01 \u2014 the exact projection-drift failure mode the reminder itself warns about.",
+      "evidence": "position.json: `\"id\": \"uar-uiux-full-migration-2026-08\" ... \"progress\": { \"done\": 8, \"total\": 21 }` with C-01 through C-05 `\"status\": \"COMPLETE\"` and C-06 `\"IN_PROGRESS\"`. position-reminder.txt: `Step: 1 of 21 ... NEXT WORK: C-01 amend-goal4-base-ui-divergence` and 'THIS PHASE IS 1/21'.",
+      "suggested_fix": "Regenerate both projections from canonical kbd state in one operation before dispatching C-01, and treat one file (or the runtime) as the single source the other is derived from."
+    },
+    {
+      "severity": "WARNING",
+      "file": "src/uar/api/sse.rs",
+      "line": 168,
+      "claim": "A TOOL_CALL_START synthesized from a ToolDelta fabricates `toolCallName` as `tool-{call_index}`, so a client attaching mid-tool-call sees an invented tool name rather than the real one, contradicting the absorbed 'tool-start semantics remain faithful' scope.",
+      "evidence": "`agui_spec_frames`: when the first frame for a tool_call_id is `NormalizedEvent::ToolDelta`, the synthesized payload uses `\"toolCallName\": tool_name.map_or_else(|| format!(\"tool-{call_index}\"), str::to_string)` with `tool_name = None` for ToolDelta. The change proposal states 'official tool-start semantics remain faithful.'",
+      "suggested_fix": "Carry the resolved tool name on ToolDelta events (or look it up from run state) so the synthesized START reports the real name; failing that, document the placeholder as a disclosed limitation."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".claude/settings.local.json",
+      "line": 637,
+      "claim": "Operator-local permission state is committed to the shared repo, including absolute machine paths (/Users/gqadonis/...), binary replacement + codesign of ~/.local/bin/prometheus, and a broad `Bash(gh secret *)` allowance \u2014 a local-only file leaking workstation specifics and secret-management permission into version control.",
+      "evidence": "Added entries include `Bash(gh secret *)`, `Bash(cp -f /Users/gqadonis/Projects/prometheus/prometheus-skill-pack/.../prometheus /Users/gqadonis/.local/bin/prometheus)`, `Bash(codesign --force --sign - /Users/gqadonis/.local/bin/prometheus)`, and numerous `/Users/gqadonis/...` paths in .claude/settings.local.json.",
+      "suggested_fix": "Revert the .claude/settings.local.json hunk from this change and add the file to .gitignore (or strip machine-absolute and secret-related entries before committing)."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/phases/uar-grade-a-upgrade-2026-07/progress.json",
+      "claim": "The kbd-runtime migration rewrites historically completed phases (e.g., uar-grade-a-upgrade 25/25 COMPLETE, uar-next-harness 16/24 with G1\u2013G3 closed) to 0/0 PENDING with empty changes lists, destroying the completion record and skewing the project-wide 34/72 roll-up in current-waypoint.json.",
+      "evidence": "uar-grade-a-upgrade-2026-07/progress.json: was `\"implementation\": { \"completed\": 25, \"total\": 25, \"status\": \"COMPLETE\" }`, now `\"completed\": 0, \"total\": 0, \"status\": \"PENDING\"` with `\"changes\": []` and `\"migrationStatus\": \"legacy-read-only\"`. Same pattern across ~20 legacy phase files.",
+      "suggested_fix": "Preserve completed/total counts (and a reference to the pre-migration file or archive) during projection migration so roll-ups and audits retain historical truth."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

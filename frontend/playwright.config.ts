@@ -6,6 +6,16 @@ const baseURL = `http://${e2eHost}:${e2ePort}`;
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: [
+    "a11y-responsive-certification.spec.ts",
+    "performance-budget.spec.ts",
+    "provider-route-real.spec.ts",
+    "knowledge-rag-real.spec.ts",
+  ],
+  reporter: [
+    ["line"],
+    ["json", { outputFile: "../openspec/changes/a11y-and-responsive-certification/receipts/default-playwright.json" }],
+  ],
   timeout: 30_000,
   retries: 1,
   // Cold Vite transforms of heavy admin chunks can exceed the 5s default
@@ -14,6 +24,7 @@ export default defineConfig({
   use: {
     baseURL,
     headless: true,
+    serviceWorkers: "block",
     screenshot: "only-on-failure",
   },
   webServer: {

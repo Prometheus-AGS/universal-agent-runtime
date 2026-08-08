@@ -4,6 +4,7 @@
 [submodule "crates/prometheus-skill-system"]
 	path = crates/prometheus-skill-system
 	url = git@github.com:Prometheus-AGS/prometheus-skill-system.git
+	branch = main
 [submodule "frontend/packages/prometheus-entity-management"]
 	path = frontend/packages/prometheus-entity-management
 	url = git@github.com:Prometheus-AGS/prometheus-entity-management.git

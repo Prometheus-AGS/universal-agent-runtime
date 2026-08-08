@@ -1,0 +1,73 @@
+{
+  "refinement_id": "1f31ded4-1dd2-41c0-8c87-33bf2c739c03",
+  "artifact_name": "ci-bundle-and-perf-budget",
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "started_at": "2026-08-08T04:16:16Z",
+  "updated_at": "2026-08-08T04:17:34Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate C-13 against its manifest, latency, seed-integrity, CI, and protected-scope requirements"
+  ],
+  "constraints": [
+    {
+      "id": "c13-initial-javascript-budget"
+    },
+    {
+      "id": "c13-browser-latency-budgets"
+    },
+    {
+      "id": "c13-production-seed-integrity"
+    },
+    {
+      "id": "c13-ci-and-scope-integrity"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-08T04:16:16Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "371189a6",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-08T04:17:34Z"
+    },
+    {
+      "checkpoint_id": "183b9e6f",
+      "phase": "plan",
+      "iteration": 1,
+      "timestamp": "2026-08-08T04:17:34Z"
+    },
+    {
+      "checkpoint_id": "b57c2b07",
+      "phase": "execute",
+      "iteration": 1,
+      "timestamp": "2026-08-08T04:17:34Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

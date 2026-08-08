@@ -1,4 +1,14 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "@chromatic-com/playwright";
+
+async function configureNoModel(page: import("@playwright/test").Page) {
+  await page.route("**/api/uar/resolve-model", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: false, error: "No model configured" }),
+    });
+  });
+}
 
 test.describe("Chat — No-model guard", () => {
   test("chat page loads without crashing", async ({ page }) => {
@@ -8,41 +18,16 @@ test.describe("Chat — No-model guard", () => {
     await expect(page).toHaveURL(/\/threads/);
   });
 
-  test("chat page shows either chat UI or no-model guard", async ({ page }) => {
+  test("chat page shows the no-model guard when resolution fails", async ({ page }) => {
+    await configureNoModel(page);
     await page.goto("/threads");
-
-    // Wait for the page to finish loading (model check completes)
-    await page.waitForLoadState("domcontentloaded");
-
-    // One of two valid states:
-    // 1. No-model guard is shown (no model configured)
-    // 2. Normal chat UI is shown (model is configured)
-    // Wait for either to appear — the app boots PGlite and the model check
-    // asynchronously after domcontentloaded.
-    const guardOrChat = page
-      .locator("text=No Model Configured, text=No LLM Provider Configured")
-      .or(page.locator("button:has-text('New conversation')"))
-      .or(page.locator("[aria-label='Send']"))
-      .or(page.locator("text=Select a thread"));
-
-    await expect(guardOrChat.first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("heading", { name: "No Model Configured" })).toBeVisible();
   });
 
   test("no-model guard CTA navigates to admin", async ({ page }) => {
+    await configureNoModel(page);
     await page.goto("/threads");
-    await page.waitForLoadState("domcontentloaded");
-
-    // If the no-model guard is visible, clicking CTA should navigate to admin
-    const guard = page.locator("text=No Model Configured").first();
-    const isGuardVisible = await guard.isVisible().catch(() => false);
-
-    if (isGuardVisible) {
-      const ctaButton = page.locator("button:has-text('Configure Provider')").first();
-      await ctaButton.click();
-      await expect(page).toHaveURL(/\/admin/);
-    } else {
-      // No guard shown — model is configured, test passes trivially
-      test.skip();
-    }
+    await page.getByRole("button", { name: "Configure Provider" }).click();
+    await expect(page).toHaveURL(/\/admin/);
   });
 });

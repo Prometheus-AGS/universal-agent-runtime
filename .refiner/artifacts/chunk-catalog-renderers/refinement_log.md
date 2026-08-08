@@ -1,0 +1,17 @@
+# Chunk Catalog Renderers Refinement Log
+
+## 2026-08-08 — Iteration 1
+
+- **Specify:** Bound validation to the exact portable `ContentBlock` contract, exhaustive rich `Chunk` projection, Assistant UI data parts, safe artifact/media/chart rendering, development-only A2UI tester discovery, and the Wave 4 aggregate gate.
+- **Plan:** Verify migration compatibility first, then discriminant exhaustiveness, renderer security and semantics, catalog accessibility/responsiveness, production navigation, focused gates, and the full test/build boundary.
+- **Execute:** Added the canonical protocol and legacy decoder, complete typed chunk maps and projections, data-part renderer catalog, closed Recharts model, safe MIME dispatch, catalog story, production/dev navigation inventories, and focused conformance/security tests. The first aggregate Storybook run exposed duplicate reasoning landmarks; generic surfaces now retain labels/live announcements without creating repeated landmark regions.
+- **Reflect — delta first:** The initial renderer pass did not account for repeated same-kind chunks creating duplicate named regions, and legacy rich rows initially double-projected tool/skill/RAG/context/error chunks. Both defects were observed by aggregate accessibility and focused migration checks, corrected, and covered. The final catalog stays flat, status-explicit, source-preserving, and usable without horizontal clipping at 320/768/1024/1440.
+- **Persist:** Frozen installs, typecheck, lint, architecture boundaries, Flat 2.0, 37 focused tests, 59 full files/295 tests, production build, lazy-engine graph audit, static bundle validation, Storybook axe, and responsive screenshots pass. Isolated adversarial review remains the next independent gate.
+
+## 2026-08-08 — Iteration 2
+
+- **Specify:** Reopened only the defects observed by the two-round isolated review: late A2UI results, terminal persistence, distinct thinking/reasoning projection, local persistence/transport error isolation, terminal tool results without output, and provider-authored DOM URLs.
+- **Plan:** Keep the portable union exact; persist rich A2UI state as fixed-MIME artifact envelopes plus the rich chunk column, isolate PGlite failures from upstream retry, and enforce URL allowlists at the renderer boundary.
+- **Execute:** A2UI input/display envelopes now retain request/result/status/profile/component metadata; thinking and reasoning retain distinct chunk kinds; terminal no-output tools persist an empty result; run-event persistence errors are logged and cannot enter the transport retry branch; citation/artifact/media URLs now pass through the shared safe URL gate.
+- **Reflect — delta first:** The initial refinement validated static catalog coverage but missed late lifecycle transitions and URL attributes outside markup sanitizers. Review round one found the late A2UI/terminal paths; the post-round-one URL audit found the executable URL boundary; review round two found the remaining persistence and thinking/reasoning inconsistencies. All were corrected within the exact existing contracts.
+- **Persist:** Typecheck, lint, boundaries, Flat 2.0, 42 focused tests, 59 full files/300 tests, production and manifest builds, lazy-engine graph audit, and static bundle validation pass after remediation. The round-two receipt remains `BLOCK` as an auditable pre-remediation report because the review skill caps retry at two rounds; verification records each resolved disposition and the residual same-family isolation limitation.

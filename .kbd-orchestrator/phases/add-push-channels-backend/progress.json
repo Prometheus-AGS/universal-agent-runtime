@@ -1,34 +1,45 @@
 {
-  "phase": "add-push-channels-backend",
-  "createdAt": "2026-05-27T12:15:00-05:00",
-  "updatedAt": "2026-05-27T12:25:00-05:00",
-  "sourceTool": "claude-code",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "reflection_path": ".kbd-orchestrator/phases/add-push-channels-backend/reflection.md",
-  "goal_achievement_percent": 100,
-  "scope_collapse_note": "phase rescoped from backend-push-channels to frontend-only bridge deletion after discovering Tools is static (registry built once at startup) and McpStatus polling is adequate. Zero Rust changes.",
-  "changes_total": 4,
-  "changes_completed": 4,
-  "changes_ordered": [
-    "add-tools-and-mcp-fetchers",
-    "migrate-tools-page-direct",
-    "migrate-mcp-health-page-direct",
-    "delete-use-graph-bridge-and-update-audit"
-  ],
-  "change_status": {
-    "add-tools-and-mcp-fetchers": "DONE",
-    "migrate-tools-page-direct": "DONE",
-    "migrate-mcp-health-page-direct": "DONE",
-    "delete-use-graph-bridge-and-update-audit": "DONE"
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
   },
-  "verification": {
-    "frontend_tests": "37/37 (40 − 3 bridge contract tests deleted with the bridge)",
-    "frontend_build": "clean",
-    "useGraphBridge_grep": "empty",
-    "tools_stores_retired": "tools-discovery-store + mcp-health-store + their admin hooks deleted",
-    "bridge_file_deleted": "frontend/src/lib/realtime/use-graph-bridge.ts removed; contract test removed"
-  }
+  "conflictCount": 0,
+  "phase": "add-push-channels-backend",
+  "phaseId": "add-push-channels-backend",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

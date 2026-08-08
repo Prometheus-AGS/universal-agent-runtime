@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { useEntityView, useGraphStore } from "@prometheus-ags/prometheus-entity-management";
-import type { FilterClause, ViewDescriptor } from "@prometheus-ags/prometheus-entity-management";
+import { useEntityView, useGraphStore } from "@/platform/entities";
+import type { FilterClause, ViewDescriptor } from "@/platform/entities";
 import type { ToolEntity } from "@/entities/types";
 
 const EMPTY_TOOLS: ToolEntity[] = [];

@@ -1,0 +1,38 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "openai/gpt-5",
+  "isolation_mode": "harness-native",
+  "producer_model": "openai/gpt-5",
+  "cross_model_check": "same-model-collision",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/package.json",
+      "claim": "The submitted change does not add Mermaid or Shiki to the frontend manifest or synchronize either maintained lockfile, so acceptance criterion 1.1 is not satisfied by the packet.",
+      "evidence": "Acceptance criterion 1.1 requires adding both dependencies in one frontend package transaction and synchronizing both maintained lockfiles, but the complete diff header list contains no change to frontend/package.json, frontend/pnpm-lock.yaml, or pnpm-lock.yaml.",
+      "suggested_fix": "Add mermaid and shiki to frontend/package.json in one package-manager transaction and include the resulting frontend and root pnpm lockfile updates in the change packet."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/shared/markdown/markdown-build-contract.test.ts",
+      "line": 8,
+      "claim": "The build-contract tests do not deterministically prove that the production entry excludes Mermaid and Shiki or that the emitted chunks are named vendor-mermaid and vendor-shiki, leaving acceptance criterion 3.4 unmet.",
+      "evidence": "The test only searches source strings for dynamic import spellings and explicitly checks that vite.config.ts has no vendor-mermaid/vendor-shiki grouping; it never builds or reads a Vite manifest, traverses the entry's static imports, or asserts emitted chunk names, despite criterion 3.4 requiring deterministic graph assertions and the spec requiring both named chunks outside the initial graph.",
+      "suggested_fix": "Add a deterministic production-manifest assertion that recursively traverses static imports from the initial entry, rejects Mermaid/Shiki modules in that closure, and verifies separate emitted vendor-mermaid and vendor-shiki dynamic chunks."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/shared/markdown/markdown-bubble.test.tsx",
+      "line": 118,
+      "claim": "The focused renderer suite does not exercise a lazy module-load rejection or verify the Suspense source fallback while an engine module is pending, so acceptance criterion 3.1's lazy-loading and module-failure evidence is incomplete.",
+      "evidence": "The suite tests streaming-to-finalized dispatch and a synchronous render throw from the mocked CodeBlock, but no test controls the vendor-shiki/vendor-mermaid import promise, asserts escaped source during a pending React.lazy import, or rejects that import; criterion 3.1 explicitly requires lazy-loading and source-fallback evidence, and the verification document separately claims module-failure coverage.",
+      "suggested_fix": "Add isolated tests with controllable dynamic-import promises that assert the escaped source Suspense fallback while pending and the per-block error-boundary fallback after module rejection, while sibling prose remains rendered."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

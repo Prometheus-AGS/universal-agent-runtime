@@ -1,0 +1,63 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/package.json",
+      "line": 84,
+      "claim": "The diff silently performs a Tailwind v3\u2192v4 migration (tailwindcss ^3.4.19 \u2192 4.3.3, removal of tailwindcss-animate/autoprefixer/postcss, addition of tw-animate-css) inside a change whose spec explicitly declares it is gate-only with no runtime or build behavior changes, and no accompanying CSS, tailwind config, or component migration appears anywhere in the diff.",
+      "evidence": "package.json hunks: `-    \"tailwindcss-animate\": \"^1.0.7\"`, `-    \"autoprefixer\": \"^10.4.24\"`, `-    \"postcss\": \"^8.5.6\"`, `-    \"tailwindcss\": \"^3.4.19\"` \u2192 `+    \"tailwindcss\": \"4.3.3\"`, `+    \"tw-animate-css\": \"1.4.0\"`. Acceptance criteria state: \"Runtime UX: No component or runtime behavior changes; this change only freezes the current visual-debt baseline\" and \"C-03 does not perform those edits.\" The 'What Changes' list contains no Tailwind migration item. The verification section admits \"production builds are intentionally deferred\", so the v3 PostCSS pipeline being removed with no v4 replacement wired is unverified.",
+      "suggested_fix": "Split the Tailwind 4 upgrade into its own change with the required CSS/config/source migration and a production-build verification, or revert these dependency hunks from the gate change."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/package.json",
+      "line": 92,
+      "claim": "@tailwindcss/vite is added as a devDependency but nothing in the diff registers the plugin in vite.config.ts (or any config), so after postcss/autoprefixer are removed there is no CSS processing pipeline left for Tailwind at all.",
+      "evidence": "package.json adds `\"@tailwindcss/vite\": \"4.3.3\"` and removes `\"postcss\": \"^8.5.6\"` and `\"autoprefixer\"`; the diff contains no hunk for frontend/vite.config.ts (present in the file tree) or any CSS entry file. Under Tailwind v4 the Vite plugin must be explicitly added to the Vite config; as shipped the dependency is dead and the build has no Tailwind processor.",
+      "suggested_fix": "Add `import tailwindcss from \"@tailwindcss/vite\"` to frontend/vite.config.ts plugins and migrate the CSS entry to `@import \"tailwindcss\";` (plus `@import \"tw-animate-css\";` to replace the removed tailwindcss-animate plugin), or revert."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/package.json",
+      "line": 22,
+      "claim": "Chromatic SaaS tooling (chromatic@18, @chromatic-com/playwright, three new upload scripts) is added with no corresponding acceptance-criteria or 'What Changes' entry, it drags a second full Storybook version (10.2.13 alongside the project's 10.5.0) plus @segment/analytics-node telemetry into the graph, and test:e2e:chromatic requires a CHROMATIC_PROJECT_TOKEN and uploads artifacts to an external service.",
+      "evidence": "Scripts hunk: `+\"chromatic\": \"chromatic --exit-zero-on-changes\"`, `+\"test:e2e:chromatic\": \"playwright test && chromatic --playwright --exit-zero-on-changes\"`. Lockfile snapshot: `'@chromatic-com/playwright@0.14.11...'` depends on `storybook: 10.2.13(...)` while the project uses `storybook@10.5.0`, and pulls `@segment/analytics-node@2.1.3`. None of the acceptance criteria sections 1\u20134 or the 'What Changes' bullets mention visual-regression SaaS tooling.",
+      "suggested_fix": "Remove the Chromatic scripts/dependencies from this change; if visual regression is wanted, propose it as a separate change with token handling and threat-model review of external artifact upload."
+    },
+    {
+      "severity": "WARNING",
+      "file": "pnpm-lock.yaml",
+      "line": 9,
+      "claim": "The new root-level `overrides: vite: 8.1.4` (duplicated in frontend/pnpm-lock.yaml) rewrites declared peer-dependency ranges for every workspace package to an exact vite version, masking any future incompatibility and pinning the entire monorepo (sdks, tools, workspace packages) to one vite build.",
+      "evidence": "Both lockfiles add `overrides: vite: 8.1.4`, and the packages sections show peer ranges rewritten from e.g. `vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0` to `vite: 8.1.4` for @joshwooding/vite-plugin-react-docgen-typescript, @storybook/builder-vite, @storybook/csf-plugin, @storybook/react-vite, @sveltejs/vite-plugin-svelte, @testing-library/svelte, vitefu, and vitest. This is far broader than the frontend style-gate scope.",
+      "suggested_fix": "Scope the vite pin to the frontend importer only (e.g., via `pnpm.overrides` keyed with a dependent path or by aligning the frontend's own vite specifier) instead of a global exact-version override."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/eslint.config.js",
+      "line": 34,
+      "claim": "Ignoring `test-fixtures/**` in the product lint config creates a vacuous-pass hazard for the negative-fixture proof required by criterion 3.1: if scripts/test-flat2-style-negative.mjs (not included in this diff) ever invokes the main config against those fixtures, ESLint reports them as ignored and exits cleanly without detecting the prohibited syntax.",
+      "evidence": "eslint.config.js hunk: `+        \"test-fixtures/**\"` with the comment 'never by the product lint traversal'. Criterion 3.1 requires 'negative fixtures proving prohibited style syntax and a PascalCase filename are rejected', but neither scripts/check-flat2-style.mjs, scripts/test-flat2-style-negative.mjs, frontend/eslint-flat2-baseline.config.js, nor the allowlist are part of this diff, so the claim that fixtures are still scanned unsuppressed cannot be verified from the packet.",
+      "suggested_fix": "Include the checker/negative-test scripts and baseline config in the reviewable diff, and have the negative harness assert non-zero diagnostics (e.g., run the baseline config explicitly or pass --no-ignore) rather than relying on exit codes that an ignored-file match would also produce."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/package.json",
+      "line": 23,
+      "claim": "Both chromatic scripts pass --exit-zero-on-changes, which makes the command succeed even when visual snapshots change, so any future CI wiring of these scripts would silently pass on regressions.",
+      "evidence": "`\"chromatic\": \"chromatic --exit-zero-on-changes\"` and `\"test:e2e:chromatic\": \"playwright test && chromatic --playwright --exit-zero-on-changes\"`.",
+      "suggested_fix": "If these scripts are ever used as a gate, drop --exit-zero-on-changes or pair it with explicit change-review enforcement."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

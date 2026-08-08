@@ -1,0 +1,28 @@
+[core]
+# This repo contains ~7,800 markdown files, the bulk of which are generated or
+# vendored rather than authored prose. Indexing all of them makes the Marksman
+# language server hang on "Loading folder documents" and Zed reports a timeout.
+#
+# Ignore globs use the same syntax as .gitignore.
+markdown.file_extensions = ["md", "markdown"]
+
+ignore = [
+  # Agent/tool scaffolding - SKILL.md and prompt libraries, not project docs
+  ".claude/**",
+  ".codex/**",
+  ".cursor/**",
+  ".opencode/**",
+  ".roo/**",
+  ".windsurf/**",
+  ".kbd-orchestrator/**",
+
+  # Skill-pack library: ~3,955 files, the single largest contributor
+  "crates/prometheus-skill-system/**",
+
+  # Third-party and build output
+  "vendor/**",
+  "**/vendor/**",
+  "**/node_modules/**",
+  "**/target/**",
+  "**/.git/**",
+]

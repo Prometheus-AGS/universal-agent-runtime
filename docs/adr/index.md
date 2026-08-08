@@ -7,7 +7,7 @@ This directory contains the architecture decision records (ADRs) for the Univers
 | ADR | Title | Date | Status |
 |---|---|---|---|
 | [ADR-0001](0001-record-architecture-decisions.md) | Record architecture decisions | 2026-07-14 | Accepted |
-| [ADR-0002](0002-dual-license-agpl-mit.md) | Dual-license the runtime under AGPL and the SDKs under MIT | 2026-07-13 | Accepted |
+| [ADR-0002](0002-dual-license-agpl-mit.md) | Dual-license the runtime under AGPL and the SDKs under MIT | 2026-07-13 | Superseded by [ADR-0017](0017-relicense-runtime-to-mit.md) |
 | [ADR-0003](0003-coverage-baseline-60-percent.md) | Set a 60% coverage baseline on day one | 2026-07-13 | Accepted |
 | [ADR-0004](0004-central-uar-error-enum.md) | Introduce a central `UarError` enum | 2026-07-13 | Accepted |
 | [ADR-0005](0005-config-rs-schemars-secrecy.md) | Migrate configuration to `config-rs` with `schemars` and `secrecy` | 2026-07-13 | Accepted |
@@ -22,6 +22,7 @@ This directory contains the architecture decision records (ADRs) for the Univers
 | [ADR-0014](0014-effective-policy-model-backfill.md) | Backfill the effective-run-policy model route from the registry default | 2026-07-24 | Accepted |
 | [ADR-0015](0015-embedded-conversation-policy-surface.md) | Embedded conversation-policy admin surface + effective-config resolver | 2026-07-24 | Accepted |
 | [ADR-0016](0016-seed-embedded-session-from-host-history.md) | Seed the embedded session from host-supplied conversation history | 2026-07-25 | Accepted |
+| [ADR-0017](0017-relicense-runtime-to-mit.md) | Relicense the runtime from AGPL-3.0-only to MIT | 2026-08-07 | Accepted |
 
 ## Process
 

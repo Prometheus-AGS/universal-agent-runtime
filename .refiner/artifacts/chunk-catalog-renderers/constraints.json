@@ -1,0 +1,55 @@
+{
+  "artifact_type": "ui",
+  "constraints": [
+    {
+      "id": "c12-exhaustive-protocol",
+      "description": "The exact portable ContentBlock union and complete rich Chunk union have deterministic, compile-time exhaustive projections, including compatibility for every historical persisted discriminant.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "TypeScript build plus portable, legacy-decoder, AG-UI, and catalog conformance tests"
+      }
+    },
+    {
+      "id": "c12-complete-accessible-catalog",
+      "description": "Every bubble-visible chunk has an Assistant UI renderer and catalog story; hidden kinds remain trace-only; disclosures, statuses, media fallbacks, dividers, focus targets, and responsive layouts remain accessible.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused renderer tests, Storybook axe, full catalog story, source audit, and 320/768/1024/1440 screenshots"
+      }
+    },
+    {
+      "id": "c12-artifact-trust-boundaries",
+      "description": "Untrusted Markdown, Mermaid, SVG, HTML, JSON, charts, A2UI, and raw payloads remain sanitized, sandboxed, text-only, schema-closed, policy-gated, or hidden from bubbles as specified.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Security fixtures, shared sanitizer suites, chart rejection tests, sandbox assertions, and emitted lazy-engine audit"
+      }
+    },
+    {
+      "id": "c12-wave4-gates",
+      "description": "C-12 passes compiler, lint, architecture, Flat 2.0, focused tests, frozen installs, full frontend tests, production build, emitted-asset checks, strict OpenSpec, and scoped diff integrity.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded C-12 and Wave 4 command receipts"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the chunk-catalog-renderers OpenSpec delta and the vendored UI authority as acceptance criteria.",
+    "Do not alter backend/provider contracts, .gitmodules, the Prometheus skill-system submodule, src/uar, or user-staged license deletions.",
+    "Divider is a role=separator spacer div, never an hr; production discovery excludes the A2UI tester."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "Wave 4 full frontend tests and production build pass.",
+    "No critical finding remains after isolated adversarial review."
+  ]
+}

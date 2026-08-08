@@ -1,0 +1,23 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/tailwind4-css-first-tokens/verify-token-foundation.sh",
+      "line": 199,
+      "claim": "The dangling-reference scan backing acceptance criterion 3.3 (\"no live frontend or workflow configuration references either deleted config file\") cannot see extensionless files or anything outside `frontend/` and `.github/workflows`, so `frontend/Dockerfile` (present in the file tree) and root-level scripts are never checked for references to the deleted `postcss.config.js`/`tailwind.config.ts`.",
+      "evidence": "The scan is `rg --hidden -n 'tailwind\\.config|postcss\\.config' .github/workflows frontend --glob '*.{css,html,js,json,mjs,cjs,ts,tsx,yaml,yml}' ...` \u2014 the extension glob cannot match `frontend/Dockerfile` (no extension, listed in the packet's file_tree), and paths are limited to `.github/workflows` and `frontend`, excluding `scripts/*.sh|mjs`, `Dockerfile`, `run-dev.sh`, `start.sh`, and `bootstrap.sh` which operate on the frontend build. If any of these copy or reference the deleted config files, the break passes the criterion's own assertion undetected.",
+      "suggested_fix": "Add a targeted check for the known extensionless build entry points, e.g. `rg -n 'tailwind\\.config|postcss\\.config' frontend/Dockerfile Dockerfile scripts/ --glob '!**/node_modules/**'`, or drop the extension glob for the `frontend` scan and rely on the directory exclusions already present."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

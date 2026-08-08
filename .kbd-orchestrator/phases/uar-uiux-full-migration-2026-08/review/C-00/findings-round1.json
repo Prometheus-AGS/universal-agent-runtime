@@ -1,0 +1,95 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/package.json",
+      "line": 90,
+      "claim": "The diff implements none of the base-ui-foundation acceptance criteria: no @base-ui/react or @floating-ui/react dependency is added, no @radix-ui/* removal is shown, components.json is untouched, and no regenerated frontend/src/components/ui/* files appear anywhere in the diff.",
+      "evidence": "Acceptance criteria require 'frontend/package.json contains zero @radix-ui/* entries', 'contains @base-ui/react and @floating-ui/react', 'components.json has \"style\": \"base-vega\"', and 'ui/ contains Base UI\u2013backed component implementations'. The only frontend/package.json hunk adds '@chromatic-com/playwright' and 'chromatic' devDependencies plus chromatic scripts \u2014 nothing else in the diff touches dependencies, components.json, or any ui/*.tsx file. The diff as presented cannot satisfy or even be verified against the stated criteria.",
+      "suggested_fix": "Either include the actual base-ui swap changes in this packet, or re-scope the review target; do not certify base-ui-foundation against a diff that contains only Chromatic wiring and orchestrator bookkeeping."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "openspec/changes/base-ui-foundation/proposal.md",
+      "line": 5,
+      "claim": "The added 'Archive reconciliation' note explicitly waives the acceptance criterion that frontend/package.json contain zero @radix-ui/* entries, admitting Radix declarations 'reappeared as unused manifest entries' and deferring their removal to a different change (C-14c).",
+      "evidence": "New blockquote: 'Radix declarations later reappeared as unused manifest entries; their transitive audit and removal are owned by retire-admin-and-legacy-deps (C-14c), so they are not asserted by this change's durable capability specification.' This directly contradicts the acceptance criterion 'frontend/package.json contains zero @radix-ui/* entries (except @radix-ui/react-icons which is deferred)' and Task 2 'Remove Radix packages ... all 26 primitives'. Editing the proposal to un-assert a criterion is not the same as satisfying it.",
+      "suggested_fix": "Either remove the reintroduced @radix-ui/* manifest entries in this change as the criterion demands, or formally amend the acceptance criteria through the change-control process rather than annotating the proposal."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/position-reminder.txt",
+      "line": 7,
+      "claim": "The base-ui-foundation change still has zero openspec spec deltas and this diff adds none, so the change cannot pass `openspec archive` validation despite the diff's archive-reconciliation framing.",
+      "evidence": "The new position-reminder text states: 'BLOCKER BEFORE C-00: openspec/changes/base-ui-foundation/ has ZERO spec deltas (only proposal.md + tasks.md). `openspec archive base-ui-foundation` WILL FAIL validation. Write its delta under specs/ first.' The diff modifies only proposal.md (adding a Capabilities header) and adds no files under openspec/changes/base-ui-foundation/specs/. The acknowledged blocker remains unresolved in this change set.",
+      "suggested_fix": "Add the spec delta file(s) under openspec/changes/base-ui-foundation/specs/frontend-component-primitives/ before any archive attempt."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/package.json",
+      "line": 22,
+      "claim": "All three new chromatic scripts use --exit-zero-on-changes, so visual regressions detected during a UI/UX migration phase can never fail the pipeline.",
+      "evidence": "\"chromatic\": \"chromatic --exit-zero-on-changes\", \"chromatic:playwright\": \"chromatic --playwright --exit-zero-on-changes\", \"test:e2e:chromatic\": \"playwright test && chromatic --playwright --exit-zero-on-changes\". With this flag the CLI exits 0 whenever diffs are found; the gate only fails on infrastructure errors, masking exactly the visual regressions this phase exists to catch.",
+      "suggested_fix": "Drop --exit-zero-on-changes from the CI-facing script (keep it, if desired, only in a local convenience script), or pair it with --auto-accept-changes on a protected branch policy."
+    },
+    {
+      "severity": "WARNING",
+      "file": "static/index.html",
+      "line": 23,
+      "claim": "index.html now references newly hashed bundles (index-BCK5r21d.js, vendor-assistant-qgxGfEEW.js, vendor-react-BkEnn25x.js, vendor-query-D6lCwDEj.js) but no corresponding static/assets files appear in the diff, risking 404s and a non-booting embedded UI if the assets were not committed.",
+      "evidence": "The static/index.html hunk swaps four module/modulepreload hashes, yet the diff contains zero files under static/assets/. Old hashed files are typically also deleted by the build, so stale references in either direction break loading. Asset presence cannot be verified from the packet.",
+      "suggested_fix": "Verify the new hashed assets are present and committed under static/assets/ (and old ones removed) in the same commit as this index.html change."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/e2e/chat-basic.spec.ts",
+      "line": 1,
+      "claim": "Every e2e spec now imports test/expect from @chromatic-com/playwright while playwright.config.ts, playwright.real-server.config.ts, and the existing 'playwright test' scripts are unchanged, silently rerouting all e2e runs through Chromatic's auto-fixture archiving layer without config review.",
+      "evidence": "14 spec files swap the import (e.g., chat-basic.spec.ts line 1), but the diff contains no change to playwright.config.ts, playwright.real-server.config.ts, or the test:e2e:* scripts that invoke plain 'playwright test'. The wrapper's snapshot/archive fixtures now run on every local and CI e2e invocation, including the real-server suites (knowledge-rag-real.spec.ts, provider-route-real.spec.ts) that were never intended as visual tests.",
+      "suggested_fix": "Either limit the chromatic import to specs intended for visual archiving, or update the playwright configs/scripts so archiving behavior is explicit and consistent across local, CI, and real-server runs."
+    },
+    {
+      "severity": "WARNING",
+      "file": "pnpm-lock.yaml",
+      "line": 9964,
+      "claim": "The root lockfile contains unrelated peer-resolution churn for @typescript-eslint (parser re-resolved from eslint@9.39.4/typescript@6.0.3 to eslint@10.7.0/typescript@5.9.3), indicating lockfile regeneration drift beyond the Chromatic additions.",
+      "evidence": "Root pnpm-lock.yaml hunks rewrite '@typescript-eslint/eslint-plugin@8.64.0(...eslint@9.39.4...typescript@6.0.3)' to '(...eslint@10.7.0...typescript@5.9.3)' with no corresponding package.json change in the diff. A position-reminder from the prior phase already documents a stale-lockfile incident in this repo; silently changing which TypeScript major the lint toolchain peers against can flip lint/typecheck results for the whole workspace.",
+      "suggested_fix": "Regenerate the lockfile from a clean install and audit why the typescript-eslint peer context moved; pin typescript if 6.x was intended."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/pnpm-lock.yaml",
+      "line": 205,
+      "claim": "The repo maintains two lockfiles (root pnpm-lock.yaml and frontend/pnpm-lock.yaml) that now encode divergent dependency contexts for the same frontend package (prettier@2.8.8 vs prettier@3.9.5 peer contexts for identical new Chromatic entries), so installs differ depending on which lockfile is used.",
+      "evidence": "frontend/pnpm-lock.yaml resolves '@chromatic-com/playwright@0.14.11(...prettier@2.8.8...)' while root pnpm-lock.yaml resolves the same package as '(...prettier@3.9.5...)'. Both were modified in this diff for the same dependency additions.",
+      "suggested_fix": "Establish a single source-of-truth lockfile for the frontend workspace, or add a CI check that both lockfiles are regenerated from the same manifest state."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".claude/settings.local.json",
+      "line": 637,
+      "claim": "Machine-local Claude settings containing user-specific absolute paths and ad-hoc one-off command permissions are committed to the repository.",
+      "evidence": "Added entries include 'Bash(/Users/gqadonis/.claude/skills/kbd-new-phase/kbd-new-phase.sh ...)', 'Bash(shasum -a 256 /Users/gqadonis/Projects/hybrid-mobile-architecture-src/docs/knowme-ui-ux-standard.md)', an in-place file mutation 'Bash(perl -pi -e s/.../ frontend/src/pages/about-page.tsx)', and /tmp copy commands. settings.local.json is by convention user-local and non-portable; committing it leaks local filesystem layout and grants stale, meaningless permissions to other checkouts.",
+      "suggested_fix": "Revert this hunk and add .claude/settings.local.json to .gitignore; promote genuinely shared permissions into .claude/settings.json."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/model-preflight.json",
+      "line": 3,
+      "claim": "Preflight reports status 'ok' while providers_detected and classes_available are now empty arrays and the gateway moved to a different localhost port, masking a degraded routing configuration.",
+      "evidence": "Hunk changes gateway to http://localhost:4000/v1, judge model to 'k3', critic to 'MiniMax-M3', and sets 'providers_detected': [] and 'classes_available': [] while retaining '\"status\": \"ok\"'. A preflight whose purpose is to verify model/provider availability reporting ok with zero detected providers is a silent-failure pattern for any step that consumes it.",
+      "suggested_fix": "Treat empty providers_detected/classes_available as a non-ok status in whatever produces model-preflight.json, and regenerate the file after the gateway move is verified."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

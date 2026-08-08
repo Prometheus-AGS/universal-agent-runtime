@@ -15,6 +15,10 @@ const expectedRules = [
   "hook-service-import",
   "store-upward-import",
   "service-upward-import",
+  "platform-upward-feature-import",
+  "shared-upward-feature-import",
+  "feature-upward-app-import",
+  "feature-cross-implementation-import",
 ];
 
 if (result.status === 0) throw new Error("Negative boundary fixture unexpectedly passed");

@@ -11,11 +11,11 @@ Thank you for contributing to the Universal Agent Runtime.
 
 ## License
 
-- Runtime: AGPL-3.0-only + commercial dual-license
+- Runtime: MIT
 - SDKs (Rust, Python, TypeScript): MIT
 - Documentation: CC-BY-4.0
 
-See [CONTRIBUTING.md](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/CONTRIBUTING.md) and the [license ADR](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/adr/0002-dual-license-agpl-mit.md) for details.
+See [CONTRIBUTING.md](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/CONTRIBUTING.md) and the [license ADR](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/adr/0017-relicense-runtime-to-mit.md) for details.
 
 ## Commit conventions
 

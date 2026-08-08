@@ -1,24 +1,1244 @@
 {
   "schemaVersion": "1",
-  "updatedAt": "2026-07-16T01:49:33Z",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
+  "updatedAt": "2026-08-08T09:02:54.826920Z",
   "cursor": [
-    "uar-hybrid-app-architecture"
+    "uar-uiux-full-migration-2026-08",
+    "C-00: archive the 4 complete UI changes; base-ui-foundation blocker resolved and strictly validated"
   ],
   "root": {
     "type": "phase",
-    "id": "uar-hybrid-app-architecture",
-    "status": "planned",
+    "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+    "status": "running",
     "progress": {
-      "done": 0,
-      "total": 12
+      "done": 47,
+      "total": 72
     },
-    "children": [],
-    "annotations": [
+    "children": [
       {
-        "source": "evolver",
-        "ref": ".evolver/",
-        "summary": "evolutions: uar-evolution-2026-02,uar-production-readiness-2026-04"
+        "type": "phase",
+        "id": "add-push-channels-backend",
+        "canonicalId": "add-push-channels-backend",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "browser-smoke-providers-and-agents",
+        "canonicalId": "browser-smoke-providers-and-agents",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "ci-frontend-tests",
+        "canonicalId": "ci-frontend-tests",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "direct-entity-migration-agents",
+        "canonicalId": "direct-entity-migration-agents",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "direct-entity-migration-models",
+        "canonicalId": "direct-entity-migration-models",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "direct-entity-migration-providers",
+        "canonicalId": "direct-entity-migration-providers",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "emit-runtime-step-events",
+        "canonicalId": "emit-runtime-step-events",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "eval-harness-hardening",
+        "canonicalId": "eval-harness-hardening",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "fix-skills-page-utils-test-fixtures",
+        "canonicalId": "fix-skills-page-utils-test-fixtures",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "full-frontend-entity-mgmt-migration",
+        "canonicalId": "full-frontend-entity-mgmt-migration",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "gate-activation-and-security-cleanup",
+        "canonicalId": "gate-activation-and-security-cleanup",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "knowledge-page-aesthetic-pass",
+        "canonicalId": "knowledge-page-aesthetic-pass",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+        "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 14
+        },
+        "children": [
+          {
+            "type": "change",
+            "id": "fix-user-isolation-sessions-memory-kb",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "harden-jwt-defaults",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "fix-skills-scope-semantics",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "ship-skill-pack-install-path",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "emit-rag-retrieval-events",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "wire-orchestrator-delegation",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "complete-agui-event-parity",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "resolve-sdk-distribution",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "rewrite-readme-and-docs",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "screen-by-screen-validation",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "certify-operational-resilience",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "produce-supply-chain-artifacts",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "certify-release-candidate",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "release-1-0-0",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "prometheus-package-integration",
+        "canonicalId": "prometheus-package-integration",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "readme-architecture-diagram",
+        "canonicalId": "readme-architecture-diagram",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "runtime-console-ux",
+        "canonicalId": "runtime-console-ux",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "runtime-console-validation-hardening",
+        "canonicalId": "runtime-console-validation-hardening",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 7
+        },
+        "children": [
+          {
+            "type": "change",
+            "id": "frontend-lint-zero-warning",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "runtime-console-live-visual-tests",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "runtime-event-replay-entity-sync-tests",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "surreal-memory-workflow-mirror-tests",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "openspec-global-validation-cleanup",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "moonshot-provider-status",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "runtime-console-archive-readiness",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "runtime-image-polyglot-toolchain-completion",
+        "canonicalId": "runtime-image-polyglot-toolchain-completion",
+        "status": "COMPLETE",
+        "progress": {
+          "done": 6,
+          "total": 6
+        },
+        "children": [
+          {
+            "type": "change",
+            "id": "pin-rust-nightly-and-bump-go",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "add-missing-wasm-toolchains-to-image",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "dockerfile-multi-arch-toolchain",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "dockerfile-test-rebase-to-polyglot",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "ci-publish-uar-toolchain-image",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "plugin-loader-strategy-enum",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "settings-store-retirement",
+        "canonicalId": "settings-store-retirement",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "submodule-entity-management-implementation",
+        "canonicalId": "submodule-entity-management-implementation",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "submodule-skills-and-entity-devtools-expansion",
+        "canonicalId": "submodule-skills-and-entity-devtools-expansion",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "thread-topic-chat-sidebar",
+        "canonicalId": "thread-topic-chat-sidebar",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "tool-mcp-status-push-channels",
+        "canonicalId": "tool-mcp-status-push-channels",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-carryover-audit",
+        "canonicalId": "uar-carryover-audit",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-dependabot-remediation-2026-07",
+        "canonicalId": "uar-dependabot-remediation-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-eval-harness",
+        "canonicalId": "uar-eval-harness",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-final-production-hardening-2026-07",
+        "canonicalId": "uar-final-production-hardening-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 20,
+          "total": 24
+        },
+        "children": [
+          {
+            "type": "change",
+            "id": "fix-embeddings-fastembed",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "green-main-ci",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "re-remediate-stale-rustsec",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "security-policy-and-community-files",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "runtime-console-wire-or-remove",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "fix-config-passthroughs",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "docs-site-github-pages",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "establish-react-product-contract",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "certify-provider-model-settings-flow",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "certify-knowledge-rag-flow",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "certify-agui-chat-flow",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "certify-a2ui-react-flow",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "certify-runtime-console-governance",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "certify-remaining-admin-surfaces",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "close-react-boundary-gate",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "publish-capability-support-matrix",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "modularize-release-capabilities",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "make-build-offline-reproducible",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "reconcile-product-documentation",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "align-release-workflow-platforms",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "certify-operational-resilience",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "produce-supply-chain-artifacts",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "certify-release-candidate",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "release-1-0-0",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-frontend-typecheck-cleanup",
+        "canonicalId": "uar-frontend-typecheck-cleanup",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-grade-a-upgrade-2026-07",
+        "canonicalId": "uar-grade-a-upgrade-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-harness-parity",
+        "canonicalId": "uar-harness-parity",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-hybrid-app-architecture",
+        "canonicalId": "uar-hybrid-app-architecture",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-kreuzberg-v4-migration",
+        "canonicalId": "uar-kreuzberg-v4-migration",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-next-harness",
+        "canonicalId": "uar-next-harness",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-post-dependabot-followup-2026-07",
+        "canonicalId": "uar-post-dependabot-followup-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-production-readiness-gaps",
+        "canonicalId": "uar-production-readiness-gaps",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-production-ready-uiux-2026-07",
+        "canonicalId": "uar-production-ready-uiux-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-safety-and-evals",
+        "canonicalId": "uar-safety-and-evals",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-security-audit-alerts-gate-2026-07",
+        "canonicalId": "uar-security-audit-alerts-gate-2026-07",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-security-deps-and-hygiene",
+        "canonicalId": "uar-security-deps-and-hygiene",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-spec-v2-and-polish",
+        "canonicalId": "uar-spec-v2-and-polish",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-uiux-full-migration-2026-08",
+        "canonicalId": "uar-uiux-full-migration-2026-08",
+        "status": "COMPLETE",
+        "progress": {
+          "done": 21,
+          "total": 21
+        },
+        "children": [
+          {
+            "type": "change",
+            "id": "C-00",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-01",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-02",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-03",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-03b",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-03c",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-04",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-05",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-06",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-07",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-08",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-09",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-10",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-11",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-12",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-13",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-14a",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-14b",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-14c",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-14d",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "C-15",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          }
+        ],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-uiux-refinement-2026-08",
+        "canonicalId": "uar-uiux-refinement-2026-08",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-wisc-cli",
+        "canonicalId": "uar-wisc-cli",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "ui-base-ui-migration",
+        "canonicalId": "ui-base-ui-migration",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "use-optimistic-patch-helper-extraction",
+        "canonicalId": "use-optimistic-patch-helper-extraction",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "vitest-contract-test-suite",
+        "canonicalId": "vitest-contract-test-suite",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "wire-dead-metric-recorders",
+        "canonicalId": "wire-dead-metric-recorders",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 0
+        },
+        "children": [],
+        "annotations": []
       }
-    ]
+    ],
+    "annotations": []
   }
 }

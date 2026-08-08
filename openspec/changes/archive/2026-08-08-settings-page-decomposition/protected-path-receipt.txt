@@ -1,0 +1,20 @@
+C-14b protected-path closeout receipt
+Run date: 2026-08-08
+
+Command: git diff --cached --name-status -- LICENSE-COMMERCIAL.md sdks/rust/LICENSE-AGPL
+D\tLICENSE-COMMERCIAL.md
+D\tsdks/rust/LICENSE-AGPL
+
+Command: git status --short -- .gitmodules crates/prometheus-skill-system src/uar LICENSE-COMMERCIAL.md sdks/rust/LICENSE-AGPL
+ M .gitmodules
+D  LICENSE-COMMERCIAL.md
+ M crates/prometheus-skill-system
+D  sdks/rust/LICENSE-AGPL
+ M src/uar/api/adapters.rs
+ M src/uar/api/openapi.rs
+ M src/uar/api/routes.rs
+ M src/uar/api/sse.rs
+
+The status matches the C-14b entry baseline inherited from C-14a. The entry baseline did
+not retain hashes or a standalone receipt, so this comparison is a closeout record rather
+than independently reproducible proof. No staging or commit occurred during C-14b.

@@ -1,0 +1,55 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "scripts/check-flat2-style.mjs",
+      "line": 14,
+      "claim": "The gate's default scan root is frontend/src only, so a prohibited syntax or non-kebab filename finding added to any frontend TypeScript/TSX file outside src/ (e.g., frontend/e2e/, frontend/playwright.config.ts, or a new top-level folder) never reaches the failing comparison, contradicting the spec scenario that the gate fails for a finding added to 'any frontend TypeScript or TSX file'.",
+      "evidence": "check-flat2-style.mjs: `const scanRoot = fixtureIndex >= 0 ? resolve(root, process.argv[fixtureIndex + 1]) : resolve(frontend, \"src\");` and `const target = relative(frontend, scanRoot)` \u2014 the CI harness (scripts/ci-grep-gates.sh) invokes `node scripts/check-flat2-style.mjs` with no --fixture-dir, so only src/ is scanned. spec.md scenario: 'WHEN a contributor adds a prohibited Flat 2.0 syntax finding to any frontend TypeScript or TSX file THEN the style gate fails'.",
+      "suggested_fix": "Either scan the whole frontend tree (adding targeted ignores for packages/, storybook-static/, test-fixtures/, e2e selector strings if needed) or narrow the spec scenario wording to 'frontend source under src/' so the documented contract matches the enforced scope."
+    },
+    {
+      "severity": "WARNING",
+      "file": "scripts/check-flat2-style.mjs",
+      "line": 66,
+      "claim": "ESLint fatal diagnostics (parse errors, ruleId === null) are silently dropped: exit status 1 is accepted as success, the message loop only records the two gated rule IDs, and stderr is never surfaced on the status-1 path, so a new unparseable file produces zero findings and the gate reports pass.",
+      "evidence": "`if (result.status !== 0 && result.status !== 1) { ... process.exit(...) }` treats 1 as clean; the loop only pushes entries for `message.ruleId === \"unicorn/filename-case\"` / `\"no-restricted-syntax\"`. A fatal parsing error message has `ruleId: null, fatal: true` and is skipped; stderr is only written when status > 1 or JSON.parse fails.",
+      "suggested_fix": "Fail the checker when any message has `fatal: true` or a ruleId outside the two gated IDs (e.g., print the offending file/message and exit 2), so non-gate ESLint failures cannot masquerade as a passing baseline."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/eslint-flat2-contract.js",
+      "line": 5,
+      "claim": "The prohibited-syntax selectors only match plain Literal nodes and literal JSX attribute values, so common idioms \u2014 template-literal class strings (className={`border shadow-md`}) and expression attribute values (variant={\"outline\"}) \u2014 bypass both the normal lint rule and the unsuppressed baseline gate, letting new Flat 2.0 violations accumulate undetected.",
+      "evidence": "Selector 1: `Literal[value=/\\b(border|...)\\b/]` matches only Literal AST nodes, not TemplateLiteral quasis or object-style clsx keys. Selector 2: `JSXAttribute[name.name='variant'][value.value='outline']` requires the attribute value node itself to carry `.value === 'outline'`; for `variant={\"outline\"}` the value is a JSXExpressionContainer with no `.value`, so it never matches. The fixture (test-fixtures/flat2-style/PascalFixture.tsx) only exercises the literal forms, so the negative proof does not cover these shapes.",
+      "suggested_fix": "Extend the contract with selectors for TemplateLiteral quasi values containing prohibited utilities and for `JSXAttribute[name.name='variant'] > JSXExpressionContainer > Literal[value='outline']`, and add fixture cases proving those forms are rejected."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/flat2-style-gate/specs/frontend-design-system/spec.md",
+      "line": 0,
+      "claim": "The requirement mandates kebab-case 'filenames and directories', but the implemented `unicorn/filename-case` rule inspects only the file basename \u2014 a new PascalCase directory containing kebab-case files (e.g., src/NewModule/widget.tsx) passes both normal lint and the baseline gate with no finding.",
+      "evidence": "spec.md: 'The frontend SHALL configure `unicorn/filename-case` to require kebab-case filenames and directories for TypeScript and TSX source'. eslint-flat2-contract.js: `flat2FilenameCaseRule = [\"error\", { case: \"kebabCase\" }]` \u2014 eslint-plugin-unicorn's filename-case has no directory/path-segment enforcement (design.md itself only discusses rejecting 'Unicorn's path-segment ignore option', which concerns exempting segments, not checking them). No other mechanism in the diff checks directory names.",
+      "suggested_fix": "Either add directory-name enforcement to the checker (e.g., a path-segment kebab-case validation over scanned file paths in check-flat2-style.mjs) or amend the requirement text to cover filenames only."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "scripts/check-flat2-style.mjs",
+      "line": 10,
+      "claim": "Passing `--allowlist` or `--fixture-dir` as the final argument crashes with an opaque TypeError because process.argv[index + 1] is undefined and is fed straight into resolve().",
+      "evidence": "`const allowlistPath = allowlistIndex >= 0 ? resolve(root, process.argv[allowlistIndex + 1]) : ...` and the identical `fixtureIndex` pattern; resolve(root, undefined) throws 'The \"paths[1]\" argument must be of type string. Received undefined'.",
+      "suggested_fix": "Validate that the token following each flag exists and exit with a clear usage error when it does not."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

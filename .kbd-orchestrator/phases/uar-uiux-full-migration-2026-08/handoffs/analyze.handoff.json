@@ -1,0 +1,12 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-08-07T09:20:29Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "12 candidates written, schema-validated (0 errors), addressable as cand-001..cand-012. ADOPT: Base UI 1.6.0 (cand-001), Tailwind 4.3.3 + @tailwindcss/vite (cand-002), the 8 absent markdown packages (cand-003/004/005), PGlite schema-only extension (cand-006), PEM at workspace:* (cand-007), assistant-ui 0.14.26 held (cand-009). REJECT: TanStack Query (cand-008, 1 dead call site). BUILD: Flat 2.0 ESLint gate + run/run_event migrations. CRITICAL CONTEXT FOR PLAN — (1) Base UI is an OPERATOR OVERRIDE of KnowMe standard §6.1/§6.3, which name Shadcn as required owner; recorded as a divergence in the vendored standard header, and Goal 4 must be amended. (2) Tailwind migration is NOT small: 237 hsl(var()) occurrences across 12 files, ~175 of them inside the 13 admin pages, so those pages are a per-page REWRITE, not a port — goal 11 names src/admin/ a removal target. (3) rehype-raw and rehype-sanitize MUST land in the same change (A-3 trust boundary: the target deliberately enables raw HTML from model output; there is no vulnerability today only because rehype-raw is absent). WARNINGS: cand-010 (timeline virtualization), cand-011 (command palette/cmdk, Radix-transitive), and cand-012 (recharts) are verdict=reference, NOT decisions — plan must resolve them before building the trace timeline or shell; the 27 @radix-ui declarations cannot be pruned without a transitive-dependency check (cmdk, assistant-ui, storybook depend on Radix). UNRESOLVED: OQ9 — platform/ and shared/ are 0 files each, so two of four target layers are absent outright; whether services/+protocols/+lib/ already discharge platform/'s function is code-tracing work and should be plan's first task. OQ-PEM-API — verify createPGlitePersistenceAdapter/startLocalFirstGraph/registerEntityFromSql exist in the vendored PEM before depending on them. No cost or duration estimate exists for any workstream.",
+  "skipped": false,
+  "skipReason": null
+}

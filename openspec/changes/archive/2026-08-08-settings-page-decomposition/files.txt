@@ -1,0 +1,38 @@
+# C-14b scoped file manifest
+
+These are the source, test, validation, and evidence files owned by `settings-page-decomposition`. Generated production output was rebuilt for validation but remains cumulative phase output rather than C-14b source ownership.
+
+- frontend/e2e/settings-decomposition.spec.ts
+- frontend/package.json
+- frontend/src/features/settings/model/settings-form-cache.ts
+- frontend/src/features/settings/model/use-settings.test.tsx
+- frontend/src/features/settings/model/use-settings.ts
+- frontend/src/features/settings/ui/generic-schema-panel.tsx
+- frontend/src/features/settings/ui/panels/ai-settings-panels.tsx
+- frontend/src/features/settings/ui/panels/caching-user-settings-panels.tsx
+- frontend/src/features/settings/ui/panels/file-processing-settings-panels.tsx
+- frontend/src/features/settings/ui/panels/governance-settings-panels.tsx
+- frontend/src/features/settings/ui/panels/memory-settings-panel.tsx
+- frontend/src/features/settings/ui/panels/resilience-preview.ts
+- frontend/src/features/settings/ui/panels/resilience-settings-panel.tsx
+- frontend/src/features/settings/ui/settings-navigation.tsx
+- frontend/src/features/settings/ui/settings-page.test.tsx
+- frontend/src/features/settings/ui/settings-page.tsx
+- frontend/src/features/settings/ui/settings-panel-registry.tsx
+- frontend/src/features/settings/ui/settings-primitives.tsx
+- frontend/src/features/settings/ui/settings-value-utils.ts
+- openspec/changes/settings-page-decomposition/.openspec.yaml
+- openspec/changes/settings-page-decomposition/bundle-budget.json
+- openspec/changes/settings-page-decomposition/design.md
+- openspec/changes/settings-page-decomposition/files.txt
+- openspec/changes/settings-page-decomposition/migration-inventory.md
+- openspec/changes/settings-page-decomposition/proposal.md
+- openspec/changes/settings-page-decomposition/protected-path-receipt.txt
+- openspec/changes/settings-page-decomposition/settings-structure-baseline.md
+- openspec/changes/settings-page-decomposition/specs/frontend-configuration-surfaces/spec.md
+- openspec/changes/settings-page-decomposition/tasks.md
+- openspec/changes/settings-page-decomposition/ui-routing-summary.md
+- openspec/changes/settings-page-decomposition/verification.md
+- scripts/check-settings-ui-decomposition.mjs
+- scripts/frontend-flat2-style-allowlist.txt
+

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
-import type { EntityType } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@/platform/entities";
+import type { EntityType } from "@/platform/entities";
 
 /**
  * Live list of every entity of `type` currently in the graph.

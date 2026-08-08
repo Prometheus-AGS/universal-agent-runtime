@@ -23,15 +23,15 @@
     { "id": "tauri", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features tauri" }
   ],
   "bundles": [
-    { "id": "minimal", "status": "stable", "license": "AGPL-3.0-only", "features": ["surreal-backend"], "gate": "cargo test --lib --features minimal" },
-    { "id": "server-full", "status": "stable", "distribution": true, "license": "AGPL-3.0-only", "features": ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
-    { "id": "desktop-full", "status": "preview", "license": "AGPL-3.0-only", "features": ["server-full", "tauri"], "gate": "cargo check --lib --features desktop-full" },
-    { "id": "server-postgres", "status": "preview", "license": "AGPL-3.0-only", "features": ["postgres-backend"], "gate": "cargo test --features postgres-backend" },
-    { "id": "in-memory-development", "status": "development-only", "license": "AGPL-3.0-only", "features": ["in-memory-backend"], "gate": "cargo test --lib --no-default-features --features in-memory-backend" }
+    { "id": "minimal", "status": "stable", "license": "MIT", "features": ["surreal-backend"], "gate": "cargo test --lib --features minimal" },
+    { "id": "server-full", "status": "stable", "distribution": true, "license": "MIT", "features": ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
+    { "id": "desktop-full", "status": "preview", "license": "MIT", "features": ["server-full", "tauri"], "gate": "cargo check --lib --features desktop-full" },
+    { "id": "server-postgres", "status": "preview", "license": "MIT", "features": ["postgres-backend"], "gate": "cargo test --features postgres-backend" },
+    { "id": "in-memory-development", "status": "development-only", "license": "MIT", "features": ["in-memory-backend"], "gate": "cargo test --lib --no-default-features --features in-memory-backend" }
   ],
   "sdks": [
     { "id": "sdk-python", "path": "sdks/python", "license": "MIT" },
-    { "id": "sdk-rust", "path": "sdks/rust", "license": "MIT OR AGPL-3.0", "note": "the optional 'embedded' feature links the AGPL-3.0-only runtime crate; binaries built with that feature must comply with AGPL-3.0" },
+    { "id": "sdk-rust", "path": "sdks/rust", "license": "MIT", "note": "the optional 'embedded' feature links the runtime crate directly; under MIT this carries no additional obligation" },
     { "id": "sdk-typescript", "path": "sdks/typescript", "license": "MIT" }
   ],
   "providers": [

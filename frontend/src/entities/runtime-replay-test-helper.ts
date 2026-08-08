@@ -1,5 +1,5 @@
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
-import type { EntityType } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@/platform/entities";
+import type { EntityType } from "@/platform/entities";
 import {
   RUNTIME_REPLAY_APPROVAL_ID,
   RUNTIME_REPLAY_RUN_ID,

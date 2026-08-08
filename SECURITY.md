@@ -2,11 +2,12 @@
 
 _Last updated: 2026-07-12._
 
-Universal Agent Runtime (UAR) is dual-licensed open-source software
-([AGPL-3.0](LICENSE) / [commercial](LICENSE-COMMERCIAL.md)) developed by
-Prometheus AGS. Because UAR is also made commercially available, we treat
-ourselves as a **manufacturer** in the sense of the EU Cyber Resilience Act
-and operate this policy accordingly.
+Universal Agent Runtime (UAR) is open-source software ([MIT](LICENSE))
+developed by Prometheus AGS. We continue to treat ourselves as a
+**manufacturer** in the sense of the EU Cyber Resilience Act and operate this
+policy accordingly, because Prometheus AGS offers commercial services built on
+UAR — the relicense to MIT changed the software's terms, not our security
+obligations to the people running it.
 
 ## Reporting a vulnerability
 

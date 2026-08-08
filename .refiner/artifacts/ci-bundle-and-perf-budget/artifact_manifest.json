@@ -1,0 +1,31 @@
+{
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "generated_at": "2026-08-08T04:16:16Z",
+  "variants": [
+    {
+      "name": "c-13-verification",
+      "file": ".refiner/artifacts/ci-bundle-and-perf-budget/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic validation and scope-integrity receipt for the C-13 bundle and performance budget change"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Production manifest accounting passes at 242082 of 250000 gzip bytes and reports required PGlite asset classes with raw sizes.",
+      "Cold thread-list browser-frame measurements pass three consecutive runs at 943.7ms, 921.6ms, and 925.6ms; the consolidated run passes at 973.3ms.",
+      "The 500-event trace lane passes at 13.3ms and the 2000-line Markdown finalization passes at 130.2ms after their structural predicates hold.",
+      "The seed public-schema catalog exactly matches a fresh migration replay at SHA-256 1d1e4bd08d2b14a3308bf1028ce01113cff5b9f30b8b31f3d59a6eff568452ac.",
+      "Frontend typecheck, lint, architecture boundaries, Flat 2.0, 317 full tests, production build, negative proofs, seed validation, and strict OpenSpec validation pass.",
+      "The artifact refinement corrected test-runner polling overcount and made the production schema seed auditable without changing existing-database migration semantics.",
+      "Fresh isolated artifact-only review passed with no findings after exact manifest/engine closure and schema-catalog parity corrections."
+    ]
+  }
+}

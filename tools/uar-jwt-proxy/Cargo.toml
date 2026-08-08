@@ -2,7 +2,7 @@
 name = "uar-jwt-proxy"
 version = "1.0.0"
 edition = "2024"
-license = "AGPL-3.0-only"
+license = "MIT"
 description = "Local dev reverse proxy that mints and injects an HS256 JWT for UAR."
 
 [[bin]]

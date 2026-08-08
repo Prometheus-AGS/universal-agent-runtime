@@ -1,0 +1,111 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "openspec/changes/base-ui-foundation/verification.md",
+      "line": 7,
+      "claim": "Every acceptance criterion for base-ui-foundation is satisfied only by self-attestation in verification.md; the diff itself still contains zero evidence \u2014 no @base-ui/react entry in the frontend/package.json hunk, no components.json hunk showing \"style\": \"base-vega\", and no frontend/src/components/ui/*.tsx files anywhere in the packet.",
+      "evidence": "The acceptance criteria require 'frontend/package.json contains @base-ui/react', 'components.json has \"style\": \"base-vega\" and \"baseColor\": \"neutral\"', and 'ui/ contains Base UI\u2013backed component implementations'. The only frontend/package.json hunk adds @chromatic-com/playwright and chromatic; no hunk touches components.json or ui/*.tsx. verification.md asserts 'rg -l @base-ui/react ... reports 34', 'pins @base-ui/react at 1.6.0', and 'openspec validate --strict passes', but these are unverifiable claims in a file added by the same change they certify. The spec delta added in this diff resolves the archive-validation blocker but does not demonstrate the underlying criteria.",
+      "suggested_fix": "Include the current-tree evidence in the reviewable change set (e.g., the components.json and package.json state, or a CI gate output artifact) rather than certifying archive readiness solely via a self-authored verification.md."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/position-reminder.txt",
+      "line": 7,
+      "claim": "The position reminder and current-waypoint.json still declare the spec-delta blocker as unresolved in the same diff that writes the delta, so the next operator turn will be told to redo completed work and attempt archives in the wrong order.",
+      "evidence": "This diff adds openspec/changes/base-ui-foundation/specs/frontend-component-primitives/spec.md, yet position-reminder.txt retains 'BLOCKER BEFORE C-00: openspec/changes/base-ui-foundation/ has ZERO spec deltas ... Write its delta under specs/ first' and current-waypoint.json retains '\"currentTask\": \"C-00: write base-ui-foundation spec delta (BLOCKER)\"' and 'BLOCKER FIRST: ... has zero spec deltas'. The state files were not updated to reflect the resolution they accompany.",
+      "suggested_fix": "Update position-reminder.txt and current-waypoint.json in the same commit that adds the spec delta to mark the blocker resolved and point at the actual next command."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/package.json",
+      "line": 22,
+      "claim": "All three new chromatic scripts use --exit-zero-on-changes, so visual regressions detected during a UI/UX migration phase can never fail the pipeline.",
+      "evidence": "\"chromatic\": \"chromatic --exit-zero-on-changes\", \"chromatic:playwright\": \"chromatic --playwright --exit-zero-on-changes\", \"test:e2e:chromatic\": \"playwright test && chromatic --playwright --exit-zero-on-changes\". With this flag the CLI exits 0 whenever diffs are found; the gate only fails on infrastructure errors, masking exactly the visual regressions this phase exists to catch.",
+      "suggested_fix": "Drop --exit-zero-on-changes from the CI-facing script (keep it, if desired, only in a local convenience script), or pair it with --auto-accept-changes under a protected-branch policy."
+    },
+    {
+      "severity": "WARNING",
+      "file": "static/index.html",
+      "line": 23,
+      "claim": "index.html now references newly hashed bundles (index-BCK5r21d.js, vendor-assistant-qgxGfEEW.js, vendor-react-BkEnn25x.js, vendor-query-D6lCwDEj.js) but no corresponding static/assets files appear in the diff, risking 404s and a non-booting embedded UI if the assets were not committed.",
+      "evidence": "The static/index.html hunk swaps four module/modulepreload hashes, yet the diff contains zero files under static/assets/. Old hashed files are typically also deleted by the build, so stale references in either direction break loading. Asset presence cannot be verified from the packet.",
+      "suggested_fix": "Verify the new hashed assets are present and committed under static/assets/ (and old ones removed) in the same commit as this index.html change."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/e2e/chat-basic.spec.ts",
+      "line": 1,
+      "claim": "Every e2e spec now imports test/expect from @chromatic-com/playwright while playwright.config.ts, playwright.real-server.config.ts, and the existing 'playwright test' scripts are unchanged, silently rerouting all e2e runs through Chromatic's auto-fixture archiving layer without config review.",
+      "evidence": "14 spec files swap the import (e.g., chat-basic.spec.ts line 1), but the diff contains no change to playwright.config.ts, playwright.real-server.config.ts, or the test:e2e:* scripts that invoke plain 'playwright test'. The wrapper's snapshot/archive fixtures now run on every local and CI e2e invocation, including the real-server suites (knowledge-rag-real.spec.ts, provider-route-real.spec.ts) that were never intended as visual tests.",
+      "suggested_fix": "Either limit the chromatic import to specs intended for visual archiving, or update the playwright configs/scripts so archiving behavior is explicit and consistent across local, CI, and real-server runs."
+    },
+    {
+      "severity": "WARNING",
+      "file": "pnpm-lock.yaml",
+      "line": 9964,
+      "claim": "The root lockfile contains unrelated peer-resolution churn for @typescript-eslint (parser re-resolved from eslint@9.39.4/typescript@6.0.3 to eslint@10.7.0/typescript@5.9.3), indicating lockfile regeneration drift beyond the Chromatic additions.",
+      "evidence": "Root pnpm-lock.yaml hunks rewrite '@typescript-eslint/eslint-plugin@8.64.0(...eslint@9.39.4...typescript@6.0.3)' to '(...eslint@10.7.0...typescript@5.9.3)' with no corresponding package.json change in the diff. Silently changing which TypeScript major the lint toolchain peers against can flip lint/typecheck results for the whole workspace.",
+      "suggested_fix": "Regenerate the lockfile from a clean install and audit why the typescript-eslint peer context moved; pin typescript if 6.x was intended."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/pnpm-lock.yaml",
+      "line": 205,
+      "claim": "The repo maintains two lockfiles (root pnpm-lock.yaml and frontend/pnpm-lock.yaml) that now encode divergent dependency contexts for the same frontend package (prettier@2.8.8 vs prettier@3.9.5 peer contexts for identical new Chromatic entries), so installs differ depending on which lockfile is used.",
+      "evidence": "frontend/pnpm-lock.yaml resolves '@chromatic-com/playwright@0.14.11(...prettier@2.8.8...)' while root pnpm-lock.yaml resolves the same package as '(...prettier@3.9.5...)'. Both were modified in this diff for the same dependency additions.",
+      "suggested_fix": "Establish a single source-of-truth lockfile for the frontend workspace, or add a CI check that both lockfiles are regenerated from the same manifest state."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".claude/settings.local.json",
+      "line": 637,
+      "claim": "Machine-local Claude settings containing user-specific absolute paths and ad-hoc one-off command permissions are committed to the repository.",
+      "evidence": "Added entries include 'Bash(/Users/gqadonis/.claude/skills/kbd-new-phase/kbd-new-phase.sh ...)', 'Bash(shasum -a 256 /Users/gqadonis/Projects/hybrid-mobile-architecture-src/docs/knowme-ui-ux-standard.md)', an in-place file mutation 'Bash(perl -pi -e s/.../ frontend/src/pages/about-page.tsx)', and /tmp copy commands. settings.local.json is by convention user-local and non-portable; committing it leaks local filesystem layout and grants stale, meaningless permissions to other checkouts.",
+      "suggested_fix": "Revert this hunk and add .claude/settings.local.json to .gitignore; promote genuinely shared permissions into .claude/settings.json."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/model-preflight.json",
+      "line": 3,
+      "claim": "Preflight reports status 'ok' while providers_detected and classes_available are now empty arrays and the gateway moved to a different localhost port, masking a degraded routing configuration.",
+      "evidence": "Hunk changes gateway to http://localhost:4000/v1, judge model to 'k3', critic to 'MiniMax-M3', and sets 'providers_detected': [] and 'classes_available': [] while retaining '\"status\": \"ok\"'. A preflight whose purpose is to verify model/provider availability reporting ok with zero detected providers is a silent-failure pattern for any step that consumes it.",
+      "suggested_fix": "Treat empty providers_detected/classes_available as a non-ok status in whatever produces model-preflight.json, and regenerate the file after the gateway move is verified."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/base-ui-foundation/tasks.md",
+      "line": 10,
+      "claim": "tasks.md permanently records Task 2 'Remove Radix packages ... all 26 primitives' as checked complete while verification.md in the same diff admits the Radix declarations are present again in the manifest, so the archived task list misrepresents the delivered state.",
+      "evidence": "tasks.md Task 2 shows '[x] Run: pnpm remove @radix-ui/react-accordion ... (all 26 primitives)' with only a parenthetical ARCHIVE NOTE, while verification.md states 'frontend/package.json still declares unused Radix packages.' The amended acceptance criteria no longer require zero @radix-ui/* entries, but the archived task checkbox asserts a removal whose effect was undone, and the task's verification sub-item ('pnpm install succeeds after removal') describes a state that no longer exists.",
+      "suggested_fix": "Un-check or reword Task 2 to reflect that the removal was reverted by later manifest drift and that only the 'no direct Radix imports in production source' property holds, with the prune owned by C-14c."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "openspec/changes/base-ui-foundation/proposal.md",
+      "line": 15,
+      "claim": "The proposal and tasks still cite Base UI v1.5.0 as the installed version while verification.md claims the manifest pins @base-ui/react at 1.6.0, leaving internally inconsistent version statements in the archived record.",
+      "evidence": "proposal.md 'Why' says 'Base UI v1.5.0 (May 2026)' and tasks.md Task 3 says '@base-ui/react v1.5.0 installed', but verification.md states 'frontend/package.json pins @base-ui/react at 1.6.0'.",
+      "suggested_fix": "Reconcile the version references (e.g., 'proposed against v1.5.0; delivered at 1.6.0') before archiving."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/memory-outbox.jsonl",
+      "line": 1,
+      "claim": "The queued memory operation (create_task_stream 'kbd:prometheus-skill-pack:uar-readiness-and-tooling-repair') is deleted with no in-packet evidence it was delivered or migrated.",
+      "evidence": "The diff deletes .kbd-orchestrator/memory-outbox.jsonl containing one queued entry; the file tree shows a memory-outbox.jsonl.migrated.20260806T112426Z file, suggesting a migration, but the diff does not reference it, so the fate of the queued task-stream creation is unverifiable from the packet.",
+      "suggested_fix": "Confirm the queued entry exists in the migrated store before deleting the outbox, or note the migration in the commit."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

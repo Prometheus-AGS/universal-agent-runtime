@@ -10,6 +10,7 @@ export function useThreadUi() {
   return {
     threads: useThreadRegistryStore((state) => state.threads),
     activeThreadId: useThreadRegistryStore((state) => state.activeThreadId),
+    hydrated: useThreadRegistryStore((state) => state.hydrated),
     registerThread: useThreadRegistryStore((state) => state.registerThread),
     setTitle: useThreadRegistryStore((state) => state.setTitle),
     setActive: useThreadRegistryStore((state) => state.setActive),

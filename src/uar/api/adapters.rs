@@ -379,7 +379,11 @@ pub fn enrich_agui_spec_payload(
     source_id: &str,
     ordinal: u64,
 ) -> serde_json::Value {
-    let sequence = source_id.parse::<u64>().unwrap_or(0).saturating_mul(16) + ordinal;
+    // Frames synthesized from one retained runtime event share its ordering
+    // sequence. Their stable event ids carry the per-frame ordinal, so an
+    // arbitrarily long tool-argument stream cannot overlap the next event's
+    // sequence range.
+    let sequence = source_id.parse::<u64>().unwrap_or(0).saturating_mul(16);
     if let Some(object) = payload.as_object_mut() {
         object.insert("type".to_string(), serde_json::json!(event_type));
         object.insert("profile".to_string(), serde_json::json!("uar.agui/1"));

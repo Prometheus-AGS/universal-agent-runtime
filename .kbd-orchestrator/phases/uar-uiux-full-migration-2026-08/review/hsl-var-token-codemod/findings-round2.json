@@ -1,0 +1,36 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "scripts/frontend-flat2-style-allowlist.txt",
+      "claim": "Criterion 3.3 and the delta-spec scenario 'the baseline records the new exact source string' are not satisfied by anything in the packet: the allowlist hunk contains only a prose annotation and zero content delta, even though the diff demonstrably rewrites both error-bar.tsx string payloads that the allowlist snapshots.",
+      "evidence": "The diff changes error-bar.tsx from `border-[hsl(var(--signal-red))] bg-[hsl(var(--signal-red)/0.08)] ...` and `border-[hsl(var(--signal-red)/0.4)] ... hover:bg-[hsl(var(--signal-red)/0.15)]` to `border-[var(--color-signal-red)] bg-[color-mix(...)]` etc., yet the `--- scripts/frontend-flat2-style-allowlist.txt` hunk shows no `+`/`-` payload lines at all \u2014 only the sentences 'The two exact error-bar string payloads are updated to their semantic-token text. Their no-restricted-syntax rule, occurrence count, and total 400-finding baseline are unchanged...'. If the allowlist truly was not edited, `check-flat2-style.mjs` must either fail on stale exact-match entries or report the two rewritten strings as new findings, contradicting the verification claim of '400 tracked legacy findings, 0 new'.",
+      "suggested_fix": "Include the actual allowlist payload diff replacing the two `hsl(var(--signal-red)...)` snapshot strings with the new `var(--color-signal-red)`/`color-mix(...)` strings, and re-run `node scripts/check-flat2-style.mjs` to prove 400 findings with 0 new and 0 stale."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/hsl-var-token-codemod/verification.md",
+      "claim": "The recorded per-file census is arithmetically inconsistent with the diff and with the 29 total: 'two in each of loading-cursor.tsx, error-bar.tsx, empty-frame.tsx, and KnowMeLogo.tsx' sums with 14 (index.css) + 3 (enhanced-thread) to 25, not 29, and the error-bar hunk alone replaces 6 `hsl(var(` occurrences, not 2.",
+      "evidence": "Scope Reconciliation states: '14 in index.css, three in enhanced-thread.tsx, and two in each of loading-cursor.tsx, error-bar.tsx, empty-frame.tsx, and KnowMeLogo.tsx' (14+3+8=25). The error-bar.tsx hunk contains 3 `hsl(var(` replacements in the first class string (border, bg /0.08, text) plus 3 in the second (border /0.4, hover /0.15, outline phosphor-glow) = 6; loading-cursor 2 + error-bar 6 + empty-frame 2 = 10 shared admin-component call sites, which matches task 2.3 ('ten shared admin-component call sites') and 14+3+10+2=29. Criterion 1.1 ('Record the measured 29-occurrence C-05 file census') is therefore only partially met \u2014 the total is right but the recorded per-file breakdown is wrong.",
+      "suggested_fix": "Correct the census wording in verification.md and the change context to '14 in index.css, 3 in enhanced-thread.tsx, 6 in error-bar.tsx, and 2 in each of loading-cursor.tsx, empty-frame.tsx, and KnowMeLogo.tsx'."
+    },
+    {
+      "severity": "WARNING",
+      "file": "scripts/check-hsl-token-codemod.mjs",
+      "claim": "The scope gate is case-sensitive and therefore does not reject every legacy HSL-channel call site as the design requires: `HSL(var(--x))`, `Hsl(var(--x))`, or `HSLA(var(--x))` reintroduced into any of the six migrated files would pass the check, even though CSS color function names are case-insensitive and such syntax is fully valid in both stylesheets and Tailwind arbitrary values.",
+      "evidence": "`const legacyCall = /hsla?\\s*\\(\\s*var\\s*\\(/g;` has no `i` flag. The design doc states the check 'rejects a remaining `hsl(var(` or `hsla(var(` sequence', and the proposal says the gate 'rejects any remaining legacy HSL-channel call site in the six-file C-05 set'; a case-variant call site is a legacy HSL-channel call site that evades the deterministic gate wired into `scripts/ci-grep-gates.sh`.",
+      "suggested_fix": "Add the case-insensitive flag: `/hsla?\\s*\\(\\s*var\\s*\\(/gi`, and add a negative test fixture (mirroring `scripts/test-flat2-style-negative.mjs`) that asserts an `HSL(var(--x))` insertion fails the gate."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,17 +1,21 @@
 {
   "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "uar-uiux-refinement-2026-08",
+  "phaseId": "uar-uiux-refinement-2026-08",
   "parentPhase": null,
-  "childPhases": [],
-  "childPointer": null,
-  "assessment_complete": false,
-  "plan_complete": false,
-  "execute_complete": false,
-  "reflect_complete": false,
-  "implementation_total": 0,
-  "implementation_completed": 0,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
   "changes_total": 0,
   "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
@@ -20,28 +24,22 @@
       "status": "PENDING"
     },
     "evidence": {
-      "status": "NOT_TRACKED",
+      "status": "PENDING",
       "summary": null,
       "blockers": []
     },
     "certification": {
-      "status": "NOT_TRACKED",
+      "status": "PENDING",
       "summary": null,
       "blockers": []
     },
     "publication": {
-      "status": "NOT_TRACKED",
+      "status": "PENDING",
       "summary": null,
       "blockers": []
     }
   },
-  "completed_changes": [],
-  "active_change": null,
-  "blocked_changes": [],
   "changes": [],
-  "last_updated": "2026-08-01T11:32:52Z",
-  "last_updated_by": "kbd-new-phase",
-  "sourceTool": "claude",
-  "createdBy": "kbd-new-phase",
-  "updatedAt": "2026-08-01T11:32:52Z"
+  "children": {},
+  "migrationStatus": null
 }

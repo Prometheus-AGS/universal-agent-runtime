@@ -1,4 +1,19 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "@chromatic-com/playwright";
+
+async function configureDeterministicChat(page: import("@playwright/test").Page) {
+  await page.route("**/api/uar/resolve-model", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, provider_id: "local", model_id: "local/test" }),
+    });
+  });
+  await page.route("**/api/agents", async (route) => {
+    await route.fulfill({ contentType: "application/json", body: "[]" });
+  });
+  await page.route("**/api/uar/providers", async (route) => {
+    await route.fulfill({ contentType: "application/json", body: "[]" });
+  });
+}
 
 test.describe("Chat — Basic smoke tests", () => {
   test("chat page renders without crash", async ({ page }) => {
@@ -9,19 +24,10 @@ test.describe("Chat — Basic smoke tests", () => {
   });
 
   test("chat UI is functional when model is configured", async ({ page }) => {
+    await configureDeterministicChat(page);
     await page.goto("/threads");
-    await page.waitForLoadState("domcontentloaded");
 
-    const guard = page.locator("text=No Model Configured, text=No LLM Provider Configured");
-    const guardVisible = await guard.first().isVisible().catch(() => false);
-    if (guardVisible) {
-      // No model configured — guard is correct UI, test passes
-      return;
-    }
-
-    // Chat UI should have a way to start a conversation
-    const newConvBtn = page.locator("button:has-text('New conversation')").first();
-    await expect(newConvBtn).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole("button", { name: "New conversation" })).toBeVisible();
   });
 
   test("admin link is accessible from chat page header", async ({ page }) => {

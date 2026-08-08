@@ -1,84 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "submodule-skills-and-entity-devtools-expansion",
+  "phaseId": "submodule-skills-and-entity-devtools-expansion",
   "parentPhase": null,
-  "childPhases": [],
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "backend": "openspec",
-  "changes_total": 11,
-  "changes_completed": 11,
-  "completed_changes": [
-    "ssed-worktree-persistence-convention",
-    "ssed-kbd-nested-phase-schema",
-    "ssed-kbd-process-hooks",
-    "ssed-kbd-new-phase-skill",
-    "ssed-kbd-child-phase-skills",
-    "ssed-kbd-memory-first-execution",
-    "ssed-kbd-agent-rules-injector",
-    "ssed-uar-uiux-skill-routing",
-    "ssed-entity-surreal-live-adapter",
-    "ssed-entity-explorer-fab-panel",
-    "ssed-entity-explorer-browser-extension"
-  ],
-  "active_change": null,
-  "active_change_state": "phase_reflect_complete",
-  "blocked_changes": [],
-  "deferred_tasks": [
-    {
-      "change": "ssed-kbd-process-hooks",
-      "tasks": ["5.4"],
-      "reason": "/opsx:apply task-loop integration lives in an external skill repo."
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
     },
-    {
-      "change": "ssed-entity-surreal-live-adapter",
-      "tasks": ["1.*", "2.*", "3.*"],
-      "reason": "TypeScript adapter implementation + vitest suite — moved to next phase recommendation."
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
     },
-    {
-      "change": "ssed-entity-explorer-fab-panel",
-      "tasks": ["2.*", "3.*", "4.*", "5.*", "6.*", "7.*"],
-      "reason": "React UI implementation + tests — moved to next phase recommendation."
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
     },
-    {
-      "change": "ssed-entity-explorer-browser-extension",
-      "tasks": ["1.*-9.*"],
-      "reason": "Stretch — Chrome MV3 implementation moved to next phase recommendation."
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
     }
-  ],
-  "pending_cross_repo_commits": [
-    {
-      "repo": "prometheus-skill-system",
-      "changes_count": 8,
-      "next_step": "single topic-branch commit covering W1+W2+W3 skill-system edits"
-    },
-    {
-      "repo": "prometheus-entity-management",
-      "changes": ["ssed-entity-surreal-live-adapter", "ssed-entity-explorer-fab-panel", "ssed-entity-explorer-browser-extension"],
-      "next_step": "implementation session against entity-management dev environment"
-    }
-  ],
-  "recommended_next_phase": {
-    "name": "submodule-entity-management-implementation",
-    "rationale": "Pick up the three deferred TypeScript-heavy changes (9, 10, 11) in a focused session against the prometheus-entity-management dev environment.",
-    "seed_goals": [
-      "Implement createSurrealLiveAdapter per archived spec; run vitest suite",
-      "Implement in-app entity explorer FAB + 5-tab panel per archived spec, following UI/UX routing discipline (now live in CLAUDE.md/AGENTS.md)",
-      "Scaffold Chrome MV3 extension per archived spec (stretch — defer panel polish)",
-      "Commit-and-PR the dirty prometheus-skill-system working tree as the first action"
-    ]
   },
-  "waves": {
-    "W0": ["ssed-worktree-persistence-convention"],
-    "W1": ["ssed-kbd-nested-phase-schema", "ssed-kbd-process-hooks", "ssed-kbd-new-phase-skill", "ssed-kbd-child-phase-skills"],
-    "W2": ["ssed-kbd-memory-first-execution", "ssed-kbd-agent-rules-injector"],
-    "W3": ["ssed-uar-uiux-skill-routing"],
-    "W4": ["ssed-entity-surreal-live-adapter"],
-    "W5": ["ssed-entity-explorer-fab-panel"],
-    "W6": ["ssed-entity-explorer-browser-extension"]
-  },
-  "sourceTool": "claude-code",
-  "notes": "Reflect complete. 11/11 changes archived; 6/9 goals MET, 3/9 PARTIAL (TS impl deferred with complete spec contracts). Reflection.md seeds next phase ssed → submodule-entity-management-implementation.",
-  "updatedAt": "2026-05-27T00:00:00Z"
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

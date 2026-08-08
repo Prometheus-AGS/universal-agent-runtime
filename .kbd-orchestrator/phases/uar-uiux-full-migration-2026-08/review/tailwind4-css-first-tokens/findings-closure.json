@@ -1,0 +1,38 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/tailwind4-css-first-tokens/verify-token-foundation.sh",
+      "line": 197,
+      "claim": "The dangling-reference scan that backs acceptance criterion 3.3 silently skips every hidden directory under frontend/, so frontend/.storybook/** \u2014 a live config surface the workflow itself watches \u2014 is never checked for references to the deleted tailwind.config.ts/postcss.config.js.",
+      "evidence": "The final assertion block runs `rg -n 'tailwind\\.config|postcss\\.config' .github/workflows frontend --glob '*.{css,html,js,json,mjs,cjs,ts,tsx,yaml,yml}' ...` with no `--hidden` (or `--no-ignore`) flag; ripgrep skips dot-directories during recursive descent of `frontend`, and `.github/workflows` is only covered because it is passed explicitly. Acceptance criterion 3.3 claims 'Verify no live frontend or workflow configuration references either deleted config file,' and the workflow's own path filters treat `frontend/.storybook/**` as live input.",
+      "suggested_fix": "Add `--hidden` (and consider `--no-ignore`) to the rg invocation in verify-token-foundation.sh so .storybook and other dot-directory configs are included in the dangling-reference proof."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/pnpm-lock.yaml",
+      "claim": "The lockfile now resolves three different Vite versions inside the frontend workspace \u2014 8.1.3 (a2ui-svelte importer), 8.1.4 (frontend importer), and 8.2.1 (a2ui-lit vitest, a2ui-react/a2ui-uar plugin-react and vitest peers) \u2014 contradicting the change's stated convergence goal and risking duplicate-Vite dedupe problems in Storybook/vitest interop.",
+      "evidence": "Hunks show `packages/a2ui-lit` vitest resolving to `vite@8.2.1(...)`, the svelte package's `@sveltejs/vite-plugin-svelte@7.2.0(...)(vite@8.2.1...)`, and `packages/a2ui-uar`'s `@vitejs/plugin-react@6.0.3(vite@8.2.1...)` plus `vitest \u2192 vite@8.2.1`, while `packages/a2ui-svelte` keeps `vite: specifier ^8.1.3, version 8.1.3` and the frontend importer is pinned at 8.1.4. design.md states the intent: 'C-02 converges their frontend importer on Vite 8.1.4 ... so running the same package from either workspace root uses the same compiler resolution' \u2014 the sibling packages were left diverging on opposite sides.",
+      "suggested_fix": "Re-resolve the frontend workspace lockfile so all importers sharing the `^8.1.x` specifier land on a single Vite version (ideally 8.1.4 via an override or `pnpm dedupe`), or document why 8.2.1/8.1.3 coexistence is safe for the a2ui packages."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".github/workflows/storybook-visual-regression.yml",
+      "line": 10,
+      "claim": "The rewritten header comment bakes an unverifiable operational claim into the repo ('The CHROMATIC_PROJECT_TOKEN repo secret IS configured (set 2026-08-07)') and contradicts the change's own recorded ownership boundary that Chromatic workflow edits belong to C-00, not C-02.",
+      "evidence": "The hunk replaces the old 'Requires a CHROMATIC_PROJECT_TOKEN repo secret ... Until that secret is set, the chromatic job's publish step is skipped' comment with the assertion that the secret is configured and publishing happens on every run, while `.refiner/artifacts/tailwind4-css-first-tokens/refinement_log.md` simultaneously states 'C-00's pre-existing Chromatic dependency/workflow edits remain outside C-02 ownership.' No executable assertion in verify-token-foundation.sh or verification.md validates the secret's existence; if the claim is wrong, the committed documentation lies about CI behavior (the empty-token guard prevents a hard failure, but the workflow now misdescribes itself).",
+      "suggested_fix": "Revert the header comment to the conditional 'publishes when the secret is present' wording (matching the retained `env.CHROMATIC_PROJECT_TOKEN == ''` guard semantics), or move the comment rewrite into the C-00 change that owns the Chromatic wiring."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

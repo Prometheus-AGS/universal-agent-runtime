@@ -1,0 +1,8 @@
+openspec/changes/base-ui-foundation/design.md
+openspec/changes/base-ui-foundation/files.txt
+openspec/changes/base-ui-foundation/proposal.md
+openspec/changes/base-ui-foundation/specs/frontend-component-primitives/spec.md
+openspec/changes/base-ui-foundation/tasks.md
+openspec/changes/base-ui-foundation/verification.md
+openspec/changes/base-ui-foundation/verification-output.txt
+openspec/changes/base-ui-foundation/verify-archive-readiness.sh

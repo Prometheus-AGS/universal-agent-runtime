@@ -1,0 +1,31 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/shared/markdown/plugins/sanitize-raw-svg.ts",
+      "line": 4,
+      "claim": "The isSupported fallback branch is a dead/crashing fallback: when DOMPurify reports unsupported precisely because there is no DOM (SSR, Node test env without jsdom), the else branch dereferences the bare `window` global and throws ReferenceError instead of failing gracefully.",
+      "evidence": "const purifier = createDOMPurify.isSupported ? createDOMPurify : createDOMPurify(window as unknown as WindowLike); \u2014 in any environment where `isSupported` is false due to a missing DOM, `window` is undefined, so the fallback path can never succeed.",
+      "suggested_fix": "Guard the fallback explicitly, e.g. `if (!createDOMPurify.isSupported) { if (typeof window === \"undefined\") return \"\"; return createDOMPurify(window as unknown as WindowLike).sanitize(...); }`, or drop the fallback and document that the helper requires a DOM."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/components/assistant-ui/enhanced-thread.tsx",
+      "line": 114,
+      "claim": "The restyled composer/reasoning surfaces now depend on Tailwind 4 theme tokens `--color-surface` and `--color-cyan` whose definitions are not present anywhere in the packet, so if those tokens are not registered in the theme the composer background and reasoning tint silently render transparent/unstyled.",
+      "evidence": "Hunks replacing `hsl(var(--surface))` with `var(--color-surface)`, `text-[hsl(var(--cyan))]` with `text-[var(--color-cyan)]`, and `bg-[color-mix(in_srgb,var(--color-cyan)_7%,transparent)]`; no theme/CSS file defining these custom properties appears in the diff or is verifiable from the packet.",
+      "suggested_fix": "Confirm (and cite in evidence) that the Tailwind 4 theme defines `--color-surface` and `--color-cyan`, or add the token definitions alongside this change."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

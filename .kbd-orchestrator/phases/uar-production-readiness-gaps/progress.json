@@ -1,38 +1,45 @@
 {
-  "phase": "uar-production-readiness-gaps",
-  "parentPhase": null,
-  "childPhases": [],
-  "childPointer": null,
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": true,
-  "reflect_complete": true,
-  "backend": "openspec",
-  "sourceTool": "claude-code",
-  "goals": ["G1", "G2", "G3", "G4", "G5", "G6", "G7"],
-  "evolverBridge": null,
-  "evolverBridgeReason": "active evolution uar-production-readiness-2026-04 has no plan.json (assess-only); nothing to bridge",
-  "changeRoster": [
-    { "id": "fix-worker-pool-graceful-shutdown", "code": "C1", "goals": ["G1", "G2", "G3"], "priority": "P0", "dependsOn": [], "inPhase": true },
-    { "id": "make-config-authoritative-on-boot", "code": "C2", "goals": ["G4"], "priority": "P0", "dependsOn": [], "inPhase": true },
-    { "id": "persist-builtin-agents", "code": "C3", "goals": ["G5"], "priority": "P1", "dependsOn": [], "inPhase": true },
-    { "id": "wire-runtime-console-events", "code": "C4", "goals": ["G6", "G7"], "priority": "P1", "dependsOn": ["fix-worker-pool-graceful-shutdown"], "inPhase": true },
-    { "id": "add-otel-agent-tracing", "code": "C5", "goals": ["G7"], "priority": "P2", "dependsOn": ["fix-worker-pool-graceful-shutdown", "wire-runtime-console-events"], "inPhase": false, "status": "deferred-partial" },
-    { "id": "uar-harness-parity", "code": "C6", "goals": ["G7"], "priority": "P3", "dependsOn": [], "inPhase": false, "status": "deferred-to-new-phase" }
-  ],
-  "criticalPath": ["fix-worker-pool-graceful-shutdown", "wire-runtime-console-events"],
-  "blockingDefect": "D1: ingestion worker pool shutdown is unreachable behind Arc + crate pinned to pre-fix rev 32b481d6",
-  "productDecision_R3": "RESOLVED — env/YAML authoritative on every boot (UI-only edits not persisted; write-back deferred P3)",
-  "changes_total": 4,
-  "changes_completed": 4,
-  "completed_changes": ["fix-worker-pool-graceful-shutdown", "make-config-authoritative-on-boot", "persist-builtin-agents", "wire-runtime-console-events"],
-  "active_change": null,
-  "change_status": {
-    "fix-worker-pool-graceful-shutdown": "done",
-    "make-config-authoritative-on-boot": "done",
-    "persist-builtin-agents": "done",
-    "wire-runtime-console-events": "done"
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
   },
-  "exactNextCommand": "/kbd-reflect uar-production-readiness-gaps",
-  "updatedAt": "2026-06-02T00:00:00Z"
+  "conflictCount": 0,
+  "phase": "uar-production-readiness-gaps",
+  "phaseId": "uar-production-readiness-gaps",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

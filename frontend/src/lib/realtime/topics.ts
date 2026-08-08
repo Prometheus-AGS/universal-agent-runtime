@@ -2,7 +2,7 @@
  * Canonical mapping of UAR realtime topics → graph entity types.
  * Source of truth: `src/uar/realtime/mod.rs::EntityTopic` on the Rust side.
  */
-import type { RealtimeAdapter } from "@prometheus-ags/prometheus-entity-management";
+import type { RealtimeAdapter } from "@/platform/entities";
 import { createUarSseAdapter } from "./uar-sse-adapter";
 
 // EntityType names use CamelCase to match the schemas registered in

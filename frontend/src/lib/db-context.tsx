@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { UarDb, setDbInstance, type OnStatusFn } from "@/lib/db";
+import { UarDb, setDbInstance, type OnStatusFn } from "@/platform/pglite/client";
+import { bootstrapDurableEntityGraph } from "@/entities/bootstrap";
 
 // ---------------------------------------------------------------------------
 // Context
@@ -155,7 +156,7 @@ function DbLoadingScreen({ steps, current, error }: DbLoadingScreenProps) {
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="rounded-md border border-border bg-card px-4 py-2 font-mono text-xs text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="rounded-md border border-border bg-card px-4 py-2 font-mono text-xs text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring"
         >
           Reload page
         </button>
@@ -183,12 +184,16 @@ export function DbProvider({ children }: DbProviderProps) {
 
     const onStatus: OnStatusFn = (msg) => {
       if (cancelled) return;
+      performance.mark(`uar-db:${msg}`);
       setCurrent(msg);
       setSteps((prev) => [...prev, msg]);
     };
 
     UarDb.open(onStatus)
-      .then((db) => {
+      .then(async (db) => {
+        onStatus("Hydrating local entity graph…");
+        await bootstrapDurableEntityGraph(db.getPersistenceClient());
+        onStatus("Local entity graph ready");
         if (!cancelled) {
           setDbInstance(db);
           setValue({ ready: true, db });

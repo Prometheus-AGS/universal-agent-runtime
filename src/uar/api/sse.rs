@@ -2,37 +2,343 @@ use crate::uar::domain::events::NormalizedEvent;
 use crate::uar::runtime::manager::StreamEvent;
 use axum::response::sse::{Event, Sse};
 use futures::{Stream, StreamExt};
+use std::collections::{HashMap, HashSet};
 use std::convert::Infallible;
 use std::time::Duration;
 
-pub fn build_sse_response<S>(
+#[derive(Clone, Debug)]
+pub(crate) struct AguiReplaySnapshot {
+    cursor: u64,
+    run_id: String,
+    state: Option<serde_json::Value>,
+    messages: Vec<serde_json::Value>,
+}
+
+fn pointer_segments(path: &str) -> Option<Vec<String>> {
+    if path.is_empty() {
+        return Some(Vec::new());
+    }
+    path.strip_prefix('/').map(|pointer| {
+        pointer
+            .split('/')
+            .map(|segment| segment.replace("~1", "/").replace("~0", "~"))
+            .collect()
+    })
+}
+
+fn value_at_mut<'a>(
+    mut value: &'a mut serde_json::Value,
+    segments: &[String],
+) -> Option<&'a mut serde_json::Value> {
+    for segment in segments {
+        value = match value {
+            serde_json::Value::Object(object) => object.get_mut(segment)?,
+            serde_json::Value::Array(array) => array.get_mut(segment.parse::<usize>().ok()?)?,
+            _ => return None,
+        };
+    }
+    Some(value)
+}
+
+fn apply_state_patch(
+    state: &mut serde_json::Value,
+    patch: &[crate::uar::domain::events::StatePatchOp],
+) -> bool {
+    for operation in patch {
+        let Some(segments) = pointer_segments(&operation.path) else {
+            return false;
+        };
+        if segments.is_empty() {
+            match operation.op.as_str() {
+                "add" | "replace" => {
+                    let Some(value) = operation.value.clone() else {
+                        return false;
+                    };
+                    *state = value;
+                }
+                _ => return false,
+            }
+            continue;
+        }
+
+        let Some(key) = segments.last().cloned() else {
+            return false;
+        };
+        let Some(parent) = value_at_mut(state, &segments[..segments.len() - 1]) else {
+            return false;
+        };
+        match parent {
+            serde_json::Value::Object(object) => match operation.op.as_str() {
+                "add" => {
+                    let Some(value) = operation.value.clone() else {
+                        return false;
+                    };
+                    object.insert(key, value);
+                }
+                "replace" if object.contains_key(&key) => {
+                    let Some(value) = operation.value.clone() else {
+                        return false;
+                    };
+                    object.insert(key, value);
+                }
+                "remove" if object.remove(&key).is_some() => {}
+                _ => return false,
+            },
+            serde_json::Value::Array(array) => {
+                let index = if key == "-" {
+                    array.len()
+                } else if let Ok(index) = key.parse::<usize>() {
+                    index
+                } else {
+                    return false;
+                };
+                match operation.op.as_str() {
+                    "add" if index <= array.len() => {
+                        let Some(value) = operation.value.clone() else {
+                            return false;
+                        };
+                        array.insert(index, value);
+                    }
+                    "replace" if index < array.len() => {
+                        let Some(value) = operation.value.clone() else {
+                            return false;
+                        };
+                        array[index] = value;
+                    }
+                    "remove" if index < array.len() => {
+                        array.remove(index);
+                    }
+                    _ => return false,
+                }
+            }
+            _ => return false,
+        }
+    }
+    true
+}
+
+#[must_use]
+pub(crate) fn build_agui_replay_snapshot(
+    run_id: &str,
+    history: &[StreamEvent],
+    cursor: u64,
+) -> AguiReplaySnapshot {
+    let mut state = serde_json::json!({
+        "run": null,
+        "a2ui": { "surfaces": {} }
+    });
+    let mut state_synchronized = true;
+    let mut assistant_text = String::new();
+
+    for event in history.iter().filter(|event| event.id <= cursor) {
+        match &event.event {
+            NormalizedEvent::StatePatch { patch, .. } if state_synchronized => {
+                state_synchronized = apply_state_patch(&mut state, patch);
+            }
+            NormalizedEvent::ChatDelta { text_delta, .. } => assistant_text.push_str(text_delta),
+            _ => {}
+        }
+    }
+
+    let messages = if assistant_text.is_empty() {
+        Vec::new()
+    } else {
+        vec![serde_json::json!({
+            "id": format!("{run_id}:assistant"),
+            "role": "assistant",
+            "content": assistant_text,
+        })]
+    };
+    AguiReplaySnapshot {
+        cursor,
+        run_id: run_id.to_string(),
+        state: state_synchronized.then_some(state),
+        messages,
+    }
+}
+
+struct AguiSpecFrame {
+    event_name: &'static str,
+    payload: serde_json::Value,
+    ordinal: u64,
+}
+
+#[derive(Default)]
+struct AguiSpecProjector {
+    seen_tool_calls: HashSet<String>,
+    pending_tool_args: HashMap<String, Vec<AguiSpecFrame>>,
+}
+
+impl AguiSpecProjector {
+    fn project(&mut self, event: &NormalizedEvent) -> Vec<AguiSpecFrame> {
+        if let NormalizedEvent::ToolDelta { tool_call_id, .. } = event
+            && !self.seen_tool_calls.contains(tool_call_id)
+        {
+            if let Some((event_name, payload)) = to_agui_spec_event(event) {
+                let pending = self
+                    .pending_tool_args
+                    .entry(tool_call_id.clone())
+                    .or_default();
+                pending.push(AguiSpecFrame {
+                    event_name,
+                    payload,
+                    ordinal: 0,
+                });
+            }
+            return Vec::new();
+        }
+
+        let tool_start = match event {
+            NormalizedEvent::ToolStart {
+                run_id,
+                tool_call_id,
+                tool,
+                ..
+            }
+            | NormalizedEvent::ToolEnd {
+                run_id,
+                tool_call_id,
+                tool,
+                ..
+            } => Some((run_id, tool_call_id, tool.as_str())),
+            _ => None,
+        };
+
+        let mut frames = Vec::new();
+        if let Some((run_id, tool_call_id, tool_name)) = tool_start
+            && self.seen_tool_calls.insert(tool_call_id.clone())
+        {
+            frames.push(AguiSpecFrame {
+                event_name: "TOOL_CALL_START",
+                payload: serde_json::json!({
+                    "type": "TOOL_CALL_START",
+                    "profile": "uar.agui/1",
+                    "toolCallId": tool_call_id,
+                    "toolCallName": tool_name,
+                    "threadId": run_id,
+                    "runId": run_id,
+                }),
+                ordinal: 0,
+            });
+            frames.extend(
+                self.pending_tool_args
+                    .remove(tool_call_id)
+                    .unwrap_or_default(),
+            );
+            if matches!(event, NormalizedEvent::ToolEnd { .. }) {
+                frames.push(AguiSpecFrame {
+                    event_name: "TOOL_CALL_END",
+                    payload: serde_json::json!({
+                        "type": "TOOL_CALL_END",
+                        "profile": "uar.agui/1",
+                        "toolCallId": tool_call_id,
+                        "toolCallName": tool_name,
+                        "threadId": run_id,
+                        "runId": run_id,
+                    }),
+                    ordinal: 0,
+                });
+            }
+        }
+        if let Some((event_name, payload)) = to_agui_spec_event(event) {
+            frames.push(AguiSpecFrame {
+                event_name,
+                payload,
+                ordinal: 0,
+            });
+        }
+        for (ordinal, frame) in frames.iter_mut().enumerate() {
+            frame.ordinal = ordinal as u64;
+        }
+        frames
+    }
+}
+
+fn replay_snapshot_events(snapshot: AguiReplaySnapshot) -> Vec<Result<Event, Infallible>> {
+    let source_id = snapshot.cursor.to_string();
+    let mut frames = Vec::new();
+    if let Some(state) = snapshot.state {
+        let payload = enrich_agui_spec_payload(
+            "STATE_SNAPSHOT",
+            serde_json::json!({
+                "type": "STATE_SNAPSHOT", "profile": "uar.agui/1",
+                "threadId": snapshot.run_id, "runId": snapshot.run_id,
+                "snapshot": state,
+            }),
+            &source_id,
+            1,
+        );
+        frames.push(Ok(Event::default()
+            .event("STATE_SNAPSHOT")
+            .id(source_id.clone())
+            .data(payload.to_string())));
+    }
+    let payload = enrich_agui_spec_payload(
+        "MESSAGES_SNAPSHOT",
+        serde_json::json!({
+            "type": "MESSAGES_SNAPSHOT", "profile": "uar.agui/1",
+            "threadId": snapshot.run_id, "runId": snapshot.run_id,
+            "messages": snapshot.messages,
+        }),
+        &source_id,
+        2,
+    );
+    frames.push(Ok(Event::default()
+        .event("MESSAGES_SNAPSHOT")
+        .id(source_id)
+        .data(payload.to_string())));
+    frames
+}
+
+pub(crate) fn build_sse_response<S>(
     stream: S,
     agui_spec: bool,
+    replay_snapshot: Option<AguiReplaySnapshot>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>> + Send>
 where
     S: Stream<Item = StreamEvent> + Send + 'static,
 {
-    let stream = stream.filter_map(move |event| async move {
-        let (event_name, payload) = if agui_spec {
-            let (event_name, payload) = to_agui_spec_event(&event.event)?;
-            (
-                event_name,
-                enrich_agui_spec_payload(event_name, payload, &event.id.to_string(), 8),
-            )
+    let snapshot_stream = futures::stream::iter(
+        replay_snapshot
+            .filter(|_| agui_spec)
+            .map(replay_snapshot_events)
+            .unwrap_or_default(),
+    );
+    let mut agui_spec_projector = AguiSpecProjector::default();
+    let event_stream = stream.flat_map(move |event| {
+        let source_id = event.id.to_string();
+        let frames = if agui_spec {
+            agui_spec_projector
+                .project(&event.event)
+                .into_iter()
+                .map(|frame| {
+                    let payload = enrich_agui_spec_payload(
+                        frame.event_name,
+                        frame.payload,
+                        &source_id,
+                        frame.ordinal,
+                    );
+                    Ok(Event::default()
+                        .event(frame.event_name)
+                        .id(source_id.clone())
+                        .data(payload.to_string()))
+                })
+                .collect()
         } else {
-            to_agui_event(&event.event)?
+            to_agui_event(&event.event)
+                .map(|(event_name, payload)| {
+                    let json = serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
+                    vec![Ok(Event::default()
+                        .event(event_name)
+                        .id(source_id)
+                        .data(json))]
+                })
+                .unwrap_or_default()
         };
-
-        let json = serde_json::to_string(&payload).unwrap_or_else(|_| "{}".to_string());
-        let sse_event = Event::default()
-            .event(event_name)
-            .id(event.id.to_string())
-            .data(json);
-
-        Some(Ok(sse_event))
+        futures::stream::iter(frames)
     });
 
-    Sse::new(stream)
+    Sse::new(snapshot_stream.chain(event_stream))
         .keep_alive(axum::response::sse::KeepAlive::new().interval(Duration::from_secs(15)))
 }
 
@@ -650,12 +956,14 @@ mod tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
 
     use super::{
-        enrich_agui_spec_payload, to_agui_event, to_agui_spec_event, to_runtime_entity_event,
+        AguiSpecProjector, build_agui_replay_snapshot, enrich_agui_spec_payload, to_agui_event,
+        to_agui_spec_event, to_runtime_entity_event,
     };
     use crate::uar::domain::{
         context::{ContextAction, ContextStrategy},
         events::{NormalizedEvent, StatePatchOp},
     };
+    use crate::uar::runtime::manager::StreamEvent;
 
     #[test]
     fn maps_skill_activation_event_with_selection_method() {
@@ -849,5 +1157,134 @@ mod tests {
             assert_eq!(enriched["eventId"], format!("7:{index}"));
             assert!(enriched["sequence"].as_u64().is_some());
         }
+    }
+
+    #[test]
+    fn replay_snapshot_matches_the_selected_cursor() {
+        let history = vec![
+            StreamEvent {
+                id: 1,
+                event: NormalizedEvent::StatePatch {
+                    run_id: "run-1".into(),
+                    patch: vec![StatePatchOp {
+                        op: "replace".into(),
+                        path: "/run".into(),
+                        value: Some(serde_json::json!({ "status": "running" })),
+                    }],
+                },
+            },
+            StreamEvent {
+                id: 2,
+                event: NormalizedEvent::ChatDelta {
+                    run_id: "run-1".into(),
+                    text_delta: "hello".into(),
+                },
+            },
+            StreamEvent {
+                id: 3,
+                event: NormalizedEvent::ChatDelta {
+                    run_id: "run-1".into(),
+                    text_delta: " world".into(),
+                },
+            },
+        ];
+
+        let snapshot = build_agui_replay_snapshot("run-1", &history, 2);
+
+        assert_eq!(snapshot.cursor, 2);
+        assert_eq!(
+            snapshot.state.expect("state remains synchronized")["run"]["status"],
+            "running"
+        );
+        assert_eq!(snapshot.messages.len(), 1);
+        assert_eq!(snapshot.messages[0]["content"], "hello");
+    }
+
+    #[test]
+    fn replay_snapshot_does_not_claim_state_after_an_invalid_patch() {
+        let history = vec![StreamEvent {
+            id: 1,
+            event: NormalizedEvent::StatePatch {
+                run_id: "run-1".into(),
+                patch: vec![StatePatchOp {
+                    op: "replace".into(),
+                    path: "/missing".into(),
+                    value: Some(serde_json::json!(true)),
+                }],
+            },
+        }];
+
+        assert!(
+            build_agui_replay_snapshot("run-1", &history, 1)
+                .state
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn replay_tool_projection_synthesizes_start_exactly_once() {
+        let mut projector = AguiSpecProjector::default();
+        for index in 0..8 {
+            let delta = NormalizedEvent::ToolDelta {
+                run_id: "run-1".into(),
+                call_index: 0,
+                tool_call_id: "call-1".into(),
+                delta: serde_json::json!({ "chunk": index }),
+            };
+            assert!(projector.project(&delta).is_empty());
+        }
+        let end = NormalizedEvent::ToolStart {
+            run_id: "run-1".into(),
+            call_index: 0,
+            tool_call_id: "call-1".into(),
+            tool: "weather".into(),
+            input: serde_json::json!({ "city": "Chicago" }),
+        };
+
+        let end_frames = projector.project(&end);
+
+        assert_eq!(
+            end_frames
+                .iter()
+                .map(|frame| frame.event_name)
+                .collect::<Vec<_>>(),
+            vec![
+                "TOOL_CALL_START",
+                "TOOL_CALL_ARGS",
+                "TOOL_CALL_ARGS",
+                "TOOL_CALL_ARGS",
+                "TOOL_CALL_ARGS",
+                "TOOL_CALL_ARGS",
+                "TOOL_CALL_ARGS",
+                "TOOL_CALL_ARGS",
+                "TOOL_CALL_ARGS",
+                "TOOL_CALL_END",
+            ]
+        );
+        assert_eq!(
+            end_frames
+                .iter()
+                .map(|frame| frame.ordinal)
+                .collect::<Vec<_>>(),
+            (0..10).collect::<Vec<_>>()
+        );
+        assert_eq!(end_frames[0].payload["toolCallName"], "weather");
+        let enriched = end_frames
+            .into_iter()
+            .map(|frame| {
+                enrich_agui_spec_payload(frame.event_name, frame.payload, "7", frame.ordinal)
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            enriched
+                .iter()
+                .map(|payload| payload["eventId"].as_str().expect("event id"))
+                .collect::<std::collections::HashSet<_>>()
+                .len(),
+            10
+        );
+        assert!(enriched.iter().all(|payload| payload["sequence"] == 112));
+        let next = enrich_agui_spec_payload("TOOL_CALL_RESULT", serde_json::json!({}), "8", 0);
+        assert_eq!(next["sequence"], 128);
     }
 }

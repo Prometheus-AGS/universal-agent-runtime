@@ -1,0 +1,71 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/package.json",
+      "line": 22,
+      "claim": "The dependency manifest changes far exceed the C-11 scope of adding only @tanstack/react-virtual 3.14.9, directly violating criterion 2.1 ('without changing unrelated packages') and contradicting criterion 7.3's claim of proving no unrelated dependency changes.",
+      "evidence": "The hunk adds dompurify, katex, mermaid, rehype-katex, rehype-raw, rehype-sanitize, remark-breaks, remark-math, shiki, tw-animate-css, chromatic, @chromatic-com/playwright, @tailwindcss/vite, eslint-plugin-unicorn; upgrades tailwindcss ^3.4.19\u21924.3.3 and vite; removes @radix-ui/react-icons, tailwindcss-animate, autoprefixer, and postcss; and adds three chromatic scripts. None of these are the cand-010 library. Criterion 2.1 also requires updating 'dependency and lock manifests', but no pnpm-lock.yaml diff appears in the packet, so a frozen-lockfile install cannot be verified.",
+      "suggested_fix": "Split the Tailwind 4 / markdown / Chromatic changes into their own change artifacts, restore the removed packages or prove no remaining imports, and include the lockfile hunk so 2.1's lock-manifest requirement is demonstrable."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "frontend/src/features/chat/model/run-trace-store.ts",
+      "line": 160,
+      "claim": "Snapshot subscription failure in selectContext produces an unhandled promise rejection and leaves the entire trace panel silently dead with no local error state, violating criterion 5.1's requirement for independent local and network loading/error states.",
+      "evidence": "`const subscription = await subscribeRunTraceSnapshot(context.runId, onSnapshot);` has no try/catch; `subscribeRunTraceSnapshot` calls `getDbInstance()` in run-trace-api.ts, which throws if PGlite is uninitialized. The caller in use-run-trace.ts does `void selectContext(stableContext)` with no .catch, so the rejection is unhandled. Because the throw occurs before `void get().refreshCheckpoints()` / `refreshReplay()` / `refreshAgentArtifact()`, all four network states stay 'idle', context remains set, and the UI shows only 'No persisted events match the current filters' with no error surface \u2014 the network-error model covers checkpoints/replay/agent/resume but there is no local (snapshot) error state at all.",
+      "suggested_fix": "Wrap the subscribe call in try/catch, add a `snapshot` entry to RunTraceNetworkState (status/error), surface it in the timeline/panel, and gate the checkpoint/replay/agent refreshes so they still run (or report scoped errors) when the local subscription fails."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/components/assistant-ui/enhanced-thread.tsx",
+      "line": 35,
+      "claim": "The chat thread's markdown renderer is swapped from EnhancedMarkdownText to an unverified-in-packet MarkdownBubble (@/shared/markdown), a user-facing chat regression risk that is outside C-11's stated scope (6.8 requires only message anchors) and ships while full frontend tests are explicitly deferred (7.8).",
+      "evidence": "Hunks replace `import { EnhancedMarkdownText }` with `import { MarkdownBubble } from \"@/shared/markdown\"` and substitute it in AssistantMessageBody and USER_MESSAGE_PARTS_COMPONENTS; MarkdownBubble's source is not in the file tree or diff, so feature parity (GFM, code highlighting, citation handling) cannot be confirmed, and no focused test for the chat thread is cited in the corrected evidence.",
+      "suggested_fix": "Revert enhanced-thread.tsx to EnhancedMarkdownText (keeping only the anchor id/tabIndex additions required by 6.8), or include MarkdownBubble and focused chat-rendering tests in this change's evidence."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/chat/ui/run-trace-timeline.tsx",
+      "line": 175,
+      "claim": "The selection effect depends on the `rows` array, whose identity changes on every reprojection, so each live event append force-scrolls the tree back to the selected row and hijacks the operator's scroll position during streaming runs.",
+      "evidence": "`useEffect(() => { ... virtualizer.scrollToIndex(selectedIndex, ...) / scrollIntoView(...) }, [projection.selectedNodeId, rows, shouldVirtualize, virtualizer])` \u2014 `rows` is `projection.visibleRows`, rebuilt by projectRunTrace on every snapshot delivery via the store's onSnapshot \u2192 reproject path, so the scroll runs on every append even when selectedNodeId is unchanged.",
+      "suggested_fix": "Scroll only when selectedNodeId actually changes (e.g., track the last scrolled id in a ref, or drop `rows` from the deps and read it via a ref), keeping the focus-carry behavior keyed to pendingFocusNodeId."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/admin/pages/runtime-console-page.tsx",
+      "line": 340,
+      "claim": "openConversation polls for the message anchor for at most 60 requestAnimationFrame frames (~1 second) and then silently gives up, so the 'focuses the matching message' half of criterion 6.8 fails without any feedback whenever thread/message hydration from PGlite takes longer.",
+      "evidence": "`attempts += 1; if (attempts < 60) window.requestAnimationFrame(focusMessage);` \u2014 after 60 frames there is no error path, no announcement, and no fallback; on a cold IndexedDB load of a large thread the /threads route can easily exceed ~1s before the message DOM node exists.",
+      "suggested_fix": "Bound the retry by wall-clock time with a longer budget (or observe thread-load state), and on timeout surface a polite announcement or fall back to navigating to the thread without anchor focus."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/admin/pages/runtime-console-page.tsx",
+      "line": 323,
+      "claim": "The diff adds uses of `useNavigate` and `useCallback` with no corresponding import additions in any shown hunk, so the file as presented would not compile \u2014 contradicting the claimed typecheck pass and indicating the diff or the evidence is incomplete.",
+      "evidence": "The hunk adds `const navigate = useNavigate();` and `const selectRun = useCallback(...)`; the only import hunk (@@ -35,6 +35,10) adds useThreadRegistryActions, RunTracePanel, RunTraceContext, and chatMessageAnchorId. No hunk modifies the react-router import (which previously only needed useSearchParams) or the react import.",
+      "suggested_fix": "Include the import hunks for `useNavigate` (react-router) and `useCallback` (react) in the artifact, or attach the typecheck output proving the file compiles as diffed."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/features/chat/model/run-trace-store.ts",
+      "line": 218,
+      "claim": "refreshCheckpoints unconditionally resets selectedCheckpointId to the newest checkpoint, discarding any operator-chosen checkpoint selection whenever the action re-runs.",
+      "evidence": "`set((state) => ({ checkpoints: response.checkpoints, selectedCheckpointId: response.checkpoints.at(-1)?.id ?? null, ... }))` overwrites the prior selection instead of preserving it when the id still exists in the new list.",
+      "suggested_fix": "Preserve the existing selectedCheckpointId if it is still present in the refreshed list; only fall back to the latest checkpoint when there is no valid prior selection."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

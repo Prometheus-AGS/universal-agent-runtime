@@ -28,28 +28,12 @@ const meta: Meta = { title: "UI Primitives" };
 export default meta;
 type Story = StoryObj;
 
-/**
- * Two pre-existing design-token contrast gaps this a11y gate surfaced
- * app-wide, not specific to any one component: `--primary`/
- * `--primary-foreground` (white on `#ff5500`, 3.2:1) affects every default
- * `Button`/`Badge` variant; `--muted-foreground`/`--muted` (4.3:1, and
- * 3.56:1 on `TabsTrigger`'s inactive state) affects `Kbd`, `Avatar`
- * fallback, and inactive tabs. Fixing either is a design-system-wide
- * token change, out of Change 25's scope (adding the Storybook +
- * visual-regression + perf-budget infrastructure) -- flagged as a
- * follow-up in this change's proposal.md rather than silently
- * disabled without a trail.
- */
-const KNOWN_DESIGN_TOKEN_CONTRAST_GAP = { a11y: { test: "off" as const } };
-
 export const ButtonPrimary: Story = {
   render: () => <Button>Confirm</Button>,
-  parameters: KNOWN_DESIGN_TOKEN_CONTRAST_GAP,
 };
 export const ButtonOutline: Story = { render: () => <Button variant="outline">Cancel</Button> };
 export const BadgeDefault: Story = {
   render: () => <Badge>New</Badge>,
-  parameters: KNOWN_DESIGN_TOKEN_CONTRAST_GAP,
 };
 export const AlertDefault: Story = {
   render: () => (
@@ -66,7 +50,6 @@ export const AvatarDefault: Story = {
       <AvatarFallback>AB</AvatarFallback>
     </Avatar>
   ),
-  parameters: KNOWN_DESIGN_TOKEN_CONTRAST_GAP,
 };
 export const SwitchDefault: Story = { render: () => <Switch aria-label="Enable notifications" /> };
 export const SpinnerDefault: Story = { render: () => <Spinner /> };
@@ -81,7 +64,6 @@ export const TabsDefault: Story = {
       <TabsContent value="two">Second tab content</TabsContent>
     </Tabs>
   ),
-  parameters: KNOWN_DESIGN_TOKEN_CONTRAST_GAP,
 };
 export const TextareaDefault: Story = { render: () => <Textarea placeholder="Notes" /> };
 export const SkeletonDefault: Story = { render: () => <Skeleton className="h-4 w-32" /> };
@@ -112,6 +94,25 @@ export const LabelDefault: Story = {
 };
 export const KbdDefault: Story = {
   render: () => <Kbd>⌘K</Kbd>,
-  parameters: KNOWN_DESIGN_TOKEN_CONTRAST_GAP,
 };
 export const CheckboxDefault: Story = { render: () => <Checkbox aria-label="Accept terms" /> };
+
+export const LightThemeContrast: Story = {
+  render: () => (
+    <div className="light flex flex-wrap items-center gap-4 rounded-lg bg-background p-6 text-foreground">
+      <Button>Confirm</Button>
+      <Badge>New</Badge>
+      <Avatar>
+        <AvatarFallback>AB</AvatarFallback>
+      </Avatar>
+      <Kbd>Ctrl K</Kbd>
+      <Tabs defaultValue="one">
+        <TabsList>
+          <TabsTrigger value="one">Active</TabsTrigger>
+          <TabsTrigger value="two">Inactive</TabsTrigger>
+        </TabsList>
+        <TabsContent value="one">Light theme accessibility baseline</TabsContent>
+      </Tabs>
+    </div>
+  ),
+};

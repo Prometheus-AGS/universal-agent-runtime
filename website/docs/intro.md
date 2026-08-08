@@ -44,4 +44,4 @@ React -> hooks -> stores/entity graph -> services -> Axum REST/SSE
 
 ## Licensing
 
-Licensing is split by component: the runtime server is `AGPL-3.0-only` (separate commercial terms are available for AGPL-incompatible use), the SDKs under `sdks/` are `MIT`, and documentation is `CC-BY-4.0`. See the repository's `LICENSE`, `LICENSE-COMMERCIAL.md`, and `LICENSE-CC-BY-4.0.md`.
+All code — the runtime server and the SDKs under `sdks/` — is `MIT`; documentation is `CC-BY-4.0`. There is no commercial license to buy. See the repository's `LICENSE` and `LICENSE-CC-BY-4.0.md`.

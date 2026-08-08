@@ -1,0 +1,17 @@
+C-14d protected-path entry baseline
+Run date: 2026-08-08
+
+Combined SHA-256 of protected status, unstaged diffs, and staged license diffs:
+07e74ad94dc137e9574e411bc99d6f0fcd631879c5a0e52a1b87ca999cf43dc4
+
+Protected paths:
+.gitmodules
+LICENSE-COMMERCIAL.md
+crates/prometheus-skill-system
+sdks/rust/LICENSE-AGPL
+src/uar/api/adapters.rs
+src/uar/api/openapi.rs
+src/uar/api/routes.rs
+src/uar/api/sse.rs
+
+The closeout receipt must recompute the exact combined stream and match this hash.

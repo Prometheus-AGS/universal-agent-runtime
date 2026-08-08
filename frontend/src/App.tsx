@@ -1,19 +1,32 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AppShell } from "@/app/AppShell";
+import { AppShell } from "@/app/shell/app-shell";
 import { Titlebar } from "@/components/Titlebar";
 import { ChatPage } from "@/pages/chat-page";
-import { AdminPage } from "@/pages/admin-page";
-import { AboutPage } from "@/pages/about-page";
 import { Toaster } from "sonner";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { useAppBootstrap } from "@/hooks/use-app-bootstrap";
 
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
-});
+const LazyAdminPage = lazy(() => import("@/pages/admin-page").then((module) => ({
+  default: module.AdminPage,
+})));
+const LazyAboutPage = lazy(() => import("@/pages/about-page").then((module) => ({
+  default: module.AboutPage,
+})));
 
-function AppRoutes() {
+export function RouteLoadingFallback({ label }: { label: string }) {
+  return (
+    <div
+      className="flex flex-1 items-center justify-center bg-background p-6 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="font-mono text-xs text-fg-sub">Loading {label}…</span>
+    </div>
+  );
+}
+
+export function AppRoutes() {
   // Hydrate thread list from PGlite once on mount (DB is guaranteed ready here).
   useAppBootstrap();
   return (
@@ -31,12 +44,14 @@ function AppRoutes() {
               </div>
             }
           />
-          {/* Admin — full width, inner sidebar inside AdminPage */}
+          {/* Configuration surfaces — full width inside the shared application shell */}
           <Route
             path="/admin/*"
             element={
               <div className="flex h-full flex-1 overflow-hidden">
-                <AdminPage />
+                <Suspense fallback={<RouteLoadingFallback label="administration" />}>
+                  <LazyAdminPage />
+                </Suspense>
               </div>
             }
           />
@@ -45,7 +60,9 @@ function AppRoutes() {
             path="/about"
             element={
               <div className="flex h-full flex-1 overflow-hidden">
-                <AboutPage />
+                <Suspense fallback={<RouteLoadingFallback label="about" />}>
+                  <LazyAboutPage />
+                </Suspense>
               </div>
             }
           />
@@ -59,10 +76,8 @@ function AppRoutes() {
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </QueryClientProvider>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }

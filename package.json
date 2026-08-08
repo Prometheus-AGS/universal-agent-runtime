@@ -20,6 +20,7 @@
     "docs:lint": "npm --prefix website run lint",
     "ci-gates": "bash scripts/ci-grep-gates.sh",
     "frontend:boundaries": "node scripts/check-frontend-boundaries.mjs && node scripts/test-frontend-boundaries-negative.mjs",
+    "frontend:style-gate": "node scripts/check-flat2-style.mjs && node scripts/test-flat2-style-negative.mjs",
     "support-matrix:validate": "node scripts/validate-product-support-matrix.mjs && node scripts/validate-release-capabilities.mjs",
     "docs:validate": "node scripts/validate-documentation-truth.mjs",
     "release-workflow:validate": "node scripts/validate-release-workflow.mjs",
@@ -61,7 +62,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "AGPL-3.0-only",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues"
   },

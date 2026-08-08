@@ -1,0 +1,30 @@
+{
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "generated_at": "2026-08-07T19:25:20Z",
+  "variants": [
+    {
+      "name": "c-06-verification",
+      "file": ".refiner/artifacts/agui-event-parity-and-normalizer/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic validation receipt for C-06 AG-UI normalization and replay parity"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "All C-06 OpenSpec tasks are complete.",
+      "Frontend typecheck, lint, boundaries, focused tests, full tests, and production build pass.",
+      "Rust server-full check and focused replay tests pass with no C-06 warnings.",
+      "Adversarial-review fixes for buffered tool ordinals and legacy cursor reads pass focused validation.",
+      "The existing live integration target cannot compile because its shared Cli fixture omits strict_config and uses a stale server config type; this is outside C-06.",
+      "Repository-wide rustfmt remains red outside C-06; the three C-06 Rust files pass direct rustfmt validation."
+    ]
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "c09-finalization-and-fallbacks",
+      "description": "Streaming fences remain escaped source; finalized blocks load independently with per-block Suspense, error isolation, and readable source fallbacks.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused MarkdownBubble tests and source import inspection"
+      }
+    },
+    {
+      "id": "c09-engine-security",
+      "description": "Mermaid uses strict/start-disabled configuration plus sanitized SVG insertion, and Shiki renders token text without highlighter HTML injection.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused Mermaid and Shiki tests plus trust-boundary source inspection"
+      }
+    },
+    {
+      "id": "c09-lazy-production-graph",
+      "description": "The production entry's complete static closure excludes Mermaid and Shiki while named vendor-mermaid and vendor-shiki entries remain dynamic.",
+      "severity": "blocking",
+      "type": "performance",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Vite --manifest build followed by recursive static-import traversal"
+      }
+    },
+    {
+      "id": "c09-wave-three-gates",
+      "description": "C-09 passes frontend typecheck, lint, boundaries, Flat 2.0, full tests, production build, strict OpenSpec validation, and diff integrity.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded Wave 3 command receipts"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the C-09 OpenSpec delta as acceptance authority because .kbd-orchestrator/constraints.md is absent.",
+    "Keep Mermaid and Shiki outside the initial graph; named package-wide groups are invalid when shared transitive modules promote them into entry imports.",
+    "Retain Highlight.js until C-14c and keep the single KaTeX stylesheet owner established by C-08."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "The Wave 3 full-suite/build receipt and recursive manifest evidence exist.",
+    "No critical finding remains after isolated adversarial review."
+  ]
+}

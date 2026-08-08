@@ -4,7 +4,7 @@ The UAR and Prometheus names, logos, and related marks are trademarks of their r
 
 ## Code License vs Trademark Rights
 
-The software license (including AGPLv3) governs copyright permissions for source code.
+The software license (MIT) governs copyright permissions for source code.
 Trademark rights are separate and are not granted by the software license.
 
 ## Allowed Nominative Use

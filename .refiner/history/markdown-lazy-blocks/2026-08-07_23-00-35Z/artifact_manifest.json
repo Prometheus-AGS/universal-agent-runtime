@@ -1,0 +1,30 @@
+{
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "generated_at": "2026-08-07T22:59:58Z",
+  "variants": [
+    {
+      "name": "c-09-verification",
+      "file": "dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic validation receipt for finalized lazy Markdown blocks and the production import graph"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "C-09 implementation tasks through the Wave 3 build boundary are complete.",
+      "Frontend lint, typecheck, architecture boundaries, Flat 2.0, 45 test files with 214 tests, production build, strict OpenSpec validation, and diff integrity pass.",
+      "Adversarial review exposed and closed missing deterministic production-manifest and controllable lazy-module rejection evidence.",
+      "Frontend and root frozen-lockfile installs pass and both maintained importers resolve Mermaid 11.16.1 and Shiki 4.4.2.",
+      "The production manifest's recursive initial static closure contains only index.html, Rolldown runtime, assistant, React, and query chunks; both named engine entries are dynamic.",
+      "The project has no .kbd-orchestrator/constraints.md, so the C-09 OpenSpec requirements are the blocking constraint authority."
+    ]
+  }
+}

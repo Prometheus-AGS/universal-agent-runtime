@@ -1,39 +1,61 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "@chromatic-com/playwright";
 
 test.describe("Chat — Agent selection", () => {
-  test("chat page loads agent selector", async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
+    await page.route("**/api/uar/resolve-model", async (route) => {
+      await route.fulfill({
+        json: { ok: true, provider_id: "test", model_id: "test-model" },
+      });
+    });
+    await page.route("**/api/uar/providers", async (route) => {
+      await route.fulfill({ json: { default_id: "test", providers: [] } });
+    });
+    await page.route("**/api/agents", async (route) => {
+      await route.fulfill({
+        json: {
+          runtime_agents: [
+            {
+              id: "researcher",
+              metadata: {
+                title: "Research Assistant",
+                description: "Finds primary sources",
+              },
+            },
+            {
+              id: "writer",
+              metadata: {
+                title: "Writing Assistant",
+                description: "Drafts concise reports",
+              },
+            },
+          ],
+          federated_agents: [],
+        },
+      });
+    });
+  });
+
+  test("agent selector filters and selects with the Base UI command facade", async ({ page }) => {
     await page.goto("/threads");
-    await page.waitForLoadState("domcontentloaded");
-
-    // If the no-model guard is showing, skip — we need a configured server
-    const guard = page.locator("text=No Model Configured, text=No LLM Provider Configured");
-    const guardVisible = await guard.first().isVisible().catch(() => false);
-    if (guardVisible) {
-      test.skip();
-      return;
-    }
-
-    // Click New Conversation to get a thread
-    const newConv = page.locator("button:has-text('New conversation')").first();
-    if (await newConv.isVisible().catch(() => false)) {
-      await newConv.click();
-    }
-
-    // Agent selector (aria-label="Select agent") is always rendered in the chat toolbar
     const agentSelector = page.getByLabel("Select agent").first();
     await expect(agentSelector).toBeVisible({ timeout: 15000 });
+
+    await agentSelector.click();
+    const search = page.getByPlaceholder("Search agents...");
+    await expect(search).toBeVisible();
+    await search.fill("writing");
+
+    await expect(page.getByText("Writing Assistant", { exact: true })).toBeVisible();
+    await expect(page.getByText("Research Assistant", { exact: true })).not.toBeVisible();
+    await search.press("Enter");
+
+    await expect(agentSelector).toContainText("Writing Assistant");
+    await expect(search).not.toBeVisible();
   });
 
   test("new thread button creates a thread", async ({ page }) => {
     await page.goto("/threads");
     await page.waitForLoadState("domcontentloaded");
-
-    const guard = page.locator("text=No Model Configured").first();
-    const guardVisible = await guard.isVisible().catch(() => false);
-    if (guardVisible) {
-      test.skip();
-      return;
-    }
 
     const newConv = page.locator("button:has-text('New conversation'), [aria-label='New thread']").first();
     if (await newConv.isVisible({ timeout: 3000 }).catch(() => false)) {

@@ -1,0 +1,11 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-08-07T10:08:39Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "21 changes across 6 waves, dependency-ordered, OpenSpec backend. FIRST ACTION: write base-ui-foundation's missing spec delta, THEN C-00 archives the 4 complete UI changes (a2ui-uar-renderer 49/49, base-ui-foundation 24/24, a2ui-inspector 21/21, a2ui-theming 20/20) — base-ui-foundation has ZERO deltas today and openspec archive will fail on it. Then C-01 amends Goal 4 to name Base UI and records the standard §6.1/§6.3 divergence per D1. Both open questions closed at plan entry: OQ-PEM-API confirmed (all 5 APIs exported from the vendored dist, so C-07's outbox deletion is viable); OQ9 answered NEGATIVELY after review — services/ is NOT platform code (23 REST clients belong in features/*/api/ per target §1.2), so C-04 was re-scoped and re-sized S->M and its boundary zones deferred to C-14c. WARNINGS carried: (1) 337 hsl(var()) occurrences, not 237 — 307 sit in admin pages that C-14a rewrites, so C-05 is deliberately scoped to only the 30 non-admin ones to avoid paying twice; (2) the C-14a/b/c/d chain is strictly sequential on one tree, do NOT parallelise it; (3) C-13 was re-scoped — all 4 remaining tasks on docs-storybook-visual-regression-perf-budget are in its Deferred/out-of-scope section, so C-13 AUTHORS the CI bundle budget instead, and CHROMATIC_PROJECT_TOKEN is an OPERATOR prerequisite not agent work; (4) three library candidates (cand-010 virtualization, cand-011 cmdk/palette, cand-012 recharts) are verdict=reference and each owning change must resolve them before building; (5) 5 of 21 changes are horizontal — exception declared in §5.1; (6) every change has a named spec-delta capability in §5.2, and frontend-design-authority is a NEW capability C-01 must create. No cost or duration estimate exists.",
+  "skipped": false,
+  "skipReason": null
+}

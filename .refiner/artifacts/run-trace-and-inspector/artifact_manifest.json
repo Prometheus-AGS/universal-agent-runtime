@@ -1,0 +1,32 @@
+{
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "generated_at": "2026-08-08T01:53:00Z",
+  "variants": [
+    {
+      "name": "c-11-verification",
+      "file": ".refiner/artifacts/run-trace-and-inspector/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic validation and manual audit receipt for the C-11 run trace and inspector surface"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Frontend typecheck, lint, architecture boundaries, and the Flat 2.0 gate pass.",
+      "Six focused files pass with 39 tests; the supported Chromium story passes with one 500-event mount check.",
+      "Strict OpenSpec validation and scoped diff checks pass.",
+      "The manual audit corrected undersized inspector targets and prevented idle/loading replay states from claiming successful validation.",
+      "The first isolated review's critical roving-focus defect is corrected; selected checkpoint inspection, collapsed-root phase selection, resumed-run query persistence, and repeat-copy announcements are also covered.",
+      "The second review's local subscription blocker is corrected with independent snapshot status/error UI while remote requests continue; stable live selection no longer recenters and checkpoint refresh preserves selection.",
+      "The final isolated review passes with no critical findings; its virtual-focus and pending-run warnings were adopted and covered before OpenSpec verification.",
+      "Full frontend Vitest and production build remain deferred to the Wave 4 boundary after C-12."
+    ]
+  }
+}

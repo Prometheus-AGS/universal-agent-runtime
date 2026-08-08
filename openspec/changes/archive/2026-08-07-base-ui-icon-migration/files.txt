@@ -1,0 +1,11 @@
+frontend/package.json
+frontend/pnpm-lock.yaml
+frontend/src/components/ui/icon-migration.test.tsx
+openspec/changes/base-ui-icon-migration/design.md
+openspec/changes/base-ui-icon-migration/files.txt
+openspec/changes/base-ui-icon-migration/proposal.md
+openspec/changes/base-ui-icon-migration/specs/frontend-component-primitives/spec.md
+openspec/changes/base-ui-icon-migration/tasks.md
+openspec/changes/base-ui-icon-migration/verification.md
+pnpm-lock.yaml
+scripts/ci-grep-gates.sh

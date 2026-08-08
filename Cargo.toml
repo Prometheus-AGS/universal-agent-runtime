@@ -19,9 +19,7 @@ resolver = "2"
 name = "universal-agent-runtime"
 version = "1.0.0"
 edition = "2024"
-# Runtime server license. The sdks/{python,rust,typescript} SDK packages are
-# separately licensed MIT — see LICENSE-COMMERCIAL.md and each sdks/*/LICENSE*.
-license = "AGPL-3.0-only"
+license = "MIT"
 
 [lib]
 path = "src/lib.rs"

@@ -1,5 +1,9 @@
-export interface TextContentBlock { type: "text"; text: string }
-export interface ReasoningContentBlock { type: "reasoning"; text: string }
+import type { Chunk } from "@/shared/content/chunk";
+import type { ContentBlock } from "@/shared/content";
+
+export type { ContentBlock } from "@/shared/content";
+
+/** Runtime input accepted by the message store; never persisted as a wire block. */
 export interface ToolCallContentBlock {
   type: "tool-call";
   toolCallId: string;
@@ -8,37 +12,20 @@ export interface ToolCallContentBlock {
   result?: string;
   status: "running" | "complete" | "failed";
 }
-export interface CitationContentBlock {
-  type: "citation";
-  source: string;
-  content: string;
-  url?: string;
-}
-/** One numbered citation marker ([1], [2], ...) referencing a retrieved RAG
- * knowledge chunk. Mirrors the backend `RagCitation` wire shape
- * (`src/uar/domain/events.rs`). */
+
 export interface RagCitationMarker {
-  /** 1-based marker number, matching the `[n]` shown in the response text. */
   marker: number;
   chunkId: string;
   documentId?: string;
   documentName: string;
+  knowledgeBase?: string;
   relevanceScore: number;
   snippet: string;
+  page?: number;
+  span?: [number, number];
 }
-/** The full numbered citation set for one RAG-augmented assistant message,
- * rendered as a hover-to-source panel (see `CitationHoverPanel`). */
-export interface RagCitationsContentBlock {
-  type: "rag-citations";
-  citations: RagCitationMarker[];
-}
-export interface SkillActivationContentBlock {
-  type: "skill-activation";
-  skillId: string;
-  skillName: string;
-  selectionMethod?: string;
-  status: "active" | "complete";
-}
+
+/** Runtime input accepted by the message store; persisted as an artifact block. */
 export interface ContextUpdateContentBlock {
   type: "context-update";
   strategy: string;
@@ -47,19 +34,6 @@ export interface ContextUpdateContentBlock {
   wasApplied: boolean;
   summaryGenerated: boolean;
 }
-export interface ImageContentBlock { type: "image"; url: string; alt?: string }
-export interface ErrorContentBlock { type: "error"; message: string; code?: string }
-
-export type ContentBlock =
-  | TextContentBlock
-  | ReasoningContentBlock
-  | ToolCallContentBlock
-  | CitationContentBlock
-  | RagCitationsContentBlock
-  | SkillActivationContentBlock
-  | ContextUpdateContentBlock
-  | ImageContentBlock
-  | ErrorContentBlock;
 
 export interface MessageUsage {
   inputTokens: number;
@@ -70,14 +44,14 @@ export interface MessageUsage {
 export interface RichMessage {
   id: string;
   role: "user" | "assistant" | "system";
+  /** Portable wire/storage blocks only. */
   content: ContentBlock[];
+  /** UAR-rich view projection. Old rows derive this at the PGlite boundary. */
+  chunks?: Chunk[];
   createdAt: Date;
   status?: "in_progress" | "complete" | "failed";
-  /** The agent that actually answered (from agui.stream.start; may differ from the selected agent when an orchestrator delegates). */
   agentId?: string;
-  /** The model that produced the answer (from agui.done usage.model). */
   model?: string;
-  /** Token usage for this message (from agui.done). */
   usage?: MessageUsage;
 }
 
@@ -93,7 +67,7 @@ export interface StreamingState {
 
 export function getMessageText(message: RichMessage): string {
   return message.content
-    .filter((b): b is TextContentBlock => b.type === "text")
-    .map((b) => b.text)
+    .filter((block): block is Extract<ContentBlock, { type: "text" }> => block.type === "text")
+    .map((block) => block.text)
     .join("");
 }

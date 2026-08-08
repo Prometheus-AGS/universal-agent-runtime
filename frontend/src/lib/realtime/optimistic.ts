@@ -7,7 +7,7 @@
  *
  * Contract pinned by `__tests__/optimistic-rollback.test.tsx`.
  */
-import { useGraphStore } from "@prometheus-ags/prometheus-entity-management";
+import { useGraphStore } from "@/platform/entities";
 
 /**
  * Optimistically merge `patch` into the entity at (`type`, `id`), then run

@@ -1,0 +1,29 @@
+{
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "generated_at": "2026-08-07T21:36:42Z",
+  "variants": [
+    {
+      "name": "c-08-verification",
+      "file": "dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic validation receipt for the C-08 single markdown renderer and untrusted-HTML boundary"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "C-08 implementation tasks 1.1 through 4.2 are complete; task 4.3 is the verification/refinement/review gate represented by this receipt.",
+      "Frontend typecheck, lint, architecture boundaries, Flat 2.0, one focused test file with fourteen tests, strict OpenSpec validation, renderer census, and diff integrity pass.",
+      "Raw HTML parsing and sanitization are present in one ordered plugin chain, with KaTeX running after the sanitizer.",
+      "The final isolated review passes at zero critical, two warnings, and zero suggestions; its actionable raw-SVG warning was resolved and deterministically revalidated.",
+      "The project has no .kbd-orchestrator/constraints.md, so the C-08 OpenSpec requirements are the blocking constraint authority."
+    ]
+  }
+}

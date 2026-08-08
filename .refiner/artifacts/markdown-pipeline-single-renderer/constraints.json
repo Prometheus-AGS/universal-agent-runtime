@@ -1,0 +1,54 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "c08-single-renderer",
+      "description": "Chat and Skills preview consume one shared MarkdownBubble configuration, with no second markdown constructor outside the shared module.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": false,
+        "validation_method": "Renderer ownership census and consumer import inspection"
+      }
+    },
+    {
+      "id": "c08-sanitizer-boundary",
+      "description": "rehype-raw is immediately followed by the restrictive rehype-sanitize schema before trusted KaTeX processing.",
+      "severity": "blocking",
+      "type": "security",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused plugin-order and XSS DOM tests"
+      }
+    },
+    {
+      "id": "c08-content-features",
+      "description": "GFM, model-style hard breaks, KaTeX, approved semantic HTML, and safe limited SVG render through the shared source pipeline.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused MarkdownBubble feature tests"
+      }
+    },
+    {
+      "id": "c08-repository-gates",
+      "description": "The change passes frontend compiler, lint, boundary, Flat 2.0, focused test, strict OpenSpec, and diff-integrity gates.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded commands in verification-summary.md"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the C-08 OpenSpec delta as the acceptance authority because .kbd-orchestrator/constraints.md is absent.",
+    "Raw HTML parsing and sanitization must remain in the same change and adjacent in the plugin chain.",
+    "Do not claim Wave 3 full-suite or production-build evidence from this per-change gate."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "Implementation tasks 1.1 through 4.2 are complete and the task 4.3 verification receipt exists."
+  ]
+}

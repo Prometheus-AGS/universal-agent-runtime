@@ -1,0 +1,56 @@
+{
+  "refinement_id": "c07-pglite-run-event-persistence-20260807",
+  "artifact_name": "pglite-run-event-persistence",
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "started_at": "2026-08-07T20:56:00Z",
+  "updated_at": "2026-08-07T21:20:00Z",
+  "current_iteration": 3,
+  "max_iterations": 5,
+  "goals": [
+    "Validate C-07 against its OpenSpec requirements and per-change frontend gates"
+  ],
+  "constraints": [
+    { "id": "c07-versioned-local-schema" },
+    { "id": "c07-bounded-event-writes" },
+    { "id": "c07-local-first-lifecycle" },
+    { "id": "c07-repository-gates" }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-07T20:56:00Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-07T21:13:00Z"
+    },
+    {
+      "iteration": 3,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-07T21:20:00Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null
+}

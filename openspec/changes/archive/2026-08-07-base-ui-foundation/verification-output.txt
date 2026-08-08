@@ -1,0 +1,12 @@
+Command: openspec/changes/base-ui-foundation/verify-archive-readiness.sh
+Run date: 2026-08-07
+Base commit: a91cd5b50b9061c0ef439003142e994c46b8d013
+Exit status: 0
+
+Change 'base-ui-foundation' is valid
+base-ui-foundation archive readiness: PASS (34 Base UI wrappers)
+
+Verified inputs at run time:
+frontend/package.json git hash-object: 0a70007a38c1bd88545df8d55a5d706111b54cde
+frontend/components.json git hash-object: 3005b7532e1c7c6db88b508168940f853fd006c5
+implementation commit: e92670e248d7e02fed764edc16a7fabcf9d84dca

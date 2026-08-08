@@ -1,5 +1,5 @@
 use crate::uar::{
-    api::sse::build_sse_response,
+    api::sse::{build_agui_replay_snapshot, build_sse_response},
     domain::artifact::AgentArtifact,
     runtime::{checkpoint::Checkpoint, manager::RunManager},
 };
@@ -83,11 +83,30 @@ async fn stream_run(
             .and_then(|value| value.parse::<u64>().ok())
     });
 
-    let replay = manager
-        .history_since(&run_id, last_event_id)
-        .await
-        .unwrap_or_default();
-    let replay_max_id = replay.last().map_or(0, |event| event.id);
+    let agui_spec = params.stream_mode.as_deref() == Some("agui_spec");
+    let (replay, replay_max_id, replay_snapshot) = if agui_spec {
+        let full_history = manager
+            .history_since(&run_id, None)
+            .await
+            .unwrap_or_default();
+        let cursor =
+            last_event_id.unwrap_or_else(|| full_history.last().map_or(0, |event| event.id));
+        let replay = full_history
+            .iter()
+            .filter(|event| event.id > cursor)
+            .cloned()
+            .collect::<Vec<_>>();
+        let replay_max_id = replay.last().map_or(cursor, |event| event.id);
+        let snapshot = build_agui_replay_snapshot(&run_id, &full_history, cursor);
+        (replay, replay_max_id, Some(snapshot))
+    } else {
+        let replay = manager
+            .history_since(&run_id, last_event_id)
+            .await
+            .unwrap_or_default();
+        let replay_max_id = replay.last().map_or(0, |event| event.id);
+        (replay, replay_max_id, None)
+    };
 
     // Convert Broadcast Receiver to Stream
     let live_stream = BroadcastStream::new(rx)
@@ -106,7 +125,7 @@ async fn stream_run(
             event
         });
 
-    build_sse_response(stream, params.stream_mode.as_deref() == Some("agui_spec")).into_response()
+    build_sse_response(stream, agui_spec, replay_snapshot).into_response()
 }
 
 #[derive(Deserialize)]

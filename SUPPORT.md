@@ -14,10 +14,10 @@ there is no guaranteed response or fix time on the community track.
 
 ## Commercial support
 
-Commercial licensees (see [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md) and
-[docs/LICENSING.md](docs/LICENSING.md)) receive contractual response times,
-upgrade assistance, and deployment guidance. Contact: the licensing contact
-listed in LICENSE-COMMERCIAL.md.
+UAR itself is MIT and carries no commercial licence. Prometheus AGS offers
+paid support contracts — contractual response times, upgrade assistance, and
+deployment guidance — as a service, not as a licence to the software. See
+[docs/licensing/LICENSING.md](docs/licensing/LICENSING.md).
 
 ## Supported versions
 

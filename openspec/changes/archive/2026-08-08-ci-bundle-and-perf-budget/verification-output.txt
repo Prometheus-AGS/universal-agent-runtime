@@ -1,0 +1,58 @@
+C-13 ci-bundle-and-perf-budget verification
+Run date: 2026-08-08
+Supported browser: Chromium
+
+PASS  pnpm -C frontend typecheck
+PASS  pnpm -C frontend lint
+PASS  node scripts/check-frontend-boundaries.mjs
+PASS  node scripts/check-flat2-style.mjs
+      0 production boundary violations; 385 tracked Flat 2.0 legacy violations; 0 new
+
+PASS  pnpm -C frontend budget:proofs
+      Schema seed valid: migrations [1,2,3], migration SHA-256
+      a4cf692ceb10f55dae41490a46353edb64e98283d3311873d0077e65db24aab7,
+      public-schema catalog SHA-256
+      1d1e4bd08d2b14a3308bf1028ce01113cff5b9f30b8b31f3d59a6eff568452ac
+      exactly matches a fresh migration replay (tables, columns, constraints, indexes),
+      zero rows across every product table, 4,605,535 bytes
+      Bundle checker negative fixtures passed
+      Shared performance assertion: 9 tests passed
+
+PASS  pnpm -C frontend exec vitest run src/app.test.tsx
+      5 route/loading-boundary tests passed
+
+PASS  pnpm -C frontend test
+      63 files, 317 tests passed
+
+PASS  pnpm -C frontend build:manifest
+PASS  pnpm -C frontend budget:bundle --output test-results/frontend-bundle-budget.json
+      Initial JavaScript: 242,082 / 250,000 gzip bytes across 10 manifest files
+      Exactly one named static vendor-pglite JavaScript exclusion reported
+      initdb.wasm, pglite.data, pglite.wasm, and pglite-seed-v3.tar.gz reported with raw sizes
+      Mermaid and Shiki lazy-engine integrity passed
+
+PASS  pnpm -C frontend budget:performance
+      Cold PGlite thread-list browser-frame mark: 973.3 / 1,000ms
+      500-event trace lane (timestamped when the structural predicate holds): 13.3 / 100ms
+      2,000-line finalized Markdown (timestamped when the structural predicate holds): 130.2 / 250ms
+
+PASS  repeated cold fixture (--repeat-each=3)
+      943.7ms, 921.6ms, 925.6ms; all within 1,000ms
+
+PASS  openspec validate ci-bundle-and-perf-budget --strict
+PASS  artifact-refiner schema and referenced-file validation
+PASS  fresh isolated artifact-only adversarial review (no findings)
+PASS  git diff --check on the scoped C-13 packet
+
+Scope integrity:
+- No C-13 file is under provider/model/backend protocol ownership, C-14 removals,
+  src/uar, .gitmodules, or crates/prometheus-skill-system.
+- .gitmodules, the skill-system submodule, and src/uar were already dirty outside
+  C-13 and were not edited during this change.
+- The user-staged deletions remain staged exactly as received:
+  LICENSE-COMMERCIAL.md and sdks/rust/LICENSE-AGPL.
+
+Known verification environment signal:
+- The production preview had no backend on 127.0.0.1:1906, so expected proxy
+  connection-refused diagnostics appeared for unrelated API/health requests.
+  The measured cold PGlite path and all three binding assertions passed.

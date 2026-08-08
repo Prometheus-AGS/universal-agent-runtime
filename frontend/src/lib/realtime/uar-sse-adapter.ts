@@ -19,7 +19,7 @@ import type {
   RealtimeAdapter,
   SubscriptionConfig,
   UnsubscribeFn,
-} from "@prometheus-ags/prometheus-entity-management";
+} from "@/platform/entities";
 
 export interface UarSseAdapterOptions {
   /** Topic name from the bus: `knowledge_documents`, `agents`, `providers`, etc. */

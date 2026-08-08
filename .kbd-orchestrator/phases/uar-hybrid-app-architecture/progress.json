@@ -1,25 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "uar-hybrid-app-architecture",
+  "phaseId": "uar-hybrid-app-architecture",
   "parentPhase": null,
-  "childPhases": [],
-  "childPointer": null,
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": false,
-  "reflect_complete": false,
-  "changes_total": 12,
-  "changes_completed": 4,
-  "completed_changes": [
-    "desktop-stable-port",
-    "pglite-oxide-intel-mac-spike",
-    "admin-sw-scheme-safe-caching",
-    "admin-agent-model-warning-clarity"
-  ],
-  "active_change": null,
-  "blocked_changes": [],
-  "sourceTool": "claude",
-  "createdBy": "kbd-new-phase",
-  "updatedAt": "2026-07-16T09:45:00Z",
-  "last_updated_by": "claude",
-  "analysis_complete": true
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }

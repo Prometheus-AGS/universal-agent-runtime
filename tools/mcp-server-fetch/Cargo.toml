@@ -2,7 +2,7 @@
 name = "mcp-server-fetch"
 version = "1.0.0"
 edition = "2024"
-license = "AGPL-3.0-only"
+license = "MIT"
 description = "Rust MCP server exposing a single `fetch` tool for retrieving and converting web content, packaged as a Tauri sidecar binary."
 
 [[bin]]

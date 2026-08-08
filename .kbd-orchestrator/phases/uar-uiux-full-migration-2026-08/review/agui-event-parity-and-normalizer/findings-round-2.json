@@ -1,0 +1,39 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "src/uar/api/sse.rs",
+      "line": 190,
+      "claim": "AguiSpecProjector assigns unbounded ordinals (1..n) to buffered pre-name arg deltas while hardcoding ordinal 7 for TOOL_CALL_END and 8 for the fallthrough frame, so a tool call with 7+ streamed argument deltas produces two frames with the same `{source_id}:{ordinal}` eventId and the frontend adapter's `seen` dedupe silently drops TOOL_CALL_END, TOOL_CALL_RESULT, or an args frame.",
+      "evidence": "Buffering path: `ordinal: pending.len() as u64 + 1` (arg k gets ordinal k); synthesis path: END pushed with `ordinal: 7` and fallthrough `to_agui_spec_event` frame pushed with `ordinal: 8`. The established wire format (evidenced by the deleted `frontend/src/protocols/agui-adapter.test.ts` fixtures `wire(\"RUN_STARTED\", \"1:8\", 24, ...)` \u2014 eventId \"1:8\" == `{sseId}:{ordinal}`, sequence = id*16+ordinal) has no event-name component, so ordinal reuse means identical eventIds. The adapter contract (`if (this.seen.has(adapted.eventId)) return null;`) then discards the second frame. Trigger is realistic: `NormalizedEvent::ToolDelta` streams argument chunks and `ToolStart` only fires once the full input (and thus the name) is known, so large tool inputs (e.g. write_file with a whole file body) routinely exceed 7 deltas. Result: the chat store never sees tool completion for that call, or argument text is lost \u2014 a silent failure in exactly the replay/first-seen ordering this projector was added to fix.",
+      "suggested_fix": "Reassign ordinals sequentially when flushing frames from `project()` (e.g., `for (i, frame) in frames.iter_mut().enumerate() { frame.ordinal = i as u64; }`) so START/ARGS/END/RESULT always get unique ordinals regardless of buffered-arg count; additionally consider widening the sequence spacing (the id*16+ordinal formula bleeds into the next SSE id's sequence space beyond 15 frames from one source event)."
+    },
+    {
+      "severity": "WARNING",
+      "file": "src/uar/api/routes.rs",
+      "line": 87,
+      "claim": "Non-agui_spec (legacy) SSE attaches now fetch the entire retained run history and filter in memory, regressing the previous cursor-scoped fetch so every legacy replay attach pays a full-history load plus a cloned replay vec on long runs.",
+      "evidence": "Pre-diff: `let replay = manager.history_since(&run_id, last_event_id).await.unwrap_or_default();`. Post-diff: `let full_history = manager.history_since(&run_id, None).await.unwrap_or_default();` executed unconditionally, with the legacy branch doing `full_history.iter().filter(|event| last_event_id.is_none_or(|id| event.id > id)).cloned().collect::<Vec<_>>()`. The full fetch is only needed for agui_spec snapshot reconstruction; the legacy path gained no behavior from it.",
+      "suggested_fix": "Fetch full history only inside the `agui_spec` branch; in the legacy branch keep `manager.history_since(&run_id, last_event_id)` and derive `replay_max_id` as before."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/vite.config.js",
+      "line": 1,
+      "claim": "A tracked `vite.config.js` now sits alongside the tracked `vite.config.ts` with identical content, and Vite's config resolution prefers `.js` over `.ts`, so the typechecked `.ts` is silently shadowed \u2014 the exact failure mode this repository previously fixed by deleting the duplicate.",
+      "evidence": "Both files receive the same `@tailwindcss/vite` hunk in this diff. The repo's own history (visible in the pre-migration minus-lines of `.kbd-orchestrator/phases/uar-post-dependabot-followup-2026-07/progress.json`): 'blocked by a stale git-tracked duplicate vite.config.js shadowing the fix (deleted, untouched since original migration, referenced by nothing)'. Any future edit made only to `vite.config.ts` will be ignored at runtime again.",
+      "suggested_fix": "Keep one authoritative config: either delete `frontend/vite.config.js` (rolldown-vite handles TS configs natively) or, if the `.js` is generated from the `.ts`, generate it at build time and gitignore it instead of committing it."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

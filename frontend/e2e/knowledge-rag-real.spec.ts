@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "@chromatic-com/playwright";
 
 test("knowledge page creates, indexes, searches, and deletes real data", async ({ page }) => {
   const baseName = `Release facts ${Date.now()}`;

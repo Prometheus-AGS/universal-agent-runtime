@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import * as agentFetcher from "@/entities/fetchers/agents";
-import * as providersApi from "@/services/providers-api";
+import * as agentFetcher from "@/features/agents/model";
+import * as providersApi from "@/features/providers/api";
 import * as sessionApi from "@/services/session-config-api";
 import { useChatSessionConfigStore } from "@/stores/chat-session-config-store";
 
-vi.mock("@/entities/fetchers/agents", () => ({ loadAgentsIntoGraph: vi.fn() }));
-vi.mock("@/services/providers-api", () => ({ fetchConfiguredProviders: vi.fn() }));
+vi.mock("@/features/agents/model", () => ({ loadAgentsIntoGraph: vi.fn() }));
+vi.mock("@/features/providers/api", () => ({ fetchConfiguredProviders: vi.fn() }));
 vi.mock("@/services/session-config-api", () => ({ saveSessionAgentConfig: vi.fn() }));
 
 beforeEach(() => {

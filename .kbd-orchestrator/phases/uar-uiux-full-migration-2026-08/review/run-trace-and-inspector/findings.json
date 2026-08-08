@@ -1,0 +1,47 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/chat/ui/run-trace-timeline.tsx",
+      "line": 158,
+      "claim": "The pending keyboard-focus target is cleared in the requestAnimationFrame callback even when the target row is not yet mounted, so large jumps in virtualized mode (End key, or fast repeated ArrowDown past the overscan window) can permanently drop roving focus to document.body.",
+      "evidence": "In the scroll/focus effect: `const frame = window.requestAnimationFrame(() => { rowElements.current.get(projection.selectedNodeId!)?.focus({ preventScroll: true }); if (pendingFocusNodeId.current === projection.selectedNodeId) pendingFocusNodeId.current = null; });` \u2014 the flag is nulled unconditionally when it matches, regardless of whether `get()` returned an element. `virtualizer.scrollToIndex` applies the scroll asynchronously (scroll event \u2192 virtualizer state \u2192 rerender), and the effect deps (`projection.selectedNodeId, rows, shouldVirtualize, virtualizer`) do not change when only the virtual window shifts (`rows` is the same reference), so the effect never re-runs to retry. The jsdom regression cited in the disposition (consecutive ArrowDown) stays within the already-mounted range and cannot observe this.",
+      "suggested_fix": "Only clear `pendingFocusNodeId.current` after `focus()` actually ran on a found element, and/or drive focus off the virtualizer's rendered-range change (e.g., an effect keyed on `virtualItems`) so the focus attempt retries once the row mounts."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/admin/pages/runtime-console-page.tsx",
+      "line": 0,
+      "claim": "`selectedRun = runs.find((run) => run.id === selectedRunId) ?? runs[0]` silently renders a different run than the `?run=` route parameter and selection state indicate, which is reachable through C-11's new resume handoff when the resumed run id is not yet present in graph entities.",
+      "evidence": "The excerpt shows `onRunHandoff={selectRun}` wired to `RunTracePanel`, and `resume()` in `run-trace-panel.tsx` calls `onRunHandoff?.(response.run_id)` immediately after the resume POST returns. `selectRun` writes `?run=<new id>` and sets `selectedRunId`, but `runs.find(...)` fails until `useGraphEntities` refreshes, so `traceContext` is built from `runs[0]` \u2014 the operator sees an arbitrary other run's trace while the URL names the resumed run. The same mismatch occurs for any stale/unknown `?run=` deep link.",
+      "suggested_fix": "When `selectedRunId` is set but not found in `runs`, render an explicit loading/not-found state (or keep the previous run) instead of falling back to `runs[0]`; only use `runs[0]` when no id is selected at all."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/chat/model/run-trace-store.ts",
+      "line": 190,
+      "claim": "Phase-bar selection silently no-ops whenever the chosen phase has no visible tree node \u2014 which happens for phases whose events are all filtered out or that exist only in `run.phaseTimings` \u2014 leaving focus on a listbox option whose aria-selected stays false with no feedback.",
+      "evidence": "`RunTraceBar` segments are built from `input.run.phaseTimings` (`buildRunTraceSegments`), while `selectPhase` looks up `current.projection.phaseNodeIds`, a map populated only for phases of events that pass `input.filters` (`if (!input.filters[event.kind]) continue;` in `projectRunTrace`). `selectPhase` returns null and changes nothing when the lookup misses, but the bar's `move()` still focuses the button (`items.current[next]?.focus()`), so keyboard/click interaction appears broken under active filters. This undercuts criterion 6.1's phase-to-timeline selection contract in filtered states.",
+      "suggested_fix": "Disable or hide bar segments whose phase has no node in `projection.phaseNodeIds` (or have `selectPhase` surface a no-op state), so the bar only offers phases that can actually be selected and scrolled to."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/features/chat/model/use-run-trace.ts",
+      "line": 21,
+      "claim": "A rejected live-query unsubscribe produces an unhandled promise rejection because both `selectContext` and `dispose` await `subscription.unsubscribe()` yet are invoked via `void` from the effect.",
+      "evidence": "`use-run-trace.ts` calls `void selectContext(stableContext)` and `void useRunTraceStore.getState().dispose()`; in `run-trace-store.ts`, `selectContext` does `await previousSubscription?.unsubscribe()` and `dispose` does `await subscription?.unsubscribe()` with no try/catch, while `PersistedRunSnapshotSubscription.unsubscribe` awaits `Promise.all([runQuery.unsubscribe(), eventQuery.unsubscribe()])`, which can reject if the PGlite live extension teardown fails.",
+      "suggested_fix": "Wrap the unsubscribe awaits in try/catch (logging or ignoring teardown failures) so context switches and unmounts cannot emit unhandled rejections."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

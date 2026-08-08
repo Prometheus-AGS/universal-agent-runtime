@@ -1,4 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@chromatic-com/playwright";
+import type { Page } from "@playwright/test";
 
 type RuntimeReplayWindow = Window & {
   __uarRuntimeReplay?: {
@@ -40,9 +41,12 @@ test.describe("Runtime event replay entity sync", () => {
     await page.goto("/admin/runs");
     await replayAll(page);
 
-    await expect(page.getByRole("heading", { name: "Live Replay Run" })).toBeVisible();
-    await expect(page.getByText("Replay Diagnostics Artifact")).toBeVisible();
-    await expect(page.getByText("provider.health.check")).toBeVisible();
+    await expect(page.getByRole("region", { name: "Artifacts · 1" })).toContainText(
+      "Replay Diagnostics Artifact",
+    );
+    await expect(page.getByRole("region", { name: "Tool calls · 1" })).toContainText(
+      "provider.health.check",
+    );
     await expect(page.getByText("json · application/json")).toBeVisible();
   });
 
@@ -72,7 +76,7 @@ test.describe("Runtime event replay entity sync", () => {
     await expect(page.getByText("2 events")).toBeVisible();
     await expect(page.getByText("1 surfaces")).toBeVisible();
     await expect(page.getByText("1 route decisions")).toBeVisible();
-    await expect(page.getByText("tool_call.delta")).toBeVisible();
+    await expect(page.getByText("TOOL_CALL_ARGS")).toBeVisible();
     await expect(page.getByText("Replay A2UI Surface")).toBeVisible();
     await expect(page.getByText("Replay payload rendered from entity graph")).toBeVisible();
     await expect(page.getByText("gpt-5.4")).toBeVisible();

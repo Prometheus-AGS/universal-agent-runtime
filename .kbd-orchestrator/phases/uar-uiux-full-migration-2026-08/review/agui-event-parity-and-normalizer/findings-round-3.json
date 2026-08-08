@@ -1,0 +1,30 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "line": 746,
+      "claim": "Removing the isHighFrequencyAguiEvent filter means every validated official frame \u2014 including each per-token TEXT_MESSAGE_CONTENT/REASONING_MESSAGE_CONTENT delta \u2014 now upserts a RuntimeAgUiEvent entity into the zustand graph store once per token, reintroducing the per-token store-update churn and unbounded entity growth the deleted filter was deliberately preventing.",
+      "evidence": "Deleted code: `if (!isHighFrequencyAguiEvent(event)) { ingestAgUiEvent(...) }` with comment 'High-frequency token deltas are excluded to keep the AG-UI events panel readable.' Replacement: `if (adapted.eventRow) ingestAgUiEvent(runId, adapted.eventRow);` with comment 'including high-frequency content rows.' runtime-ingest.ts upserts one entity per row.id with no eviction or cap, so a long stream produces one graph-store entity (and subscriber notification) per streamed token.",
+      "suggested_fix": "Cap or coalesce RuntimeAgUiEvent ingestion for delta-type rows (e.g., keep only the latest N rows per run, or upsert deltas into a single rolling 'latest content' entity) while retaining full rows for lifecycle/tool/state events."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".claude/settings.local.json",
+      "claim": "The added allow entry `Bash(gh secret *)` grants non-interactive permission to run any gh secret subcommand (list, set, delete) against the repository's CI credentials, broadening agent capability over production secrets with no ask-gate.",
+      "evidence": "Diff hunk adds `\"Bash(gh secret *)\"` to the permissions allow array, alongside other write-capable entries; the file's `ask` array remains empty (`\"ask\": []`), so nothing forces confirmation before secret mutation.",
+      "suggested_fix": "Narrow the permission to read-only forms (e.g., `Bash(gh secret list)`) and leave `gh secret set/delete` unprompted-by-default via the `ask` list or explicit operator invocation."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

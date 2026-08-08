@@ -20,6 +20,10 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
+  reporter: [
+    ["line"],
+    ["json", { outputFile: "../openspec/changes/a11y-and-responsive-certification/receipts/real-server-playwright.json" }],
+  ],
   timeout: 60_000,
   use: {
     baseURL: appBaseUrl,

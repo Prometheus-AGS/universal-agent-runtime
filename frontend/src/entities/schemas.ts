@@ -1,9 +1,22 @@
-import { registerSchema } from "@prometheus-ags/prometheus-entity-management";
-import type { EntityId } from "@prometheus-ags/prometheus-entity-management";
+import { registerEntityFromSql, registerSchema } from "@/platform/entities";
+import type { EntityId } from "@/platform/entities";
+import {
+  RUN_EVENT_TABLE_SQL,
+  RUN_TABLE_SQL,
+} from "@/platform/pglite/migrations";
 
 const list = (type: string, filter: Record<string, EntityId>) => [type, filter];
 
 export function registerAllSchemas() {
+  registerEntityFromSql({
+    entityType: "RuntimeRun",
+    createTableSql: RUN_TABLE_SQL,
+  });
+  registerEntityFromSql({
+    entityType: "RuntimeAgUiEvent",
+    createTableSql: RUN_EVENT_TABLE_SQL,
+  });
+
   registerSchema({
     type: "Provider",
     relations: {

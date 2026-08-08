@@ -1,0 +1,47 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/entities/runtime-ingest.ts",
+      "line": 76,
+      "claim": "The RuntimeAgUiEvent graph entity shape does not match the SQL-derived schema it is registered from, so the C-07 'SQL-derived entity schema' describes a record the graph never produces.",
+      "evidence": "ingestAgUiEvent upserts { id: row.id, run_id, event_type: row.type, sequence: row.sequence, phase, received_at, payload, updated_at }, but RUN_EVENT_TABLE_SQL (migrations.ts) declares columns run_id/seq/event_id/wire_sequence/type/kind/at/payload, and schemas.ts registers 'RuntimeAgUiEvent' via registerEntityFromSql on that SQL. The entity has no event_id/seq/wire_sequence fields; the SQL schema has no event_type/sequence/phase/received_at fields. schemas.test.ts only asserts the SQL-side property names exist, never that the ingested entity conforms. If PEM applies the registered schema for validation or projection of graph entities, every field written by ingestAgUiEvent is undeclared.",
+      "suggested_fix": "Either align the graph entity field names with the SQL columns (event_id, seq, wire_sequence, type, kind, at) or register the graph-facing shape separately and add a test that round-trips an ingested RuntimeAgUiEvent entity through the registered schema."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/entities/bootstrap.ts",
+      "line": 60,
+      "claim": "Realtime sync initialization is now hard-gated on PGlite durable bootstrap succeeding, so any PGlite open/hydration failure (or a runtime mode without the local DbProvider) silently eliminates the entire SSE sync path that bootstrapEntityGraph previously started unconditionally.",
+      "evidence": "bootstrapEntityGraph no longer calls initSyncTransport(); the only remaining caller is durableDependencies.startSync, invoked from bootstrapDurableEntityGraph, which is only called from DbProvider after `UarDb.open()` and `await bootstrapDurableEntityGraph(db.getPersistenceClient())` succeed (db-context.tsx). If UarDb.open or hydration throws, the provider enters its error state and initSyncTransport never runs \u2014 previously sync started at app bootstrap independent of local database health. No fallback path starts sync without the local-first runtime.",
+      "suggested_fix": "Either confirm no non-PGlite deployment mode exists and document the coupling, or start initSyncTransport in a degraded path when durable bootstrap fails so realtime updates are not lost with the local store."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/platform/pglite/run-event-repository.ts",
+      "line": 160,
+      "claim": "A retried stream that reuses the fallback run id can never be re-finalized: startRun's ON CONFLICT clause updates thread/message/model but not status, and finishRun only transitions rows with status='running', so a run finalized 'error' by the failed attempt stays terminally 'error' while the retry appends new events to it.",
+      "evidence": "chat-stream-store.ts creates RunEventPersistence with `fallbackRunId: serverRunIdRef ?? runId`; when the response header is absent (e.g., the fetch failed before headers on every attempt), the same client runId is reused across retries. The catch block's retry path calls `finalizeRunPersistence(runPersistence, 'error')` before the retry, marking the run 'error'. On the retry, startRun's `ON CONFLICT (id) DO UPDATE SET thread_id..., message_id..., model...` leaves status='error' and finished_at set, and `finishRun ... WHERE id = $1 AND status = 'running'` no-ops, so the eventual successful completion is never persisted.",
+      "suggested_fix": "Generate a fresh persistence run id per attempt (e.g., suffix the fallback id with the attempt counter) or have startRun reset status to 'running'/clear finished_at when the existing row is in a terminal state and a genuinely new attempt begins."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/stores/chat-stream-store.ts",
+      "line": 665,
+      "claim": "Cancellation finalization is fire-and-forget, so the terminal 'cancelled' write can be lost entirely on page unload or an immediate app teardown, leaving the persisted run permanently 'running'.",
+      "evidence": "stopStream does `const persistence = activeRunPersistence; activeRunPersistence = null; void finalizeRunPersistence(persistence, 'cancelled'); streamAbortRef?.abort();` \u2014 the promise is deliberately unawaited and finalizeRunPersistence only logs failures (`console.error('[run-persistence] terminal finalization failed', ...)`). If the page unloads or PGlite is torn down before the microtask completes, finishRun never executes and no later code path retries it; the run row stays status='running' forever, which the offline-trace consumer (criterion 1.2 / 'interrupted traces survive refresh') will misreport.",
+      "suggested_fix": "Record interrupted runs deterministically: e.g., on next bootstrap sweep runs left in 'running' with finished_at IS NULL and mark them 'cancelled'/'error', or await finalization before releasing the abort path where the caller lifecycle permits."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

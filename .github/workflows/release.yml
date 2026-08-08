@@ -188,7 +188,7 @@ jobs:
           mkdir -p "dist/${{ matrix.name }}/skills"
           cp -R crates/prometheus-skill-system/skills "dist/${{ matrix.name }}/skills/builtin"
           cp -R src/uar/runtime/matching/models "dist/${{ matrix.name }}/models"
-          cp README.md LICENSE LICENSE-COMMERCIAL.md example.config.yaml "dist/${{ matrix.name }}/"
+          cp README.md LICENSE example.config.yaml "dist/${{ matrix.name }}/"
           tar -czf "dist/${{ matrix.archive }}" -C dist "${{ matrix.name }}"
 
       - name: Package Windows archive
@@ -201,7 +201,7 @@ jobs:
           New-Item -ItemType Directory -Force "dist/${{ matrix.name }}/skills" | Out-Null
           Copy-Item crates/prometheus-skill-system/skills "dist/${{ matrix.name }}/skills/builtin" -Recurse
           Copy-Item src/uar/runtime/matching/models "dist/${{ matrix.name }}/models" -Recurse
-          Copy-Item README.md,LICENSE,LICENSE-COMMERCIAL.md,example.config.yaml "dist/${{ matrix.name }}/"
+          Copy-Item README.md,LICENSE,example.config.yaml "dist/${{ matrix.name }}/"
           Compress-Archive -Path "dist/${{ matrix.name }}" -DestinationPath "dist/${{ matrix.archive }}"
 
       - name: Install and smoke-test Unix archive

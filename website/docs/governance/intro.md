@@ -13,5 +13,5 @@ UAR embeds governance directly into the runtime: policy files, tool-approval wor
 ## Related documents
 
 - [Governance paper](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/prometheus-governance-paper.html)
-- [License ADR](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/adr/0002-dual-license-agpl-mit.md)
+- [License ADR](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/adr/0017-relicense-runtime-to-mit.md)
 - [Security policy](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/SECURITY.md)

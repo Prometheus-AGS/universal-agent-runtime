@@ -1,0 +1,29 @@
+{
+  "artifact_type": "code",
+  "generated_at": "2026-08-08T07:20:02Z",
+  "variants": [
+    {
+      "name": "c-14d-verification",
+      "file": ".refiner/artifacts/base-ui-verification/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "C-14d Base UI ownership, dependency, browser, budget, and protected-scope evidence"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "partial",
+    "has_console_errors": true,
+    "has_request_failures": true,
+    "notes": [
+      "The Base UI command facade passes filtering, pointer selection, Enter selection, repeated selection, and browser agent-selector verification.",
+      "cmdk is absent from both root and nested lock/install graphs; direct Radix ownership remains zero; retained Radix is attributed to vaul and Assistant UI.",
+      "Root-authoritative typecheck, lint, 330 tests, boundaries, CI grep gates, production manifest build, and strict OpenSpec validation pass.",
+      "The production initial JavaScript closure passes at 217476 of 250000 gzip bytes.",
+      "Protected-path closeout exactly matches entry at SHA-256 07e74ad94dc137e9574e411bc99d6f0fcd631879c5a0e52a1b87ca999cf43dc4.",
+      "Browser preview is partial because unrelated routes still report expected connection failures when the backend is absent; the migration-sensitive assertions pass."
+    ]
+  }
+}

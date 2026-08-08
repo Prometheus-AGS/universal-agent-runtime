@@ -1,5 +1,5 @@
 import { Bot, Code2, Database, Globe, Layers, Shield, Zap } from "lucide-react";
-import { KnowMeLogo, KnowMeWordmark } from "@/components/KnowMeLogo";
+import { UarWordmark } from "@/shared/ui/uar-logo";
 import { useHealthz } from "@/hooks/use-healthz";
 
 export function AboutPage() {
@@ -21,10 +21,8 @@ export function AboutPage() {
       <div className="mx-auto w-full max-w-4xl px-6 py-12">
         {/* Hero */}
         <div className="mb-12 text-center">
-          <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-3xl bg-card">
-            <KnowMeLogo size={44} className="text-foreground" />
-          </div>
-          <h1 className="font-display text-4xl font-bold tracking-tight text-foreground"><KnowMeWordmark /></h1>
+          <UarWordmark decorative className="mx-auto mb-6 h-20 w-full max-w-md" />
+          <h1 className="sr-only">Universal Agent Runtime</h1>
           <p className="mt-3 font-mono text-sm text-primary">{"Agentic streaming AI infrastructure · powered by the Universal Agent Runtime"}</p>
 
           {health && (

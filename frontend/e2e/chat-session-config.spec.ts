@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "@chromatic-com/playwright";
 
 test.describe("Chat — Session config panel", () => {
   test("session config button is accessible from chat", async ({ page }) => {

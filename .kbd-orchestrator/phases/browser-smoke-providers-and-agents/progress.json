@@ -1,31 +1,45 @@
 {
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 52,
+  "derivedRevision": 52,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+  },
+  "conflictCount": 0,
   "phase": "browser-smoke-providers-and-agents",
-  "createdAt": "2026-05-27T08:45:00-05:00",
-  "updatedAt": "2026-05-27T09:30:00-05:00",
-  "sourceTool": "claude-code",
-  "assessment_complete": true,
-  "plan_complete": true,
-  "execute_complete": false,
-  "reflect_complete": true,
-  "reflection_path": ".kbd-orchestrator/phases/browser-smoke-providers-and-agents/reflection.md",
-  "goal_achievement_percent": 35,
-  "reflection_caveat": "Partial reflect — deployment shipped, manual walkthrough not run. Re-reflect after smoke completes.",
-  "decisions": {
-    "browser": "Chrome",
-    "force_failure_technique": "natural API rejection (DevTools fallback)",
-    "smoke_output": "separate smoke-log.md",
-    "regression_triage": "finish all 8 then batch-triage; escalate if <6/8 pass"
+  "phaseId": "browser-smoke-providers-and-agents",
+  "parentPhase": null,
+  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 0,
+  "changes_completed": 0,
+  "implementation_total": 0,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 0,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
   },
-  "changes_total": 2,
-  "changes_completed": 1,
-  "execute_partial_reason": "Change 2 (smoke walkthrough) requires human-driven Chrome; MCP can't reach localhost from connected browser. Smoke-log template ready to fill in.",
-  "changes_ordered": [
-    "refresh-deployed-bundle-for-smoke",
-    "run-providers-and-agents-smoke-checklist"
-  ],
-  "change_status": {
-    "refresh-deployed-bundle-for-smoke": "DONE",
-    "run-providers-and-agents-smoke-checklist": "AWAITING_HUMAN — Preview MCP harness ran a partial pre-flight (SPA loads, backend reachable) but cannot drive cross-tab scenarios; template + observations recorded in smoke-log.md"
-  },
-  "next_change": "run-providers-and-agents-smoke-checklist"
+  "changes": [],
+  "children": {},
+  "migrationStatus": "legacy-read-only"
 }
