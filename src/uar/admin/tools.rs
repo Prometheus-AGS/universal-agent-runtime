@@ -51,10 +51,7 @@ pub struct ToolEntry {
 /// Native tools are listed first because they are the ones that survive with no
 /// network — an offline client reading this top-down sees what still works
 /// before what does not.
-pub async fn list(
-    native: &Arc<NativeSkillRegistry>,
-    mcp: &Arc<McpRegistry>,
-) -> Vec<ToolEntry> {
+pub async fn list(native: &Arc<NativeSkillRegistry>, mcp: &Arc<McpRegistry>) -> Vec<ToolEntry> {
     let mut entries = Vec::new();
 
     for name in native.names().await {

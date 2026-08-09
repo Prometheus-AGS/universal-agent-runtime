@@ -171,7 +171,10 @@ mod tests {
         let d = tmpdir();
         let p = read_provenance(&d);
         assert!(p.is_unknown());
-        assert!(p.manifest_path.is_none(), "no manifest means no path recorded");
+        assert!(
+            p.manifest_path.is_none(),
+            "no manifest means no path recorded"
+        );
         std::fs::remove_dir_all(&d).ok();
     }
 
@@ -292,9 +295,15 @@ mod tests {
         // THE assertion this change exists for. If this cannot fail, the
         // 359-commit drift would still be invisible.
         let d = tmpdir();
-        write_manifest(&d, "---\nversion: 1.0.0\ncommit: aaa\nskill_count: 161\n---\n");
+        write_manifest(
+            &d,
+            "---\nversion: 1.0.0\ncommit: aaa\nskill_count: 161\n---\n",
+        );
         let before = read_provenance(&d);
-        write_manifest(&d, "---\nversion: 1.6.0\ncommit: bbb\nskill_count: 220\n---\n");
+        write_manifest(
+            &d,
+            "---\nversion: 1.6.0\ncommit: bbb\nskill_count: 220\n---\n",
+        );
         let after = read_provenance(&d);
 
         assert_ne!(before, after, "provenance must track manifest changes");

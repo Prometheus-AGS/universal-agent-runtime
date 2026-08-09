@@ -8,11 +8,30 @@ use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 
+/// Matches the value this test used before `VectorMatcher::new` changed shape.
+/// Nothing here is threshold-sensitive — no matching is ever performed.
+const VECTOR_THRESHOLD: f32 = 0.75;
+
+/// Dimension reported by the placeholder backend. Never used to produce a
+/// vector: the backend errors on `embed` by design.
+const EMBEDDING_DIMENSION: usize = 384;
+
+/// These tests only assert that `RunManager` *constructs* without MCP — none of
+/// them embeds anything. `UnavailableEmbeddingBackend` is therefore the correct
+/// backend rather than a stand-in: it is compiled unconditionally (no feature
+/// gate), so this test builds under every profile, and it mirrors the fallback
+/// `server.rs` installs when a real backend cannot be built.
 fn make_vector_matcher() -> Arc<universal_agent_runtime::uar::runtime::matching::VectorMatcher> {
+    let backend = Arc::new(
+        universal_agent_runtime::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+            EMBEDDING_DIMENSION,
+            "embeddings are not exercised by the MCP-optional tests",
+        ),
+    );
     Arc::new(
         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
-            0.75,
-            "src/uar/runtime/matching/models".to_string(),
+            backend,
+            VECTOR_THRESHOLD,
         ),
     )
 }

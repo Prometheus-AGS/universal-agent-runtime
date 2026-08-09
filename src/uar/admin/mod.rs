@@ -18,9 +18,9 @@
 
 pub mod a2ui;
 pub mod knowledge;
-pub mod pack_sync;
 pub mod mcp;
 pub mod memory;
+pub mod pack_sync;
 pub mod skill_exec;
 pub mod skills;
 pub mod tools;
