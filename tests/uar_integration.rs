@@ -8,6 +8,7 @@ use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar;
 use universal_agent_runtime::uar::domain::skills::{Skill, SkillConstraints, SkillTriggers};
+use universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 use universal_agent_runtime::uar::runtime::skills::{
     SkillService, storage::FilesystemStorageProvider,
@@ -24,8 +25,7 @@ use universal_agent_runtime::uar::{
 /// unconditionally compiled (no feature gate), so these tests build and run
 /// under every profile — unlike a real backend, which panics without
 /// `local-models` because the `openai` fallback requires an API key.
-fn unavailable_embedding_backend()
--> Arc<dyn universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend> {
+fn unavailable_embedding_backend() -> Arc<dyn EmbeddingBackend> {
     Arc::new(
         universal_agent_runtime::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
             384,
