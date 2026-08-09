@@ -321,6 +321,14 @@ this file is the agent context.
 Change planning is coordinated with the KBD orchestrator. `.kbd-orchestrator/` is
 the source of truth.
 
+### GitHub Actions policy
+
+GitHub Actions are reserved for deployment execution and deployment validation
+only. Do not run unit tests, integration tests, conformance tests, linting,
+formatting, or other routine development checks in GitHub Actions. Run all
+non-deployment verification locally before committing and pushing changes. Do
+not add or retain workflow jobs that perform non-deployment testing.
+
 ### Worktree convention
 
 Git worktrees are created under **`~/.claude/worktrees/`**, never inside the repo
