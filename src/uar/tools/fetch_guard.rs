@@ -248,7 +248,9 @@ mod tests {
     fn blocks_the_cloud_metadata_endpoint() {
         // 169.254.169.254 hands out IAM credentials on every major cloud. This
         // is the single most important address for this tool to refuse.
-        assert!(is_blocked_address(IpAddr::V4(Ipv4Addr::new(169, 254, 169, 254))));
+        assert!(is_blocked_address(IpAddr::V4(Ipv4Addr::new(
+            169, 254, 169, 254
+        ))));
     }
 
     #[test]
@@ -269,9 +271,13 @@ mod tests {
     fn blocks_carrier_grade_nat() {
         // 100.64.0.0/10 is routable inside many cloud networks.
         assert!(is_blocked_address(IpAddr::V4(Ipv4Addr::new(100, 64, 0, 1))));
-        assert!(is_blocked_address(IpAddr::V4(Ipv4Addr::new(100, 127, 255, 254))));
+        assert!(is_blocked_address(IpAddr::V4(Ipv4Addr::new(
+            100, 127, 255, 254
+        ))));
         // ...but 100.128.x is public and must NOT be refused.
-        assert!(!is_blocked_address(IpAddr::V4(Ipv4Addr::new(100, 128, 0, 1))));
+        assert!(!is_blocked_address(IpAddr::V4(Ipv4Addr::new(
+            100, 128, 0, 1
+        ))));
     }
 
     #[test]
@@ -284,7 +290,9 @@ mod tests {
     #[test]
     fn allows_ordinary_public_addresses() {
         // The control: a blanket-deny would also be "secure" and useless.
-        assert!(!is_blocked_address(IpAddr::V4(Ipv4Addr::new(93, 184, 216, 34))));
+        assert!(!is_blocked_address(IpAddr::V4(Ipv4Addr::new(
+            93, 184, 216, 34
+        ))));
         assert!(!is_blocked_address(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8))));
     }
 
@@ -350,7 +358,10 @@ mod tests {
     #[test]
     fn binary_documents_route_to_the_extractor() {
         // The gap upstream leaves undefined: a PDF must become text, not bytes.
-        assert_eq!(extraction_for("application/pdf", false), Extraction::Document);
+        assert_eq!(
+            extraction_for("application/pdf", false),
+            Extraction::Document
+        );
         assert_eq!(
             extraction_for(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -358,7 +369,10 @@ mod tests {
             ),
             Extraction::Document
         );
-        assert_eq!(extraction_for("text/html; charset=utf-8", false), Extraction::Markdown);
+        assert_eq!(
+            extraction_for("text/html; charset=utf-8", false),
+            Extraction::Markdown
+        );
         assert_eq!(extraction_for("text/plain", false), Extraction::PlainText);
         // `raw` bypasses every conversion, as upstream specifies.
         assert_eq!(extraction_for("text/html", true), Extraction::Raw);

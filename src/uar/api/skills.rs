@@ -4,7 +4,7 @@
 //! and per-agent skill bindings.
 
 use crate::uar::domain::skills::{Skill, SkillExecutionConfig, SkillTriggers};
-use crate::uar::runtime::skills::provenance::{read_provenance, PackProvenance};
+use crate::uar::runtime::skills::provenance::{PackProvenance, read_provenance};
 use crate::uar::runtime::skills::service::{SkillMatchingConfig, SkillService, SkillUpdate};
 use axum::{
     Json, Router,
@@ -60,9 +60,7 @@ async fn get_provenance(State(service): State<Arc<SkillService>>) -> impl IntoRe
     let loaded = service.get_skills().await.len();
 
     let drift = match pack.skill_count {
-        Some(n) if n != loaded => Some(format!(
-            "pack reports {n} skills, runtime loaded {loaded}"
-        )),
+        Some(n) if n != loaded => Some(format!("pack reports {n} skills, runtime loaded {loaded}")),
         Some(_) => None,
         // Unknown is NOT "no drift": an older pack states nothing, and saying
         // "no drift" there would be a false assurance.
@@ -673,11 +671,14 @@ async fn check_for_update() -> impl IntoResponse {
     let repo = update_check::default_repo();
 
     let status = update_check::check_for_update(&local, &repo).await;
-    (StatusCode::OK, Json(serde_json::json!({
-        "repo": repo,
-        "local_commit": local.commit,
-        "result": status,
-    })))
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "repo": repo,
+            "local_commit": local.commit,
+            "result": status,
+        })),
+    )
 }
 
 /// `POST /update` — initiate a pack update on desktop/server.
@@ -722,13 +723,16 @@ async fn initiate_update() -> impl IntoResponse {
         Vec::new()
     };
 
-    (code, Json(serde_json::json!({
-        "repo": repo,
-        "result": status,
-        "actionable": actionable,
-        "pack_root": pack_root.display().to_string(),
-        "steps": steps,
-        "note": "This endpoint reports the update path; it does not swap the \
-                 tree under a live process. See change-uhe-013.",
-    })))
+    (
+        code,
+        Json(serde_json::json!({
+            "repo": repo,
+            "result": status,
+            "actionable": actionable,
+            "pack_root": pack_root.display().to_string(),
+            "steps": steps,
+            "note": "This endpoint reports the update path; it does not swap the \
+                     tree under a live process. See change-uhe-013.",
+        })),
+    )
 }

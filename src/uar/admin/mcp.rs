@@ -85,7 +85,15 @@ pub async fn list(
     registry
         .server_entries()
         .into_iter()
-        .map(|(name, entry)| (name, StoredMcpServer { enabled: true, entry }))
+        .map(|(name, entry)| {
+            (
+                name,
+                StoredMcpServer {
+                    enabled: true,
+                    entry,
+                },
+            )
+        })
         .collect()
 }
 
@@ -137,7 +145,10 @@ pub async fn save(
             .await
             .map_err(|error| error.to_string())?;
     }
-    Ok(SaveResult { name, outcome: ApplyOutcome::Applied })
+    Ok(SaveResult {
+        name,
+        outcome: ApplyOutcome::Applied,
+    })
 }
 
 /// Remove a server from the store and from the live registry.
@@ -154,7 +165,10 @@ pub async fn delete(
     servers.remove(name);
     write(manager, &servers).await?;
     registry.remove_server(name);
-    Ok(SaveResult { name: name.to_string(), outcome: ApplyOutcome::Removed })
+    Ok(SaveResult {
+        name: name.to_string(),
+        outcome: ApplyOutcome::Removed,
+    })
 }
 
 /// Seed the store from the file-derived registry on first boot, then make the
@@ -170,7 +184,15 @@ pub async fn hydrate(
     let current = registry
         .server_entries()
         .into_iter()
-        .map(|(name, entry)| (name, StoredMcpServer { enabled: true, entry }))
+        .map(|(name, entry)| {
+            (
+                name,
+                StoredMcpServer {
+                    enabled: true,
+                    entry,
+                },
+            )
+        })
         .collect::<HashMap<_, _>>();
     let stored = manager
         .get_value(SETTINGS_KEY)
@@ -181,7 +203,9 @@ pub async fn hydrate(
     // The file→database seed: an empty store adopts the file configuration
     // once, and every later read comes from the database.
     let effective = if stored.is_empty() && !current.is_empty() {
-        manager.set_value(SETTINGS_KEY, serde_json::to_value(&current)?).await?;
+        manager
+            .set_value(SETTINGS_KEY, serde_json::to_value(&current)?)
+            .await?;
         current
     } else {
         stored

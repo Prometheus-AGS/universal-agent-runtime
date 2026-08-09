@@ -37,8 +37,8 @@ use universal_agent_runtime::uar::domain::skills::{Skill, SkillOrigin};
 /// `MockLlmDriver` rather than pretending the constraint does not exist.
 #[cfg(feature = "in-memory-backend")]
 async fn embedded_runtime() -> EmbeddedRuntime {
-    use universal_agent_runtime::llm::registry::{ModelConfig, ProtocolSetting, ProviderConfig};
     use universal_agent_runtime::llm::mock_driver::MockLlmDriver;
+    use universal_agent_runtime::llm::registry::{ModelConfig, ProtocolSetting, ProviderConfig};
     use universal_agent_runtime::uar::persistence::PersistenceLayer;
     use universal_agent_runtime::uar::persistence::providers::memory::InMemoryProvider;
 
@@ -133,11 +133,19 @@ async fn an_embedder_can_list_install_get_toggle_and_query() {
         "toggle must report success for a skill that exists"
     );
     assert!(
-        !skills.list_enabled().await.iter().any(|s| s.skill_id == "emb-sdk-alpha"),
+        !skills
+            .list_enabled()
+            .await
+            .iter()
+            .any(|s| s.skill_id == "emb-sdk-alpha"),
         "a disabled skill must leave list_enabled"
     );
     assert!(
-        skills.list().await.iter().any(|s| s.skill_id == "emb-sdk-alpha"),
+        skills
+            .list()
+            .await
+            .iter()
+            .any(|s| s.skill_id == "emb-sdk-alpha"),
         "but it must REMAIN in list — disabling is not deleting, which is the \
          guarantee pack builtins depend on"
     );
@@ -146,7 +154,11 @@ async fn an_embedder_can_list_install_get_toggle_and_query() {
     // only on the way down.
     assert!(skills.toggle("emb-sdk-alpha", true).await);
     assert!(
-        skills.list_enabled().await.iter().any(|s| s.skill_id == "emb-sdk-alpha"),
+        skills
+            .list_enabled()
+            .await
+            .iter()
+            .any(|s| s.skill_id == "emb-sdk-alpha"),
         "re-enabling must restore the skill to list_enabled"
     );
 

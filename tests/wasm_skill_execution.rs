@@ -33,10 +33,7 @@ fn reference_component() -> Option<PathBuf> {
         "crates/prometheus-skill-system/skills/react/prometheus-entity-skills/entity-graph-optimize/skill.wasm",
         "../prometheus-skill-pack/skills/react/prometheus-entity-skills/entity-graph-optimize/skill.wasm",
     ];
-    candidates
-        .iter()
-        .map(PathBuf::from)
-        .find(|p| p.exists())
+    candidates.iter().map(PathBuf::from).find(|p| p.exists())
 }
 
 /// THE ASSERTION: the component returns **its own output**, not a placeholder.

@@ -162,9 +162,19 @@ mod tests {
         let listed = list(None, &user, None, None).await;
         assert!(listed.is_err(), "listing must not silently return empty");
         assert!(get(None, "m1").await.is_err());
-        assert!(add(None, "x", MemoryScope::default(), MemoryType::default(), &user, None, None)
+        assert!(
+            add(
+                None,
+                "x",
+                MemoryScope::default(),
+                MemoryType::default(),
+                &user,
+                None,
+                None
+            )
             .await
-            .is_err());
+            .is_err()
+        );
         assert!(update(None, "m1", "x".to_string()).await.is_err());
         assert!(delete(None, "m1").await.is_err());
         assert!(search(None, "q", &user, None, None, 5, None).await.is_err());
