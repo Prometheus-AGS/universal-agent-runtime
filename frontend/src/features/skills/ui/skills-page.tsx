@@ -180,11 +180,11 @@ export const SkillsPage: FC = () => {
   );
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden font-mono text-[13px] text-[var(--color-terminal-fg)]">
-      <div className="flex items-center justify-between border-b border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-surface)] px-6 py-4">
+    <div className="flex flex-1 flex-col overflow-hidden font-mono text-[13px] text-[var(--color-fg)]">
+      <div className="flex items-center justify-between bg-[var(--color-surface)] px-6 py-4">
         <div>
           <h2 className="text-[20px] font-medium tracking-tight">skills</h2>
-          <p className="text-xs text-[var(--color-terminal-fg-dim)]">
+          <p className="text-xs text-[var(--color-fg-sub)]">
             {skills.length} skills
             {admin.loading && <LoadingCursor className="ml-2" />}
           </p>
@@ -194,7 +194,7 @@ export const SkillsPage: FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => void load().catch(() => undefined)}
-            className="gap-1.5 border border-[var(--color-terminal-line-strong)] bg-transparent text-[var(--color-terminal-fg)] hover:bg-[color-mix(in_srgb,var(--color-phosphor)_8%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
+            className="gap-1.5 bg-transparent text-[var(--color-fg)] hover:bg-[color-mix(in_srgb,var(--color-ember)_8%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
             aria-label="Refresh skills"
           >
             <RefreshCw size={13} className={cn(admin.loading && "animate-spin")} />refresh
@@ -203,7 +203,7 @@ export const SkillsPage: FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => setIsImportOpen(true)}
-            className="gap-1.5 border border-[var(--color-terminal-line-strong)] bg-transparent text-[var(--color-terminal-fg)] hover:bg-[color-mix(in_srgb,var(--color-phosphor)_8%,transparent)]"
+            className="gap-1.5 bg-transparent text-[var(--color-fg)] hover:bg-[color-mix(in_srgb,var(--color-ember)_8%,transparent)]"
             aria-label="Import skills"
           >
             <FolderOpen size={13} />import
@@ -211,7 +211,7 @@ export const SkillsPage: FC = () => {
           <Button
             size="sm"
             onClick={openCreate}
-            className="gap-1.5 border border-[var(--color-phosphor)] bg-[color-mix(in_srgb,var(--color-phosphor)_12%,transparent)] text-[var(--color-phosphor)] hover:bg-[color-mix(in_srgb,var(--color-phosphor)_18%,transparent)]"
+            className="gap-1.5 border border-[var(--color-ember)] bg-[color-mix(in_srgb,var(--color-ember)_12%,transparent)] text-[var(--color-ember)] hover:bg-[color-mix(in_srgb,var(--color-ember)_18%,transparent)]"
           >
             <Plus size={13} />new skill
           </Button>
@@ -230,7 +230,7 @@ export const SkillsPage: FC = () => {
               <Button
                 size="sm"
                 onClick={() => { resetDialogState(); setIsDialogOpen(true); }}
-                className="gap-1.5 border border-[var(--color-phosphor)] bg-[color-mix(in_srgb,var(--color-phosphor)_12%,transparent)] text-[var(--color-phosphor)] hover:bg-[color-mix(in_srgb,var(--color-phosphor)_18%,transparent)]"
+                className="gap-1.5 border border-[var(--color-ember)] bg-[color-mix(in_srgb,var(--color-ember)_12%,transparent)] text-[var(--color-ember)] hover:bg-[color-mix(in_srgb,var(--color-ember)_18%,transparent)]"
               >
                 <Plus size={13} />new skill
               </Button>
@@ -247,7 +247,7 @@ export const SkillsPage: FC = () => {
               <div
                 key={skill.skill_id}
                 className={cn(
-                  "flex items-center gap-3 border border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-surface)] px-4 py-3 transition-colors duration-[160ms] hover:border-[color-mix(in_srgb,var(--color-phosphor)_40%,transparent)]",
+                  "flex items-center gap-3 bg-[var(--color-surface)] px-4 py-3 transition-colors duration-[160ms] hover:border-[color-mix(in_srgb,var(--color-ember)_40%,transparent)]",
                   !isEnabled && "opacity-60",
                 )}
               >
@@ -255,14 +255,14 @@ export const SkillsPage: FC = () => {
                   className={cn(
                     "flex size-8 items-center justify-center border",
                     isEnabled
-                      ? "border-[var(--color-phosphor)] bg-[color-mix(in_srgb,var(--color-phosphor)_12%,transparent)]"
-                      : "border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-bg)]",
+                      ? "border-[var(--color-ember)] bg-[color-mix(in_srgb,var(--color-ember)_12%,transparent)]"
+                      : " bg-[var(--color-bg)]",
                   )}
                 >
-                  <Zap size={14} className={isEnabled ? "text-[var(--color-phosphor)]" : "text-[var(--color-terminal-fg-dim)]"} />
+                  <Zap size={14} className={isEnabled ? "text-[var(--color-ember)]" : "text-[var(--color-fg-sub)]"} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-2 text-sm font-medium text-[var(--color-terminal-fg)]">
+                  <p className="flex items-center gap-2 text-sm font-medium text-[var(--color-fg)]">
                     {skill.title || skill.skill_id}
                     {isBuiltin && (
                       <span className="inline-flex items-center gap-1 rounded border border-[color-mix(in_srgb,var(--color-amber)_50%,transparent)] bg-transparent px-2 py-0.5 font-mono text-[9px] uppercase tracking-wide text-[var(--color-amber)]">
@@ -271,9 +271,9 @@ export const SkillsPage: FC = () => {
                     )}
                   </p>
                   {skill.description && (
-                    <p className="line-clamp-1 text-xs text-[var(--color-terminal-fg-dim)]">{skill.description}</p>
+                    <p className="line-clamp-1 text-xs text-[var(--color-fg-sub)]">{skill.description}</p>
                   )}
-                  <p className="text-[10px] text-[var(--color-terminal-fg-dim)]">
+                  <p className="text-[10px] text-[var(--color-fg-sub)]">
                     {skill.provider_id ? `provider: ${skill.provider_id}` : `id: ${skill.skill_id}`}
                   </p>
                 </div>

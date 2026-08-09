@@ -23,7 +23,7 @@ export const EmptyFrame: FC<{
       <p className="sr-only">{title}</p>
       <pre
         aria-hidden
-        className="select-none text-xs leading-[1.2] text-[var(--color-terminal-fg-dim)] opacity-60"
+        className="select-none text-xs leading-[1.2] text-[var(--color-fg-sub)] opacity-60"
       >
 {`┌────────────────────────────┐
 │                            │
@@ -32,7 +32,7 @@ export const EmptyFrame: FC<{
 └────────────────────────────┘`}
       </pre>
       {hint && (
-        <p className="mt-3 text-xs leading-relaxed text-[var(--color-terminal-fg-dim)]">
+        <p className="mt-3 text-xs leading-relaxed text-[var(--color-fg-sub)]">
           {hint}
         </p>
       )}

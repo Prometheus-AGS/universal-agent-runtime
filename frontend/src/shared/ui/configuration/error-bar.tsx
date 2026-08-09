@@ -21,7 +21,7 @@ export const ErrorBar: FC<{
     <div
       role="alert"
       className={cn(
-        "flex items-center gap-3 border-b border-[var(--color-signal-red)] bg-[color-mix(in_srgb,var(--color-signal-red)_8%,transparent)] px-6 py-2 text-xs text-[var(--color-signal-red)]",
+        "flex items-center gap-3 border-b border-[var(--color-red)] bg-[color-mix(in_srgb,var(--color-red)_8%,transparent)] px-6 py-2 text-xs text-[var(--color-red)]",
         className,
       )}
     >
@@ -31,7 +31,7 @@ export const ErrorBar: FC<{
         <button
           type="button"
           onClick={onDismiss}
-          className="rounded border border-[color-mix(in_srgb,var(--color-signal-red)_40%,transparent)] px-2 py-0.5 text-xs hover:bg-[color-mix(in_srgb,var(--color-signal-red)_15%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
+          className="rounded border border-[color-mix(in_srgb,var(--color-red)_40%,transparent)] px-2 py-0.5 text-xs hover:bg-[color-mix(in_srgb,var(--color-red)_15%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
         >
           dismiss
         </button>

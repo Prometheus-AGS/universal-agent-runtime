@@ -178,12 +178,12 @@ export const ModelsPage: FC = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden font-mono text-[13px] text-[var(--color-terminal-fg)]">
+    <div className="flex flex-1 flex-col overflow-hidden font-mono text-[13px] text-[var(--color-fg)]">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-surface)] px-6 py-4">
+      <div className="flex items-center justify-between bg-[var(--color-surface)] px-6 py-4">
         <div>
-          <h2 className="text-[20px] font-medium tracking-tight text-[var(--color-terminal-fg)]">models</h2>
-          <p className="text-xs text-[var(--color-terminal-fg-dim)]">
+          <h2 className="text-[20px] font-medium tracking-tight text-[var(--color-fg)]">models</h2>
+          <p className="text-xs text-[var(--color-fg-sub)]">
             <span data-testid="models-configured-count">{configuredCount}</span> configured ·{" "}
             <span data-testid="models-count">{filtered.length}</span> of {allModels.length} in catalog · {providers.length} providers
             {refreshing && <TerminalCursor className="ml-2" />}
@@ -196,7 +196,7 @@ export const ModelsPage: FC = () => {
             size="sm"
             onClick={() => setShowAddDialog(true)}
             disabled={configured.length === 0}
-            className="gap-1.5 border border-[color-mix(in_srgb,var(--color-phosphor)_40%,transparent)] bg-transparent text-[var(--color-phosphor)] hover:bg-[color-mix(in_srgb,var(--color-phosphor)_8%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)] disabled:opacity-40"
+            className="gap-1.5 border border-[color-mix(in_srgb,var(--color-ember)_40%,transparent)] bg-transparent text-[var(--color-ember)] hover:bg-[color-mix(in_srgb,var(--color-ember)_8%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)] disabled:opacity-40"
             aria-label="Add model from catalog"
             data-testid="models-add-button"
           >
@@ -207,7 +207,7 @@ export const ModelsPage: FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => void load()}
-            className="gap-1.5 border border-[var(--color-terminal-line-strong)] bg-transparent text-[var(--color-terminal-fg)] hover:bg-[color-mix(in_srgb,var(--color-phosphor)_8%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
+            className="gap-1.5 bg-transparent text-[var(--color-fg)] hover:bg-[color-mix(in_srgb,var(--color-ember)_8%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
             aria-label="Refresh models"
           >
             <RefreshCw size={13} className={cn(refreshing && "animate-spin")} />refresh
@@ -217,19 +217,19 @@ export const ModelsPage: FC = () => {
 
       {/* Error bar */}
       {error && (
-        <div className="border-b border-[var(--color-signal-red)] bg-[color-mix(in_srgb,var(--color-signal-red)_8%,transparent)] px-6 py-2 text-xs text-[var(--color-signal-red)]">
+        <div className="border-b border-[var(--color-red)] bg-[color-mix(in_srgb,var(--color-red)_8%,transparent)] px-6 py-2 text-xs text-[var(--color-red)]">
           <span className="mr-2 font-semibold">ERR-MODELS</span>{error}
         </div>
       )}
 
       <div className="flex-1 overflow-y-auto">
         {/* Configured models section */}
-        <section className="border-b border-[var(--color-terminal-line)] px-6 py-4" aria-label="Configured models">
+        <section className=" px-6 py-4" aria-label="Configured models">
           <div className="mb-3 flex items-center gap-2">
-            <span className="text-xs font-medium uppercase tracking-widest text-[var(--color-terminal-fg-dim)]">
+            <span className="text-xs font-medium uppercase tracking-widest text-[var(--color-fg-sub)]">
               configured
             </span>
-            <span className="h-px flex-1 bg-[var(--color-terminal-line)]" aria-hidden />
+            <span className="flex-1" aria-hidden />
           </div>
 
           {configuredRows.length === 0 ? (
@@ -266,21 +266,21 @@ export const ModelsPage: FC = () => {
         {/* Catalog section */}
         <section className="px-6 py-4" aria-label="Model catalog">
           <div className="mb-3 flex items-center gap-2">
-            <span className="text-xs font-medium uppercase tracking-widest text-[var(--color-terminal-fg-dim)]">
+            <span className="text-xs font-medium uppercase tracking-widest text-[var(--color-fg-sub)]">
               catalog
             </span>
-            <span className="h-px flex-1 bg-[var(--color-terminal-line)]" aria-hidden />
+            <span className="flex-1" aria-hidden />
           </div>
 
           {/* Filters */}
           <div className="mb-3 flex flex-col gap-2">
             <div className="relative">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-terminal-fg-dim)]" />
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-fg-sub)]" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="search models…"
-                className="h-8 border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-surface)] pl-8 font-mono text-xs text-[var(--color-terminal-fg)] placeholder:text-[var(--color-terminal-fg-dim)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
+                className="h-8 bg-[var(--color-surface)] pl-8 font-mono text-xs text-[var(--color-fg)] placeholder:text-[var(--color-fg-sub)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
               />
             </div>
 
@@ -308,7 +308,7 @@ export const ModelsPage: FC = () => {
           </div>
 
           {loading && (
-            <div className="flex items-center gap-2 text-[var(--color-terminal-fg-dim)]">
+            <div className="flex items-center gap-2 text-[var(--color-fg-sub)]">
               <TerminalCursor /> <span className="text-xs">loading models</span>
             </div>
           )}
@@ -340,22 +340,22 @@ export const ModelsPage: FC = () => {
           sees the running selection without losing catalog scroll position. */}
       {compareKeys.length > 0 && (
         <div
-          className="flex items-center gap-3 border-t border-[color-mix(in_srgb,var(--color-phosphor)_40%,transparent)] bg-[var(--color-terminal-surface)] px-6 py-2.5"
+          className="flex items-center gap-3 border-t border-[color-mix(in_srgb,var(--color-ember)_40%,transparent)] bg-[var(--color-surface)] px-6 py-2.5"
           data-testid="compare-bar"
         >
-          <Columns3 size={14} className="shrink-0 text-[var(--color-phosphor)]" aria-hidden />
+          <Columns3 size={14} className="shrink-0 text-[var(--color-ember)]" aria-hidden />
           <div className="flex flex-1 flex-wrap items-center gap-1.5">
             {compareModels.map((m) => (
               <span
                 key={m.key}
-                className="inline-flex items-center gap-1 rounded border border-[var(--color-terminal-line-strong)] py-0 pl-2 pr-1 text-xs text-[var(--color-terminal-fg)]"
+                className="inline-flex items-center gap-1 rounded py-0 pl-2 pr-1 text-xs text-[var(--color-fg)]"
               >
                 {m.name || m.model_id}
                 <button
                   type="button"
                   onClick={() => toggleCompare(m.key)}
                   aria-label={`Remove ${m.key} from compare`}
-                  className="rounded p-0.5 text-[var(--color-terminal-fg-dim)] hover:text-[var(--color-signal-red)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
+                  className="rounded p-0.5 text-[var(--color-fg-sub)] hover:text-[var(--color-red)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
                 >
                   <X size={10} />
                 </button>
@@ -367,7 +367,7 @@ export const ModelsPage: FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => setCompareKeys([])}
-            className="text-xs text-[var(--color-terminal-fg-dim)] hover:text-[var(--color-terminal-fg)]"
+            className="text-xs text-[var(--color-fg-sub)] hover:text-[var(--color-fg)]"
           >
             clear
           </Button>
@@ -376,7 +376,7 @@ export const ModelsPage: FC = () => {
             size="sm"
             onClick={() => setShowCompare(true)}
             disabled={compareModels.length < 2}
-            className="gap-1.5 border border-[color-mix(in_srgb,var(--color-phosphor)_50%,transparent)] bg-[color-mix(in_srgb,var(--color-phosphor)_12%,transparent)] text-[var(--color-phosphor)] hover:bg-[color-mix(in_srgb,var(--color-phosphor)_20%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)] disabled:opacity-40"
+            className="gap-1.5 border border-[color-mix(in_srgb,var(--color-ember)_50%,transparent)] bg-[color-mix(in_srgb,var(--color-ember)_12%,transparent)] text-[var(--color-ember)] hover:bg-[color-mix(in_srgb,var(--color-ember)_20%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)] disabled:opacity-40"
             data-testid="open-compare"
           >
             <Columns3 size={13} />compare ({compareModels.length})
@@ -573,27 +573,27 @@ function ConfiguredModelRow({
       className={cn(
         "flex items-center gap-3 border px-4 py-3 transition-colors duration-[160ms]",
         isDefault
-          ? "border-[color-mix(in_srgb,var(--color-phosphor)_50%,transparent)] bg-[color-mix(in_srgb,var(--color-phosphor)_6%,transparent)]"
-          : "border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-surface)] hover:border-[color-mix(in_srgb,var(--color-phosphor)_40%,transparent)]",
+          ? "border-[color-mix(in_srgb,var(--color-ember)_50%,transparent)] bg-[color-mix(in_srgb,var(--color-ember)_6%,transparent)]"
+          : " bg-[var(--color-surface)] hover:border-[color-mix(in_srgb,var(--color-ember)_40%,transparent)]",
       )}
       data-testid={`configured-model-${providerId}/${model.id}`}
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-[13px] font-medium text-[var(--color-terminal-fg)]">
+          <p className="truncate text-[13px] font-medium text-[var(--color-fg)]">
             {model.display_name || model.id}
           </p>
           {isDefault && (
-            <span className="inline-flex items-center gap-1 rounded border border-[color-mix(in_srgb,var(--color-phosphor)_50%,transparent)] px-1.5 py-0 text-xs text-[var(--color-phosphor)]">
+            <span className="inline-flex items-center gap-1 rounded border border-[color-mix(in_srgb,var(--color-ember)_50%,transparent)] px-1.5 py-0 text-xs text-[var(--color-ember)]">
               <Star size={10} className="fill-current" />default
             </span>
           )}
         </div>
-        <p className="text-xs text-[var(--color-terminal-fg-dim)]">{providerId}/{model.id}</p>
+        <p className="text-xs text-[var(--color-fg-sub)]">{providerId}/{model.id}</p>
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-        {ctxK && <span className="text-xs text-[var(--color-terminal-fg-dim)]">{ctxK} ctx</span>}
+        {ctxK && <span className="text-xs text-[var(--color-fg-sub)]">{ctxK} ctx</span>}
         {model.supports_tools && <CapBadge>tools</CapBadge>}
         {model.supports_vision && <CapBadge>vision</CapBadge>}
         <span className="sr-only">{providerName}</span>
@@ -606,7 +606,7 @@ function ConfiguredModelRow({
             onClick={onSetDefault}
             disabled={busy}
             aria-label={`Set ${model.id} as default for ${providerId}`}
-            className="inline-flex h-7 items-center gap-1 rounded border border-[var(--color-terminal-line-strong)] px-2 text-xs text-[var(--color-terminal-fg-dim)] transition-colors hover:border-[color-mix(in_srgb,var(--color-phosphor)_40%,transparent)] hover:text-[var(--color-phosphor)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)] disabled:opacity-40"
+            className="inline-flex h-7 items-center gap-1 rounded px-2 text-xs text-[var(--color-fg-sub)] transition-colors hover:border-[color-mix(in_srgb,var(--color-ember)_40%,transparent)] hover:text-[var(--color-ember)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)] disabled:opacity-40"
           >
             {busy ? <Loader2 size={11} className="animate-spin" /> : <Star size={11} />}default
           </button>
@@ -616,7 +616,7 @@ function ConfiguredModelRow({
           onClick={onRemove}
           disabled={busy}
           aria-label={`Remove ${model.id} from ${providerId}`}
-          className="inline-flex h-7 w-7 items-center justify-center rounded border border-[var(--color-terminal-line-strong)] text-[var(--color-terminal-fg-dim)] transition-colors hover:border-[color-mix(in_srgb,var(--color-signal-red)_50%,transparent)] hover:text-[var(--color-signal-red)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)] disabled:opacity-40"
+          className="inline-flex h-7 w-7 items-center justify-center rounded text-[var(--color-fg-sub)] transition-colors hover:border-[color-mix(in_srgb,var(--color-red)_50%,transparent)] hover:text-[var(--color-red)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)] disabled:opacity-40"
         >
           <Trash2 size={12} />
         </button>
@@ -647,8 +647,8 @@ function FilterPill({
       className={cn(
         "h-7 rounded border px-2.5 py-0.5 font-mono text-xs lowercase tracking-wide transition-colors duration-[160ms] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]",
         active
-          ? "border-[var(--color-phosphor)] bg-[color-mix(in_srgb,var(--color-phosphor)_12%,transparent)] text-[var(--color-phosphor)]"
-          : "border-[var(--color-terminal-line-strong)] text-[var(--color-terminal-fg-dim)] hover:border-[color-mix(in_srgb,var(--color-phosphor)_40%,transparent)] hover:text-[var(--color-terminal-fg)]",
+          ? "border-[var(--color-ember)] bg-[color-mix(in_srgb,var(--color-ember)_12%,transparent)] text-[var(--color-ember)]"
+          : " text-[var(--color-fg-sub)] hover:border-[color-mix(in_srgb,var(--color-ember)_40%,transparent)] hover:text-[var(--color-fg)]",
         dimmed && "opacity-40",
       )}
     >
@@ -670,10 +670,10 @@ function ModelRow({ row, compareChecked, compareDisabled, onToggleCompare }: Mod
     <div
       className={cn(
         "flex items-center gap-3 border px-4 py-3 transition-colors duration-[160ms]",
-        compareChecked && "border-[var(--color-phosphor)] bg-[color-mix(in_srgb,var(--color-phosphor)_6%,transparent)]",
+        compareChecked && "border-[var(--color-ember)] bg-[color-mix(in_srgb,var(--color-ember)_6%,transparent)]",
         !compareChecked && row.provider_configured &&
-          "border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-surface)] hover:border-[color-mix(in_srgb,var(--color-phosphor)_40%,transparent)]",
-        !compareChecked && !row.provider_configured && "border-[var(--color-terminal-line)] bg-transparent opacity-50",
+          " bg-[var(--color-surface)] hover:border-[color-mix(in_srgb,var(--color-ember)_40%,transparent)]",
+        !compareChecked && !row.provider_configured && " bg-transparent opacity-50",
       )}
     >
       <Checkbox
@@ -686,18 +686,18 @@ function ModelRow({ row, compareChecked, compareDisabled, onToggleCompare }: Mod
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-[13px] font-medium text-[var(--color-terminal-fg)]">{row.name || row.model_id}</p>
+          <p className="truncate text-[13px] font-medium text-[var(--color-fg)]">{row.name || row.model_id}</p>
           {!row.provider_configured && (
             <span className="text-xs text-[var(--color-amber)]">[not configured]</span>
           )}
         </div>
-        <p className="text-xs text-[var(--color-terminal-fg-dim)]">{row.key}</p>
+        <p className="text-xs text-[var(--color-fg-sub)]">{row.key}</p>
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-        {ctxK && <span className="text-xs text-[var(--color-terminal-fg-dim)]">{ctxK} ctx</span>}
+        {ctxK && <span className="text-xs text-[var(--color-fg-sub)]">{ctxK} ctx</span>}
         {row.cost_input > 0 && (
-          <span className="text-xs text-[var(--color-terminal-fg-dim)]">
+          <span className="text-xs text-[var(--color-fg-sub)]">
             ${row.cost_input.toFixed(2)}/${row.cost_output.toFixed(2)} per 1M
           </span>
         )}
@@ -756,19 +756,19 @@ function CompareDialog({
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="border-[var(--color-terminal-line-strong)] hover:bg-transparent">
-                <TableHead className="text-xs text-[var(--color-terminal-fg-dim)]">metric</TableHead>
+              <TableRow className=" hover:bg-transparent">
+                <TableHead className="text-xs text-[var(--color-fg-sub)]">metric</TableHead>
                 {models.map((m) => (
-                  <TableHead key={m.key} className="text-xs text-[var(--color-terminal-fg)]">
+                  <TableHead key={m.key} className="text-xs text-[var(--color-fg)]">
                     {m.name || m.model_id}
-                    <div className="font-normal normal-case text-[var(--color-terminal-fg-dim)]">{m.key}</div>
+                    <div className="font-normal normal-case text-[var(--color-fg-sub)]">{m.key}</div>
                   </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow className="border-[var(--color-terminal-line)]">
-                <TableCell className="text-xs text-[var(--color-terminal-fg-dim)]">context window</TableCell>
+              <TableRow>
+                <TableCell className="text-xs text-[var(--color-fg-sub)]">context window</TableCell>
                 {models.map((m) => (
                   <TableCell key={m.key} className="text-xs">
                     <ComparedValue highlight={m.context === largestContext && m.context > 0}>
@@ -777,8 +777,8 @@ function CompareDialog({
                   </TableCell>
                 ))}
               </TableRow>
-              <TableRow className="border-[var(--color-terminal-line)]">
-                <TableCell className="text-xs text-[var(--color-terminal-fg-dim)]">cost / 1M tokens</TableCell>
+              <TableRow>
+                <TableCell className="text-xs text-[var(--color-fg-sub)]">cost / 1M tokens</TableCell>
                 {models.map((m) => (
                   <TableCell key={m.key} className="text-xs">
                     <ComparedValue highlight={m.cost_input > 0 && m.cost_input === cheapestInput}>
@@ -787,8 +787,8 @@ function CompareDialog({
                   </TableCell>
                 ))}
               </TableRow>
-              <TableRow className="border-[var(--color-terminal-line)]">
-                <TableCell className="text-xs text-[var(--color-terminal-fg-dim)]">capabilities</TableCell>
+              <TableRow>
+                <TableCell className="text-xs text-[var(--color-fg-sub)]">capabilities</TableCell>
                 {models.map((m) => (
                   <TableCell key={m.key} className="text-xs">
                     <div className="flex flex-wrap gap-1">
@@ -797,15 +797,15 @@ function CompareDialog({
                       {m.vision && <CapBadge>vision</CapBadge>}
                       {m.open_weights && <CapBadge tone="amber">open</CapBadge>}
                       {!m.tool_call && !m.reasoning && !m.vision && !m.open_weights && (
-                        <span className="text-[var(--color-terminal-fg-dim)]">—</span>
+                        <span className="text-[var(--color-fg-sub)]">—</span>
                       )}
                     </div>
                   </TableCell>
                 ))}
               </TableRow>
               {dimensions.map((dimension) => (
-                <TableRow key={dimension} className="border-[var(--color-terminal-line)]">
-                  <TableCell className="text-xs text-[var(--color-terminal-fg-dim)]">
+                <TableRow key={dimension}>
+                  <TableCell className="text-xs text-[var(--color-fg-sub)]">
                     {DIMENSION_LABEL[dimension]}
                   </TableCell>
                   {models.map((m) => {
@@ -842,7 +842,7 @@ function CompareDialog({
  * winner without reading every cell. */
 function ComparedValue({ children, highlight }: { children: React.ReactNode; highlight: boolean }) {
   return (
-    <span className={cn(highlight ? "font-medium text-[var(--color-phosphor)]" : "text-[var(--color-terminal-fg)]")}>
+    <span className={cn(highlight ? "font-medium text-[var(--color-ember)]" : "text-[var(--color-fg)]")}>
       {children}
     </span>
   );
@@ -855,7 +855,7 @@ function CapBadge({ children, tone }: { children: React.ReactNode; tone?: "amber
         "rounded border px-1.5 py-0 text-xs lowercase tracking-tight",
         tone === "amber"
           ? "border-[color-mix(in_srgb,var(--color-amber)_50%,transparent)] text-[var(--color-amber)]"
-          : "border-[color-mix(in_srgb,var(--color-phosphor)_40%,transparent)] text-[var(--color-phosphor)]",
+          : "border-[color-mix(in_srgb,var(--color-ember)_40%,transparent)] text-[var(--color-ember)]",
       )}
     >
       {children}
@@ -868,7 +868,7 @@ function TerminalCursor({ className }: { className?: string }) {
   return (
     <span
       aria-hidden
-      className={cn("inline-block text-[var(--color-phosphor)]", className)}
+      className={cn("inline-block text-[var(--color-ember)]", className)}
       style={{ animation: "terminal-cursor-blink 600ms steps(1, end) infinite" }}
     >
       ▍
@@ -879,15 +879,15 @@ function TerminalCursor({ className }: { className?: string }) {
 /** Inline ASCII-frame empty state. The shared component lands in change-4. */
 function EmptyState({ title, hint }: { title: string; hint: string }) {
   return (
-    <div className="mx-auto max-w-md py-12 text-center text-xs text-[var(--color-terminal-fg-dim)]">
-      <pre className="select-none text-[var(--color-terminal-fg-dim)] opacity-60" aria-hidden>
+    <div className="mx-auto max-w-md py-12 text-center text-xs text-[var(--color-fg-sub)]">
+      <pre className="select-none text-[var(--color-fg-sub)] opacity-60" aria-hidden>
 {`┌────────────────────────────┐
 │                            │
 │         ${title.padEnd(20, " ").slice(0, 20)}│
 │                            │
 └────────────────────────────┘`}
       </pre>
-      <p className="mt-3 text-[var(--color-terminal-fg-dim)]">{hint}</p>
+      <p className="mt-3 text-[var(--color-fg-sub)]">{hint}</p>
     </div>
   );
 }

@@ -70,17 +70,17 @@
     --sidebar-border: transparent;
     --sidebar-ring: 14 100% 62%;
 
-    /* Transitional aliases for migrated dense configuration surfaces. These
-       follow the shared theme instead of activating the retired CRT theme. */
-    --color-terminal-bg: var(--color-bg);
-    --color-terminal-surface: var(--color-surface);
-    --color-terminal-fg: var(--color-fg);
-    --color-terminal-fg-dim: var(--color-fg-sub);
-    --color-phosphor: var(--color-ember);
-    --color-phosphor-glow: var(--color-focus-ring);
-    --color-signal-red: var(--color-red);
-    --color-terminal-line: color-mix(in srgb, var(--color-fg) 18%, transparent);
-    --color-terminal-line-strong: color-mix(in srgb, var(--color-fg) 34%, transparent);
+    /* The transitional terminal-* aliases that used to live here are gone. They
+       already resolved to the KnowMe tokens below, so every call site now names
+       the KnowMe token directly and the indirection buys nothing. The two
+       line tokens had no KnowMe equivalent by design: Flat 2.0 §3.3 forbids
+       one-pixel rules as chrome, so those call sites dropped the rule instead
+       of retokening it. Data-viz axis structure is the documented exception
+       and uses --color-border.
+
+       Console density tokens are NOT part of that retirement. ADR-0017 retires
+       the CRT *aesthetic* while explicitly preserving its operator-instrument
+       density, so anything spacing- or size-related below stays. */
   }
 
   .light {

@@ -30,7 +30,7 @@ function useEntities<T>(type: EntityType): T[] {
 }
 
 const chartConfig: ChartConfig = {
-  cost: { label: "spend (USD)", color: "var(--color-phosphor)" },
+  cost: { label: "spend (USD)", color: "var(--color-ember)" },
 };
 
 export const CostDashboardPage: FC = () => {
@@ -83,12 +83,12 @@ export const CostDashboardPage: FC = () => {
   const loading = runs.length === 0 && alerts.length === 0;
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden font-mono text-[13px] text-[var(--color-terminal-fg)]">
+    <div className="flex flex-1 flex-col overflow-hidden font-mono text-[13px] text-[var(--color-fg)]">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-surface)] px-6 py-4">
+      <div className="flex items-center justify-between bg-[var(--color-surface)] px-6 py-4">
         <div>
-          <h2 className="text-[20px] font-medium tracking-tight text-[var(--color-terminal-fg)]">cost</h2>
-          <p className="text-xs text-[var(--color-terminal-fg-dim)]">
+          <h2 className="text-[20px] font-medium tracking-tight text-[var(--color-fg)]">cost</h2>
+          <p className="text-xs text-[var(--color-fg-sub)]">
             <span data-testid="cost-run-count">{pricedRuns.length}</span> priced runs this session
             {loading && <LoadingCursor className="ml-2" />}
           </p>
@@ -98,7 +98,7 @@ export const CostDashboardPage: FC = () => {
       <div className="flex-1 overflow-y-auto">
         {/* Stat tiles */}
         <section
-          className="grid grid-cols-2 divide-x divide-[var(--color-terminal-line)] border-b border-[var(--color-terminal-line)] md:grid-cols-4"
+          className="grid grid-cols-2 md:grid-cols-4"
           aria-label="Spend summary"
         >
           <StatTile label="total spend" value={`$${totalSpend.toFixed(4)}`} icon={DollarSign} />
@@ -118,7 +118,7 @@ export const CostDashboardPage: FC = () => {
         </section>
 
         {/* Spend-over-time chart */}
-        <section className="border-b border-[var(--color-terminal-line)] px-6 py-4" aria-label="Spend over time">
+        <section className=" px-6 py-4" aria-label="Spend over time">
           <SectionLabel>spend over time</SectionLabel>
           {chartData.length === 0 ? (
             <EmptyFrame
@@ -128,13 +128,13 @@ export const CostDashboardPage: FC = () => {
           ) : (
             <ChartContainer config={chartConfig} className="aspect-auto h-56 w-full">
               <BarChart data={chartData} accessibilityLayer>
-                <CartesianGrid vertical={false} stroke="var(--color-terminal-line)" />
+                <CartesianGrid vertical={false} stroke="var(--color-border)" />
                 <XAxis
                   dataKey="index"
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  stroke="var(--color-terminal-fg-dim)"
+                  stroke="var(--color-fg-sub)"
                   fontSize={11}
                 />
                 <YAxis
@@ -142,19 +142,19 @@ export const CostDashboardPage: FC = () => {
                   axisLine={false}
                   tickMargin={8}
                   width={56}
-                  stroke="var(--color-terminal-fg-dim)"
+                  stroke="var(--color-fg-sub)"
                   fontSize={11}
                   tickFormatter={(v: number) => `$${v.toFixed(3)}`}
                 />
                 <ChartTooltip content={<ChartTooltipContent labelKey="run" nameKey="cost" />} />
-                <Bar dataKey="cost" fill="var(--color-phosphor)" radius={2} />
+                <Bar dataKey="cost" fill="var(--color-ember)" radius={2} />
               </BarChart>
             </ChartContainer>
           )}
         </section>
 
         {/* Per-model breakdown */}
-        <section className="border-b border-[var(--color-terminal-line)] px-6 py-4" aria-label="Spend by model">
+        <section className=" px-6 py-4" aria-label="Spend by model">
           <SectionLabel>spend by model</SectionLabel>
           {byModel.length === 0 ? (
             <EmptyFrame title="no model breakdown yet" hint="grouped once priced runs are recorded" />
@@ -163,10 +163,10 @@ export const CostDashboardPage: FC = () => {
               {byModel.map((row) => (
                 <div
                   key={row.model}
-                  className="flex items-center justify-between gap-3 border border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-surface)] px-4 py-2.5"
+                  className="flex items-center justify-between gap-3 bg-[var(--color-surface)] px-4 py-2.5"
                 >
-                  <span className="truncate text-[13px] text-[var(--color-terminal-fg)]">{row.model}</span>
-                  <span className="shrink-0 font-medium text-[var(--color-phosphor)]">${row.spend.toFixed(4)}</span>
+                  <span className="truncate text-[13px] text-[var(--color-fg)]">{row.model}</span>
+                  <span className="shrink-0 font-medium text-[var(--color-ember)]">${row.spend.toFixed(4)}</span>
                 </div>
               ))}
             </div>
@@ -197,10 +197,10 @@ export const CostDashboardPage: FC = () => {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-3 flex items-center gap-2">
-      <span className="text-xs font-medium uppercase tracking-widest text-[var(--color-terminal-fg-dim)]">
+      <span className="text-xs font-medium uppercase tracking-widest text-[var(--color-fg-sub)]">
         {children}
       </span>
-      <span className="h-px flex-1 bg-[var(--color-terminal-line)]" aria-hidden />
+      <span className="flex-1" aria-hidden />
     </div>
   );
 }
@@ -219,13 +219,13 @@ function StatTile({
   return (
     <div className="px-4 py-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs text-[var(--color-terminal-fg-dim)]">{label}</span>
+        <span className="text-xs text-[var(--color-fg-sub)]">{label}</span>
         <Icon
           size={15}
           className={cn(
             tone === "amber" && "text-[var(--color-amber)]",
-            tone === "red" && "text-[var(--color-signal-red)]",
-            !tone && "text-[var(--color-phosphor)]",
+            tone === "red" && "text-[var(--color-red)]",
+            !tone && "text-[var(--color-ember)]",
           )}
         />
       </div>
@@ -233,8 +233,8 @@ function StatTile({
         className={cn(
           "text-2xl font-semibold",
           tone === "amber" && "text-[var(--color-amber)]",
-          tone === "red" && "text-[var(--color-signal-red)]",
-          !tone && "text-[var(--color-terminal-fg)]",
+          tone === "red" && "text-[var(--color-red)]",
+          !tone && "text-[var(--color-fg)]",
         )}
       >
         {value}
@@ -249,20 +249,20 @@ function BudgetAlertRow({ alert }: { alert: RuntimeBudgetAlertEntity }) {
       className={cn(
         "flex items-center gap-3 border px-4 py-2.5",
         alert.exceeded
-          ? "border-[color-mix(in_srgb,var(--color-signal-red)_50%,transparent)] bg-[color-mix(in_srgb,var(--color-signal-red)_6%,transparent)]"
+          ? "border-[color-mix(in_srgb,var(--color-red)_50%,transparent)] bg-[color-mix(in_srgb,var(--color-red)_6%,transparent)]"
           : "border-[color-mix(in_srgb,var(--color-amber)_50%,transparent)] bg-[color-mix(in_srgb,var(--color-amber)_6%,transparent)]",
       )}
       data-testid={`budget-alert-${alert.id}`}
     >
       <AlertTriangle
         size={14}
-        className={cn("shrink-0", alert.exceeded ? "text-[var(--color-signal-red)]" : "text-[var(--color-amber)]")}
+        className={cn("shrink-0", alert.exceeded ? "text-[var(--color-red)]" : "text-[var(--color-amber)]")}
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] text-[var(--color-terminal-fg)]">
+        <p className="truncate text-[13px] text-[var(--color-fg)]">
           {alert.scope}/{alert.scope_id}
         </p>
-        <p className="text-xs text-[var(--color-terminal-fg-dim)]">
+        <p className="text-xs text-[var(--color-fg-sub)]">
           ${alert.spent_usd.toFixed(4)} of ${alert.limit_usd.toFixed(4)} spent
         </p>
       </div>
@@ -270,7 +270,7 @@ function BudgetAlertRow({ alert }: { alert: RuntimeBudgetAlertEntity }) {
         className={cn(
           "shrink-0 rounded border px-1.5 py-0 text-xs lowercase",
           alert.exceeded
-            ? "border-[color-mix(in_srgb,var(--color-signal-red)_50%,transparent)] text-[var(--color-signal-red)]"
+            ? "border-[color-mix(in_srgb,var(--color-red)_50%,transparent)] text-[var(--color-red)]"
             : "border-[color-mix(in_srgb,var(--color-amber)_50%,transparent)] text-[var(--color-amber)]",
         )}
       >

@@ -24,23 +24,23 @@ export const CompilerPage: FC = () => {
 
   const statusColor = (status?: string) => {
     switch (status) {
-      case "complete": return "text-[var(--color-phosphor)]";
+      case "complete": return "text-[var(--color-ember)]";
       case "running":
       case "compiling": return "text-[var(--color-amber)]";
-      case "failed": return "text-[var(--color-signal-red)]";
-      default: return "text-[var(--color-terminal-fg-dim)]";
+      case "failed": return "text-[var(--color-red)]";
+      default: return "text-[var(--color-fg-sub)]";
     }
   };
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden font-mono text-[13px] text-[var(--color-terminal-fg)]">
-      <div className="flex items-center justify-between border-b border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-surface)] px-6 py-4">
+    <div className="flex flex-1 flex-col overflow-hidden font-mono text-[13px] text-[var(--color-fg)]">
+      <div className="flex items-center justify-between bg-[var(--color-surface)] px-6 py-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-[20px] font-medium tracking-tight">compiler sessions</h2>
             <Badge variant="outline">Experimental</Badge>
           </div>
-          <p className="text-xs text-[var(--color-terminal-fg-dim)]">
+          <p className="text-xs text-[var(--color-fg-sub)]">
             Preview the skill compilation workflow; packaged output is not GA-certified yet
             {compiler.loading && <LoadingCursor className="ml-2" />}
           </p>
@@ -50,7 +50,7 @@ export const CompilerPage: FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => void load().catch(() => undefined)}
-            className="gap-1.5 border border-[var(--color-terminal-line-strong)] bg-transparent text-[var(--color-terminal-fg)] hover:bg-[color-mix(in_srgb,var(--color-phosphor)_8%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
+            className="gap-1.5 bg-transparent text-[var(--color-fg)] hover:bg-[color-mix(in_srgb,var(--color-ember)_8%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
           >
             <RefreshCw size={13} className={cn(compiler.loading && "animate-spin")} />refresh
           </Button>
@@ -58,7 +58,7 @@ export const CompilerPage: FC = () => {
             size="sm"
             onClick={() => void compiler.createSession().catch(() => undefined)}
             disabled={compiler.creating}
-            className="gap-1.5 border border-[var(--color-phosphor)] bg-[color-mix(in_srgb,var(--color-phosphor)_12%,transparent)] text-[var(--color-phosphor)] hover:bg-[color-mix(in_srgb,var(--color-phosphor)_18%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
+            className="gap-1.5 border border-[var(--color-ember)] bg-[color-mix(in_srgb,var(--color-ember)_12%,transparent)] text-[var(--color-ember)] hover:bg-[color-mix(in_srgb,var(--color-ember)_18%,transparent)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ember)]"
           >
             {compiler.creating ? <LoadingCursor /> : <Plus size={13} />}new session
           </Button>
@@ -79,7 +79,7 @@ export const CompilerPage: FC = () => {
               <Button
                 onClick={() => void compiler.createSession().catch(() => undefined)}
                 disabled={compiler.creating}
-                className="gap-1.5 border border-[var(--color-phosphor)] bg-[color-mix(in_srgb,var(--color-phosphor)_12%,transparent)] text-[var(--color-phosphor)] hover:bg-[color-mix(in_srgb,var(--color-phosphor)_18%,transparent)]"
+                className="gap-1.5 border border-[var(--color-ember)] bg-[color-mix(in_srgb,var(--color-ember)_12%,transparent)] text-[var(--color-ember)] hover:bg-[color-mix(in_srgb,var(--color-ember)_18%,transparent)]"
                 size="sm"
               >
                 <Plus size={13} />create session
@@ -91,10 +91,10 @@ export const CompilerPage: FC = () => {
           {sessions.map((s) => (
             <div
               key={s.id}
-              className="flex items-center gap-3 border border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-surface)] px-4 py-3 transition-colors duration-[160ms] hover:border-[color-mix(in_srgb,var(--color-phosphor)_40%,transparent)]"
+              className="flex items-center gap-3 bg-[var(--color-surface)] px-4 py-3 transition-colors duration-[160ms] hover:border-[color-mix(in_srgb,var(--color-ember)_40%,transparent)]"
             >
-              <div className="flex size-8 items-center justify-center border border-[var(--color-terminal-line-strong)] bg-[var(--color-terminal-bg)]">
-                <Code2 size={14} className="text-[var(--color-terminal-fg-dim)]" />
+              <div className="flex size-8 items-center justify-center bg-[var(--color-bg)]">
+                <Code2 size={14} className="text-[var(--color-fg-sub)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs">{s.id}</p>

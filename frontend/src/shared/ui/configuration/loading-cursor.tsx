@@ -14,13 +14,13 @@ export const LoadingCursor: FC<{ className?: string; label?: string }> = ({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 text-[var(--color-terminal-fg-dim)]",
+        "inline-flex items-center gap-2 text-[var(--color-fg-sub)]",
         className,
       )}
     >
       <span
         aria-hidden
-        className="inline-block text-[var(--color-phosphor)]"
+        className="inline-block text-[var(--color-ember)]"
         style={{ animation: "terminal-cursor-blink 600ms steps(1, end) infinite" }}
       >
         ▍
