@@ -98,9 +98,16 @@ static/assets
 .firecrawl/
 .zed/
 
-# Local pk/Karpathy LLM-wiki state (events log + generated wiki articles) —
-# machine-local knowledge cache, not shared project content.
-.prometheus/
+# `.prometheus/` IS PROJECT HISTORY — DO NOT IGNORE IT.
+# It holds the Karpathy session logs, decisions, gotchas, and post-mortems that
+# make sessions compound (see the `.prometheus` layout in AGENTS.md/CLAUDE.md).
+# It was ignored until 2026-08-09, which silently stranded ~48 knowledge files
+# inside a worktree that was about to be deleted — the history existed only on
+# one machine's disk. Never re-add a blanket `.prometheus/` rule.
+#
+# Only the regenerable LLM prompt cache is excluded: hash-named snapshots that
+# are ~37M of the directory's ~38M and are rebuilt on demand.
+.prometheus/knowledge/.prompt-snapshots/
 
 # Eval harness: per-invocation timestamped run results are local artifacts;
 # only the committed baseline (evals/results/<suite>.baseline.json) is shared.

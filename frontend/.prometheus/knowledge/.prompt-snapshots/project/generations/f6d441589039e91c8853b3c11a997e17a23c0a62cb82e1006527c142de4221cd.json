@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "scope": "project",
+  "generation": "f6d441589039e91c8853b3c11a997e17a23c0a62cb82e1006527c142de4221cd",
+  "candidateCount": 2,
+  "byteCount": 4531,
+  "entries": [
+    {
+      "id": "karpathy-session-5bfb2075e2703841",
+      "title": "Karpathy session 5bfb2075e270",
+      "content": "## Delta\n\n**The Flat 2.0 gate is real.** I planted a violation and it blocked:\n\n```\n1:43  error  Flat 2.0: separate by surface fill and spacing, not lines/shadows/blur  no-restricted-syntax\n```\n\nThat's the single most important verification in this phase — C-05's codemod is only safe behind a gate that actually fires, and I confirmed it does rather than trusting the change was marked DONE.\n\nFour more changes landed while I was checking. **7/21**, both stores in agreement.\n\n## Progress\n\n| | |\n|---|---|\n| Done | C-00, C-01, C-02, C-03, C-03b, C-03c, C-04 |\n| Next | **C-06** |\n| Canonical ↔ projection | agree at 7 |\n\nCodex is moving fast now — five changes in roughly the time C-02 alone took, which fits the earlier diagnosis: C-02's 13-minute stall was packet size, not a systemic problem.\n\n## One ordering note worth watching\n\nThe plan's next-in-sequence was **C-05** (the `hsl(var())` codemod), but the pointer says **C-06**. That's not necessarily wrong — the dependency graph allows C-06/C-07/C-08 to run parallel to C-05, and C-05 is now unblocked whenever it's picked up. But C-05 is the one I scoped down to *only* the 30 non-admin occurrences, precisely so it wouldn't collide with C-14a's admin-page rewrite.\n\nIf C-05 gets skipped rather than deferred, those 30 occurrences never get converted and the C-03 allowlist never shrinks. I'll flag it if we reach Wave 3 with C-05 still PENDING.\n\nNothing needs your attention. The interesting outstanding question is still whether trimming the review packet drops judge latency below the 300s window — C-06 through C-08 are large changes, so we should get a clean data point soon.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: claude-code\n- Session: 444a77f7-71ee-4a60-8ce1-1b19da7d22ab\n- Captured: 2026-08-07T17:45:00.648757Z\n- Project: /Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        "session:444a77f7-71ee-4a60-8ce1-1b19da7d22ab"
+      ],
+      "created_at": "2026-08-07T17:45:08.143652Z",
+      "updated_at": "2026-08-07T17:45:08.143652Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "extra": {}
+    },
+    {
+      "id": "uar-ui-ux-migration-phase-status-flat-2-0-gate-verified",
+      "title": "UAR UI/UX Migration Phase Status: Flat 2.0 Gate Verified",
+      "content": "## Context\n\nExecutor session completed for phase `uar-uiux-full-migration-2026-08`; change status was reported as `unknown`.\n\n## Verification\n\nThe **Flat 2.0 gate** was manually verified by planting a violation. The rule correctly blocked the violation:\n\n```text\n1:43  error  Flat 2.0: separate by surface fill and spacing, not lines/shadows/blur  no-restricted-syntax\n```\n\nThis verification is important because **C-05** depends on the gate being active: the `hsl(var())` codemod is only safe if the lint gate actually fires. The check confirmed the gate behavior instead of relying solely on a `DONE` marker.\n\n## Migration Progress\n\nBoth canonical and projection stores agree at **7 completed changes out of 21**.\n\n| Status | Changes |\n|---|---|\n| Done | C-00, C-01, C-02, C-03, C-03b, C-03c, C-04 |\n| Next pointer | C-06 |\n| Canonical ↔ projection | agree at 7 |\n\n## Ordering Note\n\nThe plan's next sequential change was **C-05** for the `hsl(var())` codemod, but the current pointer indicates **C-06**.\n\nThis is not necessarily incorrect:\n\n- The dependency graph allows **C-06**, **C-07**, and **C-08** to run in parallel with **C-05**.\n- **C-05** is now unblocked because the Flat 2.0 gate has been verified.\n- **C-05** was intentionally scoped to only the **30 non-admin occurrences** to reduce collision risk.\n\n## Execution Observation\n\nCodex completed five changes in roughly the time that **C-02** alone previously took. This supports the earlier diagnosis that the C-02 delay was caused by packet size rather than a systemic throughput issue.\n\n# Citations\n\n1. stdin",
+      "tags": [
+        "uar-uiux",
+        "flat-2-0",
+        "codemod",
+        "lint-gate",
+        "migration-status"
+      ],
+      "links": [],
+      "sources": [
+        "stdin"
+      ],
+      "created_at": "2026-08-08T08:57:07.223414Z",
+      "updated_at": "2026-08-08T08:57:07.223414Z",
+      "revision": 0,
+      "entry_type": "Reference",
+      "description": null,
+      "extra": {}
+    }
+  ]
+}

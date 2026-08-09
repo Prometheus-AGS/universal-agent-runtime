@@ -495,6 +495,28 @@ Resolution order for the KB: `--kb-dir`/`PK_KB_DIR` -> shared
 (`~/.prometheus/knowledge/shared/`) -> project (`<root>/.prometheus/knowledge/`) -> global.
 Memory-server writes fall back to these files on timeout (D-4).
 
+**`.prometheus/` is version-controlled history. NEVER add it to `.gitignore`.**
+This directory *is* the estate's memory — the Karpathy session logs, decisions,
+gotchas, and post-mortems that make sessions compound (D-1 calls it
+"git-tracked" for exactly this reason). Untracked, it exists only on one
+machine's disk and dies with that checkout.
+
+This is not hypothetical. `.gitignore` carried a blanket `.prometheus/` rule
+until 2026-08-09, commented as a "machine-local knowledge cache, not shared
+project content" — the opposite of its purpose. The consequence surfaced during
+routine worktree cleanup: a worktree queued for deletion held ~48 knowledge
+files (including UI/UX migration completion records for the active KBD phase)
+that existed nowhere else, and `git` reported the tree "clean" because every one
+of them was ignored. Deleting the directory would have destroyed them silently.
+
+The ONLY exclusion is the regenerable prompt cache,
+`.prometheus/knowledge/.prompt-snapshots/` — hash-named LLM snapshots, ~37M of
+the directory's ~38M, rebuilt on demand. Everything else (~1.2M, ~226 markdown
+and jsonl files) is history and must be committed.
+
+Before deleting any worktree, check it for `.prometheus/` content that is not in
+the origin repo. A "clean" `git status` proves nothing about ignored files.
+
 ---
 
 *v3 supersedes v2. Nothing that worked in v2 was removed; the document was tiered so the
