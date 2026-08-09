@@ -1,0 +1,22 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "kbd-judge",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [],
+  "checked_classes": [
+    "Spec violations \u2014 the only diff changes task 2.2 from unchecked to checked, matching acceptance criterion 2.2 and the verification evidence included in the packet.",
+    "Correctness \u2014 no executable logic is changed in the diff.",
+    "Regressions \u2014 no behavior, API, or dependency surface is changed by the diff.",
+    "Security \u2014 no code, configuration, credentials, or authorization logic is changed by the diff.",
+    "Constraint breaches \u2014 no project-level constraints were provided in the packet.",
+    "Silent failure \u2014 no error handling or fallback behavior is changed by the diff."
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

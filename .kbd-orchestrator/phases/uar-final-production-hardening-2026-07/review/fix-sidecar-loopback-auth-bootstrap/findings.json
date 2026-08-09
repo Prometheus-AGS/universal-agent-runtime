@@ -1,0 +1,22 @@
+{
+  "mode": "diff",
+  "verdict": "BLOCK",
+  "judge_model": "kbd-judge",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:8181/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "acceptance_criteria",
+      "claim": "The change does not satisfy the production verification requirement to publish the repaired image and verify readiness plus unauthenticated capability discovery.",
+      "evidence": "Acceptance criterion 2.2 is explicitly unchecked: \"- [ ] 2.2 Publish the repaired image and verify readiness plus unauthenticated capability discovery.\"",
+      "suggested_fix": "Complete and record the image publish/readiness/capability-discovery verification before marking this change production-ready."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}
