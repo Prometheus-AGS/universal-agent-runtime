@@ -7,6 +7,11 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "surreal-backend")]
 use surrealdb::{Surreal, engine::any::Any};
 
+#[cfg(feature = "surreal-backend")]
+use crate::uar::persistence::providers::surreal::{
+    empty_when_table_missing, none_when_table_missing,
+};
+
 /// Information about a registered agent in the federation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentInfo {
@@ -117,7 +122,8 @@ impl AgentRegistry for SurrealAgentRegistry {
     }
 
     async fn get_agent(&self, id: &str) -> Result<Option<AgentInfo>> {
-        let result: Option<serde_json::Value> = self.db.select(("uar_agents", id)).await?;
+        let result: Option<serde_json::Value> =
+            none_when_table_missing(self.db.select(("uar_agents", id)).await)?;
         match result {
             Some(val) => Ok(Some(Self::from_db_value(val)?)),
             None => Ok(None),
@@ -125,7 +131,8 @@ impl AgentRegistry for SurrealAgentRegistry {
     }
 
     async fn list_agents(&self) -> Result<Vec<AgentInfo>> {
-        let records: Vec<serde_json::Value> = self.db.select("uar_agents").await?;
+        let records: Vec<serde_json::Value> =
+            empty_when_table_missing(self.db.select("uar_agents").await)?;
         Self::from_db_vec(records)
     }
 }

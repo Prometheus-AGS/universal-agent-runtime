@@ -7,6 +7,9 @@ use surrealdb::engine::any::Any;
 use crate::uar::compiler::session::CompilerSession;
 use crate::uar::compiler::session::persistence::SessionStorage;
 use crate::uar::compiler::storage::{ReportRecord, SpecRecord, SpecStorage};
+use crate::uar::persistence::providers::surreal::{
+    empty_when_table_missing, none_when_table_missing,
+};
 
 /// SurrealDB implementation of SpecStorage and SessionStorage.
 #[derive(Debug)]
@@ -54,12 +57,14 @@ impl SpecStorage for SurrealCompilerStorage {
     }
 
     async fn get_spec(&self, id: &str) -> Result<Option<SpecRecord>> {
-        let record: Option<serde_json::Value> = self.db.select(("uar_specs", id)).await?;
+        let record: Option<serde_json::Value> =
+            none_when_table_missing(self.db.select(("uar_specs", id)).await)?;
         Self::from_db_opt(record)
     }
 
     async fn list_specs(&self) -> Result<Vec<SpecRecord>> {
-        let records: Vec<serde_json::Value> = self.db.select("uar_specs").await?;
+        let records: Vec<serde_json::Value> =
+            empty_when_table_missing(self.db.select("uar_specs").await)?;
         Self::from_db_vec(records)
     }
 
@@ -77,8 +82,10 @@ impl SpecStorage for SurrealCompilerStorage {
             .bind(("updated_at", updated_at))
             .await?;
 
-        // Take the first result from the first query
-        let record: Option<serde_json::Value> = response.take(0)?;
+        // Take the first result from the first query. A missing table means
+        // no spec has ever been written, so there is nothing to update —
+        // `None` (404 at the API layer), not an error.
+        let record: Option<serde_json::Value> = none_when_table_missing(response.take(0))?;
         Self::from_db_opt(record)
     }
 
@@ -118,7 +125,8 @@ impl SpecStorage for SurrealCompilerStorage {
     }
 
     async fn get_report(&self, id: &str) -> Result<Option<ReportRecord>> {
-        let record: Option<serde_json::Value> = self.db.select(("uar_reports", id)).await?;
+        let record: Option<serde_json::Value> =
+            none_when_table_missing(self.db.select(("uar_reports", id)).await)?;
         Self::from_db_opt(record)
     }
 
@@ -130,7 +138,7 @@ impl SpecStorage for SurrealCompilerStorage {
             .bind(("spec_id", spec_id.to_string()))
             .await?;
 
-        let records: Vec<serde_json::Value> = response.take(0)?;
+        let records: Vec<serde_json::Value> = empty_when_table_missing(response.take(0))?;
         Self::from_db_vec(records)
     }
 }
@@ -150,7 +158,7 @@ impl SessionStorage for SurrealCompilerStorage {
 
     async fn get_session(&self, id: &str) -> Result<Option<CompilerSession>> {
         let record: Option<serde_json::Value> =
-            self.db.select(("uar_compiler_sessions", id)).await?;
+            none_when_table_missing(self.db.select(("uar_compiler_sessions", id)).await)?;
         Self::from_db_opt(record)
     }
 
@@ -160,7 +168,97 @@ impl SessionStorage for SurrealCompilerStorage {
     }
 
     async fn list_sessions(&self) -> Result<Vec<CompilerSession>> {
-        let records: Vec<serde_json::Value> = self.db.select("uar_compiler_sessions").await?;
+        let records: Vec<serde_json::Value> =
+            empty_when_table_missing(self.db.select("uar_compiler_sessions").await)?;
         Self::from_db_vec(records)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fresh-database reads — embedded SurrealKV, no external server.
+//
+// SurrealDB is schemaless: a table does not exist until its first record is
+// written, so reads against a never-written table fail at the driver level.
+// These cases pin the contract that an absent table reads as empty/absent
+// rather than propagating an error to the API layer as a 500.
+// ─────────────────────────────────────────────────────────────────────────────
+#[cfg(test)]
+mod fresh_db_tests {
+    use super::*;
+
+    async fn fresh_storage() -> SurrealCompilerStorage {
+        let mut dir = std::env::temp_dir();
+        dir.push(format!(
+            "uar-compiler-fresh-db-test-{}",
+            uuid::Uuid::new_v4()
+        ));
+        let db = surrealdb::engine::any::connect(format!("surrealkv://{}", dir.display()))
+            .await
+            .expect("connect embedded surrealkv");
+        db.use_ns("uar_test")
+            .use_db("uar_test")
+            .await
+            .expect("use ns/db");
+        SurrealCompilerStorage::new(db)
+    }
+
+    #[tokio::test]
+    async fn list_specs_on_fresh_database_returns_empty() {
+        let storage = fresh_storage().await;
+        let specs = storage
+            .list_specs()
+            .await
+            .expect("listing specs on a fresh database must not error");
+        assert!(specs.is_empty(), "expected no specs, got {}", specs.len());
+    }
+
+    #[tokio::test]
+    async fn get_spec_on_fresh_database_returns_none() {
+        let storage = fresh_storage().await;
+        let spec = storage
+            .get_spec("never-written")
+            .await
+            .expect("getting a spec on a fresh database must not error");
+        assert!(spec.is_none());
+    }
+
+    #[tokio::test]
+    async fn get_report_on_fresh_database_returns_none() {
+        let storage = fresh_storage().await;
+        let report = storage
+            .get_report("never-written")
+            .await
+            .expect("getting a report on a fresh database must not error");
+        assert!(report.is_none());
+    }
+
+    #[tokio::test]
+    async fn list_reports_for_spec_on_fresh_database_returns_empty() {
+        let storage = fresh_storage().await;
+        let reports = storage
+            .list_reports_for_spec("never-written")
+            .await
+            .expect("listing reports on a fresh database must not error");
+        assert!(reports.is_empty());
+    }
+
+    #[tokio::test]
+    async fn list_sessions_on_fresh_database_returns_empty() {
+        let storage = fresh_storage().await;
+        let sessions = storage
+            .list_sessions()
+            .await
+            .expect("listing sessions on a fresh database must not error");
+        assert!(sessions.is_empty());
+    }
+
+    #[tokio::test]
+    async fn get_session_on_fresh_database_returns_none() {
+        let storage = fresh_storage().await;
+        let session = storage
+            .get_session("never-written")
+            .await
+            .expect("getting a session on a fresh database must not error");
+        assert!(session.is_none());
     }
 }
