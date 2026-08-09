@@ -37,14 +37,14 @@
 - [x] 2.2 The job carries **no** `continue-on-error`. Do not add it to
       `live-integration.yml`, which still has two `continue-on-error: true`
       steps at `:121` and `:127` — a new file or a clearly separate job.
-- [ ] 2.3 Runtime budget: the matrix took 194.70s locally plus build. Confirm
+- [x] 2.3 Runtime budget: the matrix took 194.70s locally plus build. Confirm
       the job completes inside the workflow timeout; if it does not, raise the
       timeout rather than sharding, because sharding breaks `#[serial]`.
 
 ## 3. Prove the gate fails (not just that it passes)
 
 - [x] 3.1 Introduce a deliberate one-line break in a **named** case.
-- [ ] 3.2 Push. Confirm the job goes red **and the log names that specific
+- [x] 3.2 Push. Confirm the job goes red **and the log names that specific
       case**. A job that reddens on a compile error proves nothing about the
       gate.
 - [ ] 3.3 Revert the break. Confirm green. Record **both** run URLs — the red

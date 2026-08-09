@@ -524,7 +524,7 @@ async fn absent_c13_sessions_retired() {
 
     let (status, body) = get_capability(&server.base_url, "C-13", "/api/sessions").await;
     assert_eq!(
-        status, 418,
+        status, 404,
         "C-13 retired-route contract changed: expected 404, got {status}: {body}"
     );
     let parsed: serde_json::Value = serde_json::from_str(&body)
