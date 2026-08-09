@@ -265,3 +265,43 @@
 - Strict sycophancy analysis scored 0.01785714365541935, found no S-08, and raised only a low-severity length warning. No evolver bridge exists for this phase.
 - The canonical phase node was still pending after child completion; valid pending → in-progress → complete transitions reconciled it at revisions 51–52. The next refinement phase was not activated.
 - No staging or commit occurred. The protected skill-system/Rust/license path hash remains `07e74ad94dc137e9574e411bc99d6f0fcd631879c5a0e52a1b87ca999cf43dc4`.
+
+## 2026-08-09 — agent context migrated off Base Rules v3
+
+Applied `prometheus-context-bootstrap/scripts/migrate.sh --apply`, profile `mixed`.
+
+**Resident context.** Before: 9,393 words across two files — `AGENTS.md` (4,720)
+and `CLAUDE.md` (4,673), each carrying an independent copy of all 45 v3 rule IDs.
+After: one file. `AGENTS.md` is a 1,396-word managed region plus 866 words of
+carried tool regions and project rules; `CLAUDE.md` is a symlink to it, so nothing
+double-loads.
+
+**What moved where.**
+- Tier discipline, single-writer, the sycophancy gate, and the compaction
+  re-anchor left prose for `.claude/hooks/`, wired through `.claude/settings.json`
+  and therefore enforced rather than advised.
+- Per-stack commands moved to `.claude/rules/rust.md` and `typescript.md`,
+  path-scoped and loaded on file read rather than resident.
+- The S-01..S-08 taxonomy moved into `.claude/agents/artifact-critic.md`, the
+  subagent that applies it.
+- Appendix C's `.prometheus/` schema became the directory structure itself.
+- Full coverage table for all 49 mapped IDs: `.prometheus/MIGRATION-REPORT.md`.
+- Pre-migration originals: `.prometheus/knowledge/AGENTS.pre-migration-2026-08-09.md`
+  and `.CLAUDE.md`.
+
+**Verification.** `scripts/verify.sh` reports 10 PASS / 0 FAIL / 0 SKIP.
+Skill budget measured directly: 15 skills, ~1,513 description chars (~378 tokens)
+against `skillListingBudgetFraction` 0.02 — roughly 10x headroom, no drops
+expected. `claude doctor` from the CLI reports installation health only and does
+not print the skill-listing line; the in-session `/doctor` was not run.
+
+**Open item.** The 2026-07 production-completion lock was retired rather than
+restored — it would have contradicted the active waypoint. The gap it guarded is
+now tracked debt: v1.0.0 was published 2026-07-11 with four certification changes
+still PENDING and no supply-chain artifacts on disk. See the RESOLVED entry in
+`.prometheus/decisions.md`. The KBD ledger was deliberately not edited.
+
+**Also recorded.** Four vendored submodule files still carry the full v3
+constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imports
+5,041 words of it whenever that subtree is read. Fix belongs upstream. See
+`.prometheus/gotchas.md`.
