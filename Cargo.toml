@@ -383,7 +383,7 @@ text-splitter = "0.32.0"
 chrono = { version = "0.4.44", features = ["serde"] }
 walkdir = "2.5.0"
 serde_yaml = "0.9"
-jsonwebtoken = "10.2.0"
+jsonwebtoken = "11.0.0"
 tracing-opentelemetry = { version = "0.33.0", optional = true }
 opentelemetry = { version = "0.32.0", optional = true }
 opentelemetry-otlp = { version = "0.32.0", optional = true }
