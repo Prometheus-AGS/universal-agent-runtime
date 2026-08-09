@@ -4,4 +4,5 @@ pub mod baseline_cases;
 pub mod harness;
 pub mod librefang_seam_cases;
 pub mod load_test;
+pub mod memory_cases;
 pub mod stub_llm;

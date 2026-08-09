@@ -306,7 +306,18 @@ sse-stream = "0.2.4"
 #
 # The optional palace graph extension is intentionally excluded: UAR has no
 # integrated or certified palace APIs, and the extension introduces SQLite.
-surreal-memory = { path = "vendor/git/surreal-memory-server/crates/surreal-memory", default-features = false }
+#
+# `local-embeddings` IS required. `MemoryService::new` routes every
+# `embedding_provider` other than "openai"/"cohere" — including the documented
+# "local" and any typo — to `EmbeddingProvider::Local`. Without this feature
+# that arm compiles to a hard `bail!`, so MemoryService construction fails, the
+# service is left as None, and every memory endpoint answers
+# `503 Memory system not enabled` even when config explicitly enables memory.
+# It pulls candle 0.9.2 alongside the 0.11.0 used by UAR's own
+# `candle-embeddings`; cargo resolves the two majors independently.
+surreal-memory = { path = "vendor/git/surreal-memory-server/crates/surreal-memory", default-features = false, features = [
+    "local-embeddings",
+] }
 
 # Utilities
 url = "2.5.7"
