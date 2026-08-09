@@ -71,7 +71,29 @@
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git stash list:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(cargo metadata:*)",
+      "Bash(cargo tree:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm install:*)",
+      "Bash(openspec:*)",
+      "Bash(jq:*)",
+      "Bash(node scripts/:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)"
     ],
     "ask": [
       "Bash(git push:*)",
@@ -85,7 +107,10 @@
       "Read(./**/.env)",
       "Read(./**/*.pem)",
       "Edit(versions.toml)",
-      "Edit(.kbd-orchestrator/**)"
+      "Edit(.kbd-orchestrator/**/*.json)",
+      "Edit(.kbd-orchestrator/**/*.jsonl)",
+      "Edit(.kbd-orchestrator/current-waypoint.*)",
+      "Edit(.kbd-orchestrator/position*)"
     ],
     "additionalDirectories": []
   }
