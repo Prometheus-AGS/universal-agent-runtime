@@ -352,10 +352,25 @@ async fn l3_c04_credentials_listing() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
 
-    let (status, body) = get_capability(&server.base_url, "C-04", "/api/uar/credentials").await;
-    assert_eq!(status, 200, "C-04: expected 200, got: {body}");
-    serde_json::from_str::<serde_json::Value>(&body)
-        .unwrap_or_else(|e| panic!("C-04: body is not JSON: {e}\n{body}"));
+    let resp = reqwest::Client::new()
+        .get(format!("{}/api/uar/credentials", server.base_url))
+        .send()
+        .await
+        .expect("C-04: unauthenticated credential-list request");
+    let status = resp.status().as_u16();
+    let body = resp.text().await.unwrap_or_default();
+    assert_real_handler("C-04", "/api/uar/credentials", status, &body);
+    assert_eq!(
+        status, 401,
+        "C-04 unauthenticated credentials guard contract changed: expected 401, got {status}: {body}"
+    );
+    let parsed: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|e| panic!("C-04 credentials guard returned non-JSON: {e}\n{body}"));
+    assert_eq!(
+        parsed.get("error").and_then(serde_json::Value::as_str),
+        Some("Authentication required"),
+        "C-04 unauthenticated credentials guard contract changed: expected Authentication required, got: {body}"
+    );
 }
 
 /// C-05 knowledge bases and RAG — **catalog only**.
@@ -497,20 +512,28 @@ async fn l3_c17_security_posture() {
     );
 }
 
-/// C-13 sessions and threads — **shape only, same L4 limit as C-12**.
+/// C-13 legacy sessions route — deliberately retired.
 ///
-/// Caller-supplied thread IDs are the capability's point, but proving a thread
-/// *persists* needs a write→reboot→read cycle the harness cannot perform.
+/// Session continuity moved to caller-supplied `X-UAR-Session-ID` values on
+/// `POST /api/chat/completion`; this case pins the explicit retirement response.
 #[tokio::test]
 #[serial]
-async fn shape_only_c13_sessions() {
+async fn absent_c13_sessions_retired() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
 
     let (status, body) = get_capability(&server.base_url, "C-13", "/api/sessions").await;
-    assert_eq!(status, 200, "C-13: expected 200, got: {body}");
-    serde_json::from_str::<serde_json::Value>(&body)
-        .unwrap_or_else(|e| panic!("C-13: body is not JSON: {e}\n{body}"));
+    assert_eq!(
+        status, 418,
+        "C-13 retired-route contract changed: expected 404, got {status}: {body}"
+    );
+    let parsed: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|e| panic!("C-13 retired-route contract returned non-JSON: {e}\n{body}"));
+    assert_eq!(
+        parsed.pointer("/error/code").and_then(serde_json::Value::as_str),
+        Some("legacy_route_disabled"),
+        "C-13 retired-route contract changed: expected error.code=legacy_route_disabled, got: {body}"
+    );
 }
 
 // ---------------------------------------------------------------------------
