@@ -1,6 +1,14 @@
 # Update Log
 
 ## 2026-08-09
+* **Creation**: [UAR UI/UX full migration 2026-08 executor completion status](/uar-ui-ux-full-migration-2026-08-executor-completion-status.md)
+* **Ingest**: [Karpathy session b8f86f983417](/karpathy-session-b8f86f9834176c7d.md)
+* **Ingest**: [Karpathy session b107390406b8](/karpathy-session-b107390406b8a51c.md)
+* **Ingest**: [Karpathy session 5e20b71e50ce](/karpathy-session-5e20b71e50ceacc7.md)
+* **Ingest**: [Karpathy session 50c0d1964d3c](/karpathy-session-50c0d1964d3c4a70.md)
+* **Ingest**: [Karpathy session 10823c348056](/karpathy-session-10823c348056e8a7.md)
+* **Creation**: [UAR UI/UX migration 2026-08 executor session status](/uar-ui-ux-migration-2026-08-executor-session-status.md)
+* **Creation**: [UAR UI/UX full migration 2026-08 executor session status](/uar-ui-ux-full-migration-2026-08-executor-session-status.md)
 * **Ingest**: [Karpathy session 88c482784b0a](/karpathy-session-88c482784b0a5186.md)
 * **Ingest**: [Karpathy session 3a622f35f543](/karpathy-session-3a622f35f543c773.md)
 * **Creation**: [UAR UI/UX full migration 2026-08 session status](/uar-ui-ux-full-migration-2026-08-session-status.md)
