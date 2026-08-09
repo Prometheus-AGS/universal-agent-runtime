@@ -14,10 +14,11 @@
 //! `pub(crate)`, so this harness cannot call them directly even if it wanted
 //! to — which is fine, since HTTP-level testing never needs to.
 
-use std::sync::{Arc, Once};
+use std::sync::Once;
 use std::time::Duration;
 
-use universal_agent_runtime::config::{AppConfig, Cli};
+use universal_agent_runtime::config::Cli;
+use universal_agent_runtime::config_manager::ConfigManager;
 use universal_agent_runtime::server::start_server;
 
 static TRACING_INIT: Once = Once::new();
@@ -152,7 +153,8 @@ fn unique_temp_path(tag: &str) -> std::path::PathBuf {
 /// requires beyond the mandatory embedded-SurrealDB persistence layer.
 ///
 /// Every config value is set explicitly in a throwaway temp YAML file —
-/// `AppConfig::load_with_cli` falls back to probing `./config.yaml` and
+/// `AppConfig::load_with_cli` (which `ConfigManager::load_without_watcher`
+/// calls internally) falls back to probing `./config.yaml` and
 /// `~/.uar/config.yaml` when no `--config` is given, and both exist on at
 /// least one developer machine this harness was built on. An explicit
 /// `cli.config` path is the only way to guarantee this harness never reads
@@ -214,10 +216,18 @@ pub async fn boot_test_server(
         skill_evolution_model: None,
         acp_enabled: None,
         acp_path: None,
+        strict_config: false,
         command: None,
     };
 
-    let config = Arc::new(AppConfig::load_with_cli(cli).expect("load harness config"));
+    // `start_server` takes an `Arc<ConfigManager>` (hot-reload via arc-swap,
+    // f53b988). `load_without_watcher` is the documented test constructor: the
+    // harness writes a throwaway temp config that never changes, so a file
+    // watcher would be pure overhead — and one watcher task per booted server
+    // would leak across the tier's many `boot_test_server` calls.
+    let config = ConfigManager::load_without_watcher(cli)
+        .await
+        .expect("load harness config");
 
     let thread = std::thread::spawn(move || {
         let rt = tokio::runtime::Builder::new_current_thread()

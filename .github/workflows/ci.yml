@@ -61,8 +61,28 @@ jobs:
       - name: Run clippy
         run: cargo clippy --locked --no-default-features --lib --features server-full --no-deps
 
-      - name: Run cargo check
-        run: cargo check --locked --no-default-features --features server-full
+      # `--all-targets` is load-bearing, not decoration. A bare `cargo check`
+      # compiles only lib + bins, so a production signature change can break
+      # every file under tests/ while this job stays green. That has now
+      # happened three times. Most recently (found 2026-08-09): 76856b9
+      # changed VectorMatcher::new from (f32, String) to
+      # (Arc<dyn EmbeddingBackend>, f32) on 2026-07-14, breaking six test
+      # binaries — burn_embedding_test, test_mcp_optional,
+      # test_provider_resolution, test_chat_completion, and uar_integration
+      # (3 sites) — for ~26 days with CI green. Before that, the `live::` tier
+      # was dead for 25 days (see the header of live-integration.yml).
+      #
+      # Nothing else here covers it: the `test` job below builds a different
+      # feature set (postgres-backend,tauri,wasm-runtime), not server-full;
+      # the release-bundle matrix is `--lib`-scoped; and live-integration.yml
+      # gates only `--test integration`, i.e. one target out of many. Scoping
+      # the gate per-target is what let this recur — `--all-targets` is what
+      # makes it general. Do not drop `--all-targets` from this command.
+      #
+      # clippy above stays `--lib`-scoped on purpose: `--all-targets` there
+      # trips ~140 pedantic errors in the vendored parking-lot submodule.
+      - name: Run cargo check (all targets, including tests)
+        run: cargo check --locked --no-default-features --features server-full --all-targets
 
   test:
     name: Test
@@ -327,7 +347,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo registry (sdks/rust)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -337,7 +357,7 @@ jobs:
           restore-keys: ${{ runner.os }}-sdk-rust-cargo-
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 

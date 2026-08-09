@@ -5,14 +5,31 @@ use tokio::sync::RwLock;
 use universal_agent_runtime::config::LlmConfig;
 use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::session::SessionStore;
+use universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend;
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
+
+/// These tests only assert that `RunManager` *constructs* without MCP — none of
+/// them embeds anything. `UnavailableEmbeddingBackend` is therefore the correct
+/// backend rather than a stand-in: it is unconditionally compiled (no feature
+/// gate), so this test builds and runs under every profile, and it mirrors the
+/// fallback `server.rs` itself installs when a real backend cannot be built.
+/// Building a real backend here would instead panic under any profile without
+/// `local-models`, because the `openai` fallback requires an API key.
+fn unavailable_embedding_backend() -> Arc<dyn EmbeddingBackend> {
+    Arc::new(
+        universal_agent_runtime::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+            384,
+            "embeddings are not exercised by these tests",
+        ),
+    )
+}
 
 fn make_vector_matcher() -> Arc<universal_agent_runtime::uar::runtime::matching::VectorMatcher> {
     Arc::new(
         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+            unavailable_embedding_backend(),
             0.75,
-            "src/uar/runtime/matching/models".to_string(),
         ),
     )
 }

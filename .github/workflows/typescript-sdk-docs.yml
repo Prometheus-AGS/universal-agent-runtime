@@ -22,7 +22,7 @@ jobs:
         working-directory: sdks/typescript
       - run: npm run docs
         working-directory: sdks/typescript
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with: { path: sdks/typescript/docs/api }
   deploy:
     environment: { name: github-pages, url: "${{ steps.deployment.outputs.page_url }}" }
@@ -31,4 +31,4 @@ jobs:
     steps:
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

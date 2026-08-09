@@ -9,14 +9,28 @@ use universal_agent_runtime::config::LlmConfig;
 use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar::domain::artifact::AgentArtifact;
+use universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend;
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
+
+/// These tests exercise run lifecycle only — nothing embeds. The
+/// unconditionally-compiled `UnavailableEmbeddingBackend` therefore builds and
+/// runs under every feature profile, whereas constructing a real backend would
+/// panic without `local-models` (the `openai` fallback requires an API key).
+fn unavailable_embedding_backend() -> Arc<dyn EmbeddingBackend> {
+    Arc::new(
+        universal_agent_runtime::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+            384,
+            "embeddings are not exercised by these tests",
+        ),
+    )
+}
 
 fn make_vector_matcher() -> Arc<universal_agent_runtime::uar::runtime::matching::VectorMatcher> {
     Arc::new(
         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+            unavailable_embedding_backend(),
             0.75,
-            "src/uar/runtime/matching/models".to_string(),
         ),
     )
 }

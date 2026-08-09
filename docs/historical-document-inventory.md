@@ -7,7 +7,8 @@ This inventory prevents point-in-time designs and assessments from being mistake
 | `docs/htmx/` | Standalone HTMX/Web Component prototypes from the retired first-party UI direction | Directory-level historical marker; artifacts retained as research |
 | `docs/htmx-docs/` | Rendered point-in-time RFC and assessment artifacts | Directory-level historical marker; artifacts retained for provenance |
 | `docs/full-implementation/` | Exploratory implementation prompts, including no-React and HTMX proposals | Directory-level historical marker; not a release contract |
-| `CLAUDE_ASSESSMENT.md`, `CODEX_ASSESSMENT.md`, `OPENCODE_ASSESSMENT.md` | Dated tool assessments of the former UI | Supersession banner |
+| `CLAUDE_ASSESSMENT.md`, `CODEX_ASSESSMENT.md` | Dated tool assessments of the former UI | Supersession banner |
+| `OPENCODE_ASSESSMENT.md` | Dated tool assessment of the former UI, plus a retracted testing claim: its "30+ API test cases" counts declarations in `tests/integration/api/comprehensive.rs` whose tests issue no HTTP request | Supersession banner + inline retraction of the testing and frontend claims |
 | `STATE_MANAGEMENT.md` | Alpine/localStorage/Web Component state design | Supersession banner |
 | `THEME_AND_MOBILE.md` | Former Web Component theme/mobile proposal | Supersession banner |
 | `COMPREHENSIVE_TESTING_INFRASTRUCTURE_SUMMARY.md` | Unverified point-in-time completion claims | Supersession banner |

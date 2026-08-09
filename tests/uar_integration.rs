@@ -8,6 +8,7 @@ use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar;
 use universal_agent_runtime::uar::domain::skills::{Skill, SkillConstraints, SkillTriggers};
+use universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 use universal_agent_runtime::uar::runtime::skills::{
     SkillService, storage::FilesystemStorageProvider,
@@ -19,6 +20,19 @@ use universal_agent_runtime::uar::{
     },
     runtime::manager::RunManager,
 };
+
+/// Backend for tests that construct a `RunManager` but never embed. It is
+/// unconditionally compiled (no feature gate), so these tests build and run
+/// under every profile — unlike a real backend, which panics without
+/// `local-models` because the `openai` fallback requires an API key.
+fn unavailable_embedding_backend() -> Arc<dyn EmbeddingBackend> {
+    Arc::new(
+        universal_agent_runtime::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+            384,
+            "embeddings are not exercised by this test",
+        ),
+    )
+}
 
 fn llm_tests_enabled() -> bool {
     matches!(
@@ -55,8 +69,8 @@ async fn setup_real_env() -> (Arc<RunManager>, Arc<SessionStore>) {
     let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
     let vector_matcher = Arc::new(
         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+            unavailable_embedding_backend(),
             0.75,
-            "src/uar/runtime/matching/models".to_string(),
         ),
     );
     let run_manager = Arc::new(
@@ -103,8 +117,8 @@ async fn setup_real_env_with_tools() -> (
     let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
     let vector_matcher = Arc::new(
         universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+            unavailable_embedding_backend(),
             0.75,
-            "src/uar/runtime/matching/models".to_string(),
         ),
     );
     let run_manager = Arc::new(
@@ -669,6 +683,10 @@ async fn test_verify_filesystem_skills() {
     }
 }
 
+// This test performs real embedding inference, so it requires a local backend.
+// Without `local-models`, `build_backend` falls through to `openai`, which
+// needs an API key and would panic rather than skip.
+#[cfg(feature = "local-models")]
 #[tokio::test]
 #[serial]
 async fn test_vector_skill_matching() {
@@ -715,10 +733,15 @@ You are a database expert.
     }
 
     // Initialize Vector Matcher
-    let matcher = universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+    // Lower threshold for test
+    let matcher = universal_agent_runtime::uar::runtime::matching::VectorMatcher::from_config(
+        &universal_agent_runtime::uar::rag::embeddings::EmbeddingConfig {
+            models_dir: "src/uar/runtime/matching/models".to_string(),
+            ..Default::default()
+        },
         0.6,
-        "src/uar/runtime/matching/models".to_string(),
-    ); // Lower threshold for test
+    )
+    .expect("VectorMatcher should build from default embedding config");
     matcher
         .initialize()
         .await
