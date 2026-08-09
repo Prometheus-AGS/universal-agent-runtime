@@ -47,15 +47,35 @@ Three parts are load-bearing and must not be altered:
 Baseline for comparison: `.kbd-orchestrator/phases/uar-spec-conformance-2026-08/baseline-2026-08-09.md`
 — 18 passed, 2 failed, 194.70s.
 
-## CI enforcement covers the whole set
+## The gate is LOCAL for now — CI/CD comes after the code
 
-The gate added by `conformance-baseline-gate` task 2.1 runs the entire
-`live::capability_cases` module. **Every case added or renamed by changes 2 and
-3 is therefore executed and enforced by that gate automatically** — neither
-change needs its own CI work, and neither may add a case that the gate skips.
+> **AMENDED 2026-08-09 by operator decision.** The gate is **local**, not a
+> GitHub Actions job. CI/CD-based validation **will** be supported; it is
+> sequenced after a working code base rather than declined. Full rationale and
+> the reopening conditions are in `.prometheus/decisions.md`.
+>
+> Why: `origin/main` at `a70996f` had **five of six workflows failing**, all
+> predating this phase. A sixth red check carries no information and teaches
+> people to stop reading the pipeline — which is how a build failure hid behind
+> `continue-on-error: true` for 25 days. Separately, the matrix costs ~195s plus
+> build; running it per-push while its own cases are being authored pays
+> repeatedly for a signal about code that is about to change.
+>
+> **Do not add a GitHub Actions job for the matrix in any of these three
+> changes.** If a task appears to ask for one, it predates this amendment.
 
-If a case cannot run in CI, it is an `excluded_` case with the reason named. It
-is never a case that silently does not execute.
+The pinned command below runs the entire `live::capability_cases` module, so
+**every case added or renamed by changes 2 and 3 is covered by the same local
+gate** — neither change needs its own gate work, and neither may add a case the
+command skips.
+
+If a case cannot run under the pinned command, it is an `excluded_` case with
+the reason named. It is never a case that silently does not execute.
+
+**Before the phase closes**, the red-and-green proof must exist as *local*
+results recorded in `verification.md`. Those rows gain CI run URLs later, when
+the matrix is wired — that is a separate change, gated on `main` being green
+first.
 
 ## Discriminator scope
 
