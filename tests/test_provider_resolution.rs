@@ -10,13 +10,19 @@ use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 
+/// These tests only exercise provider/model resolution — nothing embeds. The
+/// unconditionally-compiled `UnavailableEmbeddingBackend` therefore builds and
+/// runs under every feature profile, whereas constructing a real backend would
+/// panic without `local-models` (the `openai` fallback requires an API key).
 fn make_vector_matcher() -> Arc<universal_agent_runtime::uar::runtime::matching::VectorMatcher> {
-    Arc::new(
-        universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
-            0.75,
-            "src/uar/runtime/matching/models".to_string(),
-        ),
-    )
+    let backend: Arc<dyn universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend> =
+        Arc::new(
+            universal_agent_runtime::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+                384,
+                "embeddings are not exercised by these tests",
+            ),
+        );
+    Arc::new(universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(backend, 0.75))
 }
 
 async fn make_manager(model: &str) -> RunManager {
