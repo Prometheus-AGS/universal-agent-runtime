@@ -13,21 +13,56 @@
 # A single shared absolute `CARGO_TARGET_DIR` looks appealing — one set of
 # artifacts instead of N — but cargo takes an exclusive lock on a target dir,
 # so it serializes every concurrent build across all worktrees. Sharing
-# *compiled artifacts* is the job of `rustc-wrapper` below, which caches at the
-# compiler level and needs no lock. (Cargo's own cross-workspace cache is a
-# 2026 project goal, still nightly-only.)
+# *compiled artifacts* is `rustc-wrapper`'s job (sccache; see the note below
+# for why it is configured per-machine rather than here), and it needs no
+# lock. Cargo's own cross-workspace cache is a 2026 project goal, still
+# nightly-only.
+#
+# Neither mechanism removes the remaining serialization point: concurrent
+# builds still queue on the shared `~/.cargo/registry` package-cache lock.
 target-dir = "target"
 
-# sccache: the reason a second worktree does not recompile burn, cedar-policy,
-# surrealdb and tokenizers from scratch. It was installed on this machine but
-# never wired in, which is why five worktrees accumulated ~800MB of target/
-# each while sharing nothing (measured hit rate before wiring: 19.6%).
-rustc-wrapper = "sccache"
+# NOTE: `rustc-wrapper = "sccache"` deliberately does NOT live here.
+#
+# This file is tracked, so every consumer of the repo — including CI — reads
+# it, and cargo resolves the wrapper through PATH. No GitHub Actions workflow
+# installs sccache, so setting it here fails every job with
+# `could not execute process 'sccache …' (never executed)`. The same failure
+# hits any local shell whose PATH lacks the binary; that is exactly how this
+# was found (2026-08-08), by a build in a worktree without Homebrew on PATH.
+#
+# sccache is worth using — a warm rebuild on this machine went from 5 to 393
+# Rust cache hits (1.51% -> 42.29%) — but it is a MACHINE choice, not a repo
+# one. Enable it per-developer, outside version control:
+#
+#     # ~/.cargo/config.toml  (user-global, untracked)
+#     [build]
+#     rustc-wrapper = "/opt/homebrew/bin/sccache"   # absolute path, not PATH
+#
+# or per-shell with `RUSTC_WRAPPER=/opt/homebrew/bin/sccache`. Use an absolute
+# path in either case: a bare name reintroduces the PATH dependency.
+#
+# To adopt it in CI, add a real install step (e.g. mozilla-actions/sccache-action)
+# and set RUSTC_WRAPPER in that workflow's env — not here.
 
-# Parallelism. The previous value (`2`) was set by 71751de for a "4-core/15GB
-# box" — a DIFFERENT machine from the one this repo now lives on (10 cores /
-# 64GB). It was throttling builds by 5x for an OOM risk that no longer exists.
-# 6 leaves headroom for the several very large debug links in this graph
-# rather than saturating all 10 cores. If `memory_pressure` drops below ~30%
-# free during a build, lower this — the original OOM was real on its box.
-jobs = 6
+# NOTE: `jobs` deliberately does NOT live here either, for the same reason as
+# the wrapper — it is a machine property, not a repo property.
+#
+# The previous value (`jobs = 2`, from 71751de) was chosen for what its own
+# comment calls "this 4-core/15GB box". Repo config OUTRANKS `~/.cargo/config.toml`,
+# so that line silently capped every developer and every CI runner at 2 jobs
+# regardless of their hardware — including a 10-core machine whose user config
+# already asked for 10.
+#
+# Set it per-machine instead:
+#
+#     # ~/.cargo/config.toml
+#     [build]
+#     jobs = 10
+#
+# or per-invocation with `--jobs N` / `CARGO_BUILD_JOBS`. Omitting it here lets
+# cargo default to the core count, which is right for CI runners too.
+#
+# The original OOM was real on its box: if a build pages heavily, lower `jobs`
+# in the machine config — this graph has several very large debug links
+# (burn, cedar-policy, surrealdb, tokenizers).
