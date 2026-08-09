@@ -63,6 +63,66 @@ impl SurrealDbProvider {
     }
 }
 
+/// Treat SurrealDB's "table does not exist" as an empty result set.
+///
+/// SurrealDB is schemaless: a table only comes into being when its first
+/// record is written. Reads against a table that has never been written to
+/// therefore fail rather than returning nothing, which would surface to API
+/// clients as a 500 on any first-run or fresh-deploy instance. An absent
+/// table and an empty table are indistinguishable to a caller listing
+/// records, so both map to the empty case.
+///
+/// Errors that are not a missing table are returned unchanged.
+///
+/// # Errors
+///
+/// Returns the original error whenever its message does not identify a
+/// missing table.
+///
+/// # Examples
+///
+/// ```ignore
+/// let rows: Vec<Value> = empty_when_table_missing(response.take(0))?;
+/// ```
+pub(crate) fn empty_when_table_missing<T, E: std::fmt::Display>(
+    result: std::result::Result<Vec<T>, E>,
+) -> Result<Vec<T>> {
+    result.or_else(|e| {
+        if e.to_string().contains("does not exist") {
+            Ok(Vec::new())
+        } else {
+            Err(anyhow::anyhow!(e.to_string()))
+        }
+    })
+}
+
+/// Treat SurrealDB's "table does not exist" as an absent record.
+///
+/// The single-record counterpart to [`empty_when_table_missing`]; see that
+/// function for why a missing table is not an error on a read path.
+///
+/// # Errors
+///
+/// Returns the original error whenever its message does not identify a
+/// missing table.
+///
+/// # Examples
+///
+/// ```ignore
+/// let row: Option<Value> = none_when_table_missing(db.select(("t", id)).await)?;
+/// ```
+pub(crate) fn none_when_table_missing<T, E: std::fmt::Display>(
+    result: std::result::Result<Option<T>, E>,
+) -> Result<Option<T>> {
+    result.or_else(|e| {
+        if e.to_string().contains("does not exist") {
+            Ok(None)
+        } else {
+            Err(anyhow::anyhow!(e.to_string()))
+        }
+    })
+}
+
 /// Returns `true` for network-accessible SurrealDB endpoints that require
 /// explicit authentication before selecting a namespace/database.
 fn is_server_endpoint(endpoint: &str) -> bool {
@@ -823,7 +883,7 @@ impl PersistenceLayer for SurrealDbProvider {
             .bind(("id", id_owned))
             .await
             .context("get_attachment")?;
-        let val: Option<serde_json::Value> = res.take(0)?;
+        let val: Option<serde_json::Value> = none_when_table_missing(res.take(0))?;
         match val {
             None => Ok(None),
             Some(v) => Ok(Some(surreal_json_to_attachment_meta(v)?)),
@@ -841,7 +901,7 @@ impl PersistenceLayer for SurrealDbProvider {
             .bind(("sid", sid_owned))
             .await
             .context("list_attachments_for_session")?;
-        let vals: Vec<serde_json::Value> = res.take(0)?;
+        let vals: Vec<serde_json::Value> = empty_when_table_missing(res.take(0))?;
         vals.into_iter()
             .map(surreal_json_to_attachment_meta)
             .collect()

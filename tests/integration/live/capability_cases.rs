@@ -73,6 +73,39 @@ async fn get_capability(base_url: &str, capability: &str, path: &str) -> (u16, S
     (status, body)
 }
 
+/// Assert a list endpoint answered 200 with an *empty* collection.
+///
+/// Stronger than the `200 + parses as JSON` check most cases here use, and
+/// deliberately so: SurrealDB is schemaless, so a table does not exist until
+/// its first insert and a read against a never-written one fails at the driver
+/// level. That surfaced to clients as HTTP 500 on every fresh deploy until the
+/// read sites were guarded. Asserting only "200 and valid JSON" would not have
+/// caught the regression, and would not catch a future re-break that returns a
+/// well-formed error envelope.
+fn assert_empty_collection(capability: &str, path: &str, status: u16, body: &str) {
+    assert_eq!(
+        status, 200,
+        "{capability}: {path} on a fresh DB must not error, got {status}: {body}"
+    );
+
+    let json: serde_json::Value = serde_json::from_str(body)
+        .unwrap_or_else(|e| panic!("{capability}: {path} returned non-JSON: {e}\n{body}"));
+
+    let items = match &json {
+        serde_json::Value::Array(items) => items,
+        serde_json::Value::Object(map) => map
+            .values()
+            .find_map(serde_json::Value::as_array)
+            .unwrap_or_else(|| panic!("{capability}: {path} envelope has no array field: {body}")),
+        other => panic!("{capability}: {path} returned neither array nor object: {other}"),
+    };
+
+    assert!(
+        items.is_empty(),
+        "{capability}: {path} on a fresh DB must be empty, got: {body}"
+    );
+}
+
 fn content_fixture(last_user_message: &str, response: &str) -> FixtureSet {
     FixtureSet::new().with(
         RequestFingerprint {
@@ -139,8 +172,8 @@ async fn l3_c07_skills_catalog() {
     // would have produced a false ABSENT via the catch-all.
     let (status, body) = get_capability(&server.base_url, "C-07", "/api/uar/skills").await;
     assert_eq!(status, 200, "skills catalog should be 200, got: {body}");
-    let parsed: serde_json::Value =
-        serde_json::from_str(&body).unwrap_or_else(|e| panic!("C-07: body is not JSON: {e}\n{body}"));
+    let parsed: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|e| panic!("C-07: body is not JSON: {e}\n{body}"));
     assert!(
         parsed.is_array() || parsed.get("skills").is_some() || parsed.get("data").is_some(),
         "C-07: expected a skills collection, got: {body}"
@@ -265,7 +298,10 @@ async fn l2_c01_c02_run_stream_shape() {
     let status = resp.status().as_u16();
     let body = resp.text().await.unwrap_or_default();
     assert_real_handler("C-01/C-02", "/api/chat/completion", status, &body);
-    assert!(status == 200, "C-01/C-02: expected 200, got {status}: {body}");
+    assert!(
+        status == 200,
+        "C-01/C-02: expected 200, got {status}: {body}"
+    );
     assert!(
         body.contains("streamed reply"),
         "C-01/C-02: expected fixture content in the stream, got: {body}"
@@ -288,8 +324,7 @@ async fn shape_only_c12_persistence_config() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
 
-    let (status, body) =
-        get_capability(&server.base_url, "C-12", "/api/config/persistence").await;
+    let (status, body) = get_capability(&server.base_url, "C-12", "/api/config/persistence").await;
     assert_eq!(status, 200, "C-12: expected 200, got: {body}");
     assert!(
         body.contains("provider") || body.contains("surreal"),
@@ -353,22 +388,60 @@ async fn shape_only_c06_memory_stats() {
 
     let (status, body) =
         get_capability(&server.base_url, "C-06", "/api/admin/memories/stats").await;
-    assert_eq!(status, 200, "C-06: expected 200 with memory enabled, got: {body}");
+    assert_eq!(
+        status, 200,
+        "C-06: expected 200 with memory enabled, got: {body}"
+    );
     serde_json::from_str::<serde_json::Value>(&body)
         .unwrap_or_else(|e| panic!("C-06: body is not JSON: {e}\n{body}"));
 }
 
-/// C-09 agent compiler — spec listing.
+/// C-09 agent compiler — spec listing on a fresh database.
+///
+/// Regression: SurrealDB's `The table 'uar_specs' does not exist` propagated to
+/// the client as HTTP 500, so the compiler catalog was broken on every fresh
+/// deploy until the first spec was written. The harness allocates a unique
+/// temp SurrealKV path per boot, so every run of this case *is* a fresh-DB run.
 #[tokio::test]
 #[serial]
 async fn l3_c09_compiler_specs() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
 
-    let (status, body) = get_capability(&server.base_url, "C-09", "/api/compiler/specs").await;
-    assert_eq!(status, 200, "C-09: expected 200, got: {body}");
-    serde_json::from_str::<serde_json::Value>(&body)
-        .unwrap_or_else(|e| panic!("C-09: body is not JSON: {e}\n{body}"));
+    let path = "/api/compiler/specs";
+    let (status, body) = get_capability(&server.base_url, "C-09", path).await;
+    assert_empty_collection("C-09", path, status, &body);
+}
+
+/// C-09b — the same contract on the `/api/uar/compiler` mount, which
+/// `src/server.rs` nests from the same router.
+#[tokio::test]
+#[serial]
+async fn l3_c09_uar_compiler_specs() {
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+
+    let path = "/api/uar/compiler/specs";
+    let (status, body) = get_capability(&server.base_url, "C-09b", path).await;
+    assert_empty_collection("C-09b", path, status, &body);
+}
+
+/// C-09c — compiler sessions on a fresh DB.
+///
+/// Not a regression case: `CompilerService::list_sessions` already swallowed the
+/// storage error into an empty `Vec`, so this endpoint returned 200 even before
+/// the fix. Asserted here to pin the contract, since the underlying
+/// `uar_compiler_sessions` read was guarded alongside `uar_specs` and the
+/// endpoint should not regress if that swallow is ever tightened.
+#[tokio::test]
+#[serial]
+async fn l3_c09_compiler_sessions() {
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+
+    let path = "/api/compiler/sessions";
+    let (status, body) = get_capability(&server.base_url, "C-09c", path).await;
+    assert_empty_collection("C-09c", path, status, &body);
 }
 
 /// C-15 agent descriptor schema — served at the A2A well-known path.
@@ -383,8 +456,7 @@ async fn l3_c15_agent_descriptor_well_known() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
 
-    let (status, body) =
-        get_capability(&server.base_url, "C-15", "/.well-known/agent.json").await;
+    let (status, body) = get_capability(&server.base_url, "C-15", "/.well-known/agent.json").await;
     assert_eq!(status, 200, "C-15: expected 200, got: {body}");
     let parsed: serde_json::Value = serde_json::from_str(&body)
         .unwrap_or_else(|e| panic!("C-15: agent.json is not JSON: {e}\n{body}"));

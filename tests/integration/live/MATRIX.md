@@ -38,6 +38,7 @@ wired through the switch with content-tolerant assertions, so it runs on both.
 | RAG ingest → retrieve | `rag_ingest_then_retrieve` | recorded | ⏸️ `#[ignore]` — zero-vector placeholder embeddings + SurrealQL `type::thing` bug; see `task_188b4179`, `task_7c2fd7ee` |
 | Credential-chain CRUD (encrypted, authed) | `credential_chain_put_then_list` | recorded | ✅ |
 | Dual-backend parity smoke | `backend_parametric_chat_smoke` | **both** | ✅ |
+| Fresh-DB compiler catalog (empty ≠ error) | `l3_c09_compiler_specs`, `l3_c09_uar_compiler_specs`, `l3_c09_compiler_sessions` (`capability_cases.rs`) | recorded | ✅ |
 
 ## Per-change rows (append one per landing feature change)
 
