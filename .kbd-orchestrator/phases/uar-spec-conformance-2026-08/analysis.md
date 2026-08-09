@@ -30,17 +30,40 @@ file, and add a shutdown hook to code we own. **None of these is a library
 selection.** Running the tiered pipeline would burn its 20-minute budget
 producing candidates for problems this phase does not have.
 
-## The one genuine research question, and where it goes
+## The one open design question — RESOLVED after writing, by reading the code
 
-`C-05(a)` — a shutdown hook on `start_server` plus a harness seam permitting
-write→reboot→read against the same DB path — touches the boot path and the
-SurrealDB lifecycle. Whether that is a clean `oneshot` + `graceful_shutdown`
-seam or a refactor of connection ownership is a real design question.
+`C-05(a)` was recorded here as a real design question: whether a shutdown hook on
+`start_server` is a clean seam or a refactor of connection ownership. The
+recommendation was to answer it by reading `server.rs` rather than by searching
+for candidates.
 
-It is **not** a library question. Axum and SurrealDB are already chosen and
-pinned; nothing is being adopted. It is scoped separately from the test handoff
-(see `goals.md` → Ownership) precisely because it is runtime work, and it should
-be answered by reading `server.rs`, not by searching for candidates.
+**That reading was done on 2026-08-09, and it refutes the premise.** Graceful
+shutdown already exists:
+
+| `src/server.rs` | What is already there |
+|---|---|
+| 1386 | `let http_shutdown = tokio_util::sync::CancellationToken::new()` |
+| 1388-1420 | signal-handler task: SIGINT/SIGTERM → drain ingestion pool → `http_shutdown.cancel()` |
+| 1425-1438 | `shutdown_future` awaits the token, then drains in-flight connections with a timeout |
+| 1441, 1453 | both listeners wired via `.with_graceful_shutdown(...)` |
+
+Nothing needs to be designed or built. The token is created *internally* and only
+signal handlers can fire it, so the only thing a test lacks is a way to **own**
+it. The seam is a caller-supplied `CancellationToken` parameter on
+`start_server_sidecar` (`1357`) — a function that already accepts a
+caller-supplied `oneshot::Sender<SocketAddr>` for readiness. Same shape, same
+function, additive, and the existing signal handler is untouched.
+
+**Consequence:** C-05(a) is no longer held back for separate scoping. All of
+C-05 — runtime seam, harness fixed-DB-path support, tests — is in the Codex
+handoff. Any future `L4 unverifiable` verdict must name a different blocking
+reason; "no shutdown hook exists" is refuted.
+
+**Method note.** This is the second finding in this phase where reading the code
+beat reasoning about it — the first was `stub_llm.rs` versus off-the-shelf mocks
+(W-1). Both times the error ran the same direction: **assuming absent
+infrastructure that already existed.** The spec phase should ground each change
+in a file and line before writing its exit criteria.
 
 ## Scope requests routed elsewhere
 

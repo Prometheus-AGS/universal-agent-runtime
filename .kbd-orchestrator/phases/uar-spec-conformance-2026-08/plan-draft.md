@@ -75,18 +75,48 @@ backed cases whose correctness depends on model output become `l2_`. Exit: every
 case name carries a defined prefix.
 
 **C-05 · L4 for persistence.**
-- (a) *Runtime seam* — shutdown hook on `start_server`, harness support for
-  rebooting against the same DB path. **Boot-path work. Not a test. Scope
-  separately; do not hand to Codex as test work.**
-- (b) *Tests* — write→reboot→read for C-12 and C-13, once (a) exists.
+
+> **CORRECTED 2026-08-09 after reading `src/server.rs`.** This change was
+> classified as "boot-path refactor, scope separately, do not hand to Codex."
+> That classification was wrong, and wrong in the direction that mattered: it
+> made L4 look expensive and pushed it out of the handoff.
+>
+> **Graceful shutdown already exists.** `serve_on_listener` creates a
+> `tokio_util::sync::CancellationToken` at `server.rs:1386`; a signal-handler
+> task (1388-1420) waits on SIGINT/SIGTERM, drains the ingestion pool, then
+> calls `http_shutdown.cancel()`; `shutdown_future` (1425-1438) awaits that
+> token and drains in-flight connections with a timeout; both listeners are
+> wired through `.with_graceful_shutdown(...)` at 1441 and 1453.
+>
+> Nothing needs to be built. The token is created internally and only signals
+> can fire it, so what a test lacks is a way to *own* it.
+
+- (a) *Runtime seam* — accept a caller-supplied `CancellationToken` so a test can
+  trigger the shutdown path that already exists. `start_server_sidecar`
+  (`server.rs:1357`) already takes a caller-supplied
+  `oneshot::Sender<SocketAddr>` for readiness; a `CancellationToken` parameter
+  is the same shape of change against the same function. Additive, and the
+  existing signal handler keeps working unchanged.
+- (b) *Harness* — `boot_test_server` must accept a fixed DB path rather than
+  minting a fresh temp path per boot, so the same store can be reopened.
+- (c) *Tests* — write→reboot→read for C-12 and C-13, once (a) and (b) exist.
+
+**All three are now in scope for the Codex handoff.** The earlier split existed
+because (a) was believed to be a boot-path redesign; it is a parameter addition
+on a function that already takes caller-supplied channels.
+
 Exit: C-12 and C-13 produce a real L4 result, or are published as
-`L4 unverifiable` with the blocking reason named.
+`L4 unverifiable` with the blocking reason named. The reason may no longer be
+"no shutdown hook exists" — that is refuted.
 
 ## Sequencing
 
 C-01 (done), C-01b, C-02 are executable without runtime changes.
-C-03, C-04, C-05(b) hand to Codex at kbd-execute.
-C-05(a) needs its own scoping decision first.
+C-03, C-04 and **all of C-05** hand to Codex at kbd-execute.
+
+*Superseded:* an earlier revision held C-05(a) back for its own scoping decision,
+on the belief that a shutdown hook had to be designed. Reading `server.rs`
+refuted that — see the C-05 entry above. No separate scoping step is needed.
 
 ## Verification
 

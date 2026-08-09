@@ -39,9 +39,11 @@
   "openQuestions": [
     {
       "id": "OQ-1",
+      "status": "CLOSED 2026-08-09",
       "question": "Does start_server hold state whose lifecycle prevents a clean shutdown hook?",
-      "resolveBy": "reading src/server.rs — this is a design question about code we own, not a research question",
-      "blocks": "C-05(a), and therefore any L4 result for C-12 and C-13"
+      "answer": "No — graceful shutdown already exists and nothing needs designing. serve_on_listener creates a tokio_util CancellationToken (server.rs:1386); a signal handler (1388-1420) drains the ingestion pool then cancels it; shutdown_future (1425-1438) awaits it and drains connections with a timeout; both listeners use .with_graceful_shutdown() (1441, 1453). The token is created internally, so the only gap is that a test cannot own it. The seam is a caller-supplied CancellationToken parameter on start_server_sidecar (1357), which already accepts a caller-supplied oneshot::Sender<SocketAddr>.",
+      "resolvedBy": "reading src/server.rs",
+      "blocks": "nothing — C-05(a) is no longer held back for separate scoping; all of C-05 is in the Codex handoff. A future 'L4 unverifiable' verdict must name a different reason."
     },
     {
       "id": "OQ-2",

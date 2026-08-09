@@ -70,7 +70,7 @@
       "id": "C-05",
       "name": "l4-persistence",
       "status": "PENDING",
-      "note": "(a) shutdown hook on start_server is BOOT-PATH work, scope separately; (b) tests to Codex"
+      "note": "Graceful shutdown already exists (server.rs:1386 token, 1388-1420 signal handler, 1425-1438 drain, 1441/1453 wired). Seam is a caller-supplied CancellationToken on start_server_sidecar, which already takes a caller-supplied oneshot::Sender. All of C-05 to Codex; the earlier separate-scoping note is refuted."
     }
   ],
   "children": []

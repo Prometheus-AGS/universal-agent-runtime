@@ -75,10 +75,18 @@ closes.
 C-01, C-01b and C-02 are executable in this session — one command, two one-line
 test corrections, one workflow file. No runtime changes.
 
-**C-03, C-04 and C-05(b) hand off to Codex at kbd-execute.** They are bounded,
-test-shaped, multi-file work. **C-05(a) does not**: a shutdown hook on
-`start_server` is a boot-path change, not a test, and must be scoped separately
-rather than smuggled into a test handoff.
+**C-03, C-04 and all of C-05 hand off to Codex at kbd-execute.** They are
+bounded, test-shaped, multi-file work.
+
+> **Corrected 2026-08-09.** This section previously held C-05(a) back, claiming
+> "a shutdown hook on `start_server` is a boot-path change." Reading
+> `src/server.rs` refuted that: graceful shutdown already exists — a
+> `CancellationToken` at `1386`, a signal handler at `1388-1420`, a
+> `shutdown_future` at `1425-1438`, and both listeners wired through
+> `.with_graceful_shutdown(...)` at `1441`/`1453`. The token is merely created
+> internally, so the seam is a caller-supplied parameter on a function
+> (`start_server_sidecar`, `1357`) that already accepts a caller-supplied
+> `oneshot::Sender`. Additive, not a redesign.
 
 Codex deliverables are re-reviewed against the four structural findings before
 this phase closes. This phase exists because a prior instrument silently
