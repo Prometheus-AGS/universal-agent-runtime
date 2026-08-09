@@ -5,6 +5,7 @@ use tokio::sync::RwLock;
 use universal_agent_runtime::config::LlmConfig;
 use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::session::SessionStore;
+use universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend;
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 
@@ -15,8 +16,7 @@ use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 /// fallback `server.rs` itself installs when a real backend cannot be built.
 /// Building a real backend here would instead panic under any profile without
 /// `local-models`, because the `openai` fallback requires an API key.
-fn unavailable_embedding_backend()
--> Arc<dyn universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend> {
+fn unavailable_embedding_backend() -> Arc<dyn EmbeddingBackend> {
     Arc::new(
         universal_agent_runtime::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
             384,
