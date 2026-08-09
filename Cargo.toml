@@ -106,7 +106,7 @@ harness = false
 anyhow = "1.0"
 axum-test = "21.0.0"
 cucumber = "0.23.0"
-serial_test = "3.4.0"
+serial_test = "4.0.1"
 tempfile = "3.27.0"
 tokio = { version = "1.50.0", features = ["full", "test-util"] }
 tower = { version = "0.5.2", features = ["util"] }
