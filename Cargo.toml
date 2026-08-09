@@ -254,8 +254,15 @@ sycophancy-core = { path = "vendor/git/sycophancy-correction/crates/sycophancy-c
 # fixes 2 critical aarch64 Winch-backend sandbox-escape CVEs (need >=42.0.2/
 # >=43.0.2) and a wasmtime-wasi path_open(TRUNCATE) permission bypass (needs
 # >=44.0.2). Took latest (46.x) rather than the exact minimum patched version.
+#
+# These two MUST move together. `wasmtime-wasi` re-exports `wasmtime` types, so
+# a version skew puts two distinct `Linker<T>` types in the same build and
+# `add_to_linker_sync` stops type-checking. That happened when #218 bumped
+# wasmtime 46 -> 47 while #220 (the matching wasmtime-wasi bump) sat blocked on
+# a lockfile conflict: `server-full` stopped compiling on main, and the errors
+# named `wasmtime_internal_core` types that appear nowhere in this repo.
 wasmtime = { version = "47", optional = true }
-wasmtime-wasi = { version = "46", optional = true }
+wasmtime-wasi = { version = "47", optional = true }
 
 # HTTP client
 reqwest = { version = "0.12", default-features = false, features = [
