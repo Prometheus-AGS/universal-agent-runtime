@@ -1,0 +1,81 @@
+{
+  "phase": "uar-spec-conformance-2026-08",
+  "generatedAt": "2026-08-09T13:50:00Z",
+  "generatedBy": "kbd-analyze",
+  "mode": "skip",
+  "skipped": true,
+  "skipReason": "No build-vs-adopt decision exists in this phase. Every dependency it touches is already present, pinned, and exercised: the live harness boots a real server, the LLM stub needs no keys, serial_test is pinned at 4.0.1, and GitHub Actions already runs the compile gate. Verified 2026-08-09 — the matrix ran to completion in 194.70s and the live tier compiles in 1m54s. The phase's changes are: run an existing instrument, correct two of its assertions, wire an existing runner to an existing test, extend an existing case file, and add a shutdown hook to code we own. None is a library selection.",
+  "candidates": [],
+  "incumbents": [
+    {
+      "name": "serial_test",
+      "version": "4.0.1",
+      "role": "serialises booting capability cases",
+      "verdict": "keep",
+      "evidence": "Pinned in Cargo.toml. harness.rs:283-289 records a full run passing module-by-module while failing 7/16 concurrently on health-check timeouts, so serialisation is load-bearing rather than incidental."
+    },
+    {
+      "name": "in-repo live harness",
+      "version": "tests/integration/live/harness.rs",
+      "role": "boots a real server per case",
+      "verdict": "keep",
+      "evidence": "Exercised 2026-08-09: 20 cases, 194.70s, ~10s cold boot each. Was silently uncompilable for 25 days before repair, so it is now known-good rather than assumed-good."
+    },
+    {
+      "name": "in-process OpenAI-compatible stub",
+      "version": "tests/integration/live/stub_llm.rs",
+      "role": "deterministic LLM backend for recorded mode",
+      "verdict": "keep, with a stated limit",
+      "evidence": "No API keys, no token spend, no network. LIMIT: fixtures are authored by the test author, so a passing case against this stub is L2-wired, not L3-exercised, wherever correctness depends on model output."
+    },
+    {
+      "name": "GitHub Actions",
+      "version": "n/a",
+      "role": "CI runner for the blocking matrix gate (C-02)",
+      "verdict": "keep",
+      "evidence": "Already runs the live-tier compile gate. live-integration.yml:75 reads 'No continue-on-error. This is the gate.' C-02 adds execution alongside it, in a separate job — that file still carries two continue-on-error steps."
+    }
+  ],
+  "openQuestions": [
+    {
+      "id": "OQ-1",
+      "question": "Does start_server hold state whose lifecycle prevents a clean shutdown hook?",
+      "resolveBy": "reading src/server.rs — this is a design question about code we own, not a research question",
+      "blocks": "C-05(a), and therefore any L4 result for C-12 and C-13"
+    },
+    {
+      "id": "OQ-2",
+      "question": "Is C-24 peer reachability published as an exclusion with its reason named, rather than tested weakly?",
+      "resolveBy": "spec phase",
+      "blocks": "C-03 exit criterion"
+    },
+    {
+      "id": "OQ-3",
+      "question": "What concrete form does the Codex re-review gate take — which artifacts, reviewed against what?",
+      "resolveBy": "spec phase",
+      "blocks": "handoff of C-03, C-04, C-05(b)"
+    }
+  ],
+  "routedElsewhere": [
+    {
+      "request": "UAR documentation (features, APIs, SDKs, theory) in UAR branding",
+      "phase": "uar-docs-and-pages-2026-08",
+      "reason": "A deliverable, not a measurement. Genuinely needs Analyze — SSG selection, rustdoc extraction, SDK doc generation."
+    },
+    {
+      "request": "GitHub Pages built and refreshed by Actions on every change",
+      "phase": "uar-docs-and-pages-2026-08",
+      "reason": "CI infrastructure paired with the docs deliverable."
+    },
+    {
+      "request": "Cover all functionality representing a 1.0 release",
+      "phase": "uar-1-0-readiness (proposed)",
+      "reason": "Scope redefinition. SPECIFICATION.md already names 39 GAPs; closing them is implementation. Depends on this phase's output — planning gap-closure before knowing what works is planning against unknowns."
+    },
+    {
+      "request": "Prometheus skill system auto-included as a base skill set",
+      "phase": "uar-1-0-readiness (proposed)",
+      "reason": "A new capability absent from the spec, with an unsolved problem underneath: PSP measured ~41x over the skill-description budget on 2026-08-09 (2,266 skills, ~163,000 tokens vs ~4,000)."
+    }
+  ]
+}

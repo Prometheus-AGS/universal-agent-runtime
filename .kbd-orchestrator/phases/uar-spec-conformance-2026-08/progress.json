@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "agent-seeded",
+  "note": "Seeded by an agent during phase authoring, NOT by kbd-runtime. sourceRevision/derivedRevision/frontier are absent deliberately — this file carries no runtime provenance and the runtime should overwrite it on first canonical transition.",
+  "conflictCount": 0,
+  "phase": "uar-spec-conformance-2026-08",
+  "phaseId": "uar-spec-conformance-2026-08",
+  "parentPhase": null,
+  "last_updated": "2026-08-09T13:45:00Z",
+  "last_updated_by": "agent-seeded",
+  "changes_total": 6,
+  "changes_completed": 1,
+  "implementation_total": 6,
+  "implementation_completed": 1,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 1,
+      "total": 6,
+      "status": "IN_PROGRESS"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "C-01",
+      "name": "run-and-publish-baseline",
+      "status": "DONE",
+      "note": "baseline-2026-08-09.md — 18 passed / 2 failed / 194.70s, backend=recorded, server-full"
+    },
+    {
+      "id": "C-01b",
+      "name": "correct-miscalibrated-assertions",
+      "status": "PENDING",
+      "note": "l3_c04 must send a token or assert 401; shape_only_c13 must assert legacy_route_disabled"
+    },
+    {
+      "id": "C-02",
+      "name": "blocking-ci-gate",
+      "status": "PENDING",
+      "note": "dedicated job, continue-on-error false; proof must name the failing case"
+    },
+    {
+      "id": "C-03",
+      "name": "close-eight-capability-hole",
+      "status": "PENDING",
+      "note": "C-16,18,19,21,24,25,26,27 with per-capability target evidence level; Codex"
+    },
+    {
+      "id": "C-04",
+      "name": "define-and-apply-label-taxonomy",
+      "status": "PENDING",
+      "note": "l1_/l2_/l3_/l4_/shape_only_/absent_/excluded_ defined before relabelling; Codex"
+    },
+    {
+      "id": "C-05",
+      "name": "l4-persistence",
+      "status": "PENDING",
+      "note": "(a) shutdown hook on start_server is BOOT-PATH work, scope separately; (b) tests to Codex"
+    }
+  ],
+  "children": []
+}

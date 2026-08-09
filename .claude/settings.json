@@ -93,7 +93,9 @@
       "Bash(gh pr view:*)",
       "Bash(gh pr list:*)",
       "Bash(gh run list:*)",
-      "Bash(gh run view:*)"
+      "Bash(gh run view:*)",
+      "Edit(.kbd-orchestrator/phases/*/handoffs/*.json)",
+      "Edit(.kbd-orchestrator/phases/*/progress.json)"
     ],
     "ask": [
       "Bash(git push:*)",
@@ -107,7 +109,7 @@
       "Read(./**/.env)",
       "Read(./**/*.pem)",
       "Edit(versions.toml)",
-      "Edit(.kbd-orchestrator/**/*.json)",
+      "Edit(.kbd-orchestrator/*.json)",
       "Edit(.kbd-orchestrator/**/*.jsonl)",
       "Edit(.kbd-orchestrator/current-waypoint.*)",
       "Edit(.kbd-orchestrator/position*)"

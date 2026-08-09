@@ -1,0 +1,14 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-08-09T13:40:00Z",
+  "outputs": [
+    "assessment.md",
+    "baseline-2026-08-09.md",
+    "goals.md",
+    "plan-draft.md"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "Assessment complete with a measured baseline, not an inherited one. First full run of the capability matrix on 2026-08-09: 18 passed, 2 failed, 194.70s, server-full, UAR_LIVE_INTEGRATION_BACKEND=recorded, --test-threads=1. BOTH failures are instrument defects, not runtime defects — C-04's credentials endpoint guards unconditionally and the test never sent a token; C-13's session route was deliberately retired and says so in its error body, naming its replacement. Honest reading: 18 of 19 exercised capabilities behave correctly, zero runtime defects surfaced. Second consecutive run where the instrument's error rate exceeded the runtime's (prior run: 5 reported failures, 3 real defects), which is why plan-draft adds C-01b to correct the miscalibrated assertions BEFORE extending coverage. Five gaps: (1) 8 of 27 capabilities have no test — C-16, C-18, C-19, C-21, C-24, C-25, C-26, C-27 — and these are the newest and most security-sensitive, with C-21 tenant isolation absent and the frf-did/frf-wallet crates (37 unit tests, built 2026-08-07) never exercised through the runtime; (2) ZERO CI workflows execute the matrix, so the live tier compiles in CI and never runs — the 25-day harness failure one level up; (3) evidence labels overstate what was exercised — 13 l3_ against a stub whose fixtures the test author wrote is L2-wired, not L3-exercised; (4) shape_only_ and absent_ are undefined relative to the L-scale, so 'honestly labelled' cannot currently be verified; (5) the four structural limits from the MiniMax-M3/k3 review are unchanged — no L4 (no shutdown hook on start_server, fresh temp DB per boot), no semantics, one profile (silent on embedded-mobile where GAP-04 says the Rust library API IS the contract), no tenant isolation. SCOPE NOTE FOR ANALYZE: this phase is measurement only. Documentation, GitHub Pages, 1.0 gap-closure, and auto-bundling the Prometheus skill system were requested 2026-08-09 and deliberately routed to separate phases — they are deliverables and scope redefinition, not measurement, and folding them in would invalidate the adversarial review this phase's plan already passed. Analyze may legitimately SKIP here: the instrument exists, compiles (exit 0, 1m54s), and needs no external library research. WARNING carried: the runtime is at v1.0.0 (published 2026-07-11, main +367 commits) with no current per-capability evidence, and decisions.md records four certification changes still PENDING with no supply-chain artifacts on disk.",
+  "skipped": false,
+  "skipReason": null
+}
