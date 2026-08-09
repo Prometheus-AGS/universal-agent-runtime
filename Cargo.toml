@@ -255,7 +255,7 @@ sycophancy-core = { path = "vendor/git/sycophancy-correction/crates/sycophancy-c
 # >=43.0.2) and a wasmtime-wasi path_open(TRUNCATE) permission bypass (needs
 # >=44.0.2). Took latest (46.x) rather than the exact minimum patched version.
 wasmtime = { version = "47", optional = true }
-wasmtime-wasi = { version = "46", optional = true }
+wasmtime-wasi = { version = "47", optional = true }
 
 # HTTP client
 reqwest = { version = "0.12", default-features = false, features = [
