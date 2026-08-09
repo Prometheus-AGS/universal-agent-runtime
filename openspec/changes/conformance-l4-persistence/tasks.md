@@ -1,8 +1,9 @@
 > **Read `EXECUTION-CONTRACT.md` first.** It fixes the order (this change is
 > third and last), the pinned command, and the verification format.
 >
-> **CI:** the cases added here are executed and enforced by the gate from
-> `conformance-baseline-gate` task 2.1. No CI work belongs in this change.
+> **Local gate:** the cases added here are executed by the pinned local command
+> from `conformance-baseline-gate` task 2.1. No GitHub Actions work belongs in
+> this change.
 >
 > **This is the only change in the set that touches runtime source.** Task 1.1 is
 > the entire permitted surface: one additive parameter. Anything beyond it is a

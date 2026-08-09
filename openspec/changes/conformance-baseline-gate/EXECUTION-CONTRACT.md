@@ -9,8 +9,9 @@ set that was individually valid but ambiguous when read together.
 
 Apply strictly in this order. Each change assumes its predecessors have landed.
 
-1. **`conformance-baseline-gate`** — correct two miscalibrated assertions, add
-   the blocking CI gate, prove the gate fails.
+1. **`conformance-baseline-gate`** — correct two miscalibrated assertions, make
+   the pinned matrix a mandatory local gate, prove the command detects a named
+   failure.
 2. **`conformance-close-capability-gaps`** — define the label taxonomy, relabel,
    close the eight-capability hole.
 3. **`conformance-l4-persistence`** — expose the shutdown trigger, allow a fixed
@@ -47,15 +48,20 @@ Three parts are load-bearing and must not be altered:
 Baseline for comparison: `.kbd-orchestrator/phases/uar-spec-conformance-2026-08/baseline-2026-08-09.md`
 — 18 passed, 2 failed, 194.70s.
 
-## CI enforcement covers the whole set
+## Local enforcement covers the whole set
 
-The gate added by `conformance-baseline-gate` task 2.1 runs the entire
-`live::capability_cases` module. **Every case added or renamed by changes 2 and
-3 is therefore executed and enforced by that gate automatically** — neither
-change needs its own CI work, and neither may add a case that the gate skips.
+The gate defined by `conformance-baseline-gate` task 2.1 runs the entire
+`live::capability_cases` module locally before each change is considered
+complete and before its commit is pushed. **Every case added or renamed by
+changes 2 and 3 is therefore executed and enforced by that gate** — neither
+change may add a case that the pinned command skips.
 
-If a case cannot run in CI, it is an `excluded_` case with the reason named. It
-is never a case that silently does not execute.
+GitHub Actions are reserved for deployment and deployment validation. Unit,
+integration, conformance, lint, format, and other routine development checks
+MUST NOT be added to or run by a GitHub Actions workflow.
+
+If a case cannot run under the pinned local command, it is an `excluded_` case
+with the reason named. It is never a case that silently does not execute.
 
 ## Discriminator scope
 
@@ -91,11 +97,13 @@ All three changes append to
 One row per case, in this format:
 
 ```
-| case | capability | evidence level | result | run URL | timestamp |
+| case | capability | evidence level | result | evidence | timestamp |
 ```
 
-For CI-proof rows (baseline-gate task 3), record two rows — the deliberate red
-run and the green run after revert — so the gate is provably capable of failing.
+For local-gate proof rows (baseline-gate task 3), record two rows — the
+deliberate red run and the green run after revert — and name the local command
+result in the evidence column so the gate is provably capable of detecting a
+failure.
 
 ## Stop conditions
 
@@ -107,6 +115,8 @@ Halt and report rather than guessing if any of these occur:
   `conformance-l4-persistence` task 1.1 appears necessary.
 - Any task requires editing `docs/SPECIFICATION.md`. The spec is the measuring
   stick; changing it to fit the measurement inverts the exercise.
+- Any task appears to require a non-deployment GitHub Actions job. All
+  development verification in this set is local.
 - `cargo fmt --all -- --check` or `cargo check --all-targets` fails for a reason
   unrelated to the change in hand — that is a pre-existing break and it belongs
   in its own change.

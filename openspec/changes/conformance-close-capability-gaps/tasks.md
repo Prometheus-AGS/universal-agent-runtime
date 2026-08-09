@@ -1,10 +1,10 @@
 > **Read `EXECUTION-CONTRACT.md` first.** It fixes the order (this change is
 > second), the pinned command, and what counts as satisfied.
 >
-> **CI:** every case added or renamed here is executed and enforced by the gate
-> added in `conformance-baseline-gate` task 2.1, which runs the whole
-> `live::capability_cases` module. This change adds no CI work of its own and
-> must not add a case the gate skips.
+> **Local gate:** every case added or renamed here is executed by the pinned
+> local command from `conformance-baseline-gate` task 2.1, which runs the whole
+> `live::capability_cases` module. This change adds no GitHub Actions work and
+> must not add a case the local gate skips.
 
 ## 1. Define the taxonomy before relabelling
 

@@ -139,3 +139,22 @@ with a heredoc for that reason and was written with the file editor instead.
 Narrowing the regex to anchor on command position would risk missing real
 invocations inside compound commands; the current trade favours no false
 negatives at the cost of this one benign false positive.
+
+---
+
+## 2026-08-09 — Routine verification is local; GitHub Actions are deployment-only
+
+**Decision.** GitHub Actions are reserved for deployment execution and
+deployment validation. Unit, integration, conformance, lint, format, and other
+routine development checks run locally before commit and push.
+
+**Rationale.** Remote development-test runs add queue and execution time without
+improving the evidence available from the same pinned local command. The
+conformance phase keeps its exact recorded/server-full/serial matrix, but its
+gate is a local non-zero/zero command result rather than a workflow result.
+
+**Consequence.** The `conformance-baseline-gate` contract, proposal, spec delta,
+and tasks were amended from CI red/green proof to local red/green proof. The
+non-deployment `spec-conformance.yml` workflow was removed and its active run
+cancelled. Verification records cite local command evidence rather than Actions
+run URLs.

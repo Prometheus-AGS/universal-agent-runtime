@@ -29,26 +29,31 @@ its name MUST carry a prefix that matches what it asserts.
   field, not a success status
 - **AND** the case name carries the `absent_` prefix
 
-### Requirement: The capability matrix runs on a blocking CI gate
+### Requirement: The capability matrix is a mandatory local gate
 
-The matrix MUST execute in CI on a job that cannot pass while a case fails.
-Compiling the test tier is not executing it: a compile gate proves the
-instrument builds, and says nothing about whether the runtime works.
+The matrix MUST execute locally with the pinned command before a conformance
+change is considered complete or its commit is pushed. A non-zero result MUST
+block completion. Compiling the test tier is not executing it: a compile check
+proves the instrument builds, and says nothing about whether the runtime works.
+
+GitHub Actions MUST NOT run the matrix or other unit, integration, conformance,
+lint, format, or routine development checks. GitHub Actions are reserved for
+deployment and deployment validation.
 
 The gate's failure path MUST be demonstrated, not assumed. A gate that has only
 ever been observed passing is indistinguishable from a gate that cannot fail.
 
-#### Scenario: A failing case blocks the pipeline
+#### Scenario: A failing case blocks local completion
 
-- **GIVEN** the matrix job is wired with `continue-on-error` absent or false
+- **GIVEN** the pinned matrix command is run locally
 - **WHEN** any capability case fails
-- **THEN** the job fails
-- **AND** the job log names the specific case that failed
+- **THEN** the command exits non-zero
+- **AND** its output names the specific case that failed
 
 #### Scenario: The gate is proven before it is trusted
 
-- **GIVEN** a newly added matrix job
-- **WHEN** a deliberate break is introduced in a named case and pushed
-- **THEN** the job goes red and the log names that case
-- **AND** reverting the break returns the job to green
-- **AND** both run URLs are recorded in the change's verification record
+- **GIVEN** the pinned matrix command
+- **WHEN** a deliberate break is introduced in a named case and run locally
+- **THEN** the command exits non-zero and its output names that case
+- **AND** reverting the break returns the local command to green
+- **AND** both command results are recorded in the change's verification record

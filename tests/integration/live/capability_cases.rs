@@ -530,7 +530,9 @@ async fn absent_c13_sessions_retired() {
     let parsed: serde_json::Value = serde_json::from_str(&body)
         .unwrap_or_else(|e| panic!("C-13 retired-route contract returned non-JSON: {e}\n{body}"));
     assert_eq!(
-        parsed.pointer("/error/code").and_then(serde_json::Value::as_str),
+        parsed
+            .pointer("/error/code")
+            .and_then(serde_json::Value::as_str),
         Some("legacy_route_disabled"),
         "C-13 retired-route contract changed: expected error.code=legacy_route_disabled, got: {body}"
     );
