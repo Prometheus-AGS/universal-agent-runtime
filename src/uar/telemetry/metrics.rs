@@ -6,22 +6,59 @@ use std::time::Instant;
 
 static METRICS_HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
 
-/// Initialize the Prometheus metrics exporter and return the handle.
-/// Must be called once at startup.
+/// Build the Prometheus recorder, install it as the process-global recorder,
+/// and return its handle.
+///
+/// Falls back to a detached recorder only when the global slot is already
+/// owned by a *foreign* recorder (one this module did not install) — in that
+/// case the `counter!` / `gauge!` macros write elsewhere, so the returned
+/// handle renders an empty payload. That is the best available outcome: the
+/// alternative is aborting a `/metrics` scrape, and this module cannot
+/// dislodge a recorder another component installed deliberately.
+fn install() -> PrometheusHandle {
+    match PrometheusBuilder::new().install_recorder() {
+        Ok(handle) => handle,
+        Err(err) => {
+            tracing::warn!(
+                error = %err,
+                "could not install the Prometheus recorder; /metrics will render an \
+                 empty payload because another global recorder owns metric writes"
+            );
+            PrometheusBuilder::new().build_recorder().handle()
+        }
+    }
+}
+
+/// Initialize the Prometheus metrics exporter.
+///
+/// Idempotent: the recorder is installed at most once per process, so callers
+/// need not coordinate. `server::start_server` calls this at boot, and the
+/// binaries call it earlier still to fix ordering relative to other telemetry
+/// setup.
+///
+/// Call this before recording any metric. The `metrics` macros resolve the
+/// global recorder on every call and silently discard writes to a no-op when
+/// none is installed, so metrics recorded before this point are lost — which
+/// is why installation cannot be left to [`metrics_handle`]'s lazy path
+/// alone.
 pub fn init() {
-    let handle = PrometheusBuilder::new()
-        .install_recorder()
-        .expect("failed to install Prometheus metrics recorder");
-    METRICS_HANDLE
-        .set(handle)
-        .expect("metrics already initialized");
+    let _ = metrics_handle();
 }
 
 /// Get the Prometheus handle for rendering metrics.
+///
+/// Initializes on first use as a backstop rather than requiring a prior
+/// [`init`] call. `/metrics` is registered unconditionally by
+/// `server::start_server`, which embedded hosts (including SDK consumers)
+/// reach without going through a binary's startup path — so requiring
+/// explicit initialization here made that route abort its request thread for
+/// every embedder.
+///
+/// This guarantees `/metrics` never panics, but it is not the intended
+/// install point: see [`init`] for why the recorder must be installed at boot
+/// rather than on the first scrape.
 pub fn metrics_handle() -> &'static PrometheusHandle {
-    METRICS_HANDLE
-        .get()
-        .expect("metrics not initialized — call metrics::init() first")
+    METRICS_HANDLE.get_or_init(install)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -248,4 +285,28 @@ pub fn record_skill_activation_outcome(skill_id: &str, success: bool) {
         ("success", success.to_string()),
     ];
     counter!("uar_skill_activation_outcome_total", &labels).increment(1);
+}
+
+#[cfg(test)]
+mod tests {
+    /// Recording through the `metrics` macros must be visible in the handle's
+    /// render — i.e. `metrics_handle()` returns the GLOBAL recorder's handle,
+    /// not a detached one.
+    ///
+    /// Order matters and is the point of this test. `metrics::with_recorder`
+    /// resolves the global recorder on every macro call and falls back to a
+    /// no-op when none is installed, discarding the write. So `init()` must
+    /// run before the first `record_*` call — which is why `start_server`
+    /// installs eagerly at boot rather than relying on the first `/metrics`
+    /// scrape to initialise lazily.
+    #[test]
+    fn handle_renders_series_recorded_through_macros() {
+        super::init();
+        super::record_request("GET", "/health", 200, std::time::Duration::from_millis(1));
+        let body = super::metrics_handle().render();
+        assert!(
+            body.contains("uar_requests_total"),
+            "handle is detached from the global recorder; body was:\n{body}"
+        );
+    }
 }

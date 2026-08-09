@@ -116,6 +116,17 @@ async fn start_server_with_listener(
     listener: Option<tokio::net::TcpListener>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
 ) -> anyhow::Result<()> {
+    // Install the Prometheus recorder before anything can record a metric.
+    // `metrics::with_recorder` resolves the global recorder on every macro
+    // call and silently discards writes to a no-op when none is installed, so
+    // any metric recorded before this point is lost — and the `Counter` handle
+    // it returns stays bound to that no-op. Lazy initialisation on the first
+    // `/metrics` scrape is therefore not sufficient: request metrics recorded
+    // before the first scrape would never appear. Idempotent, so the binaries'
+    // own startup call remains harmless.
+    #[cfg(feature = "telemetry")]
+    crate::uar::telemetry::metrics::init();
+
     let config = config_manager.current();
     let mut llm_config = config.llm.clone();
     normalize_legacy_openai_base_url(&mut llm_config);
