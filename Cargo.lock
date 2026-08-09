@@ -13083,7 +13083,7 @@ dependencies = [
  "axum",
  "axum-extra",
  "axum-test",
- "base64 0.22.1",
+ "base64 0.23.1",
  "candle-core 0.11.0",
  "candle-nn 0.11.0",
  "candle-transformers 0.11.0",
