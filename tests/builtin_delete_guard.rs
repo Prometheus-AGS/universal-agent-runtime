@@ -23,8 +23,8 @@
 
 use serial_test::serial;
 use universal_agent_runtime::uar::domain::skills::{Skill, SkillOrigin};
-use universal_agent_runtime::uar::persistence::providers::postgres::PostgresProvider;
 use universal_agent_runtime::uar::persistence::PersistenceLayer;
+use universal_agent_runtime::uar::persistence::providers::postgres::PostgresProvider;
 
 fn database_url() -> Option<String> {
     std::env::var("DATABASE_URL").ok()

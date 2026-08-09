@@ -70,7 +70,9 @@ fn skill_payload(name: &str) -> Value {
 }
 
 async fn rows(db: &Arc<dyn PersistenceLayer>) -> Vec<Skill> {
-    db.list_skills().await.expect("list skills from persistence")
+    db.list_skills()
+        .await
+        .expect("list skills from persistence")
 }
 
 /// **install** — `POST /skills` must write to the database, not just answer 201.
@@ -83,7 +85,10 @@ async fn post_skills_persists_the_skill_not_just_returns_201() {
         "the database must start empty, or this test measures leftovers"
     );
 
-    let response = server.post("/skills").json(&skill_payload("Rest Persist")).await;
+    let response = server
+        .post("/skills")
+        .json(&skill_payload("Rest Persist"))
+        .await;
     response.assert_status(axum::http::StatusCode::CREATED);
 
     // THE ASSERTION the existing 26 tests do not make.
@@ -104,9 +109,15 @@ async fn post_skills_persists_the_skill_not_just_returns_201() {
 async fn install_is_visible_to_a_subsequent_get() {
     let (server, db) = setup_with_persistence();
 
-    let created = server.post("/skills").json(&skill_payload("Round Trip")).await;
+    let created = server
+        .post("/skills")
+        .json(&skill_payload("Round Trip"))
+        .await;
     created.assert_status(axum::http::StatusCode::CREATED);
-    let id = created.json::<Value>()["skill_id"].as_str().unwrap().to_string();
+    let id = created.json::<Value>()["skill_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     // Query path: GET /{id} must find what install wrote.
     let fetched = server.get(&format!("/skills/{id}")).await;
@@ -181,9 +192,15 @@ async fn match_finds_an_installed_skill() {
 async fn toggle_persists_the_new_enabled_state() {
     let (server, db) = setup_with_persistence();
 
-    let created = server.post("/skills").json(&skill_payload("Toggle Me")).await;
+    let created = server
+        .post("/skills")
+        .json(&skill_payload("Toggle Me"))
+        .await;
     created.assert_status(axum::http::StatusCode::CREATED);
-    let id = created.json::<Value>()["skill_id"].as_str().unwrap().to_string();
+    let id = created.json::<Value>()["skill_id"]
+        .as_str()
+        .unwrap()
+        .to_string();
 
     server
         .post(&format!("/skills/{id}/toggle"))

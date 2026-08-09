@@ -45,12 +45,7 @@ impl WebFetchTool {
     /// the limitation with a reason instead of returning lossy-decoded
     /// nonsense that looks like content.
     #[allow(unused_variables)]
-    async fn extract_document(
-        url: &str,
-        content_type: &str,
-        status: u16,
-        bytes: &[u8],
-    ) -> Value {
+    async fn extract_document(url: &str, content_type: &str, status: u16, bytes: &[u8]) -> Value {
         #[cfg(feature = "document-intelligence")]
         {
             // Go through UAR's OWN kreuzberg wrapper rather than calling the
@@ -110,8 +105,8 @@ impl WebFetchTool {
     async fn guard_url(&self, url: &str) -> Result<(), super::fetch_guard::FetchDenial> {
         use super::fetch_guard::{FetchDenial, check_resolved_addresses, check_scheme};
 
-        let parsed = url::Url::parse(url)
-            .map_err(|_| FetchDenial::UnsupportedScheme(url.to_string()))?;
+        let parsed =
+            url::Url::parse(url).map_err(|_| FetchDenial::UnsupportedScheme(url.to_string()))?;
         check_scheme(&parsed)?;
 
         let host = parsed
@@ -328,7 +323,10 @@ mod guard_wiring_tests {
             "http://[::1]/",
         ] {
             let error = refusal(url).await;
-            assert!(!error.is_empty(), "{url} must give a reason, not a bare failure");
+            assert!(
+                !error.is_empty(),
+                "{url} must give a reason, not a bare failure"
+            );
         }
     }
 
@@ -394,7 +392,10 @@ mod guard_wiring_tests {
         )
         .await;
         assert_eq!(out.get("ok").and_then(Value::as_bool), Some(false));
-        assert_eq!(out.get("platformLimitation").and_then(Value::as_bool), Some(true));
+        assert_eq!(
+            out.get("platformLimitation").and_then(Value::as_bool),
+            Some(true)
+        );
         let error = out.get("error").and_then(Value::as_str).unwrap_or_default();
         assert!(
             error.contains("document extraction"),

@@ -109,7 +109,9 @@ pub struct DiscoveredSkill {
 /// a name from the directory.
 fn split_frontmatter(text: &str) -> Option<(&str, &str)> {
     let rest = text.strip_prefix("---")?;
-    let rest = rest.strip_prefix('\n').or_else(|| rest.strip_prefix("\r\n"))?;
+    let rest = rest
+        .strip_prefix('\n')
+        .or_else(|| rest.strip_prefix("\r\n"))?;
     let end = rest.find("\n---")?;
     let yaml = &rest[..end];
     let body = rest[end..].trim_start_matches("\n---");
@@ -148,7 +150,11 @@ pub fn parse_skill_md(text: &str, dir: &Path) -> Option<DiscoveredSkill> {
     };
     skill.enabled = true;
 
-    Some(DiscoveredSkill { skill, dir: dir.to_path_buf(), has_scripts })
+    Some(DiscoveredSkill {
+        skill,
+        dir: dir.to_path_buf(),
+        has_scripts,
+    })
 }
 
 /// Walk a pack checkout and return every canonical skill.
@@ -232,7 +238,10 @@ Body.
         assert_eq!(found.skill.version, "1.0.0");
         assert_eq!(found.skill.license.as_deref(), Some("MIT"));
         assert_eq!(found.skill.language.as_deref(), Some("rust"));
-        assert_eq!(found.skill.metadata_category.as_deref(), Some("architecture"));
+        assert_eq!(
+            found.skill.metadata_category.as_deref(),
+            Some("architecture")
+        );
         assert!(found.skill.metadata_tags.contains(&"patterns".to_string()));
         assert!(matches!(found.skill.kind, SkillKind::Manifest));
         assert!(matches!(found.skill.origin, SkillOrigin::Builtin));
@@ -245,8 +254,8 @@ Body.
     #[test]
     fn accepts_version_in_either_location() {
         // Keying on one spelling silently loses the version for half the pack.
-        let found = parse_skill_md(METADATA_VERSION_SKILL, Path::new("/tmp/other-skill"))
-            .expect("parses");
+        let found =
+            parse_skill_md(METADATA_VERSION_SKILL, Path::new("/tmp/other-skill")).expect("parses");
         assert_eq!(found.skill.version, "2.3.4");
         assert_eq!(found.skill.authors, vec!["prometheus".to_string()]);
     }
@@ -297,13 +306,17 @@ Body.
             "duplicate skill ids — the walker is counting imported/ or a mirror"
         );
         assert!(
-            found.iter().all(|f| !f.dir.to_string_lossy().contains("/imported/")),
+            found
+                .iter()
+                .all(|f| !f.dir.to_string_lossy().contains("/imported/")),
             "an imported/ duplicate leaked into the catalog"
         );
         // A knowledge skill carries its body and needs no runner; that split is
         // what lets ~74% of the pack work on a platform with no process spawning.
         assert!(
-            found.iter().any(|f| !f.has_scripts && !f.skill.prompt_overlay.is_empty()),
+            found
+                .iter()
+                .any(|f| !f.has_scripts && !f.skill.prompt_overlay.is_empty()),
             "expected at least one knowledge-only skill with a body"
         );
     }

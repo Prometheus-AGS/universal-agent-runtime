@@ -75,7 +75,10 @@ pub enum ExecPlan {
     /// Hand off to a server over `RemoteRunner`.
     Remote { reason: String },
     /// Cannot run here at all, with a reason safe to show a user.
-    Unavailable { reason: String, platform_limitation: bool },
+    Unavailable {
+        reason: String,
+        platform_limitation: bool,
+    },
 }
 
 /// Decide how a skill runs, given the host and whether a remote runner exists.
@@ -93,20 +96,23 @@ pub fn plan_with_host(host: ExecHost, has_scripts: bool, remote_available: bool)
     if remote_available {
         return ExecPlan::Remote {
             reason: match host {
-                ExecHost::Ios => "iOS cannot spawn processes, so this skill runs on the server"
-                    .to_string(),
+                ExecHost::Ios => {
+                    "iOS cannot spawn processes, so this skill runs on the server".to_string()
+                }
                 _ => "this device runs skill scripts on the server".to_string(),
             },
         };
     }
     ExecPlan::Unavailable {
         reason: match host {
-            ExecHost::Ios =>
+            ExecHost::Ios => {
                 "this skill runs scripts, which iOS cannot do. Connect to a server to use it."
-                    .to_string(),
-            ExecHost::Android =>
+                    .to_string()
+            }
+            ExecHost::Android => {
                 "this skill runs scripts and no server is reachable. Connect to a server to use it."
-                    .to_string(),
+                    .to_string()
+            }
             _ => "no execution runner is available on this host".to_string(),
         },
         // iOS is a permanent platform property; Android merely lacks a server
@@ -161,7 +167,12 @@ mod tests {
     #[test]
     fn knowledge_skills_run_everywhere_including_ios() {
         // The whole reason a phone can carry the catalog offline.
-        for host in [ExecHost::Server, ExecHost::Desktop, ExecHost::Android, ExecHost::Ios] {
+        for host in [
+            ExecHost::Server,
+            ExecHost::Desktop,
+            ExecHost::Android,
+            ExecHost::Ios,
+        ] {
             assert_eq!(
                 plan_with_host(host, false, false),
                 ExecPlan::KnowledgeOnly,
@@ -172,8 +183,14 @@ mod tests {
 
     #[test]
     fn a_server_runs_scripts_natively() {
-        assert_eq!(plan_with_host(ExecHost::Server, true, false), ExecPlan::Native);
-        assert_eq!(plan_with_host(ExecHost::Desktop, true, false), ExecPlan::Native);
+        assert_eq!(
+            plan_with_host(ExecHost::Server, true, false),
+            ExecPlan::Native
+        );
+        assert_eq!(
+            plan_with_host(ExecHost::Desktop, true, false),
+            ExecPlan::Native
+        );
     }
 
     #[test]
@@ -199,12 +216,24 @@ mod tests {
         let android = plan_with_host(ExecHost::Android, true, false);
         match (ios, android) {
             (
-                ExecPlan::Unavailable { platform_limitation: ios_perm, reason: ios_reason },
-                ExecPlan::Unavailable { platform_limitation: android_perm, .. },
+                ExecPlan::Unavailable {
+                    platform_limitation: ios_perm,
+                    reason: ios_reason,
+                },
+                ExecPlan::Unavailable {
+                    platform_limitation: android_perm,
+                    ..
+                },
             ) => {
                 assert!(ios_perm, "iOS cannot spawn processes — that is permanent");
-                assert!(!android_perm, "Android just needs a server — that is transient");
-                assert!(!ios_reason.is_empty(), "an unavailable plan needs an actionable reason");
+                assert!(
+                    !android_perm,
+                    "Android just needs a server — that is transient"
+                );
+                assert!(
+                    !ios_reason.is_empty(),
+                    "an unavailable plan needs an actionable reason"
+                );
             }
             other => panic!("expected both to be unavailable, got {other:?}"),
         }

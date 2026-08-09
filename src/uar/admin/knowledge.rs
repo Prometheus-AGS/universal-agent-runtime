@@ -16,10 +16,7 @@ pub async fn get(
     store.get_knowledge_base(id).await
 }
 
-pub async fn save(
-    store: &Arc<dyn PersistenceLayer>,
-    kb: &KnowledgeBase,
-) -> anyhow::Result<()> {
+pub async fn save(store: &Arc<dyn PersistenceLayer>, kb: &KnowledgeBase) -> anyhow::Result<()> {
     store.save_knowledge_base(kb).await
 }
 

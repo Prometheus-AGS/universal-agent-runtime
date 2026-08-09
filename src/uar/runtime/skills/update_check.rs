@@ -245,7 +245,10 @@ mod tests {
              again."
         );
         assert!(!status.is_conclusive());
-        assert!(!status.is_behind(), "Unknown must not be mistaken for Behind");
+        assert!(
+            !status.is_behind(),
+            "Unknown must not be mistaken for Behind"
+        );
 
         let UpdateStatus::Unknown { reason } = status else {
             unreachable!()

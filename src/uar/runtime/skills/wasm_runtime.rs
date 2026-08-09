@@ -121,7 +121,6 @@ impl WasmSkillRuntime {
         self.components.lock().await.contains_key(skill_id)
     }
 
-
     /// Wire `prometheus:component/kv-store@0.1.0` into a component linker.
     ///
     /// Split out so the capability surface is readable in one place: whatever a
@@ -138,39 +137,43 @@ impl WasmSkillRuntime {
 
         iface
             .func_new("get", |store, _ty, params, results| {
-            let Some(Val::String(key)) = params.first() else {
-                return Err(wasmtime::Error::msg("kv-store.get expects a string key"));
-            };
-            let found = store.data().kv.get(key.as_str()).cloned();
-            // result<option<string>, error>
-            let inner = match found {
-                Some(v) => Val::Option(Some(Box::new(Val::String(v)))),
-                None => Val::Option(None),
-            };
-            results[0] = Val::Result(Ok(Some(Box::new(inner))));
-            Ok(())
-        })
+                let Some(Val::String(key)) = params.first() else {
+                    return Err(wasmtime::Error::msg("kv-store.get expects a string key"));
+                };
+                let found = store.data().kv.get(key.as_str()).cloned();
+                // result<option<string>, error>
+                let inner = match found {
+                    Some(v) => Val::Option(Some(Box::new(Val::String(v)))),
+                    None => Val::Option(None),
+                };
+                results[0] = Val::Result(Ok(Some(Box::new(inner))));
+                Ok(())
+            })
             .map_err(|e| anyhow::anyhow!("link kv-store.get: {e}"))?;
 
-        iface.func_new("set", |mut store, _ty, params, results| {
-            let (Some(Val::String(k)), Some(Val::String(v))) = (params.first(), params.get(1))
-            else {
-                return Err(wasmtime::Error::msg("kv-store.set expects (string, string)"));
-            };
-            store.data_mut().kv.insert(k.clone(), v.clone());
-            results[0] = Val::Result(Ok(None));
-            Ok(())
-        })
+        iface
+            .func_new("set", |mut store, _ty, params, results| {
+                let (Some(Val::String(k)), Some(Val::String(v))) = (params.first(), params.get(1))
+                else {
+                    return Err(wasmtime::Error::msg(
+                        "kv-store.set expects (string, string)",
+                    ));
+                };
+                store.data_mut().kv.insert(k.clone(), v.clone());
+                results[0] = Val::Result(Ok(None));
+                Ok(())
+            })
             .map_err(|e| anyhow::anyhow!("link kv-store.set: {e}"))?;
 
-        iface.func_new("delete", |mut store, _ty, params, results| {
-            let Some(Val::String(k)) = params.first() else {
-                return Err(wasmtime::Error::msg("kv-store.delete expects a string key"));
-            };
-            store.data_mut().kv.remove(k.as_str());
-            results[0] = Val::Result(Ok(None));
-            Ok(())
-        })
+        iface
+            .func_new("delete", |mut store, _ty, params, results| {
+                let Some(Val::String(k)) = params.first() else {
+                    return Err(wasmtime::Error::msg("kv-store.delete expects a string key"));
+                };
+                store.data_mut().kv.remove(k.as_str());
+                results[0] = Val::Result(Ok(None));
+                Ok(())
+            })
             .map_err(|e| anyhow::anyhow!("link kv-store.delete: {e}"))?;
 
         Ok(())
