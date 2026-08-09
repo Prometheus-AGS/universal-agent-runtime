@@ -171,8 +171,12 @@ pub async fn boot_test_server(
 
     let memory_yaml = if needs.memory {
         let memory_path = unique_temp_path("memory");
+        // `db_path` is a BARE filesystem path: `MemoryService::new` builds the
+        // endpoint itself with `format!("surrealkv://{db_path}")`. Passing a
+        // scheme-qualified value here yields `surrealkv://surrealkv:///tmp/…`,
+        // which SurrealDB accepts as a path and then fails to open.
         format!(
-            "\nmemory:\n  enabled: true\n  db_path: \"surrealkv://{}\"\n  embedding_provider: \"local\"\n",
+            "\nmemory:\n  enabled: true\n  db_path: \"{}\"\n  embedding_provider: \"local\"\n",
             memory_path.display()
         )
     } else {

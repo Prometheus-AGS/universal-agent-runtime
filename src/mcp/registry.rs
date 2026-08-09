@@ -1,5 +1,6 @@
 use crate::mcp::config::{
-    McpServerEntry, expand_env_map, expand_env_placeholders, load_mcp_config,
+    McpServerEntry, expand_env_map, expand_env_placeholders, expand_env_placeholders_strict,
+    load_mcp_config,
 };
 use anyhow::{Context, anyhow};
 use async_trait::async_trait;
@@ -60,15 +61,20 @@ async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<Dy
     }
 }
 
-/// Expands `${VAR}` placeholders in a remote MCP server's `url` (per the
-/// process environment, same as its `env` map). Tavily's config style embeds
-/// `${TAVILY_API_KEY}` directly in the URL and additionally declares it in
-/// `env`; if the placeholder is still present after process-env expansion,
-/// this substitutes it from the entry's own `env` map, matching that
-/// convention. Any other `RemoteHttp` entry (e.g. `surreal_memory`, which has
-/// no `TAVILY_API_KEY` at all) is left alone -- requiring a Tavily-specific
-/// key for every remote server was the bug that took down the whole registry
-/// whenever a non-Tavily entry was present.
+/// Expands `${VAR}` and `${VAR:-default}` placeholders in a remote MCP
+/// server's `url` (per the process environment, same as its `env` map).
+/// Tavily's config style embeds `${TAVILY_API_KEY}` directly in the URL and
+/// additionally declares it in `env`; if the placeholder is still present
+/// after process-env expansion, this substitutes it from the entry's own `env`
+/// map, matching that convention. Any other `RemoteHttp` entry (e.g.
+/// `surreal_memory`, which has no `TAVILY_API_KEY` at all) is left alone --
+/// requiring a Tavily-specific key for every remote server was the bug that
+/// took down the whole registry whenever a non-Tavily entry was present.
+///
+/// The Tavily substitution runs first, against the lenient expansion, so its
+/// `env`-map indirection still works. Only afterwards is the result required
+/// to be placeholder-free: an unexpanded `${...}` is a configuration error, not
+/// a hostname, and must not reach the URL parser verbatim.
 fn resolve_remote_http_url(
     name: &str,
     url: &str,
@@ -83,6 +89,8 @@ fn resolve_remote_http_url(
             .ok_or_else(|| anyhow!("remote MCP '{name}' missing TAVILY_API_KEY"))?;
         expanded = expanded.replace("${TAVILY_API_KEY}", &api_key);
     }
+    let expanded = expand_env_placeholders_strict(&expanded)
+        .with_context(|| format!("cannot resolve url for remote MCP '{name}'"))?;
     Url::parse(&expanded)
         .with_context(|| format!("invalid url for remote MCP '{name}': {expanded}"))
 }

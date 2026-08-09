@@ -98,6 +98,58 @@ persistence:
     setup_env_vars();
 }
 
+/// `memory.enabled: true` in a config FILE must reach `MemoryConfig`.
+///
+/// Regression probe for the "memory subsystem reports itself disabled even
+/// when configuration explicitly enables it" report: this isolates the
+/// config layer from `MemoryService::new`, so a failure here means the
+/// value never arrives, and a pass means the fault is downstream.
+#[test]
+#[serial]
+fn test_memory_enabled_from_config_file_reaches_memory_config() {
+    setup_env_vars();
+
+    let config_content = r#"
+security:
+  jwt_secret: "test_secret_for_integration_testing_only_do_not_use_in_prod"
+
+persistence:
+  provider: "memory"
+
+memory:
+  enabled: true
+  db_path: "/tmp/uar-config-probe-memory"
+  embedding_provider: "local"
+"#;
+
+    let file_path = "test_memory_config.yaml";
+    fs::write(file_path, config_content).expect("Failed to write temp config");
+
+    // SAFETY: Tests are serialized with `serial_test`, so process-wide env mutation is controlled.
+    unsafe {
+        env::set_var("CONFIG_FILE", file_path);
+    }
+
+    let config =
+        AppConfig::load_from_args(Vec::<String>::new()).expect("Failed to load config from file");
+
+    let result = std::panic::catch_unwind(|| {
+        assert!(
+            config.memory.enabled,
+            "memory.enabled: true in the config file did not reach MemoryConfig"
+        );
+        assert_eq!(config.memory.embedding_provider, "local");
+        assert_eq!(config.memory.db_path, "/tmp/uar-config-probe-memory");
+    });
+
+    fs::remove_file(file_path).unwrap();
+    setup_env_vars();
+
+    if let Err(e) = result {
+        std::panic::resume_unwind(e);
+    }
+}
+
 #[test]
 #[serial]
 fn test_cwd_config_fallback() {
