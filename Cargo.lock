@@ -12943,7 +12943,7 @@ dependencies = [
  "fastembed",
  "futures",
  "governor",
- "jsonschema 0.48.1",
+ "jsonschema",
  "jsonwebtoken 11.0.0",
  "kreuzberg",
  "liter-llm",
