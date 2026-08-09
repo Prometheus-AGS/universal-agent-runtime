@@ -1,0 +1,267 @@
+# Session Log
+
+## 2026-08-07 — UI/UX full migration C-02 waypoint
+
+- Completed and archived C-02 `tailwind4-css-first-tokens` at canonical KBD revision 14 (`committedLocally: true`); phase progress is 3/21.
+- Migrated the frontend to Tailwind 4.3.3 CSS-first Vite integration, added the shared token/theme foundation, removed legacy Tailwind/PostCSS configs, and repaired live config references.
+- Both workspace roots pin the shared Vite 8 graph to 8.1.4; root and frontend frozen-lockfile checks pass.
+- Deterministic token/config assertions, TypeScript, frontend boundary validation, Vite development compilation, strict OpenSpec validation, artifact refinement, and corrected-final isolated adversarial review passed.
+- Repository-wide frontend lint remains red on pre-existing generated `test-results/chromatic-archives` and `coverage` output; it is recorded as an external phase condition rather than a C-02 success.
+- Next planned change: C-03 `flat2-style-gate`.
+
+## 2026-08-07 — UI/UX full migration C-03 waypoint
+
+- Completed and archived C-03 `flat2-style-gate` at canonical KBD revision 16 (`committedLocally: true`); phase progress is 4/21.
+- Added the shared Flat 2.0 ESLint contract, exact `eslint-plugin-unicorn` 73.0.0 filename gate, 400-finding shrinking baseline, normal-lint exact-file overrides, fatal-parser handling, negative fixtures, and root CI integration without editing component source.
+- Frontend lint/typecheck, existing boundary checks, full root grep gates, both frozen lockfiles, strict OpenSpec validation, and diff integrity pass. Full tests/build/e2e remain deferred to the Wave 1 boundary.
+- Corrected isolated review passed with 0 critical, 4 warning, and 1 suggestion findings using `k3` against producer `openai/gpt-5`; accepted warnings were remediated and revalidated.
+- Next planned change: C-03b `base-ui-composition-patterns`.
+
+## 2026-08-07 — UI/UX full migration C-03b waypoint
+
+- Completed and archived C-03b `base-ui-composition-patterns` at canonical KBD revision 18 (`committedLocally: true`); phase progress is 5/21.
+- Reconciled the stale 44-use/13-file plan with the post-regeneration tree, replaced the ten remaining assistant-ui `asChild` calls with supported render elements, and moved the stable React Hook Form facade onto Base UI Field semantics.
+- Six focused interaction tests cover form validation/submission, Button/Breadcrumb composition, desktop/mobile Sidebar behavior, Select keyboard navigation, and merged assistant action behavior.
+- Frontend lint/typecheck, boundary and Flat 2.0 gates, zero-legacy-composition source checks, strict OpenSpec change/spec validation, diff integrity, manual UI critique/polish fallback, and isolated cross-model adversarial review passed.
+- The isolated `k3` review passed with 0 critical / 3 warning / 3 suggestion findings; the valid coverage warning and two style suggestions were resolved, the installed Base UI contract disproved one warning, and the remaining intentional trade-offs are documented.
+- Next planned change: C-03c `base-ui-icon-migration`.
+
+## 2026-08-07 — UI/UX full migration C-03c waypoint
+
+- Completed and archived C-03c `base-ui-icon-migration` at canonical KBD revision 20 (`committedLocally: true`); phase progress is 6/21.
+- Reconciled the stale 16-file migration plan with the regenerated Base UI source, removed the unused `@radix-ui/react-icons` dependency from the frontend manifest and both maintained lockfiles, and preserved custom brand/provider SVG artwork.
+- Added five focused interaction tests covering Dialog and Sheet close behavior, Accordion expansion, Checkbox checked state, and RadioGroup selection semantics.
+- Added CI grep enforcement for application imports, the frontend manifest, and both lockfiles; frontend typecheck/lint, boundary and Flat 2.0 gates, both frozen installs, strict OpenSpec validation, and diff integrity pass.
+- The corrected isolated `k3` review passed with 0 critical / 1 warning / 1 suggestion findings against producer `openai/gpt-5`; the warning was disproved by the gate's `git grep -E` implementation and the useful lockfile-gate suggestion was adopted and revalidated.
+- Next planned change: C-04 `platform-adapter-layer`.
+
+## 2026-08-07 — UI/UX full migration C-04 waypoint
+
+- Completed and archived C-04 `platform-adapter-layer` at canonical KBD revision 22 (`committedLocally: true`); phase progress is 7/21 and Wave 1 is complete.
+- Moved AG-UI and PGlite infrastructure under `frontend/src/platform/`, established `frontend/src/platform/entities/index.ts` as the sole application PEM import facade, and rewrote 56 application/test consumers while keeping the React database provider outside the platform boundary.
+- Added a CI-enforced platform ownership gate with negative fixtures for direct package imports, retired file/directory namespaces, and independent TSX, `react`, and `react-dom` boundary violations, plus a clean positive control.
+- The Wave 1 boundary suite passed: frontend typecheck/lint, 35 test files and 164 tests, production build, repository grep gates, strict OpenSpec validation, and diff integrity. The build retains the known PGlite direct-eval and large-chunk warnings assigned to later bundle-budget work.
+- Full-suite verification exposed and resolved the moved PGlite asset loader's stale relative path. The initial isolated review blocked at 1 critical / 3 warnings / 1 suggestion; the final corrected review passed at 0 critical / 1 warning / 5 suggestions, with its warning and useful evidence suggestions resolved before archive.
+- Next planned change: C-05 `hsl-var-token-codemod` (only the 30 non-admin occurrences).
+
+## 2026-08-07 — UI/UX full migration C-05 waypoint
+
+- Completed and archived C-05 `hsl-var-token-codemod` at canonical KBD revision 24 (`committedLocally: true`); phase progress is 8/21.
+- Reconciled the planned 30-call-site estimate to 29 observed non-admin occurrences: 14 in `index.css`, three in the assistant thread, six in the shared error bar, and two each in the loading cursor, empty frame, and KnowMe logo. All 307 `admin/pages/` occurrences remain owned by C-14a.
+- Migrated consumers to complete semantic colors, preserved 6%/7%/8%/15%/40% alpha treatments, and scoped five complete-color terminal aliases to the admin terminal theme.
+- Added the CI token-migration gate, recursive deferred census reporting, semantic-token definition validation, and a negative fixture proving case-insensitive HSL/HSLA rejection. The Flat 2.0 baseline remains exact at 400 findings.
+- Frontend typecheck/lint, architecture and root grep gates, strict OpenSpec validation, diff integrity, Vite development compilation, and emitted-CSS assertions passed. Full tests/build remain correctly deferred to the Wave 2 boundary after C-06.
+- Isolated `k3` review rounds blocked first on alias placement and then on incomplete packet evidence; both were corrected. The final review passed with 0 critical / 2 warning / 4 suggestion findings, verified-distinct from `openai/gpt-5`, with sycophancy score 0.0. Official Tailwind v4 docs disproved the utility-inference warning; useful fixture/message/token-definition suggestions were adopted.
+- No security boundary changed in C-05.
+- Next planned change: C-06 `agui-event-parity-and-normalizer`.
+
+## 2026-08-07 — UI/UX full migration C-06 waypoint
+
+- Completed and archived C-06 `agui-event-parity-and-normalizer` at canonical
+  KBD revision 26 (`committedLocally: true`); phase progress is 9/21 and Wave 2
+  is complete.
+- Added typed single-pass AG-UI projections for message chunks, official event
+  rows, and terminal phase timings; chat and RuntimeRun entity ingestion now
+  consume those projections while RAW remains opaque to domain state.
+- Added cursor-consistent state/message attach snapshots and faithful tool-call
+  replay ordering. Review exposed and resolved an ordinal collision for long
+  buffered argument streams and restored cursor-scoped history reads for legacy
+  SSE clients.
+- Frontend typecheck/lint/boundaries, 3 focused files with 22 tests, the Wave 2
+  boundary at 36 files with 171 tests, production build, server-full compiler
+  check, focused Rust replay validation, strict OpenSpec validation, C-06
+  rustfmt, artifact validation, and diff integrity pass.
+- Final isolated `k3` review passed at 0 critical / 2 warnings / 0 suggestions
+  against producer `openai/gpt-5`, with verified-distinct routing and
+  anti-sycophancy score 0.0. Its high-frequency-row warning conflicts with the
+  explicit C-06 requirement; its local-permission warning is cumulative content
+  outside C-06.
+- The live integration seam remains unexecuted because the shared harness has
+  pre-existing `Cli`/server-config compile defects. Repository-wide rustfmt is
+  also red on unrelated dirty Rust files; all three C-06 Rust files pass direct
+  rustfmt validation.
+- Security boundary: invalid retained state patches fail closed rather than
+  emitting a snapshot that falsely claims synchronization, and RAW payloads are
+  not reinterpreted as trusted UAR domain state.
+- Synced four new requirements into `ag-ui-chat-conformance`; next planned
+  change: C-07 `pglite-run-event-persistence`.
+
+## 2026-08-07 — UI/UX full migration C-07 waypoint
+
+- Completed and archived C-07 `pglite-run-event-persistence` at canonical KBD
+  revision 28 (`committedLocally: true`); phase progress is 10/21.
+- Added additive PGlite run/run-event storage, typed offline reads, stable event
+  identity, independent durable/wire ordering, terminal phase timings, and
+  first-terminal-state preservation.
+- Added a bounded persistence writer that coalesces text/reasoning by run, kind,
+  and message identity; explicit/terminal boundaries, RAW rows, multiple logical
+  spans, server run identity, and headerless retry identities are covered.
+- PEM graph storage now hydrates before realtime subscription, disposes failed
+  runtimes, permits retry, and uses package snapshot/action persistence without
+  an application outbox.
+- Frontend typecheck/lint/boundaries, six focused files with 28 tests, strict
+  OpenSpec validation, artifact refinement, schema/state consistency, and diff
+  integrity pass. Full test/build remain scheduled for the Wave 3 boundary.
+- An early focused-test command accidentally ran the then-current full frontend
+  suite (37 files / 174 tests) because of an extra argument separator. It passed
+  but is disclosed as a tier deviation and is not final Wave 3 evidence.
+- Final isolated `k3` review passed at 0 critical / 4 warnings / 0 suggestions
+  against producer `openai/gpt-5`, with verified-distinct routing and
+  anti-sycophancy score 0.0. Its actionable retry/cancellation warnings were
+  resolved and revalidated; retained warnings document browser teardown limits,
+  metadata-only SQL schema aliases, and intentional hydrate-before-sync coupling.
+- Security boundary: poison-action reporting logs only action id/key and error
+  type, never persisted action input or secrets.
+- Synced five requirements into the new `frontend-local-first-persistence`
+  capability; next planned change: C-08 `secure-markdown-rendering`.
+
+## 2026-08-07 — UI/UX full migration C-08 waypoint
+
+- Completed and archived C-08 `markdown-pipeline-single-renderer` at canonical
+  KBD revision 30 (`committedLocally: true`); phase progress is 11/21.
+- Consolidated chat and Skills preview on `shared/markdown/MarkdownBubble`, with
+  one GFM, breaks, math, raw-HTML, sanitization, and KaTeX chain for explicit
+  source and assistant-ui context modes.
+- Added a restrictive untrusted-HTML schema and DOMPurify standalone-SVG helper;
+  raw parsing and sanitization land together, malformed math is non-throwing,
+  and no imperative highlighter HTML crossed the trust boundary.
+- Frontend typecheck, lint, boundaries, Flat 2.0, 14 focused tests, strict
+  OpenSpec, artifact refinement, accessibility review, and diff integrity pass.
+  Full test and build remain scheduled for the Wave 3 boundary.
+- Final isolated `k3` review passed at 0 critical / 2 warnings / 0 suggestions
+  against producer `openai/gpt-5`, with verified-distinct routing and
+  anti-sycophancy score 0.0. The raw-SVG warning was fixed and revalidated; the
+  retained token warning belongs to an earlier completed token change.
+- Synced six requirements and fourteen scenarios into the new
+  `frontend-content-rendering` capability; next planned change: C-09
+  `markdown-lazy-blocks`.
+
+## 2026-08-07 — UI/UX full migration C-09 waypoint
+
+- Completed and archived C-09 `markdown-lazy-blocks` at canonical KBD revision 32 (`committedLocally: true`); phase progress is 12/21 and Wave 3 is complete.
+- Added finalized-only lazy Mermaid and Shiki blocks behind named dynamic facades. Streaming, module loading, unsupported syntax, parsing failures, and renderer crashes preserve escaped source through per-block Suspense and error boundaries.
+- Mermaid runs with `startOnLoad: false` and `securityLevel: "strict"`, then passes SVG through DOMPurify before insertion. Shiki maps token data to React text/span nodes rather than inserting highlighter HTML.
+- The production graph checker consumes emitted Rolldown module ownership, proves both named engine entries remain outside the initial static closure, and rejects absolute build-host paths. The final graph reports zero forbidden static engine modules, zero missing or invalid entries, and zero absolute module identifiers.
+- Wave 3 validation passes: frontend typecheck/lint/boundaries, Flat 2.0 at 391 tracked legacy and zero new findings, 45 files with 214 tests, production build and manifest, both frozen lockfile installs, strict change and targeted capability validation, artifact refinement, and diff integrity.
+- Final fresh-context harness review passed at 0 critical / 1 warning / 0 suggestions with anti-sycophancy score 0.0803571417927742. The warning about absolute diagnostic module IDs was resolved and revalidated. External review endpoints timed out, so the receipt discloses harness-native isolation and a same-model collision rather than claiming cross-model independence.
+- The repository-wide OpenSpec sweep remains red on 19 unrelated pre-existing capabilities; the synced `frontend-content-rendering` capability itself passes strict validation.
+- Security boundaries: untrusted Mermaid output remains strict and sanitized, untrusted code stays text-only, and deployable diagnostic metadata no longer exposes absolute build-host paths.
+- Synced six requirements and fourteen scenarios into `frontend-content-rendering`; next planned change: C-10 `migrate-cross-cutting-pages`.
+
+## 2026-08-07 — UI/UX full migration C-10 waypoint
+
+- Completed and archived C-10 `migrate-cross-cutting-pages` / `app-shell-and-navigation` at canonical KBD revision 34 (`committedLocally: true`); phase progress is 13/21.
+- Replaced the legacy top-level shell with one typed destination inventory, 240px/60px desktop rail, exact 900px compact switch, four 44px compact targets, inventory-derived breadcrumbs, shared Configure sheet, and a Base UI Autocomplete/Dialog command palette.
+- Installed the delivered UAR Slash Gate identity, light/dark favicon selection, 180px touch icon, theme-aware inline brand projections, and deterministic source-to-public asset coverage while retiring current KnowMe logo consumers.
+- Shell state remains serializable Zustand state exposed through `useUiState`; components preserve the UI → hook → store boundary and no provider, AG-UI, entity, persistence, service, or runtime contract changed.
+- Frontend typecheck/lint/boundaries, Flat 2.0 at 389 tracked legacy and zero new findings, four focused files with 28 tests, strict OpenSpec change/capability validation, rendered audits at 1440/901/900/390/320px, artifact validation, and diff integrity pass. Full tests, production build, and checked-in static regeneration remain scheduled for the Wave 4 boundary after C-12.
+- Final isolated `k3` review passed at 0 critical / 3 warnings / 2 suggestions against producer `openai/gpt-5`, with verified-distinct routing and anti-sycophancy score 0.0. The warnings were disproved by the registered `RuntimeRunsPage`, present `docs/ui/logo/` source inventory, and the C-03-owned allowlist with zero new C-10 violations.
+- No security boundary changed in C-10; navigation commands are static application routes and no untrusted URL, HTML, credential, or provider payload enters the shell model.
+- Synced eight requirements and twenty-one scenarios into the new `frontend-app-shell` capability; next planned change: C-11 `a2ui-inspector-surface`.
+
+## 2026-08-07 — UI/UX full migration C-11 waypoint
+
+- Completed C-11 `run-trace-and-inspector` at canonical KBD revision 36 (`committedLocally: true`); phase progress is 14/21.
+- Added the exact `@tanstack/react-virtual` 3.14.9 dependency, live selected-run PGlite snapshots, typed checkpoint/resume/replay services, one-pass run/phase/event projection, scoped Zustand state, and a responsive phase bar, virtualized ARIA tree, and inert event/checkpoint/replay inspector.
+- Integrated the trace into `RuntimeRunsPage` while preserving registry/query, artifact/tool context, returned-run pending behavior, and stable conversation message anchors. Provider, protocol, backend route, `.gitmodules`, skill-system submodule, and staged license-delete surfaces remain untouched by C-11.
+- The manual audit corrected sub-44px inspector targets and false replay-success language. Isolated review then exposed and drove fixes for roving focus, collapsed-root phase selection, checkpoint inspection/selection preservation, returned-run query state, local subscription failure, live-scroll recentering, repeated copy announcements, distant virtual focus, and unknown-run fallback.
+- Final evidence passes: frozen frontend install, typecheck, lint, frontend boundaries, Flat 2.0 at 385 tracked legacy findings and zero new findings, six focused files with 39 tests, one supported Chromium 500-event test, strict OpenSpec validation, artifact refinement, and scoped diff integrity.
+- Final isolated `k3` review passed at 0 critical / 3 warnings / 1 suggestion against producer `openai/gpt-5`, with verified-distinct routing and anti-sycophancy score 0.0. Two actionable warnings were adopted; the remaining phase/filter and unsubscribe observations are documented nonblocking tradeoffs without an observed failure.
+- Security boundary: persisted raw payloads render only as escaped React text; replay operations pass through the existing A2UI validator/reducer before inert metadata is exposed; local and remote failures remain independently visible.
+- Full frontend Vitest and production build remain intentionally deferred to the Wave 4 boundary after C-12. Next planned change: C-12 `retire-a2ui-testing-page-from-prod`.
+
+## 2026-08-08 — UI/UX full migration C-12 waypoint
+
+- Completed C-12 `chunk-catalog-renderers` at canonical KBD revision 38 (`committedLocally: true`); phase progress is 15/21 and Wave 4 is complete.
+- Added the exact portable `ContentBlock` contract, complete 27-kind runtime `Chunk` union, exhaustive projection/disposition maps, historical PGlite decoding, durable rich chunk storage, and stable Assistant UI data-part registrations.
+- Added the full Flat 2.0 renderer catalog for text/reasoning, tools/approvals, skills/memory/context, citations/RAG, A2UI, artifacts/charts, media/files, usage/errors, and intentional trace-only kinds. The divider is a spacing `<div role="separator">`, never a visible rule.
+- Retained Recharts 3.10.1 behind a finite application-owned schema; reused the established Markdown, lazy code/Mermaid, SVG sanitizer, A2UI policy, escaped JSON, and empty-sandbox HTML boundaries. Provider-authored DOM URLs now pass an explicit safe scheme/data-MIME gate.
+- The upgraded A2UI round-trip tester remains development-only and is absent from production navigation, command discovery, and route resolution; live A2UI chat and runtime-console behavior remain intact. The superseded July removal proposal is retired with an explicit pointer to this resolution.
+- Post-review fixes persist complete fixed-MIME A2UI lifecycle envelopes, preserve distinct thinking/reasoning chunks, persist terminal no-output tool results, and isolate local run-event persistence errors from upstream stream retry.
+- Final evidence passes: typecheck, lint, frontend boundaries, Flat 2.0 at 385 tracked legacy findings and zero new, six focused files with 42 tests, full frontend at 59 files/300 tests including Storybook axe, production and manifest builds, lazy-engine graph audit, static bundle validation, strict C-12 and target-capability OpenSpec validation, artifact refinement, and scoped diff integrity.
+- Two review rounds are retained. Round one was verified-distinct `k3` and round two used a fresh-context harness fallback after unusable REST output; the second receipt honestly remains `BLOCK` against its pre-remediation packet with `same-model-collision`. All reported defects were remediated and the aggregate gate rerun; the two-round cap and weaker isolation remain explicit in verification.
+- The repository-wide OpenSpec sweep remains red on 19 unrelated pre-existing capabilities; `chunk-catalog-renderers` and the synced `frontend-content-rendering` capability pass strict validation.
+- Next planned change: C-13 `ci-bundle-and-perf-budget`.
+
+## 2026-08-08 — UI/UX full migration C-13 waypoint
+
+- Completed C-13 `ci-bundle-and-perf-budget` at canonical KBD revision 40 (`committedLocally: true`); phase progress is 16/21.
+- Added a fail-closed production-manifest budget capped at 250,000 decimal gzip bytes, with exact PGlite ownership evidence and exact parity between manifest-static JavaScript and the typed Markdown engine graph. The final closure is 242,082 bytes across 10 counted files.
+- Added a versioned 4,605,535-byte schema-only PGlite seed for genuinely new databases. Verification requires migrations 1–3, ordered-definition SHA-256 `a4cf692ceb10f55dae41490a46353edb64e98283d3311873d0077e65db24aab7`, exact public-schema catalog parity with a fresh migration replay at SHA-256 `1d1e4bd08d2b14a3308bf1028ce01113cff5b9f30b8b31f3d59a6eff568452ac`, and zero rows in every product table. Existing databases continue through ordinary migrations without seed loading.
+- Added serial Chromium budgets for the cold hydrated thread-list browser-frame boundary (973.3/1,000ms; repeats 943.7, 921.6, 925.6ms), a structurally complete 500-event virtualized trace (13.3/100ms), and structurally complete 2,000-line finalized Markdown (130.2/250ms).
+- Completion evidence passes: typecheck, lint, frontend boundaries, Flat 2.0, deterministic negative proofs, 63 files/317 tests, production manifest build, bundle gate, supported Chromium performance gates, strict OpenSpec, artifact refinement, and diff integrity.
+- Three isolated artifact-only review rounds drove seed/asset/failure-evidence, engine-graph parity, structural timing, and schema-catalog corrections. The final fresh review passed with no criticals, warnings, or suggestions.
+- Security and scope boundaries: requested failure artifacts contain diagnostics without secrets; untrusted Markdown engines remain lazy and auditable; `.gitmodules`, `crates/prometheus-skill-system`, `src/uar`, and the two operator-staged license deletions remain outside C-13 ownership.
+- Next planned change: C-14a `admin-pages-to-features`.
+
+## 2026-08-08 — UI/UX full migration C-14a waypoint
+
+- Completed C-14a `admin-pages-to-features` at canonical KBD revision 42 (`committedLocally: true`); phase progress is 17/21.
+- Re-homed all thirteen production configuration pages and their observed UI, model/store, API, helper, and focused-test ownership clusters into feature slices. `frontend/src/admin/pages/` has no remaining production owner, while the 3,336-line settings page remains intact for C-14b.
+- Migrated all 307 C-14a-owned legacy color expressions to existing semantic Tailwind 4 tokens. The HSL gate reports zero migrated and zero deferred admin occurrences; Flat 2.0 reports 384 tracked legacy findings and zero new findings.
+- Preserved narrow public API/model entries after an observed broad-barrel regression raised initial JavaScript to 303,220/250,000 gzip bytes. The retained final manifest report passes at 242,518/250,000 across 12 files.
+- Completion evidence passes: typecheck, lint, architecture boundary, Flat 2.0, token gate, 16 focused files/59 tests, 66 full-suite files/317 tests, production build, bundle gate, responsive admin/runtime smoke, strict OpenSpec, and diff integrity.
+- Fresh artifact-only adversarial review passed with no critical findings. Its evidence-precision warnings were incorporated, including a C-14c requirement to narrow the runtime feed entry before retiring the admin shell.
+- No security boundary changed. `.gitmodules`, `crates/prometheus-skill-system`, `src/uar/*`, and the two operator-staged license deletions remained outside C-14a ownership; no staging or commit occurred.
+- Next planned change: C-14b `settings-page-decomposition`.
+
+## 2026-08-08 — UI/UX full migration C-14b waypoint
+
+- Completed C-14b `settings-page-decomposition` at canonical KBD revision 44 (`committedLocally: true`); phase progress is 18/21.
+- Split the 3,336-line settings UI into 11 production TSX modules with an exact 29-item navigation/registry contract. The route composer is 104 lines and the largest cohesive domain module is 549/600 lines.
+- Added an exact feature-root export assertion, retained only the public `SettingsPage`, and corrected the settings hook documentation to preserve the live settings store as the I/O owner for C-14c.
+- The first browser smoke exposed a React 19 external-store snapshot loop when no dirty draft existed. A stable empty snapshot and rejection handling corrected the observed crash; focused, browser, and full frontend verification all pass.
+- Completion evidence passes: typecheck, lint, frontend boundaries, Flat 2.0 at 384 tracked legacy findings and zero new findings, token and structure gates, 2 focused files/8 tests, 67 full-suite files/322 tests, production manifest build, 2 responsive browser checks, bundle budget at 242,520/250,000 bytes, strict OpenSpec, and diff integrity.
+- Fresh artifact-only adversarial review passed with no critical findings. Its evidence warnings tightened the public-export gate, store-retirement handoff, behavior-preservation wording, and protected-path receipt limitations; the preserved UI-owned JWT availability check remains nonblocking pre-existing layering debt.
+- No security boundary changed. The protected-path closeout status matches the inherited entry observation, but entry hashes were not retained and the evidence packet does not claim independently reproducible proof. No staging or commit occurred during C-14b.
+- Next planned change: C-14c `retire-admin-and-legacy-deps`.
+
+## 2026-08-08 — UI/UX full migration C-14c waypoint
+
+- Completed C-14c `retire-admin-and-legacy-deps` at canonical KBD revision 46 (`committedLocally: true`); phase progress is 19/21.
+- Removed the nested admin shell and terminal-theme mutation, composed retained `/admin/*` routes directly under the shared application shell, and re-homed the development-only A2UI tester plus MCP health ownership into their A2UI/tools feature slices. `frontend/src/admin/` has no files.
+- Removed TanStack Query, highlight.js, and all 26 observed direct Radix declarations after direct-import proof. Frozen install passes and retained Radix packages resolve transitively through `cmdk`, `vaul`, `radix-ui`, and Assistant UI.
+- Installed the exact §6.3 app/feature/shared/platform boundary matrix plus cross-feature root/`api`/`model` public-entry enforcement. Independent review found and drove closure of a `ui/index.ts` barrel loophole; production reports zero violations and negative fixtures reject all ten rule classes, including the barrel case, inside the CI gate.
+- Completion evidence passes: typecheck, lint, architecture and negative gates, Flat 2.0 at 376 tracked legacy findings and zero new findings, HSL debt 0, 6 focused files/26 tests, 6 responsive browser smokes, production manifest build, and bundle budget at 231,433/250,000 gzip bytes.
+- The dev-only A2UI tester is absent from all 524 production manifest entries. The retained manifest hash and zero-match query are recorded in the change packet.
+- Fresh artifact-only adversarial review initially blocked on the boundary-barrel loophole; remediation re-review passed with no remaining critical findings.
+- No security boundary changed. The eight-path protected closeout hash exactly matches its entry baseline (`07e74ad94dc137e9574e411bc99d6f0fcd631879c5a0e52a1b87ca999cf43dc4`), proving C-14c did not alter the pre-existing skill-system submodule, Rust API, or staged license work. No staging or commit occurred.
+- Next planned change: C-14d `base-ui-verification`.
+
+## 2026-08-08 — UI/UX full migration C-14d waypoint
+
+- Completed C-14d `base-ui-verification` at canonical KBD revision 48
+  (`committedLocally: true`); phase progress is 20/21.
+- Replaced the live cmdk compatibility facade with Base UI Autocomplete while preserving
+  all nine exported `Command*` names. Filtering, empty state, pointer activation, Enter
+  activation, repeated action selection, the real chat agent selector, and the shell
+  command palette have deterministic coverage.
+- Removed cmdk from the manifest, nested lock, authoritative root lock, and both resolved
+  install graphs. Fresh isolated review initially blocked on the stale root importer;
+  remediation synchronized both workspace surfaces and the resolution review passed with
+  no remaining critical findings.
+- Retained Radix ownership is explicit: Assistant UI 0.14.26 and vaul 1.1.2 only; current
+  Assistant UI 0.15.10 still declares Radix, while PEM 3.0.0-alpha.0 declares none.
+- Completion evidence passes: root and nested frozen installs, root typecheck/lint,
+  boundaries and all CI grep gates, 4 focused command tests, 3 focused browser flows,
+  69 files/330 full tests, production manifest build, serial performance at 995.5/1,000ms,
+  bundle budget at 217,476/250,000 gzip bytes, artifact refinement, and strict OpenSpec.
+- The broad no-backend Playwright probe remains honestly classified at 36 pass / 4 skip /
+  8 fail before remediation; its real-server, stale async guard, wrong-profile performance,
+  and two pre-existing runtime-replay failures did not exercise the migrated command facade
+  and are retained as C-15 evidence.
+- The eight-path protected closeout hash exactly matches entry
+  (`07e74ad94dc137e9574e411bc99d6f0fcd631879c5a0e52a1b87ca999cf43dc4`). No staging or
+  commit occurred. The change archived at
+  `openspec/changes/archive/2026-08-08-base-ui-verification` and synced two requirements.
+- Next planned change: C-15 `final-ui-certification`.
+
+## 2026-08-08 — UI/UX full migration phase completion
+
+- Completed and archived C-15 `a11y-and-responsive-certification` at canonical KBD revision 50 (`committedLocally: true`); phase progress is 21/21.
+- Final product evidence passes: 69 Vitest/Storybook files and 331 tests, default Playwright at 42 pass / 3 explicit skips, accessibility at 16/16, real-server browser checks at 2/2, production manifest build, bundle budget at 217,630/250,000 gzip bytes, and final performance at 942.2/1,000ms startup, 14.1/100ms interaction, and 137/250ms trace rendering.
+- The unchanged first startup attempt failed at 1,008.8ms and remains disclosed. Coverage improved from the 19.45% baseline to 33.68% lines but remains below the retained 60% threshold. Flat 2.0 retains 365 style and 11 filename exceptions with zero new violations.
+- Wrote the delta-first phase reflection at 82% weighted goal completion. Goals 1, 5, 6, and 10 remain partial because D2 superseded literal greenfield scope, legacy allowlists remain, coverage is below threshold, and manual screen-reader/text-zoom certification is outstanding.
+- Strict sycophancy analysis scored 0.01785714365541935, found no S-08, and raised only a low-severity length warning. No evolver bridge exists for this phase.
+- The canonical phase node was still pending after child completion; valid pending → in-progress → complete transitions reconciled it at revisions 51–52. The next refinement phase was not activated.
+- No staging or commit occurred. The protected skill-system/Rust/license path hash remains `07e74ad94dc137e9574e411bc99d6f0fcd631879c5a0e52a1b87ca999cf43dc4`.

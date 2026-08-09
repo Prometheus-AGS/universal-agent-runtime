@@ -1,0 +1,96 @@
+---
+type: SessionRecord
+id: karpathy-session-32c7cfdf7f0a6a79
+title: Karpathy session 32c7cfdf7f0a
+tags:
+- karpathy
+- session-learning
+sources:
+- session:444a77f7-71ee-4a60-8ce1-1b19da7d22ab
+timestamp: 2026-08-07T23:14:49.680023+00:00
+created_at: 2026-08-07T23:14:49.680023+00:00
+updated_at: 2026-08-07T23:14:49.680023+00:00
+revision: 0
+---
+
+## Delta
+
+Codex is at 12/21 (C-09 done) — routine progress, no action needed.
+
+That was a background notification, not a message from you. The four tasks I was working on are complete, so I'll pause here rather than start new work unprompted.
+
+**Where things stand:**
+
+- **Relicense to MIT** — done and verified across all seven UAR crates
+- **`frf-p2p`, `frf-did`, `frf-wallet`** — built, 47 tests passing, clippy clean
+- **UAR spec** — C-25/26/27 recorded at their honest evidence level (L1–L2, not L3)
+
+**Two things flagged, not fixed:**
+- `frf-media-str0m` has a pre-existing compile failure (upstream str0m API change) — raised as a separate task chip
+- Nothing in UAR consumes the new crates yet
+
+**Natural next steps**, whenever you want them:
+
+1. **`RouteTarget::Peer`** (GAP-12) — the highest-leverage change, and the one that makes the phone-asks-Mac-Studio scenario expressible at all
+2. **`frf-p2p` accept loop + mDNS** — needed before two devices can actually pair
+3. **Phases 5–7** of the original plan — doc classification manifest, archiving, doneness measurement. Phase 7 needs Codex to finish; it's at 12/21
+
+Nothing is blocked on me. Let me know which thread you want next.
+
+## Root Cause
+
+No explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.
+
+## Corrective Actions
+
+Review and promote only reusable findings.
+
+## Session Metadata
+
+- Harness: claude-code
+- Session: 444a77f7-71ee-4a60-8ce1-1b19da7d22ab
+- Captured: 2026-08-07T23:09:59.092589Z
+- Project: /Users/gqadonis/Projects/prometheus/universal-agent-runtime
+
+## Changed Paths
+
+- .claude/settings.local.json
+- .github/workflows/operational-resilience.yml
+- .github/workflows/release.yml
+- .github/workflows/storybook-visual-regression.yml
+- .gitmodules
+- .kbd-orchestrator/current-waypoint.json
+- .kbd-orchestrator/memory-outbox.jsonl
+- .kbd-orchestrator/model-preflight.json
+- .kbd-orchestrator/phases/add-push-channels-backend/progress.json
+- .kbd-orchestrator/phases/browser-smoke-providers-and-agents/progress.json
+- .kbd-orchestrator/phases/ci-frontend-tests/progress.json
+- .kbd-orchestrator/phases/direct-entity-migration-agents/progress.json
+- .kbd-orchestrator/phases/direct-entity-migration-models/progress.json
+- .kbd-orchestrator/phases/direct-entity-migration-providers/progress.json
+- .kbd-orchestrator/phases/fix-skills-page-utils-test-fixtures/progress.json
+- .kbd-orchestrator/phases/full-frontend-entity-mgmt-migration/progress.json
+- .kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/progress.json
+- .kbd-orchestrator/phases/prometheus-package-integration/progress.json
+- .kbd-orchestrator/phases/readme-architecture-diagram/progress.json
+- .kbd-orchestrator/phases/runtime-image-polyglot-toolchain-completion/progress.json
+- .kbd-orchestrator/phases/settings-store-retirement/progress.json
+- .kbd-orchestrator/phases/submodule-entity-management-implementation/progress.json
+- .kbd-orchestrator/phases/submodule-skills-and-entity-devtools-expansion/progress.json
+- .kbd-orchestrator/phases/thread-topic-chat-sidebar/progress.json
+- .kbd-orchestrator/phases/uar-carryover-audit/progress.json
+- .kbd-orchestrator/phases/uar-dependabot-remediation-2026-07/progress.json
+- .kbd-orchestrator/phases/uar-final-production-hardening-2026-07/progress.json
+- .kbd-orchestrator/phases/uar-frontend-typecheck-cleanup/progress.json
+- .kbd-orchestrator/phases/uar-grade-a-upgrade-2026-07/progress.json
+- .kbd-orchestrator/phases/uar-hybrid-app-architecture/progress.json
+- .kbd-orchestrator/phases/uar-next-harness/progress.json
+- .kbd-orchestrator/phases/uar-post-dependabot-followup-2026-07/progress.json
+- .kbd-orchestrator/phases/uar-production-readiness-gaps/progress.json
+- .kbd-orchestrator/phases/uar-production-ready-uiux-2026-07/progress.json
+- .kbd-orchestrator/phases/uar-security-audit-alerts-gate-2026-07/progress.json
+- .kbd-orchestrator/phases/uar-security-deps-and-hygiene/progress.json
+- .kbd-orchestrator/phases/uar-spec-v2-and-polish/progress.json
+- .kbd-orchestrator/phases/uar-uiux-refinement-2026-08/progress.json
+- .kbd-orchestrator/phases/use-optimistic-patch-helper-extraction/progress.json
+- .kbd-orchestrator/phases/vitest-contract-test-suite/progress.json
