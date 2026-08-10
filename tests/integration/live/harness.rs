@@ -5,21 +5,23 @@
 //! include several whose constructors are non-obvious — see
 //! `openspec/changes/live-integration-baseline-coverage/appstate-field-plan.md`
 //! for that research), this harness calls the actual public
-//! `universal_agent_runtime::server::start_server` entry point — the exact
-//! function production uses — against a config built entirely from an
+//! `universal_agent_runtime::server::start_server_sidecar` entry point against
+//! a config built entirely from an
 //! explicit temp YAML file. This is both simpler and a stronger proof: the
-//! baseline cases exercise the real boot path, not a hand-approximated one.
+//! baseline cases exercise the real sidecar boot path, not a hand-approximated
+//! one.
 //!
-//! `start_server`'s handler functions (`api_chat_completion`, etc.) are
+//! The server's handler functions (`api_chat_completion`, etc.) are
 //! `pub(crate)`, so this harness cannot call them directly even if it wanted
 //! to — which is fine, since HTTP-level testing never needs to.
 
 use std::sync::Once;
 use std::time::Duration;
 
+use tokio_util::sync::CancellationToken;
 use universal_agent_runtime::config::Cli;
 use universal_agent_runtime::config_manager::ConfigManager;
-use universal_agent_runtime::server::start_server;
+use universal_agent_runtime::server::start_server_sidecar;
 
 static TRACING_INIT: Once = Once::new();
 static SCRATCH_SWEEP: Once = Once::new();
@@ -61,23 +63,93 @@ pub struct ServiceNeeds {
 
 /// A running real UAR server instance, bound to an ephemeral loopback port.
 ///
-/// `start_server`'s returned future is `!Send` (a `tracing::info!` call in
+/// The server's returned future is `!Send` (a `tracing::info!` call in
 /// its body holds a non-`Send` value across an `.await`), so it cannot be
 /// handed to `tokio::spawn` directly. Rather than touch `src/server.rs` to
 /// chase that down (out of scope for a test-infra change — see design.md),
 /// this harness runs it on a dedicated OS thread with its own
 /// current-thread Tokio runtime, which has no `Send` requirement on the
 /// future it drives.
+#[allow(dead_code)] // The BDD target imports this harness but only reads `base_url`.
 pub struct TestServerHandle {
     pub base_url: String,
-    // Held only to keep the background thread from being detached from
-    // view; `start_server` has no external shutdown hook (it listens for
-    // process-level SIGINT/SIGTERM internally), so there is nothing
-    // graceful to signal here. The thread is intentionally not joined on
-    // drop — it lives for the remainder of the test binary's process,
-    // which is acceptable for an 8-case test suite each on its own
-    // ephemeral port and temp config/db path.
-    _thread: std::thread::JoinHandle<()>,
+    shutdown: CancellationToken,
+    // Optional so `shutdown` can move the join handle into `spawn_blocking`.
+    // Existing callers may still drop the handle, which detaches the server
+    // thread exactly as before.
+    thread: Option<std::thread::JoinHandle<anyhow::Result<()>>>,
+}
+
+/// A real UAR server isolated in a child test process.
+///
+/// SurrealDB's local SDK releases its SurrealKV file lock asynchronously after
+/// the final client handle drops. A dedicated process makes that lifecycle
+/// deterministic: shutdown still cancels the caller-owned token and awaits the
+/// server thread, then normal process exit releases any remaining SDK-owned
+/// file descriptors before the parent attempts a cold reboot.
+#[allow(dead_code)] // Consumed by capability cases, which the BDD target omits.
+pub struct ProcessTestServerHandle {
+    pub base_url: String,
+    child: Option<std::process::Child>,
+    control_dir: tempfile::TempDir,
+}
+
+impl ProcessTestServerHandle {
+    /// Trigger the child harness's caller-owned token and await normal process
+    /// exit, including release of the embedded datastore's OS lock.
+    #[allow(dead_code)] // Consumed by capability cases, which the BDD target omits.
+    pub async fn shutdown(mut self) {
+        std::fs::write(self.control_dir.path().join("shutdown"), b"shutdown")
+            .expect("write child-server shutdown control");
+        let mut child = self.child.take().expect("child server process");
+        let status = tokio::task::spawn_blocking(move || child.wait())
+            .await
+            .expect("join child-server wait task")
+            .expect("wait for child server process");
+        assert!(
+            status.success(),
+            "child server process exited unsuccessfully: {status}"
+        );
+    }
+}
+
+impl Drop for ProcessTestServerHandle {
+    fn drop(&mut self) {
+        let Some(child) = self.child.as_mut() else {
+            return;
+        };
+        let _ = std::fs::write(self.control_dir.path().join("shutdown"), b"shutdown");
+        for _ in 0..20 {
+            if child.try_wait().ok().flatten().is_some() {
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        // A panicking test must not strand its exclusively-owned helper
+        // process. Graceful control is attempted first; kill is the bounded
+        // cleanup fallback only when that child did not exit within one second.
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+}
+
+impl TestServerHandle {
+    /// Fire the caller-owned HTTP graceful-shutdown trigger.
+    #[allow(dead_code)] // Consumed by the child helper, which the BDD target omits.
+    pub fn trigger_shutdown(&self) {
+        self.shutdown.cancel();
+    }
+
+    /// Await the dedicated server thread after a shutdown trigger has fired.
+    #[allow(dead_code)] // Consumed by the child helper, which the BDD target omits.
+    pub async fn wait_for_exit(mut self) {
+        let thread = self.thread.take().expect("server thread handle");
+        let server_result = tokio::task::spawn_blocking(move || thread.join())
+            .await
+            .expect("join server thread task")
+            .expect("server thread panicked");
+        server_result.expect("server exited with an error");
+    }
 }
 
 /// Best-effort removal of THIS process's temp scratch once, at process exit,
@@ -128,18 +200,6 @@ fn sweep_stale_scratch() {
     }
 }
 
-fn find_free_port() -> u16 {
-    std::net::TcpListener::bind("127.0.0.1:0")
-        .expect("bind ephemeral port")
-        .local_addr()
-        .expect("local_addr")
-        .port()
-    // Listener drops here. The tiny loopback race window between this and
-    // start_server re-binding is the same trade-off `uar-sidecar` accepts
-    // for its own pre-bind-discover-drop-rebind dance (see start_server's
-    // doc comment for start_server_sidecar).
-}
-
 fn unique_temp_path(tag: &str) -> std::path::PathBuf {
     std::env::temp_dir().join(format!(
         "uar-live-itest-{tag}-{}-{}",
@@ -164,10 +224,96 @@ pub async fn boot_test_server(
     llm_model: &str,
     needs: ServiceNeeds,
 ) -> TestServerHandle {
+    let persistence_path = unique_temp_path("persistence");
+    boot_test_server_inner(llm_base_url, llm_model, needs, persistence_path).await
+}
+
+/// Boot a real UAR server on a caller-owned persistence path. The process
+/// harness reuses this seam after awaiting a normal child exit.
+#[allow(dead_code)] // Consumed by the child helper, which the BDD target omits.
+pub async fn boot_test_server_with_persistence_path(
+    llm_base_url: &str,
+    llm_model: &str,
+    needs: ServiceNeeds,
+    persistence_path: &std::path::Path,
+) -> TestServerHandle {
+    boot_test_server_inner(
+        llm_base_url,
+        llm_model,
+        needs,
+        persistence_path.to_path_buf(),
+    )
+    .await
+}
+
+/// Boot a real server in a fresh child process on a caller-owned persistence
+/// path. This is the cold-restart harness used by L4 capability cases.
+#[allow(dead_code)] // Consumed by capability cases, which the BDD target omits.
+pub async fn boot_test_server_process(
+    llm_base_url: &str,
+    llm_model: &str,
+    needs: ServiceNeeds,
+    persistence_path: &std::path::Path,
+) -> ProcessTestServerHandle {
+    let control_dir = tempfile::tempdir().expect("create child-server control directory");
+    let ready_path = control_dir.path().join("ready");
+    let mut child = std::process::Command::new(
+        std::env::current_exe().expect("resolve integration test executable"),
+    )
+    .arg("--exact")
+    .arg("live::harness::tests::process_server_helper")
+    .arg("--nocapture")
+    .arg("--test-threads=1")
+    .env("UAR_TEST_SERVER_CHILD", "1")
+    .env("UAR_TEST_SERVER_LLM_BASE_URL", llm_base_url)
+    .env("UAR_TEST_SERVER_LLM_MODEL", llm_model)
+    .env(
+        "UAR_TEST_SERVER_MEMORY",
+        if needs.memory { "1" } else { "0" },
+    )
+    .env("UAR_TEST_SERVER_PERSISTENCE_PATH", persistence_path)
+    .env("UAR_TEST_SERVER_CONTROL_DIR", control_dir.path())
+    .spawn()
+    .expect("spawn child server process");
+
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(60);
+    loop {
+        if let Ok(base_url) = std::fs::read_to_string(&ready_path) {
+            return ProcessTestServerHandle {
+                base_url,
+                child: Some(child),
+                control_dir,
+            };
+        }
+        if let Some(status) = child.try_wait().expect("poll child server process") {
+            panic!("child server exited before readiness: {status}");
+        }
+        if tokio::time::Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            panic!("child server did not become ready within 60s");
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+}
+
+async fn boot_test_server_inner(
+    llm_base_url: &str,
+    llm_model: &str,
+    needs: ServiceNeeds,
+    persistence_path: std::path::PathBuf,
+) -> TestServerHandle {
     init_tracing_once();
     SCRATCH_SWEEP.call_once(sweep_stale_scratch);
-    let port = find_free_port();
-    let persistence_path = unique_temp_path("persistence");
+    let listener =
+        std::net::TcpListener::bind("127.0.0.1:0").expect("bind ephemeral harness listener");
+    listener
+        .set_nonblocking(true)
+        .expect("set harness listener nonblocking");
+    let port = listener
+        .local_addr()
+        .expect("harness listener address")
+        .port();
 
     let memory_yaml = if needs.memory {
         let memory_path = unique_temp_path("memory");
@@ -188,7 +334,7 @@ pub async fn boot_test_server(
          resilience:\n  rate_limit_enabled: false\n\
          persistence:\n  provider: \"surreal\"\n  database_url: \"surrealkv://{}\"\n\
          llm:\n  model: \"{llm_model}\"\n  base_url: \"{llm_base_url}\"\n\
-         server:\n  host: \"127.0.0.1\"\n  port: {port}\n\
+         server:\n  host: \"127.0.0.1\"\n  port: {port}\n  shutdown_timeout_secs: 1\n\
          {memory_yaml}",
         persistence_path.display(),
     );
@@ -220,7 +366,7 @@ pub async fn boot_test_server(
         command: None,
     };
 
-    // `start_server` takes an `Arc<ConfigManager>` (hot-reload via arc-swap,
+    // The sidecar entry point takes an `Arc<ConfigManager>` (hot-reload via arc-swap,
     // f53b988). `load_without_watcher` is the documented test constructor: the
     // harness writes a throwaway temp config that never changes, so a file
     // watcher would be pure overhead — and one watcher task per booted server
@@ -229,27 +375,37 @@ pub async fn boot_test_server(
         .await
         .expect("load harness config");
 
+    let shutdown = CancellationToken::new();
+    let thread_shutdown = shutdown.clone();
+    let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
     let thread = std::thread::spawn(move || {
         let rt = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
-            .expect("build current-thread runtime for start_server");
+            .expect("build current-thread runtime for server");
         rt.block_on(async move {
-            if let Err(e) = start_server(config).await {
-                // The test-side health-check poll surfaces a boot failure
-                // as a clear timeout+panic; this eprintln gives the actual
-                // cause when debugging a failed run.
-                eprintln!("start_server exited with error: {e:?}");
+            let listener = tokio::net::TcpListener::from_std(listener)
+                .expect("register harness listener with Tokio");
+            let result =
+                start_server_sidecar(config, listener, ready_tx, Some(thread_shutdown)).await;
+            if let Err(error) = &result {
+                eprintln!("start_server_sidecar exited with error: {error:?}");
             }
-        });
+            result
+        })
     });
 
-    let base_url = format!("http://127.0.0.1:{port}");
+    let ready_addr = tokio::time::timeout(Duration::from_secs(30), ready_rx)
+        .await
+        .expect("server did not signal readiness within 30s")
+        .expect("server exited before signaling readiness");
+    let base_url = format!("http://{ready_addr}");
     wait_for_health(&base_url).await;
 
     TestServerHandle {
         base_url,
-        _thread: thread,
+        shutdown,
+        thread: Some(thread),
     }
 }
 
@@ -368,5 +524,75 @@ mod tests {
             resp.status(),
             resp.text().await.unwrap_or_default()
         );
+    }
+
+    #[tokio::test]
+    async fn process_server_helper() {
+        if std::env::var_os("UAR_TEST_SERVER_CHILD").is_none() {
+            return;
+        }
+
+        let llm_base_url =
+            std::env::var("UAR_TEST_SERVER_LLM_BASE_URL").expect("child-server LLM base URL");
+        let llm_model = std::env::var("UAR_TEST_SERVER_LLM_MODEL").expect("child-server LLM model");
+        let needs = ServiceNeeds {
+            memory: std::env::var("UAR_TEST_SERVER_MEMORY").as_deref() == Ok("1"),
+        };
+        let persistence_path = std::path::PathBuf::from(
+            std::env::var_os("UAR_TEST_SERVER_PERSISTENCE_PATH")
+                .expect("child-server persistence path"),
+        );
+        let control_dir = std::path::PathBuf::from(
+            std::env::var_os("UAR_TEST_SERVER_CONTROL_DIR")
+                .expect("child-server control directory"),
+        );
+
+        let server = boot_test_server_with_persistence_path(
+            &llm_base_url,
+            &llm_model,
+            needs,
+            &persistence_path,
+        )
+        .await;
+        std::fs::write(control_dir.join("ready"), &server.base_url)
+            .expect("publish child-server readiness");
+
+        while !control_dir.join("shutdown").exists() {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        let client = reqwest::Client::new();
+        let base_url = server.base_url.clone();
+        server.trigger_shutdown();
+
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
+        loop {
+            if client
+                .get(format!("{base_url}/health"))
+                .send()
+                .await
+                .is_err()
+            {
+                break;
+            }
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "caller token did not stop the child HTTP listener within 10s"
+            );
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+
+        #[cfg(unix)]
+        {
+            let status = std::process::Command::new("/bin/kill")
+                .arg("-TERM")
+                .arg(std::process::id().to_string())
+                .status()
+                .expect("send SIGTERM to child server process");
+            assert!(status.success(), "failed to send child SIGTERM: {status}");
+        }
+        #[cfg(not(unix))]
+        panic!("process-server helper requires Unix SIGTERM support");
+
+        server.wait_for_exit().await;
     }
 }

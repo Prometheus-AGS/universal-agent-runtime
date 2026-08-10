@@ -9,11 +9,10 @@
 //! adversarial reviews (MiniMax-M3 critic, k3 judge) ruled the stronger framing
 //! unsupportable. The limits are structural, not incidental:
 //!
-//! - **No L4.** The harness uses a fresh temp SurrealKV path per boot and
-//!   `start_server` has no shutdown hook, so no write-then-reboot-then-read
-//!   cycle is possible. Capabilities whose defining property is persistence
-//!   (C-12, C-13) can only be shape-verified — which does not establish that
-//!   they persist anything.
+//! - **L4 is capability-specific.** C-12 uses a caller-owned SurrealKV path and
+//!   caller-triggered graceful shutdown to prove a write survives a cold
+//!   restart. C-13 remains excluded because the current header-based session
+//!   surface is backed by an explicitly non-durable in-process `SessionStore`.
 //! - **No semantics.** Assertions check response *shape*. A route returning a
 //!   well-formed body containing the *wrong* answer passes.
 //! - **Stub provider.** Cases run against `stub_llm`, whose fixtures this same
@@ -45,7 +44,9 @@
 //! rejecting". Every case therefore calls [`assert_real_handler`], which fails
 //! on the sentinel `code: "api_route_not_found"` regardless of status.
 
-use super::harness::{HARNESS_JWT_SECRET, ServiceNeeds, boot_test_server};
+use super::harness::{
+    HARNESS_JWT_SECRET, ServiceNeeds, boot_test_server, boot_test_server_process,
+};
 use super::stub_llm::{FixtureResponse, FixtureSet, RequestFingerprint, start_stub_llm};
 use serial_test::serial;
 
@@ -331,26 +332,87 @@ async fn l2_c01_c02_run_stream_shape() {
 }
 
 // ---------------------------------------------------------------------------
-// Shape-only — the defining property is NOT verifiable here
+// L4 — survives a cold runtime restart
 // ---------------------------------------------------------------------------
 
-/// C-12 persistence — **shape only. This does NOT establish persistence.**
-///
-/// The harness gives each boot a fresh temp SurrealKV path and `start_server`
-/// exposes no shutdown hook, so a write-then-reboot-then-read cycle cannot be
-/// performed. A pass here means the endpoint answered; it does not mean
-/// anything was durably stored. Reported as **L4 unverifiable**.
+/// C-12 persistence — write a knowledge-base resource, stop the server, reopen
+/// the same SurrealKV path in a new runtime, and read the identical resource.
+/// Setting `UAR_L4_NEGATIVE_CONTROL_DIFFERENT_PATH=1` deliberately points the
+/// second boot at an empty path; the final assertion must then fail.
 #[tokio::test]
 #[serial]
-async fn shape_only_c12_persistence_config() {
+async fn l4_c12_persistence_round_trip() {
     let stub = start_stub_llm(FixtureSet::new()).await;
-    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let scratch = tempfile::tempdir().expect("C-12: create persistence scratch");
+    let persistence_path = scratch.path().join("surrealkv");
+    let server = boot_test_server_process(
+        &stub.base_url,
+        MODEL,
+        ServiceNeeds::default(),
+        &persistence_path,
+    )
+    .await;
+    let client = reqwest::Client::new();
+    let expected_name = format!("c12-round-trip-{}", uuid::Uuid::new_v4());
+    let expected_description = "C-12 cold-restart marker";
 
-    let (status, body) = get_capability(&server.base_url, "C-12", "/api/config/persistence").await;
-    assert_eq!(status, 200, "C-12: expected 200, got: {body}");
-    assert!(
-        body.contains("provider") || body.contains("surreal"),
-        "C-12: expected persistence info, got: {body}"
+    let create = client
+        .post(format!("{}/api/knowledge", server.base_url))
+        .json(&serde_json::json!({
+            "name": expected_name,
+            "description": expected_description,
+        }))
+        .send()
+        .await
+        .expect("C-12: create knowledge base");
+    let create_status = create.status().as_u16();
+    let create_body = create.text().await.unwrap_or_default();
+    assert_real_handler("C-12", "/api/knowledge", create_status, &create_body);
+    assert_eq!(
+        create_status, 201,
+        "C-12: expected resource creation to return 201, got: {create_body}"
+    );
+    let created: serde_json::Value = serde_json::from_str(&create_body)
+        .unwrap_or_else(|e| panic!("C-12: create body is not JSON: {e}\n{create_body}"));
+    let resource_id = created["id"]
+        .as_str()
+        .expect("C-12: created resource id")
+        .to_string();
+
+    server.shutdown().await;
+
+    let negative_path = scratch.path().join("negative-control-surrealkv");
+    let reopen_path = if std::env::var_os("UAR_L4_NEGATIVE_CONTROL_DIFFERENT_PATH").is_some() {
+        negative_path.as_path()
+    } else {
+        persistence_path.as_path()
+    };
+    let restarted =
+        boot_test_server_process(&stub.base_url, MODEL, ServiceNeeds::default(), reopen_path).await;
+    let resource_path = format!("/api/knowledge/{resource_id}");
+    let (status, body) = get_capability(&restarted.base_url, "C-12", &resource_path).await;
+    restarted.shutdown().await;
+
+    assert_eq!(
+        status, 200,
+        "C-12: resource did not survive the cold restart: {body}"
+    );
+    let reopened: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|e| panic!("C-12: reopened body is not JSON: {e}\n{body}"));
+    assert_eq!(
+        reopened["id"].as_str(),
+        Some(resource_id.as_str()),
+        "C-12: reopened resource id changed: {body}"
+    );
+    assert_eq!(
+        reopened["name"].as_str(),
+        Some(expected_name.as_str()),
+        "C-12: reopened resource name changed: {body}"
+    );
+    assert_eq!(
+        reopened["description"].as_str(),
+        Some(expected_description),
+        "C-12: reopened resource description changed: {body}"
     );
 }
 
@@ -557,6 +619,107 @@ async fn absent_c13_sessions_retired() {
             .and_then(serde_json::Value::as_str),
         Some("legacy_route_disabled"),
         "C-13 retired-route contract changed: expected error.code=legacy_route_disabled, got: {body}"
+    );
+}
+
+/// C-13 session continuity — **excluded from L4**.
+///
+/// The current contract is exercised on both boots: a stable UUID is supplied
+/// through `X-UAR-Session-ID` to `POST /api/chat/completion`. The first boot
+/// creates live session state, but the context-stats handler returns 404 after
+/// reopening the same persistence path. This matches `SessionStore`'s
+/// in-process `HashMap` implementation and the runtime's explicit statement
+/// that the store is not durable. Fixing it requires runtime persistence work
+/// beyond the one-parameter source allowance for this change.
+#[tokio::test]
+#[serial]
+async fn excluded_c13_session_continuity_is_not_durable() {
+    let fixtures = FixtureSet::new()
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: "c13 first turn".to_string(),
+                has_tools: true,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content("c13 first reply".to_string()),
+        )
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: "c13 second turn".to_string(),
+                has_tools: true,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content("c13 second reply".to_string()),
+        );
+    let stub = start_stub_llm(fixtures).await;
+    let scratch = tempfile::tempdir().expect("C-13: create persistence scratch");
+    let persistence_path = scratch.path().join("surrealkv");
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let client = reqwest::Client::new();
+
+    let first = boot_test_server_process(
+        &stub.base_url,
+        MODEL,
+        ServiceNeeds::default(),
+        &persistence_path,
+    )
+    .await;
+    let first_response = client
+        .post(format!("{}/api/chat/completion", first.base_url))
+        .header("X-UAR-Session-ID", &session_id)
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": "c13 first turn"}],
+            "stream": false,
+        }))
+        .send()
+        .await
+        .expect("C-13: first chat request");
+    let first_status = first_response.status().as_u16();
+    let first_body = first_response.text().await.unwrap_or_default();
+    assert_real_handler("C-13", "/api/chat/completion", first_status, &first_body);
+    assert_eq!(first_status, 200, "C-13: first chat failed: {first_body}");
+    let stats_path = format!("/api/uar/sessions/{session_id}/context-stats");
+    let (before_status, before_body) = get_capability(&first.base_url, "C-13", &stats_path).await;
+    assert_eq!(
+        before_status, 200,
+        "C-13: live session was not observable before restart: {before_body}"
+    );
+    first.shutdown().await;
+
+    let restarted = boot_test_server_process(
+        &stub.base_url,
+        MODEL,
+        ServiceNeeds::default(),
+        &persistence_path,
+    )
+    .await;
+    let (after_status, after_body) = get_capability(&restarted.base_url, "C-13", &stats_path).await;
+    assert_eq!(
+        after_status, 404,
+        "C-13 exclusion is stale: session unexpectedly survived restart: {after_body}"
+    );
+
+    let second_response = client
+        .post(format!("{}/api/chat/completion", restarted.base_url))
+        .header("X-UAR-Session-ID", &session_id)
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": "c13 second turn"}],
+            "stream": false,
+        }))
+        .send()
+        .await
+        .expect("C-13: second chat request");
+    let second_status = second_response.status().as_u16();
+    let second_body = second_response.text().await.unwrap_or_default();
+    assert_real_handler("C-13", "/api/chat/completion", second_status, &second_body);
+    restarted.shutdown().await;
+    assert_eq!(
+        second_status, 200,
+        "C-13: current session contract failed after restart: {second_body}"
     );
 }
 

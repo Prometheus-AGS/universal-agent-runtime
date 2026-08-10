@@ -16,6 +16,10 @@ Final baseline Tier 2 confirmation: the unchanged, formatted source completed
 the pinned matrix with exit 0 and all 20 cases passing in 196.61s at
 2026-08-09T18:16:05Z.
 
+Final conformance Tier 2 confirmation: the formatted source completed the
+pinned matrix with exit 0 and all 29 cases passing in 288.73s at
+2026-08-10T14:44:56Z.
+
 Two intervening attempts are not conformance results: C-13 and C-10 each once
 timed out waiting for their test server to become healthy before reaching a
 capability assertion. Both cases passed on the unchanged-source retries.
@@ -45,8 +49,8 @@ No case changed labels in this audit.
 | C-09 | L3 | pass | Compiler spec/session catalogs return correct empty collections on a fresh database. |
 | C-10 | L3 | pass | Runtime settings handler returns a JSON settings surface. |
 | C-11 | L3 | pass | Runtime-owned A2UI schema catalog. |
-| C-12 | shape-only | pass | Persistence configuration handler only; restart durability is deferred to the next change. |
-| C-13 | absent exclusion | pass | Legacy sessions route is deliberately retired in favor of caller-supplied `X-UAR-Session-ID`. |
+| C-12 | L4 | pass | A knowledge-base resource survives a normal shutdown and cold process restart on the same SurrealKV path; a different-path negative control returns 404. |
+| C-13 | absent + durability exclusion | pass | The legacy sessions route is retired; the current `X-UAR-Session-ID` chat contract works, but its in-memory `SessionStore` does not survive a cold process restart. |
 | C-14 | L2 | pass | OpenAI-compatible response shape against the recorded provider; no live-provider claim. |
 | C-15 | L3 | pass | Static well-known agent descriptor contract. |
 | C-16 | L2 | pass | Cedar governance middleware with repository policy fixtures. |
@@ -72,7 +76,8 @@ No case changed labels in this audit.
 | `l3_c03_provider_registry` | C-03 | L3 | pass | local pinned matrix; exit 0; 191.54s | 2026-08-09T17:56:19Z |
 | `l2_c14_openai_compatible_surface` | C-14 | L2 | pass | local pinned matrix; exit 0; 191.54s | 2026-08-09T17:56:19Z |
 | `l2_c01_c02_run_stream_shape` | C-01 / C-02 | L2 | pass | local pinned matrix; exit 0; 191.54s | 2026-08-09T17:56:19Z |
-| `shape_only_c12_persistence_config` | C-12 | shape-only | pass | local pinned matrix; exit 0; 191.54s | 2026-08-09T17:56:19Z |
+| `l4_c12_persistence_round_trip` | C-12 | L4 | pass | local pinned matrix; exit 0; 29/29; 288.73s; same-path resource matched after two normal child-process boots; caller token stopped HTTP before SIGTERM completed unchanged root shutdown | 2026-08-10T14:44:56Z |
+| `l4_c12_persistence_round_trip__different_path_negative_control` | C-12 | L4 negative control | expected fail | targeted local command with `UAR_L4_NEGATIVE_CONTROL_DIFFERENT_PATH=1`; exit 101; second boot returned 404 instead of 200 for the created resource | 2026-08-10T14:44:56Z |
 | `l3_c04_credentials_listing` | C-04 | L3 | pass | local pinned matrix; exit 0; 191.54s | 2026-08-09T17:56:19Z |
 | `l3_c05_knowledge_base_catalog` | C-05 | L3 | pass | local pinned matrix; exit 0; 191.54s | 2026-08-09T17:56:19Z |
 | `shape_only_c06_memory_stats` | C-06 | shape-only | pass | local pinned matrix; exit 0; 191.54s | 2026-08-09T17:56:19Z |
@@ -83,6 +88,7 @@ No case changed labels in this audit.
 | `l3_c17_security_posture` | C-17 | L3 | pass | local pinned matrix; exit 0; 191.54s | 2026-08-09T17:56:19Z |
 | `absent_c13_sessions_retired` | C-13 | absent exclusion | expected fail | local pinned matrix; exit 101; 19/20; deliberate expected 418, actual 404 | 2026-08-09T17:39:53Z |
 | `absent_c13_sessions_retired` | C-13 | absent exclusion | pass | local pinned matrix after revert; exit 0; 20/20; 191.54s | 2026-08-09T17:56:19Z |
+| `excluded_c13_session_continuity_is_not_durable` | C-13 | durability exclusion | pass | local pinned matrix; exit 0; 29/29; current chat contract succeeded before and after reboot, while context stats returned 404 after the same-path cold restart because `SessionStore` is in-memory | 2026-08-10T14:44:56Z |
 | `absent_c22_scheduled_runs` | C-22 | absent exclusion | pass | local pinned matrix; exit 0; 191.54s | 2026-08-09T17:56:19Z |
 | `absent_c23_peer_reachability` | C-23 | absent exclusion | pass | local pinned matrix; exit 0; 191.54s | 2026-08-09T17:56:19Z |
 | `l2_c16_governance_middleware` | C-16 | L2 | pass | local pinned matrix; exit 0; 28/28; 274.70s; repository Cedar policy fixture | 2026-08-10T10:16:23Z |

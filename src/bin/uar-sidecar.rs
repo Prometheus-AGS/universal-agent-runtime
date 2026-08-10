@@ -180,7 +180,7 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) {
     };
 
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
-    let server = server::start_server_sidecar(config_manager, listener, ready_tx);
+    let server = server::start_server_sidecar(config_manager, listener, ready_tx, None);
     tokio::pin!(server);
     let ready_addr = match await_server_readiness(ready_rx, server.as_mut()).await {
         Ok(addr) => addr,
