@@ -158,3 +158,78 @@ and tasks were amended from CI red/green proof to local red/green proof. The
 non-deployment `spec-conformance.yml` workflow was removed and its active run
 cancelled. Verification records cite local command evidence rather than Actions
 run URLs.
+
+---
+
+## 2026-08-09 — CI/CD validation is DEFERRED, not declined: gates land after the code, not before
+
+**Decision (operator).** The conformance matrix runs as a **local** gate for now.
+No new blocking GitHub Actions job is added while the tests it would run are
+still being written. **CI/CD-based validation WILL be supported** — it is
+sequenced after a working code base, not abandoned.
+
+This supersedes `conformance-baseline-gate` task 2.1 as originally written
+("add a dedicated job with `continue-on-error: false`"). Anyone reading that
+task cold will think the executor deviated. It did not; the scope changed here,
+deliberately, and Codex's commit `3bf72e15` *"docs(policy): reserve actions for
+deployment"* records the same call from the execution side.
+
+**Mechanism — why a gate added now would carry no signal.** Measured on
+`origin/main` at `a70996f`, 2026-08-09:
+
+| Workflow | Conclusion |
+|---|---|
+| Live Integration Tier | success |
+| CI | **failure** |
+| Build and Deploy to AKS | **failure** |
+| Coverage | **failure** |
+| Cookbook examples | **failure** |
+| BDD Chat Scenario Suite | **failure** |
+
+Five of six red, all predating this phase. A sixth red check is
+indistinguishable from the five already there. Worse, it is *actively harmful*:
+a pipeline that is always red teaches everyone to stop reading it, which is how
+`live-integration.yml` masked a build failure for 25 days behind
+`continue-on-error: true` while showing green.
+
+**Second reason — cost against changing code.** The matrix takes ~195s plus
+build. Running it on every push while its own cases are still being authored
+pays repeatedly for a signal about code that is about to change. That is the
+same economics the tier ladder exists to prevent: expensive verification belongs
+at phase boundaries, not inside the edit loop.
+
+**Stakes, stated plainly.** Until the gate is wired, the matrix runs when
+someone remembers to run it. **That is not enforcement.** Regressions will
+reappear silently, which is exactly the failure this phase was opened to close.
+Deferring is the right call on today's evidence; forgetting to come back would
+undo the phase's whole purpose.
+
+**What is already banked.** The expensive half of the gate work is done and
+transfers. Codex ran the deliberate-break probe locally — red naming the
+specific case, then green after revert (`13edc142` -> `f873a940`). Proving a
+gate can fail is the part people skip; wiring it into a workflow afterwards is
+mostly a YAML file.
+
+**What reopens this — the prerequisite is explicit.** Before the matrix is
+wired into Actions:
+
+1. Get `main` green. Five failing workflows must be fixed or deliberately
+   retired. Adding a gate to a red pipeline gets it ignored.
+2. Then add the matrix job with `continue-on-error` absent, and re-prove the
+   red/green cycle **in CI** — the local proof does not transfer to the runner.
+3. Fixing those five workflows is its own change with its own scope. It does not
+   belong inside a conformance-measurement phase, and folding it in would
+   invalidate the adversarial review that phase's plan already passed.
+
+`conformance-baseline-gate` tasks 3.3, 4.1 and 4.2 keep their local form: record
+the red run and the green run in `verification.md` as local results. When CI is
+wired, those rows gain run URLs.
+
+---
+
+## 2026-08-09 — Supersession: deployment validation is the only GitHub Actions test scope
+
+The deployment-only operator decision above is final and supersedes the earlier
+idea that routine conformance checks might later move into Actions. Unit,
+integration, conformance, lint, and format checks remain local. GitHub Actions
+may validate deployments at deployment time; it does not run development tests.
