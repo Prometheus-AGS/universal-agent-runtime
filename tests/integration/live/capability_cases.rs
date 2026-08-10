@@ -24,6 +24,19 @@
 //!   §12.1, `embedded-mobile` compiles no `server` feature at all and therefore
 //!   has *none* of these routes. A pass here transfers to no other profile.
 //!
+//! # Evidence label taxonomy
+//!
+//! Every case name starts with exactly one prefix from this closed set:
+//!
+//! - `l1_` — route present: reachable, without a behavioural claim.
+//! - `l2_` — wired: exercises the real call path with fixtures authored by the
+//!   test.
+//! - `l3_` — exercised: correctness is independent of stub output.
+//! - `l4_` — round-tripped: the result survives a runtime restart.
+//! - `shape_only_` — response shape only, without a semantic claim.
+//! - `absent_` — asserts a documented absence.
+//! - `excluded_` — published exclusion; its doc comment names the reason.
+//!
 //! # The catch-all discriminator
 //!
 //! `server.rs:1093` routes `/api/{*path}` to `api_route_not_found`, so an
@@ -116,6 +129,15 @@ fn content_fixture(last_user_message: &str, response: &str) -> FixtureSet {
         },
         FixtureResponse::Content(response.to_string()),
     )
+}
+
+struct C19FixtureProvider;
+
+#[async_trait::async_trait]
+impl universal_agent_runtime::uar::eval::CompletionProvider for C19FixtureProvider {
+    async fn complete(&self, _input: &str) -> anyhow::Result<String> {
+        Ok("deterministic C-19 fixture output".to_string())
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -541,20 +563,265 @@ async fn absent_c13_sessions_retired() {
 // ---------------------------------------------------------------------------
 // NOT MEASURABLE BY THIS INSTRUMENT — no HTTP surface exists
 //
-// C-16 governance, C-18 file processing, C-19 evals have **zero registered
-// routes** (verified: no `.route()` anywhere matches governance/file_processing/
-// eval). SPECIFICATION.md §3.1 classifies them as internal libraries whose user
-// decisions are made through settings keys rather than dedicated endpoints.
+// C-16 governance, C-18 file processing, and C-19 evals have no dedicated HTTP
+// route. Their cases below use the real surfaces that do exist: governance
+// middleware, the upload handler, and the public eval runner. Each still hits a
+// known real HTTP handler so the catch-all discriminator applies uniformly.
 //
-// There is deliberately no test here. Writing one would mean inventing a path,
-// watching the `/api/{*path}` catch-all answer, and recording an ABSENT verdict
-// for a capability that was never meant to have an endpoint — manufacturing a
-// finding. They are reported in the "not measurable" table instead.
-//
-// C-21 tenant isolation is also absent from this file: it is a security
-// property requiring two tenants and a cross-read attempt, which `#[serial]`
-// single-tenant cases structurally cannot express.
 // ---------------------------------------------------------------------------
+
+/// C-16 governance — **L2 wired**.
+///
+/// Supplying `X-Agent-Id` sends this request through the server's Cedar
+/// governance middleware before the settings handler. The repository's policy
+/// files are the fixture, so this proves the runtime wiring and default permit
+/// behavior but not an independently-authored authorization policy.
+#[tokio::test]
+#[serial]
+async fn l2_c16_governance_middleware() {
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let path = "/api/uar/settings";
+    let resp = reqwest::Client::new()
+        .get(format!("{}{}", server.base_url, path))
+        .header("Authorization", format!("Bearer {HARNESS_JWT_SECRET}"))
+        .header("X-Agent-Id", "conformance-c16-agent")
+        .send()
+        .await
+        .expect("C-16: governed settings request");
+    let status = resp.status().as_u16();
+    let body = resp.text().await.unwrap_or_default();
+    assert_real_handler("C-16", path, status, &body);
+    assert_eq!(
+        status, 200,
+        "C-16: default governance policy should permit the real settings handler: {body}"
+    );
+}
+
+/// C-18 file processing / document intelligence — **L3 exercised**.
+///
+/// A text multipart upload runs through the real upload handler and must return
+/// the exact extracted text independently of model output. Binary OCR is not
+/// claimed by this case.
+#[tokio::test]
+#[serial]
+async fn l3_c18_text_file_processing() {
+    const CONTENT: &str = "C-18 deterministic document text";
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let path = "/api/upload";
+    let form = reqwest::multipart::Form::new().part(
+        "file",
+        reqwest::multipart::Part::bytes(CONTENT.as_bytes().to_vec())
+            .file_name("c18-conformance.txt")
+            .mime_str("text/plain")
+            .expect("C-18: valid MIME type"),
+    );
+    let resp = reqwest::Client::new()
+        .post(format!("{}{}", server.base_url, path))
+        .header("Authorization", format!("Bearer {HARNESS_JWT_SECRET}"))
+        .multipart(form)
+        .send()
+        .await
+        .expect("C-18: upload request");
+    let status = resp.status().as_u16();
+    let body = resp.text().await.unwrap_or_default();
+    assert_real_handler("C-18", path, status, &body);
+    assert_eq!(status, 200, "C-18: text upload failed: {body}");
+    let parsed: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|e| panic!("C-18: upload response is not JSON: {e}\n{body}"));
+    let file = parsed
+        .pointer("/files/0")
+        .unwrap_or_else(|| panic!("C-18: upload response has no file: {body}"));
+    assert_eq!(
+        file.get("text_content").and_then(serde_json::Value::as_str),
+        Some(CONTENT),
+        "C-18: extracted text did not round-trip: {body}"
+    );
+
+    if let Some(id) = file.get("id").and_then(serde_json::Value::as_str) {
+        let _ = std::fs::remove_file(
+            std::env::temp_dir()
+                .join("uar-uploads")
+                .join(format!("{id}.txt")),
+        );
+    }
+}
+
+/// C-19 evals — **L2 wired**.
+///
+/// Loads the shipped suite, builds its declared scorers, and runs every case
+/// through the real eval runner. The completion provider is authored by this
+/// test, so the case establishes wiring and result production, not model
+/// evaluation correctness.
+#[tokio::test]
+#[serial]
+async fn l2_c19_eval_runner() {
+    use universal_agent_runtime::uar::eval::{Runner, build_scorers, load_suite};
+
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let (status, body) = get_capability(&server.base_url, "C-19", "/healthz").await;
+    assert_eq!(
+        status, 200,
+        "C-19 discriminator: live runtime health handler failed: {body}"
+    );
+
+    let suite_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("evals/starter.yaml");
+    let suite = load_suite(&suite_path)
+        .unwrap_or_else(|e| panic!("C-19: shipped starter suite did not load: {e}"));
+    assert!(!suite.cases.is_empty(), "C-19: starter suite has no cases");
+    assert!(
+        !suite.scorers.is_empty(),
+        "C-19: starter suite has no scorers"
+    );
+
+    let provider: std::sync::Arc<dyn universal_agent_runtime::uar::eval::CompletionProvider> =
+        std::sync::Arc::new(C19FixtureProvider);
+    let scorers = build_scorers(&suite, &provider);
+    let results = Runner
+        .run(&suite, &scorers, provider.as_ref(), Some("recorded/c19"))
+        .await;
+    assert_eq!(
+        results.len(),
+        suite.cases.len(),
+        "C-19: eval runner did not produce one result per case"
+    );
+    assert!(
+        results
+            .iter()
+            .all(|result| result.scores.len() == suite.scorers.len()),
+        "C-19: eval runner did not apply every declared scorer"
+    );
+}
+
+/// C-21 tenant isolation — **published exclusion**.
+///
+/// Target: L3 plus a negative cross-tenant read that is explicitly denied.
+/// The runtime's verified JWT claims carry a user id but no tenant id, and its
+/// only scoped HTTP surface is the credential list, which cannot address
+/// another tenant's resource. The harness cannot create two tenant identities
+/// or target the same resource across them; runs, memory, knowledge bases, and
+/// tools have no tenant-aware surface to substitute. This case only proves the
+/// real credential handler is mounted and guarded. It does not present that
+/// guard as tenant-isolation evidence, so C-21 remains a published exclusion.
+#[tokio::test]
+#[serial]
+async fn excluded_c21_tenant_isolation_no_cross_read_surface() {
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let path = "/api/uar/credentials";
+    let resp = reqwest::Client::new()
+        .get(format!("{}/api/uar/credentials", server.base_url))
+        .send()
+        .await
+        .expect("C-21: credential guard request");
+    let status = resp.status().as_u16();
+    let body = resp.text().await.unwrap_or_default();
+    assert_real_handler("C-21", path, status, &body);
+    assert_eq!(
+        status, 401,
+        "C-21 exclusion discriminator: real credential handler guard changed: {body}"
+    );
+}
+
+/// C-24 peer mesh — **published exclusion**.
+///
+/// Discovery, CRDT convergence, and capability-aware peer routing require two
+/// independently-addressable devices. This harness boots one loopback runtime
+/// with a throwaway database, so it cannot create the topology needed for the
+/// target. The live health request supplies the real-handler discriminator; it
+/// is not presented as evidence that any peer behavior occurred.
+#[tokio::test]
+#[serial]
+async fn excluded_c24_peer_mesh_requires_two_devices() {
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let (status, body) = get_capability(&server.base_url, "C-24", "/healthz").await;
+    assert_eq!(
+        status, 200,
+        "C-24 exclusion discriminator: live runtime health handler failed: {body}"
+    );
+}
+
+/// C-25 node decentralized identity — **published exclusion**.
+///
+/// Target: L3 deterministic `did:key` derivation checked against the W3C
+/// vector used by `frf-did`. UAR has no `frf-did` dependency or node-identity
+/// surface, so this runtime harness cannot reach that implementation. The
+/// source audit is executable below; the health request proves this is a live
+/// runtime result rather than a skipped test. When UAR consumes the crate, this
+/// exclusion deliberately fails and must be replaced by the vector assertion.
+#[tokio::test]
+#[serial]
+async fn excluded_c25_node_did_not_consumed_by_runtime() {
+    let manifest = include_str!("../../../Cargo.toml");
+    assert!(
+        !manifest.contains("frf-did") && !manifest.contains("frf_did"),
+        "C-25 exclusion is stale: UAR now declares an frf-did dependency"
+    );
+
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let (status, body) = get_capability(&server.base_url, "C-25", "/healthz").await;
+    assert_eq!(
+        status, 200,
+        "C-25 exclusion discriminator: live runtime health handler failed: {body}"
+    );
+}
+
+/// C-26 DID resolution and credential verification — **published exclusion**.
+///
+/// Target: L3 offline `did:key` resolution plus rejection of a credential from
+/// a different DID. UAR consumes neither `frf-did` nor `frf-wallet`, so no
+/// runtime call path can perform either half of that check. The manifest audit
+/// pins the blocking condition, and the health request is the required live
+/// real-handler discriminator.
+#[tokio::test]
+#[serial]
+async fn excluded_c26_did_resolution_and_vc_verification_not_consumed() {
+    let manifest = include_str!("../../../Cargo.toml");
+    assert!(
+        !manifest.contains("frf-did")
+            && !manifest.contains("frf_did")
+            && !manifest.contains("frf-wallet")
+            && !manifest.contains("frf_wallet"),
+        "C-26 exclusion is stale: UAR now declares an frf DID/wallet dependency"
+    );
+
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let (status, body) = get_capability(&server.base_url, "C-26", "/healthz").await;
+    assert_eq!(
+        status, 200,
+        "C-26 exclusion discriminator: live runtime health handler failed: {body}"
+    );
+}
+
+/// C-27 credential wallet and owner-to-node delegation — **published exclusion**.
+///
+/// Target: L3 with forged-issuer and expired-credential rejection. The
+/// `frf-wallet` implementation is not a UAR dependency and UAR exposes no
+/// wallet/delegation call path, so exercising those fail-closed cases through
+/// this runtime is structurally impossible. The manifest audit makes that
+/// blocker executable; the health request proves a real runtime handler ran.
+#[tokio::test]
+#[serial]
+async fn excluded_c27_wallet_not_consumed_by_runtime() {
+    let manifest = include_str!("../../../Cargo.toml");
+    assert!(
+        !manifest.contains("frf-wallet") && !manifest.contains("frf_wallet"),
+        "C-27 exclusion is stale: UAR now declares an frf-wallet dependency"
+    );
+
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let (status, body) = get_capability(&server.base_url, "C-27", "/healthz").await;
+    assert_eq!(
+        status, 200,
+        "C-27 exclusion discriminator: live runtime health handler failed: {body}"
+    );
+}
 
 // ---------------------------------------------------------------------------
 // Predicted-ABSENT — these SHOULD fail to resolve
