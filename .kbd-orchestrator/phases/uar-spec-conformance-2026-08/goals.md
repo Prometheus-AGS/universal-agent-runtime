@@ -16,8 +16,8 @@ Produce a per-capability conformance result for every capability in
 - **(c) honestly labelled** — each result carries an evidence level that reflects
   what was actually exercised, and capabilities that cannot be exercised are
   **published exclusions**, never silent passes;
-- **(d) enforced** — the matrix runs in CI on a blocking gate, so it cannot rot
-  the way this repo's live tier rotted for 25 days behind green checkmarks.
+- **(d) enforced** — the matrix is a mandatory local completion gate, with a
+  demonstrated red path and durable evidence for each completed change.
 
 Published exclusions are in scope for (a)-(d). An honest "cannot be measured with
 this harness" is a successful output of this phase. A pass count is not the
@@ -51,13 +51,13 @@ Measured 2026-08-09:
 
 - `docs/SPECIFICATION.md`: 718 lines, 27 capabilities, 39 GAP references.
 - `capability_cases.rs`: 20 tests covering **19 of 27** capabilities.
-- CI workflows executing that matrix: **zero**.
+- Durable local completion records for that matrix: **zero**.
 - Baseline run: 18 passed, 2 failed — and **both failures are miscalibrated
   assertions, not runtime defects** (see `baseline-2026-08-09.md`).
 
-The instrument exists and works. It has never been run to completion in CI, and
-its error rate currently exceeds the runtime's. That is the gap this phase
-closes.
+The instrument exists and works, but its error rate currently exceeds the
+runtime's and no durable local completion record proves its failure path. That
+is the gap this phase closes.
 
 ## Success criteria
 
@@ -65,15 +65,15 @@ closes.
    2026-08-09]**
 2. The two miscalibrated assertions corrected, so the instrument stops
    generating false defects.
-3. A blocking CI job whose failure is proven by a named case going red.
+3. A mandatory local gate whose non-zero failure is proven by a named case.
 4. All 27 capabilities carry either a result at a stated target evidence level,
    or a published exclusion with a reason.
 5. The evidence-label taxonomy defined and applied consistently across all cases.
 
 ## Ownership
 
-C-01, C-01b and C-02 are executable in this session — one command, two one-line
-test corrections, one workflow file. No runtime changes.
+C-01, C-01b and C-02 are executable in this session — one command and two
+one-line test corrections. No runtime changes or GitHub Actions work.
 
 **C-03, C-04 and all of C-05 hand off to Codex at kbd-execute.** They are
 bounded, test-shaped, multi-file work.

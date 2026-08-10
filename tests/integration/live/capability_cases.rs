@@ -9,11 +9,10 @@
 //! adversarial reviews (MiniMax-M3 critic, k3 judge) ruled the stronger framing
 //! unsupportable. The limits are structural, not incidental:
 //!
-//! - **No L4.** The harness uses a fresh temp SurrealKV path per boot and
-//!   `start_server` has no shutdown hook, so no write-then-reboot-then-read
-//!   cycle is possible. Capabilities whose defining property is persistence
-//!   (C-12, C-13) can only be shape-verified — which does not establish that
-//!   they persist anything.
+//! - **L4 is capability-specific.** C-12 uses a caller-owned SurrealKV path and
+//!   caller-triggered graceful shutdown to prove a write survives a cold
+//!   restart. C-13 remains excluded because the current header-based session
+//!   surface is backed by an explicitly non-durable in-process `SessionStore`.
 //! - **No semantics.** Assertions check response *shape*. A route returning a
 //!   well-formed body containing the *wrong* answer passes.
 //! - **Stub provider.** Cases run against `stub_llm`, whose fixtures this same
@@ -24,6 +23,19 @@
 //!   §12.1, `embedded-mobile` compiles no `server` feature at all and therefore
 //!   has *none* of these routes. A pass here transfers to no other profile.
 //!
+//! # Evidence label taxonomy
+//!
+//! Every case name starts with exactly one prefix from this closed set:
+//!
+//! - `l1_` — route present: reachable, without a behavioural claim.
+//! - `l2_` — wired: exercises the real call path with fixtures authored by the
+//!   test.
+//! - `l3_` — exercised: correctness is independent of stub output.
+//! - `l4_` — round-tripped: the result survives a runtime restart.
+//! - `shape_only_` — response shape only, without a semantic claim.
+//! - `absent_` — asserts a documented absence.
+//! - `excluded_` — published exclusion; its doc comment names the reason.
+//!
 //! # The catch-all discriminator
 //!
 //! `server.rs:1093` routes `/api/{*path}` to `api_route_not_found`, so an
@@ -32,7 +44,9 @@
 //! rejecting". Every case therefore calls [`assert_real_handler`], which fails
 //! on the sentinel `code: "api_route_not_found"` regardless of status.
 
-use super::harness::{HARNESS_JWT_SECRET, ServiceNeeds, boot_test_server};
+use super::harness::{
+    HARNESS_JWT_SECRET, ServiceNeeds, boot_test_server, boot_test_server_process,
+};
 use super::stub_llm::{FixtureResponse, FixtureSet, RequestFingerprint, start_stub_llm};
 use serial_test::serial;
 
@@ -116,6 +130,15 @@ fn content_fixture(last_user_message: &str, response: &str) -> FixtureSet {
         },
         FixtureResponse::Content(response.to_string()),
     )
+}
+
+struct C19FixtureProvider;
+
+#[async_trait::async_trait]
+impl universal_agent_runtime::uar::eval::CompletionProvider for C19FixtureProvider {
+    async fn complete(&self, _input: &str) -> anyhow::Result<String> {
+        Ok("deterministic C-19 fixture output".to_string())
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -309,26 +332,87 @@ async fn l2_c01_c02_run_stream_shape() {
 }
 
 // ---------------------------------------------------------------------------
-// Shape-only — the defining property is NOT verifiable here
+// L4 — survives a cold runtime restart
 // ---------------------------------------------------------------------------
 
-/// C-12 persistence — **shape only. This does NOT establish persistence.**
-///
-/// The harness gives each boot a fresh temp SurrealKV path and `start_server`
-/// exposes no shutdown hook, so a write-then-reboot-then-read cycle cannot be
-/// performed. A pass here means the endpoint answered; it does not mean
-/// anything was durably stored. Reported as **L4 unverifiable**.
+/// C-12 persistence — write a knowledge-base resource, stop the server, reopen
+/// the same SurrealKV path in a new runtime, and read the identical resource.
+/// Setting `UAR_L4_NEGATIVE_CONTROL_DIFFERENT_PATH=1` deliberately points the
+/// second boot at an empty path; the final assertion must then fail.
 #[tokio::test]
 #[serial]
-async fn shape_only_c12_persistence_config() {
+async fn l4_c12_persistence_round_trip() {
     let stub = start_stub_llm(FixtureSet::new()).await;
-    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let scratch = tempfile::tempdir().expect("C-12: create persistence scratch");
+    let persistence_path = scratch.path().join("surrealkv");
+    let server = boot_test_server_process(
+        &stub.base_url,
+        MODEL,
+        ServiceNeeds::default(),
+        &persistence_path,
+    )
+    .await;
+    let client = reqwest::Client::new();
+    let expected_name = format!("c12-round-trip-{}", uuid::Uuid::new_v4());
+    let expected_description = "C-12 cold-restart marker";
 
-    let (status, body) = get_capability(&server.base_url, "C-12", "/api/config/persistence").await;
-    assert_eq!(status, 200, "C-12: expected 200, got: {body}");
-    assert!(
-        body.contains("provider") || body.contains("surreal"),
-        "C-12: expected persistence info, got: {body}"
+    let create = client
+        .post(format!("{}/api/knowledge", server.base_url))
+        .json(&serde_json::json!({
+            "name": expected_name,
+            "description": expected_description,
+        }))
+        .send()
+        .await
+        .expect("C-12: create knowledge base");
+    let create_status = create.status().as_u16();
+    let create_body = create.text().await.unwrap_or_default();
+    assert_real_handler("C-12", "/api/knowledge", create_status, &create_body);
+    assert_eq!(
+        create_status, 201,
+        "C-12: expected resource creation to return 201, got: {create_body}"
+    );
+    let created: serde_json::Value = serde_json::from_str(&create_body)
+        .unwrap_or_else(|e| panic!("C-12: create body is not JSON: {e}\n{create_body}"));
+    let resource_id = created["id"]
+        .as_str()
+        .expect("C-12: created resource id")
+        .to_string();
+
+    server.shutdown().await;
+
+    let negative_path = scratch.path().join("negative-control-surrealkv");
+    let reopen_path = if std::env::var_os("UAR_L4_NEGATIVE_CONTROL_DIFFERENT_PATH").is_some() {
+        negative_path.as_path()
+    } else {
+        persistence_path.as_path()
+    };
+    let restarted =
+        boot_test_server_process(&stub.base_url, MODEL, ServiceNeeds::default(), reopen_path).await;
+    let resource_path = format!("/api/knowledge/{resource_id}");
+    let (status, body) = get_capability(&restarted.base_url, "C-12", &resource_path).await;
+    restarted.shutdown().await;
+
+    assert_eq!(
+        status, 200,
+        "C-12: resource did not survive the cold restart: {body}"
+    );
+    let reopened: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|e| panic!("C-12: reopened body is not JSON: {e}\n{body}"));
+    assert_eq!(
+        reopened["id"].as_str(),
+        Some(resource_id.as_str()),
+        "C-12: reopened resource id changed: {body}"
+    );
+    assert_eq!(
+        reopened["name"].as_str(),
+        Some(expected_name.as_str()),
+        "C-12: reopened resource name changed: {body}"
+    );
+    assert_eq!(
+        reopened["description"].as_str(),
+        Some(expected_description),
+        "C-12: reopened resource description changed: {body}"
     );
 }
 
@@ -352,10 +436,25 @@ async fn l3_c04_credentials_listing() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
 
-    let (status, body) = get_capability(&server.base_url, "C-04", "/api/uar/credentials").await;
-    assert_eq!(status, 200, "C-04: expected 200, got: {body}");
-    serde_json::from_str::<serde_json::Value>(&body)
-        .unwrap_or_else(|e| panic!("C-04: body is not JSON: {e}\n{body}"));
+    let resp = reqwest::Client::new()
+        .get(format!("{}/api/uar/credentials", server.base_url))
+        .send()
+        .await
+        .expect("C-04: unauthenticated credential-list request");
+    let status = resp.status().as_u16();
+    let body = resp.text().await.unwrap_or_default();
+    assert_real_handler("C-04", "/api/uar/credentials", status, &body);
+    assert_eq!(
+        status, 401,
+        "C-04 unauthenticated credentials guard contract changed: expected 401, got {status}: {body}"
+    );
+    let parsed: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|e| panic!("C-04 credentials guard returned non-JSON: {e}\n{body}"));
+    assert_eq!(
+        parsed.get("error").and_then(serde_json::Value::as_str),
+        Some("Authentication required"),
+        "C-04 unauthenticated credentials guard contract changed: expected Authentication required, got: {body}"
+    );
 }
 
 /// C-05 knowledge bases and RAG — **catalog only**.
@@ -497,39 +596,395 @@ async fn l3_c17_security_posture() {
     );
 }
 
-/// C-13 sessions and threads — **shape only, same L4 limit as C-12**.
+/// C-13 legacy sessions route — deliberately retired.
 ///
-/// Caller-supplied thread IDs are the capability's point, but proving a thread
-/// *persists* needs a write→reboot→read cycle the harness cannot perform.
+/// Session continuity moved to caller-supplied `X-UAR-Session-ID` values on
+/// `POST /api/chat/completion`; this case pins the explicit retirement response.
 #[tokio::test]
 #[serial]
-async fn shape_only_c13_sessions() {
+async fn absent_c13_sessions_retired() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
 
     let (status, body) = get_capability(&server.base_url, "C-13", "/api/sessions").await;
-    assert_eq!(status, 200, "C-13: expected 200, got: {body}");
-    serde_json::from_str::<serde_json::Value>(&body)
-        .unwrap_or_else(|e| panic!("C-13: body is not JSON: {e}\n{body}"));
+    assert_eq!(
+        status, 404,
+        "C-13 retired-route contract changed: expected 404, got {status}: {body}"
+    );
+    let parsed: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|e| panic!("C-13 retired-route contract returned non-JSON: {e}\n{body}"));
+    assert_eq!(
+        parsed
+            .pointer("/error/code")
+            .and_then(serde_json::Value::as_str),
+        Some("legacy_route_disabled"),
+        "C-13 retired-route contract changed: expected error.code=legacy_route_disabled, got: {body}"
+    );
+}
+
+/// C-13 session continuity — **excluded from L4**.
+///
+/// The current contract is exercised on both boots: a stable UUID is supplied
+/// through `X-UAR-Session-ID` to `POST /api/chat/completion`. The first boot
+/// creates live session state, but the context-stats handler returns 404 after
+/// reopening the same persistence path. This matches `SessionStore`'s
+/// in-process `HashMap` implementation and the runtime's explicit statement
+/// that the store is not durable. Fixing it requires runtime persistence work
+/// beyond the one-parameter source allowance for this change.
+#[tokio::test]
+#[serial]
+async fn excluded_c13_session_continuity_is_not_durable() {
+    let fixtures = FixtureSet::new()
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: "c13 first turn".to_string(),
+                has_tools: true,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content("c13 first reply".to_string()),
+        )
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: "c13 second turn".to_string(),
+                has_tools: true,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content("c13 second reply".to_string()),
+        );
+    let stub = start_stub_llm(fixtures).await;
+    let scratch = tempfile::tempdir().expect("C-13: create persistence scratch");
+    let persistence_path = scratch.path().join("surrealkv");
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let client = reqwest::Client::new();
+
+    let first = boot_test_server_process(
+        &stub.base_url,
+        MODEL,
+        ServiceNeeds::default(),
+        &persistence_path,
+    )
+    .await;
+    let first_response = client
+        .post(format!("{}/api/chat/completion", first.base_url))
+        .header("X-UAR-Session-ID", &session_id)
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": "c13 first turn"}],
+            "stream": false,
+        }))
+        .send()
+        .await
+        .expect("C-13: first chat request");
+    let first_status = first_response.status().as_u16();
+    let first_body = first_response.text().await.unwrap_or_default();
+    assert_real_handler("C-13", "/api/chat/completion", first_status, &first_body);
+    assert_eq!(first_status, 200, "C-13: first chat failed: {first_body}");
+    let stats_path = format!("/api/uar/sessions/{session_id}/context-stats");
+    let (before_status, before_body) = get_capability(&first.base_url, "C-13", &stats_path).await;
+    assert_eq!(
+        before_status, 200,
+        "C-13: live session was not observable before restart: {before_body}"
+    );
+    first.shutdown().await;
+
+    let restarted = boot_test_server_process(
+        &stub.base_url,
+        MODEL,
+        ServiceNeeds::default(),
+        &persistence_path,
+    )
+    .await;
+    let (after_status, after_body) = get_capability(&restarted.base_url, "C-13", &stats_path).await;
+    assert_eq!(
+        after_status, 404,
+        "C-13 exclusion is stale: session unexpectedly survived restart: {after_body}"
+    );
+
+    let second_response = client
+        .post(format!("{}/api/chat/completion", restarted.base_url))
+        .header("X-UAR-Session-ID", &session_id)
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": "c13 second turn"}],
+            "stream": false,
+        }))
+        .send()
+        .await
+        .expect("C-13: second chat request");
+    let second_status = second_response.status().as_u16();
+    let second_body = second_response.text().await.unwrap_or_default();
+    assert_real_handler("C-13", "/api/chat/completion", second_status, &second_body);
+    restarted.shutdown().await;
+    assert_eq!(
+        second_status, 200,
+        "C-13: current session contract failed after restart: {second_body}"
+    );
 }
 
 // ---------------------------------------------------------------------------
 // NOT MEASURABLE BY THIS INSTRUMENT — no HTTP surface exists
 //
-// C-16 governance, C-18 file processing, C-19 evals have **zero registered
-// routes** (verified: no `.route()` anywhere matches governance/file_processing/
-// eval). SPECIFICATION.md §3.1 classifies them as internal libraries whose user
-// decisions are made through settings keys rather than dedicated endpoints.
+// C-16 governance, C-18 file processing, and C-19 evals have no dedicated HTTP
+// route. Their cases below use the real surfaces that do exist: governance
+// middleware, the upload handler, and the public eval runner. Each still hits a
+// known real HTTP handler so the catch-all discriminator applies uniformly.
 //
-// There is deliberately no test here. Writing one would mean inventing a path,
-// watching the `/api/{*path}` catch-all answer, and recording an ABSENT verdict
-// for a capability that was never meant to have an endpoint — manufacturing a
-// finding. They are reported in the "not measurable" table instead.
-//
-// C-21 tenant isolation is also absent from this file: it is a security
-// property requiring two tenants and a cross-read attempt, which `#[serial]`
-// single-tenant cases structurally cannot express.
 // ---------------------------------------------------------------------------
+
+/// C-16 governance — **L2 wired**.
+///
+/// Supplying `X-Agent-Id` sends this request through the server's Cedar
+/// governance middleware before the settings handler. The repository's policy
+/// files are the fixture, so this proves the runtime wiring and default permit
+/// behavior but not an independently-authored authorization policy.
+#[tokio::test]
+#[serial]
+async fn l2_c16_governance_middleware() {
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let path = "/api/uar/settings";
+    let resp = reqwest::Client::new()
+        .get(format!("{}{}", server.base_url, path))
+        .header("Authorization", format!("Bearer {HARNESS_JWT_SECRET}"))
+        .header("X-Agent-Id", "conformance-c16-agent")
+        .send()
+        .await
+        .expect("C-16: governed settings request");
+    let status = resp.status().as_u16();
+    let body = resp.text().await.unwrap_or_default();
+    assert_real_handler("C-16", path, status, &body);
+    assert_eq!(
+        status, 200,
+        "C-16: default governance policy should permit the real settings handler: {body}"
+    );
+}
+
+/// C-18 file processing / document intelligence — **L3 exercised**.
+///
+/// A text multipart upload runs through the real upload handler and must return
+/// the exact extracted text independently of model output. Binary OCR is not
+/// claimed by this case.
+#[tokio::test]
+#[serial]
+async fn l3_c18_text_file_processing() {
+    const CONTENT: &str = "C-18 deterministic document text";
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let path = "/api/upload";
+    let form = reqwest::multipart::Form::new().part(
+        "file",
+        reqwest::multipart::Part::bytes(CONTENT.as_bytes().to_vec())
+            .file_name("c18-conformance.txt")
+            .mime_str("text/plain")
+            .expect("C-18: valid MIME type"),
+    );
+    let resp = reqwest::Client::new()
+        .post(format!("{}{}", server.base_url, path))
+        .header("Authorization", format!("Bearer {HARNESS_JWT_SECRET}"))
+        .multipart(form)
+        .send()
+        .await
+        .expect("C-18: upload request");
+    let status = resp.status().as_u16();
+    let body = resp.text().await.unwrap_or_default();
+    assert_real_handler("C-18", path, status, &body);
+    assert_eq!(status, 200, "C-18: text upload failed: {body}");
+    let parsed: serde_json::Value = serde_json::from_str(&body)
+        .unwrap_or_else(|e| panic!("C-18: upload response is not JSON: {e}\n{body}"));
+    let file = parsed
+        .pointer("/files/0")
+        .unwrap_or_else(|| panic!("C-18: upload response has no file: {body}"));
+    assert_eq!(
+        file.get("text_content").and_then(serde_json::Value::as_str),
+        Some(CONTENT),
+        "C-18: extracted text did not round-trip: {body}"
+    );
+
+    if let Some(id) = file.get("id").and_then(serde_json::Value::as_str) {
+        let _ = std::fs::remove_file(
+            std::env::temp_dir()
+                .join("uar-uploads")
+                .join(format!("{id}.txt")),
+        );
+    }
+}
+
+/// C-19 evals — **L2 wired**.
+///
+/// Loads the shipped suite, builds its declared scorers, and runs every case
+/// through the real eval runner. The completion provider is authored by this
+/// test, so the case establishes wiring and result production, not model
+/// evaluation correctness.
+#[tokio::test]
+#[serial]
+async fn l2_c19_eval_runner() {
+    use universal_agent_runtime::uar::eval::{Runner, build_scorers, load_suite};
+
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let (status, body) = get_capability(&server.base_url, "C-19", "/healthz").await;
+    assert_eq!(
+        status, 200,
+        "C-19 discriminator: live runtime health handler failed: {body}"
+    );
+
+    let suite_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("evals/starter.yaml");
+    let suite = load_suite(&suite_path)
+        .unwrap_or_else(|e| panic!("C-19: shipped starter suite did not load: {e}"));
+    assert!(!suite.cases.is_empty(), "C-19: starter suite has no cases");
+    assert!(
+        !suite.scorers.is_empty(),
+        "C-19: starter suite has no scorers"
+    );
+
+    let provider: std::sync::Arc<dyn universal_agent_runtime::uar::eval::CompletionProvider> =
+        std::sync::Arc::new(C19FixtureProvider);
+    let scorers = build_scorers(&suite, &provider);
+    let results = Runner
+        .run(&suite, &scorers, provider.as_ref(), Some("recorded/c19"))
+        .await;
+    assert_eq!(
+        results.len(),
+        suite.cases.len(),
+        "C-19: eval runner did not produce one result per case"
+    );
+    assert!(
+        results
+            .iter()
+            .all(|result| result.scores.len() == suite.scorers.len()),
+        "C-19: eval runner did not apply every declared scorer"
+    );
+}
+
+/// C-21 tenant isolation — **published exclusion**.
+///
+/// Target: L3 plus a negative cross-tenant read that is explicitly denied.
+/// The runtime's verified JWT claims carry a user id but no tenant id, and its
+/// only scoped HTTP surface is the credential list, which cannot address
+/// another tenant's resource. The harness cannot create two tenant identities
+/// or target the same resource across them; runs, memory, knowledge bases, and
+/// tools have no tenant-aware surface to substitute. This case only proves the
+/// real credential handler is mounted and guarded. It does not present that
+/// guard as tenant-isolation evidence, so C-21 remains a published exclusion.
+#[tokio::test]
+#[serial]
+async fn excluded_c21_tenant_isolation_no_cross_read_surface() {
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let path = "/api/uar/credentials";
+    let resp = reqwest::Client::new()
+        .get(format!("{}/api/uar/credentials", server.base_url))
+        .send()
+        .await
+        .expect("C-21: credential guard request");
+    let status = resp.status().as_u16();
+    let body = resp.text().await.unwrap_or_default();
+    assert_real_handler("C-21", path, status, &body);
+    assert_eq!(
+        status, 401,
+        "C-21 exclusion discriminator: real credential handler guard changed: {body}"
+    );
+}
+
+/// C-24 peer mesh — **published exclusion**.
+///
+/// Discovery, CRDT convergence, and capability-aware peer routing require two
+/// independently-addressable devices. This harness boots one loopback runtime
+/// with a throwaway database, so it cannot create the topology needed for the
+/// target. The live health request supplies the real-handler discriminator; it
+/// is not presented as evidence that any peer behavior occurred.
+#[tokio::test]
+#[serial]
+async fn excluded_c24_peer_mesh_requires_two_devices() {
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let (status, body) = get_capability(&server.base_url, "C-24", "/healthz").await;
+    assert_eq!(
+        status, 200,
+        "C-24 exclusion discriminator: live runtime health handler failed: {body}"
+    );
+}
+
+/// C-25 node decentralized identity — **published exclusion**.
+///
+/// Target: L3 deterministic `did:key` derivation checked against the W3C
+/// vector used by `frf-did`. UAR has no `frf-did` dependency or node-identity
+/// surface, so this runtime harness cannot reach that implementation. The
+/// source audit is executable below; the health request proves this is a live
+/// runtime result rather than a skipped test. When UAR consumes the crate, this
+/// exclusion deliberately fails and must be replaced by the vector assertion.
+#[tokio::test]
+#[serial]
+async fn excluded_c25_node_did_not_consumed_by_runtime() {
+    let manifest = include_str!("../../../Cargo.toml");
+    assert!(
+        !manifest.contains("frf-did") && !manifest.contains("frf_did"),
+        "C-25 exclusion is stale: UAR now declares an frf-did dependency"
+    );
+
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let (status, body) = get_capability(&server.base_url, "C-25", "/healthz").await;
+    assert_eq!(
+        status, 200,
+        "C-25 exclusion discriminator: live runtime health handler failed: {body}"
+    );
+}
+
+/// C-26 DID resolution and credential verification — **published exclusion**.
+///
+/// Target: L3 offline `did:key` resolution plus rejection of a credential from
+/// a different DID. UAR consumes neither `frf-did` nor `frf-wallet`, so no
+/// runtime call path can perform either half of that check. The manifest audit
+/// pins the blocking condition, and the health request is the required live
+/// real-handler discriminator.
+#[tokio::test]
+#[serial]
+async fn excluded_c26_did_resolution_and_vc_verification_not_consumed() {
+    let manifest = include_str!("../../../Cargo.toml");
+    assert!(
+        !manifest.contains("frf-did")
+            && !manifest.contains("frf_did")
+            && !manifest.contains("frf-wallet")
+            && !manifest.contains("frf_wallet"),
+        "C-26 exclusion is stale: UAR now declares an frf DID/wallet dependency"
+    );
+
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let (status, body) = get_capability(&server.base_url, "C-26", "/healthz").await;
+    assert_eq!(
+        status, 200,
+        "C-26 exclusion discriminator: live runtime health handler failed: {body}"
+    );
+}
+
+/// C-27 credential wallet and owner-to-node delegation — **published exclusion**.
+///
+/// Target: L3 with forged-issuer and expired-credential rejection. The
+/// `frf-wallet` implementation is not a UAR dependency and UAR exposes no
+/// wallet/delegation call path, so exercising those fail-closed cases through
+/// this runtime is structurally impossible. The manifest audit makes that
+/// blocker executable; the health request proves a real runtime handler ran.
+#[tokio::test]
+#[serial]
+async fn excluded_c27_wallet_not_consumed_by_runtime() {
+    let manifest = include_str!("../../../Cargo.toml");
+    assert!(
+        !manifest.contains("frf-wallet") && !manifest.contains("frf_wallet"),
+        "C-27 exclusion is stale: UAR now declares an frf-wallet dependency"
+    );
+
+    let stub = start_stub_llm(FixtureSet::new()).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
+    let (status, body) = get_capability(&server.base_url, "C-27", "/healthz").await;
+    assert_eq!(
+        status, 200,
+        "C-27 exclusion discriminator: live runtime health handler failed: {body}"
+    );
+}
 
 // ---------------------------------------------------------------------------
 // Predicted-ABSENT — these SHOULD fail to resolve

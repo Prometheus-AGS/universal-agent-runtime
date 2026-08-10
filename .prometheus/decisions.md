@@ -142,6 +142,25 @@ negatives at the cost of this one benign false positive.
 
 ---
 
+## 2026-08-09 — Routine verification is local; GitHub Actions are deployment-only
+
+**Decision.** GitHub Actions are reserved for deployment execution and
+deployment validation. Unit, integration, conformance, lint, format, and other
+routine development checks run locally before commit and push.
+
+**Rationale.** Remote development-test runs add queue and execution time without
+improving the evidence available from the same pinned local command. The
+conformance phase keeps its exact recorded/server-full/serial matrix, but its
+gate is a local non-zero/zero command result rather than a workflow result.
+
+**Consequence.** The `conformance-baseline-gate` contract, proposal, spec delta,
+and tasks were amended from CI red/green proof to local red/green proof. The
+non-deployment `spec-conformance.yml` workflow was removed and its active run
+cancelled. Verification records cite local command evidence rather than Actions
+run URLs.
+
+---
+
 ## 2026-08-09 — CI/CD validation is DEFERRED, not declined: gates land after the code, not before
 
 **Decision (operator).** The conformance matrix runs as a **local** gate for now.
@@ -205,3 +224,12 @@ wired into Actions:
 `conformance-baseline-gate` tasks 3.3, 4.1 and 4.2 keep their local form: record
 the red run and the green run in `verification.md` as local results. When CI is
 wired, those rows gain run URLs.
+
+---
+
+## 2026-08-09 — Supersession: deployment validation is the only GitHub Actions test scope
+
+The deployment-only operator decision above is final and supersedes the earlier
+idea that routine conformance checks might later move into Actions. Unit,
+integration, conformance, lint, and format checks remain local. GitHub Actions
+may validate deployments at deployment time; it does not run development tests.

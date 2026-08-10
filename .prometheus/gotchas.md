@@ -157,3 +157,20 @@ name works even when a description has been dropped.
 **Not fixed here.** That work is estate-wide and belongs in its own session.
 This entry is the measurement and the mechanism, recorded so the next person
 does not re-derive it from the wrong denominator.
+
+## 2026-08-10 — the sidecar HTTP token is not full runtime shutdown
+
+**Observed behavior.** Cancelling the caller-supplied HTTP
+`CancellationToken` stops the Axum listeners, but the `server-full` future can
+remain alive awaiting the A2A gRPC task. The existing SIGINT/SIGTERM handler is
+what cancels the separate runtime cancellation root.
+
+**Persistence consequence.** Awaiting only the HTTP serve loop is not enough to
+make an in-process SurrealKV cold reboot deterministic. SDK-owned handles can
+retain the directory lock after the HTTP listener has drained.
+
+**Working test pattern.** Use a dedicated child process for each boot. Cancel
+the caller token and prove HTTP has stopped, then send SIGTERM through the
+unchanged signal path and await normal child exit. Process exit releases any
+remaining SDK-owned file descriptors before reopening the same path. Do not
+claim that the HTTP token alone shuts down the full runtime.

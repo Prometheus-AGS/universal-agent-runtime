@@ -107,7 +107,7 @@ async fn request_span_layer(request: Request, next: Next) -> Response {
 
 /// Start the Axum server with the provided configuration manager.
 pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, None, None).await
+    start_server_with_listener(config_manager, None, None, None).await
 }
 
 #[expect(clippy::expect_used, reason = "init-time fatal configuration failure")]
@@ -115,6 +115,7 @@ async fn start_server_with_listener(
     config_manager: Arc<ConfigManager>,
     listener: Option<tokio::net::TcpListener>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
+    http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
     // Install the Prometheus recorder before anything can record a metric.
     // `metrics::with_recorder` resolves the global recorder on every macro
@@ -1297,6 +1298,7 @@ async fn start_server_with_listener(
         config.server.shutdown_timeout_secs,
         ingestion_pool_shared,
         run_cancellation_root,
+        http_shutdown,
     )
     .await;
 
@@ -1358,8 +1360,9 @@ pub async fn start_server_sidecar(
     config_manager: Arc<ConfigManager>,
     listener: tokio::net::TcpListener,
     ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
+    http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, Some(listener), Some(ready)).await
+    start_server_with_listener(config_manager, Some(listener), Some(ready), http_shutdown).await
 }
 
 async fn serve_on_listener(
@@ -1369,6 +1372,7 @@ async fn serve_on_listener(
     shutdown_timeout_secs: u64,
     ingestion_pool_shared: Option<Arc<IngestionWorkerPool>>,
     run_cancellation_root: tokio_util::sync::CancellationToken,
+    http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
     let addr = listener.local_addr()?;
     let shutdown_timeout = Duration::from_secs(shutdown_timeout_secs);
@@ -1383,7 +1387,7 @@ async fn serve_on_listener(
     // A `CancellationToken` (rather than a one-shot channel) fans the
     // graceful-shutdown trigger out to BOTH the primary and the optional
     // companion serve loops from the single signal-handler task.
-    let http_shutdown = tokio_util::sync::CancellationToken::new();
+    let http_shutdown = http_shutdown.unwrap_or_else(tokio_util::sync::CancellationToken::new);
 
     // Spawn the signal handler: wait for SIGINT/SIGTERM, then:
     //   1. Shut down the ingestion worker pool (drains with timeout, detaches wedges).

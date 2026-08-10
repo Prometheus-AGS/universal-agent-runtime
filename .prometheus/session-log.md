@@ -305,3 +305,22 @@ still PENDING and no supply-chain artifacts on disk. See the RESOLVED entry in
 constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imports
 5,041 words of it whenever that subtree is read. Fix belongs upstream. See
 `.prometheus/gotchas.md`.
+
+## 2026-08-10 — UAR spec-conformance phase completion
+
+- Completed the three ordered OpenSpec changes on
+  `feat/spec-conformance-2026-08`; every task is checked and each change passes
+  `openspec validate`.
+- Kept routine verification local. The contract-pinned recorded-backend,
+  `server-full`, serial capability matrix exited 0 with 29 passing cases in
+  288.73s; `cargo fmt --all -- --check` and the locked all-targets check also
+  exited 0.
+- Upgraded C-12 from shape-only evidence to an L4 cold-process restart over a
+  reused SurrealKV path. Its different-path negative control exited 101 with
+  the intended 404-versus-200 assertion failure.
+- Published C-13 as a durability exclusion: the current
+  `X-UAR-Session-ID` chat contract works, but the in-memory `SessionStore` does
+  not survive a cold restart. No runtime source beyond the additive
+  `start_server_sidecar` shutdown-token seam was changed.
+- The verification record remains capability-scoped; it does not assert a
+  runtime-level conformance verdict.

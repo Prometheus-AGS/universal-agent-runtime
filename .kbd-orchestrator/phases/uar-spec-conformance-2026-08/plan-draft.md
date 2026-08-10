@@ -29,8 +29,8 @@ Rejected by the judge, and I accept the rejection:
 
 - *"`L4 unverifiable` is a deliverable failure."* — No. The goal is an honest
   measurement, not a pass count; an honest "unverifiable" is a success.
-- *"Someone could re-add `continue-on-error` later."* — True of every CI gate;
-  an argument for code review, not a plan defect.
+- *"Someone could omit the local command later."* — True of every manual gate;
+  the durable verification record makes the omission visible.
 
 Added after review, from the baseline the reviewers did not have:
 
@@ -47,10 +47,11 @@ must send a token or assert 401 as the contract; `shape_only_c13_sessions` must
 assert the documented retirement (`legacy_route_disabled`) rather than 200. Exit:
 20/20 pass, and each corrected case states which contract it now asserts.
 
-**C-02 · Blocking CI gate.** A dedicated job running `capability_cases` with
-`continue-on-error: false`. Not inside `live-integration.yml`, which still
-carries two `continue-on-error: true` steps. Exit: a deliberately broken case
-turns the job red **and the log names that specific case**.
+**C-02 · Mandatory local gate.** Run the pinned `capability_cases` command
+locally before completion and push. GitHub Actions are reserved for deployment
+and deployment validation. Exit: a deliberately broken case exits non-zero
+**and the local output names that specific case**; reverting it produces a
+green local result. Both results are recorded.
 
 **C-03 · Close the 8-capability hole**, with a target evidence level per
 capability:
