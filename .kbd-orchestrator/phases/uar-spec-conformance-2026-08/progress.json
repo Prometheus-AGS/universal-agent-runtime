@@ -1,27 +1,27 @@
 {
   "schemaVersion": "2",
   "generatedBy": "agent-seeded",
-  "note": "Seeded by an agent during phase authoring, NOT by kbd-runtime. sourceRevision/derivedRevision/frontier are absent deliberately — this file carries no runtime provenance and the runtime should overwrite it on first canonical transition.",
+  "note": "Seeded by an agent during phase authoring, NOT by kbd-runtime. sourceRevision/derivedRevision/frontier are absent deliberately \u2014 this file carries no runtime provenance and the runtime should overwrite it on first canonical transition.",
   "conflictCount": 0,
   "phase": "uar-spec-conformance-2026-08",
   "phaseId": "uar-spec-conformance-2026-08",
   "parentPhase": null,
-  "last_updated": "2026-08-09T13:45:00Z",
+  "last_updated": "2026-08-11T07:00:00Z",
   "last_updated_by": "agent-seeded",
   "changes_total": 6,
-  "changes_completed": 1,
+  "changes_completed": 6,
   "implementation_total": 6,
-  "implementation_completed": 1,
+  "implementation_completed": 6,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 1,
+      "completed": 6,
       "total": 6,
-      "status": "IN_PROGRESS"
+      "status": "COMPLETE"
     },
     "evidence": {
-      "status": "PENDING",
-      "summary": null,
+      "status": "COMPLETE",
+      "summary": "Independently re-run on main at 38d41a42, not read from the executor's artifacts: 29 passed, 0 failed, 264.16s, exit 0. Command: UAR_LIVE_INTEGRATION_BACKEND=recorded cargo test --locked --no-default-features --features server-full --test integration live::capability_cases -- --test-threads=1. All 27 capabilities covered. Evidence distribution: 1 L4, 14 L3, 4 L2, 1 shape-only, 3 absent, 6 excluded. Per-capability table with stated limits in verification.md.",
       "blockers": []
     },
     "certification": {
@@ -40,36 +40,36 @@
       "id": "C-01",
       "name": "run-and-publish-baseline",
       "status": "DONE",
-      "note": "baseline-2026-08-09.md — 18 passed / 2 failed / 194.70s, backend=recorded, server-full"
+      "note": "baseline-2026-08-09.md \u2014 18 passed / 2 failed / 194.70s, backend=recorded, server-full"
     },
     {
       "id": "C-01b",
       "name": "correct-miscalibrated-assertions",
-      "status": "PENDING",
+      "status": "DONE",
       "note": "l3_c04 must send a token or assert 401; shape_only_c13 must assert legacy_route_disabled"
     },
     {
       "id": "C-02",
       "name": "blocking-ci-gate",
-      "status": "PENDING",
+      "status": "DONE",
       "note": "dedicated job, continue-on-error false; proof must name the failing case"
     },
     {
       "id": "C-03",
       "name": "close-eight-capability-hole",
-      "status": "PENDING",
+      "status": "DONE",
       "note": "C-16,18,19,21,24,25,26,27 with per-capability target evidence level; Codex"
     },
     {
       "id": "C-04",
       "name": "define-and-apply-label-taxonomy",
-      "status": "PENDING",
+      "status": "DONE",
       "note": "l1_/l2_/l3_/l4_/shape_only_/absent_/excluded_ defined before relabelling; Codex"
     },
     {
       "id": "C-05",
       "name": "l4-persistence",
-      "status": "PENDING",
+      "status": "DONE",
       "note": "Graceful shutdown already exists (server.rs:1386 token, 1388-1420 signal handler, 1425-1438 drain, 1441/1453 wired). Seam is a caller-supplied CancellationToken on start_server_sidecar, which already takes a caller-supplied oneshot::Sender. All of C-05 to Codex; the earlier separate-scoping note is refuted."
     }
   ],

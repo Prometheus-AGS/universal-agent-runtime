@@ -233,3 +233,70 @@ The deployment-only operator decision above is final and supersedes the earlier
 idea that routine conformance checks might later move into Actions. Unit,
 integration, conformance, lint, and format checks remain local. GitHub Actions
 may validate deployments at deployment time; it does not run development tests.
+
+---
+
+## 2026-08-11 — PAGS-SPEC-PID-001 changes the scope of uar-1-0-readiness
+
+**Decision.** `uar-1-0-readiness` scopes to **GAP-02, GAP-03, GAP-05, and
+widening `TokenVerifier`**. It does **not** make UAR depend on `frf-did` or
+`frf-wallet`.
+
+**Mechanism.** A first draft of this phase proposed making UAR consume those two
+crates so that the C-25/C-26/C-27 exclusions would collapse into real tests.
+PAGS-SPEC-PID-001 (Prometheus ID, Draft v0.1) supersedes both: §0 lists it as
+superseding *"ad-hoc `did:key` issuance in `frf-wallet`"*, and §2.2 marks
+`pid-wallet` as *"Supersedes `frf-wallet` issuance."* Adding a dependency on a
+layer already scheduled for replacement buys a test result and a migration.
+
+Instead, UAR widens `TokenVerifier` now to the PID FR-5.1 shape — one trait, a
+`Presented` enum with `Jwks` / `SdJwtVp` / `DidAuth` variants, returning a single
+`Principal`. PID §6.1 makes the argument itself: *"Doing this before there are
+consumers costs nothing. Doing it after means every downstream site branches on
+auth lane."* That converts C-25/26/27 from "UAR lacks a dependency" into
+"awaiting PID P4" — a scheduled dependency rather than an open gap.
+
+**What stays UAR's own work.** PID touches neither:
+
+| Gap | Status under PID |
+|---|---|
+| GAP-02 no JWKS/RS256 verifier | PID §6.1 keeps the RS256 lane **unchanged** — *"San Saba must not need DHT resolution to log a user in."* UAR should close this now |
+| GAP-03 A2A store not tenant-partitioned | Untouched by PID |
+| GAP-05 builtins not registered on embedded | Untouched by PID |
+
+**Stakes.** PID §8 sequences UAR's GAP-02 as unblocked by its own P4, and P4 sits
+behind P0's three blocking decisions — one of which (D-3, entitlement issuance
+topology) is a business decision involving an external party. **If UAR waits for
+PID to close GAP-02, it waits on someone else's negotiation.** Since PID
+explicitly preserves the RS256/JWKS lane, the two are designed to coexist, and
+UAR should ship a real JWKS verifier independently.
+
+**What reopens this.** When PID reaches P4 and `pid-verifier` exists, UAR
+consumes it as the `SdJwtVp` arm of the already-widened trait. The six
+conformance exclusions collapse then, not before.
+
+---
+
+## 2026-08-11 — Cross-harness handoff protocol recorded
+
+**Decision.** The Claude-Code-authors / Codex-executes split used by
+`uar-spec-conformance-2026-08` is written down at
+`.kbd-orchestrator/HARNESS-HANDOFF.md` and applies to `uar-1-0-readiness`.
+
+**Mechanism.** The boundary is the spec handoff: everything the executor needs
+must be on disk and in git, because it does not share the authoring
+conversation. `EXECUTION-CONTRACT.md` is the load-bearing artifact — adversarial
+review of that phase returned INSUFFICIENT on six findings and **every one was
+about autonomous executability rather than correctness** (implicit inheritance
+between changes, a dangling cross-change reference, ambiguous requirement scope,
+no verification-record format, no precedence rule, an undefined satisfaction
+boundary).
+
+**Stakes.** Three failure modes are recorded because each cost real time:
+`progress.json` went stale for a day while neither harness owned it; a first
+check reported "nothing from Codex is on main" because local `main` was stale
+rather than because the work was missing; and the executor made two scope changes
+(five extra exclusions, a repo-wide CI prohibition in a measurement-phase spec
+delta) that were defensible but unreviewed. **The executor is not obliged to flag
+its own scope changes, so diffing the merged spec against the reviewed spec
+belongs on the authoring side.**
