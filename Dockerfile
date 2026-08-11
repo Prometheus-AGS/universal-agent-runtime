@@ -220,7 +220,7 @@ RUN --mount=type=secret,id=github_token \
       git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"; \
     fi \
     && CARGO_NET_GIT_FETCH_WITH_CLI=true cargo +nightly build --release \
-        --features "server-full" \
+        --features "server-full,postgres-backend" \
         --bin universal-agent-runtime
 # (The token-bearing gitconfig lives only in this throwaway builder stage — the
 #  runtime image copies only /out/*, so the credential never ships.)
