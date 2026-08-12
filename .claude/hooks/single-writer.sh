@@ -16,13 +16,57 @@ me="${CLAUDE_SESSION_ID:-pid-$PPID}"
 now="$(date +%s)"
 stale_after=14400
 
+# Only guard writes to the tree this hook protects.
+#
+# This check did not exist before 2026-08-12. Without it the hook fired on EVERY
+# Write/Edit — including files in ~/.claude/plans/ that have nothing to do with
+# this repo — so a whole planning session was spent reading a collision warning
+# about a tree it was not touching. A guard that cries wolf on unrelated writes
+# teaches people to ignore it, which is worse than having no guard.
+target="$(
+  cat 2>/dev/null | python3 -c 'import json,sys
+try:
+    d = json.load(sys.stdin)
+    print(d.get("tool_input", {}).get("file_path", ""))
+except Exception:
+    print("")
+' 2>/dev/null || true
+)"
+if [[ -n "$target" ]]; then
+  case "$target" in
+    "$root"/*) : ;;               # inside the guarded tree — check the lock
+    *) exit 0 ;;                  # outside it — not this hook's business
+  esac
+fi
+
 mkdir -p "$(dirname "$lock")" 2>/dev/null || exit 0
+
+# A lock held by a dead process is not contention, it is litter.
+#
+# The 4-hour staleness window is a blunt proxy for "is anyone still there".
+# When the holder encodes a PID we can answer that exactly, so a crashed session
+# no longer blocks the next one for four hours. Reclaiming is logged, never
+# silent: a lock that vanishes without explanation is its own confusion.
+_holder_alive() { # <holder-token>
+  local h="$1" pid
+  case "$h" in
+    pid-*) pid="${h#pid-}" ;;
+    *) return 0 ;;                # non-PID holder (session id) — cannot probe
+  esac
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 0
+  kill -0 "$pid" 2>/dev/null
+}
 
 if [[ -f "$lock" ]]; then
   holder="$(head -1 "$lock" 2>/dev/null || true)"
   since="$(sed -n '2p' "$lock" 2>/dev/null || echo 0)"
   [[ "$since" =~ ^[0-9]+$ ]] || since=0
   age=$(( now - since ))
+
+  if [[ -n "$holder" && "$holder" != "$me" ]] && ! _holder_alive "$holder"; then
+    printf 'single-writer: reclaiming lock from dead holder %s (held %ss)\n' "$holder" "$age" >&2
+    holder=""
+  fi
 
   if [[ -n "$holder" && "$holder" != "$me" && "$age" -lt "$stale_after" ]]; then
     cat >&2 <<EOF

@@ -1,0 +1,1 @@
+../../../.kbd-orchestrator/phases/uar-1-0-readiness/EXECUTION-CONTRACT.md

@@ -20,15 +20,16 @@ error.
 This is not optional.** It carries the execution order, the precedence rule
 against an existing change, the verbatim verification command, what counts as
 satisfied, the permitted surface (per track), and eleven stop conditions. It is
-symlinked into all five change directories.
+symlinked into all six change directories.
 
-Execute these five changes, committing after each. They form **two tracks**.
+Execute these six changes, committing after each. They form **two tracks**.
 Order within a track is load-bearing; the tracks share no files.
 
 **Track A — identity and tenancy (serial):**
 
-1. `openspec/changes/gap-02-jwks-token-verifier`
-2. `openspec/changes/gap-03-a2a-tenant-partitioning`
+1. `openspec/changes/fix-jwt-crypto-provider`  ← **RUNS FIRST**
+2. `openspec/changes/gap-02-jwks-token-verifier`
+3. `openspec/changes/gap-03-a2a-tenant-partitioning`
 
 **Track B — skills (serial):**
 
@@ -53,7 +54,7 @@ authentication defect.
 - the pinned command yields **≥ 29 passing, 0 failed** (no regression against the
   `38d41a42` baseline);
 - the C-21 exclusion is replaced by a real two-tenant denial test;
-- `openspec validate <change> --strict` passes for all five;
+- `openspec validate <change> --strict` passes for all six;
 - a `verification.md` per change in the contract's row format;
 - a fresh embedded database yields built-in skills; a scoped disable survives
   restart and takes effect live; a config-removed skill is tombstoned and

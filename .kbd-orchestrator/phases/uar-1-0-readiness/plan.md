@@ -4,13 +4,14 @@ Authored 2026-08-12 in the Claude Code harness. Execution and reflection belong
 to Codex per `.kbd-orchestrator/HARNESS-HANDOFF.md`.
 
 **Baseline:** `origin/main` at `88c38015`.
-**Contract:** `EXECUTION-CONTRACT.md` in this directory, symlinked into all five
+**Contract:** `EXECUTION-CONTRACT.md` in this directory, symlinked into all six
 changes. It is not optional reading.
 
 ## Scope, as delivered by the spec stage
 
 | # | Change | Capability | Validates |
 |---|---|---|---|
+| A0 | `fix-jwt-crypto-provider` | `jwt-hardening` (ADDED) | strict ✅ |
 | A1 | `gap-02-jwks-token-verifier` | `jwt-hardening` (ADDED) | strict ✅ |
 | A2 | `gap-03-a2a-tenant-partitioning` | `tenant-isolation` (new) | strict ✅ |
 | B3 | `skill-builtins-on-embedded` | `skill-builtin-availability` (new) | strict ✅ |
@@ -25,7 +26,7 @@ three ways (see the contract's retraction section).
 ## Sequence
 
 ```
-Track A   gap-02 ──────────> gap-03
+Track A   fix-jwt-crypto ─> gap-02 ─────────> gap-03
           (verifier, JWKS)   (tenant claim, partition, convert C-21)
 
 Track B   skill-builtins ──> skill-scoped ──> skill-config
@@ -45,14 +46,14 @@ Serial within each track; the tracks share no files and may run concurrently.
 
 The phase is done when **all** hold:
 
-1. All five changes' tasks complete, each assertion **observed** to pass.
+1. All six changes' tasks complete, each assertion **observed** to pass.
 2. Every fail-closed assertion has a **negative control observed to fail**, with
    command and output recorded.
 3. The pinned command produces **≥ 29 passing cases, 0 failed** — no regression
    against the `38d41a42` baseline.
 4. `excluded_c21_tenant_isolation_no_cross_read_surface` no longer exists as an
    exclusion; a real two-tenant denial test stands in its place.
-5. `openspec validate <change> --strict` passes for all five after execution.
+5. `openspec validate <change> --strict` passes for all six after execution.
 6. A `verification.md` per change in the contract's row format.
 7. A fresh embedded database yields built-in skills; a scoped disable survives
    restart and takes effect live; a config-removed skill is tombstoned and

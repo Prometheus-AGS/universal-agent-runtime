@@ -1,6 +1,6 @@
 # Execution contract — uar-1-0-readiness
 
-**Read this before executing any of the five changes.** It resolves the cross-change
+**Read this before executing any of the six changes.** It resolves the cross-change
 questions an autonomous executor cannot safely infer. The prior phase's
 adversarial review returned INSUFFICIENT on six findings, and **every one was
 about autonomous executability rather than correctness** — an executor that
@@ -12,10 +12,21 @@ Authored in the Claude Code harness. Execution and reflection belong to Codex pe
 
 ## The set, and its order
 
-Five changes in **two independent tracks**. Within a track the order is
+Six changes in **two independent tracks**. Within a track the order is
 load-bearing; the tracks share no files and may run concurrently.
 
 ### Track A — identity and tenancy (strictly serial)
+
+0. **`fix-jwt-crypto-provider`** — **RUNS FIRST, BLOCKS EVERYTHING IN TRACK A.**
+   `Cargo.toml:393` sets `jsonwebtoken = "11.0.0"` with default features, which
+   enable neither `rust_crypto` nor `aws_lc_rs`. `CryptoProvider::from_crate_features()`
+   therefore returns a struct whose `signer_factory`/`verifier_factory` are
+   `panic!`, and nothing in `src/` calls `install_default`. Every JWT sign and
+   verify panics today — `middleware.rs:48`, `api_keys.rs:265`.
+   A1 task 1.2 requires the existing HS256 tests to pass unchanged; they cannot
+   until this lands. **That precondition is correct and must not be amended** —
+   it detected a real defect. Added 2026-08-12 after an executor correctly
+   halted rather than working around it.
 
 1. **`gap-02-jwks-token-verifier`** — `TokenVerifier` abstraction, JWKS lane,
    enforce `jwt_required` at the point of use, enforce `iss`/`aud`.
@@ -117,7 +128,7 @@ One row per requirement, in the change's own `verification.md`:
 | requirement | assertion observed | negative control observed | command | result |
 ```
 
-Rows from all five changes must be comparable, so use this format in every one.
+Rows from all six changes must be comparable, so use this format in every one.
 Paste the actual command and the actual output. **Do not describe what a test "should"
 produce.**
 

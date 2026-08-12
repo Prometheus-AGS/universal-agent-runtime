@@ -6,17 +6,17 @@
   "phase": "uar-1-0-readiness",
   "phaseId": "uar-1-0-readiness",
   "parentPhase": null,
-  "last_updated": "2026-08-12T11:30:00Z",
+  "last_updated": "2026-08-12T14:55:00Z",
   "last_updated_by": "agent-seeded",
-  "changes_total": 5,
+  "changes_total": 6,
   "changes_completed": 0,
-  "implementation_total": 5,
+  "implementation_total": 6,
   "implementation_completed": 0,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
       "completed": 0,
-      "total": 5,
+      "total": 6,
       "status": "NOT_STARTED"
     },
     "evidence": {
@@ -59,6 +59,13 @@
   },
   "changes": [
     {
+      "id": "A0",
+      "track": "A",
+      "name": "fix-jwt-crypto-provider",
+      "status": "TODO",
+      "note": "jsonwebtoken 11 default features enable no crypto backend; every JWT sign/verify panics. BLOCKS all of Track A. Added 2026-08-12 after an executor correctly halted on it."
+    },
+    {
       "id": "A1",
       "track": "A",
       "name": "gap-02-jwks-token-verifier",
@@ -97,6 +104,7 @@
   "children": [],
   "tracks": {
     "A": [
+      "A0",
       "A1",
       "A2"
     ],
