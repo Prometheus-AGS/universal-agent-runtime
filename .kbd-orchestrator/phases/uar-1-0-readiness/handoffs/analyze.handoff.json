@@ -1,0 +1,17 @@
+{
+  "stage": "analyze",
+  "phase": "uar-1-0-readiness",
+  "completedAt": "2026-08-11T09:45:00Z",
+  "harness": "claude-code",
+  "generatedBy": "agent-seeded",
+  "summary": "Analyze complete. Headline: GAP-02 is an adopt, not a build - jsonwebtoken 11 is already a direct dependency (Cargo.toml:393) and ships a complete jwk module (JwkSet, find-by-kid, DecodingKey::from_jwk), verified by reading crate source on disk. reqwest 0.12 with rustls-tls-native-roots already covers the HTTPS fetch; no new dependency and no feature change. Dedicated JWKS wrapper crates rejected: none present, all wrap the same primitives, and adding a dependency on the auth path to avoid ~150 lines of fetch-and-cache is a poor trade. Everything else is build (pure wiring or field/key-type changes). Execution order GAP-02 -> GAP-03a -> GAP-03b is load-bearing; GAP-05 is file-disjoint and may run in parallel. Four risks recorded, R-4 sharpest: Validation::default() checks neither iss nor aud, so 'signature verifies' must not be read as 'token is valid'.",
+  "artifacts": ["analysis.md", "library-candidates.json"],
+  "openQuestions": ["OQ-1", "OQ-2"],
+  "warnings": [
+    "R-1 OQ-2 gates GAP-03a only; GAP-02 and GAP-05 can proceed without it",
+    "R-2 the middleware.rs:85 bypass sits inside GAP-02's blast radius",
+    "R-3 every fail-closed assertion needs a paired negative control proving it can fail",
+    "R-4 Validation::default() enforces neither issuer nor audience"
+  ],
+  "nextStage": "spec"
+}

@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "phase": "uar-1-0-readiness",
+  "completedAt": "2026-08-11T09:30:00Z",
+  "harness": "claude-code",
+  "generatedBy": "agent-seeded",
+  "summary": "Assess complete. All three gaps grounded at file+line before exit criteria were written. Grounding corrected four SPECIFICATION.md citations and split GAP-03 into an ordered pair: no tenant concept exists in src/ (tenant_id absent everywhere; UserClaims is {sub,name,roles,exp}), so partitioning must be preceded by introducing the claim, which itself depends on GAP-02's verifier. Execution order is therefore load-bearing. Also surfaced an unrecorded live defect: jwt_required hardcoded false at middleware.rs:85, making both the absent-token and invalid-token branches fall through to anonymous. Two open questions for the operator (OQ-1 fix-the-bypass-here, OQ-2 tenant claim provenance); neither blocks analyze.",
+  "artifacts": ["goals.md", "assessment.md"],
+  "openQuestions": ["OQ-1", "OQ-2"],
+  "nextStage": "analyze"
+}

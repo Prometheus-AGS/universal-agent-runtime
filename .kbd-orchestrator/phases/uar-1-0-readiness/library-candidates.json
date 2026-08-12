@@ -1,0 +1,88 @@
+{
+  "phase": "uar-1-0-readiness",
+  "generatedBy": "agent-seeded",
+  "generatedAt": "2026-08-11T09:45:00Z",
+  "tiersReached": [1, 3],
+  "budgetExhausted": false,
+  "note": "Tier 4 web comparison never reached; Tier 1/3 resolved the only contested question (JWKS crate selection). All verdicts verified by reading crate source on disk, not from training-era memory.",
+  "candidates": [
+    {
+      "gap": "GAP-02",
+      "need": "JWKS document parsing, kid selection, JWK to verification key",
+      "verdict": "adopt",
+      "selection": "jsonwebtoken",
+      "version": "11.0.0",
+      "alreadyPresent": true,
+      "manifestSite": "Cargo.toml:393",
+      "evidence": [
+        "jwk::JwkSet at jwk.rs:672",
+        "JwkSet::find(&str) -> Option<&Jwk> at jwk.rs:678",
+        "DecodingKey::from_jwk at decoding.rs:213",
+        "from_rsa_components decoding.rs:121, from_ed_components decoding.rs:204",
+        "Algorithm RS256/ES256/EdDSA at algorithms.rs:53-72"
+      ],
+      "rejected": [
+        {"name": "jwt-authorizer", "reason": "not in tree; duplicates reqwest+cache stack we already carry; wraps the same jsonwebtoken primitives"},
+        {"name": "alcoholic_jwt", "reason": "not in tree; same wrapping argument"},
+        {"name": "jwks", "reason": "not in tree; adds a dependency on the authentication path to avoid ~150 lines of fetch-and-cache"}
+      ]
+    },
+    {
+      "gap": "GAP-02",
+      "need": "HTTPS fetch of the JWKS document",
+      "verdict": "adopt",
+      "selection": "reqwest",
+      "version": "0.12",
+      "alreadyPresent": true,
+      "manifestSite": "Cargo.toml:268-274",
+      "evidence": ["default-features=false with rustls-tls-native-roots enabled; outbound HTTPS works today; no feature change required"]
+    },
+    {
+      "gap": "GAP-02",
+      "need": "key cache with refresh-on-unknown-kid",
+      "verdict": "build",
+      "selection": null,
+      "rationale": "No moka/dashmap in tree. RwLock<HashMap<String, DecodingKey>> plus a refresh timestamp matches the concurrency primitive already used in task_store.rs:17-21 and suffices for a key set that turns over on the order of days."
+    },
+    {
+      "gap": "GAP-03a",
+      "need": "tenant_id claim on UserClaims",
+      "verdict": "build",
+      "selection": null,
+      "rationale": "Field addition at claims.rs:4-9. No library involved.",
+      "blockedBy": "OQ-2"
+    },
+    {
+      "gap": "GAP-03b",
+      "need": "tenant-partition tasks and context_index",
+      "verdict": "build",
+      "selection": null,
+      "rationale": "Key-type change at task_store.rs:17-21. No library involved.",
+      "blockedBy": "GAP-03a"
+    },
+    {
+      "gap": "GAP-05",
+      "need": "register builtins on the embedded path",
+      "verdict": "build",
+      "selection": null,
+      "rationale": "Wiring only: call the two existing registration functions (server.rs:448, server.rs:511) from the SDK path at sdks/rust/src/runtime.rs:120-123."
+    },
+    {
+      "gap": "FR-5.1",
+      "need": "TokenVerifier trait with Presented enum",
+      "verdict": "build",
+      "selection": null,
+      "rationale": "No TokenVerifier exists anywhere in src/. The trait IS the contract; PID owns future SdJwtVp/DidAuth adapters."
+    }
+  ],
+  "executionOrder": {
+    "loadBearing": true,
+    "chain": ["GAP-02", "GAP-03a", "GAP-03b"],
+    "parallel": ["GAP-05"],
+    "rationale": "Populating tenant_id from an unverified token is worse than having no tenant field, because downstream code would treat an attacker-controlled string as an isolation boundary. GAP-05 shares no files with GAP-02/03."
+  },
+  "openQuestions": [
+    {"id": "OQ-1", "question": "Fold the hardcoded jwt_required:false fix (middleware.rs:85) into this phase?", "gates": [], "recommendation": "yes"},
+    {"id": "OQ-2", "question": "Is tenant_id minted by UAR or supplied by flint-gate?", "gates": ["GAP-03a", "GAP-03b"], "recommendation": null}
+  ]
+}

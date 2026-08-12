@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "agent-seeded",
+  "note": "Seeded by an agent during phase authoring, NOT by kbd-runtime. sourceRevision/derivedRevision/frontier are absent deliberately - this file carries no runtime provenance and the runtime should overwrite it on first canonical transition.",
+  "conflictCount": 0,
+  "phase": "uar-1-0-readiness",
+  "phaseId": "uar-1-0-readiness",
+  "parentPhase": null,
+  "last_updated": "2026-08-12T11:30:00Z",
+  "last_updated_by": "agent-seeded",
+  "changes_total": 5,
+  "changes_completed": 0,
+  "implementation_total": 5,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 5,
+      "status": "NOT_STARTED"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "stages": {
+    "assess": "COMPLETE",
+    "analyze": "COMPLETE",
+    "spec": "COMPLETE",
+    "plan": "COMPLETE",
+    "execute": "PENDING",
+    "reflect": "PENDING"
+  },
+  "harnessSplit": {
+    "claude-code": [
+      "assess",
+      "analyze",
+      "spec",
+      "plan",
+      "verify"
+    ],
+    "codex": [
+      "execute",
+      "reflect"
+    ],
+    "protocol": ".kbd-orchestrator/HARNESS-HANDOFF.md"
+  },
+  "changes": [
+    {
+      "id": "A1",
+      "track": "A",
+      "name": "gap-02-jwks-token-verifier",
+      "status": "TODO",
+      "note": "TokenVerifier trait + JWKS lane + enforce jwt_required + iss/aud."
+    },
+    {
+      "id": "A2",
+      "track": "A",
+      "name": "gap-03-a2a-tenant-partitioning",
+      "status": "TODO",
+      "note": "tenant_id claim, partition tasks AND context_index, convert C-21 exclusion. Depends on A1."
+    },
+    {
+      "id": "B3",
+      "track": "B",
+      "name": "skill-builtins-on-embedded",
+      "status": "TODO",
+      "note": "Register builtins on embedded path. Only change permitted to edit SPECIFICATION.md (line 445 only)."
+    },
+    {
+      "id": "B4",
+      "track": "B",
+      "name": "skill-scoped-governance",
+      "status": "TODO",
+      "note": "Durable global/agent/conversation enable-disable, live effect, origin exposed. Supersedes fix-skills-scope-semantics. Depends on B3."
+    },
+    {
+      "id": "B5",
+      "track": "B",
+      "name": "skill-config-reconciliation",
+      "status": "TODO",
+      "note": "Config merges into DB at startup; tombstone-with-restore, never hard delete. Depends on B4."
+    }
+  ],
+  "children": [],
+  "tracks": {
+    "A": [
+      "A1",
+      "A2"
+    ],
+    "B": [
+      "B3",
+      "B4",
+      "B5"
+    ],
+    "note": "Serial within a track; tracks are file-disjoint and may run concurrently."
+  }
+}

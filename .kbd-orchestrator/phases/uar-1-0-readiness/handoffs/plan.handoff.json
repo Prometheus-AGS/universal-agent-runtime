@@ -1,0 +1,46 @@
+{
+  "stage": "plan",
+  "phase": "uar-1-0-readiness",
+  "completedAt": "2026-08-12T11:30:00Z",
+  "harness": "claude-code",
+  "generatedBy": "agent-seeded",
+  "summary": "Plan and EXECUTION-CONTRACT.md written, then WIDENED 2026-08-12 on operator direction from 2 changes to 5 across two file-disjoint tracks. Track A (identity/tenancy): gap-02 then gap-03, strictly serial. Track B (skills): skill-builtins-on-embedded, skill-scoped-governance, skill-config-reconciliation, strictly serial. Track B replaces the held GAP-05: grounding showed SPECIFICATION.md:445 wrong in three ways and disproved the contract's own earlier claim that builtins are in-memory only - commit fdd69a2f made register persist via db.save_skill (registry.rs:69-99). The real defect is that embedded.rs never calls the builtin loader, so a FRESH embedded database gets no builtins. Operator decisions recorded: builtins durable and non-deletable; all skills configurable at global/agent/conversation with live effect; config reconciles into DB at startup; removal is tombstone-with-restore, never hard delete. skill-scoped-governance supersedes fix-skills-scope-semantics and adopts its skill-governance capability name. provider_id (fs-skills/builtin/api/wasm) is the existing discriminator that makes reconciliation safe - no schema change needed. All five changes validate --strict.",
+  "artifacts": [
+    "plan.md",
+    "EXECUTION-CONTRACT.md"
+  ],
+  "executionOrder": [
+    "gap-02-jwks-token-verifier",
+    "gap-03-a2a-tenant-partitioning",
+    "skill-builtins-on-embedded",
+    "skill-scoped-governance",
+    "skill-config-reconciliation"
+  ],
+  "parallel": [
+    "Track A and Track B are file-disjoint"
+  ],
+  "openItems": [
+    "Mark fix-skills-scope-semantics superseded (operator action)",
+    "add-skill-kind-and-origin has 3 tasks left (8/11); defines SkillOrigin that Track B consumes",
+    "Rename multi-tenant-isolation to user-data-isolation",
+    "SPECIFICATION.md citation drift beyond line 445"
+  ],
+  "risks": [
+    "R-4 unmitigated: overlap scan covered only security/a2a/skill-registration terms across ~190 active changes",
+    "R-6 data loss: B5 could tombstone a user-created skill if provider_id is unreliable in some path. Stop condition 9 plus negative control B5 task 4.8",
+    "R-7 B4 supersedes an unstarted change authored by someone else"
+  ],
+  "nextStage": "execute",
+  "nextHarness": "codex",
+  "tracks": {
+    "A": [
+      "gap-02-jwks-token-verifier",
+      "gap-03-a2a-tenant-partitioning"
+    ],
+    "B": [
+      "skill-builtins-on-embedded",
+      "skill-scoped-governance",
+      "skill-config-reconciliation"
+    ]
+  }
+}

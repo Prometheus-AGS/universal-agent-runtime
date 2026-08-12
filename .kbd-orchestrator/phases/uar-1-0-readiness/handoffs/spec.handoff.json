@@ -1,0 +1,12 @@
+{
+  "stage": "spec",
+  "phase": "uar-1-0-readiness",
+  "completedAt": "2026-08-12T10:00:00Z",
+  "harness": "claude-code",
+  "generatedBy": "agent-seeded",
+  "summary": "Two changes authored, both openspec-validate --strict clean: gap-02-jwks-token-verifier (capability jwt-hardening, ADDED) and gap-03-a2a-tenant-partitioning (capability tenant-isolation, new). Operator resolved D-2: tenant_id is distinct from sub, so GAP-03 declares its own capability rather than extending multi-tenant-isolation, whose scenarios are user-scoped. An overlap scan of ~190 active changes surfaced harden-jwt-defaults (0/3, same capability, overlapping claim-validation requirement - precedence rule written into the contract) and fix-sidecar-loopback-auth (5/6, compatible, guarded by a stop condition). GAP-05 held: add-skill-system-submodule (13/16) already chose in-memory-only builtin registration deliberately, which is the actual cause of the gap, so specifying it now would conflict with a nearly-finished change.",
+  "artifacts": ["openspec/changes/gap-02-jwks-token-verifier", "openspec/changes/gap-03-a2a-tenant-partitioning"],
+  "validation": "openspec validate --strict: both valid",
+  "heldItems": ["GAP-05 pending operator decision on builtin persistence"],
+  "nextStage": "plan"
+}
