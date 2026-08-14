@@ -359,3 +359,26 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   review returned PASS with no findings.
 - Canonical KBD revision 91 marks A0 complete, keeps A1 pending with all 18
   tasks ready, and sets exact next work to `/kbd-execute uar-1-0-readiness`.
+
+## 2026-08-14 — `uar-1-0-readiness` A1 JWKS verifier completed
+
+- Added one internal `TokenVerifier` boundary with the existing HS256 lane and
+  an RS256 JWKS lane. The JWKS cache is scoped per URL and holds multiple
+  `kid` values, refreshes once for an unknown key, and enforces configured
+  issuer and audience claims.
+- Made `security.jwt_required` effective at middleware verification. Required
+  requests reject missing tokens, wrong signatures, wrong issuer/audience,
+  unknown keys, and unreachable JWKS; explicitly disabled requests retain the
+  anonymous path.
+- The final `server-full` security slice passed 33/33 and the `uar-sidecar`
+  stop-condition suite passed 3/3. Package check and package/library/no-deps
+  clippy exited 0 with only the recorded repository warnings. Tier 2 did not
+  run.
+- Retained literal exit-101 output for all six fail-closed controls, complete
+  source-diff restoration evidence, and passing affected reruns. The
+  unreachable-JWKS assertion captured an error-level refresh failure.
+- Strict OpenSpec and deterministic artifact validation passed; the final
+  history-free critic and judge both returned PASS.
+- Canonical KBD revision 93 marks A1 complete, leaves A2
+  `gap-03-a2a-tenant-partitioning` pending next, and retains exact next work
+  `/kbd-execute uar-1-0-readiness`.

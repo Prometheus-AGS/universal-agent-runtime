@@ -3,16 +3,16 @@ Project: universal-agent-runtime
 Date: 2026-08-13
 Selected backend: openspec
 Dispatched to: Codex
-Backend rationale: Six spec-backed changes require ordered task and evidence traceability; A0 is the only change in this execution slice.
-Backend entrypoint: /opsx:apply fix-jwt-crypto-provider
+Backend rationale: Six spec-backed changes require ordered task and evidence traceability; A2 is the active delivery slice after authenticated principal verification.
+Backend entrypoint: /opsx:apply gap-03-a2a-tenant-partitioning
 OpenSpec available: YES
 Source plan: .kbd-orchestrator/phases/uar-1-0-readiness/plan.md
 
 EXECUTION SCOPE
 
-- fix-jwt-crypto-provider: Pin jsonwebtoken 11.0.0 to RustCrypto workspace-wide and fail closed on process-provider conflict.
-- gap-02-jwks-token-verifier: Next pending change; not implemented in this slice.
-- gap-03-a2a-tenant-partitioning: Pending after gap-02.
+- fix-jwt-crypto-provider: Complete, with a focused follow-up preserving UAR first ownership because `jsonwebtoken` cannot expose an earlier provider's identity.
+- gap-02-jwks-token-verifier: Complete — JWKS verification, caching, claim validation, and effective `jwt_required` enforcement passed its gates.
+- gap-03-a2a-tenant-partitioning: Pending next after the separate A1 commit.
 - skill-builtins-on-embedded: Pending Track B start.
 - skill-scoped-governance: Pending after built-ins.
 - skill-config-reconciliation: Pending after scoped governance.
@@ -25,9 +25,12 @@ DISPATCH CONTRACTS
 APPROVAL GATES
 
 - The operator approved RustCrypto standardization and the expanded A0 surface on 2026-08-13.
-- On 2026-08-14, the operator accepted UAR-owned first installation: any
-  process provider initialized before UAR fails closed.
+- On 2026-08-14, observed dual-provider execution proved pointer comparison
+  cannot identify the installed provider. UAR retains first ownership; any
+  earlier provider fails closed.
 - Every fail-closed assertion requires an observed failing negative control.
+- A cohesive implementation unit is completed before broad Tier 0/Tier 1 runs;
+  focused failures are debugged without restarting broad groups.
 
 FALLBACK CONDITIONS
 
@@ -35,14 +38,19 @@ FALLBACK CONDITIONS
 
 VERIFICATION REQUIREMENTS
 
-- A0 focused tests, workspace feature tree, Tier 0 server-full checks, proxy check, iOS and Android embedded-mobile checks, strict OpenSpec validation, and artifact-refiner validation.
+- A0's provider-ownership follow-up runs as the first exact test in the warmed A1
+  verification sequence and commits separately.
+- A1 runs one consolidated Tier 0 sequence, its focused security tests, the
+  `uar-sidecar` tests, strict OpenSpec validation, negative-control restoration,
+  artifact-refiner validation, and history-free critic/judge review. All passed.
+- A2 begins only after A1 is committed separately.
 - Tier 2 remains prohibited until all six changes complete.
 
 PROGRESS LEDGER
 
 - [COMPLETE] fix-jwt-crypto-provider — Codex
-- [PENDING — NEXT] gap-02-jwks-token-verifier — Codex
-- [PENDING] gap-03-a2a-tenant-partitioning — Codex
+- [COMPLETE] gap-02-jwks-token-verifier — Codex
+- [PENDING — NEXT] gap-03-a2a-tenant-partitioning — Codex
 - [PENDING] skill-builtins-on-embedded — Codex
 - [PENDING] skill-scoped-governance — Codex
 - [PENDING] skill-config-reconciliation — Codex
@@ -57,10 +65,11 @@ BLOCKERS
 
 CANONICAL HANDOFF
 
-- Revision 91, plan revision 6.
+- Canonical KBD revision 93, plan revision 6.
 - Active phase: `uar-1-0-readiness`.
 - A0 `fix-jwt-crypto-provider`: complete.
-- A1 `gap-02-jwks-token-verifier`: pending and next.
+- A1 `gap-02-jwks-token-verifier`: complete.
+- A2 `gap-03-a2a-tenant-partitioning`: pending and next.
 - Exact next command: `/kbd-execute uar-1-0-readiness`.
 
 REFLECTION HANDOFF

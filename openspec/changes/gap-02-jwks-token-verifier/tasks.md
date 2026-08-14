@@ -1,51 +1,57 @@
 ## 0. Read first
 
-- [ ] 0.1 Read `.kbd-orchestrator/phases/uar-1-0-readiness/EXECUTION-CONTRACT.md`
+- [x] 0.1 Read `.kbd-orchestrator/phases/uar-1-0-readiness/EXECUTION-CONTRACT.md`
       before starting. Execution order across this phase is load-bearing.
 
 ## 1. TokenVerifier abstraction
 
-- [ ] 1.1 Add `src/uar/security/verifier/mod.rs` defining `trait TokenVerifier`,
+- [x] 1.1 Add `src/uar/security/verifier/mod.rs` defining `trait TokenVerifier`,
       `enum Presented { Jwks(String) }` with `SdJwtVp` / `DidAuth` reserved and
       documented as PID P4 (do not implement them), and `struct Principal`.
-- [ ] 1.2 Implement the existing HS256 shared-secret path behind the trait with
+- [x] 1.2 Implement the existing HS256 shared-secret path behind the trait with
       no behavioural change. Prove it by running the current middleware tests
       unchanged — they must pass before any JWKS code is added.
 
 ## 2. JWKS lane
 
-- [ ] 2.1 Add `jwks_url`, `jwt_issuer`, `jwt_audience` to `SecurityConfig`
+- [x] 2.1 Add `jwks_url`, `jwt_issuer`, `jwt_audience` to `SecurityConfig`
       (`src/config.rs`), all optional, following the existing
       `#[serde(default)]` pattern in that file.
-- [ ] 2.2 Implement JWKS fetch with the existing `reqwest` client. Use
+- [x] 2.2 Implement JWKS fetch with the existing `reqwest` client. Use
       `jsonwebtoken::jwk::JwkSet` and `DecodingKey::from_jwk`. **Add no new
       dependency** — if one appears necessary, stop (see 5.2).
-- [ ] 2.3 Cache in `RwLock<HashMap<String, DecodingKey>>` with a refresh
+- [x] 2.3 Cache per JWKS URL. Each URL owns an
+      `RwLock<HashMap<String, DecodingKey>>` keyed by `kid` plus a refresh
       timestamp. Refresh at most once per unknown `kid` per request; a `kid`
       still absent after one refresh is a 401.
-- [ ] 2.4 Enforce `iss` and `aud` via `Validation` when configured.
+- [x] 2.4 Enforce `iss` and `aud` via `Validation` when configured.
 
 ## 3. Enforce jwt_required
 
-- [ ] 3.1 Replace the hardcoded `false` at `src/uar/security/middleware.rs:85`
+- [x] 3.1 Replace the hardcoded `false` at `src/uar/security/middleware.rs:85`
       with `state.config.security.jwt_required`.
-- [ ] 3.2 Run the `uar-sidecar` tests. They are expected to **pass**: the sidecar
+- [x] 3.2 Run the `uar-sidecar` tests. They are expected to **pass**: the sidecar
       sets `jwt_required` explicitly (see `fix-sidecar-loopback-auth`, 5/6 done),
       and this change makes that setting effective. **If a sidecar test fails,
       stop and report — do not revert 3.1 and do not edit the sidecar.**
 
 ## 4. Proof
 
-- [ ] 4.1 Unit tests: JWKS-signed token accepted; unknown `kid` refreshes once
-      then 401; HS256 lane unchanged.
-- [ ] 4.2 Unit tests: `jwt_required=true` rejects both absent and invalid tokens
+- [x] 4.1 Unit tests: JWKS-signed token accepted; two simultaneous `kid` values
+      remain usable; rotation refreshes to a new `kid`; unknown `kid` refreshes
+      once then 401; HS256 lane unchanged.
+- [x] 4.2 Unit tests: `jwt_required=true` rejects both absent and invalid tokens
       with 401; `jwt_required=false` still permits anonymous.
-- [ ] 4.3 Unit tests: correct signature with wrong `aud` → 401; wrong `iss` → 401.
-- [ ] 4.4 Fail-closed test: JWKS unreachable, no cached keys, `jwt_required=true`
+- [x] 4.3 Unit tests: correct signature with wrong `aud` → 401; wrong `iss` → 401.
+- [x] 4.4 Fail-closed test: JWKS unreachable, no cached keys, `jwt_required=true`
       → 401.
-- [ ] 4.5 **Negative control for 4.4.** Demonstrate the test fails when the
-      closed branch is inverted. Record the command and its failing output in
-      the verification record. An untested fail-closed assertion proves nothing.
+- [x] 4.5 **Negative controls for every fail-closed assertion.** Demonstrate the
+      absent-token, bad-signature, wrong-audience, wrong-issuer, unknown-`kid`,
+      and unreachable-JWKS tests fail when their closed branch is inverted.
+      Record each command and failing output. Capture the pre-inversion source
+      diff, restore it exactly, assert the complete diff is identical, and
+      rerun only the affected assertions. An untested fail-closed assertion
+      proves nothing.
 
 ## 5. Stop conditions
 

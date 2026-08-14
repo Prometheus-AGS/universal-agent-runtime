@@ -282,6 +282,15 @@ pub struct SecurityConfig {
     /// has no `JsonSchema`/`Serialize` impl of its own.
     #[schemars(with = "String")]
     pub jwt_secret: secrecy::SecretString,
+    /// Optional JSON Web Key Set endpoint for asymmetric JWT verification.
+    #[serde(default)]
+    pub jwks_url: Option<String>,
+    /// Required JWT issuer when the JWKS lane is configured.
+    #[serde(default)]
+    pub jwt_issuer: Option<String>,
+    /// Required JWT audience when the JWKS lane is configured.
+    #[serde(default)]
+    pub jwt_audience: Option<String>,
     /// When true (default), `PUT`/`POST`/`DELETE` on `/api/uar/settings` require the
     /// `X-UAR-Admin-Key` header (value may be any non-empty use of the header today).
     /// Set to `false` for trusted local development only.
@@ -294,6 +303,9 @@ impl std::fmt::Debug for SecurityConfig {
         f.debug_struct("SecurityConfig")
             .field("jwt_required", &self.jwt_required)
             .field("jwt_secret", &REDACTED)
+            .field("jwks_url", &self.jwks_url)
+            .field("jwt_issuer", &self.jwt_issuer)
+            .field("jwt_audience", &self.jwt_audience)
             .field(
                 "settings_mutation_auth_required",
                 &self.settings_mutation_auth_required,

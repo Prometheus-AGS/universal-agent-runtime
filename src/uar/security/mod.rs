@@ -6,3 +6,5 @@ pub(crate) mod jwt;
 pub mod middleware;
 #[cfg(feature = "server")]
 pub mod rate_limit;
+#[cfg(feature = "server")]
+pub(crate) mod verifier;
