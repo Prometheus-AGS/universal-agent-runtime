@@ -73,10 +73,12 @@ mod tests {
     fn make_anon() -> UserContext {
         UserContext {
             user_id: "anonymous".to_string(),
+            tenant_id: None,
             claims: UserClaims {
                 sub: "anonymous".to_string(),
                 name: None,
                 roles: None,
+                tenant_id: None,
                 exp: usize::MAX,
             },
         }
@@ -85,10 +87,12 @@ mod tests {
     fn make_user(id: &str) -> UserContext {
         UserContext {
             user_id: id.to_string(),
+            tenant_id: None,
             claims: UserClaims {
                 sub: id.to_string(),
                 name: Some("Test User".to_string()),
                 roles: Some(vec!["user".to_string()]),
+                tenant_id: None,
                 exp: usize::MAX,
             },
         }

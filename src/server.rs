@@ -660,6 +660,7 @@ async fn start_server_with_listener(
     let a2a_state = Arc::new(uar::api::a2a::A2AState {
         compiler_service: Arc::clone(&compiler_service),
         task_store: a2a_task_store,
+        security: config.security.clone(),
         base_url: format!("http://{}:{}", config.server.host, config.server.port),
     });
     #[cfg(feature = "a2a-transport")]
@@ -4321,10 +4322,12 @@ pub(crate) async fn api_chat_completion(
             .to_string();
         UserContext {
             user_id: uid.clone(),
+            tenant_id: None,
             claims: UserClaims {
                 sub: uid,
                 name: None,
                 roles: None,
+                tenant_id: None,
                 exp: 0,
             },
         }

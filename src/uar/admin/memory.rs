@@ -143,10 +143,12 @@ mod tests {
         // code conjure an unauthenticated identity by accident.
         UserContext {
             user_id: "u1".to_string(),
+            tenant_id: None,
             claims: UserClaims {
                 sub: "u1".to_string(),
                 name: None,
                 roles: None,
+                tenant_id: None,
                 exp: 0,
             },
         }

@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 93,
-  "derivedRevision": 93,
+  "sourceRevision": 94,
+  "derivedRevision": 94,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 35
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 36
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-14T12:40:36.900910Z",
+  "updatedAt": "2026-08-14T12:44:27.131114Z",
   "cursor": [
     "uar-1-0-readiness"
   ],
@@ -596,7 +596,7 @@
           {
             "type": "change",
             "id": "gap-03-a2a-tenant-partitioning",
-            "status": "PENDING",
+            "status": "IN_PROGRESS",
             "progress": {
               "done": 0,
               "total": 0

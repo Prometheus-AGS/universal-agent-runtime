@@ -257,6 +257,7 @@ impl ApiKeyService {
                     sub: record.subject.clone(),
                     name: Some(record.name.clone()),
                     roles: Some(record.roles.clone()),
+                    tenant_id: None,
                     exp,
                 };
                 let token = jwt::encode(
@@ -302,6 +303,7 @@ impl ApiKeyService {
                     sub: record.subject.clone(),
                     name: Some(record.name.clone()),
                     roles: Some(record.roles.clone()),
+                    tenant_id: None,
                     exp,
                 }));
             }

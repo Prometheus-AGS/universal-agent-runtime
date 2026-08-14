@@ -8,6 +8,7 @@ use std::net::TcpListener as StdTcpListener;
 use std::sync::Arc;
 use std::time::Duration;
 
+use universal_agent_runtime::config::SecurityConfig;
 use universal_agent_runtime::uar::api::a2a::grpc::GrpcAgentService;
 use universal_agent_runtime::uar::api::a2a::grpc::pb::agent_service_client::AgentServiceClient;
 use universal_agent_runtime::uar::api::a2a::grpc::pb::{
@@ -32,6 +33,14 @@ fn start_grpc_server() -> String {
     let state = Arc::new(A2AState {
         compiler_service: Arc::new(CompilerService::in_memory()),
         task_store: TaskStore::new(),
+        security: SecurityConfig {
+            jwt_required: false,
+            jwt_secret: "test-secret".to_owned().into(),
+            jwks_url: None,
+            jwt_issuer: None,
+            jwt_audience: None,
+            settings_mutation_auth_required: true,
+        },
         base_url: format!("http://127.0.0.1:{port}"),
     });
     let service = GrpcAgentService::new(state);

@@ -1,3 +1,7 @@
+use super::{
+    claims::{UserClaims, UserContext},
+    verifier::{VerificationError, verify_token},
+};
 use crate::{AppState, config::SecurityConfig};
 use axum::{
     extract::{Request, State},
@@ -5,20 +9,16 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use secrecy::ExposeSecret;
-
-use super::{
-    claims::{UserClaims, UserContext},
-    verifier::{JwksVerifier, Presented, SharedSecretVerifier, TokenVerifier, VerificationError},
-};
 
 fn anonymous_context() -> UserContext {
     UserContext {
         user_id: "anonymous".to_string(),
+        tenant_id: None,
         claims: UserClaims {
             sub: "anonymous".to_string(),
             name: Some("Anonymous".to_string()),
             roles: Some(vec!["anonymous".to_string()]),
+            tenant_id: None,
             // far-future expiry for internal placeholder context
             exp: usize::MAX,
         },
@@ -42,27 +42,14 @@ async fn resolve_user_context_with_config(
         }
     };
 
-    let presented = Presented::Jwks(token.to_owned());
-    let verification = if let Some(jwks_url) = config.jwks_url.as_deref() {
-        JwksVerifier::new(
-            jwks_url,
-            config.jwt_issuer.as_deref(),
-            config.jwt_audience.as_deref(),
-        )
-        .await
-        .verify(presented)
-        .await
-    } else {
-        SharedSecretVerifier::new(config.jwt_secret.expose_secret())
-            .verify(presented)
-            .await
-    };
+    let verification = verify_token(config, token).await;
 
     match verification {
         Ok(principal) => {
             let claims = principal.claims;
             Ok(UserContext {
                 user_id: principal.subject,
+                tenant_id: principal.tenant_id,
                 claims,
             })
         }
@@ -126,6 +113,7 @@ pub async fn auth_middleware(
                     Ok(Some(claims)) => {
                         context = UserContext {
                             user_id: claims.sub.clone(),
+                            tenant_id: None,
                             claims,
                         };
                     }
@@ -242,6 +230,7 @@ mod tests {
             sub: "user-123".to_string(),
             name: Some("Test User".to_string()),
             roles: Some(vec!["user".to_string()]),
+            tenant_id: None,
             exp: usize::MAX,
         };
         let token = jwt::encode(
@@ -263,6 +252,7 @@ mod tests {
             sub: "user-123".to_string(),
             name: Some("Test User".to_string()),
             roles: Some(vec!["user".to_string()]),
+            tenant_id: None,
             exp: usize::MAX,
         };
         let token = jwt::encode(

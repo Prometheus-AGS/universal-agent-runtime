@@ -255,6 +255,11 @@ Track B adds four more (numbered 10–13 after the A0 additions):
 - `src/server.rs` — only the `TaskStore` construction and wiring; A0 may
   additionally install RustCrypto at the start of the shared
   `start_server_with_listener` funnel. No other A0 server edit.
+- **A2 compile-only expansion approved by the operator on 2026-08-14:** existing
+  `UserClaims` literals in `src/server.rs`, `src/uar/admin/memory.rs`,
+  `src/uar/memory/scopes.rs`, and `src/uar/api/memory_admin.rs` may add only
+  `tenant_id: None`. This preserves their current behavior and does not
+  authorize tenant-scoping runs, memory, or knowledge bases.
 
 **Track B:**
 

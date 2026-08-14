@@ -9,9 +9,24 @@ use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode_header, jwk::JwkSe
 use tokio::sync::RwLock;
 
 use super::{
-    claims::UserClaims,
+    claims::{TenantId, UserClaims},
     jwt::{self, JwtError},
 };
+use crate::config::SecurityConfig;
+use secrecy::ExposeSecret;
+
+/// Proof that a tenant claim was read inside a successful verifier path.
+pub(in crate::uar::security) struct VerifiedTenantClaim<'a>(&'a str);
+
+impl<'a> VerifiedTenantClaim<'a> {
+    fn new(value: &'a str) -> Self {
+        Self(value)
+    }
+
+    pub(in crate::uar::security) fn into_value(self) -> &'a str {
+        self.0
+    }
+}
 
 /// Authenticated material accepted by the runtime's verification boundary.
 #[allow(dead_code)]
@@ -26,6 +41,7 @@ pub(crate) enum Presented {
 /// Identity produced only after the presented material has been authenticated.
 pub(crate) struct Principal {
     pub(crate) subject: String,
+    pub(crate) tenant_id: Option<TenantId>,
     pub(crate) claims: UserClaims,
 }
 
@@ -88,6 +104,10 @@ impl TokenVerifier for SharedSecretVerifier<'_> {
 
         Ok(Principal {
             subject: claims.sub.clone(),
+            tenant_id: claims
+                .tenant_id
+                .as_deref()
+                .map(|value| TenantId::from_verified_claim(VerifiedTenantClaim::new(value))),
             claims,
         })
     }
@@ -224,8 +244,33 @@ impl TokenVerifier for JwksVerifier {
         let claims = token_data.claims;
         Ok(Principal {
             subject: claims.sub.clone(),
+            tenant_id: claims
+                .tenant_id
+                .as_deref()
+                .map(|value| TenantId::from_verified_claim(VerifiedTenantClaim::new(value))),
             claims,
         })
+    }
+}
+
+pub(crate) async fn verify_token(
+    config: &SecurityConfig,
+    token: &str,
+) -> Result<Principal, VerificationError> {
+    let presented = Presented::Jwks(token.to_owned());
+    if let Some(jwks_url) = config.jwks_url.as_deref() {
+        JwksVerifier::new(
+            jwks_url,
+            config.jwt_issuer.as_deref(),
+            config.jwt_audience.as_deref(),
+        )
+        .await
+        .verify(presented)
+        .await
+    } else {
+        SharedSecretVerifier::new(config.jwt_secret.expose_secret())
+            .verify(presented)
+            .await
     }
 }
 
@@ -360,10 +405,42 @@ pub(crate) mod test_support {
 
 #[cfg(test)]
 mod tests {
+    use jsonwebtoken::{EncodingKey, Header};
+
     use super::{
-        JwksVerifier, Presented, TokenVerifier, VerificationError,
+        JwksVerifier, Presented, SharedSecretVerifier, TokenVerifier, VerificationError, jwt,
         test_support::{TestJwksServer, jwk, signed_token},
     };
+    use crate::uar::security::claims::UserClaims;
+
+    #[tokio::test]
+    async fn verified_tenant_claim_becomes_typed_principal_identity() {
+        let claims = UserClaims {
+            sub: "user-123".to_owned(),
+            name: None,
+            roles: None,
+            tenant_id: Some("tenant-a".to_owned()),
+            exp: usize::MAX,
+        };
+        let token = jwt::encode(
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret(b"tenant-test-secret"),
+        )
+        .expect("tenant test token must encode");
+
+        let principal = SharedSecretVerifier::new("tenant-test-secret")
+            .verify(Presented::Jwks(token))
+            .await
+            .expect("verified tenant token must produce a principal");
+
+        assert_eq!(principal.subject, "user-123");
+        assert_eq!(
+            principal.tenant_id.as_ref().map(|tenant| tenant.as_str()),
+            Some("tenant-a")
+        );
+        assert_ne!(principal.subject, "tenant-a");
+    }
 
     #[tokio::test]
     async fn accepts_two_cached_keys_and_refreshes_after_rotation() {

@@ -12,8 +12,10 @@ EXECUTION SCOPE
 
 - fix-jwt-crypto-provider: Complete, with a focused follow-up preserving UAR first ownership because `jsonwebtoken` cannot expose an earlier provider's identity.
 - gap-02-jwks-token-verifier: Complete — JWKS verification, caching, claim validation, and effective `jwt_required` enforcement passed its gates.
-- gap-03-a2a-tenant-partitioning: Pending next after the separate A1 commit.
-- skill-builtins-on-embedded: Pending Track B start.
+- gap-03-a2a-tenant-partitioning: Implementation and focused controls complete;
+  canonical completion remains deferred until the live C-21 Tier 2 assertion
+  and control run at phase completion.
+- skill-builtins-on-embedded: Pending next implementation slice.
 - skill-scoped-governance: Pending after built-ins.
 - skill-config-reconciliation: Pending after scoped governance.
 
@@ -44,14 +46,17 @@ VERIFICATION REQUIREMENTS
   `uar-sidecar` tests, strict OpenSpec validation, negative-control restoration,
   artifact-refiner validation, and history-free critic/judge review. All passed.
 - A2 begins only after A1 is committed separately.
+- A2 focused tenant tests, fail-closed controls, Tier 0, integration-target
+  compile, strict OpenSpec validation, and independent critic/judge review pass.
+  Its live C-21 row remains explicitly unobserved until phase Tier 2.
 - Tier 2 remains prohibited until all six changes complete.
 
 PROGRESS LEDGER
 
 - [COMPLETE] fix-jwt-crypto-provider — Codex
 - [COMPLETE] gap-02-jwks-token-verifier — Codex
-- [PENDING — NEXT] gap-03-a2a-tenant-partitioning — Codex
-- [PENDING] skill-builtins-on-embedded — Codex
+- [IN PROGRESS — IMPLEMENTED, LIVE GATE DEFERRED] gap-03-a2a-tenant-partitioning — Codex
+- [PENDING — NEXT IMPLEMENTATION] skill-builtins-on-embedded — Codex
 - [PENDING] skill-scoped-governance — Codex
 - [PENDING] skill-config-reconciliation — Codex
 
@@ -65,11 +70,13 @@ BLOCKERS
 
 CANONICAL HANDOFF
 
-- Canonical KBD revision 93, plan revision 6.
+- Canonical KBD revision 94, plan revision 6.
 - Active phase: `uar-1-0-readiness`.
 - A0 `fix-jwt-crypto-provider`: complete.
 - A1 `gap-02-jwks-token-verifier`: complete.
-- A2 `gap-03-a2a-tenant-partitioning`: pending and next.
+- A2 `gap-03-a2a-tenant-partitioning`: in progress; implementation complete,
+  live C-21 evidence deferred to phase Tier 2.
+- B3 `skill-builtins-on-embedded`: next implementation slice.
 - Exact next command: `/kbd-execute uar-1-0-readiness`.
 
 REFLECTION HANDOFF

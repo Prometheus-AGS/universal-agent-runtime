@@ -858,33 +858,145 @@ async fn l2_c19_eval_runner() {
     );
 }
 
-/// C-21 tenant isolation — **published exclusion**.
+/// C-21 tenant isolation.
 ///
-/// Target: L3 plus a negative cross-tenant read that is explicitly denied.
-/// The runtime's verified JWT claims carry a user id but no tenant id, and its
-/// only scoped HTTP surface is the credential list, which cannot address
-/// another tenant's resource. The harness cannot create two tenant identities
-/// or target the same resource across them; runs, memory, knowledge bases, and
-/// tools have no tenant-aware surface to substitute. This case only proves the
-/// real credential handler is mounted and guarded. It does not present that
-/// guard as tenant-isolation evidence, so C-21 remains a published exclusion.
+/// Genuine L3: two independently verified tenant claims address the same live
+/// A2A task and context identifiers. Cross-tenant read and cancel fail while
+/// same-tenant access remains available. The result is scoped to the A2A task
+/// store under `server-full`; it makes no claim about runs, memory, or KBs.
 #[tokio::test]
 #[serial]
-async fn excluded_c21_tenant_isolation_no_cross_read_surface() {
+async fn l3_c21_a2a_tasks_are_partitioned_by_verified_tenant() {
     let stub = start_stub_llm(FixtureSet::new()).await;
     let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds::default()).await;
-    let path = "/api/uar/credentials";
-    let resp = reqwest::Client::new()
-        .get(format!("{}/api/uar/credentials", server.base_url))
-        .send()
+
+    let token = |subject: &str, tenant: &str| {
+        let claims = universal_agent_runtime::uar::security::claims::UserClaims {
+            sub: subject.to_owned(),
+            name: None,
+            roles: Some(vec!["user".to_owned()]),
+            tenant_id: Some(tenant.to_owned()),
+            exp: usize::MAX,
+        };
+        jsonwebtoken::encode(
+            &jsonwebtoken::Header::default(),
+            &claims,
+            &jsonwebtoken::EncodingKey::from_secret(HARNESS_JWT_SECRET.as_bytes()),
+        )
+        .expect("C-21: tenant token must encode")
+    };
+
+    let tenant_a = token("user-a", "tenant-a");
+    let tenant_b = token("user-b", "tenant-b");
+    let endpoint = format!("{}/a2a/compiler?tenant_id=tenant-b", server.base_url);
+    let client = reqwest::Client::new();
+    let call = |token: &str, method: &str, params: serde_json::Value| {
+        client
+            .post(&endpoint)
+            .bearer_auth(token)
+            .header("x-uar-tenant-id", "tenant-b")
+            .json(&serde_json::json!({
+                "jsonrpc": "2.0",
+                "id": "c21",
+                "method": method,
+                "params": params,
+                "tenant_id": "tenant-b"
+            }))
+            .send()
+    };
+
+    let created = call(
+        &tenant_a,
+        "message/send",
+        serde_json::json!({
+            "message": {
+                "role": "user",
+                "parts": [{"type": "text", "text": "C-21 tenant task"}],
+                "metadata": {}
+            },
+            "context_id": "c21-shared-context",
+            "metadata": {"tenant_id": "tenant-b"},
+            "tenant_id": "tenant-b"
+        }),
+    )
+    .await
+    .expect("C-21: tenant A create request");
+    assert_eq!(created.status(), 200);
+    let created: serde_json::Value = created
+        .json()
         .await
-        .expect("C-21: credential guard request");
-    let status = resp.status().as_u16();
-    let body = resp.text().await.unwrap_or_default();
-    assert_real_handler("C-21", path, status, &body);
+        .expect("C-21: tenant A create response JSON");
+    let task_id = created["result"]["id"]
+        .as_str()
+        .expect("C-21: created task id")
+        .to_owned();
+
+    let same_tenant = call(&tenant_a, "tasks/get", serde_json::json!({"id": task_id}))
+        .await
+        .expect("C-21: same-tenant get")
+        .json::<serde_json::Value>()
+        .await
+        .expect("C-21: same-tenant get JSON");
     assert_eq!(
-        status, 401,
-        "C-21 exclusion discriminator: real credential handler guard changed: {body}"
+        same_tenant["result"]["id"].as_str(),
+        Some(task_id.as_str()),
+        "C-21: same-tenant task lookup must succeed: {same_tenant}"
+    );
+
+    let cross_get = call(&tenant_b, "tasks/get", serde_json::json!({"id": task_id}))
+        .await
+        .expect("C-21: cross-tenant get")
+        .json::<serde_json::Value>()
+        .await
+        .expect("C-21: cross-tenant get JSON");
+    assert_eq!(cross_get["error"]["code"], -32001);
+    assert!(cross_get.get("result").is_none());
+
+    let cross_context = call(
+        &tenant_b,
+        "message/send",
+        serde_json::json!({
+            "message": {
+                "role": "user",
+                "parts": [{"type": "text", "text": "tenant B context"}],
+                "metadata": {}
+            },
+            "context_id": "c21-shared-context",
+            "metadata": {}
+        }),
+    )
+    .await
+    .expect("C-21: cross-tenant context request")
+    .json::<serde_json::Value>()
+    .await
+    .expect("C-21: cross-tenant context JSON");
+    assert_ne!(
+        cross_context["result"]["id"].as_str(),
+        Some(task_id.as_str()),
+        "C-21: tenant B must not join tenant A context: {cross_context}"
+    );
+
+    let cross_cancel = call(
+        &tenant_b,
+        "tasks/cancel",
+        serde_json::json!({"id": task_id}),
+    )
+    .await
+    .expect("C-21: cross-tenant cancel")
+    .json::<serde_json::Value>()
+    .await
+    .expect("C-21: cross-tenant cancel JSON");
+    assert_eq!(cross_cancel["error"]["code"], -32002);
+
+    let after_cancel = call(&tenant_a, "tasks/get", serde_json::json!({"id": task_id}))
+        .await
+        .expect("C-21: tenant A post-cancel get")
+        .json::<serde_json::Value>()
+        .await
+        .expect("C-21: tenant A post-cancel JSON");
+    assert_eq!(
+        after_cancel["result"]["status"]["state"], "working",
+        "C-21: cross-tenant cancel must not mutate tenant A task: {after_cancel}"
     );
 }
 

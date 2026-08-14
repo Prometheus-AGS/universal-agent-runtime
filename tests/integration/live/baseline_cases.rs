@@ -523,6 +523,7 @@ async fn credential_chain_put_then_list() {
         sub: "live-itest-user".to_string(),
         name: Some("Live ITest User".to_string()),
         roles: Some(vec!["user".to_string()]),
+        tenant_id: None,
         exp: usize::MAX,
     };
     let token = jsonwebtoken::encode(
