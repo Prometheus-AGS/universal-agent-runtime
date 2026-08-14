@@ -3,8 +3,8 @@ Project: universal-agent-runtime
 Date: 2026-08-13
 Selected backend: openspec
 Dispatched to: Codex
-Backend rationale: Six spec-backed changes require ordered task and evidence traceability; A2 is the active delivery slice after authenticated principal verification.
-Backend entrypoint: /opsx:apply gap-03-a2a-tenant-partitioning
+Backend rationale: Six spec-backed changes require ordered task and evidence traceability; B4 is the next delivery slice after embedded built-in availability.
+Backend entrypoint: /opsx:apply skill-scoped-governance
 OpenSpec available: YES
 Source plan: .kbd-orchestrator/phases/uar-1-0-readiness/plan.md
 
@@ -15,8 +15,10 @@ EXECUTION SCOPE
 - gap-03-a2a-tenant-partitioning: Implementation and focused controls complete;
   canonical completion remains deferred until the live C-21 Tier 2 assertion
   and control run at phase completion.
-- skill-builtins-on-embedded: Pending next implementation slice.
-- skill-scoped-governance: Pending after built-ins.
+- skill-builtins-on-embedded: Complete — fresh SurrealKV seeding, process-exit
+  reload with seeding disabled, enabled re-registration without duplicates, and
+  the disabled-seeding switch passed focused gates and adversarial review.
+- skill-scoped-governance: Pending next after built-ins.
 - skill-config-reconciliation: Pending after scoped governance.
 
 DISPATCH CONTRACTS
@@ -49,6 +51,9 @@ VERIFICATION REQUIREMENTS
 - A2 focused tenant tests, fail-closed controls, Tier 0, integration-target
   compile, strict OpenSpec validation, and independent critic/judge review pass.
   Its live C-21 row remains explicitly unobserved until phase Tier 2.
+- B3 fresh-database, process-exit reload, deduplication, disabled-seeding, and
+  registration-removal controls passed under `server-full`; deterministic
+  artifact-refiner and corrected independent critic/judge gates passed.
 - Tier 2 remains prohibited until all six changes complete.
 
 PROGRESS LEDGER
@@ -56,8 +61,8 @@ PROGRESS LEDGER
 - [COMPLETE] fix-jwt-crypto-provider — Codex
 - [COMPLETE] gap-02-jwks-token-verifier — Codex
 - [IN PROGRESS — IMPLEMENTED, LIVE GATE DEFERRED] gap-03-a2a-tenant-partitioning — Codex
-- [PENDING — NEXT IMPLEMENTATION] skill-builtins-on-embedded — Codex
-- [PENDING] skill-scoped-governance — Codex
+- [COMPLETE] skill-builtins-on-embedded — Codex
+- [PENDING — NEXT IMPLEMENTATION] skill-scoped-governance — Codex
 - [PENDING] skill-config-reconciliation — Codex
 
 OUTPUTS
@@ -70,13 +75,14 @@ BLOCKERS
 
 CANONICAL HANDOFF
 
-- Canonical KBD revision 94, plan revision 6.
+- Canonical KBD revision 96, plan revision 6.
 - Active phase: `uar-1-0-readiness`.
 - A0 `fix-jwt-crypto-provider`: complete.
 - A1 `gap-02-jwks-token-verifier`: complete.
 - A2 `gap-03-a2a-tenant-partitioning`: in progress; implementation complete,
   live C-21 evidence deferred to phase Tier 2.
-- B3 `skill-builtins-on-embedded`: next implementation slice.
+- B3 `skill-builtins-on-embedded`: complete.
+- B4 `skill-scoped-governance`: next implementation slice.
 - Exact next command: `/kbd-execute uar-1-0-readiness`.
 
 REFLECTION HANDOFF

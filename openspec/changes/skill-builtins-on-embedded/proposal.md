@@ -10,7 +10,7 @@ What is actually true, verified in code rather than from doc comments:
 
 | Spec claim | Verified |
 |---|---|
-| Called only from `server.rs:436` | **Two** sites: `server.rs:448` and `:511`. Neither line number matches |
+| Called only from `server.rs:436` | **Two** sites: `server.rs:454` and `:517`. Neither line number matches |
 | Builtins are not persisted | **They are.** `registry.rs:69-99` — `register` writes through `db.save_skill` |
 | Embedded registry is empty | **Only on a fresh database.** `embedded.rs:365-371` registers a `DatabaseStorageProvider` and calls `initialize()`, so it loads any persisted builtin |
 

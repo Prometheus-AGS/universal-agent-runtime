@@ -26,6 +26,13 @@
       "artifact_type": "content",
       "content_type": "direct:content",
       "updated_at": "2026-08-14T12:39:42Z"
+    },
+    "skill-builtins-on-embedded": {
+      "path": ".refiner/artifacts/skill-builtins-on-embedded",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-14T17:42:24Z",
+      "finalized_at": "2026-08-14T17:42:24Z"
     }
   }
 }

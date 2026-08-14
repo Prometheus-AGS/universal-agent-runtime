@@ -303,7 +303,7 @@ it would build the wrong thing:
 
 | Spec claim | Verified on `main` |
 |---|---|
-| `register_builtins` called only from `server.rs:436` | **Two** sites, `server.rs:448` and `:511`; neither line matches |
+| `register_builtins` called only from `server.rs:436` | **Two** sites, `server.rs:454` and `:517`; neither line matches |
 | Built-ins are not persisted | **They are** — `registry.rs:69-99` |
 | Embedded boots with an empty registry, "capability at 0%" | **Only on a fresh database.** `embedded.rs:365-371` registers a `DatabaseStorageProvider` and calls `initialize()` |
 
