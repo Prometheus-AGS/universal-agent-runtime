@@ -1,0 +1,54 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "a0-rustcrypto-exclusive",
+      "description": "Every UAR-owned jsonwebtoken 11 dependency resolves through the exact workspace RustCrypto entry without an AWS-LC feature edge.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Locked workspace reverse feature tree"
+      }
+    },
+    {
+      "id": "a0-provider-fail-closed",
+      "description": "UAR acquires RustCrypto first at server startup, reuses its own installation idempotently, guards every UAR JWT operation, and rejects any prior process provider and wrong-secret controls.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused security/proxy tests plus isolated observed-failing controls"
+      }
+    },
+    {
+      "id": "a0-target-coverage",
+      "description": "Final source checks under server-full and separately under iOS and Android embedded-mobile targets.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded Cargo check and test commands"
+      }
+    },
+    {
+      "id": "a0-spec-and-scope",
+      "description": "Strict OpenSpec validation passes, Tier 2 remains unrun, and no A0 source change escapes the permitted surface.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "OpenSpec strict validation and diff inspection"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the A0 OpenSpec delta and EXECUTION-CONTRACT.md as acceptance authority because the project has no .kbd-orchestrator/constraints.md.",
+    "Do not transfer server-full, iOS, or Android results to another profile or target.",
+    "Do not run Tier 2 before all six readiness changes complete."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "The canonical per-requirement verification receipt exists and includes observed negative controls."
+  ]
+}

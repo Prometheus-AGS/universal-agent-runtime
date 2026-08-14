@@ -1,0 +1,43 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "codex-gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "claim": "Goal 2 requires the recorded decision to include an explicit re-evaluation trigger, but no change or acceptance criterion in the plan ensures or verifies that one exists.",
+      "evidence": "Goal: 'Record one binding backend decision with rationale, rejected alternative, risks, and an explicit re-evaluation trigger.' The plan's only change says 'Preserve `decision.md`, `analysis.md`, `research-evidence.md`, and both independent review receipts. Write `handoff-out.md` naming the exact manifest entry, parent verification commands, negative control, exactly-one-provider assertion, stop condition...' \u2014 none of the six acceptance criteria mention a re-evaluation trigger, and the analyze handoff summaryForNext ('Adopt jsonwebtoken 11.0.0 + aws_lc_rs; reject rust_crypto and manual provider... remaining warnings are scoped in unresolved-review-findings.md') never confirms a re-evaluation trigger was recorded. An executor can satisfy every acceptance criterion while goal 2 remains unmet.",
+      "suggested_fix": "Add an acceptance criterion that handoff-out.md (or the preserved decision.md, verified by the change) states the explicit re-evaluation trigger, plus rationale, rejected alternative, and risks."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The acceptance criterion requiring handoff-out.md to list the A0 verification commands is unverifiable against the packet because the commands themselves are never enumerated.",
+      "evidence": "Acceptance criterion: 'It lists the A0 Tier 0/focused Tier 1/provider-disabled negative-control/exclusivity/OpenSpec validation commands.' Neither the plan, the goals, nor the prior handoffs contain these commands; the change details only say 'parent verification commands'. The executor must invent command invocations with no source of truth in the packet, and a downstream reviewer cannot check them.",
+      "suggested_fix": "Enumerate the exact commands (e.g., the cargo test/check invocations for Tier 0, focused Tier 1, the provider-disabled negative control, the exclusivity grep, and `openspec validate fix-jwt-crypto-provider`) in the plan or cite the parent contract file that defines them."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The plan orders preservation of 'both independent review receipts' but those artifacts are not in the analyze stage's declared outputs, so their existence and paths are unverified.",
+      "evidence": "Change details: 'Preserve `decision.md`, `analysis.md`, `research-evidence.md`, and both independent review receipts.' The analyze.handoff.json outputs list is ['analysis.md', 'library-candidates.json', 'decision.md', 'research-evidence.md'] \u2014 no review receipts. The summary mentions 'Two independent PASS review rounds completed' and 'unresolved-review-findings.md', but no receipt filenames or paths are given anywhere in the packet.",
+      "suggested_fix": "Name the exact receipt file paths in the change scope, or replace 'review receipts' with the concrete 'unresolved-review-findings.md' reference from the analyze handoff."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "The binding manifest entry uses a caret version requirement rather than an exact pin, which may not match the 'binding decision' intent.",
+      "evidence": "Acceptance criterion: '`handoff-out.md` names `jsonwebtoken = { version = \"11.0.0\", features = [\"aws_lc_rs\"] }` as binding for parent A0.' In Cargo semantics, `\"11.0.0\"` permits any 11.x >= 11.0.0, so the 'exact manifest entry' is not actually a fixed version despite the spike's evidence being measured against one specific backend configuration.",
+      "suggested_fix": "If the decision is meant to bind an exact tested version, specify `=11.0.0` or note explicitly that caret semantics are intended and the lockfile provides the pin."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

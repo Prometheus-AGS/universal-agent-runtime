@@ -324,3 +324,38 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   `start_server_sidecar` shutdown-token seam was changed.
 - The verification record remains capability-scoped; it does not assert a
   runtime-level conformance verdict.
+
+## 2026-08-14 — `uar-1-0-readiness` A0 execution checkpoint
+
+- Standardized UAR-owned `jsonwebtoken` manifests on exact 11.0.0 with only
+  RustCrypto and routed runtime/proxy JWT operations through guarded wrappers.
+- Observed server-full focused tests and Tier 0 checks pass, plus separate iOS
+  and Android `embedded-mobile` checks. Tier 2 did not run.
+- Retained replayable scratch sources, literal commands, and observed failing
+  output for the provider-disabled, AWS-LC-first, and wrong-secret controls.
+- Independent adversarial review proved that identical RustCrypto installed
+  before UAR is rejected: the public v11 API does not expose the installed
+  provider needed for the requested pointer comparison.
+- A0 remains in progress and uncommitted. KBD was not advanced and A1 was not
+  started because the execution contract's provider-identity requirement is
+  unresolved.
+
+## 2026-08-14 — `uar-1-0-readiness` A0 completed after operator decision
+
+- The operator selected UAR-owned first provider installation. This supersedes
+  the checkpoint's unresolved identical-provider acceptance requirement:
+  RustCrypto remains the sole UAR-owned backend, while any provider installed
+  before UAR—including RustCrypto—fails closed.
+- UAR now acquires the provider at the shared server-startup funnel and guards
+  every owned encode/decode; the proxy acquires before minting. The security
+  slice passed 25 tests, the proxy passed 2 tests, and provider-disabled,
+  AWS-LC-first acceptance, and wrong-secret acceptance controls failed as
+  required. RustCrypto-first conflict passed as positive boundary evidence.
+- Final server-full check and clippy exited 0; clippy retained the existing 578
+  warnings and introduced none in A0. iOS and Android embedded-mobile checks
+  passed separately. Tier 2 did not run.
+- Strict OpenSpec validation passed. Artifact-refiner schema, file, four
+  blocking-constraint, and consistency gates passed; isolated adversarial
+  review returned PASS with no findings.
+- Canonical KBD revision 91 marks A0 complete, keeps A1 pending with all 18
+  tasks ready, and sets exact next work to `/kbd-execute uar-1-0-readiness`.

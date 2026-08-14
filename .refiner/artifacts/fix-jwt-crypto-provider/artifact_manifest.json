@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-14T02:51:12Z",
+  "variants": [
+    {
+      "name": "a0-verification",
+      "file": ".refiner/artifacts/fix-jwt-crypto-provider/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic QA receipt for RustCrypto standardization and guarded JWT operations"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Workspace jsonwebtoken 11 feature graph is RustCrypto-only.",
+      "UAR owns first provider installation because jsonwebtoken 11 does not expose installed-provider identity; AWS-LC-first and RustCrypto-first controls both fail closed.",
+      "Server-full Tier 0, focused security tests, proxy checks, and separate iOS and Android embedded-mobile checks pass.",
+      "Tier 2 was not run because the phase has five later changes.",
+      "Independent artifact-validator confirmed all four blocking constraints; independent adversarial review returned PASS with no findings."
+    ]
+  }
+}

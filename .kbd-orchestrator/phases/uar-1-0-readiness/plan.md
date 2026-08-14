@@ -11,7 +11,7 @@ changes. It is not optional reading.
 
 | # | Change | Capability | Validates |
 |---|---|---|---|
-| A0 | `fix-jwt-crypto-provider` | `jwt-hardening` (ADDED) | strict ✅ |
+| A0 | `fix-jwt-crypto-provider` | `jwt-hardening` (ADDED) | strict pending re-validation after RustCrypto supersession |
 | A1 | `gap-02-jwks-token-verifier` | `jwt-hardening` (ADDED) | strict ✅ |
 | A2 | `gap-03-a2a-tenant-partitioning` | `tenant-isolation` (new) | strict ✅ |
 | B3 | `skill-builtins-on-embedded` | `skill-builtin-availability` (new) | strict ✅ |
@@ -34,6 +34,18 @@ Track B   skill-builtins ──> skill-scoped ──> skill-config
 ```
 
 Serial within each track; the tracks share no files and may run concurrently.
+
+**A0 decision revision, 2026-08-13.** The workspace standard is
+`jsonwebtoken` 11.0.0 with RustCrypto, not AWS-LC. The selection is centralized
+in `[workspace.dependencies]`, and runtime JWT operations explicitly install
+the chosen provider so a downstream additive feature cannot turn provider
+selection back into an implicit panic.
+
+**A0 ownership clarification, 2026-08-14.** UAR acquires the process provider
+slot at the shared server-startup funnel and caches that successful RustCrypto
+installation. Any provider initialized before UAR fails closed, including an
+indistinguishable RustCrypto installation; exact-v11 exposes no public accessor
+that could prove the prior provider's identity.
 
 - **A1 → A2**: A2 consumes a type A1 introduces, and populating a tenant from an
   unverified token is worse than having no tenant field.
@@ -65,8 +77,8 @@ Not exit criteria: "code compiles", "review looks right", any aggregate score.
 
 Per `CLAUDE.md`, and not earlier than their point:
 
-- **Tier 0**, every edit — `cargo check --locked --no-default-features --features server-full`
-  plus `cargo clippy -p universal-agent-runtime`. (Scope clippy to the package;
+- **Tier 0**, every implementation unit — `cargo check --locked --no-default-features --features server-full`
+  plus `cargo clippy --locked -p universal-agent-runtime --no-default-features --features server-full --lib --no-deps`. (Scope clippy to the package;
   `--all-targets` is blocked by ~140 pedantic errors in a vendored submodule.)
 - **Tier 1**, unit complete — the change's own unit tests.
 - **Tier 2**, phase completion — the pinned live command, verbatim.
@@ -128,6 +140,8 @@ From the reconciliation checklist, all of it, not the convenient parts:
 | R-5 | ~~GAP-05's hold leaves no parallel work~~ | **Resolved by the widening.** Track B is file-disjoint from Track A |
 | R-6 | B5 tombstones a user-created skill through a `provider_id` path I did not check | Stop condition 9 plus a dedicated negative control (B5 task 4.8). **This is the phase's only data-loss risk** |
 | R-7 | `skill-scoped-governance` supersedes an unstarted change someone else authored | Stated in its proposal; marking it superseded is a stop condition, not a task |
+| R-8 | A downstream crate enables another `jsonwebtoken` provider additively | A0 acquires RustCrypto at the shared server-startup funnel and fails closed if any provider already owns the process slot |
+| R-9 | Native crypto toolchain stalls are mistaken for backend correctness evidence | RustCrypto target probes and full profile checks run with the compiler cache disabled when the observed stall recurs |
 
 ## Open items carried out of this phase
 

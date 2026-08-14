@@ -1,0 +1,13 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/uar-1-0-readiness/children/jsonwebtoken-crypto-provider-spike/**"
+  ],
+  "deniedPaths": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "src/**",
+    "tests/**"
+  ],
+  "inheritsConstraints": true,
+  "note": "The spike is research-only. Parent A0 owns implementation after child exit."
+}

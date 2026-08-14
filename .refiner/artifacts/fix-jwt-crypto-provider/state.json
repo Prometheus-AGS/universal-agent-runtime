@@ -1,0 +1,48 @@
+{
+  "refinement_id": "a0-fix-jwt-crypto-provider-20260814",
+  "artifact_name": "fix-jwt-crypto-provider",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-14T02:51:12Z",
+  "updated_at": "2026-08-14T04:26:56Z",
+  "current_iteration": 2,
+  "max_iterations": 5,
+  "goals": [
+    "Validate A0 against its OpenSpec requirements and readiness execution contract"
+  ],
+  "constraints": [
+    { "id": "a0-rustcrypto-exclusive" },
+    { "id": "a0-provider-fail-closed" },
+    { "id": "a0-target-coverage" },
+    { "id": "a0-spec-and-scope" }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 3,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-14T03:03:41Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-14T04:26:56Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null
+}

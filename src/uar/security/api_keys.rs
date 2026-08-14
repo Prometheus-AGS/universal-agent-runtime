@@ -19,12 +19,12 @@ use argon2::{
     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 use async_trait::async_trait;
-use jsonwebtoken::{EncodingKey, Header, encode};
+use jsonwebtoken::{EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use crate::uar::security::claims::UserClaims;
+use crate::uar::security::{claims::UserClaims, jwt};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -259,11 +259,12 @@ impl ApiKeyService {
                     roles: Some(record.roles.clone()),
                     exp,
                 };
-                let token = encode(
+                let token = jwt::encode(
                     &Header::default(),
                     &claims,
                     &EncodingKey::from_secret(self.jwt_secret.as_bytes()),
-                )?;
+                )
+                .map_err(|error| anyhow::anyhow!("issuing API-key exchange JWT: {error}"))?;
                 return Ok(Some(token));
             }
         }

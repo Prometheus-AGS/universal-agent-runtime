@@ -1,0 +1,43 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "codex-gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "claim": "The rejection of rust_crypto hinges on an RSA private-key timing advisory, but the packet contains no evidence that UAR performs RSA private-key operations, and the analysis itself concedes the observed usage is public-key verification.",
+      "evidence": "The artifact states 'Immediate JWKS verification uses public keys, but the chosen provider also exposes signing and cannot be evaluated as verification-only without narrowing UAR's supported contract.' No code path, config, or assessment finding in the packet establishes that UAR's supported contract includes RS*/PS* signing; the assumption 'cannot be evaluated as verification-only' is asserted, not shown. This assumption is the decisive input ('the dependency graph and unresolved RSA advisory do [break the tie]'), so the binding decision rests on an unverified premise.",
+      "suggested_fix": "Cite the concrete UAR signing usage (e.g., a path under src/ or tools/uar-jwt-proxy that encodes RS*/PS* tokens) or state explicitly that the decision is conservative under an unverified signing requirement and add a re-evaluation trigger for 'UAR confirmed verification-only'."
+    },
+    {
+      "severity": "WARNING",
+      "file": "library-candidates.json",
+      "claim": "The artifact's timestamps contradict its claimed evidence-gathering: the analysis reports 24 research queries across four tiers plus cargo info/tree runs and a focused test execution, yet it was generated ~2 minutes after the assess stage completed.",
+      "evidence": "assess.handoff.json completedAt is '2026-08-13T07:04:11Z' and library-candidates.json generated_at is '2026-08-13T07:06:28Z'. Within that window the artifact claims 'Tier 1, GitHub: 8 queries attempted' plus upstream issue/PR inspection, tier-2/3/4 research, and 'The unchanged focused middleware command observed 3 passing cases and one failure' \u2014 a cargo build/test cycle alone typically exceeds this interval. This undermines the verifiability of the observed-facts section the decision depends on.",
+      "suggested_fix": "Either correct generated_at to reflect actual completion or attach the captured command outputs/logs for the cargo tree, cargo info, and test-run claims so the evidence is independently checkable."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "claim": "The goal requires comparison 'using ... measured evidence', but the analysis unilaterally declares performance 'not a decision input' and performs no measurement, citing a rule scoped to implementation work.",
+      "evidence": "Goals state: 'Compare the jsonwebtoken 11 RustCrypto and AWS-LC backends using ... and measured evidence.' The artifact's stopping rule says comparative performance 'cannot be measured representatively without a release build forbidden by .claude/rules/rust.md during implementation' \u2014 but this phase is a spike, not implementation, and no partial measurement (e.g., debug-build timing smoke) was attempted or documented as waived. The goal dimension is silently dropped rather than explicitly negotiated.",
+      "suggested_fix": "Either run a bounded measurement (with debug-build caveats recorded) or add an explicit line stating the measured-evidence goal dimension is descoped, with the reason and the authority for descoping it."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "claim": "The parent handoff's Tier 1 verification step names test scenarios but gives no exact commands or test identifiers, and the packet does not establish that an 'HS256 encode/decode round trip' or 'wrong-secret rejection' test exists.",
+      "evidence": "Handoff step 4 reads 'Run focused Tier 1 tests for an HS256 encode/decode round trip, wrong-secret rejection without panic, and the unchanged test_resolve_user_context cases' \u2014 only test_resolve_user_context is a named, observed test; the other two have no command, file, or evidence of existence, while the goal requires 'a precise Cargo.toml configuration and verification commands'.",
+      "suggested_fix": "Provide exact cargo test invocations with package and test-name filters, or state explicitly that the parent must author these two tests first and include them as acceptance criteria."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

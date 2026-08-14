@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-08-13T07:04:11Z",
+  "outputs": [
+    "assessment.md"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "Provider absence is observed: the unchanged HS256 valid-token test panics while three sibling cases pass. Analyze must choose exactly one backend, carry the independent-review warnings on comparative measurement/security symmetry/path citations, and must not claim performance or FIPS properties not measured.",
+  "skipped": false,
+  "skipReason": null
+}

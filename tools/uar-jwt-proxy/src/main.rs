@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result};
@@ -17,7 +17,7 @@ use axum::{
 };
 use clap::Parser;
 use futures_util::{SinkExt, StreamExt};
-use jsonwebtoken::{EncodingKey, Header, encode};
+use jsonwebtoken::{EncodingKey, Header, crypto::rust_crypto, encode};
 use serde::{Deserialize, Serialize};
 use tokio_tungstenite::tungstenite::{client::IntoClientRequest, protocol::Message as WsMessage};
 use tracing_subscriber::EnvFilter;
@@ -102,6 +102,21 @@ struct AppState {
     ttl_secs: u64,
 }
 
+static UAR_PROVIDER: OnceLock<Result<(), ()>> = OnceLock::new();
+
+fn ensure_rustcrypto_provider() -> Result<()> {
+    match UAR_PROVIDER.get_or_init(|| {
+        rust_crypto::DEFAULT_PROVIDER
+            .install_default()
+            .map_err(|_already_initialized| ())
+    }) {
+        Ok(()) => Ok(()),
+        Err(()) => anyhow::bail!(
+            "jsonwebtoken process provider was initialized before uar-jwt-proxy could install RustCrypto"
+        ),
+    }
+}
+
 impl AppState {
     fn mint_token(&self) -> Result<String> {
         let exp = SystemTime::now()
@@ -125,6 +140,8 @@ async fn main() -> Result<()> {
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .init();
+
+    ensure_rustcrypto_provider().context("initializing JWT crypto provider")?;
 
     let cli = Cli::parse();
 
@@ -463,4 +480,32 @@ fn build_ws_url(upstream_http: &str, path_and_query: &str) -> Result<reqwest::Ur
         upstream_http.to_string()
     };
     Ok(reqwest::Url::parse(&format!("{ws_base}{path_and_query}"))?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rustcrypto_installation_is_idempotent() {
+        ensure_rustcrypto_provider().expect("initial provider installation should succeed");
+        ensure_rustcrypto_provider().expect("repeated provider installation should succeed");
+    }
+
+    #[test]
+    fn app_state_mints_hs256_token() {
+        ensure_rustcrypto_provider().expect("provider installation should succeed");
+        let state = AppState {
+            upstream: "http://127.0.0.1:1906".to_string(),
+            client: reqwest::Client::new(),
+            encoding_key: EncodingKey::from_secret(b"secret"),
+            sub: "test-user".to_string(),
+            name: "Test User".to_string(),
+            roles: vec!["user".to_string()],
+            ttl_secs: 60,
+        };
+
+        let token = state.mint_token().expect("token minting should succeed");
+        assert_eq!(token.split('.').count(), 3);
+    }
 }

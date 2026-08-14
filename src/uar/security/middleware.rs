@@ -5,10 +5,13 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use jsonwebtoken::{DecodingKey, Validation, decode};
+use jsonwebtoken::{DecodingKey, Validation};
 use secrecy::ExposeSecret;
 
-use super::claims::{UserClaims, UserContext};
+use super::{
+    claims::{UserClaims, UserContext},
+    jwt::{self, JwtError},
+};
 
 fn anonymous_context() -> UserContext {
     UserContext {
@@ -45,7 +48,7 @@ fn resolve_user_context(
     let key = DecodingKey::from_secret(jwt_secret.as_bytes());
     let validation = Validation::default();
 
-    match decode::<UserClaims>(token, &key, &validation) {
+    match jwt::decode::<UserClaims>(token, &key, &validation) {
         Ok(token_data) => {
             let claims = token_data.claims;
             Ok(UserContext {
@@ -53,7 +56,8 @@ fn resolve_user_context(
                 claims,
             })
         }
-        Err(_) => {
+        Err(JwtError::ProviderConflict) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        Err(JwtError::Token(_)) => {
             if jwt_required {
                 Err(StatusCode::UNAUTHORIZED)
             } else {
@@ -128,7 +132,7 @@ pub async fn auth_middleware(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use jsonwebtoken::{EncodingKey, Header, encode};
+    use jsonwebtoken::{EncodingKey, Header};
 
     #[test]
     fn test_resolve_user_context_anonymous_when_jwt_disabled_and_no_header() {
@@ -157,7 +161,7 @@ mod tests {
             roles: Some(vec!["user".to_string()]),
             exp: usize::MAX,
         };
-        let token = encode(
+        let token = jwt::encode(
             &Header::default(),
             &claims,
             &EncodingKey::from_secret("secret".as_bytes()),
@@ -168,5 +172,26 @@ mod tests {
         let ctx =
             resolve_user_context(true, "secret", Some(&header_value)).expect("expected context");
         assert_eq!(ctx.user_id, "user-123");
+    }
+
+    #[test]
+    fn test_resolve_user_context_rejects_token_signed_with_wrong_secret() {
+        let claims = UserClaims {
+            sub: "user-123".to_string(),
+            name: Some("Test User".to_string()),
+            roles: Some(vec!["user".to_string()]),
+            exp: usize::MAX,
+        };
+        let token = jwt::encode(
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret("wrong-secret".as_bytes()),
+        )
+        .expect("token encode should succeed");
+        let header_value = format!("Bearer {token}");
+
+        let err = resolve_user_context(true, "secret", Some(&header_value))
+            .expect_err("expected invalid signature to be rejected");
+        assert_eq!(err, StatusCode::UNAUTHORIZED);
     }
 }

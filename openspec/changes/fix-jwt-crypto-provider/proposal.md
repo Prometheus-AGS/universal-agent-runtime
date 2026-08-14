@@ -50,13 +50,21 @@ the defect so 1.2 passes on its own terms.
 
 ## What Changes
 
-- `Cargo.toml:393` — enable a crypto backend explicitly:
-  `jsonwebtoken = { version = "11.0.0", features = ["rust_crypto"] }`.
-  `rust_crypto` is chosen over `aws_lc_rs` because its dependencies are already
-  in the tree, so this adds no new transitive crates.
-- Add a test that signs and verifies a token through the real code path. A
-  compile check cannot catch this class of defect: the failure is a runtime
-  panic in a function pointer, so only an executed round-trip proves it.
+- Pin `jsonwebtoken` exactly once in `[workspace.dependencies]` at `11.0.0`,
+  disable its default features, and enable only `rust_crypto`. The runtime and
+  `uar-jwt-proxy` inherit the same entry so an ordinary workspace build does not
+  activate two provider backends.
+- Add a crate-private JWT wrapper that installs RustCrypto explicitly before
+  every runtime encode/decode. Cargo features are additive in downstream
+  builds, so the manifest choice alone cannot protect an embeddable crate from
+  a consumer enabling `aws_lc_rs`. UAR owns first installation through the
+  shared server-startup funnel and caches that successful initialization for
+  idempotent reuse. Any provider initialized before UAR—including an
+  indistinguishable RustCrypto installation—is a structured, fail-closed
+  error because `jsonwebtoken` 11 does not expose the installed provider.
+- Initialize the same provider in `uar-jwt-proxy` before it mints a token.
+- Add tests that execute the provider guard and the real HS256 sign/verify path.
+  A compile check cannot catch the original panic, so only executed paths count.
 
 ## Capabilities
 
@@ -65,7 +73,10 @@ the defect so 1.2 passes on its own terms.
 
 ## Impact
 
-`Cargo.toml`, `Cargo.lock`, plus one test module. No source logic changes.
+`Cargo.toml`, `Cargo.lock`, `tools/uar-jwt-proxy`, the JWT call sites under
+`src/uar/security/`, and the provider-initialization call at the shared
+`src/server.rs` startup funnel. No public API is added and no signing algorithm
+policy is changed.
 
 **Ordered before `gap-02-jwks-token-verifier` (A1).** A1 builds a JWKS verifier
 on `jsonwebtoken`; building it over a panicking provider would produce a verifier

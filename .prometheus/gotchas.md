@@ -174,3 +174,23 @@ the caller token and prove HTTP has stopped, then send SIGTERM through the
 unchanged signal path and await normal child exit. Process exit releases any
 remaining SDK-owned file descriptors before reopening the same path. Do not
 claim that the HTTP token alone shuts down the full runtime.
+
+## 2026-08-14 — disabling sccache does not disable the external Cargo build directory
+
+**Observed behavior.** Cross-target checks run with `RUSTC_WRAPPER=` and
+`SCCACHE_DISABLE=1` still spent long silent intervals in uninterruptible I/O on
+`/Volumes/my-passport`. Process state showed `cargo` as `U`/`Us`, and build
+artifacts resolved under `/Volumes/my-passport/cargo-build/...`.
+
+**Mechanism.** The user-global Cargo configuration independently sets both
+`rustc-wrapper = "/opt/homebrew/bin/sccache"` and
+`build-dir = "/Volumes/my-passport/cargo-build/{workspace-path-hash}"`.
+Clearing the wrapper disables compiler caching, but it does not override the
+external build directory. Those controls solve different problems.
+
+**Working practice.** Retain the execution session and poll it instead of
+mistaking an empty output interval for a compiler deadlock. Record literal
+target environment values. For Android, the installed NDK uses the
+API-suffixed `aarch64-linux-android35-clang`, and the pre-existing
+`native-tls` graph needs a target OpenSSL sysroot. Do not repair either machine
+precondition in UAR source.

@@ -1,6 +1,7 @@
 pub mod api_keys;
 pub mod claims;
 pub mod credentials;
+pub(crate) mod jwt;
 #[cfg(feature = "server")]
 pub mod middleware;
 #[cfg(feature = "server")]

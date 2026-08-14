@@ -300,3 +300,49 @@ rather than because the work was missing; and the executor made two scope change
 delta) that were defensible but unreviewed. **The executor is not obliged to flag
 its own scope changes, so diffing the merged spec against the reviewed spec
 belongs on the authoring side.**
+
+---
+
+## 2026-08-14 — UAR standardizes `jsonwebtoken` 11 on RustCrypto
+
+**Decision.** Every UAR-owned `jsonwebtoken` dependency resolves through one
+workspace entry pinned exactly to `11.0.0`, with default features disabled and
+only `rust_crypto` selected. The earlier AWS-LC spike conclusion is historical
+and superseded.
+
+**Rationale.** RustCrypto removes the native C/assembly provider from UAR's JWT
+choice, works across the separately checked server-full, iOS, and Android
+graphs, and is already present in the lockfile. The decision is not based on a
+performance claim. A1 requires authenticated public-key verification only; it
+does not add RSA/PS private-key signing.
+
+**Uncomfortable constraint.** `jsonwebtoken` 11 stores its process provider
+behind a crate-private getter. Its public `install_default()` error returns the
+provider the caller attempted to install, not the provider already present.
+Consequently UAR cannot distinguish “RustCrypto was installed before UAR” from
+“a foreign provider was installed before UAR” by pointer identity. A0 remains
+in progress until the operator either requires UAR to own first installation or
+expands scope to a patched/forked provider API. No completion claim transfers
+from the backend decision to that unresolved initialization contract.
+
+---
+
+## 2026-08-14 — UAR owns first `jsonwebtoken` provider installation
+
+**Decision.** The operator selected the first-owner option. UAR installs
+RustCrypto at the shared server-startup funnel and before every UAR-owned JWT
+encode/decode operation. Repeated calls reuse only UAR's recorded successful
+installation. Any provider initialized before UAR—including RustCrypto—fails
+closed with a structured provider-conflict error.
+
+**Rationale.** `jsonwebtoken` 11 exposes neither the installed provider nor an
+identity token for it. Treating a failed RustCrypto installation as proof that
+the existing provider is RustCrypto would accept AWS-LC or an arbitrary
+downstream provider under feature unification. Owning first installation makes
+the invariant observable without a fork or a new dependency.
+
+**Supersession.** This resolves the uncomfortable constraint in the preceding
+RustCrypto decision. It does not reverse the backend choice; RustCrypto remains
+the sole UAR-owned `jsonwebtoken` feature. If another component must own the
+process provider, that integration must change architecture explicitly rather
+than bypass the guard.

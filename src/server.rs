@@ -117,6 +117,12 @@ async fn start_server_with_listener(
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
+    // UAR owns the process-level jsonwebtoken provider. Install it at the
+    // shared startup funnel so in-process clients cannot initialize another
+    // provider before the first authenticated request reaches middleware.
+    crate::uar::security::jwt::ensure_rustcrypto_provider()
+        .map_err(|error| anyhow::anyhow!("initializing JWT crypto provider: {error}"))?;
+
     // Install the Prometheus recorder before anything can record a metric.
     // `metrics::with_recorder` resolves the global recorder on every macro
     // call and silently discards writes to a no-op when none is installed, so

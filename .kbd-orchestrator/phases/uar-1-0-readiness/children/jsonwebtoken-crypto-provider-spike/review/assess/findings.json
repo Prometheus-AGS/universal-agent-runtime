@@ -1,0 +1,50 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "codex-gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "claim": "The '[DONE]' verdict for comparative decision evidence is unsupported by the artifact's own content and is contradicted by the GOAL PROGRESS section.",
+      "evidence": "IMPLEMENTATION STATUS asserts 'Comparative decision evidence: [DONE] \u2014 dependency, platform, advisory, upstream-maintenance, and measured baseline behavior facts are grounded for analysis,' yet GOAL PROGRESS states 'Compare both providers: [PARTIAL] \u2014 official/current and repository facts collected; analysis remains.' The artifact contains no upstream-maintenance facts for either provider (no release cadence, commit activity, or maintainer data) and no measured figures of any kind beyond a 14m04s build time.",
+      "suggested_fix": "Downgrade the verdict to [PARTIAL] or add the missing maintenance and measurement facts with citations so the analysis stage is not handed an empty evidence class marked complete."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "claim": "The goal-mandated 'measured evidence' component of the provider comparison has no corresponding gap analysis and no data anywhere in the assessment.",
+      "evidence": "The goal requires comparison 'using current official documentation, pinned source, dependency topology, supported release platforms, security posture, and measured evidence,' but the artifact records zero measurements comparing RustCrypto and AWS-LC (no signing/verification benchmarks, build-time deltas, or binary-size impact), and no SPEC GAP entry flags this as missing or explicitly scopes it out.",
+      "suggested_fix": "Either collect at least one measured comparison (e.g., cargo build timing or a sign/verify micro-benchmark per provider) or add an explicit gap entry stating measurement is deferred to analysis with a reason, so the binding decision is not made on an unexamined criterion."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "claim": "The security-posture comparison is asymmetric: advisory/risk evidence is presented only for the RustCrypto side, leaving AWS-LC's security posture unassessed despite the goal requiring a security-posture comparison of both.",
+      "evidence": "The UNCOMFORTABLE FACT section discusses only the rsa crate's Marvin timing advisory ('no patched version exists'); no equivalent facts appear for AWS-LC (e.g., its C/assembly attack surface, advisory history, or FIPS validation status), even though 'Comparative decision evidence' claims 'advisory ... facts are grounded.'",
+      "suggested_fix": "Add AWS-LC security-posture facts (advisories, FIPS 140-3 certificate status, C-vs-pure-Rust supply-chain implications) so analysis does not weigh a documented risk on one side against an unexamined blank on the other."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "claim": "Path grounding for the pinned jsonwebtoken source is broken, so claims derived from 'pinned 11.0.0 source' cannot be corroborated from the packet.",
+      "evidence": "cited_paths shows 'jsonwebtoken-11.0.0/src/crypto/mod.rs -> 108 matches' resolving to unrelated files under 'crates/prometheus-skill-system/skills/imported/artifact-refiner/shared/sycophancy-correction/...', and the file tree contains no vendored jsonwebtoken source; yet the assessment asserts 'pinned 11.0.0 source therefore installs the panic-only fallback' and cites 'jsonwebtoken-11.0.0/src/crypto/mod.rs:124'.",
+      "suggested_fix": "Cite the actual cargo registry path (e.g., ~/.cargo/registry/src/.../jsonwebtoken-11.0.0/src/crypto/mod.rs) and quote the relevant lines, or rely explicitly on the captured test panic message as the evidence source."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "assessment.md",
+      "claim": "The platform-support claim for AWS-LC is asserted without a citation while the competing RustCrypto portability advantage is dismissed, leaving an uncited load-bearing fact for the decision.",
+      "evidence": "'AWS-LC documents builds/tests for all five' platforms appears with no document reference, and it is the sole fact supporting dismissal of RustCrypto's portability advantage ('matters mainly for no_std and bare WebAssembly, neither of which is part of the certified server-full profile').",
+      "suggested_fix": "Attach the specific AWS-LC documentation URL/version covering the five-platform build/test matrix so the analysis stage can verify rather than trust the claim."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

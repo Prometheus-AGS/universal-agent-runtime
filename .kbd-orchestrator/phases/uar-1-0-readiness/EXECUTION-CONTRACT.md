@@ -28,6 +28,21 @@ load-bearing; the tracks share no files and may run concurrently.
    it detected a real defect. Added 2026-08-12 after an executor correctly
    halted rather than working around it.
 
+   **Superseding provider decision, 2026-08-13.** Standardize every UAR-owned
+   `jsonwebtoken` dependency on exactly 11.0.0 with default features disabled
+   and only `rust_crypto` enabled. The earlier contained spike selected AWS-LC
+   using only the `server-full` dependency graph. Re-evaluation found that
+   `tools/uar-jwt-proxy` already enabled RustCrypto, so a workspace build
+   activated both providers and recreated the panic. RustCrypto also completed
+   isolated iOS and Android builds without a native C toolchain. Because UAR is
+   embeddable and downstream features remain additive, A0 additionally guards
+   every UAR JWT operation with explicit, idempotent RustCrypto installation and
+   acquires the process provider slot at the shared server-startup funnel.
+   Operator decision of 2026-08-14: UAR owns first installation and caches that
+   success for idempotent reuse. Any provider initialized before UAR—including
+   an indistinguishable RustCrypto installation—returns a structured conflict
+   error because `jsonwebtoken` 11 exposes no installed-provider accessor.
+
 1. **`gap-02-jwks-token-verifier`** — `TokenVerifier` abstraction, JWKS lane,
    enforce `jwt_required` at the point of use, enforce `iss`/`aud`.
 2. **`gap-03-a2a-tenant-partitioning`** — add the tenant claim, partition both
@@ -104,6 +119,22 @@ Unit tests added by these changes run under the ordinary
 `cargo test --locked --no-default-features --features server-full` and do not
 need the live harness.
 
+## Tier-0 Clippy exception
+
+Operator decision of 2026-08-13: for this phase, run:
+
+```bash
+cargo clippy --locked -p universal-agent-runtime \
+  --no-default-features --features server-full --lib --no-deps
+```
+
+Success means exit code 0 and no warning introduced by the change in hand. The
+existing warning baseline is acknowledged as pre-existing debt and is not part
+of `uar-1-0-readiness`. Do not edit vendored dependencies or unrelated UAR
+source to reduce that baseline. A warning attributable to the current change is
+a failure and must be fixed within that change's permitted surface or reported
+as a stop condition.
+
 ## What counts as satisfied
 
 A task is done when its assertion **has been observed to pass, and its negative
@@ -162,17 +193,25 @@ Each condition names a specific observable:
 7. **A pre-existing failure unrelated to the change in hand appears.** Report it;
    do not repair it inside these changes.
 
-Track B adds four more:
+A0 adds two provider-specific conditions:
 
-8. **Any task appears to require hard-deleting a skill.** Operator decision is
+8. **A new direct crate or a package not already present in the lockfile appears
+   necessary.** RustCrypto is already locked through the proxy. Stop rather than
+   widening the authentication dependency surface.
+9. **A UAR JWT operation cannot be routed through the provider guard within the
+   A0 surface.** Stop rather than leaving a panic-capable bypass.
+
+Track B adds four more (numbered 10–13 after the A0 additions):
+
+10. **Any task appears to require hard-deleting a skill.** Operator decision is
    tombstone-with-restore. Reconciliation never hard-deletes.
-9. **`provider_id` turns out not to distinguish config-provisioned from
+11. **`provider_id` turns out not to distinguish config-provisioned from
    user-created skills** in some code path. The entire data-loss safety argument
    for `skill-config-reconciliation` rests on it (`fs-skills` vs `api` vs
    `builtin` vs `wasm`). If it is unreliable, stop — do not substitute a guess.
-10. **Marking `fix-skills-scope-semantics` superseded appears necessary.** It is
+12. **Marking `fix-skills-scope-semantics` superseded appears necessary.** It is
     an operator action on another author's change.
-11. **Built-in non-deletability appears to need implementing.** It already
+13. **Built-in non-deletability appears to need implementing.** It already
     exists — `service.rs:390-401` rejects with `system_skill_immutable`. Consume
     it; do not rebuild it.
 
@@ -180,10 +219,14 @@ Track B adds four more:
 
 **Track A:**
 
+- `Cargo.toml`, `Cargo.lock`, and `tools/uar-jwt-proxy/**` — A0 provider
+  standardization, provider initialization, and focused proxy tests only.
 - `src/uar/security/**` — verifier, claims, middleware.
 - `src/uar/api/a2a/**` — task store, handler, grpc.
 - `src/config.rs` — new optional security fields only.
-- `src/server.rs` — only the `TaskStore` construction at `:652` and wiring.
+- `src/server.rs` — only the `TaskStore` construction and wiring; A0 may
+  additionally install RustCrypto at the start of the shared
+  `start_server_with_listener` funnel. No other A0 server edit.
 
 **Track B:**
 
@@ -207,7 +250,9 @@ Carried forward from the prior phase and still binding:
 
 - **No aggregate percentage.** No runtime-level verdict.
 - Per-requirement results only, each with its stated limit.
-- Results are scoped to `server-full`. Say so; do not imply transfer.
+- Runtime results are scoped to `server-full`. A0 may additionally report its
+  two explicit `embedded-mobile` target checks separately; neither target result
+  transfers to another profile or target.
 - Commit per change. **Do not push. Do not open a PR.** The authoring harness
   reconciles and verifies independently.
 
