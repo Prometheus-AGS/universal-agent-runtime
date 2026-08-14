@@ -300,3 +300,38 @@ rather than because the work was missing; and the executor made two scope change
 delta) that were defensible but unreviewed. **The executor is not obliged to flag
 its own scope changes, so diffing the merged spec against the reviewed spec
 belongs on the authoring side.**
+
+---
+
+## 2026-08-13 — an installer refuses rather than renames, and proves completeness itself
+
+**Decision.** When a skill cannot be placed at its canonical name, the install
+**fails**. The `prometheus-<name>` fallback survives only behind
+`--allow-fallback`, and even then the run exits non-zero. A completeness gate
+(`scripts/verify-skill-install.js`) asserts every skill at every target and runs
+as the install's own last step.
+
+**Mechanism.** Declining to clobber a file the installer does not own is
+correct; doing so while reporting success is not. The two are incompatible and
+the code chose both — placement diverted silently and verification followed the
+divert, so 19 skills were unreachable across 14 targets while every run printed
+a checkmark. Making the gate the install's last step collapses "install ran" and
+"install is correct" into one statement, so no judgment sits between them.
+
+**Stakes.** The cost is real: an operator with a legitimately foreign skill
+directory now gets a failed install instead of a working one with a renamed
+skill. That is the intended trade. A silent rename is indistinguishable from
+success at the point where it matters, and the operator shipped on that
+assumption. A loud failure is recoverable in one command; a silent one persisted
+across many install loops and was caught only by a human noticing a missing
+skill.
+
+**What reopens this.** If `--allow-fallback` is exercised in practice and the
+non-zero exit proves obstructive rather than protective, revisit whether the
+flag should exit 0 with a persistent warning. It has never been run.
+
+**Also decided.** Rule promotion for the underlying method failure (completeness
+claims require a denominator) goes through §D-6's gates — adversarial review,
+sycophancy gate, explicit approval — before any rule text lands. Operator
+direction, same date. Record:
+`.prometheus/postmortems/2026-08-13-skills-not-installed-at-canonical-names.md`.

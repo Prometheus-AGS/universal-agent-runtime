@@ -174,3 +174,37 @@ the caller token and prove HTTP has stopped, then send SIGTERM through the
 unchanged signal path and await normal child exit. Process exit releases any
 remaining SDK-owned file descriptors before reopening the same path. Do not
 claim that the HTTP token alone shuts down the full runtime.
+
+---
+
+## 2026-08-13 — an installer that renames on collision cannot also report success
+
+**Symptom.** Skills were current on disk yet unreachable. A Codex session
+blocked on `deep-research`; `~/.claude/skills/deep-research` held an unrelated
+April stub (1 file, 4,582 bytes) while the real 13,519-byte skill sat at
+`prometheus-deep-research`.
+
+**Root cause.** When something it does not own holds a skill's canonical name,
+`install-plugin-generation.js` diverts to `prometheus-<name>` (`:930`, `:987`)
+and `targetDestination` (`:1038`) re-derives the same fallback, so
+`verifyTargets` (`:1045`) validates the renamed path. The run then prints
+"Verified immutable generation installed to all supported user targets."
+19 skills were affected across 14 targets.
+
+**Why it was nearly invisible.** Sixteen of the nineteen were symlinks that
+*resolve* — into a source checkout rather than the installed generation. Any
+check asking "is this a symlink that resolves?" calls them healthy;
+`artifact-refiner` served four-month-old content across six targets on exactly
+that basis. Verification followed the rename by construction, so no run could
+detect it.
+
+**Fix.** Collisions are reported and exit non-zero;
+`scripts/verify-skill-install.js` asserts every skill at every target (163 × 14)
+with the denominator printed, requires symlinks to resolve into the active
+generation, and hashes copy targets file-by-file. It runs as the install's last
+step. Six failure modes are observed failing in
+`scripts/tests/verify-skill-install.test.mjs`.
+
+**Prevention.** A completeness claim without a denominator is not evidence. Ask
+of any green check: *what would this print if it had failed?* Full record:
+`.prometheus/postmortems/2026-08-13-skills-not-installed-at-canonical-names.md`.
