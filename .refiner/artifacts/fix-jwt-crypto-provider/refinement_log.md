@@ -77,3 +77,55 @@
 
 - Type: `direct:content`.
 - Evaluation: output inspection plus deterministic Cargo/OpenSpec execution.
+
+## Iteration 3 — 2026-08-14T12:03:09Z
+
+### Actions Taken
+
+- Executed the provisional pointer-identity guard in an AWS-LC-first process and observed that it incorrectly accepted AWS-LC.
+- Confirmed from the pinned 11.0.0 source and Context7 documentation that no public installed-provider identity API exists.
+- Restored first-owner code and corrected the execution contract, phase plan, OpenSpec proposal/spec/tasks, verification receipt, and negative-control evidence.
+- Re-ran runtime idempotence, proxy tests/check, both prior-provider positives, the false AWS-LC-acceptance control, the locked workspace feature tree, Tier 0, and strict OpenSpec validation.
+
+### Constraint Status — final correction
+
+- `a0-rustcrypto-exclusive`: satisfied — the workspace tree contains RustCrypto and no AWS-LC edge for jsonwebtoken 11.0.0.
+- `a0-provider-fail-closed`: satisfied — UAR-owned calls are idempotent; either prior provider returns structured conflict; the false AWS-LC-acceptance control fails.
+- `a0-target-coverage`: satisfied — `git diff --exit-code db1abfd3 -- src/uar/security/jwt.rs tools/uar-jwt-proxy/src/main.rs` exits 0, so the current provider source is byte-identical to the A0 source previously checked for server-full, iOS, and Android; current server-full Tier 0 also passes.
+- `a0-spec-and-scope`: satisfied — both OpenSpec changes are strict-valid and the correction stays inside the permitted surface.
+
+### Reflection Summary
+
+- Convergence: terminate.
+- Reason: all four blocking constraints pass under the only provider-identity rule the public API can enforce.
+
+### Content Type
+
+- Type: `direct:content`.
+- Evaluation: output inspection plus deterministic Cargo/OpenSpec execution.
+
+## Iteration 4 — 2026-08-14T12:35:50Z
+
+### Actions Taken
+
+- Proved the current runtime/proxy provider source is byte-identical to A0 commit `db1abfd3`, so the retained iOS and Android results describe the current source without claiming a rerun.
+- Corrected the stop-condition ledger and removed the stale claim that the latest critic had already passed.
+- Replayed manifest, constraint, state, referenced-file, and consistency validation.
+- Submitted the corrected A0 artifact to fresh history-free critic and judge review; both reported no concrete A0 blocker.
+
+### Constraint Status
+
+- `a0-rustcrypto-exclusive`: satisfied.
+- `a0-provider-fail-closed`: satisfied.
+- `a0-target-coverage`: satisfied by byte identity to the checked A0 source.
+- `a0-spec-and-scope`: satisfied.
+
+### Reflection Summary
+
+- Convergence: terminate.
+- Reason: deterministic validation and both independent adversarial roles clear A0 for its separate follow-up commit.
+
+### Content Type
+
+- Type: `direct:content`.
+- Evaluation: output inspection plus deterministic Cargo/OpenSpec execution.

@@ -57,11 +57,12 @@ the defect so 1.2 passes on its own terms.
 - Add a crate-private JWT wrapper that installs RustCrypto explicitly before
   every runtime encode/decode. Cargo features are additive in downstream
   builds, so the manifest choice alone cannot protect an embeddable crate from
-  a consumer enabling `aws_lc_rs`. UAR owns first installation through the
-  shared server-startup funnel and caches that successful initialization for
-  idempotent reuse. Any provider initialized before UAR—including an
-  indistinguishable RustCrypto installation—is a structured, fail-closed
-  error because `jsonwebtoken` 11 does not expose the installed provider.
+  a consumer enabling `aws_lc_rs`. UAR installs RustCrypto through the shared
+  server-startup funnel and caches its own success for idempotent reuse.
+  `CryptoProvider::install_default` cannot reveal which provider already owns
+  the process slot: its error returns the attempted value and the getter is
+  crate-private. Any earlier provider is therefore a structured, fail-closed
+  error; otherwise AWS-LC can be mistaken for RustCrypto.
 - Initialize the same provider in `uar-jwt-proxy` before it mints a token.
 - Add tests that execute the provider guard and the real HS256 sign/verify path.
   A compile check cannot catch the original panic, so only executed paths count.

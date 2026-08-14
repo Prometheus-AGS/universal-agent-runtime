@@ -333,3 +333,109 @@ test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; fini
 ```
 
 This is observed acceptance evidence for UAR's first-owner contract.
+
+## Final ownership re-evaluation — supersedes the pointer-identity attempt
+
+The intermediate pointer-identity guard compared the error from
+`rust_crypto::DEFAULT_PROVIDER.install_default()` with the RustCrypto static.
+That comparison accepted a process in which AWS-LC had already been installed.
+The dual-provider scratch test observed the defect directly:
+
+```text
+running 1 test
+thread 'tests::conflicting_aws_lc_provider_returns_structured_error' panicked at src/lib.rs:14:9:
+assertion failed: matches!(jwt::ensure_rustcrypto_provider(), Err(JwtError::ProviderConflict))
+test tests::conflicting_aws_lc_provider_returns_structured_error ... FAILED
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 3 filtered out
+```
+
+The reason is visible in the pinned `jsonwebtoken` 11.0.0 source:
+`install_default` calls `OnceLock::set(default_provider)`. `OnceLock::set`
+returns the attempted value on failure, not the value already stored. The only
+getter is `pub(crate)`. No public API can distinguish an identical preinstalled
+RustCrypto provider from preinstalled AWS-LC.
+
+The final rule therefore restores UAR first ownership: UAR-owned startup
+installs RustCrypto and caches its own success; any earlier process owner returns
+`ProviderConflict`. The final scratch source was:
+
+```rust
+#[path = "/Users/gqadonis/.claude/worktrees/uar-1-0-readiness/src/uar/security/jwt.rs"]
+mod jwt;
+
+#[cfg(test)]
+mod tests {
+    use super::jwt::{self, JwtError};
+    use jsonwebtoken::crypto::{aws_lc, rust_crypto};
+
+    #[test]
+    fn conflicting_aws_lc_provider_returns_structured_error() {
+        aws_lc::DEFAULT_PROVIDER
+            .install_default()
+            .expect("isolated process should accept AWS-LC first");
+        assert!(matches!(
+            jwt::ensure_rustcrypto_provider(),
+            Err(JwtError::ProviderConflict)
+        ));
+    }
+
+    #[test]
+    fn negative_control_assumes_preinstalled_aws_lc_is_accepted() {
+        aws_lc::DEFAULT_PROVIDER
+            .install_default()
+            .expect("isolated process should accept AWS-LC first");
+        jwt::ensure_rustcrypto_provider()
+            .expect("negative control deliberately assumes AWS-LC is accepted");
+    }
+
+    #[test]
+    fn preinstalled_rustcrypto_returns_structured_error() {
+        rust_crypto::DEFAULT_PROVIDER
+            .install_default()
+            .expect("isolated process should accept RustCrypto first");
+        assert!(matches!(
+            jwt::ensure_rustcrypto_provider(),
+            Err(JwtError::ProviderConflict)
+        ));
+    }
+}
+```
+
+Commands and observed output:
+
+```bash
+cd /tmp/uar-jwt-provider-conflict
+cargo test --offline tests::preinstalled_rustcrypto_returns_structured_error -- --exact --nocapture
+```
+
+```text
+running 1 test
+test tests::preinstalled_rustcrypto_returns_structured_error ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out
+```
+
+```bash
+cargo test --offline tests::conflicting_aws_lc_provider_returns_structured_error -- --exact --nocapture
+```
+
+```text
+running 1 test
+test tests::conflicting_aws_lc_provider_returns_structured_error ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out
+```
+
+```bash
+cargo test --offline tests::negative_control_assumes_preinstalled_aws_lc_is_accepted -- --exact --nocapture
+```
+
+Observed exit: `101`
+
+```text
+running 1 test
+thread 'tests::negative_control_assumes_preinstalled_aws_lc_is_accepted' panicked at src/lib.rs:26:14:
+negative control deliberately assumes AWS-LC is accepted: ProviderConflict
+test tests::negative_control_assumes_preinstalled_aws_lc_is_accepted ... FAILED
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 3 filtered out
+```

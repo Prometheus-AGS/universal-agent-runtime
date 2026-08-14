@@ -10,7 +10,7 @@
 
 ## 2. Fail closed at the process boundary
 
-- [x] 2.1 Add a crate-private runtime wrapper that explicitly installs `rust_crypto::DEFAULT_PROVIDER` at the shared server-startup funnel and before every encode/decode. Cache UAR's successful first installation for idempotent reuse; return a structured error if any provider was initialized before UAR.
+- [x] 2.1 Add a crate-private runtime wrapper that explicitly installs `rust_crypto::DEFAULT_PROVIDER` at the shared server-startup funnel and before every encode/decode. Cache UAR's own success for idempotence; return a structured error for any provider installed before UAR because version 11.0.0 cannot publicly identify it.
 - [x] 2.2 Route middleware verification and API-key JWT issuance through the wrapper. Provider conflict maps to HTTP 500 in middleware and a contextual service error in API-key exchange.
 - [x] 2.3 Initialize RustCrypto in `uar-jwt-proxy` before its first token is minted; provider conflict exits startup with an error.
 
@@ -18,14 +18,14 @@
 
 - [x] 3.1 Test idempotent UAR-owned RustCrypto initialization, HS256 round-trip through the runtime path, wrong-secret rejection, API-key exchange, and proxy token minting.
 - [x] 3.2 Record the provider-disabled round-trip failure and the pre-fix workspace tree with both providers active.
-- [x] 3.3 In isolated scratch processes, preinstall AWS-LC and RustCrypto separately and demonstrate that the UAR guard returns the structured conflict error for either prior owner.
+- [x] 3.3 In isolated scratch processes, demonstrate that both preinstalled RustCrypto and preinstalled AWS-LC return the structured conflict error, and preserve the negative control that falsely assumes AWS-LC is accepted.
 
 ## 4. Verification and handoff
 
-- [x] 4.1 Tier 0 passes for the `server-full` profile, and `cargo check --locked -p uar-jwt-proxy` passes.
+- [x] 4.1 Tier 0 passes for the `server-full` profile, and `cargo check --locked -p uar-jwt-proxy` passes after the provider-ownership correction.
 - [x] 4.2 Full `embedded-mobile` library checks pass for `aarch64-apple-ios` and `aarch64-linux-android`; report each target separately.
-- [x] 4.3 `openspec validate fix-jwt-crypto-provider --strict` and the artifact-refiner validation gate pass.
-- [x] 4.4 Write `verification.md`, transition A0 complete through canonical KBD state, and leave A1 pending as the exact next change.
+- [x] 4.3 `openspec validate fix-jwt-crypto-provider --strict` and the artifact-refiner validation gate pass after the correction.
+- [x] 4.4 Supersede the earlier conflict evidence in `verification.md`, preserve the historical outputs, and record the A0 follow-up commit separately from A1.
 
 ## 5. Stop conditions
 

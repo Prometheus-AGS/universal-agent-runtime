@@ -1,7 +1,7 @@
 {
   "artifact_type": "content",
   "content_type": "direct:content",
-  "generated_at": "2026-08-14T02:51:12Z",
+  "generated_at": "2026-08-14T12:03:09Z",
   "variants": [
     {
       "name": "a0-verification",
@@ -23,7 +23,7 @@
       "UAR owns first provider installation because jsonwebtoken 11 does not expose installed-provider identity; AWS-LC-first and RustCrypto-first controls both fail closed.",
       "Server-full Tier 0, focused security tests, proxy checks, and separate iOS and Android embedded-mobile checks pass.",
       "Tier 2 was not run because the phase has five later changes.",
-      "Independent artifact-validator confirmed all four blocking constraints; independent adversarial review returned PASS with no findings."
+      "Artifact-validator confirmed all four blocking constraints after the final first-owner correction."
     ]
   }
 }

@@ -38,10 +38,15 @@ load-bearing; the tracks share no files and may run concurrently.
    embeddable and downstream features remain additive, A0 additionally guards
    every UAR JWT operation with explicit, idempotent RustCrypto installation and
    acquires the process provider slot at the shared server-startup funnel.
-   Operator decision of 2026-08-14: UAR owns first installation and caches that
-   success for idempotent reuse. Any provider initialized before UAR—including
-   an indistinguishable RustCrypto installation—returns a structured conflict
-   error because `jsonwebtoken` 11 exposes no installed-provider accessor.
+   Final operator correction of 2026-08-14: UAR installs RustCrypto first and
+   caches its own success for idempotent reuse. In `jsonwebtoken` 11.0.0,
+   `CryptoProvider::install_default` delegates to `OnceLock::set`, whose error
+   returns the attempted value rather than exposing the installed provider; the
+   installed provider getter is crate-private. UAR therefore cannot safely
+   distinguish an identical earlier installation from AWS-LC. Any process
+   provider installed before UAR is a structured conflict. UAR-owned binaries
+   acquire the slot at startup, and all UAR-owned dependency edges select only
+   RustCrypto.
 
 1. **`gap-02-jwks-token-verifier`** — `TokenVerifier` abstraction, JWKS lane,
    enforce `jwt_required` at the point of use, enforce `iss`/`aud`.
@@ -134,6 +139,29 @@ of `uar-1-0-readiness`. Do not edit vendored dependencies or unrelated UAR
 source to reduce that baseline. A warning attributable to the current change is
 a failure and must be fixed within that change's permitted surface or reported
 as a stop condition.
+
+## Delivery-first verification cadence
+
+An implementation unit is a cohesive change-level code slice, not each patch or
+file write. Build the complete slice in dependency order, using formatting and
+static inspection between related edits. Run Tier 0 once when that slice is
+complete, then Tier 1 once the change's tests are complete. Do not repeat an
+unchanged expensive command without a source change or a contract requirement.
+
+For A1, the slice is the JWKS verifier, per-URL cache, middleware selection,
+`jwt_required` enforcement, and focused tests together. Pay the test-profile
+compile cost once: run the exact A0 idempotence regression first, then the A1
+security group and `uar-sidecar` tests from the warmed profile. If a
+test fails, narrow to that test while fixing it; do not restart the broad group
+until the focused failure passes.
+
+Negative-control restoration is exact: capture the pre-inversion source diff,
+run the failing control, restore it, assert the source diff is identical, and
+rerun only the affected positive assertion.
+
+Across tracks, only implementation and isolated tests may run concurrently in
+separate worktrees/build directories. Canonical KBD transitions, shared phase
+artifacts, integration, and commits remain serialized.
 
 ## What counts as satisfied
 

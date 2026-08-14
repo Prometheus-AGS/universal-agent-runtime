@@ -41,11 +41,12 @@ in `[workspace.dependencies]`, and runtime JWT operations explicitly install
 the chosen provider so a downstream additive feature cannot turn provider
 selection back into an implicit panic.
 
-**A0 ownership clarification, 2026-08-14.** UAR acquires the process provider
-slot at the shared server-startup funnel and caches that successful RustCrypto
-installation. Any provider initialized before UAR fails closed, including an
-indistinguishable RustCrypto installation; exact-v11 exposes no public accessor
-that could prove the prior provider's identity.
+**A0 ownership correction, 2026-08-14.** UAR installs RustCrypto at the shared
+server-startup funnel and caches its own success. `jsonwebtoken` 11.0.0 does not
+publicly expose the installed provider: `install_default` returns the attempted
+value when `OnceLock::set` fails, and `get_default` is crate-private. Any provider
+installed before UAR therefore fails closed with a structured conflict. This is
+the only rule that cannot silently accept AWS-LC while claiming RustCrypto.
 
 - **A1 → A2**: A2 consumes a type A1 introduces, and populating a tenant from an
   unverified token is worse than having no tenant field.
@@ -83,6 +84,26 @@ Per `CLAUDE.md`, and not earlier than their point:
 - **Tier 1**, unit complete — the change's own unit tests.
 - **Tier 2**, phase completion — the pinned live command, verbatim.
 - **Tier 3** — not reached in this phase; no milestone or release here.
+
+## Delivery critical path
+
+1. Validate the active OpenSpec change strictly before implementation.
+2. Build each change as one cohesive implementation unit. Use formatting and
+   static inspection between related edits; do not run full Cargo checks after
+   micro-edits.
+3. Run one Tier 0 sequence after the unit is complete.
+4. Pay the Tier 1 test-profile compilation once, then run focused groups from
+   the warmed target directory. On failure, narrow to the failing test until it
+   passes before rerunning a broader group.
+5. Capture the source diff before each required branch inversion, observe the
+   negative control fail, restore the exact diff, and rerun only the affected
+   positive assertion.
+6. Update verification, OpenSpec, artifact-refiner, and KBD records only after
+   working code and focused tests pass. Documentation-only updates do not cause
+   another Rust build.
+7. Commit each change separately. Track B implementation may use a separate
+   worktree after a changed-file intersection check, but KBD transitions,
+   shared phase artifacts, integration, and commits are serialized.
 
 ## Handoff to Codex
 

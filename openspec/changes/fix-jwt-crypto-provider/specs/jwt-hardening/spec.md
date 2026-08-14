@@ -24,8 +24,12 @@ alone SHALL NOT be treated as evidence: provider features are additive, and
 - **WHEN** UAR acquires the process provider slot with RustCrypto and invokes its initializer again
 - **THEN** the cached UAR-owned initialization succeeds and JWT operations remain available
 
-#### Scenario: Any provider initialized before UAR fails closed
-- **WHEN** any `jsonwebtoken` provider is installed before UAR acquires the process provider slot, including an indistinguishable RustCrypto installation
+#### Scenario: An earlier process owner fails closed
+- **WHEN** any `jsonwebtoken` provider was installed before UAR invokes its provider guard
+- **THEN** UAR returns a structured provider-conflict error because version 11.0.0 cannot publicly identify the installed provider
+
+#### Scenario: A different provider initialized before UAR fails closed
+- **WHEN** a non-RustCrypto `jsonwebtoken` provider is installed before UAR invokes its provider guard
 - **THEN** UAR returns a structured provider-conflict error and does not perform a JWT operation
 
 #### Scenario: Server startup acquires provider ownership

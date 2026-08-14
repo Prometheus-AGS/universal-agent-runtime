@@ -194,3 +194,22 @@ target environment values. For Android, the installed NDK uses the
 API-suffixed `aarch64-linux-android35-clang`, and the pre-existing
 `native-tls` graph needs a target OpenSSL sysroot. Do not repair either machine
 precondition in UAR source.
+
+## 2026-08-14 — `CryptoProvider::install_default` cannot identify the installed provider
+
+**Observed failure.** A provisional guard compared the pointer returned by a
+failed `rust_crypto::DEFAULT_PROVIDER.install_default()` call with the
+RustCrypto static. The identical-RustCrypto control passed, but an AWS-LC-first
+process was also accepted; the structured-conflict assertion failed.
+
+**Root cause.** `jsonwebtoken` 11.0.0 delegates `install_default` to
+`OnceLock::set(default_provider)`. On failure, `OnceLock::set` returns the value
+the caller attempted to install, not the provider already stored. The installed
+provider getter is crate-private. The returned pointer therefore always
+describes the attempted RustCrypto value and proves nothing about the process
+owner.
+
+**Working rule.** UAR owns first installation and caches only its own successful
+RustCrypto acquisition. Any provider installed earlier—including RustCrypto—
+returns a structured conflict. Do not reintroduce pointer comparison unless a
+pinned `jsonwebtoken` API publicly exposes the installed provider identity.

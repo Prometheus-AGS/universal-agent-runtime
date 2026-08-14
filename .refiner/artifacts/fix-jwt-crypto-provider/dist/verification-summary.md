@@ -3,7 +3,7 @@
 - Schema inputs: manifest and constraints are present for `direct:content` validation.
 - Files: this receipt exists and is non-empty.
 - Dependency constraint: the locked reverse feature tree shows RustCrypto and no AWS-LC feature for `jsonwebtoken 11.0.0`.
-- Runtime constraint: the final security slice passed 25 tests and the proxy passed 2 tests.
+- Runtime constraint: the exact UAR-owned idempotence regression passed; the proxy passed 2 tests; isolated RustCrypto-first and AWS-LC-first processes both returned the structured conflict.
 - Fail-closed controls: AWS-LC-first and RustCrypto-first both returned the
   structured provider conflict; deliberately false foreign-provider acceptance
   and wrong-secret acceptance assertions failed as required.
@@ -22,8 +22,9 @@ including RustCrypto, fails closed. Literal Android, provider-disabled,
 prior-provider, and wrong-secret commands and outputs are retained under
 `openspec/changes/fix-jwt-crypto-provider/evidence/`.
 
-Independent artifact-validator: all four blocking constraints pass.
-Independent artifact-critic: PASS with no findings.
+Artifact-validator: all four blocking constraints pass after the final
+first-owner correction. The history-free artifact-critic and judge both report
+no concrete A0 blocker after the evidence correction.
 
 Detailed commands and observed outputs are in
 `openspec/changes/fix-jwt-crypto-provider/verification.md`.
