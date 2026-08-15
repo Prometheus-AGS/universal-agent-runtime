@@ -277,7 +277,7 @@ reqwest = { version = "0.12", default-features = false, features = [
 # fixes GHSA-89vp-x53w-74fx, a DNS-rebinding vuln in the Streamable HTTP
 # server transport (patched >=1.4.0) -- this project enables
 # transport-streamable-http-server below, so it was directly exposed.
-rmcp = { version = "=2.2.0", features = [
+rmcp = { version = "=3.1.2", features = [
   "client",
   "server",
   "macros",
