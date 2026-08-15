@@ -1,11 +1,11 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 100,
-  "derivedRevision": 100,
+  "sourceRevision": 102,
+  "derivedRevision": 102,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 42
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 44
   },
   "conflictCount": 0,
   "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
@@ -23,10 +23,10 @@
   "currentTask": null,
   "status": "running",
   "completionMetric": "implementation",
-  "implementationCompleted": 53,
+  "implementationCompleted": 54,
   "implementationTotal": 79,
   "planRevision": 6,
-  "revision": 100,
+  "revision": 102,
   "exactNextCommand": "/kbd-execute uar-1-0-readiness",
-  "updatedAt": "2026-08-15T09:39:59.784025Z"
+  "updatedAt": "2026-08-15T09:51:39.202495Z"
 }

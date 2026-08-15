@@ -219,25 +219,58 @@ test uar::api::a2a::grpc::tests::grpc_required_jwt_without_verified_tenant_is_re
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 572 filtered out; finished in 0.01s
 ```
 
-## Deferred live control
+## Phase-level live C-21 control
 
-The phase-level C-21 assertion and its live negative control are not represented
-by these library controls. They remain deferred to the one permitted Tier 2 run
-after all six changes are implemented. The integration target containing C-21
-was compiled, not executed:
+After all six changes were committed, the one permitted Tier 2 run observed the
+real two-tenant assertion:
 
 ```bash
-cargo check --locked -p universal-agent-runtime \
-  --no-default-features --features server-full --test integration
+UAR_LIVE_INTEGRATION_BACKEND=recorded \
+  cargo test --locked --no-default-features --features server-full \
+  --test integration live::capability_cases -- --test-threads=1
 ```
 
 Observed output:
 
 ```text
-Checking universal-agent-runtime v1.0.0 (/Users/gqadonis/.claude/worktrees/uar-1-0-readiness)
-warning: `universal-agent-runtime` (lib) generated 3 warnings
-Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 32s
+running 29 tests
+test live::capability_cases::l3_c21_a2a_tasks_are_partitioned_by_verified_tenant ... ok
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 62 filtered out; finished in 289.87s
 ```
 
-Exit code: `0`. This is compile evidence only and is not reported as a live
-C-21 result.
+Exit code: `0`.
+
+For the paired negative control, the scratch inversion changed only
+`TaskStore::get`: it ignored the tenant key and selected the first matching task
+ID. Pre-inversion identity:
+
+```text
+8159395cabf91744f601eeac9e34d0f2d1a1fd0f8bd8041d9db867d08216ebd4  src/uar/api/a2a/task_store.rs
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  -
+```
+
+Command:
+
+```bash
+UAR_LIVE_INTEGRATION_BACKEND=recorded \
+  cargo test --locked --no-default-features --features server-full \
+  --test integration live::capability_cases::l3_c21_a2a_tasks_are_partitioned_by_verified_tenant \
+  -- --exact --test-threads=1
+```
+
+Observed output (exit 101):
+
+```text
+running 1 test
+test live::capability_cases::l3_c21_a2a_tasks_are_partitioned_by_verified_tenant ... FAILED
+thread 'live::capability_cases::l3_c21_a2a_tasks_are_partitioned_by_verified_tenant' panicked at tests/integration/live/capability_cases.rs:952:5:
+assertion `left == right` failed
+  left: Null
+ right: -32001
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 90 filtered out; finished in 9.15s
+error: test failed, to rerun pass `--test integration`
+```
+
+After restoration, both hashes returned exactly to the pre-inversion values.
+The successful Tier 2 result above is the positive observation on that exact
+source.

@@ -417,3 +417,16 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Independent review found four reachable implementation defects and one
   evidence defect; all were corrected. The final judge and critic returned
   PASS. Phase Tier 2 remains deferred until the B5 commit is complete.
+
+## 2026-08-15 — `uar-1-0-readiness` Execute stage completed
+
+- Committed B5 as `44aadbb6`, then ran the pinned phase command verbatim under
+  the recorded `server-full` backend. It observed 29 passing and 0 failed in
+  289.87 seconds; the real C-21 two-tenant case passed.
+- Inverted only tenant-aware task lookup and reran exact C-21. It exited 101 at
+  the cross-tenant read assertion (`Null` instead of `-32001`); task-store source
+  and empty-diff hashes then restored exactly.
+- All six OpenSpec changes strict-validated. A2 artifact-refiner schema replay
+  passed 4/4 and finalized at `2026-08-15_09-50-40Z`.
+- Canonical KBD revision 102 marks all six changes and Execute complete. No push,
+  PR, archive, or Tier 3 action occurred. Reflection is next.

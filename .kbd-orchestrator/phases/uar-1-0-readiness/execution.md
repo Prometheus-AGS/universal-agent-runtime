@@ -3,8 +3,8 @@ Project: universal-agent-runtime
 Date: 2026-08-13
 Selected backend: openspec
 Dispatched to: Codex
-Backend rationale: Six spec-backed changes require ordered task and evidence traceability; B4 is the next delivery slice after embedded built-in availability.
-Backend entrypoint: /opsx:apply skill-scoped-governance
+Backend rationale: Six spec-backed changes required ordered task and evidence traceability; all six are now complete and the Execute stage is closed.
+Backend entrypoint: /kbd-reflect uar-1-0-readiness
 OpenSpec available: YES
 Source plan: .kbd-orchestrator/phases/uar-1-0-readiness/plan.md
 
@@ -12,14 +12,15 @@ EXECUTION SCOPE
 
 - fix-jwt-crypto-provider: Complete, with a focused follow-up preserving UAR first ownership because `jsonwebtoken` cannot expose an earlier provider's identity.
 - gap-02-jwks-token-verifier: Complete — JWKS verification, caching, claim validation, and effective `jwt_required` enforcement passed its gates.
-- gap-03-a2a-tenant-partitioning: Implementation and focused controls complete;
-  canonical completion remains deferred until the live C-21 Tier 2 assertion
-  and control run at phase completion.
+- gap-03-a2a-tenant-partitioning: Complete — the live C-21 assertion passed in
+  Tier 2 and its tenant-key inversion exited 101 before exact restoration.
 - skill-builtins-on-embedded: Complete — fresh SurrealKV seeding, process-exit
   reload with seeding disabled, enabled re-registration without duplicates, and
   the disabled-seeding switch passed focused gates and adversarial review.
-- skill-scoped-governance: Pending next after built-ins.
-- skill-config-reconciliation: Pending after scoped governance.
+- skill-scoped-governance: Complete — durable scoped state, cold restart, live
+  binding, deletion behavior, and compatibility all passed focused gates.
+- skill-config-reconciliation: Complete — reversible tombstone reconciliation,
+  provenance repair, four-process restore, fail-safes, and visibility passed.
 
 DISPATCH CONTRACTS
 
@@ -48,22 +49,23 @@ VERIFICATION REQUIREMENTS
   `uar-sidecar` tests, strict OpenSpec validation, negative-control restoration,
   artifact-refiner validation, and history-free critic/judge review. All passed.
 - A2 begins only after A1 is committed separately.
-- A2 focused tenant tests, fail-closed controls, Tier 0, integration-target
-  compile, strict OpenSpec validation, and independent critic/judge review pass.
-  Its live C-21 row remains explicitly unobserved until phase Tier 2.
+- A2 focused tenant tests, fail-closed controls, Tier 0, live C-21 assertion and
+  inversion, strict OpenSpec validation, artifact-refiner, and independent
+  critic/judge review pass.
 - B3 fresh-database, process-exit reload, deduplication, disabled-seeding, and
   registration-removal controls passed under `server-full`; deterministic
   artifact-refiner and corrected independent critic/judge gates passed.
-- Tier 2 remains prohibited until all six changes complete.
+- Tier 2 ran once after all six changes completed and observed 29 passing and 0
+  failed.
 
 PROGRESS LEDGER
 
 - [COMPLETE] fix-jwt-crypto-provider — Codex
 - [COMPLETE] gap-02-jwks-token-verifier — Codex
-- [IN PROGRESS — IMPLEMENTED, LIVE GATE DEFERRED] gap-03-a2a-tenant-partitioning — Codex
+- [COMPLETE] gap-03-a2a-tenant-partitioning — Codex
 - [COMPLETE] skill-builtins-on-embedded — Codex
-- [PENDING — NEXT IMPLEMENTATION] skill-scoped-governance — Codex
-- [PENDING] skill-config-reconciliation — Codex
+- [COMPLETE] skill-scoped-governance — Codex
+- [COMPLETE] skill-config-reconciliation — Codex
 
 OUTPUTS
 
@@ -75,15 +77,15 @@ BLOCKERS
 
 CANONICAL HANDOFF
 
-- Canonical KBD revision 96, plan revision 6.
+- Canonical KBD revision 102, plan revision 6; Execute stage complete.
 - Active phase: `uar-1-0-readiness`.
 - A0 `fix-jwt-crypto-provider`: complete.
 - A1 `gap-02-jwks-token-verifier`: complete.
-- A2 `gap-03-a2a-tenant-partitioning`: in progress; implementation complete,
-  live C-21 evidence deferred to phase Tier 2.
+- A2 `gap-03-a2a-tenant-partitioning`: complete.
 - B3 `skill-builtins-on-embedded`: complete.
-- B4 `skill-scoped-governance`: next implementation slice.
-- Exact next command: `/kbd-execute uar-1-0-readiness`.
+- B4 `skill-scoped-governance`: complete.
+- B5 `skill-config-reconciliation`: complete.
+- Next lifecycle command: `/kbd-reflect uar-1-0-readiness`.
 
 REFLECTION HANDOFF
 

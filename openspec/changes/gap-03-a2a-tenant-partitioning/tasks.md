@@ -30,13 +30,13 @@
 
 ## 3. Convert the published exclusion
 
-- [ ] 3.1 Replace `excluded_c21_tenant_isolation_no_cross_read_surface`
+- [x] 3.1 Replace `excluded_c21_tenant_isolation_no_cross_read_surface`
       (`tests/integration/live/capability_cases.rs:873`) with a real two-tenant
       test. Rename off the `excluded_` prefix per the label taxonomy — an
       exclusion that outlives its blocking condition is the failure the
       self-invalidating design exists to prevent.
-- [ ] 3.2 The new case asserts denial by task id, by context id, and on cancel.
-- [ ] 3.3 Same-tenant access still succeeds — the negative claim alone is not
+- [x] 3.2 The new case asserts denial by task id, by context id, and on cancel.
+- [x] 3.3 Same-tenant access still succeeds — the negative claim alone is not
       evidence the store still works.
 
 ## 4. Proof
@@ -44,7 +44,7 @@
 - [x] 4.1 Defer the contract's pinned Tier 2 command to phase completion, after
       all six changes are implemented. Running it during A2 is prohibited by
       the phase tier discipline; A2 uses focused tests at change completion.
-- [ ] 4.2 **Negative control.** Demonstrate the cross-tenant test fails when the
+- [x] 4.2 **Negative control.** Demonstrate the cross-tenant test fails when the
       partition key is ignored. Record the command and its failing output.
 - [x] 4.3 Record current results in the contract's verification-record format;
       retain the live C-21 row as explicitly deferred until phase Tier 2.

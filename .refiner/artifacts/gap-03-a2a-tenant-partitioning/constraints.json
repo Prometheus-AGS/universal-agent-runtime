@@ -1,0 +1,55 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "a2-verified-tenant-identity",
+      "description": "Tenant identity is distinct from user identity, originates only from verified claims, and cannot be overridden by request body, query, or headers.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused verifier and spoofing assertions plus A1 unverified-token denial evidence"
+      }
+    },
+    {
+      "id": "a2-partition-every-task-path",
+      "description": "Task ID, context ID, cancel, and gRPC paths partition by verified tenant and preserve same-tenant access.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused store/gRPC controls and live two-tenant C-21 positive and inverted assertions"
+      }
+    },
+    {
+      "id": "a2-required-tenant-fail-closed",
+      "description": "When JWT is required, tenant-scoped HTTP and gRPC surfaces reject a verified token that establishes no tenant.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "HTTP and gRPC positive assertions with separate observed-failing guard inversions"
+      }
+    },
+    {
+      "id": "a2-phase-proof-and-scope",
+      "description": "The pinned server-full phase command passes at or above the 29-case floor, strict OpenSpec validates, and A2 does not scope runs, memory, or knowledge bases.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Pinned Tier 2 output, strict OpenSpec validation, verification record, and scoped diff inspection"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the A2 OpenSpec delta and EXECUTION-CONTRACT.md as acceptance authority.",
+    "Report results only for server-full and transfer them to no other profile.",
+    "Never derive a tenant boundary from an unverified token.",
+    "Do not expand A2 scope to runs, memory, or knowledge bases."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "Every fail-closed assertion retains literal observed-failing output."
+  ]
+}
