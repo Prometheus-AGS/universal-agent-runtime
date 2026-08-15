@@ -729,7 +729,7 @@ impl RunManager {
     ) -> (PolicyUniverse, Option<RunPolicy>) {
         let skills = match &self.skill_service {
             Some(service) => service
-                .get_enabled_skills()
+                .get_skills()
                 .await
                 .into_iter()
                 .map(|skill| skill.skill_id)
@@ -1246,7 +1246,9 @@ impl RunManager {
             }
             .to_string();
             (
-                skill_service.match_skills(&input, Some(&agent_id)).await,
+                skill_service
+                    .match_skills_scoped(&input, Some(&agent_id), Some(session.id()))
+                    .await,
                 selection_method,
             )
         } else {

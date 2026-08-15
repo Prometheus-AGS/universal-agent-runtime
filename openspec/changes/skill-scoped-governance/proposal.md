@@ -58,7 +58,8 @@ it.
 ## Impact
 
 `src/uar/domain/skills.rs`, `src/uar/runtime/skills/service.rs`,
-`src/uar/runtime/skills/registry.rs`, skill storage providers, `src/uar/api/skills.rs`.
+`src/uar/runtime/skills/registry.rs`, skill storage providers, `src/uar/api/skills.rs`,
+and the scoped-matching call in `src/uar/runtime/manager.rs`.
 
 ## Non-goals
 

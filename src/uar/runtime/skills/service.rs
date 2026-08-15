@@ -8,11 +8,11 @@
 
 use super::registry::SkillRegistry;
 use super::storage::{SkillStorageProvider, StorageProviderKind};
-use crate::uar::domain::skills::Skill;
+use crate::uar::domain::skills::{Skill, SkillScope};
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::runtime::matching::vector::VectorMatcher;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
@@ -101,7 +101,8 @@ pub struct SkillService {
     providers: Vec<Arc<dyn SkillStorageProvider>>,
     /// Current matching configuration
     matching_config: RwLock<SkillMatchingConfig>,
-    /// Per-agent skill bindings: agent_id -> Vec<skill_id>
+    /// Compatibility view for agent bindings whose skill is not loaded yet.
+    /// Loaded skills also receive durable [`SkillScope::Agent`] overrides.
     agent_skills: RwLock<HashMap<String, Vec<String>>>,
     /// Optional governance engine for Cedar policy enforcement on skill mutations.
     governance: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
@@ -167,16 +168,7 @@ impl SkillService {
     pub async fn register_builtins(&self, skills: Vec<crate::uar::domain::skills::Skill>) {
         let mut registry = self.registry.write().await;
         let count = skills.len();
-        for s in skills {
-            // `register`, NOT `register_loaded`. Builtins are ENTERING the
-            // system from the pack on disk — they were not read out of the
-            // database, so there is nothing to "re-hydrate" and skipping the
-            // write is what left the embedded catalogue empty (R1).
-            //
-            // `register_loaded` is for the opposite direction: skills read FROM
-            // a provider, which must not be written straight back.
-            registry.register(s).await;
-        }
+        registry.register_builtins(skills).await;
         info!(count, "registered builtin skills");
     }
 
@@ -250,23 +242,32 @@ impl SkillService {
 
     /// Toggle a skill's enabled state.
     pub async fn toggle_skill(&self, id: &str, enabled: bool) -> bool {
-        match self
-            .update_skill(
-                id,
-                SkillUpdate {
-                    enabled: Some(enabled),
-                    ..SkillUpdate::default()
-                },
-            )
+        self.set_scoped_enabled(id, SkillScope::Global, enabled)
             .await
-        {
-            Ok(Some(_)) => true,
-            Ok(None) => false,
-            Err(e) => {
-                warn!("Failed to toggle skill '{}': {:?}", id, e);
-                false
-            }
+    }
+
+    /// Set a durable enabled-state override at one scope.
+    pub async fn set_scoped_enabled(&self, id: &str, scope: SkillScope, enabled: bool) -> bool {
+        if let Err(error) = self.ensure_mutation_allowed(id).await {
+            warn!("Failed to configure skill '{}': {:?}", id, error);
+            return false;
         }
+
+        let updated = {
+            let mut registry = self.registry.write().await;
+            let Some(mut skill) = registry.get(id).cloned() else {
+                return false;
+            };
+            skill.set_enabled_for(scope, enabled);
+            registry.register(skill.clone()).await;
+            skill
+        };
+
+        if updated.origin == crate::uar::domain::skills::SkillOrigin::User {
+            self.persist_to_filesystem(&updated).await;
+        }
+        info!(skill_id = id, enabled, "updated scoped skill configuration");
+        true
     }
 
     /// Create a new skill dynamically via API.
@@ -312,25 +313,7 @@ impl SkillService {
         id: &str,
         update: SkillUpdate,
     ) -> anyhow::Result<Option<Skill>> {
-        // Cedar governance gate: check if this mutation is allowed
-        if let Some(ref engine) = self.governance {
-            let environment = std::env::var("PROMETHEUS_ENVIRONMENT")
-                .unwrap_or_else(|_| "development".to_string());
-            let context = format!(
-                r#"{{"environment": "{}", "validation_passed": true}}"#,
-                environment
-            );
-            let allowed = engine
-                .is_skill_mutation_allowed("uar-runtime", "skill.mutate", id, &context)
-                .await;
-            if !allowed {
-                anyhow::bail!(
-                    "Cedar policy denied skill mutation for '{}' in {} environment",
-                    id,
-                    environment
-                );
-            }
-        }
+        self.ensure_mutation_allowed(id).await?;
 
         let existing = { self.registry.read().await.get(id).cloned() };
         let Some(mut skill) = existing else {
@@ -356,7 +339,7 @@ impl SkillService {
             skill.preferred_tools = preferred_tools;
         }
         if let Some(enabled) = update.enabled {
-            skill.enabled = enabled;
+            skill.set_enabled_for(SkillScope::Global, enabled);
         }
         if let Some(execution_config) = update.execution_config {
             skill.execution_config = execution_config;
@@ -364,20 +347,7 @@ impl SkillService {
 
         self.registry.write().await.register(skill.clone()).await;
 
-        // Persist updates to writable filesystem skills so changes survive restarts.
-        for provider in &self.providers {
-            if provider.kind() == StorageProviderKind::Filesystem {
-                if let Err(e) = provider.save_skill(&skill).await {
-                    warn!(
-                        "Could not write updated skill '{}' to filesystem provider '{}': {:?}",
-                        skill.skill_id,
-                        provider.name(),
-                        e
-                    );
-                }
-                break;
-            }
-        }
+        self.persist_to_filesystem(&skill).await;
 
         info!("Updated skill via API: {}", skill.skill_id);
         Ok(Some(skill))
@@ -421,16 +391,40 @@ impl SkillService {
 
     /// Match skills to a query for a specific agent.
     pub async fn match_skills(&self, query: &str, agent_id: Option<&str>) -> Vec<Skill> {
+        self.match_skills_scoped(query, agent_id, None).await
+    }
+
+    /// Match skills after resolving conversation > agent > global state.
+    pub async fn match_skills_scoped(
+        &self,
+        query: &str,
+        agent_id: Option<&str>,
+        conversation_id: Option<&str>,
+    ) -> Vec<Skill> {
+        let legacy_bindings = if let Some(agent_id) = agent_id {
+            self.agent_skills
+                .read()
+                .await
+                .get(agent_id)
+                .filter(|skill_ids| !skill_ids.is_empty())
+                .cloned()
+        } else {
+            None
+        };
         let registry = self.registry.read().await;
         let config = self.matching_config.read().await;
 
-        // Get candidate skills (agent-specific if agent_id provided)
-        let candidates = if let Some(aid) = agent_id {
-            self.get_enabled_skills_for_agent_inner(&registry, aid)
-                .await
-        } else {
-            registry.list_enabled()
-        };
+        let candidates = registry
+            .list()
+            .into_iter()
+            .filter(|skill| {
+                let agent_fallback = legacy_bindings.as_ref().map(|skill_ids| {
+                    skill_ids.iter().any(|id| id == &skill.skill_id)
+                        && skill.enabled_for(None, None)
+                });
+                skill.enabled_for_with_agent_fallback(agent_id, conversation_id, agent_fallback)
+            })
+            .collect::<Vec<_>>();
 
         if candidates.is_empty() {
             return Vec::new();
@@ -545,66 +539,130 @@ impl SkillService {
             .collect()
     }
 
-    // --- Per-agent skill bindings ---
+    // --- Per-agent skill configuration ---
 
-    /// Get skill IDs associated with an agent.
+    /// Get skill IDs explicitly enabled for an agent.
     pub async fn get_agent_skill_ids(&self, agent_id: &str) -> Vec<String> {
-        self.agent_skills
+        let mut skill_ids = self
+            .agent_skills
             .read()
             .await
             .get(agent_id)
             .cloned()
-            .unwrap_or_default()
+            .unwrap_or_default();
+        for skill_id in self
+            .registry
+            .read()
+            .await
+            .list()
+            .into_iter()
+            .filter(|skill| {
+                skill.scoped_config.iter().any(|config| {
+                    config.enabled
+                        && matches!(&config.scope, SkillScope::Agent(id) if id == agent_id)
+                })
+            })
+            .map(|skill| skill.skill_id)
+        {
+            if !skill_ids.contains(&skill_id) {
+                skill_ids.push(skill_id);
+            }
+        }
+        skill_ids
     }
 
-    /// Set skill bindings for an agent.
+    /// Replace an agent's durable skill overrides using allowlist semantics.
     pub async fn set_agent_skills(&self, agent_id: &str, skill_ids: Vec<String>) {
+        let selected = skill_ids.iter().cloned().collect::<HashSet<_>>();
         self.agent_skills
             .write()
             .await
             .insert(agent_id.to_string(), skill_ids);
+        let all_ids = self
+            .registry
+            .read()
+            .await
+            .list()
+            .into_iter()
+            .map(|skill| skill.skill_id)
+            .collect::<Vec<_>>();
+        for skill_id in all_ids {
+            self.set_scoped_enabled(
+                &skill_id,
+                SkillScope::Agent(agent_id.to_string()),
+                selected.contains(&skill_id),
+            )
+            .await;
+        }
     }
 
-    /// Add a single skill to an agent's bindings.
+    /// Enable one skill for an agent.
     pub async fn add_skill_to_agent(&self, agent_id: &str, skill_id: &str) {
-        let mut map = self.agent_skills.write().await;
-        let entry = map.entry(agent_id.to_string()).or_default();
-        if !entry.contains(&skill_id.to_string()) {
+        let mut bindings = self.agent_skills.write().await;
+        let entry = bindings.entry(agent_id.to_string()).or_default();
+        if !entry.iter().any(|id| id == skill_id) {
             entry.push(skill_id.to_string());
         }
+        drop(bindings);
+        self.set_scoped_enabled(skill_id, SkillScope::Agent(agent_id.to_string()), true)
+            .await;
     }
 
-    /// Remove a single skill from an agent's bindings.
+    /// Disable one skill for an agent.
     pub async fn remove_skill_from_agent(&self, agent_id: &str, skill_id: &str) {
-        let mut map = self.agent_skills.write().await;
-        if let Some(entry) = map.get_mut(agent_id) {
-            entry.retain(|id| id != skill_id);
+        if let Some(bindings) = self.agent_skills.write().await.get_mut(agent_id) {
+            bindings.retain(|id| id != skill_id);
         }
+        self.set_scoped_enabled(skill_id, SkillScope::Agent(agent_id.to_string()), false)
+            .await;
     }
 
-    /// Get enabled skills for an agent (intersection of agent bindings and globally enabled).
+    /// Get skills enabled after resolving agent state over global state.
     pub async fn get_enabled_skills_for_agent(&self, agent_id: &str) -> Vec<Skill> {
         let registry = self.registry.read().await;
-        self.get_enabled_skills_for_agent_inner(&registry, agent_id)
-            .await
+        registry
+            .list()
+            .into_iter()
+            .filter(|skill| skill.enabled_for(Some(agent_id), None))
+            .collect()
     }
 
-    async fn get_enabled_skills_for_agent_inner(
-        &self,
-        registry: &SkillRegistry,
-        agent_id: &str,
-    ) -> Vec<Skill> {
-        let agent_skill_ids = self.get_agent_skill_ids(agent_id).await;
-        if agent_skill_ids.is_empty() {
-            // If no specific bindings, return all enabled skills
-            return registry.list_enabled();
+    async fn ensure_mutation_allowed(&self, id: &str) -> anyhow::Result<()> {
+        if let Some(ref engine) = self.governance {
+            let environment = std::env::var("PROMETHEUS_ENVIRONMENT")
+                .unwrap_or_else(|_| "development".to_string());
+            let context = format!(
+                r#"{{"environment": "{}", "validation_passed": true}}"#,
+                environment
+            );
+            let allowed = engine
+                .is_skill_mutation_allowed("uar-runtime", "skill.mutate", id, &context)
+                .await;
+            if !allowed {
+                anyhow::bail!(
+                    "Cedar policy denied skill mutation for '{}' in {} environment",
+                    id,
+                    environment
+                );
+            }
         }
+        Ok(())
+    }
 
-        registry
-            .list_enabled()
-            .into_iter()
-            .filter(|s| agent_skill_ids.contains(&s.skill_id))
-            .collect()
+    async fn persist_to_filesystem(&self, skill: &Skill) {
+        for provider in &self.providers {
+            if provider.kind() == StorageProviderKind::Filesystem {
+                if let Err(error) = provider.save_skill(skill).await {
+                    warn!(
+                        "Could not write updated skill '{}' to filesystem provider '{}': {:?}",
+                        skill.skill_id,
+                        provider.name(),
+                        error
+                    );
+                }
+                break;
+            }
+        }
     }
 
     // --- Config ---
@@ -662,7 +720,9 @@ impl SkillService {
 mod tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
-    use crate::uar::domain::skills::{SkillConstraints, SkillTriggers};
+    use crate::uar::domain::skills::{SkillConstraints, SkillOrigin, SkillTriggers};
+    use crate::uar::persistence::providers::surreal::SurrealDbProvider;
+    use crate::uar::runtime::skills::storage::DatabaseStorageProvider;
 
     fn test_skill() -> Skill {
         Skill {
@@ -739,5 +799,253 @@ mod tests {
             .expect("missing update should not error");
 
         assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn scoped_state_resolves_conversation_then_agent_then_global_both_directions() {
+        let service = SkillService::new(None, None);
+        service.create_skill(test_skill()).await.unwrap();
+
+        assert!(
+            service
+                .set_scoped_enabled("test-skill", SkillScope::Global, false)
+                .await
+        );
+        assert!(
+            service
+                .set_scoped_enabled("test-skill", SkillScope::Agent("agent-a".to_string()), true,)
+                .await
+        );
+        assert!(
+            service
+                .set_scoped_enabled(
+                    "test-skill",
+                    SkillScope::Conversation("conversation-a".to_string()),
+                    false,
+                )
+                .await
+        );
+
+        assert!(
+            service
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
+                .await
+                .is_empty()
+        );
+        assert_eq!(
+            service
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-b"))
+                .await
+                .len(),
+            1
+        );
+        assert!(
+            service
+                .match_skills_scoped("initial", Some("agent-b"), Some("conversation-b"))
+                .await
+                .is_empty()
+        );
+
+        assert!(
+            service
+                .set_scoped_enabled("test-skill", SkillScope::Global, true)
+                .await
+        );
+        assert!(
+            service
+                .set_scoped_enabled(
+                    "test-skill",
+                    SkillScope::Agent("agent-a".to_string()),
+                    false,
+                )
+                .await
+        );
+        assert!(
+            service
+                .set_scoped_enabled(
+                    "test-skill",
+                    SkillScope::Conversation("conversation-a".to_string()),
+                    true,
+                )
+                .await
+        );
+
+        assert_eq!(
+            service
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
+                .await
+                .len(),
+            1
+        );
+        assert!(
+            service
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-b"))
+                .await
+                .is_empty()
+        );
+        assert_eq!(
+            service
+                .match_skills_scoped("initial", Some("agent-b"), Some("conversation-b"))
+                .await
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn scoped_change_affects_next_match_without_mutating_existing_binding() {
+        let service = SkillService::new(None, None);
+        service.create_skill(test_skill()).await.unwrap();
+
+        let in_flight_binding = service
+            .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
+            .await;
+        assert_eq!(in_flight_binding.len(), 1);
+
+        assert!(
+            service
+                .set_scoped_enabled(
+                    "test-skill",
+                    SkillScope::Conversation("conversation-a".to_string()),
+                    false,
+                )
+                .await
+        );
+
+        assert_eq!(in_flight_binding.len(), 1);
+        assert!(
+            service
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
+                .await
+                .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn agent_binding_set_before_load_filters_future_skills() {
+        let service = SkillService::new(None, None);
+        service
+            .set_agent_skills("agent-a", vec!["future-skill".to_string()])
+            .await;
+
+        let mut future = test_skill();
+        future.skill_id = "future-skill".to_string();
+        let mut unbound = test_skill();
+        unbound.skill_id = "unbound-skill".to_string();
+        service.create_skill(future).await.unwrap();
+        service.create_skill(unbound).await.unwrap();
+
+        let matched = service.match_skills("initial", Some("agent-a")).await;
+        assert_eq!(matched.len(), 1);
+        assert_eq!(matched[0].skill_id, "future-skill");
+
+        assert!(
+            service
+                .set_scoped_enabled(
+                    "unbound-skill",
+                    SkillScope::Conversation("conversation-a".to_string()),
+                    true,
+                )
+                .await
+        );
+        let conversation_match = service
+            .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
+            .await;
+        assert_eq!(conversation_match.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn builtin_scoped_state_survives_restart_reregistration() {
+        let directory = tempfile::tempdir().unwrap();
+        let endpoint = format!(
+            "surrealkv://{}",
+            directory.path().join("skills.db").display()
+        );
+        let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+            SurrealDbProvider::new(&endpoint, None, None, Some("b4"), Some("b4"))
+                .await
+                .unwrap(),
+        );
+        let mut global_builtin = test_skill();
+        global_builtin.skill_id = "global-builtin".to_string();
+        global_builtin.origin = SkillOrigin::Builtin;
+        global_builtin.provider_id = "builtin".to_string();
+        let mut agent_builtin = global_builtin.clone();
+        agent_builtin.skill_id = "agent-builtin".to_string();
+
+        let first = SkillService::new(Some(Arc::clone(&persistence)), None);
+        first
+            .register_builtins(vec![global_builtin.clone(), agent_builtin.clone()])
+            .await;
+        assert!(
+            first
+                .set_scoped_enabled("global-builtin", SkillScope::Global, false)
+                .await
+        );
+        assert!(
+            first
+                .set_scoped_enabled(
+                    "agent-builtin",
+                    SkillScope::Agent("agent-a".to_string()),
+                    false,
+                )
+                .await
+        );
+
+        let mut restarted = SkillService::new(Some(Arc::clone(&persistence)), None);
+        restarted.add_provider(Arc::new(DatabaseStorageProvider::new(
+            "test-db",
+            "Test database",
+            Arc::clone(&persistence),
+        )));
+        restarted
+            .register_builtins(vec![global_builtin, agent_builtin])
+            .await;
+        restarted.initialize().await.unwrap();
+
+        assert!(
+            restarted
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-b"))
+                .await
+                .is_empty()
+        );
+        assert_eq!(
+            restarted
+                .match_skills_scoped("initial", Some("agent-b"), Some("conversation-b"))
+                .await
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn builtin_delete_is_refused_and_user_delete_succeeds() {
+        let service = SkillService::new(None, None);
+        let mut builtin = test_skill();
+        builtin.skill_id = "builtin-skill".to_string();
+        builtin.origin = SkillOrigin::Builtin;
+        service.register_builtins(vec![builtin]).await;
+        service.create_skill(test_skill()).await.unwrap();
+
+        let error = service
+            .delete_skill_permanent("builtin-skill")
+            .await
+            .expect_err("built-in deletion must fail");
+        assert!(error.to_string().contains("system_skill_immutable"));
+        assert!(service.delete_skill_permanent("test-skill").await.unwrap());
+        assert!(
+            service
+                .get_skills()
+                .await
+                .iter()
+                .any(|skill| skill.skill_id == "builtin-skill")
+        );
+        assert!(
+            service
+                .get_skills()
+                .await
+                .iter()
+                .all(|skill| skill.skill_id != "test-skill")
+        );
     }
 }

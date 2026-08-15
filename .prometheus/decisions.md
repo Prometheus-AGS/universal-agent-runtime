@@ -346,3 +346,28 @@ RustCrypto decision. It does not reverse the backend choice; RustCrypto remains
 the sole UAR-owned `jsonwebtoken` feature. If another component must own the
 process provider, that integration must change architecture explicitly rather
 than bypass the guard.
+
+---
+
+## 2026-08-15 — Skill enablement is durable and most-specific-wins
+
+**Decision.** Store skill enablement as durable global, agent, and conversation
+records on each skill. Resolve conversation first, then explicit agent state,
+then the pre-existing non-empty agent-binding allowlist as a compatibility
+fallback, then global state. Keep `Skill::enabled` as the legacy global copy and
+synchronize it on new global writes.
+
+**Rationale.** Existing persisted rows and clients already read `enabled`, while
+the scoped records must survive built-in re-registration. The compatibility
+fallback preserves bindings created before a skill is loaded; explicit scoped
+records remain authoritative when present.
+
+**Runtime consequence.** The run policy universe contains every registered
+skill. Scoped matching filters that universe using the existing agent and
+conversation identifiers, and the returned skill clones remain the run's
+start-time binding.
+
+**Uncomfortable constraint.** A conversation enable cannot widen a global
+disable if the policy universe discards the skill before scoped resolution.
+Changing precedence without changing universe construction produces tests that
+pass in the service and behavior that fails in a real run.

@@ -106,7 +106,8 @@ impl FilesystemStorageProvider {
             preferred_tools: manifest.tools,
             mcp_config,
             constraints: Default::default(),
-            enabled: true,
+            enabled: manifest.enabled,
+            scoped_config: manifest.scoped_config,
             provider_id: self.id.clone(),
             execution_config: Default::default(),
             kind: crate::uar::domain::skills::SkillKind::Manifest,
@@ -146,6 +147,8 @@ pub fn serialize_skill_to_md(skill: &Skill) -> anyhow::Result<String> {
         authors: Vec::new(),
         triggers: skill.triggers.clone(),
         tools: skill.preferred_tools.clone(),
+        enabled: skill.enabled,
+        scoped_config: skill.scoped_config.clone(),
     };
     let yaml = serde_norway::to_string(&manifest)?;
     let body = if skill.prompt_overlay.is_empty() {
@@ -231,5 +234,36 @@ impl SkillStorageProvider for FilesystemStorageProvider {
         }
         self.skills_cache.write().await.remove(id);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::uar::domain::skills::SkillScope;
+
+    #[test]
+    fn scoped_config_round_trips_through_skill_markdown() {
+        let mut skill = Skill {
+            skill_id: "round-trip".to_string(),
+            version: "1.0.0".to_string(),
+            title: "Round Trip".to_string(),
+            description: "Scoped persistence".to_string(),
+            prompt_overlay: "# Round Trip".to_string(),
+            ..Skill::default()
+        };
+        skill.set_enabled_for(SkillScope::Global, false);
+        skill.set_enabled_for(SkillScope::Agent("agent-a".to_string()), true);
+        skill.set_enabled_for(
+            SkillScope::Conversation("conversation-a".to_string()),
+            false,
+        );
+
+        let markdown = serialize_skill_to_md(&skill).expect("serialize skill");
+        let (manifest, overlay) = parse_skill_file(&markdown).expect("parse skill");
+
+        assert_eq!(manifest.enabled, false);
+        assert_eq!(manifest.scoped_config, skill.scoped_config);
+        assert_eq!(overlay, skill.prompt_overlay);
     }
 }

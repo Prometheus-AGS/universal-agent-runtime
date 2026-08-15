@@ -382,3 +382,23 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Canonical KBD revision 93 marks A1 complete, leaves A2
   `gap-03-a2a-tenant-partitioning` pending next, and retains exact next work
   `/kbd-execute uar-1-0-readiness`.
+
+## 2026-08-15 — `uar-1-0-readiness` B4 scoped governance checkpoint
+
+- Added durable global, agent, and conversation skill state with
+  conversation-over-agent-over-global resolution and live run matching through
+  the existing agent/session identifiers.
+- Preserved built-in scoped state during re-registration and observed it across
+  three separate SurrealKV child-process boots. Removing the merge failed the
+  reopen assertion with exit 101 before exact source restoration.
+- Observed an in-flight run retain its bound skill after a mid-run disable and
+  the next run omit it. Forcing the single conversation branch enabled made the
+  next-run assertion fail with exit 101 before exact restoration.
+- Proved API-created user deletion removes SurrealKV and filesystem copies and
+  remains absent after another boot; built-in deletion remains refused.
+- Independent review rejected two earlier artifacts: same-handle reconstruction
+  was not a restart, and a GET-only compatibility repair did not affect matching.
+  The final focused matrix covers a binding created before hot-load.
+- Final code checks observed package check exit 0 with three pre-existing
+  warnings and package/library/no-deps Clippy exit 0 with the 573-warning
+  baseline. Phase Tier 2 remains deferred until B5 is complete.

@@ -123,6 +123,38 @@ impl SkillRegistry {
         }
     }
 
+    /// Register built-ins while preserving durable enabled-state configuration.
+    ///
+    /// Pack metadata is refreshed from `skills`, but a persisted row remains
+    /// authoritative for its global and scoped enabled values. The durable
+    /// catalogue is read once for the batch so startup does not perform one
+    /// full-table read per built-in.
+    pub async fn register_builtins(&mut self, mut skills: Vec<Skill>) {
+        if let Some(db) = &self.persistence {
+            let stored = match db.list_skills().await {
+                Ok(stored) => stored
+                    .into_iter()
+                    .map(|skill| (skill.skill_id.clone(), skill))
+                    .collect::<HashMap<_, _>>(),
+                Err(error) => {
+                    error!(
+                        ?error,
+                        "Failed to load stored skill configuration; refusing to overwrite built-ins"
+                    );
+                    return;
+                }
+            };
+            for skill in &mut skills {
+                if let Some(existing) = stored.get(&skill.skill_id) {
+                    skill.enabled = existing.enabled;
+                    skill.scoped_config.clone_from(&existing.scoped_config);
+                }
+            }
+        }
+
+        self.register_all(skills).await;
+    }
+
     /// Hydrate a batch that already belongs to a configured storage provider.
     pub fn register_all_loaded(&mut self, skills: Vec<Skill>) {
         for skill in skills {

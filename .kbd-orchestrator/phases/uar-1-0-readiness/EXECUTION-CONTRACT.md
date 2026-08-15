@@ -264,6 +264,10 @@ Track B adds four more (numbered 10–13 after the A0 additions):
 **Track B:**
 
 - `src/uar/runtime/skills/**` — service, registry, storage providers.
+- `src/uar/runtime/manager.rs` — **B4 only:** construct the skill policy universe
+  from all registered skills, pass the existing conversation/session identifier
+  into scoped matching, and retain the returned binding for the run lifetime. No
+  other run-manager changes.
 - `src/uar/domain/skills.rs` — scoped-config and tombstone shape.
 - `src/uar/api/skills.rs` — expose `origin`.
 - `src/embedded.rs` — built-in registration on the embedded path.

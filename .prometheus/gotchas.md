@@ -213,3 +213,25 @@ owner.
 RustCrypto acquisition. Any provider installed earlier—including RustCrypto—
 returns a structured conflict. Do not reintroduce pointer comparison unless a
 pinned `jsonwebtoken` API publicly exposes the installed provider identity.
+
+## 2026-08-15 — same-handle reconstruction is not a SurrealKV restart proof
+
+**Observed defect.** A scoped-skill durability test built a second service over
+the same live `Arc<SurrealDbProvider>` and called it a restart. Independent
+review rejected the claim.
+
+**Working rule.** For cold-restart assertions, launch a child process for each
+boot against one temporary SurrealKV path. Process exit must release the old
+provider before the next process opens it. A new service over one live provider
+proves rehydration only.
+
+## 2026-08-15 — compatibility must be observed at the behavior boundary
+
+**Observed defect.** The durable skill model first dropped unknown legacy agent
+binding IDs, then a repair made GET return them without making later-loaded
+skills obey them during matching.
+
+**Working rule.** When preserving an API contract, test the downstream behavior,
+not only the response shape. For agent skills, set a binding before load, load a
+selected and non-selected skill, and observe matching. Conversation and explicit
+durable agent records remain more specific than the compatibility fallback.
