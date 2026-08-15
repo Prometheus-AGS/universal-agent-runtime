@@ -3,7 +3,7 @@
 //! The registry aggregates skills from all enabled storage providers
 //! and provides fast lookups.
 
-use crate::uar::domain::skills::Skill;
+use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::runtime::matching::vector::VectorMatcher;
 use std::collections::HashMap;
@@ -35,6 +35,8 @@ impl Default for SkillRegistry {
 }
 
 impl SkillRegistry {
+    const VECTOR_MATCH_LIMIT: usize = 5;
+
     pub fn new(
         persistence: Option<Arc<dyn PersistenceLayer>>,
         vector_matcher: Option<Arc<VectorMatcher>>,
@@ -67,35 +69,54 @@ impl SkillRegistry {
     /// independent: persist whenever there is a database, and attach an
     /// embedding when one can be produced.
     pub async fn register(&mut self, skill: Skill) {
-        if let Some(db) = &self.persistence {
-            // Best-effort embedding. `None` (no matcher) and `Err` (matcher
-            // failed) both degrade to persisting without one, rather than to
-            // dropping the skill.
-            let embedding: Vec<f32> = match &self.vector_matcher {
-                Some(vm) => {
-                    let text = format!("{}: {}", skill.title, skill.description);
-                    match vm.embed_batch(vec![text]).await {
-                        Ok(embeddings) => embeddings.into_iter().next().unwrap_or_default(),
-                        Err(e) => {
-                            error!(
-                                "Failed to generate embedding for skill {}: {:?} — \
-                                 persisting without one; vector search will not match it \
-                                 until it is re-embedded",
-                                skill.skill_id, e
-                            );
-                            Vec::new()
-                        }
-                    }
-                }
-                None => Vec::new(),
-            };
-
-            if let Err(e) = db.save_skill(&skill, &embedding).await {
-                error!("Failed to persist skill {}: {:?}", skill.skill_id, e);
-            }
+        let embedding = self.embedding_for(&skill).await;
+        if let Some(db) = &self.persistence
+            && let Err(e) = db.save_skill(&skill, &embedding).await
+        {
+            error!("Failed to persist skill {}: {:?}", skill.skill_id, e);
         }
 
         self.skills.insert(skill.skill_id.clone(), skill);
+    }
+
+    /// Register and persist a skill, returning persistence failures to callers
+    /// that must not claim reconciliation succeeded after a failed write.
+    pub(crate) async fn register_checked(&mut self, skill: Skill) -> anyhow::Result<()> {
+        let embedding = self.embedding_for(&skill).await;
+        if let Some(db) = &self.persistence {
+            db.save_skill(&skill, &embedding).await?;
+        }
+        self.skills.insert(skill.skill_id.clone(), skill);
+        Ok(())
+    }
+
+    /// Read every durable skill, including tombstoned records.
+    pub(crate) async fn list_persisted(&self) -> anyhow::Result<Vec<Skill>> {
+        match &self.persistence {
+            Some(db) => db.list_skills().await,
+            None => Ok(Vec::new()),
+        }
+    }
+
+    async fn embedding_for(&self, skill: &Skill) -> Vec<f32> {
+        // Best-effort embedding. `None` (no matcher) and `Err` (matcher failed)
+        // both degrade to persisting without one, rather than dropping the skill.
+        let Some(vm) = &self.vector_matcher else {
+            return Vec::new();
+        };
+        let text = format!("{}: {}", skill.title, skill.description);
+        match vm.embed_batch(vec![text]).await {
+            Ok(embeddings) => embeddings.into_iter().next().unwrap_or_default(),
+            Err(e) => {
+                error!(
+                    "Failed to generate embedding for skill {}: {:?} — \
+                     persisting without one; vector search will not match it \
+                     until it is re-embedded",
+                    skill.skill_id, e
+                );
+                Vec::new()
+            }
+        }
     }
 
     /// Register a skill that has already been loaded from durable storage.
@@ -169,14 +190,18 @@ impl SkillRegistry {
 
     /// List all registered skills.
     pub fn list(&self) -> Vec<Skill> {
-        self.skills.values().cloned().collect()
+        self.skills
+            .values()
+            .filter(|skill| !skill.tombstoned)
+            .cloned()
+            .collect()
     }
 
     /// List only enabled skills.
     pub fn list_enabled(&self) -> Vec<Skill> {
         self.skills
             .values()
-            .filter(|s| s.enabled)
+            .filter(|skill| !skill.tombstoned && skill.enabled)
             .cloned()
             .collect()
     }
@@ -204,12 +229,15 @@ impl SkillRegistry {
 
     /// Get the count of registered skills.
     pub fn len(&self) -> usize {
-        self.skills.len()
+        self.skills
+            .values()
+            .filter(|skill| !skill.tombstoned)
+            .count()
     }
 
     /// Check if the registry is empty.
     pub fn is_empty(&self) -> bool {
-        self.skills.is_empty()
+        self.skills.values().all(|skill| skill.tombstoned)
     }
 
     /// Find skills matching a query (fallback keyword search).
@@ -218,12 +246,13 @@ impl SkillRegistry {
         self.skills
             .values()
             .filter(|s| {
-                s.title.to_lowercase().contains(&q)
-                    || s.description.to_lowercase().contains(&q)
-                    || s.triggers
-                        .keywords
-                        .iter()
-                        .any(|k| k.to_lowercase().contains(&q))
+                !s.tombstoned
+                    && (s.title.to_lowercase().contains(&q)
+                        || s.description.to_lowercase().contains(&q)
+                        || s.triggers
+                            .keywords
+                            .iter()
+                            .any(|k| k.to_lowercase().contains(&q)))
             })
             .cloned()
             .collect()
@@ -235,9 +264,9 @@ impl SkillRegistry {
             match vm.embed_batch(vec![query.to_string()]).await {
                 Ok(embeddings) => {
                     if let Some(q_vec) = embeddings.first() {
-                        match db.search_skills(q_vec, 5).await {
+                        match db.search_skills(q_vec, self.vector_candidate_limit()).await {
                             Ok(matches) => {
-                                return matches.into_iter().map(|m| m.skill).collect();
+                                return Self::visible_vector_matches(matches);
                             }
                             Err(e) => {
                                 error!("Skill search failed: {:?}", e);
@@ -253,5 +282,83 @@ impl SkillRegistry {
 
         // Fallback to keyword match
         self.find_by_keyword(query)
+    }
+
+    fn vector_candidate_limit(&self) -> usize {
+        self.skills.len().max(Self::VECTOR_MATCH_LIMIT)
+    }
+
+    fn visible_vector_matches(matches: Vec<SkillMatch>) -> Vec<Skill> {
+        matches
+            .into_iter()
+            .map(|candidate| candidate.skill)
+            .filter(|skill| !skill.tombstoned)
+            .take(Self::VECTOR_MATCH_LIMIT)
+            .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tombstoned_skill_is_hidden_but_retrievable_for_restore() {
+        let mut registry = SkillRegistry::default();
+        let active = Skill {
+            skill_id: "active".to_string(),
+            title: "Shared Keyword".to_string(),
+            description: "active".to_string(),
+            enabled: true,
+            ..Skill::default()
+        };
+        let tombstoned = Skill {
+            skill_id: "removed".to_string(),
+            title: "Shared Keyword".to_string(),
+            description: "removed".to_string(),
+            tombstoned: true,
+            ..Skill::default()
+        };
+        registry.register_loaded(active);
+        registry.register_loaded(tombstoned);
+
+        assert_eq!(registry.list().len(), 1);
+        assert_eq!(registry.list_enabled().len(), 1);
+        assert_eq!(registry.find_by_keyword("shared").len(), 1);
+        assert_eq!(registry.len(), 1);
+        assert!(registry.get("removed").is_some());
+    }
+
+    #[test]
+    fn vector_candidates_include_tombstones_before_visibility_filtering() {
+        let mut registry = SkillRegistry::default();
+        let mut matches = Vec::new();
+        for index in 0..SkillRegistry::VECTOR_MATCH_LIMIT {
+            let skill = Skill {
+                skill_id: format!("removed-{index}"),
+                tombstoned: true,
+                ..Skill::default()
+            };
+            registry.register_loaded(skill.clone());
+            matches.push(SkillMatch { skill, score: 1.0 });
+        }
+        let active = Skill {
+            skill_id: "active".to_string(),
+            ..Skill::default()
+        };
+        registry.register_loaded(active.clone());
+        matches.push(SkillMatch {
+            skill: active,
+            score: 0.5,
+        });
+
+        assert_eq!(registry.vector_candidate_limit(), 6);
+        assert_eq!(
+            SkillRegistry::visible_vector_matches(matches)
+                .into_iter()
+                .map(|skill| skill.skill_id)
+                .collect::<Vec<_>>(),
+            vec!["active"]
+        );
     }
 }

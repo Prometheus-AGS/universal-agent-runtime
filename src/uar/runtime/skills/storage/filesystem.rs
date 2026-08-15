@@ -96,6 +96,15 @@ impl FilesystemStorageProvider {
             }
         }
 
+        let provider_id = if path
+            .strip_prefix(&self.path)
+            .is_ok_and(|relative| relative.starts_with("dynamic"))
+        {
+            "api".to_string()
+        } else {
+            self.id.clone()
+        };
+
         let skill = Skill {
             skill_id: skill_id.clone(),
             version: manifest.version,
@@ -108,7 +117,7 @@ impl FilesystemStorageProvider {
             constraints: Default::default(),
             enabled: manifest.enabled,
             scoped_config: manifest.scoped_config,
-            provider_id: self.id.clone(),
+            provider_id,
             execution_config: Default::default(),
             kind: crate::uar::domain::skills::SkillKind::Manifest,
             origin: Default::default(),
@@ -187,13 +196,31 @@ impl SkillStorageProvider for FilesystemStorageProvider {
     }
 
     async fn refresh(&self) -> anyhow::Result<Vec<Skill>> {
-        let skills = self.scan_directory(&self.path).await?;
+        let discovered = self.scan_directory(&self.path).await?;
 
         let mut cache = self.skills_cache.write().await;
         cache.clear();
-        for skill in &skills {
-            cache.insert(skill.skill_id.clone(), skill.clone());
+        for skill in discovered {
+            match cache.get(&skill.skill_id) {
+                Some(existing) if existing.provider_id == self.id && skill.provider_id == "api" => {
+                    warn!(
+                        skill_id = %skill.skill_id,
+                        "Ignoring dynamic skill copy because a configuration-managed source exists"
+                    );
+                }
+                Some(existing) if existing.provider_id == "api" && skill.provider_id == self.id => {
+                    warn!(
+                        skill_id = %skill.skill_id,
+                        "Replacing dynamic skill copy with configuration-managed source"
+                    );
+                    cache.insert(skill.skill_id.clone(), skill);
+                }
+                _ => {
+                    cache.insert(skill.skill_id.clone(), skill);
+                }
+            }
         }
+        let skills = cache.values().cloned().collect::<Vec<_>>();
 
         info!(
             "FilesystemStorageProvider '{}': loaded {} skills from {:?}",
@@ -206,6 +233,10 @@ impl SkillStorageProvider for FilesystemStorageProvider {
     }
 
     async fn save_skill(&self, skill: &Skill) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            skill.provider_id == "api",
+            "filesystem dynamic storage accepts only API-managed skills"
+        );
         // Write to skills/dynamic/<skill_id>/SKILL.md so the skill persists
         // across restarts and is picked up by future filesystem scans.
         let skill_dir = self.path.join("dynamic").join(&skill.skill_id);
@@ -265,5 +296,118 @@ mod tests {
         assert_eq!(manifest.enabled, false);
         assert_eq!(manifest.scoped_config, skill.scoped_config);
         assert_eq!(overlay, skill.prompt_overlay);
+    }
+
+    #[tokio::test]
+    async fn cold_reload_preserves_api_and_config_provenance() {
+        let directory = tempfile::tempdir().expect("temporary skills directory");
+        let provider =
+            FilesystemStorageProvider::new("fs-skills", "Local Skills", directory.path());
+        let api_skill = Skill {
+            skill_id: "api-cold-reload".to_string(),
+            version: "1.0.0".to_string(),
+            title: "API Cold Reload".to_string(),
+            description: "API-managed skill".to_string(),
+            provider_id: "api".to_string(),
+            ..Skill::default()
+        };
+        provider
+            .save_skill(&api_skill)
+            .await
+            .expect("save API skill");
+
+        let config_directory = directory.path().join("config-cold-reload");
+        fs::create_dir_all(&config_directory)
+            .await
+            .expect("create config skill directory");
+        let config_skill = Skill {
+            skill_id: "config-cold-reload".to_string(),
+            version: "1.0.0".to_string(),
+            title: "Config Cold Reload".to_string(),
+            description: "Configuration-managed skill".to_string(),
+            ..Skill::default()
+        };
+        fs::write(
+            config_directory.join("SKILL.md"),
+            serialize_skill_to_md(&config_skill).expect("serialize config skill"),
+        )
+        .await
+        .expect("write config skill");
+        drop(provider);
+
+        let restarted =
+            FilesystemStorageProvider::new("fs-skills", "Local Skills", directory.path());
+        let reloaded = restarted.list_skills().await.expect("cold reload skills");
+        let api = reloaded
+            .iter()
+            .find(|skill| skill.skill_id == "api-cold-reload")
+            .expect("API skill reloaded");
+        let config = reloaded
+            .iter()
+            .find(|skill| skill.skill_id == "config-cold-reload")
+            .expect("config skill reloaded");
+
+        assert_eq!(api.provider_id, "api");
+        assert_eq!(config.provider_id, "fs-skills");
+    }
+
+    #[tokio::test]
+    async fn dynamic_storage_rejects_non_api_skills() {
+        let directory = tempfile::tempdir().expect("temporary skills directory");
+        let provider =
+            FilesystemStorageProvider::new("fs-skills", "Local Skills", directory.path());
+        let config_skill = Skill {
+            skill_id: "config-only".to_string(),
+            provider_id: "fs-skills".to_string(),
+            ..Skill::default()
+        };
+
+        let error = provider
+            .save_skill(&config_skill)
+            .await
+            .expect_err("configuration-managed skill must not enter dynamic storage");
+
+        assert!(error.to_string().contains("only API-managed skills"));
+        assert!(!directory.path().join("dynamic/config-only").exists());
+    }
+
+    #[tokio::test]
+    async fn configuration_source_wins_over_a_stale_dynamic_copy() {
+        let directory = tempfile::tempdir().expect("temporary skills directory");
+        let provider =
+            FilesystemStorageProvider::new("fs-skills", "Local Skills", directory.path());
+        let config_skill = Skill {
+            skill_id: "shared-skill".to_string(),
+            title: "Shared Skill".to_string(),
+            description: "current configuration".to_string(),
+            provider_id: "fs-skills".to_string(),
+            ..Skill::default()
+        };
+        let mut stale_copy = config_skill.clone();
+        stale_copy.description = "stale dynamic copy".to_string();
+        stale_copy.provider_id = "api".to_string();
+
+        let config_directory = directory.path().join("shared-skill");
+        let dynamic_directory = directory.path().join("dynamic/shared-skill");
+        fs::create_dir_all(&config_directory).await.unwrap();
+        fs::create_dir_all(&dynamic_directory).await.unwrap();
+        fs::write(
+            config_directory.join("SKILL.md"),
+            serialize_skill_to_md(&config_skill).unwrap(),
+        )
+        .await
+        .unwrap();
+        fs::write(
+            dynamic_directory.join("SKILL.md"),
+            serialize_skill_to_md(&stale_copy).unwrap(),
+        )
+        .await
+        .unwrap();
+
+        let loaded = provider.refresh().await.unwrap();
+
+        assert_eq!(loaded.len(), 1);
+        assert_eq!(loaded[0].provider_id, "fs-skills");
+        assert_eq!(loaded[0].description, "current configuration");
     }
 }

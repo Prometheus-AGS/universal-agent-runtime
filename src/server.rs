@@ -492,8 +492,15 @@ async fn start_server_with_listener(
         ));
         skill_service.add_provider(db_provider);
     }
-    if let Err(e) = skill_service.initialize().await {
-        eprintln!("Warning: Failed to initialize skills: {e:?}");
+    match skill_service.initialize().await {
+        Ok(()) => {
+            if let Err(error) = skill_service.reconcile_config_skills().await {
+                tracing::error!(?error, "Failed to reconcile configuration skills");
+            }
+        }
+        Err(error) => {
+            eprintln!("Warning: Failed to initialize skills: {error:?}");
+        }
     }
     let skills = skill_service.registry().clone();
     let skill_service = Arc::new(skill_service);

@@ -86,6 +86,10 @@ pub struct Skill {
     /// value. New global writes keep both representations synchronized.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scoped_config: Vec<ScopedSkillConfig>,
+    /// Configuration-managed skill removed from its source but retained for
+    /// audit and restoration. This is independent from operator enablement.
+    #[serde(default)]
+    pub tombstoned: bool,
     /// ID of the storage provider that loaded this skill.
     #[serde(default)]
     pub provider_id: String,
@@ -143,6 +147,9 @@ impl Skill {
         conversation_id: Option<&str>,
         agent_fallback: Option<bool>,
     ) -> bool {
+        if self.tombstoned {
+            return false;
+        }
         if let Some(conversation_id) = conversation_id
             && let Some(config) = self.scoped_config.iter().find(|config| {
                 matches!(
@@ -250,4 +257,23 @@ pub struct SkillMatch {
 
 fn default_enabled() -> bool {
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tombstone_overrides_scope_without_destroying_configuration() {
+        let mut skill = Skill::default();
+        skill.set_enabled_for(SkillScope::Global, true);
+        skill.set_enabled_for(SkillScope::Agent("agent-a".to_string()), true);
+        let scoped_config = skill.scoped_config.clone();
+
+        skill.tombstoned = true;
+
+        assert!(!skill.enabled_for(None, None));
+        assert!(!skill.enabled_for(Some("agent-a"), None));
+        assert_eq!(skill.scoped_config, scoped_config);
+    }
 }

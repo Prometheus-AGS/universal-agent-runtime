@@ -371,3 +371,23 @@ start-time binding.
 disable if the policy universe discards the skill before scoped resolution.
 Changing precedence without changing universe construction produces tests that
 pass in the service and behavior that fails in a real run.
+
+---
+
+## 2026-08-15 — `skills/dynamic` is an API-owned persistence namespace
+
+**Decision.** Files beneath the filesystem provider's reserved `dynamic/`
+directory are API-managed and reload with `provider_id = "api"`. The filesystem
+write boundary rejects every other provider id. Configuration files outside
+that directory reload as `fs-skills`, and when an upgrade leaves both sources
+for one ID, the real configuration source wins deterministically.
+
+**Rationale.** Reconciliation may tombstone only exact `fs-skills` records.
+Before this boundary was explicit, an API skill could reload as configuration,
+and a stale dynamic copy of a config skill could win by directory traversal
+order. Either failure makes provenance unsuitable as the data-loss guard.
+
+**Uncomfortable constraint.** The reserved path is now part of the provenance
+contract. Moving API-created files elsewhere, accepting config records at the
+dynamic write boundary, or restoring last-writer-wins cache insertion would
+invalidate reconciliation safety and requires a new migration decision.

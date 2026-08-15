@@ -402,3 +402,18 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Final code checks observed package check exit 0 with three pre-existing
   warnings and package/library/no-deps Clippy exit 0 with the 573-warning
   baseline. Phase Tier 2 remains deferred until B5 is complete.
+
+## 2026-08-15 — `uar-1-0-readiness` B5 reconciliation checkpoint
+
+- Added durable, reversible tombstones for exact `fs-skills` records and a
+  startup reconciliation pass for add, change, remove, and restore.
+- Reserved `skills/dynamic` for API-managed files, rejected non-API writes, and
+  made real configuration win over stale dynamic upgrade copies.
+- Excluded tombstones from default, refresh, keyword, vector, and matching
+  results while keeping durable retrieval and scoped configuration for restore.
+- Observed a four-child SurrealKV seed/change/remove/restore proof, the final
+  46-test skills slice, Tier 0, strict OpenSpec, formatting, and artifact-refiner
+  iteration 3 pass. Six inverted guards exited 101 before exact restoration.
+- Independent review found four reachable implementation defects and one
+  evidence defect; all were corrected. The final judge and critic returned
+  PASS. Phase Tier 2 remains deferred until the B5 commit is complete.

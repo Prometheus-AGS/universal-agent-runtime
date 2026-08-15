@@ -235,3 +235,20 @@ skills obey them during matching.
 not only the response shape. For agent skills, set a binding before load, load a
 selected and non-selected skill, and observe matching. Conversation and explicit
 durable agent records remain more specific than the compatibility fallback.
+
+## 2026-08-15 — skill provenance must survive both reads and writes
+
+**Observed defect.** `provider_id` looked usable in the database but was rebuilt
+from a filesystem provider that mixed API-created and configuration-managed
+files. The first repair fixed cold reads but left the storage provider willing
+to write any source into the API namespace. Old dynamic copies could also race
+real configuration files by directory iteration order.
+
+**Working rule.** Enforce provenance at the filesystem write boundary and test
+upgrade residue explicitly. For duplicate IDs, configuration beats dynamic
+regardless of traversal order. A clean-directory cold-reload test alone does
+not prove the migration is safe.
+
+**Evidence lesson.** A required `error!` call in source is not an observed log.
+Install a test subscriber, run the exact test with `--nocapture`, and retain the
+literal level, message, fields, and passing result.

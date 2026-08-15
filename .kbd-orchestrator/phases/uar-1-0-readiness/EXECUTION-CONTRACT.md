@@ -237,6 +237,13 @@ Track B adds four more (numbered 10–13 after the A0 additions):
    user-created skills** in some code path. The entire data-loss safety argument
    for `skill-config-reconciliation` rests on it (`fs-skills` vs `api` vs
    `builtin` vs `wasm`). If it is unreliable, stop — do not substitute a guess.
+   **Operator-approved correction, 2026-08-15:** this condition fired because
+   API-created skills written under the reserved `skills/dynamic/` directory
+   reloaded as `fs-skills`. Before reconciliation, the filesystem loader may be
+   corrected to assign `api` beneath that reserved directory and `fs-skills`
+   elsewhere, and service writes to that directory may be restricted to
+   `provider_id = "api"`, with cold-reload and write-side regression tests. Any
+   other unreliable path remains a stop condition.
 12. **Marking `fix-skills-scope-semantics` superseded appears necessary.** It is
     an operator action on another author's change.
 13. **Built-in non-deletability appears to need implementing.** It already

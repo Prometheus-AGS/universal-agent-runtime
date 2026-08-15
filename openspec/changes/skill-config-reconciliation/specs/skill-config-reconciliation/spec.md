@@ -26,6 +26,14 @@ Reconciliation SHALL determine candidacy from the skill's recorded source.
 Built-in skills and skills created through the API SHALL NOT be tombstoned by
 reconciliation under any circumstances.
 
+#### Scenario: API provenance survives filesystem cold reload
+- **WHEN** an API-created skill is persisted beneath the reserved `skills/dynamic/` directory and the filesystem provider is reconstructed
+- **THEN** the reloaded skill records `provider_id` as `api`, while configuration files outside that directory record `fs-skills`
+
+#### Scenario: Configuration updates do not enter API persistence
+- **WHEN** durable scoped configuration changes for a configuration-managed skill
+- **THEN** the update is stored in the database and no copy is written beneath the reserved `skills/dynamic/` API directory
+
 #### Scenario: User-created skill survives an empty configuration
 - **WHEN** a skill was created through the API and no configuration file mentions it
 - **THEN** reconciliation leaves it untouched and active

@@ -19,11 +19,14 @@ Removed skills are therefore **tombstoned**: retained in storage, marked removed
 excluded from matching and from default listings, and restorable — either by
 restoring the configuration file or by an explicit restore.
 
-### The source discriminator already exists
+### The source discriminator must survive filesystem reload
 
 Reconciliation must distinguish config-provisioned skills from user-created ones,
 or it would tombstone every skill a user authored through the API. **No new field
-is needed.** `Skill::provider_id` (`skills.rs:63-65`) already records the source:
+is needed.** `Skill::provider_id` (`skills.rs:63-65`) records the source, but the
+filesystem loader must preserve the distinction across a cold reload. API-created
+skills are written beneath the reserved `skills/dynamic/` directory; files under
+that directory load as `api`, while other files load as `fs-skills`:
 
 | `provider_id` | Source | Reconciled? |
 |---|---|---|
@@ -51,6 +54,9 @@ rather than left to the implementer.
   while the database holds config-provisioned ones. That is far more likely to be
   a broken mount than a deliberate removal of everything. Log an error and skip
   rather than tombstoning the entire catalogue.
+- Correct filesystem cold reload so the reserved `skills/dynamic/` API persistence
+  directory reloads with `provider_id = "api"`; configuration files outside it
+  continue to reload with `provider_id = "fs-skills"`.
 
 ## Capabilities
 
