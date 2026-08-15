@@ -344,7 +344,7 @@ tracing-error = "0.2"
 anyhow = "1.0.100"
 # Optional error reporting for UarError, gated behind the `sentry` feature
 # (default off). Actual DSN/project configuration is operator work.
-sentry = { version = "0.48", optional = true, default-features = false, features = ["backtrace", "contexts", "panic", "reqwest", "rustls"] }
+sentry = { version = "0.49", optional = true, default-features = false, features = ["backtrace", "contexts", "panic", "reqwest", "rustls"] }
 axum-extra = { version = "0.12.3", optional = true, features = [
   "typed-routing",
   "typed-header",
