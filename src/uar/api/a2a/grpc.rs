@@ -12,6 +12,10 @@ use tonic::{Request, Response, Status};
 
 use super::handler::A2AState;
 use super::types::{Message as A2aMessage, Part as A2aPart, Role, Task, TaskState};
+use crate::uar::security::{
+    claims::TenantId,
+    verifier::{VerificationError, verify_token},
+};
 
 // ── Generated code from proto/a2a.proto ─────────────────────────────────────
 pub mod pb {
@@ -54,6 +58,7 @@ impl AgentService for GrpcAgentService {
         &self,
         request: Request<SendMessageRequest>,
     ) -> Result<Response<PbTaskResponse>, Status> {
+        let tenant_id = self.tenant_for_request(&request).await?;
         let req = request.into_inner();
         let pb_msg = req
             .message
@@ -64,9 +69,14 @@ impl AgentService for GrpcAgentService {
 
         // Try to continue an existing task if task_id is provided.
         if !req.task_id.is_empty() {
-            if let Some(existing) = self.state.task_store.get(&req.task_id).await {
+            if let Some(existing) = self
+                .state
+                .task_store
+                .get(tenant_id.as_ref(), &req.task_id)
+                .await
+            {
                 return self
-                    .continue_task(existing, a2a_msg, &user_text)
+                    .continue_task(tenant_id.as_ref(), existing, a2a_msg, &user_text)
                     .await
                     .map(|t| Response::new(task_to_pb(&t)));
             }
@@ -79,7 +89,7 @@ impl AgentService for GrpcAgentService {
         let task = self
             .state
             .task_store
-            .create(None, &session_id, a2a_msg)
+            .create(tenant_id.as_ref(), None, &session_id, a2a_msg)
             .await;
 
         let agent_reply = A2aMessage::agent_text(
@@ -93,10 +103,15 @@ impl AgentService for GrpcAgentService {
 
         self.state
             .task_store
-            .append_message(&task.id, agent_reply.clone())
+            .append_message(tenant_id.as_ref(), &task.id, agent_reply.clone())
             .await;
 
-        let mut result_task = self.state.task_store.get(&task.id).await.unwrap_or(task);
+        let mut result_task = self
+            .state
+            .task_store
+            .get(tenant_id.as_ref(), &task.id)
+            .await
+            .unwrap_or(task);
         result_task.status.message = Some(agent_reply);
 
         Ok(Response::new(task_to_pb(&result_task)))
@@ -107,11 +122,12 @@ impl AgentService for GrpcAgentService {
         &self,
         request: Request<GetTaskRequest>,
     ) -> Result<Response<PbTaskResponse>, Status> {
+        let tenant_id = self.tenant_for_request(&request).await?;
         let req = request.into_inner();
         let task = self
             .state
             .task_store
-            .get(&req.task_id)
+            .get(tenant_id.as_ref(), &req.task_id)
             .await
             .ok_or_else(|| Status::not_found("task not found"))?;
 
@@ -123,9 +139,14 @@ impl AgentService for GrpcAgentService {
         &self,
         request: Request<CancelTaskRequest>,
     ) -> Result<Response<PbTaskResponse>, Status> {
+        let tenant_id = self.tenant_for_request(&request).await?;
         let req = request.into_inner();
 
-        let cancelled = self.state.task_store.cancel(&req.task_id).await;
+        let cancelled = self
+            .state
+            .task_store
+            .cancel(tenant_id.as_ref(), &req.task_id)
+            .await;
         if !cancelled {
             return Err(Status::failed_precondition(
                 "task not found or already in a terminal state",
@@ -133,7 +154,12 @@ impl AgentService for GrpcAgentService {
         }
 
         // Also cancel the underlying compiler session (best-effort).
-        if let Some(task) = self.state.task_store.get(&req.task_id).await {
+        if let Some(task) = self
+            .state
+            .task_store
+            .get(tenant_id.as_ref(), &req.task_id)
+            .await
+        {
             if let Some(ctx_id) = &task.context_id {
                 self.state.compiler_service.cancel_session(ctx_id).await;
             }
@@ -142,7 +168,7 @@ impl AgentService for GrpcAgentService {
         let task = self
             .state
             .task_store
-            .get(&req.task_id)
+            .get(tenant_id.as_ref(), &req.task_id)
             .await
             .ok_or_else(|| Status::not_found("task not found after cancel"))?;
 
@@ -180,8 +206,42 @@ impl AgentService for GrpcAgentService {
 // ── Private helpers (task continuation) ─────────────────────────────────────
 
 impl GrpcAgentService {
+    async fn tenant_for_request<T>(
+        &self,
+        request: &Request<T>,
+    ) -> Result<Option<TenantId>, Status> {
+        let authorization = request
+            .metadata()
+            .get("authorization")
+            .and_then(|value| value.to_str().ok());
+
+        let Some(token) = authorization.and_then(|value| value.strip_prefix("Bearer ")) else {
+            return if self.state.security.jwt_required {
+                Err(Status::unauthenticated("verified tenant claim required"))
+            } else {
+                Ok(None)
+            };
+        };
+
+        match verify_token(&self.state.security, token).await {
+            Ok(principal) if principal.tenant_id.is_some() => Ok(principal.tenant_id),
+            Ok(_) if self.state.security.jwt_required => {
+                Err(Status::unauthenticated("verified tenant claim required"))
+            }
+            Ok(_) => Ok(None),
+            Err(VerificationError::ProviderConflict) => {
+                Err(Status::internal("JWT provider conflict"))
+            }
+            Err(_) if self.state.security.jwt_required => {
+                Err(Status::unauthenticated("token verification failed"))
+            }
+            Err(_) => Ok(None),
+        }
+    }
+
     async fn continue_task(
         &self,
+        tenant_id: Option<&TenantId>,
         task: Task,
         message: A2aMessage,
         user_text: &str,
@@ -190,7 +250,7 @@ impl GrpcAgentService {
 
         self.state
             .task_store
-            .append_message(&task_id, message)
+            .append_message(tenant_id, &task_id, message)
             .await;
 
         // Attempt single-shot compilation if input looks like a spec.
@@ -200,13 +260,13 @@ impl GrpcAgentService {
                 let descriptor = serde_json::to_value(&output).unwrap_or(serde_json::Value::Null);
                 self.state
                     .task_store
-                    .complete_with_descriptor(&task_id, descriptor)
+                    .complete_with_descriptor(tenant_id, &task_id, descriptor)
                     .await;
 
                 return self
                     .state
                     .task_store
-                    .get(&task_id)
+                    .get(tenant_id, &task_id)
                     .await
                     .ok_or_else(|| Status::internal("task vanished"));
             }
@@ -222,10 +282,15 @@ impl GrpcAgentService {
 
         self.state
             .task_store
-            .append_message(&task_id, agent_reply.clone())
+            .append_message(tenant_id, &task_id, agent_reply.clone())
             .await;
 
-        let mut result_task = self.state.task_store.get(&task_id).await.unwrap_or(task);
+        let mut result_task = self
+            .state
+            .task_store
+            .get(tenant_id, &task_id)
+            .await
+            .unwrap_or(task);
         result_task.status.state = TaskState::InputRequired;
         result_task.status.message = Some(agent_reply);
 
@@ -340,4 +405,153 @@ fn extract_text_from_a2a(msg: &A2aMessage) -> String {
         })
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use jsonwebtoken::{EncodingKey, Header};
+
+    use super::*;
+    use crate::{
+        config::SecurityConfig,
+        uar::{
+            api::a2a::TaskStore,
+            compiler::service::CompilerService,
+            security::{claims::UserClaims, jwt},
+        },
+    };
+
+    fn service() -> GrpcAgentService {
+        GrpcAgentService::new(Arc::new(A2AState {
+            compiler_service: Arc::new(CompilerService::in_memory()),
+            task_store: TaskStore::new(),
+            security: SecurityConfig {
+                jwt_required: true,
+                jwt_secret: "tenant-test-secret".to_owned().into(),
+                jwks_url: None,
+                jwt_issuer: None,
+                jwt_audience: None,
+                settings_mutation_auth_required: true,
+            },
+            base_url: "http://127.0.0.1:3928".to_owned(),
+        }))
+    }
+
+    fn token(subject: &str, tenant: Option<&str>) -> String {
+        jwt::encode(
+            &Header::default(),
+            &UserClaims {
+                sub: subject.to_owned(),
+                name: None,
+                roles: None,
+                tenant_id: tenant.map(str::to_owned),
+                exp: usize::MAX,
+            },
+            &EncodingKey::from_secret(b"tenant-test-secret"),
+        )
+        .expect("tenant gRPC token must encode")
+    }
+
+    fn authenticated<T>(message: T, token: &str) -> Request<T> {
+        let mut request = Request::new(message);
+        request.metadata_mut().insert(
+            "authorization",
+            format!("Bearer {token}")
+                .parse()
+                .expect("authorization metadata must parse"),
+        );
+        request.metadata_mut().insert(
+            "x-uar-tenant-id",
+            "tenant-b".parse().expect("spoofed metadata must parse"),
+        );
+        request
+    }
+
+    #[tokio::test]
+    async fn grpc_task_access_is_partitioned_by_verified_tenant() {
+        let service = service();
+        let tenant_a = token("user-a", Some("tenant-a"));
+        let tenant_b = token("user-b", Some("tenant-b"));
+
+        let created = service
+            .message_send(authenticated(
+                SendMessageRequest {
+                    task_id: String::new(),
+                    message: Some(PbMessage {
+                        role: "user".to_owned(),
+                        parts: vec![PbPart {
+                            content: Some(pb::part::Content::Text("tenant task".to_owned())),
+                            content_type: "text/plain".to_owned(),
+                        }],
+                    }),
+                },
+                &tenant_a,
+            ))
+            .await
+            .expect("tenant A must create a task")
+            .into_inner();
+
+        service
+            .task_get(authenticated(
+                GetTaskRequest {
+                    task_id: created.task_id.clone(),
+                },
+                &tenant_a,
+            ))
+            .await
+            .expect("same-tenant task get must succeed");
+
+        let cross_get = service
+            .task_get(authenticated(
+                GetTaskRequest {
+                    task_id: created.task_id.clone(),
+                },
+                &tenant_b,
+            ))
+            .await
+            .expect_err("cross-tenant task get must fail");
+        assert_eq!(cross_get.code(), tonic::Code::NotFound);
+
+        let cross_cancel = service
+            .task_cancel(authenticated(
+                CancelTaskRequest {
+                    task_id: created.task_id.clone(),
+                },
+                &tenant_b,
+            ))
+            .await
+            .expect_err("cross-tenant task cancel must fail");
+        assert_eq!(cross_cancel.code(), tonic::Code::FailedPrecondition);
+
+        let unchanged = service
+            .task_get(authenticated(
+                GetTaskRequest {
+                    task_id: created.task_id,
+                },
+                &tenant_a,
+            ))
+            .await
+            .expect("tenant A task must remain readable")
+            .into_inner();
+        assert_eq!(unchanged.status, "working");
+    }
+
+    #[tokio::test]
+    async fn grpc_required_jwt_without_verified_tenant_is_rejected() {
+        let service = service();
+        let token_without_tenant = token("user-without-tenant", None);
+
+        let error = service
+            .task_get(authenticated(
+                GetTaskRequest {
+                    task_id: "unknown".to_owned(),
+                },
+                &token_without_tenant,
+            ))
+            .await
+            .expect_err("verified token without tenant must be rejected");
+
+        assert_eq!(error.code(), tonic::Code::Unauthenticated);
+        assert_eq!(error.message(), "verified tenant claim required");
+    }
 }

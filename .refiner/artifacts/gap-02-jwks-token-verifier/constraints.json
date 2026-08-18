@@ -1,0 +1,54 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "a1-verifier-and-jwks",
+      "description": "One TokenVerifier abstraction preserves HS256 and verifies RS256 JWKS tokens with per-URL multi-key caching and one refresh for an unknown kid.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused server-full security tests"
+      }
+    },
+    {
+      "id": "a1-required-and-claims",
+      "description": "The configured jwt_required value, issuer, and audience are enforced at middleware verification without anonymous downgrade.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Middleware assertions and sidecar stop-condition tests"
+      }
+    },
+    {
+      "id": "a1-fail-closed-control",
+      "description": "Missing token, wrong secret, wrong audience, wrong issuer, unknown kid, and unreachable JWKS return 401; each assertion is paired with an observed-failing branch-inversion control and complete source restoration.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Exact no-header control, focused verification-error group, two branch inversions, complete retained-diff comparison, affected positive reruns, and captured error-level JWKS log"
+      }
+    },
+    {
+      "id": "a1-tier-scope-spec",
+      "description": "Tier 0 and strict OpenSpec validation pass, Tier 2 remains unrun, and no A1 change escapes the permitted surface or introduces a dependency or tenant concept.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Cargo check/clippy, OpenSpec strict validation, and diff inspection"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the A1 OpenSpec delta and EXECUTION-CONTRACT.md as acceptance authority because the project has no .kbd-orchestrator/constraints.md.",
+    "Report results only for server-full and transfer them to no other profile.",
+    "Do not run Tier 2 before all six readiness changes complete."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "The per-requirement verification record exists and includes the observed fail-closed negative control."
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "b5-provenance-safety",
+      "description": "Filesystem cold reload and service writes preserve the fs-skills versus api discriminator, and reconciliation never selects api, builtin, or wasm records.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Cold-reload provenance assertion, real API creation assertion, and observed-failing provider-filter inversion"
+      }
+    },
+    {
+      "id": "b5-reversible-reconciliation",
+      "description": "Configuration add, change, removal tombstone, and restoration survive separate-process SurrealKV reopen; removed records remain durable and restoration preserves scoped configuration.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Four-child cold-process test plus domain, registry, matching, and attributable-log assertions"
+      }
+    },
+    {
+      "id": "b5-empty-source-fail-safe",
+      "description": "A zero-skill configuration source cannot tombstone a durable configuration catalogue, and removing the guard makes its exact test fail.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Positive fail-safe assertion, observed exit-101 inversion, and exact pre/post source hashes"
+      }
+    },
+    {
+      "id": "b5-tier-scope-spec",
+      "description": "Tier 0, focused server-full tests, strict OpenSpec validation, formatting, and permitted-surface inspection pass while phase Tier 2 remains unrun.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Cargo check/clippy/tests, OpenSpec strict validation, artifact schema replay, and scoped diff inspection"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the B5 OpenSpec delta and EXECUTION-CONTRACT.md as acceptance authority.",
+    "Report results only for server-full and transfer them to no other profile.",
+    "Reconciliation tombstones and restores; it never hard-deletes.",
+    "Do not run Tier 2 before the final B5 artifact review and commit."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "The per-requirement verification record retains literal output for both observed-failing controls."
+  ]
+}

@@ -324,3 +324,130 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   `start_server_sidecar` shutdown-token seam was changed.
 - The verification record remains capability-scoped; it does not assert a
   runtime-level conformance verdict.
+
+## 2026-08-14 — `uar-1-0-readiness` A0 execution checkpoint
+
+- Standardized UAR-owned `jsonwebtoken` manifests on exact 11.0.0 with only
+  RustCrypto and routed runtime/proxy JWT operations through guarded wrappers.
+- Observed server-full focused tests and Tier 0 checks pass, plus separate iOS
+  and Android `embedded-mobile` checks. Tier 2 did not run.
+- Retained replayable scratch sources, literal commands, and observed failing
+  output for the provider-disabled, AWS-LC-first, and wrong-secret controls.
+- Independent adversarial review proved that identical RustCrypto installed
+  before UAR is rejected: the public v11 API does not expose the installed
+  provider needed for the requested pointer comparison.
+- A0 remains in progress and uncommitted. KBD was not advanced and A1 was not
+  started because the execution contract's provider-identity requirement is
+  unresolved.
+
+## 2026-08-14 — `uar-1-0-readiness` A0 completed after operator decision
+
+- The operator selected UAR-owned first provider installation. This supersedes
+  the checkpoint's unresolved identical-provider acceptance requirement:
+  RustCrypto remains the sole UAR-owned backend, while any provider installed
+  before UAR—including RustCrypto—fails closed.
+- UAR now acquires the provider at the shared server-startup funnel and guards
+  every owned encode/decode; the proxy acquires before minting. The security
+  slice passed 25 tests, the proxy passed 2 tests, and provider-disabled,
+  AWS-LC-first acceptance, and wrong-secret acceptance controls failed as
+  required. RustCrypto-first conflict passed as positive boundary evidence.
+- Final server-full check and clippy exited 0; clippy retained the existing 578
+  warnings and introduced none in A0. iOS and Android embedded-mobile checks
+  passed separately. Tier 2 did not run.
+- Strict OpenSpec validation passed. Artifact-refiner schema, file, four
+  blocking-constraint, and consistency gates passed; isolated adversarial
+  review returned PASS with no findings.
+- Canonical KBD revision 91 marks A0 complete, keeps A1 pending with all 18
+  tasks ready, and sets exact next work to `/kbd-execute uar-1-0-readiness`.
+
+## 2026-08-14 — `uar-1-0-readiness` A1 JWKS verifier completed
+
+- Added one internal `TokenVerifier` boundary with the existing HS256 lane and
+  an RS256 JWKS lane. The JWKS cache is scoped per URL and holds multiple
+  `kid` values, refreshes once for an unknown key, and enforces configured
+  issuer and audience claims.
+- Made `security.jwt_required` effective at middleware verification. Required
+  requests reject missing tokens, wrong signatures, wrong issuer/audience,
+  unknown keys, and unreachable JWKS; explicitly disabled requests retain the
+  anonymous path.
+- The final `server-full` security slice passed 33/33 and the `uar-sidecar`
+  stop-condition suite passed 3/3. Package check and package/library/no-deps
+  clippy exited 0 with only the recorded repository warnings. Tier 2 did not
+  run.
+- Retained literal exit-101 output for all six fail-closed controls, complete
+  source-diff restoration evidence, and passing affected reruns. The
+  unreachable-JWKS assertion captured an error-level refresh failure.
+- Strict OpenSpec and deterministic artifact validation passed; the final
+  history-free critic and judge both returned PASS.
+- Canonical KBD revision 93 marks A1 complete, leaves A2
+  `gap-03-a2a-tenant-partitioning` pending next, and retains exact next work
+  `/kbd-execute uar-1-0-readiness`.
+
+## 2026-08-15 — `uar-1-0-readiness` B4 scoped governance checkpoint
+
+- Added durable global, agent, and conversation skill state with
+  conversation-over-agent-over-global resolution and live run matching through
+  the existing agent/session identifiers.
+- Preserved built-in scoped state during re-registration and observed it across
+  three separate SurrealKV child-process boots. Removing the merge failed the
+  reopen assertion with exit 101 before exact source restoration.
+- Observed an in-flight run retain its bound skill after a mid-run disable and
+  the next run omit it. Forcing the single conversation branch enabled made the
+  next-run assertion fail with exit 101 before exact restoration.
+- Proved API-created user deletion removes SurrealKV and filesystem copies and
+  remains absent after another boot; built-in deletion remains refused.
+- Independent review rejected two earlier artifacts: same-handle reconstruction
+  was not a restart, and a GET-only compatibility repair did not affect matching.
+  The final focused matrix covers a binding created before hot-load.
+- Final code checks observed package check exit 0 with three pre-existing
+  warnings and package/library/no-deps Clippy exit 0 with the 573-warning
+  baseline. Phase Tier 2 remains deferred until B5 is complete.
+
+## 2026-08-15 — `uar-1-0-readiness` B5 reconciliation checkpoint
+
+- Added durable, reversible tombstones for exact `fs-skills` records and a
+  startup reconciliation pass for add, change, remove, and restore.
+- Reserved `skills/dynamic` for API-managed files, rejected non-API writes, and
+  made real configuration win over stale dynamic upgrade copies.
+- Excluded tombstones from default, refresh, keyword, vector, and matching
+  results while keeping durable retrieval and scoped configuration for restore.
+- Observed a four-child SurrealKV seed/change/remove/restore proof, the final
+  46-test skills slice, Tier 0, strict OpenSpec, formatting, and artifact-refiner
+  iteration 3 pass. Six inverted guards exited 101 before exact restoration.
+- Independent review found four reachable implementation defects and one
+  evidence defect; all were corrected. The final judge and critic returned
+  PASS. Phase Tier 2 remains deferred until the B5 commit is complete.
+
+## 2026-08-15 — `uar-1-0-readiness` Execute stage completed
+
+- Committed B5 as `44aadbb6`, then ran the pinned phase command verbatim under
+  the recorded `server-full` backend. It observed 29 passing and 0 failed in
+  289.87 seconds; the real C-21 two-tenant case passed.
+- Inverted only tenant-aware task lookup and reran exact C-21. It exited 101 at
+  the cross-tenant read assertion (`Null` instead of `-32001`); task-store source
+  and empty-diff hashes then restored exactly.
+- All six OpenSpec changes strict-validated. A2 artifact-refiner schema replay
+  passed 4/4 and finalized at `2026-08-15_09-50-40Z`.
+- Canonical KBD revision 102 marks all six changes and Execute complete. No push,
+  PR, archive, or Tier 3 action occurred. Reflection is next.
+
+## 2026-08-16 — `uar-1-0-readiness` Reflect stage completed
+
+- Archived all six phase changes in dependency order. Their deltas merged into
+  `jwt-hardening`, `tenant-isolation`, `skill-builtin-availability`,
+  `skill-governance`, and `skill-config-reconciliation`; all five merged specs
+  passed strict validation.
+- Wrote `reflection.md` with the phase deltas first. The primary process failure
+  was scheduling evidence construction before stable implementation. Independent
+  review also corrected provider ownership, real restart boundaries, legacy
+  matching behavior, tombstone visibility, and observed fail-safe logging.
+- The strict Reflect anti-sycophancy gate reported no Reflect Phase Inversion.
+  Per the execution contract, the reflection reports requirement results and
+  limits without an aggregate percentage or runtime-level verdict.
+- Closed the completed JWT research child, including its preserved Analyze
+  stage, then completed Reflect and the parent phase. Canonical KBD revision 108
+  records both phases and every child stage complete.
+- The generated waypoint still retains the stale Execute command and the
+  agent-seeded phase `progress.json` remains all-TODO because the runtime refuses
+  to overwrite an unowned projection. Canonical phase status is complete; the
+  next lifecycle action is `/kbd-new-phase`.

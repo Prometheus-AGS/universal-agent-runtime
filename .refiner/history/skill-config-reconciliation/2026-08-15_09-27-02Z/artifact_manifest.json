@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-15T09:08:14Z",
+  "variants": [
+    {
+      "name": "b5-verification",
+      "file": ".refiner/artifacts/skill-config-reconciliation/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic QA receipt for reversible skill configuration reconciliation, provenance safety, cold restart, and fail-safe behavior"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Reserved dynamic filesystem entries cold-reload as api while configuration entries reload as fs-skills.",
+      "Four child processes reopened one SurrealKV directory for add, change, tombstone, and restore while preserving scoped configuration.",
+      "API-created and builtin skills survived empty-source reconciliation; ignoring provider_id failed the API assertion.",
+      "The empty-source fail-safe preserved the catalogue; removing it failed its exact assertion.",
+      "Tier 0 and strict OpenSpec validation passed; phase-level Tier 2 was not run."
+    ]
+  }
+}

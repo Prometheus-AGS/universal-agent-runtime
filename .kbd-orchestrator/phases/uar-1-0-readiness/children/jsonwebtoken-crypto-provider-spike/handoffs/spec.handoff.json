@@ -1,0 +1,9 @@
+{
+  "stage": "spec",
+  "completedAt": "2026-08-13T07:23:03Z",
+  "outputs": [],
+  "nextStage": "plan",
+  "summaryForNext": "skipped: No new change structure: existing parent OpenSpec change fix-jwt-crypto-provider owns implementation; child scope permits research artifacts only.",
+  "skipped": true,
+  "skipReason": "No new change structure: existing parent OpenSpec change fix-jwt-crypto-provider owns implementation; child scope permits research artifacts only."
+}

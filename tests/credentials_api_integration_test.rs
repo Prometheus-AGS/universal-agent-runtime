@@ -38,10 +38,12 @@ fn server_for(user: Option<&str>, service: Option<Arc<ProviderService>>) -> Test
     if let Some(uid) = user {
         let ctx = UserContext {
             user_id: uid.to_string(),
+            tenant_id: None,
             claims: UserClaims {
                 sub: uid.to_string(),
                 name: None,
                 roles: Some(vec!["user".to_string()]),
+                tenant_id: None,
                 exp: usize::MAX,
             },
         };

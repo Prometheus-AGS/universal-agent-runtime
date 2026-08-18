@@ -1,0 +1,14 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-08-13T07:22:33Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json",
+    "decision.md",
+    "research-evidence.md"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "Three candidates evaluated. Adopt jsonwebtoken 11.0.0 + aws_lc_rs; reject rust_crypto and manual provider. Measured graph: 918 baseline, 918 AWS-LC, 940 RustCrypto. Two independent PASS review rounds completed; remaining warnings are scoped in unresolved-review-findings.md, especially no cross-target/non-server-full verdict and future exactly-one-provider checks.",
+  "skipped": false,
+  "skipReason": null
+}

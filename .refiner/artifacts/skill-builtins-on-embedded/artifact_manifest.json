@@ -1,0 +1,28 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-14T17:41:06Z",
+  "variants": [
+    {
+      "name": "b3-verification",
+      "file": ".refiner/artifacts/skill-builtins-on-embedded/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic QA receipt for embedded built-in discovery, persistence, restart, deduplication, and disabled seeding"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Three subprocesses seeded, reopened with seeding disabled, and re-registered against one SurrealKV directory; persistence, process-exit restart, and deduplication passed under server-full.",
+      "The disabled default-seeding assertion passed under server-full.",
+      "Removing the embedded registration block made the availability assertion fail; exact source restoration and the positive rerun passed.",
+      "Tier 0 and strict OpenSpec validation passed; phase-level Tier 2 was not run."
+    ]
+  }
+}

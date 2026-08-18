@@ -8,11 +8,11 @@
 
 use super::registry::SkillRegistry;
 use super::storage::{SkillStorageProvider, StorageProviderKind};
-use crate::uar::domain::skills::Skill;
+use crate::uar::domain::skills::{Skill, SkillScope};
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::runtime::matching::vector::VectorMatcher;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
@@ -101,7 +101,8 @@ pub struct SkillService {
     providers: Vec<Arc<dyn SkillStorageProvider>>,
     /// Current matching configuration
     matching_config: RwLock<SkillMatchingConfig>,
-    /// Per-agent skill bindings: agent_id -> Vec<skill_id>
+    /// Compatibility view for agent bindings whose skill is not loaded yet.
+    /// Loaded skills also receive durable [`SkillScope::Agent`] overrides.
     agent_skills: RwLock<HashMap<String, Vec<String>>>,
     /// Optional governance engine for Cedar policy enforcement on skill mutations.
     governance: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
@@ -167,16 +168,7 @@ impl SkillService {
     pub async fn register_builtins(&self, skills: Vec<crate::uar::domain::skills::Skill>) {
         let mut registry = self.registry.write().await;
         let count = skills.len();
-        for s in skills {
-            // `register`, NOT `register_loaded`. Builtins are ENTERING the
-            // system from the pack on disk — they were not read out of the
-            // database, so there is nothing to "re-hydrate" and skipping the
-            // write is what left the embedded catalogue empty (R1).
-            //
-            // `register_loaded` is for the opposite direction: skills read FROM
-            // a provider, which must not be written straight back.
-            registry.register(s).await;
-        }
+        registry.register_builtins(skills).await;
         info!(count, "registered builtin skills");
     }
 
@@ -214,6 +206,100 @@ impl SkillService {
         Ok(())
     }
 
+    /// Merge configuration-managed filesystem skills into durable storage.
+    ///
+    /// API-created files beneath the reserved `dynamic/` directory reload with
+    /// `provider_id = "api"` and are therefore outside this operation.
+    pub(crate) async fn reconcile_config_skills(&self) -> anyhow::Result<()> {
+        let Some(config_provider) = self
+            .providers
+            .iter()
+            .find(|provider| provider.id() == "fs-skills")
+        else {
+            return Ok(());
+        };
+        let config_skills = config_provider
+            .list_skills()
+            .await?
+            .into_iter()
+            .filter(|skill| skill.provider_id == "fs-skills")
+            .collect::<Vec<_>>();
+        let stored_skills = self.registry.read().await.list_persisted().await?;
+        let stored_by_id = stored_skills
+            .iter()
+            .map(|skill| (skill.skill_id.clone(), skill))
+            .collect::<HashMap<_, _>>();
+        let stored_config_skill_count = stored_skills
+            .iter()
+            .filter(|skill| skill.provider_id == "fs-skills")
+            .count();
+
+        if config_skills.is_empty() && stored_config_skill_count > 0 {
+            error!(
+                stored_config_skills = stored_config_skill_count,
+                "configuration skill source is empty; refusing to tombstone stored skills"
+            );
+            return Ok(());
+        }
+
+        let configured_ids = config_skills
+            .iter()
+            .map(|skill| skill.skill_id.clone())
+            .collect::<HashSet<_>>();
+        for mut configured in config_skills {
+            if let Some(existing) = stored_by_id.get(&configured.skill_id) {
+                if existing.provider_id != "fs-skills" {
+                    warn!(
+                        skill_id = %configured.skill_id,
+                        stored_provider_id = %existing.provider_id,
+                        "configuration skill conflicts with a non-configuration skill; preserving stored skill"
+                    );
+                    continue;
+                }
+                configured.enabled = existing.enabled;
+                configured.scoped_config.clone_from(&existing.scoped_config);
+            }
+            configured.tombstoned = false;
+
+            let changed = match stored_by_id.get(&configured.skill_id) {
+                Some(existing) => {
+                    serde_json::to_value(existing)? != serde_json::to_value(&configured)?
+                }
+                None => true,
+            };
+            if changed {
+                self.registry
+                    .write()
+                    .await
+                    .register_checked(configured)
+                    .await?;
+            }
+        }
+
+        for stored in stored_skills
+            .iter()
+            .filter(|skill| skill.provider_id == "fs-skills")
+        {
+            if configured_ids.contains(&stored.skill_id) || stored.tombstoned {
+                continue;
+            }
+            let mut tombstoned = stored.clone();
+            tombstoned.tombstoned = true;
+            self.registry
+                .write()
+                .await
+                .register_checked(tombstoned)
+                .await?;
+            info!(
+                skill_id = %stored.skill_id,
+                reason = "absent_from_configuration",
+                "tombstoned configuration-managed skill"
+            );
+        }
+
+        Ok(())
+    }
+
     /// Get all skills from all providers.
     pub async fn get_skills(&self) -> Vec<Skill> {
         self.registry.read().await.list()
@@ -236,7 +322,7 @@ impl SkillService {
             }
             match provider.refresh().await {
                 Ok(skills) => {
-                    all_skills.extend(skills.clone());
+                    all_skills.extend(skills.iter().filter(|skill| !skill.tombstoned).cloned());
                     registry.register_all_loaded(skills);
                 }
                 Err(e) => {
@@ -250,23 +336,32 @@ impl SkillService {
 
     /// Toggle a skill's enabled state.
     pub async fn toggle_skill(&self, id: &str, enabled: bool) -> bool {
-        match self
-            .update_skill(
-                id,
-                SkillUpdate {
-                    enabled: Some(enabled),
-                    ..SkillUpdate::default()
-                },
-            )
+        self.set_scoped_enabled(id, SkillScope::Global, enabled)
             .await
-        {
-            Ok(Some(_)) => true,
-            Ok(None) => false,
-            Err(e) => {
-                warn!("Failed to toggle skill '{}': {:?}", id, e);
-                false
-            }
+    }
+
+    /// Set a durable enabled-state override at one scope.
+    pub async fn set_scoped_enabled(&self, id: &str, scope: SkillScope, enabled: bool) -> bool {
+        if let Err(error) = self.ensure_mutation_allowed(id).await {
+            warn!("Failed to configure skill '{}': {:?}", id, error);
+            return false;
         }
+
+        let updated = {
+            let mut registry = self.registry.write().await;
+            let Some(mut skill) = registry.get(id).cloned() else {
+                return false;
+            };
+            skill.set_enabled_for(scope, enabled);
+            registry.register(skill.clone()).await;
+            skill
+        };
+
+        if updated.provider_id == "api" {
+            self.persist_to_filesystem(&updated).await;
+        }
+        info!(skill_id = id, enabled, "updated scoped skill configuration");
+        true
     }
 
     /// Create a new skill dynamically via API.
@@ -312,25 +407,7 @@ impl SkillService {
         id: &str,
         update: SkillUpdate,
     ) -> anyhow::Result<Option<Skill>> {
-        // Cedar governance gate: check if this mutation is allowed
-        if let Some(ref engine) = self.governance {
-            let environment = std::env::var("PROMETHEUS_ENVIRONMENT")
-                .unwrap_or_else(|_| "development".to_string());
-            let context = format!(
-                r#"{{"environment": "{}", "validation_passed": true}}"#,
-                environment
-            );
-            let allowed = engine
-                .is_skill_mutation_allowed("uar-runtime", "skill.mutate", id, &context)
-                .await;
-            if !allowed {
-                anyhow::bail!(
-                    "Cedar policy denied skill mutation for '{}' in {} environment",
-                    id,
-                    environment
-                );
-            }
-        }
+        self.ensure_mutation_allowed(id).await?;
 
         let existing = { self.registry.read().await.get(id).cloned() };
         let Some(mut skill) = existing else {
@@ -356,7 +433,7 @@ impl SkillService {
             skill.preferred_tools = preferred_tools;
         }
         if let Some(enabled) = update.enabled {
-            skill.enabled = enabled;
+            skill.set_enabled_for(SkillScope::Global, enabled);
         }
         if let Some(execution_config) = update.execution_config {
             skill.execution_config = execution_config;
@@ -364,19 +441,8 @@ impl SkillService {
 
         self.registry.write().await.register(skill.clone()).await;
 
-        // Persist updates to writable filesystem skills so changes survive restarts.
-        for provider in &self.providers {
-            if provider.kind() == StorageProviderKind::Filesystem {
-                if let Err(e) = provider.save_skill(&skill).await {
-                    warn!(
-                        "Could not write updated skill '{}' to filesystem provider '{}': {:?}",
-                        skill.skill_id,
-                        provider.name(),
-                        e
-                    );
-                }
-                break;
-            }
+        if skill.provider_id == "api" {
+            self.persist_to_filesystem(&skill).await;
         }
 
         info!("Updated skill via API: {}", skill.skill_id);
@@ -421,16 +487,40 @@ impl SkillService {
 
     /// Match skills to a query for a specific agent.
     pub async fn match_skills(&self, query: &str, agent_id: Option<&str>) -> Vec<Skill> {
+        self.match_skills_scoped(query, agent_id, None).await
+    }
+
+    /// Match skills after resolving conversation > agent > global state.
+    pub async fn match_skills_scoped(
+        &self,
+        query: &str,
+        agent_id: Option<&str>,
+        conversation_id: Option<&str>,
+    ) -> Vec<Skill> {
+        let legacy_bindings = if let Some(agent_id) = agent_id {
+            self.agent_skills
+                .read()
+                .await
+                .get(agent_id)
+                .filter(|skill_ids| !skill_ids.is_empty())
+                .cloned()
+        } else {
+            None
+        };
         let registry = self.registry.read().await;
         let config = self.matching_config.read().await;
 
-        // Get candidate skills (agent-specific if agent_id provided)
-        let candidates = if let Some(aid) = agent_id {
-            self.get_enabled_skills_for_agent_inner(&registry, aid)
-                .await
-        } else {
-            registry.list_enabled()
-        };
+        let candidates = registry
+            .list()
+            .into_iter()
+            .filter(|skill| {
+                let agent_fallback = legacy_bindings.as_ref().map(|skill_ids| {
+                    skill_ids.iter().any(|id| id == &skill.skill_id)
+                        && skill.enabled_for(None, None)
+                });
+                skill.enabled_for_with_agent_fallback(agent_id, conversation_id, agent_fallback)
+            })
+            .collect::<Vec<_>>();
 
         if candidates.is_empty() {
             return Vec::new();
@@ -545,66 +635,130 @@ impl SkillService {
             .collect()
     }
 
-    // --- Per-agent skill bindings ---
+    // --- Per-agent skill configuration ---
 
-    /// Get skill IDs associated with an agent.
+    /// Get skill IDs explicitly enabled for an agent.
     pub async fn get_agent_skill_ids(&self, agent_id: &str) -> Vec<String> {
-        self.agent_skills
+        let mut skill_ids = self
+            .agent_skills
             .read()
             .await
             .get(agent_id)
             .cloned()
-            .unwrap_or_default()
+            .unwrap_or_default();
+        for skill_id in self
+            .registry
+            .read()
+            .await
+            .list()
+            .into_iter()
+            .filter(|skill| {
+                skill.scoped_config.iter().any(|config| {
+                    config.enabled
+                        && matches!(&config.scope, SkillScope::Agent(id) if id == agent_id)
+                })
+            })
+            .map(|skill| skill.skill_id)
+        {
+            if !skill_ids.contains(&skill_id) {
+                skill_ids.push(skill_id);
+            }
+        }
+        skill_ids
     }
 
-    /// Set skill bindings for an agent.
+    /// Replace an agent's durable skill overrides using allowlist semantics.
     pub async fn set_agent_skills(&self, agent_id: &str, skill_ids: Vec<String>) {
+        let selected = skill_ids.iter().cloned().collect::<HashSet<_>>();
         self.agent_skills
             .write()
             .await
             .insert(agent_id.to_string(), skill_ids);
+        let all_ids = self
+            .registry
+            .read()
+            .await
+            .list()
+            .into_iter()
+            .map(|skill| skill.skill_id)
+            .collect::<Vec<_>>();
+        for skill_id in all_ids {
+            self.set_scoped_enabled(
+                &skill_id,
+                SkillScope::Agent(agent_id.to_string()),
+                selected.contains(&skill_id),
+            )
+            .await;
+        }
     }
 
-    /// Add a single skill to an agent's bindings.
+    /// Enable one skill for an agent.
     pub async fn add_skill_to_agent(&self, agent_id: &str, skill_id: &str) {
-        let mut map = self.agent_skills.write().await;
-        let entry = map.entry(agent_id.to_string()).or_default();
-        if !entry.contains(&skill_id.to_string()) {
+        let mut bindings = self.agent_skills.write().await;
+        let entry = bindings.entry(agent_id.to_string()).or_default();
+        if !entry.iter().any(|id| id == skill_id) {
             entry.push(skill_id.to_string());
         }
+        drop(bindings);
+        self.set_scoped_enabled(skill_id, SkillScope::Agent(agent_id.to_string()), true)
+            .await;
     }
 
-    /// Remove a single skill from an agent's bindings.
+    /// Disable one skill for an agent.
     pub async fn remove_skill_from_agent(&self, agent_id: &str, skill_id: &str) {
-        let mut map = self.agent_skills.write().await;
-        if let Some(entry) = map.get_mut(agent_id) {
-            entry.retain(|id| id != skill_id);
+        if let Some(bindings) = self.agent_skills.write().await.get_mut(agent_id) {
+            bindings.retain(|id| id != skill_id);
         }
+        self.set_scoped_enabled(skill_id, SkillScope::Agent(agent_id.to_string()), false)
+            .await;
     }
 
-    /// Get enabled skills for an agent (intersection of agent bindings and globally enabled).
+    /// Get skills enabled after resolving agent state over global state.
     pub async fn get_enabled_skills_for_agent(&self, agent_id: &str) -> Vec<Skill> {
         let registry = self.registry.read().await;
-        self.get_enabled_skills_for_agent_inner(&registry, agent_id)
-            .await
+        registry
+            .list()
+            .into_iter()
+            .filter(|skill| skill.enabled_for(Some(agent_id), None))
+            .collect()
     }
 
-    async fn get_enabled_skills_for_agent_inner(
-        &self,
-        registry: &SkillRegistry,
-        agent_id: &str,
-    ) -> Vec<Skill> {
-        let agent_skill_ids = self.get_agent_skill_ids(agent_id).await;
-        if agent_skill_ids.is_empty() {
-            // If no specific bindings, return all enabled skills
-            return registry.list_enabled();
+    async fn ensure_mutation_allowed(&self, id: &str) -> anyhow::Result<()> {
+        if let Some(ref engine) = self.governance {
+            let environment = std::env::var("PROMETHEUS_ENVIRONMENT")
+                .unwrap_or_else(|_| "development".to_string());
+            let context = format!(
+                r#"{{"environment": "{}", "validation_passed": true}}"#,
+                environment
+            );
+            let allowed = engine
+                .is_skill_mutation_allowed("uar-runtime", "skill.mutate", id, &context)
+                .await;
+            if !allowed {
+                anyhow::bail!(
+                    "Cedar policy denied skill mutation for '{}' in {} environment",
+                    id,
+                    environment
+                );
+            }
         }
+        Ok(())
+    }
 
-        registry
-            .list_enabled()
-            .into_iter()
-            .filter(|s| agent_skill_ids.contains(&s.skill_id))
-            .collect()
+    async fn persist_to_filesystem(&self, skill: &Skill) {
+        for provider in &self.providers {
+            if provider.kind() == StorageProviderKind::Filesystem {
+                if let Err(error) = provider.save_skill(skill).await {
+                    warn!(
+                        "Could not write updated skill '{}' to filesystem provider '{}': {:?}",
+                        skill.skill_id,
+                        provider.name(),
+                        error
+                    );
+                }
+                break;
+            }
+        }
     }
 
     // --- Config ---
@@ -662,7 +816,15 @@ impl SkillService {
 mod tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
-    use crate::uar::domain::skills::{SkillConstraints, SkillTriggers};
+    use crate::uar::domain::skills::{SkillConstraints, SkillOrigin, SkillTriggers};
+    use crate::uar::persistence::providers::surreal::SurrealDbProvider;
+    use crate::uar::runtime::skills::storage::{
+        DatabaseStorageProvider, FilesystemStorageProvider, filesystem::serialize_skill_to_md,
+    };
+
+    const B5_CHILD_MODE: &str = "UAR_B5_RECONCILIATION_CHILD_MODE";
+    const B5_CHILD_ENDPOINT: &str = "UAR_B5_RECONCILIATION_ENDPOINT";
+    const B5_CHILD_SKILLS_DIR: &str = "UAR_B5_RECONCILIATION_SKILLS_DIR";
 
     fn test_skill() -> Skill {
         Skill {
@@ -685,6 +847,35 @@ mod tests {
             origin: Default::default(),
             ..Default::default()
         }
+    }
+
+    async fn write_config_skill(root: &std::path::Path, skill: &Skill) {
+        let skill_directory = root.join(&skill.skill_id);
+        tokio::fs::create_dir_all(&skill_directory).await.unwrap();
+        tokio::fs::write(
+            skill_directory.join("SKILL.md"),
+            serialize_skill_to_md(skill).unwrap(),
+        )
+        .await
+        .unwrap();
+    }
+
+    fn reconciliation_service(
+        persistence: Arc<dyn PersistenceLayer>,
+        skills_root: &std::path::Path,
+    ) -> SkillService {
+        let mut service = SkillService::new(Some(Arc::clone(&persistence)), None);
+        service.add_provider(Arc::new(FilesystemStorageProvider::new(
+            "fs-skills",
+            "Configuration skills",
+            skills_root,
+        )));
+        service.add_provider(Arc::new(DatabaseStorageProvider::new(
+            "db-skills",
+            "Database skills",
+            persistence,
+        )));
+        service
     }
 
     #[tokio::test]
@@ -739,5 +930,636 @@ mod tests {
             .expect("missing update should not error");
 
         assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn refresh_hides_tombstones_but_keeps_them_available_for_restore() {
+        let database_directory = tempfile::tempdir().unwrap();
+        let endpoint = format!(
+            "surrealkv://{}",
+            database_directory.path().join("skills.db").display()
+        );
+        let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+            SurrealDbProvider::new(&endpoint, None, None, Some("b5"), Some("visibility"))
+                .await
+                .unwrap(),
+        );
+        let active = Skill {
+            skill_id: "active".to_string(),
+            provider_id: "fs-skills".to_string(),
+            ..Skill::default()
+        };
+        let tombstoned = Skill {
+            skill_id: "removed".to_string(),
+            provider_id: "fs-skills".to_string(),
+            tombstoned: true,
+            ..Skill::default()
+        };
+        persistence.save_skill(&active, &[]).await.unwrap();
+        persistence.save_skill(&tombstoned, &[]).await.unwrap();
+
+        let mut service = SkillService::new(Some(Arc::clone(&persistence)), None);
+        service.add_provider(Arc::new(DatabaseStorageProvider::new(
+            "db-skills",
+            "Database skills",
+            persistence,
+        )));
+
+        let visible = service.refresh().await.unwrap();
+        assert_eq!(visible.len(), 1);
+        assert_eq!(visible[0].skill_id, "active");
+        assert!(service.registry.read().await.get("removed").is_some());
+    }
+
+    #[tokio::test]
+    async fn scoped_state_resolves_conversation_then_agent_then_global_both_directions() {
+        let service = SkillService::new(None, None);
+        service.create_skill(test_skill()).await.unwrap();
+
+        assert!(
+            service
+                .set_scoped_enabled("test-skill", SkillScope::Global, false)
+                .await
+        );
+        assert!(
+            service
+                .set_scoped_enabled("test-skill", SkillScope::Agent("agent-a".to_string()), true,)
+                .await
+        );
+        assert!(
+            service
+                .set_scoped_enabled(
+                    "test-skill",
+                    SkillScope::Conversation("conversation-a".to_string()),
+                    false,
+                )
+                .await
+        );
+
+        assert!(
+            service
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
+                .await
+                .is_empty()
+        );
+        assert_eq!(
+            service
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-b"))
+                .await
+                .len(),
+            1
+        );
+        assert!(
+            service
+                .match_skills_scoped("initial", Some("agent-b"), Some("conversation-b"))
+                .await
+                .is_empty()
+        );
+
+        assert!(
+            service
+                .set_scoped_enabled("test-skill", SkillScope::Global, true)
+                .await
+        );
+        assert!(
+            service
+                .set_scoped_enabled(
+                    "test-skill",
+                    SkillScope::Agent("agent-a".to_string()),
+                    false,
+                )
+                .await
+        );
+        assert!(
+            service
+                .set_scoped_enabled(
+                    "test-skill",
+                    SkillScope::Conversation("conversation-a".to_string()),
+                    true,
+                )
+                .await
+        );
+
+        assert_eq!(
+            service
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
+                .await
+                .len(),
+            1
+        );
+        assert!(
+            service
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-b"))
+                .await
+                .is_empty()
+        );
+        assert_eq!(
+            service
+                .match_skills_scoped("initial", Some("agent-b"), Some("conversation-b"))
+                .await
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn scoped_change_affects_next_match_without_mutating_existing_binding() {
+        let service = SkillService::new(None, None);
+        service.create_skill(test_skill()).await.unwrap();
+
+        let in_flight_binding = service
+            .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
+            .await;
+        assert_eq!(in_flight_binding.len(), 1);
+
+        assert!(
+            service
+                .set_scoped_enabled(
+                    "test-skill",
+                    SkillScope::Conversation("conversation-a".to_string()),
+                    false,
+                )
+                .await
+        );
+
+        assert_eq!(in_flight_binding.len(), 1);
+        assert!(
+            service
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
+                .await
+                .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn agent_binding_set_before_load_filters_future_skills() {
+        let service = SkillService::new(None, None);
+        service
+            .set_agent_skills("agent-a", vec!["future-skill".to_string()])
+            .await;
+
+        let mut future = test_skill();
+        future.skill_id = "future-skill".to_string();
+        let mut unbound = test_skill();
+        unbound.skill_id = "unbound-skill".to_string();
+        service.create_skill(future).await.unwrap();
+        service.create_skill(unbound).await.unwrap();
+
+        let matched = service.match_skills("initial", Some("agent-a")).await;
+        assert_eq!(matched.len(), 1);
+        assert_eq!(matched[0].skill_id, "future-skill");
+
+        assert!(
+            service
+                .set_scoped_enabled(
+                    "unbound-skill",
+                    SkillScope::Conversation("conversation-a".to_string()),
+                    true,
+                )
+                .await
+        );
+        let conversation_match = service
+            .match_skills_scoped("initial", Some("agent-a"), Some("conversation-a"))
+            .await;
+        assert_eq!(conversation_match.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn builtin_scoped_state_survives_restart_reregistration() {
+        let directory = tempfile::tempdir().unwrap();
+        let endpoint = format!(
+            "surrealkv://{}",
+            directory.path().join("skills.db").display()
+        );
+        let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+            SurrealDbProvider::new(&endpoint, None, None, Some("b4"), Some("b4"))
+                .await
+                .unwrap(),
+        );
+        let mut global_builtin = test_skill();
+        global_builtin.skill_id = "global-builtin".to_string();
+        global_builtin.origin = SkillOrigin::Builtin;
+        global_builtin.provider_id = "builtin".to_string();
+        let mut agent_builtin = global_builtin.clone();
+        agent_builtin.skill_id = "agent-builtin".to_string();
+
+        let first = SkillService::new(Some(Arc::clone(&persistence)), None);
+        first
+            .register_builtins(vec![global_builtin.clone(), agent_builtin.clone()])
+            .await;
+        assert!(
+            first
+                .set_scoped_enabled("global-builtin", SkillScope::Global, false)
+                .await
+        );
+        assert!(
+            first
+                .set_scoped_enabled(
+                    "agent-builtin",
+                    SkillScope::Agent("agent-a".to_string()),
+                    false,
+                )
+                .await
+        );
+
+        let mut restarted = SkillService::new(Some(Arc::clone(&persistence)), None);
+        restarted.add_provider(Arc::new(DatabaseStorageProvider::new(
+            "test-db",
+            "Test database",
+            Arc::clone(&persistence),
+        )));
+        restarted
+            .register_builtins(vec![global_builtin, agent_builtin])
+            .await;
+        restarted.initialize().await.unwrap();
+
+        assert!(
+            restarted
+                .match_skills_scoped("initial", Some("agent-a"), Some("conversation-b"))
+                .await
+                .is_empty()
+        );
+        assert_eq!(
+            restarted
+                .match_skills_scoped("initial", Some("agent-b"), Some("conversation-b"))
+                .await
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn builtin_delete_is_refused_and_user_delete_succeeds() {
+        let service = SkillService::new(None, None);
+        let mut builtin = test_skill();
+        builtin.skill_id = "builtin-skill".to_string();
+        builtin.origin = SkillOrigin::Builtin;
+        service.register_builtins(vec![builtin]).await;
+        service.create_skill(test_skill()).await.unwrap();
+
+        let error = service
+            .delete_skill_permanent("builtin-skill")
+            .await
+            .expect_err("built-in deletion must fail");
+        assert!(error.to_string().contains("system_skill_immutable"));
+        assert!(service.delete_skill_permanent("test-skill").await.unwrap());
+        assert!(
+            service
+                .get_skills()
+                .await
+                .iter()
+                .any(|skill| skill.skill_id == "builtin-skill")
+        );
+        assert!(
+            service
+                .get_skills()
+                .await
+                .iter()
+                .all(|skill| skill.skill_id != "test-skill")
+        );
+    }
+
+    #[tokio::test]
+    async fn reconciliation_adds_changes_tombstones_and_restores_scoped_config() {
+        let _ = tracing_subscriber::fmt().with_test_writer().try_init();
+        let database_directory = tempfile::tempdir().unwrap();
+        let skills_directory = tempfile::tempdir().unwrap();
+        let endpoint = format!(
+            "surrealkv://{}",
+            database_directory.path().join("skills.db").display()
+        );
+        let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+            SurrealDbProvider::new(&endpoint, None, None, Some("b5"), Some("roundtrip"))
+                .await
+                .unwrap(),
+        );
+        let mut removed = test_skill();
+        removed.skill_id = "config-removed".to_string();
+        removed.title = "Config Removed".to_string();
+        removed.provider_id = "fs-skills".to_string();
+        removed.triggers.keywords = vec!["removed".to_string()];
+        let mut retained = test_skill();
+        retained.skill_id = "config-retained".to_string();
+        retained.title = "Config Retained".to_string();
+        retained.provider_id = "fs-skills".to_string();
+        await_config_pair(skills_directory.path(), &removed, &retained).await;
+
+        let first = reconciliation_service(Arc::clone(&persistence), skills_directory.path());
+        first.initialize().await.unwrap();
+        first.reconcile_config_skills().await.unwrap();
+        assert!(
+            first
+                .set_scoped_enabled(
+                    "config-removed",
+                    SkillScope::Agent("agent-a".to_string()),
+                    false,
+                )
+                .await
+        );
+        assert!(!skills_directory.path().join("dynamic").exists());
+
+        removed.description = "Changed configuration definition".to_string();
+        write_config_skill(skills_directory.path(), &removed).await;
+        let changed = reconciliation_service(Arc::clone(&persistence), skills_directory.path());
+        changed.initialize().await.unwrap();
+        changed.reconcile_config_skills().await.unwrap();
+        let changed_record = persistence
+            .list_skills()
+            .await
+            .unwrap()
+            .into_iter()
+            .find(|skill| skill.skill_id == "config-removed")
+            .unwrap();
+        assert_eq!(
+            changed_record.description,
+            "Changed configuration definition"
+        );
+
+        tokio::fs::remove_dir_all(skills_directory.path().join("config-removed"))
+            .await
+            .unwrap();
+        let removed_service =
+            reconciliation_service(Arc::clone(&persistence), skills_directory.path());
+        removed_service.initialize().await.unwrap();
+        removed_service.reconcile_config_skills().await.unwrap();
+        assert!(
+            removed_service
+                .get_skills()
+                .await
+                .iter()
+                .all(|skill| skill.skill_id != "config-removed")
+        );
+        assert!(
+            removed_service
+                .match_skills("removed", Some("agent-b"))
+                .await
+                .is_empty()
+        );
+        let tombstoned = persistence
+            .list_skills()
+            .await
+            .unwrap()
+            .into_iter()
+            .find(|skill| skill.skill_id == "config-removed")
+            .unwrap();
+        assert!(tombstoned.tombstoned);
+
+        write_config_skill(skills_directory.path(), &removed).await;
+        let restored = reconciliation_service(Arc::clone(&persistence), skills_directory.path());
+        restored.initialize().await.unwrap();
+        restored.reconcile_config_skills().await.unwrap();
+        let restored_record = persistence
+            .list_skills()
+            .await
+            .unwrap()
+            .into_iter()
+            .find(|skill| skill.skill_id == "config-removed")
+            .unwrap();
+        assert!(!restored_record.tombstoned);
+        assert!(restored_record.scoped_config.iter().any(|config| {
+            matches!(&config.scope, SkillScope::Agent(id) if id == "agent-a") && !config.enabled
+        }));
+        assert!(
+            restored
+                .match_skills("removed", Some("agent-a"))
+                .await
+                .is_empty()
+        );
+        assert_eq!(
+            restored
+                .match_skills("removed", Some("agent-b"))
+                .await
+                .len(),
+            1
+        );
+    }
+
+    async fn await_config_pair(root: &std::path::Path, first: &Skill, second: &Skill) {
+        write_config_skill(root, first).await;
+        write_config_skill(root, second).await;
+    }
+
+    #[tokio::test]
+    async fn empty_source_fail_safe_preserves_every_skill_origin() {
+        let _ = tracing_subscriber::fmt().with_test_writer().try_init();
+        let database_directory = tempfile::tempdir().unwrap();
+        let skills_directory = tempfile::tempdir().unwrap();
+        let endpoint = format!(
+            "surrealkv://{}",
+            database_directory.path().join("skills.db").display()
+        );
+        let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+            SurrealDbProvider::new(&endpoint, None, None, Some("b5"), Some("failsafe"))
+                .await
+                .unwrap(),
+        );
+        for (id, provider_id, origin) in [
+            ("config-skill", "fs-skills", SkillOrigin::User),
+            ("api-skill", "api", SkillOrigin::User),
+            ("builtin-skill", "builtin", SkillOrigin::Builtin),
+        ] {
+            let mut skill = test_skill();
+            skill.skill_id = id.to_string();
+            skill.title = id.to_string();
+            skill.provider_id = provider_id.to_string();
+            skill.origin = origin;
+            persistence.save_skill(&skill, &[]).await.unwrap();
+        }
+
+        let service = reconciliation_service(Arc::clone(&persistence), skills_directory.path());
+        service.initialize().await.unwrap();
+        service.reconcile_config_skills().await.unwrap();
+
+        let stored = persistence.list_skills().await.unwrap();
+        assert_eq!(stored.len(), 3);
+        assert!(stored.iter().all(|skill| !skill.tombstoned));
+    }
+
+    #[tokio::test]
+    async fn api_skill_survives_empty_configuration_by_provider_id() {
+        let database_directory = tempfile::tempdir().unwrap();
+        let skills_directory = tempfile::tempdir().unwrap();
+        let endpoint = format!(
+            "surrealkv://{}",
+            database_directory.path().join("skills.db").display()
+        );
+        let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+            SurrealDbProvider::new(&endpoint, None, None, Some("b5"), Some("api-origin"))
+                .await
+                .unwrap(),
+        );
+        let first = reconciliation_service(Arc::clone(&persistence), skills_directory.path());
+        first.initialize().await.unwrap();
+        let mut api_skill = test_skill();
+        api_skill.skill_id = "api-survivor".to_string();
+        api_skill.provider_id = "api".to_string();
+        first.create_skill(api_skill).await.unwrap();
+        let mut builtin = test_skill();
+        builtin.skill_id = "builtin-survivor".to_string();
+        builtin.provider_id = "builtin".to_string();
+        builtin.origin = SkillOrigin::Builtin;
+        first.register_builtins(vec![builtin]).await;
+        drop(first);
+
+        let service = reconciliation_service(Arc::clone(&persistence), skills_directory.path());
+        service.initialize().await.unwrap();
+        service.reconcile_config_skills().await.unwrap();
+
+        let stored = persistence.list_skills().await.unwrap();
+        let api_skill = stored
+            .iter()
+            .find(|skill| skill.skill_id == "api-survivor")
+            .unwrap();
+        assert!(!api_skill.tombstoned);
+        let builtin = stored
+            .iter()
+            .find(|skill| skill.skill_id == "builtin-survivor")
+            .unwrap();
+        assert!(!builtin.tombstoned);
+    }
+
+    #[tokio::test]
+    async fn reconciliation_survives_cold_process_restarts() {
+        if let Ok(mode) = std::env::var(B5_CHILD_MODE) {
+            let endpoint = std::env::var(B5_CHILD_ENDPOINT).unwrap();
+            let skills_directory =
+                std::path::PathBuf::from(std::env::var(B5_CHILD_SKILLS_DIR).unwrap());
+            let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+                SurrealDbProvider::new(&endpoint, None, None, Some("b5-cold"), Some("b5-cold"))
+                    .await
+                    .unwrap(),
+            );
+            let service = reconciliation_service(Arc::clone(&persistence), &skills_directory);
+            service.initialize().await.unwrap();
+            service.reconcile_config_skills().await.unwrap();
+
+            match mode.as_str() {
+                "seed" => {
+                    assert_eq!(persistence.list_skills().await.unwrap().len(), 2);
+                    assert!(
+                        service
+                            .set_scoped_enabled(
+                                "cold-removed",
+                                SkillScope::Agent("agent-a".to_string()),
+                                false,
+                            )
+                            .await
+                    );
+                    assert!(!skills_directory.join("dynamic").exists());
+                }
+                "change" => {
+                    let changed = persistence
+                        .list_skills()
+                        .await
+                        .unwrap()
+                        .into_iter()
+                        .find(|skill| skill.skill_id == "cold-removed")
+                        .unwrap();
+                    assert_eq!(changed.description, "Changed across cold restart");
+                }
+                "remove" => {
+                    let tombstoned = persistence
+                        .list_skills()
+                        .await
+                        .unwrap()
+                        .into_iter()
+                        .find(|skill| skill.skill_id == "cold-removed")
+                        .unwrap();
+                    assert!(tombstoned.tombstoned);
+                    assert!(
+                        service
+                            .get_skills()
+                            .await
+                            .iter()
+                            .all(|skill| skill.skill_id != "cold-removed")
+                    );
+                    assert!(
+                        service
+                            .match_skills("cold-removed", Some("agent-b"))
+                            .await
+                            .is_empty()
+                    );
+                }
+                "restore" => {
+                    let restored = persistence
+                        .list_skills()
+                        .await
+                        .unwrap()
+                        .into_iter()
+                        .find(|skill| skill.skill_id == "cold-removed")
+                        .unwrap();
+                    assert!(!restored.tombstoned);
+                    assert!(restored.scoped_config.iter().any(|config| {
+                        matches!(&config.scope, SkillScope::Agent(id) if id == "agent-a")
+                            && !config.enabled
+                    }));
+                    assert!(
+                        service
+                            .match_skills("cold-removed", Some("agent-a"))
+                            .await
+                            .is_empty()
+                    );
+                    assert_eq!(
+                        service
+                            .match_skills("cold-removed", Some("agent-b"))
+                            .await
+                            .len(),
+                        1
+                    );
+                }
+                _ => panic!("unknown B5 child mode: {mode}"),
+            }
+            return;
+        }
+
+        let directory = tempfile::tempdir().unwrap();
+        let endpoint = format!(
+            "surrealkv://{}",
+            directory.path().join("reconciliation.db").display()
+        );
+        let skills_directory = directory.path().join("skills");
+        let mut removed = test_skill();
+        removed.skill_id = "cold-removed".to_string();
+        removed.title = "Cold Removed".to_string();
+        removed.provider_id = "fs-skills".to_string();
+        removed.triggers.keywords = vec!["cold-removed".to_string()];
+        let mut retained = test_skill();
+        retained.skill_id = "cold-retained".to_string();
+        retained.title = "Cold Retained".to_string();
+        retained.provider_id = "fs-skills".to_string();
+        await_config_pair(&skills_directory, &removed, &retained).await;
+        run_b5_child("seed", &endpoint, &skills_directory);
+
+        removed.description = "Changed across cold restart".to_string();
+        write_config_skill(&skills_directory, &removed).await;
+        run_b5_child("change", &endpoint, &skills_directory);
+
+        tokio::fs::remove_dir_all(skills_directory.join("cold-removed"))
+            .await
+            .unwrap();
+        run_b5_child("remove", &endpoint, &skills_directory);
+
+        write_config_skill(&skills_directory, &removed).await;
+        run_b5_child("restore", &endpoint, &skills_directory);
+    }
+
+    fn run_b5_child(mode: &str, endpoint: &str, skills_directory: &std::path::Path) {
+        let output = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "uar::runtime::skills::service::tests::reconciliation_survives_cold_process_restarts",
+                "--test-threads=1",
+            ])
+            .env(B5_CHILD_MODE, mode)
+            .env(B5_CHILD_ENDPOINT, endpoint)
+            .env(B5_CHILD_SKILLS_DIR, skills_directory)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "B5 {mode} child failed\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 }

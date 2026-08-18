@@ -208,3 +208,83 @@ step. Six failure modes are observed failing in
 **Prevention.** A completeness claim without a denominator is not evidence. Ask
 of any green check: *what would this print if it had failed?* Full record:
 `.prometheus/postmortems/2026-08-13-skills-not-installed-at-canonical-names.md`.
+
+---
+
+## 2026-08-14 — disabling sccache does not disable the external Cargo build directory
+
+**Observed behavior.** Cross-target checks run with `RUSTC_WRAPPER=` and
+`SCCACHE_DISABLE=1` still spent long silent intervals in uninterruptible I/O on
+`/Volumes/my-passport`. Process state showed `cargo` as `U`/`Us`, and build
+artifacts resolved under `/Volumes/my-passport/cargo-build/...`.
+
+**Mechanism.** The user-global Cargo configuration independently sets both
+`rustc-wrapper = "/opt/homebrew/bin/sccache"` and
+`build-dir = "/Volumes/my-passport/cargo-build/{workspace-path-hash}"`.
+Clearing the wrapper disables compiler caching, but it does not override the
+external build directory. Those controls solve different problems.
+
+**Working practice.** Retain the execution session and poll it instead of
+mistaking an empty output interval for a compiler deadlock. Record literal
+target environment values. For Android, the installed NDK uses the
+API-suffixed `aarch64-linux-android35-clang`, and the pre-existing
+`native-tls` graph needs a target OpenSSL sysroot. Do not repair either machine
+precondition in UAR source.
+
+## 2026-08-14 — `CryptoProvider::install_default` cannot identify the installed provider
+
+**Observed failure.** A provisional guard compared the pointer returned by a
+failed `rust_crypto::DEFAULT_PROVIDER.install_default()` call with the
+RustCrypto static. The identical-RustCrypto control passed, but an AWS-LC-first
+process was also accepted; the structured-conflict assertion failed.
+
+**Root cause.** `jsonwebtoken` 11.0.0 delegates `install_default` to
+`OnceLock::set(default_provider)`. On failure, `OnceLock::set` returns the value
+the caller attempted to install, not the provider already stored. The installed
+provider getter is crate-private. The returned pointer therefore always
+describes the attempted RustCrypto value and proves nothing about the process
+owner.
+
+**Working rule.** UAR owns first installation and caches only its own successful
+RustCrypto acquisition. Any provider installed earlier—including RustCrypto—
+returns a structured conflict. Do not reintroduce pointer comparison unless a
+pinned `jsonwebtoken` API publicly exposes the installed provider identity.
+
+## 2026-08-15 — same-handle reconstruction is not a SurrealKV restart proof
+
+**Observed defect.** A scoped-skill durability test built a second service over
+the same live `Arc<SurrealDbProvider>` and called it a restart. Independent
+review rejected the claim.
+
+**Working rule.** For cold-restart assertions, launch a child process for each
+boot against one temporary SurrealKV path. Process exit must release the old
+provider before the next process opens it. A new service over one live provider
+proves rehydration only.
+
+## 2026-08-15 — compatibility must be observed at the behavior boundary
+
+**Observed defect.** The durable skill model first dropped unknown legacy agent
+binding IDs, then a repair made GET return them without making later-loaded
+skills obey them during matching.
+
+**Working rule.** When preserving an API contract, test the downstream behavior,
+not only the response shape. For agent skills, set a binding before load, load a
+selected and non-selected skill, and observe matching. Conversation and explicit
+durable agent records remain more specific than the compatibility fallback.
+
+## 2026-08-15 — skill provenance must survive both reads and writes
+
+**Observed defect.** `provider_id` looked usable in the database but was rebuilt
+from a filesystem provider that mixed API-created and configuration-managed
+files. The first repair fixed cold reads but left the storage provider willing
+to write any source into the API namespace. Old dynamic copies could also race
+real configuration files by directory iteration order.
+
+**Working rule.** Enforce provenance at the filesystem write boundary and test
+upgrade residue explicitly. For duplicate IDs, configuration beats dynamic
+regardless of traversal order. A clean-directory cold-reload test alone does
+not prove the migration is safe.
+
+**Evidence lesson.** A required `error!` call in source is not an observed log.
+Install a test subscriber, run the exact test with `--nocapture`, and retain the
+literal level, message, fields, and passing result.

@@ -335,3 +335,94 @@ claims require a denominator) goes through §D-6's gates — adversarial review,
 sycophancy gate, explicit approval — before any rule text lands. Operator
 direction, same date. Record:
 `.prometheus/postmortems/2026-08-13-skills-not-installed-at-canonical-names.md`.
+
+---
+
+## 2026-08-14 — UAR standardizes `jsonwebtoken` 11 on RustCrypto
+
+**Decision.** Every UAR-owned `jsonwebtoken` dependency resolves through one
+workspace entry pinned exactly to `11.0.0`, with default features disabled and
+only `rust_crypto` selected. The earlier AWS-LC spike conclusion is historical
+and superseded.
+
+**Rationale.** RustCrypto removes the native C/assembly provider from UAR's JWT
+choice, works across the separately checked server-full, iOS, and Android
+graphs, and is already present in the lockfile. The decision is not based on a
+performance claim. A1 requires authenticated public-key verification only; it
+does not add RSA/PS private-key signing.
+
+**Uncomfortable constraint.** `jsonwebtoken` 11 stores its process provider
+behind a crate-private getter. Its public `install_default()` error returns the
+provider the caller attempted to install, not the provider already present.
+Consequently UAR cannot distinguish “RustCrypto was installed before UAR” from
+“a foreign provider was installed before UAR” by pointer identity. A0 remains
+in progress until the operator either requires UAR to own first installation or
+expands scope to a patched/forked provider API. No completion claim transfers
+from the backend decision to that unresolved initialization contract.
+
+---
+
+## 2026-08-14 — UAR owns first `jsonwebtoken` provider installation
+
+**Decision.** The operator selected the first-owner option. UAR installs
+RustCrypto at the shared server-startup funnel and before every UAR-owned JWT
+encode/decode operation. Repeated calls reuse only UAR's recorded successful
+installation. Any provider initialized before UAR—including RustCrypto—fails
+closed with a structured provider-conflict error.
+
+**Rationale.** `jsonwebtoken` 11 exposes neither the installed provider nor an
+identity token for it. Treating a failed RustCrypto installation as proof that
+the existing provider is RustCrypto would accept AWS-LC or an arbitrary
+downstream provider under feature unification. Owning first installation makes
+the invariant observable without a fork or a new dependency.
+
+**Supersession.** This resolves the uncomfortable constraint in the preceding
+RustCrypto decision. It does not reverse the backend choice; RustCrypto remains
+the sole UAR-owned `jsonwebtoken` feature. If another component must own the
+process provider, that integration must change architecture explicitly rather
+than bypass the guard.
+
+---
+
+## 2026-08-15 — Skill enablement is durable and most-specific-wins
+
+**Decision.** Store skill enablement as durable global, agent, and conversation
+records on each skill. Resolve conversation first, then explicit agent state,
+then the pre-existing non-empty agent-binding allowlist as a compatibility
+fallback, then global state. Keep `Skill::enabled` as the legacy global copy and
+synchronize it on new global writes.
+
+**Rationale.** Existing persisted rows and clients already read `enabled`, while
+the scoped records must survive built-in re-registration. The compatibility
+fallback preserves bindings created before a skill is loaded; explicit scoped
+records remain authoritative when present.
+
+**Runtime consequence.** The run policy universe contains every registered
+skill. Scoped matching filters that universe using the existing agent and
+conversation identifiers, and the returned skill clones remain the run's
+start-time binding.
+
+**Uncomfortable constraint.** A conversation enable cannot widen a global
+disable if the policy universe discards the skill before scoped resolution.
+Changing precedence without changing universe construction produces tests that
+pass in the service and behavior that fails in a real run.
+
+---
+
+## 2026-08-15 — `skills/dynamic` is an API-owned persistence namespace
+
+**Decision.** Files beneath the filesystem provider's reserved `dynamic/`
+directory are API-managed and reload with `provider_id = "api"`. The filesystem
+write boundary rejects every other provider id. Configuration files outside
+that directory reload as `fs-skills`, and when an upgrade leaves both sources
+for one ID, the real configuration source wins deterministically.
+
+**Rationale.** Reconciliation may tombstone only exact `fs-skills` records.
+Before this boundary was explicit, an API skill could reload as configuration,
+and a stale dynamic copy of a config skill could win by directory traversal
+order. Either failure makes provenance unsuitable as the data-loss guard.
+
+**Uncomfortable constraint.** The reserved path is now part of the provenance
+contract. Moving API-created files elsewhere, accepting config records at the
+dynamic write boundary, or restoring last-writer-wins cache insertion would
+invalidate reconciliation safety and requires a new migration decision.

@@ -1,0 +1,36 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "codex-gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "claim": "The 'Provider-disabled scratch negative control' command is identical in feature set to the positive test invocation and the plan never states how the provider is disabled, when the control runs relative to A0's Cargo.toml edit, or what outcome is expected, so the control cannot be executed or judged without guessing.",
+      "evidence": "The negative control is `cargo test --locked --no-default-features --features server-full --lib uar::security::middleware::tests::test_resolve_user_context_valid_token -- --exact --nocapture` \u2014 the same `--features server-full` used for the post-fix focused suite, with no scratch checkout, no temporary manifest edit, and no stated precondition (e.g., 'run against the unmodified tree before A0 applies the manifest entry, expect panic' per the assess handoff's 'the unchanged HS256 valid-token test panics'). No acceptance criterion requires handoff-out.md to record the control's expected result or its pass/fail semantics, so A0 can run it after adding aws_lc_rs, see it pass, and falsely conclude the negative control verified anything.",
+      "suggested_fix": "Add to the handoff-out.md requirements: (1) the control must run on the tree before the jsonwebtoken feature is enabled (or in a scratch checkout with the feature removed), (2) expected outcome is a panic/failure of test_resolve_user_context_valid_token proving the absence of a crypto provider, and (3) after A0's change the same command must pass. Add a matching acceptance criterion."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The clippy verification command drops the `--locked --no-default-features --features server-full` scoping used by every other command, so it checks a different (default-feature) configuration than the one the decision is scoped to.",
+      "evidence": "`cargo clippy -p universal-agent-runtime` appears between `cargo check --locked --no-default-features --features server-full` and `cargo tree --locked --no-default-features --features server-full ...`; the plan elsewhere states 'The child deliberately does not certify ... non-`server-full`' claims, yet this command lints the default feature set, which may include or exclude code paths relevant to the JWT provider decision.",
+      "suggested_fix": "Change to `cargo clippy --locked --no-default-features --features server-full -p universal-agent-runtime` so all verification commands share one configuration."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "The requirement that parent A0 add `test_resolve_user_context_rejects_token_signed_with_wrong_secret` before the focused suite is meaningful appears only as an aside in the Commands section, not in the enumerated handoff-out.md contents or acceptance criteria.",
+      "evidence": "The Details list requires handoff-out.md to name 'the manifest entry, commands below, negative control, exactly-one-provider assertion, stop condition ... risks/rejected alternatives/re-evaluation triggers, and the `server-full` reporting limit' but not the new-test prerequisite; the sentence 'The focused suite assumes parent A0 first adds `test_resolve_user_context_rejects_token_signed_with_wrong_secret`' stands alone, and since the suite filter `test_resolve_user_context` matches the pre-existing test, omission would fail silently.",
+      "suggested_fix": "Add an acceptance criterion that handoff-out.md explicitly instructs A0 to add the wrong-secret rejection test before running the focused suite."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

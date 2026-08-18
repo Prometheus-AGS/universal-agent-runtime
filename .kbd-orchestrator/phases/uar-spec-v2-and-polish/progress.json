@@ -1,16 +1,17 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 52,
-  "derivedRevision": 52,
+  "sourceRevision": 108,
+  "derivedRevision": 108,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 50
   },
   "conflictCount": 0,
   "phase": "uar-spec-v2-and-polish",
   "phaseId": "uar-spec-v2-and-polish",
   "parentPhase": null,
-  "last_updated": "2026-08-08T09:02:54.826920Z",
+  "last_updated": "2026-08-15T22:07:16.756649Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 0,
   "changes_completed": 0,

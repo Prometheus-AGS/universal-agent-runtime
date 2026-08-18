@@ -117,6 +117,12 @@ async fn start_server_with_listener(
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
+    // UAR owns the process-level jsonwebtoken provider. Install it at the
+    // shared startup funnel so in-process clients cannot initialize another
+    // provider before the first authenticated request reaches middleware.
+    crate::uar::security::jwt::ensure_rustcrypto_provider()
+        .map_err(|error| anyhow::anyhow!("initializing JWT crypto provider: {error}"))?;
+
     // Install the Prometheus recorder before anything can record a metric.
     // `metrics::with_recorder` resolves the global recorder on every macro
     // call and silently discards writes to a no-op when none is installed, so
@@ -486,8 +492,15 @@ async fn start_server_with_listener(
         ));
         skill_service.add_provider(db_provider);
     }
-    if let Err(e) = skill_service.initialize().await {
-        eprintln!("Warning: Failed to initialize skills: {e:?}");
+    match skill_service.initialize().await {
+        Ok(()) => {
+            if let Err(error) = skill_service.reconcile_config_skills().await {
+                tracing::error!(?error, "Failed to reconcile configuration skills");
+            }
+        }
+        Err(error) => {
+            eprintln!("Warning: Failed to initialize skills: {error:?}");
+        }
     }
     let skills = skill_service.registry().clone();
     let skill_service = Arc::new(skill_service);
@@ -654,6 +667,7 @@ async fn start_server_with_listener(
     let a2a_state = Arc::new(uar::api::a2a::A2AState {
         compiler_service: Arc::clone(&compiler_service),
         task_store: a2a_task_store,
+        security: config.security.clone(),
         base_url: format!("http://{}:{}", config.server.host, config.server.port),
     });
     #[cfg(feature = "a2a-transport")]
@@ -4315,10 +4329,12 @@ pub(crate) async fn api_chat_completion(
             .to_string();
         UserContext {
             user_id: uid.clone(),
+            tenant_id: None,
             claims: UserClaims {
                 sub: uid,
                 name: None,
                 roles: None,
+                tenant_id: None,
                 exp: 0,
             },
         }

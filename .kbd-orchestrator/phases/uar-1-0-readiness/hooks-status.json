@@ -1,0 +1,1 @@
+{"totalRuns":26,"failedRuns":0,"lastRun":{"ts":"2026-08-13T07:33:37Z","kind":"child","edge":"after","name":"jsonwebtoken-crypto-provider-spike","hookId":"kbd-memory-log","layer":"builtin","mode":"augment","status":0},"lastFailure":null}

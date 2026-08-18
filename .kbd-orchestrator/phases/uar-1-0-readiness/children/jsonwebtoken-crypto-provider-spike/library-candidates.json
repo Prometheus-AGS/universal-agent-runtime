@@ -1,0 +1,130 @@
+{
+  "phase": "uar-1-0-readiness/jsonwebtoken-crypto-provider-spike",
+  "generated_at": "2026-08-13T07:06:28Z",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": {
+      "tier_1_github": 8,
+      "tier_2_official_docs": 4,
+      "tier_3_package_and_source": 8,
+      "tier_4_security_web": 4
+    }
+  },
+  "gaps_addressed": [
+    "jwt-provider-absent",
+    "jwt-backend-standard-unresolved",
+    "jwt-version-standard-unresolved"
+  ],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "jsonwebtoken 11.0.0 with aws_lc_rs",
+      "kind": "library",
+      "repo_url": "https://github.com/Keats/jsonwebtoken",
+      "registry": "crates",
+      "fit_for_gap": "Selects exactly one built-in provider for the existing direct jsonwebtoken 11 API while reusing aws-lc-rs already active in the server-full graph.",
+      "verdict": "adopt",
+      "license": "MIT; backend ISC AND (Apache-2.0 OR ISC)",
+      "maintenance": {
+        "last_release": "2026-07-24",
+        "stars": 2086,
+        "open_issues": 57
+      },
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Keats/jsonwebtoken/pull/452",
+          "claim": "Upstream merged CryptoProvider with built-in AWS-LC and RustCrypto backends and support for selective custom composition."
+        },
+        {
+          "tier": 2,
+          "source_url": "https://aws.github.io/aws-lc-rs/platform_support.html",
+          "claim": "Non-FIPS AWS-LC supports and tests the Linux, macOS, and Windows targets in UAR's release matrix and requires only a C/C++ compiler."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://crates.io/crates/jsonwebtoken/11.0.0",
+          "claim": "The pinned crate exposes aws_lc_rs as one of exactly two built-in provider features. Read-only feature simulation left the active normal/build package count at the 918-package baseline and produced no manifest or lockfile diff."
+        },
+        {
+          "tier": 4,
+          "source_url": "https://rustsec.org/advisories/RUSTSEC-2026-0046.html",
+          "claim": "The inspected 2026 aws-lc-sys advisory is patched from 0.38.0; UAR currently locks 0.41.0."
+        }
+      ],
+      "risks": [
+        "C, assembly, and FFI remain part of the trusted native dependency surface.",
+        "This ordinary backend is non-FIPS and must not be reported as a FIPS configuration.",
+        "A future no_std, bare-WASM, or C/C++-free target would invalidate the portability fit."
+      ],
+      "decision_rationale": "Adopt for server-full because it fixes the observed provider panic, matches RustCrypto's JWT algorithm coverage, supports every release target, and measured feature simulation adds zero active packages while preserving the locked graph."
+    },
+    {
+      "id": "cand-002",
+      "name": "jsonwebtoken 11.0.0 with rust_crypto",
+      "kind": "library",
+      "repo_url": "https://github.com/Keats/jsonwebtoken",
+      "registry": "crates",
+      "fit_for_gap": "Selects a pure-Rust built-in provider with the required JWT algorithms and broader no_std/WASM portability.",
+      "verdict": "reject",
+      "license": "MIT plus component licenses",
+      "maintenance": {
+        "last_release": "2026-07-24",
+        "stars": 2086,
+        "open_issues": 57
+      },
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://github.com/RustCrypto/RSA",
+          "claim": "RustCrypto supplies the pure-Rust RSA component used by jsonwebtoken's rust_crypto backend."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://crates.io/crates/jsonwebtoken/11.0.0",
+          "claim": "Read-only feature simulation increased active normal/build packages from 918 to 940. The 22-package set difference includes ed25519-dalek, p256, p384, and rsa 0.9.10."
+        },
+        {
+          "tier": 4,
+          "source_url": "https://rustsec.org/advisories/RUSTSEC-2023-0071.html",
+          "claim": "The RSA Marvin timing advisory lists no patched version and concerns remotely observable private-key timing leakage."
+        }
+      ],
+      "risks": [
+        "Expands the active server-full dependency graph despite the packages already appearing in Cargo.lock.",
+        "Activates rsa 0.9.10 while its private-key timing advisory has no patched stable version, although no current UAR RS/PS signing path was observed.",
+        "Its principal portability benefits do not satisfy a current certified server-full requirement."
+      ],
+      "decision_rationale": "Reject as UAR's server-full standard backend. It is functionally valid, but it measurably activates 22 additional packages while its portability advantages are out of scope; the RSA advisory is a secondary consideration."
+    },
+    {
+      "id": "cand-003",
+      "name": "Manual custom jsonwebtoken CryptoProvider",
+      "kind": "pattern",
+      "repo_url": "https://github.com/Keats/jsonwebtoken",
+      "registry": "none",
+      "fit_for_gap": "Could install a process-level provider or compose per-algorithm implementations without selecting a built-in feature.",
+      "verdict": "reject",
+      "license": "N/A",
+      "evidence": [
+        {
+          "tier": 1,
+          "source_url": "https://github.com/Keats/jsonwebtoken/issues/409",
+          "claim": "The custom-provider use case was resolved by upstream CryptoProvider support, primarily for requirements such as HSMs or alternate signers/verifiers."
+        },
+        {
+          "tier": 3,
+          "source_url": "https://docs.rs/jsonwebtoken/11.0.0/jsonwebtoken/crypto/struct.CryptoProvider.html",
+          "claim": "Manual installation is process-global and succeeds at most once; a built-in feature performs the required selection without runtime initialization code."
+        }
+      ],
+      "risks": [
+        "Adds source-level initialization ordering and a process-global correctness surface.",
+        "Creates unsupported provider composition without an HSM, KMS, or missing-algorithm requirement."
+      ],
+      "decision_rationale": "Reject because the observed failure is fully solved by one built-in feature and no custom-cryptography requirement exists."
+    }
+  ],
+  "build_required": []
+}

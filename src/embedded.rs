@@ -28,7 +28,10 @@ use crate::{
             manager::RunManager,
             matching::VectorMatcher,
             native_skill::NativeSkillRegistry,
-            skills::{service::SkillService, storage::DatabaseStorageProvider},
+            skills::{
+                builtin_loader::discover_builtin_skills, service::SkillService,
+                storage::DatabaseStorageProvider,
+            },
         },
         settings::manager::SettingsManager,
     },
@@ -367,6 +370,10 @@ impl EmbeddedRuntimeBuilder {
             Arc::clone(&persistence),
         )));
         let skill_service = Arc::new(skill_service);
+        if self.seed_defaults {
+            let (builtins, _) = discover_builtin_skills();
+            skill_service.register_builtins(builtins).await;
+        }
         skill_service.initialize().await?;
         let skills = skill_service.registry().clone();
 

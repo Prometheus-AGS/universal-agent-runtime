@@ -1,0 +1,43 @@
+{
+  "mode": "decision",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "codex-gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "decision.md \u2014 Assumptions / Falsifier",
+      "claim": "The decision's central cost rationale (zero new packages, reuse of already-locked AWS-LC crates) is stated as fact, is cheaply checkable now with `cargo tree`/`cargo update --dry-run`, was the spike's explicit job to verify ('dependency topology' per the goals), and is instead deferred to the parent's implementation via the falsifier \u2014 so if it is wrong, the error surfaces only after the decision has been committed downstream.",
+      "evidence": "Assumption: 'Enabling `aws_lc_rs` reuses the already locked `aws-lc-rs 1.17.0` / `aws-lc-sys 0.41.0` packages and introduces no new package.' \u2014 no command output, lockfile diff, or `cargo tree` citation is given anywhere in the document. Falsifier: 'Reject or reopen this decision if the parent lockfile update introduces a new package' \u2014 the verification happens in A0, after the spike closes, while the decision simultaneously declares 'The spike does not alter `Cargo.toml`, `Cargo.lock`, runtime source, or tests.'",
+      "suggested_fix": "Run `cargo tree -e features -i aws-lc-rs` and a dry-run feature enable inside the spike, record the output in analysis.md, and cite it in the decision; a read-only verification does not violate 'does not alter'."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision.md \u2014 Falsifier",
+      "claim": "The falsifier is explicitly carved out so that the single most probable event \u2014 the Marvin advisory against `rsa` being patched \u2014 cannot reopen the decision, even though that unpatched advisory is the headline reason given for rejecting the alternative; the falsifier is structured to survive the collapse of its own stated rationale.",
+      "evidence": "Rejected alternative: '...including `rsa 0.9.10`, whose Marvin timing advisory lists no patched version...' versus Falsifier: 'A patched stable RustCrypto RSA release is a re-evaluation trigger, not by itself a falsifier; the dependency and target facts must also change.' If the advisory is patched and the remaining rationale is only 'no new packages' (see prior finding, itself unverified), the decision persists on its weakest leg by construction.",
+      "suggested_fix": "State what the decision rests on if the advisory is patched: either promote a patched `rsa` release to a true falsifier, or elevate the package-reuse argument to the primary rejection reason and verify it (finding 1)."
+    },
+    {
+      "severity": "WARNING",
+      "file": "decision.md \u2014 whole document vs original_intent",
+      "claim": "The decision does not deliver two artifacts the intent explicitly requires: verification commands returned to parent A0 and measured evidence; nothing in the document satisfies either, so the spike's deliverable is incomplete against its own goals.",
+      "evidence": "Goals: 'Compare the `jsonwebtoken` 11 RustCrypto and AWS-LC backends using ... measured evidence' and 'Return a precise `Cargo.toml` configuration and verification commands to parent change A0'. The decision document contains the `Cargo.toml` stanza but zero verification commands (no `cargo build --features`, no `cargo audit`, no cross-target check commands) and zero measured evidence; the only performance statement is a disclaimer: 'No performance advantage is assumed for AWS-LC or RustCrypto.'",
+      "suggested_fix": "Append a verification block for A0: per-target `cargo check/test --features aws_lc_rs` commands for the five named release targets, `cargo audit` against the locked `aws-lc-rs 1.17.0`, and a lockfile-diff check; cite where the measured evidence lives or record that none was taken and why the goals were narrowed."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "decision.md \u2014 Assumptions",
+      "claim": "The five-target native scope assumption is never reconciled with prior decisions showing UAR embedded/mobile work, where AWS-LC's C/asm build requirements are the dominant cost; if any embedded or mobile profile ever consumes this provider, the portability argument that was dismissed re-enters unexamined.",
+      "evidence": "Assumption 1: 'The supported scope remains the native `server-full` release matrix: Linux x86-64/aarch64, macOS x86-64/aarch64, and Windows x86-64.' Prior decisions include '[knowme-embedded-mobile-cargo-gating-scope-assessment] ... tags: knowme, embedded-mobile, cargo-features, universal-agent-runtime' and '[uar-embedded-admin-sdk-gap-and-mcp-live-hydration-decision] ... tags: universal-agent-runtime, embedded-uar ... mobile-offline'. The decision neither references these nor states why they are out of scope.",
+      "suggested_fix": "Add one sentence stating whether embedded/mobile UAR profiles can ever depend on the `server-full` JWT provider, and if so, extend the target-coverage falsifier to those targets."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

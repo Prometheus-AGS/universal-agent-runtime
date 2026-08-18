@@ -389,6 +389,8 @@ fn load_one(path: &Path) -> Result<Skill> {
         mcp_config: None,
         constraints: SkillConstraints::default(),
         enabled: true,
+        scoped_config: Vec::new(),
+        tombstoned: false,
         provider_id: "builtin".to_string(),
         execution_config: SkillExecutionConfig::default(),
         kind: SkillKind::Manifest,
