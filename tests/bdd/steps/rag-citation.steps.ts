@@ -25,5 +25,6 @@ Then('hovering the first citation badge reveals its source document', async ({ p
   // The ingested BDD fixture is always uploaded as `bdd-fixture.txt`
   // (see `createKnowledgeBaseWithDocument` in support/api.ts), and the
   // backend resolves that filename as the citation's `document_name`.
-  await expect(page.getByText('bdd-fixture.txt')).toBeVisible({ timeout: 5_000 });
+  const hoverCard = page.locator('[data-slot="hover-card-content"]');
+  await expect(hoverCard.getByText('bdd-fixture.txt', { exact: true })).toBeVisible({ timeout: 5_000 });
 });

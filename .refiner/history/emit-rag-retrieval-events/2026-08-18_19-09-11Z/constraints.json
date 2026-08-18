@@ -1,0 +1,56 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "retrieval-provenance",
+      "description": "A used knowledge-base hit emits AG-UI provenance with KB ID, document ID, and document name, and the chat UI displays the source document.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused normalized/SSE tests plus the exact Chromium BDD scenario"
+      }
+    },
+    {
+      "id": "hardened-chat-pipeline",
+      "description": "Agent-scoped chat retrieval uses decomposition, deduplication, verification, result limiting, and a named structured retrieval decision audit event before context injection.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused pipeline suite, structured tracing capture, and outgoing-prompt browser assertion"
+      }
+    },
+    {
+      "id": "provider-indexed-status",
+      "description": "Successful document processing persists Indexed rather than Pending on embedded SurrealKV and PostgreSQL.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Fresh embedded SurrealKV status test and isolated PostgreSQL 17 lifecycle test"
+      }
+    },
+    {
+      "id": "scope-and-evidence",
+      "description": "The change is limited to RAG events/pipeline/persistence, focused BDD fixtures, OpenSpec, and evidence; phase Tier 2 remains deferred.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Scoped diff audit, Rust/TypeScript Tier 0, focused tests, strict OpenSpec, schemas, references, and independent review"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the OpenSpec proposal, delta, and tasks as acceptance authority.",
+    "Do not claim provenance from source inspection alone; observe the browser and event mappings.",
+    "Report SurrealKV, PostgreSQL, Chromium, and server-full results separately.",
+    "Do not run phase Tier 2 before all active-phase changes are complete."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "Strict OpenSpec, artifact schemas/references/state, focused provider and browser checks, and scoped diff checks pass.",
+    "Independent artifact critic and judge find no implementation or evidence blocker."
+  ]
+}

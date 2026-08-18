@@ -1,26 +1,26 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 137,
-  "derivedRevision": 137,
+  "sourceRevision": 139,
+  "derivedRevision": 139,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 79
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 81
   },
   "conflictCount": 0,
   "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "parentPhase": null,
-  "last_updated": "2026-08-18T18:06:17.064738Z",
+  "last_updated": "2026-08-18T19:10:29.166083Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 14,
-  "changes_completed": 5,
+  "changes_completed": 6,
   "implementation_total": 14,
-  "implementation_completed": 5,
+  "implementation_completed": 6,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 5,
+      "completed": 6,
       "total": 14,
       "status": "IN_PROGRESS"
     },
@@ -88,8 +88,8 @@
     {
       "id": "emit-rag-retrieval-events",
       "title": "emit-rag-retrieval-events",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,

@@ -795,7 +795,8 @@ impl PersistenceLayer for SurrealDbProvider {
             .bind(("id", doc_id.to_string()))
             .bind(("owner_id", owner_id.to_string()))
             .bind(("status", serde_json::to_value(status)?))
-            .await?;
+            .await?
+            .check()?;
         Ok(())
     }
 
@@ -1527,6 +1528,58 @@ mod tests {
         });
 
         assert_eq!(unwrap_surreal_value(value), json!("doc-123"));
+    }
+
+    #[tokio::test]
+    async fn document_status_reaches_indexed_on_embedded_surrealdb() {
+        use super::SurrealDbProvider;
+        use crate::uar::domain::knowledge::{DocumentStatus, KnowledgeBase, KnowledgeDocument};
+        use crate::uar::persistence::PersistenceLayer;
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let endpoint = format!("surrealkv://{}", dir.path().join("status.db").display());
+        let provider = SurrealDbProvider::new(&endpoint, None, None, None, None)
+            .await
+            .expect("connect to embedded SurrealKV");
+        let now = chrono::Utc::now().to_rfc3339();
+        let kb = KnowledgeBase {
+            id: "status-kb".into(),
+            owner_id: "status-owner".into(),
+            name: "status-kb".into(),
+            description: None,
+            config: Default::default(),
+            created_at: now.clone(),
+            updated_at: now.clone(),
+        };
+        let document = KnowledgeDocument {
+            id: "status-doc".into(),
+            owner_id: kb.owner_id.clone(),
+            kb_id: kb.id.clone(),
+            filename: "status.txt".into(),
+            file_path: None,
+            mime_type: Some("text/plain".into()),
+            chunk_count: 1,
+            status: DocumentStatus::Pending,
+            created_at: now.clone(),
+            updated_at: now,
+        };
+
+        provider.save_knowledge_base(&kb).await.expect("save KB");
+        provider
+            .save_document(&document)
+            .await
+            .expect("save document");
+        provider
+            .update_document_status(&kb.owner_id, &document.id, &DocumentStatus::Indexed)
+            .await
+            .expect("update status to indexed");
+
+        let indexed = provider
+            .get_document(&kb.owner_id, &document.id)
+            .await
+            .expect("read updated document")
+            .expect("document exists");
+        assert_eq!(indexed.status, DocumentStatus::Indexed);
     }
 
     #[tokio::test]

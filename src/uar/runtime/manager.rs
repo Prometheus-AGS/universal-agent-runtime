@@ -15,7 +15,10 @@ use crate::uar::domain::{
     },
     runs::{Run, RunStatus},
 };
-use crate::uar::rag::citation_stream::CitationStream;
+use crate::uar::rag::{
+    citation_stream::CitationStream,
+    pipeline::{RagRetrievalPipeline, RetrievalBackend},
+};
 use crate::uar::runtime::context::manager::ContextManager;
 use crate::uar::runtime::matching::{ClassifierConfig, IntentClassifier, create_classifier};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
@@ -73,6 +76,36 @@ impl RunEventEmitter {
         }
 
         let _ = self.sender.send(stream_event);
+    }
+}
+
+struct ChatRagSearchBackend<'a> {
+    persistence: &'a dyn crate::uar::persistence::PersistenceLayer,
+    vector_matcher: &'a crate::uar::runtime::matching::VectorMatcher,
+    owner_id: &'a str,
+    kb_ids: &'a [String],
+}
+
+#[async_trait::async_trait]
+impl RetrievalBackend for ChatRagSearchBackend<'_> {
+    async fn search_one(
+        &self,
+        sub_query: &str,
+        limit: usize,
+        min_score: f32,
+    ) -> anyhow::Result<Vec<crate::uar::domain::knowledge::KnowledgeMatch>> {
+        let embeddings = self
+            .vector_matcher
+            .embed_batch(vec![sub_query.to_string()])
+            .await?;
+        let query_vec = embeddings
+            .into_iter()
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("no embedding generated for chat sub-query"))?;
+        let kb_id_refs = self.kb_ids.iter().map(String::as_str).collect::<Vec<_>>();
+        self.persistence
+            .search_knowledge_scoped(self.owner_id, &kb_id_refs, &query_vec, limit, min_score)
+            .await
     }
 }
 
@@ -1175,84 +1208,73 @@ impl RunManager {
         if !effective_policy.knowledge_bases.ids.is_empty()
             && let Some(db) = &self.persistence
         {
-            match self.vector_matcher.embed_batch(vec![input.clone()]).await {
-                Ok(embeddings) => {
-                    if let Some(query_vec) = embeddings.first() {
-                        let mut kb_ids = Vec::new();
-                        for id_or_name in &effective_policy.knowledge_bases.ids {
-                            let resolved = db
-                                .get_knowledge_base(&owner_id, id_or_name)
-                                .await
-                                .ok()
-                                .flatten()
-                                .or_else(|| None);
-                            let resolved = match resolved {
-                                Some(kb) => Some(kb),
-                                None => db
-                                    .get_knowledge_base_by_name(&owner_id, id_or_name)
-                                    .await
-                                    .ok()
-                                    .flatten(),
-                            };
-                            if let Some(kb) = resolved
-                                && !kb_ids.contains(&kb.id)
+            let mut kb_ids = Vec::new();
+            for id_or_name in &effective_policy.knowledge_bases.ids {
+                let resolved = db
+                    .get_knowledge_base(&owner_id, id_or_name)
+                    .await
+                    .ok()
+                    .flatten();
+                let resolved = match resolved {
+                    Some(kb) => Some(kb),
+                    None => db
+                        .get_knowledge_base_by_name(&owner_id, id_or_name)
+                        .await
+                        .ok()
+                        .flatten(),
+                };
+                if let Some(kb) = resolved
+                    && !kb_ids.contains(&kb.id)
+                {
+                    kb_ids.push(kb.id);
+                }
+            }
+
+            // A configured selection that resolves to nothing is a safe empty
+            // result, never an implicit search-all.
+            let search_result = if kb_ids.is_empty() {
+                Ok(Vec::new())
+            } else {
+                let backend = ChatRagSearchBackend {
+                    persistence: db.as_ref(),
+                    vector_matcher: self.vector_matcher.as_ref(),
+                    owner_id: &owner_id,
+                    kb_ids: &kb_ids,
+                };
+                RagRetrievalPipeline::new()
+                    .retrieve(&backend, &kb_ids.join(","), &input, 3, 0.7)
+                    .await
+            };
+
+            match search_result {
+                Ok(matches) => {
+                    if !matches.is_empty() {
+                        // Resolve document names for the citation panel
+                        // (best-effort; falls back to the document/chunk id
+                        // when a document record can't be found or has none).
+                        let mut document_names: HashMap<String, String> = HashMap::new();
+                        let mut seen_document_ids: HashSet<String> = HashSet::new();
+                        for m in &matches {
+                            if let Some(did) = &m.chunk.document_id
+                                && seen_document_ids.insert(did.clone())
+                                && let Ok(Some(doc)) = db.get_document(&owner_id, did).await
                             {
-                                kb_ids.push(kb.id);
+                                document_names.insert(did.clone(), doc.filename);
                             }
                         }
 
-                        // A configured selection that resolves to nothing is a
-                        // safe empty result, never an implicit search-all.
-                        let search_result = if kb_ids.is_empty() {
-                            Ok(Vec::new())
-                        } else {
-                            let kb_id_refs: Vec<&str> = kb_ids.iter().map(String::as_str).collect();
-                            db.search_knowledge_scoped(&owner_id, &kb_id_refs, query_vec, 3, 0.7)
-                                .await
-                        };
-
-                        match search_result {
-                            Ok(matches) => {
-                                if !matches.is_empty() {
-                                    // Resolve document names for the citation
-                                    // panel (best-effort; falls back to the
-                                    // document/chunk id when a document
-                                    // record can't be found or has none).
-                                    let mut document_names: HashMap<String, String> =
-                                        HashMap::new();
-                                    let mut seen_document_ids: HashSet<String> = HashSet::new();
-                                    for m in &matches {
-                                        if let Some(did) = &m.chunk.document_id
-                                            && seen_document_ids.insert(did.clone())
-                                            && let Ok(Some(doc)) =
-                                                db.get_document(&owner_id, did).await
-                                        {
-                                            document_names.insert(did.clone(), doc.filename);
-                                        }
-                                    }
-
-                                    // Assign [1], [2], ... markers matching
-                                    // retrieval order, inject the numbered
-                                    // block so the model has a reason to cite
-                                    // back with `[n]`, and emit the same
-                                    // numbered set on the SSE stream so the
-                                    // client can resolve `[n]` to a
-                                    // hover-to-source panel.
-                                    let citation_stream =
-                                        CitationStream::from_matches(&matches, &document_names);
-                                    system_prompt.push_str(&citation_stream.prompt_block());
-                                    if let Some(event) =
-                                        citation_stream.to_normalized_event(run_id.clone())
-                                    {
-                                        emitter.emit(event).await;
-                                    }
-                                }
-                            }
-                            Err(e) => tracing::error!("RAG search failed: {:?}", e),
+                        // Assign [1], [2], ... markers matching retrieval
+                        // order, inject the numbered block, and emit the same
+                        // provenance on the SSE stream for the chat UI.
+                        let citation_stream =
+                            CitationStream::from_matches(&matches, &document_names);
+                        system_prompt.push_str(&citation_stream.prompt_block());
+                        if let Some(event) = citation_stream.to_normalized_event(run_id.clone()) {
+                            emitter.emit(event).await;
                         }
                     }
                 }
-                Err(e) => tracing::error!("RAG embedding failed: {:?}", e),
+                Err(e) => tracing::error!("RAG retrieval pipeline failed: {:?}", e),
             }
         }
 

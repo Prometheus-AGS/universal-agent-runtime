@@ -1,0 +1,54 @@
+{
+  "refinement_id": "3637ae43-2b21-4650-bfaa-77e833182e09",
+  "artifact_name": "emit-rag-retrieval-events",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-18T18:48:34Z",
+  "updated_at": "2026-08-18T18:48:34Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Expose RAG provenance, use the hardened chat retrieval pipeline, and persist indexed status on supported providers"
+  ],
+  "constraints": [
+    {
+      "id": "retrieval-provenance"
+    },
+    {
+      "id": "hardened-chat-pipeline"
+    },
+    {
+      "id": "provider-indexed-status"
+    },
+    {
+      "id": "scope-and-evidence"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-18T18:48:34Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null
+}

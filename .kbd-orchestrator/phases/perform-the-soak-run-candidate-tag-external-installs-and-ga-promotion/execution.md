@@ -56,7 +56,9 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
 - [DONE] `ship-skill-pack-install-path` — OpenSpec; public pinned installer,
   exact default inventory proof, independent review, and archive completed
   2026-08-18
-- [PENDING] `emit-rag-retrieval-events` — OpenSpec
+- [DONE] `emit-rag-retrieval-events` — OpenSpec; provenance, hardened retrieval,
+  embedded/PostgreSQL status transitions, exact Chromium scenario, independent
+  review, and archive completed 2026-08-18
 - [PENDING] `wire-orchestrator-delegation` — OpenSpec
 - [DONE] `complete-agui-event-parity` — reconciled archived evidence
 - [PENDING] `resolve-sdk-distribution` — OpenSpec and operator decision

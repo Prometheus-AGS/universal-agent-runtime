@@ -75,6 +75,7 @@ impl CitationStream {
                     marker: i + 1,
                     chunk_id,
                     document_id: m.chunk.document_id.clone(),
+                    knowledge_base_id: Some(m.chunk.kb_id.clone()),
                     document_name,
                     relevance_score: m.score,
                     snippet: truncate_snippet(&m.chunk.content),
@@ -105,6 +106,7 @@ impl CitationStream {
                 marker: i + 1,
                 chunk_id: c.chunk_id.clone(),
                 document_id: c.document_id.clone(),
+                knowledge_base_id: None,
                 document_name: c.document_name.clone(),
                 relevance_score: c.relevance_score,
                 snippet: truncate_snippet(&c.snippet),
@@ -214,6 +216,10 @@ mod tests {
         let stream = CitationStream::from_matches(&matches, &names);
         assert_eq!(stream.len(), 2);
         assert_eq!(stream.markers()[0].marker, 1);
+        assert_eq!(
+            stream.markers()[0].knowledge_base_id.as_deref(),
+            Some("kb-1")
+        );
         assert_eq!(stream.markers()[0].document_name, "Doc A.pdf");
         assert_eq!(stream.markers()[1].marker, 2);
         assert_eq!(stream.markers()[1].document_name, "Doc B.pdf");
