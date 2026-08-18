@@ -29,7 +29,7 @@ interface CrossScreenEvidence {
 
 const evidence = new WeakMap<Page, CrossScreenEvidence>();
 
-function signedJwt(subject: string): string {
+function signedJwt(subject: string, tenantId = 'screen-validation-tenant'): string {
   const now = Math.floor(Date.now() / 1000);
   const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
   const header = encode({ alg: 'HS256', typ: 'JWT' });
@@ -37,7 +37,7 @@ function signedJwt(subject: string): string {
     sub: subject,
     name: subject,
     roles: ['admin'],
-    tenant_id: `tenant-${subject}`,
+    tenant_id: tenantId,
     iat: now,
     exp: now + 3600,
   });
@@ -50,20 +50,20 @@ When('I ask the default and orchestrator agents their deterministic questions', 
   await openFreshThread(page);
   await switchAgentViaUI(page, 'Default Assistant');
   await sendMessageAndWait(page, 'What is 2 plus 2?');
-  await expect(page.getByText('2 plus 2 is 4.', { exact: false }).last()).toBeVisible();
+  await expect(page.getByText('2 plus 2 is 4.', { exact: true }).last()).toBeVisible();
 
   await startNewConversation(page);
   await switchAgentViaUI(page, 'Orchestrator');
   await sendMessageAndWait(page, 'Review this Rust ownership boundary');
-  await expect(page.getByText('The ownership boundary is sound.', { exact: false }).last()).toBeVisible();
-  await expect(page.getByText('rust-reviewer', { exact: false }).last()).toBeVisible();
+  await expect(page.getByText('The ownership boundary is sound.', { exact: true }).last()).toBeVisible();
+  await expect(page.getByText('[rust-reviewer]', { exact: true }).last()).toBeVisible();
   evidence.set(page, { ...evidence.get(page), exactAnswers: true });
 });
 
 Then('both exact answers are visible and the orchestrator contribution is attributed', async ({ page }) => {
   expect(evidence.get(page)?.exactAnswers).toBe(true);
-  await expect(page.getByText('The ownership boundary is sound.', { exact: false }).last()).toBeVisible();
-  await expect(page.getByText('rust-reviewer', { exact: false }).last()).toBeVisible();
+  await expect(page.getByText('The ownership boundary is sound.', { exact: true }).last()).toBeVisible();
+  await expect(page.getByText('[rust-reviewer]', { exact: true }).last()).toBeVisible();
 });
 
 When('I compare verified and anonymous credential requests', async ({ page }) => {

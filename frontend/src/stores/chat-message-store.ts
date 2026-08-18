@@ -34,6 +34,7 @@ interface ChatMessageActions {
   appendTextDelta(threadId: string, runId: string, text: string): void;
   appendThinkingDelta(threadId: string, runId: string, text: string, kind?: "thinking" | "reasoning"): void;
   addToolCall(threadId: string, runId: string, toolCall: ToolCallContentBlock): void;
+  addRuntimeChunk(threadId: string, runId: string, chunk: Chunk): void;
   updateToolCall(threadId: string, toolCallId: string, update: Partial<Omit<ToolCallContentBlock, "type">>): void;
   addCitation(threadId: string, runId: string, citation: { source: string; content: string; url?: string }): void;
   /** Attach the full numbered citation set ([1], [2], ...) for a RAG-augmented
@@ -306,6 +307,25 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         message.content.push({ type: "toolUse", id: toolCall.toolCallId, name: toolCall.toolName, inputJson: JSON.stringify(toolCall.args) });
         if (toolCall.result !== undefined) message.content.push({ type: "toolResult", toolUseId: toolCall.toolCallId, outputJson: toolCall.result, isError: toolCall.status === "failed" });
         chunks.push({ ...base, kind: "tool-call", toolCallId: toolCall.toolCallId, toolName: toolCall.toolName, args: toolCall.args, result: toolCall.result, status: toolCall.status });
+      }),
+
+    addRuntimeChunk: (threadId, runId, chunk) =>
+      set((state) => {
+        ensureThread(state, threadId);
+        const streaming = ensureStreaming(state, threadId);
+        if (!streaming.isStreaming || streaming.runId !== runId) {
+          state.streamingByThread[threadId] = {
+            isStreaming: true,
+            runId,
+            streamingMessageId: null,
+            awaitingFirstToken: false,
+            retryAttempt: 0,
+            retryMaxAttempts: 0,
+            retryDelayMs: 0,
+          };
+        }
+        const message = getOrCreateStreamingMessage(state, threadId, runId);
+        ensureMessageChunks(message, runId).push(chunk);
       }),
 
     updateToolCall: (threadId, toolCallId, update) =>

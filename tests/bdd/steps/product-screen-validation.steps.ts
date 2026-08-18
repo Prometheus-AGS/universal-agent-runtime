@@ -1,16 +1,24 @@
 import { createHmac } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { createBdd } from 'playwright-bdd';
 import type { Page } from '@playwright/test';
 import {
   expect,
   openFreshThread,
   sendMessageAndWait,
+  switchAgentViaUI,
   test,
   waitForDbReady,
 } from '../support/world';
+import { createTestAgent } from '../support/api';
 
 const { Given, When, Then } = createBdd(test);
 const JWT_SECRET = 'bdd-dev-secret-at-least-32-characters-long';
+const AXE_PATH = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../../frontend/node_modules/axe-core/axe.min.js',
+);
 const completed = new WeakMap<Page, Set<string>>();
 
 type RuntimeReplayWindow = Window & {
@@ -89,16 +97,54 @@ async function validateRuns(page: Page): Promise<void> {
 }
 
 async function validateApprovals(page: Page): Promise<void> {
-  await openAdmin(page, 'approvals');
-  await replayRuntime(page);
-  await expect(page.getByText('1 pending')).toBeVisible();
+  const title = `BDD Approval Agent ${Date.now()}`;
+  const agent = await createTestAgent({ title, tools: ['native_echo'] });
+  await openFreshThread(page);
+  const selected = page.waitForRequest((request) =>
+    request.url().includes('/api/uar/sessions/')
+      && request.url().endsWith('/agent-config')
+      && request.method() === 'POST');
+  await switchAgentViaUI(page, title);
+  const selectedRequest = await selected;
+  const sessionId = new URL(selectedRequest.url()).pathname.split('/').at(-2);
+  if (!sessionId) throw new Error(`could not derive session id from ${selectedRequest.url()}`);
+  const configured = await page.evaluate(async ({ sessionId, agentId }) => {
+    const response = await fetch(`/api/uar/sessions/${encodeURIComponent(sessionId)}/agent-config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agent_id: agentId,
+        tools: ['native_echo'],
+        tool_approval: 'ask',
+      }),
+    });
+    return { status: response.status, body: await response.text() };
+  }, { sessionId, agentId: agent.id });
+  if (configured.status !== 200) {
+    throw new Error(`approval policy save failed: ${configured.status} ${configured.body}`);
+  }
+
+  const input = page.locator('[aria-label="Message input"]');
+  await input.fill('Echo this via the bdd tool-call scenario.');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Review approval', { exact: true })).toBeVisible({ timeout: 15_000 });
   await page.evaluate(() => {
-    const replay = (window as RuntimeReplayWindow).__uarRuntimeReplay;
-    if (!replay) throw new Error('runtime replay helper not installed');
-    replay.replayApprovalStatus('denied');
+    window.history.pushState({}, '', '/admin/approvals');
+    window.dispatchEvent(new PopStateEvent('popstate'));
   });
+  await expect(page.getByTestId('admin-section-approvals')).toBeVisible();
+  await expect(page.getByText('1 pending')).toBeVisible();
+  const denied = page.waitForResponse((response) =>
+    response.url().includes('/api/uar/runs/')
+      && response.url().endsWith('/approval')
+      && response.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Deny', exact: true }).first().click();
+  const deniedResponse = await denied;
+  if (!deniedResponse.ok()) {
+    throw new Error(`approval denial failed: ${deniedResponse.status()} ${await deniedResponse.text()}`);
+  }
   await expect(page.getByText('0 pending')).toBeVisible();
-  await expect(page.getByText('denied')).toBeVisible();
+  await expect(page.getByText('denied', { exact: true })).toBeVisible();
 }
 
 async function validateProtocols(page: Page): Promise<void> {
@@ -137,7 +183,10 @@ async function validateModels(page: Page): Promise<void> {
   await openAdmin(page, 'models');
   await page.getByPlaceholder('search models…').fill('gpt-5.4-mini');
   await expect(page.getByText('gpt-5.4-mini', { exact: true }).first()).toBeVisible();
-  await expect(page.getByTestId('models-count')).not.toHaveText('0');
+  const selectedModel = page.getByRole('checkbox', { name: 'Select gpt-5.4-mini for comparison' }).first();
+  await selectedModel.click();
+  await expect(selectedModel).toBeChecked();
+  await expect(page.getByTestId('compare-bar')).toContainText('compare (1)');
 }
 
 async function validateSkills(page: Page): Promise<void> {
@@ -189,13 +238,17 @@ async function validateAgents(page: Page): Promise<void> {
   await waitForDbReady(page);
   await page.locator('[aria-label="Select agent"]').click();
   await page.locator('[placeholder="Search agents..."]').fill(title);
-  await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
+  await page.getByText(title, { exact: true }).first().click();
+  await expect(page.locator('[aria-label="Select agent"]')).toContainText(title);
 }
 
 async function validateTools(page: Page): Promise<void> {
   await openAdmin(page, 'tools');
   await page.getByPlaceholder('Search tools...').fill('native_echo');
-  await expect(page.getByText('native_echo', { exact: false }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'View tool native_echo' }).click();
+  await expect(page.getByRole('heading', { name: 'native_echo', exact: true })).toBeVisible();
+  await expect(page.getByText('Source: Built-in', { exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Schema', exact: true })).toBeVisible();
 }
 
 async function validateAuth(page: Page): Promise<void> {
@@ -212,6 +265,10 @@ async function validateAuth(page: Page): Promise<void> {
 }
 
 async function validateKnowledge(page: Page): Promise<void> {
+  const invalidNesting: string[] = [];
+  page.on('console', (message) => {
+    if (message.text().includes('cannot be a descendant of')) invalidNesting.push(message.text());
+  });
   const baseName = `BDD Screen KB ${Date.now()}`;
   const filename = 'screen-validation.txt';
   const fact = 'The screen validation marker is HELIOS-2048.';
@@ -220,7 +277,20 @@ async function validateKnowledge(page: Page): Promise<void> {
   await page.getByLabel('Name', { exact: true }).fill(baseName);
   await page.getByLabel('Description', { exact: true }).fill('Screen validation fixture');
   await page.getByRole('button', { name: 'Create', exact: true }).click();
-  await page.getByText(baseName, { exact: true }).click();
+  const baseCard = page.getByTestId(/^knowledge-base-/).filter({ hasText: baseName });
+  await expect(baseCard).toBeVisible();
+  await page.addScriptTag({ path: AXE_PATH });
+  const nestedInteractiveViolations = await page.evaluate(async () => {
+    const axe = (window as Window & {
+      axe: { run: (context: Document, options: object) => Promise<{ violations: Array<{ id: string }> }> };
+    }).axe;
+    const result = await axe.run(document, { runOnly: { type: 'rule', values: ['nested-interactive'] } });
+    return result.violations.map((violation) => violation.id);
+  });
+  expect(nestedInteractiveViolations).toEqual([]);
+  await baseCard.focus();
+  await expect(baseCard).toBeFocused();
+  await page.keyboard.press('Enter');
   await page.getByLabel('Select files to upload to this knowledge base').setInputFiles({
     name: filename,
     mimeType: 'text/plain',
@@ -231,6 +301,7 @@ async function validateKnowledge(page: Page): Promise<void> {
   await page.getByPlaceholder('Search by meaning across all documents...').fill('screen validation marker');
   await page.getByRole('button', { name: 'Search', exact: true }).click();
   await expect(page.getByText(fact, { exact: true })).toBeVisible({ timeout: 15_000 });
+  expect(invalidNesting).toEqual([]);
 }
 
 async function validateMemory(page: Page): Promise<void> {

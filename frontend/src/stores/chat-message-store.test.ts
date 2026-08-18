@@ -63,6 +63,25 @@ describe("chat-message-store streaming", () => {
     expect(useChatMessageStore.getState().streamingByThread[THREAD_ID]?.awaitingFirstToken).toBe(false);
   });
 
+  test("addRuntimeChunk keeps approval interruptions visible", () => {
+    useChatMessageStore.getState().beginStream(THREAD_ID, "run-approval");
+    useChatMessageStore.getState().addRuntimeChunk(THREAD_ID, "run-approval", {
+      id: "approval-1",
+      kind: "tool-approval",
+      at: "2026-08-19T00:00:00.000Z",
+      runId: "run-approval",
+      seq: 1,
+      toolCallId: "call-1",
+      toolName: "native_echo",
+      args: { text: "hello" },
+      reason: "operator decision required",
+    });
+
+    expect(useChatMessageStore.getState().messagesByThread[THREAD_ID]?.[0]?.chunks).toEqual([
+      expect.objectContaining({ kind: "tool-approval", toolCallId: "call-1" }),
+    ]);
+  });
+
   test("updates A2UI input and display chunks when tool results arrive", () => {
     const store = useChatMessageStore.getState();
     store.initThread(THREAD_ID, []);

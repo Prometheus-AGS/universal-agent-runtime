@@ -52,8 +52,8 @@ duplicate browser lifecycle, video, reporting, and server orchestration.
 
 The validation matrix names each route, purpose, primary action, observable
 result, scenario title, and video artifact. Mutating screens operate on unique
-BDD fixtures in the ephemeral database and clean up where the UI exposes that
-action. Read-only screens must observe API-backed or replayed state; merely
+BDD fixtures or a real pending runtime run and clean up where the UI exposes
+that action. Read-only screens may observe API-backed or replayed state; merely
 finding a heading is insufficient. `/admin/a2ui-testing` is validated in the
 Vite development profile because the route is intentionally development-only.
 
@@ -64,15 +64,16 @@ record.
 
 ### 3. Split general-screen and security evidence without weakening either
 
-The general screen/chat suite keeps `jwt_required=false` while still using a
-configured signing secret; this matches the existing BDD harness and lets the
-browser exercise every screen without inventing a login layer that the product
-does not have. JWT-required and two-user isolation assertions use Playwright's
-browser-owned request context against a dedicated server profile and verified
-tokens, with a visible browser evidence page for the recorded result. Anonymous
-and cross-user requests are the required failing controls. Existing Rust live
-integration coverage may corroborate those boundaries but cannot replace the
-browser-run evidence required here.
+The suite keeps global `jwt_required=false` while still using a configured
+signing secret; this matches the existing BDD harness and lets the browser
+exercise every screen without inventing a login layer that the product does
+not have. The credential route remains authenticated regardless of the global
+option, so its verified-token 200 and anonymous 401 form the JWT fail-closed
+control. Two-user isolation presents two verified subjects in the same tenant
+to the real session, knowledge, memory, and conversation-policy APIs. Cross-user
+requests are the required failing controls. Existing Rust live integration
+coverage may corroborate those boundaries but cannot replace the browser-run
+evidence required here.
 
 ### 4. Reuse deterministic fixtures for agent, skill, RAG, memory, and events
 

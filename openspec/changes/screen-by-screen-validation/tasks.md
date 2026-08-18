@@ -6,5 +6,9 @@
 - [x] 2.3 Local-first: offline banner, PGlite persistence across reload, SSE resync.
 - [x] 2.4 Repair the observed Skills screen graph-view defect and prove the
   created skill is rendered and can complete its enable/disable lifecycle.
+- [x] 2.5 Repair the observed approval-event projection defect and prove the
+  Approvals screen denies a real pending run through the live API.
+- [x] 2.6 Repair the observed nested-interactive Knowledge card markup and
+  prove keyboard selection plus the axe `nested-interactive` rule.
 ## 3. Evidence
 - [ ] 3.1 Mint video certification bundles (bdd-video-proof); validation report per screen.
