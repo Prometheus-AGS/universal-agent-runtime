@@ -59,7 +59,9 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
 - [DONE] `emit-rag-retrieval-events` — OpenSpec; provenance, hardened retrieval,
   embedded/PostgreSQL status transitions, exact Chromium scenario, independent
   review, and archive completed 2026-08-18
-- [PENDING] `wire-orchestrator-delegation` — OpenSpec
+- [DONE] `wire-orchestrator-delegation` — OpenSpec; orchestrator-only graph,
+  attributed non-empty specialist output, recorded/live HTTP proof, independent
+  review, and archive completed 2026-08-18
 - [DONE] `complete-agui-event-parity` — reconciled archived evidence
 - [PENDING] `resolve-sdk-distribution` — OpenSpec and operator decision
 - [PENDING] `rewrite-readme-and-docs` — OpenSpec

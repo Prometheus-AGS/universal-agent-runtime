@@ -70,6 +70,10 @@ impl AgentGraph {
                 "Executing graph node"
             );
 
+            let mut trace = state.get::<Vec<String>>("_graph_trace").unwrap_or_default();
+            trace.push(current_id.clone());
+            state.set("_graph_trace", trace);
+
             state = match node.execute(state, ctx).await {
                 NodeResult::Continue(s) => s,
                 NodeResult::Finished(s) => {

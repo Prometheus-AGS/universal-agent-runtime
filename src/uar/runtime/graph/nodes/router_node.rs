@@ -70,9 +70,20 @@ impl GraphNode for RouterNode {
 
         // Build a routing prompt that asks the LLM to pick exactly one option
         let options_list = self.options.join(", ");
+        let user_input = state
+            .get::<String>("_agent_input")
+            .or_else(|| {
+                state.messages.iter().rev().find_map(|message| {
+                    (message.get("role").and_then(|role| role.as_str()) == Some("user"))
+                        .then(|| message.get("content").and_then(|content| content.as_str()))
+                        .flatten()
+                        .map(str::to_string)
+                })
+            })
+            .unwrap_or_default();
         let router_prompt = format!(
-            "{}\n\nYou MUST respond with exactly one of the following options (no extra text): {options_list}",
-            self.prompt
+            "{}\n\nUser request:\n{}\n\nYou MUST respond with exactly one of the following options (no extra text): {options_list}",
+            self.prompt, user_input
         );
 
         let messages: Vec<serde_json::Value> = vec![

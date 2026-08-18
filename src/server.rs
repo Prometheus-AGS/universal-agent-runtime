@@ -590,6 +590,7 @@ async fn start_server_with_listener(
             persistence.clone(),
         )
         .await
+        .with_agent_graph(uar::defaults::orchestrator_graph())
         .with_skill_service(Arc::clone(&skill_service))
         .with_provider_registry(Arc::clone(&provider_registry))
         .with_native_skills(Arc::clone(&native_skill_registry))

@@ -6,10 +6,15 @@
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use universal_agent_runtime::config::LlmConfig;
+use universal_agent_runtime::llm::mock_driver::MockLlmDriver;
 use universal_agent_runtime::mcp::registry::McpRegistry;
+use universal_agent_runtime::normalized::NormalizedEvent as DriverEvent;
 use universal_agent_runtime::session::SessionStore;
+use universal_agent_runtime::uar::defaults;
 use universal_agent_runtime::uar::domain::artifact::AgentArtifact;
+use universal_agent_runtime::uar::domain::events::NormalizedEvent;
 use universal_agent_runtime::uar::rag::embeddings::EmbeddingBackend;
+use universal_agent_runtime::uar::runtime::graph::{AgentGraph, AgentNode, GraphState, RouterNode};
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 
@@ -74,6 +79,64 @@ async fn make_manager() -> Arc<RunManager> {
     let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
     let vm = make_vector_matcher();
     Arc::new(RunManager::new(llm_config, mcp, sessions, skills, vm, None).await)
+}
+
+async fn make_graph_manager(driver: Arc<MockLlmDriver>) -> Arc<RunManager> {
+    let mcp = Arc::new(McpRegistry::new_empty());
+    let llm_config = LlmConfig {
+        model: "openai/gpt-4o".to_string(),
+        api_key: Some("test-key".to_string()),
+        ..LlmConfig::default()
+    };
+    let sessions = SessionStore::new();
+    let skills = Arc::new(RwLock::new(SkillRegistry::new(None, None)));
+    let graph = AgentGraph::builder("router")
+        .add_node(RouterNode::new(
+            "router",
+            "Route Rust work to rust-reviewer and everything else to general-purpose.",
+            vec!["general-purpose".to_string(), "rust-reviewer".to_string()],
+        ))
+        .add_node(AgentNode::new("general-purpose", "general-purpose"))
+        .add_node(AgentNode::new("rust-reviewer", "rust-reviewer"))
+        .add_conditional_edge("router", |state: &GraphState| {
+            state
+                .get::<String>("_route")
+                .unwrap_or_else(|| "general-purpose".to_string())
+        })
+        .build();
+    Arc::new(
+        RunManager::new(
+            llm_config,
+            mcp,
+            sessions,
+            skills,
+            make_vector_matcher(),
+            None,
+        )
+        .await
+        .with_llm_driver(driver)
+        .with_agent_graph(graph),
+    )
+}
+
+async fn wait_for_run_done(manager: &RunManager, run_id: &str) -> Vec<NormalizedEvent> {
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        loop {
+            let events = manager
+                .history_since(run_id, None)
+                .await
+                .unwrap_or_default();
+            if events
+                .iter()
+                .any(|event| matches!(event.event, NormalizedEvent::RunDone { .. }))
+            {
+                return events.into_iter().map(|event| event.event).collect();
+            }
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("run should complete")
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -176,4 +239,108 @@ async fn test_session_id_links_run_to_session() {
     if let Some(run) = run_by_session {
         assert_eq!(run.run_id, run_id, "run id via session lookup should match");
     }
+}
+
+#[tokio::test]
+async fn orchestrator_run_routes_and_streams_delegated_answer() {
+    let driver = Arc::new(MockLlmDriver::new(vec![
+        vec![
+            DriverEvent::MessageDelta {
+                text: "rust-reviewer".to_string(),
+            },
+            DriverEvent::Done,
+        ],
+        vec![
+            DriverEvent::MessageDelta {
+                text: "The ownership boundary is sound.".to_string(),
+            },
+            DriverEvent::Done,
+        ],
+    ]));
+    let manager = make_graph_manager(Arc::clone(&driver)).await;
+    let orchestrator = defaults::orchestrator_agent();
+    assert_eq!(orchestrator.runtime.entry, "orchestrator");
+    assert!(
+        orchestrator
+            .metadata
+            .tags
+            .contains(&"delegation".to_string())
+    );
+    assert_ne!(
+        orchestrator.prompt.system,
+        defaults::default_agent().prompt.system
+    );
+
+    let run_id = manager
+        .start_run(
+            orchestrator,
+            "Review this Rust ownership boundary".to_string(),
+            None,
+            None,
+            vec![],
+        )
+        .await;
+    let events = wait_for_run_done(&manager, &run_id).await;
+
+    assert_eq!(driver.call_count(), 2, "router and sub-agent must both run");
+    let requests = driver.requests();
+    assert!(
+        requests[0].messages.iter().any(|message| {
+            message["content"]
+                .as_str()
+                .is_some_and(|content| content.contains("Review this Rust ownership boundary"))
+        }),
+        "router request must include the user's task"
+    );
+    assert!(
+        requests[1].messages[0]["content"]
+            .as_str()
+            .is_some_and(|content| content.contains("rust-reviewer")),
+        "delegated request must identify the selected sub-agent"
+    );
+    assert!(events.iter().any(|event| matches!(
+        event,
+        NormalizedEvent::ChatDelta { text_delta, .. }
+            if text_delta == "[rust-reviewer]\n\nThe ownership boundary is sound."
+    )));
+    assert_eq!(
+        events
+            .iter()
+            .filter(|event| matches!(event, NormalizedEvent::RuntimeStep { .. }))
+            .count(),
+        4,
+        "router and delegated agent must each emit start and finish step events"
+    );
+}
+
+#[tokio::test]
+async fn attached_graph_does_not_change_default_agent_path() {
+    let driver = Arc::new(MockLlmDriver::new(vec![vec![
+        DriverEvent::MessageDelta {
+            text: "default answer".to_string(),
+        },
+        DriverEvent::Done,
+    ]]));
+    let manager = make_graph_manager(Arc::clone(&driver)).await;
+
+    let run_id = manager
+        .start_run(
+            defaults::default_agent(),
+            "answer directly".to_string(),
+            None,
+            None,
+            vec![],
+        )
+        .await;
+    let events = wait_for_run_done(&manager, &run_id).await;
+
+    assert_eq!(
+        driver.call_count(),
+        1,
+        "default agent must not enter the graph"
+    );
+    assert!(events.iter().any(|event| matches!(
+        event,
+        NormalizedEvent::ChatDelta { text_delta, .. } if text_delta == "default answer"
+    )));
 }

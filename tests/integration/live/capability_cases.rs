@@ -132,6 +132,95 @@ fn content_fixture(last_user_message: &str, response: &str) -> FixtureSet {
     )
 }
 
+/// C-06 orchestrator delegation — **L2 recorded / env-gated live**.
+///
+/// The recorded backend fixes the router choice and specialist contribution;
+/// the live backend exercises the same two-call RouterNode -> AgentNode path
+/// against the operator's proxy. UAR-owned assertions require the attributed
+/// answer plus start/finish runtime-step events on either backend.
+#[tokio::test]
+#[serial]
+async fn l2_c06_orchestrator_delegates_with_trace() {
+    const PROBE: &str = "Review this Rust ownership boundary";
+    const ROUTER_REQUEST: &str = concat!(
+        "Route Rust implementation, correctness, or safety questions to rust-reviewer. ",
+        "Route all other questions to general-purpose.\n\n",
+        "User request:\nReview this Rust ownership boundary\n\n",
+        "You MUST respond with exactly one of the following options (no extra text): ",
+        "general-purpose, rust-reviewer"
+    );
+    const RECORDED_CONTRIBUTION: &str = "The ownership boundary is sound.";
+
+    let fixtures = FixtureSet::new()
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: ROUTER_REQUEST.to_string(),
+                has_tools: false,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content("rust-reviewer".to_string()),
+        )
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: PROBE.to_string(),
+                has_tools: false,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content(RECORDED_CONTRIBUTION.to_string()),
+        );
+    let recorded = std::env::var(super::backend::BACKEND_ENV_VAR).as_deref() != Ok("live");
+    let backend = super::backend::resolve(fixtures).await;
+    let server = boot_test_server(&backend.base_url, &backend.model, ServiceNeeds::default()).await;
+
+    let response = reqwest::Client::new()
+        .post(format!("{}/api/chat/completion", server.base_url))
+        .header("Authorization", format!("Bearer {HARNESS_JWT_SECRET}"))
+        .json(&serde_json::json!({
+            "model": backend.model,
+            "agent_id": "orchestrator-agent",
+            "messages": [{"role": "user", "content": PROBE}],
+            "stream": true,
+            "stream_mode": "openai",
+        }))
+        .send()
+        .await
+        .expect("orchestrator delegation request");
+    let status = response.status().as_u16();
+    let body = response.text().await.unwrap_or_default();
+    assert_real_handler("C-06", "/api/chat/completion", status, &body);
+    assert_eq!(status, 200, "C-06 delegation must return 200: {body}");
+    let assistant_text = body
+        .lines()
+        .filter_map(|line| line.strip_prefix("data: "))
+        .filter(|data| *data != "[DONE]")
+        .filter_map(|data| serde_json::from_str::<serde_json::Value>(data).ok())
+        .filter_map(|chunk| {
+            chunk
+                .pointer("/choices/0/delta/content")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+        })
+        .collect::<String>();
+    let contribution = assistant_text
+        .strip_prefix("[rust-reviewer]\n\n")
+        .unwrap_or_else(|| panic!("answer must attribute the selected sub-agent: {body}"));
+    assert!(
+        !contribution.trim().is_empty(),
+        "answer must contain the selected sub-agent's contribution: {body}"
+    );
+    assert!(
+        body.contains("event: runtime.step")
+            && body.contains("step_started")
+            && body.contains("step_finished"),
+        "router and agent traversal must emit runtime step events: {body}"
+    );
+    if recorded {
+        assert_eq!(contribution, RECORDED_CONTRIBUTION);
+    }
+}
+
 struct C19FixtureProvider;
 
 #[async_trait::async_trait]

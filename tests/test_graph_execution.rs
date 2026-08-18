@@ -126,6 +126,10 @@ async fn test_state_flows_through_multiple_nodes() {
     assert_eq!(state.get::<String>("b").as_deref(), Some("2"));
     assert_eq!(state.get::<String>("finished_by").as_deref(), Some("done"));
     assert_eq!(state.iteration, 3, "three nodes should have run");
+    assert_eq!(
+        state.get::<Vec<String>>("_graph_trace"),
+        Some(vec!["a".to_string(), "b".to_string(), "c".to_string()])
+    );
 }
 
 #[tokio::test]

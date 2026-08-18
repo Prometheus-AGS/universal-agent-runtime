@@ -199,8 +199,8 @@ pub struct RunManager {
     run_cancellations: Arc<RwLock<HashMap<String, CancellationToken>>>,
     /// Message-count based context strategy applied to session history before LLM calls.
     message_context_strategy: crate::uar::context::ContextStrategy,
-    /// Optional agent graph for graph-based execution. When set, `start_run` uses
-    /// graph-driven orchestration instead of the simple tool loop.
+    /// Optional agent graph for graph-based execution. When set, orchestrator-agent
+    /// runs use graph-driven delegation instead of the simple tool loop.
     agent_graph: Option<std::sync::Arc<crate::uar::runtime::graph::AgentGraph>>,
     /// Optional Cedar governance engine consulted at the tool-approval gate.
     /// When set, a tool that policy denies is routed to the HITL approval gate.
@@ -548,7 +548,8 @@ impl RunManager {
 
     /// Attach an agent graph for graph-driven execution.
     ///
-    /// When set, `start_run` executes the graph instead of the simple tool loop.
+    /// When set, orchestrator-agent runs execute the graph instead of the simple
+    /// tool loop. Other agents retain their existing execution path.
     #[must_use]
     pub fn with_agent_graph(mut self, graph: crate::uar::runtime::graph::AgentGraph) -> Self {
         self.agent_graph = Some(std::sync::Arc::new(graph));
@@ -1819,7 +1820,11 @@ impl RunManager {
                 )
                 .await;
         }
-        let graph_for_run = self.agent_graph.clone();
+        let graph_for_run = if artifact.id == "orchestrator-agent" {
+            self.agent_graph.clone()
+        } else {
+            None
+        };
         let persistence_for_run = self.persistence.clone();
         let a2ui_backbone_for_run = Arc::clone(&self.a2ui_backbone);
         // Cancellation: the run's child token (selected on in the consumption loop,
@@ -1942,6 +1947,27 @@ impl RunManager {
                     state = graph.execute(initial_state, &graph_ctx) => state,
                 };
 
+                let graph_trace = final_state
+                    .get::<Vec<String>>("_graph_trace")
+                    .unwrap_or_default();
+                for (index, _) in graph_trace.iter().enumerate() {
+                    let step = u32::try_from(index + 1).unwrap_or(u32::MAX);
+                    emitter
+                        .emit(NormalizedEvent::RuntimeStep {
+                            run_id: execute_run_id.clone(),
+                            step,
+                            kind: "started".to_string(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RuntimeStep {
+                            run_id: execute_run_id.clone(),
+                            step,
+                            kind: "finished".to_string(),
+                        })
+                        .await;
+                }
+
                 if let Some(err) = final_state.get::<String>("_error") {
                     emitter
                         .emit(NormalizedEvent::Error {
@@ -1950,12 +1976,41 @@ impl RunManager {
                             code: String::new(),
                         })
                         .await;
+                } else if let Some(route) = final_state.get::<String>("_route") {
+                    let output_key = format!("_agent_output_{route}");
+                    match final_state.get::<String>(&output_key) {
+                        Some(output) => {
+                            let attributed_output = format!("[{route}]\n\n{output}");
+                            execution_session.add_assistant_message(attributed_output.clone());
+                            emitter
+                                .emit(NormalizedEvent::ChatDelta {
+                                    run_id: execute_run_id.clone(),
+                                    text_delta: attributed_output,
+                                })
+                                .await;
+                        }
+                        None => {
+                            emitter
+                                .emit(NormalizedEvent::Error {
+                                    run_id: execute_run_id.clone(),
+                                    message: format!(
+                                        "Delegated sub-agent '{route}' returned no text output"
+                                    ),
+                                    code: "delegation_output_missing".to_string(),
+                                })
+                                .await;
+                        }
+                    }
                 }
                 emitter
                     .emit(NormalizedEvent::RunDone {
                         run_id: execute_run_id.clone(),
                     })
                     .await;
+                cancellations_for_cleanup
+                    .write()
+                    .await
+                    .remove(&cleanup_run_id);
                 return;
             }
 
