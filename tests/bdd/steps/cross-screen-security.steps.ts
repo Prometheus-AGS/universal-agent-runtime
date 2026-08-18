@@ -167,18 +167,24 @@ When('two verified subjects address the same session memory and knowledge identi
     const samePolicy = await jsonRequest(`/api/uar/conversations/${conversationId}/policy`, tokenA);
     const crossPolicy = await jsonRequest(`/api/uar/conversations/${conversationId}/policy`, tokenB);
 
-    const sameRows = Array.isArray(sameMemory.body) ? sameMemory.body as Array<Record<string, unknown>> : [];
-    const crossRows = Array.isArray(crossMemory.body) ? crossMemory.body as Array<Record<string, unknown>> : [];
+    const sameRows = sameMemory.status === 200 && Array.isArray(sameMemory.body)
+      ? sameMemory.body as Array<Record<string, unknown>>
+      : null;
+    const crossRows = crossMemory.status === 200 && Array.isArray(crossMemory.body)
+      ? crossMemory.body as Array<Record<string, unknown>>
+      : null;
     return {
       sameSession: sameSession.status === 200,
       crossSessionDenied: crossSession.status === 404,
       sameKb: sameKb.status === 200,
       crossKbDenied: crossKb.status === 404,
-      sameMemory: sameRows.some((row) => row.content === secret
+      sameMemory: sameRows?.some((row) => row.content === secret
         && row.user_id === 'screen-owner-a'
-        && row.agent_id === 'default-agent'),
-      crossMemoryDenied: crossRows.every((row) => row.content !== secret),
-      conversationPrivate: (samePolicy.body as { memory_enabled?: boolean })?.memory_enabled === false
+        && row.agent_id === 'default-agent') === true,
+      crossMemoryDenied: crossRows?.every((row) => row.content !== secret) === true,
+      conversationPrivate: samePolicy.status === 200
+        && (samePolicy.body as { memory_enabled?: boolean })?.memory_enabled === false
+        && crossPolicy.status === 200
         && crossPolicy.body === null,
     };
   }, { tokenA, tokenB });
