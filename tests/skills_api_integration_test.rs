@@ -15,6 +15,7 @@ use serde_json::{Value, json};
 use std::sync::Arc;
 
 use universal_agent_runtime::uar::api::skills::{build_agent_skills_router, build_router};
+use universal_agent_runtime::uar::domain::skills::{Skill, SkillOrigin};
 use universal_agent_runtime::uar::runtime::skills::service::SkillService;
 
 // ---------------------------------------------------------------------------
@@ -190,6 +191,45 @@ async fn update_skill_can_enable_and_disable() {
         .await;
     resp2.assert_status_ok();
     assert_eq!(resp2.json::<Value>()["enabled"], true);
+}
+
+#[tokio::test]
+async fn update_builtin_is_refused_while_toggle_remains_available() {
+    let service = Arc::new(SkillService::new(None, None));
+    let builtin = Skill {
+        skill_id: "pack-skill".to_string(),
+        title: "Pack skill".to_string(),
+        enabled: true,
+        origin: SkillOrigin::Builtin,
+        provider_id: "builtin".to_string(),
+        ..Skill::default()
+    };
+    service.register_builtins(vec![builtin]).await;
+    let app = axum::Router::new()
+        .nest("/skills", build_router())
+        .with_state(service);
+    let server = TestServer::new(app);
+
+    let response = server
+        .put("/skills/pack-skill")
+        .json(&json!({ "title": "Mutated pack skill" }))
+        .await;
+    response.assert_status(axum::http::StatusCode::CONFLICT);
+    let error: Value = response.json();
+    assert_eq!(error["error"], "system_skill_immutable");
+
+    let unchanged = server.get("/skills/pack-skill").await;
+    unchanged.assert_status_ok();
+    assert_eq!(unchanged.json::<Value>()["title"], "Pack skill");
+
+    let toggled = server
+        .post("/skills/pack-skill/toggle")
+        .json(&json!({ "enabled": false }))
+        .await;
+    toggled.assert_status_ok();
+    let disabled = server.get("/skills/pack-skill").await;
+    disabled.assert_status_ok();
+    assert_eq!(disabled.json::<Value>()["enabled"], false);
 }
 
 // ---------------------------------------------------------------------------

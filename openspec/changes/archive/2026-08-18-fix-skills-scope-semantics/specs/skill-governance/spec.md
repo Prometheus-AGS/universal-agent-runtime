@@ -1,36 +1,4 @@
-# skill-governance Specification
-
-## Purpose
-TBD - created by archiving change skill-scoped-governance. Update Purpose after archive.
-## Requirements
-### Requirement: Every skill is configurable at global, agent and conversation scope
-The runtime SHALL support enabling and disabling any skill at global, per-agent
-and per-conversation scope, regardless of origin. Where several scopes apply, the
-most specific SHALL win: conversation over agent over global.
-
-#### Scenario: Conversation scope overrides agent scope
-- **WHEN** a skill is enabled for an agent but disabled for one conversation
-- **THEN** it is not activated in that conversation and remains available in the agent's other conversations
-
-#### Scenario: Agent scope overrides global
-- **WHEN** a skill is enabled globally but disabled for one agent
-- **THEN** it is not activated for that agent and remains available to other agents
-
-#### Scenario: Built-in skills are configurable
-- **WHEN** a built-in skill is disabled at any scope
-- **THEN** the disable takes effect exactly as it would for a user-created skill
-
-### Requirement: Scoped configuration is durable and survives restart re-registration
-Scoped configuration SHALL be persisted, and startup registration of built-in
-skills SHALL NOT overwrite stored configuration.
-
-#### Scenario: Disable survives restart
-- **WHEN** a built-in skill is disabled globally and the runtime restarts
-- **THEN** the skill remains disabled after startup re-registration
-
-#### Scenario: Per-agent state survives restart
-- **WHEN** a skill is disabled for one agent and the runtime restarts
-- **THEN** the disable still applies to that agent only
+## MODIFIED Requirements
 
 ### Requirement: Configuration changes take effect without a restart
 A scoped configuration change SHALL affect subsequent skill matching without

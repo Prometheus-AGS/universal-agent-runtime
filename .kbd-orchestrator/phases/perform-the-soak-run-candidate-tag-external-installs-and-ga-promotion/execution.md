@@ -52,7 +52,7 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
 
 - [DONE] `fix-user-isolation-sessions-memory-kb` — OpenSpec; synced, independently verified, and archived 2026-08-18
 - [DONE] `harden-jwt-defaults` — OpenSpec; synced, independently verified, and archived 2026-08-18
-- [PENDING] `fix-skills-scope-semantics` — OpenSpec
+- [DONE] `fix-skills-scope-semantics` — OpenSpec; synced, independently verified, and archived 2026-08-18
 - [PENDING] `ship-skill-pack-install-path` — OpenSpec
 - [PENDING] `emit-rag-retrieval-events` — OpenSpec
 - [PENDING] `wire-orchestrator-delegation` — OpenSpec

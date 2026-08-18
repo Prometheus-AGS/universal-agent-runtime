@@ -19,6 +19,7 @@ use universal_agent_runtime::{
         defaults::default_agent,
         domain::{
             events::NormalizedEvent,
+            policy::{ConversationPolicyRecord, ResourceSelection, RunPolicy},
             skills::{Skill, SkillOrigin, SkillScope, SkillTriggers},
         },
         persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
@@ -464,4 +465,127 @@ async fn conversation_enable_widens_global_disable_and_in_flight_binding_is_stab
             .iter()
             .all(|message| !message.to_string().contains("B4_IN_FLIGHT_BINDING_MARKER"))
     );
+}
+
+#[tokio::test]
+async fn persisted_session_skill_selection_gates_overlay_and_activation() {
+    let directory = tempfile::tempdir().expect("temporary session-policy database directory");
+    let endpoint = format!(
+        "surrealkv://{}",
+        directory.path().join("session-policy.db").display()
+    );
+    let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+        SurrealDbProvider::new(&endpoint, None, None, Some("scope"), Some("session-policy"))
+            .await
+            .expect("embedded SurrealKV starts"),
+    );
+    let driver = Arc::new(GatedDriver::default());
+    let runtime = EmbeddedRuntime::builder()
+        .local_provider(driver.clone(), local_provider())
+        .persistence(Arc::clone(&persistence))
+        .seed_defaults(false)
+        .build()
+        .await
+        .expect("embedded runtime builds");
+
+    let selected_skill = Skill {
+        skill_id: "session-selected-skill".to_string(),
+        version: "1.0.0".to_string(),
+        title: "Session selected skill".to_string(),
+        description: "Matches session-policy-proof".to_string(),
+        triggers: SkillTriggers {
+            keywords: vec!["session-policy-proof".to_string()],
+            semantic: None,
+        },
+        prompt_overlay: "SESSION_POLICY_OVERLAY_MARKER".to_string(),
+        enabled: true,
+        ..Skill::default()
+    };
+    let unselected_skill = Skill {
+        skill_id: "session-unselected-skill".to_string(),
+        version: "1.0.0".to_string(),
+        title: "Session unselected skill".to_string(),
+        enabled: true,
+        ..Skill::default()
+    };
+    runtime
+        .skill_service()
+        .create_skill(selected_skill)
+        .await
+        .expect("selected skill is created");
+    runtime
+        .skill_service()
+        .create_skill(unselected_skill)
+        .await
+        .expect("unselected skill is created");
+
+    let conversation_id = "session-policy-conversation";
+    let mut policy = RunPolicy {
+        skills: ResourceSelection::selected(vec!["session-selected-skill".to_string()]),
+        ..RunPolicy::default()
+    };
+    persistence
+        .save_conversation_policy(&ConversationPolicyRecord::new(
+            conversation_id,
+            policy.clone(),
+        ))
+        .await
+        .expect("session agent-config persists");
+
+    let mut agent = default_agent();
+    agent.id = "agent-a".to_string();
+    agent.memory.kb.enabled = false;
+    let selected_run = runtime
+        .run_manager()
+        .start_run(
+            agent.clone(),
+            "please use session-policy-proof".to_string(),
+            Some(conversation_id.to_string()),
+            None,
+            Vec::new(),
+        )
+        .await;
+    driver.wait_until_started().await;
+    driver.release_one();
+    let selected_history = wait_for_done(&runtime, &selected_run).await;
+    assert!(selected_history.iter().any(|event| matches!(
+        &event.event,
+        NormalizedEvent::SkillActivated { skill_id, .. }
+            if skill_id == "session-selected-skill"
+    )));
+    assert!(driver.requests()[0].messages.iter().any(|message| {
+        message
+            .to_string()
+            .contains("SESSION_POLICY_OVERLAY_MARKER")
+    }));
+
+    policy.skills = ResourceSelection::selected(vec!["session-unselected-skill".to_string()]);
+    persistence
+        .save_conversation_policy(&ConversationPolicyRecord::new(conversation_id, policy))
+        .await
+        .expect("updated session agent-config persists");
+
+    let excluded_run = runtime
+        .run_manager()
+        .start_run(
+            agent,
+            "please use session-policy-proof".to_string(),
+            Some(conversation_id.to_string()),
+            None,
+            Vec::new(),
+        )
+        .await;
+    driver.wait_until_started().await;
+    driver.release_one();
+    let excluded_history = wait_for_done(&runtime, &excluded_run).await;
+    assert!(excluded_history.iter().all(|event| !matches!(
+        &event.event,
+        NormalizedEvent::SkillActivated { skill_id, .. }
+            if skill_id == "session-selected-skill"
+    )));
+    assert!(driver.requests()[1].messages.iter().all(|message| {
+        !message
+            .to_string()
+            .contains("SESSION_POLICY_OVERLAY_MARKER")
+    }));
 }
