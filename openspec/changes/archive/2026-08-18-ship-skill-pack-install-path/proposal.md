@@ -7,9 +7,11 @@ SSH-only, and no installer or toolchain bootstrap exists.
 ## What Changes
 
 - Provide a supported install path: fetch the skill pack from its public
-  repository (HTTPS), verify, build (with Rust toolchain bootstrap guidance),
-  and install where UAR is installed.
-- Admin skills UI lists every pack skill after install.
+  repository (HTTPS), verify the UAR-pinned commit, build the canonical CLI
+  after a Rust toolchain preflight, and atomically install into UAR's existing
+  versioned installed-plugin search root.
+- Admin skills UI lists the complete loader-eligible pack inventory after
+  install, while preserving the existing opt-in boundary for imported skills.
 
 ## Capabilities
 ### New Capabilities
