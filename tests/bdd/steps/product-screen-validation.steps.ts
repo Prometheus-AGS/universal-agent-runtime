@@ -79,7 +79,7 @@ async function validateThreads(page: Page): Promise<void> {
 async function validateAbout(page: Page): Promise<void> {
   await page.goto('/about');
   await expect(page.getByRole('heading', { name: 'Universal Agent Runtime' })).toBeVisible();
-  await expect(page.getByText(/healthy|online|ok/i).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/^(healthy|online|ok)$/i)).toBeVisible({ timeout: 15_000 });
 }
 
 async function validateRuntime(page: Page): Promise<void> {
@@ -305,11 +305,50 @@ async function validateKnowledge(page: Page): Promise<void> {
 }
 
 async function validateMemory(page: Page): Promise<void> {
+  const marker = `screen-memory-row-${crypto.randomUUID()}`;
+  const token = signedJwt('screen-validator');
+  await page.goto('/about');
+  const created = await page.evaluate(async ({ marker, token }) => {
+    const response = await fetch('/api/memory', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: marker,
+        categories: ['screen-validation'],
+        agent_id: 'default-agent',
+      }),
+    });
+    return { status: response.status, body: await response.text() };
+  }, { marker, token });
+  if (created.status !== 200) {
+    throw new Error(`memory fixture creation failed: ${created.status} ${created.body}`);
+  }
+
   await openAdmin(page, 'memory');
   await expect(page.getByRole('heading', { name: 'memory browser' })).toBeVisible();
+  await expect(page.getByText(/^\d+ total memories$/)).toBeVisible();
   await page.getByPlaceholder('filter by user id').fill('screen-validator');
+  const filtered = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname === '/api/admin/memories'
+      && url.searchParams.get('user_id') === 'screen-validator';
+  });
   await page.getByRole('button', { name: 'apply' }).click();
-  await expect(page.getByText('MEMORY', { exact: true })).not.toBeVisible();
+  const filteredResponse = await filtered;
+  if (!filteredResponse.ok()) {
+    throw new Error(`memory filter failed: ${filteredResponse.status()} ${await filteredResponse.text()}`);
+  }
+  const filteredBody = await filteredResponse.json() as {
+    total?: number;
+    items?: Array<{ content?: string; user_id?: string }>;
+  };
+  expect(filteredBody.items?.some((item) => item.content === marker
+    && item.user_id === 'screen-validator')).toBe(true);
+  expect(filteredBody.items?.every((item) => item.user_id === 'screen-validator')).toBe(true);
+  await expect(page.getByText('screen-validator', { exact: true }).first()).toBeVisible();
 }
 
 async function validateCompiler(page: Page): Promise<void> {
@@ -367,7 +406,8 @@ async function validateCost(page: Page): Promise<void> {
   await openAdmin(page, 'cost');
   await replayRuntime(page);
   await expect(page.getByTestId('cost-run-count')).toHaveText('1');
-  await expect(page.getByRole('region', { name: 'Spend summary' })).toContainText('$');
+  await expect(page.getByRole('region', { name: 'Spend summary' })).toContainText('$0.0042');
+  await expect(page.getByTestId('cost-by-model')).toContainText('gpt-5.4');
 }
 
 const validators: Record<string, (page: Page) => Promise<void>> = {

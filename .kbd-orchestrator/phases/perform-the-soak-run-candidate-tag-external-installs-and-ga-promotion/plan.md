@@ -41,6 +41,10 @@ Changes 1–2 and 3–7 are internally parallelizable batches; 10 hard-depends o
 - Change 8 starts with a decision task (ship minimal SDKs vs withdraw from 1.0) —
   surface to operator before implementation.
 - Change 10's per-screen matrix is seeded by the assessment's 20-screen inventory.
+- Plan revision 7 supersedes the no-source-change default only for the three
+  operator-approved defects observed by change 10: Skills graph visibility,
+  approval-event projection, and Knowledge nested-interactive markup. The repairs stay
+  bounded to those surfaces and force a fresh immutable certification run.
 - Mastra-inspired enhancements (inline trace view, in-chat model switching, evals
   panel) are deliberately NOT in this phase — recorded as candidates for the next
   phase to avoid scope creep on the release path.

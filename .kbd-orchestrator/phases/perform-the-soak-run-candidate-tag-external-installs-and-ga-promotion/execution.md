@@ -39,7 +39,11 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
 ## FALLBACK CONDITIONS
 
 - Stop if a required design decision changes the permitted implementation surface.
-- Stop at a missing external credential, publication authority, time-bound condition, or supported-product defect.
+- Stop at a missing external credential, publication authority, or time-bound condition.
+- Plan revision 7 and decision `screen-validation-bounded-repairs` authorize only the
+  three observed Skills graph-view, approval-event projection, and Knowledge
+  nested-interactive repairs inside `screen-by-screen-validation`. Stop at any other
+  supported-product defect and open a narrowly-scoped follow-up.
 - Do not substitute a completion-counter edit for an uncompleted change.
 
 ## VERIFICATION REQUIREMENTS
@@ -70,7 +74,8 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
 - [DONE] `rewrite-readme-and-docs` — OpenSpec; customer docs, rendered Mermaid,
   runtime-aligned OpenAPI, exact root cleanup, focused verification,
   independent review, canonical spec sync, and archive completed 2026-08-18
-- [PENDING] `screen-by-screen-validation` — OpenSpec
+- [IN PROGRESS] `screen-by-screen-validation` — OpenSpec; plan revision 7 permits
+  the three operator-approved bounded screen repairs before immutable recertification
 - [PENDING] `certify-operational-resilience` — OpenSpec evidence
 - [PENDING] `produce-supply-chain-artifacts` — OpenSpec evidence
 - [PENDING] `certify-release-candidate` — OpenSpec evidence and time-bound validation
