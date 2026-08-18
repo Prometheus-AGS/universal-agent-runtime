@@ -183,6 +183,7 @@ mod tests {
         KnowledgeMatch {
             chunk: KnowledgeChunk {
                 id,
+                owner_id: "anonymous".to_string(),
                 kb_id: "test-kb".to_string(),
                 document_id: None,
                 content: content.to_string(),

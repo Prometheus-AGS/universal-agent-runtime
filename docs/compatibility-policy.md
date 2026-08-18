@@ -12,6 +12,28 @@ Breaking Stable changes require a major version. Security fixes may reject
 previously accepted unsafe input or configuration when preserving that behavior
 would create material risk; such changes are documented in the changelog.
 
+## Tenancy boundary
+
+Threads, memories, knowledge bases, documents, and knowledge chunks are private
+to the authenticated user established by the verified JWT. Client-supplied user
+or tenant identifiers do not grant access to those resources.
+
+Session rows written before ownership existed contain no trustworthy user
+identity. The tenancy migration preserves them under the anonymous owner; it
+does not let the first authenticated caller claim them by presenting a known
+session ID. This is the security-fix exception to persisted-data compatibility:
+the content remains available to an explicitly anonymous deployment, while an
+authenticated deployment must start owner-scoped threads.
+
+Skills, agents, and settings are intentionally installation-wide administrator
+resources in 1.x. They are not duplicated per user and a change to one can
+affect every tenant. A deployment serving mutually untrusted users must restrict
+the corresponding administration endpoints to operators at its gateway; UAR's
+authenticated-user middleware does not itself turn an ordinary user into a
+tenant-scoped copy of these shared resources. Changing these resources to
+per-user ownership is a future breaking data-model decision, not an implicit
+part of the private-resource isolation contract above.
+
 Preview and Experimental capabilities may change in minor releases. Internal
 features and the Rust embedding/library API are not public compatibility
 contracts for 1.0. BossFang integration uses the documented sidecar HTTP/SSE

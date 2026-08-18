@@ -1162,10 +1162,13 @@ async fn start_server_with_listener(
     // Mounted conditionally so zero overhead is incurred when disabled.
     let app = if config.acp.enabled {
         info!(path = %config.acp.path, "ACP server enabled");
-        app.nest_service(
-            &config.acp.path,
-            uar::api::acp::routes::AcpRouter::new().into_router(Arc::new(state.clone())),
-        )
+        let acp_router = uar::api::acp::routes::AcpRouter::new(config.acp.auth_required)
+            .into_router(Arc::new(state.clone()))
+            .layer(axum::middleware::from_fn_with_state(
+                state.clone(),
+                uar::security::middleware::auth_middleware,
+            ));
+        app.nest_service(&config.acp.path, acp_router)
     } else {
         app
     };
@@ -1525,6 +1528,7 @@ fn build_permissive_cors_layer() -> CorsLayer {
 /// Returns 404 if no run with that id has a pending approval.
 async fn handle_tool_call_approval(
     State(state): State<AppState>,
+    axum::Extension(user): axum::Extension<UserContext>,
     axum::extract::Path(run_id): axum::extract::Path<String>,
     Json(body): Json<serde_json::Value>,
 ) -> Response {
@@ -1532,6 +1536,21 @@ async fn handle_tool_call_approval(
         .get("approved")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    if state
+        .run_manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+        .is_none()
+    {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "error": "No pending approval found for run",
+                "run_id": run_id
+            })),
+        )
+            .into_response();
+    }
     let resolved = state.run_manager.resolve_approval(&run_id, approved).await;
     if resolved {
         info!(
@@ -2257,9 +2276,10 @@ pub(crate) async fn api_mcp_health(State(state): State<AppState>) -> Json<Value>
 /// GET /api/uar/sessions/{id}/context-stats — returns context window usage for a session.
 async fn api_context_stats(
     State(state): State<AppState>,
+    axum::Extension(user_ctx): axum::Extension<UserContext>,
     axum::extract::Path(session_id): axum::extract::Path<String>,
 ) -> Response {
-    let session = state.sessions.get(&session_id);
+    let session = state.sessions.get_for_user(&session_id, &user_ctx.user_id);
     match session {
         Some(s) => {
             let messages = s.messages();
@@ -2548,7 +2568,10 @@ async fn persistence_info_handler(State(state): State<AppState>) -> impl IntoRes
 /// GET /api/uar/sync/stream — SSE stream for entity change events (embedded SurrealDB only).
 ///
 /// V1: sends periodic heartbeats; real LIVE SELECT integration will come later.
-async fn sync_stream_handler(State(state): State<AppState>) -> Response {
+async fn sync_stream_handler(
+    State(state): State<AppState>,
+    axum::Extension(user): axum::Extension<UserContext>,
+) -> Response {
     let config = &state.config.persistence;
     let is_embedded = config.database_url.starts_with("surrealkv://")
         || config.database_url.starts_with("rocksdb://")
@@ -2591,7 +2614,7 @@ async fn sync_stream_handler(State(state): State<AppState>) -> Response {
             // Poll entity tables for changes since last check.
             // KnowledgeBase has an `updated_at` RFC3339 field we can compare.
             if let Some(ref persistence) = persistence {
-                match persistence.list_knowledge_bases().await {
+                match persistence.list_knowledge_bases(&user.user_id).await {
                     Ok(kbs) => {
                         // Compare RFC3339 strings lexicographically (valid for ISO timestamps).
                         let changed: Vec<_> = kbs.iter()
@@ -4164,6 +4187,7 @@ async fn resolve_requested_model(
 /// OpenAI-compatible completion endpoint with optional UAR session continuity.
 pub(crate) async fn api_chat_completion(
     State(state): State<AppState>,
+    axum::Extension(user_ctx): axum::Extension<UserContext>,
     headers: HeaderMap,
     Json(req): Json<ChatCompletionRequest>,
 ) -> Response {
@@ -4243,11 +4267,12 @@ pub(crate) async fn api_chat_completion(
     //   2. `agent_sessions[session_id].agent_id` — session side-channel POST.
     //   3. `default-agent` — fallback.
     let resolved_agent_id: Option<String> = req.agent_id.clone().or_else(|| {
+        let session_key = uar::persistence::tenant_storage_key(&user_ctx.user_id, &session_id);
         state
             .agent_sessions
             .try_read()
             .ok()
-            .and_then(|sessions| sessions.get(&session_id).map(|cfg| cfg.agent_id.clone()))
+            .and_then(|sessions| sessions.get(&session_key).map(|cfg| cfg.agent_id.clone()))
     });
 
     let mut agent = if let Some(ref aid) = resolved_agent_id {
@@ -4281,6 +4306,7 @@ pub(crate) async fn api_chat_completion(
 
     let mut effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
         &state,
+        &user_ctx.user_id,
         &session_id,
         &agent,
         Some(turn_policy.clone()),
@@ -4292,6 +4318,7 @@ pub(crate) async fn api_chat_completion(
         agent = uar::api::discovery::resolve_agent_for_run(&state, &effective_agent_id).await;
         effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
             &state,
+            &user_ctx.user_id,
             &session_id,
             &agent,
             Some(turn_policy),
@@ -4318,27 +4345,6 @@ pub(crate) async fn api_chat_completion(
     // (document context blocks + user text + image_url parts).  Otherwise pass plain text.
     let effective_input =
         build_multipart_content(&input_message, &req.attachments).unwrap_or(input_message);
-
-    // Extract UserContext from request extensions (set by auth middleware, may be anonymous).
-    let user_ctx = {
-        use crate::uar::security::claims::UserClaims;
-        let uid = headers
-            .get("x-uar-user-id")
-            .and_then(|v| v.to_str().ok())
-            .unwrap_or("anonymous")
-            .to_string();
-        UserContext {
-            user_id: uid.clone(),
-            tenant_id: None,
-            claims: UserClaims {
-                sub: uid,
-                name: None,
-                roles: None,
-                tenant_id: None,
-                exp: 0,
-            },
-        }
-    };
 
     // --- Prompt caching: resolve effective setting for this request ---
     let effective_prompt_caching = {
@@ -4435,7 +4441,7 @@ pub(crate) async fn api_chat_completion(
             agent,
             effective_input_with_memory,
             Some(session_id.clone()),
-            None,
+            Some(user_ctx.user_id.clone()),
             memory_recall_items,
             Some(effective_run_policy),
         )
@@ -5266,7 +5272,7 @@ pub(crate) async fn api_chat_completion(
     }
 
     if assistant_text.trim().is_empty()
-        && let Some(session) = state.sessions.get(&session_id)
+        && let Some(session) = state.sessions.get_for_user(&session_id, &user_ctx.user_id)
     {
         let messages = session.messages();
         if let Some(last_assistant) = messages

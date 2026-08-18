@@ -130,7 +130,10 @@ pub async fn ensure_default_knowledge_base(
 
     // Check if default KB already exists
     if let Some(existing) = persistence
-        .get_knowledge_base_by_name(DEFAULT_KB_NAME)
+        .get_knowledge_base_by_name(
+            crate::uar::domain::knowledge::ANONYMOUS_KNOWLEDGE_OWNER,
+            DEFAULT_KB_NAME,
+        )
         .await?
     {
         tracing::debug!("Default knowledge base already exists: {}", existing.id);
@@ -172,6 +175,7 @@ pub async fn ensure_default_knowledge_base(
     let now = chrono::Utc::now().to_rfc3339();
     let kb = KnowledgeBase {
         id: uuid::Uuid::new_v4().to_string(),
+        owner_id: crate::uar::domain::knowledge::ANONYMOUS_KNOWLEDGE_OWNER.to_string(),
         name: DEFAULT_KB_NAME.to_string(),
         description: Some("Default knowledge base for general documents".to_string()),
         config: kb_config,

@@ -40,6 +40,13 @@
       "content_type": "direct:content",
       "updated_at": "2026-08-15T08:03:54Z",
       "finalized_at": "2026-08-15T08:03:54Z"
+    },
+    "fix-user-isolation-sessions-memory-kb": {
+      "path": ".refiner/artifacts/fix-user-isolation-sessions-memory-kb",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-18T12:37:17Z",
+      "finalized_at": "2026-08-18T12:37:17Z"
     }
   }
 }

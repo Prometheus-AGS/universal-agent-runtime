@@ -2,9 +2,10 @@ use crate::uar::{
     api::sse::{build_agui_replay_snapshot, build_sse_response},
     domain::artifact::AgentArtifact,
     runtime::{checkpoint::Checkpoint, manager::RunManager},
+    security::claims::UserContext,
 };
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
@@ -55,10 +56,17 @@ struct StreamParams {
 
 async fn create_run(
     State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
     Json(req): Json<CreateRunRequest>,
 ) -> Json<CreateRunResponse> {
     let run_id = manager
-        .start_run(req.artifact, req.input, req.session_id, None, vec![])
+        .start_run(
+            req.artifact,
+            req.input,
+            req.session_id,
+            Some(user.user_id),
+            vec![],
+        )
         .await;
     Json(CreateRunResponse {
         run_id: run_id.clone(),
@@ -68,10 +76,18 @@ async fn create_run(
 
 async fn stream_run(
     State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Query(params): Query<StreamParams>,
     headers: HeaderMap,
 ) -> impl IntoResponse {
+    if manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+        .is_none()
+    {
+        return StatusCode::NOT_FOUND.into_response();
+    }
     let Some(rx) = manager.subscribe(&run_id).await else {
         return axum::http::StatusCode::NOT_FOUND.into_response();
     };
@@ -139,9 +155,20 @@ struct ToolApprovalRequest {
 /// Returns 200 OK if the decision was delivered, 404 if no pending approval exists.
 async fn api_tool_approval(
     State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(body): Json<ToolApprovalRequest>,
 ) -> impl IntoResponse {
+    if manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+        .is_none()
+    {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "resolved": false })),
+        );
+    }
     if manager.resolve_approval(&run_id, body.approved).await {
         (
             StatusCode::OK,
@@ -166,10 +193,22 @@ async fn api_tool_approval(
 /// duplicate terminal event).
 async fn api_cancel_run(
     State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
-    let cancelled = manager.cancel_run(&run_id).await;
-    Json(serde_json::json!({ "cancelled": cancelled }))
+    if manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+        .is_none()
+    {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "cancelled": false })),
+        )
+            .into_response();
+    }
+    let cancelled = manager.cancel_run_for_user(&user.user_id, &run_id).await;
+    Json(serde_json::json!({ "cancelled": cancelled })).into_response()
 }
 
 /// POST /api/uar/sessions/{session_id}/cancel
@@ -177,9 +216,12 @@ async fn api_cancel_run(
 /// Cancel the active run projected through a stable conversation session id.
 async fn api_cancel_session_run(
     State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
-    let cancelled = manager.cancel_session_run(&session_id).await;
+    let cancelled = manager
+        .cancel_session_run_for_user(&user.user_id, &session_id)
+        .await;
     Json(serde_json::json!({ "cancelled": cancelled }))
 }
 
@@ -197,8 +239,16 @@ struct CheckpointListResponse {
 /// Returns 503 if no persistence layer is configured.
 async fn list_checkpoints(
     State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
+    if manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+        .is_none()
+    {
+        return StatusCode::NOT_FOUND.into_response();
+    }
     let Some(db) = &manager.persistence else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -234,16 +284,30 @@ struct ResumeRequest {
 /// Resume a run from its latest checkpoint (if any), or start fresh.
 async fn resume_run(
     State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
+    if manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+        .is_none()
+    {
+        return StatusCode::NOT_FOUND.into_response();
+    }
     let input = req.input.unwrap_or_else(|| {
         // No explicit input — use a standard resume message.
         format!("Resuming run {run_id}")
     });
 
     let new_run_id = manager
-        .start_run(req.artifact, input, req.session_id, None, vec![])
+        .start_run(
+            req.artifact,
+            input,
+            req.session_id,
+            Some(user.user_id),
+            vec![],
+        )
         .await;
 
     Json(serde_json::json!({
@@ -260,9 +324,17 @@ async fn resume_run(
 /// The checkpoint's saved state is injected as context into the new run.
 async fn resume_run_from_checkpoint(
     State(manager): State<Arc<RunManager>>,
+    Extension(user): Extension<UserContext>,
     Path((run_id, checkpoint_id)): Path<(String, String)>,
     Json(req): Json<ResumeRequest>,
 ) -> impl IntoResponse {
+    if manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+        .is_none()
+    {
+        return StatusCode::NOT_FOUND.into_response();
+    }
     let Some(db) = &manager.persistence else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -272,7 +344,14 @@ async fn resume_run_from_checkpoint(
     };
 
     let checkpoint = match db.load_checkpoint(&checkpoint_id).await {
-        Ok(Some(cp)) => cp,
+        Ok(Some(cp)) if cp.run_id == run_id => cp,
+        Ok(Some(_)) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({"error": "checkpoint not found"})),
+            )
+                .into_response();
+        }
         Ok(None) => {
             return (
                 StatusCode::NOT_FOUND,
@@ -297,7 +376,13 @@ async fn resume_run_from_checkpoint(
     });
 
     let new_run_id = manager
-        .start_run(req.artifact, input, req.session_id, None, vec![])
+        .start_run(
+            req.artifact,
+            input,
+            req.session_id,
+            Some(user.user_id),
+            vec![],
+        )
         .await;
 
     Json(serde_json::json!({

@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-18T12:29:07Z",
+  "variants": [
+    {
+      "name": "user-isolation-verification",
+      "file": ".refiner/artifacts/fix-user-isolation-sessions-memory-kb/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic verification receipt for verified-user thread, memory, and knowledge isolation"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "All eight OpenSpec tasks are complete and strict validation exits 0.",
+      "The focused two-JWT server-full case covers direct and ACP thread-adjacent sessions/runs, configuration/policy, memory, knowledge bases, and documents with same-user controls and cross-user denials.",
+      "SurrealKV and PostgreSQL 17 both preserve equal logical knowledge IDs for two owners; PostgreSQL rejects a cross-owner parent foreign key.",
+      "Legacy SurrealKV sessions remain anonymous and cannot be claimed by an authenticated ID lookup.",
+      "The final candidate's existing Clippy baseline emits 572 warnings; no warning-free claim is made."
+    ]
+  }
+}

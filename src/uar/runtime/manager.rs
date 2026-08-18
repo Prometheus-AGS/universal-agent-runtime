@@ -691,6 +691,14 @@ impl RunManager {
         true
     }
 
+    /// Cancel an in-flight run only when it belongs to the authenticated owner.
+    pub async fn cancel_run_for_user(&self, owner_id: &str, run_id: &str) -> bool {
+        if self.get_run_for_user(owner_id, run_id).await.is_none() {
+            return false;
+        }
+        self.cancel_run(run_id).await
+    }
+
     /// Cancel the current in-flight run associated with a conversation session.
     ///
     /// Service clients receive a stable session identifier before the first
@@ -698,12 +706,19 @@ impl RunManager {
     /// the runtime keeps cancellation reliable without asking clients to parse
     /// transport-specific event payloads.
     pub async fn cancel_session_run(&self, session_id: &str) -> bool {
+        self.cancel_session_run_for_user(crate::session::ANONYMOUS_SESSION_OWNER, session_id)
+            .await
+    }
+
+    /// Cancel the current run for an owner-scoped conversation session.
+    pub async fn cancel_session_run_for_user(&self, owner_id: &str, session_id: &str) -> bool {
+        let session_key = crate::uar::persistence::tenant_storage_key(owner_id, session_id);
         let run_id = {
             let session_runs = self.session_current_run.read().await;
-            session_runs.get(session_id).cloned()
+            session_runs.get(&session_key).cloned()
         };
         match run_id {
-            Some(run_id) => self.cancel_run(&run_id).await,
+            Some(run_id) => self.cancel_run_for_user(owner_id, &run_id).await,
             None => false,
         }
     }
@@ -725,6 +740,7 @@ impl RunManager {
     /// global-aware path see an identical universe + conversation scope.
     async fn build_universe_and_conversation(
         &self,
+        owner_id: &str,
         conversation_id: &str,
     ) -> (PolicyUniverse, Option<RunPolicy>) {
         let skills = match &self.skill_service {
@@ -760,14 +776,14 @@ impl RunManager {
         }
         let mut knowledge_bases = std::collections::BTreeSet::new();
         let conversation = if let Some(persistence) = &self.persistence {
-            if let Ok(records) = persistence.list_knowledge_bases().await {
+            if let Ok(records) = persistence.list_knowledge_bases(owner_id).await {
                 for knowledge_base in records {
                     knowledge_bases.insert(knowledge_base.id);
                     knowledge_bases.insert(knowledge_base.name);
                 }
             }
             persistence
-                .load_conversation_policy(conversation_id)
+                .load_conversation_policy(owner_id, conversation_id)
                 .await
                 .ok()
                 .flatten()
@@ -795,14 +811,17 @@ impl RunManager {
     async fn resolve_effective_policy(
         &self,
         artifact: &AgentArtifact,
+        owner_id: &str,
         conversation_id: &str,
     ) -> EffectiveRunPolicy {
         let Some(settings_manager) = self.settings_manager.as_ref() else {
             return self
-                .resolve_legacy_run_policy(artifact, conversation_id)
+                .resolve_legacy_run_policy(artifact, owner_id, conversation_id)
                 .await;
         };
-        let (universe, conversation) = self.build_universe_and_conversation(conversation_id).await;
+        let (universe, conversation) = self
+            .build_universe_and_conversation(owner_id, conversation_id)
+            .await;
         let ctx = PolicyResolutionContext {
             settings_manager: Some(settings_manager.as_ref()),
             universe,
@@ -824,7 +843,7 @@ impl RunManager {
     pub async fn effective_config(&self, conversation_id: &str) -> EffectiveConfig {
         let requested = if let Some(persistence) = &self.persistence {
             persistence
-                .load_conversation_policy(conversation_id)
+                .load_conversation_policy(crate::session::ANONYMOUS_SESSION_OWNER, conversation_id)
                 .await
                 .ok()
                 .flatten()
@@ -836,7 +855,13 @@ impl RunManager {
             .and_then(|record| record.policy.agent_id.clone())
             .unwrap_or_else(|| "default-agent".to_string());
         let agent = self.resolve_agent_or_default(&agent_id).await;
-        let mut effective = self.resolve_effective_policy(&agent, conversation_id).await;
+        let mut effective = self
+            .resolve_effective_policy(
+                &agent,
+                crate::uar::domain::knowledge::ANONYMOUS_KNOWLEDGE_OWNER,
+                conversation_id,
+            )
+            .await;
         self.backfill_effective_model(&mut effective).await;
         EffectiveConfig {
             agent,
@@ -867,9 +892,12 @@ impl RunManager {
     async fn resolve_legacy_run_policy(
         &self,
         artifact: &AgentArtifact,
+        owner_id: &str,
         conversation_id: &str,
     ) -> EffectiveRunPolicy {
-        let (universe, conversation) = self.build_universe_and_conversation(conversation_id).await;
+        let (universe, conversation) = self
+            .build_universe_and_conversation(owner_id, conversation_id)
+            .await;
         let default_model = ModelRoute {
             provider_id: artifact.policy.provider.default.provider.clone(),
             model_id: artifact.policy.provider.default.model.clone(),
@@ -1032,10 +1060,13 @@ impl RunManager {
         };
 
         // 1. Resolve Session
+        let owner_id = user_id
+            .clone()
+            .unwrap_or_else(|| crate::session::ANONYMOUS_SESSION_OWNER.to_string());
         let session = if let Some(id) = session_id {
-            self.sessions.get_or_create(&id)
+            self.sessions.get_or_create_for_user(&id, &owner_id)
         } else {
-            self.sessions.create()
+            self.sessions.create_for_user(&owner_id)
         };
 
         // 1b. Seed prior turns into an empty session. The in-process session
@@ -1060,7 +1091,10 @@ impl RunManager {
 
         let mut effective_policy = match resolved_policy {
             Some(policy) => policy,
-            None => self.resolve_effective_policy(&artifact, session.id()).await,
+            None => {
+                self.resolve_effective_policy(&artifact, &owner_id, session.id())
+                    .await
+            }
         };
 
         self.backfill_effective_model(&mut effective_policy).await;
@@ -1116,7 +1150,10 @@ impl RunManager {
             .await;
         {
             let mut session_runs = self.session_current_run.write().await;
-            session_runs.insert(session.id().to_string(), run_id.clone());
+            session_runs.insert(
+                crate::uar::persistence::tenant_storage_key(&owner_id, session.id()),
+                run_id.clone(),
+            );
         }
 
         // Per-run cancellation token, derived from the root so that a server
@@ -1144,7 +1181,7 @@ impl RunManager {
                         let mut kb_ids = Vec::new();
                         for id_or_name in &effective_policy.knowledge_bases.ids {
                             let resolved = db
-                                .get_knowledge_base(id_or_name)
+                                .get_knowledge_base(&owner_id, id_or_name)
                                 .await
                                 .ok()
                                 .flatten()
@@ -1152,7 +1189,7 @@ impl RunManager {
                             let resolved = match resolved {
                                 Some(kb) => Some(kb),
                                 None => db
-                                    .get_knowledge_base_by_name(id_or_name)
+                                    .get_knowledge_base_by_name(&owner_id, id_or_name)
                                     .await
                                     .ok()
                                     .flatten(),
@@ -1170,7 +1207,7 @@ impl RunManager {
                             Ok(Vec::new())
                         } else {
                             let kb_id_refs: Vec<&str> = kb_ids.iter().map(String::as_str).collect();
-                            db.search_knowledge_scoped(&kb_id_refs, query_vec, 3, 0.7)
+                            db.search_knowledge_scoped(&owner_id, &kb_id_refs, query_vec, 3, 0.7)
                                 .await
                         };
 
@@ -1187,7 +1224,8 @@ impl RunManager {
                                     for m in &matches {
                                         if let Some(did) = &m.chunk.document_id
                                             && seen_document_ids.insert(did.clone())
-                                            && let Ok(Some(doc)) = db.get_document(did).await
+                                            && let Ok(Some(doc)) =
+                                                db.get_document(&owner_id, did).await
                                         {
                                             document_names.insert(did.clone(), doc.filename);
                                         }
@@ -2516,12 +2554,31 @@ impl RunManager {
         runs.get(run_id).map(|state| state.run.clone())
     }
 
+    /// Return a run only when it belongs to the authenticated owner.
+    pub async fn get_run_for_user(&self, owner_id: &str, run_id: &str) -> Option<Run> {
+        self.get_run(run_id).await.filter(|run| match &run.user_id {
+            Some(run_owner) => run_owner == owner_id,
+            None => owner_id == crate::session::ANONYMOUS_SESSION_OWNER,
+        })
+    }
+
     pub async fn get_run_by_session_id(&self, session_id: &str) -> Option<Run> {
+        self.get_run_by_session_id_for_user(crate::session::ANONYMOUS_SESSION_OWNER, session_id)
+            .await
+    }
+
+    /// Return the current run for an owner-scoped conversation session.
+    pub async fn get_run_by_session_id_for_user(
+        &self,
+        owner_id: &str,
+        session_id: &str,
+    ) -> Option<Run> {
+        let session_key = crate::uar::persistence::tenant_storage_key(owner_id, session_id);
         let run_id = {
             let session_runs = self.session_current_run.read().await;
-            session_runs.get(session_id).cloned()
+            session_runs.get(&session_key).cloned()
         }?;
-        self.get_run(&run_id).await
+        self.get_run_for_user(owner_id, &run_id).await
     }
 
     /// Return the resolved default model `(provider_id, model_id)` if one is available,

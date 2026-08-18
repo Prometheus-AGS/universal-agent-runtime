@@ -7,7 +7,12 @@ retrieval fallback.
 
 ## What Changes
 
-- Scope sessions/threads, knowledge bases/documents/chunks by JWT-derived owner.
+- Scope sessions/threads, active runs (including ACP), conversation policy, and
+  knowledge bases/documents/chunks by JWT-derived owner.
+- Make durable knowledge identities tenant-qualified so two owners may use the
+  same logical IDs without collision or ownership transfer.
+- Preserve pre-ownership sessions as anonymous compatibility data without
+  allowing an authenticated caller to claim them by knowing the old ID.
 - Derive identity for /api/memory exclusively from UserContext.
 - Remove the all-KB retrieval fallback; unresolved KB names are an error.
 - Add cross-user bleed regression tests; document intentionally shared
@@ -18,4 +23,5 @@ retrieval fallback.
 - `multi-tenant-isolation`
 
 ## Impact
-Session/persistence providers, memory API, knowledge API, runtime retrieval, tests.
+Session and run management including ACP, conversation policy, persistence
+providers and migrations, memory API, knowledge API, runtime retrieval, tests.

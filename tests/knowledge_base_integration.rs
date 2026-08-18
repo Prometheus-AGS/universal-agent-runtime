@@ -21,6 +21,8 @@ use universal_agent_runtime::uar::{
 };
 use uuid::Uuid;
 
+const TEST_OWNER: &str = "knowledge-integration-owner";
+
 // =============================================================================
 // Test Utilities
 // =============================================================================
@@ -50,6 +52,7 @@ fn create_test_kb(suffix: &str) -> KnowledgeBase {
     let suffix_short = &suffix_id[..8];
     KnowledgeBase {
         id: Uuid::new_v4().to_string(),
+        owner_id: TEST_OWNER.to_string(),
         name: format!("test-kb-{suffix}-{suffix_short}"),
         description: Some(format!("Test knowledge base for {suffix}")),
         config: KbConfig::default(),
@@ -63,6 +66,7 @@ fn create_test_document(kb_id: &str, filename: &str) -> KnowledgeDocument {
     let now = chrono::Utc::now().to_rfc3339();
     KnowledgeDocument {
         id: Uuid::new_v4().to_string(),
+        owner_id: TEST_OWNER.to_string(),
         kb_id: kb_id.to_string(),
         filename: filename.to_string(),
         file_path: Some(format!("/data/test/{filename}")),
@@ -83,6 +87,7 @@ fn create_test_chunk(
 ) -> KnowledgeChunk {
     KnowledgeChunk {
         id: Uuid::new_v4(),
+        owner_id: TEST_OWNER.to_string(),
         kb_id: kb_id.to_string(),
         document_id: doc_id.map(String::from),
         content: content.to_string(),
@@ -102,6 +107,133 @@ fn make_embedding(pattern: &[f32]) -> Vec<f32> {
 
 #[tokio::test]
 #[serial]
+async fn test_equal_ids_are_partitioned_by_owner_in_postgres() {
+    let Some(persistence) = setup_persistence().await else {
+        eprintln!("Skipping test: DATABASE_URL not set");
+        return;
+    };
+    let shared_kb_id = Uuid::new_v4().to_string();
+    let shared_doc_id = Uuid::new_v4().to_string();
+    let shared_chunk_id = Uuid::new_v4();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    for owner in ["postgres-alice", "postgres-bob"] {
+        let kb = KnowledgeBase {
+            id: shared_kb_id.clone(),
+            owner_id: owner.to_string(),
+            name: format!("{owner}-{}", Uuid::new_v4()),
+            description: None,
+            config: KbConfig::default(),
+            created_at: now.clone(),
+            updated_at: now.clone(),
+        };
+        let document = KnowledgeDocument {
+            id: shared_doc_id.clone(),
+            owner_id: owner.to_string(),
+            kb_id: shared_kb_id.clone(),
+            filename: format!("{owner}.txt"),
+            file_path: None,
+            mime_type: Some("text/plain".to_string()),
+            chunk_count: 1,
+            status: DocumentStatus::Indexed,
+            created_at: now.clone(),
+            updated_at: now.clone(),
+        };
+        let chunk = KnowledgeChunk {
+            id: shared_chunk_id,
+            owner_id: owner.to_string(),
+            kb_id: shared_kb_id.clone(),
+            document_id: Some(shared_doc_id.clone()),
+            content: format!("{owner} secret"),
+            metadata: None,
+            embedding: make_embedding(&[1.0, 0.0, 0.0]),
+            created_at: now.clone(),
+        };
+        persistence.save_knowledge_base(&kb).await.unwrap();
+        persistence.save_document(&document).await.unwrap();
+        persistence.save_chunk(&chunk).await.unwrap();
+    }
+
+    for owner in ["postgres-alice", "postgres-bob"] {
+        assert_eq!(
+            persistence
+                .get_knowledge_base(owner, &shared_kb_id)
+                .await
+                .unwrap()
+                .unwrap()
+                .owner_id,
+            owner
+        );
+        assert_eq!(
+            persistence
+                .get_document(owner, &shared_doc_id)
+                .await
+                .unwrap()
+                .unwrap()
+                .owner_id,
+            owner
+        );
+        let matches = persistence
+            .search_knowledge(owner, &make_embedding(&[1.0, 0.0, 0.0]), 10, -1.0)
+            .await
+            .unwrap();
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].chunk.owner_id, owner);
+    }
+
+    let bob_only_kb = KnowledgeBase {
+        id: Uuid::new_v4().to_string(),
+        owner_id: "postgres-bob".to_string(),
+        name: format!("postgres-bob-only-{}", Uuid::new_v4()),
+        description: None,
+        config: KbConfig::default(),
+        created_at: now.clone(),
+        updated_at: now.clone(),
+    };
+    persistence.save_knowledge_base(&bob_only_kb).await.unwrap();
+    let cross_owner_document = KnowledgeDocument {
+        id: Uuid::new_v4().to_string(),
+        owner_id: "postgres-alice".to_string(),
+        kb_id: bob_only_kb.id.clone(),
+        filename: "must-fail.txt".to_string(),
+        file_path: None,
+        mime_type: Some("text/plain".to_string()),
+        chunk_count: 0,
+        status: DocumentStatus::Pending,
+        created_at: now.clone(),
+        updated_at: now,
+    };
+    assert!(
+        persistence
+            .save_document(&cross_owner_document)
+            .await
+            .is_err(),
+        "a document must not reference another owner's KB"
+    );
+
+    persistence
+        .delete_knowledge_base("postgres-bob", &shared_kb_id)
+        .await
+        .unwrap();
+    assert!(
+        persistence
+            .get_knowledge_base("postgres-alice", &shared_kb_id)
+            .await
+            .unwrap()
+            .is_some()
+    );
+    persistence
+        .delete_knowledge_base("postgres-alice", &shared_kb_id)
+        .await
+        .unwrap();
+    persistence
+        .delete_knowledge_base("postgres-bob", &bob_only_kb.id)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+#[serial]
 async fn test_kb_create_and_retrieve() {
     let Some(persistence) = setup_persistence().await else {
         eprintln!("Skipping test: DATABASE_URL not set");
@@ -117,7 +249,7 @@ async fn test_kb_create_and_retrieve() {
 
     // Retrieve by ID
     let retrieved = persistence
-        .get_knowledge_base(&kb.id)
+        .get_knowledge_base(TEST_OWNER, &kb.id)
         .await
         .expect("Failed to get KB")
         .expect("KB not found");
@@ -128,7 +260,7 @@ async fn test_kb_create_and_retrieve() {
 
     // Retrieve by name
     let by_name = persistence
-        .get_knowledge_base_by_name(&kb.name)
+        .get_knowledge_base_by_name(TEST_OWNER, &kb.name)
         .await
         .expect("Failed to get KB by name")
         .expect("KB not found by name");
@@ -137,7 +269,7 @@ async fn test_kb_create_and_retrieve() {
 
     // Cleanup
     persistence
-        .delete_knowledge_base(&kb.id)
+        .delete_knowledge_base(TEST_OWNER, &kb.id)
         .await
         .expect("Failed to delete KB");
 }
@@ -165,7 +297,7 @@ async fn test_kb_list() {
 
     // List all
     let all_kbs = persistence
-        .list_knowledge_bases()
+        .list_knowledge_bases(TEST_OWNER)
         .await
         .expect("Failed to list KBs");
 
@@ -175,11 +307,11 @@ async fn test_kb_list() {
 
     // Cleanup
     persistence
-        .delete_knowledge_base(&kb1.id)
+        .delete_knowledge_base(TEST_OWNER, &kb1.id)
         .await
         .expect("Failed to delete KB1");
     persistence
-        .delete_knowledge_base(&kb2.id)
+        .delete_knowledge_base(TEST_OWNER, &kb2.id)
         .await
         .expect("Failed to delete KB2");
 }
@@ -209,7 +341,7 @@ async fn test_kb_update() {
 
     // Verify update
     let retrieved = persistence
-        .get_knowledge_base(&kb.id)
+        .get_knowledge_base(TEST_OWNER, &kb.id)
         .await
         .expect("Failed to retrieve KB")
         .expect("KB not found");
@@ -221,7 +353,7 @@ async fn test_kb_update() {
 
     // Cleanup
     persistence
-        .delete_knowledge_base(&kb.id)
+        .delete_knowledge_base(TEST_OWNER, &kb.id)
         .await
         .expect("Failed to delete KB");
 }
@@ -255,20 +387,20 @@ async fn test_kb_delete_cascade() {
 
     // Delete KB - should cascade to documents and chunks
     persistence
-        .delete_knowledge_base(&kb.id)
+        .delete_knowledge_base(TEST_OWNER, &kb.id)
         .await
         .expect("Failed to delete KB");
 
     // Verify KB is gone
     let kb_result = persistence
-        .get_knowledge_base(&kb.id)
+        .get_knowledge_base(TEST_OWNER, &kb.id)
         .await
         .expect("Failed to check KB");
     assert!(kb_result.is_none());
 
     // Verify document is gone
     let doc_result = persistence
-        .get_document(&doc.id)
+        .get_document(TEST_OWNER, &doc.id)
         .await
         .expect("Failed to check document");
     assert!(doc_result.is_none());
@@ -302,7 +434,7 @@ async fn test_document_lifecycle() {
 
     // Verify initial status
     let retrieved = persistence
-        .get_document(&doc.id)
+        .get_document(TEST_OWNER, &doc.id)
         .await
         .expect("Failed to get document")
         .unwrap();
@@ -310,12 +442,12 @@ async fn test_document_lifecycle() {
 
     // Update status to Processing
     persistence
-        .update_document_status(&doc.id, &DocumentStatus::Processing)
+        .update_document_status(TEST_OWNER, &doc.id, &DocumentStatus::Processing)
         .await
         .expect("Failed to update status");
 
     let processing = persistence
-        .get_document(&doc.id)
+        .get_document(TEST_OWNER, &doc.id)
         .await
         .expect("Failed to get document")
         .unwrap();
@@ -323,12 +455,12 @@ async fn test_document_lifecycle() {
 
     // Update status to Indexed
     persistence
-        .update_document_status(&doc.id, &DocumentStatus::Indexed)
+        .update_document_status(TEST_OWNER, &doc.id, &DocumentStatus::Indexed)
         .await
         .expect("Failed to update status");
 
     let indexed = persistence
-        .get_document(&doc.id)
+        .get_document(TEST_OWNER, &doc.id)
         .await
         .expect("Failed to get document")
         .unwrap();
@@ -339,12 +471,12 @@ async fn test_document_lifecycle() {
         error: "Test error".to_string(),
     };
     persistence
-        .update_document_status(&doc.id, &error_status)
+        .update_document_status(TEST_OWNER, &doc.id, &error_status)
         .await
         .expect("Failed to update status");
 
     let failed = persistence
-        .get_document(&doc.id)
+        .get_document(TEST_OWNER, &doc.id)
         .await
         .expect("Failed to get document")
         .unwrap();
@@ -355,7 +487,7 @@ async fn test_document_lifecycle() {
 
     // Cleanup
     persistence
-        .delete_knowledge_base(&kb.id)
+        .delete_knowledge_base(TEST_OWNER, &kb.id)
         .await
         .expect("Failed to delete KB");
 }
@@ -395,7 +527,7 @@ async fn test_document_list() {
 
     // List documents in KB
     let docs = persistence
-        .list_documents(&kb.id)
+        .list_documents(TEST_OWNER, &kb.id)
         .await
         .expect("Failed to list documents");
     assert_eq!(docs.len(), 3);
@@ -407,7 +539,7 @@ async fn test_document_list() {
 
     // Cleanup
     persistence
-        .delete_knowledge_base(&kb.id)
+        .delete_knowledge_base(TEST_OWNER, &kb.id)
         .await
         .expect("Failed to delete KB");
 }
@@ -453,7 +585,7 @@ async fn test_scoped_search_filters_by_kb() {
 
     // Search scoped to KB1 only
     let kb1_results = persistence
-        .search_knowledge_scoped(&[&kb1.id], &embedding, 10, 0.0)
+        .search_knowledge_scoped(TEST_OWNER, &[&kb1.id], &embedding, 10, 0.0)
         .await
         .expect("Failed to search KB1");
 
@@ -465,7 +597,7 @@ async fn test_scoped_search_filters_by_kb() {
 
     // Search scoped to KB2 only
     let kb2_results = persistence
-        .search_knowledge_scoped(&[&kb2.id], &embedding, 10, 0.0)
+        .search_knowledge_scoped(TEST_OWNER, &[&kb2.id], &embedding, 10, 0.0)
         .await
         .expect("Failed to search KB2");
 
@@ -476,7 +608,7 @@ async fn test_scoped_search_filters_by_kb() {
 
     // Search across both KBs
     let both_results = persistence
-        .search_knowledge_scoped(&[&kb1.id, &kb2.id], &embedding, 10, 0.0)
+        .search_knowledge_scoped(TEST_OWNER, &[&kb1.id, &kb2.id], &embedding, 10, 0.0)
         .await
         .expect("Failed to search both KBs");
 
@@ -487,11 +619,11 @@ async fn test_scoped_search_filters_by_kb() {
 
     // Cleanup
     persistence
-        .delete_knowledge_base(&kb1.id)
+        .delete_knowledge_base(TEST_OWNER, &kb1.id)
         .await
         .expect("Failed to delete KB1");
     persistence
-        .delete_knowledge_base(&kb2.id)
+        .delete_knowledge_base(TEST_OWNER, &kb2.id)
         .await
         .expect("Failed to delete KB2");
 }
@@ -509,8 +641,14 @@ async fn test_default_kb_initialization() {
     };
 
     // Ensure no default KB exists (may need to clean up from previous tests)
-    if let Ok(Some(existing)) = persistence.get_knowledge_base_by_name("default").await {
-        persistence.delete_knowledge_base(&existing.id).await.ok();
+    if let Ok(Some(existing)) = persistence
+        .get_knowledge_base_by_name("anonymous", "default")
+        .await
+    {
+        persistence
+            .delete_knowledge_base("anonymous", &existing.id)
+            .await
+            .ok();
     }
 
     // First call should create the default KB
@@ -530,7 +668,7 @@ async fn test_default_kb_initialization() {
 
     // Cleanup
     persistence
-        .delete_knowledge_base(&kb1.id)
+        .delete_knowledge_base("anonymous", &kb1.id)
         .await
         .expect("Failed to delete default KB");
 }
@@ -586,7 +724,7 @@ async fn test_chunk_storage_and_global_search() {
     // Search with embedding similar to first chunk
     let query = make_embedding(&[0.85, 0.15, 0.0]);
     let results = persistence
-        .search_knowledge(&query, 10, 0.0) // Low threshold to get all results
+        .search_knowledge(TEST_OWNER, &query, 10, 0.0) // Low threshold to get all results
         .await
         .expect("Failed to search");
 
@@ -597,7 +735,7 @@ async fn test_chunk_storage_and_global_search() {
 
     // Cleanup
     persistence
-        .delete_knowledge_base(&kb.id)
+        .delete_knowledge_base(TEST_OWNER, &kb.id)
         .await
         .expect("Failed to delete KB");
 }

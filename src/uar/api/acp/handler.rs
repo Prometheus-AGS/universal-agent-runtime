@@ -25,25 +25,30 @@ impl AcpSessionStore {
         Self::default()
     }
 
-    pub async fn create(&self, agent_id: impl Into<String>) -> AcpSession {
+    pub async fn create(&self, owner_id: &str, agent_id: impl Into<String>) -> AcpSession {
         let session = AcpSession::new(agent_id);
         let mut store = self.sessions.write().await;
-        store.insert(session.session_id.clone(), session.clone());
+        store.insert(
+            crate::uar::persistence::tenant_storage_key(owner_id, &session.session_id),
+            session.clone(),
+        );
         session
     }
 
-    pub async fn get(&self, session_id: &str) -> Option<AcpSession> {
+    pub async fn get(&self, owner_id: &str, session_id: &str) -> Option<AcpSession> {
         let mut store = self.sessions.write().await;
-        if let Some(s) = store.get_mut(session_id) {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, session_id);
+        if let Some(s) = store.get_mut(&key) {
             s.last_active = Utc::now();
             return Some(s.clone());
         }
         None
     }
 
-    pub async fn delete(&self, session_id: &str) -> bool {
+    pub async fn delete(&self, owner_id: &str, session_id: &str) -> bool {
         let mut store = self.sessions.write().await;
-        store.remove(session_id).is_some()
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, session_id);
+        store.remove(&key).is_some()
     }
 
     pub async fn evict_expired(&self, ttl_secs: u64) {
@@ -62,15 +67,18 @@ pub async fn dispatch(
     req: JsonRpcRequest,
     state: Arc<AppState>,
     sessions: Arc<AcpSessionStore>,
+    owner_id: &str,
 ) -> JsonRpcResponse {
     match req.method.as_str() {
         "agents/list" => handle_agents_list(req.id, &state).await,
         "agents/get" => handle_agents_get(req.id, req.params, &state).await,
-        "sessions/create" => handle_sessions_create(req.id, req.params, &state, &sessions).await,
-        "sessions/get" => handle_sessions_get(req.id, req.params, &sessions).await,
-        "sessions/delete" => handle_sessions_delete(req.id, req.params, &sessions).await,
-        "runs/create" => handle_runs_create(req.id, req.params, &state, &sessions).await,
-        "runs/get" => handle_runs_get(req.id, req.params, &state).await,
+        "sessions/create" => {
+            handle_sessions_create(req.id, req.params, &state, &sessions, owner_id).await
+        }
+        "sessions/get" => handle_sessions_get(req.id, req.params, &sessions, owner_id).await,
+        "sessions/delete" => handle_sessions_delete(req.id, req.params, &sessions, owner_id).await,
+        "runs/create" => handle_runs_create(req.id, req.params, &state, &sessions, owner_id).await,
+        "runs/get" => handle_runs_get(req.id, req.params, &state, owner_id).await,
         _ => JsonRpcResponse::err(
             req.id,
             RPC_METHOD_NOT_FOUND,
@@ -166,6 +174,7 @@ async fn handle_sessions_create(
     params: Option<Value>,
     _state: &AppState,
     sessions: &AcpSessionStore,
+    owner_id: &str,
 ) -> JsonRpcResponse {
     let agent_id = params
         .as_ref()
@@ -173,7 +182,7 @@ async fn handle_sessions_create(
         .and_then(Value::as_str)
         .unwrap_or("default")
         .to_string();
-    let session = sessions.create(agent_id).await;
+    let session = sessions.create(owner_id, agent_id).await;
     JsonRpcResponse::ok(id, serde_json::to_value(&session).unwrap_or(json!({})))
 }
 
@@ -181,6 +190,7 @@ async fn handle_sessions_get(
     id: Option<Value>,
     params: Option<Value>,
     sessions: &AcpSessionStore,
+    owner_id: &str,
 ) -> JsonRpcResponse {
     let session_id = match params
         .as_ref()
@@ -190,7 +200,7 @@ async fn handle_sessions_get(
         Some(s) => s.to_string(),
         None => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Missing session_id"),
     };
-    match sessions.get(&session_id).await {
+    match sessions.get(owner_id, &session_id).await {
         Some(s) => JsonRpcResponse::ok(id, serde_json::to_value(&s).unwrap_or(json!({}))),
         None => JsonRpcResponse::err(
             id,
@@ -204,6 +214,7 @@ async fn handle_sessions_delete(
     id: Option<Value>,
     params: Option<Value>,
     sessions: &AcpSessionStore,
+    owner_id: &str,
 ) -> JsonRpcResponse {
     let session_id = match params
         .as_ref()
@@ -213,7 +224,7 @@ async fn handle_sessions_delete(
         Some(s) => s.to_string(),
         None => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Missing session_id"),
     };
-    let deleted = sessions.delete(&session_id).await;
+    let deleted = sessions.delete(owner_id, &session_id).await;
     JsonRpcResponse::ok(id, json!({ "deleted": deleted, "session_id": session_id }))
 }
 
@@ -226,6 +237,7 @@ async fn handle_runs_create(
     params: Option<Value>,
     state: &AppState,
     sessions: &AcpSessionStore,
+    owner_id: &str,
 ) -> JsonRpcResponse {
     let params = match params {
         Some(p) => p,
@@ -241,7 +253,7 @@ async fn handle_runs_create(
     };
 
     // Verify session exists
-    if sessions.get(&session_id).await.is_none() {
+    if sessions.get(owner_id, &session_id).await.is_none() {
         return JsonRpcResponse::err(
             id,
             ACP_SESSION_NOT_FOUND,
@@ -253,7 +265,13 @@ async fn handle_runs_create(
     let artifact = crate::uar::defaults::default_agent();
     let run_id = state
         .run_manager
-        .start_run(artifact, input, Some(session_id), None, vec![])
+        .start_run(
+            artifact,
+            input,
+            Some(session_id),
+            Some(owner_id.to_owned()),
+            vec![],
+        )
         .await;
 
     JsonRpcResponse::ok(
@@ -269,6 +287,7 @@ async fn handle_runs_get(
     id: Option<Value>,
     params: Option<Value>,
     state: &AppState,
+    owner_id: &str,
 ) -> JsonRpcResponse {
     let run_id = match params
         .as_ref()
@@ -279,7 +298,7 @@ async fn handle_runs_get(
         None => return JsonRpcResponse::err(id, RPC_INVALID_PARAMS, "Missing run_id"),
     };
     // Check if run exists in run manager
-    let run = state.run_manager.get_run(&run_id).await;
+    let run = state.run_manager.get_run_for_user(owner_id, &run_id).await;
     match run {
         Some(r) => JsonRpcResponse::ok(
             id,
@@ -291,5 +310,22 @@ async fn handle_runs_get(
             }),
         ),
         None => JsonRpcResponse::err(id, ACP_RUN_NOT_FOUND, format!("Run '{run_id}' not found")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AcpSessionStore;
+
+    #[tokio::test]
+    async fn session_store_denies_cross_owner_get_and_delete() {
+        let store = AcpSessionStore::new();
+        let session = store.create("alice", "default").await;
+
+        assert!(store.get("alice", &session.session_id).await.is_some());
+        assert!(store.get("bob", &session.session_id).await.is_none());
+        assert!(!store.delete("bob", &session.session_id).await);
+        assert!(store.get("alice", &session.session_id).await.is_some());
+        assert!(store.delete("alice", &session.session_id).await);
     }
 }

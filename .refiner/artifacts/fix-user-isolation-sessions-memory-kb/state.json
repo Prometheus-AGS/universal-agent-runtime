@@ -1,0 +1,51 @@
+{
+  "refinement_id": "a8b95d9f-bae9-4384-ab41-76504c9ee0c1",
+  "artifact_name": "fix-user-isolation-sessions-memory-kb",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-18T11:15:44Z",
+  "updated_at": "2026-08-18T12:37:17Z",
+  "current_iteration": 3,
+  "max_iterations": 5,
+  "goals": [
+    "Validate verified-user isolation across thread-adjacent state, memory, and durable knowledge storage"
+  ],
+  "constraints": [
+    { "id": "verified-user-authority" },
+    { "id": "provider-partitioning" },
+    { "id": "rag-fails-closed" },
+    { "id": "evidence-limits" }
+  ],
+  "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 1,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-18T11:16:42Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 3,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-18T12:18:22Z"
+    },
+    {
+      "iteration": 3,
+      "phases_completed": ["specify", "plan", "execute", "reflect", "persist"],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-18T12:37:17Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-18T12:37:17Z"
+}

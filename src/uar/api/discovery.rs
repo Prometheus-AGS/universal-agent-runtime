@@ -11,9 +11,10 @@ use crate::uar::domain::policy::{
 };
 use crate::uar::domain::runs::RunStatus;
 use crate::uar::domain::skills::{SkillConstraints, SkillTriggers};
+use crate::uar::security::claims::UserContext;
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Extension, Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::get,
@@ -113,6 +114,7 @@ pub async fn list_agents(State(state): State<AppState>) -> impl IntoResponse {
 
 async fn current_agent_by_session(
     State(state): State<AppState>,
+    Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
     if Uuid::parse_str(&session_id).is_err() {
@@ -130,7 +132,11 @@ async fn current_agent_by_session(
             .into_response();
     }
 
-    let Some(run) = state.run_manager.get_run_by_session_id(&session_id).await else {
+    let Some(run) = state
+        .run_manager
+        .get_run_by_session_id_for_user(&user.user_id, &session_id)
+        .await
+    else {
         return (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({
@@ -553,9 +559,16 @@ fn parse_tool_approval(value: Option<&str>) -> ToolApprovalPolicy {
     }
 }
 
-async fn load_conversation_policy(state: &AppState, conversation_id: &str) -> Option<RunPolicy> {
+async fn load_conversation_policy(
+    state: &AppState,
+    owner_id: &str,
+    conversation_id: &str,
+) -> Option<RunPolicy> {
     if let Some(persistence) = &state.persistence {
-        match persistence.load_conversation_policy(conversation_id).await {
+        match persistence
+            .load_conversation_policy(owner_id, conversation_id)
+            .await
+        {
             Ok(Some(record)) => return Some(record.policy),
             Ok(None) => {}
             Err(error) => {
@@ -567,12 +580,15 @@ async fn load_conversation_policy(state: &AppState, conversation_id: &str) -> Op
         .agent_sessions
         .read()
         .await
-        .get(conversation_id)
+        .get(&crate::uar::persistence::tenant_storage_key(
+            owner_id,
+            conversation_id,
+        ))
         .cloned()
         .map(AgentSessionConfig::into_run_policy)
 }
 
-async fn policy_universe(state: &AppState) -> PolicyUniverse {
+async fn policy_universe(state: &AppState, owner_id: &str) -> PolicyUniverse {
     let disabled_skills = match &state.settings_manager {
         Some(manager) => manager
             .list_namespace_with_meta("skill_config")
@@ -629,7 +645,7 @@ async fn policy_universe(state: &AppState) -> PolicyUniverse {
     }
     let mut knowledge_bases = std::collections::BTreeSet::new();
     if let Some(persistence) = &state.persistence
-        && let Ok(records) = persistence.list_knowledge_bases().await
+        && let Ok(records) = persistence.list_knowledge_bases(owner_id).await
     {
         for knowledge_base in records {
             knowledge_bases.insert(knowledge_base.id);
@@ -653,14 +669,15 @@ async fn policy_universe(state: &AppState) -> PolicyUniverse {
 /// embedded runtime. Behavior is identical to the previous inline resolution.
 pub async fn resolve_effective_run_policy(
     state: &AppState,
+    owner_id: &str,
     conversation_id: &str,
     agent: &AgentArtifact,
     turn: Option<RunPolicy>,
 ) -> EffectiveRunPolicy {
-    let conversation = load_conversation_policy(state, conversation_id).await;
+    let conversation = load_conversation_policy(state, owner_id, conversation_id).await;
     let ctx = PolicyResolutionContext {
         settings_manager: state.settings_manager.as_deref(),
-        universe: policy_universe(state).await,
+        universe: policy_universe(state, owner_id).await,
         default_context_strategy: state.config.context_strategy.clone(),
     };
     resolve_effective_run_policy_core(ctx, agent, conversation, turn).await
@@ -669,13 +686,18 @@ pub async fn resolve_effective_run_policy(
 /// POST /api/sessions/{id}/agent-config
 pub async fn save_agent_session_config(
     State(state): State<AppState>,
+    Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
     Json(config): Json<AgentSessionConfig>,
 ) -> impl IntoResponse {
     let policy = config.clone().into_run_policy();
     if let Some(persistence) = &state.persistence
         && let Err(error) = persistence
-            .save_conversation_policy(&ConversationPolicyRecord::new(session_id.clone(), policy))
+            .save_conversation_policy(&ConversationPolicyRecord::new_for_user(
+                &user.user_id,
+                session_id.clone(),
+                policy,
+            ))
             .await
     {
         tracing::error!(%error, %session_id, "failed to persist conversation policy");
@@ -685,20 +707,20 @@ pub async fn save_agent_session_config(
         )
             .into_response();
     }
-    state
-        .agent_sessions
-        .write()
-        .await
-        .insert(session_id, config.clone());
+    state.agent_sessions.write().await.insert(
+        crate::uar::persistence::tenant_storage_key(&user.user_id, &session_id),
+        config.clone(),
+    );
     (StatusCode::OK, Json(config)).into_response()
 }
 
 /// GET /api/sessions/{id}/agent-config
 pub async fn get_agent_session_config(
     State(state): State<AppState>,
+    Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
-    if let Some(policy) = load_conversation_policy(&state, &session_id).await {
+    if let Some(policy) = load_conversation_policy(&state, &user.user_id, &session_id).await {
         return (
             StatusCode::OK,
             Json(AgentSessionConfig::from_run_policy(&policy)),
@@ -706,7 +728,8 @@ pub async fn get_agent_session_config(
             .into_response();
     }
     let sessions = state.agent_sessions.read().await;
-    match sessions.get(&session_id) {
+    let key = crate::uar::persistence::tenant_storage_key(&user.user_id, &session_id);
+    match sessions.get(&key) {
         Some(config) => match serde_json::to_value(config) {
             Ok(value) => (StatusCode::OK, Json(value)).into_response(),
             Err(err) => {
@@ -731,9 +754,10 @@ pub async fn get_agent_session_config(
 /// Returns the agent definition merged with any per-session overrides.
 pub async fn get_effective_config(
     State(state): State<AppState>,
+    Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
-    let Some(policy) = load_conversation_policy(&state, &session_id).await else {
+    let Some(policy) = load_conversation_policy(&state, &user.user_id, &session_id).await else {
         return (
             StatusCode::NOT_FOUND,
             Json(json!({"error": "No agent session config found for this session"})),
@@ -747,7 +771,8 @@ pub async fn get_effective_config(
         .clone()
         .unwrap_or_else(|| "default-agent".to_string());
     let agent = resolve_agent_for_run(&state, &agent_id).await;
-    let effective = resolve_effective_run_policy(&state, &session_id, &agent, None).await;
+    let effective =
+        resolve_effective_run_policy(&state, &user.user_id, &session_id, &agent, None).await;
     (
         StatusCode::OK,
         Json(json!({
@@ -763,10 +788,12 @@ pub async fn get_effective_config(
 /// PUT `/api/uar/conversations/{id}/policy`.
 pub async fn save_conversation_policy(
     State(state): State<AppState>,
+    Extension(user): Extension<UserContext>,
     Path(conversation_id): Path<String>,
     Json(policy): Json<RunPolicy>,
 ) -> impl IntoResponse {
-    let record = ConversationPolicyRecord::new(conversation_id.clone(), policy);
+    let record =
+        ConversationPolicyRecord::new_for_user(&user.user_id, conversation_id.clone(), policy);
     let Some(persistence) = &state.persistence else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -790,9 +817,10 @@ pub async fn save_conversation_policy(
 /// GET `/api/uar/conversations/{id}/policy`.
 pub async fn get_conversation_policy(
     State(state): State<AppState>,
+    Extension(user): Extension<UserContext>,
     Path(conversation_id): Path<String>,
 ) -> impl IntoResponse {
-    match load_conversation_policy(&state, &conversation_id).await {
+    match load_conversation_policy(&state, &user.user_id, &conversation_id).await {
         Some(policy) => (StatusCode::OK, Json(policy)).into_response(),
         // Missing means "inherit global/agent policy", not an exceptional
         // resource failure. Returning JSON null keeps first-run web/mobile
@@ -804,11 +832,12 @@ pub async fn get_conversation_policy(
 /// DELETE `/api/uar/conversations/{id}/policy`.
 pub async fn delete_conversation_policy(
     State(state): State<AppState>,
+    Extension(user): Extension<UserContext>,
     Path(conversation_id): Path<String>,
 ) -> impl IntoResponse {
     if let Some(persistence) = &state.persistence
         && let Err(error) = persistence
-            .delete_conversation_policy(&conversation_id)
+            .delete_conversation_policy(&user.user_id, &conversation_id)
             .await
     {
         tracing::error!(%error, %conversation_id, "failed to delete conversation policy");
@@ -818,6 +847,13 @@ pub async fn delete_conversation_policy(
         )
             .into_response();
     }
-    state.agent_sessions.write().await.remove(&conversation_id);
+    state
+        .agent_sessions
+        .write()
+        .await
+        .remove(&crate::uar::persistence::tenant_storage_key(
+            &user.user_id,
+            &conversation_id,
+        ));
     StatusCode::NO_CONTENT.into_response()
 }

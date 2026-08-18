@@ -7,8 +7,9 @@
 use super::handler::{AcpSessionStore, dispatch};
 use super::types::{JsonRpcRequest, JsonRpcResponse, RPC_PARSE_ERROR};
 use crate::AppState;
+use crate::uar::security::claims::UserContext;
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     http::{HeaderMap, StatusCode},
     response::{
         IntoResponse, Response,
@@ -28,28 +29,35 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct AcpRouter {
     pub sessions: Arc<AcpSessionStore>,
+    auth_required: bool,
 }
 
 impl AcpRouter {
-    pub fn new() -> Self {
+    pub fn new(auth_required: bool) -> Self {
         Self {
             sessions: Arc::new(AcpSessionStore::new()),
+            auth_required,
         }
     }
 
     /// Build Axum router. Call `.nest()` on the parent router with the configured path.
     pub fn into_router(self, app_state: Arc<AppState>) -> Router {
         let sessions = self.sessions;
+        let auth_required = self.auth_required;
         Router::new()
             .route(
                 "/",
                 post({
                     let sess = Arc::clone(&sessions);
                     let state = Arc::clone(&app_state);
-                    move |headers: HeaderMap, Json(req): Json<serde_json::Value>| {
+                    move |Extension(user): Extension<UserContext>,
+                          headers: HeaderMap,
+                          Json(req): Json<serde_json::Value>| {
                         let sess = Arc::clone(&sess);
                         let state = Arc::clone(&state);
-                        async move { handle_rpc(req, state, sess, headers).await }
+                        async move {
+                            handle_rpc(req, state, sess, user, auth_required, headers).await
+                        }
                     }
                 }),
             )
@@ -58,10 +66,14 @@ impl AcpRouter {
                 post({
                     let sess = Arc::clone(&sessions);
                     let state = Arc::clone(&app_state);
-                    move |headers: HeaderMap, Json(req): Json<serde_json::Value>| {
+                    move |Extension(user): Extension<UserContext>,
+                          headers: HeaderMap,
+                          Json(req): Json<serde_json::Value>| {
                         let sess = Arc::clone(&sess);
                         let state = Arc::clone(&state);
-                        async move { handle_rpc_stream(req, state, sess, headers).await }
+                        async move {
+                            handle_rpc_stream(req, state, sess, user, auth_required, headers).await
+                        }
                     }
                 }),
             )
@@ -76,8 +88,13 @@ async fn handle_rpc(
     req_val: Value,
     state: Arc<AppState>,
     sessions: Arc<AcpSessionStore>,
+    user: UserContext,
+    auth_required: bool,
     _headers: HeaderMap,
 ) -> Response {
+    if auth_required && user.user_id == crate::session::ANONYMOUS_SESSION_OWNER {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
     let req: JsonRpcRequest = match serde_json::from_value(req_val) {
         Ok(r) => r,
         Err(e) => {
@@ -85,7 +102,7 @@ async fn handle_rpc(
             return (StatusCode::OK, Json(resp)).into_response();
         }
     };
-    let resp = dispatch(req, state, sessions).await;
+    let resp = dispatch(req, state, sessions, &user.user_id).await;
     (StatusCode::OK, Json(resp)).into_response()
 }
 
@@ -94,12 +111,18 @@ async fn handle_rpc_stream(
     req_val: Value,
     state: Arc<AppState>,
     sessions: Arc<AcpSessionStore>,
+    user: UserContext,
+    auth_required: bool,
     headers: HeaderMap,
 ) -> Response {
     // For non-runs/create methods, fall back to regular JSON response.
     let method = req_val.get("method").and_then(Value::as_str).unwrap_or("");
     if method != "runs/create" {
-        return handle_rpc(req_val, state, sessions, headers).await;
+        return handle_rpc(req_val, state, sessions, user, auth_required, headers).await;
+    }
+
+    if auth_required && user.user_id == crate::session::ANONYMOUS_SESSION_OWNER {
+        return StatusCode::UNAUTHORIZED.into_response();
     }
 
     let req: JsonRpcRequest = match serde_json::from_value(req_val) {
@@ -111,7 +134,13 @@ async fn handle_rpc_stream(
     };
 
     // Start the run and subscribe to its event stream.
-    let resp = dispatch(req, Arc::clone(&state), Arc::clone(&sessions)).await;
+    let resp = dispatch(
+        req,
+        Arc::clone(&state),
+        Arc::clone(&sessions),
+        &user.user_id,
+    )
+    .await;
     if resp.error.is_some() {
         return (StatusCode::OK, Json(resp)).into_response();
     }

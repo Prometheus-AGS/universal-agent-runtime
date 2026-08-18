@@ -322,7 +322,7 @@ async fn boot_test_server_inner(
         // scheme-qualified value here yields `surrealkv://surrealkv:///tmp/…`,
         // which SurrealDB accepts as a path and then fails to open.
         format!(
-            "\nmemory:\n  enabled: true\n  db_path: \"{}\"\n  embedding_provider: \"local\"\n",
+            "\nmemory:\n  enabled: true\n  db_path: \"{}\"\n  embedding_provider: \"local\"\n  embedding_model: \"BAAI/bge-small-en-v1.5\"\n",
             memory_path.display()
         )
     } else {
@@ -333,6 +333,7 @@ async fn boot_test_server_inner(
         "security:\n  jwt_required: false\n  jwt_secret: \"{HARNESS_JWT_SECRET}\"\n\
          resilience:\n  rate_limit_enabled: false\n\
          persistence:\n  provider: \"surreal\"\n  database_url: \"surrealkv://{}\"\n\
+         acp:\n  enabled: true\n  path: \"/acp\"\n  auth_required: true\n\
          llm:\n  model: \"{llm_model}\"\n  base_url: \"{llm_base_url}\"\n\
          server:\n  host: \"127.0.0.1\"\n  port: {port}\n  shutdown_timeout_secs: 1\n\
          {memory_yaml}",

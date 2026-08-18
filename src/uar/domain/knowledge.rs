@@ -3,6 +3,12 @@
 use serde::{Deserialize, Deserializer, Serialize};
 use uuid::Uuid;
 
+pub(crate) const ANONYMOUS_KNOWLEDGE_OWNER: &str = "anonymous";
+
+fn default_knowledge_owner() -> String {
+    ANONYMOUS_KNOWLEDGE_OWNER.to_string()
+}
+
 /// SurrealDB / older clients may persist JSON `null` for string columns. Plain `String`
 /// rejects `null`; these helpers coerce null and empty to defaults so reads stay compatible.
 fn deserialize_kb_string<'de, D>(deserializer: D) -> Result<String, D::Error>
@@ -120,6 +126,8 @@ where
 pub struct KnowledgeBase {
     #[serde(default, deserialize_with = "deserialize_kb_string")]
     pub id: String,
+    #[serde(default = "default_knowledge_owner")]
+    pub owner_id: String,
     /// Unique human-readable name (e.g., "default", "technical-docs")
     #[serde(default, deserialize_with = "deserialize_kb_string")]
     pub name: String,
@@ -209,6 +217,8 @@ impl Default for KbConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KnowledgeChunk {
     pub id: Uuid,
+    #[serde(default = "default_knowledge_owner")]
+    pub owner_id: String,
     pub kb_id: String,
     /// Optional reference to the source document
     #[serde(default)]
@@ -231,6 +241,8 @@ pub struct KnowledgeMatch {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KnowledgeDocument {
     pub id: String,
+    #[serde(default = "default_knowledge_owner")]
+    pub owner_id: String,
     pub kb_id: String,
     pub filename: String,
     #[serde(default)]

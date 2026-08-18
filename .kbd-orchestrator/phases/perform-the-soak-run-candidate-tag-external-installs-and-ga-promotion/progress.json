@@ -1,28 +1,28 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 108,
-  "derivedRevision": 108,
+  "sourceRevision": 131,
+  "derivedRevision": 131,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 50
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 73
   },
   "conflictCount": 0,
   "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "parentPhase": null,
-  "last_updated": "2026-08-15T22:07:16.756649Z",
+  "last_updated": "2026-08-18T12:40:47.528833Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 14,
-  "changes_completed": 0,
+  "changes_completed": 2,
   "implementation_total": 14,
-  "implementation_completed": 0,
+  "implementation_completed": 2,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 0,
+      "completed": 2,
       "total": 14,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     "evidence": {
       "status": "PENDING",
@@ -44,8 +44,8 @@
     {
       "id": "fix-user-isolation-sessions-memory-kb",
       "title": "fix-user-isolation-sessions-memory-kb",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
@@ -110,8 +110,8 @@
     {
       "id": "complete-agui-event-parity",
       "title": "complete-agui-event-parity",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,

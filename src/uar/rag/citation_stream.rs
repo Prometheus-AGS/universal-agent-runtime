@@ -180,6 +180,7 @@ mod tests {
         KnowledgeMatch {
             chunk: KnowledgeChunk {
                 id: Uuid::new_v4(),
+                owner_id: "anonymous".to_string(),
                 kb_id: "kb-1".to_string(),
                 document_id: document_id.map(str::to_string),
                 content: content.to_string(),
