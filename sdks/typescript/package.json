@@ -27,7 +27,7 @@
     "directory": "sdks/typescript"
   },
   "keywords": ["sdk", "api", "client", "llm", "agent", "rag"],
-  "author": "Developer",
+  "author": "Prometheus AGS",
   "license": "MIT",
   "files": ["dist", "README.md", "LICENSE"],
   "engines": { "node": ">=20" },

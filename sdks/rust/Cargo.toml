@@ -4,6 +4,7 @@ version = "1.0.0"
 edition = "2024"
 description = "Rust SDK for universal-agent-runtime - HTTP client and embeddable runtime. MIT-licensed, including the 'embedded' feature that links the runtime crate directly."
 repository = "https://github.com/Prometheus-AGS/universal-agent-runtime"
+authors = ["Prometheus AGS"]
 license = "MIT"
 keywords = ["sdk", "client", "api", "llm", "agent"]
 categories = ["api-bindings", "web-programming"]
@@ -35,7 +36,7 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "mul
 tokio-stream = { version = "0.1", optional = true }
 
 # Embedded mode - re-export the core crate
-universal-agent-runtime = { path = "../..", optional = true, default-features = false }
+universal-agent-runtime = { version = "=1.0.0", path = "../..", optional = true, default-features = false }
 
 [dev-dependencies]
 tokio-test = "0.4"

@@ -5,7 +5,7 @@ The UAR TypeScript SDK (`sdks/typescript`) mirrors the Rust SDK surface and uses
 ## Installation
 
 ```bash
-npm install @prometheus-ags/universal-agent-runtime
+npm install @prometheus-ags/universal-agent-runtime-sdk
 ```
 
 ## Reference

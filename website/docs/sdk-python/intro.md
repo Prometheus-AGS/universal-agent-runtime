@@ -5,7 +5,7 @@ The UAR Python SDK (`sdks/python`) mirrors the Rust SDK surface and uses `httpx-
 ## Installation
 
 ```bash
-pip install universal-agent-runtime
+pip install universal-agent-runtime-sdk
 ```
 
 ## Reference

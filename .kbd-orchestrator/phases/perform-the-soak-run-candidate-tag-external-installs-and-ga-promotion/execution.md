@@ -63,7 +63,10 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
   attributed non-empty specialist output, recorded/live HTTP proof, independent
   review, and archive completed 2026-08-18
 - [DONE] `complete-agui-event-parity` — reconciled archived evidence
-- [PENDING] `resolve-sdk-distribution` — OpenSpec and operator decision
+- [DONE] `resolve-sdk-distribution` — OpenSpec; all three SDKs selected at
+  1.0.0/MIT, metadata/docs/local verification reconciled, legacy routine CI
+  retired, Rust publication prerequisite chain recorded, independently reviewed,
+  and archived 2026-08-18
 - [PENDING] `rewrite-readme-and-docs` — OpenSpec
 - [PENDING] `screen-by-screen-validation` — OpenSpec
 - [PENDING] `certify-operational-resilience` — OpenSpec evidence
