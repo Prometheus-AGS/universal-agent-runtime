@@ -51,7 +51,7 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
 ## PROGRESS LEDGER
 
 - [DONE] `fix-user-isolation-sessions-memory-kb` — OpenSpec; synced, independently verified, and archived 2026-08-18
-- [PENDING] `harden-jwt-defaults` — OpenSpec
+- [DONE] `harden-jwt-defaults` — OpenSpec; synced, independently verified, and archived 2026-08-18
 - [PENDING] `fix-skills-scope-semantics` — OpenSpec
 - [PENDING] `ship-skill-pack-install-path` — OpenSpec
 - [PENDING] `emit-rag-retrieval-events` — OpenSpec

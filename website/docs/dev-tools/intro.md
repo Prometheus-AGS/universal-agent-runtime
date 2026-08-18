@@ -36,7 +36,8 @@ This installs `uar-jwt-proxy` to `~/.cargo/bin/`.
 
 With no arguments it auto-discovers the same `config.yaml` UAR itself would
 use (`$CONFIG_FILE`, then `./config.yaml`, then `~/.uar/config.yaml`) and
-reads `security.jwt_secret` and `server.host`/`server.port` from it:
+reads `security.jwt_secret`, optional `security.jwt_issuer`/`jwt_audience`, and
+`server.host`/`server.port` from it:
 
 ```bash
 uar-jwt-proxy
@@ -55,6 +56,8 @@ port — every request that arrives at UAR already carries a valid
 | `--config` | `CONFIG_FILE` | (auto-discovered) | Path to a UAR `config.yaml` |
 | `--upstream` | `PROXY_UPSTREAM` | from config, else `http://127.0.0.1:1906` | UAR base URL to forward to |
 | `--secret` | `UAR_SECURITY__JWT_SECRET` | from config's `security.jwt_secret` | HS256 signing secret — must match the secret the target UAR instance was started with |
+| `--issuer` | `UAR_SECURITY__JWT_ISSUER` | from config's `security.jwt_issuer` | Optional `iss` claim — must match the target UAR configuration |
+| `--audience` | `UAR_SECURITY__JWT_AUDIENCE` | from config's `security.jwt_audience` | Optional `aud` claim — must match the target UAR configuration |
 | `--sub` | `PROXY_JWT_SUB` | `dev` | `sub` claim baked into the minted token |
 | `--name` | `PROXY_JWT_NAME` | `Local Dev` | `name` claim |
 | `--roles` | `PROXY_JWT_ROLES` | `admin,user` | Comma-separated `roles` claim |

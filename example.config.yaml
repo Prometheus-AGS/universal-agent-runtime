@@ -23,11 +23,22 @@ security:
   # Env: UAR_SECURITY__JWT_REQUIRED
   jwt_required: true
 
-  # The secret key used to sign and verify JWT tokens.
-  # WARNING: Change this in production!
-  # Default: "secret_key_change_me"
+  # The secret key used to sign and verify HS256 JWT tokens.
+  # Required at startup when jwt_required=true. Generate a deliberate value,
+  # for example with: openssl rand -hex 32
   # Env: UAR_SECURITY__JWT_SECRET
-  jwt_secret: "secret_key_change_me"
+  jwt_secret: "replace_with_a_deliberate_secret"
+
+  # Optional registered claims. When set, matching claims are required.
+  # Env: UAR_SECURITY__JWT_ISSUER / UAR_SECURITY__JWT_AUDIENCE
+  jwt_issuer: null
+  jwt_audience: null
+
+  # Reject tokens whose nbf (not-before) time is beyond jsonwebtoken's
+  # 60-second default clock-skew allowance.
+  # Default: true
+  # Env: UAR_SECURITY__JWT_VALIDATE_NBF
+  jwt_validate_nbf: true
 
   # Require X-UAR-Admin-Key on /api/uar/settings mutations (PUT/POST/DELETE).
   # Default: true. Set false only on trusted localhost for admin UI without a header.

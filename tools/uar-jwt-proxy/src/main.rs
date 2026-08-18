@@ -45,6 +45,14 @@ struct Cli {
     #[arg(long, env = "UAR_SECURITY__JWT_SECRET")]
     secret: Option<String>,
 
+    /// Optional issuer claim. Overrides `security.jwt_issuer` from the config file.
+    #[arg(long, env = "UAR_SECURITY__JWT_ISSUER")]
+    issuer: Option<String>,
+
+    /// Optional audience claim. Overrides `security.jwt_audience` from the config file.
+    #[arg(long, env = "UAR_SECURITY__JWT_AUDIENCE")]
+    audience: Option<String>,
+
     /// `sub` claim baked into the minted token.
     #[arg(long, env = "PROXY_JWT_SUB", default_value = "dev")]
     sub: String,
@@ -82,6 +90,10 @@ struct ServerSection {
 struct SecuritySection {
     #[serde(default)]
     jwt_secret: Option<String>,
+    #[serde(default)]
+    jwt_issuer: Option<String>,
+    #[serde(default)]
+    jwt_audience: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -90,6 +102,10 @@ struct Claims<'a> {
     name: &'a str,
     roles: Vec<&'a str>,
     exp: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    iss: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    aud: Option<&'a str>,
 }
 
 struct AppState {
@@ -100,6 +116,8 @@ struct AppState {
     name: String,
     roles: Vec<String>,
     ttl_secs: u64,
+    issuer: Option<String>,
+    audience: Option<String>,
 }
 
 static UAR_PROVIDER: OnceLock<Result<(), ()>> = OnceLock::new();
@@ -128,6 +146,8 @@ impl AppState {
             name: &self.name,
             roles: self.roles.iter().map(String::as_str).collect(),
             exp,
+            iss: self.issuer.as_deref(),
+            aud: self.audience.as_deref(),
         };
         Ok(encode(&Header::default(), &claims, &self.encoding_key)?)
     }
@@ -170,6 +190,17 @@ async fn main() -> Result<()> {
         .map(String::from)
         .collect();
 
+    let issuer = cli.issuer.clone().or_else(|| {
+        cfg.security
+            .as_ref()
+            .and_then(|security| security.jwt_issuer.clone())
+    });
+    let audience = cli.audience.clone().or_else(|| {
+        cfg.security
+            .as_ref()
+            .and_then(|security| security.jwt_audience.clone())
+    });
+
     let state = Arc::new(AppState {
         upstream: upstream.trim_end_matches('/').to_string(),
         client: reqwest::Client::builder()
@@ -182,6 +213,8 @@ async fn main() -> Result<()> {
         name: cli.name,
         roles,
         ttl_secs: cli.ttl_secs,
+        issuer,
+        audience,
     });
 
     let preview = state.mint_token()?;
@@ -485,6 +518,7 @@ fn build_ws_url(upstream_http: &str, path_and_query: &str) -> Result<reqwest::Ur
 #[cfg(test)]
 mod tests {
     use super::*;
+    use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode};
 
     #[test]
     fn rustcrypto_installation_is_idempotent() {
@@ -503,9 +537,26 @@ mod tests {
             name: "Test User".to_string(),
             roles: vec!["user".to_string()],
             ttl_secs: 60,
+            issuer: Some("uar-issuer".to_owned()),
+            audience: Some("uar-clients".to_owned()),
         };
 
         let token = state.mint_token().expect("token minting should succeed");
         assert_eq!(token.split('.').count(), 3);
+
+        #[derive(Deserialize)]
+        struct RegisteredClaims {
+            iss: String,
+            aud: String,
+        }
+        let mut validation = Validation::new(Algorithm::HS256);
+        validation.set_issuer(&["uar-issuer"]);
+        validation.set_audience(&["uar-clients"]);
+        let claims =
+            decode::<RegisteredClaims>(&token, &DecodingKey::from_secret(b"secret"), &validation)
+                .expect("proxy token must satisfy configured registered claims")
+                .claims;
+        assert_eq!(claims.iss, "uar-issuer");
+        assert_eq!(claims.aud, "uar-clients");
     }
 }

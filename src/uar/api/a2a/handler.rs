@@ -338,6 +338,7 @@ mod tests {
             jwks_url: None,
             jwt_issuer: None,
             jwt_audience: None,
+            jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
         }
     }

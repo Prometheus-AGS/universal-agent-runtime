@@ -6,6 +6,8 @@ use std::collections::HashMap;
 use std::env;
 use std::time::Duration;
 
+const FALLBACK_JWT_SECRET: &str = "fallback_secret_change_in_production";
+
 #[cfg(feature = "vault")]
 pub mod vault;
 
@@ -285,12 +287,15 @@ pub struct SecurityConfig {
     /// Optional JSON Web Key Set endpoint for asymmetric JWT verification.
     #[serde(default)]
     pub jwks_url: Option<String>,
-    /// Required JWT issuer when the JWKS lane is configured.
+    /// Required JWT issuer for either shared-secret or JWKS verification.
     #[serde(default)]
     pub jwt_issuer: Option<String>,
-    /// Required JWT audience when the JWKS lane is configured.
+    /// Required JWT audience for either shared-secret or JWKS verification.
     #[serde(default)]
     pub jwt_audience: Option<String>,
+    /// Validate a token's `nbf` claim when it is present.
+    #[serde(default = "SecurityConfig::default_jwt_validate_nbf")]
+    pub jwt_validate_nbf: bool,
     /// When true (default), `PUT`/`POST`/`DELETE` on `/api/uar/settings` require the
     /// `X-UAR-Admin-Key` header (value may be any non-empty use of the header today).
     /// Set to `false` for trusted local development only.
@@ -306,6 +311,7 @@ impl std::fmt::Debug for SecurityConfig {
             .field("jwks_url", &self.jwks_url)
             .field("jwt_issuer", &self.jwt_issuer)
             .field("jwt_audience", &self.jwt_audience)
+            .field("jwt_validate_nbf", &self.jwt_validate_nbf)
             .field(
                 "settings_mutation_auth_required",
                 &self.settings_mutation_auth_required,
@@ -315,8 +321,24 @@ impl std::fmt::Debug for SecurityConfig {
 }
 
 impl SecurityConfig {
+    const fn default_jwt_validate_nbf() -> bool {
+        true
+    }
+
     fn default_settings_mutation_auth_required() -> bool {
         true
+    }
+
+    pub(crate) fn validate(&self) -> Result<(), config::ConfigError> {
+        if self.jwt_required
+            && secrecy::ExposeSecret::expose_secret(&self.jwt_secret) == FALLBACK_JWT_SECRET
+        {
+            return Err(config::ConfigError::Message(
+                "security.jwt_secret uses the built-in fallback while security.jwt_required=true; set UAR_SECURITY__JWT_SECRET to a deliberate secret or explicitly disable JWT authentication"
+                    .to_owned(),
+            ));
+        }
+        Ok(())
     }
 }
 
@@ -1022,10 +1044,8 @@ impl AppConfig {
             .set_default("server.host", "0.0.0.0")?
             .set_default("security.jwt_required", true)?
             .set_default("security.settings_mutation_auth_required", true)?
-            .set_default(
-                "security.jwt_secret",
-                "fallback_secret_change_in_production",
-            )?
+            .set_default("security.jwt_secret", FALLBACK_JWT_SECRET)?
+            .set_default("security.jwt_validate_nbf", true)?
             .set_default("resilience.rate_limit_enabled", true)?
             .set_default("resilience.timeout_disabled", false)? // Default enabled (timeout_disabled=false)
             .set_default("resilience.requests_per_second", 10.0)?
@@ -1291,6 +1311,8 @@ impl AppConfig {
                 deserialized.llm.api_key = Some(api_key);
             }
         }
+
+        deserialized.security.validate()?;
 
         Ok(deserialized)
     }
@@ -1805,6 +1827,69 @@ persistence:
             !cfg.security.jwt_required,
             "--jwt-required=false must override security.jwt_required"
         );
+        let _ = fs::remove_file(cfg_path);
+    }
+
+    #[test]
+    fn required_jwt_rejects_the_built_in_fallback_secret() {
+        let mut path = std::env::temp_dir();
+        path.push(format!(
+            "uar-jwt-fallback-test-{}.yaml",
+            uuid::Uuid::new_v4()
+        ));
+        fs::write(
+            &path,
+            format!("security:\n  jwt_required: true\n  jwt_secret: \"{FALLBACK_JWT_SECRET}\"\n"),
+        )
+        .expect("test config should be writable");
+        let cli = Cli {
+            config: Some(path.to_string_lossy().to_string()),
+            ..base_cli().0
+        };
+
+        let error = AppConfig::load_with_cli(cli)
+            .expect_err("required JWT auth must reject the published fallback secret");
+        assert!(
+            error.to_string().contains("built-in fallback"),
+            "configuration error must identify the unsafe fallback: {error}"
+        );
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn anonymous_mode_explicitly_allows_the_built_in_fallback_secret() {
+        let mut path = std::env::temp_dir();
+        path.push(format!(
+            "uar-jwt-anonymous-test-{}.yaml",
+            uuid::Uuid::new_v4()
+        ));
+        fs::write(
+            &path,
+            format!("security:\n  jwt_required: false\n  jwt_secret: \"{FALLBACK_JWT_SECRET}\"\n"),
+        )
+        .expect("test config should be writable");
+        let cli = Cli {
+            config: Some(path.to_string_lossy().to_string()),
+            ..base_cli().0
+        };
+
+        let config = AppConfig::load_with_cli(cli)
+            .expect("an explicitly anonymous deployment may retain the unused fallback secret");
+        assert!(!config.security.jwt_required);
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn post_load_secret_resolution_is_revalidated() {
+        let (cli, cfg_path) = base_cli();
+        let mut config = AppConfig::load_with_cli(cli).expect("deliberate secret should load");
+        config.security.jwt_secret = FALLBACK_JWT_SECRET.to_owned().into();
+
+        let error = config
+            .security
+            .validate()
+            .expect_err("a post-load resolver must not replace the secret with the fallback");
+        assert!(error.to_string().contains("built-in fallback"));
         let _ = fs::remove_file(cfg_path);
     }
 }

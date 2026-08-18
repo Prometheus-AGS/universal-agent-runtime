@@ -183,8 +183,20 @@ impl ApiKeyStorage for InMemoryApiKeyStorage {
 pub struct ApiKeyService {
     db: Arc<dyn ApiKeyStorage>,
     jwt_secret: String,
+    jwt_issuer: Option<String>,
+    jwt_audience: Option<String>,
     /// JWT TTL in seconds for exchanged tokens.
     jwt_ttl_secs: i64,
+}
+
+#[derive(Serialize)]
+struct IssuedJwtClaims<'a> {
+    #[serde(flatten)]
+    user: &'a UserClaims,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    iss: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    aud: Option<&'a str>,
 }
 
 impl ApiKeyService {
@@ -193,8 +205,20 @@ impl ApiKeyService {
         Self {
             db,
             jwt_secret: jwt_secret.into(),
+            jwt_issuer: None,
+            jwt_audience: None,
             jwt_ttl_secs: 3600, // 1 hour default
         }
+    }
+
+    pub(crate) fn with_registered_claims(
+        mut self,
+        issuer: Option<String>,
+        audience: Option<String>,
+    ) -> Self {
+        self.jwt_issuer = issuer;
+        self.jwt_audience = audience;
+        self
     }
 
     /// Create a new service with a custom JWT TTL.
@@ -260,9 +284,14 @@ impl ApiKeyService {
                     tenant_id: None,
                     exp,
                 };
+                let issued_claims = IssuedJwtClaims {
+                    user: &claims,
+                    iss: self.jwt_issuer.as_deref(),
+                    aud: self.jwt_audience.as_deref(),
+                };
                 let token = jwt::encode(
                     &Header::default(),
-                    &claims,
+                    &issued_claims,
                     &EncodingKey::from_secret(self.jwt_secret.as_bytes()),
                 )
                 .map_err(|error| anyhow::anyhow!("issuing API-key exchange JWT: {error}"))?;
@@ -357,6 +386,7 @@ fn now_unix() -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use jsonwebtoken::{Algorithm, DecodingKey, Validation};
 
     fn make_service() -> ApiKeyService {
         let storage: Arc<dyn ApiKeyStorage> = Arc::new(InMemoryApiKeyStorage::new());
@@ -384,6 +414,49 @@ mod tests {
         // Exchange for JWT
         let jwt = svc.exchange_for_jwt(&resp.raw_key).await.unwrap();
         assert!(jwt.is_some(), "should produce a JWT");
+    }
+
+    #[tokio::test]
+    async fn exchanged_jwt_contains_configured_issuer_and_audience() {
+        #[derive(Deserialize)]
+        struct RegisteredClaims {
+            iss: String,
+            aud: String,
+        }
+
+        let storage: Arc<dyn ApiKeyStorage> = Arc::new(InMemoryApiKeyStorage::new());
+        let svc = ApiKeyService::new(storage, "test-secret").with_registered_claims(
+            Some("uar-issuer".to_owned()),
+            Some("uar-clients".to_owned()),
+        );
+        let created = svc
+            .create_key(
+                "user-claims",
+                CreateKeyRequest {
+                    name: "registered-claims".to_owned(),
+                    roles: None,
+                    expires_in_secs: None,
+                },
+            )
+            .await
+            .expect("API key must be created");
+        let token = svc
+            .exchange_for_jwt(&created.raw_key)
+            .await
+            .expect("API key exchange must run")
+            .expect("API key exchange must mint a JWT");
+
+        let mut validation = Validation::new(Algorithm::HS256);
+        validation.set_issuer(&["uar-issuer"]);
+        validation.set_audience(&["uar-clients"]);
+        let decoded = jwt::decode::<RegisteredClaims>(
+            token,
+            &DecodingKey::from_secret(b"test-secret"),
+            &validation,
+        )
+        .expect("the exchanged JWT must satisfy configured registered claims");
+        assert_eq!(decoded.claims.iss, "uar-issuer");
+        assert_eq!(decoded.claims.aud, "uar-clients");
     }
 
     #[tokio::test]

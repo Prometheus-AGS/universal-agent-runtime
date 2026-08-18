@@ -641,10 +641,16 @@ async fn start_server_with_listener(
     // Initialize API Key Service
     let api_key_storage: Arc<dyn uar::security::api_keys::ApiKeyStorage> =
         Arc::new(InMemoryApiKeyStorage::new());
-    let api_key_service = Arc::new(ApiKeyService::new(
-        Arc::clone(&api_key_storage),
-        config.security.jwt_secret.expose_secret(),
-    ));
+    let api_key_service = Arc::new(
+        ApiKeyService::new(
+            Arc::clone(&api_key_storage),
+            config.security.jwt_secret.expose_secret(),
+        )
+        .with_registered_claims(
+            config.security.jwt_issuer.clone(),
+            config.security.jwt_audience.clone(),
+        ),
+    );
     info!("API key service initialized");
 
     // Initialize Compiler Service
