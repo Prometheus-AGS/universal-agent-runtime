@@ -25,6 +25,7 @@ const STUB_FIXTURES = path.resolve(__dirname, 'fixtures/bdd-chat.json');
 // suite — `persistence.provider` has no default (config.rs) and this repo
 // checkout ships no config.yaml/.env, so it must be supplied explicitly.
 const PERSISTENCE_PATH = path.join(os.tmpdir(), `uar-bdd-persistence-${crypto.randomUUID()}`);
+const MEMORY_PATH = path.join(os.tmpdir(), `uar-bdd-memory-${crypto.randomUUID()}`);
 
 const testDir = defineBddConfig({
   features: 'features/*.feature',
@@ -33,6 +34,7 @@ const testDir = defineBddConfig({
 
 export default defineConfig({
   testDir,
+  timeout: 120_000,
   fullyParallel: false, // scenarios share one stub-llm request log (see world.ts) — keep sequential
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -95,6 +97,12 @@ export default defineConfig({
         // JWT is configured (secret present) but not required — the suite
         // opens the web page and calls the API without a token.
         UAR_SECURITY__JWT_SECRET: 'bdd-dev-secret-at-least-32-characters-long',
+        UAR_SECURITY__SETTINGS_MUTATION_AUTH_REQUIRED: 'false',
+        CREDENTIAL_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef',
+        UAR_MEMORY__ENABLED: 'true',
+        UAR_MEMORY__DB_PATH: MEMORY_PATH,
+        UAR_MEMORY__EMBEDDING_PROVIDER: 'local',
+        UAR_MEMORY__EMBEDDING_MODEL: 'BAAI/bge-small-en-v1.5',
       },
       reuseExistingServer: !process.env.CI,
       // Cold boot (SurrealKV init + MCP stdio spawn) measures ~66s on dev

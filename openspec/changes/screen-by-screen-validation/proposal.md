@@ -13,10 +13,13 @@ have BDD coverage today.
   skills add/enable/disable, KB hits in UI, JWT flow, memory levels,
   cross-user isolation.
 - Video-proof bundles minted from the BDD runs.
+- Repair product-screen defects observed by those live tests when the smallest
+  bounded fix is required for the stated primary function to work.
 
 ## Capabilities
 ### New Capabilities
 - `product-validation-evidence`
 
 ## Impact
-tests/bdd features and steps, certification bundle, validation report.
+tests/bdd features and steps, bounded frontend fixes for observed screen
+failures, certification bundle, validation report.

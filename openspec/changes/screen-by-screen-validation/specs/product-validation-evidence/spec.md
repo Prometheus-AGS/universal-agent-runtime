@@ -12,3 +12,8 @@ matrix (agents, skills, RAG, memory, auth, isolation, local-first).
 #### Scenario: Admin screen validation
 - **WHEN** the suite exercises an admin screen's primary function (e.g. create KB, disable skill, mint API key)
 - **THEN** the function succeeds end-to-end and the screen's record links its video segment
+
+#### Scenario: An observed screen defect blocks validation
+- **WHEN** a live primary-function scenario exposes a supported product defect
+- **THEN** the defect is recorded and repaired at the smallest bounded product
+  surface before that scenario may be reported as passing

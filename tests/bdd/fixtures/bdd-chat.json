@@ -152,5 +152,45 @@
       "kind": "content",
       "text": "Received \u2014 this reply renders as assistant content on the canvas, below your trailing ember bubble."
     }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Route Rust implementation, correctness, or safety questions to rust-reviewer. Route all other questions to general-purpose.\n\nUser request:\nReview this Rust ownership boundary\n\nYou MUST respond with exactly one of the following options (no extra text): general-purpose, rust-reviewer",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "rust-reviewer"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Route Rust implementation, correctness, or safety questions to rust-reviewer. Route all other questions to general-purpose.\n\nUser request:\nReview this Rust ownership boundary\n\nYou MUST respond with exactly one of the following options (no extra text): general-purpose, rust-reviewer",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "rust-reviewer"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Review this Rust ownership boundary",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "The ownership boundary is sound."
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Review this Rust ownership boundary",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "The ownership boundary is sound."
+    }
   }
 ]

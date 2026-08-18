@@ -61,7 +61,7 @@ export async function waitForDbReady(page: Page): Promise<void> {
 
 /** Starts a fresh conversation thread, same button `frontend/e2e/chat-*.spec.ts` already drives. */
 export async function startNewConversation(page: Page): Promise<void> {
-  const newConv = page.getByRole('button', { name: 'New conversation', exact: true });
+  const newConv = page.getByRole('button', { name: /New conversation|New thread/ }).first();
   await newConv.waitFor({ state: 'visible', timeout: 15_000 });
   await newConv.click();
   await page.locator('[aria-label="Message input"]').waitFor({ state: 'visible', timeout: 15_000 });

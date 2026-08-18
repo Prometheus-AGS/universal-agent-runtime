@@ -1,6 +1,5 @@
 import { useMemo } from "react";
-import { useEntityView, useGraphStore } from "@/platform/entities";
-import type { FilterClause, ViewDescriptor } from "@/platform/entities";
+import { useGraphStore } from "@/platform/entities";
 import type { SkillEntity } from "@/entities/types";
 
 const EMPTY_SKILLS: SkillEntity[] = [];
@@ -13,34 +12,23 @@ const EMPTY_SKILLS: SkillEntity[] = [];
  * and optional filtering by enabled status.
  */
 export function useSkills(searchTerm?: string, enabledFilter?: boolean) {
-  const filter = useMemo<FilterClause[] | undefined>(() => {
-    if (enabledFilter === undefined) return undefined;
-    return [{ field: "enabled", op: "eq" as const, value: enabledFilter }];
-  }, [enabledFilter]);
+  const skillMap = useGraphStore((state) => state.entities["Skill"]);
 
-  const view = useMemo<ViewDescriptor>(() => {
-    const baseFilter: FilterClause[] = filter ? [...filter] : [];
+  const items = useMemo(() => {
+    const needle = searchTerm?.trim().toLowerCase();
+    const all = Object.values(skillMap ?? {}) as unknown as SkillEntity[];
 
-    return {
-      filter: baseFilter.length > 0 ? baseFilter : undefined,
-      sort: [{ field: "title", direction: "asc" as const }],
-      search:
-        searchTerm && searchTerm.length > 0
-          ? { query: searchTerm, fields: ["title", "description"], minChars: 1 }
-          : undefined,
-    };
-  }, [searchTerm, filter]);
+    return all
+      .filter((skill) => {
+        if (enabledFilter !== undefined && skill.enabled !== enabledFilter) return false;
+        if (!needle) return true;
+        return skill.title.toLowerCase().includes(needle)
+          || skill.description.toLowerCase().includes(needle);
+      })
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }, [skillMap, searchTerm, enabledFilter]);
 
-  return useEntityView<SkillEntity>({
-    type: "Skill",
-    baseQueryKey: [
-      "skills",
-      searchTerm ?? "",
-      enabledFilter === undefined ? "" : String(enabledFilter),
-    ],
-    view,
-    mode: "local",
-  });
+  return { items: items.length > 0 ? items : EMPTY_SKILLS };
 }
 
 /**
