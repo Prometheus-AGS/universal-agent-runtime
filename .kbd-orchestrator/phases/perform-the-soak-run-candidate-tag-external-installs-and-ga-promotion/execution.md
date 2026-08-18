@@ -67,7 +67,9 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
   1.0.0/MIT, metadata/docs/local verification reconciled, legacy routine CI
   retired, Rust publication prerequisite chain recorded, independently reviewed,
   and archived 2026-08-18
-- [PENDING] `rewrite-readme-and-docs` — OpenSpec
+- [DONE] `rewrite-readme-and-docs` — OpenSpec; customer docs, rendered Mermaid,
+  runtime-aligned OpenAPI, exact root cleanup, focused verification,
+  independent review, canonical spec sync, and archive completed 2026-08-18
 - [PENDING] `screen-by-screen-validation` — OpenSpec
 - [PENDING] `certify-operational-resilience` — OpenSpec evidence
 - [PENDING] `produce-supply-chain-artifacts` — OpenSpec evidence

@@ -1,0 +1,129 @@
+{
+  "refinement_id": "a36d3ae6-8021-43ae-bfb0-ac9b4173567f",
+  "artifact_name": "rewrite-readme-and-docs",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-18T20:58:55Z",
+  "updated_at": "2026-08-18T21:20:34Z",
+  "current_iteration": 2,
+  "max_iterations": 5,
+  "goals": [
+    "Complete customer documentation without replacing accurate existing material.",
+    "Make broken links fail and keep OpenAPI metadata aligned with the runtime.",
+    "Preserve exact scope and disclose every verification limit."
+  ],
+  "constraints": [
+    {
+      "id": "docs-customer-coverage",
+      "severity": "blocking"
+    },
+    {
+      "id": "docs-broken-links-fail",
+      "severity": "blocking"
+    },
+    {
+      "id": "openapi-runtime-truth",
+      "severity": "blocking"
+    },
+    {
+      "id": "scope-and-evidence-honesty",
+      "severity": "high"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect"
+      ],
+      "constraints_satisfied": 1,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-18T21:12:27Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-18T21:19:40Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "7147f1a8",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-18T21:00:02Z"
+    },
+    {
+      "checkpoint_id": "a8673532",
+      "phase": "plan",
+      "iteration": 1,
+      "timestamp": "2026-08-18T21:00:03Z"
+    },
+    {
+      "checkpoint_id": "0db64966",
+      "phase": "execute",
+      "iteration": 1,
+      "timestamp": "2026-08-18T21:00:03Z"
+    },
+    {
+      "checkpoint_id": "d17682b5",
+      "phase": "reflect",
+      "iteration": 1,
+      "timestamp": "2026-08-18T21:17:58Z"
+    },
+    {
+      "checkpoint_id": "fc12d7ce",
+      "phase": "specify",
+      "iteration": 2,
+      "timestamp": "2026-08-18T21:18:08Z"
+    },
+    {
+      "checkpoint_id": "45356ee0",
+      "phase": "plan",
+      "iteration": 2,
+      "timestamp": "2026-08-18T21:18:17Z"
+    },
+    {
+      "checkpoint_id": "687a91b7",
+      "phase": "execute",
+      "iteration": 2,
+      "timestamp": "2026-08-18T21:13:02Z"
+    },
+    {
+      "checkpoint_id": "3b105a7b",
+      "phase": "reflect",
+      "iteration": 2,
+      "timestamp": "2026-08-18T21:19:55Z"
+    },
+    {
+      "checkpoint_id": "d2e44ba5",
+      "phase": "persist",
+      "iteration": 2,
+      "timestamp": "2026-08-18T21:20:17Z"
+    }
+  ],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-18T21:20:34Z"
+}

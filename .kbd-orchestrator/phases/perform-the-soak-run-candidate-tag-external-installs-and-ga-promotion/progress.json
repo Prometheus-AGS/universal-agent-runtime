@@ -1,26 +1,26 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 144,
-  "derivedRevision": 144,
+  "sourceRevision": 146,
+  "derivedRevision": 146,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 86
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 88
   },
   "conflictCount": 0,
   "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "parentPhase": null,
-  "last_updated": "2026-08-18T20:45:54.081058Z",
+  "last_updated": "2026-08-18T21:22:39.419449Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 14,
-  "changes_completed": 8,
+  "changes_completed": 9,
   "implementation_total": 14,
-  "implementation_completed": 8,
+  "implementation_completed": 9,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 8,
+      "completed": 9,
       "total": 14,
       "status": "IN_PROGRESS"
     },
@@ -132,8 +132,8 @@
     {
       "id": "rewrite-readme-and-docs",
       "title": "rewrite-readme-and-docs",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,

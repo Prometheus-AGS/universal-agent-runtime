@@ -4,6 +4,8 @@ Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent executio
 
 UAR is at version **1.0.0**. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
 
+Start with the [customer documentation site](https://prometheus-ags.github.io/universal-agent-runtime/docs/intro) for installation, architecture, SDK, skills, deployment, and security guides.
+
 ## What is supported
 
 - OpenAI-compatible and Anthropic execution paths have named Tier 1 capability evidence. Local FastEmbed embeddings are also Tier 1.
@@ -126,23 +128,18 @@ a local browser/desktop cache for threads and messages. Versioned server
 events reconcile the reactive entity graph; server entity versions win
 conflicts while unsent drafts remain client-owned.
 
-### Quality gates in CI
+### Local verification
 
-Every PR crosses: workspace build + tests, 60% line-coverage gate
-(`cargo-llvm-cov` + vitest v8), RAG evaluation (RAGAS + DeepEval against a
-frozen golden set), A2UI render-budget enforcement (16ms initial / 8ms
-streaming chunk), Storybook story-level functional + axe accessibility
-checks in headless Chromium, cross-renderer semantic conformance, frontend
-architecture-boundary checks, and reproducible-source verification.
-Nightly: `cargo-mutants` mutation testing and cross-ecosystem
-vulnerability scanning (`osv-scanner` + `grype`, blocking on HIGH+).
-Monthly: BEIR retrieval benchmarks published to `docs/rag-benchmark/`.
+Routine development checks run locally before a change is committed. GitHub
+Actions are reserved for deployment execution and deployment validation. The
+repository's tiered verification rules keep fast checks close to each edit and
+defer the full integration profile until phase completion.
 
 Read [the system architecture](docs/ARCHITECTURE.md), [frontend ownership rules](docs/frontend-architecture.md), the [AG-UI](docs/protocols/ag-ui-profile.md) and [A2UI](docs/protocols/a2ui-profile.md) profiles, and the [architecture decision records](docs/adr/index.md).
 
 ## Run locally
 
-Requirements: a current Rust toolchain, Node.js, and pnpm 10.33.0.
+Requirements: a current Rust toolchain, Node.js, and pnpm 11.15.0.
 
 ```bash
 cp .env.example .env
@@ -174,6 +171,51 @@ By default UAR requires a JWT on every API request (`security.jwt_required: true
 UAR can run as a server, container, or supervised local service. BossFang should currently supervise UAR out of process and use the OpenAI-compatible API first, adding A2A or AG-UI where richer task/event semantics are needed. A linked library should be reconsidered only after a narrow dependency-light kernel is extracted and profiling demonstrates a material IPC bottleneck. The detailed analysis is in the [BossFang integration guide](docs/librefang-integration.md#6-deployment-decision-library-or-supervised-service).
 
 Flint Gate owns edge auth enforcement, Flint Realtime Fabric owns durable realtime distribution, Flint Forge owns RLS-backed data APIs and edge execution, and Flint Platform Agent owns authenticated administration across these services. UAR retains inference, routing, agent execution, and governance ownership.
+
+```mermaid
+flowchart LR
+    Client[Client or operator] --> Gate[Flint Gate<br/><i>edge authentication</i>]
+    Gate --> UAR[Universal Agent Runtime<br/><i>inference and governed execution</i>]
+    UAR --> Fabric[Flint Realtime Fabric<br/><i>durable event distribution</i>]
+    Forge[Flint Forge<br/><i>RLS data APIs and edge execution</i>] --> Fabric
+    Admin[Flint Platform Agent<br/><i>authenticated administration</i>] --> Gate
+    Admin --> Forge
+```
+
+For a customer quickstart, use the [installation guide](website/docs/installation.md) and [deployment guide](website/docs/deployment.md).
+
+## SDKs
+
+UAR includes MIT-licensed 1.0 SDK source packages for Rust, Python, and
+TypeScript. They provide typed HTTP clients and streaming support for the
+runtime API. Registry publication is release-ordered; use these commands after
+the corresponding package is published:
+
+```text
+Rust:       universal-agent-runtime-sdk = "1"
+Python:     pip install universal-agent-runtime-sdk
+TypeScript: npm install @prometheus-ags/universal-agent-runtime-sdk
+```
+
+See the [SDK overview](website/docs/sdks.md) and the language guides for
+[Rust](website/docs/sdk-rust/intro.md),
+[Python](website/docs/sdk-python/intro.md), and
+[TypeScript](website/docs/sdk-typescript/intro.md).
+
+## Skills
+
+The `server-full` distribution includes the pinned Prometheus skill pack and
+discovers built-ins on a fresh database. To install the pack into the UAR cache
+without keeping a development checkout, run:
+
+```bash
+bash scripts/install-uar-skill-pack.sh
+```
+
+Built-in, API-created, and configuration-provisioned skills have distinct
+lifecycle rules. Configuration removal tombstones only configuration-owned
+skills and preserves an operator restore path. Read the [skills guide](website/docs/skills.md)
+and [skill-pack installation contract](docs/skill-pack-installation.md).
 
 ## Security
 
@@ -211,7 +253,7 @@ gh attestation verify oci://ghcr.io/prometheus-ags/universal-agent-runtime:<vers
   --repo Prometheus-AGS/universal-agent-runtime
 ```
 
-Nightly cross-ecosystem dependency and container-image vulnerability scanning (`osv-scanner` + `grype`, blocking on HIGH+ severity) runs via [`.github/workflows/vuln-scan.yml`](.github/workflows/vuln-scan.yml), independent of the weekly `cargo audit` in [`.github/workflows/security-audit.yml`](.github/workflows/security-audit.yml). Reproducible-source verification (two isolated offline builds compared byte-for-byte) runs on every CI run via the `Offline Reproducible Source` job in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+Release evidence includes source-bound security-audit results and signed supply-chain artifacts. Reproducible-source verification can be run locally with the procedure in [docs/build-reproducibility.md](docs/build-reproducibility.md).
 
 ## License
 
