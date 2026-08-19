@@ -1,0 +1,18 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/children/fix-provider-default-settings-consistency/**",
+    "src/uar/settings/manager.rs",
+    "src/uar/api/providers.rs",
+    "tests/settings_persistence.rs",
+    "openspec/changes/fix-provider-default-settings-consistency/**",
+    "openspec/changes/archive/2026-08-19-fix-provider-default-settings-consistency/**",
+    "openspec/specs/provider-model-settings-certification/spec.md",
+    ".refiner/artifacts/fix-provider-default-settings-consistency/**",
+    ".refiner/history/fix-provider-default-settings-consistency/**",
+    ".refiner/registry.json",
+    ".prometheus/**"
+  ],
+  "deniedPaths": [],
+  "inheritsConstraints": true,
+  "__note": "Edit allowedWritePaths to widen the child loop's write surface. .kbd-orchestrator/** and SCRATCHPAD.md are always allowed. Enforced advisorily by check-child-scope.sh."
+}

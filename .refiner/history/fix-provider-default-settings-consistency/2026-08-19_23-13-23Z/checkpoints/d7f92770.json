@@ -1,0 +1,35 @@
+{
+  "refinement_id": "6295d778-bc06-4da6-a571-c2f2ffb2195c",
+  "artifact_name": "fix-provider-default-settings-consistency",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-19T07:06:52Z",
+  "updated_at": "2026-08-19T07:07:45Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate the provider/settings consistency repair against its OpenSpec and KBD child contract"
+  ],
+  "constraints": [
+    {
+      "id": "provider-schema-consistency"
+    },
+    {
+      "id": "persist-before-live-publication"
+    },
+    {
+      "id": "durable-reconstruction"
+    },
+    {
+      "id": "child-scope-and-gates"
+    }
+  ],
+  "phases_completed": [
+    "specify"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null
+}

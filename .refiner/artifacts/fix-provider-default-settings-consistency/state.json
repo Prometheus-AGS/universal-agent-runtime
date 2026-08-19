@@ -1,0 +1,114 @@
+{
+  "refinement_id": "6295d778-bc06-4da6-a571-c2f2ffb2195c",
+  "artifact_name": "fix-provider-default-settings-consistency",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-19T07:06:52Z",
+  "updated_at": "2026-08-19T23:13:23Z",
+  "current_iteration": 3,
+  "max_iterations": 5,
+  "goals": [
+    "Validate the provider/settings consistency repair against its OpenSpec and KBD child contract"
+  ],
+  "constraints": [
+    {
+      "id": "provider-schema-consistency"
+    },
+    {
+      "id": "persist-before-live-publication"
+    },
+    {
+      "id": "durable-reconstruction"
+    },
+    {
+      "id": "child-scope-and-gates"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 3,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-19T22:45:08Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 3,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-19T22:51:10Z"
+    },
+    {
+      "iteration": 3,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-19T23:09:54Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "d7f92770",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-19T07:08:14Z"
+    },
+    {
+      "checkpoint_id": "ef21adce",
+      "phase": "plan",
+      "iteration": 1,
+      "timestamp": "2026-08-19T07:09:15Z"
+    },
+    {
+      "checkpoint_id": "74f09601",
+      "phase": "execute",
+      "iteration": 1,
+      "timestamp": "2026-08-19T22:36:18Z"
+    },
+    {
+      "checkpoint_id": "fd2d9ae4",
+      "phase": "reflect",
+      "iteration": 3,
+      "timestamp": "2026-08-19T23:10:10Z"
+    },
+    {
+      "checkpoint_id": "cf3037e1",
+      "phase": "persist",
+      "iteration": 3,
+      "timestamp": "2026-08-19T23:10:11Z"
+    }
+  ],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-19T23:13:23Z"
+}

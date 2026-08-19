@@ -1,17 +1,17 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 146,
-  "derivedRevision": 146,
+  "sourceRevision": 168,
+  "derivedRevision": 168,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 88
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 110
   },
   "conflictCount": 0,
   "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "parentPhase": null,
-  "last_updated": "2026-08-18T21:22:39.419449Z",
+  "last_updated": "2026-08-19T23:17:56.284188Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 14,
   "changes_completed": 9,
@@ -143,8 +143,8 @@
     {
       "id": "screen-by-screen-validation",
       "title": "screen-by-screen-validation",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "IN_PROGRESS",
+      "implementation_status": "IN_PROGRESS",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
@@ -196,6 +196,17 @@
       "blockers": []
     }
   ],
-  "children": {},
+  "children": {
+    "fix-provider-default-settings-consistency": {
+      "status": "DONE",
+      "changes_completed": 1,
+      "changes_total": 1,
+      "implementation_completed": 1,
+      "implementation_total": 1,
+      "certification_status": "NOT_TRACKED",
+      "handoff": null,
+      "completed_at": null
+    }
+  },
   "migrationStatus": null
 }

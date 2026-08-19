@@ -1,0 +1,55 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "provider-schema-consistency",
+      "description": "The settings schema accepts the runtime-supported local memory embedding provider while retaining fail-closed rejection of unknown providers.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused server-full settings initialization tests and scoped source inspection"
+      }
+    },
+    {
+      "id": "persist-before-live-publication",
+      "description": "A missing provider or failed durable default-provider write leaves live routing unchanged; success publishes only after persistence.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Three focused provider-handler tests plus the observed pre-fix failure"
+      }
+    },
+    {
+      "id": "durable-reconstruction",
+      "description": "A successful default selection is read by a fresh initialized SettingsManager over the same persistence layer.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Fresh-manager SurrealKV reconstruction test"
+      }
+    },
+    {
+      "id": "child-scope-and-gates",
+      "description": "Focused tests, Tier 0, package Clippy, formatting, scoped diff, and strict OpenSpec validation pass without edits outside the child contract.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded verification commands, schema validation, file hashes, and scoped diff inspection"
+      }
+    }
+  ],
+  "global_rules": [
+    "Report results only for server-full and transfer them to no other profile.",
+    "Do not run parent browser certification or outer release checks in this child.",
+    "Do not modify frontend, general startup policy, dependencies, migrations, or inactive overlapping changes."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints have observed deterministic evidence.",
+    "The verification receipt and refiner snapshot validate against their schemas.",
+    "History-free critic and judge both return PASS."
+  ]
+}

@@ -1,8 +1,5 @@
-# provider-model-settings-certification Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change certify-provider-model-settings-flow. Update Purpose after archive.
-## Requirements
 ### Requirement: Configuration routes real work
 Provider credentials/configuration, model defaults, and settings SHALL round-trip through their owning APIs and SHALL determine a real routed request. Values supported by resolved runtime configuration SHALL be accepted consistently by settings initialization and writes. When durable settings persistence is configured, a default-provider selection SHALL be published to live routing only after its durable selection succeeds. A deployment without a configured settings manager MAY retain registry-only default selection.
 

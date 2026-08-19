@@ -426,3 +426,23 @@ order. Either failure makes provenance unsuitable as the data-loss guard.
 contract. Moving API-created files elsewhere, accepting config records at the
 dynamic write boundary, or restoring last-writer-wins cache insertion would
 invalidate reconciliation safety and requires a new migration decision.
+
+---
+
+## 2026-08-19 — Persist provider defaults before publishing live state
+
+**Decision.** When a `SettingsManager` is configured, changing the default
+provider validates the target, persists the new provider ID, and only then
+publishes it to the live registry. A persistence failure leaves the live
+default unchanged. The existing registry-only behavior remains available when
+the server has no settings persistence configured.
+
+**Rationale.** Publishing first allowed the API to report a live default that
+could not survive restart. Persistence-first ordering makes the durable setting
+the commit point while retaining compatibility for deployments that explicitly
+run without a settings manager.
+
+**Uncomfortable constraint.** Provider deletion and default selection still
+span separate stores without a transaction. This change prevents publication
+after a failed settings write, but it does not make concurrent deletion and
+selection atomic.

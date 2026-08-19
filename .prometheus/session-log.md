@@ -451,3 +451,23 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   agent-seeded phase `progress.json` remains all-TODO because the runtime refuses
   to overwrite an unowned projection. Canonical phase status is complete; the
   next lifecycle action is `/kbd-new-phase`.
+
+## 2026-08-19 — Provider default/settings consistency child completed
+
+- Added `local` to the closed memory embedding-provider schema and observed the
+  supported-value test change from exit 101 to passing while the unknown-value
+  control continued to reject invalid configuration.
+- Changed default-provider selection to validate, persist when a settings
+  manager exists, and publish live state only after persistence succeeds.
+  Focused tests observed persistence failure and missing-provider paths preserve
+  both live and durable defaults, and a successful selection survives a fresh
+  settings manager.
+- Retained four chronological post-edit Tier 0 checks and a final server-full
+  check, package-scoped Clippy, formatting, scoped diff, and strict OpenSpec
+  validation. Parent browser and release tiers were not run in the child.
+- The artifact refiner converged after three iterations; independent
+  history-free critic and judge reviews passed the final candidate. The change
+  was archived and synced into `provider-model-settings-certification`.
+- Completed child reflection and canonical child exit. The control-plane endpoint
+  was unavailable, so the KBD commands committed locally. The outer phase is at
+  70/79 and resumes with `/opsx:apply screen-by-screen-validation`.

@@ -288,3 +288,16 @@ not prove the migration is safe.
 **Evidence lesson.** A required `error!` call in source is not an observed log.
 Install a test subscriber, run the exact test with `--nocapture`, and retain the
 literal level, message, fields, and passing result.
+
+## 2026-08-19 — JSON Schema validity is not refiner-state integrity
+
+**Observed defect.** A malformed constraint entry containing iteration metadata
+passed the permissive JSON Schema, while checkpoint history and registry
+identity had drifted from the active artifact. Early receipts also summarized
+Tier 0 instead of retaining the chronological checks run after each edit.
+
+**Working rule.** Validate refiner artifacts semantically as well as
+structurally: exact constraint IDs, iteration sequence, checkpoint references,
+active/history identity, and registry artifact identity must agree. Retain the
+actual chronological Tier 0 receipts so later checks cannot conceal an edit
+that was never checked at its required point.

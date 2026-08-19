@@ -1,17 +1,16 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 146,
-  "derivedRevision": 146,
+  "sourceRevision": 168,
+  "derivedRevision": 168,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 88
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 110
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-18T21:22:39.419449Z",
+  "updatedAt": "2026-08-19T23:17:56.284188Z",
   "cursor": [
-    "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-    "execute"
+    "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion"
   ],
   "root": {
     "type": "phase",
@@ -177,6 +176,28 @@
         },
         "children": [
           {
+            "type": "phase",
+            "id": "fix-provider-default-settings-consistency",
+            "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-provider-default-settings-consistency",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 1,
+              "total": 1
+            },
+            "children": [
+              {
+                "type": "change",
+                "id": "fix-provider-default-settings-consistency",
+                "status": "COMPLETE",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                }
+              }
+            ],
+            "annotations": []
+          },
+          {
             "type": "change",
             "id": "fix-user-isolation-sessions-memory-kb",
             "status": "COMPLETE",
@@ -260,7 +281,7 @@
           {
             "type": "change",
             "id": "screen-by-screen-validation",
-            "status": "PENDING",
+            "status": "IN_PROGRESS",
             "progress": {
               "done": 0,
               "total": 0
