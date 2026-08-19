@@ -10,6 +10,6 @@ Feature: Cross-screen identity, memory, and agent boundaries
     When I compare verified and anonymous credential requests
     Then the verified credential request succeeds and the anonymous request is rejected
 
-  Scenario: User, agent, and conversation memory remain private to their owner
-    When two verified subjects address the same session memory and knowledge identifiers
-    Then the owner sees every resource and the other subject sees none
+  Scenario: Global, agent, and user memory work while user state remains private
+    When two verified subjects address scoped memory and the same session and knowledge identifiers
+    Then all memory levels resolve and the owner sees private resources while the other subject sees none

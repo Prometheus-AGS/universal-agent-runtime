@@ -9,6 +9,7 @@ import {
   switchAgentViaUI,
   test,
 } from '../support/world';
+import { APP_BASE_URL } from '../support/ports';
 
 const { When, Then } = createBdd(test);
 const JWT_SECRET = 'bdd-dev-secret-at-least-32-characters-long';
@@ -21,6 +22,7 @@ interface CrossScreenEvidence {
     crossSessionDenied: boolean;
     sameKb: boolean;
     crossKbDenied: boolean;
+    scopedMemoryLevels: boolean;
     sameMemory: boolean;
     crossMemoryDenied: boolean;
     conversationPrivate: boolean;
@@ -28,6 +30,97 @@ interface CrossScreenEvidence {
 }
 
 const evidence = new WeakMap<Page, CrossScreenEvidence>();
+
+interface McpJsonRpcResponse {
+  id?: number;
+  result?: {
+    protocolVersion?: string;
+    content?: Array<{ type?: string; text?: string }>;
+  };
+  error?: unknown;
+}
+
+function parseMcpSseResponse(body: string, requestId: number): McpJsonRpcResponse {
+  for (const line of body.split('\n').reverse()) {
+    if (!line.startsWith('data:')) continue;
+    const candidate = JSON.parse(line.slice('data:'.length).trim()) as McpJsonRpcResponse;
+    if (candidate.id === requestId) return candidate;
+  }
+  throw new Error(`MCP response ${requestId} missing from SSE body: ${body}`);
+}
+
+async function openMemoryMcpClient(): Promise<{
+  call: (name: string, args: Record<string, unknown>) => Promise<unknown>;
+}> {
+  const endpoint = `${APP_BASE_URL}/mcp/memory`;
+  const baseHeaders = {
+    Accept: 'application/json, text/event-stream',
+    'Content-Type': 'application/json',
+  };
+  const initializeId = 1;
+  const initialized = await fetch(endpoint, {
+    method: 'POST',
+    headers: baseHeaders,
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: initializeId,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2025-06-18',
+        capabilities: {},
+        clientInfo: { name: 'uar-bdd-memory-scopes', version: '1.0.0' },
+      },
+    }),
+  });
+  if (!initialized.ok) {
+    throw new Error(`memory MCP initialize failed: ${initialized.status} ${await initialized.text()}`);
+  }
+  const sessionId = initialized.headers.get('mcp-session-id');
+  if (!sessionId) throw new Error('memory MCP initialize omitted mcp-session-id');
+  const initializeBody = parseMcpSseResponse(await initialized.text(), initializeId);
+  if (initializeBody.error) throw new Error(`memory MCP initialize error: ${JSON.stringify(initializeBody.error)}`);
+  const protocolVersion = initializeBody.result?.protocolVersion;
+  if (!protocolVersion) throw new Error('memory MCP initialize omitted protocolVersion');
+
+  const sessionHeaders = {
+    ...baseHeaders,
+    'Mcp-Session-Id': sessionId,
+    'MCP-Protocol-Version': protocolVersion,
+  };
+  const notification = await fetch(endpoint, {
+    method: 'POST',
+    headers: sessionHeaders,
+    body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+  });
+  if (notification.status !== 202) {
+    throw new Error(`memory MCP initialized notification failed: ${notification.status} ${await notification.text()}`);
+  }
+
+  let nextId = 2;
+  return {
+    call: async (name, args) => {
+      const id = nextId++;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: sessionHeaders,
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id,
+          method: 'tools/call',
+          params: { name, arguments: args },
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`memory MCP ${name} failed: ${response.status} ${await response.text()}`);
+      }
+      const rpc = parseMcpSseResponse(await response.text(), id);
+      if (rpc.error) throw new Error(`memory MCP ${name} error: ${JSON.stringify(rpc.error)}`);
+      const text = rpc.result?.content?.find((item) => item.type === 'text')?.text;
+      if (!text) throw new Error(`memory MCP ${name} omitted text content`);
+      return JSON.parse(text) as unknown;
+    },
+  };
+}
 
 function signedJwt(subject: string, tenantId = 'screen-validation-tenant'): string {
   const now = Math.floor(Date.now() / 1000);
@@ -88,11 +181,53 @@ Then('the verified credential request succeeds and the anonymous request is reje
   await expect(page.getByTestId('credentials-add')).toBeVisible();
 });
 
-When('two verified subjects address the same session memory and knowledge identifiers', async ({ page }) => {
+When('two verified subjects address scoped memory and the same session and knowledge identifiers', async ({ page }) => {
   const tokenA = signedJwt('screen-owner-a');
   const tokenB = signedJwt('screen-owner-b');
+  const scopeNonce = crypto.randomUUID();
+  const globalSecret = `screen-global-memory-${scopeNonce}`;
+  const agentSecret = `screen-agent-memory-${scopeNonce}`;
+  const userSecret = `screen-user-memory-${scopeNonce}`;
+  const scopeAgentId = `screen-scope-agent-${scopeNonce}`;
+  const memoryMcp = await openMemoryMcpClient();
+  const globalMemory = await memoryMcp.call('memory_add', {
+    content: globalSecret,
+    scope: 'global',
+    categories: ['screen-validation'],
+  }) as { content?: string; scope?: string };
+  const agentMemory = await memoryMcp.call('memory_add', {
+    content: agentSecret,
+    scope: 'agent',
+    agent_id: scopeAgentId,
+    categories: ['screen-validation'],
+  }) as { content?: string; scope?: string; agent_id?: string };
+  const userMemory = await memoryMcp.call('memory_add', {
+    content: userSecret,
+    scope: 'user',
+    user_id: 'screen-owner-a',
+    agent_id: 'default-agent',
+    categories: ['screen-validation'],
+  }) as { content?: string; scope?: string; user_id?: string; agent_id?: string };
+  const allMemories = await memoryMcp.call('memory_list', {}) as Array<Record<string, unknown>>;
+  const agentMemories = await memoryMcp.call('memory_list', {
+    agent_id: scopeAgentId,
+  }) as Array<Record<string, unknown>>;
+  const userMemories = await memoryMcp.call('memory_list', {
+    user_id: 'screen-owner-a',
+  }) as Array<Record<string, unknown>>;
+  const scopedMemoryLevels = globalMemory.scope === 'global'
+    && globalMemory.content === globalSecret
+    && agentMemory.scope === 'agent'
+    && agentMemory.agent_id === scopeAgentId
+    && userMemory.scope === 'user'
+    && userMemory.user_id === 'screen-owner-a'
+    && allMemories.some((row) => row.content === globalSecret && row.scope === 'global')
+    && agentMemories.some((row) => row.content === agentSecret
+      && row.scope === 'agent' && row.agent_id === scopeAgentId)
+    && userMemories.some((row) => row.content === userSecret
+      && row.scope === 'user' && row.user_id === 'screen-owner-a');
   await page.goto('/about');
-  const result = await page.evaluate(async ({ tokenA, tokenB }) => {
+  const result = await page.evaluate(async ({ tokenA, tokenB, userSecret, scopedMemoryLevels }) => {
     async function jsonRequest(
       path: string,
       token: string,
@@ -144,15 +279,7 @@ When('two verified subjects address the same session memory and knowledge identi
     const sameKb = await jsonRequest(`/api/knowledge/${kbId}`, tokenA);
     const crossKb = await jsonRequest(`/api/knowledge/${kbId}`, tokenB);
 
-    const secret = `screen-memory-${crypto.randomUUID()}`;
-    const memoryCreate = await jsonRequest('/api/memory', tokenA, {
-      method: 'POST',
-      body: JSON.stringify({ content: secret, categories: ['screen-validation'], agent_id: 'default-agent' }),
-    });
-    if (memoryCreate.status !== 200) {
-      throw new Error(`memory creation failed: ${JSON.stringify(memoryCreate)}`);
-    }
-    const memoryQuery = new URLSearchParams({ q: secret, agent_id: 'default-agent' });
+    const memoryQuery = new URLSearchParams({ q: userSecret, agent_id: 'default-agent' });
     const sameMemory = await jsonRequest(`/api/memory?${memoryQuery}`, tokenA);
     const crossMemory = await jsonRequest(`/api/memory?${memoryQuery}`, tokenB);
 
@@ -178,16 +305,18 @@ When('two verified subjects address the same session memory and knowledge identi
       crossSessionDenied: crossSession.status === 404,
       sameKb: sameKb.status === 200,
       crossKbDenied: crossKb.status === 404,
-      sameMemory: sameRows?.some((row) => row.content === secret
+      scopedMemoryLevels,
+      sameMemory: sameRows?.some((row) => row.content === userSecret
+        && row.scope === 'User'
         && row.user_id === 'screen-owner-a'
         && row.agent_id === 'default-agent') === true,
-      crossMemoryDenied: crossRows?.every((row) => row.content !== secret) === true,
+      crossMemoryDenied: crossRows?.every((row) => row.content !== userSecret) === true,
       conversationPrivate: samePolicy.status === 200
         && (samePolicy.body as { memory_enabled?: boolean })?.memory_enabled === false
         && crossPolicy.status === 200
         && crossPolicy.body === null,
     };
-  }, { tokenA, tokenB });
+  }, { tokenA, tokenB, userSecret, scopedMemoryLevels });
 
   evidence.set(page, { ...evidence.get(page), isolation: result });
   await page.goto('/admin/memory');
@@ -196,12 +325,13 @@ When('two verified subjects address the same session memory and knowledge identi
   await page.getByRole('button', { name: 'apply' }).click();
 });
 
-Then('the owner sees every resource and the other subject sees none', async ({ page }) => {
+Then('all memory levels resolve and the owner sees private resources while the other subject sees none', async ({ page }) => {
   expect(evidence.get(page)?.isolation).toEqual({
     sameSession: true,
     crossSessionDenied: true,
     sameKb: true,
     crossKbDenied: true,
+    scopedMemoryLevels: true,
     sameMemory: true,
     crossMemoryDenied: true,
     conversationPrivate: true,
