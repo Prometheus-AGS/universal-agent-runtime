@@ -1,0 +1,28 @@
+{
+  "refinement_id": "4986cce8-38bc-42be-9f64-e11b4026325e",
+  "artifact_name": "fix-frontend-pnpm-lock-consistency",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-20T20:18:09Z",
+  "updated_at": "2026-08-20T20:52:28Z",
+  "current_iteration": 3,
+  "max_iterations": 5,
+  "goals": ["Commit a frozen-installable nested frontend lock for the exact workspace while preserving unrelated common resolutions"],
+  "constraints": [{"id":"frozen-nested-lock"},{"id":"fail-closed-stale-control"},{"id":"minimum-resolution-delta"},{"id":"bounded-child-scope"},{"id":"truthful-verification"}],
+  "phases_completed": ["execute"],
+  "convergence_status": "running",
+  "iteration_history": [
+    {"iteration":1,"phases_completed":["specify","plan","execute","reflect"],"constraints_satisfied":2,"constraints_total":5,"decision":"continue","timestamp":"2026-08-20T20:41:14Z"},
+    {"iteration":2,"phases_completed":["execute","reflect"],"constraints_satisfied":4,"constraints_total":5,"decision":"continue","timestamp":"2026-08-20T20:52:28Z"}
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {"checkpoint_id":"c4f0f8bb","phase":"specify","iteration":1,"timestamp":"2026-08-20T20:18:09Z"},
+    {"checkpoint_id":"2d55c8cc","phase":"plan","iteration":1,"timestamp":"2026-08-20T20:18:09Z"},
+    {"checkpoint_id":"dfa99139","phase":"execute","iteration":1,"timestamp":"2026-08-20T20:18:09Z"},
+    {"checkpoint_id":"20c5bf6b","phase":"reflect","iteration":1,"timestamp":"2026-08-20T20:41:14Z"},
+    {"checkpoint_id":"360e8d2b","phase":"execute","iteration":2,"timestamp":"2026-08-20T20:41:14Z"},
+    {"checkpoint_id":"0ce3bc7a","phase":"reflect","iteration":2,"timestamp":"2026-08-20T20:52:28Z"}
+  ],
+  "prior_cycle_id": null
+}

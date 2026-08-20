@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-20T20:18:09Z",
+  "variants": [
+    {
+      "name": "frontend-pnpm-lock-consistency-verification",
+      "file": ".refiner/artifacts/fix-frontend-pnpm-lock-consistency/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Bounded verification receipt for nested frontend frozen-lock consistency, stale-lock rejection, minimum resolver movement, focused frontend compatibility, and child scope"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "The accepted nested lock digest remains unchanged across frozen metadata, clean full installation, Tier 0, and focused SSE unit commands.",
+      "The stale committed nested lock fails closed with the exact pinned submodule importer mismatch.",
+      "Direct HEAD audit restores three noncausal common snapshot bodies and retains only three peer-context mutations caused by the pinned manifests.",
+      "Parent browser certification remains deferred to a new immutable child commit.",
+      "The installed artifact-refiner adapter is incomplete; validation uses the repository's canonical imported schemas and accepted on-disk artifact contract."
+    ]
+  }
+}

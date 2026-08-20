@@ -357,3 +357,21 @@ sync importer also required a direct ws 8.21.1 package record.
 installation. A receipt's displayed command must be capable of emitting every
 recorded output line; prose describing an omitted parser or setup step is not a
 replayable command.
+
+## 2026-08-20 — each active pnpm workspace owns its lock boundary
+
+**Observed defect.** The repository-root lock passed its checks while the
+independently active `frontend/` workspace rejected frozen installation after a
+pinned submodule manifest changed. Root-lock success did not describe the
+nested command's dependency graph.
+
+**Working rule.** Hash and frozen-test the lock belonging to the command's
+actual pnpm workspace root. For a nested lock repair, classify every mutation
+against the committed manifest or submodule-manifest edge that caused it and
+preserve unrelated resolutions.
+
+**Resolver lesson.** Two clean regenerations can agree on resolver drift that
+is not required by the source change. Retain an exact candidate-to-raw patch and
+compare against `HEAD`. Pnpm importer projections can also come from
+auto-installed peers, so resolve evidence anchors against the manifest section
+that actually declares the edge rather than assuming the importer key names it.

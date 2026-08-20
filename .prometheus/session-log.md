@@ -513,3 +513,20 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - TypeScript Tier 0, strict active OpenSpec, canonical spec validation, scoped
   diff checks, artifact schemas, and final history-free critic and judge reviews
   passed. Parent browser certification was not run in this child.
+
+## 2026-08-20 — Frontend pnpm lock consistency child completed
+
+- Reconciled the independently active `frontend/pnpm-lock.yaml` against all ten
+  current workspace projects without changing manifests, product source, the
+  root lock, or the entity-management gitlink. The final nested digest is
+  `43c00bbfe5b85e42c12a5fda74ab987750863794f00104a12ecd24a59f822593`.
+- Retained the stale-lock negative control: pnpm 11.15.0 exited 1 with
+  `ERR_PNPM_OUTDATED_LOCKFILE`. Frozen metadata and clean empty-dependency-tree
+  installs then exited 0 and preserved both lock digests.
+- The final fail-closed audit classifies all 693 lock mutations against 44 real
+  manifest edges, including three pnpm auto-peer projections, with zero
+  unclassified records and no unrelated common package-body movement.
+- Typecheck, lint, the focused four-test SSE unit, strict active OpenSpec,
+  canonical spec validation, refiner integrity, and final history-free critic
+  and judge reviews passed. Parent browser certification was not run in this
+  child.
