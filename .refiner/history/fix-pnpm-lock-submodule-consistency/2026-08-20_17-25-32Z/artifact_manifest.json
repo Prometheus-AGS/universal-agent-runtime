@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-20T16:59:49Z",
+  "variants": [
+    {
+      "name": "pnpm-lock-consistency-verification",
+      "file": ".refiner/artifacts/fix-pnpm-lock-submodule-consistency/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Bounded verification receipt for frozen root-lock consistency, stale-lock rejection, minimum resolution movement, and child scope"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "The corrected root lock digest remains unchanged across frozen lock-only and clean full installation.",
+      "The stale lock fails closed with the exact workspace importer mismatch.",
+      "Direct HEAD audit restores the noncausal minimatch and y-webrtc edges while retaining both required ws versions.",
+      "Parent browser certification remains deferred to a new immutable source commit.",
+      "The first artifact review blocked the candidate; fresh corrected-candidate critic and judge reviews both pass."
+    ]
+  }
+}

@@ -1,11 +1,11 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 168,
-  "derivedRevision": 168,
+  "sourceRevision": 204,
+  "derivedRevision": 204,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 110
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 146
   },
   "conflictCount": 0,
   "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
@@ -26,7 +26,7 @@
   "implementationCompleted": 70,
   "implementationTotal": 79,
   "planRevision": 7,
-  "revision": 168,
+  "revision": 204,
   "exactNextCommand": "/opsx:apply screen-by-screen-validation",
-  "updatedAt": "2026-08-19T23:17:56.284188Z"
+  "updatedAt": "2026-08-20T17:32:42.084803Z"
 }

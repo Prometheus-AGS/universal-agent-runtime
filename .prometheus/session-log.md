@@ -496,3 +496,20 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   result and does not claim a full-suite pass or alter the unrelated failures.
 - Recovery remains resume-only. No checkpoint replay or lossless-delivery claim
   was added for events emitted while the browser was disconnected.
+
+## 2026-08-20 — Root pnpm lock consistency child completed
+
+- Reconciled the root lock with entity-management pin `0352c83` without
+  changing a manifest or Git link. The final lock digest is
+  `645e3af883e8d62b74d13be20453c083431ed3cf2ef3ca20a5b1a84152273350`.
+- Independent review rejected the first frozen-compatible candidate because it
+  moved two unrelated edges. The corrected graph preserves config-array on
+  minimatch 10.2.5 and y-webrtc on ws 8.21.0 while retaining ws 8.21.1 for the
+  changed sync importer's direct pin.
+- A clean full frozen install from empty dependency directories validated 1,482
+  supply-chain entries, linked 1,345 packages, exited 0, and left the lock hash
+  unchanged. An earlier clean correction failed closed on a missing ws 8.21.1
+  record; that receipt remains part of the evidence.
+- TypeScript Tier 0, strict active OpenSpec, canonical spec validation, scoped
+  diff checks, artifact schemas, and final history-free critic and judge reviews
+  passed. Parent browser certification was not run in this child.

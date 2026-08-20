@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 168,
-  "derivedRevision": 168,
+  "sourceRevision": 204,
+  "derivedRevision": 204,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 110
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 146
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-19T23:17:56.284188Z",
+  "updatedAt": "2026-08-20T17:32:42.084803Z",
   "cursor": [
     "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion"
   ],
@@ -175,6 +175,50 @@
           "total": 14
         },
         "children": [
+          {
+            "type": "phase",
+            "id": "fix-embedded-sse-offline-reconnect",
+            "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-embedded-sse-offline-reconnect",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 1,
+              "total": 1
+            },
+            "children": [
+              {
+                "type": "change",
+                "id": "fix-embedded-sse-offline-reconnect",
+                "status": "COMPLETE",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                }
+              }
+            ],
+            "annotations": []
+          },
+          {
+            "type": "phase",
+            "id": "fix-pnpm-lock-submodule-consistency",
+            "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-pnpm-lock-submodule-consistency",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 1,
+              "total": 1
+            },
+            "children": [
+              {
+                "type": "change",
+                "id": "fix-pnpm-lock-submodule-consistency",
+                "status": "COMPLETE",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                }
+              }
+            ],
+            "annotations": []
+          },
           {
             "type": "phase",
             "id": "fix-provider-default-settings-consistency",

@@ -336,3 +336,24 @@ product test even though the package code was compatible.
 while expressing the tested consumer range in every enforcing workspace
 manifest. A source submodule cannot claim consumer compatibility if its nested
 engine rejects the consumer's package manager before build.
+
+## 2026-08-20 — lock regeneration is not a minimum-delta proof
+
+**Observed defect.** A frozen-compatible root lock candidate and two clean
+regenerations agreed on dependency movements that were unrelated to the pinned
+submodule manifest. Comparing only those generated candidates made the shared
+drift look causal. Direct comparison with `HEAD` exposed the unrelated
+config-array/minimatch and y-webrtc/ws movements.
+
+**Working rule.** For a lock-only repair, classify every `HEAD`-to-candidate
+mutation by the manifest change that caused it. Preserve unchanged-importer
+edges even when a fresh resolver would legally select a newer version.
+
+**Observed control.** After restoring the old y-webrtc edge, lock-only frozen
+validation still passed but a clean full install failed because the changed
+sync importer also required a direct ws 8.21.1 package record.
+
+**Evidence rule.** Run both metadata-only and empty-dependency-tree frozen
+installation. A receipt's displayed command must be capable of emitting every
+recorded output line; prose describing an omitted parser or setup step is not a
+replayable command.
