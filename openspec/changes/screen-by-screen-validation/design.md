@@ -79,10 +79,12 @@ evidence required here.
 
 The stub LLM fixtures provide exact expected answers. The suite creates agents,
 skills, and knowledge bases through real APIs and drives the visible chat UI.
-Runtime SSE assertions inject or trigger known events through existing test
-hooks and verify the live surface changes without reload. Local-first assertions
-create a thread/message, reload the page, and observe the same PGlite-backed
-state; offline mode must expose the shipped offline banner.
+Runtime SSE assertions trigger a real knowledge mutation while the embedded
+stream is disconnected, then require the replacement connection's authoritative
+snapshot to reconcile the missed state without a synthetic post-reconnect
+event or page reload. Local-first assertions create a thread/message, reload
+the page, and observe the same PGlite-backed state; offline mode must expose the
+shipped offline banner.
 
 ### 5. Bind the certification bundle to a clean implementation commit
 

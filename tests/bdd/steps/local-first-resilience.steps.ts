@@ -160,28 +160,31 @@ When('the registered embedded sync stream reports an error and reconnects', asyn
     if (!source) throw new Error('registered embedded EventSource not captured');
     source.dispatchEvent(new Event('error'));
   });
+  const update = await page.evaluate(async ({ entityId, recoveredName, previousCount }) => {
+    const response = await fetch(`/api/knowledge/${encodeURIComponent(entityId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: recoveredName }),
+    });
+    const body = await response.json() as { name?: string };
+    const sourceCount = (window as EmbeddedSseWindow).__bddEmbeddedSse?.sources.length ?? 0;
+    return { status: response.status, name: body.name, sourceCount, previousCount };
+  }, {
+    entityId: current.syncEntityId,
+    recoveredName: current.syncRecoveredName,
+    previousCount: current.syncSourceCount,
+  });
+  expect(update).toEqual({
+    status: 200,
+    name: current.syncRecoveredName,
+    sourceCount: current.syncSourceCount,
+    previousCount: current.syncSourceCount,
+  });
   await reconnect;
   await page.waitForFunction((previousCount) => {
     const sources = (window as EmbeddedSseWindow).__bddEmbeddedSse?.sources ?? [];
     return sources.length === previousCount + 1 && sources.at(-1)?.readyState === 1;
   }, current.syncSourceCount, { timeout: 15_000 });
-  await page.evaluate(({ entityId, recoveredName }) => {
-    const source = (window as EmbeddedSseWindow).__bddEmbeddedSse?.sources.at(-1);
-    if (!source) throw new Error('replacement embedded EventSource not captured');
-    source.dispatchEvent(new MessageEvent('entity.change', {
-      data: JSON.stringify({
-        table: 'knowledge_bases',
-        action: 'update',
-        id: entityId,
-        record: {
-          id: entityId,
-          name: recoveredName,
-          description: 'Embedded SSE fixture',
-          document_count: 0,
-        },
-      }),
-    }));
-  }, { entityId: current.syncEntityId, recoveredName: current.syncRecoveredName });
   evidence.set(page, { ...evidence.get(page), reconnected: true });
 });
 

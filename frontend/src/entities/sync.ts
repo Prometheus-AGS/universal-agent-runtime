@@ -1,5 +1,5 @@
 // frontend/src/entities/sync.ts
-import { getRealtimeManager } from "@/platform/entities";
+import { getRealtimeManager, useGraphStore } from "@/platform/entities";
 import type {
   AdapterStatus,
   RealtimeAdapter,
@@ -32,6 +32,12 @@ interface EmbeddedSsePayload {
   id?: string;
   action?: string;
   record?: Record<string, unknown>;
+  ts?: string;
+}
+
+interface EmbeddedSseSnapshotPayload {
+  table?: string;
+  records?: unknown[];
   ts?: string;
 }
 
@@ -123,6 +129,50 @@ export function createEmbeddedSseAdapter(
         }
       };
 
+      const handleEntitySnapshot = (event: Event) => {
+        try {
+          const raw = JSON.parse(
+            (event as MessageEvent).data,
+          ) as EmbeddedSseSnapshotPayload;
+          const type = EMBEDDED_ENTITY_TYPES.get(raw.table ?? "");
+          if (!type || !Array.isArray(raw.records)) return;
+
+          const records = raw.records.map((record) => {
+            if (
+              typeof record !== "object" ||
+              record === null ||
+              Array.isArray(record) ||
+              typeof (record as Record<string, unknown>).id !== "string" ||
+              (record as Record<string, unknown>).id === ""
+            ) {
+              throw new Error("invalid embedded SSE snapshot record");
+            }
+            return record as Record<string, unknown> & { id: string };
+          });
+          const snapshotIds = new Set(records.map(({ id }) => id));
+          const currentIds = Object.keys(
+            useGraphStore.getState().entities[type] ?? {},
+          );
+
+          handler({
+            changes: [
+              ...records.map(({ id, ...data }) => ({
+                op: "upsert" as const,
+                type,
+                id,
+                data: { id, ...data },
+              })),
+              ...currentIds
+                .filter((id) => !snapshotIds.has(id))
+                .map((id) => ({ op: "delete" as const, type, id })),
+            ],
+            timestamp: raw.ts,
+          });
+        } catch {
+          // Skip malformed snapshots rather than deleting local entities.
+        }
+      };
+
       const scheduleReconnect = () => {
         if (stopped || reconnectTimer) return;
         const delay = Math.min(
@@ -134,6 +184,7 @@ export function createEmbeddedSseAdapter(
 
       const closeSource = (source: EventSource) => {
         source.removeEventListener("entity.change", handleEntityChange);
+        source.removeEventListener("entity.snapshot", handleEntitySnapshot);
         source.onopen = null;
         source.onerror = null;
         source.close();
@@ -160,6 +211,7 @@ export function createEmbeddedSseAdapter(
           emitStatus("connected");
         };
         source.addEventListener("entity.change", handleEntityChange);
+        source.addEventListener("entity.snapshot", handleEntitySnapshot);
         source.onerror = () => {
           if (stopped || eventSource !== source) return;
           emitStatus("error");

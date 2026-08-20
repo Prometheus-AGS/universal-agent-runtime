@@ -2601,6 +2601,25 @@ async fn sync_stream_handler(
         let mut interval = tokio::time::interval(Duration::from_secs(5));
         let mut last_check = chrono::Utc::now().to_rfc3339();
 
+        if let Some(ref persistence) = persistence {
+            match persistence.list_knowledge_bases(&user.user_id).await {
+                Ok(kbs) => {
+                    yield Ok::<_, std::convert::Infallible>(
+                        Event::default().event("entity.snapshot").data(
+                            serde_json::json!({
+                                "table": "knowledge_bases",
+                                "records": kbs,
+                                "ts": last_check
+                            }).to_string()
+                        )
+                    );
+                }
+                Err(e) => {
+                    tracing::debug!(error = %e, "sync_stream: failed to snapshot knowledge_bases");
+                }
+            }
+        }
+
         // Send initial connected event so the client knows the stream is live.
         yield Ok::<_, std::convert::Infallible>(
             Event::default()
