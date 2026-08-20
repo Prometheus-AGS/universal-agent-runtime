@@ -176,7 +176,7 @@ async function validateProviders(page: Page): Promise<void> {
       && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Set as default', exact: true }).click();
   expect((await restored).ok()).toBeTruthy();
-  await expect(page.getByText('openai/gpt-5.4-mini', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('provider-row-openai')).toContainText('default');
 }
 
 async function validateCredentials(page: Page): Promise<void> {
