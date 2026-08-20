@@ -18,4 +18,4 @@
 
 - [x] 4.1 At child completion, run and record `pnpm build`, `pnpm test`, and the fresh-process embedded SSE browser scenario; verify the browser observes a second real stream request and one visible post-reconnect update without reload or manual replay
 - [x] 4.2 Write `verification.md` with actual positive and negative command/output rows, append the transport-proof lesson to `.prometheus`, and verify strict OpenSpec, artifact-refiner, JSON/schema, scope, and `git diff --check` gates pass
-- [ ] 4.3 Obtain independent artifact critic and judge approval, correct any blocker, then complete KBD change/child reflection and handoff with a commit that excludes parent certification artifacts and unrelated user changes
+- [x] 4.3 Obtain independent artifact critic and judge approval, correct every blocker, commit only the child implementation/evidence while excluding parent certification artifacts and unrelated user changes, and hand control to OpenSpec archive plus KBD reflection
