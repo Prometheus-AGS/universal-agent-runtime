@@ -11,7 +11,7 @@ import {
   test,
   waitForDbReady,
 } from '../support/world';
-import { createTestAgent } from '../support/api';
+import { createTestAgent, ensureSecondTestProvider } from '../support/api';
 
 const { Given, When, Then } = createBdd(test);
 const JWT_SECRET = 'bdd-dev-secret-at-least-32-characters-long';
@@ -156,12 +156,27 @@ async function validateProtocols(page: Page): Promise<void> {
 }
 
 async function validateProviders(page: Page): Promise<void> {
+  await ensureSecondTestProvider();
   await openAdmin(page, 'providers');
   await expect(page.getByTestId('providers-heading')).toHaveText(/providers/i);
-  const configured = page.getByTestId('provider-row-openai');
-  await expect(configured).toBeVisible();
-  await configured.click();
+  const alternate = page.getByTestId('provider-row-bdd-provider-b');
+  await expect(alternate).toBeVisible();
+  await alternate.click();
   await expect(page.getByText('Configured', { exact: true }).first()).toBeVisible();
+  const selected = page.waitForResponse((response) =>
+    response.url().endsWith('/api/uar/providers/bdd-provider-b/default')
+      && response.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Set as default', exact: true }).click();
+  expect((await selected).ok()).toBeTruthy();
+  await expect(page.getByText('Default Provider', { exact: true })).toBeVisible();
+
+  await page.getByTestId('provider-row-openai').click();
+  const restored = page.waitForResponse((response) =>
+    response.url().endsWith('/api/uar/providers/openai/default')
+      && response.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Set as default', exact: true }).click();
+  expect((await restored).ok()).toBeTruthy();
+  await expect(page.getByText('openai/gpt-5.4-mini', { exact: true })).toBeVisible();
 }
 
 async function validateCredentials(page: Page): Promise<void> {
@@ -258,10 +273,12 @@ async function validateAuth(page: Page): Promise<void> {
   await page.getByLabel('Key name').fill(name);
   await page.getByRole('dialog').getByRole('button', { name: 'Create' }).click();
   await expect(page.getByText(/copy it now/i)).toBeVisible();
+  await page.getByRole('button', { name: 'Show API key', exact: true }).click();
+  await expect(page.getByText(/copy it now/i).locator('..').locator('code')).toHaveText(/^[a-f0-9]{64}$/);
   await expect(page.getByText(name, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: `Revoke ${name}` }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Revoke' }).click();
-  await expect(page.getByText(name, { exact: true })).not.toBeVisible();
+  await expect(page.getByRole('button', { name: `Revoke ${name}` })).not.toBeVisible();
 }
 
 async function validateKnowledge(page: Page): Promise<void> {
@@ -397,9 +414,33 @@ async function validateMcpHealth(page: Page): Promise<void> {
   await openAdmin(page, 'mcp-health');
   const response = page.waitForResponse((res) => res.url().includes('/api/uar/mcp/health'));
   await page.getByRole('button', { name: 'Refresh' }).click();
-  expect((await response).ok()).toBeTruthy();
+  const healthResponse = await response;
+  expect(healthResponse.ok()).toBeTruthy();
+  const health = await healthResponse.json() as {
+    total_tools?: number;
+    servers?: Array<{ name?: string; status?: string; tool_count?: number }>;
+  };
+  expect(Number.isInteger(health.total_tools)).toBeTruthy();
+  expect(Array.isArray(health.servers)).toBeTruthy();
   await expect(page.getByRole('heading', { name: 'Tool Server Health' })).toBeVisible();
-  await expect(page.getByText(/servers · auto-refresh 30s/)).toBeVisible();
+  await expect(page.getByText(`${health.servers!.length} servers · auto-refresh 30s`, { exact: true })).toBeVisible();
+  if (health.servers!.length === 0) {
+    await expect(page.getByText('No tool servers configured', { exact: true })).toBeVisible();
+  } else {
+    for (const server of health.servers!) {
+      expect(server.name).toBeTruthy();
+      expect(server.status).toBeTruthy();
+      expect(Number.isInteger(server.tool_count)).toBeTruthy();
+      await expect(page.getByText(server.name!, { exact: true })).toBeVisible();
+    }
+    const statusCounts = new Map<string, number>();
+    for (const server of health.servers!) {
+      statusCounts.set(server.status!, (statusCounts.get(server.status!) ?? 0) + 1);
+    }
+    for (const [status, count] of statusCounts) {
+      await expect(page.getByRole('img', { name: status })).toHaveCount(count);
+    }
+  }
 }
 
 async function validateCost(page: Page): Promise<void> {

@@ -31,7 +31,7 @@ Feature: Every shipped product screen performs its primary function
     When I exercise the primary function of "/admin/protocols"
     Then the "/admin/protocols" screen validation is visibly complete
 
-  Scenario: Providers exposes the configured stub provider
+  Scenario: Providers changes and restores the default route
     When I exercise the primary function of "/admin/providers"
     Then the "/admin/providers" screen validation is visibly complete
 
