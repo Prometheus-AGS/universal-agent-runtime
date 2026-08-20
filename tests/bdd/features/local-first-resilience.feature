@@ -13,6 +13,6 @@ Feature: Local-first browser resilience
     Then the original context retains the answer and the fresh context does not inherit it
 
   Scenario: The embedded SSE connection reconnects without duplicating runtime state
-    Given the runtime cockpit has one known replayed run
-    When the embedded sync stream disconnects and reconnects
-    Then the restored cockpit still contains exactly one known run
+    Given a known knowledge base is visible through the registered embedded stream
+    When the registered embedded sync stream reports an error and reconnects
+    Then the knowledge screen contains exactly one recovered knowledge base

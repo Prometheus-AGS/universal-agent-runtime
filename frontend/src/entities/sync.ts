@@ -1,6 +1,7 @@
 // frontend/src/entities/sync.ts
 import { getRealtimeManager } from "@/platform/entities";
 import type {
+  AdapterStatus,
   RealtimeAdapter,
   ChangeSet,
   SubscriptionConfig,
@@ -8,6 +9,7 @@ import type {
   ChangeOperation,
 } from "@/platform/entities";
 import { emitSettingsChanged } from "@/features/settings/api";
+import { UAR_TOPICS } from "@/lib/realtime/topics";
 
 interface PersistenceInfo {
   provider: "surreal" | "postgres";
@@ -25,7 +27,34 @@ interface PersistenceInfo {
  * The Axum backend subscribes to LIVE SELECT internally and pushes
  * ChangeSet events via Server-Sent Events.
  */
-function createSSEAdapter(url: string): RealtimeAdapter {
+interface EmbeddedSsePayload {
+  table?: string;
+  id?: string;
+  action?: string;
+  record?: Record<string, unknown>;
+  ts?: string;
+}
+
+interface EmbeddedSseAdapterOptions {
+  reconnectBaseDelay?: number;
+  maxReconnectDelay?: number;
+}
+
+const EMBEDDED_ENTITY_TYPES = new Map<string, string>(
+  UAR_TOPICS.map(({ topic, entityType }) => [topic, entityType]),
+);
+
+export function createEmbeddedSseAdapter(
+  url: string,
+  options: EmbeddedSseAdapterOptions = {},
+): RealtimeAdapter {
+  const statusCallbacks = new Set<(status: AdapterStatus) => void>();
+  const reconnectBaseDelay = options.reconnectBaseDelay ?? 1_000;
+  const maxReconnectDelay = options.maxReconnectDelay ?? 30_000;
+  const emitStatus = (status: AdapterStatus) => {
+    for (const callback of statusCallbacks) callback(status);
+  };
+
   return {
     name: "sse-surreal",
 
@@ -33,38 +62,47 @@ function createSSEAdapter(url: string): RealtimeAdapter {
       _config: SubscriptionConfig,
       handler: (changeset: ChangeSet) => void,
     ) {
-      const eventSource = new EventSource(url);
+      let eventSource: EventSource | null = null;
+      let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+      let reconnectAttempts = 0;
+      let stopped = false;
 
-      eventSource.onmessage = (event) => {
+      const handleEntityChange = (event: Event) => {
         try {
-          const raw = JSON.parse(event.data) as {
-            entity_type?: string;
-            id?: string;
-            action?: string;
-            data?: Record<string, unknown>;
-          };
+          const raw = JSON.parse((event as MessageEvent).data) as EmbeddedSsePayload;
 
-          // Map raw SSE event action to ChangeOperation
           const opMap: Record<string, ChangeOperation> = {
             create: "insert",
             insert: "insert",
             update: "update",
             delete: "delete",
           };
-          const op = opMap[raw.action ?? ""] ?? "upsert";
-          const type = normalizeEntityType(raw.entity_type ?? "unknown");
+          const op = opMap[raw.action ?? ""];
+          const type = EMBEDDED_ENTITY_TYPES.get(raw.table ?? "");
+          if (
+            !op ||
+            !type ||
+            typeof raw.id !== "string" ||
+            raw.id.length === 0 ||
+            typeof raw.record !== "object" ||
+            raw.record === null ||
+            Array.isArray(raw.record)
+          ) {
+            return;
+          }
+
           if (type === "Setting") {
             const key =
-              typeof raw.data?.key === "string" ? raw.data.key : (raw.id ?? "");
+              typeof raw.record.key === "string" ? raw.record.key : raw.id;
             const namespace = key.split(".")[0] ?? "";
             emitSettingsChanged({
               namespace,
               key,
-              value: raw.data?.data,
+              value: raw.record.data,
               source: "remote",
               updated_at:
-                typeof raw.data?.updated_at === "string"
-                  ? raw.data.updated_at
+                typeof raw.record.updated_at === "string"
+                  ? raw.record.updated_at
                   : undefined,
             });
           }
@@ -74,29 +112,81 @@ function createSSEAdapter(url: string): RealtimeAdapter {
               {
                 op,
                 type,
-                id: raw.id ?? "",
-                data: raw.data,
+                id: raw.id,
+                data: raw.record,
               },
             ],
+            timestamp: raw.ts,
           });
         } catch {
           // Skip malformed events
         }
       };
 
-      return () => eventSource.close();
+      const scheduleReconnect = () => {
+        if (stopped || reconnectTimer) return;
+        const delay = Math.min(
+          reconnectBaseDelay * 2 ** Math.min(reconnectAttempts++, 6),
+          maxReconnectDelay,
+        );
+        reconnectTimer = setTimeout(connect, delay);
+      };
+
+      const closeSource = (source: EventSource) => {
+        source.removeEventListener("entity.change", handleEntityChange);
+        source.onopen = null;
+        source.onerror = null;
+        source.close();
+      };
+
+      function connect() {
+        reconnectTimer = null;
+        if (stopped) return;
+        emitStatus("connecting");
+
+        let source: EventSource;
+        try {
+          source = new EventSource(url);
+        } catch {
+          emitStatus("error");
+          scheduleReconnect();
+          return;
+        }
+
+        eventSource = source;
+        source.onopen = () => {
+          if (stopped || eventSource !== source) return;
+          reconnectAttempts = 0;
+          emitStatus("connected");
+        };
+        source.addEventListener("entity.change", handleEntityChange);
+        source.onerror = () => {
+          if (stopped || eventSource !== source) return;
+          emitStatus("error");
+          closeSource(source);
+          eventSource = null;
+          scheduleReconnect();
+        };
+      }
+
+      connect();
+
+      return () => {
+        stopped = true;
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+        if (eventSource) closeSource(eventSource);
+        eventSource = null;
+        emitStatus("disconnected");
+      };
+    },
+    onStatusChange(callback) {
+      statusCallbacks.add(callback);
+      return () => statusCallbacks.delete(callback);
     },
   };
-}
-
-function normalizeEntityType(rawType: string): string {
-  const map: Record<string, string> = {
-    settings: "Setting",
-    setting: "Setting",
-    settings_types: "SettingsType",
-    settings_type: "SettingsType",
-  };
-  return map[rawType] ?? rawType;
 }
 
 // ────────────────────────────────────────────────────────────────────
@@ -183,7 +273,7 @@ export async function initSyncTransport(): Promise<() => void> {
   }
 
   // ── SurrealDB embedded -> SSE bridge from Axum ───────────────────
-  const adapter = createSSEAdapter("/api/uar/sync/stream");
+  const adapter = createEmbeddedSseAdapter("/api/uar/sync/stream");
   const unregister = manager.register(adapter, channels);
   return unregister;
 }

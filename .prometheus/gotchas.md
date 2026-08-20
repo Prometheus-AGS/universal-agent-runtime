@@ -301,3 +301,38 @@ structurally: exact constraint IDs, iteration sequence, checkpoint references,
 active/history identity, and registry artifact identity must agree. Retain the
 actual chronological Tier 0 receipts so later checks cannot conceal an edit
 that was never checked at its required point.
+
+## 2026-08-20 — stable ID lists do not make entity projections reactive
+
+**Observed defect.** The embedded SSE adapter updated an existing normalized
+Knowledge entity, but the React view hooks projected `items` only when their ID
+arrays changed. The graph held the new record while the screen continued to
+render the old one. A browser retry, list reload, or screen-local cache bypass
+would have hidden the source-package defect.
+
+**Working rule.** A normalized view that exposes full entities must subscribe to
+the snapshots behind its stable IDs. Test an existing-ID update in both the
+current hook and its documented replacement, then repair the source package
+instead of forcing consumer refreshes.
+
+## 2026-08-20 — source-package builds must include declaration dependencies
+
+**Observed defect.** BDD preparation invoked React-package `tsup` directly. On
+the tested submodule pin it failed because `entity-graph-core`'s stale `dist`
+did not declare `getGraphSyncStatus`, even though the source did.
+
+**Working rule.** Build a source workspace package through its declared build
+graph. For the entity-management React package, the Turbo dependency filter
+must build core before React declarations; a direct leaf build depends on
+checkout residue.
+
+## 2026-08-20 — nested pnpm engines constrain consumer workspaces
+
+**Observed defect.** UAR uses pnpm 11.15.0, but the nested entity-management
+workspace admitted only pnpm 10.33.0. Dependency preparation stopped before the
+product test even though the package code was compatible.
+
+**Working rule.** Keep the repository's integrity-pinned default package manager
+while expressing the tested consumer range in every enforcing workspace
+manifest. A source submodule cannot claim consumer compatibility if its nested
+engine rejects the consumer's package manager before build.

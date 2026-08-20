@@ -1,0 +1,114 @@
+{
+  "refinement_id": "2ca76145-35ab-4e9e-aa0a-83c7b8b555e8",
+  "artifact_name": "fix-embedded-sse-offline-reconnect",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-20T08:55:43Z",
+  "updated_at": "2026-08-20T09:15:12Z",
+  "current_iteration": 3,
+  "max_iterations": 5,
+  "goals": [
+    "Deliver named embedded SSE changes and deterministic no-reload recovery through the application adapter without hiding source-package or build-order defects"
+  ],
+  "constraints": [
+    {
+      "id": "named-event-contract"
+    },
+    {
+      "id": "single-connection-recovery"
+    },
+    {
+      "id": "source-projection-reactivity"
+    },
+    {
+      "id": "reproducible-source-build"
+    },
+    {
+      "id": "truthful-bounded-delivery"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 3,
+      "constraints_total": 5,
+      "decision": "continue",
+      "timestamp": "2026-08-20T08:55:43Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": [
+        "execute",
+        "reflect"
+      ],
+      "constraints_satisfied": 5,
+      "constraints_total": 5,
+      "decision": "continue",
+      "timestamp": "2026-08-20T09:05:45Z"
+    },
+    {
+      "iteration": 3,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 5,
+      "constraints_total": 5,
+      "decision": "terminate",
+      "timestamp": "2026-08-20T09:14:49Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "a6eb2a95",
+      "phase": "specify",
+      "iteration": 3,
+      "timestamp": "2026-08-20T09:07:49Z"
+    },
+    {
+      "checkpoint_id": "d6c78666",
+      "phase": "plan",
+      "iteration": 3,
+      "timestamp": "2026-08-20T09:08:04Z"
+    },
+    {
+      "checkpoint_id": "50879ac9",
+      "phase": "execute",
+      "iteration": 3,
+      "timestamp": "2026-08-20T09:08:40Z"
+    },
+    {
+      "checkpoint_id": "cf58aab5",
+      "phase": "reflect",
+      "iteration": 3,
+      "timestamp": "2026-08-20T09:14:39Z"
+    },
+    {
+      "checkpoint_id": "48a4cd8d",
+      "phase": "persist",
+      "iteration": 3,
+      "timestamp": "2026-08-20T09:15:06Z"
+    }
+  ],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-20T09:15:12Z"
+}

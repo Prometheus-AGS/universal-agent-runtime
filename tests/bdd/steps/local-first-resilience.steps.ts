@@ -16,24 +16,17 @@ interface LocalEvidence {
   retained?: boolean;
   freshIsolated?: boolean;
   reconnected?: boolean;
+  syncEntityId?: string;
+  syncInitialName?: string;
+  syncRecoveredName?: string;
+  syncSourceCount?: number;
 }
 
 const evidence = new WeakMap<Page, LocalEvidence>();
 
-type RuntimeReplayWindow = Window & {
-  __uarRuntimeReplay?: { reset: () => void; replayAll: () => void };
-  __bddSyncProbe?: { opens: number; source: EventSource };
+type EmbeddedSseWindow = Window & {
+  __bddEmbeddedSse?: { sources: EventSource[] };
 };
-
-async function replayRuntime(page: Page, reset: boolean): Promise<void> {
-  await page.waitForFunction(() => Boolean((window as RuntimeReplayWindow).__uarRuntimeReplay));
-  await page.evaluate((shouldReset) => {
-    const replay = (window as RuntimeReplayWindow).__uarRuntimeReplay;
-    if (!replay) throw new Error('runtime replay helper not installed');
-    if (shouldReset) replay.reset();
-    replay.replayAll();
-  }, reset);
-}
 
 Given('the threads screen is ready', async ({ page }) => {
   await waitForDbReady(page);
@@ -84,37 +77,122 @@ Then('the original context retains the answer and the fresh context does not inh
   await expect(page.getByText('2 plus 2 is 4.', { exact: false }).last()).toBeVisible();
 });
 
-Given('the runtime cockpit has one known replayed run', async ({ page }) => {
-  await page.goto('/admin/runtime');
-  await expect(page.getByTestId('admin-section-runtime')).toBeVisible({ timeout: 15_000 });
-  await page.evaluate(() => {
-    const source = new EventSource('/api/uar/sync/stream');
-    const probe = { opens: 0, source };
-    source.onopen = () => { probe.opens += 1; };
-    (window as RuntimeReplayWindow).__bddSyncProbe = probe;
+Given('a known knowledge base is visible through the registered embedded stream', async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeEventSource = window.EventSource;
+    const state = { sources: [] as EventSource[] };
+    const ObservedEventSource = new Proxy(NativeEventSource, {
+      construct(target, args) {
+        const source = Reflect.construct(target, args) as EventSource;
+        if (String(args[0]).includes('/api/uar/sync/stream')) {
+          state.sources.push(source);
+        }
+        return source;
+      },
+    });
+    Object.defineProperty(window, 'EventSource', {
+      configurable: true,
+      value: ObservedEventSource,
+      writable: true,
+    });
+    (window as EmbeddedSseWindow).__bddEmbeddedSse = state;
   });
-  await page.waitForFunction(() => (window as RuntimeReplayWindow).__bddSyncProbe?.opens === 1);
-  await replayRuntime(page, true);
-  await expect(page.getByText('Live Replay Run')).toHaveCount(1);
+
+  await page.goto('/admin/knowledge');
+  await expect(page.getByRole('heading', { name: 'Knowledge Bases' })).toBeVisible();
+  await page.waitForFunction(() => {
+    const sources = (window as EmbeddedSseWindow).__bddEmbeddedSse?.sources ?? [];
+    return sources.length === 1 && sources[0]?.readyState === 1;
+  });
+
+  const baseName = `BDD SSE KB ${Date.now()}`;
+  await page.getByRole('button', { name: 'New', exact: true }).click();
+  await page.getByLabel('Name', { exact: true }).fill(baseName);
+  await page.getByLabel('Description', { exact: true }).fill('Embedded SSE fixture');
+  await page.getByRole('button', { name: 'Create', exact: true }).click();
+  const baseCard = page.getByTestId(/^knowledge-base-/).filter({ hasText: baseName });
+  await expect(baseCard).toBeVisible();
+  const testId = await baseCard.getAttribute('data-testid');
+  if (!testId?.startsWith('knowledge-base-')) {
+    throw new Error(`knowledge base test id missing: ${testId ?? '<none>'}`);
+  }
+
+  const entityId = testId.slice('knowledge-base-'.length);
+  const initialName = `${baseName} initial`;
+  await page.evaluate(({ entityId, initialName }) => {
+    const source = (window as EmbeddedSseWindow).__bddEmbeddedSse?.sources.at(-1);
+    if (!source) throw new Error('registered embedded EventSource not captured');
+    source.dispatchEvent(new MessageEvent('entity.change', {
+      data: JSON.stringify({
+        table: 'knowledge_bases',
+        action: 'update',
+        id: entityId,
+        record: {
+          id: entityId,
+          name: initialName,
+          description: 'Embedded SSE fixture',
+          document_count: 0,
+        },
+      }),
+    }));
+  }, { entityId, initialName });
+  await expect(page.getByTestId(testId)).toContainText(initialName);
+  evidence.set(page, {
+    ...evidence.get(page),
+    syncEntityId: entityId,
+    syncInitialName: initialName,
+    syncRecoveredName: `${baseName} recovered`,
+    syncSourceCount: 1,
+  });
 });
 
-When('the embedded sync stream disconnects and reconnects', async ({ context, page }) => {
-  await context.setOffline(true);
-  await expect(page.getByRole('alert').getByText(/You are offline/)).toBeVisible();
-  await context.setOffline(false);
+When('the registered embedded sync stream reports an error and reconnects', async ({ page }) => {
+  const current = evidence.get(page);
+  if (!current?.syncEntityId || !current.syncRecoveredName || !current.syncSourceCount) {
+    throw new Error('embedded SSE evidence was not initialized');
+  }
   const reconnect = page.waitForRequest(
     (request) => request.url().includes('/api/uar/sync/stream'),
     { timeout: 15_000 },
   );
-  await page.reload();
+  await page.evaluate(() => {
+    const source = (window as EmbeddedSseWindow).__bddEmbeddedSse?.sources.at(-1);
+    if (!source) throw new Error('registered embedded EventSource not captured');
+    source.dispatchEvent(new Event('error'));
+  });
   await reconnect;
-  await expect(page.getByTestId('admin-section-runtime')).toBeVisible({ timeout: 15_000 });
-  await replayRuntime(page, false);
+  await page.waitForFunction((previousCount) => {
+    const sources = (window as EmbeddedSseWindow).__bddEmbeddedSse?.sources ?? [];
+    return sources.length === previousCount + 1 && sources.at(-1)?.readyState === 1;
+  }, current.syncSourceCount, { timeout: 15_000 });
+  await page.evaluate(({ entityId, recoveredName }) => {
+    const source = (window as EmbeddedSseWindow).__bddEmbeddedSse?.sources.at(-1);
+    if (!source) throw new Error('replacement embedded EventSource not captured');
+    source.dispatchEvent(new MessageEvent('entity.change', {
+      data: JSON.stringify({
+        table: 'knowledge_bases',
+        action: 'update',
+        id: entityId,
+        record: {
+          id: entityId,
+          name: recoveredName,
+          description: 'Embedded SSE fixture',
+          document_count: 0,
+        },
+      }),
+    }));
+  }, { entityId: current.syncEntityId, recoveredName: current.syncRecoveredName });
   evidence.set(page, { ...evidence.get(page), reconnected: true });
 });
 
-Then('the restored cockpit still contains exactly one known run', async ({ page }) => {
-  expect(evidence.get(page)?.reconnected).toBe(true);
-  await expect(page.getByText('Live Replay Run')).toHaveCount(1);
-  await expect(page.getByText('Replay tool execution')).toBeVisible();
+Then('the knowledge screen contains exactly one recovered knowledge base', async ({ page }) => {
+  const current = evidence.get(page);
+  expect(current?.reconnected).toBe(true);
+  if (!current?.syncEntityId || !current.syncRecoveredName) {
+    throw new Error('embedded SSE recovery evidence is incomplete');
+  }
+  await expect(page.getByTestId(`knowledge-base-${current.syncEntityId}`)).toContainText(
+    current.syncRecoveredName,
+  );
+  await expect(page.getByText(current.syncRecoveredName, { exact: true })).toHaveCount(1);
 });

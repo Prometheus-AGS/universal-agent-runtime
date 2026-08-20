@@ -1,0 +1,67 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "named-event-contract",
+      "description": "The embedded client consumes the named entity.change event, validates the server payload, maps canonical entity types, and ignores transport or malformed events without poisoning the subscription.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused FakeEventSource unit tests with valid and malformed controls"
+      }
+    },
+    {
+      "id": "single-connection-recovery",
+      "description": "A detected error closes the failed source before one capped replacement, resets on open, delivers each received post-reconnect event once, and leaves no retry after unsubscribe.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Fake-timer unit controls plus one fresh-process Chromium scenario bound to the application EventSource"
+      }
+    },
+    {
+      "id": "source-projection-reactivity",
+      "description": "Existing-ID normalized entity updates rerender through the upstream React hooks; UAR does not patch the Knowledge UI with refresh, replay, or direct store mutation.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Upstream before/after hook tests, reviewed upstream commits, and the visible UAR browser transition"
+      }
+    },
+    {
+      "id": "reproducible-source-build",
+      "description": "The BDD preparation path admits the UAR pnpm version and builds entity-graph-core before the React source declarations instead of consuming stale dist output.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Observed pnpm-engine/direct-leaf failures followed by compatibility Cucumber, Turbo dependency build, and final BDD preparation passes"
+      }
+    },
+    {
+      "id": "truthful-bounded-delivery",
+      "description": "Evidence binds the source hashes and submodule pin, reports every observed command result including unrelated full-suite failures, excludes parent/operator files, and makes no checkpoint-replay or publication claim.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Hash/pin replay, strict OpenSpec, artifact schemas/references/state/history, scope audit, diff check, and independent artifact review"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the child OpenSpec proposal, delta, tasks, and KBD scope as acceptance authority.",
+    "Do not claim events emitted while disconnected are replayed or delivered losslessly.",
+    "Do not treat a source-package defect with a UAR screen refresh or store bypass.",
+    "Keep pnpm-lock.yaml, frontend/package.json, settings, static build output, parent certification artifacts, and unrelated KBD churn outside the child commit.",
+    "Keep the tested upstream source head and separate generated rc.2 version head distinct; neither PR is an npm publication."
+  ],
+  "termination_conditions": [
+    "All five blocking constraints pass.",
+    "Strict OpenSpec, artifact schemas/references/checkpoints/history, final source hashes, submodule pin, scoped diff, and git diff checks pass.",
+    "Independent history-free artifact critic and judge find no implementation or evidence blocker."
+  ]
+}

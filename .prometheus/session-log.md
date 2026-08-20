@@ -471,3 +471,28 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Completed child reflection and canonical child exit. The control-plane endpoint
   was unavailable, so the KBD commands committed locally. The outer phase is at
   70/79 and resumes with `/opsx:apply screen-by-screen-validation`.
+
+## 2026-08-20 — Embedded SSE recovery child implementation checkpoint
+
+- Corrected the embedded frontend adapter to consume the server's named
+  `entity.change` payload, expose status, close before bounded retry, deliver
+  each received event once, and cancel source/timer state on unsubscribe.
+- Replaced the separate-probe browser check with instrumentation of the
+  EventSource registered by the application. The final fresh-process Chromium
+  scenario observed an initial visible Knowledge update, one replacement stream
+  request after forced error, and one visible post-reconnect update without
+  reload, store injection, or manual replay.
+- The first corrected browser attempts exposed an upstream normalized-view
+  defect: stable ID arrays prevented existing-entity snapshots from rerendering.
+  The source package was repaired and reviewed upstream rather than patched in
+  UAR. Source/compatibility PR #20 is open at `0352c83`; the separate canonical
+  `3.0.0-rc.2` Changesets PR #21 is open at `5afa07b`.
+- Widened the upstream pnpm engine contract to admit tested pnpm 11 consumers
+  while retaining pnpm 10.33.0 as the integrity-pinned repository default. UAR
+  typecheck, lint, focused unit, build, dependency-aware BDD preparation, and
+  the exact browser scenario passed against the pinned source head.
+- The full frontend test command is not green: it observed 328 passing and 10
+  failing tests in two unrelated Storybook/A2UI files. This child records that
+  result and does not claim a full-suite pass or alter the unrelated failures.
+- Recovery remains resume-only. No checkpoint replay or lossless-delivery claim
+  was added for events emitted while the browser was disconnected.
