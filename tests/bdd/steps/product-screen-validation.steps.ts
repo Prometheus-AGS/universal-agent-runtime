@@ -168,7 +168,7 @@ async function validateProviders(page: Page): Promise<void> {
       && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Set as default', exact: true }).click();
   expect((await selected).ok()).toBeTruthy();
-  await expect(page.getByText('Default Provider', { exact: true })).toBeVisible();
+  await expect(alternate).toContainText('default');
 
   await page.getByTestId('provider-row-openai').click();
   const restored = page.waitForResponse((response) =>
