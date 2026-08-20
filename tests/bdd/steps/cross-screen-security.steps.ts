@@ -140,16 +140,16 @@ function signedJwt(subject: string, tenantId = 'screen-validation-tenant'): stri
 }
 
 When('I ask the default and orchestrator agents their deterministic questions', async ({ page }) => {
-  const assistantContent = page.locator('[data-slot="aui_assistant-message-content"]');
+  const assistantText = page.locator('[data-slot="aui_assistant-message-content"] .aui-md');
   await openFreshThread(page);
   await switchAgentViaUI(page, 'Default Assistant');
   await sendMessageAndWait(page, 'What is 2 plus 2?');
-  await expect(assistantContent.last()).toHaveText(/^2 plus 2 is 4\.$/);
+  await expect(assistantText.last()).toHaveText(/^2 plus 2 is 4\.$/);
 
   await startNewConversation(page);
   await switchAgentViaUI(page, 'Orchestrator');
   await sendMessageAndWait(page, 'Review this Rust ownership boundary');
-  await expect(assistantContent.last()).toHaveText(
+  await expect(assistantText.last()).toHaveText(
     /^\[rust-reviewer\]\s+The ownership boundary is sound\.$/,
   );
   evidence.set(page, { ...evidence.get(page), exactAnswers: true });
@@ -157,7 +157,7 @@ When('I ask the default and orchestrator agents their deterministic questions', 
 
 Then('both exact answers are visible and the orchestrator contribution is attributed', async ({ page }) => {
   expect(evidence.get(page)?.exactAnswers).toBe(true);
-  await expect(page.locator('[data-slot="aui_assistant-message-content"]').last()).toHaveText(
+  await expect(page.locator('[data-slot="aui_assistant-message-content"] .aui-md').last()).toHaveText(
     /^\[rust-reviewer\]\s+The ownership boundary is sound\.$/,
   );
 });
