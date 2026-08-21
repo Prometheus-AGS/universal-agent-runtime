@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 230,
-  "derivedRevision": 230,
+  "sourceRevision": 254,
+  "derivedRevision": 254,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 172
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 196
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-21T07:57:35.270976Z",
+  "updatedAt": "2026-08-21T14:04:46.424174Z",
   "cursor": [
     "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion"
   ],
@@ -210,6 +210,28 @@
               {
                 "type": "change",
                 "id": "fix-frontend-pnpm-lock-consistency",
+                "status": "COMPLETE",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                }
+              }
+            ],
+            "annotations": []
+          },
+          {
+            "type": "phase",
+            "id": "fix-mcp-reconnect-shared-service-state",
+            "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-mcp-reconnect-shared-service-state",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 1,
+              "total": 1
+            },
+            "children": [
+              {
+                "type": "change",
+                "id": "fix-mcp-reconnect-shared-service-state",
                 "status": "COMPLETE",
                 "progress": {
                   "done": 0,

@@ -530,3 +530,21 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   canonical spec validation, refiner integrity, and final history-free critic
   and judge reviews passed. Parent browser certification was not run in this
   child.
+
+## 2026-08-21 — MCP reconnect shared-state child completed
+
+- Replaced copied MCP handles with shared per-server service, authoritative
+  reconnect entry, and generation slots while retaining independent filtered
+  server/tool/native-tool policy maps.
+- Corrected the first candidate after history-free review proved an old filtered
+  view could reconnect configuration A after an A-to-B upsert. The focused
+  regression now passes 1/0 and rejects the stale swap.
+- Built immutable source `f0298d76` locally. macOS arm64, Linux arm64 container,
+  focused operational 5/0, and 60-second installed preflight passed. Crash and
+  timeout each failed exactly once and later calls crossed to replacement PIDs.
+- Artifact-refiner converged after two iterations. The final gate retained all
+  raw references, six chronological checkpoints, exact constraint objects, 17
+  matching hashes, byte-identical active/history state, and fresh critic and
+  judge PASS verdicts.
+- No GitHub Actions test ran. The child does not claim the parent three-hour soak,
+  external installs, deployment, candidate tag, or GA promotion.

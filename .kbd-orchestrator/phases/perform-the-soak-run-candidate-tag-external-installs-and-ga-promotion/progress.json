@@ -1,17 +1,17 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 230,
-  "derivedRevision": 230,
+  "sourceRevision": 254,
+  "derivedRevision": 254,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 172
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 196
   },
   "conflictCount": 0,
   "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "parentPhase": null,
-  "last_updated": "2026-08-21T07:57:35.270976Z",
+  "last_updated": "2026-08-21T14:04:46.424174Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 14,
   "changes_completed": 10,
@@ -26,12 +26,12 @@
     },
     "evidence": {
       "status": "PENDING",
-      "summary": null,
+      "summary": "MCP reconnect child evidence passed and is archived separately; parent operational-resilience evidence remains pending and must be regenerated from the post-child candidate.",
       "blockers": []
     },
     "certification": {
       "status": "PENDING",
-      "summary": null,
+      "summary": "The child 60-second preflight passed; the parent three-hour soak, release certification, external installs, and GA remain unverified.",
       "blockers": []
     },
     "publication": {
@@ -208,6 +208,16 @@
       "completed_at": null
     },
     "fix-frontend-pnpm-lock-consistency": {
+      "status": "DONE",
+      "changes_completed": 1,
+      "changes_total": 1,
+      "implementation_completed": 1,
+      "implementation_total": 1,
+      "certification_status": "NOT_TRACKED",
+      "handoff": null,
+      "completed_at": null
+    },
+    "fix-mcp-reconnect-shared-service-state": {
       "status": "DONE",
       "changes_completed": 1,
       "changes_total": 1,

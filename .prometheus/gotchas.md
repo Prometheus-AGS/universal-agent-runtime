@@ -475,3 +475,17 @@ rebuilt its registry from the stale global service value and failed before
 reaching the replacement process. Event-boundary evidence and shared reconnect
 ownership are separate requirements; proving the former does not prove the
 latter.
+
+## 2026-08-21 — shared replacement pointers need authoritative configuration
+
+**Observed defect.** The first MCP repair shared a replaceable service pointer
+across registry views but left reconnect configuration on each view. An old
+filtered view survived an A-to-B upsert, failed while using B, then reconnected A
+into the shared slot. The first independent judge missed the reachable rollback;
+the history-free critic blocked it with a concrete old-view sequence.
+
+**Working rule.** When an asynchronous repair can replace shared state, keep the
+repair inputs and a generation in the same shared ownership boundary. Snapshot
+the generation, build outside the lock, and discard the result if newer
+configuration won meanwhile. Test with a view created before A-to-B replacement,
+not merely two calls using one unchanged configuration.

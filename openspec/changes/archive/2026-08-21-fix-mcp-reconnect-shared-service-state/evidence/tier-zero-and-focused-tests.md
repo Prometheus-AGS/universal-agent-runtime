@@ -20,7 +20,7 @@ warning: constant `MAX_BODY_BYTES` is never used
 warning: constant `MAX_REDIRECTS` is never used
 warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
 warning: `universal-agent-runtime` (lib) generated 3 warnings
-Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.73s
+Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.41s
 ```
 
 The three warnings are in the out-of-scope pre-existing files
@@ -87,14 +87,14 @@ This test records one crash call in the fixture, asserts a new process for the
 next independently filtered request, asserts a pre-existing merged view uses
 that same replacement, and asserts excluded server/tool views remain empty.
 
-## Upsert propagation
+## Upsert propagation and authoritative reconnect configuration
 
 Command:
 
 ```bash
 cargo test --locked -p universal-agent-runtime \
   --no-default-features --features server-full --lib \
-  mcp::registry::tests::upsert_replaces_service_in_an_existing_filtered_view \
+  mcp::registry::tests::upsert_reconnect_uses_new_config_in_an_existing_filtered_view \
   -- --exact --nocapture
 ```
 
@@ -104,10 +104,15 @@ Observed result:
 
 ```text
 running 1 test
-test mcp::registry::tests::upsert_replaces_service_in_an_existing_filtered_view ... ok
+test mcp::registry::tests::upsert_reconnect_uses_new_config_in_an_existing_filtered_view ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 611 filtered out; finished in 0.44s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 611 filtered out; finished in 0.69s
 ```
+
+This regression constructs a filtered view before an A→B server upsert, crashes
+the B process through that old view, and proves the reconnect and next call use
+B's trace path. The original A trace contains only the pre-upsert call, so a
+stale-config rollback would fail the assertion.
 
 ## Local certification contracts and fail-closed controls
 

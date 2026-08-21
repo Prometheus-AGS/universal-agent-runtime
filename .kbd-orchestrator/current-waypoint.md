@@ -1,5 +1,18 @@
 # Current Waypoint
 
+> `.kbd-orchestrator/current-waypoint.json` is authoritative. This prose
+> projection was refreshed for child Plan revision 176 on 2026-08-20.
+
+**Phase path**: `perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion > fix-embedded-sse-offline-reconnect`
+**Stage**: Plan complete
+**Next action**: `/opsx:new fix-embedded-sse-offline-reconnect`
+**Plan**: `phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/children/fix-embedded-sse-offline-reconnect/plan.md`
+
+## Legacy narrative below
+
+The material below is retained as historical context and is not the active
+position.
+
 **Phase**: `uar-grade-a-upgrade-2026-07`
 **Stage**: `execute_in_progress`
 **Updated**: 2026-07-14

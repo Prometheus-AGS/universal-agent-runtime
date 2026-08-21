@@ -1,6 +1,6 @@
 ## 1. Workflow and contract
 
-- [ ] 1.1 Register `fix-mcp-reconnect-shared-service-state` as the child's only canonical change, enter Execute, record the temporary child-expanded waypoint denominator, and restore the outer 79-task denominator when the child exits
+- [x] 1.1 Register `fix-mcp-reconnect-shared-service-state` as the child's only canonical change, enter Execute, record the temporary child-expanded waypoint denominator, and restore the outer 79-task denominator when the child exits
 - [x] 1.2 Strictly validate the completed OpenSpec artifacts before source editing with `openspec validate fix-mcp-reconnect-shared-service-state --strict --no-interactive`
 
 ## 2. Shared MCP service state
@@ -20,5 +20,5 @@
 - [x] 4.1 Run Tier 0 `cargo check` and package-scoped `cargo clippy` for `server-full`; record exact commands and observed outputs
 - [x] 4.2 Run the focused MCP registry Tier 1 tests and record exact commands, pass counts, and fail-closed controls
 - [x] 4.3 Build a new immutable local candidate and run the short installed-artifact preflight; verify crash and timeout each fail once and subsequent calls use replacement process identifiers
-- [ ] 4.4 Validate both child and parent OpenSpec changes strictly, write `verification.md` with exact evidence paths, and complete the artifact-refiner gate
-- [ ] 4.5 Obtain independent artifact critic and judge PASS, reflect the plan-to-delivery delta, commit and push the scoped child change, then resume parent `certify-operational-resilience` with the prior candidate invalidated
+- [x] 4.4 Validate both child and parent OpenSpec changes strictly, write `verification.md` with exact evidence paths, and complete the artifact-refiner gate
+- [x] 4.5 Obtain independent artifact critic and judge PASS, reflect the plan-to-delivery delta, commit and push the scoped child change, then resume parent `certify-operational-resilience` with the prior candidate invalidated

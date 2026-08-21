@@ -61,6 +61,13 @@
       "content_type": "direct:content",
       "updated_at": "2026-08-20T09:15:12Z",
       "finalized_at": "2026-08-20T09:15:12Z"
+    },
+    "fix-mcp-reconnect-shared-service-state": {
+      "path": ".refiner/artifacts/fix-mcp-reconnect-shared-service-state",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-21T13:53:23Z",
+      "finalized_at": "2026-08-21T13:53:23Z"
     }
   }
 }

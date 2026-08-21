@@ -1,0 +1,3 @@
+{"source_sha":"f0298d76ea3c39853020c8a33e13f136c07a1806","candidate_tag":"operational-resilience-f0298d76ea3c","failure":"provider-outage","http_status":"200","surfaced":true}
+{"source_sha":"f0298d76ea3c39853020c8a33e13f136c07a1806","candidate_tag":"operational-resilience-f0298d76ea3c","failure":"rate-limit","http_status":"200","surfaced":true}
+{"source_sha":"f0298d76ea3c39853020c8a33e13f136c07a1806","candidate_tag":"operational-resilience-f0298d76ea3c","failure":"malformed-provider-stream","http_status":"200","surfaced":true}

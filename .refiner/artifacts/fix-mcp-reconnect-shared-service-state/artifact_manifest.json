@@ -1,0 +1,48 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-21T13:52:18Z",
+  "variants": [
+    {
+      "name": "mcp-reconnect-shared-service-verification",
+      "file": ".refiner/artifacts/fix-mcp-reconnect-shared-service-state/dist/verification-summary.md",
+      "files": [
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/verification.md",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/installed-artifact-preflight.md",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/installed-preflight-results.json",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/lifecycle.json",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/failure-recovery.jsonl",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/mcp-process-boundary.json",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/mcp-process-boundary-validation.txt",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/mcp-process-trace.jsonl",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/mcp-crash.sse",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/mcp-timeout.sse",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/parallel-load.json",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/soak.json",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/tier-zero-and-focused-tests.md",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/upgrade.json",
+        "openspec/changes/archive/2026-08-21-fix-mcp-reconnect-shared-service-state/evidence/artifact-refiner-validation.md"
+      ],
+      "format": "markdown",
+      "description": "Bounded verification summary for shared reconnect state, fail-closed non-replay, authorization preservation, and immutable installed evidence"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Two focused registry tests pass and exercise filtered, merged, and upserted views.",
+      "The upsert regression proves an old filtered view reconnects with configuration B after an A-to-B replacement instead of restoring A.",
+      "The installed crash and timeout each emit one failed tool result and execute once at the process boundary.",
+      "The exact process trace contains two replacement PID transitions and no automatic replay.",
+      "All product and release verification ran locally; GitHub Actions remain deployment-only.",
+      "A fresh history-free artifact critic and independent judge both passed the corrected candidate.",
+      "The child preflight does not replace the parent three-hour soak or establish GA readiness."
+    ]
+  }
+}

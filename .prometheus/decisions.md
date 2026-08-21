@@ -489,3 +489,22 @@ certification instead of knowingly scheduling a throwaway run.
 **Uncomfortable constraint.** This permits source preparation for later
 changes while the operational change is active. It does not permit their
 evidence, tags, signing, publication, or completion transitions to run early.
+
+---
+
+## 2026-08-21 — MCP reconnect state includes configuration generation
+
+**Decision.** Store each configured MCP server's current service, authoritative
+reconnect entry, and configuration generation in one private shared slot.
+Filtered and merged views share only slots they are already authorized to use.
+A reconnect built outside the lock may replace the service only if its captured
+generation is still current.
+
+**Rationale.** Sharing only the service pointer fixed dead-handle propagation
+but allowed an old view to reconnect configuration A after an A-to-B upsert and
+overwrite B. The generation guard closes that rollback without sharing policy
+maps, holding a synchronous lock across `.await`, or replaying the failed call.
+
+**Uncomfortable constraint.** This does not serialize concurrent failures or
+change snapshot-view behavior after server removal. Those behaviors require a
+separate observed problem and plan.
