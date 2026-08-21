@@ -1,26 +1,26 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 223,
-  "derivedRevision": 223,
+  "sourceRevision": 226,
+  "derivedRevision": 226,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 165
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 168
   },
   "conflictCount": 0,
   "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "parentPhase": null,
-  "last_updated": "2026-08-20T21:16:41.882820Z",
+  "last_updated": "2026-08-21T06:22:02.390235Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 14,
-  "changes_completed": 9,
+  "changes_completed": 10,
   "implementation_total": 14,
-  "implementation_completed": 9,
+  "implementation_completed": 10,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 9,
+      "completed": 10,
       "total": 14,
       "status": "IN_PROGRESS"
     },
@@ -143,8 +143,8 @@
     {
       "id": "screen-by-screen-validation",
       "title": "screen-by-screen-validation",
-      "status": "IN_PROGRESS",
-      "implementation_status": "IN_PROGRESS",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
