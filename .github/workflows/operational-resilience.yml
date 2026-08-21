@@ -45,7 +45,8 @@ jobs:
           pnpm -C frontend install --frozen-lockfile
           (cd frontend/packages/prometheus-entity-management && corepack pnpm install --frozen-lockfile)
           (cd frontend/packages/prometheus-entity-management && \
-            corepack pnpm --filter @prometheus-ags/prometheus-entity-management build)
+            corepack pnpm exec turbo run build \
+              --filter=@prometheus-ags/prometheus-entity-management...)
           pnpm build
           node scripts/validate-static-bundle.mjs static
           cargo build --locked --release --no-default-features --bin universal-agent-runtime --features server-full
