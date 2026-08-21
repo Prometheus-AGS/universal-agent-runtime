@@ -402,3 +402,13 @@ Grype, and Dependabot checks had a local source-bound entrypoint.
 behavior it owns and map each required behavior to a checked-in local command.
 The replacement must exist and pass its cheap contract check before the
 workflow deletion is treated as complete.
+
+## 2026-08-21 — worktree settings seeding can dirty immutable candidates
+
+**Observed defect.** `scripts/worktree-new.sh` copied the operator's modified
+`.claude/settings.local.json` over the same tracked path in a detached
+candidate, so a newly created worktree was dirty before certification began.
+
+**Working rule.** Seed per-tool settings only when the destination does not
+track that path. If the candidate tracks it, preserve the committed copy; local
+certification must start from a genuinely clean checkout.

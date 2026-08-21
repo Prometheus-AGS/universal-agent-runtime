@@ -10,7 +10,8 @@
 #   * the resolved target would land inside the repo working tree.
 #
 # Seeds .claude/settings.local.json into the new worktree when the current
-# checkout has one, so per-tool permissions follow the developer.
+# checkout has one and the destination does not track that path. A tracked
+# candidate copy is never overwritten, so immutable worktrees remain clean.
 
 set -euo pipefail
 
@@ -29,7 +30,7 @@ fi
 [[ $# -eq 0 ]] || die "unexpected extra args: $*"
 
 case "$name" in
-  */*|*..*|.|..) die "invalid name: $name (no slashes, no parent traversal)" ;;
+  */*|*..*|.) die "invalid name: $name (no slashes, no parent traversal)" ;;
 esac
 
 [[ -n "${HOME:-}" ]] || die "HOME is not set"
@@ -57,8 +58,12 @@ git worktree add "$canon_target" "$base"
 
 src_settings="$canon_repo/.claude/settings.local.json"
 if [[ -f "$src_settings" ]]; then
-  mkdir -p "$canon_target/.claude"
-  cp "$src_settings" "$canon_target/.claude/settings.local.json"
+  if git -C "$canon_target" ls-files --error-unmatch .claude/settings.local.json >/dev/null 2>&1; then
+    printf 'retained tracked candidate settings: %s\n' "$canon_target/.claude/settings.local.json"
+  else
+    mkdir -p "$canon_target/.claude"
+    cp "$src_settings" "$canon_target/.claude/settings.local.json"
+  fi
 fi
 
 printf 'created: %s\n' "$canon_target"
