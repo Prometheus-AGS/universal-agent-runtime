@@ -58,6 +58,13 @@ container as UID 65532.
 
 This is preferred to treating the synthetic Rust checks alone as release proof.
 
+The embedded entity-management repository is a nested pnpm workspace with its
+own authenticated pnpm 10.33.0 pin. The workflow installs and builds that
+workspace from its own boundary before the outer pnpm 11 build. UAR advances the
+gitlink to upstream commit `55cd5a8`, where a clean Corepack cache accepts the
+corrected integrity digest. This preserves both repositories' pinned toolchains
+instead of disabling Corepack verification.
+
 ### Pin fail-closed thresholds in the retained result
 
 The certifying lane requires:
