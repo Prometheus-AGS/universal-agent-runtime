@@ -30,24 +30,67 @@ type DynClientService = rmcp::service::RunningService<
     rmcp::service::RoleClient,
     Box<dyn rmcp::service::DynService<rmcp::service::RoleClient>>,
 >;
-type SharedClientService = Arc<RwLock<Arc<DynClientService>>>;
+struct ClientServiceState {
+    service: Arc<DynClientService>,
+    reconnect_entry: McpServerEntry,
+    generation: u64,
+}
 
-fn new_service_slot(service: DynClientService) -> SharedClientService {
-    Arc::new(RwLock::new(Arc::new(service)))
+type SharedClientService = Arc<RwLock<ClientServiceState>>;
+
+fn new_service_slot(
+    service: DynClientService,
+    reconnect_entry: McpServerEntry,
+) -> SharedClientService {
+    Arc::new(RwLock::new(ClientServiceState {
+        service: Arc::new(service),
+        reconnect_entry,
+        generation: 0,
+    }))
 }
 
 fn current_service(slot: &SharedClientService) -> Arc<DynClientService> {
     Arc::clone(
         &slot
             .read()
-            .unwrap_or_else(std::sync::PoisonError::into_inner),
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .service,
     )
 }
 
-fn replace_service(slot: &SharedClientService, service: DynClientService) {
-    *slot
+fn current_reconnect_entry(slot: &SharedClientService) -> (McpServerEntry, u64) {
+    let state = slot
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    (state.reconnect_entry.clone(), state.generation)
+}
+
+fn replace_configured_service(
+    slot: &SharedClientService,
+    service: DynClientService,
+    reconnect_entry: McpServerEntry,
+) {
+    let mut state = slot
         .write()
-        .unwrap_or_else(std::sync::PoisonError::into_inner) = Arc::new(service);
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    state.service = Arc::new(service);
+    state.reconnect_entry = reconnect_entry;
+    state.generation = state.generation.wrapping_add(1);
+}
+
+fn replace_reconnected_service(
+    slot: &SharedClientService,
+    expected_generation: u64,
+    service: DynClientService,
+) -> bool {
+    let mut state = slot
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if state.generation != expected_generation {
+        return false;
+    }
+    state.service = Arc::new(service);
+    true
 }
 
 async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<DynClientService> {
@@ -181,7 +224,7 @@ impl McpRegistry {
                 }
             };
             crate::uar::telemetry::metrics::set_mcp_server_status(name, true);
-            services.insert(name.clone(), new_service_slot(svc));
+            services.insert(name.clone(), new_service_slot(svc, entry.clone()));
         }
 
         // 2) list tools + build index
@@ -395,10 +438,20 @@ impl McpRegistry {
 
     /// Return persisted runtime MCP definitions without exposing connected handles.
     pub fn server_entries(&self) -> HashMap<String, McpServerEntry> {
-        self.server_config
+        let mut entries = self
+            .server_config
             .read()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .clone()
+            .clone();
+        for (name, service_slot) in self
+            .services
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+        {
+            entries.insert(name.clone(), current_reconnect_entry(service_slot).0);
+        }
+        entries
     }
 
     /// Add or replace one MCP server and immediately refresh its advertised tools.
@@ -423,9 +476,9 @@ impl McpRegistry {
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if let Some(service_slot) = services.get(&name) {
-            replace_service(service_slot, service);
+            replace_configured_service(service_slot, service, entry.clone());
         } else {
-            services.insert(name.clone(), new_service_slot(service));
+            services.insert(name.clone(), new_service_slot(service, entry.clone()));
         }
         drop(services);
         self.server_config
@@ -748,28 +801,24 @@ impl McpRegistry {
                 crate::uar::telemetry::metrics::set_mcp_server_status(&server_name, false);
                 // Re-establish the transport for future calls. Never replay the
                 // failed call: it may have completed remotely before transport loss.
-                let reconnect_entry = self
-                    .server_config
-                    .read()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .get(&server_name)
-                    .cloned();
-                if let Some(entry) = reconnect_entry {
-                    match connect_server(&server_name, &entry).await {
-                        Ok(replacement) => {
-                            replace_service(&service_slot, replacement);
+                let (reconnect_entry, generation) = current_reconnect_entry(&service_slot);
+                match connect_server(&server_name, &reconnect_entry).await {
+                    Ok(replacement) => {
+                        if replace_reconnected_service(&service_slot, generation, replacement) {
                             crate::uar::telemetry::metrics::set_mcp_server_status(
                                 &server_name,
                                 true,
                             );
                             tracing::info!(server = %server_name, "MCP transport reconnected for subsequent calls");
+                        } else {
+                            tracing::info!(server = %server_name, "Discarded MCP reconnect because a newer server configuration was installed");
                         }
-                        Err(reconnect_error) => tracing::warn!(
-                            server = %server_name,
-                            error = %reconnect_error,
-                            "MCP transport reconnect failed; a later call may retry"
-                        ),
                     }
+                    Err(reconnect_error) => tracing::warn!(
+                        server = %server_name,
+                        error = %reconnect_error,
+                        "MCP transport reconnect failed; a later call may retry"
+                    ),
                 }
                 return Err(error).with_context(|| {
                     format!("tools/call failed for {server_name}::{raw_tool_name}")
@@ -958,8 +1007,8 @@ for line in sys.stdin:
     }
 
     #[tokio::test]
-    async fn upsert_replaces_service_in_an_existing_filtered_view() {
-        let (_fixture_dir, trace, config) = fixture_config();
+    async fn upsert_reconnect_uses_new_config_in_an_existing_filtered_view() {
+        let (fixture_dir, original_trace, config) = fixture_config();
         let registry = McpRegistry::from_config(&config)
             .await
             .expect("connect MCP fixture");
@@ -971,26 +1020,51 @@ for line in sys.stdin:
             .call_namespaced_tool("resilience__echo", serde_json::json!({"mode": "before"}))
             .await
             .expect("initial service must respond");
+        let replacement_trace = fixture_dir.path().join("replacement-trace.jsonl");
+        let replacement_entry = match config
+            .mcp_servers
+            .get("resilience")
+            .expect("fixture server config")
+            .clone()
+        {
+            McpServerEntry::Stdio {
+                command,
+                mut args,
+                env,
+                sandboxed,
+            } => {
+                *args.last_mut().expect("fixture trace argument") =
+                    replacement_trace.display().to_string();
+                McpServerEntry::Stdio {
+                    command,
+                    args,
+                    env,
+                    sandboxed,
+                }
+            }
+            McpServerEntry::RemoteHttp { .. } => panic!("fixture must use stdio"),
+        };
         registry
-            .upsert_server(
-                "resilience".to_string(),
-                config
-                    .mcp_servers
-                    .get("resilience")
-                    .expect("fixture server config")
-                    .clone(),
-            )
+            .upsert_server("resilience".to_string(), replacement_entry)
             .await
             .expect("upsert replacement service");
         filtered
+            .call_namespaced_tool("resilience__echo", serde_json::json!({"mode": "crash"}))
+            .await
+            .expect_err("post-upsert crash must fail without replay");
+        filtered
             .call_namespaced_tool("resilience__echo", serde_json::json!({"mode": "after"}))
             .await
-            .expect("existing filtered view must observe upsert replacement");
+            .expect("existing filtered view must reconnect with the upserted config");
 
-        let trace = trace_entries(&trace);
-        assert_eq!(trace.len(), 2);
-        assert_eq!(trace[0].mode, "before");
-        assert_eq!(trace[1].mode, "after");
-        assert_ne!(trace[0].pid, trace[1].pid);
+        let original_trace = trace_entries(&original_trace);
+        assert_eq!(original_trace.len(), 1);
+        assert_eq!(original_trace[0].mode, "before");
+
+        let replacement_trace = trace_entries(&replacement_trace);
+        assert_eq!(replacement_trace.len(), 2);
+        assert_eq!(replacement_trace[0].mode, "crash");
+        assert_eq!(replacement_trace[1].mode, "after");
+        assert_ne!(replacement_trace[0].pid, replacement_trace[1].pid);
     }
 }

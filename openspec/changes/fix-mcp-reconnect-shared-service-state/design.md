@@ -24,21 +24,36 @@ The correction must preserve the existing authorization boundary, avoid replayin
 
 ## Decisions
 
-### Use a shared replaceable slot per server
+### Use a shared replaceable service-and-configuration slot per server
 
-The service map value becomes a private shared slot equivalent to `Arc<RwLock<Arc<DynClientService>>>`. The outer registry map remains independently copied for `filtered` and `merge`; cloning a permitted entry clones its slot, not merely the service pointer it currently contains.
+The service map value becomes a private shared slot containing the current
+`Arc<DynClientService>`, its authoritative reconnect entry, and a configuration
+generation. The outer registry map remains independently copied for `filtered`
+and `merge`; cloning a permitted entry clones its slot, not merely the service
+pointer or configuration it currently contains.
 
 This is preferred over sharing the entire service map because a whole-map share would allow a filtered view to observe later-added or explicitly excluded servers. It is preferred over updating both a child view and a remembered parent because merged registries can have multiple origins and parent propagation would be incomplete and brittle.
 
 ### Clone the current service pointer before awaiting
 
-Call lookup acquires the slot's read lock only long enough to clone its current `Arc<DynClientService>`, then releases the lock before `call_tool(...).await`. Reconnect creates the replacement without holding the slot lock and acquires a write lock only to swap the pointer.
+Call lookup acquires the slot's read lock only long enough to clone its current
+`Arc<DynClientService>`, then releases the lock before `call_tool(...).await`.
+Reconnect snapshots the authoritative entry and generation, creates the
+replacement without holding the slot lock, and swaps the pointer only if the
+generation remains current. A concurrent or earlier upsert therefore cannot be
+rolled back by a stale reconnect.
 
 This preserves synchronous `std::sync::RwLock` use for tiny pointer operations and prevents blocking unrelated work for the duration of a tool call or process handshake. Replacing the lock with an async lock would add scheduling overhead without providing a benefit for these non-awaiting critical sections.
 
 ### Preserve slot identity during upsert and registry projection
 
-Initial connection creates a new slot. `filtered` clones only allowed slots; `merge` preserves the current collision behavior while carrying the selected slot; reconnect swaps the existing slot. An upsert for an existing server updates that server's existing slot so previously authorized views do not retain a dead handle, while its configuration and advertised-tool projections continue to follow the existing registry update behavior.
+Initial connection creates a new slot. `filtered` clones only allowed slots;
+`merge` preserves the current collision behavior while carrying the selected
+slot; reconnect swaps the existing slot. An upsert for an existing server
+atomically updates that slot's service, authoritative reconnect entry, and
+generation so previously authorized views neither retain a dead handle nor
+reconnect with a stale configuration. Its advertised-tool projections continue
+to follow the existing registry update behavior.
 
 Removing a server deletes it from the target registry's map and indexes. Existing already-created views may still own the slot they were previously authorized to use; this is unchanged snapshot-view behavior and is not broadened by reconnect.
 
@@ -50,7 +65,13 @@ This is preferred over non-streaming response inspection because non-streaming c
 
 ### Test structure
 
-Focused Rust tests exercise slot identity across independently created filtered and merged views, pointer replacement, and continued exclusion of denied servers/tools. The local installed-artifact certifier remains the authoritative process-boundary proof because it covers the packaged binary, request-to-request registry reconstruction, actual subprocess exit, the full timeout, normalized streamed events, and process identifiers in one boundary test.
+Focused Rust tests exercise slot identity across independently created filtered
+and merged views, pointer replacement, continued exclusion of denied
+servers/tools, and an old filtered view reconnecting with configuration B after
+an A→B upsert. The local installed-artifact certifier remains the authoritative
+process-boundary proof because it covers the packaged binary, request-to-request
+registry reconstruction, actual subprocess exit, the full timeout, normalized
+streamed events, and process identifiers in one boundary test.
 
 Negative controls mutate a failed event into success and duplicate a fixture trace entry; both must make the evidence validator exit nonzero.
 

@@ -16,6 +16,12 @@ After an MCP tool call fails because its server transport crashed or timed out, 
 - **WHEN** an authorized merged registry view exists before another view successfully replaces a failed server transport
 - **THEN** the merged view's next call to that server MUST use the replacement transport
 
+#### Scenario: Upserted configuration remains authoritative during reconnect
+- **WHEN** an authorized registry view exists before server configuration A is upserted to configuration B
+- **AND** a later operation through that old view fails after using B
+- **THEN** the reconnect MUST use configuration B
+- **AND** the old view MUST NOT restore a transport created from configuration A
+
 ### Requirement: Failed MCP operations are not replayed
 UAR SHALL report the failed MCP tool operation as unsuccessful and SHALL NOT automatically execute that operation again while reconnecting the transport.
 
