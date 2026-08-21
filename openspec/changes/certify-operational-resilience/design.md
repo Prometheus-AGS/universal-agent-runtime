@@ -63,6 +63,19 @@ container as UID 65532.
 
 This is preferred to treating the synthetic Rust checks alone as release proof.
 
+The first immutable preflight exposed an observation-boundary defect in the
+installed-artifact certifier. A crashed MCP subprocess produced a normalized
+tool result with `success: false`, reconnected its transport for later calls,
+and then allowed the model to describe the failure. The certifier used the
+non-streaming response, which intentionally contains only final assistant text,
+and therefore mistook the model's `mcp-recovered` text for a replayed tool call.
+The corrected certifier reads the streaming tool-result event and retains a
+fixture-side process trace. It accepts exactly one failed crash event and one
+failed timeout event, requires exactly one process-boundary execution of each,
+and proves that the following echo calls run in replacement processes. It does
+not change normal runtime behavior by aborting every run whose model receives a
+failed tool result.
+
 The embedded entity-management repository is a nested pnpm workspace with its
 own authenticated pnpm 10.33.0 pin. Its developer-engine contract admits pnpm
 versions from 10.33.0 through 11.x so an outer pnpm 11 task can invoke the
@@ -83,7 +96,10 @@ The certifying lane requires:
 - streaming p95 latency: at most 2,000 ms;
 - peak RSS growth: at most 262,144 KiB;
 - provider outage, rate limit, malformed stream, MCP crash, transport loss, and
-  tool timeout surface explicitly before a later recovery succeeds;
+  tool timeout surface explicitly as unsuccessful streamed tool results before
+  a later independent call succeeds;
+- MCP crash and timeout fixture modes execute exactly once, and the later calls
+  use replacement MCP process identifiers;
 - cold-backup and restored tree digests match;
 - health/readiness succeed, the container UID is non-root, persistence is
   writable, and SIGTERM exits with status 0.

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 240,
+  "derivedRevision": 240,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 182
+  },
+  "conflictCount": 0,
+  "phase": "fix-mcp-reconnect-shared-service-state",
+  "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-mcp-reconnect-shared-service-state",
+  "parentPhase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+  "last_updated": "2026-08-21T11:26:15.189268Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 1,
+  "changes_completed": 0,
+  "implementation_total": 1,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 1,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "fix-mcp-reconnect-shared-service-state",
+      "title": "Fix MCP reconnect shared service state",
+      "status": "IN_PROGRESS",
+      "implementation_status": "IN_PROGRESS",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

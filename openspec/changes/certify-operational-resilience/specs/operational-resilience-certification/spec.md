@@ -6,6 +6,8 @@ UAR SHALL terminate, retry, resume or surface external failures according to doc
 #### Scenario: MCP server restart
 - **WHEN** an MCP server crashes during a tool call and restarts
 - **THEN** the run reaches a documented terminal/retry state and later calls can reconnect without restarting UAR
+- **AND** the failed call is observed as one unsuccessful streamed tool-result event and is not executed again at the MCP process boundary
+- **AND** final assistant text or an overall successful HTTP stream does not substitute for the failed tool-result observation
 
 #### Scenario: Streaming soak
 - **WHEN** the release candidate runs the defined multi-hour streaming workload

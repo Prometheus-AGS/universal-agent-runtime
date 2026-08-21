@@ -4,6 +4,7 @@ set -euo pipefail
 # Certify an installed release payload rather than a development checkout.
 # Usage: scripts/certify-release-candidate.sh <artifact-directory> [results-directory]
 
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 artifacts="${1:?artifact directory is required}"
 results="${2:-target/release-candidate-certification}"
 archive_glob="${UAR_CANDIDATE_ARCHIVE_GLOB:-*linux-x64.tar.gz}"
@@ -76,8 +77,11 @@ package_root="$(dirname "$binary")"
 
 cat >"$work/mock-mcp.py" <<'PY'
 import json
+import os
 import sys
 import time
+
+trace_path = sys.argv[1]
 
 for line in sys.stdin:
     try:
@@ -106,6 +110,10 @@ for line in sys.stdin:
         }]}
     elif method == "tools/call":
         mode = request.get("params", {}).get("arguments", {}).get("mode", "echo")
+        with open(trace_path, "a", encoding="utf-8") as trace:
+            trace.write(json.dumps({"pid": os.getpid(), "request_id": request_id, "mode": mode}) + "\n")
+            trace.flush()
+            os.fsync(trace.fileno())
         if mode == "crash":
             sys.exit(23)
         if mode == "timeout":
@@ -117,7 +125,7 @@ for line in sys.stdin:
     print(json.dumps({"jsonrpc": "2.0", "id": request_id, "result": result}), flush=True)
 PY
 cat >"$work/mcp.json" <<JSON
-{"mcpServers":{"resilience":{"command":"python3","args":["$work/mock-mcp.py"]}}}
+{"mcpServers":{"resilience":{"command":"python3","args":["$work/mock-mcp.py","$results/mcp-process-trace.jsonl"]}}}
 JSON
 
 cat >"$work/mock-openai.py" <<'PY'
@@ -336,7 +344,7 @@ certify_failure_recovery() {
 }
 
 certify_mcp_process_boundary() {
-  local attempt code health_code health_status
+  local attempt code health_code health_status crash_code timeout_code
   health_code="not-requested"
   health_status=1
   for attempt in $(seq 1 15); do
@@ -365,33 +373,27 @@ certify_mcp_process_boundary() {
   read -r code _ < <(chat_request mcp-echo false "$results/mcp-echo.json")
   [[ "$code" == 2* ]] && grep -q mcp-recovered "$results/mcp-echo.json"
 
-  set +e
-  read -r crash_code _ < <(chat_request mcp-crash false "$results/mcp-crash.json")
-  crash_request_status=$?
-  set -e
-  if [[ $crash_request_status -eq 0 && "$crash_code" == 2* ]] && grep -q mcp-recovered "$results/mcp-crash.json"; then
-    echo "crashed MCP call was replayed or reported as successful" >&2
-    return 1
-  fi
+  read -r crash_code _ < <(chat_request mcp-crash true "$results/mcp-crash.sse")
+  [[ "$crash_code" == 2* ]]
   read -r code _ < <(chat_request mcp-echo false "$results/mcp-after-crash.json")
   [[ "$code" == 2* ]] && grep -q mcp-recovered "$results/mcp-after-crash.json"
 
   timeout_started="$(date +%s)"
-  set +e
-  read -r timeout_code _ < <(chat_request mcp-timeout false "$results/mcp-timeout.json")
-  timeout_request_status=$?
-  set -e
+  read -r timeout_code _ < <(chat_request mcp-timeout true "$results/mcp-timeout.sse")
   timeout_elapsed=$(( $(date +%s) - timeout_started ))
-  if [[ $timeout_request_status -eq 0 && "$timeout_code" == 2* ]] && grep -q mcp-recovered "$results/mcp-timeout.json"; then
-    echo "timed-out MCP call was replayed or reported as successful" >&2
-    return 1
-  fi
+  [[ "$timeout_code" == 2* ]]
   [[ $timeout_elapsed -ge 30 && $timeout_elapsed -lt 45 ]]
   read -r code _ < <(chat_request mcp-echo false "$results/mcp-after-timeout.json")
   [[ "$code" == 2* ]] && grep -q mcp-recovered "$results/mcp-after-timeout.json"
 
+  node "$script_dir/validate-mcp-process-boundary-evidence.mjs" \
+    "$results/mcp-crash.sse" \
+    "$results/mcp-timeout.sse" \
+    "$results/mcp-process-trace.jsonl" \
+    >"$results/mcp-process-boundary-validation.txt"
+
   cat >"$results/mcp-process-boundary.json" <<JSON
-{"source_sha":"$source_sha","candidate_tag":"$candidate_tag","stdio_discovery":true,"tool_call":true,"configured_crash_exit_code":23,"transport_loss_surfaced":true,"reconnected_after_crash":true,"tool_timeout_seconds":30,"observed_timeout_seconds":$timeout_elapsed,"timed_out_call_replayed":false,"reconnected_after_timeout":true}
+{"source_sha":"$source_sha","candidate_tag":"$candidate_tag","stdio_discovery":true,"tool_call":true,"configured_crash_exit_code":23,"transport_loss_surfaced":true,"crash_failure_events":1,"crashed_call_replayed":false,"reconnected_after_crash":true,"tool_timeout_seconds":30,"observed_timeout_seconds":$timeout_elapsed,"timeout_failure_events":1,"timed_out_call_replayed":false,"reconnected_after_timeout":true,"raw_evidence":{"crash_stream":"mcp-crash.sse","timeout_stream":"mcp-timeout.sse","process_trace":"mcp-process-trace.jsonl","validation":"mcp-process-boundary-validation.txt"}}
 JSON
 }
 

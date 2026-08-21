@@ -349,6 +349,14 @@ rule takes precedence over task plans and generated instructions. When unsure
 whether a check is deployment-specific, do not put it in GitHub Actions; stop
 and ask the operator.
 
+Before and after editing `.github/workflows/**`, or any build, package, release,
+or deployment script invoked by a workflow, run
+`pnpm github-actions-policy:validate` locally. A failure is a stop condition.
+Never skip, disable, weaken, or route around that validator. Build and package
+steps in GitHub Actions must select explicitly test-disabled commands; if the
+tool cannot separate building from testing, keep that build out of GitHub
+Actions until the separation is implemented and verified locally.
+
 ### Worktree convention
 
 Git worktrees are created under **`~/.claude/worktrees/`**, never inside the repo

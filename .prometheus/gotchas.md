@@ -453,3 +453,25 @@ returned nonzero at EOF, and `set -e` terminated the script.
 format with `\n` and keep a focused contract check that observes `read` return
 zero. A populated response artifact does not prove the surrounding shell
 assignment succeeded.
+
+## 2026-08-21 — observe tool failure at the event boundary
+
+**Observed defect.** The installed-candidate MCP crash check used a
+non-streaming chat response to decide whether a failed tool call had surfaced.
+UAR emitted an unsuccessful normalized tool-result event and reconnected the
+MCP transport, but the non-streaming endpoint intentionally retained only the
+model's final `mcp-recovered` text. The certifier therefore labeled correct
+event-level behavior as a replayed successful tool call.
+
+**Working rule.** Certify a tool failure from the streamed tool-result event,
+not from final assistant text or the request's overall HTTP status. Pair that
+event with a fixture-side process trace that proves the failed call executed
+once and the next independent call used a replacement process. Do not change
+normal agent recovery semantics to satisfy a check observing the wrong layer.
+
+**Correction from the same preflight.** The reconnect itself succeeded only in
+the disposable filtered registry that handled the failed call. A later request
+rebuilt its registry from the stale global service value and failed before
+reaching the replacement process. Event-boundary evidence and shared reconnect
+ownership are separate requirements; proving the former does not prove the
+latter.

@@ -2,6 +2,8 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const [directory] = process.argv.slice(2);
 if (!directory) {
@@ -67,14 +69,32 @@ if (
   !mcp.stdio_discovery ||
   !mcp.tool_call ||
   !mcp.transport_loss_surfaced ||
+  mcp.crash_failure_events !== 1 ||
+  mcp.crashed_call_replayed !== false ||
   !mcp.reconnected_after_crash ||
   mcp.tool_timeout_seconds !== 30 ||
   mcp.observed_timeout_seconds < 30 ||
   mcp.observed_timeout_seconds >= 45 ||
+  mcp.timeout_failure_events !== 1 ||
   mcp.timed_out_call_replayed !== false ||
   !mcp.reconnected_after_timeout
 ) {
   failures.push("MCP process/transport/reconnect/timeout evidence is incomplete or source-mismatched");
+}
+const mcpEvidenceValidation = spawnSync(
+  process.execPath,
+  [
+    fileURLToPath(new URL("./validate-mcp-process-boundary-evidence.mjs", import.meta.url)),
+    join(directory, mcp.raw_evidence?.crash_stream ?? ""),
+    join(directory, mcp.raw_evidence?.timeout_stream ?? ""),
+    join(directory, mcp.raw_evidence?.process_trace ?? ""),
+  ],
+  { encoding: "utf8" },
+);
+if (mcpEvidenceValidation.status !== 0) {
+  failures.push(
+    `MCP raw process-boundary evidence failed replay: ${mcpEvidenceValidation.stderr.trim() || mcpEvidenceValidation.error?.message || "unknown failure"}`,
+  );
 }
 if (!(soak.configured_duration_seconds > 0) || soak.observed_duration_seconds < soak.configured_duration_seconds) {
   failures.push("streaming soak did not run for its configured duration");

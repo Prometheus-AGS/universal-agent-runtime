@@ -30,6 +30,25 @@ type DynClientService = rmcp::service::RunningService<
     rmcp::service::RoleClient,
     Box<dyn rmcp::service::DynService<rmcp::service::RoleClient>>,
 >;
+type SharedClientService = Arc<RwLock<Arc<DynClientService>>>;
+
+fn new_service_slot(service: DynClientService) -> SharedClientService {
+    Arc::new(RwLock::new(Arc::new(service)))
+}
+
+fn current_service(slot: &SharedClientService) -> Arc<DynClientService> {
+    Arc::clone(
+        &slot
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner),
+    )
+}
+
+fn replace_service(slot: &SharedClientService, service: DynClientService) {
+    *slot
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Arc::new(service);
+}
 
 async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<DynClientService> {
     match entry {
@@ -97,7 +116,7 @@ fn resolve_remote_http_url(
 
 #[derive(Clone)]
 pub struct McpRegistry {
-    services: Arc<RwLock<HashMap<String, Arc<DynClientService>>>>,
+    services: Arc<RwLock<HashMap<String, SharedClientService>>>,
     server_config: Arc<RwLock<HashMap<String, McpServerEntry>>>,
     // namespaced_tool_name -> (server_name, tool_name)
     tool_index: Arc<RwLock<HashMap<String, (String, String)>>>,
@@ -150,7 +169,7 @@ impl McpRegistry {
 
     pub async fn from_config(cfg: &crate::mcp::config::McpConfig) -> anyhow::Result<Self> {
         // 1) connect all servers
-        let mut services: HashMap<String, Arc<DynClientService>> = HashMap::new();
+        let mut services: HashMap<String, SharedClientService> = HashMap::new();
 
         for (name, entry) in &cfg.mcp_servers {
             let svc = match Self::connect_configured_server(name, entry).await {
@@ -162,14 +181,15 @@ impl McpRegistry {
                 }
             };
             crate::uar::telemetry::metrics::set_mcp_server_status(name, true);
-            services.insert(name.clone(), Arc::new(svc));
+            services.insert(name.clone(), new_service_slot(svc));
         }
 
         // 2) list tools + build index
         let mut all_tools: Vec<(String, Tool)> = Vec::new();
         let mut tool_index: HashMap<String, (String, String)> = HashMap::new();
 
-        for (server_name, svc) in &services {
+        for (server_name, service_slot) in &services {
+            let svc = current_service(service_slot);
             // list_tools exists on the rmcp running service in examples
             let result = match svc.list_tools(Default::default()).await {
                 Ok(result) => result,
@@ -383,7 +403,7 @@ impl McpRegistry {
 
     /// Add or replace one MCP server and immediately refresh its advertised tools.
     pub async fn upsert_server(&self, name: String, entry: McpServerEntry) -> anyhow::Result<()> {
-        let service = Arc::new(Self::connect_configured_server(&name, &entry).await?);
+        let service = Self::connect_configured_server(&name, &entry).await?;
         let result = service
             .list_tools(Default::default())
             .await
@@ -398,10 +418,16 @@ impl McpRegistry {
             discovered.push((namespaced, tool));
         }
 
-        self.services
+        let mut services = self
+            .services
             .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .insert(name.clone(), service);
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if let Some(service_slot) = services.get(&name) {
+            replace_service(service_slot, service);
+        } else {
+            services.insert(name.clone(), new_service_slot(service));
+        }
+        drop(services);
         self.server_config
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -537,7 +563,7 @@ impl McpRegistry {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .iter()
             .filter(|(name, _)| server_allowed(name))
-            .map(|(name, service)| (name.clone(), service.clone()))
+            .map(|(name, service)| (name.clone(), Arc::clone(service)))
             .collect();
         let server_config = self
             .server_entries()
@@ -659,13 +685,14 @@ impl McpRegistry {
         }
 
         // 2. Lookup service
-        let service = self
+        let service_slot = self
             .services
             .read()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .get(&server_name)
             .cloned()
             .ok_or_else(|| anyhow!("missing server handle: {server_name}"))?;
+        let service = current_service(&service_slot);
 
         // 3. Call tool
         let args_obj = arguments.as_object().cloned();
@@ -730,10 +757,7 @@ impl McpRegistry {
                 if let Some(entry) = reconnect_entry {
                     match connect_server(&server_name, &entry).await {
                         Ok(replacement) => {
-                            self.services
-                                .write()
-                                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                                .insert(server_name.clone(), Arc::new(replacement));
+                            replace_service(&service_slot, replacement);
                             crate::uar::telemetry::metrics::set_mcp_server_status(
                                 &server_name,
                                 true,
@@ -793,4 +817,180 @@ fn resolve_mcp_command(command: &str) -> PathBuf {
     }
 
     path.to_path_buf()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::mcp::config::McpConfig;
+    use serde::Deserialize;
+    use std::collections::HashSet;
+
+    const FIXTURE: &str = r#"
+import json
+import os
+import sys
+
+trace_path = sys.argv[1]
+
+for line in sys.stdin:
+    try:
+        request = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    request_id = request.get("id")
+    if request_id is None:
+        continue
+    method = request.get("method")
+    if method == "initialize":
+        result = {
+            "protocolVersion": request.get("params", {}).get("protocolVersion", "2024-11-05"),
+            "capabilities": {"tools": {}},
+            "serverInfo": {"name": "uar-registry-test", "version": "1.0.0"},
+        }
+    elif method == "tools/list":
+        result = {"tools": [{
+            "name": "echo",
+            "description": "MCP registry recovery fixture",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"mode": {"type": "string"}},
+                "required": ["mode"],
+            },
+        }]}
+    elif method == "tools/call":
+        mode = request.get("params", {}).get("arguments", {}).get("mode", "echo")
+        with open(trace_path, "a", encoding="utf-8") as trace:
+            trace.write(json.dumps({"pid": os.getpid(), "mode": mode}) + "\n")
+            trace.flush()
+            os.fsync(trace.fileno())
+        if mode == "crash":
+            sys.exit(23)
+        result = {"content": [{"type": "text", "text": f"mcp-{mode}"}], "isError": False}
+    else:
+        print(json.dumps({
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "error": {"code": -32601, "message": "method not found"},
+        }), flush=True)
+        continue
+    print(json.dumps({"jsonrpc": "2.0", "id": request_id, "result": result}), flush=True)
+"#;
+
+    #[derive(Deserialize)]
+    struct TraceEntry {
+        pid: u32,
+        mode: String,
+    }
+
+    fn fixture_config() -> (tempfile::TempDir, PathBuf, McpConfig) {
+        let fixture_dir = tempfile::tempdir().expect("create MCP fixture directory");
+        let script = fixture_dir.path().join("mock-mcp.py");
+        let trace = fixture_dir.path().join("trace.jsonl");
+        std::fs::write(&script, FIXTURE).expect("write MCP fixture");
+        let config = McpConfig {
+            mcp_servers: HashMap::from([(
+                "resilience".to_string(),
+                McpServerEntry::Stdio {
+                    command: "python3".to_string(),
+                    args: vec![script.display().to_string(), trace.display().to_string()],
+                    env: HashMap::new(),
+                    sandboxed: false,
+                },
+            )]),
+        };
+        (fixture_dir, trace, config)
+    }
+
+    fn trace_entries(path: &Path) -> Vec<TraceEntry> {
+        std::fs::read_to_string(path)
+            .expect("read MCP trace")
+            .lines()
+            .map(|line| serde_json::from_str(line).expect("parse MCP trace entry"))
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn reconnect_replacement_is_shared_without_widening_filtered_views() {
+        let (_fixture_dir, trace, config) = fixture_config();
+        let registry = McpRegistry::from_config(&config)
+            .await
+            .expect("connect MCP fixture");
+        let allowed_servers = HashSet::from(["resilience".to_string()]);
+        let allowed_tools = HashSet::from(["resilience__echo".to_string()]);
+        let first_view = registry.filtered(Some(&allowed_servers), Some(&allowed_tools));
+        let second_view = registry.filtered(Some(&allowed_servers), Some(&allowed_tools));
+        let merged_view = McpRegistry::empty().merge(&registry);
+        let denied_server_view = registry.filtered(Some(&HashSet::new()), None);
+        let denied_tool_view = registry.filtered(Some(&allowed_servers), Some(&HashSet::new()));
+
+        first_view
+            .call_namespaced_tool("resilience__echo", serde_json::json!({"mode": "crash"}))
+            .await
+            .expect_err("crashed MCP call must fail without replay");
+
+        second_view
+            .call_namespaced_tool("resilience__echo", serde_json::json!({"mode": "echo"}))
+            .await
+            .expect("independent filtered view must use replacement service");
+        merged_view
+            .call_namespaced_tool("resilience__echo", serde_json::json!({"mode": "echo"}))
+            .await
+            .expect("pre-existing merged view must use replacement service");
+
+        assert!(denied_server_view.server_names().is_empty());
+        assert!(denied_server_view.tools().is_empty());
+        assert!(denied_tool_view.tools().is_empty());
+        denied_tool_view
+            .call_namespaced_tool("resilience__echo", serde_json::json!({"mode": "echo"}))
+            .await
+            .expect_err("replacement must not restore a policy-excluded tool");
+
+        let trace = trace_entries(&trace);
+        assert_eq!(
+            trace.iter().filter(|entry| entry.mode == "crash").count(),
+            1,
+            "failed call must execute exactly once"
+        );
+        assert_eq!(trace.len(), 3);
+        assert_ne!(trace[0].pid, trace[1].pid);
+        assert_eq!(trace[1].pid, trace[2].pid);
+    }
+
+    #[tokio::test]
+    async fn upsert_replaces_service_in_an_existing_filtered_view() {
+        let (_fixture_dir, trace, config) = fixture_config();
+        let registry = McpRegistry::from_config(&config)
+            .await
+            .expect("connect MCP fixture");
+        let allowed_servers = HashSet::from(["resilience".to_string()]);
+        let allowed_tools = HashSet::from(["resilience__echo".to_string()]);
+        let filtered = registry.filtered(Some(&allowed_servers), Some(&allowed_tools));
+
+        filtered
+            .call_namespaced_tool("resilience__echo", serde_json::json!({"mode": "before"}))
+            .await
+            .expect("initial service must respond");
+        registry
+            .upsert_server(
+                "resilience".to_string(),
+                config
+                    .mcp_servers
+                    .get("resilience")
+                    .expect("fixture server config")
+                    .clone(),
+            )
+            .await
+            .expect("upsert replacement service");
+        filtered
+            .call_namespaced_tool("resilience__echo", serde_json::json!({"mode": "after"}))
+            .await
+            .expect("existing filtered view must observe upsert replacement");
+
+        let trace = trace_entries(&trace);
+        assert_eq!(trace.len(), 2);
+        assert_eq!(trace[0].mode, "before");
+        assert_eq!(trace[1].mode, "after");
+        assert_ne!(trace[0].pid, trace[1].pid);
+    }
 }
