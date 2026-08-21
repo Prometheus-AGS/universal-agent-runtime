@@ -204,7 +204,10 @@ RUN git config --global --add safe.directory '*' \
 # validation. The frontend remains an isolated workspace under `frontend/`.
 RUN cd frontend \
     && pnpm install --frozen-lockfile \
-    && pnpm -r --filter "./packages/*" build \
+    && (cd packages/prometheus-entity-management \
+        && pnpm install --frozen-lockfile \
+        && pnpm --filter @prometheus-ags/entity-graph-core build \
+        && pnpm --filter @prometheus-ags/prometheus-entity-management build) \
     && pnpm build
 
 # Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded).

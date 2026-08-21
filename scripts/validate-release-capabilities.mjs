@@ -44,6 +44,7 @@ for (const dependency of forbiddenDirectDependencies) {
 
 const server = readFileSync(resolve(root, "src/server.rs"), "utf8");
 const dockerfile = readFileSync(resolve(root, "Dockerfile"), "utf8");
+const dockerignore = readFileSync(resolve(root, ".dockerignore"), "utf8");
 const localCertifier = readFileSync(
   resolve(root, "scripts/certify-operational-resilience-local.sh"),
   "utf8",
@@ -56,6 +57,25 @@ if (dockerfile.includes("memory-palace")) {
 }
 if (!/^ARG TARGETARCH$/m.test(dockerfile) || /^ARG TARGETARCH=/m.test(dockerfile)) {
   throw new Error("Dockerfile must inherit BuildKit TARGETARCH without a hard-coded default");
+}
+for (const ignoredArtifact of ["**/node_modules", "**/dist", "**/.turbo"]) {
+  if (!dockerignore.split("\n").includes(ignoredArtifact)) {
+    throw new Error(`Docker build context must recursively exclude ${ignoredArtifact}`);
+  }
+}
+if (!dockerfile.includes("cd packages/prometheus-entity-management")) {
+  throw new Error("Dockerfile must install the nested entity-management workspace");
+}
+for (const requiredPackage of [
+  "@prometheus-ags/entity-graph-core",
+  "@prometheus-ags/prometheus-entity-management",
+]) {
+  if (!dockerfile.includes(`pnpm --filter ${requiredPackage} build`)) {
+    throw new Error(`Dockerfile must build shipped workspace package: ${requiredPackage}`);
+  }
+}
+if (/pnpm\s+-r\s+--filter\s+["']\.\/packages\/\*["']\s+build/.test(dockerfile)) {
+  throw new Error("Dockerfile must not build every nested frontend workspace package");
 }
 if (!localCertifier.includes("--bin universal-agent-runtime --features server-full")) {
   throw new Error("native release archives must build the authoritative server-full bundle");

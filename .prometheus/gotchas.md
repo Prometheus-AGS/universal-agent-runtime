@@ -424,3 +424,19 @@ mismatch.
 stage without a value. A default such as `ARG TARGETARCH=amd64` overrides the
 detected target and can create a mixed-architecture image. Verify the fix with
 the actual toolchain stage and its architecture probes, not a text check alone.
+
+## 2026-08-21 — Docker contexts must exclude nested workspace outputs
+
+**Observed defect.** The UAR image build copied the entity-management
+submodule's macOS `node_modules`, package `dist` directories, and Turbo cache
+into a Linux ARM64 builder. The first clean install then failed to load
+Rollup's Linux ARM64 native package. Removing that residue also exposed that
+the image build had been compiling the submodule's unrelated docs and examples
+instead of installing its own frozen lock and building only UAR's two consumed
+packages.
+
+**Working rule.** Use recursive Docker ignore patterns for dependencies,
+package outputs, and task-runner caches. Install each nested workspace from its
+own frozen lock in the target container, then build only packages shipped by
+the parent artifact. A package build that succeeds by replaying a host cache is
+not portable evidence.
