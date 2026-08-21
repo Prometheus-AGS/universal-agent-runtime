@@ -440,3 +440,16 @@ package outputs, and task-runner caches. Install each nested workspace from its
 own frozen lock in the target container, then build only packages shipped by
 the parent artifact. A package build that succeeds by replaying a host cache is
 not portable evidence.
+
+## 2026-08-21 — curl write-out consumed by Bash `read` needs a newline
+
+**Observed defect.** The installed-candidate certifier completed provider
+failure recovery, wrote a successful recovery response, and then exited 1 with
+no diagnostic before MCP checks. Its `chat_request` helper emitted curl status
+and latency without a trailing newline. Bash `read` assigned both values but
+returned nonzero at EOF, and `set -e` terminated the script.
+
+**Working rule.** When curl `--write-out` feeds Bash `read`, terminate the
+format with `\n` and keep a focused contract check that observes `read` return
+zero. A populated response artifact does not prove the surrounding shell
+assignment succeeded.

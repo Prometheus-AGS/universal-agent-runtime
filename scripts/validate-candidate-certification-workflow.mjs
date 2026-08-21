@@ -13,6 +13,7 @@ for (const contract of [
   "release-manifest.json",
   "candidate manifest/source SHA",
   "UAR_SOAK_DURATION_SECONDS",
+  "-w '%{http_code} %{time_total}\\n'",
 ]) {
   if (!certifier.includes(contract)) failures.push(`missing installed candidate certifier contract: ${contract}`);
 }

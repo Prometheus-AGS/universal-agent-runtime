@@ -309,7 +309,7 @@ chat_request() {
   local stream="${2:-false}"
   local output="$3"
   curl --silent --show-error --max-time 45 \
-    -o "$output" -w '%{http_code} %{time_total}' \
+    -o "$output" -w '%{http_code} %{time_total}\n' \
     "http://127.0.0.1:${port}/v1/chat/completions" \
     -H 'content-type: application/json' \
     -d "{\"model\":\"openai/gpt-4o\",\"stream\":${stream},\"messages\":[{\"role\":\"user\",\"content\":\"${prompt}\"}]}"
