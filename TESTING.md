@@ -9,7 +9,7 @@ The testing infrastructure provides:
 - **100% Code Coverage**: Comprehensive testing for both Rust backend and TypeScript frontend
 - **Real Service Integration**: Tests run against actual PostgreSQL, SurrealDB, Redis, and LLM services
 - **Multi-Level Testing**: Unit, integration, API, and end-to-end tests
-- **Automated CI/CD**: GitHub Actions workflows for continuous testing
+- **Local verification**: Development and release checks run on operator-controlled local hosts
 - **Docker Integration**: Consistent testing environments via Docker Compose
 - **Rich Reporting**: HTML, JSON, XML, and LCOV coverage reports
 
@@ -60,10 +60,10 @@ Orchestrates test services with proper health checks:
 - Main application with test environment
 
 ### Test Coverage Configuration
-- **Rust**: `cargo-llvm-cov` via `.github/workflows/coverage.yml`; see `docs/coverage-baseline.md` for the 60% threshold and per-file baseline
-- **TypeScript**: `vitest --coverage` (v8 provider) via `frontend/vitest.config.ts`, same `.github/workflows/coverage.yml`
+- **Rust**: local `cargo-llvm-cov`; see `docs/coverage-baseline.md` for the 60% threshold and per-file baseline
+- **TypeScript**: local `vitest --coverage` using the v8 provider in `frontend/vitest.config.ts`
 - **Playwright**: V8 coverage integration
-- **CI guard**: `tools/coverage-drift.sh` reports per-file drift vs. `docs/coverage-baseline.md`; `.grcovrc` was removed (unused, superseded by `cargo-llvm-cov`)
+- **Local guard**: `tools/coverage-drift.sh` reports per-file drift vs. `docs/coverage-baseline.md`; `.grcovrc` was removed (unused, superseded by `cargo-llvm-cov`)
 
 ## Test Execution
 
@@ -84,11 +84,11 @@ Orchestrates test services with proper health checks:
 - Complete coverage analysis
 - Performance benchmarks
 
-#### CI Mode (Sequential execution)
+#### Sequential compatibility mode
 ```bash
 ./tools/test-all.sh --ci
 ```
-- Non-parallel execution for CI environments
+- Non-parallel local execution for constrained hosts
 - Comprehensive logging
 - Strict coverage requirements
 
@@ -131,49 +131,19 @@ docker-compose -f docker-compose.test.yaml up -d postgres redis surreal
 ./tools/test-all.sh --full
 ```
 
-## Continuous Integration
+## Verification execution policy
 
-### GitHub Actions Workflows
+Run unit, integration, end-to-end, browser, conformance, regression, security,
+performance, load, stress, soak, and release-certification checks locally.
+Formatting, linting, typechecking, and coverage also run locally. GitHub Actions
+are reserved for deployment execution and deployment-specific validation; a
+build, package, image, or release step must not invoke a test suite directly or
+as a side effect.
 
-#### 1. Comprehensive Test Suite (`comprehensive-tests.yml`)
-**Triggers**: Push to main/develop, PRs to main/develop, scheduled daily runs
-**Duration**: 30-45 minutes
-**Features**:
-- Multi-job parallel execution
-- Code quality checks (format, lint, security audit)
-- Build verification across multiple Rust versions
-- Full test suite with real services
-- Performance benchmarking
-- Docker integration tests
-- Coverage threshold enforcement (80%+ required)
-- Artifact uploads and PR comments
-
-#### 2. Quick Test Suite (`quick-tests.yml`)
-**Triggers**: Push to feature branches, draft PRs
-**Duration**: 10-15 minutes
-**Features**:
-- Fast validation for development
-- Basic compilation and format checks
-- Unit tests and quick integration tests
-- Draft PR specific validation with helpful comments
-
-#### 3. Release Pipeline (`release.yml`)
-**Triggers**: Tag pushes, release publications
-**Duration**: 45-60 minutes
-**Features**:
-- Strict pre-release validation (90% coverage required)
-- Multi-platform binary builds (Linux, macOS, Windows)
-- Docker image creation and publishing
-- GitHub release updates with artifacts
-- Comprehensive release notes with test summaries
-
-### Coverage Requirements
-
-| Environment | Rust Backend | TypeScript Frontend | E2E Coverage |
-|-------------|--------------|-------------------|--------------|
-| Development | 80%+ | 75%+ | 70%+ |
-| CI/CD | 85%+ | 80%+ | 75%+ |
-| Release | 90%+ | 85%+ | 80%+ |
+The repository enforces this boundary with
+`pnpm github-actions-policy:validate` and the pre-commit hook in `lefthook.yml`.
+The tiered local commands in `.claude/rules/rust.md` and
+`.claude/rules/typescript.md` remain authoritative for when each check runs.
 
 ## Test Environment Setup
 
@@ -197,8 +167,9 @@ curl -fsSL https://bun.sh/install | bash
 npx playwright install --with-deps chromium
 ```
 
-#### CI Environment
-All tools are automatically installed via GitHub Actions.
+#### Local certification hosts
+Install the required tools on each supported local build/certification host.
+Release receipts record the exact source commit and tool outputs used.
 
 ### Environment Variables
 
@@ -253,10 +224,6 @@ tools/
 ├── coverage.sh         # Coverage report generator
 └── ...
 
-.github/workflows/
-├── comprehensive-tests.yml  # Full CI pipeline
-├── quick-tests.yml         # Fast validation
-└── release.yml             # Release pipeline
 ```
 
 ## Coverage Tools and Formats
@@ -265,7 +232,7 @@ tools/
 **Primary Tool**: `cargo-llvm-cov`
 **Alternative**: `cargo-tarpaulin`
 **Formats**: LCOV, HTML
-**Configuration**: `.github/workflows/coverage.yml`, `.cargo/config.toml`
+**Configuration**: `.cargo/config.toml`
 
 ### TypeScript Coverage
 **Primary Tool**: Bun's built-in coverage
@@ -286,7 +253,6 @@ tools/
 
 ### Mutation testing
 - **Tool**: `cargo-mutants`
-- **CI**: `.github/workflows/mutation.yml` nightly cron
 - **Run locally**: `cargo mutants --no-shuffle --features server-full`
 - **Reports**: `docs/mutation-history/`
 - **Summary**: `bash tools/mutation-summarize.sh <report-dir>`
@@ -402,11 +368,11 @@ time ./tools/test-all.sh --quick
 3. **Maintenance**: Keep tests updated with code changes
 4. **Documentation**: Use tests as behavioral documentation
 
-### CI/CD Integration
-1. **Fast Feedback**: Quick tests for feature branches
-2. **Comprehensive Validation**: Full tests for main branches
-3. **Release Quality**: Strict requirements for releases
-4. **Monitoring**: Track test execution times and success rates
+### Local verification integration
+1. **Fast feedback**: Run the current tier's focused local checks while editing.
+2. **Comprehensive validation**: Run the phase-completion tier locally.
+3. **Release quality**: Retain source-bound local certification receipts.
+4. **Monitoring**: Track local test execution times and success rates.
 
 ## Metrics and Monitoring
 
@@ -414,16 +380,16 @@ time ./tools/test-all.sh --quick
 - **Test Execution Time**: Track performance trends
 - **Coverage Percentage**: Monitor quality improvements
 - **Failure Rate**: Identify unstable tests
-- **Resource Usage**: Optimize CI costs
+- **Resource Usage**: Optimize local certification-host costs
 
 ### Dashboards
 - **Coverage Reports**: `tests/coverage/unified/index.html`
-- **Test Results**: GitHub Actions summary pages
+- **Test Results**: source-bound local verification receipts
 - **Performance Trends**: Artifact-based historical data
 
 ### Alerts
 - **Coverage Drop**: Below threshold warnings
-- **Test Failures**: Immediate CI notifications
+- **Test Failures**: local command failure and retained logs
 - **Performance Regression**: Automated benchmark comparisons
 
 ## Contributing
@@ -439,12 +405,12 @@ time ./tools/test-all.sh --quick
 1. Update configuration files as needed
 2. Test changes locally before committing
 3. Update documentation for new features
-4. Verify CI workflows still pass
+4. Verify the local GitHub Actions policy guard still passes
 5. Consider backward compatibility
 
 ### Performance Optimization
 1. Profile test execution to identify bottlenecks
 2. Optimize Docker image sizes and startup times
-3. Use caching effectively in CI
+3. Use caching effectively on local verification hosts
 4. Balance thoroughness with execution speed
 5. Monitor resource usage trends

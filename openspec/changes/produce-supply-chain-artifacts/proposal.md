@@ -6,11 +6,14 @@ Release artifacts lack a complete signed evidence set tying binaries and images 
 
 - Generate SBOMs, checksums, keyless signatures and SLSA provenance.
 - Publish signed multi-arch images.
-- Create a machine-readable release manifest.
+- Create a machine-readable release manifest whose builder and test/audit
+  evidence are local source-bound receipts rather than GitHub Actions runs.
+- Generate and independently verify the complete evidence set locally before
+  any operator-authorized publication.
 
 ## Capabilities
 ### New Capabilities
 - `signed-release-evidence`
 
 ## Impact
-Release workflow, artifact publication, GHCR and release documentation.
+Local release tooling, artifact publication, GHCR and release documentation.

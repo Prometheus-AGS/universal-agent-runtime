@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 226,
-  "derivedRevision": 226,
+  "sourceRevision": 230,
+  "derivedRevision": 230,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 168
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 172
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-21T06:22:02.390235Z",
+  "updatedAt": "2026-08-21T07:57:35.270976Z",
   "cursor": [
     "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion"
   ],

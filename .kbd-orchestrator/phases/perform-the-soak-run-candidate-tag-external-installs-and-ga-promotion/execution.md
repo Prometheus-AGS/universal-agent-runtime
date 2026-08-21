@@ -28,7 +28,7 @@ Source plan: `.kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-extern
 
 ## DISPATCH CONTRACTS
 
-The backend is self-executing OpenSpec. For each change, its `tasks.md` is the working surface; canonical status transitions go through `prometheus kbd`; verification and artifact-refiner evidence are recorded before archive. Changes execute in the order in `plan.md` except evidence-backed reconciliation of historical completed work.
+The backend is self-executing OpenSpec. For each change, its `tasks.md` is the working surface; canonical status transitions go through `prometheus kbd`; verification and artifact-refiner evidence are recorded before archive. Evidence and status transitions execute in the order in `plan.md` except evidence-backed reconciliation of historical completed work. Plan revision 9 permits source preparation required by changes 12–14 to land while change 11 is active so the candidate is frozen once; it does not permit later changes' evidence or publication to run early.
 
 ## APPROVAL GATES
 
@@ -44,6 +44,11 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
   require every product, installed-artifact, supply-chain, load, stress, soak,
   and release-certification check to run locally. Stop and correct any artifact
   that assigns those checks to GitHub Actions.
+- Plan revision 9 and decision `freeze-after-local-release-tail-tooling` require
+  every release-tail source/tooling change to land before the immutable
+  candidate is frozen. After that freeze, stop and rerun the three-hour local
+  certification if any implementation, dependency, script, or product-doc file
+  changes.
 - Plan revision 7 and decision `screen-validation-bounded-repairs` authorize only the
   three observed Skills graph-view, approval-event projection, and Knowledge
   nested-interactive repairs inside `screen-by-screen-validation`. Stop at any other

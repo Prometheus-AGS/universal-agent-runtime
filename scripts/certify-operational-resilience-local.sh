@@ -38,8 +38,8 @@ docker info >/dev/null
 
 source_sha="$(git rev-parse HEAD)"
 [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]
-if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
-  echo "local certification requires a clean tracked checkout" >&2
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "local certification requires a clean checkout" >&2
   exit 1
 fi
 if git submodule status --recursive | grep -Eq '^[-+U]'; then
@@ -75,6 +75,7 @@ trap cleanup EXIT
 
 mkdir -p "$artifact_dir" "$results_dir" "$package_dir/skills"
 
+build_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 pnpm install --frozen-lockfile
 pnpm -C frontend install --frozen-lockfile
 (
@@ -94,9 +95,10 @@ cp README.md LICENSE example.config.yaml "$package_dir/"
 tar -czf "$artifact_dir/$archive_name" -C "$package_stage" "$package_name"
 
 docker build -t "$image" .
+build_finished_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 cat > "$results_dir/candidate-build.json" <<JSON
-{"schema_version":1,"source_sha":"$source_sha","candidate_tag":"$candidate_tag","platform":"$platform","archive":"$archive_name","archive_sha256":"$(sha256sum "$artifact_dir/$archive_name" | cut -d' ' -f1)","image":"$image","mode":"$mode","configured_soak_duration_seconds":$soak_duration_seconds}
+{"schema_version":1,"source_sha":"$source_sha","candidate_tag":"$candidate_tag","platform":"$platform","archive":"$archive_name","archive_sha256":"$(sha256sum "$artifact_dir/$archive_name" | cut -d' ' -f1)","image":"$image","mode":"$mode","configured_soak_duration_seconds":$soak_duration_seconds,"started_at":"$build_started_at","finished_at":"$build_finished_at"}
 JSON
 
 UAR_INSTALLED_ARTIFACT_DIR="$artifact_dir" \

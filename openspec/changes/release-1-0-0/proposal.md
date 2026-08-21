@@ -17,8 +17,8 @@ no SBOM, signing, or provenance — below 2026 supply-chain baselines.
 ## Not done here (operator action)
 
 - Creating the candidate or GA tags and publishing GitHub/GHCR state. Those are
-  operator-authorized effects. The candidate pipeline produces the bytes once;
-  GA promotion reuses them without rerunning a build workflow.
+  operator-authorized effects. The local candidate tooling produces the bytes
+  once; GA promotion reuses them without rebuilding.
 
 ## Capabilities
 
@@ -28,5 +28,5 @@ no SBOM, signing, or provenance — below 2026 supply-chain baselines.
 
 ## Impact
 
-Version alignment, candidate release automation, and guarded no-rebuild GA
+Version alignment, local candidate release tooling, and guarded no-rebuild GA
 promotion. No runtime code.

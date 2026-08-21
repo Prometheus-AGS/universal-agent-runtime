@@ -53,7 +53,8 @@ export SENTRY_DSN="https://public@example.sentry.io/1"
 
 When the feature is enabled and a `UarError` is rendered, `sentry::capture_error` is called. When the feature is disabled, no Sentry code is compiled in and no DSN is required.
 
-The release workflow (`.github/workflows/release.yml`) includes a `Build Sentry-enabled release bundle` step that verifies the feature compiles cleanly on every release.
+Local release verification builds the Sentry-enabled bundle and records the
+result before publication.
 
 ## Clippy unwrap/expect policy
 
@@ -63,7 +64,10 @@ The following paths are guarded by `#![deny(clippy::unwrap_used, clippy::expect_
 - `src/uar/runtime/`
 - `src/server.rs`
 
-New `unwrap()` or `expect()` calls in these paths will fail CI. Legitimate exceptions (init-time, static-parse, or test-only) must be annotated with `#[expect(clippy::unwrap_used, reason = "...")]` or `#[expect(clippy::expect_used, reason = "...")]`.
+New `unwrap()` or `expect()` calls in these paths fail local Clippy verification.
+Legitimate exceptions (init-time, static-parse, or test-only) must be annotated
+with `#[expect(clippy::unwrap_used, reason = "...")]` or
+`#[expect(clippy::expect_used, reason = "...")]`.
 
 ## Troubleshooting
 

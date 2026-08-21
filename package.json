@@ -25,6 +25,7 @@
     "support-matrix:validate": "node scripts/validate-product-support-matrix.mjs && node scripts/validate-release-capabilities.mjs",
     "docs:validate": "node scripts/validate-documentation-truth.mjs",
     "github-actions-policy:validate": "node scripts/validate-github-actions-policy.mjs",
+    "release-local-contracts:validate": "node scripts/validate-supply-chain.mjs && node scripts/validate-candidate-certification-workflow.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"

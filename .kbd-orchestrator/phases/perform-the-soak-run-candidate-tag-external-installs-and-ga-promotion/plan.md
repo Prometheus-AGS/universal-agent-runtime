@@ -49,6 +49,11 @@ Changes 1–2 and 3–7 are internally parallelizable batches; 10 hard-depends o
   Product, installed-artifact, supply-chain, load, stress, soak, and release
   certification run locally. GitHub Actions remain available only for actual
   deployment execution and deployment-specific validation.
+- Plan revision 9 separates source preparation from evidence execution. Land
+  and locally verify all scripts, manifests, schemas, and documentation needed
+  by changes 11–14 before freezing change 11's immutable candidate. Evidence
+  still executes in order 11–14. After the freeze, only evidence/checkpoint
+  commits are permitted; any later source change invalidates the three-hour run.
 - Mastra-inspired enhancements (inline trace view, in-chat model switching, evals
   panel) are deliberately NOT in this phase — recorded as candidates for the next
   phase to avoid scope creep on the release path.

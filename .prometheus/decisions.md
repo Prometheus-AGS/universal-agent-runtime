@@ -470,3 +470,22 @@ depended on workflow identity and hosted OIDC. The remaining release-tail
 changes must replace that mechanism with locally produced and independently
 verified evidence before publication; deleting the workflows does not by
 itself prove the replacement is complete.
+
+---
+
+## 2026-08-21 — Freeze after all local release-tail tooling lands
+
+**Decision.** Land and locally verify the operational, supply-chain,
+candidate-certification, and promotion scripts/contracts before freezing the
+immutable candidate. Evidence and status transitions still execute in order;
+after the freeze, only evidence/checkpoint commits are allowed.
+
+**Rationale.** Running the three-hour certification before replacing later
+workflow-bound release tooling would force a source edit and invalidate the
+run. KBD plan revision 9 and decision
+`freeze-after-local-release-tail-tooling` preserve one meaningful source-bound
+certification instead of knowingly scheduling a throwaway run.
+
+**Uncomfortable constraint.** This permits source preparation for later
+changes while the operational change is active. It does not permit their
+evidence, tags, signing, publication, or completion transitions to run early.

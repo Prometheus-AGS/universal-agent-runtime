@@ -223,19 +223,25 @@ Production deployments must configure authentication, non-default secrets, trust
 
 Report vulnerabilities per [SECURITY.md](SECURITY.md) (90-day coordinated-disclosure default); a machine-readable pointer is served at [`/.well-known/security.txt`](https://github.com/Prometheus-AGS/universal-agent-runtime) (RFC 9116).
 
-### Supply-chain provenance (SLSA Build L2 attested, L3-track)
+### Supply-chain provenance
 
-Tagged releases are built and signed by [`.github/workflows/supply-chain.yml`](.github/workflows/supply-chain.yml): multi-arch container image and release archives, CycloneDX/SPDX SBOMs, keyless [Sigstore](https://www.sigstore.dev/) signatures, and [in-toto](https://in-toto.io/) SLSA provenance + SBOM attestations via GitHub's native `actions/attest`/`actions/attest-sbom`. A separate `verify` job in the same workflow independently re-verifies every signature, attestation, and checksum before evidence is attached to the GitHub release — nothing is self-certified by the job that produced it.
-
-GitHub-native artifact attestations from an in-repo build workflow provide [SLSA v1.0 Build Level 2](https://docs.github.com/en/actions/concepts/security/artifact-attestations); reaching Build Level 3 additionally requires the build steps to run in a [dedicated reusable workflow](https://docs.github.com/actions/security-guides/using-artifact-attestations-and-reusable-workflows-to-achieve-slsa-v1-build-level-3) so provenance is non-falsifiable by the build-step author. Migrating the build/sign steps into a reusable workflow is planned; until then this project claims L2, not L3.
+Release archives and the multi-architecture image are built and certified
+locally from a clean source checkout. `scripts/prepare-release-evidence-local.sh`
+generates CycloneDX/SPDX SBOMs, keyless [Sigstore](https://www.sigstore.dev/)
+signatures, [in-toto](https://in-toto.io/) SLSA provenance, source-bound local
+test/audit receipts, and a signed checksum root. A separate local process
+reopens the exact indexed set and rejects added, removed, or modified evidence.
+GitHub Actions are reserved for deployment execution and deployment validation;
+they do not run product tests, release builds, security scans, soak tests, or
+release certification.
 
 ```mermaid
 flowchart LR
-    TAG[Release tag] --> BUILD[Build job<br/><i>multi-arch image + archives</i>]
+    SOURCE[Clean source commit] --> BUILD[Local build<br/><i>multi-arch image + archives</i>]
     BUILD --> SBOM[SBOM generation<br/><i>CycloneDX + SPDX</i>]
-    SBOM --> ATTEST["actions/attest + attest-sbom<br/><i>SLSA provenance, in-toto</i>"]
-    ATTEST --> SIGN[cosign keyless signing<br/><i>Sigstore bundles</i>]
-    SIGN --> VERIFY[Independent verify job<br/><i>re-checks every signature,<br/>attestation, checksum</i>]
+    SBOM --> PROVENANCE["Local SLSA provenance<br/><i>in-toto statement</i>"]
+    PROVENANCE --> SIGN[cosign keyless signing<br/><i>Sigstore bundles</i>]
+    SIGN --> VERIFY[Independent local process<br/><i>re-checks every signature,<br/>provenance record, checksum</i>]
     VERIFY --> REL[Evidence attached to<br/>GitHub release]
 ```
 
@@ -244,13 +250,14 @@ Verify a downloaded release archive yourself:
 ```bash
 # Verify the archive's checksum + Sigstore signature bundle (ship alongside each release asset)
 cosign verify-blob --bundle universal-agent-runtime-<version>-<platform>.tar.gz.sigstore.json \
-  --certificate-identity-regexp '^https://github.com/Prometheus-AGS/universal-agent-runtime/.github/workflows/supply-chain.yml@refs/(heads|tags)/' \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity '<approved-local-builder-identity>' \
+  --certificate-oidc-issuer '<approved-oidc-issuer>' \
   universal-agent-runtime-<version>-<platform>.tar.gz
 
-# Verify the container image's provenance/SBOM attestations
-gh attestation verify oci://ghcr.io/prometheus-ags/universal-agent-runtime:<version> \
-  --repo Prometheus-AGS/universal-agent-runtime
+# Verify the signed container image by the manifest's immutable digest
+cosign verify --certificate-identity '<approved-local-builder-identity>' \
+  --certificate-oidc-issuer '<approved-oidc-issuer>' \
+  ghcr.io/prometheus-ags/universal-agent-runtime@sha256:<digest>
 ```
 
 Release evidence includes source-bound security-audit results and signed supply-chain artifacts. Reproducible-source verification can be run locally with the procedure in [docs/build-reproducibility.md](docs/build-reproducibility.md).

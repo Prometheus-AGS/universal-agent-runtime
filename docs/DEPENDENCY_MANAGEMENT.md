@@ -114,22 +114,18 @@ cargo install cargo-audit
 cargo audit
 ```
 
-**Corrected (`uar-dependabot-remediation-2026-07`)**: this document previously
-claimed "the CI pipeline runs `cargo audit` as part of the release workflow
-(`release.yml`)." That step exists in `release.yml`, but that workflow only
-triggers on a pushed version tag or a published GitHub release — and as of
-this writing, this repository has never cut one (`gh run list
---workflow=release.yml` returns zero runs, ever), so the step has never
-actually executed. A dedicated `.github/workflows/security-audit.yml` now
-runs `cargo audit` + `npm audit` (root) + `pnpm audit` (`frontend/`) +
-`npm audit` (`sdks/typescript/`) on its own weekly schedule (`workflow_dispatch`
-also available for on-demand runs), deliberately decoupled from
-`release.yml`'s tag/release trigger — "when we cut a release" and "how often
-we scan for CVEs" are separate concerns. It ignores only the advisories
-already disclosed with a rationale in this document (see sections below);
-any new, undisclosed advisory fails the job. For non-release branches, you
-can still run `cargo audit` / `npm audit` / `pnpm audit` manually before
-merging significant dependency changes.
+**Current execution policy (`deployment-only-actions-local-release-certification`)**:
+`scripts/security-audit-local.sh` runs `cargo audit`, root/frontend package
+audits, TypeScript SDK audit, OSV-Scanner, Grype against the digest-addressed
+candidate image, and the Dependabot alerts gate locally. It writes a
+source-bound release receipt. GitHub Actions are reserved for deployment
+execution and deployment-specific validation, so no scheduled or release
+workflow performs these product/security checks. Any new open Dependabot alert
+or undisclosed advisory fails the local gate.
+
+The dated notes below describe the advisory investigations and historical
+workflow implementations that first exposed each issue. Their risk dispositions
+remain useful; their workflow locations are superseded by the local gate above.
 
 ### Resolved (fork): `kreuzberg` → `lopdf` / `quick-xml`
 

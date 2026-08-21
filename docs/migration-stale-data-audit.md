@@ -60,13 +60,14 @@ This is the inverse of the direct migration playbook (which makes the graph auth
 
 Contract test at `frontend/src/stores/__tests__/use-thread-graph-sync.test.tsx`.
 
-### CI gates (enforced)
+### Local gates (enforced)
 
-Every PR runs `scripts/ci-grep-gates.sh` plus the standard frontend pipeline. The job is `.github/workflows/ci.yml::frontend`.
+Run `scripts/ci-grep-gates.sh` plus the standard frontend commands locally
+before committing and pushing.
 
 | Gate | Enforcement |
 |------|-------------|
-| `pnpm -C frontend typecheck` | TypeScript errors fail the job |
+| `pnpm -C frontend typecheck` | TypeScript errors fail the local gate |
 | `pnpm -C frontend test` | Vitest must pass |
 | `pnpm -C frontend build` | Vite build must succeed |
 | `git grep useGraphBridge frontend/` empty | Bridge pattern permanently retired |

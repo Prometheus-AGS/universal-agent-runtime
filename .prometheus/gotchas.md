@@ -390,3 +390,15 @@ rollout, infrastructure wiring, and post-deployment health belong in Actions.
 Run all product and release certification locally. Enforce the boundary with an
 allowlisted local validator on every commit; if a plan says otherwise, revise
 the plan before execution.
+
+## 2026-08-21 — deleting a test workflow can delete the only test
+
+**Observed defect.** Removing the prohibited security-audit workflow also
+removed the only Dependabot-alert allowlist gate. The policy correction was
+structurally right but behaviorally incomplete until the Rust, JavaScript, OSV,
+Grype, and Dependabot checks had a local source-bound entrypoint.
+
+**Working rule.** Before deleting a non-deployment workflow, inventory every
+behavior it owns and map each required behavior to a checked-in local command.
+The replacement must exist and pass its cheap contract check before the
+workflow deletion is treated as complete.
