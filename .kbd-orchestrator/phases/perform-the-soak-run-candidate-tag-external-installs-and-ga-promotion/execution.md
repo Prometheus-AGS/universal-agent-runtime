@@ -40,6 +40,10 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
 
 - Stop if a required design decision changes the permitted implementation surface.
 - Stop at a missing external credential, publication authority, or time-bound condition.
+- Plan revision 8 and decision `deployment-only-actions-local-release-certification`
+  require every product, installed-artifact, supply-chain, load, stress, soak,
+  and release-certification check to run locally. Stop and correct any artifact
+  that assigns those checks to GitHub Actions.
 - Plan revision 7 and decision `screen-validation-bounded-repairs` authorize only the
   three observed Skills graph-view, approval-event projection, and Knowledge
   nested-interactive repairs inside `screen-by-screen-validation`. Stop at any other
@@ -51,6 +55,8 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
 - Follow repository Tier 0, Tier 1, Tier 2, and Tier 3 timing from `AGENTS.md` and `.claude/rules/`.
 - Run each change's OpenSpec verification and artifact-refiner gate before archive.
 - Bind certification evidence to one immutable candidate commit; any source change restarts candidate certification.
+- Retain exact local commands and outputs; GitHub Actions evidence is valid only
+  for actual deployment execution or deployment-specific validation.
 
 ## PROGRESS LEDGER
 
@@ -74,9 +80,10 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
 - [DONE] `rewrite-readme-and-docs` — OpenSpec; customer docs, rendered Mermaid,
   runtime-aligned OpenAPI, exact root cleanup, focused verification,
   independent review, canonical spec sync, and archive completed 2026-08-18
-- [IN PROGRESS] `screen-by-screen-validation` — OpenSpec; plan revision 7 permits
-  the three operator-approved bounded screen repairs before immutable recertification
-- [PENDING] `certify-operational-resilience` — OpenSpec evidence
+- [DONE] `screen-by-screen-validation` — OpenSpec; three operator-approved bounded
+  repairs, immutable local browser certification, independent review, sync, and
+  archive completed 2026-08-21
+- [IN PROGRESS] `certify-operational-resilience` — OpenSpec; local immutable-candidate evidence
 - [PENDING] `produce-supply-chain-artifacts` — OpenSpec evidence
 - [PENDING] `certify-release-candidate` — OpenSpec evidence and time-bound validation
 - [PENDING] `release-1-0-0` — OpenSpec publication

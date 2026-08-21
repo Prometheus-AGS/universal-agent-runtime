@@ -10,3 +10,17 @@ UAR SHALL terminate, retry, resume or surface external failures according to doc
 #### Scenario: Streaming soak
 - **WHEN** the release candidate runs the defined multi-hour streaming workload
 - **THEN** error, memory, latency and duplicate-event thresholds remain within the published limits
+
+### Requirement: Product certification runs locally
+UAR SHALL run product, installed-artifact, supply-chain, security, load, stress,
+soak, and release-certification checks locally rather than in GitHub Actions.
+GitHub Actions SHALL be limited to deployment execution and
+deployment-specific validation.
+
+#### Scenario: Immutable local resilience candidate
+- **WHEN** operational resilience certification is run
+- **THEN** a clean local checkout builds and certifies one exact source commit for at least 10,800 seconds and retains machine-readable evidence locally
+
+#### Scenario: Non-deployment workflow is introduced
+- **WHEN** a GitHub Actions workflow invokes a non-deployment test, lint, typecheck, audit, benchmark, certification, or implicit build-time test
+- **THEN** the local workflow-policy validator fails before the workflow is committed

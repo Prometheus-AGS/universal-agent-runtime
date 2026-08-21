@@ -7,49 +7,54 @@ provider failures, MCP process loss, parallel load, streaming reconnects, cold
 backup/restore, and a non-root container. The remaining work is to bind that
 harness to one committed source revision and retain certifying evidence.
 
-The uncomfortable current fact is that `.github/workflows/operational-resilience.yml`
-sets the soak to 60 seconds and the job timeout to 120 minutes. That lane can
-validate workflow wiring, but it cannot produce the required multi-hour result.
+The uncomfortable current fact is that the first correction tried to turn
+`.github/workflows/operational-resilience.yml` into a three-hour product-test
+runner. That violated the repository's older deployment-only GitHub Actions
+decision. Run `32458212074` was canceled and is not certification evidence.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Produce replayable machine-readable evidence from an installed `server-full`
-  archive and image built from one exact Git SHA.
-- Keep pull-request feedback short while making manual and scheduled executions
-  certifying only after at least 10,800 seconds of streaming/reconnect soak.
+- Produce replayable machine-readable local evidence from an installed
+  `server-full` archive and image built from one exact Git SHA.
+- Run the certifying streaming/reconnect workload locally for at least 10,800
+  seconds from a clean detached checkout.
 - Fail closed on lifecycle, failure recovery, MCP restart, load, duplicate-event,
   latency, memory-growth, backup/restore, non-root, health, or signal failures.
-- Retain the complete result directory as one GitHub Actions artifact.
+- Retain the complete result directory with the OpenSpec evidence and bind it to
+  the source commit with cryptographic hashes.
+- Keep GitHub Actions limited to actual deployment execution and
+  deployment-specific validation.
 
 **Non-Goals:**
 
 - This change does not create a release-candidate or GA tag, publish an image or
   GitHub release, or claim external-install/operating-period evidence.
-- The 60-second pull-request lane is a deployment-validation preflight and is
-  never reported as the multi-hour certification.
+- This change does not move local product checks into any hosted CI service.
 - No product runtime behavior is changed unless the installed-artifact run
   exposes a supported-product defect, which remains a stop condition under the
   outer execution contract.
 
 ## Decisions
 
-### Use two explicit duration lanes
+### Certify only from a local immutable checkout
 
-Pull requests run a 60-second preflight. `workflow_dispatch` accepts a numeric
-`soak_duration_seconds` input defaulting to 10,800, and scheduled runs use
-10,800. Manual and scheduled executions reject any duration below 10,800. The
-deterministic job timeout is 300 minutes so a three-hour soak plus build and
-packaging can complete.
+The local entrypoint requires an explicit duration of at least 10,800 seconds
+for a certifying run, an exact candidate source SHA, and a clean detached
+checkout. A short local preflight may prove wiring but cannot be recorded as
+multi-hour certification. Product-test, installed-artifact, security, load,
+stress, soak, and release-certification workflows are removed from GitHub
+Actions; a local policy validator rejects their return.
 
-This is preferred to silently changing every event to three hours, which would
-make pull-request feedback unusable, and to accepting an arbitrary short manual
-duration, which could be mislabeled as certification.
+This is preferred to relabeling a hosted product-test workflow as deployment
+validation. The deployment-only boundary predates this change and takes
+precedence over a task plan.
 
 ### Certify the installed process boundary
 
-`scripts/certify-operational-resilience.sh` remains the entry point. Its
+The local candidate builder and `scripts/certify-operational-resilience.sh`
+remain the entry points. The latter's
 deterministic Rust test is supplemental; the authoritative product evidence is
 the nested `scripts/certify-release-candidate.sh` result from the installed
 archive and image. That path boots the packaged binary, exercises HTTP and MCP
@@ -62,7 +67,7 @@ The embedded entity-management repository is a nested pnpm workspace with its
 own authenticated pnpm 10.33.0 pin. Its developer-engine contract admits pnpm
 versions from 10.33.0 through 11.x so an outer pnpm 11 task can invoke the
 nested dependency closure without replacing the repository's pinned default.
-The workflow installs and builds that workspace from its own boundary before
+The local builder installs and builds that workspace from its own boundary before
 the outer build. UAR advances the gitlink to upstream commit `959839a`, where a
 clean Corepack cache accepts the corrected integrity digest and a detached
 clean-worktree proof builds core then React under pnpm 11.15.0. This preserves
@@ -87,43 +92,50 @@ The harness writes the configured duration, observed duration, thresholds,
 source SHA, and candidate label into JSON. A missing or malformed result is a
 failure, not an omitted measurement.
 
-### Bind and retain one evidence directory
+### Bind and retain one local evidence directory
 
-The workflow passes `github.sha` as `UAR_CANDIDATE_SOURCE_SHA`; the harness
-refuses a checkout/source mismatch. It uploads the complete
-`target/resilience-certification/` directory with `if-no-files-found: error`,
-including deterministic output, installed-runtime JSON, and logs. The evidence
-receipt records the workflow run ID, source SHA, artifact name, duration, and
-result hashes.
+The local launcher passes the detached checkout's exact SHA as
+`UAR_CANDIDATE_SOURCE_SHA`; the harness refuses a checkout/source mismatch. It
+retains the complete result directory, including deterministic output,
+installed-runtime JSON, logs, the candidate archive digest, duration, and
+result hashes. The final evidence is copied into the change only after the
+immutable run finishes and its manifest validates.
 
-This is preferred to copying selected console excerpts into prose, which would
-lose machine-verifiable provenance and negative-control output.
+The tested source commit is frozen before the run. A direct child evidence
+commit may add only verification artifacts, hashes, and task/progress updates
+that name that tested parent. Any implementation, script, dependency, workflow,
+or product-documentation change after the run creates a new candidate and
+requires a complete rerun.
+
+This is preferred to copying selected console excerpts into prose or relying on
+an external workflow URL, either of which would weaken replayable provenance.
 
 ## Risks / Trade-offs
 
-- **[Risk] A three-hour run consumes substantial hosted-runner time.** → Keep the
-  pull-request lane at 60 seconds and reserve certification for manual/scheduled
-  runs.
+- **[Risk] A three-hour local run occupies one machine and target directory.** →
+  Use a dedicated detached worktree and target directory, retain progress logs,
+  and preserve the single-writer build discipline.
 - **[Risk] A source edit after the run makes the evidence stale.** → Bind every
   result to the exact SHA and rerun before downstream candidate certification.
-- **[Risk] The workflow definition must be present on the default branch for a
-  manual dispatch.** → Validate and merge the workflow correction before using
-  its new input; do not reinterpret an older 60-second run as certifying.
+- **[Risk] An old hosted run could be mistaken for current evidence.** → Record
+  the canceled run as superseded and accept only the local manifest whose source
+  SHA and hashes match the frozen candidate.
 - **[Risk] Runner variance can move latency and RSS.** → Keep the published
   absolute limits, retain raw measurements, and fail rather than weakening a
   threshold after observing a miss.
 
 ## Migration Plan
 
-1. Add the typed duration input, event-specific duration gate, and 300-minute
-   timeout to the deployment-validation workflow.
-2. Run local syntax, deterministic harness, result-schema, OpenSpec, and diff
-   checks without claiming the time-bound soak.
-3. Commit and push the exact candidate source.
-4. After the workflow correction exists on the default branch, dispatch the
-   certifying lane for at least 10,800 seconds and retain its artifact.
-5. Record actual commands, outputs, run identity, hashes, and limits in
+1. Remove non-deployment GitHub Actions workflows and add a local policy
+   validator that fails if they return.
+2. Add a local immutable-candidate builder/launcher and run short syntax,
+   deterministic harness, result-schema, OpenSpec, and diff checks without
+   claiming the time-bound soak.
+3. Commit the exact candidate source and create a clean detached worktree.
+4. Run the local certifying lane for at least 10,800 seconds and retain its
+   complete evidence directory.
+5. Record actual commands, outputs, source identity, hashes, and limits in
    `verification.md`; only then complete the evidence tasks and archive.
 
-Rollback is deletion of the workflow input/duration-selection step. Existing
-60-second preflight behavior remains available on pull requests throughout.
+Rollback is restoration of the local-only scripts and contracts from the prior
+commit, never restoration of non-deployment testing in GitHub Actions.

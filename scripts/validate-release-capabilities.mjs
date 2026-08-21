@@ -44,23 +44,26 @@ for (const dependency of forbiddenDirectDependencies) {
 
 const server = readFileSync(resolve(root, "src/server.rs"), "utf8");
 const dockerfile = readFileSync(resolve(root, "Dockerfile"), "utf8");
-const releaseWorkflow = readFileSync(resolve(root, ".github/workflows/release.yml"), "utf8");
-if (!dockerfile.includes('--features "server-full"')) {
+const localCertifier = readFileSync(
+  resolve(root, "scripts/certify-operational-resilience-local.sh"),
+  "utf8",
+);
+if (!dockerfile.includes('--features "server-full,postgres-backend"')) {
   throw new Error("Dockerfile must build the authoritative server-full bundle");
 }
 if (dockerfile.includes("memory-palace")) {
   throw new Error("Dockerfile references the removed memory-palace feature");
 }
-if (!releaseWorkflow.includes("--bin universal-agent-runtime --features server-full")) {
+if (!localCertifier.includes("--bin universal-agent-runtime --features server-full")) {
   throw new Error("native release archives must build the authoritative server-full bundle");
 }
-if (!releaseWorkflow.includes('cp -R static "dist/${{ matrix.name }}/static"')) {
+if (!localCertifier.includes('cp -R static "$package_dir/static"')) {
   throw new Error("native Unix release archives must contain the React bundle");
 }
-if (!releaseWorkflow.includes("crates/prometheus-skill-system/skills")) {
+if (!localCertifier.includes("crates/prometheus-skill-system/skills")) {
   throw new Error("native release archives must contain the built-in skill pack");
 }
-if (!releaseWorkflow.includes("src/uar/runtime/matching/models")) {
+if (!localCertifier.includes("src/uar/runtime/matching/models")) {
   throw new Error("native release archives must contain local model assets");
 }
 for (const guardedSurface of ["a2a_routes", "grpc_handle"]) {

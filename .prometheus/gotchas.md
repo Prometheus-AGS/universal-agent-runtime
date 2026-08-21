@@ -375,3 +375,18 @@ is not required by the source change. Retain an exact candidate-to-raw patch and
 compare against `HEAD`. Pnpm importer projections can also come from
 auto-installed peers, so resolve evidence anchors against the manifest section
 that actually declares the edge rather than assuming the importer key names it.
+
+## 2026-08-21 — release gates are not deployment validation
+
+**Observed defect.** A three-hour operational-resilience product test was put in
+GitHub Actions because it built an installed archive and container, gated a
+release, and uploaded evidence. None of those properties made it validate an
+actual deployment. The run contradicted the standing deployment-only policy and
+was canceled.
+
+**Working rule.** Classify a check by the boundary it observes, not by its
+workflow name or artifact. Only deployment execution, deployed configuration,
+rollout, infrastructure wiring, and post-deployment health belong in Actions.
+Run all product and release certification locally. Enforce the boundary with an
+allowlisted local validator on every commit; if a plan says otherwise, revise
+the plan before execution.

@@ -24,7 +24,7 @@
     "frontend:style-gate": "node scripts/check-flat2-style.mjs && node scripts/test-flat2-style-negative.mjs",
     "support-matrix:validate": "node scripts/validate-product-support-matrix.mjs && node scripts/validate-release-capabilities.mjs",
     "docs:validate": "node scripts/validate-documentation-truth.mjs",
-    "release-workflow:validate": "node scripts/validate-release-workflow.mjs",
+    "github-actions-policy:validate": "node scripts/validate-github-actions-policy.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"

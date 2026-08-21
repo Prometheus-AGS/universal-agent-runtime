@@ -6,7 +6,11 @@ Production use requires proof under shutdown, cancellation, outages, restarts, c
 
 - Add deterministic lifecycle, failure, load, soak and recovery certification.
 - Test non-root container and backup/restore behavior.
-- Publish thresholds and reports.
+- Run all product certification locally against one immutable candidate and
+  retain replayable thresholds and reports.
+- Remove GitHub Actions workflows that perform product, build-gate,
+  release-certification, security, performance, or other non-deployment tests;
+  retain Actions only for deployment execution and deployment-specific checks.
 - Repair the installed-artifact build boundary so the embedded
   entity-management workspace installs and builds with its authenticated,
   pinned package manager.
@@ -16,5 +20,6 @@ Production use requires proof under shutdown, cancellation, outages, restarts, c
 - `operational-resilience-certification`
 
 ## Impact
-Integration/load tests, containers, CI artifacts, runbooks, and the pinned
-entity-management tooling receipt. Product runtime behavior is unchanged.
+Local integration/load tests, containers, retained evidence, workflow policy,
+runbooks, and the pinned entity-management tooling receipt. Product runtime
+behavior is unchanged.

@@ -446,3 +446,27 @@ run without a settings manager.
 span separate stores without a transaction. This change prevents publication
 after a failed settings write, but it does not make concurrent deletion and
 selection atomic.
+
+---
+
+## 2026-08-21 — Release certification is local; Actions remain deployment-only
+
+**Decision.** Run operational resilience, installed-artifact, supply-chain,
+security, load, stress, soak, and release-candidate certification locally from
+an immutable checkout. GitHub Actions may execute deployments and validate the
+resulting deployment only. Remove every other workflow and enforce the retained
+three-file deployment allowlist with a local pre-commit validator.
+
+**Rationale.** A prior plan treated a release gate, container build, and hosted
+artifact upload as sufficient to call product testing deployment validation.
+That contradicted the 2026-08-09 operator decision and caused a three-hour soak
+to be dispatched to Actions. Run `32458212074` was canceled and cannot be used
+as evidence. KBD plan revision 8 and decision
+`deployment-only-actions-local-release-certification` supersede the conflicting
+phase language.
+
+**Uncomfortable constraint.** Keyless supply-chain publication previously
+depended on workflow identity and hosted OIDC. The remaining release-tail
+changes must replace that mechanism with locally produced and independently
+verified evidence before publication; deleting the workflows does not by
+itself prove the replacement is complete.

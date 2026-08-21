@@ -1,7 +1,7 @@
 name: Docs
 
-# Builds the Docusaurus site in website/, runs prose lint with Vale, optionally
-# generates rustdoc/TypeDoc/Sphinx outputs, and deploys to GitHub Pages.
+# Builds the Docusaurus site in website/, optionally generates
+# rustdoc/TypeDoc/Sphinx outputs, and deploys to GitHub Pages.
 # Requires Pages to be enabled for the repo with "GitHub Actions" as the source
 # (Settings → Pages → Build and deployment → Source: GitHub Actions).
 
@@ -13,8 +13,6 @@ on:
       - 'docs/**'
       - 'docs/adr/**'
       - '.github/workflows/docs.yml'
-      - '.vale.ini'
-      - '.github/styles/**'
       - 'sdks/**'
       - 'src/**'
   workflow_dispatch:
@@ -40,18 +38,6 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 20
-
-      - name: Install Vale
-        uses: errata-ai/vale-action@v3
-        with:
-          version: '3.11.0'
-
-      - name: Lint docs prose with Vale
-        run: |
-          vale --config=.vale.ini \
-            docs/ \
-            docs/adr/ \
-            README.md
 
       - name: Copy ADRs into Docusaurus content
         run: cp -r docs/adr website/docs/adr
