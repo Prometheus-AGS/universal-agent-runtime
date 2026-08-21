@@ -3,17 +3,18 @@ set -euo pipefail
 
 bundle="${1:-docs/certifications/product-screens/f8e203b6}"
 manifest="$bundle/manifest.json"
-expected_sha="$(git rev-parse HEAD)"
+expected_sha="f8e203b64462681597155f83660a9f35e03efa4c"
 actual_sha="$(jq -r '.git_sha' "$manifest")"
+git cat-file -e "$expected_sha^{commit}"
 test "$actual_sha" = "$expected_sha"
 echo "GIT_SHA_MATCH=$actual_sha"
 
 source_dir="$(jq -r '.module_fingerprint_source' "$manifest")"
 module_fingerprint="sha256:$(
-  find "$source_dir" -type f -not -path '*/target/*' -not -path '*/node_modules/*' \
+  git ls-tree -r --name-only "$expected_sha" -- "$source_dir" \
     | LC_ALL=C sort \
     | while IFS= read -r file; do
-        shasum -a 256 "$file" | awk '{print $1}'
+        git show "$expected_sha:$file" | shasum -a 256 | awk '{print $1}'
       done \
     | shasum -a 256 \
     | awk '{print $1}'
@@ -23,7 +24,7 @@ echo "MODULE_FINGERPRINT_MATCH=$module_fingerprint"
 
 mapfile -t source_paths < <(jq -r '.git_tree_fingerprint.source_paths[]' "$manifest")
 tree_fingerprint="$(
-  git ls-tree -r --full-tree HEAD -- "${source_paths[@]}" \
+  git ls-tree -r --full-tree "$expected_sha" -- "${source_paths[@]}" \
     | LC_ALL=C sort \
     | shasum -a 256 \
     | awk '{print $1}'
