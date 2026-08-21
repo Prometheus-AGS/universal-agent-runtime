@@ -4,8 +4,9 @@ set -euo pipefail
 active=".refiner/artifacts/screen-by-screen-validation"
 history=".refiner/history/screen-by-screen-validation/2026-08-21_05-53-37Z"
 schema_root="crates/prometheus-skill-system/skills/imported/artifact-refiner/references/schemas"
+registry=".refiner/registry.json"
 
-python3 - "$active" "$history" "$schema_root" <<'PY'
+python3 - "$active" "$history" "$schema_root" "$registry" <<'PY'
 import hashlib
 import json
 import re
@@ -17,6 +18,7 @@ from jsonschema import Draft7Validator, FormatChecker
 active = Path(sys.argv[1])
 history = Path(sys.argv[2])
 schema_root = Path(sys.argv[3])
+registry_path = Path(sys.argv[4])
 
 def validate(instance_path: Path, schema_name: str) -> None:
     instance = json.loads(instance_path.read_text())
@@ -74,6 +76,16 @@ assert constraint_ids == [
 ]
 assert state['constraints'] == constraints
 print('CONSTRAINT_OBJECTS_MATCH=5')
+
+registry = json.loads(registry_path.read_text())
+assert registry['artifacts']['screen-by-screen-validation'] == {
+    'path': '.refiner/artifacts/screen-by-screen-validation',
+    'artifact_type': 'content',
+    'content_type': 'direct:content',
+    'updated_at': '2026-08-21T05:53:37Z',
+    'finalized_at': '2026-08-21T05:53:37Z',
+}
+print('REGISTRY_ARTIFACT_IDENTITY_MATCH=screen-by-screen-validation')
 
 manifest = json.loads((active / 'artifact_manifest.json').read_text())
 references = []

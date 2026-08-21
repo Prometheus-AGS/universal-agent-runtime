@@ -48,6 +48,13 @@
       "updated_at": "2026-08-18T12:37:17Z",
       "finalized_at": "2026-08-18T12:37:17Z"
     },
+    "screen-by-screen-validation": {
+      "path": ".refiner/artifacts/screen-by-screen-validation",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-21T05:53:37Z",
+      "finalized_at": "2026-08-21T05:53:37Z"
+    },
     "fix-embedded-sse-offline-reconnect": {
       "path": ".refiner/artifacts/fix-embedded-sse-offline-reconnect",
       "artifact_type": "content",
