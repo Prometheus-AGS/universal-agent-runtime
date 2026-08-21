@@ -3,13 +3,19 @@ name: Operational resilience certification
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      soak_duration_seconds:
+        description: Certifying streaming/reconnect soak duration in seconds (minimum 10800)
+        required: true
+        default: 10800
+        type: number
   schedule:
     - cron: '17 6 * * 0'
 
 jobs:
   deterministic:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v7
         with:
@@ -50,13 +56,20 @@ jobs:
           cp README.md LICENSE example.config.yaml dist/operational-resilience/
           tar -czf dist/universal-agent-runtime-linux-x64.tar.gz -C dist operational-resilience
           docker build -t uar-operational-resilience .
+      - name: Select and validate soak duration
+        shell: bash
+        env:
+          DISPATCH_SOAK_DURATION_SECONDS: ${{ inputs.soak_duration_seconds }}
+        run: |
+          duration="$(scripts/resolve-resilience-soak-duration.sh \
+            "$GITHUB_EVENT_NAME" "$DISPATCH_SOAK_DURATION_SECONDS")"
+          echo "UAR_SOAK_DURATION_SECONDS=$duration" >> "$GITHUB_ENV"
       - name: Certify installed lifecycle, failures, load, reconnect, recovery, and soak
         env:
           UAR_INSTALLED_ARTIFACT_DIR: dist
           UAR_CANDIDATE_IMAGE: uar-operational-resilience
           UAR_CANDIDATE_SOURCE_SHA: ${{ github.sha }}
           UAR_CANDIDATE_TAG: operational-resilience-${{ github.run_id }}
-          UAR_SOAK_DURATION_SECONDS: 60
         run: |
           bash scripts/certify-operational-resilience.sh
           node scripts/validate-candidate-certification.mjs target/resilience-certification/installed-runtime

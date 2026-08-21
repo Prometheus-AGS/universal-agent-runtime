@@ -6,14 +6,18 @@ Run `scripts/certify-operational-resilience.sh`. The deterministic suite writes
 ## Published limits
 
 - 100 parallel simulated runs, zero errors, p95 under 250 ms.
-- Zero duplicate event IDs after reconnect/replay.
-- Lifecycle and tool waits are bounded; the certification job has a 60-minute ceiling.
+- 20 parallel installed-runtime requests, zero failures.
+- Installed streaming soak: zero errors, zero duplicate events, p95 at or below
+  2,000 ms, and peak RSS growth at or below 262,144 KiB.
+- Lifecycle and tool waits are bounded; the certifying job has a 300-minute ceiling.
 - Provider/MCP failures must reach an explicit error or recover on a later bounded attempt.
 
-For a release candidate, run the scheduled workflow for at least three hours by
-setting `UAR_SOAK_DURATION_SECONDS=10800`. The deterministic PR suite is a short
-certification of the same reconnect and deduplication invariants, not a claim
-that a multi-hour soak ran on every commit.
+The pull-request lane uses a 60-second deployment-validation preflight. It is
+not multi-hour certification evidence. Manual `workflow_dispatch` and scheduled
+runs use at least 10,800 seconds; the manual `soak_duration_seconds` input
+defaults to 10,800 and rejects a smaller value. The retained `soak.json` must
+show both configured and observed duration before the run can satisfy the
+multi-hour requirement.
 
 ## Backup and recovery
 
