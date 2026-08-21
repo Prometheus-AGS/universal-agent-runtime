@@ -1,0 +1,76 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "screen-evidence-complete",
+      "description": "All 20 product-screen rows must record an observed primary-function pass and resolve to a scenario video from the final bundle.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Parse the matrix, count 20 result rows, and resolve all 29 bundle paths."
+      },
+      "target_metric": {
+        "metric": "screen_rows_with_evidence",
+        "operator": "==",
+        "value": 20
+      }
+    },
+    {
+      "id": "interaction-strength",
+      "description": "Approvals, Providers, Models, Agents, Tools, Knowledge, Memory, About, and Cost must assert the named interaction rather than route or search-result visibility alone.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Inspect the final BDD steps and replay the passed Cucumber scenarios."
+      }
+    },
+    {
+      "id": "memory-and-fail-closed-controls",
+      "description": "Global, agent, and user memory scopes must be observed explicitly; exact assistant text, JWT, and same-tenant user isolation must have non-vacuous rejection controls without treating sibling structured artifacts as response text.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Inspect explicit MCP scope assertions and replay paired 200/401 plus same-tenant owner/denial assertions with required response status and body shapes."
+      }
+    },
+    {
+      "id": "bundle-process-source-integrity",
+      "description": "The bundle must bind fresh processes to the tested Git SHA, both frozen pnpm lockfiles, immutable Git tree, and stable feature-source fingerprint with unique playable videos, a retained run transcript, and a report generated from the finalized manifest.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Validate the process transcript, manifest SHA/fingerprints, artifact hashes and bytes, video codec/duration, duplicate paths, finalized report, and tamper control."
+      },
+      "target_metric": {
+        "metric": "valid_scenario_videos",
+        "operator": "==",
+        "value": 32
+      }
+    },
+    {
+      "id": "scope-process-and-truth",
+      "description": "The report must stay limited to the local Chromium server-full profile, state that canonical plan revision 7 followed the repairs, cite the immutable operator waiver, and pass strict OpenSpec validation.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Inspect profile, defect, chronology, and waiver text, then run strict OpenSpec and scoped diff checks."
+      }
+    }
+  ],
+  "global_rules": [
+    "No aggregate percentage or cross-profile verdict.",
+    "Do not substitute route or result visibility for the required primary interaction.",
+    "Do not represent canonical plan revision 7 as pre-execution authorization.",
+    "Only the three operator-approved product repairs, the later memory-evidence correction, and the observed exact-text locator correction belong to this change."
+  ],
+  "termination_conditions": [
+    "All five blocking constraints pass deterministic replay.",
+    "Manifest, constraints, state, and every referenced checkpoint validate against their schemas.",
+    "Every artifact referenced by the manifest exists and all recorded integrity receipts match."
+  ]
+}

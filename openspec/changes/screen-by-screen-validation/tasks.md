@@ -11,4 +11,4 @@
 - [x] 2.6 Repair the observed nested-interactive Knowledge card markup and
   prove keyboard selection plus the axe `nested-interactive` rule.
 ## 3. Evidence
-- [ ] 3.1 Mint video certification bundles (bdd-video-proof); validation report per screen.
+- [x] 3.1 Mint video certification bundles (bdd-video-proof); validation report per screen.

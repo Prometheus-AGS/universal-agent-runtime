@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-21T05:25:29Z",
+  "git_sha": "f8e203b64462681597155f83660a9f35e03efa4c",
+  "module": "product-screens",
+  "module_fingerprint": "sha256:5e67038718410a0771ec2af3f03f5e24b890cb5653824e519d3abb8dfb843119",
+  "artifacts": [
+    {
+      "path": "certification-run.log",
+      "sha256": "63bda1918616cbe20d800491b0db61161912d128b8ff0ffd274eba0cb29031ac",
+      "bytes": 115060
+    },
+    {
+      "path": "cucumber-report.json",
+      "sha256": "a183c93ed47f040040df9a45de0fce3d53337d0aa84bea4ef8a9e8e1cc59e66a",
+      "bytes": 58549
+    },
+    {
+      "path": "videos/features-product-screen-va-77bac-n-Cost-displays-known-usage.mp4",
+      "sha256": "532bb323a628d2a63c7f9241886c92aff222a1cd176810c436ef304f7345d2a2",
+      "bytes": 31634
+    },
+    {
+      "path": "videos/features-rag-citation.feat-52224--knowledge-base-is-attached.mp4",
+      "sha256": "d56a3bfd5401d57039611bebba8630c1f77ca179baec6375f4128cb207d35cec",
+      "bytes": 66326
+    },
+    {
+      "path": "videos/features-product-screen-va-090bd--denies-a-pending-tool-call.mp4",
+      "sha256": "ac17e526cea646c750ed88cc8e772d8650fde910d4fd6502008d4efc5d0326b6",
+      "bytes": 78462
+    },
+    {
+      "path": "videos/features-product-screen-va-00e52-lls-completes-the-lifecycle.mp4",
+      "sha256": "09dea6905f6118cb6338a49e182dfb67f087d42b007251e47673d257965362b9",
+      "bytes": 302415
+    },
+    {
+      "path": "videos/features-local-first-resil-d7113-t-duplicating-runtime-state.mp4",
+      "sha256": "a9f829e1caabeb9d7f3077a3944e5dd88d7b4253fcd802dcad4252439d880a7e",
+      "bytes": 53890
+    },
+    {
+      "path": "videos/features-cross-screen-secu-3bf82--user-state-remains-private.mp4",
+      "sha256": "d499793d98280c46cf937c2517d7b283aed90b28acfe3956d85b87eee4656f93",
+      "bytes": 58340
+    },
+    {
+      "path": "videos/features-product-screen-va-2448e-s-shows-live-event-families.mp4",
+      "sha256": "310a7f814308096beaed7e9c61e225de9447dcfadab43b6c0c71c5b8bccf6797",
+      "bytes": 48127
+    },
+    {
+      "path": "videos/features-local-first-resil-881ee-ble-and-clears-on-reconnect.mp4",
+      "sha256": "6111fcd5c61480280a303c6bd5a8d78f469be6b8107a02d0aa025f2e10aecb30",
+      "bytes": 26725
+    },
+    {
+      "path": "videos/features-product-screen-va-25508-ls-filters-the-live-catalog.mp4",
+      "sha256": "5ba477cced787239634238f9999c92a3d8bc282d059b8b8810914b80f77a69a1",
+      "bytes": 293708
+    },
+    {
+      "path": "videos/features-product-screen-va-731ba-opens-replayed-trace-detail.mp4",
+      "sha256": "f02d7eb3fc88769bb884b6ebaeafff67270ef8e74cd3bfae2f6f8f5219a7d05b",
+      "bytes": 38348
+    },
+    {
+      "path": "videos/features-chat-skill-activa-3b818--activates-mid-conversation.mp4",
+      "sha256": "c5c5d38a6c81486db6f0a4301987285999caf8e68a63abf38c17908bf9623522",
+      "bytes": 71898
+    },
+    {
+      "path": "videos/features-chat-agent-switch-9a6eb-changes-the-answering-agent.mp4",
+      "sha256": "90bf2a8507c9918306ddd105632f5746f8b3f3e64eb93bbd1d4e4469fc6be266",
+      "bytes": 117181
+    },
+    {
+      "path": "videos/features-product-screen-va-a6bd5-filters-verified-user-state.mp4",
+      "sha256": "0bae6aabf7331702ce87f89867caf3e0a7bc8b689bb93d3d824662b0e5faa23b",
+      "bytes": 60360
+    },
+    {
+      "path": "videos/features-product-screen-va-78cff-xes-and-searches-a-document.mp4",
+      "sha256": "bd4340579b6aa755617bb65a7d07f133a635bd2b9009f17d389e53fbe6a96af0",
+      "bytes": 74358
+    },
+    {
+      "path": "videos/features-rag-citation.feat-d7dae-or-a-RAG-augmented-response.mp4",
+      "sha256": "de29e4933d4903a7f1fbf873f33f3f910c7a5b5c9a985b8a605c5e57f1608e4d",
+      "bytes": 188633
+    },
+    {
+      "path": "videos/features-product-screen-va-593ae-roduct-and-runtime-identity.mp4",
+      "sha256": "1bf44e250a7d4b351422cf877073427ea5c38bc105146afda42f1fbd944af9d4",
+      "bytes": 36915
+    },
+    {
+      "path": "videos/features-product-screen-va-42414-reviews-an-artifact-surface.mp4",
+      "sha256": "82f4bfcf05a81a608509badc061f71354bde3b7cc82b9d7079c4498742f9c7cd",
+      "bytes": 40267
+    },
+    {
+      "path": "videos/features-chat-no-kb.featur-7c2c7-chat-with-no-knowledge-base.mp4",
+      "sha256": "e5e0865f6bb5e29a4976c02974fdd0fee5d142e373ea729cd8c06b37a90e25dd",
+      "bytes": 68996
+    },
+    {
+      "path": "videos/features-product-screen-va-b0d9b-s-and-removes-a-user-secret.mp4",
+      "sha256": "a9b8289a9865fc65e340ced34338f13356c1eabf5a4b3e4dd161a2b55ae2b3ec",
+      "bytes": 70088
+    },
+    {
+      "path": "videos/features-product-screen-va-36e30-ints-and-revokes-an-API-key.mp4",
+      "sha256": "7b93cd1854b030c6fdbd54afae9c2879ff2a2e92df53223a46d3e086be44deb9",
+      "bytes": 69974
+    },
+    {
+      "path": "videos/features-local-first-resil-f9399-only-in-its-browser-context.mp4",
+      "sha256": "1701505a1ec2a4eeb0dd24382aef9cdaf125e83b0a55448f1ade0437fe3e134d",
+      "bytes": 137434
+    },
+    {
+      "path": "videos/features-product-screen-va-91d08--Compiler-creates-a-session.mp4",
+      "sha256": "d7cbad5e1feb9c1e582379bd0492a9fb9568e89aedf453ce3a7dc5b5bcc71bdc",
+      "bytes": 30556
+    },
+    {
+      "path": "videos/features-product-screen-va-c0957-lth-refreshes-server-status.mp4",
+      "sha256": "c3eb3f40e0c72805cfecd07130e064d7b32b61c324436c43314e0ff84725db47",
+      "bytes": 25627
+    },
+    {
+      "path": "videos/features-product-screen-va-d9179-ckpit-consumes-a-live-event.mp4",
+      "sha256": "4fb81aaf6023cefd6ca07b4f85444094bf42cdcce2772ddb074aa3715f0dc255",
+      "bytes": 47282
+    },
+    {
+      "path": "videos/features-product-screen-va-a4ef3--creates-a-selectable-agent.mp4",
+      "sha256": "a616485610c09e5264b84ffc07c265994f3719bf7e489e467dfeb77a554d962d",
+      "bytes": 345886
+    },
+    {
+      "path": "videos/features-product-screen-va-1fab0--saves-and-restores-a-value.mp4",
+      "sha256": "40407b8aed67843b1e23629a4e402fc6c0b6284afac15ac45d7ecdd17bca340d",
+      "bytes": 107249
+    },
+    {
+      "path": "videos/features-chat-kb-retrieval-f284a-trieval-influenced-response.mp4",
+      "sha256": "6a90c2ccef01081a6c3b9edd2fab094f26ad6cfb955721cd1659ea7481ae8d33",
+      "bytes": 228782
+    },
+    {
+      "path": "videos/features-product-screen-va-8181b--finds-the-native-echo-tool.mp4",
+      "sha256": "20643ad1728bbcf7640a4cc6c500c8dacd8ae082d64eae3f181eaee3d711ab0e",
+      "bytes": 39501
+    },
+    {
+      "path": "videos/features-product-screen-va-eafbc--restores-the-default-route.mp4",
+      "sha256": "88a0056611c19ae8ab2034d29036a7daf2bcbd3c97d6c85d8ed740a26b3d2689",
+      "bytes": 74547
+    },
+    {
+      "path": "videos/features-cross-screen-secu-6b76b--and-anonymous-access-fails.mp4",
+      "sha256": "a7aac7309cdff6088c3fa78149ac35543176ee20f2c04f687b320967ea38dbdf",
+      "bytes": 27714
+    },
+    {
+      "path": "videos/features-cross-screen-secu-f688e-rn-exact-attributed-answers.mp4",
+      "sha256": "91870de368a2bd7af83fbeb863d64e69f039daad94beb94039ea35cf6c4d4adf",
+      "bytes": 114932
+    },
+    {
+      "path": "videos/features-product-screen-va-3f0bb-ists-a-deterministic-answer.mp4",
+      "sha256": "1bdd94cc5122ea5bc8d501883d35a47db26cef9e789eb32f77bab5b0cfe41f5f",
+      "bytes": 109752
+    },
+    {
+      "path": "screenshots/admin-cost.png",
+      "sha256": "30fe40d732a55931aac7b8ca6a9a633c46fe0d0f8bef5054437430814290b6e1",
+      "bytes": 61881
+    },
+    {
+      "path": "screenshots/admin-runs.png",
+      "sha256": "74b740fea44095c3d25cb6b413ecc8cffb8bf4d6ae29404ff0b8d02f63368775",
+      "bytes": 104345
+    },
+    {
+      "path": "screenshots/admin-approvals.png",
+      "sha256": "5499899d02c529ece1f33c243d5b03f588222d17ec3a1ff521afda813d01f182",
+      "bytes": 65898
+    },
+    {
+      "path": "screenshots/admin-mcp-health.png",
+      "sha256": "57a4ceba0180aa65da812c6ed4dff69a4735f9b8c4f581665229a23957666cde",
+      "bytes": 50918
+    },
+    {
+      "path": "screenshots/threads.png",
+      "sha256": "b42b409d7a543ba43c410dd0455c527592151bf92ebffc2c7710f3bbac261ab0",
+      "bytes": 129340
+    },
+    {
+      "path": "screenshots/admin-a2ui-testing.png",
+      "sha256": "4b25b62b1f054738155d5a05c96e8b343261796a93486dfaa8ad212ab883f14b",
+      "bytes": 118110
+    },
+    {
+      "path": "screenshots/admin-memory.png",
+      "sha256": "41d2434e88e7ed1351f165796eca55f2337a83691daa8424a38213e431d7c75b",
+      "bytes": 76190
+    },
+    {
+      "path": "screenshots/admin-knowledge.png",
+      "sha256": "e8d6236071b49842eb0754e6fcbeef7b5ac8524c61ec53d35f77166beb801e13",
+      "bytes": 81165
+    },
+    {
+      "path": "screenshots/admin-runtime.png",
+      "sha256": "b56d23f0bb8c1d53447930b0419978d9923255b6912ddb1b82e931a63e3575f1",
+      "bytes": 99213
+    },
+    {
+      "path": "screenshots/admin-skills.png",
+      "sha256": "a923b62b4ecb65fec7243d68609c7ed2bd2417aefad1d19d7658db773e243106",
+      "bytes": 138761
+    },
+    {
+      "path": "screenshots/admin-settings.png",
+      "sha256": "9e9aedc4ece82f0ee888e8611b7d8c1ac15089cd26f1151a7f4aaa5ca792ad11",
+      "bytes": 147599
+    },
+    {
+      "path": "screenshots/admin-models.png",
+      "sha256": "a567e039eb1d53fb01f8381b61da967d4f2dcaae913df902c38fe8f72ff12ab4",
+      "bytes": 135384
+    },
+    {
+      "path": "screenshots/admin-providers.png",
+      "sha256": "569c3a92234a4c807f3607bcce33e5c6d273a6179b1abbf127ab13c501417575",
+      "bytes": 134580
+    },
+    {
+      "path": "screenshots/admin-tools.png",
+      "sha256": "ae0e72c49694afa937547cd654da0726dc208a2a7e6923eac869b4b6bfe23dbf",
+      "bytes": 63817
+    },
+    {
+      "path": "screenshots/admin-compiler.png",
+      "sha256": "45c52f1de32018a519a1460107e05fc15fdf40e77e611caf71835ddde1e4a244",
+      "bytes": 59650
+    },
+    {
+      "path": "screenshots/admin-auth.png",
+      "sha256": "e72d4596799180ab91379e850f63d71538dc3f1a2ec76ff1a9f2d43e42592e41",
+      "bytes": 105499
+    },
+    {
+      "path": "screenshots/admin-credentials.png",
+      "sha256": "fa515f6003ff6e7117d05601c75d85c2ae08b7eff4a50262e81c1d753c2a7daf",
+      "bytes": 96233
+    },
+    {
+      "path": "screenshots/about.png",
+      "sha256": "b936ceae3e648617c8656965f504e4f1a876ab7cf0151d89946e087b74bea259",
+      "bytes": 106434
+    },
+    {
+      "path": "screenshots/admin-protocols.png",
+      "sha256": "e4d987902e4ff6597484a2dd957f430a8275116c71d1df4ca2deb00f2ffc5536",
+      "bytes": 119905
+    },
+    {
+      "path": "screenshots/admin-agents.png",
+      "sha256": "332fbbcd5f8b6f2379d0765a6705e67564f611e283105db1104a4415cd8aa5e7",
+      "bytes": 64806
+    }
+  ],
+  "runtime": {
+    "cucumber_version": "13.2.1",
+    "playwright_version": "1.62.1",
+    "runner": "playwright-bdd"
+  },
+  "module_fingerprint_source": "tests/bdd/features",
+  "git_tree_fingerprint": {
+    "algorithm": "sha256 of LC_ALL=C sorted git ls-tree -r --full-tree",
+    "source_paths": [
+      "Cargo.toml",
+      "Cargo.lock",
+      "src",
+      "frontend/package.json",
+      "frontend/pnpm-lock.yaml",
+      "frontend/src",
+      "frontend/packages/prometheus-entity-management",
+      "tests/bdd",
+      "package.json",
+      "pnpm-lock.yaml"
+    ],
+    "sha256": "12bd9b50e71b93e8bbad5b9a6bceac1eed9690f05875d983e86176bd5f92e8be"
+  }
+}

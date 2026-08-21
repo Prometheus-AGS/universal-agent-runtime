@@ -91,13 +91,16 @@ shipped offline banner.
 BDD source and runner changes are committed before the certification run. The
 bundle is then minted against that clean Git SHA and committed as evidence in a
 second commit for this OpenSpec change. This avoids falsely binding video to a
-parent commit that did not contain the executed scenarios. The final report
-records both the tested source SHA and the evidence commit.
+parent commit that did not contain the executed scenarios. The finalized bundle
+report records the tested source SHA. Because a commit cannot contain its own
+hash, a subsequent immutable receipt under this change records the evidence
+commit that first introduced the bundle and is committed separately.
 
 ## Risks / Trade-offs
 
 - **Twenty independent videos increase repository size** → keep each scenario
-  focused on one primary function and remux WebM to MP4 without re-encoding.
+  focused on one primary function and transcode Playwright VP8 WebM recordings
+  to H.264 MP4 at the evidence boundary.
 - **A shared server can leak fixtures between scenarios** → retain one worker,
   unique names/IDs, explicit cleanup, and a fresh embedded store per run.
 - **A video can look successful while the assertion is weak** → the report

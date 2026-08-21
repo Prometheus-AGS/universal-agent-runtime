@@ -1,0 +1,119 @@
+{
+  "refinement_id": "fcdd2e93-b66c-4a2b-8a7d-184d5edcf7de",
+  "artifact_name": "screen-by-screen-validation",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-21T05:51:25Z",
+  "updated_at": "2026-08-21T05:52:24Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Keep constraint objects identical across the canonical file, state, and every checkpoint.",
+    "Bind f8e203b6 evidence to both frozen locks and the stable source/tree fingerprints.",
+    "Record the evidence commit through a non-self-referential subsequent receipt."
+  ],
+  "constraints": [
+    {
+      "id": "screen-evidence-complete",
+      "description": "All 20 product-screen rows must record an observed primary-function pass and resolve to a scenario video from the final bundle.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Parse the matrix, count 20 result rows, and resolve all 29 bundle paths."
+      },
+      "target_metric": {
+        "metric": "screen_rows_with_evidence",
+        "operator": "==",
+        "value": 20
+      }
+    },
+    {
+      "id": "interaction-strength",
+      "description": "Approvals, Providers, Models, Agents, Tools, Knowledge, Memory, About, and Cost must assert the named interaction rather than route or search-result visibility alone.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Inspect the final BDD steps and replay the passed Cucumber scenarios."
+      }
+    },
+    {
+      "id": "memory-and-fail-closed-controls",
+      "description": "Global, agent, and user memory scopes must be observed explicitly; exact assistant text, JWT, and same-tenant user isolation must have non-vacuous rejection controls without treating sibling structured artifacts as response text.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Inspect explicit MCP scope assertions and replay paired 200/401 plus same-tenant owner/denial assertions with required response status and body shapes."
+      }
+    },
+    {
+      "id": "bundle-process-source-integrity",
+      "description": "The bundle must bind fresh processes to the tested Git SHA, both frozen pnpm lockfiles, immutable Git tree, and stable feature-source fingerprint with unique playable videos, a retained run transcript, and a report generated from the finalized manifest.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Validate the process transcript, manifest SHA/fingerprints, artifact hashes and bytes, video codec/duration, duplicate paths, finalized report, and tamper control."
+      },
+      "target_metric": {
+        "metric": "valid_scenario_videos",
+        "operator": "==",
+        "value": 32
+      }
+    },
+    {
+      "id": "scope-process-and-truth",
+      "description": "The report must stay limited to the local Chromium server-full profile, state that canonical plan revision 7 followed the repairs, cite the immutable operator waiver, and pass strict OpenSpec validation.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Inspect profile, defect, chronology, and waiver text, then run strict OpenSpec and scoped diff checks."
+      }
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "24ed57ed",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-21T05:51:40Z"
+    },
+    {
+      "checkpoint_id": "6d9c8b51",
+      "phase": "plan",
+      "iteration": 1,
+      "timestamp": "2026-08-21T05:51:53Z"
+    }
+  ],
+  "prior_cycle_id": "3872ee40-6d3b-4374-814e-0395bc173f02",
+  "plan": {
+    "stages": [
+      "Correct the evidence-commit design to use a subsequent immutable receipt.",
+      "Replay bundle, matrix, OpenSpec, and all source integrity checks.",
+      "Validate full constraint-object equality in state and every checkpoint.",
+      "Persist and archive a new byte-identical active/history cycle.",
+      "Commit the evidence allowlist, then record that commit in a second receipt."
+    ],
+    "requires_code_execution": true
+  },
+  "execution_results": {
+    "bundle_artifacts_verified": 54,
+    "scenario_videos_verified": 32,
+    "screenshots_verified": 20,
+    "matrix_references_resolved": 29,
+    "full_constraint_objects_match": true,
+    "evidence_commit_receipt_mechanism": "subsequent immutable receipt",
+    "errors": []
+  }
+}

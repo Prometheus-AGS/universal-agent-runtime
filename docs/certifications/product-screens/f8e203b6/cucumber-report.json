@@ -1,0 +1,2061 @@
+[
+  {
+    "description": "  As a user with more than one agent available\n  I want switching the active agent to actually change who answers\n  So that agent selection isn't just cosmetic",
+    "elements": [
+      {
+        "description": "",
+        "id": "chat-with-agent-selection-and-mid-session-switching;switching-agent-changes-the-answering-agent",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Switching agent changes the answering agent",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "two agents \"BDD Agent Aurora\" (model \"openai/gpt-5.4-mini\") and \"BDD Agent Borealis\" (model \"bdd-provider-b/claude-5-haiku\") exist",
+            "result": {
+              "status": "passed",
+              "duration": 50000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "a fresh conversation using \"BDD Agent Aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 2684000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I send the message \"Which agent is answering?\"",
+            "result": {
+              "status": "passed",
+              "duration": 1919000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the assistant responds with content containing \"Agent Aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 7000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 11,
+            "name": "I switch the active agent to \"BDD Agent Borealis\"",
+            "result": {
+              "status": "passed",
+              "duration": 269000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "I send the message \"Which agent is answering?\"",
+            "result": {
+              "status": "passed",
+              "duration": 1399000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "the assistant responds with content containing \"Agent Borealis\"",
+            "result": {
+              "status": "passed",
+              "duration": 4000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 51000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "chat-with-agent-selection-and-mid-session-switching",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Chat with agent selection and mid-session switching",
+    "tags": [],
+    "uri": "features/chat-agent-switching.feature"
+  },
+  {
+    "description": "  As a user with a knowledge base attached to my agent\n  I want retrieved document content to actually reach the LLM call\n  So that answers are grounded in my ingested documents, not generic",
+    "elements": [
+      {
+        "description": "",
+        "id": "chat-with-a-knowledge-base-enabled,-retrieval-influencing-the-response;retrieval-influenced-response",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Retrieval-influenced response",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I have ingested a knowledge base document containing \"The secret onboarding code is ZEBRA-42.\"",
+            "result": {
+              "status": "passed",
+              "duration": 283000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "a fresh conversation with an agent scoped to that knowledge base",
+            "result": {
+              "status": "passed",
+              "duration": 1843000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I ask \"What is the secret onboarding code mentioned in the handbook?\"",
+            "result": {
+              "status": "passed",
+              "duration": 1414000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the assistant responds with content containing \"ZEBRA-42\"",
+            "result": {
+              "status": "passed",
+              "duration": 3000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "the outgoing request's system prompt actually contains \"The secret onboarding code is ZEBRA-42.\"",
+            "result": {
+              "status": "passed",
+              "duration": 4000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "a RAG citation source badge is shown in the transcript",
+            "result": {
+              "status": "passed",
+              "duration": 19000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 13,
+            "name": "hovering the first citation badge reveals its source document",
+            "result": {
+              "status": "passed",
+              "duration": 2653000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 52000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "chat-with-a-knowledge-base-enabled,-retrieval-influencing-the-response",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Chat with a knowledge base enabled, retrieval influencing the response",
+    "tags": [],
+    "uri": "features/chat-kb-retrieval.feature"
+  },
+  {
+    "description": "  As a user with no knowledge base configured for my agent\n  I want a plain chat response with no retrieval-related UI\n  So that I can trust the chat works standalone, without requiring a KB",
+    "elements": [
+      {
+        "description": "",
+        "id": "chat-with-no-knowledge-base-attached;plain-chat-with-no-knowledge-base",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Plain chat with no knowledge base",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a fresh conversation with an agent that has no knowledge bases attached",
+            "result": {
+              "status": "passed",
+              "duration": 1882000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I send the message \"What is 2 plus 2?\"",
+            "result": {
+              "status": "passed",
+              "duration": 1414000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the assistant responds with content containing \"2 plus 2 is 4\"",
+            "result": {
+              "status": "passed",
+              "duration": 4000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "no knowledge-base retrieval indicator is shown in the transcript",
+            "result": {
+              "status": "passed",
+              "duration": 5000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 43000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "chat-with-no-knowledge-base-attached",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Chat with no knowledge base attached",
+    "tags": [],
+    "uri": "features/chat-no-kb.feature"
+  },
+  {
+    "description": "  As a user whose message matches a configured skill's trigger\n  I want the frontend to visibly show which skill activated\n  So that I can trust the system is actually applying the skill, not just replying generically",
+    "elements": [
+      {
+        "description": "",
+        "id": "chat-with-a-skill-activated-mid-conversation;skill-visibly-activates-mid-conversation",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Skill visibly activates mid-conversation",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a fresh conversation with an agent bound to a skill triggered by the keyword \"diagnostics\"",
+            "result": {
+              "status": "passed",
+              "duration": 4480000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 8,
+            "name": "I send the message \"Please run diagnostics on the system.\"",
+            "result": {
+              "status": "passed",
+              "duration": 1923000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 9,
+            "name": "the assistant responds with content containing \"Diagnostics complete\"",
+            "result": {
+              "status": "passed",
+              "duration": 3000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "a skill-activation indicator for \"BDD Diagnostics Skill\" is shown in the transcript",
+            "result": {
+              "status": "passed",
+              "duration": 2000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 44000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "chat-with-a-skill-activated-mid-conversation",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Chat with a skill activated mid-conversation",
+    "tags": [],
+    "uri": "features/chat-skill-activation.feature"
+  },
+  {
+    "description": "  The browser must prove the behaviors that span individual product screens.",
+    "elements": [
+      {
+        "description": "",
+        "id": "cross-screen-identity,-memory,-and-agent-boundaries;default-and-orchestrator-agents-return-exact-attributed-answers",
+        "keyword": "Scenario",
+        "line": 5,
+        "name": "Default and orchestrator agents return exact attributed answers",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I ask the default and orchestrator agents their deterministic questions",
+            "result": {
+              "status": "passed",
+              "duration": 4892000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 7,
+            "name": "both exact answers are visible and the orchestrator contribution is attributed",
+            "result": {
+              "status": "passed",
+              "duration": 2000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 51000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@cross-screen",
+            "line": 1
+          },
+          {
+            "name": "@certification",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "cross-screen-identity,-memory,-and-agent-boundaries;a-verified-jwt-reaches-protected-credentials-and-anonymous-access-fails",
+        "keyword": "Scenario",
+        "line": 9,
+        "name": "A verified JWT reaches protected credentials and anonymous access fails",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 10,
+            "name": "I compare verified and anonymous credential requests",
+            "result": {
+              "status": "passed",
+              "duration": 1973000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the verified credential request succeeds and the anonymous request is rejected",
+            "result": {
+              "status": "passed",
+              "duration": 2000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 47000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@cross-screen",
+            "line": 1
+          },
+          {
+            "name": "@certification",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "cross-screen-identity,-memory,-and-agent-boundaries;global,-agent,-and-user-memory-work-while-user-state-remains-private",
+        "keyword": "Scenario",
+        "line": 13,
+        "name": "Global, agent, and user memory work while user state remains private",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 14,
+            "name": "two verified subjects address scoped memory and the same session and knowledge identifiers",
+            "result": {
+              "status": "passed",
+              "duration": 5482000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 15,
+            "name": "all memory levels resolve and the owner sees private resources while the other subject sees none",
+            "result": {
+              "status": "passed",
+              "duration": 97000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 175000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@cross-screen",
+            "line": 1
+          },
+          {
+            "name": "@certification",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "cross-screen-identity,-memory,-and-agent-boundaries",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Cross-screen identity, memory, and agent boundaries",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@cross-screen",
+        "line": 1
+      },
+      {
+        "name": "@certification",
+        "line": 1
+      }
+    ],
+    "uri": "features/cross-screen-security.feature"
+  },
+  {
+    "description": "  Browser-owned state must survive ordinary network and page lifecycle changes.",
+    "elements": [
+      {
+        "description": "",
+        "id": "local-first-browser-resilience;offline-state-is-visible-and-clears-on-reconnect",
+        "keyword": "Scenario",
+        "line": 5,
+        "name": "Offline state is visible and clears on reconnect",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 6,
+            "name": "the threads screen is ready",
+            "result": {
+              "status": "passed",
+              "duration": 1175000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 7,
+            "name": "the browser goes offline and returns online",
+            "result": {
+              "status": "passed",
+              "duration": 8000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the offline banner appears and then clears",
+            "result": {
+              "status": "passed",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 42000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@cross-screen",
+            "line": 1
+          },
+          {
+            "name": "@certification",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "local-first-browser-resilience;pglite-retains-a-completed-thread-only-in-its-browser-context",
+        "keyword": "Scenario",
+        "line": 10,
+        "name": "PGlite retains a completed thread only in its browser context",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 11,
+            "name": "a completed deterministic chat is stored locally",
+            "result": {
+              "status": "passed",
+              "duration": 3580000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 12,
+            "name": "I reload it and open a fresh browser context",
+            "result": {
+              "status": "passed",
+              "duration": 2709000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 13,
+            "name": "the original context retains the answer and the fresh context does not inherit it",
+            "result": {
+              "status": "passed",
+              "duration": 8000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 67000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@cross-screen",
+            "line": 1
+          },
+          {
+            "name": "@certification",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "local-first-browser-resilience;the-embedded-sse-connection-reconnects-without-duplicating-runtime-state",
+        "keyword": "Scenario",
+        "line": 15,
+        "name": "The embedded SSE connection reconnects without duplicating runtime state",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 16,
+            "name": "a known knowledge base is visible through the registered embedded stream",
+            "result": {
+              "status": "passed",
+              "duration": 1983000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 17,
+            "name": "the registered embedded sync stream reports an error and reconnects",
+            "result": {
+              "status": "passed",
+              "duration": 1012000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 18,
+            "name": "the knowledge screen contains exactly one recovered knowledge base",
+            "result": {
+              "status": "passed",
+              "duration": 27000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 48000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@cross-screen",
+            "line": 1
+          },
+          {
+            "name": "@certification",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "local-first-browser-resilience",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Local-first browser resilience",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@cross-screen",
+        "line": 1
+      },
+      {
+        "name": "@certification",
+        "line": 1
+      }
+    ],
+    "uri": "features/local-first-resilience.feature"
+  },
+  {
+    "description": "  As a release reviewer\n  I want one recorded browser scenario per shipped screen\n  So that route presence cannot be mistaken for working product behavior",
+    "elements": [
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;chat-returns-and-persists-a-deterministic-answer",
+        "keyword": "Scenario",
+        "line": 10,
+        "name": "Chat returns and persists a deterministic answer",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 4000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 11,
+            "name": "I exercise the primary function of \"/threads\"",
+            "result": {
+              "status": "passed",
+              "duration": 5039000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 12,
+            "name": "the \"/threads\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 67000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 60000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;about-reports-product-and-runtime-identity",
+        "keyword": "Scenario",
+        "line": 14,
+        "name": "About reports product and runtime identity",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 15,
+            "name": "I exercise the primary function of \"/about\"",
+            "result": {
+              "status": "passed",
+              "duration": 1724000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 16,
+            "name": "the \"/about\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 34000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 43000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;runtime-cockpit-consumes-a-live-event",
+        "keyword": "Scenario",
+        "line": 18,
+        "name": "Runtime cockpit consumes a live event",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 19,
+            "name": "I exercise the primary function of \"/admin/runtime\"",
+            "result": {
+              "status": "passed",
+              "duration": 1771000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 20,
+            "name": "the \"/admin/runtime\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 34000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 69000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;runs-opens-replayed-trace-detail",
+        "keyword": "Scenario",
+        "line": 22,
+        "name": "Runs opens replayed trace detail",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 23,
+            "name": "I exercise the primary function of \"/admin/runs\"",
+            "result": {
+              "status": "passed",
+              "duration": 1824000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 24,
+            "name": "the \"/admin/runs\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 41000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 91000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;approvals-denies-a-pending-tool-call",
+        "keyword": "Scenario",
+        "line": 26,
+        "name": "Approvals denies a pending tool call",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 27,
+            "name": "I exercise the primary function of \"/admin/approvals\"",
+            "result": {
+              "status": "passed",
+              "duration": 3582000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 28,
+            "name": "the \"/admin/approvals\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 42000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 43000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;protocols-shows-live-event-families",
+        "keyword": "Scenario",
+        "line": 30,
+        "name": "Protocols shows live event families",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 31,
+            "name": "I exercise the primary function of \"/admin/protocols\"",
+            "result": {
+              "status": "passed",
+              "duration": 1747000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 32,
+            "name": "the \"/admin/protocols\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 37000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 54000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;providers-changes-and-restores-the-default-route",
+        "keyword": "Scenario",
+        "line": 34,
+        "name": "Providers changes and restores the default route",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 35,
+            "name": "I exercise the primary function of \"/admin/providers\"",
+            "result": {
+              "status": "passed",
+              "duration": 3986000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 36,
+            "name": "the \"/admin/providers\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 55000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 51000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;credentials-stores-and-removes-a-user-secret",
+        "keyword": "Scenario",
+        "line": 38,
+        "name": "Credentials stores and removes a user secret",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 39,
+            "name": "I exercise the primary function of \"/admin/credentials\"",
+            "result": {
+              "status": "passed",
+              "duration": 2373000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 40,
+            "name": "the \"/admin/credentials\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 132000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 48000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;models-filters-the-live-catalog",
+        "keyword": "Scenario",
+        "line": 42,
+        "name": "Models filters the live catalog",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 43,
+            "name": "I exercise the primary function of \"/admin/models\"",
+            "result": {
+              "status": "passed",
+              "duration": 45559000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 44,
+            "name": "the \"/admin/models\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 83000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 379000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;skills-completes-the-lifecycle",
+        "keyword": "Scenario",
+        "line": 46,
+        "name": "Skills completes the lifecycle",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 47,
+            "name": "I exercise the primary function of \"/admin/skills\"",
+            "result": {
+              "status": "passed",
+              "duration": 37136000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 48,
+            "name": "the \"/admin/skills\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 94000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 33000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;agents-creates-a-selectable-agent",
+        "keyword": "Scenario",
+        "line": 50,
+        "name": "Agents creates a selectable agent",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 51,
+            "name": "I exercise the primary function of \"/admin/agents\"",
+            "result": {
+              "status": "passed",
+              "duration": 84688000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 52,
+            "name": "the \"/admin/agents\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 38000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 147000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;tools-finds-the-native-echo-tool",
+        "keyword": "Scenario",
+        "line": 54,
+        "name": "Tools finds the native echo tool",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 55,
+            "name": "I exercise the primary function of \"/admin/tools\"",
+            "result": {
+              "status": "passed",
+              "duration": 1839000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 56,
+            "name": "the \"/admin/tools\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 40000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 50000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;auth-mints-and-revokes-an-api-key",
+        "keyword": "Scenario",
+        "line": 58,
+        "name": "Auth mints and revokes an API key",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 59,
+            "name": "I exercise the primary function of \"/admin/auth\"",
+            "result": {
+              "status": "passed",
+              "duration": 2487000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 60,
+            "name": "the \"/admin/auth\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 61000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 49000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;knowledge-indexes-and-searches-a-document",
+        "keyword": "Scenario",
+        "line": 62,
+        "name": "Knowledge indexes and searches a document",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 63,
+            "name": "I exercise the primary function of \"/admin/knowledge\"",
+            "result": {
+              "status": "passed",
+              "duration": 5530000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 64,
+            "name": "the \"/admin/knowledge\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 34000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 43000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;memory-filters-verified-user-state",
+        "keyword": "Scenario",
+        "line": 66,
+        "name": "Memory filters verified-user state",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 67,
+            "name": "I exercise the primary function of \"/admin/memory\"",
+            "result": {
+              "status": "passed",
+              "duration": 5624000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 68,
+            "name": "the \"/admin/memory\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 29000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 37000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;compiler-creates-a-session",
+        "keyword": "Scenario",
+        "line": 70,
+        "name": "Compiler creates a session",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 71,
+            "name": "I exercise the primary function of \"/admin/compiler\"",
+            "result": {
+              "status": "passed",
+              "duration": 1777000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 72,
+            "name": "the \"/admin/compiler\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 35000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 65000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;settings-saves-and-restores-a-value",
+        "keyword": "Scenario",
+        "line": 74,
+        "name": "Settings saves and restores a value",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 75,
+            "name": "I exercise the primary function of \"/admin/settings\"",
+            "result": {
+              "status": "passed",
+              "duration": 3285000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 76,
+            "name": "the \"/admin/settings\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 49000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 49000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;a2ui-testing-previews-an-artifact-surface",
+        "keyword": "Scenario",
+        "line": 78,
+        "name": "A2UI testing previews an artifact surface",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 79,
+            "name": "I exercise the primary function of \"/admin/a2ui-testing\"",
+            "result": {
+              "status": "passed",
+              "duration": 1797000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 80,
+            "name": "the \"/admin/a2ui-testing\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 41000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 47000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;mcp-health-refreshes-server-status",
+        "keyword": "Scenario",
+        "line": 82,
+        "name": "MCP health refreshes server status",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 83,
+            "name": "I exercise the primary function of \"/admin/mcp-health\"",
+            "result": {
+              "status": "passed",
+              "duration": 1806000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 84,
+            "name": "the \"/admin/mcp-health\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 48000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 39000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "every-shipped-product-screen-performs-its-primary-function;cost-displays-known-usage",
+        "keyword": "Scenario",
+        "line": 86,
+        "name": "Cost displays known usage",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "a verified browser subject named \"screen-validator\"",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 87,
+            "name": "I exercise the primary function of \"/admin/cost\"",
+            "result": {
+              "status": "passed",
+              "duration": 1788000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 88,
+            "name": "the \"/admin/cost\" screen validation is visibly complete",
+            "result": {
+              "status": "passed",
+              "duration": 30000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 44000000
+            }
+          }
+        ],
+        "tags": [
+          {
+            "name": "@ui",
+            "line": 1
+          },
+          {
+            "name": "@product-screen",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "every-shipped-product-screen-performs-its-primary-function",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Every shipped product screen performs its primary function",
+    "tags": [
+      {
+        "name": "@ui",
+        "line": 1
+      },
+      {
+        "name": "@product-screen",
+        "line": 1
+      }
+    ],
+    "uri": "features/product-screen-validation.feature"
+  },
+  {
+    "description": "  As a user asking a question against a knowledge-base-scoped agent\n  I want the retrieved sources to show up as numbered [1], [2] citation markers\n  So that I can hover a marker and see exactly which document it came from",
+    "elements": [
+      {
+        "description": "",
+        "id": "rag-augmented-chat-responses-carry-numbered-citation-markers;numbered-citation-markers-appear-for-a-rag-augmented-response",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "Numbered citation markers appear for a RAG-augmented response",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "I have ingested a knowledge base document containing \"The secret onboarding code is ZEBRA-42.\"",
+            "result": {
+              "status": "passed",
+              "duration": 298000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 8,
+            "name": "a fresh conversation with an agent scoped to that knowledge base",
+            "result": {
+              "status": "passed",
+              "duration": 1851000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I ask \"What is the secret onboarding code mentioned in the handbook?\"",
+            "result": {
+              "status": "passed",
+              "duration": 1422000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "the assistant responds with content containing \"ZEBRA-42\"",
+            "result": {
+              "status": "passed",
+              "duration": 16000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 11,
+            "name": "a RAG citation source badge is shown in the transcript",
+            "result": {
+              "status": "passed",
+              "duration": 7000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 12,
+            "name": "hovering the first citation badge reveals its source document",
+            "result": {
+              "status": "passed",
+              "duration": 2665000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 50000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "rag-augmented-chat-responses-carry-numbered-citation-markers;no-citation-markers-when-no-knowledge-base-is-attached",
+        "keyword": "Scenario",
+        "line": 14,
+        "name": "No citation markers when no knowledge base is attached",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 15,
+            "name": "a fresh conversation with an agent that has no knowledge bases attached",
+            "result": {
+              "status": "passed",
+              "duration": 1843000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 16,
+            "name": "I send the message \"What is 2 plus 2?\"",
+            "result": {
+              "status": "passed",
+              "duration": 1411000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 17,
+            "name": "the assistant responds with content containing \"2 plus 2 is 4\"",
+            "result": {
+              "status": "passed",
+              "duration": 3000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 18,
+            "name": "no RAG citation source badge is shown in the transcript",
+            "result": {
+              "status": "passed",
+              "duration": 2000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 41000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "rag-augmented-chat-responses-carry-numbered-citation-markers",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "RAG-augmented chat responses carry numbered citation markers",
+    "tags": [],
+    "uri": "features/rag-citation.feature"
+  }
+]
