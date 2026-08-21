@@ -54,6 +54,9 @@ if (!dockerfile.includes('--features "server-full,postgres-backend"')) {
 if (dockerfile.includes("memory-palace")) {
   throw new Error("Dockerfile references the removed memory-palace feature");
 }
+if (!/^ARG TARGETARCH$/m.test(dockerfile) || /^ARG TARGETARCH=/m.test(dockerfile)) {
+  throw new Error("Dockerfile must inherit BuildKit TARGETARCH without a hard-coded default");
+}
 if (!localCertifier.includes("--bin universal-agent-runtime --features server-full")) {
   throw new Error("native release archives must build the authoritative server-full bundle");
 }

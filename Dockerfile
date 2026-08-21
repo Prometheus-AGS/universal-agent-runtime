@@ -40,9 +40,9 @@ ARG PYTHON_VERSION
 ARG GO_VERSION
 ARG WASMTIME_VERSION
 ARG TINYGO_VERSION
-# TARGETARCH is set automatically by buildx (`amd64` or `arm64`); see
+# TARGETARCH is set automatically by BuildKit (`amd64` or `arm64`); see
 # multi-arch branches further down in the Go / wasmtime / tinygo installs.
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \

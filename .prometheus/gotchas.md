@@ -412,3 +412,15 @@ candidate, so a newly created worktree was dirty before certification began.
 **Working rule.** Seed per-tool settings only when the destination does not
 track that path. If the candidate tracks it, preserve the committed copy; local
 certification must start from a genuinely clean checkout.
+
+## 2026-08-21 — do not default BuildKit's automatic platform arguments
+
+**Observed defect.** A native Apple Silicon `docker build` selected an ARM64
+Ubuntu base, but `ARG TARGETARCH=amd64` forced the Go, TinyGo, and Wasmtime
+download branches to AMD64. TinyGo then failed at `dpkg` with an architecture
+mismatch.
+
+**Working rule.** Re-declare BuildKit's automatic platform arguments inside a
+stage without a value. A default such as `ARG TARGETARCH=amd64` overrides the
+detected target and can create a mixed-architecture image. Verify the fix with
+the actual toolchain stage and its architecture probes, not a text check alone.
