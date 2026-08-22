@@ -9,3 +9,5 @@ Feature: Chat with a knowledge base enabled, retrieval influencing the response
     When I ask "What is the secret onboarding code mentioned in the handbook?"
     Then the assistant responds with content containing "ZEBRA-42"
     And the outgoing request's system prompt actually contains "The secret onboarding code is ZEBRA-42."
+    And a RAG citation source badge is shown in the transcript
+    And hovering the first citation badge reveals its source document

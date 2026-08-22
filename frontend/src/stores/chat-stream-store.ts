@@ -944,6 +944,40 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                   });
                   break;
                 }
+                case "agui.tool_call.approval_required": {
+                  const chunk = adapted.runtimeChunk;
+                  if (chunk?.kind !== "tool-approval") break;
+                  store.addRuntimeChunk(threadId, durableRunId, chunk);
+                  ingestRuntimeEvent({
+                    type: "approval_requested",
+                    id: chunk.toolCallId,
+                    run_id: durableRunId,
+                    payload: {
+                      tool_call_id: chunk.toolCallId,
+                      tool_name: chunk.toolName,
+                      status: "pending",
+                      reason: chunk.reason,
+                    },
+                  });
+                  break;
+                }
+                case "agui.tool_call.denied": {
+                  const chunk = adapted.runtimeChunk;
+                  if (chunk?.kind !== "tool-denied") break;
+                  store.addRuntimeChunk(threadId, durableRunId, chunk);
+                  ingestRuntimeEvent({
+                    type: "approval_updated",
+                    id: chunk.toolCallId,
+                    run_id: durableRunId,
+                    payload: {
+                      tool_call_id: chunk.toolCallId,
+                      tool_name: chunk.toolName,
+                      status: "denied",
+                      reason: chunk.reason,
+                    },
+                  });
+                  break;
+                }
                 case "agui.error": {
                   const e = agui as AguiError;
                   clearTimeout(streamStartTimer);

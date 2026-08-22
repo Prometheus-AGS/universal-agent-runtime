@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-20T08:55:43Z",
+  "variants": [
+    {
+      "name": "embedded-sse-recovery-verification",
+      "file": ".refiner/artifacts/fix-embedded-sse-offline-reconnect/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Bounded verification receipt for named embedded SSE delivery, single-connection recovery, upstream projection reactivity, and source dependency build order"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "The embedded adapter consumes named entity.change events and maps valid server payloads once.",
+      "The failed EventSource is closed before one capped replacement and unsubscribe cancels recovery.",
+      "The browser proof instruments the application EventSource and observes one visible post-reconnect Knowledge update.",
+      "The normalized React projection defect is fixed upstream rather than bypassed in UAR.",
+      "The full frontend test command retains its unrelated 10-test failure instead of being represented as passing."
+    ]
+  }
+}

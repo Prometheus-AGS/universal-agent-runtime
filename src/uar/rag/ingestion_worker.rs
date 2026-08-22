@@ -114,7 +114,7 @@ impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestion
         // Update status to Processing
         if let Err(e) = self
             .persistence
-            .update_document_status(&doc_id, &DocumentStatus::Processing)
+            .update_document_status(&job.document.owner_id, &doc_id, &DocumentStatus::Processing)
             .await
         {
             warn!(document_id = %doc_id, error = %e, "Failed to update status to processing");
@@ -127,7 +127,7 @@ impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestion
                 let status = DocumentStatus::Indexed;
                 if let Err(e) = self
                     .persistence
-                    .update_document_status(&doc_id, &status)
+                    .update_document_status(&job.document.owner_id, &doc_id, &status)
                     .await
                 {
                     error!(document_id = %doc_id, error = %e, "Failed to update status to indexed");
@@ -147,7 +147,7 @@ impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestion
                 };
                 if let Err(update_err) = self
                     .persistence
-                    .update_document_status(&doc_id, &status)
+                    .update_document_status(&job.document.owner_id, &doc_id, &status)
                     .await
                 {
                     error!(document_id = %doc_id, error = %update_err, "Failed to update status to failed");
@@ -193,6 +193,7 @@ impl DocumentIngestionExecutor {
             .ingest_service
             .ingest_text_with_metadata(
                 &result.content,
+                &job.document.owner_id,
                 &job.kb_id,
                 job.document.id.clone(),
                 metadata,
@@ -207,7 +208,10 @@ impl DocumentIngestionExecutor {
         job: &DocumentIngestionJob,
     ) -> Result<FileProcessingConfig> {
         let mut file_config = self.config.file_processing.clone();
-        if let Some(kb) = self.persistence.get_knowledge_base(&job.kb_id).await?
+        if let Some(kb) = self
+            .persistence
+            .get_knowledge_base(&job.document.owner_id, &job.kb_id)
+            .await?
             && !kb.config.file_processor.trim().is_empty()
         {
             file_config.provider = kb.config.file_processor;
@@ -500,6 +504,7 @@ mod tests {
     fn test_document() -> KnowledgeDocument {
         KnowledgeDocument {
             id: "doc-1".to_string(),
+            owner_id: "anonymous".to_string(),
             kb_id: "kb-1".to_string(),
             filename: "report.pdf".to_string(),
             file_path: None,

@@ -49,9 +49,9 @@ otherwise.
 
 ## Dependency security
 
-- `cargo audit`, `pnpm audit`, and a GitHub Dependabot alert gate run in CI
-  (`.github/workflows/security-audit.yml`); any suppressed advisory must be
-  disclosed with rationale in
+- `cargo audit`, `pnpm audit`, and the GitHub Dependabot alert gate run as local
+  release checks; GitHub Actions are reserved for deployment execution and
+  deployment-specific validation. Any suppressed advisory must be disclosed with rationale in
   [`docs/DEPENDENCY_MANAGEMENT.md`](docs/DEPENDENCY_MANAGEMENT.md).
 - Dependabot is enabled for Rust and npm ecosystems.
 

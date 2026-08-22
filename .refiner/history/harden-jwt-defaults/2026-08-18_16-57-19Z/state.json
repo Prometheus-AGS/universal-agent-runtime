@@ -1,0 +1,69 @@
+{
+  "refinement_id": "d228bd38-7ef3-4151-8619-674ad7bdeeb7",
+  "artifact_name": "harden-jwt-defaults",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-18T16:30:39Z",
+  "updated_at": "2026-08-18T16:57:19Z",
+  "current_iteration": 2,
+  "max_iterations": 5,
+  "goals": [
+    "Reject the published fallback secret under required JWT authentication and enforce configured registered claims without breaking UAR-issued tokens"
+  ],
+  "constraints": [
+    {
+      "id": "deliberate-secret-startup"
+    },
+    {
+      "id": "registered-claim-validation"
+    },
+    {
+      "id": "issued-token-continuity"
+    },
+    {
+      "id": "scope-and-evidence"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-18T16:30:39Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-18T16:49:59Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-18T16:57:19Z"
+}

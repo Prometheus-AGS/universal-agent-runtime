@@ -1789,7 +1789,7 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
                 "inject_context": { "type": "boolean", "title": "Inject Memory Context",
                     "x-control": "toggle" },
                 "embedding_provider": { "type": "string", "title": "Embedding Provider",
-                    "enum": ["openai", "cohere"], "x-control": "select" },
+                    "enum": ["openai", "cohere", "local"], "x-control": "select" },
                 "embedding_model": { "type": "string", "title": "Embedding Model",
                     "x-control": "text" },
                 "openai_api_key": { "type": ["string", "null"], "title": "OpenAI API Key",

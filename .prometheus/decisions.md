@@ -426,3 +426,152 @@ order. Either failure makes provenance unsuitable as the data-loss guard.
 contract. Moving API-created files elsewhere, accepting config records at the
 dynamic write boundary, or restoring last-writer-wins cache insertion would
 invalidate reconciliation safety and requires a new migration decision.
+
+---
+
+## 2026-08-19 — Persist provider defaults before publishing live state
+
+**Decision.** When a `SettingsManager` is configured, changing the default
+provider validates the target, persists the new provider ID, and only then
+publishes it to the live registry. A persistence failure leaves the live
+default unchanged. The existing registry-only behavior remains available when
+the server has no settings persistence configured.
+
+**Rationale.** Publishing first allowed the API to report a live default that
+could not survive restart. Persistence-first ordering makes the durable setting
+the commit point while retaining compatibility for deployments that explicitly
+run without a settings manager.
+
+**Uncomfortable constraint.** Provider deletion and default selection still
+span separate stores without a transaction. This change prevents publication
+after a failed settings write, but it does not make concurrent deletion and
+selection atomic.
+
+---
+
+## 2026-08-21 — Release certification is local; Actions remain deployment-only
+
+**Decision.** Run operational resilience, installed-artifact, supply-chain,
+security, load, stress, soak, and release-candidate certification locally from
+an immutable checkout. GitHub Actions may execute deployments and validate the
+resulting deployment only. Remove every other workflow and enforce the retained
+three-file deployment allowlist with a local pre-commit validator.
+
+**Rationale.** A prior plan treated a release gate, container build, and hosted
+artifact upload as sufficient to call product testing deployment validation.
+That contradicted the 2026-08-09 operator decision and caused a three-hour soak
+to be dispatched to Actions. Run `32458212074` was canceled and cannot be used
+as evidence. KBD plan revision 8 and decision
+`deployment-only-actions-local-release-certification` supersede the conflicting
+phase language.
+
+**Uncomfortable constraint.** Keyless supply-chain publication previously
+depended on workflow identity and hosted OIDC. The remaining release-tail
+changes must replace that mechanism with locally produced and independently
+verified evidence before publication; deleting the workflows does not by
+itself prove the replacement is complete.
+
+---
+
+## 2026-08-21 — Freeze after all local release-tail tooling lands
+
+**Decision.** Land and locally verify the operational, supply-chain,
+candidate-certification, and promotion scripts/contracts before freezing the
+immutable candidate. Evidence and status transitions still execute in order;
+after the freeze, only evidence/checkpoint commits are allowed.
+
+**Rationale.** Running the three-hour certification before replacing later
+workflow-bound release tooling would force a source edit and invalidate the
+run. KBD plan revision 9 and decision
+`freeze-after-local-release-tail-tooling` preserve one meaningful source-bound
+certification instead of knowingly scheduling a throwaway run.
+
+**Uncomfortable constraint.** This permits source preparation for later
+changes while the operational change is active. It does not permit their
+evidence, tags, signing, publication, or completion transitions to run early.
+
+---
+
+## 2026-08-21 — MCP reconnect state includes configuration generation
+
+**Decision.** Store each configured MCP server's current service, authoritative
+reconnect entry, and configuration generation in one private shared slot.
+Filtered and merged views share only slots they are already authorized to use.
+A reconnect built outside the lock may replace the service only if its captured
+generation is still current.
+
+**Rationale.** Sharing only the service pointer fixed dead-handle propagation
+but allowed an old view to reconnect configuration A after an A-to-B upsert and
+overwrite B. The generation guard closes that rollback without sharing policy
+maps, holding a synchronous lock across `.await`, or replaying the failed call.
+
+**Uncomfortable constraint.** This does not serialize concurrent failures or
+change snapshot-view behavior after server removal. Those behaviors require a
+separate observed problem and plan.
+
+---
+
+## 2026-08-22 — Shutdown timeout is one absolute signal-to-exit window
+
+**Decision.** Under `server-full`, observe SIGTERM/SIGINT once, stop both HTTP
+listeners immediately, and measure the configured graceful timeout from that
+observation. A standard-library watchdog owns the forced boundary independently
+of Tokio. Normal completion waits for ingestion, A2A, MCP, live-query, and
+SurrealKV ownership to end; deadline expiry exits 0 after one bounded
+non-blocking `deadline_enforced` write and never reports graceful completion.
+
+**Rationale.** The immutable candidate passed the 10,800-second traffic soak
+but Docker later sent SIGKILL and observed exit 137. Focused baseline controls
+showed the existing implementation spent the full configured timeout before it
+began draining, so held work had no remaining internal margin. An absolute
+deadline fixes the observed semantic defect without adding a dependency,
+protocol, provider, or public API.
+
+**Uncomfortable constraint.** Forced exit intentionally abandons cleanup still
+blocked at the deadline. The safety claim is bounded process termination, not
+completion of every cleanup branch. Only the normal path may emit
+`graceful_complete`; the parent three-hour certification must still restart
+from zero on the committed source SHA.
+
+---
+
+## 2026-08-22 — Production image builds consume the repository's dated Rust channel
+
+**Decision.** Keep `nightly-2026-07-18` as the repository and Docker default,
+and make the production backend invoke `cargo +"${RUST_TOOLCHAIN}" build
+--release`. A local preflight rejects a floating selector or any disagreement
+among the Docker default, repository channel, and effective build argument.
+
+**Rationale.** The Docker toolchain stage already installed the intended dated
+channel. The defect was the later floating `cargo +nightly` selector, which
+bypassed that declaration and resolved to an incompatible compiler. Explicit
+selection fixes the causal fault without changing dependencies, features, or
+the repository toolchain decision.
+
+**Evidence binding.** The product/build implementation is committed first and
+verified from a clean detached checkout. A direct evidence-only child commit
+then records those results. Canonical KBD resolves that evidence SHA as the
+parent handoff, and the parent rebuilds it and restarts the 10,800-second
+certification from zero.
+
+**Uncomfortable constraint.** A passing isolated Cargo probe is not a release
+image result, and a passing clean image build is not an operational-resilience
+result. Each remains limited to its recorded profile and source SHA.
+
+---
+
+## 2026-08-22 — UAR 1.0 closes on bounded real-inference functionality
+
+**Decision.** Supersede the multi-hour soak, supply-chain, RC, and GA-publication
+tail with five real-model functional paths, each observed through both the
+packaged API boundary and the shipped UI. Cancel the four old release-tail
+changes rather than representing them as passed.
+
+**Rationale.** The operator's final acceptance boundary is working software:
+OpenAI proxy inference, skill activation, knowledge grounding, Kimi k3 UI
+configuration and inference, and basic-agent creation and inference. Synthetic,
+recorded, and duration-only checks do not establish those behaviors.
+
+**Uncomfortable constraint.** This decision closes only the requested local
+`server-full` functional scope. It produces no supply-chain, release-candidate,
+publication, minimal-profile, or embedded-mobile claim.

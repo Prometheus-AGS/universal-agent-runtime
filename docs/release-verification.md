@@ -1,12 +1,36 @@
 # Verify release evidence
 
-The `Supply-chain release evidence` workflow attaches `release-manifest.json`,
-`SHA256SUMS`, archive/binary/source/image SBOMs, Sigstore bundles, SLSA
-provenance, and the exact product support matrix to an existing GitHub release.
-Verification trusts the GitHub OIDC identity recorded in Sigstore and the GitHub
-artifact-attestation service, rather than an unsigned checksum page. The
-workflow accepts explicit consolidated-test and security-audit run URLs and
-refuses either unless it completed successfully for the release source SHA.
+Release evidence is produced locally from a clean checkout by
+`scripts/prepare-release-evidence-local.sh`. The output includes
+`release-manifest.json`, `SHA256SUMS`, archive/binary/source/image SBOMs,
+Sigstore bundles, SLSA provenance, and the exact product support matrix. The
+manifest binds hashed local test and security-audit receipts to the release
+source SHA. GitHub Actions are not a product-test, build, certification, or
+signing runner; they are reserved for deployment execution and validation.
+
+Run the local security gate first, then prepare evidence from already-built
+platform archives and an already-published digest-addressed candidate image.
+Both commands require a clean checkout and write source-bound receipts. Signing
+and publication remain explicit operator-authorized release actions.
+
+```bash
+GH_TOKEN='<dependabot-read-token>' \
+UAR_SECURITY_IMAGE='ghcr.io/prometheus-ags/universal-agent-runtime@sha256:<digest>' \
+  scripts/security-audit-local.sh target/security-evidence
+
+RELEASE_TAG=v1.0.0-rc.3 \
+GA_TAG=v1.0.0 \
+SUPERSEDED_GA_SHA=null \
+REPOSITORY=Prometheus-AGS/universal-agent-runtime \
+IMAGE_REFERENCE=ghcr.io/prometheus-ags/universal-agent-runtime \
+IMAGE_DIGEST=sha256:<digest> \
+COSIGN_CERTIFICATE_IDENTITY='<approved-local-builder-identity>' \
+COSIGN_CERTIFICATE_OIDC_ISSUER='<approved-oidc-issuer>' \
+TEST_EVIDENCE_FILE='<source-bound-test-receipt.json>' \
+SECURITY_AUDIT_EVIDENCE_FILE='target/security-evidence/security-audit-evidence.json' \
+BUILD_RECEIPT_FILE='<source-bound-build-receipt.json>' \
+  scripts/prepare-release-evidence-local.sh target/platform-archives target/release-evidence
+```
 
 Download the supply checksum index first, authenticate it, then download only
 the files it names and verify that exact set:
@@ -14,11 +38,12 @@ the files it names and verify that exact set:
 ```bash
 mkdir uar-release
 gh release download v1.0.0 --repo Prometheus-AGS/universal-agent-runtime \
-  --dir uar-release --pattern SHA256SUMS
+  --dir uar-release --pattern SHA256SUMS --pattern SHA256SUMS.sigstore.json
 cd uar-release
-gh attestation verify SHA256SUMS \
-  --repo Prometheus-AGS/universal-agent-runtime \
-  --signer-workflow Prometheus-AGS/universal-agent-runtime/.github/workflows/supply-chain.yml
+cosign verify-blob --bundle SHA256SUMS.sigstore.json \
+  --certificate-identity '<approved-local-builder-identity>' \
+  --certificate-oidc-issuer '<approved-oidc-issuer>' \
+  SHA256SUMS
 while read -r _ asset; do
   gh release download v1.0.0 --repo Prometheus-AGS/universal-agent-runtime \
     --dir . --pattern "$asset"
@@ -27,12 +52,13 @@ sha256sum --check SHA256SUMS
 node verify-release.mjs release-manifest.json
 ```
 
-`SHA256SUMS` covers every immutable supply-evidence file except itself. Its
-GitHub artifact attestation is the non-recursive trust root, avoiding an
-impossible checksum/signature self-reference while ensuring that added,
-removed, or changed supply files fail verification. Candidate-certification
-outputs use a separate authenticated index described below; they never modify
-this supply set.
+`SHA256SUMS` covers every immutable supply-evidence file except itself and its
+Sigstore bundle. The keyless signature bundle is the non-recursive trust root,
+avoiding an impossible checksum/signature self-reference while ensuring that
+added, removed, or changed supply files fail verification. The approved signer
+identity and issuer are release policy inputs; never take them from an
+unverified downloaded manifest. Candidate-certification outputs use a separate
+signed index described below and never modify this supply set.
 
 Verify an archive's keyless signature and SLSA provenance. Replace the archive
 name as needed; keep the certificate identity and issuer constraints intact.
@@ -40,13 +66,9 @@ name as needed; keep the certificate identity and issuer constraints intact.
 ```bash
 cosign verify-blob \
   --bundle universal-agent-runtime-linux-x64.tar.gz.sigstore.json \
-  --certificate-identity-regexp '^https://github.com/Prometheus-AGS/universal-agent-runtime/.github/workflows/supply-chain.yml@refs/(heads|tags)/' \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity '<approved-local-builder-identity>' \
+  --certificate-oidc-issuer '<approved-oidc-issuer>' \
   universal-agent-runtime-linux-x64.tar.gz
-
-gh attestation verify universal-agent-runtime-linux-x64.tar.gz \
-  --repo Prometheus-AGS/universal-agent-runtime \
-  --signer-workflow Prometheus-AGS/universal-agent-runtime/.github/workflows/supply-chain.yml
 ```
 
 Validate the machine-readable links and local digests with Node.js 22 or later.
@@ -62,8 +84,8 @@ manifest):
 
 ```bash
 cosign verify \
-  --certificate-identity-regexp '^https://github.com/Prometheus-AGS/universal-agent-runtime/.github/workflows/supply-chain.yml@refs/(heads|tags)/' \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity '<approved-local-builder-identity>' \
+  --certificate-oidc-issuer '<approved-oidc-issuer>' \
   ghcr.io/prometheus-ags/universal-agent-runtime@sha256:<digest>
 ```
 
@@ -73,9 +95,9 @@ offline source archive has source-appropriate SBOMs but no invented runtime
 binary trace. The manifest records each packaged executable path and SHA-256 so
 the standalone verifier can extract it and prove which binary the signed
 platform archive contains. It also records the source commit and Git tree,
-Cargo lockfile, provider catalog and packaged-model digests, workflow identity,
-immutable source-bound test and audit runs, and the downloadable product
-support matrix used for the release decision.
+Cargo lockfile, provider catalog and packaged-model digests, local builder
+identity, immutable source-bound local test and audit receipts, and the
+downloadable product support matrix used for the release decision.
 
 ## Candidate installation certification
 
@@ -87,22 +109,25 @@ recovery, measures parallel load and a streaming/reconnect soak, and performs a
 cold backup/restore. Set `UAR_CANDIDATE_IMAGE` to the manifest's digest-bound
 image reference to include the non-root container journey. A published immutable
 candidate defaults to a 10,800-second soak; `UAR_SOAK_DURATION_SECONDS` may be
-set to a short value only for pre-candidate workflow validation.
+set to a short value only for local pre-candidate script validation.
 
 ```bash
 UAR_CANDIDATE_IMAGE='ghcr.io/prometheus-ags/universal-agent-runtime@sha256:<digest>' \
 UAR_PREVIOUS_ARTIFACT_DIR=previous-release \
 UAR_REQUIRE_UPGRADE_JOURNEY=1 \
-  scripts/certify-release-candidate.sh uar-release candidate-evidence
+  scripts/certify-release-candidate.sh uar-release target/release-candidate-certification
+
+scripts/package-candidate-certification-local.sh \
+  target/release-candidate-certification uar-release target/candidate-certification-assets
 ```
 
 `previous-release` must contain either a distinct prior release's Linux archive
 and `release-manifest.json`, or a controlled source rebuild plus
 `previous-identity.json` recording the public source ref, resolved commit, and
-archive digest. The immutable workflow uses the latter when the prior public
-release has no downloadable archive. Both archive identities are checked before
+archive digest. The local certification procedure uses the latter when the
+prior public release has no downloadable archive. Both archive identities are checked before
 the previous binary and candidate are run against the same persistence path.
-The workflow accepts `previous_ref` only when GitHub resolves it as a published,
+The procedure accepts `previous_ref` only when GitHub resolves it as a published,
 non-draft release tag, records the peeled commit for annotated tags, and rejects
 the candidate's own tag or source commit. The previous runtime writes a custom
 durable setting through the supported Settings API; the candidate must read the
@@ -111,33 +136,35 @@ separate rollback path, the previous runtime is restarted, and it must read the
 same record again. The command
 writes `results.json`, lifecycle/failure/load/soak/upgrade/non-root JSON,
 installed version, model listing, chat response, and process logs. Validate it
-with `node scripts/validate-candidate-certification.mjs candidate-evidence` and
-retain the directory with the candidate evidence.
+with `node scripts/validate-candidate-certification.mjs
+target/release-candidate-certification` and retain the directory with the
+candidate evidence.
 
-Before executing candidate bytes, the certification workflow authenticates the
+Before executing candidate bytes, the local certification procedure authenticates the
 supply `SHA256SUMS`, downloads exactly its indexed files, verifies every digest,
-and runs the bundled `verify-release.mjs`. Certification subsequently publishes
-three separate files without modifying the supply checksum set:
+and runs the bundled `verify-release.mjs`. Package completed local results with
+`scripts/package-candidate-certification-local.sh`. Publication subsequently
+attaches four separate files without modifying the supply checksum set:
 
 - `candidate-certification-<tag>.tar.gz`
 - `candidate-certification-manifest.json`
 - `CANDIDATE_CERTIFICATION_SHA256SUMS`
+- `CANDIDATE_CERTIFICATION_SHA256SUMS.sigstore.json`
 
-The checksum index covers the archive and manifest and is itself attested by
-`.github/workflows/candidate-certification.yml`. The manifest binds the archive
-to the candidate tag/source SHA, the supply manifest and checksum-index
-digests, and the immutable certification workflow run. Consumers authenticate
-this second index, verify it, validate the manifest, extract the archive, and
-run `validate-candidate-certification.mjs` against the retained results.
+The checksum index covers the archive and manifest and has its own local
+Sigstore bundle. The manifest binds the archive to the candidate tag/source
+SHA, the supply manifest and checksum-index digests, the local builder identity,
+and a hashed `results.json` receipt. Consumers authenticate this second index,
+verify it, validate the manifest, extract the archive, and run
+`validate-candidate-certification.mjs` against the retained results.
 
 ## Immutable GA promotion
 
 GA promotion reuses the certified candidate archives and OCI manifest digest;
-it does not run a build. Only `vX.Y.Z-rc.N` and `release-test-*` tags trigger the
-archive workflow; the signed GA tag is deliberately excluded so it cannot race
-the promotion by rebuilding or replacing certified bytes. The promotion tool
-defaults to a read-only preflight, requires the RC and GA semantic versions to
-match, and refuses a stale GA tag unless its exact current commit is
+it does not run a build. Local candidate tooling accepts only
+`vX.Y.Z-rc.N`; the signed GA tag is never an archive-build input. The promotion
+tool defaults to a read-only preflight, requires the RC and GA semantic versions
+to match, and refuses a stale GA tag unless its exact current commit is
 acknowledged. Execution additionally requires an explicit confirmation and a
 configured Git tag-signing identity.
 
@@ -165,8 +192,12 @@ authenticated promotion evidence; do not rewrite this file or append an
 unindexed `superseded-release.json` at GA time.
 
 ```bash
-scripts/promote-release-candidate.sh v1.0.0-rc.3 v1.0.0
+UAR_RELEASE_SIGNING_IDENTITY='<approved-local-builder-identity>' \
+UAR_RELEASE_SIGNING_OIDC_ISSUER='<approved-oidc-issuer>' \
+  scripts/promote-release-candidate.sh v1.0.0-rc.3 v1.0.0
 
+UAR_RELEASE_SIGNING_IDENTITY='<approved-local-builder-identity>' \
+UAR_RELEASE_SIGNING_OIDC_ISSUER='<approved-oidc-issuer>' \
 UAR_EXPECTED_EXISTING_GA_SHA=<audited-old-sha> \
 UAR_CONFIRM_GA_PROMOTION='v1.0.0-rc.3->v1.0.0' \
 UAR_CONFIRM_GA_RELEASE_REPLACEMENT=v1.0.0 \

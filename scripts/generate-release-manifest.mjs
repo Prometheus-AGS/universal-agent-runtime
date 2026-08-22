@@ -15,10 +15,12 @@ const requiredEnvironment = [
   "RELEASE_TAG",
   "SOURCE_SHA",
   "REPOSITORY",
-  "WORKFLOW_IDENTITY",
-  "RUN_URL",
-  "TEST_RUN_URL",
-  "SECURITY_AUDIT_RUN_URL",
+  "BUILDER_IDENTITY",
+  "BUILD_RECEIPT",
+  "TEST_EVIDENCE",
+  "SECURITY_AUDIT_EVIDENCE",
+  "COSIGN_CERTIFICATE_IDENTITY",
+  "COSIGN_CERTIFICATE_OIDC_ISSUER",
   "GA_TAG",
   "SUPERSEDED_GA_SHA",
   "IMAGE_REFERENCE",
@@ -33,6 +35,13 @@ const files = readdirSync(directory).filter((name) => payloadPattern.test(name))
 if (files.length === 0) throw new Error(`no release archives found in ${directory}`);
 
 const sha256 = (path) => createHash("sha256").update(readFileSync(path)).digest("hex");
+const localEvidence = (environmentName) => {
+  const name = process.env[environmentName];
+  if (basename(name) !== name) throw new Error(`${environmentName} must be a file name`);
+  const path = join(directory, name);
+  if (!statSync(path).isFile()) throw new Error(`${environmentName} is not a file: ${name}`);
+  return { name, sha256: sha256(path), source_sha: process.env.SOURCE_SHA };
+};
 const repositoryRoot = resolve(import.meta.dirname, "..");
 const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], {
   cwd: repositoryRoot,
@@ -54,6 +63,9 @@ const sourceTree = execFileSync("git", ["rev-parse", "HEAD^{tree}"], {
   cwd: repositoryRoot,
   encoding: "utf8",
 }).trim();
+const buildReceipt = localEvidence("BUILD_RECEIPT");
+const testEvidence = localEvidence("TEST_EVIDENCE");
+const auditEvidence = localEvidence("SECURITY_AUDIT_EVIDENCE");
 
 function archiveBinary(archiveName) {
   const archivePath = join(directory, archiveName);
@@ -138,7 +150,17 @@ const manifest = {
     model_inputs: modelInputs,
     sboms: ["source.cyclonedx.json", "source.spdx.json"],
   },
-  workflow: { identity: process.env.WORKFLOW_IDENTITY, run_url: process.env.RUN_URL },
+  builder: {
+    kind: "local",
+    identity: process.env.BUILDER_IDENTITY,
+    source_sha: process.env.SOURCE_SHA,
+    receipt: buildReceipt.name,
+    receipt_sha256: buildReceipt.sha256,
+  },
+  signing: {
+    certificate_identity: process.env.COSIGN_CERTIFICATE_IDENTITY,
+    certificate_oidc_issuer: process.env.COSIGN_CERTIFICATE_OIDC_ISSUER,
+  },
   artifacts,
   image: {
     reference: process.env.IMAGE_REFERENCE,
@@ -146,14 +168,14 @@ const manifest = {
     platforms: ["linux/amd64", "linux/arm64"],
     sboms: ["image.cyclonedx.json", "image.spdx.json"],
     signature: `${process.env.IMAGE_REFERENCE}@${process.env.IMAGE_DIGEST}`,
-    provenance: `${process.env.IMAGE_REFERENCE}@${process.env.IMAGE_DIGEST}#application/vnd.in-toto+json`,
+    provenance: "image.provenance.json",
   },
   evidence: {
     checksums: "SHA256SUMS",
     files: evidenceFiles,
     provenance: artifacts.map(({ provenance }) => provenance),
-    tests: { run_url: process.env.TEST_RUN_URL, source_sha: process.env.SOURCE_SHA },
-    audits: { run_url: process.env.SECURITY_AUDIT_RUN_URL, source_sha: process.env.SOURCE_SHA },
+    tests: testEvidence,
+    audits: auditEvidence,
   },
   promotion: "promotion.json",
   support_matrix: "product-support-matrix.json",

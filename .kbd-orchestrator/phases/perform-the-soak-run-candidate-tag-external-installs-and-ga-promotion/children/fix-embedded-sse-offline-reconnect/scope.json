@@ -1,0 +1,29 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/children/fix-embedded-sse-offline-reconnect/**",
+    "frontend/src/entities/sync.ts",
+    "frontend/src/entities/sync.test.ts",
+    "frontend/packages/prometheus-entity-management",
+    "package.json",
+    "tests/bdd/features/local-first-resilience.feature",
+    "tests/bdd/steps/local-first-resilience.steps.ts",
+    "openspec/changes/fix-embedded-sse-offline-reconnect/**",
+    "openspec/specs/embedded-sse-sync/**",
+    ".refiner/artifacts/fix-embedded-sse-offline-reconnect/**",
+    ".refiner/history/fix-embedded-sse-offline-reconnect/**",
+    ".refiner/registry.json",
+    ".prometheus/gotchas.md",
+    ".prometheus/session-log.md"
+  ],
+  "deniedPaths": [
+    "src/server.rs",
+    "frontend/src/lib/realtime/uar-sse-adapter.ts",
+    "frontend/package.json",
+    "pnpm-lock.yaml",
+    ".claude/settings.local.json",
+    "openspec/changes/screen-by-screen-validation/**",
+    "docs/certifications/product-screens/**"
+  ],
+  "inheritsConstraints": true,
+  "__note": "Operator approved an upstream prometheus-entity-management repair after the live browser proved existing-row projections stale. The submodule pointer may advance to the tested upstream commit. The root manifest is limited to making BDD preparation build the source package through its declared dependency graph; the UAR lockfile and frontend manifest remain denied."
+}

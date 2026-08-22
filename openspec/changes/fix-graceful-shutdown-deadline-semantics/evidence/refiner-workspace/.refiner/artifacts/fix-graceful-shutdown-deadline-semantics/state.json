@@ -1,0 +1,89 @@
+{
+  "refinement_id": "0bd354ca-389c-4e67-a3f1-a9003852109a",
+  "artifact_name": "fix-graceful-shutdown-deadline-semantics",
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "started_at": "2026-08-22T10:50:01Z",
+  "updated_at": "2026-08-22T10:57:02Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Verify that the server-full shutdown correction enforces one absolute signal-to-exit deadline, releases owned resources on the graceful path, and preserves exact negative controls without expanding public API or dependencies"
+  ],
+  "constraints": [
+    {
+      "id": "absolute-deadline"
+    },
+    {
+      "id": "resource-ownership"
+    },
+    {
+      "id": "container-escalation-margin"
+    },
+    {
+      "id": "fail-closed-evidence"
+    },
+    {
+      "id": "bounded-scope"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 5,
+      "constraints_total": 5,
+      "decision": "terminate",
+      "timestamp": "2026-08-22T10:56:37Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "b1205285",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-22T10:50:54Z"
+    },
+    {
+      "checkpoint_id": "2fd3bde4",
+      "phase": "plan",
+      "iteration": 1,
+      "timestamp": "2026-08-22T10:51:20Z"
+    },
+    {
+      "checkpoint_id": "0fd0e76c",
+      "phase": "execute",
+      "iteration": 1,
+      "timestamp": "2026-08-22T10:54:53Z"
+    },
+    {
+      "checkpoint_id": "9725c321",
+      "phase": "reflect",
+      "iteration": 1,
+      "timestamp": "2026-08-22T10:56:28Z"
+    },
+    {
+      "checkpoint_id": "9834816f",
+      "phase": "persist",
+      "iteration": 1,
+      "timestamp": "2026-08-22T10:56:55Z"
+    }
+  ],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-22T10:57:02Z"
+}

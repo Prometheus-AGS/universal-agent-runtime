@@ -8,7 +8,8 @@ started="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 log="$results_dir/test.log"
 
 set +e
-cargo test --test operational_resilience -- --nocapture 2>&1 | tee "$log"
+cargo test --locked --no-default-features --features server-full \
+  --test operational_resilience -- --nocapture 2>&1 | tee "$log"
 status=${PIPESTATUS[0]}
 set -e
 

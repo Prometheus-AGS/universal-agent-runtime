@@ -451,3 +451,161 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   agent-seeded phase `progress.json` remains all-TODO because the runtime refuses
   to overwrite an unowned projection. Canonical phase status is complete; the
   next lifecycle action is `/kbd-new-phase`.
+
+## 2026-08-19 — Provider default/settings consistency child completed
+
+- Added `local` to the closed memory embedding-provider schema and observed the
+  supported-value test change from exit 101 to passing while the unknown-value
+  control continued to reject invalid configuration.
+- Changed default-provider selection to validate, persist when a settings
+  manager exists, and publish live state only after persistence succeeds.
+  Focused tests observed persistence failure and missing-provider paths preserve
+  both live and durable defaults, and a successful selection survives a fresh
+  settings manager.
+- Retained four chronological post-edit Tier 0 checks and a final server-full
+  check, package-scoped Clippy, formatting, scoped diff, and strict OpenSpec
+  validation. Parent browser and release tiers were not run in the child.
+- The artifact refiner converged after three iterations; independent
+  history-free critic and judge reviews passed the final candidate. The change
+  was archived and synced into `provider-model-settings-certification`.
+- Completed child reflection and canonical child exit. The control-plane endpoint
+  was unavailable, so the KBD commands committed locally. The outer phase is at
+  70/79 and resumes with `/opsx:apply screen-by-screen-validation`.
+
+## 2026-08-20 — Embedded SSE recovery child implementation checkpoint
+
+- Corrected the embedded frontend adapter to consume the server's named
+  `entity.change` payload, expose status, close before bounded retry, deliver
+  each received event once, and cancel source/timer state on unsubscribe.
+- Replaced the separate-probe browser check with instrumentation of the
+  EventSource registered by the application. The final fresh-process Chromium
+  scenario observed an initial visible Knowledge update, one replacement stream
+  request after forced error, and one visible post-reconnect update without
+  reload, store injection, or manual replay.
+- The first corrected browser attempts exposed an upstream normalized-view
+  defect: stable ID arrays prevented existing-entity snapshots from rerendering.
+  The source package was repaired and reviewed upstream rather than patched in
+  UAR. Source/compatibility PR #20 is open at `0352c83`; the separate canonical
+  `3.0.0-rc.2` Changesets PR #21 is open at `5afa07b`.
+- Widened the upstream pnpm engine contract to admit tested pnpm 11 consumers
+  while retaining pnpm 10.33.0 as the integrity-pinned repository default. UAR
+  typecheck, lint, focused unit, build, dependency-aware BDD preparation, and
+  the exact browser scenario passed against the pinned source head.
+- The full frontend test command is not green: it observed 328 passing and 10
+  failing tests in two unrelated Storybook/A2UI files. This child records that
+  result and does not claim a full-suite pass or alter the unrelated failures.
+- Recovery remains resume-only. No checkpoint replay or lossless-delivery claim
+  was added for events emitted while the browser was disconnected.
+
+## 2026-08-20 — Root pnpm lock consistency child completed
+
+- Reconciled the root lock with entity-management pin `0352c83` without
+  changing a manifest or Git link. The final lock digest is
+  `645e3af883e8d62b74d13be20453c083431ed3cf2ef3ca20a5b1a84152273350`.
+- Independent review rejected the first frozen-compatible candidate because it
+  moved two unrelated edges. The corrected graph preserves config-array on
+  minimatch 10.2.5 and y-webrtc on ws 8.21.0 while retaining ws 8.21.1 for the
+  changed sync importer's direct pin.
+- A clean full frozen install from empty dependency directories validated 1,482
+  supply-chain entries, linked 1,345 packages, exited 0, and left the lock hash
+  unchanged. An earlier clean correction failed closed on a missing ws 8.21.1
+  record; that receipt remains part of the evidence.
+- TypeScript Tier 0, strict active OpenSpec, canonical spec validation, scoped
+  diff checks, artifact schemas, and final history-free critic and judge reviews
+  passed. Parent browser certification was not run in this child.
+
+## 2026-08-20 — Frontend pnpm lock consistency child completed
+
+- Reconciled the independently active `frontend/pnpm-lock.yaml` against all ten
+  current workspace projects without changing manifests, product source, the
+  root lock, or the entity-management gitlink. The final nested digest is
+  `43c00bbfe5b85e42c12a5fda74ab987750863794f00104a12ecd24a59f822593`.
+- Retained the stale-lock negative control: pnpm 11.15.0 exited 1 with
+  `ERR_PNPM_OUTDATED_LOCKFILE`. Frozen metadata and clean empty-dependency-tree
+  installs then exited 0 and preserved both lock digests.
+- The final fail-closed audit classifies all 693 lock mutations against 44 real
+  manifest edges, including three pnpm auto-peer projections, with zero
+  unclassified records and no unrelated common package-body movement.
+- Typecheck, lint, the focused four-test SSE unit, strict active OpenSpec,
+  canonical spec validation, refiner integrity, and final history-free critic
+  and judge reviews passed. Parent browser certification was not run in this
+  child.
+
+## 2026-08-21 — MCP reconnect shared-state child completed
+
+- Replaced copied MCP handles with shared per-server service, authoritative
+  reconnect entry, and generation slots while retaining independent filtered
+  server/tool/native-tool policy maps.
+- Corrected the first candidate after history-free review proved an old filtered
+  view could reconnect configuration A after an A-to-B upsert. The focused
+  regression now passes 1/0 and rejects the stale swap.
+- Built immutable source `f0298d76` locally. macOS arm64, Linux arm64 container,
+  focused operational 5/0, and 60-second installed preflight passed. Crash and
+  timeout each failed exactly once and later calls crossed to replacement PIDs.
+- Artifact-refiner converged after two iterations. The final gate retained all
+  raw references, six chronological checkpoints, exact constraint objects, 17
+  matching hashes, byte-identical active/history state, and fresh critic and
+  judge PASS verdicts.
+- No GitHub Actions test ran. The child does not claim the parent three-hour soak,
+  external installs, deployment, candidate tag, or GA promotion.
+
+## 2026-08-22 — Graceful shutdown deadline child implemented and locally verified
+
+- Replaced the mandatory pre-drain wait with an immediate HTTP drain and one
+  signal-to-exit deadline. Added an executor-independent watchdog and mutually
+  exclusive `graceful_complete`/`deadline_enforced` outcomes.
+- Added explicit terminal ownership for MCP transports and Surreal live-query
+  supervisors, retained ingestion/A2A joins, and observed the SurrealKV lock
+  released before original-helper process exit.
+- Focused local results: process controls 9/0, MCP registry 4/0, live query 1/0,
+  same-path C-12 1/0, and later-SIGINT caller control 1/0. The paired baseline
+  process control failed 6 intended assertions; the different-path C-12 control
+  failed at the intended 404-versus-200 assertion.
+- A healthy UID-65532 container held a real SSE request, reached its 30-second
+  internal deadline in 30,489 ms under Docker's 35-second stop limit, terminated
+  curl with exit 18, emitted only `deadline_enforced`, exited 0, and produced no
+  SIGKILL event.
+- Cargo check, scoped Clippy, strict OpenSpec, shell syntax, dependency, added
+  visibility, scoped diff, untracked text, and contained artifact-refiner gates
+  passed locally. Existing Cargo warnings and the nested SurrealKV teardown
+  warning remain disclosed.
+- No GitHub Actions test, push, PR, tag, release, or GA action ran. The parent
+  10,800-second certification remains pending until this child is committed and
+  closed on the new immutable candidate SHA.
+
+## 2026-08-22 — Container Rust toolchain pin child verified
+
+- Replaced the production backend's floating `cargo +nightly` selector with an
+  explicit selection of the Docker stage's dated `RUST_TOOLCHAIN` argument.
+- Added a local contract that accepts matching Docker/repository/effective
+  dated pins and rejects a floating selector plus both forms of mismatch.
+- Preserved identical-input ARM64 controls: `nightly-2026-07-18` compiled the
+  locked `diskann-wide 0.54.0` probe, while `nightly-2026-08-22` reproduced
+  exactly three E0283 diagnostics and exited 101.
+- A clean detached `linux/arm64` production build compiled the formerly failing
+  dependency and exported image
+  `sha256:07a9dca99e084bbe132855a196e51ff443ae18273ce04a1e6821c00d92c77b4f`.
+- Strict OpenSpec and the contained artifact-refiner schemas, file integrity,
+  constraints, and state consistency passed. Its optional trigger dispatcher
+  has a quoted-variable defect, but this artifact configured no triggers and
+  no action was skipped.
+- The stale stable/1.87 GKE spec is recorded for a separately planned follow-up.
+  No GitHub Actions test, push, PR, tag, release, or parent soak ran in this
+  child.
+
+## 2026-08-22 — UAR 1.0 bounded functional closeout completed
+
+- Completed the operator's five real-inference paths through both API and UI:
+  OpenAI proxy, skill activation, knowledge grounding, Kimi k3 configuration
+  and inference, and basic-agent creation and inference.
+- Fixed observed provider credential resolution, provider update, native-skill
+  tool naming, assistant grouped-part rendering, and UI agent/model routing
+  defects before accepting the results.
+- Verified Kimi UI routing from the effective run policy as
+  `kimi-for-coding/k3`; verified the UI-created basic agent as
+  `ui-basic-agent` on `openai/gpt-5.4-mini`.
+- Recorded plan revision 11 and canonical decision
+  `functional-real-inference-closeout-only`. Cancelled the old soak,
+  supply-chain, RC, and GA changes without representing them as passed.
+- No unit suite, synthetic or recorded provider, soak, GitHub Actions job, tag,
+  publication, push, or PR was used for this closeout.

@@ -14,7 +14,7 @@
 use std::sync::Arc;
 
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
@@ -34,6 +34,7 @@ use super::registry::A2uiRegistry;
 use crate::uar::{
     domain::events::{ArtifactPayload, NormalizedEvent},
     runtime::manager::RunManager,
+    security::claims::UserContext,
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -178,11 +179,16 @@ async fn get_schema(
 /// agent to continue execution.
 async fn submit_artifact_response(
     State(state): State<A2uiApiState>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(payload): Json<ArtifactResponsePayload>,
 ) -> impl IntoResponse {
     // Verify the run exists and is active.
-    let run = match state.run_manager.get_run(&run_id).await {
+    let run = match state
+        .run_manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+    {
         Some(r) => r,
         None => {
             return (
@@ -318,10 +324,16 @@ async fn publish_messages(
 /// both replayable state patches and a directly renderable AG-UI artifact.
 async fn submit_messages(
     State(state): State<A2uiApiState>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    if state.run_manager.get_run(&run_id).await.is_none() {
+    if state
+        .run_manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+        .is_none()
+    {
         return (
             StatusCode::NOT_FOUND,
             Json(serde_json::json!({ "error": format!("run '{run_id}' not found") })),
@@ -364,10 +376,15 @@ fn json_contains_string(value: &serde_json::Value, expected: &str) -> bool {
 /// persist/broadcast the action state, and resume the agent in a continuation run.
 async fn submit_action(
     State(state): State<A2uiApiState>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(payload): Json<A2uiActionPayload>,
 ) -> impl IntoResponse {
-    let run = match state.run_manager.get_run(&run_id).await {
+    let run = match state
+        .run_manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+    {
         Some(run) => run,
         None => {
             return (
@@ -547,10 +564,15 @@ async fn promote_library_component(
 /// than waiting for an agent to naturally request input.
 async fn test_trigger_artifact(
     State(state): State<A2uiApiState>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(payload): Json<TestTriggerPayload>,
 ) -> impl IntoResponse {
-    let run = match state.run_manager.get_run(&run_id).await {
+    let run = match state
+        .run_manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+    {
         Some(r) => r,
         None => {
             return (
@@ -599,10 +621,15 @@ async fn test_trigger_artifact(
 /// converges on it immediately.
 async fn surface_test_trigger(
     State(state): State<A2uiApiState>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
     Json(payload): Json<SurfaceTestTriggerPayload>,
 ) -> impl IntoResponse {
-    let run = match state.run_manager.get_run(&run_id).await {
+    let run = match state
+        .run_manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+    {
         Some(r) => r,
         None => {
             return (
@@ -666,8 +693,17 @@ async fn surface_test_trigger(
 /// broadcast for anything published from that point on.
 async fn surface_replay(
     State(state): State<A2uiApiState>,
+    Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
 ) -> impl IntoResponse {
+    if state
+        .run_manager
+        .get_run_for_user(&user.user_id, &run_id)
+        .await
+        .is_none()
+    {
+        return StatusCode::NOT_FOUND.into_response();
+    }
     let ops = state.realtime_backbone.replay(&run_id);
     (StatusCode::OK, Json(ops)).into_response()
 }

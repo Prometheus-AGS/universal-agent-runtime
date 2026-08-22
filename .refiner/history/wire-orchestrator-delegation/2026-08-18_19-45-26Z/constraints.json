@@ -1,0 +1,46 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "orchestrator-only-graph",
+      "description": "The distinct orchestrator descriptor enters RouterNode then the selected AgentNode; default-agent remains on the existing direct path.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused RunManager positive test plus default-agent contrast control"
+      }
+    },
+    {
+      "id": "delegated-trace-and-answer",
+      "description": "Recorded and live server requests emit router/agent step events and return the selected specialist's attributed contribution.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Exact capability test against recorded stub and operator live proxy"
+      }
+    },
+    {
+      "id": "scope-and-evidence",
+      "description": "The change is limited to orchestration defaults, graph execution, runtime wiring, focused tests, OpenSpec, and evidence; phase Tier 2 remains deferred.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Rust Tier 0, focused tests, strict OpenSpec, schemas, references, scoped diff, and independent review"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the OpenSpec proposal, delta, and tasks as acceptance authority.",
+    "Do not infer delegation from source inspection; observe route choice, answer content, and step events.",
+    "Report recorded and live backend results separately.",
+    "Do not run phase Tier 2 before all active-phase changes are complete."
+  ],
+  "termination_conditions": [
+    "All three blocking constraints pass.",
+    "Strict OpenSpec, artifact schemas/references/state, focused behavior checks, and scoped diff checks pass.",
+    "Independent artifact critic and judge find no implementation or evidence blocker."
+  ]
+}

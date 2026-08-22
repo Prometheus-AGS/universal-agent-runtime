@@ -73,7 +73,11 @@ impl NativeSkill for SessionSearchTool {
             .unwrap_or(self.max_results)
             .min(self.max_results);
 
-        let session = match self.persistence.load_session(&session_id).await {
+        let session = match self
+            .persistence
+            .load_session(crate::session::ANONYMOUS_SESSION_OWNER, &session_id)
+            .await
+        {
             Ok(Some(s)) => s,
             Ok(None) => {
                 return Ok(

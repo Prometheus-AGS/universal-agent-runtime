@@ -86,8 +86,41 @@ pub fn orchestrator_agent() -> AgentArtifact {
     let mut agent = default_agent();
     agent.id = "orchestrator-agent".to_string();
     agent.metadata.title = "Orchestrator".to_string();
-    agent.metadata.description = "System orchestrator for complex tasks.".to_string();
+    agent.metadata.description =
+        "Routes complex tasks to a general-purpose or Rust-review sub-agent and returns the delegated contribution."
+            .to_string();
+    agent.metadata.tags = vec![
+        "orchestration".to_string(),
+        "delegation".to_string(),
+        "multi-agent".to_string(),
+    ];
+    agent.runtime.entry = "orchestrator".to_string();
+    agent.prompt.system = "You coordinate specialist sub-agents. Route each request to the best available specialist and return that specialist's evidence-backed contribution."
+        .to_string();
+    agent.prompt.instructions = vec![
+        "Use rust-reviewer for Rust implementation and safety review; use general-purpose for other work."
+            .to_string(),
+    ];
     agent
+}
+
+pub(crate) fn orchestrator_graph() -> crate::uar::runtime::graph::AgentGraph {
+    use crate::uar::runtime::graph::{AgentGraph, AgentNode, GraphState, RouterNode};
+
+    AgentGraph::builder("router")
+        .add_node(RouterNode::new(
+            "router",
+            "Route Rust implementation, correctness, or safety questions to rust-reviewer. Route all other questions to general-purpose.",
+            vec!["general-purpose".to_string(), "rust-reviewer".to_string()],
+        ))
+        .add_node(AgentNode::new("general-purpose", "general-purpose"))
+        .add_node(AgentNode::new("rust-reviewer", "rust-reviewer"))
+        .add_conditional_edge("router", |state: &GraphState| {
+            state
+                .get::<String>("_route")
+                .unwrap_or_else(|| "general-purpose".to_string())
+        })
+        .build()
 }
 
 /// Seeds the two built-in agents into the persistence layer at startup.
@@ -130,7 +163,10 @@ pub async fn ensure_default_knowledge_base(
 
     // Check if default KB already exists
     if let Some(existing) = persistence
-        .get_knowledge_base_by_name(DEFAULT_KB_NAME)
+        .get_knowledge_base_by_name(
+            crate::uar::domain::knowledge::ANONYMOUS_KNOWLEDGE_OWNER,
+            DEFAULT_KB_NAME,
+        )
         .await?
     {
         tracing::debug!("Default knowledge base already exists: {}", existing.id);
@@ -172,6 +208,7 @@ pub async fn ensure_default_knowledge_base(
     let now = chrono::Utc::now().to_rfc3339();
     let kb = KnowledgeBase {
         id: uuid::Uuid::new_v4().to_string(),
+        owner_id: crate::uar::domain::knowledge::ANONYMOUS_KNOWLEDGE_OWNER.to_string(),
         name: DEFAULT_KB_NAME.to_string(),
         description: Some("Default knowledge base for general documents".to_string()),
         config: kb_config,

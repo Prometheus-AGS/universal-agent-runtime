@@ -12,6 +12,10 @@ use uuid::Uuid;
 
 pub mod providers;
 
+pub(crate) fn tenant_storage_key(owner_id: &str, resource_id: &str) -> String {
+    format!("{}:{owner_id}:{resource_id}", owner_id.len())
+}
+
 /// Metadata for a file uploaded during a chat session.
 /// The actual bytes live on disk at `file_path`; served via GET /api/attachments/{id}.
 #[derive(Debug, Clone)]
@@ -36,7 +40,7 @@ pub struct PostgresProvider;
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     // Session Management
     async fn save_session(&self, session: &Session) -> Result<()>;
-    async fn load_session(&self, id: &str) -> Result<Option<Session>>;
+    async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>>;
 
     /// Save or replace a conversation-scoped chat policy.
     async fn save_conversation_policy(&self, record: &ConversationPolicyRecord) -> Result<()>;
@@ -44,11 +48,13 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     /// Load a conversation-scoped chat policy.
     async fn load_conversation_policy(
         &self,
+        owner_id: &str,
         conversation_id: &str,
     ) -> Result<Option<ConversationPolicyRecord>>;
 
     /// Delete a conversation-scoped chat policy.
-    async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()>;
+    async fn delete_conversation_policy(&self, owner_id: &str, conversation_id: &str)
+    -> Result<()>;
 
     // Skill Management
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()>;
@@ -72,16 +78,20 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn save_knowledge_base(&self, kb: &KnowledgeBase) -> Result<()>;
 
     /// Get a knowledge base by ID.
-    async fn get_knowledge_base(&self, id: &str) -> Result<Option<KnowledgeBase>>;
+    async fn get_knowledge_base(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeBase>>;
 
     /// Get a knowledge base by name.
-    async fn get_knowledge_base_by_name(&self, name: &str) -> Result<Option<KnowledgeBase>>;
+    async fn get_knowledge_base_by_name(
+        &self,
+        owner_id: &str,
+        name: &str,
+    ) -> Result<Option<KnowledgeBase>>;
 
     /// List all knowledge bases.
-    async fn list_knowledge_bases(&self) -> Result<Vec<KnowledgeBase>>;
+    async fn list_knowledge_bases(&self, owner_id: &str) -> Result<Vec<KnowledgeBase>>;
 
     /// Delete a knowledge base and all its chunks/documents.
-    async fn delete_knowledge_base(&self, id: &str) -> Result<()>;
+    async fn delete_knowledge_base(&self, owner_id: &str, id: &str) -> Result<()>;
 
     // =========================================================================
     // Knowledge Chunk Management
@@ -93,6 +103,7 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     /// Search knowledge across ALL knowledge bases (original behavior).
     async fn search_knowledge(
         &self,
+        owner_id: &str,
         query_vec: &[f32],
         limit: usize,
         min_score: f32,
@@ -101,6 +112,7 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     /// Search knowledge scoped to specific knowledge base IDs.
     async fn search_knowledge_scoped(
         &self,
+        owner_id: &str,
         kb_ids: &[&str],
         query_vec: &[f32],
         limit: usize,
@@ -115,22 +127,27 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()>;
 
     /// Get a document by ID.
-    async fn get_document(&self, id: &str) -> Result<Option<KnowledgeDocument>>;
+    async fn get_document(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeDocument>>;
 
     /// List documents in a knowledge base.
-    async fn list_documents(&self, kb_id: &str) -> Result<Vec<KnowledgeDocument>>;
+    async fn list_documents(&self, owner_id: &str, kb_id: &str) -> Result<Vec<KnowledgeDocument>>;
 
     /// Count documents in a knowledge base. Default impl uses `list_documents`;
     /// providers should override with a backend-native COUNT query for efficiency.
-    async fn count_documents(&self, kb_id: &str) -> Result<usize> {
-        Ok(self.list_documents(kb_id).await?.len())
+    async fn count_documents(&self, owner_id: &str, kb_id: &str) -> Result<usize> {
+        Ok(self.list_documents(owner_id, kb_id).await?.len())
     }
 
     /// Update document processing status.
-    async fn update_document_status(&self, doc_id: &str, status: &DocumentStatus) -> Result<()>;
+    async fn update_document_status(
+        &self,
+        owner_id: &str,
+        doc_id: &str,
+        status: &DocumentStatus,
+    ) -> Result<()>;
 
     /// Delete a document and all its associated chunks.
-    async fn delete_document(&self, doc_id: &str) -> Result<()>;
+    async fn delete_document(&self, owner_id: &str, doc_id: &str) -> Result<()>;
 
     // =========================================================================
     // Agent Persistence

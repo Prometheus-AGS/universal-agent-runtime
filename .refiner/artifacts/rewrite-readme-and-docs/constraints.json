@@ -1,0 +1,55 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "docs-customer-coverage",
+      "description": "README and site cover architecture, Flint boundaries, SDKs, skills, deployment, and security with rendered Mermaid diagrams and working customer links.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Docusaurus production build and documentation truth gate"
+      }
+    },
+    {
+      "id": "docs-broken-links-fail",
+      "description": "A normal documentation page with a missing target causes the production site build to exit nonzero.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Observed temporary broken-link negative control"
+      }
+    },
+    {
+      "id": "openapi-runtime-truth",
+      "description": "OpenAPI derives the package version and documents representative paths verified against the Axum router, including the distinct skills reload and refresh endpoints.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Scoped server-full check and focused OpenAPI unit test"
+      }
+    },
+    {
+      "id": "scope-and-evidence-honesty",
+      "description": "Only planned docs, Docusaurus dependency metadata, OpenAPI, and exact root scratch files change; evidence discloses skipped Vale, Rust warnings, and website development dependency findings.",
+      "severity": "high",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Scoped git diff, OpenSpec evidence review, and independent critic/judge review"
+      }
+    }
+  ],
+  "global_rules": [
+    "Do not change application UI or runtime behavior.",
+    "Do not claim catalog entries are certified provider execution support.",
+    "Do not report a skipped or warning-bearing check as clean."
+  ],
+  "termination_conditions": [
+    "All blocking constraints pass deterministic checks.",
+    "Independent critic and judge find no blocking defect.",
+    "Manifest, constraints, and refinement state validate against their schemas."
+  ]
+}

@@ -464,7 +464,7 @@ const AssistantMessageBody: FC = () => {
                 )
               );
             case "data":
-              return (part as { dataRendererUI?: ReactNode }).dataRendererUI ?? <>{children}</>;
+              return (part as { dataRendererUI?: ReactNode }).dataRendererUI ?? null;
             case "indicator":
               return (
                 <span data-slot="aui_assistant-message-indicator" className="animate-pulse" aria-label="Assistant is working">
@@ -472,7 +472,7 @@ const AssistantMessageBody: FC = () => {
                 </span>
               );
             default:
-              return <>{children}</>;
+              return null;
           }
         }}
       </MessagePrimitive.GroupedParts>

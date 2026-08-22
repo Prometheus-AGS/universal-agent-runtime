@@ -1,0 +1,78 @@
+{
+  "stages": [
+    {
+      "id": "candidate-integrity",
+      "description": "Record exact hashes for the two source files, focused test file, OpenSpec artifacts, and verification receipt.",
+      "requires_execution": true,
+      "tool": "local-shell"
+    },
+    {
+      "id": "deterministic-validation",
+      "description": "Validate the manifest and constraints schemas, referenced file existence, scoped diff integrity, and OpenSpec contract.",
+      "requires_execution": true,
+      "tool": "local-shell"
+    },
+    {
+      "id": "verification-summary",
+      "description": "Persist a concise per-constraint summary that cites the exact verification receipt and negative-control outcomes.",
+      "requires_execution": false
+    },
+    {
+      "id": "manifest-update",
+      "description": "Write and validate the artifact manifest after all referenced outputs exist.",
+      "requires_execution": true,
+      "tool": "local-shell"
+    }
+  ],
+  "tool_invocations": [
+    {
+      "stage_id": "candidate-integrity",
+      "tool": "local-shell",
+      "purpose": "Compute SHA-256 hashes without altering the candidate"
+    },
+    {
+      "stage_id": "deterministic-validation",
+      "tool": "local-shell",
+      "purpose": "Run repository-provided schema validators and scoped integrity checks"
+    }
+  ],
+  "state_updates": {
+    "files_to_create": [
+      "artifact_manifest.json",
+      "plan.json",
+      "refinement_log.md",
+      "decisions.md",
+      "dist/verification-summary.md"
+    ],
+    "files_to_update": [
+      "constraints.json",
+      "state.json"
+    ],
+    "directories_required": [
+      "dist",
+      "checkpoints"
+    ]
+  },
+  "validation_plan": [
+    {
+      "constraint_id": "provider-schema-consistency",
+      "validation_method": "Inspect recorded settings controls and exact source hash",
+      "execution_required": true
+    },
+    {
+      "constraint_id": "persist-before-live-publication",
+      "validation_method": "Inspect recorded pre-fix failure and final three-test provider group",
+      "execution_required": true
+    },
+    {
+      "constraint_id": "durable-reconstruction",
+      "validation_method": "Inspect the fresh-manager test result and source hash",
+      "execution_required": true
+    },
+    {
+      "constraint_id": "child-scope-and-gates",
+      "validation_method": "Validate schemas, OpenSpec, referenced files, and scoped diff",
+      "execution_required": true
+    }
+  ]
+}

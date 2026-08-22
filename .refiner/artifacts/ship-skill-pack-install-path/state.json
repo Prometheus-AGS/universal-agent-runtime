@@ -1,0 +1,69 @@
+{
+  "refinement_id": "c241f412-36c2-4ec9-931d-b338c08f9740",
+  "artifact_name": "ship-skill-pack-install-path",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-18T17:51:31Z",
+  "updated_at": "2026-08-18T18:04:21Z",
+  "current_iteration": 2,
+  "max_iterations": 5,
+  "goals": [
+    "Provide a verified public install path that produces the UAR-detected Prometheus Skill Pack without a development checkout"
+  ],
+  "constraints": [
+    {
+      "id": "public-immutable-source"
+    },
+    {
+      "id": "locked-build-atomic-install"
+    },
+    {
+      "id": "admin-inventory-continuity"
+    },
+    {
+      "id": "scope-docs-evidence"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "continue",
+      "timestamp": "2026-08-18T17:51:31Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-18T17:59:54Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-18T18:04:21Z"
+}

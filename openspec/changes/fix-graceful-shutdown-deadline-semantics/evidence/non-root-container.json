@@ -1,0 +1,21 @@
+{
+  "source_sha": "a9b50220995d11d4cbb944e00cc3ed2274f355ae",
+  "candidate_tag": "uar-shutdown-held-work:a9b50220995d",
+  "candidate_image_digest": "sha256:323c761a47eb466b46422b6b663e56cf6c71e53064d7ccd09c4cd95b447545dd",
+  "binary_sha256": "746cd57f32890d792f6fdf2a47726131c93e964ea12ea7a528d59665df65fb82",
+  "uid": 65532,
+  "writable_persistence": true,
+  "health": true,
+  "held_sse_connected": true,
+  "held_sse_terminated": true,
+  "held_sse_exit_code": 18,
+  "internal_shutdown_deadline_seconds": 30,
+  "external_stop_deadline_seconds": 35,
+  "observed_stop_elapsed_ms": 30489,
+  "shutdown_outcome": "deadline_enforced",
+  "graceful_complete_observed": false,
+  "sigterm_exit_code": 0,
+  "docker_sigkill_observed": false,
+  "raw_event_evidence": "non-root-container-events.jsonl",
+  "profile": "server-full"
+}

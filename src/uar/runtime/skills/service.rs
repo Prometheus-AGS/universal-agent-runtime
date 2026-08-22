@@ -413,6 +413,12 @@ impl SkillService {
         let Some(mut skill) = existing else {
             return Ok(None);
         };
+        if matches!(
+            skill.origin,
+            crate::uar::domain::skills::SkillOrigin::Builtin
+        ) {
+            anyhow::bail!("system_skill_immutable");
+        }
 
         if let Some(version) = update.version {
             skill.version = version;
@@ -1217,6 +1223,43 @@ mod tests {
                 .iter()
                 .all(|skill| skill.skill_id != "test-skill")
         );
+    }
+
+    #[tokio::test]
+    async fn builtin_update_is_refused_while_disable_remains_available() {
+        let service = SkillService::new(None, None);
+        let mut builtin = test_skill();
+        builtin.skill_id = "builtin-update-proof".to_string();
+        builtin.title = "Original built-in".to_string();
+        builtin.origin = SkillOrigin::Builtin;
+        service.register_builtins(vec![builtin]).await;
+
+        let error = service
+            .update_skill(
+                "builtin-update-proof",
+                SkillUpdate {
+                    title: Some("Mutated built-in".to_string()),
+                    ..SkillUpdate::default()
+                },
+            )
+            .await
+            .expect_err("built-in edits must fail");
+        assert!(error.to_string().contains("system_skill_immutable"));
+        assert!(
+            service
+                .set_scoped_enabled("builtin-update-proof", SkillScope::Global, false)
+                .await,
+            "built-ins remain disableable"
+        );
+
+        let stored = service
+            .get_skills()
+            .await
+            .into_iter()
+            .find(|skill| skill.skill_id == "builtin-update-proof")
+            .expect("built-in remains present");
+        assert_eq!(stored.title, "Original built-in");
+        assert!(!stored.enabled_for(None, None));
     }
 
     #[tokio::test]

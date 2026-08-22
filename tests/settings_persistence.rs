@@ -79,6 +79,7 @@ fn minimal_config() -> AppConfig {
             jwks_url: None,
             jwt_issuer: None,
             jwt_audience: None,
+            jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
         },
         resilience: ResilienceConfig {
@@ -403,6 +404,43 @@ async fn mgr_first_boot_seeds_all_core_namespaces() -> Result<()> {
 
     assert_eq!(mgr.get_value("server.port").await, Some(json!(3000)));
     assert_eq!(mgr.get_value("server.host").await, Some(json!("127.0.0.1")));
+    Ok(())
+}
+
+#[tokio::test]
+async fn mgr_initialize_accepts_local_memory_embedding_provider() -> Result<()> {
+    let (mgr, _dir) = make_manager().await;
+    let mut config = minimal_config();
+    config.memory.embedding_provider = "local".to_string();
+
+    mgr.initialize(&config).await?;
+
+    assert_eq!(
+        mgr.get_value("memory.embedding_provider").await,
+        Some(json!("local"))
+    );
+    assert!(
+        mgr.get_value("llm.default_provider").await.is_some(),
+        "settings after the memory namespace must still be seeded"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn mgr_initialize_rejects_unknown_memory_embedding_provider() -> Result<()> {
+    let (mgr, _dir) = make_manager().await;
+    let mut config = minimal_config();
+    config.memory.embedding_provider = "unsupported-provider".to_string();
+
+    let error = mgr
+        .initialize(&config)
+        .await
+        .expect_err("unknown memory embedding providers must fail schema validation");
+    let chain = format!("{error:#}");
+
+    assert!(chain.contains("memory.embedding_provider"), "{chain}");
+    assert!(chain.contains("unsupported-provider"), "{chain}");
+    assert!(chain.contains("JSON Schema validation"), "{chain}");
     Ok(())
 }
 

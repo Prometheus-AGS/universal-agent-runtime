@@ -1,0 +1,18 @@
+{
+  "refinement_id": "78f3a410-eb98-477d-a6fc-4509e214b3b8",
+  "artifact_name": "fix-pnpm-lock-submodule-consistency",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-20T16:59:49Z",
+  "updated_at": "2026-08-20T16:59:55Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": ["Commit a frozen-installable root lock for the exact workspace without unrelated dependency resolution movement"],
+  "constraints": [{"id":"frozen-root-lock"},{"id":"fail-closed-stale-control"},{"id":"minimum-resolution-delta"},{"id":"bounded-child-scope"},{"id":"truthful-verification"}],
+  "phases_completed": ["specify", "plan"],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [{"checkpoint_id":"46384bce","phase":"specify","iteration":1,"timestamp":"2026-08-20T16:59:49Z"}],
+  "prior_cycle_id": null
+}

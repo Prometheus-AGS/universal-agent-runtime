@@ -1,0 +1,31 @@
+{
+  "refinement_id": "a36d3ae6-8021-43ae-bfb0-ac9b4173567f",
+  "artifact_name": "rewrite-readme-and-docs",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-18T20:58:55Z",
+  "updated_at": "2026-08-18T20:58:55Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Complete customer documentation without replacing accurate existing material.",
+    "Make broken links fail and keep OpenAPI metadata aligned with the runtime.",
+    "Preserve exact scope and disclose every verification limit."
+  ],
+  "constraints": [
+    {"id": "docs-customer-coverage", "severity": "blocking"},
+    {"id": "docs-broken-links-fail", "severity": "blocking"},
+    {"id": "openapi-runtime-truth", "severity": "blocking"},
+    {"id": "scope-and-evidence-honesty", "severity": "high"}
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null
+}

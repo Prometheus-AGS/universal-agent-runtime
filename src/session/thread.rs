@@ -14,6 +14,12 @@ use crate::llm::{Message, MessageContent, MessageRole, ToolCall};
 #[allow(dead_code)]
 const DEFAULT_SESSION_TIMEOUT: Duration = Duration::from_secs(30 * 60);
 
+pub(crate) const ANONYMOUS_SESSION_OWNER: &str = "anonymous";
+
+fn anonymous_session_owner() -> String {
+    ANONYMOUS_SESSION_OWNER.to_string()
+}
+
 /// A single conversation session.
 ///
 /// Sessions maintain the full message history and provide methods
@@ -27,6 +33,8 @@ pub struct Session {
 struct SessionInner {
     /// Unique session identifier.
     id: String,
+    /// Authenticated user that owns this session.
+    owner_id: String,
     /// Conversation messages.
     messages: RwLock<Vec<Message>>,
     /// Session creation time.
@@ -41,6 +49,8 @@ struct SessionInner {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SessionState {
     pub id: String,
+    #[serde(default = "anonymous_session_owner")]
+    pub owner_id: String,
     pub messages: Vec<Message>,
     pub created_at: String,    // RFC3339
     pub last_activity: String, // RFC3339
@@ -77,11 +87,12 @@ impl Clone for Session {
 
 impl Session {
     /// Create a new session with the given ID.
-    fn new(id: String) -> Self {
+    fn new(id: String, owner_id: String) -> Self {
         let now = Utc::now();
         Self {
             inner: Arc::new(SessionInner {
                 id,
+                owner_id,
                 messages: RwLock::new(Vec::new()),
                 created_at: now,
                 last_activity: RwLock::new(now),
@@ -93,6 +104,7 @@ impl Session {
     pub fn to_state(&self) -> SessionState {
         SessionState {
             id: self.inner.id.clone(),
+            owner_id: self.inner.owner_id.clone(),
             messages: self.inner.messages.read().unwrap().clone(),
             created_at: self.inner.created_at.to_rfc3339(),
             last_activity: self.inner.last_activity.read().unwrap().to_rfc3339(),
@@ -111,6 +123,7 @@ impl Session {
         Self {
             inner: Arc::new(SessionInner {
                 id: state.id,
+                owner_id: state.owner_id,
                 messages: RwLock::new(state.messages),
                 created_at,
                 last_activity: RwLock::new(last_activity),
@@ -123,6 +136,12 @@ impl Session {
     #[must_use]
     pub fn id(&self) -> &str {
         &self.inner.id
+    }
+
+    /// Get the authenticated user that owns this session.
+    #[must_use]
+    pub fn owner_id(&self) -> &str {
+        &self.inner.owner_id
     }
 
     /// Set the system prompt for this session.
@@ -287,7 +306,7 @@ pub struct SessionStore {
 
 #[derive(Debug)]
 struct SessionStoreInner {
-    sessions: RwLock<HashMap<String, Session>>,
+    sessions: RwLock<HashMap<(String, String), Session>>,
 }
 
 impl Default for SessionStore {
@@ -310,17 +329,30 @@ impl SessionStore {
     /// Create a new session and return it.
     #[must_use]
     pub fn create(&self) -> Session {
+        self.create_for_user(ANONYMOUS_SESSION_OWNER)
+    }
+
+    /// Create a new session owned by `owner_id`.
+    #[must_use]
+    pub fn create_for_user(&self, owner_id: &str) -> Session {
         let id = Uuid::new_v4().to_string();
-        self.create_with_id(id)
+        self.create_with_id_for_user(id, owner_id)
     }
 
     /// Create a new session with a specific ID.
     #[must_use]
     pub fn create_with_id(&self, id: impl Into<String>) -> Session {
+        self.create_with_id_for_user(id, ANONYMOUS_SESSION_OWNER)
+    }
+
+    /// Create a new session with a specific ID for `owner_id`.
+    #[must_use]
+    pub fn create_with_id_for_user(&self, id: impl Into<String>, owner_id: &str) -> Session {
         let id = id.into();
-        let session = Session::new(id.clone());
+        let owner_id = owner_id.to_string();
+        let session = Session::new(id.clone(), owner_id.clone());
         let mut guard = self.inner.sessions.write().unwrap();
-        guard.insert(id, session.clone());
+        guard.insert((owner_id, id), session.clone());
         #[allow(clippy::cast_precision_loss)]
         crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
         session
@@ -329,29 +361,46 @@ impl SessionStore {
     /// Get a session by ID.
     #[must_use]
     pub fn get(&self, id: &str) -> Option<Session> {
+        self.get_for_user(id, ANONYMOUS_SESSION_OWNER)
+    }
+
+    /// Get a session only when it belongs to `owner_id`.
+    #[must_use]
+    pub fn get_for_user(&self, id: &str, owner_id: &str) -> Option<Session> {
         let guard = self.inner.sessions.read().unwrap();
-        guard.get(id).cloned()
+        guard.get(&(owner_id.to_string(), id.to_string())).cloned()
     }
 
     /// Get a session by ID, creating it if it doesn't exist.
     #[must_use]
     pub fn get_or_create(&self, id: &str) -> Session {
+        self.get_or_create_for_user(id, ANONYMOUS_SESSION_OWNER)
+    }
+
+    /// Get or create a session scoped to `owner_id`.
+    #[must_use]
+    pub fn get_or_create_for_user(&self, id: &str, owner_id: &str) -> Session {
         // Try read-only first
         {
             let guard = self.inner.sessions.read().unwrap();
-            if let Some(session) = guard.get(id) {
+            if let Some(session) = guard.get(&(owner_id.to_string(), id.to_string())) {
                 return session.clone();
             }
         }
 
         // Create if not exists
-        self.create_with_id(id)
+        self.create_with_id_for_user(id, owner_id)
     }
 
     /// Remove a session by ID.
     pub fn remove(&self, id: &str) -> Option<Session> {
+        self.remove_for_user(id, ANONYMOUS_SESSION_OWNER)
+    }
+
+    /// Remove a session only when it belongs to `owner_id`.
+    pub fn remove_for_user(&self, id: &str, owner_id: &str) -> Option<Session> {
         let mut guard = self.inner.sessions.write().unwrap();
-        let removed = guard.remove(id);
+        let removed = guard.remove(&(owner_id.to_string(), id.to_string()));
         #[allow(clippy::cast_precision_loss)]
         crate::uar::telemetry::metrics::set_active_sessions(guard.len() as f64);
         removed
@@ -396,12 +445,19 @@ impl SessionStore {
     /// List all session IDs.
     #[must_use]
     pub fn list_ids(&self) -> Vec<String> {
+        self.list_ids_for_user(ANONYMOUS_SESSION_OWNER)
+    }
+
+    /// List session IDs owned by `owner_id`.
+    #[must_use]
+    pub fn list_ids_for_user(&self, owner_id: &str) -> Vec<String> {
         self.inner
             .sessions
             .read()
             .unwrap()
-            .keys()
-            .cloned()
+            .iter()
+            .filter(|((stored_owner, _), _)| stored_owner == owner_id)
+            .map(|((_, id), _)| id.clone())
             .collect()
     }
 }
@@ -412,7 +468,7 @@ mod tests {
 
     #[test]
     fn test_session_lifecycle() {
-        let session = Session::new("test-123".to_string());
+        let session = Session::new("test-123".to_string(), ANONYMOUS_SESSION_OWNER.to_string());
 
         assert_eq!(session.id(), "test-123");
         assert_eq!(session.message_count(), 0);
@@ -445,8 +501,40 @@ mod tests {
     }
 
     #[test]
+    fn session_store_partitions_identical_ids_by_owner() {
+        let store = SessionStore::new();
+        let alice = store.create_with_id_for_user("shared-id", "alice");
+        let bob = store.create_with_id_for_user("shared-id", "bob");
+        alice.add_user_message("alice secret");
+        bob.add_user_message("bob secret");
+
+        assert_eq!(
+            store
+                .get_for_user("shared-id", "alice")
+                .expect("alice session")
+                .messages()[0]
+                .content
+                .as_text(),
+            Some("alice secret")
+        );
+        assert_eq!(
+            store
+                .get_for_user("shared-id", "bob")
+                .expect("bob session")
+                .messages()[0]
+                .content
+                .as_text(),
+            Some("bob secret")
+        );
+        assert!(store.get("shared-id").is_none());
+        assert_eq!(store.list_ids_for_user("alice"), vec!["shared-id"]);
+        assert!(store.remove_for_user("shared-id", "bob").is_some());
+        assert!(store.get_for_user("shared-id", "alice").is_some());
+    }
+
+    #[test]
     fn test_system_prompt() {
-        let session = Session::new("test".to_string());
+        let session = Session::new("test".to_string(), ANONYMOUS_SESSION_OWNER.to_string());
 
         assert!(session.system_prompt().is_none());
 

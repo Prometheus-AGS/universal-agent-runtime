@@ -5,6 +5,8 @@ commit-msg:
 
 pre-commit:
   commands:
+    github-actions-policy:
+      run: pnpm github-actions-policy:validate
     frontend-lint:
       run: pnpm -C frontend lint
       glob: "frontend/**/*.{ts,tsx}"

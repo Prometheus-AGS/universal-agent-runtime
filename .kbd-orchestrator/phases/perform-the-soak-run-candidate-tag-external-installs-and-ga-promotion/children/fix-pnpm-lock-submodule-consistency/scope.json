@@ -1,0 +1,23 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/children/fix-pnpm-lock-submodule-consistency/**",
+    "pnpm-lock.yaml",
+    "openspec/changes/fix-pnpm-lock-submodule-consistency/**",
+    "openspec/specs/frontend-build-tooling/spec.md",
+    ".refiner/artifacts/fix-pnpm-lock-submodule-consistency/**",
+    ".refiner/history/fix-pnpm-lock-submodule-consistency/**",
+    ".prometheus/**"
+  ],
+  "deniedPaths": [
+    "package.json",
+    "pnpm-workspace.yaml",
+    "frontend/**",
+    "src/**",
+    "tests/**",
+    "static/**",
+    "docs/certifications/**",
+    "openspec/changes/screen-by-screen-validation/**"
+  ],
+  "inheritsConstraints": true,
+  "__note": "Edit allowedWritePaths to widen the child loop's write surface. .kbd-orchestrator/** and SCRATCHPAD.md are always allowed. Enforced advisorily by check-child-scope.sh."
+}

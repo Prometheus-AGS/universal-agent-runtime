@@ -1,0 +1,23 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/children/fix-mcp-reconnect-shared-service-state/**",
+    "src/mcp/registry.rs",
+    "scripts/certify-release-candidate.sh",
+    "scripts/validate-mcp-process-boundary-evidence.mjs",
+    "scripts/validate-candidate-certification.mjs",
+    "scripts/validate-candidate-certification-workflow.mjs",
+    "openspec/changes/fix-mcp-reconnect-shared-service-state/**",
+    "openspec/changes/certify-operational-resilience/design.md",
+    "openspec/changes/certify-operational-resilience/specs/operational-resilience-certification/spec.md",
+    ".prometheus/gotchas.md",
+    ".prometheus/decisions.md",
+    ".prometheus/session-log.md",
+    ".refiner/artifacts/fix-mcp-reconnect-shared-service-state/**",
+    ".refiner/history/fix-mcp-reconnect-shared-service-state/**",
+    ".refiner/registry.json",
+    "AGENTS.md"
+  ],
+  "deniedPaths": [],
+  "inheritsConstraints": true,
+  "__note": "Edit allowedWritePaths to widen the child loop's write surface. .kbd-orchestrator/** and SCRATCHPAD.md are always allowed. Enforced advisorily by check-child-scope.sh."
+}

@@ -1,0 +1,81 @@
+{
+  "refinement_id": "1fc496f1-4a96-415c-935e-37993f176ea6",
+  "artifact_name": "fix-mcp-reconnect-shared-service-state",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-21T12:30:48Z",
+  "updated_at": "2026-08-21T12:31:51Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Prove shared MCP reconnect state and fail-closed non-replay for the exact installed child candidate without widening authorization"
+  ],
+  "constraints": [
+    {
+      "id": "shared-replacement-state",
+      "description": "A successfully reconnected MCP transport and its authoritative configuration are shared by later independent filtered and pre-existing merged registry views without a UAR restart or stale-config rollback after upsert.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused exact registry tests including A-to-B upsert then crash/reconnect, plus installed echo-crash-echo process trace"
+      }
+    },
+    {
+      "id": "fail-closed-no-replay",
+      "description": "Crash and timeout operations each emit exactly one explicit failed tool-result event, execute exactly once at the MCP process boundary, and are not replayed during reconnect.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Raw crash and timeout SSE replay against the exact process trace plus six synthetic negative controls"
+      }
+    },
+    {
+      "id": "authorization-preserved",
+      "description": "Sharing replacement transport state does not add excluded servers, MCP tools, or native tools to any registry view.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused filtered and merged registry authorization assertions"
+      }
+    },
+    {
+      "id": "immutable-evidence-integrity",
+      "description": "The retained raw evidence and summary bind to source f0298d76ea3c39853020c8a33e13f136c07a1806 and replay with matching hashes and exact candidate identity.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Source SHA, candidate tag, byte comparison, SHA-256 receipts, raw parser replay, and referenced-file checks"
+      }
+    },
+    {
+      "id": "truthful-bounded-handoff",
+      "description": "Verification reports actual commands, outputs, warnings, negative controls, and limits without claiming the parent three-hour soak, GA readiness, deployment success, or another runtime profile.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Verification-row audit, strict child and parent OpenSpec validation, GitHub Actions policy validation, scoped diff check, and history-free review"
+      }
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "416b85b4",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-21T12:31:51Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

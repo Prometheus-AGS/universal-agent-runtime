@@ -83,12 +83,45 @@ pub(crate) trait TokenVerifier {
 
 pub(crate) struct SharedSecretVerifier<'a> {
     secret: &'a str,
+    issuer: Option<&'a str>,
+    audience: Option<&'a str>,
+    validate_nbf: bool,
 }
 
 impl<'a> SharedSecretVerifier<'a> {
-    pub(crate) fn new(secret: &'a str) -> Self {
-        Self { secret }
+    pub(crate) fn new(
+        secret: &'a str,
+        issuer: Option<&'a str>,
+        audience: Option<&'a str>,
+        validate_nbf: bool,
+    ) -> Self {
+        Self {
+            secret,
+            issuer,
+            audience,
+            validate_nbf,
+        }
     }
+}
+
+fn claim_validation(
+    algorithm: Algorithm,
+    issuer: Option<&str>,
+    audience: Option<&str>,
+    validate_nbf: bool,
+) -> Validation {
+    let mut validation = Validation::new(algorithm);
+    validation.validate_nbf = validate_nbf;
+    validation.validate_aud = audience.is_some();
+    if let Some(issuer) = issuer {
+        validation.set_issuer(&[issuer]);
+        validation.required_spec_claims.insert("iss".to_owned());
+    }
+    if let Some(audience) = audience {
+        validation.set_audience(&[audience]);
+        validation.required_spec_claims.insert("aud".to_owned());
+    }
+    validation
 }
 
 #[async_trait]
@@ -99,7 +132,13 @@ impl TokenVerifier for SharedSecretVerifier<'_> {
         };
 
         let key = DecodingKey::from_secret(self.secret.as_bytes());
-        let token_data = jwt::decode::<UserClaims>(token, &key, &Validation::default())?;
+        let validation = claim_validation(
+            Algorithm::HS256,
+            self.issuer,
+            self.audience,
+            self.validate_nbf,
+        );
+        let token_data = jwt::decode::<UserClaims>(token, &key, &validation)?;
         let claims = token_data.claims;
 
         Ok(Principal {
@@ -142,16 +181,23 @@ pub(crate) struct JwksVerifier {
     url: String,
     issuer: Option<String>,
     audience: Option<String>,
+    validate_nbf: bool,
     client: reqwest::Client,
     cache: Arc<JwksCache>,
 }
 
 impl JwksVerifier {
-    pub(crate) async fn new(url: &str, issuer: Option<&str>, audience: Option<&str>) -> Self {
+    pub(crate) async fn new(
+        url: &str,
+        issuer: Option<&str>,
+        audience: Option<&str>,
+        validate_nbf: bool,
+    ) -> Self {
         Self {
             url: url.to_owned(),
             issuer: issuer.map(str::to_owned),
             audience: audience.map(str::to_owned),
+            validate_nbf,
             client: JWKS_CLIENT.get_or_init(reqwest::Client::new).clone(),
             cache: cache_for_url(url).await,
         }
@@ -196,16 +242,12 @@ impl JwksVerifier {
     }
 
     fn validation(&self) -> Validation {
-        let mut validation = Validation::new(Algorithm::RS256);
-        if let Some(issuer) = self.issuer.as_deref() {
-            validation.set_issuer(&[issuer]);
-            validation.required_spec_claims.insert("iss".to_owned());
-        }
-        if let Some(audience) = self.audience.as_deref() {
-            validation.set_audience(&[audience]);
-            validation.required_spec_claims.insert("aud".to_owned());
-        }
-        validation
+        claim_validation(
+            Algorithm::RS256,
+            self.issuer.as_deref(),
+            self.audience.as_deref(),
+            self.validate_nbf,
+        )
     }
 
     #[cfg(test)]
@@ -263,14 +305,20 @@ pub(crate) async fn verify_token(
             jwks_url,
             config.jwt_issuer.as_deref(),
             config.jwt_audience.as_deref(),
+            config.jwt_validate_nbf,
         )
         .await
         .verify(presented)
         .await
     } else {
-        SharedSecretVerifier::new(config.jwt_secret.expose_secret())
-            .verify(presented)
-            .await
+        SharedSecretVerifier::new(
+            config.jwt_secret.expose_secret(),
+            config.jwt_issuer.as_deref(),
+            config.jwt_audience.as_deref(),
+            config.jwt_validate_nbf,
+        )
+        .verify(presented)
+        .await
     }
 }
 
@@ -429,7 +477,7 @@ mod tests {
         )
         .expect("tenant test token must encode");
 
-        let principal = SharedSecretVerifier::new("tenant-test-secret")
+        let principal = SharedSecretVerifier::new("tenant-test-secret", None, None, true)
             .verify(Presented::Jwks(token))
             .await
             .expect("verified tenant token must produce a principal");
@@ -445,7 +493,7 @@ mod tests {
     #[tokio::test]
     async fn accepts_two_cached_keys_and_refreshes_after_rotation() {
         let server = TestJwksServer::start(vec![jwk("key-a"), jwk("key-b")]).await;
-        let verifier = JwksVerifier::new(&server.url, Some("issuer"), Some("audience")).await;
+        let verifier = JwksVerifier::new(&server.url, Some("issuer"), Some("audience"), true).await;
 
         let first = verifier
             .verify(Presented::Jwks(signed_token("key-a", "issuer", "audience")))
@@ -472,7 +520,7 @@ mod tests {
     #[tokio::test]
     async fn unknown_kid_refreshes_once_then_rejects() {
         let server = TestJwksServer::start(vec![jwk("known")]).await;
-        let verifier = JwksVerifier::new(&server.url, Some("issuer"), Some("audience")).await;
+        let verifier = JwksVerifier::new(&server.url, Some("issuer"), Some("audience"), true).await;
 
         let error = verifier
             .verify(Presented::Jwks(signed_token(
@@ -488,7 +536,7 @@ mod tests {
     #[tokio::test]
     async fn rejects_wrong_issuer_and_audience() {
         let server = TestJwksServer::start(vec![jwk("claims-key")]).await;
-        let verifier = JwksVerifier::new(&server.url, Some("issuer"), Some("audience")).await;
+        let verifier = JwksVerifier::new(&server.url, Some("issuer"), Some("audience"), true).await;
 
         let wrong_audience = verifier
             .verify(Presented::Jwks(signed_token(

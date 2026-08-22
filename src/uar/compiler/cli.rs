@@ -3,10 +3,9 @@
 //! Compiles a single UAR-AGENT-MD document into a signed
 //! [`super::pipeline::CompiledDescriptor`], reusing the same 8-stage
 //! pipeline ([`super::pipeline::compile`]) the conversational/service compile
-//! paths use — not a separate implementation. Primarily exercised by CI to
-//! compile+sign the agent template library (`templates/*.agent.md`) as
-//! release artifacts (`.github/workflows/release.yml`), and usable
-//! standalone for any `.agent.md` document.
+//! paths use — not a separate implementation. Local release tooling uses it
+//! to compile+sign the agent template library (`templates/*.agent.md`), and
+//! it is usable standalone for any `.agent.md` document.
 
 use std::sync::Arc;
 

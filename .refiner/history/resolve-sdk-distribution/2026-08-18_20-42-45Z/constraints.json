@@ -1,0 +1,46 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "sdk-release-metadata",
+      "description": "Rust, Python, and TypeScript SDKs retain 1.0.0/MIT identities, real authorship, exact customer install names, locally inspectable package contents, and an honest release-readiness status.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Manifest inspection, package metadata/content listing, and exact documentation-name search"
+      }
+    },
+    {
+      "id": "local-verification-and-publication-order",
+      "description": "Focused tests, examples/type checks, package generation or content listing, generated docs, and streaming examples pass locally; Rust preserves and proves the complete internal-crates to runtime to SDK publication chain.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Language-specific local commands plus the observed pre-runtime cargo package negative control"
+      }
+    },
+    {
+      "id": "workflow-scope-and-evidence",
+      "description": "The legacy routine CI workflow is retired, deployment workflows are untouched, repository Tier 0 and strict OpenSpec pass, and evidence reports only observed scoped results.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Workflow lint/search, scoped diff, Tier 0, strict OpenSpec, artifact schemas/references, and independent review"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the OpenSpec proposal, design, delta, and tasks as acceptance authority.",
+    "Do not publish packages, remove embedded Rust support, add manifest dependencies, or expand SDK behavior.",
+    "Keep routine verification local and preserve deployment-only GitHub Actions policy.",
+    "Report language/profile results separately and do not run phase Tier 2."
+  ],
+  "termination_conditions": [
+    "All three blocking constraints pass.",
+    "Strict OpenSpec, artifact schemas/references/state, scoped local checks, and diff integrity pass.",
+    "Independent artifact critic and judge find no implementation or evidence blocker."
+  ]
+}

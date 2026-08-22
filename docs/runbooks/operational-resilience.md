@@ -1,19 +1,31 @@
 # Operational resilience certification
 
-Run `scripts/certify-operational-resilience.sh`. The deterministic suite writes
-`target/resilience-certification/results.json` and `test.log`; CI retains both.
+From a clean detached checkout of the candidate commit, run:
+
+```bash
+scripts/certify-operational-resilience-local.sh preflight
+scripts/certify-operational-resilience-local.sh certify
+```
+
+The first command defaults to a 60-second local wiring check. The second
+requires at least 10,800 seconds and writes the candidate archive plus complete
+machine-readable evidence under `target/`. Neither command runs in GitHub
+Actions.
 
 ## Published limits
 
 - 100 parallel simulated runs, zero errors, p95 under 250 ms.
-- Zero duplicate event IDs after reconnect/replay.
-- Lifecycle and tool waits are bounded; the certification job has a 60-minute ceiling.
+- 20 parallel installed-runtime requests, zero failures.
+- Installed streaming soak: zero errors, zero duplicate events, p95 at or below
+  2,000 ms, and peak RSS growth at or below 262,144 KiB.
+- Lifecycle and tool waits are bounded; the local certifying process must be
+  allowed to finish the full configured duration.
 - Provider/MCP failures must reach an explicit error or recover on a later bounded attempt.
 
-For a release candidate, run the scheduled workflow for at least three hours by
-setting `UAR_SOAK_DURATION_SECONDS=10800`. The deterministic PR suite is a short
-certification of the same reconnect and deduplication invariants, not a claim
-that a multi-hour soak ran on every commit.
+The 60-second local preflight is not multi-hour certification evidence. The
+`certify` mode defaults to 10,800 seconds and rejects a smaller
+`UAR_SOAK_DURATION_SECONDS`. The retained `soak.json` must show both configured
+and observed duration before the run can satisfy the multi-hour requirement.
 
 ## Backup and recovery
 
@@ -25,7 +37,11 @@ against a known-corrupt copy.
 
 ## Container checks
 
-The certification workflow builds the image, runs it with `--user 65532:65532`,
-sends `SIGTERM`, and requires `/health` to become ready. All configured cache,
-skill, and data paths must be mounted writable by that UID. Treat permission,
-signal, or health failures as release blockers.
+The local certification launcher builds the image, runs it with
+`--user 65532:65532`, sends `SIGTERM`, and requires `/health` to become ready.
+All configured cache, skill, and data paths must be mounted writable by that
+UID. Treat permission, signal, or health failures as release blockers.
+
+GitHub Actions are reserved for actual deployment execution and
+deployment-specific validation. Product certification, including this runbook,
+must remain local even when it builds an installed archive or container image.

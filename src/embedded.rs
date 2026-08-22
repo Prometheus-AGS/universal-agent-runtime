@@ -412,6 +412,7 @@ impl EmbeddedRuntimeBuilder {
                 Some(Arc::clone(&persistence)),
             )
             .await
+            .with_agent_graph(crate::uar::defaults::orchestrator_graph())
             .with_llm_driver(driver)
             .with_skill_service(Arc::clone(&skill_service))
             .with_provider_registry(Arc::clone(&provider_registry))
@@ -763,7 +764,7 @@ mod tests {
             .expect("conversation policy persists");
 
         let loaded = persistence
-            .load_conversation_policy(conversation_id)
+            .load_conversation_policy(crate::session::ANONYMOUS_SESSION_OWNER, conversation_id)
             .await
             .expect("load ok")
             .expect("record present");
@@ -786,7 +787,7 @@ mod tests {
 
         // Deleting the override reverts to the backfilled registry default.
         persistence
-            .delete_conversation_policy(conversation_id)
+            .delete_conversation_policy(crate::session::ANONYMOUS_SESSION_OWNER, conversation_id)
             .await
             .expect("delete ok");
         let reverted = runtime

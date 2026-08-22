@@ -51,6 +51,10 @@ export const runtimeReplayEvents: RuntimeReplayEvent[] = [
     payload: {
       status: "waiting",
       title: "Live Replay Run",
+      cost_usd_estimate: 0.0042,
+      input_tokens: 120,
+      output_tokens: 48,
+      total_tokens: 168,
     },
   },
   {

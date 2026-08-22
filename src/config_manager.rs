@@ -47,6 +47,7 @@ impl ConfigManager {
         let mut config = config;
         #[cfg(feature = "vault")]
         crate::config::vault::resolve(&mut config).await?;
+        config.security.validate().map_err(ConfigError::Config)?;
         let watched_path = resolve_watched_path(&cli);
         let initial = Arc::new(config);
         let current = ArcSwap::new(Arc::clone(&initial));
@@ -77,6 +78,7 @@ impl ConfigManager {
         let mut config = config;
         #[cfg(feature = "vault")]
         crate::config::vault::resolve(&mut config).await?;
+        config.security.validate().map_err(ConfigError::Config)?;
         let initial = Arc::new(config);
         Ok(Arc::new(Self {
             current: ArcSwap::new(Arc::clone(&initial)),
@@ -111,6 +113,10 @@ impl ConfigManager {
         let new_config = AppConfig::load_with_cli(self.cli.clone()).map_err(ConfigError::Config)?;
         #[cfg(feature = "vault")]
         crate::config::vault::resolve(&mut new_config).await?;
+        new_config
+            .security
+            .validate()
+            .map_err(ConfigError::Config)?;
         let new_arc = Arc::new(new_config);
 
         if self.strict.load(Ordering::SeqCst) && !configs_equal(&self.initial, &new_arc) {
@@ -255,7 +261,15 @@ mod tests {
 
     #[tokio::test]
     async fn config_manager_stores_and_returns_current() {
-        let cli = Cli::parse_from(["uar"]);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.yaml");
+        let mut file = std::fs::File::create(&path).unwrap();
+        writeln!(
+            file,
+            "security:\n  jwt_required: false\nserver:\n  port: 1906"
+        )
+        .unwrap();
+        let cli = Cli::parse_from(["uar", "--config", path.to_str().unwrap()]);
         let manager = ConfigManager::load_without_watcher(cli).await.unwrap();
         let current = manager.current();
         assert_eq!(current.server.port, 1906);
@@ -266,7 +280,11 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("config.yaml");
         let mut file = std::fs::File::create(&path).unwrap();
-        writeln!(file, "server:\n  port: 1906").unwrap();
+        writeln!(
+            file,
+            "server:\n  port: 1906\nsecurity:\n  jwt_required: false"
+        )
+        .unwrap();
 
         let cli = Cli::parse_from(["uar", "--config", path.to_str().unwrap()]);
         let manager = ConfigManager::load_without_watcher(cli).await.unwrap();
@@ -274,7 +292,11 @@ mod tests {
 
         // Mutate the file and reload.
         let mut file = std::fs::File::create(&path).unwrap();
-        writeln!(file, "server:\n  port: 9090").unwrap();
+        writeln!(
+            file,
+            "server:\n  port: 9090\nsecurity:\n  jwt_required: false"
+        )
+        .unwrap();
         manager.reload().await.unwrap();
         assert_eq!(manager.current().server.port, 9090);
     }
@@ -284,14 +306,22 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("config.yaml");
         let mut file = std::fs::File::create(&path).unwrap();
-        writeln!(file, "server:\n  port: 1906").unwrap();
+        writeln!(
+            file,
+            "server:\n  port: 1906\nsecurity:\n  jwt_required: false"
+        )
+        .unwrap();
 
         let cli = Cli::parse_from(["uar", "--config", path.to_str().unwrap()]);
         let manager = ConfigManager::load_without_watcher(cli).await.unwrap();
         manager.set_strict(true);
 
         let mut file = std::fs::File::create(&path).unwrap();
-        writeln!(file, "server:\n  port: 9090").unwrap();
+        writeln!(
+            file,
+            "server:\n  port: 9090\nsecurity:\n  jwt_required: false"
+        )
+        .unwrap();
         let err = manager.reload().await.unwrap_err();
         assert!(matches!(err, ConfigError::StrictConflict(_)));
     }

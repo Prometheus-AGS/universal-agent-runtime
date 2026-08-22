@@ -288,3 +288,253 @@ not prove the migration is safe.
 **Evidence lesson.** A required `error!` call in source is not an observed log.
 Install a test subscriber, run the exact test with `--nocapture`, and retain the
 literal level, message, fields, and passing result.
+
+## 2026-08-19 — JSON Schema validity is not refiner-state integrity
+
+**Observed defect.** A malformed constraint entry containing iteration metadata
+passed the permissive JSON Schema, while checkpoint history and registry
+identity had drifted from the active artifact. Early receipts also summarized
+Tier 0 instead of retaining the chronological checks run after each edit.
+
+**Working rule.** Validate refiner artifacts semantically as well as
+structurally: exact constraint IDs, iteration sequence, checkpoint references,
+active/history identity, and registry artifact identity must agree. Retain the
+actual chronological Tier 0 receipts so later checks cannot conceal an edit
+that was never checked at its required point.
+
+## 2026-08-20 — stable ID lists do not make entity projections reactive
+
+**Observed defect.** The embedded SSE adapter updated an existing normalized
+Knowledge entity, but the React view hooks projected `items` only when their ID
+arrays changed. The graph held the new record while the screen continued to
+render the old one. A browser retry, list reload, or screen-local cache bypass
+would have hidden the source-package defect.
+
+**Working rule.** A normalized view that exposes full entities must subscribe to
+the snapshots behind its stable IDs. Test an existing-ID update in both the
+current hook and its documented replacement, then repair the source package
+instead of forcing consumer refreshes.
+
+## 2026-08-20 — source-package builds must include declaration dependencies
+
+**Observed defect.** BDD preparation invoked React-package `tsup` directly. On
+the tested submodule pin it failed because `entity-graph-core`'s stale `dist`
+did not declare `getGraphSyncStatus`, even though the source did.
+
+**Working rule.** Build a source workspace package through its declared build
+graph. For the entity-management React package, the Turbo dependency filter
+must build core before React declarations; a direct leaf build depends on
+checkout residue.
+
+## 2026-08-20 — nested pnpm engines constrain consumer workspaces
+
+**Observed defect.** UAR uses pnpm 11.15.0, but the nested entity-management
+workspace admitted only pnpm 10.33.0. Dependency preparation stopped before the
+product test even though the package code was compatible.
+
+**Working rule.** Keep the repository's integrity-pinned default package manager
+while expressing the tested consumer range in every enforcing workspace
+manifest. A source submodule cannot claim consumer compatibility if its nested
+engine rejects the consumer's package manager before build.
+
+## 2026-08-20 — lock regeneration is not a minimum-delta proof
+
+**Observed defect.** A frozen-compatible root lock candidate and two clean
+regenerations agreed on dependency movements that were unrelated to the pinned
+submodule manifest. Comparing only those generated candidates made the shared
+drift look causal. Direct comparison with `HEAD` exposed the unrelated
+config-array/minimatch and y-webrtc/ws movements.
+
+**Working rule.** For a lock-only repair, classify every `HEAD`-to-candidate
+mutation by the manifest change that caused it. Preserve unchanged-importer
+edges even when a fresh resolver would legally select a newer version.
+
+**Observed control.** After restoring the old y-webrtc edge, lock-only frozen
+validation still passed but a clean full install failed because the changed
+sync importer also required a direct ws 8.21.1 package record.
+
+**Evidence rule.** Run both metadata-only and empty-dependency-tree frozen
+installation. A receipt's displayed command must be capable of emitting every
+recorded output line; prose describing an omitted parser or setup step is not a
+replayable command.
+
+## 2026-08-20 — each active pnpm workspace owns its lock boundary
+
+**Observed defect.** The repository-root lock passed its checks while the
+independently active `frontend/` workspace rejected frozen installation after a
+pinned submodule manifest changed. Root-lock success did not describe the
+nested command's dependency graph.
+
+**Working rule.** Hash and frozen-test the lock belonging to the command's
+actual pnpm workspace root. For a nested lock repair, classify every mutation
+against the committed manifest or submodule-manifest edge that caused it and
+preserve unrelated resolutions.
+
+**Resolver lesson.** Two clean regenerations can agree on resolver drift that
+is not required by the source change. Retain an exact candidate-to-raw patch and
+compare against `HEAD`. Pnpm importer projections can also come from
+auto-installed peers, so resolve evidence anchors against the manifest section
+that actually declares the edge rather than assuming the importer key names it.
+
+## 2026-08-21 — release gates are not deployment validation
+
+**Observed defect.** A three-hour operational-resilience product test was put in
+GitHub Actions because it built an installed archive and container, gated a
+release, and uploaded evidence. None of those properties made it validate an
+actual deployment. The run contradicted the standing deployment-only policy and
+was canceled.
+
+**Working rule.** Classify a check by the boundary it observes, not by its
+workflow name or artifact. Only deployment execution, deployed configuration,
+rollout, infrastructure wiring, and post-deployment health belong in Actions.
+Run all product and release certification locally. Enforce the boundary with an
+allowlisted local validator on every commit; if a plan says otherwise, revise
+the plan before execution.
+
+## 2026-08-21 — deleting a test workflow can delete the only test
+
+**Observed defect.** Removing the prohibited security-audit workflow also
+removed the only Dependabot-alert allowlist gate. The policy correction was
+structurally right but behaviorally incomplete until the Rust, JavaScript, OSV,
+Grype, and Dependabot checks had a local source-bound entrypoint.
+
+**Working rule.** Before deleting a non-deployment workflow, inventory every
+behavior it owns and map each required behavior to a checked-in local command.
+The replacement must exist and pass its cheap contract check before the
+workflow deletion is treated as complete.
+
+## 2026-08-21 — worktree settings seeding can dirty immutable candidates
+
+**Observed defect.** `scripts/worktree-new.sh` copied the operator's modified
+`.claude/settings.local.json` over the same tracked path in a detached
+candidate, so a newly created worktree was dirty before certification began.
+
+**Working rule.** Seed per-tool settings only when the destination does not
+track that path. If the candidate tracks it, preserve the committed copy; local
+certification must start from a genuinely clean checkout.
+
+## 2026-08-21 — do not default BuildKit's automatic platform arguments
+
+**Observed defect.** A native Apple Silicon `docker build` selected an ARM64
+Ubuntu base, but `ARG TARGETARCH=amd64` forced the Go, TinyGo, and Wasmtime
+download branches to AMD64. TinyGo then failed at `dpkg` with an architecture
+mismatch.
+
+**Working rule.** Re-declare BuildKit's automatic platform arguments inside a
+stage without a value. A default such as `ARG TARGETARCH=amd64` overrides the
+detected target and can create a mixed-architecture image. Verify the fix with
+the actual toolchain stage and its architecture probes, not a text check alone.
+
+## 2026-08-21 — Docker contexts must exclude nested workspace outputs
+
+**Observed defect.** The UAR image build copied the entity-management
+submodule's macOS `node_modules`, package `dist` directories, and Turbo cache
+into a Linux ARM64 builder. The first clean install then failed to load
+Rollup's Linux ARM64 native package. Removing that residue also exposed that
+the image build had been compiling the submodule's unrelated docs and examples
+instead of installing its own frozen lock and building only UAR's two consumed
+packages.
+
+**Working rule.** Use recursive Docker ignore patterns for dependencies,
+package outputs, and task-runner caches. Install each nested workspace from its
+own frozen lock in the target container, then build only packages shipped by
+the parent artifact. A package build that succeeds by replaying a host cache is
+not portable evidence.
+
+## 2026-08-21 — curl write-out consumed by Bash `read` needs a newline
+
+**Observed defect.** The installed-candidate certifier completed provider
+failure recovery, wrote a successful recovery response, and then exited 1 with
+no diagnostic before MCP checks. Its `chat_request` helper emitted curl status
+and latency without a trailing newline. Bash `read` assigned both values but
+returned nonzero at EOF, and `set -e` terminated the script.
+
+**Working rule.** When curl `--write-out` feeds Bash `read`, terminate the
+format with `\n` and keep a focused contract check that observes `read` return
+zero. A populated response artifact does not prove the surrounding shell
+assignment succeeded.
+
+## 2026-08-21 — observe tool failure at the event boundary
+
+**Observed defect.** The installed-candidate MCP crash check used a
+non-streaming chat response to decide whether a failed tool call had surfaced.
+UAR emitted an unsuccessful normalized tool-result event and reconnected the
+MCP transport, but the non-streaming endpoint intentionally retained only the
+model's final `mcp-recovered` text. The certifier therefore labeled correct
+event-level behavior as a replayed successful tool call.
+
+**Working rule.** Certify a tool failure from the streamed tool-result event,
+not from final assistant text or the request's overall HTTP status. Pair that
+event with a fixture-side process trace that proves the failed call executed
+once and the next independent call used a replacement process. Do not change
+normal agent recovery semantics to satisfy a check observing the wrong layer.
+
+**Correction from the same preflight.** The reconnect itself succeeded only in
+the disposable filtered registry that handled the failed call. A later request
+rebuilt its registry from the stale global service value and failed before
+reaching the replacement process. Event-boundary evidence and shared reconnect
+ownership are separate requirements; proving the former does not prove the
+latter.
+
+## 2026-08-21 — shared replacement pointers need authoritative configuration
+
+**Observed defect.** The first MCP repair shared a replaceable service pointer
+across registry views but left reconnect configuration on each view. An old
+filtered view survived an A-to-B upsert, failed while using B, then reconnected A
+into the shared slot. The first independent judge missed the reachable rollback;
+the history-free critic blocked it with a concrete old-view sequence.
+
+**Working rule.** When an asynchronous repair can replace shared state, keep the
+repair inputs and a generation in the same shared ownership boundary. Snapshot
+the generation, build outside the lock, and discard the result if newer
+configuration won meanwhile. Test with a view created before A-to-B replacement,
+not merely two calls using one unchanged configuration.
+
+## 2026-08-22 — container release controls need cache-compatible build volume ownership
+
+**Observed defect.** A focused Linux shutdown control initially entered the
+full Dockerfile build after only three Rust source files changed. The layer
+fingerprint invalidated the release target and began rebuilding the entire
+SurrealDB, Wasmtime, OCR, and server-full graph. Switching to the existing
+builder image avoided rebuilding the image layers, but its `/src` and target
+fingerprints still required a 12-minute optimized compile. Compiler-cache and
+build-volume mismatch, not unwritten shutdown code, was the delay.
+
+**Working rule.** Implement and run Tier 0/focused tests in the configured
+single-writer host target first. Build a source-only control commit, reuse the
+matching architecture builder and its target volume, and perform the real
+container boundary only after focused behavior passes. Keep Rust toolchains and
+active target/cache volumes on the internal drive; do not move them or start a
+fresh full container graph merely to obtain early feedback.
+
+## 2026-08-22 — custom container ports can invalidate inherited health evidence
+
+**Observed defect.** The first manual non-root shutdown control served on port
+19161 while the inherited image healthcheck still probed production port 1906.
+External readiness passed and the deadline behavior was correct, but Docker
+recorded a healthcheck exec failure, so that run could not support a Docker
+health claim.
+
+**Working rule.** A focused container control that inherits a healthcheck must
+use the healthcheck's configured port or replace the healthcheck explicitly.
+Observe Docker `healthy` before initiating held work. Do not infer container
+health from an external readiness probe alone.
+
+## 2026-08-22 — a dated Docker ARG does not constrain a floating Cargo selector
+
+**Observed defect.** The production Dockerfile installed
+`nightly-2026-07-18`, but its backend build invoked `cargo +nightly`. On the
+2026-08-22 ARM64 build host that selector resolved to `nightly-2026-08-22`, and
+the locked `diskann-wide 0.54.0` dependency failed with three E0283 diagnostics.
+The earlier Docker syntax check passed because it never compiled that path.
+
+**Working rule.** Every Rust build stage must explicitly consume the declared
+dated toolchain argument. Validate Docker default, repository channel, and
+effective build argument together, pair the contract with a mismatched-channel
+negative control, and complete a clean production-image build before handing a
+release candidate back to certification.
+
+**Follow-up.** `openspec/specs/gke-deployment/spec.md` still describes a Rust
+stable/1.87 image build. That stale capability text is outside this release
+child and must be reconciled in a separately planned spec change; it is not
+evidence about the current production Dockerfile.

@@ -431,6 +431,7 @@ mod tests {
                 jwks_url: None,
                 jwt_issuer: None,
                 jwt_audience: None,
+                jwt_validate_nbf: true,
                 settings_mutation_auth_required: true,
             },
             base_url: "http://127.0.0.1:3928".to_owned(),

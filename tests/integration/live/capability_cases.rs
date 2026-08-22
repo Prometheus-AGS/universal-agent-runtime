@@ -10,8 +10,9 @@
 //! unsupportable. The limits are structural, not incidental:
 //!
 //! - **L4 is capability-specific.** C-12 uses a caller-owned SurrealKV path and
-//!   caller-triggered graceful shutdown to prove a write survives a cold
-//!   restart. C-13 remains excluded because the current header-based session
+//!   caller-triggered graceful shutdown to prove a write survives a restart
+//!   before the original helper process exits. C-13 remains excluded because
+//!   the current header-based session
 //!   surface is backed by an explicitly non-durable in-process `SessionStore`.
 //! - **No semantics.** Assertions check response *shape*. A route returning a
 //!   well-formed body containing the *wrong* answer passes.
@@ -130,6 +131,95 @@ fn content_fixture(last_user_message: &str, response: &str) -> FixtureSet {
         },
         FixtureResponse::Content(response.to_string()),
     )
+}
+
+/// C-06 orchestrator delegation — **L2 recorded / env-gated live**.
+///
+/// The recorded backend fixes the router choice and specialist contribution;
+/// the live backend exercises the same two-call RouterNode -> AgentNode path
+/// against the operator's proxy. UAR-owned assertions require the attributed
+/// answer plus start/finish runtime-step events on either backend.
+#[tokio::test]
+#[serial]
+async fn l2_c06_orchestrator_delegates_with_trace() {
+    const PROBE: &str = "Review this Rust ownership boundary";
+    const ROUTER_REQUEST: &str = concat!(
+        "Route Rust implementation, correctness, or safety questions to rust-reviewer. ",
+        "Route all other questions to general-purpose.\n\n",
+        "User request:\nReview this Rust ownership boundary\n\n",
+        "You MUST respond with exactly one of the following options (no extra text): ",
+        "general-purpose, rust-reviewer"
+    );
+    const RECORDED_CONTRIBUTION: &str = "The ownership boundary is sound.";
+
+    let fixtures = FixtureSet::new()
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: ROUTER_REQUEST.to_string(),
+                has_tools: false,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content("rust-reviewer".to_string()),
+        )
+        .with(
+            RequestFingerprint {
+                model: MODEL.to_string(),
+                last_user_message: PROBE.to_string(),
+                has_tools: false,
+                has_tool_result: false,
+            },
+            FixtureResponse::Content(RECORDED_CONTRIBUTION.to_string()),
+        );
+    let recorded = std::env::var(super::backend::BACKEND_ENV_VAR).as_deref() != Ok("live");
+    let backend = super::backend::resolve(fixtures).await;
+    let server = boot_test_server(&backend.base_url, &backend.model, ServiceNeeds::default()).await;
+
+    let response = reqwest::Client::new()
+        .post(format!("{}/api/chat/completion", server.base_url))
+        .header("Authorization", format!("Bearer {HARNESS_JWT_SECRET}"))
+        .json(&serde_json::json!({
+            "model": backend.model,
+            "agent_id": "orchestrator-agent",
+            "messages": [{"role": "user", "content": PROBE}],
+            "stream": true,
+            "stream_mode": "openai",
+        }))
+        .send()
+        .await
+        .expect("orchestrator delegation request");
+    let status = response.status().as_u16();
+    let body = response.text().await.unwrap_or_default();
+    assert_real_handler("C-06", "/api/chat/completion", status, &body);
+    assert_eq!(status, 200, "C-06 delegation must return 200: {body}");
+    let assistant_text = body
+        .lines()
+        .filter_map(|line| line.strip_prefix("data: "))
+        .filter(|data| *data != "[DONE]")
+        .filter_map(|data| serde_json::from_str::<serde_json::Value>(data).ok())
+        .filter_map(|chunk| {
+            chunk
+                .pointer("/choices/0/delta/content")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+        })
+        .collect::<String>();
+    let contribution = assistant_text
+        .strip_prefix("[rust-reviewer]\n\n")
+        .unwrap_or_else(|| panic!("answer must attribute the selected sub-agent: {body}"));
+    assert!(
+        !contribution.trim().is_empty(),
+        "answer must contain the selected sub-agent's contribution: {body}"
+    );
+    assert!(
+        body.contains("event: runtime.step")
+            && body.contains("step_started")
+            && body.contains("step_finished"),
+        "router and agent traversal must emit runtime step events: {body}"
+    );
+    if recorded {
+        assert_eq!(contribution, RECORDED_CONTRIBUTION);
+    }
 }
 
 struct C19FixtureProvider;
@@ -335,8 +425,9 @@ async fn l2_c01_c02_run_stream_shape() {
 // L4 — survives a cold runtime restart
 // ---------------------------------------------------------------------------
 
-/// C-12 persistence — write a knowledge-base resource, stop the server, reopen
-/// the same SurrealKV path in a new runtime, and read the identical resource.
+/// C-12 persistence — write a knowledge-base resource, stop its server runtime,
+/// reopen the same SurrealKV path while the original helper process remains
+/// alive at a pre-exit barrier, and read the identical resource.
 /// Setting `UAR_L4_NEGATIVE_CONTROL_DIFFERENT_PATH=1` deliberately points the
 /// second boot at an empty path; the final assertion must then fail.
 #[tokio::test]
@@ -379,7 +470,7 @@ async fn l4_c12_persistence_round_trip() {
         .expect("C-12: created resource id")
         .to_string();
 
-    server.shutdown().await;
+    let original_barrier = server.shutdown_to_pre_exit_barrier("TERM").await;
 
     let negative_path = scratch.path().join("negative-control-surrealkv");
     let reopen_path = if std::env::var_os("UAR_L4_NEGATIVE_CONTROL_DIFFERENT_PATH").is_some() {
@@ -389,6 +480,7 @@ async fn l4_c12_persistence_round_trip() {
     };
     let restarted =
         boot_test_server_process(&stub.base_url, MODEL, ServiceNeeds::default(), reopen_path).await;
+    original_barrier.allow_exit().await;
     let resource_path = format!("/api/knowledge/{resource_id}");
     let (status, body) = get_capability(&restarted.base_url, "C-12", &resource_path).await;
     restarted.shutdown().await;
@@ -997,6 +1089,554 @@ async fn l3_c21_a2a_tasks_are_partitioned_by_verified_tenant() {
     assert_eq!(
         after_cancel["result"]["status"]["state"], "working",
         "C-21: cross-tenant cancel must not mutate tenant A task: {after_cancel}"
+    );
+}
+
+/// C-21 private user resources.
+///
+/// Two independently verified JWT subjects address the same live session and
+/// Alice's persisted memory/knowledge identifiers. Same-user controls succeed;
+/// Bob's caller-supplied user ids do not cross the authenticated boundary.
+#[tokio::test]
+#[serial]
+async fn l3_c21_threads_memory_and_knowledge_are_partitioned_by_verified_user() {
+    let stub = start_stub_llm(content_fixture("C-21 private thread", "C-21 private reply")).await;
+    let server = boot_test_server(&stub.base_url, MODEL, ServiceNeeds { memory: true }).await;
+    let token = |subject: &str| {
+        let claims = universal_agent_runtime::uar::security::claims::UserClaims {
+            sub: subject.to_owned(),
+            name: None,
+            roles: Some(vec!["user".to_owned()]),
+            tenant_id: None,
+            exp: usize::MAX,
+        };
+        jsonwebtoken::encode(
+            &jsonwebtoken::Header::default(),
+            &claims,
+            &jsonwebtoken::EncodingKey::from_secret(HARNESS_JWT_SECRET.as_bytes()),
+        )
+        .expect("C-21: user token must encode")
+    };
+    let user_a = token("c21-user-a");
+    let user_b = token("c21-user-b");
+    let client = reqwest::Client::new();
+
+    let acp_url = format!("{}/acp/", server.base_url);
+    let unauthenticated_acp = client
+        .post(&acp_url)
+        .json(&serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "sessions/create",
+            "params": {"agent_id": "default"}
+        }))
+        .send()
+        .await
+        .expect("C-21: unauthenticated ACP request");
+    assert_eq!(unauthenticated_acp.status(), 401);
+
+    let acp_session: serde_json::Value = client
+        .post(&acp_url)
+        .bearer_auth(&user_a)
+        .json(&serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "sessions/create",
+            "params": {"agent_id": "default"}
+        }))
+        .send()
+        .await
+        .expect("C-21: user A ACP session create")
+        .json()
+        .await
+        .expect("C-21: user A ACP session JSON");
+    let acp_session_id = acp_session["result"]["session_id"]
+        .as_str()
+        .expect("C-21: ACP session id")
+        .to_owned();
+
+    let cross_acp_session: serde_json::Value = client
+        .post(&acp_url)
+        .bearer_auth(&user_b)
+        .json(&serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "sessions/get",
+            "params": {"session_id": acp_session_id}
+        }))
+        .send()
+        .await
+        .expect("C-21: user B ACP session lookup")
+        .json()
+        .await
+        .expect("C-21: user B ACP session JSON");
+    assert_eq!(cross_acp_session["error"]["code"], -32001);
+
+    let cross_acp_delete: serde_json::Value = client
+        .post(&acp_url)
+        .bearer_auth(&user_b)
+        .json(&serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 4,
+            "method": "sessions/delete",
+            "params": {"session_id": acp_session_id}
+        }))
+        .send()
+        .await
+        .expect("C-21: user B ACP session delete")
+        .json()
+        .await
+        .expect("C-21: user B ACP delete JSON");
+    assert_eq!(cross_acp_delete["result"]["deleted"], false);
+
+    let cross_acp_run_create: serde_json::Value = client
+        .post(&acp_url)
+        .bearer_auth(&user_b)
+        .json(&serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "runs/create",
+            "params": {"session_id": acp_session_id, "input": "must fail"}
+        }))
+        .send()
+        .await
+        .expect("C-21: user B ACP run create")
+        .json()
+        .await
+        .expect("C-21: user B ACP run-create JSON");
+    assert_eq!(cross_acp_run_create["error"]["code"], -32001);
+
+    let same_acp_session: serde_json::Value = client
+        .post(&acp_url)
+        .bearer_auth(&user_a)
+        .json(&serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "sessions/get",
+            "params": {"session_id": acp_session_id}
+        }))
+        .send()
+        .await
+        .expect("C-21: user A ACP session lookup")
+        .json()
+        .await
+        .expect("C-21: user A ACP session lookup JSON");
+    assert_eq!(same_acp_session["result"]["session_id"], acp_session_id);
+
+    let acp_run: serde_json::Value = client
+        .post(&acp_url)
+        .bearer_auth(&user_a)
+        .json(&serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "runs/create",
+            "params": {"session_id": acp_session_id, "input": "C-21 private thread"}
+        }))
+        .send()
+        .await
+        .expect("C-21: user A ACP run create")
+        .json()
+        .await
+        .expect("C-21: user A ACP run JSON");
+    let acp_run_id = acp_run["result"]["run_id"]
+        .as_str()
+        .expect("C-21: ACP run id")
+        .to_owned();
+
+    let cross_acp_run: serde_json::Value = client
+        .post(&acp_url)
+        .bearer_auth(&user_b)
+        .json(&serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 8,
+            "method": "runs/get",
+            "params": {"run_id": acp_run_id}
+        }))
+        .send()
+        .await
+        .expect("C-21: user B ACP run lookup")
+        .json()
+        .await
+        .expect("C-21: user B ACP run JSON");
+    assert_eq!(cross_acp_run["error"]["code"], -32002);
+
+    let same_acp_run: serde_json::Value = client
+        .post(&acp_url)
+        .bearer_auth(&user_a)
+        .json(&serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": 9,
+            "method": "runs/get",
+            "params": {"run_id": acp_run_id}
+        }))
+        .send()
+        .await
+        .expect("C-21: user A ACP run lookup")
+        .json()
+        .await
+        .expect("C-21: user A ACP run lookup JSON");
+    assert_eq!(same_acp_run["result"]["run_id"], acp_run_id);
+
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let chat = client
+        .post(format!("{}/api/chat/completion", server.base_url))
+        .bearer_auth(&user_a)
+        .header("X-UAR-Session-ID", &session_id)
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": "C-21 private thread"}],
+            "stream": false,
+            "memory_enabled": false
+        }))
+        .send()
+        .await
+        .expect("C-21: user A chat request");
+    assert_eq!(
+        chat.status(),
+        200,
+        "C-21: user A chat failed: {}",
+        chat.text().await.unwrap_or_default()
+    );
+    let stats_url = format!(
+        "{}/api/uar/sessions/{session_id}/context-stats",
+        server.base_url
+    );
+    let same_user_stats = client
+        .get(&stats_url)
+        .bearer_auth(&user_a)
+        .send()
+        .await
+        .expect("C-21: same-user session read");
+    assert_eq!(same_user_stats.status(), 200);
+    let cross_user_stats = client
+        .get(&stats_url)
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: cross-user session read");
+    assert_eq!(
+        cross_user_stats.status(),
+        404,
+        "C-21: user B read user A session: {}",
+        cross_user_stats.text().await.unwrap_or_default()
+    );
+
+    let session_agent_url = format!(
+        "{}/api/uar/discovery/sessions/{session_id}/agent",
+        server.base_url
+    );
+    let user_a_run: serde_json::Value = client
+        .get(&session_agent_url)
+        .bearer_auth(&user_a)
+        .send()
+        .await
+        .expect("C-21: user A current run")
+        .json()
+        .await
+        .expect("C-21: user A current run JSON");
+    let user_a_run_id = user_a_run["run_id"]
+        .as_str()
+        .expect("C-21: user A run id")
+        .to_owned();
+    let cross_user_run = client
+        .get(&session_agent_url)
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: user B current run lookup");
+    assert_eq!(cross_user_run.status(), 404);
+    let cross_user_stream = client
+        .get(format!(
+            "{}/api/uar/runs/{user_a_run_id}/stream",
+            server.base_url
+        ))
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: user B stream lookup");
+    assert_eq!(cross_user_stream.status(), 404);
+    let cross_user_cancel = client
+        .post(format!(
+            "{}/api/uar/runs/{user_a_run_id}/cancel",
+            server.base_url
+        ))
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: user B cancel request");
+    assert_eq!(cross_user_cancel.status(), 404);
+    let cross_user_checkpoints = client
+        .get(format!(
+            "{}/api/uar/runs/{user_a_run_id}/checkpoints",
+            server.base_url
+        ))
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: user B checkpoint request");
+    assert_eq!(cross_user_checkpoints.status(), 404);
+
+    let same_user_stream = client
+        .get(format!(
+            "{}/api/uar/runs/{user_a_run_id}/stream",
+            server.base_url
+        ))
+        .bearer_auth(&user_a)
+        .send()
+        .await
+        .expect("C-21: user A stream lookup");
+    assert_eq!(same_user_stream.status(), 200);
+    drop(same_user_stream);
+
+    let agent_config_url = format!(
+        "{}/api/uar/sessions/{session_id}/agent-config",
+        server.base_url
+    );
+    let save_agent_config = client
+        .post(&agent_config_url)
+        .bearer_auth(&user_a)
+        .json(&serde_json::json!({"agent_id": "default-agent"}))
+        .send()
+        .await
+        .expect("C-21: user A save agent config");
+    assert_eq!(save_agent_config.status(), 200);
+    let cross_agent_config = client
+        .get(&agent_config_url)
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: user B agent config lookup");
+    assert_eq!(cross_agent_config.status(), 404);
+    let same_agent_config = client
+        .get(&agent_config_url)
+        .bearer_auth(&user_a)
+        .send()
+        .await
+        .expect("C-21: user A agent config lookup");
+    assert_eq!(same_agent_config.status(), 200);
+
+    let policy_id = format!("c21-policy-{}", uuid::Uuid::new_v4());
+    let policy_url = format!(
+        "{}/api/uar/conversations/{policy_id}/policy",
+        server.base_url
+    );
+    let save_policy = client
+        .put(&policy_url)
+        .bearer_auth(&user_a)
+        .json(&serde_json::json!({"memory_enabled": false}))
+        .send()
+        .await
+        .expect("C-21: user A save policy");
+    assert_eq!(save_policy.status(), 200);
+    let cross_policy: serde_json::Value = client
+        .get(&policy_url)
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: user B policy lookup")
+        .json()
+        .await
+        .expect("C-21: user B policy JSON");
+    assert!(cross_policy.is_null());
+    let same_policy: serde_json::Value = client
+        .get(&policy_url)
+        .bearer_auth(&user_a)
+        .send()
+        .await
+        .expect("C-21: user A policy lookup")
+        .json()
+        .await
+        .expect("C-21: user A policy JSON");
+    assert_eq!(same_policy["memory_enabled"], false);
+
+    let user_b_chat = client
+        .post(format!("{}/api/chat/completion", server.base_url))
+        .bearer_auth(&user_b)
+        .header("X-UAR-Session-ID", &session_id)
+        .json(&serde_json::json!({
+            "model": MODEL,
+            "messages": [{"role": "user", "content": "C-21 private thread"}],
+            "stream": false,
+            "memory_enabled": false
+        }))
+        .send()
+        .await
+        .expect("C-21: user B same-id chat request");
+    assert_eq!(
+        user_b_chat.status(),
+        200,
+        "C-21: user B same-id chat failed: {}",
+        user_b_chat.text().await.unwrap_or_default()
+    );
+    let user_b_run: serde_json::Value = client
+        .get(&session_agent_url)
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: user B current run")
+        .json()
+        .await
+        .expect("C-21: user B current run JSON");
+    let user_b_run_id = user_b_run["run_id"].as_str().expect("C-21: user B run id");
+    assert_ne!(user_a_run_id, user_b_run_id);
+    let user_a_run_after_b: serde_json::Value = client
+        .get(&session_agent_url)
+        .bearer_auth(&user_a)
+        .send()
+        .await
+        .expect("C-21: user A current run after B")
+        .json()
+        .await
+        .expect("C-21: user A current run after B JSON");
+    assert_eq!(user_a_run_after_b["run_id"], user_a_run_id);
+
+    let kb_create = client
+        .post(format!("{}/api/knowledge", server.base_url))
+        .bearer_auth(&user_a)
+        .json(&serde_json::json!({
+            "name": format!("c21-private-{}", uuid::Uuid::new_v4()),
+            "description": "user A only"
+        }))
+        .send()
+        .await
+        .expect("C-21: user A KB create");
+    let kb_status = kb_create.status();
+    if kb_status != 201 {
+        panic!(
+            "C-21: KB create failed ({kb_status}): {}",
+            kb_create.text().await.unwrap_or_default()
+        );
+    }
+    let kb: serde_json::Value = kb_create.json().await.expect("C-21: KB create JSON");
+    let kb_id = kb["id"].as_str().expect("C-21: KB id");
+    let same_user_kb = client
+        .get(format!("{}/api/knowledge/{kb_id}", server.base_url))
+        .bearer_auth(&user_a)
+        .send()
+        .await
+        .expect("C-21: same-user KB read");
+    assert_eq!(same_user_kb.status(), 200);
+    let cross_user_kb = client
+        .get(format!("{}/api/knowledge/{kb_id}", server.base_url))
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: cross-user KB read");
+    assert_eq!(
+        cross_user_kb.status(),
+        404,
+        "C-21: user B read user A KB: {}",
+        cross_user_kb.text().await.unwrap_or_default()
+    );
+    let user_b_kbs: serde_json::Value = client
+        .get(format!("{}/api/knowledge", server.base_url))
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: user B KB list")
+        .json()
+        .await
+        .expect("C-21: user B KB list JSON");
+    assert!(
+        user_b_kbs
+            .as_array()
+            .is_some_and(|rows| rows.iter().all(|row| row["id"] != kb_id)),
+        "C-21: user B list leaked user A KB: {user_b_kbs}"
+    );
+    let document_upload = client
+        .post(format!(
+            "{}/api/knowledge/{kb_id}/documents",
+            server.base_url
+        ))
+        .bearer_auth(&user_a)
+        .multipart(
+            reqwest::multipart::Form::new().part(
+                "file",
+                reqwest::multipart::Part::bytes(b"C-21 private document".to_vec())
+                    .file_name("c21-private.txt")
+                    .mime_str("text/plain")
+                    .expect("C-21: document MIME"),
+            ),
+        )
+        .send()
+        .await
+        .expect("C-21: user A document upload");
+    assert_eq!(document_upload.status(), 202);
+    let document: serde_json::Value = document_upload
+        .json()
+        .await
+        .expect("C-21: uploaded document JSON");
+    let document_id = document["id"].as_str().expect("C-21: uploaded document id");
+    let cross_user_document = client
+        .get(format!(
+            "{}/api/knowledge/{kb_id}/documents/{document_id}",
+            server.base_url
+        ))
+        .bearer_auth(&user_b)
+        .send()
+        .await
+        .expect("C-21: user B document lookup");
+    assert_eq!(cross_user_document.status(), 404);
+    let same_user_document = client
+        .get(format!(
+            "{}/api/knowledge/{kb_id}/documents/{document_id}",
+            server.base_url
+        ))
+        .bearer_auth(&user_a)
+        .send()
+        .await
+        .expect("C-21: user A document lookup");
+    assert_eq!(same_user_document.status(), 200);
+
+    let secret = format!("c21-memory-{}", uuid::Uuid::new_v4());
+    let memory_create = client
+        .post(format!("{}/api/memory", server.base_url))
+        .bearer_auth(&user_a)
+        .json(&serde_json::json!({
+            "content": secret,
+            "categories": ["c21"],
+            "user_id": "c21-user-b"
+        }))
+        .send()
+        .await
+        .expect("C-21: user A memory create");
+    assert_eq!(
+        memory_create.status(),
+        200,
+        "C-21: memory create failed: {}",
+        memory_create.text().await.unwrap_or_default()
+    );
+    let same_user_memories: serde_json::Value = client
+        .get(format!("{}/api/memory", server.base_url))
+        .bearer_auth(&user_a)
+        .query(&[("q", secret.as_str()), ("user_id", "c21-user-b")])
+        .send()
+        .await
+        .expect("C-21: same-user memory search")
+        .json()
+        .await
+        .expect("C-21: same-user memory JSON");
+    assert!(
+        same_user_memories
+            .as_array()
+            .is_some_and(|rows| rows.iter().any(|row| row["content"] == secret)),
+        "C-21: user A could not read its memory: {same_user_memories}"
+    );
+    let cross_user_memories: serde_json::Value = client
+        .get(format!("{}/api/memory", server.base_url))
+        .bearer_auth(&user_b)
+        .query(&[("q", secret.as_str()), ("user_id", "c21-user-a")])
+        .send()
+        .await
+        .expect("C-21: cross-user memory search")
+        .json()
+        .await
+        .expect("C-21: cross-user memory JSON");
+    assert!(
+        cross_user_memories
+            .as_array()
+            .is_some_and(|rows| rows.iter().all(|row| row["content"] != secret)),
+        "C-21: user B read user A memory: {cross_user_memories}"
     );
 }
 

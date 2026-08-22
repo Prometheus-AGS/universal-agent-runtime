@@ -22,14 +22,16 @@ const config: Config = {
   projectName: 'universal-agent-runtime',
   trailingSlash: false,
 
-  // Ingested docs may reference pages not yet ported; warn rather than fail the build.
-  onBrokenLinks: 'warn',
+  onBrokenLinks: 'throw',
 
   markdown: {
+    mermaid: true,
     hooks: {
-      onBrokenMarkdownLinks: 'warn',
+      onBrokenMarkdownLinks: 'throw',
     },
   },
+
+  themes: ['@docusaurus/theme-mermaid'],
 
   i18n: {
     defaultLocale: 'en',

@@ -1,24 +1,23 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 108,
-  "derivedRevision": 108,
+  "sourceRevision": 254,
+  "derivedRevision": 254,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 50
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 196
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-15T22:07:16.756649Z",
+  "updatedAt": "2026-08-21T14:04:46.424174Z",
   "cursor": [
-    "uar-1-0-readiness",
-    "reflect"
+    "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion"
   ],
   "root": {
     "type": "phase",
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "running",
     "progress": {
-      "done": 54,
+      "done": 74,
       "total": 79
     },
     "children": [
@@ -170,16 +169,126 @@
         "type": "phase",
         "id": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
         "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-        "status": "PENDING",
+        "status": "IN_PROGRESS",
         "progress": {
-          "done": 0,
+          "done": 10,
           "total": 14
         },
         "children": [
           {
+            "type": "phase",
+            "id": "fix-embedded-sse-offline-reconnect",
+            "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-embedded-sse-offline-reconnect",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 1,
+              "total": 1
+            },
+            "children": [
+              {
+                "type": "change",
+                "id": "fix-embedded-sse-offline-reconnect",
+                "status": "COMPLETE",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                }
+              }
+            ],
+            "annotations": []
+          },
+          {
+            "type": "phase",
+            "id": "fix-frontend-pnpm-lock-consistency",
+            "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-frontend-pnpm-lock-consistency",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 1,
+              "total": 1
+            },
+            "children": [
+              {
+                "type": "change",
+                "id": "fix-frontend-pnpm-lock-consistency",
+                "status": "COMPLETE",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                }
+              }
+            ],
+            "annotations": []
+          },
+          {
+            "type": "phase",
+            "id": "fix-mcp-reconnect-shared-service-state",
+            "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-mcp-reconnect-shared-service-state",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 1,
+              "total": 1
+            },
+            "children": [
+              {
+                "type": "change",
+                "id": "fix-mcp-reconnect-shared-service-state",
+                "status": "COMPLETE",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                }
+              }
+            ],
+            "annotations": []
+          },
+          {
+            "type": "phase",
+            "id": "fix-pnpm-lock-submodule-consistency",
+            "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-pnpm-lock-submodule-consistency",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 1,
+              "total": 1
+            },
+            "children": [
+              {
+                "type": "change",
+                "id": "fix-pnpm-lock-submodule-consistency",
+                "status": "COMPLETE",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                }
+              }
+            ],
+            "annotations": []
+          },
+          {
+            "type": "phase",
+            "id": "fix-provider-default-settings-consistency",
+            "canonicalId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-provider-default-settings-consistency",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 1,
+              "total": 1
+            },
+            "children": [
+              {
+                "type": "change",
+                "id": "fix-provider-default-settings-consistency",
+                "status": "COMPLETE",
+                "progress": {
+                  "done": 0,
+                  "total": 0
+                }
+              }
+            ],
+            "annotations": []
+          },
+          {
             "type": "change",
             "id": "fix-user-isolation-sessions-memory-kb",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -188,7 +297,7 @@
           {
             "type": "change",
             "id": "harden-jwt-defaults",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -197,7 +306,7 @@
           {
             "type": "change",
             "id": "fix-skills-scope-semantics",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -206,7 +315,7 @@
           {
             "type": "change",
             "id": "ship-skill-pack-install-path",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -215,7 +324,7 @@
           {
             "type": "change",
             "id": "emit-rag-retrieval-events",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -224,7 +333,7 @@
           {
             "type": "change",
             "id": "wire-orchestrator-delegation",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -233,7 +342,7 @@
           {
             "type": "change",
             "id": "complete-agui-event-parity",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -242,7 +351,7 @@
           {
             "type": "change",
             "id": "resolve-sdk-distribution",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -251,7 +360,7 @@
           {
             "type": "change",
             "id": "rewrite-readme-and-docs",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -260,7 +369,7 @@
           {
             "type": "change",
             "id": "screen-by-screen-validation",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -345,16 +454,16 @@
         "type": "phase",
         "id": "runtime-console-validation-hardening",
         "canonicalId": "runtime-console-validation-hardening",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
-          "done": 0,
+          "done": 7,
           "total": 7
         },
         "children": [
           {
             "type": "change",
             "id": "frontend-lint-zero-warning",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -363,7 +472,7 @@
           {
             "type": "change",
             "id": "runtime-console-live-visual-tests",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -372,7 +481,7 @@
           {
             "type": "change",
             "id": "runtime-event-replay-entity-sync-tests",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -381,7 +490,7 @@
           {
             "type": "change",
             "id": "surreal-memory-workflow-mirror-tests",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -390,7 +499,7 @@
           {
             "type": "change",
             "id": "openspec-global-validation-cleanup",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -399,7 +508,7 @@
           {
             "type": "change",
             "id": "moonshot-provider-status",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
@@ -408,7 +517,7 @@
           {
             "type": "change",
             "id": "runtime-console-archive-readiness",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0

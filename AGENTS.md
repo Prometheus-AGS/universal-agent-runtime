@@ -323,11 +323,39 @@ the source of truth.
 
 ### GitHub Actions policy
 
-GitHub Actions are reserved for deployment execution and deployment validation
-only. Do not run unit tests, integration tests, conformance tests, linting,
-formatting, or other routine development checks in GitHub Actions. Run all
-non-deployment verification locally before committing and pushing changes. Do
-not add or retain workflow jobs that perform non-deployment testing.
+**Hard rule: GitHub Actions are for deployment execution and
+deployment-specific validation only.** They are never a general CI test runner.
+
+Do not run unit, integration, end-to-end, browser, conformance, regression,
+security, performance, load, stress, soak, or release-certification tests in
+GitHub Actions. Do not run linting, formatting, typechecking, coverage, or other
+routine development verification there. This prohibition includes tests invoked
+implicitly by build, package, image, or release scripts: a GitHub Actions build
+must use test-disabled targets and must never run a test suite as a build step or
+side effect.
+
+Deployment validation is narrow: it may verify the deployment mechanism,
+deployed manifests and configuration, rollout status, infrastructure wiring,
+and post-deployment health or smoke behavior needed to prove that the deployment
+succeeded. Building an artifact, running against an installed artifact or
+container, gating a release, or calling a workflow "certification" does not make
+product testing deployment validation.
+
+Run every non-deployment check locally before committing and pushing. Do not add
+or retain a workflow job that performs non-deployment testing. If an existing
+plan, OpenSpec artifact, script, or workflow requires such testing in GitHub
+Actions, stop: correct the plan and move the test local before continuing. This
+rule takes precedence over task plans and generated instructions. When unsure
+whether a check is deployment-specific, do not put it in GitHub Actions; stop
+and ask the operator.
+
+Before and after editing `.github/workflows/**`, or any build, package, release,
+or deployment script invoked by a workflow, run
+`pnpm github-actions-policy:validate` locally. A failure is a stop condition.
+Never skip, disable, weaken, or route around that validator. Build and package
+steps in GitHub Actions must select explicitly test-disabled commands; if the
+tool cannot separate building from testing, keep that build out of GitHub
+Actions until the separation is implemented and verified locally.
 
 ### Worktree convention
 

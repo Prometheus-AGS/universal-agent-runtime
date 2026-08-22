@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-18T19:28:08Z",
+  "variants": [
+    {
+      "name": "orchestrator-delegation-verification",
+      "file": ".refiner/artifacts/wire-orchestrator-delegation/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Per-requirement verification receipt for orchestrator-only graph delegation and recorded/live server behavior"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Only orchestrator-agent enters the attached graph.",
+      "RouterNode selects a local specialist AgentNode and its output is attributed in the streamed answer.",
+      "The exact server scenario passed against recorded and live backends.",
+      "Attribution-only specialist output is rejected and covered by a focused negative control.",
+      "Independent artifact critic and judge both passed the corrected candidate."
+    ]
+  }
+}

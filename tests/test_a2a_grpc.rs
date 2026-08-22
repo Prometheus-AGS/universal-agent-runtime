@@ -39,6 +39,7 @@ fn start_grpc_server() -> String {
             jwks_url: None,
             jwt_issuer: None,
             jwt_audience: None,
+            jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
         },
         base_url: format!("http://127.0.0.1:{port}"),

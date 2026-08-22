@@ -264,42 +264,43 @@ export const KnowledgePage: FC = () => {
 				)}
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 					{bases.map((kb) => (
-						<button
+						<div
 							key={kb.id}
-							data-testid={`knowledge-base-${kb.id}`}
-							type="button"
-							onClick={() => selectKb(kb)}
-							className="flex flex-col rounded-lg border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 hover:bg-card/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring"
+							className="relative flex rounded-lg border border-border bg-card transition-colors hover:border-primary/40 hover:bg-card/80"
 						>
-							<div className="mb-3 flex items-start justify-between">
-								<div className="flex size-8 items-center justify-center rounded-md bg-primary/15">
-									<BookOpen size={14} className="text-primary" />
+							<button
+								data-testid={`knowledge-base-${kb.id}`}
+								type="button"
+								onClick={() => selectKb(kb)}
+								className="flex min-w-0 flex-1 flex-col p-4 pr-12 text-left focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring"
+							>
+								<div className="mb-3 flex items-start">
+									<div className="flex size-8 items-center justify-center rounded-md bg-primary/15">
+										<BookOpen size={14} className="text-primary" />
+									</div>
 								</div>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-6 w-6 text-muted-foreground hover:text-destructive"
-									onClick={(e) => {
-										e.stopPropagation();
-										setDeleteTarget(kb);
-									}}
-									aria-label={`Delete ${kb.name}`}
-								>
-									<Trash2 size={12} />
-								</Button>
-							</div>
-							<p className="font-display text-sm font-semibold text-foreground">
-								{kb.name}
-							</p>
-							{kb.description && (
-								<p className="mt-1 font-body text-xs text-muted-foreground line-clamp-2">
-									{kb.description}
+								<p className="font-display text-sm font-semibold text-foreground">
+									{kb.name}
 								</p>
-							)}
-							<p className="mt-2 font-mono text-xs text-muted-foreground">
-								{kb.document_count ?? 0} documents
-							</p>
-						</button>
+								{kb.description && (
+									<p className="mt-1 font-body text-xs text-muted-foreground line-clamp-2">
+										{kb.description}
+									</p>
+								)}
+								<p className="mt-2 font-mono text-xs text-muted-foreground">
+									{kb.document_count ?? 0} documents
+								</p>
+							</button>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="absolute right-4 top-4 h-6 w-6 text-muted-foreground hover:text-destructive"
+								onClick={() => setDeleteTarget(kb)}
+								aria-label={`Delete ${kb.name}`}
+							>
+								<Trash2 size={12} />
+							</Button>
+						</div>
 					))}
 				</div>
 			</div>

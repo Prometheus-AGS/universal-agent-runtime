@@ -88,9 +88,16 @@ CONFIG_FILE=config.embedded.yaml cargo run
 | Env var | YAML key | Default | Notes |
 |---|---|---|---|
 | `UAR_SECURITY__JWT_REQUIRED` (or `JWT_REQUIRED` / `--jwt-required`) | `security.jwt_required` | `true` | When true, protected endpoints require a valid JWT (401 otherwise). |
-| `UAR_SECURITY__JWT_SECRET` | `security.jwt_secret` | `fallback_secret_change_in_production` | HMAC secret. **Always override in production.** Generate with `openssl rand -base64 64`. Redacted from logs. |
+| `UAR_SECURITY__JWT_SECRET` | `security.jwt_secret` | no safe default | HMAC secret. UAR refuses to start with the published fallback when JWT auth is required. Generate with `openssl rand -base64 64`. Redacted from logs. |
+| `UAR_SECURITY__JWT_ISSUER` | `security.jwt_issuer` | *(unset)* | Optional required `iss` claim for HS256 and JWKS tokens. |
+| `UAR_SECURITY__JWT_AUDIENCE` | `security.jwt_audience` | *(unset)* | Optional required `aud` claim for HS256 and JWKS tokens. |
+| `UAR_SECURITY__JWT_VALIDATE_NBF` | `security.jwt_validate_nbf` | `true` | Reject tokens whose optional `nbf` is beyond jsonwebtoken's 60-second default clock-skew allowance. |
 | `UAR_SECURITY__SETTINGS_MUTATION_AUTH_REQUIRED` | `security.settings_mutation_auth_required` | `true` | When true, `PUT`/`POST`/`DELETE` on `/api/uar/settings` require the `X-UAR-Admin-Key` header. Set `false` for trusted local dev only. |
 | `CREDENTIAL_ENCRYPTION_KEY` | — | *(unset)* | Optional. Enables multi-tenant per-user provider credentials, encrypted at rest with AES-256-GCM. Must be 32 ASCII bytes or 64 hex chars. Leave unset for single-tenant/self-hosted operation. |
+
+Setting `jwt_required: false` is an explicit anonymous mode. Requests without
+valid credentials share the same `anonymous` identity, so this mode does not
+provide user or tenant isolation and is intended only for trusted local use.
 
 ## LLM (liter-llm)
 

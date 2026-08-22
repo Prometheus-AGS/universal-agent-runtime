@@ -1,4 +1,4 @@
-use crate::uar::domain::knowledge::KnowledgeChunk;
+use crate::uar::domain::knowledge::{ANONYMOUS_KNOWLEDGE_OWNER, KnowledgeChunk};
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::rag::chunking::{Chunker, ChunkingStrategy};
 use crate::uar::rag::embeddings::EmbeddingBackend;
@@ -91,6 +91,7 @@ impl IngestService {
 
             let k_chunk = KnowledgeChunk {
                 id: chunk_id,
+                owner_id: ANONYMOUS_KNOWLEDGE_OWNER.to_string(),
                 kb_id: kb_id.to_string(),
                 document_id: None, // No document tracking in basic ingest
                 content: segment,
@@ -110,10 +111,11 @@ impl IngestService {
     pub async fn ingest_text(
         &self,
         content: &str,
+        owner_id: &str,
         kb_id: &str,
         document_id: String,
     ) -> Result<usize> {
-        self.ingest_text_with_metadata(content, kb_id, document_id, HashMap::new())
+        self.ingest_text_with_metadata(content, owner_id, kb_id, document_id, HashMap::new())
             .await
     }
 
@@ -122,6 +124,7 @@ impl IngestService {
     pub async fn ingest_text_with_metadata(
         &self,
         content: &str,
+        owner_id: &str,
         kb_id: &str,
         document_id: String,
         extra_metadata: HashMap<String, serde_json::Value>,
@@ -155,6 +158,7 @@ impl IngestService {
 
             let k_chunk = KnowledgeChunk {
                 id: chunk_id,
+                owner_id: owner_id.to_string(),
                 kb_id: kb_id.to_string(),
                 document_id: Some(document_id.clone()),
                 content: segment.clone(),

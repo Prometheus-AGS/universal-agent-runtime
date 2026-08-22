@@ -326,11 +326,25 @@ async fn update_skill(
     match service.update_skill(&id, patch).await {
         Ok(Some(skill)) => Json(SkillResponse::from(skill)).into_response(),
         Ok(None) => StatusCode::NOT_FOUND.into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({ "error": format!("{e:?}") })),
-        )
-            .into_response(),
+        Err(e) => {
+            let msg = format!("{e}");
+            if msg.contains("system_skill_immutable") {
+                (
+                    StatusCode::CONFLICT,
+                    Json(serde_json::json!({
+                        "error": "system_skill_immutable",
+                        "message": "System skill cannot be edited; disable it instead.",
+                    })),
+                )
+                    .into_response()
+            } else {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": format!("{e:?}") })),
+                )
+                    .into_response()
+            }
+        }
     }
 }
 

@@ -3,7 +3,7 @@
 	url = https://github.com/Know-Me-Tools/models.dev.git
 [submodule "crates/prometheus-skill-system"]
 	path = crates/prometheus-skill-system
-	url = git@github.com:Prometheus-AGS/prometheus-skill-system.git
+	url = https://github.com/Prometheus-AGS/prometheus-skill-system.git
 	branch = main
 [submodule "frontend/packages/prometheus-entity-management"]
 	path = frontend/packages/prometheus-entity-management

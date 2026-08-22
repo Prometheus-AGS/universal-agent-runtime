@@ -18,9 +18,16 @@ use crate::uar::settings::manager::SettingsManager;
 /// Current serialized policy schema version.
 pub const RUN_POLICY_VERSION: u32 = 1;
 
+fn default_policy_owner() -> String {
+    crate::session::ANONYMOUS_SESSION_OWNER.to_string()
+}
+
 /// Durable conversation-scoped policy record owned by UAR persistence.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct ConversationPolicyRecord {
+    /// Authenticated user that owns the conversation.
+    #[serde(default = "default_policy_owner")]
+    pub owner_id: String,
     /// Stable conversation/session identifier.
     pub conversation_id: String,
     /// Versioned requested policy.
@@ -33,7 +40,22 @@ impl ConversationPolicyRecord {
     /// Create a record using the current UTC timestamp.
     #[must_use]
     pub fn new(conversation_id: impl Into<String>, policy: RunPolicy) -> Self {
+        Self::new_for_user(
+            crate::session::ANONYMOUS_SESSION_OWNER,
+            conversation_id,
+            policy,
+        )
+    }
+
+    /// Create an owner-scoped record using the current UTC timestamp.
+    #[must_use]
+    pub fn new_for_user(
+        owner_id: impl Into<String>,
+        conversation_id: impl Into<String>,
+        policy: RunPolicy,
+    ) -> Self {
         Self {
+            owner_id: owner_id.into(),
             conversation_id: conversation_id.into(),
             policy,
             updated_at: chrono::Utc::now(),
@@ -593,10 +615,14 @@ pub async fn resolve_effective_run_policy_core(
 /// fallback themselves and pass the result as the conversation scope.
 pub async fn load_persisted_conversation_policy(
     persistence: Option<&Arc<dyn PersistenceLayer>>,
+    owner_id: &str,
     conversation_id: &str,
 ) -> Option<RunPolicy> {
     let persistence = persistence?;
-    match persistence.load_conversation_policy(conversation_id).await {
+    match persistence
+        .load_conversation_policy(owner_id, conversation_id)
+        .await
+    {
         Ok(Some(record)) => Some(record.policy),
         Ok(None) => None,
         Err(error) => {

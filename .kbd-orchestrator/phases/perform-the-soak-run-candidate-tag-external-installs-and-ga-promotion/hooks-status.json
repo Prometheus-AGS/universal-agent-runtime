@@ -1,0 +1,1 @@
+{"totalRuns":12,"failedRuns":0,"lastRun":{"ts":"2026-08-21T11:02:24Z","kind":"child","edge":"before","name":"fix-mcp-reconnect-shared-service-state","hookId":"kbd-memory-log","layer":"builtin","mode":"augment","status":0},"lastFailure":null}

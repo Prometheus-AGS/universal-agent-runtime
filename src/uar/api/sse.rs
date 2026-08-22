@@ -961,7 +961,7 @@ mod tests {
     };
     use crate::uar::domain::{
         context::{ContextAction, ContextStrategy},
-        events::{NormalizedEvent, StatePatchOp},
+        events::{NormalizedEvent, RagCitation, StatePatchOp},
     };
     use crate::uar::runtime::manager::StreamEvent;
 
@@ -982,6 +982,29 @@ mod tests {
         assert_eq!(payload["skill"]["id"], "skills.weather");
         assert_eq!(payload["skill"]["title"], "Weather Skill");
         assert_eq!(payload["selection_method"], "skill_service.keyword");
+    }
+
+    #[test]
+    fn maps_rag_citation_with_knowledge_base_and_document_provenance() {
+        let event = NormalizedEvent::RagCitations {
+            run_id: "run-rag".to_string(),
+            citations: vec![RagCitation {
+                marker: 1,
+                chunk_id: "chunk-1".to_string(),
+                document_id: Some("doc-1".to_string()),
+                knowledge_base_id: Some("kb-1".to_string()),
+                document_name: "handbook.txt".to_string(),
+                relevance_score: 0.91,
+                snippet: "grounded content".to_string(),
+            }],
+        };
+
+        let (name, payload) = to_agui_event(&event).expect("RAG citation should map");
+        assert_eq!(name, "agui.rag_citations");
+        assert_eq!(payload["request_id"], "run-rag");
+        assert_eq!(payload["citations"][0]["knowledge_base_id"], "kb-1");
+        assert_eq!(payload["citations"][0]["document_id"], "doc-1");
+        assert_eq!(payload["citations"][0]["document_name"], "handbook.txt");
     }
 
     #[test]

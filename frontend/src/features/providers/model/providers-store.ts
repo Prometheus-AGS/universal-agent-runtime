@@ -13,6 +13,7 @@ import {
   fetchConfiguredProviders,
   fetchProviderHealth,
   setDefaultProvider,
+  updateProvider,
   type ProviderHealthEntry,
 } from "../api/providers-api";
 import type { CatalogProviderSummary } from "@/types";
@@ -115,17 +116,25 @@ export const useProvidersStore = create<ProvidersStore>((set) => ({
   configure: async ({ provider, apiKey, baseUrl }) => {
     set({ saving: true, error: null });
     try {
-      const response = await createProvider({
+      const configured = await fetchConfiguredProviders();
+      const existing = configured.providers.find((candidate) => candidate.id === provider.id);
+      const next = {
+        ...(existing ?? {}),
         id: provider.id,
         display_name: provider.display_name ?? provider.id,
         base_url: baseUrl.trim() || provider.base_url || "",
         api_key: apiKey || undefined,
-        protocol: "auto",
+        protocol: existing?.protocol ?? "auto",
         enabled: true,
-      });
-      if (!response.ok && response.status !== 409) {
-        const detail = await response.text().catch(() => "");
-        throw new Error(detail || `Configure provider failed: ${response.status}`);
+      };
+      if (existing) {
+        await updateProvider(provider.id, next);
+      } else {
+        const response = await createProvider(next);
+        if (!response.ok) {
+          const detail = await response.text().catch(() => "");
+          throw new Error(detail || `Configure provider failed: ${response.status}`);
+        }
       }
       await hydrateProviders();
     } catch (error) {

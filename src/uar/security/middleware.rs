@@ -76,6 +76,7 @@ fn resolve_user_context(
         jwks_url: None,
         jwt_issuer: None,
         jwt_audience: None,
+        jwt_validate_nbf: true,
         settings_mutation_auth_required: true,
     };
     futures::executor::block_on(resolve_user_context_with_config(&config, auth_header))
@@ -153,6 +154,7 @@ mod tests {
         verifier::test_support::{TestJwksServer, jwk, signed_token},
     };
     use jsonwebtoken::{EncodingKey, Header};
+    use serde::Serialize;
     use tracing_subscriber::fmt::MakeWriter;
 
     #[derive(Clone, Default)]
@@ -201,8 +203,52 @@ mod tests {
             jwks_url: Some(url),
             jwt_issuer: Some(issuer.to_owned()),
             jwt_audience: Some(audience.to_owned()),
+            jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
         }
+    }
+
+    fn shared_secret_config(issuer: Option<&str>, audience: Option<&str>) -> SecurityConfig {
+        SecurityConfig {
+            jwt_required: true,
+            jwt_secret: "claim-test-secret".to_owned().into(),
+            jwks_url: None,
+            jwt_issuer: issuer.map(str::to_owned),
+            jwt_audience: audience.map(str::to_owned),
+            jwt_validate_nbf: true,
+            settings_mutation_auth_required: true,
+        }
+    }
+
+    #[derive(Serialize)]
+    struct RegisteredClaims<'a> {
+        sub: &'a str,
+        exp: usize,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        iss: Option<&'a str>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        aud: Option<&'a str>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        nbf: Option<usize>,
+    }
+
+    fn shared_secret_token(
+        issuer: Option<&str>,
+        audience: Option<&str>,
+        not_before: Option<usize>,
+    ) -> String {
+        jwt::encode(
+            &Header::default(),
+            &RegisteredClaims {
+                sub: "claim-user",
+                exp: usize::MAX,
+                iss: issuer,
+                aud: audience,
+                nbf: not_before,
+            },
+            &EncodingKey::from_secret(b"claim-test-secret"),
+        )
+        .expect("claim test token must encode")
     }
 
     #[test]
@@ -304,6 +350,50 @@ mod tests {
                 .await
                 .expect_err("wrong issuer must return 401");
         assert_eq!(issuer_error, StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn shared_secret_issuer_and_audience_are_required_when_configured() {
+        let config = shared_secret_config(Some("expected-issuer"), Some("expected-audience"));
+        let valid = shared_secret_token(Some("expected-issuer"), Some("expected-audience"), None);
+        let context = resolve_user_context_with_config(&config, Some(&format!("Bearer {valid}")))
+            .await
+            .expect("matching issuer and audience must authenticate");
+        assert_eq!(context.user_id, "claim-user");
+
+        for token in [
+            shared_secret_token(None, Some("expected-audience"), None),
+            shared_secret_token(Some("expected-issuer"), None, None),
+            shared_secret_token(Some("wrong-issuer"), Some("expected-audience"), None),
+            shared_secret_token(Some("expected-issuer"), Some("wrong-audience"), None),
+        ] {
+            let error = resolve_user_context_with_config(&config, Some(&format!("Bearer {token}")))
+                .await
+                .expect_err("missing or mismatched registered claims must fail closed");
+            assert_eq!(error, StatusCode::UNAUTHORIZED);
+        }
+    }
+
+    #[tokio::test]
+    async fn not_before_is_enforced_when_enabled_and_optional_when_disabled() {
+        let future = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("system clock must follow the Unix epoch")
+            .as_secs()
+            .saturating_add(3_600) as usize;
+        let token = shared_secret_token(None, None, Some(future));
+        let enabled = shared_secret_config(None, None);
+        let error = resolve_user_context_with_config(&enabled, Some(&format!("Bearer {token}")))
+            .await
+            .expect_err("a future nbf must fail closed when validation is enabled");
+        assert_eq!(error, StatusCode::UNAUTHORIZED);
+
+        let mut disabled = enabled;
+        disabled.jwt_validate_nbf = false;
+        let context = resolve_user_context_with_config(&disabled, Some(&format!("Bearer {token}")))
+            .await
+            .expect("operators may explicitly disable nbf validation");
+        assert_eq!(context.user_id, "claim-user");
     }
 
     #[tokio::test]

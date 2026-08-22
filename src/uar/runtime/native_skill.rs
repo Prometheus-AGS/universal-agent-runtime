@@ -82,6 +82,20 @@ impl Default for NativeSkillRegistry {
 }
 
 impl NativeSkillRegistry {
+    /// Convert an internal native-skill identifier into the function-name
+    /// alphabet accepted by OpenAI-compatible providers.
+    fn provider_tool_name(name: &str) -> String {
+        name.chars()
+            .map(|character| {
+                if character.is_ascii_alphanumeric() || matches!(character, '_' | '-') {
+                    character
+                } else {
+                    '_'
+                }
+            })
+            .collect()
+    }
+
     /// Create an empty registry.
     #[must_use]
     pub fn new() -> Self {
@@ -106,12 +120,22 @@ impl NativeSkillRegistry {
 
     /// Look up a native skill by name.
     pub async fn get(&self, name: &str) -> Option<Arc<dyn NativeSkill>> {
-        self.skills.read().await.get(name).cloned()
+        let skills = self.skills.read().await;
+        skills.get(name).cloned().or_else(|| {
+            skills
+                .iter()
+                .find(|(registered_name, _)| Self::provider_tool_name(registered_name) == name)
+                .map(|(_, skill)| Arc::clone(skill))
+        })
     }
 
     /// Check whether a native skill is registered for the given name.
     pub async fn contains(&self, name: &str) -> bool {
-        self.skills.read().await.contains_key(name)
+        let skills = self.skills.read().await;
+        skills.contains_key(name)
+            || skills
+                .keys()
+                .any(|registered_name| Self::provider_tool_name(registered_name) == name)
     }
 
     /// Return a snapshot of all registered skill names.
@@ -157,7 +181,7 @@ impl NativeSkillRegistry {
                 serde_json::json!({
                     "type": "function",
                     "function": {
-                        "name": skill.name(),
+                        "name": Self::provider_tool_name(skill.name()),
                         "description": skill.description(),
                         "parameters": skill.parameters_schema()
                     }

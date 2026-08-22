@@ -4,6 +4,7 @@ set -euo pipefail
 # Certify an installed release payload rather than a development checkout.
 # Usage: scripts/certify-release-candidate.sh <artifact-directory> [results-directory]
 
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 artifacts="${1:?artifact directory is required}"
 results="${2:-target/release-candidate-certification}"
 archive_glob="${UAR_CANDIDATE_ARCHIVE_GLOB:-*linux-x64.tar.gz}"
@@ -18,11 +19,13 @@ work="$(mktemp -d)"
 server_pid=""
 mock_pid=""
 container_id=""
+held_sse_pid=""
 upgrade_journey=""
 
 cleanup() {
   if [[ -n "$server_pid" ]]; then kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; fi
   if [[ -n "$mock_pid" ]]; then kill "$mock_pid" 2>/dev/null || true; wait "$mock_pid" 2>/dev/null || true; fi
+  if [[ -n "$held_sse_pid" ]]; then kill "$held_sse_pid" 2>/dev/null || true; wait "$held_sse_pid" 2>/dev/null || true; fi
   if [[ -n "$container_id" ]]; then docker rm -f "$container_id" >/dev/null 2>&1 || true; fi
   rm -rf "$work"
 }
@@ -76,8 +79,11 @@ package_root="$(dirname "$binary")"
 
 cat >"$work/mock-mcp.py" <<'PY'
 import json
+import os
 import sys
 import time
+
+trace_path = sys.argv[1]
 
 for line in sys.stdin:
     try:
@@ -106,6 +112,10 @@ for line in sys.stdin:
         }]}
     elif method == "tools/call":
         mode = request.get("params", {}).get("arguments", {}).get("mode", "echo")
+        with open(trace_path, "a", encoding="utf-8") as trace:
+            trace.write(json.dumps({"pid": os.getpid(), "request_id": request_id, "mode": mode}) + "\n")
+            trace.flush()
+            os.fsync(trace.fileno())
         if mode == "crash":
             sys.exit(23)
         if mode == "timeout":
@@ -117,7 +127,7 @@ for line in sys.stdin:
     print(json.dumps({"jsonrpc": "2.0", "id": request_id, "result": result}), flush=True)
 PY
 cat >"$work/mcp.json" <<JSON
-{"mcpServers":{"resilience":{"command":"python3","args":["$work/mock-mcp.py"]}}}
+{"mcpServers":{"resilience":{"command":"python3","args":["$work/mock-mcp.py","$results/mcp-process-trace.jsonl"]}}}
 JSON
 
 cat >"$work/mock-openai.py" <<'PY'
@@ -309,7 +319,7 @@ chat_request() {
   local stream="${2:-false}"
   local output="$3"
   curl --silent --show-error --max-time 45 \
-    -o "$output" -w '%{http_code} %{time_total}' \
+    -o "$output" -w '%{http_code} %{time_total}\n' \
     "http://127.0.0.1:${port}/v1/chat/completions" \
     -H 'content-type: application/json' \
     -d "{\"model\":\"openai/gpt-4o\",\"stream\":${stream},\"messages\":[{\"role\":\"user\",\"content\":\"${prompt}\"}]}"
@@ -336,7 +346,7 @@ certify_failure_recovery() {
 }
 
 certify_mcp_process_boundary() {
-  local attempt code health_code health_status
+  local attempt code health_code health_status crash_code timeout_code
   health_code="not-requested"
   health_status=1
   for attempt in $(seq 1 15); do
@@ -365,33 +375,27 @@ certify_mcp_process_boundary() {
   read -r code _ < <(chat_request mcp-echo false "$results/mcp-echo.json")
   [[ "$code" == 2* ]] && grep -q mcp-recovered "$results/mcp-echo.json"
 
-  set +e
-  read -r crash_code _ < <(chat_request mcp-crash false "$results/mcp-crash.json")
-  crash_request_status=$?
-  set -e
-  if [[ $crash_request_status -eq 0 && "$crash_code" == 2* ]] && grep -q mcp-recovered "$results/mcp-crash.json"; then
-    echo "crashed MCP call was replayed or reported as successful" >&2
-    return 1
-  fi
+  read -r crash_code _ < <(chat_request mcp-crash true "$results/mcp-crash.sse")
+  [[ "$crash_code" == 2* ]]
   read -r code _ < <(chat_request mcp-echo false "$results/mcp-after-crash.json")
   [[ "$code" == 2* ]] && grep -q mcp-recovered "$results/mcp-after-crash.json"
 
   timeout_started="$(date +%s)"
-  set +e
-  read -r timeout_code _ < <(chat_request mcp-timeout false "$results/mcp-timeout.json")
-  timeout_request_status=$?
-  set -e
+  read -r timeout_code _ < <(chat_request mcp-timeout true "$results/mcp-timeout.sse")
   timeout_elapsed=$(( $(date +%s) - timeout_started ))
-  if [[ $timeout_request_status -eq 0 && "$timeout_code" == 2* ]] && grep -q mcp-recovered "$results/mcp-timeout.json"; then
-    echo "timed-out MCP call was replayed or reported as successful" >&2
-    return 1
-  fi
+  [[ "$timeout_code" == 2* ]]
   [[ $timeout_elapsed -ge 30 && $timeout_elapsed -lt 45 ]]
   read -r code _ < <(chat_request mcp-echo false "$results/mcp-after-timeout.json")
   [[ "$code" == 2* ]] && grep -q mcp-recovered "$results/mcp-after-timeout.json"
 
+  node "$script_dir/validate-mcp-process-boundary-evidence.mjs" \
+    "$results/mcp-crash.sse" \
+    "$results/mcp-timeout.sse" \
+    "$results/mcp-process-trace.jsonl" \
+    >"$results/mcp-process-boundary-validation.txt"
+
   cat >"$results/mcp-process-boundary.json" <<JSON
-{"source_sha":"$source_sha","candidate_tag":"$candidate_tag","stdio_discovery":true,"tool_call":true,"configured_crash_exit_code":23,"transport_loss_surfaced":true,"reconnected_after_crash":true,"tool_timeout_seconds":30,"observed_timeout_seconds":$timeout_elapsed,"timed_out_call_replayed":false,"reconnected_after_timeout":true}
+{"source_sha":"$source_sha","candidate_tag":"$candidate_tag","stdio_discovery":true,"tool_call":true,"configured_crash_exit_code":23,"transport_loss_surfaced":true,"crash_failure_events":1,"crashed_call_replayed":false,"reconnected_after_crash":true,"tool_timeout_seconds":30,"observed_timeout_seconds":$timeout_elapsed,"timeout_failure_events":1,"timed_out_call_replayed":false,"reconnected_after_timeout":true,"raw_evidence":{"crash_stream":"mcp-crash.sse","timeout_stream":"mcp-timeout.sse","process_trace":"mcp-process-trace.jsonl","validation":"mcp-process-boundary-validation.txt"}}
 JSON
 }
 
@@ -635,6 +639,8 @@ certify_upgrade_journey
 
 container_journey=""
 if [[ -n "${UAR_CANDIDATE_IMAGE:-}" ]]; then
+  internal_shutdown_deadline_seconds=30
+  external_stop_deadline_seconds=35
   mkdir -p "$work/container-data"
   chmod 0777 "$work/container-data"
   container_id="$(docker run -d --network host --user 65532:65532 \
@@ -644,6 +650,8 @@ if [[ -n "${UAR_CANDIDATE_IMAGE:-}" ]]; then
     -e UAR_SECURITY__JWT_REQUIRED=false \
     -e UAR_SERVER__HOST=127.0.0.1 \
     -e UAR_SERVER__PORT="$port" \
+    -e UAR_SERVER__SHUTDOWN_TIMEOUT_SECS="$internal_shutdown_deadline_seconds" \
+    -e UAR_RESILIENCE__REQUEST_TIMEOUT_MS=120000 \
     -e UAR_PERSISTENCE__DATABASE_URL=surrealkv:///var/lib/uar/data/uar.db \
     -v "$work/container-data:/var/lib/uar" \
     "$UAR_CANDIDATE_IMAGE")"
@@ -658,14 +666,81 @@ if [[ -n "${UAR_CANDIDATE_IMAGE:-}" ]]; then
   smoke_sidecar
   container_uid="$(docker exec "$container_id" id -u)"
   [[ "$container_uid" -ne 0 ]]
-  docker stop --time 30 "$container_id" >/dev/null
+  curl --fail --silent --show-error --no-buffer \
+    "http://127.0.0.1:${port}/api/uar/sync/stream" \
+    >"$results/non-root-held-sse.log" 2>"$results/non-root-held-sse.stderr" &
+  held_sse_pid=$!
+  for _ in $(seq 1 100); do
+    grep -q 'event: connected' "$results/non-root-held-sse.log" && break
+    if ! kill -0 "$held_sse_pid" 2>/dev/null; then
+      cat "$results/non-root-held-sse.stderr" >&2
+      echo "non-root held SSE exited before shutdown" >&2
+      exit 1
+    fi
+    sleep 0.1
+  done
+  grep -q 'event: connected' "$results/non-root-held-sse.log"
+
+  events_since="$(date +%s)"
+  stop_started_ns="$(python3 -c 'import time; print(time.monotonic_ns())')"
+  docker stop --time "$external_stop_deadline_seconds" "$container_id" >/dev/null
+  stop_finished_ns="$(python3 -c 'import time; print(time.monotonic_ns())')"
+  stop_elapsed_ms=$(( (stop_finished_ns - stop_started_ns) / 1000000 ))
+  events_until="$(( $(date +%s) + 1 ))"
+  set +e
+  wait "$held_sse_pid"
+  held_sse_exit_code=$?
+  set -e
+  held_sse_pid=""
   docker logs "$container_id" >"$results/container.log" 2>&1
   container_exit_code="$(docker inspect -f '{{.State.ExitCode}}' "$container_id")"
   [[ "$container_exit_code" == 0 ]]
+  [[ "$stop_elapsed_ms" -ge $((internal_shutdown_deadline_seconds * 1000)) ]]
+  [[ "$stop_elapsed_ms" -lt $((external_stop_deadline_seconds * 1000)) ]]
+  grep -q 'UAR_SHUTDOWN outcome=deadline_enforced' "$results/container.log"
+  ! grep -q 'UAR_SHUTDOWN outcome=graceful_complete' "$results/container.log"
+  docker events \
+    --since "$events_since" \
+    --until "$events_until" \
+    --filter "container=$container_id" \
+    --format '{{json .}}' >"$results/non-root-container-events.jsonl"
+  jq -e 'select((.Action // .status) == "die")' \
+    "$results/non-root-container-events.jsonl" >/dev/null
+  if jq -e '
+    select((.Action // .status) == "kill")
+    | (.Actor.Attributes.signal // "" | ascii_upcase)
+    | select(. == "9" or . == "SIGKILL" or . == "KILL")
+  ' "$results/non-root-container-events.jsonl" >/dev/null; then
+    echo "Docker escalated the non-root container to SIGKILL" >&2
+    exit 1
+  fi
   find "$work/container-data" -mindepth 1 -print -quit | grep -q .
-  cat >"$results/non-root-container.json" <<JSON
-{"source_sha":"$source_sha","candidate_tag":"$candidate_tag","uid":$container_uid,"writable_persistence":true,"health":true,"sigterm_exit_code":$container_exit_code}
-JSON
+  jq -n \
+    --arg source_sha "$source_sha" \
+    --arg candidate_tag "$candidate_tag" \
+    --argjson uid "$container_uid" \
+    --argjson internal_deadline_seconds "$internal_shutdown_deadline_seconds" \
+    --argjson external_deadline_seconds "$external_stop_deadline_seconds" \
+    --argjson elapsed_ms "$stop_elapsed_ms" \
+    --argjson held_sse_exit_code "$held_sse_exit_code" \
+    --argjson container_exit_code "$container_exit_code" \
+    '{
+      source_sha: $source_sha,
+      candidate_tag: $candidate_tag,
+      uid: $uid,
+      writable_persistence: true,
+      health: true,
+      held_sse_connected: true,
+      held_sse_terminated: true,
+      held_sse_exit_code: $held_sse_exit_code,
+      internal_shutdown_deadline_seconds: $internal_deadline_seconds,
+      external_stop_deadline_seconds: $external_deadline_seconds,
+      observed_stop_elapsed_ms: $elapsed_ms,
+      shutdown_outcome: "deadline_enforced",
+      sigterm_exit_code: $container_exit_code,
+      docker_sigkill_observed: false,
+      raw_event_evidence: "non-root-container-events.jsonl"
+    }' >"$results/non-root-container.json"
   docker rm "$container_id" >/dev/null
   container_id=""
   container_journey=',"non-root-container"'

@@ -1,0 +1,56 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "verified-user-authority",
+      "description": "Threads, direct and ACP sessions/runs, conversation policy/configuration, memories, knowledge bases, documents, and chunks use only the verified JWT subject as their authorization owner.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused live direct-API and ACP test with unauthenticated rejection plus two independently encoded and server-verified JWT subjects"
+      }
+    },
+    {
+      "id": "provider-partitioning",
+      "description": "Every persistence provider scopes knowledge and session operations by owner; durable providers permit equal logical IDs without collision or cross-owner parent links.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "All-provider compile, real SurrealKV equal-ID tests, and PostgreSQL 17 migration plus equal-ID/foreign-key test"
+      }
+    },
+    {
+      "id": "rag-fails-closed",
+      "description": "A configured knowledge-base selection that resolves to no accessible owner rows returns no chunks and never becomes an all-KB search.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Owner-scoped search denial plus runtime branch inspection"
+      }
+    },
+    {
+      "id": "evidence-limits",
+      "description": "Evidence records the observed PostgreSQL migration/test and noisy pre-existing Clippy baseline without making an aggregate or warning-free claim.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Verification row audit, strict OpenSpec validation, manifest and constraints schema validation"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the change proposal, delta spec, and tasks as acceptance authority.",
+    "Do not treat client-supplied user or tenant identifiers as authorization input.",
+    "Report server-full, SurrealKV, and PostgreSQL 17 results separately and make no cross-profile claim.",
+    "Do not fix unrelated lint warnings while implementing isolation."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "Strict OpenSpec, schema validation, focused tests, and scoped diff checks exit successfully.",
+    "Independent artifact review finds no security or evidence blocker."
+  ]
+}
