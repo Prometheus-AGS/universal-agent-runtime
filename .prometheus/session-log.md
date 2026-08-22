@@ -592,3 +592,20 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - The stale stable/1.87 GKE spec is recorded for a separately planned follow-up.
   No GitHub Actions test, push, PR, tag, release, or parent soak ran in this
   child.
+
+## 2026-08-22 — UAR 1.0 bounded functional closeout completed
+
+- Completed the operator's five real-inference paths through both API and UI:
+  OpenAI proxy, skill activation, knowledge grounding, Kimi k3 configuration
+  and inference, and basic-agent creation and inference.
+- Fixed observed provider credential resolution, provider update, native-skill
+  tool naming, assistant grouped-part rendering, and UI agent/model routing
+  defects before accepting the results.
+- Verified Kimi UI routing from the effective run policy as
+  `kimi-for-coding/k3`; verified the UI-created basic agent as
+  `ui-basic-agent` on `openai/gpt-5.4-mini`.
+- Recorded plan revision 11 and canonical decision
+  `functional-real-inference-closeout-only`. Cancelled the old soak,
+  supply-chain, RC, and GA changes without representing them as passed.
+- No unit suite, synthetic or recorded provider, soak, GitHub Actions job, tag,
+  publication, push, or PR was used for this closeout.

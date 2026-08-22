@@ -557,3 +557,21 @@ certification from zero.
 **Uncomfortable constraint.** A passing isolated Cargo probe is not a release
 image result, and a passing clean image build is not an operational-resilience
 result. Each remains limited to its recorded profile and source SHA.
+
+---
+
+## 2026-08-22 — UAR 1.0 closes on bounded real-inference functionality
+
+**Decision.** Supersede the multi-hour soak, supply-chain, RC, and GA-publication
+tail with five real-model functional paths, each observed through both the
+packaged API boundary and the shipped UI. Cancel the four old release-tail
+changes rather than representing them as passed.
+
+**Rationale.** The operator's final acceptance boundary is working software:
+OpenAI proxy inference, skill activation, knowledge grounding, Kimi k3 UI
+configuration and inference, and basic-agent creation and inference. Synthetic,
+recorded, and duration-only checks do not establish those behaviors.
+
+**Uncomfortable constraint.** This decision closes only the requested local
+`server-full` functional scope. It produces no supply-chain, release-candidate,
+publication, minimal-profile, or embedded-mobile claim.

@@ -88,10 +88,20 @@ The backend is self-executing OpenSpec. For each change, its `tasks.md` is the w
 - [DONE] `screen-by-screen-validation` — OpenSpec; three operator-approved bounded
   repairs, immutable local browser certification, independent review, sync, and
   archive completed 2026-08-21
-- [IN PROGRESS] `certify-operational-resilience` — OpenSpec; local immutable-candidate evidence
-- [PENDING] `produce-supply-chain-artifacts` — OpenSpec evidence
-- [PENDING] `certify-release-candidate` — OpenSpec evidence and time-bound validation
-- [PENDING] `release-1-0-0` — OpenSpec publication
+- [CANCELLED] `certify-operational-resilience` — superseded by operator revision 11; not passed
+- [CANCELLED] `produce-supply-chain-artifacts` — superseded by operator revision 11; not passed
+- [CANCELLED] `certify-release-candidate` — superseded by operator revision 11; not passed
+- [CANCELLED] `release-1-0-0` — superseded by operator revision 11; no publication performed
+
+## REVISION 11 FUNCTIONAL CLOSEOUT
+
+The phase closes only on the five operator-selected real-model functional paths,
+each exercised through both the packaged API boundary and the shipped UI:
+OpenAI proxy inference, skill activation, knowledge grounding, Kimi k3 provider
+configuration and inference, and basic-agent creation and inference. The observed
+results are recorded in `functional-verification.md`. No unit, synthetic,
+recorded, soak, supply-chain, RC, GA, or GitHub Actions test belongs to this
+closeout.
 
 ## OUTPUTS
 

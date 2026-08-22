@@ -54,6 +54,11 @@ Changes 1–2 and 3–7 are internally parallelizable batches; 10 hard-depends o
   by changes 11–14 before freezing change 11's immutable candidate. Evidence
   still executes in order 11–14. After the freeze, only evidence/checkpoint
   commits are permitted; any later source change invalidates the three-hour run.
+- Plan revision 11 and decision `functional-real-inference-closeout-only`
+  supersede changes 11–14. The operator replaced the elapsed-time, supply-chain,
+  RC, and publication tail with five bounded real-model functional paths, each
+  observed through both the packaged API boundary and the shipped UI. Changes
+  11–14 are cancelled rather than represented as passed.
 - Mastra-inspired enhancements (inline trace view, in-chat model switching, evals
   panel) are deliberately NOT in this phase — recorded as candidates for the next
   phase to avoid scope creep on the release path.
@@ -62,4 +67,4 @@ Changes 1–2 and 3–7 are internally parallelizable batches; 10 hard-depends o
 
 ## Next
 
-`/opsx:apply certify-operational-resilience`
+`/kbd-reflect perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion`

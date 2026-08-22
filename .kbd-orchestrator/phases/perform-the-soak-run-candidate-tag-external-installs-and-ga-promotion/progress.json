@@ -1,17 +1,17 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 254,
-  "derivedRevision": 254,
+  "sourceRevision": 315,
+  "derivedRevision": 315,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 196
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257
   },
   "conflictCount": 0,
   "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "parentPhase": null,
-  "last_updated": "2026-08-21T14:04:46.424174Z",
+  "last_updated": "2026-08-22T19:03:03.149349Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 14,
   "changes_completed": 10,
@@ -25,18 +25,18 @@
       "status": "IN_PROGRESS"
     },
     "evidence": {
-      "status": "PENDING",
-      "summary": "MCP reconnect child evidence passed and is archived separately; parent operational-resilience evidence remains pending and must be regenerated from the post-child candidate.",
+      "status": "COMPLETE",
+      "summary": "Five genuine model-backed functional paths passed through both API and shipped UI under local server-full; results and limits are in functional-verification.md.",
       "blockers": []
     },
     "certification": {
-      "status": "PENDING",
-      "summary": "The child 60-second preflight passed; the parent three-hour soak, release certification, external installs, and GA remain unverified.",
+      "status": "SKIPPED",
+      "summary": "Operational soak, supply-chain, and RC certification were superseded and cancelled; no certification claim is made.",
       "blockers": []
     },
     "publication": {
-      "status": "PENDING",
-      "summary": null,
+      "status": "SKIPPED",
+      "summary": "GA publication was superseded and cancelled; no tag or publication was performed.",
       "blockers": []
     }
   },
@@ -154,8 +154,8 @@
     {
       "id": "certify-operational-resilience",
       "title": "certify-operational-resilience",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "SKIPPED",
+      "implementation_status": "SKIPPED",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
@@ -165,8 +165,8 @@
     {
       "id": "produce-supply-chain-artifacts",
       "title": "produce-supply-chain-artifacts",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "SKIPPED",
+      "implementation_status": "SKIPPED",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
@@ -176,8 +176,8 @@
     {
       "id": "certify-release-candidate",
       "title": "certify-release-candidate",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "SKIPPED",
+      "implementation_status": "SKIPPED",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
@@ -187,8 +187,8 @@
     {
       "id": "release-1-0-0",
       "title": "release-1-0-0",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "SKIPPED",
+      "implementation_status": "SKIPPED",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
@@ -197,6 +197,16 @@
     }
   ],
   "children": {
+    "fix-container-rust-toolchain-pin-consistency": {
+      "status": "DONE",
+      "changes_completed": 1,
+      "changes_total": 1,
+      "implementation_completed": 1,
+      "implementation_total": 1,
+      "certification_status": "NOT_TRACKED",
+      "handoff": null,
+      "completed_at": null
+    },
     "fix-embedded-sse-offline-reconnect": {
       "status": "DONE",
       "changes_completed": 1,
@@ -208,6 +218,16 @@
       "completed_at": null
     },
     "fix-frontend-pnpm-lock-consistency": {
+      "status": "DONE",
+      "changes_completed": 1,
+      "changes_total": 1,
+      "implementation_completed": 1,
+      "implementation_total": 1,
+      "certification_status": "NOT_TRACKED",
+      "handoff": null,
+      "completed_at": null
+    },
+    "fix-graceful-shutdown-deadline-semantics": {
       "status": "DONE",
       "changes_completed": 1,
       "changes_total": 1,
