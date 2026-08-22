@@ -45,5 +45,5 @@
 ## 7. Child Completion and Parent Handoff
 
 - [x] 7.1 Complete the canonical change and child Execute stage through `prometheus kbd`, commit the bounded child surface as one change commit, and verify unrelated user changes remain unstaged and unmodified.
-- [ ] 7.2 Reflect and close the child, restore the parent release denominator and certification tasks through the canonical runtime, and verify exact next work is fresh `certify-operational-resilience` on the new immutable candidate SHA.
-- [ ] 7.3 Restart `scripts/certify-operational-resilience-local.sh certify` from zero in a clean detached checkout and verify all deterministic, 10,800-second soak, backup/restore, native restart, cleanup, and non-root held-work evidence belongs to the corrected SHA before supply-chain certification.
+- [x] 7.2 Reflect and close the child, restore the parent release denominator and certification tasks through the canonical runtime, and verify exact next work is fresh `certify-operational-resilience` on the new immutable candidate SHA.
+- [x] 7.3 Cancelled by operator course correction: do not restart the 10,800-second soak or proceed to supply-chain certification. Canonical decision `functional-real-inference-closeout-only` supersedes this parent-release task, and the parent records operational-resilience certification as cancelled with no passing claim.

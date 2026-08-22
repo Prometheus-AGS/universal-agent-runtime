@@ -5,7 +5,9 @@ Date: 2026-08-22
 Profile scope: local UAR `server-full` only. These results transfer to no other
 runtime profile, platform, provider, or deployment. The parent phase's full
 10,800-second certification is intentionally not represented by this child
-verification; it must restart from zero on the committed immutable candidate.
+verification. Its planned restart was later cancelled by canonical decision
+`functional-real-inference-closeout-only`; no passing certification claim is
+made.
 
 | requirement | assertion observed | negative control observed | command | result |
 |---|---|---|---|---|
