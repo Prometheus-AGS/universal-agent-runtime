@@ -489,3 +489,33 @@ repair inputs and a generation in the same shared ownership boundary. Snapshot
 the generation, build outside the lock, and discard the result if newer
 configuration won meanwhile. Test with a view created before A-to-B replacement,
 not merely two calls using one unchanged configuration.
+
+## 2026-08-22 — container release controls need cache-compatible build volume ownership
+
+**Observed defect.** A focused Linux shutdown control initially entered the
+full Dockerfile build after only three Rust source files changed. The layer
+fingerprint invalidated the release target and began rebuilding the entire
+SurrealDB, Wasmtime, OCR, and server-full graph. Switching to the existing
+builder image avoided rebuilding the image layers, but its `/src` and target
+fingerprints still required a 12-minute optimized compile. Compiler-cache and
+build-volume mismatch, not unwritten shutdown code, was the delay.
+
+**Working rule.** Implement and run Tier 0/focused tests in the configured
+single-writer host target first. Build a source-only control commit, reuse the
+matching architecture builder and its target volume, and perform the real
+container boundary only after focused behavior passes. Keep Rust toolchains and
+active target/cache volumes on the internal drive; do not move them or start a
+fresh full container graph merely to obtain early feedback.
+
+## 2026-08-22 — custom container ports can invalidate inherited health evidence
+
+**Observed defect.** The first manual non-root shutdown control served on port
+19161 while the inherited image healthcheck still probed production port 1906.
+External readiness passed and the deadline behavior was correct, but Docker
+recorded a healthcheck exec failure, so that run could not support a Docker
+health claim.
+
+**Working rule.** A focused container control that inherits a healthcheck must
+use the healthcheck's configured port or replace the healthcheck explicitly.
+Observe Docker `healthy` before initiating held work. Do not infer container
+health from an external readiness probe alone.

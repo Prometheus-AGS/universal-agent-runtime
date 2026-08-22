@@ -82,25 +82,123 @@ pub struct TestServerHandle {
 
 /// A real UAR server isolated in a child test process.
 ///
-/// SurrealDB's local SDK releases its SurrealKV file lock asynchronously after
-/// the final client handle drops. A dedicated process makes that lifecycle
-/// deterministic: shutdown still cancels the caller-owned token and awaits the
-/// server thread, then normal process exit releases any remaining SDK-owned
-/// file descriptors before the parent attempts a cold reboot.
+/// A dedicated process lets the parent distinguish server-runtime shutdown
+/// from process exit. The child can remain alive at a post-runtime barrier
+/// while the parent proves that a second UAR opens the same SurrealKV path.
 #[allow(dead_code)] // Consumed by capability cases, which the BDD target omits.
 pub struct ProcessTestServerHandle {
     pub base_url: String,
     child: Option<std::process::Child>,
-    control_dir: tempfile::TempDir,
+    control_dir: Option<tempfile::TempDir>,
 }
 
 impl ProcessTestServerHandle {
     /// Trigger the child harness's caller-owned token and await normal process
-    /// exit, including release of the embedded datastore's OS lock.
+    /// exit after the post-runtime resource-release barrier.
     #[allow(dead_code)] // Consumed by capability cases, which the BDD target omits.
-    pub async fn shutdown(mut self) {
-        std::fs::write(self.control_dir.path().join("shutdown"), b"shutdown")
+    pub async fn shutdown(self) {
+        self.shutdown_with_signal("TERM").await;
+    }
+
+    async fn shutdown_with_signal(self, signal: &str) {
+        let barrier = self.shutdown_to_pre_exit_barrier(signal).await;
+        barrier.allow_exit().await;
+    }
+
+    #[allow(dead_code)] // Consumed by capability cases, which the BDD target omits.
+    pub async fn shutdown_to_pre_exit_barrier(
+        mut self,
+        signal: &str,
+    ) -> ProcessTestServerExitBarrier {
+        let control_dir = self.control_dir.as_ref().expect("child control directory");
+        std::fs::write(control_dir.path().join("shutdown"), b"shutdown")
             .expect("write child-server shutdown control");
+        let mut child = self.child.take().expect("child server process");
+        let http_stopped = control_dir.path().join("http-stopped");
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
+        while !http_stopped.exists() {
+            assert!(
+                child
+                    .try_wait()
+                    .expect("poll child server process")
+                    .is_none(),
+                "caller-owned HTTP cancellation terminated the child process"
+            );
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "caller-owned HTTP cancellation did not stop the listeners within 10s"
+            );
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        assert!(
+            child
+                .try_wait()
+                .expect("poll child after HTTP stop")
+                .is_none(),
+            "caller-owned HTTP cancellation terminated the host process"
+        );
+        let pre_signal_stderr =
+            std::fs::read_to_string(control_dir.path().join("stderr.log")).unwrap_or_default();
+        assert!(
+            !pre_signal_stderr.contains("UAR_SHUTDOWN outcome=deadline_enforced"),
+            "caller-owned HTTP cancellation armed the process deadline: {pre_signal_stderr}"
+        );
+        #[cfg(unix)]
+        {
+            let signal_status = std::process::Command::new("/bin/kill")
+                .arg(format!("-{signal}"))
+                .arg(child.id().to_string())
+                .status()
+                .expect("send shutdown signal to child server process");
+            assert!(
+                signal_status.success(),
+                "failed to send child {signal}: {signal_status}"
+            );
+        }
+        #[cfg(not(unix))]
+        panic!("process-server helper requires Unix SIGTERM support");
+        let resources_released = control_dir.path().join("resources-released");
+        let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
+        while !resources_released.exists() {
+            assert!(
+                child
+                    .try_wait()
+                    .expect("poll child at resource-release barrier")
+                    .is_none(),
+                "child exited before publishing pre-exit resource release"
+            );
+            assert!(
+                tokio::time::Instant::now() < deadline,
+                "child did not release server resources within 10s"
+            );
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        assert!(
+            child
+                .try_wait()
+                .expect("poll child at pre-exit barrier")
+                .is_none(),
+            "child process exited instead of waiting at the pre-exit barrier"
+        );
+        ProcessTestServerExitBarrier {
+            child: Some(child),
+            control_dir: self.control_dir.take(),
+        }
+    }
+}
+
+#[allow(dead_code)] // Consumed by capability cases, which the BDD target omits.
+pub struct ProcessTestServerExitBarrier {
+    child: Option<std::process::Child>,
+    control_dir: Option<tempfile::TempDir>,
+}
+
+impl ProcessTestServerExitBarrier {
+    #[allow(dead_code)] // Consumed by capability cases, which the BDD target omits.
+    pub async fn allow_exit(mut self) {
+        let control_dir = self.control_dir.take().expect("child control directory");
+        std::fs::write(control_dir.path().join("allow-exit"), b"exit")
+            .expect("release child pre-exit barrier");
         let mut child = self.child.take().expect("child server process");
         let status = tokio::task::spawn_blocking(move || child.wait())
             .await
@@ -113,12 +211,24 @@ impl ProcessTestServerHandle {
     }
 }
 
+impl Drop for ProcessTestServerExitBarrier {
+    fn drop(&mut self) {
+        let Some(child) = self.child.as_mut() else {
+            return;
+        };
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+}
+
 impl Drop for ProcessTestServerHandle {
     fn drop(&mut self) {
         let Some(child) = self.child.as_mut() else {
             return;
         };
-        let _ = std::fs::write(self.control_dir.path().join("shutdown"), b"shutdown");
+        if let Some(control_dir) = self.control_dir.as_ref() {
+            let _ = std::fs::write(control_dir.path().join("shutdown"), b"shutdown");
+        }
         for _ in 0..20 {
             if child.try_wait().ok().flatten().is_some() {
                 return;
@@ -257,6 +367,8 @@ pub async fn boot_test_server_process(
 ) -> ProcessTestServerHandle {
     let control_dir = tempfile::tempdir().expect("create child-server control directory");
     let ready_path = control_dir.path().join("ready");
+    let stderr_file = std::fs::File::create(control_dir.path().join("stderr.log"))
+        .expect("create child-server stderr capture");
     let mut child = std::process::Command::new(
         std::env::current_exe().expect("resolve integration test executable"),
     )
@@ -273,6 +385,7 @@ pub async fn boot_test_server_process(
     )
     .env("UAR_TEST_SERVER_PERSISTENCE_PATH", persistence_path)
     .env("UAR_TEST_SERVER_CONTROL_DIR", control_dir.path())
+    .stderr(std::process::Stdio::from(stderr_file))
     .spawn()
     .expect("spawn child server process");
 
@@ -282,11 +395,13 @@ pub async fn boot_test_server_process(
             return ProcessTestServerHandle {
                 base_url,
                 child: Some(child),
-                control_dir,
+                control_dir: Some(control_dir),
             };
         }
         if let Some(status) = child.try_wait().expect("poll child server process") {
-            panic!("child server exited before readiness: {status}");
+            let stderr = std::fs::read_to_string(control_dir.path().join("stderr.log"))
+                .unwrap_or_else(|error| format!("<failed to read child stderr: {error}>"));
+            panic!("child server exited before readiness: {status}\n{stderr}");
         }
         if tokio::time::Instant::now() >= deadline {
             let _ = child.kill();
@@ -528,6 +643,22 @@ mod tests {
     }
 
     #[tokio::test]
+    #[serial]
+    async fn caller_owned_http_cancellation_remains_nonterminating_before_sigint() {
+        let stub = start_stub_llm(FixtureSet::new()).await;
+        let scratch = tempfile::tempdir().expect("create SIGINT persistence scratch");
+        let server = boot_test_server_process(
+            &stub.base_url,
+            "openai/gpt-5.4-mini",
+            ServiceNeeds::default(),
+            &scratch.path().join("surrealkv"),
+        )
+        .await;
+
+        server.shutdown_with_signal("INT").await;
+    }
+
+    #[tokio::test]
     async fn process_server_helper() {
         if std::env::var_os("UAR_TEST_SERVER_CHILD").is_none() {
             return;
@@ -581,19 +712,13 @@ mod tests {
             );
             tokio::time::sleep(Duration::from_millis(50)).await;
         }
-
-        #[cfg(unix)]
-        {
-            let status = std::process::Command::new("/bin/kill")
-                .arg("-TERM")
-                .arg(std::process::id().to_string())
-                .status()
-                .expect("send SIGTERM to child server process");
-            assert!(status.success(), "failed to send child SIGTERM: {status}");
-        }
-        #[cfg(not(unix))]
-        panic!("process-server helper requires Unix SIGTERM support");
-
+        std::fs::write(control_dir.join("http-stopped"), b"stopped")
+            .expect("publish caller-owned HTTP stop");
         server.wait_for_exit().await;
+        std::fs::write(control_dir.join("resources-released"), b"released")
+            .expect("publish pre-exit resource release");
+        while !control_dir.join("allow-exit").exists() {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
     }
 }

@@ -1,0 +1,67 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "absolute-deadline",
+      "description": "SIGTERM and SIGINT begin HTTP drain immediately; the configured timeout is measured from signal observation; graceful and deadline-enforced outcomes are mutually exclusive; held work, stderr lock, and stderr backpressure cannot extend the one-second post-deadline observation bound.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Real child-process signal, listener, SSE, held-cleanup, stderr-lock, and stderr-backpressure tests with the baseline behavioral failures retained"
+      }
+    },
+    {
+      "id": "resource-ownership",
+      "description": "The normal path waits for ingestion, A2A, MCP transports, live-query supervisors, and SurrealKV release; MCP cancellation starts concurrently with blocked cleanup; caller-owned HTTP cancellation never becomes process shutdown.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused MCP/live-query tests plus same-path C-12 process restart and its different-path failing control"
+      }
+    },
+    {
+      "id": "container-escalation-margin",
+      "description": "A non-root server-full container holding a real SSE request exits 0 at the 30-second internal deadline and before Docker's 35-second stop limit, terminates the request, emits deadline_enforced, and has no SIGKILL event.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Release binary in the non-root runtime image, monotonic docker-stop timing, synchronous marker inspection, container exit inspection, and raw Docker event replay"
+      }
+    },
+    {
+      "id": "fail-closed-evidence",
+      "description": "Every bounded or fail-closed shutdown assertion is paired with an observed failing control and exact command/output; the verification table reports server-full only and does not claim the pending parent soak.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Verification-row inspection, baseline 6-failure process control, different-path C-12 failure, and immutable-candidate exit-137 receipt"
+      }
+    },
+    {
+      "id": "bounded-scope",
+      "description": "Tier 0, focused tests, strict OpenSpec, shell syntax, scoped diff, dependency diff, and visibility inspection pass; no dependency, public API, protocol, provider, GitHub Actions, push, PR, release, or GA change is introduced.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Recorded local gates plus final staged-path and source-receipt audit"
+      }
+    }
+  ],
+  "global_rules": [
+    "Treat the child OpenSpec delta, tasks, KBD scope, and outer immutable-candidate rules as acceptance authority.",
+    "Run development verification locally; GitHub Actions are deployment-only.",
+    "Do not represent the focused container control as the parent 10,800-second certification.",
+    "Do not stage unrelated KBD projections, local settings, root refiner state, static assets, or operator changes.",
+    "The constraints schema does not enumerate code, so this direct-code refinement uses its schema-valid content discriminator only in constraints.json; state and manifest retain code as the artifact type."
+  ],
+  "termination_conditions": [
+    "All five blocking constraints pass with observed local evidence.",
+    "State, constraints, manifest, checkpoints, references, active/history identity, strict OpenSpec, and final scope receipts validate deterministically.",
+    "The verification artifact states the pending parent certification limit and makes no cross-profile or release verdict."
+  ]
+}

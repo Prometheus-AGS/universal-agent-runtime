@@ -508,3 +508,27 @@ maps, holding a synchronous lock across `.await`, or replaying the failed call.
 **Uncomfortable constraint.** This does not serialize concurrent failures or
 change snapshot-view behavior after server removal. Those behaviors require a
 separate observed problem and plan.
+
+---
+
+## 2026-08-22 — Shutdown timeout is one absolute signal-to-exit window
+
+**Decision.** Under `server-full`, observe SIGTERM/SIGINT once, stop both HTTP
+listeners immediately, and measure the configured graceful timeout from that
+observation. A standard-library watchdog owns the forced boundary independently
+of Tokio. Normal completion waits for ingestion, A2A, MCP, live-query, and
+SurrealKV ownership to end; deadline expiry exits 0 after one bounded
+non-blocking `deadline_enforced` write and never reports graceful completion.
+
+**Rationale.** The immutable candidate passed the 10,800-second traffic soak
+but Docker later sent SIGKILL and observed exit 137. Focused baseline controls
+showed the existing implementation spent the full configured timeout before it
+began draining, so held work had no remaining internal margin. An absolute
+deadline fixes the observed semantic defect without adding a dependency,
+protocol, provider, or public API.
+
+**Uncomfortable constraint.** Forced exit intentionally abandons cleanup still
+blocked at the deadline. The safety claim is bounded process termination, not
+completion of every cleanup branch. Only the normal path may emit
+`graceful_complete`; the parent three-hour certification must still restart
+from zero on the committed source SHA.

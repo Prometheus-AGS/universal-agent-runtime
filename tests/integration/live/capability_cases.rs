@@ -10,8 +10,9 @@
 //! unsupportable. The limits are structural, not incidental:
 //!
 //! - **L4 is capability-specific.** C-12 uses a caller-owned SurrealKV path and
-//!   caller-triggered graceful shutdown to prove a write survives a cold
-//!   restart. C-13 remains excluded because the current header-based session
+//!   caller-triggered graceful shutdown to prove a write survives a restart
+//!   before the original helper process exits. C-13 remains excluded because
+//!   the current header-based session
 //!   surface is backed by an explicitly non-durable in-process `SessionStore`.
 //! - **No semantics.** Assertions check response *shape*. A route returning a
 //!   well-formed body containing the *wrong* answer passes.
@@ -424,8 +425,9 @@ async fn l2_c01_c02_run_stream_shape() {
 // L4 — survives a cold runtime restart
 // ---------------------------------------------------------------------------
 
-/// C-12 persistence — write a knowledge-base resource, stop the server, reopen
-/// the same SurrealKV path in a new runtime, and read the identical resource.
+/// C-12 persistence — write a knowledge-base resource, stop its server runtime,
+/// reopen the same SurrealKV path while the original helper process remains
+/// alive at a pre-exit barrier, and read the identical resource.
 /// Setting `UAR_L4_NEGATIVE_CONTROL_DIFFERENT_PATH=1` deliberately points the
 /// second boot at an empty path; the final assertion must then fail.
 #[tokio::test]
@@ -468,7 +470,7 @@ async fn l4_c12_persistence_round_trip() {
         .expect("C-12: created resource id")
         .to_string();
 
-    server.shutdown().await;
+    let original_barrier = server.shutdown_to_pre_exit_barrier("TERM").await;
 
     let negative_path = scratch.path().join("negative-control-surrealkv");
     let reopen_path = if std::env::var_os("UAR_L4_NEGATIVE_CONTROL_DIFFERENT_PATH").is_some() {
@@ -478,6 +480,7 @@ async fn l4_c12_persistence_round_trip() {
     };
     let restarted =
         boot_test_server_process(&stub.base_url, MODEL, ServiceNeeds::default(), reopen_path).await;
+    original_barrier.allow_exit().await;
     let resource_path = format!("/api/knowledge/{resource_id}");
     let (status, body) = get_capability(&restarted.base_url, "C-12", &resource_path).await;
     restarted.shutdown().await;

@@ -18,7 +18,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::io::Write as _;
+use std::pin::Pin;
+use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 use tokio::time::timeout;
 use uuid::Uuid;
@@ -73,6 +75,154 @@ use crate::uar::{
     },
 };
 
+type ShutdownCleanup = Arc<dyn Fn() + Send + Sync + 'static>;
+type ShutdownAsyncCleanup =
+    Arc<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> + Send + Sync + 'static>;
+
+const SHUTDOWN_DEADLINE_MARKER: &[u8] = b"UAR_SHUTDOWN outcome=deadline_enforced\n";
+const SHUTDOWN_GRACEFUL_MARKER: &[u8] = b"UAR_SHUTDOWN outcome=graceful_complete\n";
+const SHUTDOWN_HARD_STOP_ALLOWANCE: Duration = Duration::from_millis(500);
+
+#[derive(Clone)]
+struct ShutdownCoordinator {
+    started: tokio_util::sync::CancellationToken,
+    cleanup_complete: tokio_util::sync::CancellationToken,
+    process_complete: Arc<(Mutex<bool>, Condvar)>,
+}
+
+impl ShutdownCoordinator {
+    fn new() -> Self {
+        Self {
+            started: tokio_util::sync::CancellationToken::new(),
+            cleanup_complete: tokio_util::sync::CancellationToken::new(),
+            process_complete: Arc::new((Mutex::new(false), Condvar::new())),
+        }
+    }
+
+    fn begin(&self, timeout: Duration) {
+        if self.started.is_cancelled() {
+            return;
+        }
+        self.started.cancel();
+
+        let fuse_state = Arc::clone(&self.process_complete);
+        let fuse = std::thread::Builder::new()
+            .name("uar-shutdown-hard-stop".to_string())
+            .spawn(move || {
+                if shutdown_wait_expired(&fuse_state, timeout + SHUTDOWN_HARD_STOP_ALLOWANCE) {
+                    std::process::exit(0);
+                }
+            });
+
+        let watchdog_state = Arc::clone(&self.process_complete);
+        let watchdog = std::thread::Builder::new()
+            .name("uar-shutdown-deadline".to_string())
+            .spawn(move || {
+                if shutdown_wait_expired(&watchdog_state, timeout) {
+                    emit_shutdown_marker_nonblocking(SHUTDOWN_DEADLINE_MARKER);
+                    std::process::exit(0);
+                }
+            });
+
+        if fuse.is_err() && watchdog.is_err() {
+            emit_shutdown_marker_nonblocking(SHUTDOWN_DEADLINE_MARKER);
+            std::process::exit(0);
+        }
+    }
+
+    fn mark_cleanup_complete(&self) {
+        self.cleanup_complete.cancel();
+    }
+
+    async fn wait_for_cleanup(&self) {
+        if self.started.is_cancelled() {
+            self.cleanup_complete.cancelled().await;
+        }
+    }
+
+    fn complete(&self) {
+        if !self.started.is_cancelled() {
+            return;
+        }
+        let (lock, wake) = &*self.process_complete;
+        let mut completed = match lock.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+        if *completed {
+            return;
+        }
+        *completed = true;
+        wake.notify_all();
+        drop(completed);
+        emit_shutdown_marker_nonblocking(SHUTDOWN_GRACEFUL_MARKER);
+        info!(
+            name: "server.shutdown.graceful_complete",
+            "Server shutdown completed within the graceful deadline"
+        );
+    }
+}
+
+fn shutdown_wait_expired(state: &Arc<(Mutex<bool>, Condvar)>, timeout: Duration) -> bool {
+    let (lock, wake) = &**state;
+    let completed = match lock.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+    let (completed, _) = match wake.wait_timeout_while(completed, timeout, |done| !*done) {
+        Ok(result) => result,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+    !*completed
+}
+
+#[cfg(unix)]
+fn emit_shutdown_marker_nonblocking(marker: &[u8]) {
+    use std::os::unix::fs::OpenOptionsExt as _;
+
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    const NONBLOCK: i32 = 0x800;
+    #[cfg(any(
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "tvos",
+        target_os = "watchos",
+        target_os = "visionos",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly"
+    ))]
+    const NONBLOCK: i32 = 0x4;
+    #[cfg(not(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "tvos",
+        target_os = "watchos",
+        target_os = "visionos",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly"
+    )))]
+    const NONBLOCK: i32 = 0;
+
+    if let Ok(mut stderr) = std::fs::OpenOptions::new()
+        .write(true)
+        .custom_flags(NONBLOCK)
+        .open("/dev/stderr")
+    {
+        let _ = stderr.write(marker);
+    }
+}
+
+#[cfg(not(unix))]
+fn emit_shutdown_marker_nonblocking(marker: &[u8]) {
+    let _ = std::io::stderr().write(marker);
+}
+
 #[cfg(feature = "in-memory-backend")]
 use crate::uar::persistence::providers::memory::InMemoryProvider;
 #[cfg(feature = "surreal-backend")]
@@ -110,12 +260,92 @@ pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<
     start_server_with_listener(config_manager, None, None, None).await
 }
 
-#[expect(clippy::expect_used, reason = "init-time fatal configuration failure")]
 async fn start_server_with_listener(
     config_manager: Arc<ConfigManager>,
     listener: Option<tokio::net::TcpListener>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
+) -> anyhow::Result<()> {
+    let config = config_manager.current();
+    let embedded_lock = surrealkv_lock_path(
+        &config.persistence.provider,
+        &config.persistence.database_url,
+    );
+    let shutdown_coordinator = ShutdownCoordinator::new();
+    let result = run_server_with_listener(
+        config_manager,
+        listener,
+        ready,
+        http_shutdown,
+        shutdown_coordinator.clone(),
+    )
+    .await;
+
+    if result.is_ok() && shutdown_coordinator.started.is_cancelled() {
+        if let Some(lock_path) = embedded_lock {
+            wait_for_surrealkv_lock_release(&lock_path).await;
+        }
+        shutdown_coordinator.complete();
+    }
+    result
+}
+
+fn surrealkv_lock_path(provider: &str, database_url: &str) -> Option<std::path::PathBuf> {
+    if !matches!(provider, "surreal" | "surrealdb") {
+        return None;
+    }
+    let endpoint = database_url.trim();
+    let path = endpoint
+        .strip_prefix("surrealkv://")
+        .or_else(|| endpoint.strip_prefix("rocksdb://"))
+        .or_else(|| (!endpoint.contains("://")).then_some(endpoint))?;
+    if path.is_empty() || matches!(path, "surrealkv" | "rocksdb" | "memory" | "mem") {
+        return None;
+    }
+    Some(std::path::PathBuf::from(path).join("LOCK"))
+}
+
+async fn wait_for_surrealkv_lock_release(lock_path: &std::path::Path) {
+    loop {
+        let file = match std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(lock_path)
+        {
+            Ok(file) => file,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return,
+            Err(error) => {
+                tracing::warn!(path = %lock_path.display(), %error, "Could not observe SurrealKV lock release yet");
+                tokio::time::sleep(Duration::from_millis(10)).await;
+                continue;
+            }
+        };
+        match file.try_lock() {
+            Ok(()) => {
+                if let Err(error) = std::fs::File::unlock(&file) {
+                    tracing::warn!(path = %lock_path.display(), %error, "Could not release SurrealKV shutdown observer lock");
+                    tokio::time::sleep(Duration::from_millis(10)).await;
+                    continue;
+                }
+                info!(path = %lock_path.display(), "SurrealKV lock released before normal completion");
+                return;
+            }
+            Err(std::fs::TryLockError::WouldBlock) => {}
+            Err(std::fs::TryLockError::Error(error)) => {
+                tracing::warn!(path = %lock_path.display(), %error, "Could not observe SurrealKV lock release yet");
+            }
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+}
+
+#[expect(clippy::expect_used, reason = "init-time fatal configuration failure")]
+async fn run_server_with_listener(
+    config_manager: Arc<ConfigManager>,
+    listener: Option<tokio::net::TcpListener>,
+    ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
+    http_shutdown: Option<tokio_util::sync::CancellationToken>,
+    shutdown_coordinator: ShutdownCoordinator,
 ) -> anyhow::Result<()> {
     // UAR owns the process-level jsonwebtoken provider. Install it at the
     // shared startup funnel so in-process clients cannot initialize another
@@ -181,6 +411,7 @@ async fn start_server_with_listener(
         live_bus,
         credential_store,
         a2ui_design_system_store,
+        surreal_live_bus,
     ): (
         Arc<dyn PersistenceLayer>,
         Option<(
@@ -191,6 +422,7 @@ async fn start_server_with_listener(
         Option<Arc<dyn crate::uar::realtime::RealtimeBus>>,
         Option<Arc<dyn uar::security::credentials::CredentialStore>>,
         uar::a2ui::design_systems::store::SharedDesignSystemStore,
+        Option<Arc<crate::uar::realtime::surreal_bus::LiveQueryBus>>,
     ) = if config.persistence.provider == "memory" {
         #[cfg(feature = "in-memory-backend")]
         {
@@ -201,6 +433,7 @@ async fn start_server_with_listener(
                 None,
                 None,
                 Arc::new(uar::a2ui::design_systems::store::InMemoryDesignSystemStore::new()),
+                None,
             )
         }
         #[cfg(not(feature = "in-memory-backend"))]
@@ -255,9 +488,11 @@ async fn start_server_with_listener(
                 as Arc<dyn uar::security::credentials::CredentialStore>);
 
             // Start the live-query bus on the same DB connection.
+            let surreal_live_bus = Arc::new(
+                crate::uar::realtime::surreal_bus::LiveQueryBus::start(db),
+            );
             let live_bus = Some(
-                Arc::new(crate::uar::realtime::surreal_bus::LiveQueryBus::start(db))
-                    as Arc<dyn crate::uar::realtime::RealtimeBus>,
+                Arc::clone(&surreal_live_bus) as Arc<dyn crate::uar::realtime::RealtimeBus>
             );
 
             (
@@ -267,6 +502,7 @@ async fn start_server_with_listener(
                 live_bus,
                 credential_store,
                 a2ui_store,
+                Some(surreal_live_bus),
             )
         }
         #[cfg(not(feature = "surreal-backend"))]
@@ -321,6 +557,7 @@ async fn start_server_with_listener(
                 live_bus,
                 credential_store,
                 a2ui_store,
+                None,
             )
         }
         #[cfg(not(feature = "postgres-backend"))]
@@ -337,6 +574,7 @@ async fn start_server_with_listener(
     let persistence = Some(persistence_layer);
 
     // Initialize Ingest Service if persistence is available
+    let mut ingestion_watcher = None;
     if let Some(p) = &persistence {
         let ingest = Arc::new(IngestService::new(
             Arc::clone(p),
@@ -347,7 +585,7 @@ async fn start_server_with_listener(
 
         // Spawn File Watcher
         let ingest_svc_clone = Arc::clone(&ingest);
-        tokio::spawn(async move {
+        ingestion_watcher = Some(tokio::spawn(async move {
             let ingest_dir = std::path::PathBuf::from("/data/ingest");
             if !ingest_dir.exists() {
                 let _ = tokio::fs::create_dir_all(&ingest_dir).await;
@@ -357,7 +595,7 @@ async fn start_server_with_listener(
                     .watch(ingest_dir, "default".to_string())
                     .await;
             }
-        });
+        }));
 
         // Ensure default knowledge base exists
         if let Err(e) = ensure_default_knowledge_base(&**p, None).await {
@@ -747,7 +985,7 @@ async fn start_server_with_listener(
         Arc::new(crate::uar::runtime::user_settings_store::UserSettingsStore::new());
 
     let state = AppState {
-        mcp,
+        mcp: Arc::clone(&mcp),
         orchestrator,
         sessions,
         run_manager,
@@ -1315,20 +1553,52 @@ async fn start_server_with_listener(
             .map_err(|_| anyhow::anyhow!("sidecar supervisor stopped before readiness"))?;
     }
 
+    let shutdown_cleanup = ingestion_pool_shared
+        .map(|pool| Arc::new(move || pool.shutdown()) as Arc<dyn Fn() + Send + Sync + 'static>);
+    let async_resource_cleanup = {
+        let mcp = Arc::clone(&mcp);
+        let surreal_live_bus = surreal_live_bus.clone();
+        Arc::new(move || {
+            let mcp = Arc::clone(&mcp);
+            let surreal_live_bus = surreal_live_bus.clone();
+            Box::pin(async move {
+                let mcp_shutdown = mcp.shutdown();
+                let live_query_shutdown = async move {
+                    if let Some(bus) = surreal_live_bus {
+                        bus.shutdown().await;
+                    }
+                };
+                tokio::join!(mcp_shutdown, live_query_shutdown);
+            })
+                as Pin<Box<dyn Future<Output = ()> + Send + 'static>>
+        }) as ShutdownAsyncCleanup
+    };
     let http_result = serve_on_listener(
         listener,
         companion,
         app,
         config.server.shutdown_timeout_secs,
-        ingestion_pool_shared,
+        shutdown_cleanup,
+        Some(async_resource_cleanup),
         run_cancellation_root,
         http_shutdown,
+        shutdown_coordinator.clone(),
     )
     .await;
 
     #[cfg(feature = "a2a-transport")]
     if let Err(e) = grpc_handle.await {
         tracing::error!(error = %e, "A2A gRPC task panicked");
+    }
+
+    shutdown_coordinator.wait_for_cleanup().await;
+    if let Some(watcher) = ingestion_watcher {
+        watcher.abort();
+        if let Err(error) = watcher.await
+            && !error.is_cancelled()
+        {
+            tracing::warn!(%error, "ingestion watcher task failed during shutdown");
+        }
     }
 
     http_result
@@ -1394,9 +1664,11 @@ async fn serve_on_listener(
     companion: Option<tokio::net::TcpListener>,
     app: axum::Router,
     shutdown_timeout_secs: u64,
-    ingestion_pool_shared: Option<Arc<IngestionWorkerPool>>,
+    shutdown_cleanup: Option<ShutdownCleanup>,
+    shutdown_async_cleanup: Option<ShutdownAsyncCleanup>,
     run_cancellation_root: tokio_util::sync::CancellationToken,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
+    shutdown_coordinator: ShutdownCoordinator,
 ) -> anyhow::Result<()> {
     let addr = listener.local_addr()?;
     let shutdown_timeout = Duration::from_secs(shutdown_timeout_secs);
@@ -1417,11 +1689,14 @@ async fn serve_on_listener(
     //   1. Shut down the ingestion worker pool (drains with timeout, detaches wedges).
     //   2. Fire the Axum graceful-shutdown trigger.
     {
-        let pool_for_shutdown = ingestion_pool_shared.clone();
+        let cleanup_for_shutdown = shutdown_cleanup.clone();
+        let async_cleanup_for_shutdown = shutdown_async_cleanup.clone();
         let run_cancellation_root = run_cancellation_root.clone();
         let http_shutdown = http_shutdown.clone();
+        let shutdown_coordinator = shutdown_coordinator.clone();
         tokio::spawn(async move {
             prometheus_parking_lot::core::shutdown::wait_for_signal().await;
+            shutdown_coordinator.begin(shutdown_timeout);
             info!(
                 name: "server.shutdown",
                 timeout_secs = shutdown_timeout.as_secs(),
@@ -1430,21 +1705,27 @@ async fn serve_on_listener(
             // Abort in-flight runs first so they stop calling the LLM / tools and
             // emit a terminal Cancelled event before connections are drained.
             run_cancellation_root.cancel();
-            // Drain and cancel any wedged ingestion workers before closing sockets.
-            // `pool.shutdown()` blocks synchronously (std::sync::mpsc::recv_timeout,
-            // up to 2s per worker) -- calling it directly here would stall this
-            // tokio worker thread without yielding at an .await point, which can
-            // hang the whole graceful-shutdown sequence indefinitely (the runtime
-            // has nothing else to poll on this thread and Ctrl-C/SIGTERM appears
-            // to do nothing). Run it on the blocking thread pool instead.
-            if let Some(pool) = pool_for_shutdown {
-                if let Err(e) = tokio::task::spawn_blocking(move || pool.shutdown()).await {
-                    tracing::warn!(error = %e, "ingestion pool shutdown task panicked");
-                }
-            }
-            info!(name: "server.shutdown.pool_drained", "Ingestion pool shut down — closing HTTP connections");
-            // Signal Axum (both listeners) to stop accepting and drain open connections.
+            // Stop both accept loops before potentially blocking cleanup so the
+            // configured timeout is a drain deadline, not a pre-drain delay.
             http_shutdown.cancel();
+            // Start independent resource cleanup concurrently. A wedged ingestion
+            // worker must not delay MCP transport cancellation and stdio closure.
+            let blocking_cleanup = async move {
+                if let Some(cleanup) = cleanup_for_shutdown {
+                    if let Err(e) = tokio::task::spawn_blocking(move || cleanup()).await {
+                        tracing::warn!(error = %e, "ingestion pool shutdown task panicked");
+                    }
+                }
+                info!(name: "server.shutdown.pool_drained", "Ingestion pool shut down");
+            };
+            let async_cleanup = async move {
+                if let Some(cleanup) = async_cleanup_for_shutdown {
+                    cleanup().await;
+                }
+                info!(name: "server.shutdown.async_resources_closed", "Async resources shut down");
+            };
+            tokio::join!(blocking_cleanup, async_cleanup);
+            shutdown_coordinator.mark_cleanup_complete();
         });
     }
 
@@ -1461,7 +1742,6 @@ async fn serve_on_listener(
                     "Draining in-flight HTTP connections"
                 );
             }
-            tokio::time::sleep(shutdown_timeout).await;
         }
     };
 
@@ -1486,7 +1766,7 @@ async fn serve_on_listener(
         }
     }
 
-    info!(name: "server.stopped", "Server shut down gracefully");
+    info!(name: "server.http_stopped", "HTTP listeners stopped");
     Ok(())
 }
 
@@ -5344,6 +5624,555 @@ pub(crate) async fn api_chat_completion(
 mod tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
     use super::*;
+    use std::convert::Infallible;
+    use std::io::Read as _;
+    use std::net::{SocketAddr, TcpStream};
+    use std::path::{Path, PathBuf};
+    use std::process::{Child, Command, ExitStatus, Stdio};
+    use std::time::Instant;
+
+    const SHUTDOWN_CHILD_ENV: &str = "UAR_SHUTDOWN_TEST_CHILD";
+    const SHUTDOWN_MCP_FIXTURE: &str = r#"
+import json
+import pathlib
+import sys
+
+marker = pathlib.Path(sys.argv[1])
+for line in sys.stdin:
+    try:
+        request = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    request_id = request.get("id")
+    if request_id is None:
+        continue
+    method = request.get("method")
+    if method == "initialize":
+        result = {
+            "protocolVersion": request.get("params", {}).get("protocolVersion", "2024-11-05"),
+            "capabilities": {"tools": {}},
+            "serverInfo": {"name": "uar-shutdown-test", "version": "1.0.0"},
+        }
+    elif method == "tools/list":
+        result = {"tools": []}
+    else:
+        print(json.dumps({
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "error": {"code": -32601, "message": "method not found"},
+        }), flush=True)
+        continue
+    print(json.dumps({"jsonrpc": "2.0", "id": request_id, "result": result}), flush=True)
+
+marker.write_bytes(b"stdin-closed")
+"#;
+
+    #[derive(Clone)]
+    struct ShutdownSseState {
+        control_dir: PathBuf,
+        hold: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct ShutdownChildReady {
+        primary: SocketAddr,
+        companion: SocketAddr,
+    }
+
+    struct ShutdownChild {
+        child: Child,
+        control_dir: tempfile::TempDir,
+        ready: ShutdownChildReady,
+    }
+
+    struct ShutdownChildExit {
+        status: ExitStatus,
+        stderr: String,
+    }
+
+    impl ShutdownChild {
+        fn spawn(mode: &str, timeout_secs: u64) -> Self {
+            let control_dir = tempfile::tempdir().expect("create shutdown control directory");
+            let child = Command::new(std::env::current_exe().expect("resolve test executable"))
+                .arg("--exact")
+                .arg("server::tests::shutdown_process_child")
+                .arg("--nocapture")
+                .arg("--test-threads=1")
+                .env(SHUTDOWN_CHILD_ENV, mode)
+                .env("UAR_SHUTDOWN_TEST_TIMEOUT_SECS", timeout_secs.to_string())
+                .env("UAR_SHUTDOWN_TEST_CONTROL_DIR", control_dir.path())
+                .stdout(Stdio::null())
+                .stderr(Stdio::piped())
+                .spawn()
+                .expect("spawn shutdown child process");
+            let mut this = Self {
+                child,
+                control_dir,
+                ready: ShutdownChildReady {
+                    primary: "127.0.0.1:1".parse().expect("placeholder primary"),
+                    companion: "127.0.0.1:1".parse().expect("placeholder companion"),
+                },
+            };
+            let ready_path = this.control_dir.path().join("ready.json");
+            let deadline = Instant::now() + Duration::from_secs(10);
+            loop {
+                if let Ok(bytes) = std::fs::read(&ready_path) {
+                    this.ready = serde_json::from_slice(&bytes).expect("parse child readiness");
+                    return this;
+                }
+                assert!(
+                    this.child
+                        .try_wait()
+                        .expect("poll shutdown child")
+                        .is_none(),
+                    "shutdown child exited before readiness"
+                );
+                assert!(
+                    Instant::now() < deadline,
+                    "shutdown child readiness timeout"
+                );
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+
+        fn signal(&self, signal: &str) {
+            let status = Command::new("/bin/kill")
+                .arg(format!("-{signal}"))
+                .arg(self.child.id().to_string())
+                .status()
+                .expect("deliver shutdown signal");
+            assert!(status.success(), "failed to deliver {signal}: {status}");
+        }
+
+        fn wait_for_file(&mut self, name: &str) {
+            let path = self.control_dir.path().join(name);
+            let deadline = Instant::now() + Duration::from_secs(5);
+            loop {
+                if path.exists() {
+                    return;
+                }
+                assert!(
+                    self.child
+                        .try_wait()
+                        .expect("poll shutdown child")
+                        .is_none(),
+                    "shutdown child exited before publishing {name}"
+                );
+                assert!(Instant::now() < deadline, "timed out waiting for {name}");
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+
+        fn wait_for_exit(&mut self, limit: Duration) -> Option<ShutdownChildExit> {
+            let deadline = Instant::now() + limit;
+            loop {
+                if let Some(status) = self.child.try_wait().expect("poll shutdown child") {
+                    let mut stderr = String::new();
+                    if let Some(mut pipe) = self.child.stderr.take() {
+                        pipe.read_to_string(&mut stderr)
+                            .expect("read shutdown child stderr");
+                    }
+                    return Some(ShutdownChildExit { status, stderr });
+                }
+                if Instant::now() >= deadline {
+                    return None;
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+    }
+
+    impl Drop for ShutdownChild {
+        fn drop(&mut self) {
+            if self.child.try_wait().ok().flatten().is_none() {
+                let _ = self.child.kill();
+                let _ = self.child.wait();
+            }
+        }
+    }
+
+    async fn shutdown_test_sse(
+        State(state): State<ShutdownSseState>,
+    ) -> Sse<
+        std::pin::Pin<Box<dyn futures::Stream<Item = Result<Event, Infallible>> + Send + 'static>>,
+    > {
+        std::fs::write(state.control_dir.join("stream-started"), b"started")
+            .expect("publish SSE start");
+        let stream = futures::stream::unfold(0_u8, move |step| {
+            let hold = state.hold;
+            async move {
+                match step {
+                    0 => Some((Ok(Event::default().data("started")), 1)),
+                    1 if hold => {
+                        std::future::pending::<Option<(Result<Event, Infallible>, u8)>>().await
+                    }
+                    1 => {
+                        tokio::time::sleep(Duration::from_millis(250)).await;
+                        Some((Ok(Event::default().data("done")), 2))
+                    }
+                    _ => None,
+                }
+            }
+        });
+        Sse::new(Box::pin(stream))
+    }
+
+    async fn run_shutdown_process_child(mode: &str, control_dir: &Path, timeout_secs: u64) {
+        let primary = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind primary shutdown fixture");
+        let primary_addr = primary.local_addr().expect("read primary address");
+        let companion = tokio::net::TcpListener::bind(format!("[::1]:{}", primary_addr.port()))
+            .await
+            .expect("bind companion shutdown fixture");
+        let companion_addr = companion.local_addr().expect("read companion address");
+        let sse_state = ShutdownSseState {
+            control_dir: control_dir.to_path_buf(),
+            hold: matches!(mode, "held-sse"),
+        };
+        let app = Router::new()
+            .route("/health", get(|| async { "ok" }))
+            .route("/sse", get(shutdown_test_sse))
+            .with_state(sse_state);
+        let cleanup: Option<ShutdownCleanup> = if mode == "normal-cleanup" {
+            let cleanup_marker = control_dir.join("registered-cleanup-complete");
+            Some(Arc::new(move || {
+                std::fs::write(&cleanup_marker, b"complete")
+                    .expect("publish registered cleanup completion");
+            }))
+        } else if matches!(
+            mode,
+            "held-cleanup" | "held-cleanup-mcp" | "stderr-lock" | "stderr-backpressure"
+        ) {
+            Some(Arc::new(|| {
+                loop {
+                    std::thread::park_timeout(Duration::from_secs(60));
+                }
+            }))
+        } else {
+            None
+        };
+        let async_cleanup: Option<ShutdownAsyncCleanup> = if mode == "held-cleanup" {
+            let cleanup_marker = control_dir.join("async-cleanup-complete");
+            Some(Arc::new(move || {
+                let cleanup_marker = cleanup_marker.clone();
+                Box::pin(async move {
+                    std::fs::write(cleanup_marker, b"complete")
+                        .expect("publish async cleanup completion");
+                })
+            }))
+        } else if mode == "held-cleanup-mcp" {
+            let fixture_path = control_dir.join("mcp-shutdown-fixture.py");
+            let eof_marker = control_dir.join("mcp-stdin-closed");
+            std::fs::write(&fixture_path, SHUTDOWN_MCP_FIXTURE)
+                .expect("write shutdown MCP fixture");
+            let config = crate::mcp::config::McpConfig {
+                mcp_servers: HashMap::from([(
+                    "shutdown-fixture".to_string(),
+                    crate::mcp::config::McpServerEntry::Stdio {
+                        command: "python3".to_string(),
+                        args: vec![
+                            fixture_path.display().to_string(),
+                            eof_marker.display().to_string(),
+                        ],
+                        env: HashMap::new(),
+                        sandboxed: false,
+                    },
+                )]),
+            };
+            let registry = Arc::new(
+                McpRegistry::from_config(&config)
+                    .await
+                    .expect("connect shutdown MCP fixture"),
+            );
+            Some(Arc::new(move || {
+                let registry = Arc::clone(&registry);
+                Box::pin(async move { registry.shutdown().await })
+                    as Pin<Box<dyn Future<Output = ()> + Send + 'static>>
+            }))
+        } else {
+            None
+        };
+
+        if mode == "stderr-lock" {
+            let (locked_tx, locked_rx) = std::sync::mpsc::sync_channel(0);
+            std::thread::spawn(move || {
+                let _stderr = std::io::stderr().lock();
+                locked_tx.send(()).expect("publish stderr lock");
+                loop {
+                    std::thread::park_timeout(Duration::from_secs(60));
+                }
+            });
+            locked_rx.recv().expect("wait for stderr lock");
+        } else if mode == "stderr-backpressure" {
+            std::thread::spawn(|| {
+                let mut stderr = std::io::stderr().lock();
+                let block = [b'x'; 4096];
+                loop {
+                    if stderr.write_all(&block).is_err() {
+                        return;
+                    }
+                }
+            });
+        }
+
+        let ready_path = control_dir.join("ready.json");
+        let ready_pending_path = control_dir.join("ready.json.pending");
+        std::fs::write(
+            &ready_pending_path,
+            serde_json::to_vec(&json!({
+                "primary": primary_addr,
+                "companion": companion_addr,
+            }))
+            .expect("serialize shutdown readiness"),
+        )
+        .expect("write pending shutdown readiness");
+        std::fs::rename(ready_pending_path, ready_path).expect("publish shutdown readiness");
+
+        let coordinator = ShutdownCoordinator::new();
+        serve_on_listener(
+            primary,
+            Some(companion),
+            app,
+            timeout_secs,
+            cleanup,
+            async_cleanup,
+            tokio_util::sync::CancellationToken::new(),
+            None,
+            coordinator.clone(),
+        )
+        .await
+        .expect("serve shutdown fixture");
+        coordinator.wait_for_cleanup().await;
+        coordinator.complete();
+    }
+
+    #[test]
+    fn shutdown_process_child() {
+        let Some(mode) = std::env::var_os(SHUTDOWN_CHILD_ENV) else {
+            return;
+        };
+        let control_dir = PathBuf::from(
+            std::env::var_os("UAR_SHUTDOWN_TEST_CONTROL_DIR")
+                .expect("shutdown child control directory"),
+        );
+        let timeout_secs = std::env::var("UAR_SHUTDOWN_TEST_TIMEOUT_SECS")
+            .expect("shutdown child timeout")
+            .parse()
+            .expect("parse shutdown child timeout");
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(2)
+            .enable_all()
+            .build()
+            .expect("build shutdown child runtime");
+        runtime.block_on(run_shutdown_process_child(
+            &mode.to_string_lossy(),
+            &control_dir,
+            timeout_secs,
+        ));
+    }
+
+    fn read_sse(addr: SocketAddr) -> std::thread::JoinHandle<String> {
+        std::thread::spawn(move || {
+            let mut stream = TcpStream::connect_timeout(&addr, Duration::from_secs(2))
+                .expect("connect SSE client");
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .expect("set SSE read timeout");
+            write!(
+                stream,
+                "GET /sse HTTP/1.1\r\nHost: {addr}\r\nConnection: close\r\n\r\n"
+            )
+            .expect("write SSE request");
+            let mut response = String::new();
+            let _ = stream.read_to_string(&mut response);
+            response
+        })
+    }
+
+    fn listener_refuses_within(addr: SocketAddr, limit: Duration) -> bool {
+        let deadline = Instant::now() + limit;
+        loop {
+            if TcpStream::connect_timeout(&addr, Duration::from_millis(50)).is_err() {
+                return true;
+            }
+            if Instant::now() >= deadline {
+                return false;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+    }
+
+    #[test]
+    fn shutdown_process_idle_sigterm_and_sigint_exit_within_one_second() {
+        for signal in ["TERM", "INT"] {
+            let mut child = ShutdownChild::spawn("idle", 2);
+            let started = Instant::now();
+            child.signal(signal);
+            let exit = child
+                .wait_for_exit(Duration::from_secs(1))
+                .unwrap_or_else(|| panic!("idle {signal} did not exit within one second"));
+            assert!(
+                exit.status.success(),
+                "idle {signal} status: {}",
+                exit.status
+            );
+            assert!(
+                exit.stderr
+                    .contains("UAR_SHUTDOWN outcome=graceful_complete"),
+                "idle {signal} missing graceful marker: {}",
+                exit.stderr
+            );
+            assert!(!exit.stderr.contains("deadline_enforced"));
+            assert!(started.elapsed() < Duration::from_secs(1));
+        }
+    }
+
+    #[test]
+    fn shutdown_process_real_sse_completes_and_both_listeners_refuse() {
+        let mut child = ShutdownChild::spawn("active-sse", 2);
+        let reader = read_sse(child.ready.primary);
+        child.wait_for_file("stream-started");
+        child.signal("TERM");
+        assert!(
+            listener_refuses_within(child.ready.primary, Duration::from_millis(500)),
+            "primary listener accepted connections after SIGTERM"
+        );
+        assert!(
+            listener_refuses_within(child.ready.companion, Duration::from_millis(500)),
+            "companion listener accepted connections after SIGTERM"
+        );
+        let exit = child
+            .wait_for_exit(Duration::from_secs(3))
+            .expect("active SSE child did not exit inside its graceful window");
+        let response = reader.join().expect("join SSE reader");
+        assert!(response.contains("content-type: text/event-stream"));
+        assert!(response.contains("data: started"));
+        assert!(response.contains("data: done"));
+        assert!(exit.status.success());
+        assert!(
+            exit.stderr
+                .contains("UAR_SHUTDOWN outcome=graceful_complete")
+        );
+        assert!(!exit.stderr.contains("deadline_enforced"));
+    }
+
+    #[test]
+    fn shutdown_process_held_sse_exits_at_deadline() {
+        let mut child = ShutdownChild::spawn("held-sse", 1);
+        let reader = read_sse(child.ready.primary);
+        child.wait_for_file("stream-started");
+        let started = Instant::now();
+        child.signal("TERM");
+        let exit = child
+            .wait_for_exit(Duration::from_millis(1900))
+            .expect("held SSE child did not enforce its deadline");
+        let response = reader.join().expect("join held SSE reader");
+        assert!(response.contains("data: started"));
+        assert!(exit.status.success());
+        assert!(started.elapsed() >= Duration::from_millis(900));
+        assert!(started.elapsed() < Duration::from_millis(1900));
+        assert!(
+            exit.stderr
+                .contains("UAR_SHUTDOWN outcome=deadline_enforced")
+        );
+        assert!(!exit.stderr.contains("graceful_complete"));
+        assert!(!exit.stderr.contains("cleanup_complete"));
+    }
+
+    #[test]
+    fn shutdown_process_held_registered_cleanup_exits_at_deadline() {
+        let mut child = ShutdownChild::spawn("held-cleanup", 1);
+        let started = Instant::now();
+        child.signal("TERM");
+        child.wait_for_file("async-cleanup-complete");
+        let exit = child
+            .wait_for_exit(Duration::from_millis(1900))
+            .expect("held cleanup child did not enforce its deadline");
+        assert!(exit.status.success());
+        assert!(started.elapsed() >= Duration::from_millis(900));
+        assert!(started.elapsed() < Duration::from_millis(1900));
+        assert!(
+            exit.stderr
+                .contains("UAR_SHUTDOWN outcome=deadline_enforced")
+        );
+        assert!(!exit.stderr.contains("graceful_complete"));
+        assert!(!exit.stderr.contains("cleanup_complete"));
+    }
+
+    #[test]
+    fn shutdown_process_mcp_eof_precedes_held_cleanup_deadline() {
+        let mut child = ShutdownChild::spawn("held-cleanup-mcp", 1);
+        let started = Instant::now();
+        child.signal("TERM");
+        child.wait_for_file("mcp-stdin-closed");
+        let exit = child
+            .wait_for_exit(Duration::from_millis(1900))
+            .expect("held cleanup with MCP child did not enforce its deadline");
+        assert!(exit.status.success());
+        assert!(started.elapsed() >= Duration::from_millis(900));
+        assert!(started.elapsed() < Duration::from_millis(1900));
+        assert!(
+            exit.stderr
+                .contains("UAR_SHUTDOWN outcome=deadline_enforced")
+        );
+        assert!(!exit.stderr.contains("graceful_complete"));
+        assert!(!exit.stderr.contains("cleanup_complete"));
+    }
+
+    #[test]
+    fn shutdown_process_registered_cleanup_precedes_graceful_completion() {
+        let mut child = ShutdownChild::spawn("normal-cleanup", 2);
+        child.signal("TERM");
+        let exit = child
+            .wait_for_exit(Duration::from_secs(1))
+            .expect("normal registered cleanup did not finish within one second");
+        assert!(exit.status.success());
+        assert!(
+            child
+                .control_dir
+                .path()
+                .join("registered-cleanup-complete")
+                .exists(),
+            "normal process completion preceded registered cleanup"
+        );
+        assert!(
+            exit.stderr
+                .contains("UAR_SHUTDOWN outcome=graceful_complete")
+        );
+        assert!(!exit.stderr.contains("deadline_enforced"));
+    }
+
+    #[test]
+    fn shutdown_process_stderr_lock_does_not_block_deadline() {
+        let mut child = ShutdownChild::spawn("stderr-lock", 1);
+        let started = Instant::now();
+        child.signal("TERM");
+        let exit = child
+            .wait_for_exit(Duration::from_millis(1900))
+            .expect("ordinary stderr lock blocked forced exit");
+        assert!(exit.status.success());
+        assert!(started.elapsed() < Duration::from_millis(1900));
+        assert!(
+            exit.stderr
+                .contains("UAR_SHUTDOWN outcome=deadline_enforced")
+        );
+        assert!(!exit.stderr.contains("graceful_complete"));
+    }
+
+    #[test]
+    fn shutdown_process_stderr_backpressure_does_not_block_deadline() {
+        let mut child = ShutdownChild::spawn("stderr-backpressure", 1);
+        std::thread::sleep(Duration::from_millis(200));
+        let started = Instant::now();
+        child.signal("TERM");
+        let exit = child
+            .wait_for_exit(Duration::from_millis(1900))
+            .expect("backpressured stderr blocked forced exit");
+        assert!(exit.status.success());
+        assert!(started.elapsed() < Duration::from_millis(1900));
+        assert!(!exit.stderr.contains("graceful_complete"));
+    }
 
     #[test]
     fn ensure_toolu_id_prefixes_non_prefixed_ids() {

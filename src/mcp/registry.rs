@@ -12,7 +12,10 @@ use rmcp::{
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
-    sync::{Arc, RwLock},
+    sync::{
+        Arc, RwLock,
+        atomic::{AtomicBool, Ordering},
+    },
     time::Duration,
 };
 use tokio::process::Command;
@@ -34,6 +37,8 @@ struct ClientServiceState {
     service: Arc<DynClientService>,
     reconnect_entry: McpServerEntry,
     generation: u64,
+    reconnects_in_flight: usize,
+    shutting_down: bool,
 }
 
 type SharedClientService = Arc<RwLock<ClientServiceState>>;
@@ -46,6 +51,8 @@ fn new_service_slot(
         service: Arc::new(service),
         reconnect_entry,
         generation: 0,
+        reconnects_in_flight: 0,
+        shutting_down: false,
     }))
 }
 
@@ -69,28 +76,63 @@ fn replace_configured_service(
     slot: &SharedClientService,
     service: DynClientService,
     reconnect_entry: McpServerEntry,
-) {
+) -> Arc<DynClientService> {
     let mut state = slot
         .write()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    state.service = Arc::new(service);
+    let replaced = std::mem::replace(&mut state.service, Arc::new(service));
     state.reconnect_entry = reconnect_entry;
     state.generation = state.generation.wrapping_add(1);
+    replaced
 }
 
-fn replace_reconnected_service(
+fn begin_reconnect(slot: &SharedClientService) -> Option<(McpServerEntry, u64)> {
+    let mut state = slot
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if state.shutting_down {
+        return None;
+    }
+    state.reconnects_in_flight += 1;
+    Some((state.reconnect_entry.clone(), state.generation))
+}
+
+fn install_reconnected_service(
     slot: &SharedClientService,
     expected_generation: u64,
     service: DynClientService,
-) -> bool {
+) -> Result<(), DynClientService> {
     let mut state = slot
         .write()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    if state.generation != expected_generation {
-        return false;
+    if state.shutting_down || state.generation != expected_generation {
+        return Err(service);
     }
     state.service = Arc::new(service);
-    true
+    state.reconnects_in_flight -= 1;
+    Ok(())
+}
+
+fn finish_reconnect(slot: &SharedClientService) {
+    let mut state = slot
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    state.reconnects_in_flight -= 1;
+}
+
+fn begin_service_shutdown(slot: &SharedClientService) -> Arc<DynClientService> {
+    let mut state = slot
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    state.shutting_down = true;
+    Arc::clone(&state.service)
+}
+
+fn service_shutdown_complete(slot: &SharedClientService, service: &DynClientService) -> bool {
+    let state = slot
+        .read()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    state.reconnects_in_flight == 0 && service.is_transport_closed()
 }
 
 async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<DynClientService> {
@@ -160,6 +202,7 @@ fn resolve_remote_http_url(
 #[derive(Clone)]
 pub struct McpRegistry {
     services: Arc<RwLock<HashMap<String, SharedClientService>>>,
+    shutting_down: Arc<AtomicBool>,
     server_config: Arc<RwLock<HashMap<String, McpServerEntry>>>,
     // namespaced_tool_name -> (server_name, tool_name)
     tool_index: Arc<RwLock<HashMap<String, (String, String)>>>,
@@ -197,6 +240,7 @@ impl McpRegistry {
     pub fn empty() -> Self {
         Self {
             services: Arc::new(RwLock::new(HashMap::new())),
+            shutting_down: Arc::new(AtomicBool::new(false)),
             server_config: Arc::new(RwLock::new(HashMap::new())),
             tool_index: Arc::new(RwLock::new(HashMap::new())),
             tools: Arc::new(RwLock::new(Vec::new())),
@@ -255,6 +299,7 @@ impl McpRegistry {
 
         Ok(Self {
             services: Arc::new(RwLock::new(services)),
+            shutting_down: Arc::new(AtomicBool::new(false)),
             server_config: Arc::new(RwLock::new(cfg.mcp_servers.clone())),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(all_tools)),
@@ -350,6 +395,7 @@ impl McpRegistry {
     pub fn new_empty() -> Self {
         Self {
             services: Arc::new(RwLock::new(HashMap::new())),
+            shutting_down: Arc::new(AtomicBool::new(false)),
             server_config: Arc::new(RwLock::new(HashMap::new())),
             tool_index: Arc::new(RwLock::new(HashMap::new())),
             tools: Arc::new(RwLock::new(Vec::new())),
@@ -383,6 +429,7 @@ impl McpRegistry {
 
         Self {
             services: Arc::new(RwLock::new(HashMap::new())),
+            shutting_down: Arc::new(AtomicBool::new(false)),
             server_config: Arc::new(RwLock::new(HashMap::new())),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(tools)),
@@ -456,6 +503,9 @@ impl McpRegistry {
 
     /// Add or replace one MCP server and immediately refresh its advertised tools.
     pub async fn upsert_server(&self, name: String, entry: McpServerEntry) -> anyhow::Result<()> {
+        if self.shutting_down.load(Ordering::Acquire) {
+            return Err(anyhow!("MCP registry is shutting down"));
+        }
         let service = Self::connect_configured_server(&name, &entry).await?;
         let result = service
             .list_tools(Default::default())
@@ -471,16 +521,33 @@ impl McpRegistry {
             discovered.push((namespaced, tool));
         }
 
-        let mut services = self
-            .services
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if let Some(service_slot) = services.get(&name) {
-            replace_configured_service(service_slot, service, entry.clone());
-        } else {
-            services.insert(name.clone(), new_service_slot(service, entry.clone()));
+        if self.shutting_down.load(Ordering::Acquire) {
+            let _ = service.cancel().await;
+            return Err(anyhow!("MCP registry is shutting down"));
         }
-        drop(services);
+
+        let replaced = {
+            let mut services = self
+                .services
+                .write()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if let Some(service_slot) = services.get(&name) {
+                Some(replace_configured_service(
+                    service_slot,
+                    service,
+                    entry.clone(),
+                ))
+            } else {
+                services.insert(name.clone(), new_service_slot(service, entry.clone()));
+                None
+            }
+        };
+        if let Some(replaced) = replaced {
+            replaced.cancellation_token().cancel();
+            while !replaced.is_transport_closed() {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        }
         self.server_config
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -546,6 +613,35 @@ impl McpRegistry {
         removed
     }
 
+    /// Cancel every connected MCP transport and wait for its cleanup to finish.
+    pub(crate) async fn shutdown(&self) {
+        self.shutting_down.store(true, Ordering::Release);
+        let services = self
+            .services
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .iter()
+            .map(|(name, slot)| {
+                let service = begin_service_shutdown(slot);
+                (name.clone(), Arc::clone(slot), service)
+            })
+            .collect::<Vec<_>>();
+
+        // Initiate every close before awaiting any one transport. A slow MCP
+        // server must not delay the start of cleanup for its peers.
+        for (_, _, service) in &services {
+            service.cancellation_token().cancel();
+        }
+
+        for (name, slot, service) in services {
+            while !service_shutdown_complete(&slot, &service) {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+            crate::uar::telemetry::metrics::set_mcp_server_status(&name, false);
+            tracing::info!(server = %name, "MCP transport shut down");
+        }
+    }
+
     /// Merge another registry into this one, returning a new registry.
     /// This is used to combine global tools with skill-specific tools.
     #[must_use]
@@ -587,6 +683,10 @@ impl McpRegistry {
 
         Self {
             services: Arc::new(RwLock::new(services)),
+            shutting_down: Arc::new(AtomicBool::new(
+                self.shutting_down.load(Ordering::Acquire)
+                    || other.shutting_down.load(Ordering::Acquire),
+            )),
             server_config: Arc::new(RwLock::new(server_config)),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(tools)),
@@ -649,6 +749,7 @@ impl McpRegistry {
 
         Self {
             services: Arc::new(RwLock::new(services)),
+            shutting_down: Arc::clone(&self.shutting_down),
             server_config: Arc::new(RwLock::new(server_config)),
             tool_index: Arc::new(RwLock::new(tool_index)),
             tools: Arc::new(RwLock::new(tools)),
@@ -676,6 +777,7 @@ impl McpRegistry {
 
         Self {
             services: self.services, // Keep ref
+            shutting_down: self.shutting_down,
             server_config: self.server_config,
             tool_index: self.tool_index, // Keep ref
             tools: Arc::new(RwLock::new(tools)),
@@ -801,24 +903,37 @@ impl McpRegistry {
                 crate::uar::telemetry::metrics::set_mcp_server_status(&server_name, false);
                 // Re-establish the transport for future calls. Never replay the
                 // failed call: it may have completed remotely before transport loss.
-                let (reconnect_entry, generation) = current_reconnect_entry(&service_slot);
-                match connect_server(&server_name, &reconnect_entry).await {
-                    Ok(replacement) => {
-                        if replace_reconnected_service(&service_slot, generation, replacement) {
-                            crate::uar::telemetry::metrics::set_mcp_server_status(
-                                &server_name,
-                                true,
+                if let Some((reconnect_entry, generation)) = begin_reconnect(&service_slot) {
+                    match connect_server(&server_name, &reconnect_entry).await {
+                        Ok(replacement) => {
+                            match install_reconnected_service(
+                                &service_slot,
+                                generation,
+                                replacement,
+                            ) {
+                                Ok(()) => {
+                                    crate::uar::telemetry::metrics::set_mcp_server_status(
+                                        &server_name,
+                                        true,
+                                    );
+                                    tracing::info!(server = %server_name, "MCP transport reconnected for subsequent calls");
+                                }
+                                Err(replacement) => {
+                                    let _ = replacement.cancel().await;
+                                    finish_reconnect(&service_slot);
+                                    tracing::info!(server = %server_name, "Discarded MCP reconnect because shutdown began or a newer server configuration was installed");
+                                }
+                            }
+                        }
+                        Err(reconnect_error) => {
+                            finish_reconnect(&service_slot);
+                            tracing::warn!(
+                                server = %server_name,
+                                error = %reconnect_error,
+                                "MCP transport reconnect failed; a later call may retry"
                             );
-                            tracing::info!(server = %server_name, "MCP transport reconnected for subsequent calls");
-                        } else {
-                            tracing::info!(server = %server_name, "Discarded MCP reconnect because a newer server configuration was installed");
                         }
                     }
-                    Err(reconnect_error) => tracing::warn!(
-                        server = %server_name,
-                        error = %reconnect_error,
-                        "MCP transport reconnect failed; a later call may retry"
-                    ),
                 }
                 return Err(error).with_context(|| {
                     format!("tools/call failed for {server_name}::{raw_tool_name}")
@@ -924,6 +1039,11 @@ for line in sys.stdin:
         }), flush=True)
         continue
     print(json.dumps({"jsonrpc": "2.0", "id": request_id, "result": result}), flush=True)
+
+with open(trace_path, "a", encoding="utf-8") as trace:
+    trace.write(json.dumps({"pid": os.getpid(), "mode": "stdin_closed"}) + "\n")
+    trace.flush()
+    os.fsync(trace.fileno())
 "#;
 
     #[derive(Deserialize)]
@@ -995,15 +1115,21 @@ for line in sys.stdin:
             .await
             .expect_err("replacement must not restore a policy-excluded tool");
 
+        registry.shutdown().await;
+
         let trace = trace_entries(&trace);
         assert_eq!(
             trace.iter().filter(|entry| entry.mode == "crash").count(),
             1,
             "failed call must execute exactly once"
         );
-        assert_eq!(trace.len(), 3);
-        assert_ne!(trace[0].pid, trace[1].pid);
-        assert_eq!(trace[1].pid, trace[2].pid);
+        let calls = trace
+            .iter()
+            .filter(|entry| entry.mode != "stdin_closed")
+            .collect::<Vec<_>>();
+        assert_eq!(calls.len(), 3);
+        assert_ne!(calls[0].pid, calls[1].pid);
+        assert_eq!(calls[1].pid, calls[2].pid);
     }
 
     #[tokio::test]
@@ -1057,14 +1183,66 @@ for line in sys.stdin:
             .await
             .expect("existing filtered view must reconnect with the upserted config");
 
+        registry.shutdown().await;
+
         let original_trace = trace_entries(&original_trace);
-        assert_eq!(original_trace.len(), 1);
-        assert_eq!(original_trace[0].mode, "before");
+        let original_calls = original_trace
+            .iter()
+            .filter(|entry| entry.mode != "stdin_closed")
+            .collect::<Vec<_>>();
+        assert_eq!(original_calls.len(), 1);
+        assert_eq!(original_calls[0].mode, "before");
 
         let replacement_trace = trace_entries(&replacement_trace);
-        assert_eq!(replacement_trace.len(), 2);
-        assert_eq!(replacement_trace[0].mode, "crash");
-        assert_eq!(replacement_trace[1].mode, "after");
-        assert_ne!(replacement_trace[0].pid, replacement_trace[1].pid);
+        let replacement_calls = replacement_trace
+            .iter()
+            .filter(|entry| entry.mode != "stdin_closed")
+            .collect::<Vec<_>>();
+        assert_eq!(replacement_calls.len(), 2);
+        assert_eq!(replacement_calls[0].mode, "crash");
+        assert_eq!(replacement_calls[1].mode, "after");
+        assert_ne!(replacement_calls[0].pid, replacement_calls[1].pid);
+    }
+
+    #[tokio::test]
+    async fn shutdown_waits_for_stdio_eof_and_blocks_filtered_view_reconnect() {
+        let (_fixture_dir, trace, config) = fixture_config();
+        let registry = McpRegistry::from_config(&config)
+            .await
+            .expect("connect MCP fixture");
+        let allowed_servers = HashSet::from(["resilience".to_string()]);
+        let allowed_tools = HashSet::from(["resilience__echo".to_string()]);
+        let filtered = registry.filtered(Some(&allowed_servers), Some(&allowed_tools));
+
+        registry.shutdown().await;
+
+        filtered
+            .call_namespaced_tool("resilience__echo", serde_json::json!({"mode": "after"}))
+            .await
+            .expect_err("a pre-existing filtered view must not reconnect after shutdown");
+        let trace = trace_entries(&trace);
+        assert_eq!(trace.len(), 1);
+        assert_eq!(trace[0].mode, "stdin_closed");
+    }
+
+    #[tokio::test]
+    async fn shutdown_blocks_new_server_upsert() {
+        let (_fixture_dir, trace, config) = fixture_config();
+        let registry = McpRegistry::from_config(&config)
+            .await
+            .expect("connect MCP fixture");
+        registry.shutdown().await;
+
+        registry
+            .upsert_server(
+                "replacement".to_string(),
+                config.mcp_servers["resilience"].clone(),
+            )
+            .await
+            .expect_err("shutdown must reject a newly configured MCP transport");
+
+        let trace = trace_entries(&trace);
+        assert_eq!(trace.len(), 1);
+        assert_eq!(trace[0].mode, "stdin_closed");
     }
 }

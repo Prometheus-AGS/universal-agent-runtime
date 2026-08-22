@@ -19,11 +19,13 @@ work="$(mktemp -d)"
 server_pid=""
 mock_pid=""
 container_id=""
+held_sse_pid=""
 upgrade_journey=""
 
 cleanup() {
   if [[ -n "$server_pid" ]]; then kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; fi
   if [[ -n "$mock_pid" ]]; then kill "$mock_pid" 2>/dev/null || true; wait "$mock_pid" 2>/dev/null || true; fi
+  if [[ -n "$held_sse_pid" ]]; then kill "$held_sse_pid" 2>/dev/null || true; wait "$held_sse_pid" 2>/dev/null || true; fi
   if [[ -n "$container_id" ]]; then docker rm -f "$container_id" >/dev/null 2>&1 || true; fi
   rm -rf "$work"
 }
@@ -637,6 +639,8 @@ certify_upgrade_journey
 
 container_journey=""
 if [[ -n "${UAR_CANDIDATE_IMAGE:-}" ]]; then
+  internal_shutdown_deadline_seconds=30
+  external_stop_deadline_seconds=35
   mkdir -p "$work/container-data"
   chmod 0777 "$work/container-data"
   container_id="$(docker run -d --network host --user 65532:65532 \
@@ -646,6 +650,8 @@ if [[ -n "${UAR_CANDIDATE_IMAGE:-}" ]]; then
     -e UAR_SECURITY__JWT_REQUIRED=false \
     -e UAR_SERVER__HOST=127.0.0.1 \
     -e UAR_SERVER__PORT="$port" \
+    -e UAR_SERVER__SHUTDOWN_TIMEOUT_SECS="$internal_shutdown_deadline_seconds" \
+    -e UAR_RESILIENCE__REQUEST_TIMEOUT_MS=120000 \
     -e UAR_PERSISTENCE__DATABASE_URL=surrealkv:///var/lib/uar/data/uar.db \
     -v "$work/container-data:/var/lib/uar" \
     "$UAR_CANDIDATE_IMAGE")"
@@ -660,14 +666,81 @@ if [[ -n "${UAR_CANDIDATE_IMAGE:-}" ]]; then
   smoke_sidecar
   container_uid="$(docker exec "$container_id" id -u)"
   [[ "$container_uid" -ne 0 ]]
-  docker stop --time 30 "$container_id" >/dev/null
+  curl --fail --silent --show-error --no-buffer \
+    "http://127.0.0.1:${port}/api/uar/sync/stream" \
+    >"$results/non-root-held-sse.log" 2>"$results/non-root-held-sse.stderr" &
+  held_sse_pid=$!
+  for _ in $(seq 1 100); do
+    grep -q 'event: connected' "$results/non-root-held-sse.log" && break
+    if ! kill -0 "$held_sse_pid" 2>/dev/null; then
+      cat "$results/non-root-held-sse.stderr" >&2
+      echo "non-root held SSE exited before shutdown" >&2
+      exit 1
+    fi
+    sleep 0.1
+  done
+  grep -q 'event: connected' "$results/non-root-held-sse.log"
+
+  events_since="$(date +%s)"
+  stop_started_ns="$(python3 -c 'import time; print(time.monotonic_ns())')"
+  docker stop --time "$external_stop_deadline_seconds" "$container_id" >/dev/null
+  stop_finished_ns="$(python3 -c 'import time; print(time.monotonic_ns())')"
+  stop_elapsed_ms=$(( (stop_finished_ns - stop_started_ns) / 1000000 ))
+  events_until="$(( $(date +%s) + 1 ))"
+  set +e
+  wait "$held_sse_pid"
+  held_sse_exit_code=$?
+  set -e
+  held_sse_pid=""
   docker logs "$container_id" >"$results/container.log" 2>&1
   container_exit_code="$(docker inspect -f '{{.State.ExitCode}}' "$container_id")"
   [[ "$container_exit_code" == 0 ]]
+  [[ "$stop_elapsed_ms" -ge $((internal_shutdown_deadline_seconds * 1000)) ]]
+  [[ "$stop_elapsed_ms" -lt $((external_stop_deadline_seconds * 1000)) ]]
+  grep -q 'UAR_SHUTDOWN outcome=deadline_enforced' "$results/container.log"
+  ! grep -q 'UAR_SHUTDOWN outcome=graceful_complete' "$results/container.log"
+  docker events \
+    --since "$events_since" \
+    --until "$events_until" \
+    --filter "container=$container_id" \
+    --format '{{json .}}' >"$results/non-root-container-events.jsonl"
+  jq -e 'select((.Action // .status) == "die")' \
+    "$results/non-root-container-events.jsonl" >/dev/null
+  if jq -e '
+    select((.Action // .status) == "kill")
+    | (.Actor.Attributes.signal // "" | ascii_upcase)
+    | select(. == "9" or . == "SIGKILL" or . == "KILL")
+  ' "$results/non-root-container-events.jsonl" >/dev/null; then
+    echo "Docker escalated the non-root container to SIGKILL" >&2
+    exit 1
+  fi
   find "$work/container-data" -mindepth 1 -print -quit | grep -q .
-  cat >"$results/non-root-container.json" <<JSON
-{"source_sha":"$source_sha","candidate_tag":"$candidate_tag","uid":$container_uid,"writable_persistence":true,"health":true,"sigterm_exit_code":$container_exit_code}
-JSON
+  jq -n \
+    --arg source_sha "$source_sha" \
+    --arg candidate_tag "$candidate_tag" \
+    --argjson uid "$container_uid" \
+    --argjson internal_deadline_seconds "$internal_shutdown_deadline_seconds" \
+    --argjson external_deadline_seconds "$external_stop_deadline_seconds" \
+    --argjson elapsed_ms "$stop_elapsed_ms" \
+    --argjson held_sse_exit_code "$held_sse_exit_code" \
+    --argjson container_exit_code "$container_exit_code" \
+    '{
+      source_sha: $source_sha,
+      candidate_tag: $candidate_tag,
+      uid: $uid,
+      writable_persistence: true,
+      health: true,
+      held_sse_connected: true,
+      held_sse_terminated: true,
+      held_sse_exit_code: $held_sse_exit_code,
+      internal_shutdown_deadline_seconds: $internal_deadline_seconds,
+      external_stop_deadline_seconds: $external_deadline_seconds,
+      observed_stop_elapsed_ms: $elapsed_ms,
+      shutdown_outcome: "deadline_enforced",
+      sigterm_exit_code: $container_exit_code,
+      docker_sigkill_observed: false,
+      raw_event_evidence: "non-root-container-events.jsonl"
+    }' >"$results/non-root-container.json"
   docker rm "$container_id" >/dev/null
   container_id=""
   container_journey=',"non-root-container"'

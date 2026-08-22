@@ -1,0 +1,16 @@
+{
+  "allowedWritePaths": [
+    ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/children/fix-graceful-shutdown-deadline-semantics/**",
+    ".prometheus/**",
+    "openspec/changes/fix-graceful-shutdown-deadline-semantics/**",
+    "scripts/certify-release-candidate.sh",
+    "src/mcp/registry.rs",
+    "src/server.rs",
+    "src/uar/realtime/surreal_bus.rs",
+    "tests/integration/live/capability_cases.rs",
+    "tests/integration/live/harness.rs"
+  ],
+  "deniedPaths": [],
+  "inheritsConstraints": true,
+  "__note": "Edit allowedWritePaths to widen the child loop's write surface. .kbd-orchestrator/** and SCRATCHPAD.md are always allowed. Enforced advisorily by check-child-scope.sh."
+}

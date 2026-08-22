@@ -548,3 +548,27 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   judge PASS verdicts.
 - No GitHub Actions test ran. The child does not claim the parent three-hour soak,
   external installs, deployment, candidate tag, or GA promotion.
+
+## 2026-08-22 — Graceful shutdown deadline child implemented and locally verified
+
+- Replaced the mandatory pre-drain wait with an immediate HTTP drain and one
+  signal-to-exit deadline. Added an executor-independent watchdog and mutually
+  exclusive `graceful_complete`/`deadline_enforced` outcomes.
+- Added explicit terminal ownership for MCP transports and Surreal live-query
+  supervisors, retained ingestion/A2A joins, and observed the SurrealKV lock
+  released before original-helper process exit.
+- Focused local results: process controls 9/0, MCP registry 4/0, live query 1/0,
+  same-path C-12 1/0, and later-SIGINT caller control 1/0. The paired baseline
+  process control failed 6 intended assertions; the different-path C-12 control
+  failed at the intended 404-versus-200 assertion.
+- A healthy UID-65532 container held a real SSE request, reached its 30-second
+  internal deadline in 30,489 ms under Docker's 35-second stop limit, terminated
+  curl with exit 18, emitted only `deadline_enforced`, exited 0, and produced no
+  SIGKILL event.
+- Cargo check, scoped Clippy, strict OpenSpec, shell syntax, dependency, added
+  visibility, scoped diff, untracked text, and contained artifact-refiner gates
+  passed locally. Existing Cargo warnings and the nested SurrealKV teardown
+  warning remain disclosed.
+- No GitHub Actions test, push, PR, tag, release, or GA action ran. The parent
+  10,800-second certification remains pending until this child is committed and
+  closed on the new immutable candidate SHA.

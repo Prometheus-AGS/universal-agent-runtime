@@ -1,0 +1,11 @@
+{
+  "artifacts": {
+    "fix-graceful-shutdown-deadline-semantics": {
+      "path": ".refiner/artifacts/fix-graceful-shutdown-deadline-semantics",
+      "artifact_type": "code",
+      "content_type": "direct:code",
+      "updated_at": "2026-08-22T10:57:02Z",
+      "finalized_at": "2026-08-22T10:57:02Z"
+    }
+  }
+}
