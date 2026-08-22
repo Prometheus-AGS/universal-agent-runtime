@@ -325,6 +325,23 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - The verification record remains capability-scoped; it does not assert a
   runtime-level conformance verdict.
 
+## 2026-08-22 — Real-model inference certification policy
+
+- Added the same fail-closed `Real-model integration testing` policy to
+  `AGENTS.md` and its `CLAUDE.md` symlink. Only requests that traverse packaged
+  UAR and perform actual inference on a real loaded model can support inference
+  integration, soak, resilience, release, or production-readiness claims.
+- Prohibited multi-hour synthetic inference tests. Fast model-double tests are
+  non-certifying diagnostics only. Missing credentials, capacity, weights,
+  network access, or budget now leaves the inference claim explicitly
+  unverified instead of triggering a synthetic fallback.
+- Created OpenSpec change `require-real-model-integration-certification` with a
+  real-model integration capability delta. Strict validation passed, policy
+  surfaces compared identical, and the scoped documentation diff passed
+  `git diff --check`.
+- The active mock-only soak was not interrupted by this documentation change,
+  but its result is non-certifying and cannot support inference readiness or
+  release certification under the new policy.
 ## 2026-08-14 — `uar-1-0-readiness` A0 execution checkpoint
 
 - Standardized UAR-owned `jsonwebtoken` manifests on exact 11.0.0 with only

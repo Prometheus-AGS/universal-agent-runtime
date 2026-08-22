@@ -391,3 +391,30 @@ committed. See `.prometheus/gotchas.md` for the incident that established this.
 
 Before deleting any worktree, check it for `.prometheus/` content not present in
 the origin repo. A clean `git status` proves nothing about ignored files.
+
+### External retrieval: dependency archaeology
+
+When you need behavior of a third-party crate, package, or API that is
+not in this repository, and the answer depends on version-specific
+behavior, resolve it against the Firecrawl developer index before
+answering from recall.
+
+    firecrawl developer "<question>" --json --limit 10
+
+Use it when:
+- A crate is pre-1.0 or changed API surface recently (axum, tauri,
+  ractor, pgrx, str0m, iggy, flutter_rust_bridge, cedar, surrealdb)
+- The question is "why does X behave this way" rather than "what is
+  X's signature" — the answer is likely an issue thread, not a doc page
+- A stack trace or error string came from a dependency, not our code
+- You are about to state upstream behavior you cannot cite
+
+Do NOT use it for:
+- Anything in this repository — read the source
+- Language-level Rust/TypeScript semantics
+- Architecture decisions, which are governed by versions.toml
+- Questions already answered by a doc source you have loaded
+
+Every claim about upstream behavior must carry the issue or PR URL that
+supports it. If the index returns nothing that supports the claim, say
+the claim is unverified rather than filling the gap from recall.
