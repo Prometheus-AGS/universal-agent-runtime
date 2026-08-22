@@ -532,3 +532,28 @@ blocked at the deadline. The safety claim is bounded process termination, not
 completion of every cleanup branch. Only the normal path may emit
 `graceful_complete`; the parent three-hour certification must still restart
 from zero on the committed source SHA.
+
+---
+
+## 2026-08-22 — Production image builds consume the repository's dated Rust channel
+
+**Decision.** Keep `nightly-2026-07-18` as the repository and Docker default,
+and make the production backend invoke `cargo +"${RUST_TOOLCHAIN}" build
+--release`. A local preflight rejects a floating selector or any disagreement
+among the Docker default, repository channel, and effective build argument.
+
+**Rationale.** The Docker toolchain stage already installed the intended dated
+channel. The defect was the later floating `cargo +nightly` selector, which
+bypassed that declaration and resolved to an incompatible compiler. Explicit
+selection fixes the causal fault without changing dependencies, features, or
+the repository toolchain decision.
+
+**Evidence binding.** The product/build implementation is committed first and
+verified from a clean detached checkout. A direct evidence-only child commit
+then records those results. Canonical KBD resolves that evidence SHA as the
+parent handoff, and the parent rebuilds it and restarts the 10,800-second
+certification from zero.
+
+**Uncomfortable constraint.** A passing isolated Cargo probe is not a release
+image result, and a passing clean image build is not an operational-resilience
+result. Each remains limited to its recorded profile and source SHA.

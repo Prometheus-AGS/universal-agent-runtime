@@ -1,0 +1,28 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-22T13:27:26Z",
+  "variants": [
+    {
+      "name": "container-toolchain-pin-verification",
+      "file": ".refiner/artifacts/fix-container-rust-toolchain-pin-consistency/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Profile-limited validation receipt for the dated selector, negative controls, locked ARM64 probe, clean production image, and bounded handoff"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "The backend command consumes the declared dated Docker toolchain argument.",
+      "Each fail-closed selector assertion has an observed nonzero control.",
+      "The complete production image passed only for the recorded local linux/arm64 profile.",
+      "Parent operational-resilience certification remains pending on the final handoff SHA."
+    ]
+  }
+}

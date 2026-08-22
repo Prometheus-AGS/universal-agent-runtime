@@ -519,3 +519,22 @@ health claim.
 use the healthcheck's configured port or replace the healthcheck explicitly.
 Observe Docker `healthy` before initiating held work. Do not infer container
 health from an external readiness probe alone.
+
+## 2026-08-22 — a dated Docker ARG does not constrain a floating Cargo selector
+
+**Observed defect.** The production Dockerfile installed
+`nightly-2026-07-18`, but its backend build invoked `cargo +nightly`. On the
+2026-08-22 ARM64 build host that selector resolved to `nightly-2026-08-22`, and
+the locked `diskann-wide 0.54.0` dependency failed with three E0283 diagnostics.
+The earlier Docker syntax check passed because it never compiled that path.
+
+**Working rule.** Every Rust build stage must explicitly consume the declared
+dated toolchain argument. Validate Docker default, repository channel, and
+effective build argument together, pair the contract with a mismatched-channel
+negative control, and complete a clean production-image build before handing a
+release candidate back to certification.
+
+**Follow-up.** `openspec/specs/gke-deployment/spec.md` still describes a Rust
+stable/1.87 image build. That stale capability text is outside this release
+child and must be reconciled in a separately planned spec change; it is not
+evidence about the current production Dockerfile.

@@ -572,3 +572,23 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - No GitHub Actions test, push, PR, tag, release, or GA action ran. The parent
   10,800-second certification remains pending until this child is committed and
   closed on the new immutable candidate SHA.
+
+## 2026-08-22 — Container Rust toolchain pin child verified
+
+- Replaced the production backend's floating `cargo +nightly` selector with an
+  explicit selection of the Docker stage's dated `RUST_TOOLCHAIN` argument.
+- Added a local contract that accepts matching Docker/repository/effective
+  dated pins and rejects a floating selector plus both forms of mismatch.
+- Preserved identical-input ARM64 controls: `nightly-2026-07-18` compiled the
+  locked `diskann-wide 0.54.0` probe, while `nightly-2026-08-22` reproduced
+  exactly three E0283 diagnostics and exited 101.
+- A clean detached `linux/arm64` production build compiled the formerly failing
+  dependency and exported image
+  `sha256:07a9dca99e084bbe132855a196e51ff443ae18273ce04a1e6821c00d92c77b4f`.
+- Strict OpenSpec and the contained artifact-refiner schemas, file integrity,
+  constraints, and state consistency passed. Its optional trigger dispatcher
+  has a quoted-variable defect, but this artifact configured no triggers and
+  no action was skipped.
+- The stale stable/1.87 GKE spec is recorded for a separately planned follow-up.
+  No GitHub Actions test, push, PR, tag, release, or parent soak ran in this
+  child.

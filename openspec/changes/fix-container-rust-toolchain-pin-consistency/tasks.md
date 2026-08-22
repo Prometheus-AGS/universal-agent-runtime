@@ -20,17 +20,17 @@
 
 ## 4. Implementation Commit and Source-Bound Build Verification
 
-- [ ] 4.1 Mark tasks 1.1 through 3.2 complete from observed results, commit the authorized implementation and planning files, and verify the commit contains no unrelated user files
-- [ ] 4.2 Create a clean detached checkout of the implementation commit, initialize its submodules, and verify `git status --short` is empty and `git rev-parse HEAD` equals the recorded implementation SHA
-- [ ] 4.3 In the clean checkout, record `uname -m`, fixture-scoped `git status --short`, `shasum -a 256` for its manifest/lock/source, and `rustc +nightly-2026-07-18 -Vv`; set `CARGO_TARGET_DIR` to a fresh `mktemp -d` path and run `cargo +nightly-2026-07-18 check --locked --manifest-path openspec/changes/fix-container-rust-toolchain-pin-consistency/fixtures/diskann-wide-probe/Cargo.toml --target aarch64-apple-darwin`, verifying exit zero
-- [ ] 4.4 In the same checkout, record `rustc +nightly-2026-08-22 -Vv`, set `CARGO_TARGET_DIR` to a different fresh `mktemp -d` path, and run `cargo +nightly-2026-08-22 check --locked --manifest-path openspec/changes/fix-container-rust-toolchain-pin-consistency/fixtures/diskann-wide-probe/Cargo.toml --target aarch64-apple-darwin`; verify exit nonzero with E0283, then verify the fixture hashes equal task 4.3 and fixture-scoped git status remains empty
-- [ ] 4.5 From the clean implementation checkout, run `docker buildx build --check --platform linux/arm64 --build-arg RUST_TOOLCHAIN=nightly-2026-07-18 -f Dockerfile .` locally and verify it exits zero
-- [ ] 4.6 Confirm sufficient local Docker storage, then run the complete `linux/arm64` production image build locally with the same explicit build argument; verify it exits zero and records the implementation SHA
+- [x] 4.1 Mark tasks 1.1 through 3.2 complete from observed results, commit the authorized implementation and planning files, and verify the commit contains no unrelated user files
+- [x] 4.2 Create a clean detached checkout of the implementation commit, initialize its submodules, and verify `git status --short` is empty and `git rev-parse HEAD` equals the recorded implementation SHA
+- [x] 4.3 In the clean checkout, record `uname -m`, fixture-scoped `git status --short`, `shasum -a 256` for its manifest/lock/source, and `rustc +nightly-2026-07-18 -Vv`; set `CARGO_TARGET_DIR` to a fresh `mktemp -d` path and run `cargo +nightly-2026-07-18 check --locked --manifest-path openspec/changes/fix-container-rust-toolchain-pin-consistency/fixtures/diskann-wide-probe/Cargo.toml --target aarch64-apple-darwin`, verifying exit zero
+- [x] 4.4 In the same checkout, record `rustc +nightly-2026-08-22 -Vv`, set `CARGO_TARGET_DIR` to a different fresh `mktemp -d` path, and run `cargo +nightly-2026-08-22 check --locked --manifest-path openspec/changes/fix-container-rust-toolchain-pin-consistency/fixtures/diskann-wide-probe/Cargo.toml --target aarch64-apple-darwin`; verify exit nonzero with E0283, then verify the fixture hashes equal task 4.3 and fixture-scoped git status remains empty
+- [x] 4.5 From the clean implementation checkout, run `docker buildx build --check --platform linux/arm64 --build-arg RUST_TOOLCHAIN=nightly-2026-07-18 -f Dockerfile .` locally and verify it exits zero
+- [x] 4.6 Confirm sufficient local Docker storage, then run the complete `linux/arm64` production image build locally with the same explicit build argument; verify it exits zero and records the implementation SHA
 
 ## 5. Completion Evidence and Handoff
 
-- [ ] 5.1 Write row-form `verification.md` with command, observed output, limit, tested implementation SHA, and profile for every requirement and paired fail-closed negative control; verify no aggregate or cross-profile verdict is present
-- [ ] 5.2 Re-run `openspec validate fix-container-rust-toolchain-pin-consistency --strict` and the required artifact-refiner validation gate; record both observed results
-- [ ] 5.3 Append the moving-toolchain root cause, dated-selector decision, and stale `gke-deployment` spec follow-up to permitted `.prometheus` history; verify history remains append-only
-- [ ] 5.4 Mark the remaining tasks complete only from observed evidence, create one direct evidence-only commit containing no product or build changes, and verify its parent is the tested implementation commit
+- [x] 5.1 Write row-form `verification.md` with command, observed output, limit, tested implementation SHA, and profile for every requirement and paired fail-closed negative control; verify no aggregate or cross-profile verdict is present
+- [x] 5.2 Re-run `openspec validate fix-container-rust-toolchain-pin-consistency --strict` and the required artifact-refiner validation gate; record both observed results
+- [x] 5.3 Append the moving-toolchain root cause, dated-selector decision, and stale `gke-deployment` spec follow-up to permitted `.prometheus` history; verify history remains append-only
+- [x] 5.4 Mark the remaining tasks complete only from observed evidence, create one direct evidence-only commit containing no product or build changes, and verify its parent is the tested implementation commit
 - [ ] 5.5 Complete child Execute and Reflect through the canonical KBD runtime after resolving the evidence-commit SHA, restore the parent on that exact handoff SHA, and verify its next command restarts local 10,800-second certification from zero
