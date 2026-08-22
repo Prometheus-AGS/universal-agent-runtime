@@ -1,0 +1,31 @@
+{
+  "refinement_id": "a8b95d9f-bae9-4384-ab41-76504c9ee0c1",
+  "artifact_name": "fix-user-isolation-sessions-memory-kb",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-18T11:15:44Z",
+  "updated_at": "2026-08-18T11:18:12Z",
+  "current_iteration": 0,
+  "max_iterations": 5,
+  "goals": [],
+  "constraints": [],
+  "phases_completed": [],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "c34456b0",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-18T11:18:12Z"
+    },
+    {
+      "checkpoint_id": "8a2aeec2",
+      "phase": "plan",
+      "iteration": 0,
+      "timestamp": "2026-08-18T11:18:12Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

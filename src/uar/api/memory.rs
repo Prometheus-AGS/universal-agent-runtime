@@ -5,9 +5,10 @@
 //! `/mcp/memory` which provide the full surreal-memory feature set.
 
 use crate::AppState;
+use crate::uar::security::claims::UserContext;
 use axum::{
     Json,
-    extract::{Query, State},
+    extract::{Extension, Query, State},
     http::StatusCode,
     response::IntoResponse,
 };
@@ -33,6 +34,7 @@ pub struct SearchMemoryQuery {
 
 pub async fn save_memory_handler(
     State(state): State<AppState>,
+    Extension(user_ctx): Extension<UserContext>,
     Json(payload): Json<SaveMemoryRequest>,
 ) -> impl IntoResponse {
     let Some(svc) = &state.memory_service else {
@@ -41,7 +43,7 @@ pub async fn save_memory_handler(
 
     let memory = Memory::new(
         payload.content,
-        payload.user_id,
+        Some(user_ctx.user_id),
         payload.agent_id,
         None,
         payload.categories.unwrap_or_default(),
@@ -71,6 +73,7 @@ pub async fn save_memory_handler(
 
 pub async fn search_memory_handler(
     State(state): State<AppState>,
+    Extension(user_ctx): Extension<UserContext>,
     Query(query): Query<SearchMemoryQuery>,
 ) -> impl IntoResponse {
     let Some(svc) = &state.memory_service else {
@@ -83,7 +86,7 @@ pub async fn search_memory_handler(
         .storage()
         .search_memories(
             &query.q,
-            query.user_id.as_deref(),
+            Some(user_ctx.user_id.as_str()),
             query.agent_id.as_deref(),
             None,
             None,

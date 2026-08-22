@@ -1,0 +1,114 @@
+{
+  "refinement_id": "dc44f403-6623-4566-9563-6dca1e9048e1",
+  "artifact_name": "wire-orchestrator-delegation",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-18T19:28:08Z",
+  "updated_at": "2026-08-18T19:40:07Z",
+  "current_iteration": 2,
+  "max_iterations": 5,
+  "goals": [
+    "Make orchestrator-agent execute real RouterNode-to-AgentNode delegation with observable attributed output"
+  ],
+  "constraints": [
+    {
+      "id": "orchestrator-only-graph"
+    },
+    {
+      "id": "delegated-trace-and-answer"
+    },
+    {
+      "id": "scope-and-evidence"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 3,
+      "constraints_total": 3,
+      "decision": "continue",
+      "timestamp": "2026-08-18T19:28:08Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 3,
+      "constraints_total": 3,
+      "decision": "continue",
+      "timestamp": "2026-08-18T19:39:12Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "d001042b",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-18T19:29:04Z"
+    },
+    {
+      "checkpoint_id": "51bde4c2",
+      "phase": "plan",
+      "iteration": 1,
+      "timestamp": "2026-08-18T19:29:05Z"
+    },
+    {
+      "checkpoint_id": "ddd5ef73",
+      "phase": "execute",
+      "iteration": 1,
+      "timestamp": "2026-08-18T19:29:05Z"
+    },
+    {
+      "checkpoint_id": "bdc63c0b",
+      "phase": "reflect",
+      "iteration": 1,
+      "timestamp": "2026-08-18T19:29:05Z"
+    },
+    {
+      "checkpoint_id": "deaf3f79",
+      "phase": "persist",
+      "iteration": 1,
+      "timestamp": "2026-08-18T19:29:06Z"
+    },
+    {
+      "checkpoint_id": "6ed5a7b2",
+      "phase": "specify",
+      "iteration": 2,
+      "timestamp": "2026-08-18T19:40:06Z"
+    },
+    {
+      "checkpoint_id": "aa0db44d",
+      "phase": "plan",
+      "iteration": 2,
+      "timestamp": "2026-08-18T19:40:06Z"
+    },
+    {
+      "checkpoint_id": "3168c3bd",
+      "phase": "execute",
+      "iteration": 2,
+      "timestamp": "2026-08-18T19:40:07Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

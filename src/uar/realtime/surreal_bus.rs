@@ -14,7 +14,9 @@ use anyhow::Result;
 use futures::StreamExt;
 use surrealdb::types::Action;
 use surrealdb::{Notification, Surreal, engine::any::Any};
-use tokio::sync::broadcast;
+use tokio::sync::{Mutex, broadcast};
+use tokio::task::JoinHandle;
+use tokio_util::sync::CancellationToken;
 use tracing::{debug, info, warn};
 
 use super::{EntityTopic, LiveAction, LiveEvent, RealtimeBus};
@@ -30,12 +32,19 @@ const RECONNECT_MAX: Duration = Duration::from_secs(30);
 #[derive(Clone)]
 pub struct LiveQueryBus {
     senders: Arc<HashMap<EntityTopic, broadcast::Sender<LiveEvent>>>,
+    lifecycle: Arc<LiveQueryLifecycle>,
+}
+
+struct LiveQueryLifecycle {
+    shutdown: CancellationToken,
+    tasks: Mutex<Option<Vec<JoinHandle<()>>>>,
 }
 
 impl std::fmt::Debug for LiveQueryBus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LiveQueryBus")
             .field("topics", &self.senders.keys().collect::<Vec<_>>())
+            .field("shutting_down", &self.lifecycle.shutdown.is_cancelled())
             .finish()
     }
 }
@@ -50,17 +59,40 @@ impl LiveQueryBus {
     /// topics whose streams are healthy.
     pub fn start(db: Surreal<Any>) -> Self {
         let mut senders = HashMap::with_capacity(EntityTopic::ALL.len());
+        let shutdown = CancellationToken::new();
+        let mut tasks = Vec::with_capacity(EntityTopic::ALL.len());
         for topic in EntityTopic::ALL {
             let (tx, _) = broadcast::channel(CHANNEL_CAPACITY);
             senders.insert(*topic, tx.clone());
             let db = db.clone();
             let topic = *topic;
-            tokio::spawn(async move {
-                supervise_topic(db, topic, tx).await;
-            });
+            let topic_shutdown = shutdown.clone();
+            tasks.push(tokio::spawn(async move {
+                tokio::select! {
+                    () = topic_shutdown.cancelled() => {
+                        info!(topic = %topic, "live stream supervisor shutting down");
+                    }
+                    () = supervise_topic(db, topic, tx) => {}
+                }
+            }));
         }
         Self {
             senders: Arc::new(senders),
+            lifecycle: Arc::new(LiveQueryLifecycle {
+                shutdown,
+                tasks: Mutex::new(Some(tasks)),
+            }),
+        }
+    }
+
+    /// Cancel and join every UAR-owned live-query supervisor.
+    pub(crate) async fn shutdown(&self) {
+        self.lifecycle.shutdown.cancel();
+        let tasks = self.lifecycle.tasks.lock().await.take().unwrap_or_default();
+        for task in tasks {
+            if let Err(error) = task.await {
+                warn!(%error, "live stream supervisor task failed during shutdown");
+            }
         }
     }
 
@@ -176,4 +208,29 @@ async fn run_live_stream(
         let _ = tx.send(event);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn shutdown_is_idempotent_and_joins_topic_supervisors() {
+        let scratch = tempfile::tempdir().expect("create SurrealKV scratch directory");
+        let endpoint = format!("surrealkv://{}", scratch.path().join("db").display());
+        let db = surrealdb::engine::any::connect(&endpoint)
+            .await
+            .expect("connect temporary SurrealKV database");
+        db.use_ns("test")
+            .use_db("test")
+            .await
+            .expect("select test namespace and database");
+        let bus = LiveQueryBus::start(db);
+
+        bus.shutdown().await;
+        bus.shutdown().await;
+
+        assert!(bus.lifecycle.shutdown.is_cancelled());
+        assert!(bus.lifecycle.tasks.lock().await.is_none());
+    }
 }

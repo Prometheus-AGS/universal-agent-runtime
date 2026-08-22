@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 108,
+  "derivedRevision": 108,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 50
+  },
+  "conflictCount": 0,
+  "phase": "jsonwebtoken-crypto-provider-spike",
+  "phaseId": "uar-1-0-readiness::jsonwebtoken-crypto-provider-spike",
+  "parentPhase": "uar-1-0-readiness",
+  "last_updated": "2026-08-15T22:07:16.756649Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 1,
+  "changes_completed": 1,
+  "implementation_total": 1,
+  "implementation_completed": 1,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 1,
+      "total": 1,
+      "status": "COMPLETE"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "handoff-jwt-provider-decision",
+      "title": "Handoff JWT provider decision",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 1,
+      "tasks_done": 1,
+      "last_task_completed": "Write and verify handoff-out",
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

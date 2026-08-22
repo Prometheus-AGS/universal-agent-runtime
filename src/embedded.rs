@@ -28,7 +28,10 @@ use crate::{
             manager::RunManager,
             matching::VectorMatcher,
             native_skill::NativeSkillRegistry,
-            skills::{service::SkillService, storage::DatabaseStorageProvider},
+            skills::{
+                builtin_loader::discover_builtin_skills, service::SkillService,
+                storage::DatabaseStorageProvider,
+            },
         },
         settings::manager::SettingsManager,
     },
@@ -367,6 +370,10 @@ impl EmbeddedRuntimeBuilder {
             Arc::clone(&persistence),
         )));
         let skill_service = Arc::new(skill_service);
+        if self.seed_defaults {
+            let (builtins, _) = discover_builtin_skills();
+            skill_service.register_builtins(builtins).await;
+        }
         skill_service.initialize().await?;
         let skills = skill_service.registry().clone();
 
@@ -405,6 +412,7 @@ impl EmbeddedRuntimeBuilder {
                 Some(Arc::clone(&persistence)),
             )
             .await
+            .with_agent_graph(crate::uar::defaults::orchestrator_graph())
             .with_llm_driver(driver)
             .with_skill_service(Arc::clone(&skill_service))
             .with_provider_registry(Arc::clone(&provider_registry))
@@ -756,7 +764,7 @@ mod tests {
             .expect("conversation policy persists");
 
         let loaded = persistence
-            .load_conversation_policy(conversation_id)
+            .load_conversation_policy(crate::session::ANONYMOUS_SESSION_OWNER, conversation_id)
             .await
             .expect("load ok")
             .expect("record present");
@@ -779,7 +787,7 @@ mod tests {
 
         // Deleting the override reverts to the backfilled registry default.
         persistence
-            .delete_conversation_policy(conversation_id)
+            .delete_conversation_policy(crate::session::ANONYMOUS_SESSION_OWNER, conversation_id)
             .await
             .expect("delete ok");
         let reverted = runtime

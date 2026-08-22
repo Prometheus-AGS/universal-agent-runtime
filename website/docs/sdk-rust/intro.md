@@ -8,7 +8,7 @@ Add the SDK to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-universal-agent-runtime-sdk = { path = "../sdks/rust" }
+universal-agent-runtime-sdk = "1"
 ```
 
 ## Reference

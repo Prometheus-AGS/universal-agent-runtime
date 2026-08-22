@@ -1,0 +1,57 @@
+{
+  "mode": "decision",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "codex-gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "Decision / Assumptions",
+      "claim": "The decision makes the aws_lc_rs manifest feature unconditional and explicitly defers all embedded/mobile impact, but never acknowledges two prior decisions on exactly that ground.",
+      "evidence": "prior_decisions lists 'knowme-embedded-mobile-cargo-gating-scope-assessment' (tags: embedded-mobile, cargo-features, universal-agent-runtime) and 'uar-embedded-admin-sdk-gap-and-mcp-live-hydration-decision' (tags: embedded-uar, hybrid-app-architecture, mobile-offline). The decision document contains no reference to either, while assumption 4 states the feature 'can affect non-server-full graphs' and grants them 'no verdict.' If the prior cargo-gating assessment settled how embedded/mobile feature exposure must be handled, this decision contradicts it silently.",
+      "suggested_fix": "Cite the prior embedded-mobile cargo-gating decision and state explicitly whether an unconditional aws_lc_rs feature complies with it, or make the feature conditional on the server-full profile."
+    },
+    {
+      "severity": "WARNING",
+      "file": "Falsifier",
+      "claim": "Several falsifier limbs are passive triggers that no one is assigned to test, and the document itself declines to run the checks that would activate them.",
+      "evidence": "The falsifier fires 'if any non-server-full profile that consumes the unconditional feature observes a build regression' and 'if a supported release target lacks AWS-LC build/test coverage', yet the document states 'Cross-target and non-server-full checks are not silently claimed; this phase's reporting contract limits all results to server-full.' No owner, cadence, or CI gate is named for non-server-full builds, cross-target builds, or advisory monitoring. 'Observes' is not a check \u2014 a falsifier limb nobody executes cannot trigger.",
+      "suggested_fix": "Assign each passive falsifier limb a concrete check: a CI job for non-server-full feature graphs, a cross-target build matrix, and a named advisory-monitoring cadence with an owner."
+    },
+    {
+      "severity": "WARNING",
+      "file": "Assumptions / Decisive evidence",
+      "claim": "The decision certifies a five-target release matrix on the strength of vendor documentation plus single-host evidence, without any UAR cross-target build.",
+      "evidence": "Assumption 1 asserts the scope 'remains the native server-full release matrix: Linux x86-64/aarch64, macOS x86-64/aarch64, and Windows x86-64.' The only support evidence offered is 'AWS-LC documents build/test support for every native release target in this phase.' All measured evidence (918-package resolution, cargo check/test commands) ran on one host; the reporting contract limits results to server-full, which is a feature profile, not a target matrix. Vendor documentation of platform support is not evidence that UAR's graph compiles on those targets.",
+      "suggested_fix": "Either narrow the certified scope to the targets actually built, or add cross-target cargo check builds to the parent verification commands before claiming the release matrix."
+    },
+    {
+      "severity": "WARNING",
+      "file": "Assumptions",
+      "claim": "A load-bearing assumption is missing entirely: aws-lc-rs requires a C toolchain (and typically cmake) on every build host, and no assumption or check covers build-environment availability for the release matrix or cross-compiles.",
+      "evidence": "The Assumptions section lists scope, certification requirements, and performance neutrality, but nothing about build toolchain prerequisites. The spike's simulation ran in one environment; embedded/mobile and CI cross-compile hosts \u2014 the exact environments flagged in prior decisions \u2014 are the most likely to lack this toolchain, and the unconditional feature forces aws-lc-rs compilation into those graphs.",
+      "suggested_fix": "Add an explicit assumption that all release build hosts provide the aws-lc-rs build toolchain, and verify it in CI for at least one cross-compiled target."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "Decisive evidence",
+      "claim": "The claim 'Both built-ins implement the same JWT algorithms' is stated as decisive evidence with no citation in the packet, and UAR's only exercised path is HS256, so the claim is broader than what the decision needs.",
+      "evidence": "The packet contains no algorithm matrix or upstream citation; the only referenced test, 'test_resolve_user_context_valid_token', is described as 'the HS256 round trip.' If the backends differ on any algorithm, the claim as written is wrong even though the decision's outcome would be unchanged.",
+      "suggested_fix": "Either cite the upstream algorithm-support matrix from research-evidence.md, or narrow the claim to 'both backends support HS256, the only algorithm UAR exercises.'"
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "Falsifier",
+      "claim": "Advisory monitoring covers only the locked AWS-LC version; the jsonwebtoken 11.0.0 lock itself has no advisory or currency check, despite the intent requiring comparison against current official documentation.",
+      "evidence": "The falsifier triggers on 'an unpatched advisory affects the locked AWS-LC version' but no limb addresses advisories against jsonwebtoken 11.0.0 itself, and no evidence in the packet establishes that 11.0.0 is the current 11.x patch release.",
+      "suggested_fix": "Extend the advisory limb to cover the locked jsonwebtoken version and record the check that 11.0.0 is the intended current release."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

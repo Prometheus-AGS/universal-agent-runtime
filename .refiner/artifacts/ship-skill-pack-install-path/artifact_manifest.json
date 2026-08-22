@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-18T17:51:31Z",
+  "variants": [
+    {
+      "name": "skill-pack-install-verification",
+      "file": ".refiner/artifacts/ship-skill-pack-install-path/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic verification receipt for public skill-pack fetch, build, atomic install, and UAR inventory"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "The public HTTPS endpoint served the exact UAR-pinned commit.",
+      "A real locked release build produced prometheus-cli 1.7.0 and installed 311 manifests.",
+      "Wrong-commit and failed-build controls refused activation.",
+      "A clean-prefix server-full test exposed the exact 147-skill default loader inventory through the skills API with built-in origin.",
+      "Independent artifact critic and judge accepted the corrected candidate."
+    ]
+  }
+}

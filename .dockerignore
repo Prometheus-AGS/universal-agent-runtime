@@ -3,8 +3,7 @@
 .gitignore
 
 # Dependencies
-node_modules/
-frontend/node_modules/
+**/node_modules
 target/
 .yarn/
 .pnp.*
@@ -18,7 +17,8 @@ target/
 *.log*
 
 # Build artifacts
-dist/
+**/dist
+**/.turbo
 build/
 coverage/
 

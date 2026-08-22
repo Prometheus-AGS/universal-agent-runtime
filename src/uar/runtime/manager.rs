@@ -15,7 +15,10 @@ use crate::uar::domain::{
     },
     runs::{Run, RunStatus},
 };
-use crate::uar::rag::citation_stream::CitationStream;
+use crate::uar::rag::{
+    citation_stream::CitationStream,
+    pipeline::{RagRetrievalPipeline, RetrievalBackend},
+};
 use crate::uar::runtime::context::manager::ContextManager;
 use crate::uar::runtime::matching::{ClassifierConfig, IntentClassifier, create_classifier};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
@@ -73,6 +76,36 @@ impl RunEventEmitter {
         }
 
         let _ = self.sender.send(stream_event);
+    }
+}
+
+struct ChatRagSearchBackend<'a> {
+    persistence: &'a dyn crate::uar::persistence::PersistenceLayer,
+    vector_matcher: &'a crate::uar::runtime::matching::VectorMatcher,
+    owner_id: &'a str,
+    kb_ids: &'a [String],
+}
+
+#[async_trait::async_trait]
+impl RetrievalBackend for ChatRagSearchBackend<'_> {
+    async fn search_one(
+        &self,
+        sub_query: &str,
+        limit: usize,
+        min_score: f32,
+    ) -> anyhow::Result<Vec<crate::uar::domain::knowledge::KnowledgeMatch>> {
+        let embeddings = self
+            .vector_matcher
+            .embed_batch(vec![sub_query.to_string()])
+            .await?;
+        let query_vec = embeddings
+            .into_iter()
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("no embedding generated for chat sub-query"))?;
+        let kb_id_refs = self.kb_ids.iter().map(String::as_str).collect::<Vec<_>>();
+        self.persistence
+            .search_knowledge_scoped(self.owner_id, &kb_id_refs, &query_vec, limit, min_score)
+            .await
     }
 }
 
@@ -166,8 +199,8 @@ pub struct RunManager {
     run_cancellations: Arc<RwLock<HashMap<String, CancellationToken>>>,
     /// Message-count based context strategy applied to session history before LLM calls.
     message_context_strategy: crate::uar::context::ContextStrategy,
-    /// Optional agent graph for graph-based execution. When set, `start_run` uses
-    /// graph-driven orchestration instead of the simple tool loop.
+    /// Optional agent graph for graph-based execution. When set, orchestrator-agent
+    /// runs use graph-driven delegation instead of the simple tool loop.
     agent_graph: Option<std::sync::Arc<crate::uar::runtime::graph::AgentGraph>>,
     /// Optional Cedar governance engine consulted at the tool-approval gate.
     /// When set, a tool that policy denies is routed to the HITL approval gate.
@@ -515,7 +548,8 @@ impl RunManager {
 
     /// Attach an agent graph for graph-driven execution.
     ///
-    /// When set, `start_run` executes the graph instead of the simple tool loop.
+    /// When set, orchestrator-agent runs execute the graph instead of the simple
+    /// tool loop. Other agents retain their existing execution path.
     #[must_use]
     pub fn with_agent_graph(mut self, graph: crate::uar::runtime::graph::AgentGraph) -> Self {
         self.agent_graph = Some(std::sync::Arc::new(graph));
@@ -691,6 +725,14 @@ impl RunManager {
         true
     }
 
+    /// Cancel an in-flight run only when it belongs to the authenticated owner.
+    pub async fn cancel_run_for_user(&self, owner_id: &str, run_id: &str) -> bool {
+        if self.get_run_for_user(owner_id, run_id).await.is_none() {
+            return false;
+        }
+        self.cancel_run(run_id).await
+    }
+
     /// Cancel the current in-flight run associated with a conversation session.
     ///
     /// Service clients receive a stable session identifier before the first
@@ -698,12 +740,19 @@ impl RunManager {
     /// the runtime keeps cancellation reliable without asking clients to parse
     /// transport-specific event payloads.
     pub async fn cancel_session_run(&self, session_id: &str) -> bool {
+        self.cancel_session_run_for_user(crate::session::ANONYMOUS_SESSION_OWNER, session_id)
+            .await
+    }
+
+    /// Cancel the current run for an owner-scoped conversation session.
+    pub async fn cancel_session_run_for_user(&self, owner_id: &str, session_id: &str) -> bool {
+        let session_key = crate::uar::persistence::tenant_storage_key(owner_id, session_id);
         let run_id = {
             let session_runs = self.session_current_run.read().await;
-            session_runs.get(session_id).cloned()
+            session_runs.get(&session_key).cloned()
         };
         match run_id {
-            Some(run_id) => self.cancel_run(&run_id).await,
+            Some(run_id) => self.cancel_run_for_user(owner_id, &run_id).await,
             None => false,
         }
     }
@@ -725,11 +774,12 @@ impl RunManager {
     /// global-aware path see an identical universe + conversation scope.
     async fn build_universe_and_conversation(
         &self,
+        owner_id: &str,
         conversation_id: &str,
     ) -> (PolicyUniverse, Option<RunPolicy>) {
         let skills = match &self.skill_service {
             Some(service) => service
-                .get_enabled_skills()
+                .get_skills()
                 .await
                 .into_iter()
                 .map(|skill| skill.skill_id)
@@ -760,14 +810,14 @@ impl RunManager {
         }
         let mut knowledge_bases = std::collections::BTreeSet::new();
         let conversation = if let Some(persistence) = &self.persistence {
-            if let Ok(records) = persistence.list_knowledge_bases().await {
+            if let Ok(records) = persistence.list_knowledge_bases(owner_id).await {
                 for knowledge_base in records {
                     knowledge_bases.insert(knowledge_base.id);
                     knowledge_bases.insert(knowledge_base.name);
                 }
             }
             persistence
-                .load_conversation_policy(conversation_id)
+                .load_conversation_policy(owner_id, conversation_id)
                 .await
                 .ok()
                 .flatten()
@@ -795,14 +845,17 @@ impl RunManager {
     async fn resolve_effective_policy(
         &self,
         artifact: &AgentArtifact,
+        owner_id: &str,
         conversation_id: &str,
     ) -> EffectiveRunPolicy {
         let Some(settings_manager) = self.settings_manager.as_ref() else {
             return self
-                .resolve_legacy_run_policy(artifact, conversation_id)
+                .resolve_legacy_run_policy(artifact, owner_id, conversation_id)
                 .await;
         };
-        let (universe, conversation) = self.build_universe_and_conversation(conversation_id).await;
+        let (universe, conversation) = self
+            .build_universe_and_conversation(owner_id, conversation_id)
+            .await;
         let ctx = PolicyResolutionContext {
             settings_manager: Some(settings_manager.as_ref()),
             universe,
@@ -824,7 +877,7 @@ impl RunManager {
     pub async fn effective_config(&self, conversation_id: &str) -> EffectiveConfig {
         let requested = if let Some(persistence) = &self.persistence {
             persistence
-                .load_conversation_policy(conversation_id)
+                .load_conversation_policy(crate::session::ANONYMOUS_SESSION_OWNER, conversation_id)
                 .await
                 .ok()
                 .flatten()
@@ -836,7 +889,13 @@ impl RunManager {
             .and_then(|record| record.policy.agent_id.clone())
             .unwrap_or_else(|| "default-agent".to_string());
         let agent = self.resolve_agent_or_default(&agent_id).await;
-        let mut effective = self.resolve_effective_policy(&agent, conversation_id).await;
+        let mut effective = self
+            .resolve_effective_policy(
+                &agent,
+                crate::uar::domain::knowledge::ANONYMOUS_KNOWLEDGE_OWNER,
+                conversation_id,
+            )
+            .await;
         self.backfill_effective_model(&mut effective).await;
         EffectiveConfig {
             agent,
@@ -867,9 +926,12 @@ impl RunManager {
     async fn resolve_legacy_run_policy(
         &self,
         artifact: &AgentArtifact,
+        owner_id: &str,
         conversation_id: &str,
     ) -> EffectiveRunPolicy {
-        let (universe, conversation) = self.build_universe_and_conversation(conversation_id).await;
+        let (universe, conversation) = self
+            .build_universe_and_conversation(owner_id, conversation_id)
+            .await;
         let default_model = ModelRoute {
             provider_id: artifact.policy.provider.default.provider.clone(),
             model_id: artifact.policy.provider.default.model.clone(),
@@ -1032,10 +1094,13 @@ impl RunManager {
         };
 
         // 1. Resolve Session
+        let owner_id = user_id
+            .clone()
+            .unwrap_or_else(|| crate::session::ANONYMOUS_SESSION_OWNER.to_string());
         let session = if let Some(id) = session_id {
-            self.sessions.get_or_create(&id)
+            self.sessions.get_or_create_for_user(&id, &owner_id)
         } else {
-            self.sessions.create()
+            self.sessions.create_for_user(&owner_id)
         };
 
         // 1b. Seed prior turns into an empty session. The in-process session
@@ -1060,7 +1125,10 @@ impl RunManager {
 
         let mut effective_policy = match resolved_policy {
             Some(policy) => policy,
-            None => self.resolve_effective_policy(&artifact, session.id()).await,
+            None => {
+                self.resolve_effective_policy(&artifact, &owner_id, session.id())
+                    .await
+            }
         };
 
         self.backfill_effective_model(&mut effective_policy).await;
@@ -1116,7 +1184,10 @@ impl RunManager {
             .await;
         {
             let mut session_runs = self.session_current_run.write().await;
-            session_runs.insert(session.id().to_string(), run_id.clone());
+            session_runs.insert(
+                crate::uar::persistence::tenant_storage_key(&owner_id, session.id()),
+                run_id.clone(),
+            );
         }
 
         // Per-run cancellation token, derived from the root so that a server
@@ -1138,83 +1209,73 @@ impl RunManager {
         if !effective_policy.knowledge_bases.ids.is_empty()
             && let Some(db) = &self.persistence
         {
-            match self.vector_matcher.embed_batch(vec![input.clone()]).await {
-                Ok(embeddings) => {
-                    if let Some(query_vec) = embeddings.first() {
-                        let mut kb_ids = Vec::new();
-                        for id_or_name in &effective_policy.knowledge_bases.ids {
-                            let resolved = db
-                                .get_knowledge_base(id_or_name)
-                                .await
-                                .ok()
-                                .flatten()
-                                .or_else(|| None);
-                            let resolved = match resolved {
-                                Some(kb) => Some(kb),
-                                None => db
-                                    .get_knowledge_base_by_name(id_or_name)
-                                    .await
-                                    .ok()
-                                    .flatten(),
-                            };
-                            if let Some(kb) = resolved
-                                && !kb_ids.contains(&kb.id)
+            let mut kb_ids = Vec::new();
+            for id_or_name in &effective_policy.knowledge_bases.ids {
+                let resolved = db
+                    .get_knowledge_base(&owner_id, id_or_name)
+                    .await
+                    .ok()
+                    .flatten();
+                let resolved = match resolved {
+                    Some(kb) => Some(kb),
+                    None => db
+                        .get_knowledge_base_by_name(&owner_id, id_or_name)
+                        .await
+                        .ok()
+                        .flatten(),
+                };
+                if let Some(kb) = resolved
+                    && !kb_ids.contains(&kb.id)
+                {
+                    kb_ids.push(kb.id);
+                }
+            }
+
+            // A configured selection that resolves to nothing is a safe empty
+            // result, never an implicit search-all.
+            let search_result = if kb_ids.is_empty() {
+                Ok(Vec::new())
+            } else {
+                let backend = ChatRagSearchBackend {
+                    persistence: db.as_ref(),
+                    vector_matcher: self.vector_matcher.as_ref(),
+                    owner_id: &owner_id,
+                    kb_ids: &kb_ids,
+                };
+                RagRetrievalPipeline::new()
+                    .retrieve(&backend, &kb_ids.join(","), &input, 3, 0.7)
+                    .await
+            };
+
+            match search_result {
+                Ok(matches) => {
+                    if !matches.is_empty() {
+                        // Resolve document names for the citation panel
+                        // (best-effort; falls back to the document/chunk id
+                        // when a document record can't be found or has none).
+                        let mut document_names: HashMap<String, String> = HashMap::new();
+                        let mut seen_document_ids: HashSet<String> = HashSet::new();
+                        for m in &matches {
+                            if let Some(did) = &m.chunk.document_id
+                                && seen_document_ids.insert(did.clone())
+                                && let Ok(Some(doc)) = db.get_document(&owner_id, did).await
                             {
-                                kb_ids.push(kb.id);
+                                document_names.insert(did.clone(), doc.filename);
                             }
                         }
 
-                        // A configured selection that resolves to nothing is a
-                        // safe empty result, never an implicit search-all.
-                        let search_result = if kb_ids.is_empty() {
-                            Ok(Vec::new())
-                        } else {
-                            let kb_id_refs: Vec<&str> = kb_ids.iter().map(String::as_str).collect();
-                            db.search_knowledge_scoped(&kb_id_refs, query_vec, 3, 0.7)
-                                .await
-                        };
-
-                        match search_result {
-                            Ok(matches) => {
-                                if !matches.is_empty() {
-                                    // Resolve document names for the citation
-                                    // panel (best-effort; falls back to the
-                                    // document/chunk id when a document
-                                    // record can't be found or has none).
-                                    let mut document_names: HashMap<String, String> =
-                                        HashMap::new();
-                                    let mut seen_document_ids: HashSet<String> = HashSet::new();
-                                    for m in &matches {
-                                        if let Some(did) = &m.chunk.document_id
-                                            && seen_document_ids.insert(did.clone())
-                                            && let Ok(Some(doc)) = db.get_document(did).await
-                                        {
-                                            document_names.insert(did.clone(), doc.filename);
-                                        }
-                                    }
-
-                                    // Assign [1], [2], ... markers matching
-                                    // retrieval order, inject the numbered
-                                    // block so the model has a reason to cite
-                                    // back with `[n]`, and emit the same
-                                    // numbered set on the SSE stream so the
-                                    // client can resolve `[n]` to a
-                                    // hover-to-source panel.
-                                    let citation_stream =
-                                        CitationStream::from_matches(&matches, &document_names);
-                                    system_prompt.push_str(&citation_stream.prompt_block());
-                                    if let Some(event) =
-                                        citation_stream.to_normalized_event(run_id.clone())
-                                    {
-                                        emitter.emit(event).await;
-                                    }
-                                }
-                            }
-                            Err(e) => tracing::error!("RAG search failed: {:?}", e),
+                        // Assign [1], [2], ... markers matching retrieval
+                        // order, inject the numbered block, and emit the same
+                        // provenance on the SSE stream for the chat UI.
+                        let citation_stream =
+                            CitationStream::from_matches(&matches, &document_names);
+                        system_prompt.push_str(&citation_stream.prompt_block());
+                        if let Some(event) = citation_stream.to_normalized_event(run_id.clone()) {
+                            emitter.emit(event).await;
                         }
                     }
                 }
-                Err(e) => tracing::error!("RAG embedding failed: {:?}", e),
+                Err(e) => tracing::error!("RAG retrieval pipeline failed: {:?}", e),
             }
         }
 
@@ -1246,7 +1307,9 @@ impl RunManager {
             }
             .to_string();
             (
-                skill_service.match_skills(&input, Some(&agent_id)).await,
+                skill_service
+                    .match_skills_scoped(&input, Some(&agent_id), Some(session.id()))
+                    .await,
                 selection_method,
             )
         } else {
@@ -1757,7 +1820,11 @@ impl RunManager {
                 )
                 .await;
         }
-        let graph_for_run = self.agent_graph.clone();
+        let graph_for_run = if artifact.id == "orchestrator-agent" {
+            self.agent_graph.clone()
+        } else {
+            None
+        };
         let persistence_for_run = self.persistence.clone();
         let a2ui_backbone_for_run = Arc::clone(&self.a2ui_backbone);
         // Cancellation: the run's child token (selected on in the consumption loop,
@@ -1880,6 +1947,27 @@ impl RunManager {
                     state = graph.execute(initial_state, &graph_ctx) => state,
                 };
 
+                let graph_trace = final_state
+                    .get::<Vec<String>>("_graph_trace")
+                    .unwrap_or_default();
+                for (index, _) in graph_trace.iter().enumerate() {
+                    let step = u32::try_from(index + 1).unwrap_or(u32::MAX);
+                    emitter
+                        .emit(NormalizedEvent::RuntimeStep {
+                            run_id: execute_run_id.clone(),
+                            step,
+                            kind: "started".to_string(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RuntimeStep {
+                            run_id: execute_run_id.clone(),
+                            step,
+                            kind: "finished".to_string(),
+                        })
+                        .await;
+                }
+
                 if let Some(err) = final_state.get::<String>("_error") {
                     emitter
                         .emit(NormalizedEvent::Error {
@@ -1888,12 +1976,41 @@ impl RunManager {
                             code: String::new(),
                         })
                         .await;
+                } else if let Some(route) = final_state.get::<String>("_route") {
+                    let output_key = format!("_agent_output_{route}");
+                    match final_state.get::<String>(&output_key) {
+                        Some(output) => {
+                            let attributed_output = format!("[{route}]\n\n{output}");
+                            execution_session.add_assistant_message(attributed_output.clone());
+                            emitter
+                                .emit(NormalizedEvent::ChatDelta {
+                                    run_id: execute_run_id.clone(),
+                                    text_delta: attributed_output,
+                                })
+                                .await;
+                        }
+                        None => {
+                            emitter
+                                .emit(NormalizedEvent::Error {
+                                    run_id: execute_run_id.clone(),
+                                    message: format!(
+                                        "Delegated sub-agent '{route}' returned no text output"
+                                    ),
+                                    code: "delegation_output_missing".to_string(),
+                                })
+                                .await;
+                        }
+                    }
                 }
                 emitter
                     .emit(NormalizedEvent::RunDone {
                         run_id: execute_run_id.clone(),
                     })
                     .await;
+                cancellations_for_cleanup
+                    .write()
+                    .await
+                    .remove(&cleanup_run_id);
                 return;
             }
 
@@ -2514,12 +2631,31 @@ impl RunManager {
         runs.get(run_id).map(|state| state.run.clone())
     }
 
+    /// Return a run only when it belongs to the authenticated owner.
+    pub async fn get_run_for_user(&self, owner_id: &str, run_id: &str) -> Option<Run> {
+        self.get_run(run_id).await.filter(|run| match &run.user_id {
+            Some(run_owner) => run_owner == owner_id,
+            None => owner_id == crate::session::ANONYMOUS_SESSION_OWNER,
+        })
+    }
+
     pub async fn get_run_by_session_id(&self, session_id: &str) -> Option<Run> {
+        self.get_run_by_session_id_for_user(crate::session::ANONYMOUS_SESSION_OWNER, session_id)
+            .await
+    }
+
+    /// Return the current run for an owner-scoped conversation session.
+    pub async fn get_run_by_session_id_for_user(
+        &self,
+        owner_id: &str,
+        session_id: &str,
+    ) -> Option<Run> {
+        let session_key = crate::uar::persistence::tenant_storage_key(owner_id, session_id);
         let run_id = {
             let session_runs = self.session_current_run.read().await;
-            session_runs.get(session_id).cloned()
+            session_runs.get(&session_key).cloned()
         }?;
-        self.get_run(&run_id).await
+        self.get_run_for_user(owner_id, &run_id).await
     }
 
     /// Return the resolved default model `(provider_id, model_id)` if one is available,

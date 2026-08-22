@@ -1,0 +1,22 @@
+{
+  "artifact_type": "content",
+  "variants": [
+    {
+      "name": "verification-summary",
+      "file": "dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic verification and scope summary for the customer documentation and OpenAPI candidate."
+    }
+  ],
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Docusaurus production build passed after the failing broken-link control was removed.",
+      "Focused OpenAPI test passed 1/1; server-full check passed with three pre-existing warnings.",
+      "Vale was unavailable and the locked website install reported 20 high-severity development dependency findings."
+    ]
+  },
+  "generated_at": "2026-08-18T20:58:55Z"
+}

@@ -4,7 +4,7 @@
 
 use axum::{
     Json, Router,
-    extract::{Multipart, Path, Query, State},
+    extract::{Extension, Multipart, Path, Query, State},
     http::StatusCode,
     routing::{get, post},
 };
@@ -22,6 +22,7 @@ use crate::uar::{
         pipeline::{RagRetrievalPipeline, RetrievalBackend},
     },
     runtime::matching::VectorMatcher,
+    security::claims::UserContext,
 };
 
 // =============================================================================
@@ -173,10 +174,11 @@ pub fn build_router() -> Router<Arc<KnowledgeApiState>> {
 /// GET / - List all knowledge bases
 async fn list_knowledge_bases(
     State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
 ) -> Result<Json<Vec<KnowledgeBaseResponse>>, (StatusCode, String)> {
     let kbs = state
         .persistence
-        .list_knowledge_bases()
+        .list_knowledge_bases(&user.user_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -184,7 +186,7 @@ async fn list_knowledge_bases(
     for kb in kbs {
         let count = state
             .persistence
-            .count_documents(&kb.id)
+            .count_documents(&user.user_id, &kb.id)
             .await
             .unwrap_or_else(|err| {
                 tracing::warn!(kb_id = %kb.id, error = %err, "count_documents failed; reporting 0");
@@ -198,12 +200,13 @@ async fn list_knowledge_bases(
 /// POST / - Create a new knowledge base
 async fn create_knowledge_base(
     State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
     Json(req): Json<CreateKnowledgeBaseRequest>,
 ) -> Result<(StatusCode, Json<KnowledgeBaseResponse>), (StatusCode, String)> {
     // Check if name already exists
     if let Ok(Some(_)) = state
         .persistence
-        .get_knowledge_base_by_name(&req.name)
+        .get_knowledge_base_by_name(&user.user_id, &req.name)
         .await
     {
         return Err((
@@ -220,6 +223,7 @@ async fn create_knowledge_base(
 
     let kb = KnowledgeBase {
         id: uuid::Uuid::new_v4().to_string(),
+        owner_id: user.user_id,
         name: req.name,
         description: req.description,
         config,
@@ -240,11 +244,12 @@ async fn create_knowledge_base(
 /// GET /{id} - Get a knowledge base by ID
 async fn get_knowledge_base(
     State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
     Path(id): Path<String>,
 ) -> Result<Json<KnowledgeBaseResponse>, (StatusCode, String)> {
     let kb = state
         .persistence
-        .get_knowledge_base(&id)
+        .get_knowledge_base(&user.user_id, &id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -252,19 +257,24 @@ async fn get_knowledge_base(
             format!("Knowledge base '{id}' not found"),
         ))?;
 
-    let count = state.persistence.count_documents(&kb.id).await.unwrap_or(0);
+    let count = state
+        .persistence
+        .count_documents(&user.user_id, &kb.id)
+        .await
+        .unwrap_or(0);
     Ok(Json(kb_to_response(kb, count)))
 }
 
 /// PUT /{id} - Update a knowledge base
 async fn update_knowledge_base(
     State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
     Path(id): Path<String>,
     Json(req): Json<UpdateKnowledgeBaseRequest>,
 ) -> Result<Json<KnowledgeBaseResponse>, (StatusCode, String)> {
     let mut kb = state
         .persistence
-        .get_knowledge_base(&id)
+        .get_knowledge_base(&user.user_id, &id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -275,7 +285,10 @@ async fn update_knowledge_base(
     // Apply updates
     if let Some(name) = req.name {
         // Check uniqueness
-        if let Ok(Some(existing)) = state.persistence.get_knowledge_base_by_name(&name).await
+        if let Ok(Some(existing)) = state
+            .persistence
+            .get_knowledge_base_by_name(&user.user_id, &name)
+            .await
             && existing.id != kb.id
         {
             return Err((
@@ -299,19 +312,24 @@ async fn update_knowledge_base(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let count = state.persistence.count_documents(&kb.id).await.unwrap_or(0);
+    let count = state
+        .persistence
+        .count_documents(&user.user_id, &kb.id)
+        .await
+        .unwrap_or(0);
     Ok(Json(kb_to_response(kb, count)))
 }
 
 /// DELETE /{id} - Delete a knowledge base
 async fn delete_knowledge_base(
     State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
     // Check exists
     let _ = state
         .persistence
-        .get_knowledge_base(&id)
+        .get_knowledge_base(&user.user_id, &id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -321,7 +339,7 @@ async fn delete_knowledge_base(
 
     state
         .persistence
-        .delete_knowledge_base(&id)
+        .delete_knowledge_base(&user.user_id, &id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -336,13 +354,14 @@ async fn delete_knowledge_base(
 /// GET /{id}/documents - List documents in a knowledge base
 async fn list_documents(
     State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
     Path(kb_id): Path<String>,
     Query(_query): Query<ListQuery>,
 ) -> Result<Json<Vec<DocumentResponse>>, (StatusCode, String)> {
     // Verify KB exists
     let _ = state
         .persistence
-        .get_knowledge_base(&kb_id)
+        .get_knowledge_base(&user.user_id, &kb_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -352,7 +371,7 @@ async fn list_documents(
 
     let docs = state
         .persistence
-        .list_documents(&kb_id)
+        .list_documents(&user.user_id, &kb_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -363,13 +382,14 @@ async fn list_documents(
 /// POST /{id}/documents - Upload a document (multipart form)
 async fn upload_document(
     State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
     Path(kb_id): Path<String>,
     mut multipart: Multipart,
 ) -> Result<(StatusCode, Json<DocumentResponse>), (StatusCode, String)> {
     // Verify KB exists
     let _ = state
         .persistence
-        .get_knowledge_base(&kb_id)
+        .get_knowledge_base(&user.user_id, &kb_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -409,6 +429,7 @@ async fn upload_document(
     let now = chrono::Utc::now().to_rfc3339();
     let doc = KnowledgeDocument {
         id: uuid::Uuid::new_v4().to_string(),
+        owner_id: user.user_id,
         kb_id: kb_id.clone(),
         filename: filename.clone(),
         file_path: None, // Would be set after saving to storage
@@ -458,11 +479,12 @@ async fn upload_document(
 /// GET `/{id}/documents/{doc_id}` - Get document status
 async fn get_document(
     State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
     Path((kb_id, doc_id)): Path<(String, String)>,
 ) -> Result<Json<DocumentResponse>, (StatusCode, String)> {
     let doc = state
         .persistence
-        .get_document(&doc_id)
+        .get_document(&user.user_id, &doc_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -484,12 +506,13 @@ async fn get_document(
 /// DELETE `/{id}/documents/{doc_id}` - Delete a document
 async fn delete_document(
     State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
     Path((kb_id, doc_id)): Path<(String, String)>,
 ) -> Result<StatusCode, (StatusCode, String)> {
     // Verify document exists and belongs to KB
     let doc = state
         .persistence
-        .get_document(&doc_id)
+        .get_document(&user.user_id, &doc_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -507,7 +530,7 @@ async fn delete_document(
     // Delete document and its chunks
     state
         .persistence
-        .delete_document(&doc_id)
+        .delete_document(&user.user_id, &doc_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -525,6 +548,7 @@ async fn delete_document(
 struct KbSearchBackend<'a> {
     persistence: &'a dyn PersistenceLayer,
     vector_matcher: &'a VectorMatcher,
+    owner_id: &'a str,
     kb_id: &'a str,
 }
 
@@ -545,7 +569,7 @@ impl RetrievalBackend for KbSearchBackend<'_> {
             .next()
             .ok_or_else(|| anyhow::anyhow!("no embedding generated for sub-query"))?;
         self.persistence
-            .search_knowledge_scoped(&[self.kb_id], &query_vec, limit, min_score)
+            .search_knowledge_scoped(self.owner_id, &[self.kb_id], &query_vec, limit, min_score)
             .await
     }
 }
@@ -560,13 +584,14 @@ impl RetrievalBackend for KbSearchBackend<'_> {
 /// existing callers see the same result set as before this pipeline existed.
 async fn search_knowledge_base(
     State(state): State<Arc<KnowledgeApiState>>,
+    Extension(user): Extension<UserContext>,
     Path(kb_id): Path<String>,
     Json(req): Json<SearchRequest>,
 ) -> Result<Json<SearchResponse>, (StatusCode, String)> {
     // Verify KB exists
     let kb = state
         .persistence
-        .get_knowledge_base(&kb_id)
+        .get_knowledge_base(&user.user_id, &kb_id)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
         .ok_or((
@@ -584,6 +609,7 @@ async fn search_knowledge_base(
     let backend = KbSearchBackend {
         persistence: state.persistence.as_ref(),
         vector_matcher: state.vector_matcher.as_ref(),
+        owner_id: user.user_id.as_str(),
         kb_id: kb_id.as_str(),
     };
     let matches = RagRetrievalPipeline::new()

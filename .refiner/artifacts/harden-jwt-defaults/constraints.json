@@ -1,0 +1,56 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "deliberate-secret-startup",
+      "description": "Required JWT authentication rejects the effective published fallback secret with a clear configuration error before and after optional secret resolution, while explicit anonymous mode remains available.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused configuration tests with required-auth rejection and anonymous-mode positive control"
+      }
+    },
+    {
+      "id": "registered-claim-validation",
+      "description": "HS256 and JWKS verification require configured issuer and audience claims and validate an optional not-before claim according to configuration.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused middleware and verifier tests with matching, missing, mismatched, future-nbf, and disabled-nbf controls"
+      }
+    },
+    {
+      "id": "issued-token-continuity",
+      "description": "UAR's API-key exchange and local JWT proxy include configured issuer and audience claims so the hardened verifier accepts UAR-issued tokens.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "API-key and proxy token tests that decode under configured issuer and audience validation"
+      }
+    },
+    {
+      "id": "scope-and-evidence",
+      "description": "The change is limited to JWT configuration, verification, UAR token issuers, focused tests, and documentation, and reports the existing warning baseline without an aggregate or cross-profile verdict.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Scoped diff audit, Tier 0, focused Tier 1, strict OpenSpec, artifact schema, formatting, and diff checks"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the OpenSpec proposal, delta spec, and task ledger as acceptance authority.",
+    "Do not weaken the exact fallback-secret startup rule when JWT authentication is required.",
+    "Do not add a new dependency or a new public JWT API.",
+    "Report only observed server-full and separately named proxy-package results."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "Strict OpenSpec, schema validation, focused tests, formatting, and scoped diff checks exit successfully.",
+    "Independent artifact critic and judge find no security or evidence blocker."
+  ]
+}

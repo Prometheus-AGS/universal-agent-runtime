@@ -1,0 +1,26 @@
+# Verification — `harden-jwt-defaults`
+
+Date: 2026-08-18
+Profile scope: `server-full` only, except the separately named `uar-jwt-proxy`
+package check. These results transfer to no other profile.
+
+| requirement | assertion observed | negative control observed | command | result |
+|---|---|---|---|---|
+| Required JWT authentication cannot use the published fallback secret. | A deliberate test secret loaded successfully throughout the configuration suite. Explicit anonymous mode also loaded with the unused fallback. | A config with `jwt_required: true` and the built-in fallback returned a configuration error naming the fallback and the required remediation. A post-load resolver that replaced a secret reference with the fallback was rejected by the same validation. | `cargo test --locked -p universal-agent-runtime --no-default-features --features server-full --lib config::tests:: -- --nocapture`; `cargo check --locked -p universal-agent-runtime --no-default-features --features server-full,vault` | Exit 0: configuration `20 passed; 0 failed`; the required-auth and post-resolution cases observed failure, while the anonymous control passed. The Vault-enabled package check exited 0. |
+| Configured issuer and audience are required for HS256 verification. | A token with matching `iss` and `aud` authenticated as `claim-user`. | Tokens missing either claim or carrying a wrong issuer or audience each returned HTTP 401. | `cargo test --locked -p universal-agent-runtime --no-default-features --features server-full --lib uar::security::middleware::tests::shared_secret_issuer_and_audience_are_required_when_configured -- --nocapture` | Exit 0: `1 passed; 0 failed`; all four fail-closed controls were observed inside the test. |
+| An optional `nbf` claim is validated when enabled. | The same future-`nbf` token authenticated after `jwt_validate_nbf` was explicitly set to false. | With the default `jwt_validate_nbf: true`, that future-`nbf` token returned HTTP 401. | `cargo test --locked -p universal-agent-runtime --no-default-features --features server-full --lib uar::security::middleware::tests::not_before_is_enforced_when_enabled_and_optional_when_disabled -- --nocapture` | Exit 0: `1 passed; 0 failed`; enabled and disabled controls were both observed. |
+| UAR-issued HS256 tokens remain usable when issuer/audience checks are configured. | API-key exchange JWTs and local proxy JWTs contained matching configured `iss` and `aud` claims and decoded under those validation rules. | Omitting or mismatching those claims is covered by the middleware 401 controls above. | `cargo test --locked -p universal-agent-runtime --no-default-features --features server-full --lib uar::security::api_keys::tests::exchanged_jwt_contains_configured_issuer_and_audience -- --nocapture`; `cargo test --locked -p uar-jwt-proxy app_state_mints_hs256_token -- --nocapture` | Both commands exited 0 with `1 passed; 0 failed`. |
+| Existing security, configuration, reload, and sidecar behavior remains coherent. | Security, configuration, config-integration, config-manager, and sidecar focused suites passed. The sidecar still defaults JWT off only when the operator expressed no opinion. | Invalid signature, missing authentication, unreachable JWKS, wrong JWKS claims, and explicit sidecar JWT settings retained their existing negative assertions. | Exact focused commands and observed result tails in `evidence/positive-verification.md`. | Security `37 passed`; configuration `20 passed`; config integration `5 passed`; config manager `3 passed`; sidecar `3 passed`; all with 0 failed. |
+| Tier 0 and package checks pass within the repository baseline. | Package check, proxy check, scoped Clippy, formatting, and diff checks exited 0. | Not a fail-closed assertion. | Exact commands and observed result tails in `evidence/positive-verification.md`. | UAR check and proxy check exited 0. Scoped Clippy exited 0 with the existing 572-warning baseline; no warning-free claim is made. |
+| Documentation states the startup rule and anonymous-mode risk. | The annotated example and configuration guide document deliberate secrets, issuer, audience, `nbf`, and anonymous identity sharing; proxy docs cover claim propagation. | Not a fail-closed assertion. | Source inspection plus `git diff --check`. | Documented without changing authentication defaults. |
+| Phase-level Tier 2 remains deferred. | The full server-full suite was not run for this individual change. | Not a fail-closed assertion. | No phase Tier 2 command executed. | Correctly deferred until the active 14-change phase reaches completion. |
+
+Final hashes before independent review:
+
+- `src/config.rs`: `a864048d615cdde91ee9cfae8f962e82e0eaa6981596b7b82ef5e610f65996e9`
+- `src/config_manager.rs`: `f0a4a8dd8f2645630008291d8800105e468380bc91427decc0d6b8941c37dc59`
+- `src/uar/security/verifier/mod.rs`: `a8d4c752fcbd606ccf325a7b469a96ffdaac64c77dca66e4fe2d1db937486efa`
+- `src/uar/security/middleware.rs`: `7ff64a2d669da7000f96b3f19061649cd6e932bd26915570d2fe64d27db8ded2`
+- `src/uar/security/api_keys.rs`: `338e3cf70849b2417f10a31162e432eaa3da041d88bd2e0eba6263a0fa3b0b71`
+- `src/server.rs`: `ece70f13c4d50586f0c2bb8cb75588120010613edd85928e60dc7200de87afe0`
+- `tools/uar-jwt-proxy/src/main.rs`: `e35472c9afef0b91ae9daab2e75df0f8232a8d6dcdc209fcf68333f12d708e5a`

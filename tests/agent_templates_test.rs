@@ -1,8 +1,7 @@
 //! CH-15: every `templates/*.agent.md` document must compile+sign cleanly.
 //!
-//! This is the regression guard for the template library independent of the
-//! release workflow (`.github/workflows/release.yml`), which only compiles
-//! them on a tag push — this test runs on every `cargo test`.
+//! This is the local regression guard for the template library. GitHub Actions
+//! are reserved for deployment execution and deployment-specific validation.
 
 use std::sync::Arc;
 

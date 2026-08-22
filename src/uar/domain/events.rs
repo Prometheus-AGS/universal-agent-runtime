@@ -233,6 +233,8 @@ pub struct RagCitation {
     pub chunk_id: String,
     /// ID of the source document (if the chunk was ingested from one).
     pub document_id: Option<String>,
+    /// ID of the knowledge base that produced the retrieved chunk.
+    pub knowledge_base_id: Option<String>,
     /// Human-readable document name (filename, or a fallback label).
     pub document_name: String,
     /// Retrieval relevance score (0.0-1.0-ish, retriever-dependent).

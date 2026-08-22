@@ -119,4 +119,25 @@ describe("UarAguiNormalizer", () => {
       payload: { nested: [1, 2] },
     });
   });
+
+  test("projects approval payload names and JSON arguments from the server", () => {
+    const normalizer = new UarAguiNormalizer(() => 1);
+    const custom = wire("CUSTOM", {
+      name: "uar.tool.approval_required",
+      value: {
+        toolCallId: "call-1",
+        name: "native_echo",
+        arguments: '{"text":"hello"}',
+        riskReason: "operator decision required",
+      },
+    });
+
+    expect(normalizer.normalize(custom).runtimeChunk).toMatchObject({
+      kind: "tool-approval",
+      toolCallId: "call-1",
+      toolName: "native_echo",
+      args: { text: "hello" },
+      reason: "operator decision required",
+    });
+  });
 });

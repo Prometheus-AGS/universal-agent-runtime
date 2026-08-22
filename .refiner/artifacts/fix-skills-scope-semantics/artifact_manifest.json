@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-18T17:20:08Z",
+  "variants": [
+    {
+      "name": "skill-scope-semantics-verification",
+      "file": ".refiner/artifacts/fix-skills-scope-semantics/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic verification receipt for persisted session skill selection and immutable built-in skills"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Persisted conversation selection gates the next run before activation and overlay injection.",
+      "Built-in and installed-pack skills reject edit and delete while retaining the disable path.",
+      "Durable scoped state and cold-restart behavior remain covered by the archived prerequisite change.",
+      "Scoped Clippy exits 0 with 572 warnings; no warning-free claim is made.",
+      "Independent artifact critic and judge both returned PASS on the final candidate."
+    ]
+  }
+}

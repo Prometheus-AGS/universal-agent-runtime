@@ -1,0 +1,45 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-21T05:35:00Z",
+  "variants": [
+    {
+      "name": "screen-validation-verification",
+      "file": ".refiner/artifacts/screen-by-screen-validation/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic receipt for the final per-screen matrix, scoped-memory controls, process provenance, and certification bundle"
+    },
+    {
+      "name": "certification-bundle",
+      "files": [
+        "docs/certifications/product-screens/f8e203b6/manifest.json",
+        "docs/certifications/product-screens/f8e203b6/cucumber-report.json",
+        "docs/certifications/product-screens/f8e203b6/report.html",
+        "docs/certifications/product-screens/f8e203b6/certification-run.log"
+      ],
+      "format": "mixed",
+      "description": "Manifest, raw report, regenerated rendered report, and fresh-process transcript bound to the tested source"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "A fresh CI=1 run at f8e203b6 completed all 20 product-screen scenarios and all 12 cross-screen, local-first, and chat scenarios.",
+      "Frozen root and nested frontend installs retained lock hashes 645e3af8... and 43c00bbf... before the source build and browser run.",
+      "The Providers scenario changed the default route, observed the alternate default, and restored the original default.",
+      "Global, agent, and user MCP memory scopes were observed explicitly; JWT and same-tenant two-user isolation include typed paired denial observations.",
+      "All 32 videos are unique playable H.264 MP4s with positive duration; all 54 artifact hashes and byte counts replay.",
+      "The report was regenerated after the transcript and Git-tree fingerprint were added to the finalized bundle manifest.",
+      "The first source-bound run failed because the exact-answer locator included a valid sibling A2UI artifact; the final run targets only the assistant text part without weakening the regex.",
+      "The repository mint helper cannot copy VP8 into MP4, reads ffmpeg input from its filename stream, and collapses repeated video.webm basenames; a temporary corrected runner produced 32 unique H.264 outputs without changing repository source.",
+      "The bundle records the tested source; a subsequent immutable receipt records the first evidence commit because a commit cannot contain its own hash.",
+      "The operator approved the corrected plan before execution, while immutable KBD decision screen-validation-plan-projection-lag records that canonical plan revision 7 was projected after the three repairs."
+    ]
+  }
+}

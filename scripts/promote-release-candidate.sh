@@ -9,20 +9,26 @@ candidate="${1:?candidate tag is required (for example v1.0.0-rc.3)}"
 ga="${2:?GA tag is required (for example v1.0.0)}"
 mode="${3:---dry-run}"
 repo="${GITHUB_REPOSITORY:-Prometheus-AGS/universal-agent-runtime}"
+signing_identity="${UAR_RELEASE_SIGNING_IDENTITY:?UAR_RELEASE_SIGNING_IDENTITY is required}"
+signing_issuer="${UAR_RELEASE_SIGNING_OIDC_ISSUER:?UAR_RELEASE_SIGNING_OIDC_ISSUER is required}"
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 mkdir -p "$work/assets" "$work/certification" "$work/expected-assets" "$work/tag-verification"
 
-for command in git gh jq node sha256sum tar unzip; do command -v "$command" >/dev/null || { echo "missing command: $command" >&2; exit 1; }; done
+for command in cosign git gh jq node sha256sum tar unzip; do command -v "$command" >/dev/null || { echo "missing command: $command" >&2; exit 1; }; done
 
 download_authenticated_set() {
   local tag="$1"
   local directory="$2"
   local index="$3"
-  local signer="$4"
+  local signature="${index}.sigstore.json"
   gh release download "$tag" --repo "$repo" --dir "$directory" --pattern "$index"
-  gh attestation verify "$directory/$index" --repo "$repo" --signer-workflow "$signer"
+  gh release download "$tag" --repo "$repo" --dir "$directory" --pattern "$signature"
+  cosign verify-blob --bundle "$directory/$signature" \
+    --certificate-identity "$signing_identity" \
+    --certificate-oidc-issuer "$signing_issuer" \
+    "$directory/$index"
   while read -r _ asset; do
     [[ "$asset" =~ ^[A-Za-z0-9._@+-]+$ ]] || { echo "unsafe authenticated asset name: $asset" >&2; return 1; }
     gh release download "$tag" --repo "$repo" --dir "$directory" --pattern "$asset"
@@ -61,8 +67,7 @@ git -C "$work/tag-verification" fetch -q "$origin_url" \
   "refs/tags/${candidate}:refs/tags/${candidate}"
 git -C "$work/tag-verification" verify-tag "$candidate"
 candidate_sha="$(git -C "$work/tag-verification" rev-parse "${candidate}^{}")"
-download_authenticated_set "$candidate" "$work/assets" SHA256SUMS \
-  "${repo}/.github/workflows/supply-chain.yml"
+download_authenticated_set "$candidate" "$work/assets" SHA256SUMS
 manifest="$work/assets/release-manifest.json"
 [[ -f "$manifest" ]] || { echo "candidate has no release-manifest.json" >&2; exit 1; }
 promotion="$work/assets/promotion.json"
@@ -70,10 +75,24 @@ promotion="$work/assets/promotion.json"
 checksums="$work/assets/SHA256SUMS"
 [[ -f "$checksums" ]] || { echo "candidate has no SHA256SUMS trust root" >&2; exit 1; }
 node "$root/scripts/validate-release-manifest.mjs" "$manifest"
+[[ "$(jq -r .signing.certificate_identity "$manifest")" == "$signing_identity" ]] || {
+  echo "release manifest signing identity does not match operator policy" >&2
+  exit 1
+}
+[[ "$(jq -r .signing.certificate_oidc_issuer "$manifest")" == "$signing_issuer" ]] || {
+  echo "release manifest signing issuer does not match operator policy" >&2
+  exit 1
+}
+while IFS= read -r artifact; do
+  cosign verify-blob \
+    --bundle "$work/assets/${artifact}.sigstore.json" \
+    --certificate-identity "$signing_identity" \
+    --certificate-oidc-issuer "$signing_issuer" \
+    "$work/assets/$artifact"
+done < <(jq -r '.artifacts[].name' "$manifest")
 
 download_authenticated_set "$candidate" "$work/certification" \
-  CANDIDATE_CERTIFICATION_SHA256SUMS \
-  "${repo}/.github/workflows/candidate-certification.yml"
+  CANDIDATE_CERTIFICATION_SHA256SUMS
 node "$root/scripts/validate-candidate-certification-bundle.mjs" \
   "$work/certification" "$manifest"
 certification_archive="$(jq -r .archive.name "$work/certification/candidate-certification-manifest.json")"
@@ -96,6 +115,16 @@ promotion_rebuild="$(jq -r .rebuild "$promotion")"
 promotion_superseded_sha="$(jq -r .superseded_ga_sha "$promotion")"
 image_ref="$(jq -r .image.reference "$manifest")"
 image_digest="$(jq -r .image.digest "$manifest")"
+cosign verify \
+  --certificate-identity "$signing_identity" \
+  --certificate-oidc-issuer "$signing_issuer" \
+  "$image_ref@$image_digest"
+for attestation_type in slsaprovenance cyclonedx; do
+  cosign verify-attestation --type "$attestation_type" \
+    --certificate-identity "$signing_identity" \
+    --certificate-oidc-issuer "$signing_issuer" \
+    "$image_ref@$image_digest"
+done
 [[ "$promotion_schema" == 1 ]] || { echo "unsupported promotion metadata schema" >&2; exit 1; }
 [[ "$promotion_candidate" == "$candidate" ]] || { echo "promotion metadata candidate mismatch" >&2; exit 1; }
 [[ "$promotion_ga" == "$ga" ]] || { echo "promotion metadata GA mismatch" >&2; exit 1; }

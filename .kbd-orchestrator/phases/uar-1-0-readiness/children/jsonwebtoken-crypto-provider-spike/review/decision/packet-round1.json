@@ -1,0 +1,29 @@
+{
+  "packet_version": 1,
+  "mode": "decision",
+  "phase": "",
+  "target": ".kbd-orchestrator/phases/uar-1-0-readiness/children/jsonwebtoken-crypto-provider-spike/decision.md",
+  "producer_model": "codex-gpt-5",
+  "constraints": null,
+  "file_tree": ".\n./analysis.md\n./assessment.md\n./decision-log.md\n./decision.md\n./goals.md\n./handoff-in.md\n./handoffs\n./handoffs/assess.handoff.json\n./library-candidates.json\n./progress.json\n./review\n./review/analyze\n./review/assess\n./review/decision\n./scope.json\n./tasks.md\n",
+  "decision_document": "# Decision \u2014 standard JWT provider\n\n## Decision\n\nFor UAR's `server-full` profile, retain the direct `jsonwebtoken` version requirement at `11.0.0`, keep the lock at 11.0.0, and standardize on the built-in `aws_lc_rs` feature:\n\n```toml\njsonwebtoken = { version = \"11.0.0\", features = [\"aws_lc_rs\"] }\n```\n\nThe parent A0 change owns implementation. The spike does not alter `Cargo.toml`, `Cargo.lock`, runtime source, or tests.\n\n## Assumptions\n\n- The supported scope remains the native `server-full` release matrix: Linux x86-64/aarch64, macOS x86-64/aarch64, and Windows x86-64.\n- Enabling `aws_lc_rs` reuses the already locked `aws-lc-rs 1.17.0` / `aws-lc-sys 0.41.0` packages and introduces no new package.\n- UAR has no present `no_std`, bare-WASM, C/C++-free, HSM/KMS, or FIPS certification requirement for this dependency.\n- The provider contract includes signing as well as verification; an unresolved private-key timing advisory in a backend dependency therefore counts even though A1's immediate JWKS flow verifies public-key signatures.\n- No performance advantage is assumed for AWS-LC or RustCrypto.\n\n## Falsifier\n\nReject or reopen this decision if the parent lockfile update introduces a new package; if a supported release target lacks AWS-LC build/test coverage; if an unpatched advisory affects the locked AWS-LC version; if the `server-full` graph no longer otherwise activates AWS-LC; or if a certified `no_std`, bare-WASM, C/C++-free, HSM/KMS, or FIPS requirement becomes real. A patched stable RustCrypto RSA release is a re-evaluation trigger, not by itself a falsifier; the dependency and target facts must also change.\n\n## Rejected alternative\n\n`rust_crypto` remains a valid upstream backend but is rejected as UAR's standard for this profile. It would activate several currently inactive asymmetric crates, including `rsa 0.9.10`, whose Marvin timing advisory lists no patched version, while its portability benefits do not satisfy a current exit criterion.\n\n",
+  "decision_fields": {
+    "decision": "For UAR's `server-full` profile, retain the direct `jsonwebtoken` version requirement at `11.0.0`, keep the lock at 11.0.0, and standardize on the built-in `aws_lc_rs` feature:\n\n```toml\njsonwebtoken = { version = \"11.0.0\", features = [\"aws_lc_rs\"] }\n```\n\nThe parent A0 change owns implementation. The spike does not alter `Cargo.toml`, `Cargo.lock`, runtime source, or tests.",
+    "assumptions": [
+      "The supported scope remains the native `server-full` release matrix: Linux x86-64/aarch64, macOS x86-64/aarch64, and Windows x86-64.",
+      "Enabling `aws_lc_rs` reuses the already locked `aws-lc-rs 1.17.0` / `aws-lc-sys 0.41.0` packages and introduces no new package.",
+      "UAR has no present `no_std`, bare-WASM, C/C++-free, HSM/KMS, or FIPS certification requirement for this dependency.",
+      "The provider contract includes signing as well as verification; an unresolved private-key timing advisory in a backend dependency therefore counts even though A1's immediate JWKS flow verifies public-key signatures.",
+      "No performance advantage is assumed for AWS-LC or RustCrypto."
+    ],
+    "falsifier": "Reject or reopen this decision if the parent lockfile update introduces a new package; if a supported release target lacks AWS-LC build/test coverage; if an unpatched advisory affects the locked AWS-LC version; if the `server-full` graph no longer otherwise activates AWS-LC; or if a certified `no_std`, bare-WASM, C/C++-free, HSM/KMS, or FIPS requirement becomes real. A patched stable RustCrypto RSA release is a re-evaluation trigger, not by itself a falsifier; the dependency and target facts must also change.",
+    "missing_fields": []
+  },
+  "prior_decisions": "[uar-embedded-admin-sdk-gap-and-mcp-live-hydration-decision] UAR embedded admin SDK gap and MCP live hydration decision \u2014 tags: universal-agent-runtime, embedded-uar, sdk-runtime, mcp-registry, surrealdb, hybrid-app-architecture, mobile-offline\n[knowme-embedded-mobile-cargo-gating-scope-assessment] KnowMe embedded-mobile Cargo gating scope assessment \u2014 tags: knowme, embedded-mobile, cargo-features, universal-agent-runtime, surreal-memory, rust\n[karpathy-session-62d57edee20f7b7d] Karpathy session 62d57edee20f \u2014 tags: karpathy, session-learning\n[karpathy-session-d88b2795ad0de092] Karpathy session d88b2795ad0d \u2014 tags: karpathy, session-learning\n[karpathy-session-23aacabf95c520d6] Karpathy session 23aacabf95c5 \u2014 tags: karpathy, session-learning\n",
+  "original_intent": "# Goals \u2014 uar-1-0-readiness / jsonwebtoken-crypto-provider-spike\n\n- Compare the `jsonwebtoken` 11 RustCrypto and AWS-LC backends using current official documentation, pinned source, dependency topology, supported release platforms, security posture, and measured evidence.\n- Record one binding backend decision with rationale, rejected alternative, risks, and an explicit re-evaluation trigger.\n- Return a precise `Cargo.toml` configuration and verification commands to parent change A0 without changing the parent implementation from inside the spike.\n",
+  "truncation": {
+    "cap_bytes_per_field": 40000,
+    "any_truncated": false,
+    "fields": []
+  }
+}

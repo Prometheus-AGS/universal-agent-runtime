@@ -81,26 +81,35 @@ fn write<T>(lock: &RwLock<T>) -> Result<std::sync::RwLockWriteGuard<'_, T>> {
 #[async_trait]
 impl PersistenceLayer for InMemoryProvider {
     async fn save_session(&self, session: &Session) -> Result<()> {
-        write(&self.sessions)?.insert(session.id().to_owned(), session.clone());
+        let key = crate::uar::persistence::tenant_storage_key(session.owner_id(), session.id());
+        write(&self.sessions)?.insert(key, session.clone());
         Ok(())
     }
-    async fn load_session(&self, id: &str) -> Result<Option<Session>> {
-        Ok(read(&self.sessions)?.get(id).cloned())
+    async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        Ok(read(&self.sessions)?.get(&key).cloned())
     }
     async fn save_conversation_policy(&self, record: &ConversationPolicyRecord) -> Result<()> {
-        write(&self.conversation_policies)?.insert(record.conversation_id.clone(), record.clone());
+        let key =
+            crate::uar::persistence::tenant_storage_key(&record.owner_id, &record.conversation_id);
+        write(&self.conversation_policies)?.insert(key, record.clone());
         Ok(())
     }
     async fn load_conversation_policy(
         &self,
+        owner_id: &str,
         conversation_id: &str,
     ) -> Result<Option<ConversationPolicyRecord>> {
-        Ok(read(&self.conversation_policies)?
-            .get(conversation_id)
-            .cloned())
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, conversation_id);
+        Ok(read(&self.conversation_policies)?.get(&key).cloned())
     }
-    async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()> {
-        write(&self.conversation_policies)?.remove(conversation_id);
+    async fn delete_conversation_policy(
+        &self,
+        owner_id: &str,
+        conversation_id: &str,
+    ) -> Result<()> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, conversation_id);
+        write(&self.conversation_policies)?.remove(&key);
         Ok(())
     }
     async fn save_skill(&self, skill: &Skill, _embedding: &[f32]) -> Result<()> {
@@ -118,42 +127,58 @@ impl PersistenceLayer for InMemoryProvider {
         Ok(())
     }
     async fn save_knowledge_base(&self, kb: &KnowledgeBase) -> Result<()> {
-        write(&self.knowledge_bases)?.insert(kb.id.clone(), kb.clone());
+        let key = crate::uar::persistence::tenant_storage_key(&kb.owner_id, &kb.id);
+        write(&self.knowledge_bases)?.insert(key, kb.clone());
         Ok(())
     }
-    async fn get_knowledge_base(&self, id: &str) -> Result<Option<KnowledgeBase>> {
-        Ok(read(&self.knowledge_bases)?.get(id).cloned())
+    async fn get_knowledge_base(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeBase>> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        Ok(read(&self.knowledge_bases)?.get(&key).cloned())
     }
-    async fn get_knowledge_base_by_name(&self, name: &str) -> Result<Option<KnowledgeBase>> {
+    async fn get_knowledge_base_by_name(
+        &self,
+        owner_id: &str,
+        name: &str,
+    ) -> Result<Option<KnowledgeBase>> {
         Ok(read(&self.knowledge_bases)?
             .values()
-            .find(|kb| kb.name == name)
+            .find(|kb| kb.owner_id == owner_id && kb.name == name)
             .cloned())
     }
-    async fn list_knowledge_bases(&self) -> Result<Vec<KnowledgeBase>> {
-        Ok(read(&self.knowledge_bases)?.values().cloned().collect())
+    async fn list_knowledge_bases(&self, owner_id: &str) -> Result<Vec<KnowledgeBase>> {
+        Ok(read(&self.knowledge_bases)?
+            .values()
+            .filter(|kb| kb.owner_id == owner_id)
+            .cloned()
+            .collect())
     }
-    async fn delete_knowledge_base(&self, id: &str) -> Result<()> {
-        write(&self.knowledge_bases)?.remove(id);
-        write(&self.chunks)?.retain(|_, chunk| chunk.kb_id != id);
-        write(&self.documents)?.retain(|_, document| document.kb_id != id);
+    async fn delete_knowledge_base(&self, owner_id: &str, id: &str) -> Result<()> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        write(&self.knowledge_bases)?.remove(&key);
+        write(&self.chunks)?.retain(|_, chunk| chunk.owner_id != owner_id || chunk.kb_id != id);
+        write(&self.documents)?
+            .retain(|_, document| document.owner_id != owner_id || document.kb_id != id);
         Ok(())
     }
     async fn save_chunk(&self, chunk: &KnowledgeChunk) -> Result<()> {
-        write(&self.chunks)?.insert(chunk.id.to_string(), chunk.clone());
+        let key =
+            crate::uar::persistence::tenant_storage_key(&chunk.owner_id, &chunk.id.to_string());
+        write(&self.chunks)?.insert(key, chunk.clone());
         Ok(())
     }
     async fn search_knowledge(
         &self,
+        owner_id: &str,
         _query_vec: &[f32],
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
-        self.search_knowledge_scoped(&[], _query_vec, limit, min_score)
+        self.search_knowledge_scoped(owner_id, &[], _query_vec, limit, min_score)
             .await
     }
     async fn search_knowledge_scoped(
         &self,
+        owner_id: &str,
         kb_ids: &[&str],
         _query_vec: &[f32],
         limit: usize,
@@ -161,36 +186,50 @@ impl PersistenceLayer for InMemoryProvider {
     ) -> Result<Vec<KnowledgeMatch>> {
         Ok(read(&self.chunks)?
             .values()
-            .filter(|chunk| kb_ids.is_empty() || kb_ids.contains(&chunk.kb_id.as_str()))
+            .filter(|chunk| {
+                chunk.owner_id == owner_id
+                    && (kb_ids.is_empty() || kb_ids.contains(&chunk.kb_id.as_str()))
+            })
             .take(limit)
             .cloned()
             .map(|chunk| KnowledgeMatch { chunk, score: 0.0 })
             .collect())
     }
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()> {
-        write(&self.documents)?.insert(doc.id.clone(), doc.clone());
+        let key = crate::uar::persistence::tenant_storage_key(&doc.owner_id, &doc.id);
+        write(&self.documents)?.insert(key, doc.clone());
         Ok(())
     }
-    async fn get_document(&self, id: &str) -> Result<Option<KnowledgeDocument>> {
-        Ok(read(&self.documents)?.get(id).cloned())
+    async fn get_document(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeDocument>> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
+        Ok(read(&self.documents)?.get(&key).cloned())
     }
-    async fn list_documents(&self, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
+    async fn list_documents(&self, owner_id: &str, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
         Ok(read(&self.documents)?
             .values()
-            .filter(|doc| doc.kb_id == kb_id)
+            .filter(|doc| doc.owner_id == owner_id && doc.kb_id == kb_id)
             .cloned()
             .collect())
     }
-    async fn update_document_status(&self, doc_id: &str, status: &DocumentStatus) -> Result<()> {
+    async fn update_document_status(
+        &self,
+        owner_id: &str,
+        doc_id: &str,
+        status: &DocumentStatus,
+    ) -> Result<()> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, doc_id);
         write(&self.documents)?
-            .get_mut(doc_id)
+            .get_mut(&key)
             .context("document not found")?
             .status = status.clone();
         Ok(())
     }
-    async fn delete_document(&self, doc_id: &str) -> Result<()> {
-        write(&self.documents)?.remove(doc_id);
-        write(&self.chunks)?.retain(|_, chunk| chunk.document_id.as_deref() != Some(doc_id));
+    async fn delete_document(&self, owner_id: &str, doc_id: &str) -> Result<()> {
+        let key = crate::uar::persistence::tenant_storage_key(owner_id, doc_id);
+        write(&self.documents)?.remove(&key);
+        write(&self.chunks)?.retain(|_, chunk| {
+            chunk.owner_id != owner_id || chunk.document_id.as_deref() != Some(doc_id)
+        });
         Ok(())
     }
     async fn save_agent(&self, agent: &AgentArtifact) -> Result<()> {
@@ -310,23 +349,31 @@ mod tests {
     #[tokio::test]
     async fn sessions_round_trip_without_durable_storage() {
         let provider = InMemoryProvider::new();
-        let session = crate::session::SessionStore::new().create();
+        let session = crate::session::SessionStore::new().create_for_user("alice");
         provider.save_session(&session).await.unwrap();
         assert_eq!(
             provider
-                .load_session(session.id())
+                .load_session("alice", session.id())
                 .await
                 .unwrap()
                 .unwrap()
                 .id(),
             session.id()
         );
+        assert!(
+            provider
+                .load_session("bob", session.id())
+                .await
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[tokio::test]
     async fn conversation_policy_round_trips_without_durable_storage() {
         let provider = InMemoryProvider::new();
-        let record = ConversationPolicyRecord::new(
+        let record = ConversationPolicyRecord::new_for_user(
+            "alice",
             "conversation-1",
             crate::uar::domain::policy::RunPolicy {
                 memory_enabled: Some(false),
@@ -336,18 +383,36 @@ mod tests {
         provider.save_conversation_policy(&record).await.unwrap();
         assert_eq!(
             provider
-                .load_conversation_policy("conversation-1")
+                .load_conversation_policy("alice", "conversation-1")
                 .await
                 .unwrap(),
             Some(record)
         );
+        assert!(
+            provider
+                .load_conversation_policy("bob", "conversation-1")
+                .await
+                .unwrap()
+                .is_none()
+        );
         provider
-            .delete_conversation_policy("conversation-1")
+            .delete_conversation_policy("bob", "conversation-1")
             .await
             .unwrap();
         assert!(
             provider
-                .load_conversation_policy("conversation-1")
+                .load_conversation_policy("alice", "conversation-1")
+                .await
+                .unwrap()
+                .is_some()
+        );
+        provider
+            .delete_conversation_policy("alice", "conversation-1")
+            .await
+            .unwrap();
+        assert!(
+            provider
+                .load_conversation_policy("alice", "conversation-1")
                 .await
                 .unwrap()
                 .is_none()
@@ -359,6 +424,7 @@ mod tests {
         let provider = InMemoryProvider::new();
         let kb = KnowledgeBase {
             id: "kb-1".into(),
+            owner_id: "anonymous".into(),
             name: "test".into(),
             description: None,
             config: Default::default(),
@@ -366,7 +432,95 @@ mod tests {
             updated_at: String::new(),
         };
         provider.save_knowledge_base(&kb).await.unwrap();
-        provider.delete_knowledge_base(&kb.id).await.unwrap();
-        assert!(provider.get_knowledge_base(&kb.id).await.unwrap().is_none());
+        provider
+            .delete_knowledge_base(&kb.owner_id, &kb.id)
+            .await
+            .unwrap();
+        assert!(
+            provider
+                .get_knowledge_base(&kb.owner_id, &kb.id)
+                .await
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn knowledge_rows_are_partitioned_by_owner() {
+        let provider = InMemoryProvider::new();
+        let now = chrono::Utc::now().to_rfc3339();
+        let kb = KnowledgeBase {
+            id: "alice-kb".into(),
+            owner_id: "alice".into(),
+            name: "private".into(),
+            description: None,
+            config: Default::default(),
+            created_at: now.clone(),
+            updated_at: now.clone(),
+        };
+        let document = KnowledgeDocument {
+            id: "alice-doc".into(),
+            owner_id: "alice".into(),
+            kb_id: kb.id.clone(),
+            filename: "private.txt".into(),
+            file_path: None,
+            mime_type: Some("text/plain".into()),
+            chunk_count: 1,
+            status: DocumentStatus::Indexed,
+            created_at: now.clone(),
+            updated_at: now.clone(),
+        };
+        let chunk = KnowledgeChunk {
+            id: Uuid::new_v4(),
+            owner_id: "alice".into(),
+            kb_id: kb.id.clone(),
+            document_id: Some(document.id.clone()),
+            content: "alice secret".into(),
+            metadata: None,
+            embedding: vec![1.0],
+            created_at: now,
+        };
+
+        provider.save_knowledge_base(&kb).await.unwrap();
+        provider.save_document(&document).await.unwrap();
+        provider.save_chunk(&chunk).await.unwrap();
+
+        assert!(
+            provider
+                .get_knowledge_base("bob", &kb.id)
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            provider
+                .get_document("bob", &document.id)
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert!(
+            provider
+                .search_knowledge_scoped("bob", &[&kb.id], &[1.0], 10, 0.0)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+
+        provider.delete_knowledge_base("bob", &kb.id).await.unwrap();
+        assert!(
+            provider
+                .get_knowledge_base("alice", &kb.id)
+                .await
+                .unwrap()
+                .is_some()
+        );
+        assert!(
+            provider
+                .get_document("alice", &document.id)
+                .await
+                .unwrap()
+                .is_some()
+        );
     }
 }

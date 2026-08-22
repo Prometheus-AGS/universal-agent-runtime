@@ -1,0 +1,23 @@
+{
+  "mode": "artifact",
+  "target": "plan",
+  "verdict": "PASS",
+  "judge_model": "harness-native",
+  "isolation_mode": "harness-native",
+  "producer_model": "unknown",
+  "cross_model_check": "unverified-producer-unknown",
+  "findings": [],
+  "review_rounds": 2,
+  "round_1": {
+    "critic": "BLOCK",
+    "judge": "BLOCK",
+    "required_corrections": 5
+  },
+  "round_2": {
+    "critic": "PASS",
+    "judge": "PASS"
+  },
+  "sycophancy_screen": {
+    "status": "unavailable"
+  }
+}

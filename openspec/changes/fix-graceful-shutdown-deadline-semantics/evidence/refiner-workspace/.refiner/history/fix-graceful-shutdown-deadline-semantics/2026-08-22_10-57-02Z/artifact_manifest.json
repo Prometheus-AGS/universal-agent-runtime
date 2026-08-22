@@ -1,0 +1,29 @@
+{
+  "artifact_type": "code",
+  "content_type": "direct:code",
+  "generated_at": "2026-08-22T10:50:01Z",
+  "variants": [
+    {
+      "name": "graceful-shutdown-verification",
+      "file": ".refiner/artifacts/fix-graceful-shutdown-deadline-semantics/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Bounded server-full verification receipt for absolute shutdown deadlines, resource ownership, paired negative controls, and non-root container escalation margin"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Nine real-process shutdown controls pass, while the six intended baseline failures remain recorded.",
+      "MCP, live-query, A2A, ingestion, and embedded persistence ownership are exercised at their process boundaries.",
+      "The healthy non-root container exits 0 at 30,489 ms under the 30/35-second boundary with no SIGKILL.",
+      "The verification receipt is limited to server-full and explicitly leaves the parent 10,800-second certification pending.",
+      "No dependency or public Rust API is added."
+    ]
+  }
+}

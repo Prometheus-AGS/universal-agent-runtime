@@ -1,0 +1,54 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "b4-scoped-precedence-live-run",
+      "description": "Every skill resolves conversation over agent over global in both directions, and real runs observe the conversation identifier without losing their start-time binding.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Exact server-full service matrix plus gated embedded-run integration test"
+      }
+    },
+    {
+      "id": "b4-durable-merge-controls",
+      "description": "Global and per-agent disables survive Surreal-backed restart and builtin re-registration; removing merge or conversation-disable behavior makes its exact assertion fail.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Exact restart and real-run positives plus two observed-failing negative controls and pre/post source hashes"
+      }
+    },
+    {
+      "id": "b4-origin-delete-storage",
+      "description": "The API exposes lowercase origin, builtins remain non-deletable, user skills remain deletable, and scoped state round-trips through the filesystem provider format.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Focused API, deletion, and filesystem round-trip tests"
+      }
+    },
+    {
+      "id": "b4-tier-scope-spec",
+      "description": "Tier 0 and strict OpenSpec validation pass without a B4-owned warning, permitted surface is respected, and phase Tier 2 remains unrun.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Cargo check/clippy, OpenSpec strict validation, and scoped diff inspection"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the B4 OpenSpec delta and EXECUTION-CONTRACT.md as acceptance authority because the project has no .kbd-orchestrator/constraints.md.",
+    "Report results only for server-full and transfer them to no other profile.",
+    "Do not run Tier 2 before all six readiness changes are implemented."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "The per-requirement verification record exists and includes literal output for both observed-failing controls."
+  ]
+}

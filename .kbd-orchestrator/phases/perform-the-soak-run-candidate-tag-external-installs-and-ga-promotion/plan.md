@@ -27,8 +27,8 @@ Changes 1–2 and 3–7 are internally parallelizable batches; 10 hard-depends o
 | 8 | `resolve-sdk-distribution` | C4 | typescript-reviewer + rust-reviewer (decision task first) |
 | 9 | `rewrite-readme-and-docs` | H5 M7 | doc-updater + frontend-design for diagrams |
 | 10 | `screen-by-screen-validation` | M6 M3 + operator matrix | e2e-runner (BDD + video bundles) |
-| 11 | `certify-operational-resilience` (carried) | goals §1 | operator-triggered CI + evidence |
-| 12 | `produce-supply-chain-artifacts` (carried) | goals §2 | operator-triggered CI + evidence |
+| 11 | `certify-operational-resilience` (carried) | goals §1 | local immutable-candidate run + evidence |
+| 12 | `produce-supply-chain-artifacts` (carried) | goals §2 | local build and verification + evidence |
 | 13 | `certify-release-candidate` (carried) | goals §3 | operator (tag) + external/time-bound |
 | 14 | `release-1-0-0` (carried) | goals §4 | operator (GA promotion) |
 
@@ -41,6 +41,24 @@ Changes 1–2 and 3–7 are internally parallelizable batches; 10 hard-depends o
 - Change 8 starts with a decision task (ship minimal SDKs vs withdraw from 1.0) —
   surface to operator before implementation.
 - Change 10's per-screen matrix is seeded by the assessment's 20-screen inventory.
+- Plan revision 7 supersedes the no-source-change default only for the three
+  operator-approved defects observed by change 10: Skills graph visibility,
+  approval-event projection, and Knowledge nested-interactive markup. The repairs stay
+  bounded to those surfaces and force a fresh immutable certification run.
+- Plan revision 8 restores the standing deployment-only GitHub Actions boundary.
+  Product, installed-artifact, supply-chain, load, stress, soak, and release
+  certification run locally. GitHub Actions remain available only for actual
+  deployment execution and deployment-specific validation.
+- Plan revision 9 separates source preparation from evidence execution. Land
+  and locally verify all scripts, manifests, schemas, and documentation needed
+  by changes 11–14 before freezing change 11's immutable candidate. Evidence
+  still executes in order 11–14. After the freeze, only evidence/checkpoint
+  commits are permitted; any later source change invalidates the three-hour run.
+- Plan revision 11 and decision `functional-real-inference-closeout-only`
+  supersede changes 11–14. The operator replaced the elapsed-time, supply-chain,
+  RC, and publication tail with five bounded real-model functional paths, each
+  observed through both the packaged API boundary and the shipped UI. Changes
+  11–14 are cancelled rather than represented as passed.
 - Mastra-inspired enhancements (inline trace view, in-chat model switching, evals
   panel) are deliberately NOT in this phase — recorded as candidates for the next
   phase to avoid scope creep on the release path.
@@ -49,4 +67,4 @@ Changes 1–2 and 3–7 are internally parallelizable batches; 10 hard-depends o
 
 ## Next
 
-`/kbd-execute` to dispatch change 1 (`fix-user-isolation-sessions-memory-kb`).
+`/kbd-reflect perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion`

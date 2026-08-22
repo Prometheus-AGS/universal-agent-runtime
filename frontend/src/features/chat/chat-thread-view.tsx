@@ -12,19 +12,25 @@ interface ChatThreadViewProps {
   agentConfig: AgentConfig | null;
 }
 
-/** Load the assistant runtime only after the user selects or creates a thread. */
-export function ChatThreadView({ threadId, agentConfig }: ChatThreadViewProps) {
+function ChatThreadRuntime({ threadId }: Pick<ChatThreadViewProps, "threadId">) {
   const { runtime, attachmentManager } = useChatRuntime(threadId);
 
   return (
-    <MemoryContextProvider>
-      <AssistantRuntimeProvider runtime={runtime}>
-        <AttachmentContext.Provider value={attachmentManager}>
-          <AgentConfigContext.Provider value={agentConfig}>
-            <EnhancedThread />
-          </AgentConfigContext.Provider>
-        </AttachmentContext.Provider>
-      </AssistantRuntimeProvider>
-    </MemoryContextProvider>
+    <AssistantRuntimeProvider runtime={runtime}>
+      <AttachmentContext.Provider value={attachmentManager}>
+        <EnhancedThread />
+      </AttachmentContext.Provider>
+    </AssistantRuntimeProvider>
+  );
+}
+
+/** Load the assistant runtime only after the user selects or creates a thread. */
+export function ChatThreadView({ threadId, agentConfig }: ChatThreadViewProps) {
+  return (
+    <AgentConfigContext.Provider value={agentConfig}>
+      <MemoryContextProvider>
+        <ChatThreadRuntime threadId={threadId} />
+      </MemoryContextProvider>
+    </AgentConfigContext.Provider>
   );
 }

@@ -556,8 +556,19 @@ pub(crate) fn fallback_base_url(provider_id: &str) -> Option<&'static str> {
 /// Used by the admin API when clients omit `base_url` or model lists.
 pub(crate) fn enrich_provider_config(config: &mut ProviderConfig) {
     let catalog = ModelCatalog::global();
-    if config.models.is_empty() {
-        if let Some(catalog_provider) = catalog.provider(&config.id) {
+    if let Some(catalog_provider) = catalog.provider(&config.id) {
+        if config.api_key.is_none()
+            && let Some(env_var) = catalog_provider
+                .auth
+                .as_ref()
+                .and_then(|auth| auth.env_var.as_deref())
+            && let Ok(api_key) = std::env::var(env_var)
+            && !api_key.trim().is_empty()
+        {
+            config.api_key = Some(api_key);
+        }
+
+        if config.models.is_empty() {
             config.models = models_from_catalog(catalog_provider);
 
             if config.display_name.is_empty() {

@@ -13,7 +13,7 @@
 
 use std::sync::Arc;
 
-use axum::{Json, extract::State, response::IntoResponse};
+use axum::{Extension, Json, extract::State, response::IntoResponse};
 use tracing::{info, warn};
 
 use super::{
@@ -24,7 +24,13 @@ use super::{
         TaskGetParams, TaskState, rpc_error,
     },
 };
-use crate::uar::compiler::service::CompilerService;
+use crate::{
+    config::SecurityConfig,
+    uar::{
+        compiler::service::CompilerService,
+        security::claims::{TenantId, UserContext},
+    },
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // State
@@ -35,6 +41,7 @@ use crate::uar::compiler::service::CompilerService;
 pub struct A2AState {
     pub compiler_service: Arc<CompilerService>,
     pub task_store: Arc<TaskStore>,
+    pub security: SecurityConfig,
     /// Public base URL of this UAR instance (e.g. `http://localhost:3928`).
     pub base_url: String,
 }
@@ -46,6 +53,7 @@ pub struct A2AState {
 /// `POST /a2a/compiler` — JSON-RPC 2.0 dispatcher.
 pub async fn handle_rpc(
     State(state): State<Arc<A2AState>>,
+    user_context: Option<Extension<UserContext>>,
     Json(req): Json<JsonRpcRequest>,
 ) -> impl IntoResponse {
     if req.jsonrpc != "2.0" {
@@ -56,10 +64,25 @@ pub async fn handle_rpc(
         ));
     }
 
+    let tenant_id = user_context.and_then(|Extension(context)| context.tenant_id);
+    if state.security.jwt_required && tenant_id.is_none() {
+        return Json(JsonRpcResponse::err(
+            req.id,
+            rpc_error::INVALID_REQUEST,
+            "verified tenant claim required",
+        ));
+    }
+
     let response = match req.method.as_str() {
-        "message/send" => handle_message_send(&state, req.id.clone(), req.params).await,
-        "tasks/get" => handle_tasks_get(&state, req.id.clone(), req.params).await,
-        "tasks/cancel" => handle_tasks_cancel(&state, req.id.clone(), req.params).await,
+        "message/send" => {
+            handle_message_send(&state, tenant_id.as_ref(), req.id.clone(), req.params).await
+        }
+        "tasks/get" => {
+            handle_tasks_get(&state, tenant_id.as_ref(), req.id.clone(), req.params).await
+        }
+        "tasks/cancel" => {
+            handle_tasks_cancel(&state, tenant_id.as_ref(), req.id.clone(), req.params).await
+        }
         other => {
             warn!(method = other, "unknown A2A method");
             JsonRpcResponse::err(
@@ -88,6 +111,7 @@ pub async fn handle_agent_card(State(state): State<Arc<A2AState>>) -> impl IntoR
 /// appended to that task. Otherwise a new session + task is created.
 async fn handle_message_send(
     state: &A2AState,
+    tenant_id: Option<&TenantId>,
     id: Option<serde_json::Value>,
     params: Option<serde_json::Value>,
 ) -> JsonRpcResponse {
@@ -101,8 +125,16 @@ async fn handle_message_send(
 
     // Check if this is a continuation of an existing task
     if let Some(ref ctx_id) = params.context_id {
-        if let Some(existing_task) = state.task_store.get_by_context(ctx_id).await {
-            return continue_task(state, id, existing_task, params.message, user_text).await;
+        if let Some(existing_task) = state.task_store.get_by_context(tenant_id, ctx_id).await {
+            return continue_task(
+                state,
+                tenant_id,
+                id,
+                existing_task,
+                params.message,
+                user_text,
+            )
+            .await;
         }
     }
 
@@ -115,7 +147,7 @@ async fn handle_message_send(
     // Create the A2A task
     let task = state
         .task_store
-        .create(params.context_id, &session_id, params.message)
+        .create(tenant_id, params.context_id, &session_id, params.message)
         .await;
 
     // Generate an initial response from the agent
@@ -130,11 +162,15 @@ async fn handle_message_send(
 
     state
         .task_store
-        .append_message(&task.id, agent_reply.clone())
+        .append_message(tenant_id, &task.id, agent_reply.clone())
         .await;
 
     // Return the task with the agent's reply in status
-    let mut result_task = state.task_store.get(&task.id).await.unwrap_or(task);
+    let mut result_task = state
+        .task_store
+        .get(tenant_id, &task.id)
+        .await
+        .unwrap_or(task);
     result_task.status.message = Some(agent_reply);
 
     JsonRpcResponse::ok(id, result_task)
@@ -143,6 +179,7 @@ async fn handle_message_send(
 /// Continue an existing task with a new message.
 async fn continue_task(
     state: &A2AState,
+    tenant_id: Option<&TenantId>,
     id: Option<serde_json::Value>,
     task: Task,
     message: Message,
@@ -151,7 +188,10 @@ async fn continue_task(
     let task_id = task.id.clone();
 
     // Append user message
-    state.task_store.append_message(&task_id, message).await;
+    state
+        .task_store
+        .append_message(tenant_id, &task_id, message)
+        .await;
 
     // Try to detect if the user pasted a complete spec (heuristic: starts with "# Agent:")
     let trimmed = user_text.trim();
@@ -162,10 +202,14 @@ async fn continue_task(
                 let descriptor = serde_json::to_value(&output).unwrap_or(serde_json::Value::Null);
                 state
                     .task_store
-                    .complete_with_descriptor(&task_id, descriptor)
+                    .complete_with_descriptor(tenant_id, &task_id, descriptor)
                     .await;
 
-                let result_task = state.task_store.get(&task_id).await.unwrap_or(task);
+                let result_task = state
+                    .task_store
+                    .get(tenant_id, &task_id)
+                    .await
+                    .unwrap_or(task);
                 return JsonRpcResponse::ok(id, result_task);
             }
             Err(e) => {
@@ -184,10 +228,14 @@ async fn continue_task(
 
     state
         .task_store
-        .append_message(&task_id, agent_reply.clone())
+        .append_message(tenant_id, &task_id, agent_reply.clone())
         .await;
 
-    let mut result_task = state.task_store.get(&task_id).await.unwrap_or(task);
+    let mut result_task = state
+        .task_store
+        .get(tenant_id, &task_id)
+        .await
+        .unwrap_or(task);
     result_task.status.state = TaskState::InputRequired;
     result_task.status.message = Some(agent_reply);
 
@@ -197,6 +245,7 @@ async fn continue_task(
 /// Handle `tasks/get`.
 async fn handle_tasks_get(
     state: &A2AState,
+    tenant_id: Option<&TenantId>,
     id: Option<serde_json::Value>,
     params: Option<serde_json::Value>,
 ) -> JsonRpcResponse {
@@ -205,7 +254,7 @@ async fn handle_tasks_get(
         Err(e) => return JsonRpcResponse::err(id, rpc_error::INVALID_PARAMS, e),
     };
 
-    match state.task_store.get(&params.id).await {
+    match state.task_store.get(tenant_id, &params.id).await {
         Some(task) => JsonRpcResponse::ok(id, task),
         None => JsonRpcResponse::err(id, rpc_error::TASK_NOT_FOUND, "task not found"),
     }
@@ -214,6 +263,7 @@ async fn handle_tasks_get(
 /// Handle `tasks/cancel`.
 async fn handle_tasks_cancel(
     state: &A2AState,
+    tenant_id: Option<&TenantId>,
     id: Option<serde_json::Value>,
     params: Option<serde_json::Value>,
 ) -> JsonRpcResponse {
@@ -223,7 +273,7 @@ async fn handle_tasks_cancel(
     };
 
     // Cancel the A2A task
-    let cancelled = state.task_store.cancel(&params.id).await;
+    let cancelled = state.task_store.cancel(tenant_id, &params.id).await;
     if !cancelled {
         return JsonRpcResponse::err(
             id,
@@ -233,13 +283,13 @@ async fn handle_tasks_cancel(
     }
 
     // Also cancel the underlying compiler session (best-effort)
-    if let Some(task) = state.task_store.get(&params.id).await {
+    if let Some(task) = state.task_store.get(tenant_id, &params.id).await {
         if let Some(ctx_id) = task.context_id {
             state.compiler_service.cancel_session(&ctx_id).await;
         }
     }
 
-    match state.task_store.get(&params.id).await {
+    match state.task_store.get(tenant_id, &params.id).await {
         Some(task) => JsonRpcResponse::ok(id, task),
         None => JsonRpcResponse::err(id, rpc_error::TASK_NOT_FOUND, "task not found"),
     }
@@ -266,4 +316,166 @@ fn extract_text(message: &Message) -> String {
         })
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::{
+        Router,
+        body::{Body, to_bytes},
+        http::{Request, StatusCode},
+        routing::post,
+    };
+    use tower::ServiceExt;
+
+    use super::*;
+    use crate::uar::security::claims::UserClaims;
+
+    fn security(jwt_required: bool) -> SecurityConfig {
+        SecurityConfig {
+            jwt_required,
+            jwt_secret: "tenant-test-secret".to_owned().into(),
+            jwks_url: None,
+            jwt_issuer: None,
+            jwt_audience: None,
+            jwt_validate_nbf: true,
+            settings_mutation_auth_required: true,
+        }
+    }
+
+    fn context(tenant: &str) -> UserContext {
+        UserContext {
+            user_id: "verified-user".to_owned(),
+            tenant_id: Some(TenantId::for_test(tenant)),
+            claims: UserClaims {
+                sub: "verified-user".to_owned(),
+                name: None,
+                roles: None,
+                tenant_id: Some(tenant.to_owned()),
+                exp: usize::MAX,
+            },
+        }
+    }
+
+    fn state(task_store: Arc<TaskStore>, jwt_required: bool) -> Arc<A2AState> {
+        Arc::new(A2AState {
+            compiler_service: Arc::new(CompilerService::in_memory()),
+            task_store,
+            security: security(jwt_required),
+            base_url: "http://127.0.0.1:3928".to_owned(),
+        })
+    }
+
+    #[tokio::test]
+    async fn body_query_and_header_tenant_values_cannot_override_verified_tenant() {
+        let store = TaskStore::new();
+        let tenant_a = TenantId::for_test("tenant-a");
+        let tenant_b = TenantId::for_test("tenant-b");
+        let task_a = store
+            .create(
+                Some(&tenant_a),
+                Some("shared-context".to_owned()),
+                "session-a",
+                Message::user_text("tenant A task"),
+            )
+            .await;
+        let task_b = store
+            .create(
+                Some(&tenant_b),
+                Some("shared-context".to_owned()),
+                "session-b",
+                Message::user_text("tenant B task"),
+            )
+            .await;
+
+        let app = Router::new()
+            .route("/", post(handle_rpc))
+            .with_state(state(Arc::clone(&store), true))
+            .layer(Extension(context("tenant-a")));
+        let request = Request::builder()
+            .method("POST")
+            .uri("/?tenant_id=tenant-b")
+            .header("content-type", "application/json")
+            .header("x-uar-tenant-id", "tenant-b")
+            .body(Body::from(
+                serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "id": "tenant-spoof",
+                    "method": "message/send",
+                    "tenant_id": "tenant-b",
+                    "params": {
+                        "message": {
+                            "role": "user",
+                            "parts": [{"type": "text", "text": "continue verified tenant"}],
+                            "metadata": {"tenant_id": "tenant-b"}
+                        },
+                        "context_id": "shared-context",
+                        "metadata": {"tenant_id": "tenant-b"},
+                        "tenant_id": "tenant-b"
+                    }
+                })
+                .to_string(),
+            ))
+            .expect("tenant spoof request must build");
+
+        let response = app
+            .oneshot(request)
+            .await
+            .expect("tenant spoof request must complete");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("tenant spoof response body must read");
+        let response: serde_json::Value =
+            serde_json::from_slice(&body).expect("tenant spoof response must be JSON");
+
+        assert_eq!(response["result"]["id"], task_a.id);
+        assert_ne!(response["result"]["id"], task_b.id);
+        assert_eq!(
+            store
+                .get(Some(&tenant_b), &task_b.id)
+                .await
+                .expect("tenant B task must remain present")
+                .history
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn required_jwt_without_verified_tenant_is_rejected() {
+        let app = Router::new()
+            .route("/", post(handle_rpc))
+            .with_state(state(TaskStore::new(), true));
+        let request = Request::builder()
+            .method("POST")
+            .uri("/")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "id": "missing-tenant",
+                    "method": "tasks/get",
+                    "params": {"id": "unknown"}
+                })
+                .to_string(),
+            ))
+            .expect("missing tenant request must build");
+
+        let response = app
+            .oneshot(request)
+            .await
+            .expect("missing tenant request must complete");
+        let body = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("missing tenant response body must read");
+        let response: serde_json::Value =
+            serde_json::from_slice(&body).expect("missing tenant response must be JSON");
+
+        assert_eq!(response["error"]["code"], rpc_error::INVALID_REQUEST);
+        assert_eq!(
+            response["error"]["message"],
+            "verified tenant claim required"
+        );
+    }
 }

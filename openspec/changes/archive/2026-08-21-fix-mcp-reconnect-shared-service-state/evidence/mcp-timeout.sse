@@ -1,0 +1,46 @@
+data: {"id":"chatcmpl-ba52d16ef12d4805a8630f8a0a21a3af","object":"chat.completion.chunk","created":1787319401,"model":"openai/gpt-4o","choices":[{"index":0,"delta":{"role":"assistant"}}]}
+
+event: runtime.run
+id: 2
+data: {"type":"run_started","id":"daf6c603-7b6f-4d73-9781-63073dc805ca","run_id":"daf6c603-7b6f-4d73-9781-63073dc805ca","agent_id":"default-agent","status":"running","started_at":"2026-08-21T13:36:41.638904+00:00","updated_at":"2026-08-21T13:36:41.638906+00:00"}
+
+event: runtime.step
+id: 4
+data: {"type":"step_started","id":"daf6c603-7b6f-4d73-9781-63073dc805ca-1","run_id":"daf6c603-7b6f-4d73-9781-63073dc805ca","step":1,"status":"started","updated_at":"2026-08-21T13:36:41.638913+00:00"}
+
+data: {"id":"chatcmpl-ba52d16ef12d4805a8630f8a0a21a3af","object":"chat.completion.chunk","created":1787319401,"model":"openai/gpt-4o","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"resilience-call","type":"function","function":{"arguments":"{\"mode\": \"timeout\"}"}}]}}]}
+
+event: runtime.tool_call
+id: 6
+data: {"type":"tool_call_started","id":"resilience-call","run_id":"daf6c603-7b6f-4d73-9781-63073dc805ca","call_index":0,"tool_call_id":"resilience-call","name":"resilience__echo","arguments_json":"{\"mode\":\"timeout\"}","status":"running","updated_at":"2026-08-21T13:36:41.639983+00:00"}
+
+data: {"id":"chatcmpl-ba52d16ef12d4805a8630f8a0a21a3af","object":"chat.completion.chunk","created":1787319401,"model":"openai/gpt-4o","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"resilience-call","type":"function","function":{"name":"resilience__echo","arguments":"{\"mode\":\"timeout\"}"}}]}}]}
+
+:
+
+:
+
+event: runtime.tool_call
+id: 7
+data: {"type":"tool_call_failed","id":"resilience-call","run_id":"daf6c603-7b6f-4d73-9781-63073dc805ca","call_index":0,"tool_call_id":"resilience-call","name":"resilience__echo","result":"\"Error: tools/call failed for resilience::echo\"","status":"failed","updated_at":"2026-08-21T13:37:11.887632+00:00"}
+
+data: {"id":"chatcmpl-ba52d16ef12d4805a8630f8a0a21a3af","object":"chat.completion.chunk","created":1787319401,"model":"openai/gpt-4o","choices":[{"index":0,"delta":{"tool_results":[{"index":0,"id":"resilience-call","name":"resilience__echo","content":"\"Error: tools/call failed for resilience::echo\"","success":false}]}}]}
+
+event: runtime.step
+id: 8
+data: {"type":"step_finished","id":"daf6c603-7b6f-4d73-9781-63073dc805ca-1","run_id":"daf6c603-7b6f-4d73-9781-63073dc805ca","step":1,"status":"finished","updated_at":"2026-08-21T13:37:11.887646+00:00"}
+
+event: runtime.step
+id: 9
+data: {"type":"step_started","id":"daf6c603-7b6f-4d73-9781-63073dc805ca-2","run_id":"daf6c603-7b6f-4d73-9781-63073dc805ca","step":2,"status":"started","updated_at":"2026-08-21T13:37:11.887648+00:00"}
+
+data: {"id":"chatcmpl-ba52d16ef12d4805a8630f8a0a21a3af","object":"chat.completion.chunk","created":1787319401,"model":"openai/gpt-4o","choices":[{"index":0,"delta":{"content":"mcp-recovered"}}]}
+
+event: runtime.run
+id: 11
+data: {"type":"run_finished","id":"daf6c603-7b6f-4d73-9781-63073dc805ca","run_id":"daf6c603-7b6f-4d73-9781-63073dc805ca","status":"completed","input_tokens":null,"output_tokens":null,"total_tokens":null,"cost_usd_estimate":null,"updated_at":"2026-08-21T13:37:11.888606+00:00"}
+
+data: {"id":"chatcmpl-ba52d16ef12d4805a8630f8a0a21a3af","object":"chat.completion.chunk","created":1787319401,"model":"openai/gpt-4o","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}
+
+data: [DONE]
+

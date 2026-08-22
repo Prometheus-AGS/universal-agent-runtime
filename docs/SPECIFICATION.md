@@ -442,7 +442,7 @@ demand from three consumers is not proof of uselessness.
 | **GAP-02** | No JWKS/RS256 verifier | **[V]** `src/config.rs:284` shared `jwt_secret`; no JWKS code | Blocks San Saba adoption |
 | **GAP-03** | A2A task store not tenant-partitioned | **[V]** `a2a/task_store.rs:16` — flat `RwLock<HashMap<String, Task>>` | Blocks San Saba; security property; **undelegatable** |
 | **GAP-04** | Rust API used as a contract while policy says it is not | **[V]** `compatibility-policy.md:16` vs KnowMe's ~30 imports | Every internal refactor risks breaking KnowMe |
-| **GAP-05** | `register_builtins` called **only** from `server.rs` | **[V]** `src/server.rs:436` | **Embedded/mobile boots with an empty skill registry.** All 124 routes can be correct while this capability is at 0% |
+| **GAP-05** | `register_builtins` called from two server paths but not the embedded runtime | **[V]** `src/server.rs:454`, `src/server.rs:517`; `src/embedded.rs` | Built-ins are absent when the embedded runtime starts against a fresh database |
 | **GAP-06** | A2UI catalog is 5 hardcoded builtins | **[V]** `builtin_{form,confirm,select,text_input,display}` vs the 55-definition a2ui.org catalog | Consumers expect a real catalog |
 | **GAP-07** | `@prometheus-ags/a2ui-*` appear unpublished | **[V]** `a2ui-core@0.10.4`, `a2ui-react@0.10.1`, `a2ui-uar@0.1.0` all have `"main": "./src/index.ts"` — raw TS, no build output | San Saba hand-authored a mirror believing these did not exist. **Packaging problem, not a missing implementation** |
 | **GAP-08** | `/a2ui/v1/surfaces/assemble` orphaned | Deferred Change 19 → Change 20; done in neither | Consumers depend on Forge for it |

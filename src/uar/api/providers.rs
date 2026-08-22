@@ -270,14 +270,14 @@ async fn set_default(
     State(state): State<ProviderApiState>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
-    state.registry.set_default(&id).await.map_err(|e| {
-        (
+    if state.registry.get(&id).await.is_none() {
+        return Err((
             StatusCode::NOT_FOUND,
             Json(ErrorResponse {
-                error: e.to_string(),
+                error: format!("Provider '{id}' not found"),
             }),
-        )
-    })?;
+        ));
+    }
 
     if let Some(ref sm) = state.settings_manager {
         sm.set_default_provider_id(&id).await.map_err(|e| {
@@ -289,6 +289,15 @@ async fn set_default(
             )
         })?;
     }
+
+    state.registry.set_default(&id).await.map_err(|e| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(ErrorResponse {
+                error: e.to_string(),
+            }),
+        )
+    })?;
 
     Ok(StatusCode::OK)
 }
@@ -486,4 +495,178 @@ struct ProviderHealthEntry {
 #[derive(Serialize)]
 struct ProviderHealthResponse {
     providers: std::collections::HashMap<String, ProviderHealthEntry>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        config::AppConfig,
+        uar::persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
+    };
+    use serde_json::json;
+
+    async fn test_persistence() -> (Arc<dyn PersistenceLayer>, tempfile::TempDir) {
+        let dir = tempfile::tempdir().expect("provider API test tempdir must be creatable");
+        let url = format!("surrealkv://{}", dir.path().to_string_lossy());
+        let provider = SurrealDbProvider::new(&url, None, None, None, None)
+            .await
+            .expect("provider API test database must start");
+        (Arc::new(provider), dir)
+    }
+
+    fn test_config() -> AppConfig {
+        serde_json::from_value(json!({
+            "server": {
+                "port": 3000,
+                "host": "127.0.0.1"
+            },
+            "security": {
+                "jwt_required": false,
+                "jwt_secret": "test-secret"
+            },
+            "resilience": {
+                "rate_limit_enabled": false,
+                "requests_per_second": 5.0,
+                "burst_size": 10.0
+            },
+            "persistence": {
+                "provider": "surreal",
+                "database_url": "memory://provider-api-test",
+                "vector_dimension": 384,
+                "external_cache_enabled": false
+            }
+        }))
+        .expect("minimal provider API test config must deserialize")
+    }
+
+    fn provider(id: &str) -> ProviderConfig {
+        ProviderConfig {
+            id: id.to_string(),
+            display_name: id.to_string(),
+            base_url: format!("https://{id}.example.test/v1"),
+            api_key: None,
+            protocol: crate::llm::registry::ProtocolSetting::Auto,
+            default_model: None,
+            models: Vec::new(),
+            enabled: true,
+        }
+    }
+
+    async fn registry_with_two_providers() -> Arc<ProviderRegistry> {
+        let registry = Arc::new(ProviderRegistry::new());
+        registry
+            .register(provider("provider-a"))
+            .await
+            .expect("provider-a must register");
+        registry
+            .register(provider("provider-b"))
+            .await
+            .expect("provider-b must register");
+        registry
+            .set_default("provider-a")
+            .await
+            .expect("provider-a must become the initial default");
+        registry
+    }
+
+    #[tokio::test]
+    async fn set_default_persistence_failure_preserves_live_default() {
+        let (persistence, _dir) = test_persistence().await;
+        let settings_manager = Arc::new(SettingsManager::new(persistence));
+        let registry = registry_with_two_providers().await;
+        let durable_before = settings_manager.get_default_provider_id().await;
+
+        let error = set_default(
+            State(ProviderApiState {
+                registry: Arc::clone(&registry),
+                settings_manager: Some(Arc::clone(&settings_manager)),
+            }),
+            Path("provider-b".to_string()),
+        )
+        .await
+        .expect_err("an uninitialized settings manager must reject the durable write");
+
+        assert_eq!(error.0, StatusCode::INTERNAL_SERVER_ERROR);
+        assert!(
+            error
+                .1
+                .0
+                .error
+                .contains("Failed to persist default provider")
+        );
+        assert_eq!(registry.default_id().await.as_deref(), Some("provider-a"));
+        assert_eq!(
+            settings_manager.get_default_provider_id().await,
+            durable_before
+        );
+    }
+
+    #[tokio::test]
+    async fn set_default_missing_provider_preserves_defaults() {
+        let (persistence, _dir) = test_persistence().await;
+        let settings_manager = Arc::new(SettingsManager::new(persistence));
+        let registry = registry_with_two_providers().await;
+        let durable_before = settings_manager.get_default_provider_id().await;
+
+        let error = set_default(
+            State(ProviderApiState {
+                registry: Arc::clone(&registry),
+                settings_manager: Some(Arc::clone(&settings_manager)),
+            }),
+            Path("missing-provider".to_string()),
+        )
+        .await
+        .expect_err("an unregistered provider must be rejected");
+
+        assert_eq!(error.0, StatusCode::NOT_FOUND);
+        assert_eq!(registry.default_id().await.as_deref(), Some("provider-a"));
+        assert_eq!(
+            settings_manager.get_default_provider_id().await,
+            durable_before
+        );
+    }
+
+    #[tokio::test]
+    async fn set_default_success_survives_fresh_manager() {
+        let (persistence, _dir) = test_persistence().await;
+        let settings_manager = Arc::new(SettingsManager::new(Arc::clone(&persistence)));
+        settings_manager
+            .initialize(&test_config())
+            .await
+            .expect("settings must initialize");
+        settings_manager
+            .set_default_provider_id("provider-a")
+            .await
+            .expect("initial durable default must persist");
+        let registry = registry_with_two_providers().await;
+
+        let status = match set_default(
+            State(ProviderApiState {
+                registry: Arc::clone(&registry),
+                settings_manager: Some(Arc::clone(&settings_manager)),
+            }),
+            Path("provider-b".to_string()),
+        )
+        .await
+        {
+            Ok(status) => status,
+            Err((status, Json(error))) => {
+                panic!("default selection failed with {status}: {}", error.error)
+            }
+        };
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(registry.default_id().await.as_deref(), Some("provider-b"));
+
+        let fresh_manager = SettingsManager::new(persistence);
+        fresh_manager
+            .initialize(&test_config())
+            .await
+            .expect("fresh settings manager must reconstruct persisted state");
+        assert_eq!(
+            fresh_manager.get_default_provider_id().await.as_deref(),
+            Some("provider-b")
+        );
+    }
 }

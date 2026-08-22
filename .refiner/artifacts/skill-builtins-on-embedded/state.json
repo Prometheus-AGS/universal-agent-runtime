@@ -1,0 +1,69 @@
+{
+  "refinement_id": "8a2fbc58-4ee2-4cf3-a037-fafe4f91d01f",
+  "artifact_name": "skill-builtins-on-embedded",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-14T17:27:16Z",
+  "updated_at": "2026-08-14T17:42:24Z",
+  "current_iteration": 2,
+  "max_iterations": 5,
+  "goals": [
+    "Validate B3 against its OpenSpec requirements and readiness execution contract"
+  ],
+  "constraints": [
+    {
+      "id": "b3-fresh-embedded-catalogue"
+    },
+    {
+      "id": "b3-durable-idempotent-restart"
+    },
+    {
+      "id": "b3-switch-and-control"
+    },
+    {
+      "id": "b3-tier-scope-spec"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-14T17:27:51Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-14T17:41:06Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-14T17:42:24Z"
+}

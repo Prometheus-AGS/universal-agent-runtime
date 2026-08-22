@@ -1,14 +1,20 @@
 # Supply Chain
 
-UAR ships SLSA provenance and SBOM attestations via GitHub's native `actions/attest`/`actions/attest-sbom`, keyless Sigstore signatures with an independent in-workflow verification job, reproducible-source checks on every CI run, and nightly vulnerability scanning with `osv-scanner` and `grype`.
+UAR ships source-bound local SLSA provenance, CycloneDX/SPDX SBOMs, and keyless
+Sigstore signatures. A separate local verification process reopens the exact
+signed checksum set and rejects any added, removed, or changed evidence. Local
+security-audit and test receipts are hashed into the release manifest.
 
-GitHub-native artifact attestations from an in-repo build workflow provide SLSA v1.0 **Build Level 2**; Build Level 3 additionally requires the build steps to run in a dedicated reusable workflow. UAR currently claims L2 and is on the L3 track (migrating the build/sign steps into a reusable workflow is planned).
+GitHub Actions are reserved for deployment execution and deployment-specific
+validation. Product tests, security scans, release builds, load/soak tests, and
+release certification run locally before publication. UAR does not claim a
+hosted-build SLSA level for this local builder.
 
 ## Topics
 
-- SLSA provenance attestation (Build L2 attested, L3-track)
-- SBOM generation and attestation
-- Vulnerability scanning (`vuln-scan.yml`)
+- Source-bound local SLSA provenance
+- SBOM generation and signed checksum coverage
+- Local vulnerability scanning
 - Reproducible builds verification
 - `/.well-known/security.txt`
 

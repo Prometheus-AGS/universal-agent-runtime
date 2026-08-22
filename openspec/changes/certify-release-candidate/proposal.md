@@ -6,7 +6,8 @@ No immutable release candidate has exercised the complete production matrix or e
 
 - Set all product surfaces to `1.0.0`, then cut and certify candidate tag
   `v1.0.0-rc.3` from that immutable commit (the next unused RC ordinal).
-- Install on clean supported platforms and execute the stable matrix.
+- Install on clean supported platforms and execute the stable matrix locally
+  on each platform; do not use GitHub Actions as a product-test runner.
 - Require external adopter validation and preserve evidence.
 
 ## Capabilities

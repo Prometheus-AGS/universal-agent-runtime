@@ -40,9 +40,9 @@ ARG PYTHON_VERSION
 ARG GO_VERSION
 ARG WASMTIME_VERSION
 ARG TINYGO_VERSION
-# TARGETARCH is set automatically by buildx (`amd64` or `arm64`); see
+# TARGETARCH is set automatically by BuildKit (`amd64` or `arm64`); see
 # multi-arch branches further down in the Go / wasmtime / tinygo installs.
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
@@ -204,7 +204,10 @@ RUN git config --global --add safe.directory '*' \
 # validation. The frontend remains an isolated workspace under `frontend/`.
 RUN cd frontend \
     && pnpm install --frozen-lockfile \
-    && pnpm -r --filter "./packages/*" build \
+    && (cd packages/prometheus-entity-management \
+        && pnpm install --frozen-lockfile \
+        && pnpm --filter @prometheus-ags/entity-graph-core build \
+        && pnpm --filter @prometheus-ags/prometheus-entity-management build) \
     && pnpm build
 
 # Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded).
@@ -219,7 +222,7 @@ RUN --mount=type=secret,id=github_token \
       git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "git@github.com:"; \
       git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"; \
     fi \
-    && CARGO_NET_GIT_FETCH_WITH_CLI=true cargo +nightly build --release \
+    && CARGO_NET_GIT_FETCH_WITH_CLI=true cargo +"${RUST_TOOLCHAIN}" build --release \
         --features "server-full,postgres-backend" \
         --bin universal-agent-runtime
 # (The token-bearing gitconfig lives only in this throwaway builder stage — the

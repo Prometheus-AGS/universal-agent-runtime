@@ -1,0 +1,83 @@
+{
+  "refinement_id": "97783927-77a8-412f-85b3-1640f0682fe4",
+  "artifact_name": "skill-scoped-governance",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-15T07:31:42Z",
+  "updated_at": "2026-08-15T08:03:54Z",
+  "current_iteration": 3,
+  "max_iterations": 5,
+  "goals": [
+    "Validate B4 against its OpenSpec requirements and readiness execution contract"
+  ],
+  "constraints": [
+    {
+      "id": "b4-scoped-precedence-live-run"
+    },
+    {
+      "id": "b4-durable-merge-controls"
+    },
+    {
+      "id": "b4-origin-delete-storage"
+    },
+    {
+      "id": "b4-tier-scope-spec"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-15T07:31:55Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-15T07:49:56Z"
+    },
+    {
+      "iteration": 3,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-15T08:01:45Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-15T08:03:54Z"
+}

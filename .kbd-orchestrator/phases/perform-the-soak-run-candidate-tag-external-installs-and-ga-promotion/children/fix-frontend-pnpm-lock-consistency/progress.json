@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 223,
+  "derivedRevision": 223,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 165
+  },
+  "conflictCount": 0,
+  "phase": "fix-frontend-pnpm-lock-consistency",
+  "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-frontend-pnpm-lock-consistency",
+  "parentPhase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+  "last_updated": "2026-08-20T21:16:41.882820Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 1,
+  "changes_completed": 1,
+  "implementation_total": 1,
+  "implementation_completed": 1,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 1,
+      "total": 1,
+      "status": "COMPLETE"
+    },
+    "evidence": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "certification": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    },
+    "publication": {
+      "status": "PENDING",
+      "summary": null,
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "fix-frontend-pnpm-lock-consistency",
+      "title": "Fix frontend pnpm lock consistency",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

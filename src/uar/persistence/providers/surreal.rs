@@ -174,7 +174,90 @@ fn from_db_vec<T: DeserializeOwned>(values: Vec<serde_json::Value>) -> Result<Ve
     values.into_iter().map(from_db_value).collect()
 }
 
+fn tenant_record_payload<T: Serialize>(value: &T, logical_id: &str) -> Result<serde_json::Value> {
+    let mut payload = to_db_value(value)?;
+    let fields = payload
+        .as_object_mut()
+        .context("tenant-owned record must serialize as an object")?;
+    fields.remove("id");
+    fields.insert(
+        "logical_id".to_string(),
+        serde_json::Value::String(logical_id.to_string()),
+    );
+    Ok(payload)
+}
+
+fn restore_tenant_record_id(mut value: serde_json::Value) -> serde_json::Value {
+    if let Some(fields) = value.as_object_mut()
+        && let Some(logical_id) = fields.remove("logical_id")
+    {
+        fields.insert("id".to_string(), logical_id);
+    }
+    value
+}
+
+fn restore_tenant_record_ids(values: Vec<serde_json::Value>) -> Vec<serde_json::Value> {
+    values.into_iter().map(restore_tenant_record_id).collect()
+}
+
 impl SurrealDbProvider {
+    async fn save_tenant_record<T: Serialize>(
+        &self,
+        table: &str,
+        owner_id: &str,
+        logical_id: &str,
+        value: &T,
+    ) -> Result<()> {
+        let storage_key = crate::uar::persistence::tenant_storage_key(owner_id, logical_id);
+        let payload = tenant_record_payload(value, logical_id)?;
+        let _: Option<surrealdb::types::Value> = self
+            .db
+            .upsert((table, storage_key))
+            .content(payload)
+            .await?;
+
+        if let Some(legacy) = self.fetch_one(table, logical_id).await?
+            && legacy.get("owner_id").and_then(serde_json::Value::as_str) == Some(owner_id)
+        {
+            let _: Option<surrealdb::types::Value> = self.db.delete((table, logical_id)).await?;
+        }
+        Ok(())
+    }
+
+    async fn fetch_tenant_record(
+        &self,
+        table: &str,
+        owner_id: &str,
+        logical_id: &str,
+    ) -> Result<Option<serde_json::Value>> {
+        let storage_key = crate::uar::persistence::tenant_storage_key(owner_id, logical_id);
+        if let Some(record) = self.fetch_one(table, &storage_key).await? {
+            return Ok(Some(restore_tenant_record_id(record)));
+        }
+        let legacy = self.fetch_one(table, logical_id).await?;
+        Ok(legacy
+            .filter(|record| {
+                record.get("owner_id").and_then(serde_json::Value::as_str) == Some(owner_id)
+            })
+            .map(restore_tenant_record_id))
+    }
+
+    async fn delete_tenant_record(
+        &self,
+        table: &str,
+        owner_id: &str,
+        logical_id: &str,
+    ) -> Result<()> {
+        let storage_key = crate::uar::persistence::tenant_storage_key(owner_id, logical_id);
+        let _: Option<surrealdb::types::Value> = self.db.delete((table, storage_key)).await?;
+        if let Some(legacy) = self.fetch_one(table, logical_id).await?
+            && legacy.get("owner_id").and_then(serde_json::Value::as_str) == Some(owner_id)
+        {
+            let _: Option<surrealdb::types::Value> = self.db.delete((table, logical_id)).await?;
+        }
+        Ok(())
+    }
+
     async fn fetch_all(&self, table: &str) -> Result<Vec<serde_json::Value>> {
         let mut resp = self.db.query(format!("SELECT * FROM {}", table)).await?;
         let rows: Vec<surrealdb::types::Value> = resp.take(0).or_else(|e| {
@@ -205,47 +288,75 @@ impl SurrealDbProvider {
 impl PersistenceLayer for SurrealDbProvider {
     // Session Management
     async fn save_session(&self, session: &Session) -> Result<()> {
-        let id = session.id().to_string();
-        let payload = to_db_value(session)?;
-        let _: Option<surrealdb::types::Value> =
-            self.db.upsert(("sessions", id)).content(payload).await?;
-        Ok(())
+        self.save_tenant_record("sessions", session.owner_id(), session.id(), session)
+            .await
     }
 
-    async fn load_session(&self, id: &str) -> Result<Option<Session>> {
-        let session = self.fetch_one("sessions", id).await?;
-        from_db_opt(session)
+    async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>> {
+        if let Some(session) = self.fetch_tenant_record("sessions", owner_id, id).await? {
+            return from_db_opt(Some(session));
+        }
+        if owner_id != crate::session::ANONYMOUS_SESSION_OWNER {
+            return Ok(None);
+        }
+        let Some(legacy) = self.fetch_one("sessions", id).await? else {
+            return Ok(None);
+        };
+        let session: Session = from_db_value(legacy)?;
+        self.save_session(&session).await?;
+        let _: Option<surrealdb::types::Value> = self.db.delete(("sessions", id)).await?;
+        Ok(Some(session))
     }
 
     async fn save_conversation_policy(
         &self,
         record: &crate::uar::domain::policy::ConversationPolicyRecord,
     ) -> Result<()> {
-        let payload = to_db_value(record)?;
-        let _: Option<surrealdb::types::Value> = self
-            .db
-            .upsert(("conversation_policies", record.conversation_id.clone()))
-            .content(payload)
-            .await?;
-        Ok(())
+        self.save_tenant_record(
+            "conversation_policies",
+            &record.owner_id,
+            &record.conversation_id,
+            record,
+        )
+        .await
     }
 
     async fn load_conversation_policy(
         &self,
+        owner_id: &str,
         conversation_id: &str,
     ) -> Result<Option<crate::uar::domain::policy::ConversationPolicyRecord>> {
-        let record = self
+        if let Some(record) = self
+            .fetch_tenant_record("conversation_policies", owner_id, conversation_id)
+            .await?
+        {
+            return from_db_opt(Some(record));
+        }
+        if owner_id != crate::session::ANONYMOUS_SESSION_OWNER {
+            return Ok(None);
+        }
+        let Some(legacy) = self
             .fetch_one("conversation_policies", conversation_id)
-            .await?;
-        from_db_opt(record)
-    }
-
-    async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()> {
+            .await?
+        else {
+            return Ok(None);
+        };
+        let record: crate::uar::domain::policy::ConversationPolicyRecord = from_db_value(legacy)?;
+        self.save_conversation_policy(&record).await?;
         let _: Option<surrealdb::types::Value> = self
             .db
             .delete(("conversation_policies", conversation_id))
             .await?;
-        Ok(())
+        Ok(Some(record))
+    }
+
+    async fn delete_conversation_policy(
+        &self,
+        owner_id: &str,
+        conversation_id: &str,
+    ) -> Result<()> {
+        self.delete_tenant_record("conversation_policies", owner_id, conversation_id)
+            .await
     }
 
     // Skill Management
@@ -329,33 +440,53 @@ impl PersistenceLayer for SurrealDbProvider {
 
     // Knowledge Base Management
     async fn save_knowledge_base(&self, kb: &KnowledgeBase) -> Result<()> {
-        let payload = to_db_value(kb)?;
-        let _: Option<surrealdb::types::Value> = self
-            .db
-            .upsert(("knowledge_bases", kb.id.clone()))
-            .content(payload)
-            .await?;
-        Ok(())
+        self.save_tenant_record("knowledge_bases", &kb.owner_id, &kb.id, kb)
+            .await
     }
 
     async fn save_chunk(&self, chunk: &KnowledgeChunk) -> Result<()> {
-        let payload = to_db_value(chunk)?;
-        let _: Option<surrealdb::types::Value> = self
-            .db
-            .upsert(("knowledge_chunks", chunk.id.to_string()))
-            .content(payload)
-            .await?;
-        Ok(())
+        if self
+            .get_knowledge_base(&chunk.owner_id, &chunk.kb_id)
+            .await?
+            .is_none()
+        {
+            anyhow::bail!("knowledge base is not accessible to chunk owner");
+        }
+        if let Some(document_id) = &chunk.document_id
+            && self
+                .get_document(&chunk.owner_id, document_id)
+                .await?
+                .is_none()
+        {
+            anyhow::bail!("knowledge document is not accessible to chunk owner");
+        }
+        self.save_tenant_record(
+            "knowledge_chunks",
+            &chunk.owner_id,
+            &chunk.id.to_string(),
+            chunk,
+        )
+        .await
     }
 
     async fn search_knowledge(
         &self,
+        owner_id: &str,
         query_vec: &[f32],
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
-        let chunks_raw = self.fetch_all("knowledge_chunks").await?;
-        let chunks: Vec<KnowledgeChunk> = from_db_vec(chunks_raw)?;
+        let mut response = self
+            .db
+            .query("SELECT * FROM knowledge_chunks WHERE owner_id = $owner_id")
+            .bind(("owner_id", owner_id.to_string()))
+            .await?;
+        let chunks_raw: Vec<surrealdb::types::Value> = response.take(0)?;
+        let chunks_raw = chunks_raw
+            .into_iter()
+            .map(surreal_to_json)
+            .collect::<Result<Vec<_>>>()?;
+        let chunks: Vec<KnowledgeChunk> = from_db_vec(restore_tenant_record_ids(chunks_raw))?;
         warn_zero_norm_chunks(&chunks);
 
         let mut matches: Vec<KnowledgeMatch> = chunks
@@ -457,14 +588,26 @@ impl PersistenceLayer for SurrealDbProvider {
     // Knowledge Base Retrieval Methods
     // =========================================================================
 
-    async fn get_knowledge_base(&self, id: &str) -> Result<Option<KnowledgeBase>> {
-        let kb = self.fetch_one("knowledge_bases", id).await?;
-        from_db_opt(kb)
+    async fn get_knowledge_base(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeBase>> {
+        from_db_opt(
+            self.fetch_tenant_record("knowledge_bases", owner_id, id)
+                .await?,
+        )
     }
 
-    async fn get_knowledge_base_by_name(&self, name: &str) -> Result<Option<KnowledgeBase>> {
-        let sql = "SELECT * FROM knowledge_bases WHERE name = $name LIMIT 1";
-        let mut response = self.db.query(sql).bind(("name", name.to_string())).await?;
+    async fn get_knowledge_base_by_name(
+        &self,
+        owner_id: &str,
+        name: &str,
+    ) -> Result<Option<KnowledgeBase>> {
+        let sql =
+            "SELECT * FROM knowledge_bases WHERE owner_id = $owner_id AND name = $name LIMIT 1";
+        let mut response = self
+            .db
+            .query(sql)
+            .bind(("owner_id", owner_id.to_string()))
+            .bind(("name", name.to_string()))
+            .await?;
         let rows: Vec<surrealdb::types::Value> = response.take(0).or_else(|e| {
             if e.to_string().contains("does not exist") {
                 Ok(vec![])
@@ -473,22 +616,40 @@ impl PersistenceLayer for SurrealDbProvider {
             }
         })?;
         let kb = rows.into_iter().next().map(surreal_to_json).transpose()?;
-        from_db_opt(kb)
+        from_db_opt(kb.map(restore_tenant_record_id))
     }
 
-    async fn list_knowledge_bases(&self) -> Result<Vec<KnowledgeBase>> {
-        let kbs_raw = self.fetch_all("knowledge_bases").await?;
-        from_db_vec(kbs_raw)
+    async fn list_knowledge_bases(&self, owner_id: &str) -> Result<Vec<KnowledgeBase>> {
+        let mut response = self
+            .db
+            .query("SELECT * FROM knowledge_bases WHERE owner_id = $owner_id")
+            .bind(("owner_id", owner_id.to_string()))
+            .await?;
+        let rows: Vec<surrealdb::types::Value> = response.take(0)?;
+        let rows = rows
+            .into_iter()
+            .map(surreal_to_json)
+            .collect::<Result<Vec<_>>>()?;
+        from_db_vec(restore_tenant_record_ids(rows))
     }
 
-    async fn delete_knowledge_base(&self, id: &str) -> Result<()> {
+    async fn delete_knowledge_base(&self, owner_id: &str, id: &str) -> Result<()> {
         // Delete the KB - SurrealDB doesn't have FK CASCADE, so we delete related records first
-        let _: Option<surrealdb::types::Value> = self.db.delete(("knowledge_bases", id)).await?;
+        self.delete_tenant_record("knowledge_bases", owner_id, id)
+            .await?;
         // Also delete related chunks and documents
-        let sql = "DELETE FROM knowledge_chunks WHERE kb_id = $id";
-        self.db.query(sql).bind(("id", id.to_string())).await?;
-        let sql = "DELETE FROM knowledge_documents WHERE kb_id = $id";
-        self.db.query(sql).bind(("id", id.to_string())).await?;
+        let sql = "DELETE FROM knowledge_chunks WHERE owner_id = $owner_id AND kb_id = $id";
+        self.db
+            .query(sql)
+            .bind(("owner_id", owner_id.to_string()))
+            .bind(("id", id.to_string()))
+            .await?;
+        let sql = "DELETE FROM knowledge_documents WHERE owner_id = $owner_id AND kb_id = $id";
+        self.db
+            .query(sql)
+            .bind(("owner_id", owner_id.to_string()))
+            .bind(("id", id.to_string()))
+            .await?;
         Ok(())
     }
 
@@ -498,6 +659,7 @@ impl PersistenceLayer for SurrealDbProvider {
 
     async fn search_knowledge_scoped(
         &self,
+        owner_id: &str,
         kb_ids: &[&str],
         query_vec: &[f32],
         limit: usize,
@@ -509,8 +671,13 @@ impl PersistenceLayer for SurrealDbProvider {
 
         // Query with kb_id filter
         let kb_ids_vec: Vec<String> = kb_ids.iter().copied().map(str::to_string).collect();
-        let sql = "SELECT * FROM knowledge_chunks WHERE kb_id IN $kb_ids";
-        let mut res = self.db.query(sql).bind(("kb_ids", kb_ids_vec)).await?;
+        let sql = "SELECT * FROM knowledge_chunks WHERE owner_id = $owner_id AND kb_id IN $kb_ids";
+        let mut res = self
+            .db
+            .query(sql)
+            .bind(("owner_id", owner_id.to_string()))
+            .bind(("kb_ids", kb_ids_vec))
+            .await?;
         let chunks_raw: Vec<surrealdb::types::Value> = res.take(0).or_else(|e| {
             if e.to_string().contains("does not exist") {
                 Ok(vec![])
@@ -522,7 +689,7 @@ impl PersistenceLayer for SurrealDbProvider {
             .into_iter()
             .map(surreal_to_json)
             .collect::<Result<_>>()?;
-        let chunks: Vec<KnowledgeChunk> = from_db_vec(chunks_json)?;
+        let chunks: Vec<KnowledgeChunk> = from_db_vec(restore_tenant_record_ids(chunks_json))?;
         warn_zero_norm_chunks(&chunks);
 
         // In-memory cosine similarity
@@ -550,25 +717,30 @@ impl PersistenceLayer for SurrealDbProvider {
     // =========================================================================
 
     async fn save_document(&self, doc: &KnowledgeDocument) -> Result<()> {
-        let payload = to_db_value(doc)?;
-        let _: Option<surrealdb::types::Value> = self
-            .db
-            .upsert(("knowledge_documents", doc.id.clone()))
-            .content(payload)
-            .await?;
-        Ok(())
+        if self
+            .get_knowledge_base(&doc.owner_id, &doc.kb_id)
+            .await?
+            .is_none()
+        {
+            anyhow::bail!("knowledge base is not accessible to document owner");
+        }
+        self.save_tenant_record("knowledge_documents", &doc.owner_id, &doc.id, doc)
+            .await
     }
 
-    async fn get_document(&self, id: &str) -> Result<Option<KnowledgeDocument>> {
-        let doc = self.fetch_one("knowledge_documents", id).await?;
-        from_db_opt(doc)
+    async fn get_document(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeDocument>> {
+        from_db_opt(
+            self.fetch_tenant_record("knowledge_documents", owner_id, id)
+                .await?,
+        )
     }
 
-    async fn list_documents(&self, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
-        let sql = "SELECT * FROM knowledge_documents WHERE kb_id = $kb_id ORDER BY created_at";
+    async fn list_documents(&self, owner_id: &str, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
+        let sql = "SELECT * FROM knowledge_documents WHERE owner_id = $owner_id AND kb_id = $kb_id ORDER BY created_at";
         let mut res = self
             .db
             .query(sql)
+            .bind(("owner_id", owner_id.to_string()))
             .bind(("kb_id", kb_id.to_string()))
             .await?;
         let docs_raw: Vec<surrealdb::types::Value> = res.take(0).or_else(|e| {
@@ -582,14 +754,15 @@ impl PersistenceLayer for SurrealDbProvider {
             .into_iter()
             .map(surreal_to_json)
             .collect::<Result<_>>()?;
-        from_db_vec(docs_json)
+        from_db_vec(restore_tenant_record_ids(docs_json))
     }
 
-    async fn count_documents(&self, kb_id: &str) -> Result<usize> {
-        let sql = "SELECT count() AS c FROM knowledge_documents WHERE kb_id = $kb_id GROUP ALL";
+    async fn count_documents(&self, owner_id: &str, kb_id: &str) -> Result<usize> {
+        let sql = "SELECT count() AS c FROM knowledge_documents WHERE owner_id = $owner_id AND kb_id = $kb_id GROUP ALL";
         let mut res = self
             .db
             .query(sql)
+            .bind(("owner_id", owner_id.to_string()))
             .bind(("kb_id", kb_id.to_string()))
             .await?;
         let rows: Vec<surrealdb::types::Value> = res.take(0).or_else(|e| {
@@ -610,32 +783,35 @@ impl PersistenceLayer for SurrealDbProvider {
         Ok(count)
     }
 
-    async fn update_document_status(&self, doc_id: &str, status: &DocumentStatus) -> Result<()> {
-        // `knowledge_documents.id` is a record id (e.g. knowledge_documents:`<uuid>`),
-        // not a plain string — match it via type::record() so the bound UUID resolves
-        // to the correct row.
-        let sql = "UPDATE type::record('knowledge_documents', $id) SET status = $status, updated_at = time::now()";
+    async fn update_document_status(
+        &self,
+        owner_id: &str,
+        doc_id: &str,
+        status: &DocumentStatus,
+    ) -> Result<()> {
+        let sql = "UPDATE knowledge_documents SET status = $status, updated_at = time::now() WHERE owner_id = $owner_id AND (logical_id = $id OR id = type::record('knowledge_documents', $id))";
         self.db
             .query(sql)
             .bind(("id", doc_id.to_string()))
+            .bind(("owner_id", owner_id.to_string()))
             .bind(("status", serde_json::to_value(status)?))
-            .await?;
+            .await?
+            .check()?;
         Ok(())
     }
 
-    async fn delete_document(&self, doc_id: &str) -> Result<()> {
+    async fn delete_document(&self, owner_id: &str, doc_id: &str) -> Result<()> {
         // Delete associated chunks first
-        let sql = "DELETE FROM knowledge_chunks WHERE document_id = $doc_id";
+        let sql =
+            "DELETE FROM knowledge_chunks WHERE owner_id = $owner_id AND document_id = $doc_id";
         self.db
             .query(sql)
+            .bind(("owner_id", owner_id.to_string()))
             .bind(("doc_id", doc_id.to_string()))
             .await?;
 
-        // Delete the document
-        let _: Option<surrealdb::types::Value> =
-            self.db.delete(("knowledge_documents", doc_id)).await?;
-
-        Ok(())
+        self.delete_tenant_record("knowledge_documents", owner_id, doc_id)
+            .await
     }
 
     // =========================================================================
@@ -1352,6 +1528,210 @@ mod tests {
         });
 
         assert_eq!(unwrap_surreal_value(value), json!("doc-123"));
+    }
+
+    #[tokio::test]
+    async fn document_status_reaches_indexed_on_embedded_surrealdb() {
+        use super::SurrealDbProvider;
+        use crate::uar::domain::knowledge::{DocumentStatus, KnowledgeBase, KnowledgeDocument};
+        use crate::uar::persistence::PersistenceLayer;
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let endpoint = format!("surrealkv://{}", dir.path().join("status.db").display());
+        let provider = SurrealDbProvider::new(&endpoint, None, None, None, None)
+            .await
+            .expect("connect to embedded SurrealKV");
+        let now = chrono::Utc::now().to_rfc3339();
+        let kb = KnowledgeBase {
+            id: "status-kb".into(),
+            owner_id: "status-owner".into(),
+            name: "status-kb".into(),
+            description: None,
+            config: Default::default(),
+            created_at: now.clone(),
+            updated_at: now.clone(),
+        };
+        let document = KnowledgeDocument {
+            id: "status-doc".into(),
+            owner_id: kb.owner_id.clone(),
+            kb_id: kb.id.clone(),
+            filename: "status.txt".into(),
+            file_path: None,
+            mime_type: Some("text/plain".into()),
+            chunk_count: 1,
+            status: DocumentStatus::Pending,
+            created_at: now.clone(),
+            updated_at: now,
+        };
+
+        provider.save_knowledge_base(&kb).await.expect("save KB");
+        provider
+            .save_document(&document)
+            .await
+            .expect("save document");
+        provider
+            .update_document_status(&kb.owner_id, &document.id, &DocumentStatus::Indexed)
+            .await
+            .expect("update status to indexed");
+
+        let indexed = provider
+            .get_document(&kb.owner_id, &document.id)
+            .await
+            .expect("read updated document")
+            .expect("document exists");
+        assert_eq!(indexed.status, DocumentStatus::Indexed);
+    }
+
+    #[tokio::test]
+    async fn knowledge_rows_with_identical_ids_remain_partitioned_by_owner() {
+        use super::SurrealDbProvider;
+        use crate::uar::domain::knowledge::{
+            DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument,
+        };
+        use crate::uar::persistence::PersistenceLayer;
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let db_path = dir.path().join("tenant_knowledge_test.db");
+        let endpoint = format!("surrealkv://{}", db_path.display());
+        let provider = SurrealDbProvider::new(&endpoint, None, None, None, None)
+            .await
+            .expect("connect to embedded SurrealKV");
+        let now = chrono::Utc::now().to_rfc3339();
+        let chunk_id = uuid::Uuid::new_v4();
+
+        for owner in ["alice", "bob"] {
+            let kb = KnowledgeBase {
+                id: "shared-kb-id".into(),
+                owner_id: owner.into(),
+                name: format!("{owner}-private"),
+                description: None,
+                config: Default::default(),
+                created_at: now.clone(),
+                updated_at: now.clone(),
+            };
+            let document = KnowledgeDocument {
+                id: "shared-doc-id".into(),
+                owner_id: owner.into(),
+                kb_id: kb.id.clone(),
+                filename: format!("{owner}.txt"),
+                file_path: None,
+                mime_type: Some("text/plain".into()),
+                chunk_count: 1,
+                status: DocumentStatus::Indexed,
+                created_at: now.clone(),
+                updated_at: now.clone(),
+            };
+            let chunk = KnowledgeChunk {
+                id: chunk_id,
+                owner_id: owner.into(),
+                kb_id: kb.id.clone(),
+                document_id: Some(document.id.clone()),
+                content: format!("{owner} secret"),
+                metadata: None,
+                embedding: vec![1.0],
+                created_at: now.clone(),
+            };
+
+            provider.save_knowledge_base(&kb).await.expect("save KB");
+            provider
+                .save_document(&document)
+                .await
+                .expect("save document");
+            provider.save_chunk(&chunk).await.expect("save chunk");
+        }
+
+        for owner in ["alice", "bob"] {
+            let kb = provider
+                .get_knowledge_base(owner, "shared-kb-id")
+                .await
+                .expect("get KB")
+                .expect("owned KB");
+            assert_eq!(kb.owner_id, owner);
+            let document = provider
+                .get_document(owner, "shared-doc-id")
+                .await
+                .expect("get document")
+                .expect("owned document");
+            assert_eq!(document.owner_id, owner);
+            let matches = provider
+                .search_knowledge(owner, &[1.0], 10, -1.0)
+                .await
+                .expect("search chunks");
+            assert_eq!(matches.len(), 1);
+            assert_eq!(matches[0].chunk.owner_id, owner);
+            assert_eq!(matches[0].chunk.content, format!("{owner} secret"));
+        }
+
+        provider
+            .delete_knowledge_base("bob", "shared-kb-id")
+            .await
+            .expect("delete Bob KB");
+        assert!(
+            provider
+                .get_knowledge_base("alice", "shared-kb-id")
+                .await
+                .expect("get Alice KB after Bob deletion")
+                .is_some()
+        );
+        assert_eq!(
+            provider
+                .search_knowledge("alice", &[1.0], 10, -1.0)
+                .await
+                .expect("search Alice after Bob deletion")
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn legacy_session_is_preserved_as_anonymous_without_becoming_claimable() {
+        use super::{SurrealDbProvider, to_db_value};
+        use crate::session::{ANONYMOUS_SESSION_OWNER, SessionStore};
+        use crate::uar::persistence::PersistenceLayer;
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let db_path = dir.path().join("legacy_session_test.db");
+        let endpoint = format!("surrealkv://{}", db_path.display());
+        let provider = SurrealDbProvider::new(&endpoint, None, None, None, None)
+            .await
+            .expect("connect to embedded SurrealKV");
+        let legacy_id = "legacy-session";
+        let legacy = SessionStore::new().get_or_create(legacy_id);
+        let mut payload = to_db_value(&legacy).expect("serialize legacy session");
+        payload
+            .as_object_mut()
+            .expect("session object")
+            .remove("owner_id");
+        let _: Option<surrealdb::types::Value> = provider
+            .client()
+            .upsert(("sessions", legacy_id))
+            .content(payload)
+            .await
+            .expect("write legacy row");
+
+        assert!(
+            provider
+                .load_session("alice", legacy_id)
+                .await
+                .expect("authenticated lookup")
+                .is_none(),
+            "an authenticated caller must not claim an ownerless legacy row"
+        );
+        let loaded = provider
+            .load_session(ANONYMOUS_SESSION_OWNER, legacy_id)
+            .await
+            .expect("anonymous lookup")
+            .expect("legacy session preserved");
+        assert_eq!(loaded.id(), legacy_id);
+        assert_eq!(loaded.owner_id(), ANONYMOUS_SESSION_OWNER);
+        assert!(
+            provider
+                .load_session(ANONYMOUS_SESSION_OWNER, legacy_id)
+                .await
+                .expect("migrated lookup")
+                .is_some(),
+            "lazy migration must remain readable"
+        );
     }
 
     #[tokio::test]

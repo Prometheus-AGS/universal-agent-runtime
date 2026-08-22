@@ -42,6 +42,26 @@ pub struct SkillExecutionConfig {
     pub max_tokens: Option<usize>,
 }
 
+/// Scope at which a skill enabled-state override applies.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "kind", content = "id", rename_all = "snake_case")]
+pub enum SkillScope {
+    /// Runtime-wide state. [`Skill::enabled`] remains the compatibility copy of
+    /// this value for rows written before scoped configuration existed.
+    Global,
+    /// State for one agent.
+    Agent(String),
+    /// State for one conversation.
+    Conversation(String),
+}
+
+/// Durable enabled-state override for one skill scope.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ScopedSkillConfig {
+    pub scope: SkillScope,
+    pub enabled: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[allow(clippy::struct_field_names)]
 pub struct Skill {
@@ -60,6 +80,16 @@ pub struct Skill {
     /// Whether this skill is globally enabled.
     #[serde(default = "default_enabled")]
     pub enabled: bool,
+    /// Durable global, agent, and conversation enabled-state records.
+    ///
+    /// Legacy rows without this field use [`Self::enabled`] as their global
+    /// value. New global writes keep both representations synchronized.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub scoped_config: Vec<ScopedSkillConfig>,
+    /// Configuration-managed skill removed from its source but retained for
+    /// audit and restoration. This is independent from operator enablement.
+    #[serde(default)]
+    pub tombstoned: bool,
     /// ID of the storage provider that loaded this skill.
     #[serde(default)]
     pub provider_id: String,
@@ -103,6 +133,68 @@ pub struct Skill {
     pub parent_skill_id: Option<String>,
 }
 
+impl Skill {
+    /// Resolve enabled state using conversation > agent > global precedence.
+    #[must_use]
+    pub fn enabled_for(&self, agent_id: Option<&str>, conversation_id: Option<&str>) -> bool {
+        self.enabled_for_with_agent_fallback(agent_id, conversation_id, None)
+    }
+
+    /// Resolve scoped state with an optional compatibility agent fallback.
+    pub(crate) fn enabled_for_with_agent_fallback(
+        &self,
+        agent_id: Option<&str>,
+        conversation_id: Option<&str>,
+        agent_fallback: Option<bool>,
+    ) -> bool {
+        if self.tombstoned {
+            return false;
+        }
+        if let Some(conversation_id) = conversation_id
+            && let Some(config) = self.scoped_config.iter().find(|config| {
+                matches!(
+                    &config.scope,
+                    SkillScope::Conversation(id) if id == conversation_id
+                )
+            })
+        {
+            return config.enabled;
+        }
+        if let Some(agent_id) = agent_id
+            && let Some(config) = self
+                .scoped_config
+                .iter()
+                .find(|config| matches!(&config.scope, SkillScope::Agent(id) if id == agent_id))
+        {
+            return config.enabled;
+        }
+        if let Some(enabled) = agent_fallback {
+            return enabled;
+        }
+        self.scoped_config
+            .iter()
+            .find(|config| config.scope == SkillScope::Global)
+            .map_or(self.enabled, |config| config.enabled)
+    }
+
+    /// Insert or replace the enabled-state record for one scope.
+    pub fn set_enabled_for(&mut self, scope: SkillScope, enabled: bool) {
+        if scope == SkillScope::Global {
+            self.enabled = enabled;
+        }
+        if let Some(config) = self
+            .scoped_config
+            .iter_mut()
+            .find(|config| config.scope == scope)
+        {
+            config.enabled = enabled;
+        } else {
+            self.scoped_config
+                .push(ScopedSkillConfig { scope, enabled });
+        }
+    }
+}
+
 /// Per-phase model-class routing hints, parsed from a SKILL.md's
 /// `model_routing` frontmatter block (see e.g. `liter-llm-bridge`'s
 /// SKILL.md). `phases` maps a phase name to a coarse model-class string
@@ -137,6 +229,10 @@ pub struct SkillManifest {
     pub triggers: SkillTriggers,
     #[serde(default)]
     pub tools: Vec<String>,
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub scoped_config: Vec<ScopedSkillConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -161,4 +257,23 @@ pub struct SkillMatch {
 
 fn default_enabled() -> bool {
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tombstone_overrides_scope_without_destroying_configuration() {
+        let mut skill = Skill::default();
+        skill.set_enabled_for(SkillScope::Global, true);
+        skill.set_enabled_for(SkillScope::Agent("agent-a".to_string()), true);
+        let scoped_config = skill.scoped_config.clone();
+
+        skill.tombstoned = true;
+
+        assert!(!skill.enabled_for(None, None));
+        assert!(!skill.enabled_for(Some("agent-a"), None));
+        assert_eq!(skill.scoped_config, scoped_config);
+    }
 }

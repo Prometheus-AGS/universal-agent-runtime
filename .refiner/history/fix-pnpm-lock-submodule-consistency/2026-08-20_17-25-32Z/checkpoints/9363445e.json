@@ -1,0 +1,18 @@
+{
+  "refinement_id": "78f3a410-eb98-477d-a6fc-4509e214b3b8",
+  "artifact_name": "fix-pnpm-lock-submodule-consistency",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-20T16:59:49Z",
+  "updated_at": "2026-08-20T17:25:27Z",
+  "current_iteration": 2,
+  "max_iterations": 5,
+  "goals": ["Commit a frozen-installable root lock for the exact workspace without unrelated dependency resolution movement"],
+  "constraints": [{"id":"frozen-root-lock"},{"id":"fail-closed-stale-control"},{"id":"minimum-resolution-delta"},{"id":"bounded-child-scope"},{"id":"truthful-verification"}],
+  "phases_completed": ["execute", "reflect"],
+  "convergence_status": "running",
+  "iteration_history": [{"iteration":1,"phases_completed":["specify","plan","execute","reflect"],"constraints_satisfied":2,"constraints_total":5,"decision":"continue","timestamp":"2026-08-20T17:10:00Z"}],
+  "workflow_triggers": [],
+  "checkpoints": [{"checkpoint_id":"46384bce","phase":"specify","iteration":1,"timestamp":"2026-08-20T16:59:49Z"},{"checkpoint_id":"86b09ed2","phase":"plan","iteration":1,"timestamp":"2026-08-20T16:59:55Z"},{"checkpoint_id":"685de206","phase":"execute","iteration":1,"timestamp":"2026-08-20T16:59:59Z"},{"checkpoint_id":"7b66e6eb","phase":"reflect","iteration":1,"timestamp":"2026-08-20T17:10:00Z"},{"checkpoint_id":"9ce57cf7","phase":"execute","iteration":2,"timestamp":"2026-08-20T17:16:34Z"}],
+  "prior_cycle_id": null
+}

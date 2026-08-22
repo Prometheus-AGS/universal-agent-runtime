@@ -1,0 +1,54 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "b3-fresh-embedded-catalogue",
+      "description": "A fresh embedded SurrealKV database receives every skill discovered from the built-in pack in the live registry.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Exact server-full embedded runtime integration test"
+      }
+    },
+    {
+      "id": "b3-durable-idempotent-restart",
+      "description": "Built-ins remain in persistence between runtime constructions and a second start leaves each built-in exactly once.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Direct SurrealKV row inspection and second EmbeddedRuntime construction"
+      }
+    },
+    {
+      "id": "b3-switch-and-control",
+      "description": "Disabling default seeding omits all built-ins, while removing the enabled registration causes the availability assertion to fail and exact restoration makes it pass.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Exact disabled-seeding test plus branch-removal negative control and retained-diff hash comparison"
+      }
+    },
+    {
+      "id": "b3-tier-scope-spec",
+      "description": "Tier 0 and strict OpenSpec validation pass, Tier 2 remains unrun, persistence and scoped governance remain unchanged, and only the sanctioned GAP-05 line changes in SPECIFICATION.md.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Cargo check/clippy, OpenSpec strict validation, and scoped diff inspection"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the B3 OpenSpec delta and EXECUTION-CONTRACT.md as acceptance authority because the project has no .kbd-orchestrator/constraints.md.",
+    "Report results only for server-full and transfer them to no other profile.",
+    "Do not run Tier 2 before all six readiness changes are implemented."
+  ],
+  "termination_conditions": [
+    "All four blocking constraints pass.",
+    "The per-requirement verification record exists and includes the observed registration-removal negative control."
+  ]
+}

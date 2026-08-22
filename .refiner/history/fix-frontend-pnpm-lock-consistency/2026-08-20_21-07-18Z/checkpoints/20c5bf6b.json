@@ -1,0 +1,22 @@
+{
+  "refinement_id": "4986cce8-38bc-42be-9f64-e11b4026325e",
+  "artifact_name": "fix-frontend-pnpm-lock-consistency",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-20T20:18:09Z",
+  "updated_at": "2026-08-20T20:41:14Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": ["Commit a frozen-installable nested frontend lock for the exact workspace while preserving unrelated common resolutions"],
+  "constraints": [{"id":"frozen-nested-lock"},{"id":"fail-closed-stale-control"},{"id":"minimum-resolution-delta"},{"id":"bounded-child-scope"},{"id":"truthful-verification"}],
+  "phases_completed": ["specify", "plan", "execute", "reflect"],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {"checkpoint_id":"c4f0f8bb","phase":"specify","iteration":1,"timestamp":"2026-08-20T20:18:09Z"},
+    {"checkpoint_id":"2d55c8cc","phase":"plan","iteration":1,"timestamp":"2026-08-20T20:18:09Z"},
+    {"checkpoint_id":"dfa99139","phase":"execute","iteration":1,"timestamp":"2026-08-20T20:18:09Z"}
+  ],
+  "prior_cycle_id": null
+}

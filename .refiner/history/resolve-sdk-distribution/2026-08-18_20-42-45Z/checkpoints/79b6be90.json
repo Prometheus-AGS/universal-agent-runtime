@@ -1,0 +1,158 @@
+{
+  "refinement_id": "5ef0a6e9-47d1-4705-96aa-b7eadd09ea0c",
+  "artifact_name": "resolve-sdk-distribution",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-18T20:09:16Z",
+  "updated_at": "2026-08-18T20:39:22Z",
+  "current_iteration": 3,
+  "max_iterations": 5,
+  "goals": [
+    "Make the accepted Rust, Python, and TypeScript SDK distribution decision locally verified, publication-order honest, and compliant with repository workflow policy"
+  ],
+  "constraints": [
+    {
+      "id": "sdk-release-metadata"
+    },
+    {
+      "id": "local-verification-and-publication-order"
+    },
+    {
+      "id": "workflow-scope-and-evidence"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 0,
+      "constraints_total": 3,
+      "decision": "continue",
+      "timestamp": "2026-08-18T20:31:08Z"
+    },
+    {
+      "iteration": 2,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 2,
+      "constraints_total": 3,
+      "decision": "continue",
+      "timestamp": "2026-08-18T20:38:46Z"
+    },
+    {
+      "iteration": 3,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 3,
+      "constraints_total": 3,
+      "decision": "terminate",
+      "timestamp": "2026-08-18T20:42:05Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "b43c1c72",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-18T20:11:19Z"
+    },
+    {
+      "checkpoint_id": "6153365f",
+      "phase": "plan",
+      "iteration": 0,
+      "timestamp": "2026-08-18T20:11:25Z"
+    },
+    {
+      "checkpoint_id": "0edde0b6",
+      "phase": "execute",
+      "iteration": 0,
+      "timestamp": "2026-08-18T20:11:48Z"
+    },
+    {
+      "checkpoint_id": "b78cf200",
+      "phase": "reflect",
+      "iteration": 1,
+      "timestamp": "2026-08-18T20:31:08Z"
+    },
+    {
+      "checkpoint_id": "4319b11a",
+      "phase": "persist",
+      "iteration": 1,
+      "timestamp": "2026-08-18T20:31:08Z"
+    },
+    {
+      "checkpoint_id": "c3e679f4",
+      "phase": "specify",
+      "iteration": 2,
+      "timestamp": "2026-08-18T20:31:26Z"
+    },
+    {
+      "checkpoint_id": "7e9c9e19",
+      "phase": "plan",
+      "iteration": 2,
+      "timestamp": "2026-08-18T20:31:27Z"
+    },
+    {
+      "checkpoint_id": "fe0163b1",
+      "phase": "execute",
+      "iteration": 2,
+      "timestamp": "2026-08-18T20:31:27Z"
+    },
+    {
+      "checkpoint_id": "dce80f96",
+      "phase": "reflect",
+      "iteration": 2,
+      "timestamp": "2026-08-18T20:39:11Z"
+    },
+    {
+      "checkpoint_id": "a004dd62",
+      "phase": "persist",
+      "iteration": 2,
+      "timestamp": "2026-08-18T20:39:11Z"
+    },
+    {
+      "checkpoint_id": "4e70b02e",
+      "phase": "specify",
+      "iteration": 3,
+      "timestamp": "2026-08-18T20:39:21Z"
+    },
+    {
+      "checkpoint_id": "96af76e6",
+      "phase": "plan",
+      "iteration": 3,
+      "timestamp": "2026-08-18T20:39:21Z"
+    },
+    {
+      "checkpoint_id": "d6505550",
+      "phase": "execute",
+      "iteration": 3,
+      "timestamp": "2026-08-18T20:39:22Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

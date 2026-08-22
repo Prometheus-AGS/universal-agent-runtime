@@ -24,11 +24,11 @@ certified release.
    report `1.0.0`. The tag denotes candidate status; it does not change product
    bytes or embedded version strings.
 2. GA promotion retags the exact certified commit and reuses the certified
-   artifacts. Any source, lockfile, catalog, workflow, or artifact change
+   artifacts. Any source, lockfile, catalog, local release tooling, or artifact change
    requires a new candidate and complete recertification.
-3. The archive workflow accepts candidate and `release-test-*` tags, not the GA
-   tag. This prevents a signed `v1.0.0` promotion from racing a tag-triggered
-   rebuild or replacing certified bytes.
+3. The local archive builder accepts an explicit candidate tag and refuses a GA
+   tag. This prevents a signed `v1.0.0` promotion from invoking a rebuild or
+   replacing certified bytes.
 4. The pre-existing `v1.0.0` tag cannot serve as GA evidence because it points
    to an older commit. Replacement requires an explicit, audited tag migration
    immediately before publication.
@@ -40,7 +40,7 @@ certified release.
 - Replacing the stale GA tag is irreversible for consumers that fetched it →
   record the old target, announce the correction, and verify the new signed tag.
 - Any late fix invalidates evidence → automate digest comparison and rerun the
-  full candidate workflow.
+  full local candidate matrix.
 
 ## Migration Plan
 

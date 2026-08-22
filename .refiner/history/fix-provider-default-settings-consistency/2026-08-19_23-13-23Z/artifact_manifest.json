@@ -1,0 +1,28 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-19T23:12:16Z",
+  "variants": [
+    {
+      "name": "provider-settings-verification",
+      "file": ".refiner/artifacts/fix-provider-default-settings-consistency/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic verification and candidate-identity receipt for the provider/settings consistency repair"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Focused server-full settings tests passed 2/0 and provider-handler tests passed 3/0.",
+      "The two pre-fix failure controls exited 101 for the schema mismatch and live-before-durable publication defect.",
+      "Cargo check, package Clippy, formatting, scoped diff, and strict OpenSpec validation exited 0.",
+      "Iteration 2 corrected the first judge's artifact-evidence blockers; iteration 3 qualifies the preserved registry-only mode and corrects refiner persistence state. The termination critic and judge both returned PASS."
+    ]
+  }
+}

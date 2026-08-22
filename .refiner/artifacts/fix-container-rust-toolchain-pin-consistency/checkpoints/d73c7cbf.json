@@ -1,0 +1,82 @@
+{
+  "refinement_id": "c6277cc2-2a07-4a0f-8781-31a11a6eb4e1",
+  "artifact_name": "fix-container-rust-toolchain-pin-consistency",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-22T13:26:06Z",
+  "updated_at": "2026-08-22T13:28:55Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate the container toolchain pin repair and its bounded evidence without expanding the implementation or claiming parent certification"
+  ],
+  "constraints": [
+    {
+      "id": "dated-selector-consistency"
+    },
+    {
+      "id": "fail-closed-selector-controls"
+    },
+    {
+      "id": "locked-arm64-compatibility"
+    },
+    {
+      "id": "clean-production-image"
+    },
+    {
+      "id": "bounded-truthful-handoff"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 5,
+      "constraints_total": 5,
+      "decision": "terminate",
+      "timestamp": "2026-08-22T13:28:00Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "fcc28308",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-22T13:27:07Z"
+    },
+    {
+      "checkpoint_id": "d0f954b7",
+      "phase": "plan",
+      "iteration": 0,
+      "timestamp": "2026-08-22T13:27:27Z"
+    },
+    {
+      "checkpoint_id": "b70a630c",
+      "phase": "execute",
+      "iteration": 1,
+      "timestamp": "2026-08-22T13:28:54Z"
+    },
+    {
+      "checkpoint_id": "17aeed62",
+      "phase": "reflect",
+      "iteration": 1,
+      "timestamp": "2026-08-22T13:28:55Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

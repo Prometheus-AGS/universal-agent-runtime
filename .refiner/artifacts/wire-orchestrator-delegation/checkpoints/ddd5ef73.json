@@ -1,0 +1,64 @@
+{
+  "refinement_id": "dc44f403-6623-4566-9563-6dca1e9048e1",
+  "artifact_name": "wire-orchestrator-delegation",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-18T19:28:08Z",
+  "updated_at": "2026-08-18T19:29:05Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Make orchestrator-agent execute real RouterNode-to-AgentNode delegation with observable attributed output"
+  ],
+  "constraints": [
+    {
+      "id": "orchestrator-only-graph"
+    },
+    {
+      "id": "delegated-trace-and-answer"
+    },
+    {
+      "id": "scope-and-evidence"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 3,
+      "constraints_total": 3,
+      "decision": "continue",
+      "timestamp": "2026-08-18T19:28:08Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "d001042b",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-18T19:29:04Z"
+    },
+    {
+      "checkpoint_id": "51bde4c2",
+      "phase": "plan",
+      "iteration": 1,
+      "timestamp": "2026-08-18T19:29:05Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

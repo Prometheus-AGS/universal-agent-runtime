@@ -13,8 +13,8 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
         "openapi": "3.1.0",
         "info": {
             "title": "Universal Agent Runtime",
-            "version": "0.1.0",
-            "description": "Agentic streaming LLM runtime with MCP tool integration, A2A/AG-UI/A2UI protocol support, and 142+ LLM provider coverage.",
+            "version": env!("CARGO_PKG_VERSION"),
+            "description": "Agentic streaming LLM runtime with MCP tool integration, A2A/AG-UI/A2UI protocol support, and a 269-provider discovery catalog.",
             "license": { "name": "MIT" }
         },
         "tags": [
@@ -23,7 +23,12 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
             {"name": "models", "description": "Model listing (OpenAI-compatible)"},
             {"name": "metrics", "description": "Prometheus metrics endpoint"},
             {"name": "tools", "description": "MCP tool discovery and health"},
-            {"name": "skills", "description": "Skill management"}
+            {"name": "skills", "description": "Skill management"},
+            {"name": "runs", "description": "Governed agent run lifecycle"},
+            {"name": "providers", "description": "Runtime provider configuration"},
+            {"name": "knowledge", "description": "Tenant-scoped knowledge bases and retrieval"},
+            {"name": "auth", "description": "API key management and token exchange"},
+            {"name": "realtime", "description": "Realtime entity mutation streams"}
         ],
         "paths": {
             "/healthz": {
@@ -89,15 +94,159 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     "responses": { "200": { "description": "MCP health status" } }
                 }
             },
+            "/api/uar/runs": {
+                "post": {
+                    "summary": "Start an agent run",
+                    "description": "Creates a governed run and returns its identifier and event stream URL",
+                    "tags": ["runs"],
+                    "responses": { "200": { "description": "Run created" } }
+                }
+            },
+            "/api/uar/runs/{id}/stream": {
+                "get": {
+                    "summary": "Stream run events",
+                    "tags": ["runs"],
+                    "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}],
+                    "responses": { "200": { "description": "Normalized SSE event stream" } }
+                }
+            },
+            "/api/uar/providers": {
+                "get": {
+                    "summary": "List configured providers",
+                    "tags": ["providers"],
+                    "responses": { "200": { "description": "Provider list" } }
+                },
+                "post": {
+                    "summary": "Create a provider configuration",
+                    "tags": ["providers"],
+                    "responses": { "201": { "description": "Provider created" } }
+                }
+            },
+            "/api/uar/skills": {
+                "get": {
+                    "summary": "List skills",
+                    "tags": ["skills"],
+                    "responses": { "200": { "description": "Skill list" } }
+                },
+                "post": {
+                    "summary": "Create a user skill",
+                    "tags": ["skills"],
+                    "responses": { "201": { "description": "Skill created" } }
+                }
+            },
+            "/api/uar/skills/refresh": {
+                "post": {
+                    "summary": "Refresh skills",
+                    "description": "Reloads skills from configured storage providers",
+                    "tags": ["skills"],
+                    "responses": { "200": { "description": "Refresh result" } }
+                }
+            },
             "/api/uar/skills/reload": {
                 "post": {
                     "summary": "Reload skills",
-                    "description": "Triggers a refresh of all skills from storage providers",
+                    "description": "Manually refreshes the active skill registry",
                     "tags": ["skills"],
                     "responses": { "200": { "description": "Reload result" } }
+                }
+            },
+            "/api/uar/knowledge-bases": {
+                "get": {
+                    "summary": "List knowledge bases",
+                    "tags": ["knowledge"],
+                    "responses": { "200": { "description": "Tenant-scoped knowledge base list" } }
+                },
+                "post": {
+                    "summary": "Create a knowledge base",
+                    "tags": ["knowledge"],
+                    "responses": { "201": { "description": "Knowledge base created" } }
+                }
+            },
+            "/api/uar/knowledge-bases/{id}/documents": {
+                "get": {
+                    "summary": "List knowledge base documents",
+                    "tags": ["knowledge"],
+                    "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}],
+                    "responses": { "200": { "description": "Document list" } }
+                },
+                "post": {
+                    "summary": "Upload a knowledge base document",
+                    "tags": ["knowledge"],
+                    "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}],
+                    "responses": { "202": { "description": "Document accepted for ingestion" } }
+                }
+            },
+            "/api/uar/knowledge-bases/{id}/search": {
+                "post": {
+                    "summary": "Search a knowledge base",
+                    "tags": ["knowledge"],
+                    "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string"}}],
+                    "responses": { "200": { "description": "Retrieval results" } }
+                }
+            },
+            "/api/uar/auth/keys": {
+                "get": {
+                    "summary": "List API keys",
+                    "tags": ["auth"],
+                    "responses": { "200": { "description": "API key metadata" } }
+                },
+                "post": {
+                    "summary": "Create an API key",
+                    "tags": ["auth"],
+                    "responses": { "201": { "description": "API key created" } }
+                }
+            },
+            "/api/uar/auth/exchange": {
+                "post": {
+                    "summary": "Exchange an API key for a JWT",
+                    "tags": ["auth"],
+                    "responses": { "200": { "description": "Short-lived JWT" } }
+                }
+            },
+            "/api/live/{topic}": {
+                "get": {
+                    "summary": "Stream entity mutations",
+                    "tags": ["realtime"],
+                    "parameters": [{"name": "topic", "in": "path", "required": true, "schema": {"type": "string"}}],
+                    "responses": { "200": { "description": "Entity mutation SSE stream" } }
                 }
             }
         }
     }))
     .expect("OpenAPI spec JSON is valid")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_openapi_spec;
+
+    #[test]
+    fn spec_uses_package_version_and_documents_customer_routes() {
+        let spec = serde_json::to_value(build_openapi_spec()).expect("OpenAPI serializes");
+
+        assert_eq!(spec["info"]["version"], env!("CARGO_PKG_VERSION"));
+        for path in [
+            "/v1/chat/completions",
+            "/api/uar/runs",
+            "/api/uar/providers",
+            "/api/uar/skills",
+            "/api/uar/skills/refresh",
+            "/api/uar/skills/reload",
+            "/api/uar/knowledge-bases",
+            "/api/uar/auth/exchange",
+            "/api/live/{topic}",
+        ] {
+            assert!(spec["paths"].get(path).is_some(), "missing path {path}");
+        }
+        assert!(
+            spec["paths"]["/api/uar/providers"]["post"]["responses"]
+                .get("201")
+                .is_some()
+        );
+        assert!(
+            spec["paths"]["/api/uar/knowledge-bases/{id}/documents"]["post"]["responses"]
+                .get("202")
+                .is_some()
+        );
+    }
 }

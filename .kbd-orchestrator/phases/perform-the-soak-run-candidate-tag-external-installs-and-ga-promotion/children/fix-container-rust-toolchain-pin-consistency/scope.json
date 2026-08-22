@@ -1,0 +1,23 @@
+{
+  "allowedWritePaths": [
+    "Dockerfile",
+    "scripts/verify-runtime-image-toolchain-pin.sh",
+    "openspec/changes/fix-container-rust-toolchain-pin-consistency/**",
+    ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/children/fix-container-rust-toolchain-pin-consistency/**",
+    ".prometheus/gotchas.md",
+    ".prometheus/decisions.md",
+    ".prometheus/session-log.md"
+  ],
+  "deniedPaths": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "rust-toolchain.toml",
+    ".github/**",
+    "crates/**",
+    "frontend/**",
+    "src/**",
+    "tests/**"
+  ],
+  "inheritsConstraints": true,
+  "__note": "Edit allowedWritePaths to widen the child loop's write surface. .kbd-orchestrator/** and SCRATCHPAD.md are always allowed. Enforced advisorily by check-child-scope.sh."
+}

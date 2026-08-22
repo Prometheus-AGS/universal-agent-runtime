@@ -3,7 +3,9 @@
 //! REST endpoints for skills CRUD, matching configuration,
 //! and per-agent skill bindings.
 
-use crate::uar::domain::skills::{Skill, SkillExecutionConfig, SkillTriggers};
+use crate::uar::domain::skills::{
+    Skill, SkillExecutionConfig, SkillOrigin, SkillScope, SkillTriggers,
+};
 use crate::uar::runtime::skills::provenance::{PackProvenance, read_provenance};
 use crate::uar::runtime::skills::service::{SkillMatchingConfig, SkillService, SkillUpdate};
 use axum::{
@@ -105,6 +107,7 @@ struct SkillResponse {
     description: String,
     version: String,
     enabled: bool,
+    origin: SkillOrigin,
     provider_id: String,
     triggers: crate::uar::domain::skills::SkillTriggers,
     preferred_tools: Vec<String>,
@@ -120,6 +123,7 @@ impl From<crate::uar::domain::skills::Skill> for SkillResponse {
             description: s.description,
             version: s.version,
             enabled: s.enabled,
+            origin: s.origin,
             provider_id: s.provider_id,
             triggers: s.triggers,
             preferred_tools: s.preferred_tools,
@@ -160,6 +164,8 @@ fn default_enabled() -> bool {
 #[derive(Deserialize)]
 struct ToggleRequest {
     enabled: bool,
+    #[serde(default)]
+    scope: Option<SkillScope>,
 }
 
 #[derive(Deserialize, Default)]
@@ -179,6 +185,7 @@ struct UpdateSkillRequest {
 struct MatchQuery {
     q: String,
     agent_id: Option<String>,
+    conversation_id: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -319,11 +326,25 @@ async fn update_skill(
     match service.update_skill(&id, patch).await {
         Ok(Some(skill)) => Json(SkillResponse::from(skill)).into_response(),
         Ok(None) => StatusCode::NOT_FOUND.into_response(),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({ "error": format!("{e:?}") })),
-        )
-            .into_response(),
+        Err(e) => {
+            let msg = format!("{e}");
+            if msg.contains("system_skill_immutable") {
+                (
+                    StatusCode::CONFLICT,
+                    Json(serde_json::json!({
+                        "error": "system_skill_immutable",
+                        "message": "System skill cannot be edited; disable it instead.",
+                    })),
+                )
+                    .into_response()
+            } else {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::json!({ "error": format!("{e:?}") })),
+                )
+                    .into_response()
+            }
+        }
     }
 }
 
@@ -332,7 +353,10 @@ async fn toggle_skill(
     Path(id): Path<String>,
     Json(req): Json<ToggleRequest>,
 ) -> impl IntoResponse {
-    if service.toggle_skill(&id, req.enabled).await {
+    if service
+        .set_scoped_enabled(&id, req.scope.unwrap_or(SkillScope::Global), req.enabled)
+        .await
+    {
         StatusCode::OK.into_response()
     } else {
         StatusCode::NOT_FOUND.into_response()
@@ -344,7 +368,11 @@ async fn match_skills(
     axum::extract::Query(params): axum::extract::Query<MatchQuery>,
 ) -> Json<Vec<SkillResponse>> {
     let matched = service
-        .match_skills(&params.q, params.agent_id.as_deref())
+        .match_skills_scoped(
+            &params.q,
+            params.agent_id.as_deref(),
+            params.conversation_id.as_deref(),
+        )
         .await;
     Json(matched.into_iter().map(SkillResponse::from).collect())
 }
@@ -735,4 +763,22 @@ async fn initiate_update() -> impl IntoResponse {
                      tree under a live process. See change-uhe-013.",
         })),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn skill_response_exposes_lowercase_origin() {
+        let skill = Skill {
+            skill_id: "builtin::origin-proof".to_string(),
+            origin: SkillOrigin::Builtin,
+            ..Skill::default()
+        };
+
+        let response =
+            serde_json::to_value(SkillResponse::from(skill)).expect("serialize response");
+        assert_eq!(response["origin"], "builtin");
+    }
 }

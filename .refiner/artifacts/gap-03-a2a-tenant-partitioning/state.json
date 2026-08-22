@@ -1,0 +1,55 @@
+{
+  "refinement_id": "1e51a69c-4363-4db3-8b97-f443608866a3",
+  "artifact_name": "gap-03-a2a-tenant-partitioning",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-15T09:49:30Z",
+  "updated_at": "2026-08-15T09:50:40Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate A2 verified-tenant partitioning and phase-level C-21 completion evidence"
+  ],
+  "constraints": [
+    {
+      "id": "a2-verified-tenant-identity"
+    },
+    {
+      "id": "a2-partition-every-task-path"
+    },
+    {
+      "id": "a2-required-tenant-fail-closed"
+    },
+    {
+      "id": "a2-phase-proof-and-scope"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 4,
+      "constraints_total": 4,
+      "decision": "terminate",
+      "timestamp": "2026-08-15T09:49:30Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-15T09:50:40Z"
+}

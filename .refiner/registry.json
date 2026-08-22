@@ -20,6 +20,54 @@
       "content_type": "direct:code",
       "updated_at": "2026-08-08T04:54:50Z",
       "finalized_at": "2026-08-08T04:54:50Z"
+    },
+    "gap-02-jwks-token-verifier": {
+      "path": ".refiner/artifacts/gap-02-jwks-token-verifier",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-14T12:39:42Z"
+    },
+    "skill-builtins-on-embedded": {
+      "path": ".refiner/artifacts/skill-builtins-on-embedded",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-14T17:42:24Z",
+      "finalized_at": "2026-08-14T17:42:24Z"
+    },
+    "skill-scoped-governance": {
+      "path": ".refiner/artifacts/skill-scoped-governance",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-15T08:03:54Z",
+      "finalized_at": "2026-08-15T08:03:54Z"
+    },
+    "fix-user-isolation-sessions-memory-kb": {
+      "path": ".refiner/artifacts/fix-user-isolation-sessions-memory-kb",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-18T12:37:17Z",
+      "finalized_at": "2026-08-18T12:37:17Z"
+    },
+    "screen-by-screen-validation": {
+      "path": ".refiner/artifacts/screen-by-screen-validation",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-21T05:53:37Z",
+      "finalized_at": "2026-08-21T05:53:37Z"
+    },
+    "fix-embedded-sse-offline-reconnect": {
+      "path": ".refiner/artifacts/fix-embedded-sse-offline-reconnect",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-20T09:15:12Z",
+      "finalized_at": "2026-08-20T09:15:12Z"
+    },
+    "fix-mcp-reconnect-shared-service-state": {
+      "path": ".refiner/artifacts/fix-mcp-reconnect-shared-service-state",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-21T13:53:23Z",
+      "finalized_at": "2026-08-21T13:53:23Z"
     }
   }
 }

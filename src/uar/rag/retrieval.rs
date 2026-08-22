@@ -221,6 +221,7 @@ mod tests {
     fn make_chunk(id: &str, content: &str) -> KnowledgeChunk {
         KnowledgeChunk {
             id: Uuid::new_v4(),
+            owner_id: "anonymous".to_string(),
             kb_id: "test-kb".to_string(),
             document_id: Some(id.to_string()),
             content: content.to_string(),
@@ -240,6 +241,7 @@ mod tests {
             .prop_map(|(doc_id, content, created_at, score)| KnowledgeMatch {
                 chunk: KnowledgeChunk {
                     id: Uuid::new_v4(),
+                    owner_id: "anonymous".to_string(),
                     kb_id: "test-kb".to_string(),
                     document_id: Some(doc_id),
                     content,

@@ -1,0 +1,66 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "frozen-root-lock",
+      "description": "The retained root lock is accepted unchanged by pnpm 11.15.0 frozen lock-only and full installation for the exact committed workspace.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Pre/post SHA-256 comparison around both frozen installation commands"
+      }
+    },
+    {
+      "id": "fail-closed-stale-control",
+      "description": "The stale committed lock is retained as a negative control that exits non-zero and identifies the entity-management importer mismatch.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Clean fa4ffb96 frozen-install failure receipt with command, output, and exit status"
+      }
+    },
+    {
+      "id": "minimum-resolution-delta",
+      "description": "The lock repair preserves unrelated resolved versions and rejects allowed-range movements that are not required by the submodule importer advance.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Twice-replayed clean regeneration digest and exact candidate comparison"
+      }
+    },
+    {
+      "id": "bounded-child-scope",
+      "description": "The child changes only the root lock and permitted OpenSpec, KBD, refiner, canonical-spec, and append-only history artifacts; manifests, product code, gitlink, generated output, parent evidence, settings, and the frontend lock remain excluded.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Git-link replay, scoped status, explicit exclusion inventory, staged-name audit, and git diff check"
+      }
+    },
+    {
+      "id": "truthful-verification",
+      "description": "Per-requirement evidence records actual commands, outputs, limits, Tier 0, and strict OpenSpec without a browser, runtime, release, or cross-platform claim.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Verification-row audit, strict OpenSpec, artifact schemas, referenced-file existence, hashes, and independent review"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the child OpenSpec proposal, delta, tasks, and KBD scope as acceptance authority.",
+    "Do not regenerate the lock to current range latests or edit dependency intent.",
+    "Do not stage operator settings, frontend/pnpm-lock.yaml, static output, parent certification artifacts, or prior evidence bundles.",
+    "Do not claim product behavior or parent certification from dependency installation."
+  ],
+  "termination_conditions": [
+    "All five blocking constraints pass.",
+    "Manifest, constraints, state, checkpoint, reference, hash, strict OpenSpec, and scoped diff checks pass.",
+    "History-free artifact critic and judge find no implementation, scope, or evidence blocker."
+  ]
+}

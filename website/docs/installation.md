@@ -105,7 +105,7 @@ survives container restarts.
 ## Option 3 — Build from source
 
 Prerequisites: **Rust** (latest stable, edition 2024), **Node.js 22**, and
-**pnpm 10.33.0**. PostgreSQL or a remote SurrealDB instance is optional.
+**pnpm 11.15.0**. PostgreSQL or a remote SurrealDB instance is optional.
 
 ```bash
 # 1. Clone

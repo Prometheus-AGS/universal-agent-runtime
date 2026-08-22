@@ -38,7 +38,11 @@ async fn start_a2a_mock() -> String {
                     "context_id": "ctx-test",
                     "status": {
                         "state": "completed",
-                        "timestamp": "2026-04-12T08:00:00Z"
+                        "timestamp": "2026-04-12T08:00:00Z",
+                        "message": {
+                            "role": "agent",
+                            "parts": [{"type": "text", "text": "remote contribution"}]
+                        }
                     },
                     "artifacts": [],
                     "history": [],
@@ -59,11 +63,16 @@ async fn start_a2a_mock() -> String {
 }
 
 fn make_ctx(run_id: &str) -> GraphContext {
-    let driver = Arc::new(MockLlmDriver::new(vec![vec![
-        NormalizedEvent::MessageDelta {
+    make_ctx_with_events(
+        run_id,
+        vec![NormalizedEvent::MessageDelta {
             text: "delegated".to_string(),
-        },
-    ]]));
+        }],
+    )
+}
+
+fn make_ctx_with_events(run_id: &str, events: Vec<NormalizedEvent>) -> GraphContext {
+    let driver = Arc::new(MockLlmDriver::new(vec![events]));
 
     GraphContext {
         run_id: run_id.to_string(),
@@ -73,6 +82,43 @@ fn make_ctx(run_id: &str) -> GraphContext {
         driver,
         persistence: None,
     }
+}
+
+#[tokio::test]
+async fn test_agent_node_local_empty_output_is_error() {
+    let graph = AgentGraph::builder("rust-reviewer")
+        .add_node(AgentNode::new("rust-reviewer", "rust-reviewer"))
+        .build();
+    let ctx = make_ctx_with_events("run-agent-node-empty", vec![NormalizedEvent::Done]);
+
+    let final_state = graph.execute(GraphState::default(), &ctx).await;
+
+    assert_eq!(
+        final_state.get::<String>("_error").as_deref(),
+        Some("AgentNode 'rust-reviewer' returned empty output")
+    );
+    assert!(!final_state.data.contains_key("_agent_output_rust-reviewer"));
+}
+
+#[tokio::test]
+async fn test_agent_node_local_delegation_uses_graph_driver() {
+    let graph = AgentGraph::builder("rust-reviewer")
+        .add_node(AgentNode::new("rust-reviewer", "rust-reviewer"))
+        .build();
+    let mut initial = GraphState::default();
+    initial.set("_agent_input", "review this Rust boundary".to_string());
+
+    let final_state = graph
+        .execute(initial, &make_ctx("run-agent-node-local"))
+        .await;
+
+    assert_eq!(
+        final_state
+            .get::<String>("_agent_output_rust-reviewer")
+            .as_deref(),
+        Some("delegated")
+    );
+    assert!(!final_state.data.contains_key("_error"));
 }
 
 #[tokio::test]
@@ -103,6 +149,12 @@ async fn test_agent_node_remote_delegation() {
         .get("_agent_task_id_delegate")
         .expect("task_id should be stored");
     assert_eq!(task_id, "task-delegated");
+    assert_eq!(
+        final_state
+            .get::<String>("_agent_output_delegate")
+            .as_deref(),
+        Some("remote contribution")
+    );
 }
 
 #[tokio::test]

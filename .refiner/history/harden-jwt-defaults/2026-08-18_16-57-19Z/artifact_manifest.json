@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-18T16:30:39Z",
+  "variants": [
+    {
+      "name": "jwt-hardening-verification",
+      "file": ".refiner/artifacts/harden-jwt-defaults/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic verification receipt for deliberate JWT secrets and registered-claim validation"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "All three OpenSpec tasks are complete and focused verification passes.",
+      "The fallback-secret, issuer/audience, and not-before fail-closed controls were observed.",
+      "API-key exchange and uar-jwt-proxy preserve configured registered claims.",
+      "Scoped Clippy exits 0 with the existing 572-warning baseline; no warning-free claim is made.",
+      "Independent artifact critic and judge both returned PASS on the corrected candidate."
+    ]
+  }
+}

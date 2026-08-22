@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-18T20:09:33Z",
+  "variants": [
+    {
+      "name": "sdk-distribution-verification",
+      "file": ".refiner/artifacts/resolve-sdk-distribution/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Per-requirement verification receipt for the Rust, Python, and TypeScript SDK distribution decision"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "All three SDKs remain version 1.0.0 under MIT with Prometheus AGS authorship.",
+      "Focused language tests, examples/type checks, package contents, generated docs, and streaming examples were observed locally.",
+      "Rust retains the exact runtime registry requirement; the package control plus root metadata prove the complete unresolved publication prerequisite chain.",
+      "The legacy routine CI workflow is retired; deployment workflows were not changed.",
+      "Independent artifact critic and judge both passed the release-ordered iteration-3 candidate."
+    ]
+  }
+}

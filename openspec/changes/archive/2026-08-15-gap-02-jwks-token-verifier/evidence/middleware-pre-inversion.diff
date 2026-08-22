@@ -1,0 +1,286 @@
+diff --git a/src/uar/security/middleware.rs b/src/uar/security/middleware.rs
+index 02d885a2..2b0833fa 100644
+--- a/src/uar/security/middleware.rs
++++ b/src/uar/security/middleware.rs
+@@ -1,16 +1,15 @@
+-use crate::AppState;
++use crate::{AppState, config::SecurityConfig};
+ use axum::{
+     extract::{Request, State},
+     http::{StatusCode, header},
+     middleware::Next,
+     response::Response,
+ };
+-use jsonwebtoken::{DecodingKey, Validation};
+ use secrecy::ExposeSecret;
+ 
+ use super::{
+     claims::{UserClaims, UserContext},
+-    jwt::{self, JwtError},
++    verifier::{JwksVerifier, Presented, SharedSecretVerifier, TokenVerifier, VerificationError},
+ };
+ 
+ fn anonymous_context() -> UserContext {
+@@ -26,9 +25,8 @@ fn anonymous_context() -> UserContext {
+     }
+ }
+ 
+-fn resolve_user_context(
+-    jwt_required: bool,
+-    jwt_secret: &str,
++async fn resolve_user_context_with_config(
++    config: &SecurityConfig,
+     auth_header: Option<&str>,
+ ) -> Result<UserContext, StatusCode> {
+     let token = match auth_header {
+@@ -36,7 +34,7 @@ fn resolve_user_context(
+             &header_val[7..] // Strip "Bearer "
+         }
+         _ => {
+-            return if jwt_required {
++            return if config.jwt_required {
+                 Err(StatusCode::UNAUTHORIZED)
+             } else {
+                 Ok(anonymous_context())
+@@ -44,21 +42,33 @@ fn resolve_user_context(
+         }
+     };
+ 
+-    // Decode & validate token
+-    let key = DecodingKey::from_secret(jwt_secret.as_bytes());
+-    let validation = Validation::default();
++    let presented = Presented::Jwks(token.to_owned());
++    let verification = if let Some(jwks_url) = config.jwks_url.as_deref() {
++        JwksVerifier::new(
++            jwks_url,
++            config.jwt_issuer.as_deref(),
++            config.jwt_audience.as_deref(),
++        )
++        .await
++        .verify(presented)
++        .await
++    } else {
++        SharedSecretVerifier::new(config.jwt_secret.expose_secret())
++            .verify(presented)
++            .await
++    };
+ 
+-    match jwt::decode::<UserClaims>(token, &key, &validation) {
+-        Ok(token_data) => {
+-            let claims = token_data.claims;
++    match verification {
++        Ok(principal) => {
++            let claims = principal.claims;
+             Ok(UserContext {
+-                user_id: claims.sub.clone(),
++                user_id: principal.subject,
+                 claims,
+             })
+         }
+-        Err(JwtError::ProviderConflict) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+-        Err(JwtError::Token(_)) => {
+-            if jwt_required {
++        Err(VerificationError::ProviderConflict) => Err(StatusCode::INTERNAL_SERVER_ERROR),
++        Err(_) => {
++            if config.jwt_required {
+                 Err(StatusCode::UNAUTHORIZED)
+             } else {
+                 Ok(anonymous_context())
+@@ -67,6 +77,23 @@ fn resolve_user_context(
+     }
+ }
+ 
++#[cfg(test)]
++fn resolve_user_context(
++    jwt_required: bool,
++    jwt_secret: &str,
++    auth_header: Option<&str>,
++) -> Result<UserContext, StatusCode> {
++    let config = SecurityConfig {
++        jwt_required,
++        jwt_secret: jwt_secret.to_owned().into(),
++        jwks_url: None,
++        jwt_issuer: None,
++        jwt_audience: None,
++        settings_mutation_auth_required: true,
++    };
++    futures::executor::block_on(resolve_user_context_with_config(&config, auth_header))
++}
++
+ pub async fn auth_middleware(
+     State(state): State<AppState>,
+     mut request: Request,
+@@ -85,11 +112,7 @@ pub async fn auth_middleware(
+         .and_then(|h| h.to_str().ok());
+ 
+     // Try JWT first
+-    let mut context = resolve_user_context(
+-        false,
+-        state.config.security.jwt_secret.expose_secret(),
+-        auth_header,
+-    )?;
++    let mut context = resolve_user_context_with_config(&state.config.security, auth_header).await?;
+ 
+     // If still anonymous, try X-API-Key header
+     if context.user_id == "anonymous" {
+@@ -131,8 +154,68 @@ pub async fn auth_middleware(
+ 
+ #[cfg(test)]
+ mod tests {
++    use std::{
++        io::{self, Write},
++        sync::{Arc, Mutex},
++    };
++
+     use super::*;
++    use crate::uar::security::{
++        jwt,
++        verifier::test_support::{TestJwksServer, jwk, signed_token},
++    };
+     use jsonwebtoken::{EncodingKey, Header};
++    use tracing_subscriber::fmt::MakeWriter;
++
++    #[derive(Clone, Default)]
++    struct LogBuffer(Arc<Mutex<Vec<u8>>>);
++
++    struct LogWriter(Arc<Mutex<Vec<u8>>>);
++
++    impl Write for LogWriter {
++        fn write(&mut self, buffer: &[u8]) -> io::Result<usize> {
++            self.0
++                .lock()
++                .expect("log buffer mutex must remain available")
++                .extend_from_slice(buffer);
++            Ok(buffer.len())
++        }
++
++        fn flush(&mut self) -> io::Result<()> {
++            Ok(())
++        }
++    }
++
++    impl<'a> MakeWriter<'a> for LogBuffer {
++        type Writer = LogWriter;
++
++        fn make_writer(&'a self) -> Self::Writer {
++            LogWriter(Arc::clone(&self.0))
++        }
++    }
++
++    impl LogBuffer {
++        fn contents(&self) -> String {
++            String::from_utf8(
++                self.0
++                    .lock()
++                    .expect("log buffer mutex must remain available")
++                    .clone(),
++            )
++            .expect("captured tracing output must be UTF-8")
++        }
++    }
++
++    fn jwks_config(url: String, issuer: &str, audience: &str) -> SecurityConfig {
++        SecurityConfig {
++            jwt_required: true,
++            jwt_secret: "unused-for-jwks".to_owned().into(),
++            jwks_url: Some(url),
++            jwt_issuer: Some(issuer.to_owned()),
++            jwt_audience: Some(audience.to_owned()),
++            settings_mutation_auth_required: true,
++        }
++    }
+ 
+     #[test]
+     fn test_resolve_user_context_anonymous_when_jwt_disabled_and_no_header() {
+@@ -194,4 +277,91 @@ mod tests {
+             .expect_err("expected invalid signature to be rejected");
+         assert_eq!(err, StatusCode::UNAUTHORIZED);
+     }
++
++    #[tokio::test]
++    async fn jwks_token_authenticates_through_middleware_resolution() {
++        let server = TestJwksServer::start(vec![jwk("middleware-key")]).await;
++        let config = jwks_config(server.url.clone(), "issuer", "audience");
++        let token = signed_token("middleware-key", "issuer", "audience");
++
++        let context = resolve_user_context_with_config(&config, Some(&format!("Bearer {token}")))
++            .await
++            .expect("valid JWKS token must authenticate");
++        assert_eq!(context.user_id, "user-123");
++    }
++
++    #[tokio::test]
++    async fn jwks_wrong_audience_maps_to_unauthorized() {
++        let server = TestJwksServer::start(vec![jwk("claim-key")]).await;
++        let config = jwks_config(server.url.clone(), "issuer", "audience");
++
++        let wrong_audience = signed_token("claim-key", "issuer", "other-audience");
++        let audience_error =
++            resolve_user_context_with_config(&config, Some(&format!("Bearer {wrong_audience}")))
++                .await
++                .expect_err("wrong audience must return 401");
++        assert_eq!(audience_error, StatusCode::UNAUTHORIZED);
++    }
++
++    #[tokio::test]
++    async fn jwks_wrong_issuer_maps_to_unauthorized() {
++        let server = TestJwksServer::start(vec![jwk("claim-key")]).await;
++        let config = jwks_config(server.url.clone(), "issuer", "audience");
++
++        let wrong_issuer = signed_token("claim-key", "other-issuer", "audience");
++        let issuer_error =
++            resolve_user_context_with_config(&config, Some(&format!("Bearer {wrong_issuer}")))
++                .await
++                .expect_err("wrong issuer must return 401");
++        assert_eq!(issuer_error, StatusCode::UNAUTHORIZED);
++    }
++
++    #[tokio::test]
++    async fn jwks_unknown_kid_maps_to_unauthorized() {
++        let server = TestJwksServer::start(vec![jwk("known-key")]).await;
++        let config = jwks_config(server.url.clone(), "issuer", "audience");
++        let token = signed_token("missing-key", "issuer", "audience");
++
++        let error = resolve_user_context_with_config(&config, Some(&format!("Bearer {token}")))
++            .await
++            .expect_err("unknown kid must return 401");
++        assert_eq!(error, StatusCode::UNAUTHORIZED);
++        assert_eq!(server.request_count(), 1);
++    }
++
++    #[tokio::test(flavor = "current_thread")]
++    async fn unreachable_jwks_with_no_cache_fails_closed() {
++        let logs = LogBuffer::default();
++        let subscriber = tracing_subscriber::fmt()
++            .with_max_level(tracing::Level::ERROR)
++            .without_time()
++            .with_ansi(false)
++            .with_writer(logs.clone())
++            .finish();
++        let _subscriber_guard = tracing::subscriber::set_default(subscriber);
++
++        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
++            .await
++            .expect("temporary listener must bind");
++        let address = listener
++            .local_addr()
++            .expect("temporary listener must have an address");
++        drop(listener);
++
++        let config = jwks_config(format!("http://{address}/jwks"), "issuer", "audience");
++        let token = signed_token("unreachable-key", "issuer", "audience");
++        let error = resolve_user_context_with_config(&config, Some(&format!("Bearer {token}")))
++            .await
++            .expect_err("unreachable JWKS must fail closed");
++        assert_eq!(error, StatusCode::UNAUTHORIZED);
++        let output = logs.contents();
++        assert!(
++            output.contains("ERROR"),
++            "expected error-level log: {output}"
++        );
++        assert!(
++            output.contains("JWKS refresh failed"),
++            "expected JWKS failure log: {output}"
++        );
++    }
+ }

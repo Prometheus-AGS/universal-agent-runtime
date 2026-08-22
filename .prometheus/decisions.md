@@ -367,3 +367,240 @@ is non-certifying and cannot support an inference-readiness or release claim.
 A multi-hour real-inference run also requires a documented failure model,
 traffic-volume target, operating-period target, or statistical detection goal;
 elapsed time alone is not evidence.
+## 2026-08-14 — UAR standardizes `jsonwebtoken` 11 on RustCrypto
+
+**Decision.** Every UAR-owned `jsonwebtoken` dependency resolves through one
+workspace entry pinned exactly to `11.0.0`, with default features disabled and
+only `rust_crypto` selected. The earlier AWS-LC spike conclusion is historical
+and superseded.
+
+**Rationale.** RustCrypto removes the native C/assembly provider from UAR's JWT
+choice, works across the separately checked server-full, iOS, and Android
+graphs, and is already present in the lockfile. The decision is not based on a
+performance claim. A1 requires authenticated public-key verification only; it
+does not add RSA/PS private-key signing.
+
+**Uncomfortable constraint.** `jsonwebtoken` 11 stores its process provider
+behind a crate-private getter. Its public `install_default()` error returns the
+provider the caller attempted to install, not the provider already present.
+Consequently UAR cannot distinguish “RustCrypto was installed before UAR” from
+“a foreign provider was installed before UAR” by pointer identity. A0 remains
+in progress until the operator either requires UAR to own first installation or
+expands scope to a patched/forked provider API. No completion claim transfers
+from the backend decision to that unresolved initialization contract.
+
+---
+
+## 2026-08-14 — UAR owns first `jsonwebtoken` provider installation
+
+**Decision.** The operator selected the first-owner option. UAR installs
+RustCrypto at the shared server-startup funnel and before every UAR-owned JWT
+encode/decode operation. Repeated calls reuse only UAR's recorded successful
+installation. Any provider initialized before UAR—including RustCrypto—fails
+closed with a structured provider-conflict error.
+
+**Rationale.** `jsonwebtoken` 11 exposes neither the installed provider nor an
+identity token for it. Treating a failed RustCrypto installation as proof that
+the existing provider is RustCrypto would accept AWS-LC or an arbitrary
+downstream provider under feature unification. Owning first installation makes
+the invariant observable without a fork or a new dependency.
+
+**Supersession.** This resolves the uncomfortable constraint in the preceding
+RustCrypto decision. It does not reverse the backend choice; RustCrypto remains
+the sole UAR-owned `jsonwebtoken` feature. If another component must own the
+process provider, that integration must change architecture explicitly rather
+than bypass the guard.
+
+---
+
+## 2026-08-15 — Skill enablement is durable and most-specific-wins
+
+**Decision.** Store skill enablement as durable global, agent, and conversation
+records on each skill. Resolve conversation first, then explicit agent state,
+then the pre-existing non-empty agent-binding allowlist as a compatibility
+fallback, then global state. Keep `Skill::enabled` as the legacy global copy and
+synchronize it on new global writes.
+
+**Rationale.** Existing persisted rows and clients already read `enabled`, while
+the scoped records must survive built-in re-registration. The compatibility
+fallback preserves bindings created before a skill is loaded; explicit scoped
+records remain authoritative when present.
+
+**Runtime consequence.** The run policy universe contains every registered
+skill. Scoped matching filters that universe using the existing agent and
+conversation identifiers, and the returned skill clones remain the run's
+start-time binding.
+
+**Uncomfortable constraint.** A conversation enable cannot widen a global
+disable if the policy universe discards the skill before scoped resolution.
+Changing precedence without changing universe construction produces tests that
+pass in the service and behavior that fails in a real run.
+
+---
+
+## 2026-08-15 — `skills/dynamic` is an API-owned persistence namespace
+
+**Decision.** Files beneath the filesystem provider's reserved `dynamic/`
+directory are API-managed and reload with `provider_id = "api"`. The filesystem
+write boundary rejects every other provider id. Configuration files outside
+that directory reload as `fs-skills`, and when an upgrade leaves both sources
+for one ID, the real configuration source wins deterministically.
+
+**Rationale.** Reconciliation may tombstone only exact `fs-skills` records.
+Before this boundary was explicit, an API skill could reload as configuration,
+and a stale dynamic copy of a config skill could win by directory traversal
+order. Either failure makes provenance unsuitable as the data-loss guard.
+
+**Uncomfortable constraint.** The reserved path is now part of the provenance
+contract. Moving API-created files elsewhere, accepting config records at the
+dynamic write boundary, or restoring last-writer-wins cache insertion would
+invalidate reconciliation safety and requires a new migration decision.
+
+---
+
+## 2026-08-19 — Persist provider defaults before publishing live state
+
+**Decision.** When a `SettingsManager` is configured, changing the default
+provider validates the target, persists the new provider ID, and only then
+publishes it to the live registry. A persistence failure leaves the live
+default unchanged. The existing registry-only behavior remains available when
+the server has no settings persistence configured.
+
+**Rationale.** Publishing first allowed the API to report a live default that
+could not survive restart. Persistence-first ordering makes the durable setting
+the commit point while retaining compatibility for deployments that explicitly
+run without a settings manager.
+
+**Uncomfortable constraint.** Provider deletion and default selection still
+span separate stores without a transaction. This change prevents publication
+after a failed settings write, but it does not make concurrent deletion and
+selection atomic.
+
+---
+
+## 2026-08-21 — Release certification is local; Actions remain deployment-only
+
+**Decision.** Run operational resilience, installed-artifact, supply-chain,
+security, load, stress, soak, and release-candidate certification locally from
+an immutable checkout. GitHub Actions may execute deployments and validate the
+resulting deployment only. Remove every other workflow and enforce the retained
+three-file deployment allowlist with a local pre-commit validator.
+
+**Rationale.** A prior plan treated a release gate, container build, and hosted
+artifact upload as sufficient to call product testing deployment validation.
+That contradicted the 2026-08-09 operator decision and caused a three-hour soak
+to be dispatched to Actions. Run `32458212074` was canceled and cannot be used
+as evidence. KBD plan revision 8 and decision
+`deployment-only-actions-local-release-certification` supersede the conflicting
+phase language.
+
+**Uncomfortable constraint.** Keyless supply-chain publication previously
+depended on workflow identity and hosted OIDC. The remaining release-tail
+changes must replace that mechanism with locally produced and independently
+verified evidence before publication; deleting the workflows does not by
+itself prove the replacement is complete.
+
+---
+
+## 2026-08-21 — Freeze after all local release-tail tooling lands
+
+**Decision.** Land and locally verify the operational, supply-chain,
+candidate-certification, and promotion scripts/contracts before freezing the
+immutable candidate. Evidence and status transitions still execute in order;
+after the freeze, only evidence/checkpoint commits are allowed.
+
+**Rationale.** Running the three-hour certification before replacing later
+workflow-bound release tooling would force a source edit and invalidate the
+run. KBD plan revision 9 and decision
+`freeze-after-local-release-tail-tooling` preserve one meaningful source-bound
+certification instead of knowingly scheduling a throwaway run.
+
+**Uncomfortable constraint.** This permits source preparation for later
+changes while the operational change is active. It does not permit their
+evidence, tags, signing, publication, or completion transitions to run early.
+
+---
+
+## 2026-08-21 — MCP reconnect state includes configuration generation
+
+**Decision.** Store each configured MCP server's current service, authoritative
+reconnect entry, and configuration generation in one private shared slot.
+Filtered and merged views share only slots they are already authorized to use.
+A reconnect built outside the lock may replace the service only if its captured
+generation is still current.
+
+**Rationale.** Sharing only the service pointer fixed dead-handle propagation
+but allowed an old view to reconnect configuration A after an A-to-B upsert and
+overwrite B. The generation guard closes that rollback without sharing policy
+maps, holding a synchronous lock across `.await`, or replaying the failed call.
+
+**Uncomfortable constraint.** This does not serialize concurrent failures or
+change snapshot-view behavior after server removal. Those behaviors require a
+separate observed problem and plan.
+
+---
+
+## 2026-08-22 — Shutdown timeout is one absolute signal-to-exit window
+
+**Decision.** Under `server-full`, observe SIGTERM/SIGINT once, stop both HTTP
+listeners immediately, and measure the configured graceful timeout from that
+observation. A standard-library watchdog owns the forced boundary independently
+of Tokio. Normal completion waits for ingestion, A2A, MCP, live-query, and
+SurrealKV ownership to end; deadline expiry exits 0 after one bounded
+non-blocking `deadline_enforced` write and never reports graceful completion.
+
+**Rationale.** The immutable candidate passed the 10,800-second traffic soak
+but Docker later sent SIGKILL and observed exit 137. Focused baseline controls
+showed the existing implementation spent the full configured timeout before it
+began draining, so held work had no remaining internal margin. An absolute
+deadline fixes the observed semantic defect without adding a dependency,
+protocol, provider, or public API.
+
+**Uncomfortable constraint.** Forced exit intentionally abandons cleanup still
+blocked at the deadline. The safety claim is bounded process termination, not
+completion of every cleanup branch. Only the normal path may emit
+`graceful_complete`; the parent three-hour certification must still restart
+from zero on the committed source SHA.
+
+---
+
+## 2026-08-22 — Production image builds consume the repository's dated Rust channel
+
+**Decision.** Keep `nightly-2026-07-18` as the repository and Docker default,
+and make the production backend invoke `cargo +"${RUST_TOOLCHAIN}" build
+--release`. A local preflight rejects a floating selector or any disagreement
+among the Docker default, repository channel, and effective build argument.
+
+**Rationale.** The Docker toolchain stage already installed the intended dated
+channel. The defect was the later floating `cargo +nightly` selector, which
+bypassed that declaration and resolved to an incompatible compiler. Explicit
+selection fixes the causal fault without changing dependencies, features, or
+the repository toolchain decision.
+
+**Evidence binding.** The product/build implementation is committed first and
+verified from a clean detached checkout. A direct evidence-only child commit
+then records those results. Canonical KBD resolves that evidence SHA as the
+parent handoff, and the parent rebuilds it and restarts the 10,800-second
+certification from zero.
+
+**Uncomfortable constraint.** A passing isolated Cargo probe is not a release
+image result, and a passing clean image build is not an operational-resilience
+result. Each remains limited to its recorded profile and source SHA.
+
+---
+
+## 2026-08-22 — UAR 1.0 closes on bounded real-inference functionality
+
+**Decision.** Supersede the multi-hour soak, supply-chain, RC, and GA-publication
+tail with five real-model functional paths, each observed through both the
+packaged API boundary and the shipped UI. Cancel the four old release-tail
+changes rather than representing them as passed.
+
+**Rationale.** The operator's final acceptance boundary is working software:
+OpenAI proxy inference, skill activation, knowledge grounding, Kimi k3 UI
+configuration and inference, and basic-agent creation and inference. Synthetic,
+recorded, and duration-only checks do not establish those behaviors.
+
+**Uncomfortable constraint.** This decision closes only the requested local
+`server-full` functional scope. It produces no supply-chain, release-candidate,
+publication, minimal-profile, or embedded-mobile claim.

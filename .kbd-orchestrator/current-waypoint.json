@@ -1,31 +1,32 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 52,
-  "derivedRevision": 52,
+  "sourceRevision": 315,
+  "derivedRevision": 315,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 52
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257
   },
   "conflictCount": 0,
   "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
   "runId": "uar-uiux-full-migration-2026-08-20260807T110859Z",
   "path": [
-    "uar-uiux-full-migration-2026-08"
+    "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion"
   ],
   "phaseIds": [
-    "uar-uiux-full-migration-2026-08"
+    "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion"
   ],
-  "activePhaseId": "uar-uiux-full-migration-2026-08",
-  "phase": "uar-uiux-full-migration-2026-08",
+  "activePhaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+  "phase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
   "childPointer": null,
   "change": null,
-  "currentTask": "C-00: archive the 4 complete UI changes; base-ui-foundation blocker resolved and strictly validated",
+  "currentTask": null,
   "status": "running",
   "completionMetric": "implementation",
-  "implementationCompleted": 47,
-  "implementationTotal": 72,
-  "planRevision": 5,
-  "revision": 52,
-  "exactNextCommand": "/opsx:new amend-goal4-base-ui-divergence",
-  "updatedAt": "2026-08-08T09:02:54.826920Z"
+  "implementationCompleted": 10,
+  "implementationTotal": 10,
+  "planRevision": 11,
+  "revision": 315,
+  "exactNextCommand": "/kbd-reflect perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
+  "updatedAt": "2026-08-22T19:03:03.149349Z"
 }

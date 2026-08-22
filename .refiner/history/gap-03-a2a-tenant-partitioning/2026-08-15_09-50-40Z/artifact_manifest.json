@@ -1,0 +1,28 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-15T09:49:30Z",
+  "variants": [
+    {
+      "name": "a2-verification",
+      "file": ".refiner/artifacts/gap-03-a2a-tenant-partitioning/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Deterministic QA receipt for verified-tenant A2A partitioning and the live C-21 denial proof"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Tenant identity is populated only from verified claims and remains distinct from subject identity.",
+      "Task ID, context ID, cancel, and gRPC paths are tenant-partitioned.",
+      "Required-JWT surfaces reject missing verified tenant identity.",
+      "The pinned phase command observed 29 passing and 0 failed; the C-21 tenant-key inversion exited 101."
+    ]
+  }
+}

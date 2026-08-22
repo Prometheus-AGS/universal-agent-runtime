@@ -87,9 +87,12 @@ readiness**. Before (or alongside) the certification goals above, the phase must
 
 ## Non-goals / explicit boundaries
 
-- No further source/integration code changes are expected in this phase — if a defect is
-  found during certification, open a narrowly-scoped follow-up change rather than folding
-  ad hoc fixes into the release pipeline.
+- No further source/integration code changes are expected in this phase. Plan revision 7
+  records the operator-authorized exception for the three defects exposed by
+  `screen-by-screen-validation`: Skills graph visibility, approval-event projection, and
+  Knowledge nested-interactive markup. Those smallest bounded repairs remain in that
+  change so one corrected source can be recertified. Any other defect requires a
+  narrowly-scoped follow-up rather than another ad hoc release-pipeline fix.
 - Tag creation, GHCR/GitHub publication, and GA promotion are irreversible, publicly visible
   actions. Each MUST get explicit operator confirmation at the point of execution — creating
   this phase or running `/kbd-assess`/`/kbd-plan` does not itself authorize them.

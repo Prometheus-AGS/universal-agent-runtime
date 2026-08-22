@@ -176,13 +176,48 @@ impl<D: QueryDecomposer> RagRetrievalPipeline<D> {
 
 #[cfg(test)]
 mod tests {
+    use std::{
+        fmt::Write as _,
+        sync::{Arc, Mutex},
+    };
+
     use super::*;
     use crate::uar::domain::knowledge::KnowledgeChunk;
+    use tracing::{
+        Subscriber,
+        field::{Field, Visit},
+        instrument::WithSubscriber,
+    };
+    use tracing_subscriber::{Layer, layer::Context, prelude::*};
+
+    #[derive(Clone, Default)]
+    struct CapturedEvents(Arc<Mutex<Vec<(String, String)>>>);
+
+    #[derive(Default)]
+    struct CapturedFields(String);
+
+    impl Visit for CapturedFields {
+        fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
+            let _ = write!(&mut self.0, "{}={value:?} ", field.name());
+        }
+    }
+
+    impl<S: Subscriber> Layer<S> for CapturedEvents {
+        fn on_event(&self, event: &tracing::Event<'_>, _ctx: Context<'_, S>) {
+            let mut fields = CapturedFields::default();
+            event.record(&mut fields);
+            self.0
+                .lock()
+                .expect("capture lock")
+                .push((event.metadata().name().to_string(), fields.0));
+        }
+    }
 
     fn make_match(id: Uuid, content: &str, score: f32) -> KnowledgeMatch {
         KnowledgeMatch {
             chunk: KnowledgeChunk {
                 id,
+                owner_id: "anonymous".to_string(),
                 kb_id: "test-kb".to_string(),
                 document_id: None,
                 content: content.to_string(),
@@ -269,6 +304,36 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn result_limit_applies_after_cross_query_scoring() {
+        let lower_id = Uuid::new_v4();
+        let higher_id = Uuid::new_v4();
+        let backend = FixedBackend {
+            by_query: HashMap::from([
+                (
+                    "compiler validation stages explained".to_string(),
+                    vec![make_match(lower_id, "compiler validation details", 0.7)],
+                ),
+                (
+                    "signing workflow details explained".to_string(),
+                    vec![make_match(higher_id, "signing workflow details", 0.9)],
+                ),
+            ]),
+        };
+        let results = RagRetrievalPipeline::new()
+            .retrieve(
+                &backend,
+                "kb-1",
+                "compiler validation stages explained and also signing workflow details explained",
+                1,
+                0.0,
+            )
+            .await
+            .unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].chunk.id, higher_id);
+    }
+
+    #[tokio::test]
     async fn drop_uncorroborated_filters_when_enabled() {
         let related_id = Uuid::new_v4();
         let unrelated_id = Uuid::new_v4();
@@ -318,5 +383,32 @@ mod tests {
             2,
             "default config must not change existing caller-observable result count"
         );
+    }
+
+    #[tokio::test]
+    async fn retrieval_emits_decision_audit_event() {
+        let id = Uuid::new_v4();
+        let backend = FixedBackend {
+            by_query: HashMap::from([(
+                "compiler validation".to_string(),
+                vec![make_match(id, "the compiler validates every spec", 0.9)],
+            )]),
+        };
+        let events = CapturedEvents::default();
+        let subscriber = tracing_subscriber::registry().with(events.clone());
+
+        RagRetrievalPipeline::new()
+            .retrieve(&backend, "kb-audit", "compiler validation", 3, 0.7)
+            .with_subscriber(subscriber)
+            .await
+            .expect("retrieval succeeds");
+
+        let captured = events.0.lock().expect("capture lock");
+        let (_, fields) = captured
+            .iter()
+            .find(|(name, _)| name == "rag.retrieval.decision")
+            .expect("named retrieval decision event");
+        assert!(fields.contains("kb_id=\"kb-audit\""));
+        assert!(fields.contains("returned_count=1"));
     }
 }

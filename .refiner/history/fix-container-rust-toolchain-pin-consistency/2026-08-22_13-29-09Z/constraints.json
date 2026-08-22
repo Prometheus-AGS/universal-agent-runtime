@@ -1,0 +1,66 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "dated-selector-consistency",
+      "description": "The production backend explicitly selects the dated Docker RUST_TOOLCHAIN value, and the Docker default, repository channel, and effective build argument agree exactly.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Shell syntax check plus the local pin validator against the committed Dockerfile, rust-toolchain.toml, and dated effective build argument"
+      }
+    },
+    {
+      "id": "fail-closed-selector-controls",
+      "description": "A floating backend nightly selector, a Docker/repository mismatch, and an effective build-argument mismatch each fail before Docker compilation.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Three observed nonzero validator controls with distinct failure messages"
+      }
+    },
+    {
+      "id": "locked-arm64-compatibility",
+      "description": "Identical locked diskann-wide 0.54.0 fixture inputs compile for aarch64-apple-darwin on nightly-2026-07-18 and reproduce exactly three E0283 diagnostics on nightly-2026-08-22.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Clean external-target positive and negative Cargo checks with pre/post fixture hashes"
+      }
+    },
+    {
+      "id": "clean-production-image",
+      "description": "A clean detached implementation checkout builds and exports the complete linux/arm64 production image with the explicit dated build argument.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Docker buildx static check and full local Docker build receipt bound to implementation SHA 64bea08695c341843e79e829ee0d4dfc0c210c3c"
+      }
+    },
+    {
+      "id": "bounded-truthful-handoff",
+      "description": "The child diff stays within its permitted surface, strict OpenSpec passes, evidence remains profile-limited, and no parent soak or runtime-level verdict is claimed.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Scoped git diff audit, row-form verification review, strict OpenSpec, and evidence-only parent check"
+      }
+    }
+  ],
+  "global_rules": [
+    "Use the child OpenSpec and KBD plan as acceptance authority.",
+    "Do not edit Cargo manifests, Cargo.lock, rust-toolchain.toml, GitHub Actions, runtime source, frontend source, or deployment configuration.",
+    "Run routine validation locally and keep GitHub Actions deployment-only.",
+    "Do not claim parent operational resilience before the final handoff SHA completes a fresh 10,800-second certification."
+  ],
+  "termination_conditions": [
+    "Every blocking constraint has observed evidence.",
+    "Strict OpenSpec, refiner schemas, referenced-file integrity, and scoped diff checks pass.",
+    "The evidence commit is a direct child of the tested implementation commit and contains no product or build change."
+  ]
+}

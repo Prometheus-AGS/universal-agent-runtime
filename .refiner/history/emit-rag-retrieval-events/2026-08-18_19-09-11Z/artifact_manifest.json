@@ -1,0 +1,29 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-18T18:48:34Z",
+  "variants": [
+    {
+      "name": "rag-retrieval-verification",
+      "file": ".refiner/artifacts/emit-rag-retrieval-events/dist/verification-summary.md",
+      "format": "markdown",
+      "description": "Per-requirement verification receipt for RAG provenance, hardened chat retrieval, and provider status transitions"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "AG-UI provenance carries knowledge-base ID, document ID, and document name.",
+      "The browser scenario observes retrieved content, outgoing prompt context, a source badge, and the hover-card document name.",
+      "The chat path invokes the hardened pipeline and the structured audit event is captured by metadata name and fields.",
+      "SurrealKV and PostgreSQL status transitions were observed separately.",
+      "Independent artifact critic and judge both accepted the final candidate."
+    ]
+  }
+}

@@ -37,7 +37,7 @@ export interface CreateProviderBody {
   enabled: boolean;
 }
 
-/** POST /api/uar/providers — 200/201 success; 409 treated as success by caller. */
+/** POST /api/uar/providers — create a provider that is not already configured. */
 export async function createProvider(body: CreateProviderBody): Promise<Response> {
   return fetch("/api/uar/providers", {
     method: "POST",

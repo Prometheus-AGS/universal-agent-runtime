@@ -27,6 +27,7 @@
 mod encrypted;
 mod thread;
 
+pub(crate) use thread::ANONYMOUS_SESSION_OWNER;
 #[allow(unused_imports)]
 pub use thread::Session;
 pub use thread::SessionStore;

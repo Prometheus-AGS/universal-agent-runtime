@@ -2,9 +2,9 @@
 
 This consolidates the deployable artifacts that already exist in this
 repository — the multi-stage `Dockerfile`, the `k8s/helm/uar` chart, and the
-GitHub Actions CI/CD workflows — into one narrative. **It documents what's
+GitHub Actions deployment workflow — into one narrative. **It documents what's
 here, including a real inconsistency between the Helm chart and the current
-live CI/CD path** (see [Two deployment paths](#two-deployment-paths-read-this-first)
+live deployment path** (see [Two deployment paths](#two-deployment-paths-read-this-first)
 below) rather than paper over it.
 
 ## Container image
@@ -20,19 +20,17 @@ in-container, and a `runtime` stage that carries the same toolchains forward
 docker buildx build --platform linux/amd64 -t uar:latest .
 ```
 
-Two CI workflows build this image:
-
-- **`.github/workflows/build-image.yml`** ("Build Image (no deploy)") —
-  build-only, for verifying the Dockerfile compiles without deploying anywhere.
-- **`.github/workflows/deploy.yml`** ("Build and Deploy to AKS") — builds
-  **and** deploys; see below.
+Build and verify candidate images locally. **`.github/workflows/deploy.yml`**
+("Build and Deploy to AKS") may build the deployment image only as part of an
+actual deployment; its build path must not invoke product tests or routine
+development checks directly or indirectly.
 
 ## Two deployment paths (read this first)
 
 This repository currently contains **two independent deployment
 mechanisms that target different clouds and do not share configuration**:
 
-1. **The live CI/CD path — Azure AKS, image-bump only.**
+1. **The live deployment path — Azure AKS, image-bump only.**
    `.github/workflows/deploy.yml` builds the image, pushes it to Azure
    Container Registry (`prometheusagsacr.azurecr.io`), then runs
    `kubectl set image deploy/uar uar=<acr>/<image>:<tag> -n uar` against an
@@ -50,7 +48,7 @@ mechanisms that target different clouds and do not share configuration**:
    `k8s/helm/uar/` is a complete chart with its own Postgres, SurrealDB, and
    Redis subcharts, an Envoy Gateway `HTTPRoute`, an HPA, and network
    policies. Its `storageClass` template (`pd.csi.storage.gke.io`) is
-   GKE-specific. No CI workflow currently runs `helm install`/`helm upgrade`
+   GKE-specific. No deployment workflow currently runs `helm install`/`helm upgrade`
    against it — it's the right starting point for a **fresh** cluster
    bootstrap (a new environment, a GKE target, or local `kind`/`minikube`
    testing), not a description of what's currently live.

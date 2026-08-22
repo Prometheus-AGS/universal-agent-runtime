@@ -28,9 +28,19 @@
 
 use std::sync::Arc;
 
-use universal_agent_runtime::uar::domain::skills::{Skill, SkillOrigin};
-use universal_agent_runtime::uar::persistence::PersistenceLayer;
-use universal_agent_runtime::uar::runtime::skills::service::SkillService;
+use universal_agent_runtime::{
+    embedded::EmbeddedRuntime,
+    llm::{
+        ProviderConfig,
+        mock_driver::MockLlmDriver,
+        registry::{ModelConfig, ProtocolSetting},
+    },
+    uar::{
+        domain::skills::{Skill, SkillOrigin},
+        persistence::PersistenceLayer,
+        runtime::skills::{builtin_loader::discover_builtin_skills, service::SkillService},
+    },
+};
 
 /// Builtins as the loader produces them: `origin = Builtin`.
 fn builtin(id: &str) -> Skill {
@@ -40,6 +50,56 @@ fn builtin(id: &str) -> Skill {
     s.origin = SkillOrigin::Builtin;
     s.enabled = true;
     s
+}
+
+fn embedded_local_provider() -> ProviderConfig {
+    ProviderConfig {
+        id: "embedded-local".to_string(),
+        display_name: "Embedded local test model".to_string(),
+        base_url: String::new(),
+        api_key: None,
+        protocol: ProtocolSetting::Auto,
+        default_model: Some("offline-agent-model".to_string()),
+        models: vec![ModelConfig {
+            id: "offline-agent-model".to_string(),
+            display_name: Some("Offline agent model".to_string()),
+            context_window: Some(8_192),
+            supports_vision: false,
+            supports_tools: true,
+            supports_reasoning: true,
+            supports_structured_output: true,
+            supports_streaming: true,
+            max_output_tokens: Some(2_048),
+            enabled: true,
+        }],
+        enabled: true,
+    }
+}
+
+async fn build_embedded_runtime(
+    persistence: Arc<dyn PersistenceLayer>,
+    seed_defaults: bool,
+) -> EmbeddedRuntime {
+    EmbeddedRuntime::builder()
+        .local_provider(Arc::new(MockLlmDriver::echo()), embedded_local_provider())
+        .persistence(persistence)
+        .seed_defaults(seed_defaults)
+        .build()
+        .await
+        .expect("embedded runtime is ready")
+}
+
+fn assert_each_builtin_once(expected_ids: &[String], actual: &[Skill], boundary: &str) {
+    for expected_id in expected_ids {
+        assert_eq!(
+            actual
+                .iter()
+                .filter(|skill| &skill.skill_id == expected_id)
+                .count(),
+            1,
+            "{boundary} must contain builtin {expected_id} exactly once"
+        );
+    }
 }
 
 /// THE ASSERTION, on the embedded provider.
@@ -239,6 +299,151 @@ async fn every_builtin_reaches_the_database_on_embedded_surreal() {
          {discovered_count}. This is the default backend and the embedded deployment \
          target, so a shortfall here means R1 fails on the platform it exists for."
     );
+}
+
+#[cfg(feature = "surreal-backend")]
+#[tokio::test]
+async fn embedded_runtime_seeds_persists_and_deduplicates_builtins() {
+    use universal_agent_runtime::uar::persistence::providers::surreal::SurrealDbProvider;
+
+    const CHILD_MODE: &str = "UAR_B3_EMBEDDED_CHILD_MODE";
+    const CHILD_ENDPOINT: &str = "UAR_B3_EMBEDDED_CHILD_ENDPOINT";
+
+    if let Ok(mode) = std::env::var(CHILD_MODE) {
+        let endpoint = std::env::var(CHILD_ENDPOINT).expect("child SurrealKV endpoint");
+        let (expected, _) = discover_builtin_skills();
+        assert!(
+            !expected.is_empty(),
+            "the bundled skill pack must be discoverable"
+        );
+        let expected_ids: Vec<_> = expected.into_iter().map(|skill| skill.skill_id).collect();
+        let provider: Arc<dyn PersistenceLayer> = Arc::new(
+            SurrealDbProvider::new(&endpoint, None, None, Some("uar"), Some("builtins"))
+                .await
+                .expect("open embedded SurrealKV database in child process"),
+        );
+
+        match mode.as_str() {
+            "seed" => {
+                let runtime = build_embedded_runtime(Arc::clone(&provider), true).await;
+                assert_each_builtin_once(
+                    &expected_ids,
+                    &runtime.skill_service().get_skills().await,
+                    "fresh embedded registry",
+                );
+                assert_each_builtin_once(
+                    &expected_ids,
+                    &provider
+                        .list_skills()
+                        .await
+                        .expect("list freshly seeded rows"),
+                    "fresh embedded database",
+                );
+            }
+            "load" => {
+                assert_each_builtin_once(
+                    &expected_ids,
+                    &provider
+                        .list_skills()
+                        .await
+                        .expect("list rows after the seed process exited"),
+                    "reopened embedded database",
+                );
+                let runtime = build_embedded_runtime(Arc::clone(&provider), false).await;
+                assert_each_builtin_once(
+                    &expected_ids,
+                    &runtime.skill_service().get_skills().await,
+                    "registry loaded with seeding disabled",
+                );
+            }
+            "deduplicate" => {
+                let runtime = build_embedded_runtime(Arc::clone(&provider), true).await;
+                assert_each_builtin_once(
+                    &expected_ids,
+                    &runtime.skill_service().get_skills().await,
+                    "reseeded embedded registry",
+                );
+                assert_each_builtin_once(
+                    &expected_ids,
+                    &provider.list_skills().await.expect("list reseeded rows"),
+                    "reseeded embedded database",
+                );
+            }
+            _ => panic!("unknown B3 child mode: {mode}"),
+        }
+        return;
+    }
+
+    let (expected, _) = discover_builtin_skills();
+    assert!(
+        !expected.is_empty(),
+        "the bundled skill pack must be discoverable"
+    );
+    let directory = tempfile::tempdir().expect("temporary SurrealKV directory");
+    let endpoint = format!("surrealkv://{}", directory.path().display());
+
+    for mode in ["seed", "load", "deduplicate"] {
+        let output = std::process::Command::new(
+            std::env::current_exe().expect("current integration-test executable"),
+        )
+        .args([
+            "--exact",
+            "embedded_runtime_seeds_persists_and_deduplicates_builtins",
+            "--test-threads=1",
+        ])
+        .env(CHILD_MODE, mode)
+        .env(CHILD_ENDPOINT, &endpoint)
+        .output()
+        .expect("run embedded restart child process");
+        assert!(
+            output.status.success(),
+            "B3 {mode} child failed\nstdout:\n{}\nstderr:\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+}
+
+#[cfg(feature = "surreal-backend")]
+#[tokio::test]
+async fn embedded_runtime_honors_disabled_builtin_seeding() {
+    use universal_agent_runtime::uar::persistence::providers::surreal::SurrealDbProvider;
+
+    let (expected, _) = discover_builtin_skills();
+    assert!(
+        !expected.is_empty(),
+        "the bundled skill pack must be discoverable"
+    );
+    let directory = tempfile::tempdir().expect("temporary SurrealKV directory");
+    let endpoint = format!("surrealkv://{}", directory.path().display());
+    let provider: Arc<dyn PersistenceLayer> = Arc::new(
+        SurrealDbProvider::new(&endpoint, None, None, Some("uar"), Some("no-seed"))
+            .await
+            .expect("fresh embedded SurrealKV database"),
+    );
+
+    let runtime = build_embedded_runtime(Arc::clone(&provider), false).await;
+    let registry = runtime.skill_service().get_skills().await;
+    let persisted = provider
+        .list_skills()
+        .await
+        .expect("list skills with default seeding disabled");
+    for expected_skill in expected {
+        assert!(
+            registry
+                .iter()
+                .all(|skill| skill.skill_id != expected_skill.skill_id),
+            "disabled default seeding registered builtin {}",
+            expected_skill.skill_id
+        );
+        assert!(
+            persisted
+                .iter()
+                .all(|skill| skill.skill_id != expected_skill.skill_id),
+            "disabled default seeding persisted builtin {}",
+            expected_skill.skill_id
+        );
+    }
 }
 
 /// Loading from a provider must NOT write back.

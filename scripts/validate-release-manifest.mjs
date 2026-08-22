@@ -54,6 +54,47 @@ function archiveBinary(artifact) {
   }
 }
 
+function validateProvenance(artifact) {
+  const path = join(root, artifact.provenance);
+  try {
+    const statement = JSON.parse(readFileSync(path, "utf8").trim());
+    if (statement._type !== "https://in-toto.io/Statement/v1") failures.push(`invalid provenance statement type: ${artifact.name}`);
+    if (statement.predicateType !== "https://slsa.dev/provenance/v1") failures.push(`invalid provenance predicate type: ${artifact.name}`);
+    const subjects = statement.subject ?? [];
+    if (subjects.length !== 1 || subjects[0]?.name !== artifact.name || subjects[0]?.digest?.sha256 !== artifact.sha256) {
+      failures.push(`provenance subject mismatch: ${artifact.name}`);
+    }
+    const dependencies = statement.predicate?.buildDefinition?.resolvedDependencies ?? [];
+    if (!dependencies.some((dependency) => dependency?.digest?.gitCommit === manifest.source?.sha)) {
+      failures.push(`provenance source SHA mismatch: ${artifact.name}`);
+    }
+    if (statement.predicate?.runDetails?.builder?.id !== manifest.builder?.identity) {
+      failures.push(`provenance builder identity mismatch: ${artifact.name}`);
+    }
+  } catch (error) {
+    failures.push(`invalid provenance for ${artifact.name}: ${error.message}`);
+  }
+}
+
+function validateImageProvenance() {
+  const path = join(root, manifest.image.provenance);
+  try {
+    const predicate = JSON.parse(readFileSync(path, "utf8"));
+    const dependencies = predicate.buildDefinition?.resolvedDependencies ?? [];
+    if (!dependencies.some((dependency) => dependency?.digest?.gitCommit === manifest.source?.sha)) {
+      failures.push("image provenance source SHA mismatch");
+    }
+    if (predicate.runDetails?.builder?.id !== manifest.builder?.identity) {
+      failures.push("image provenance builder identity mismatch");
+    }
+    if (predicate.buildDefinition?.externalParameters?.image !== `${manifest.image?.reference}@${manifest.image?.digest}`) {
+      failures.push("image provenance digest reference mismatch");
+    }
+  } catch (error) {
+    failures.push(`invalid image provenance: ${error.message}`);
+  }
+}
+
 if (manifest.schema_version !== "1.0.0") failures.push("unsupported schema_version");
 if (!/^v\d+\.\d+\.\d+(?:-rc\.\d+)?$/.test(manifest.release ?? "")) failures.push("invalid release tag");
 if (!/^[0-9a-f]{40}$/.test(manifest.source?.sha ?? "")) failures.push("invalid source SHA");
@@ -65,6 +106,9 @@ if (!Array.isArray(manifest.source?.model_inputs) || manifest.source.model_input
   failures.push("model_inputs must be non-empty");
 }
 if (!/^sha256:[0-9a-f]{64}$/.test(manifest.image?.digest ?? "")) failures.push("invalid image digest");
+if (manifest.image?.signature !== `${manifest.image?.reference}@${manifest.image?.digest}`) {
+  failures.push("image signature reference mismatch");
+}
 if (!Array.isArray(manifest.artifacts) || manifest.artifacts.length === 0) failures.push("artifacts must be non-empty");
 
 const linkedEvidence = new Set();
@@ -93,6 +137,7 @@ for (const artifact of manifest.artifacts ?? []) {
     if (evidence) linkedEvidence.add(evidence);
     requireFile(evidence, `linked evidence for ${artifact.name}`);
   }
+  if (artifact.provenance && existsSync(join(root, artifact.provenance))) validateProvenance(artifact);
 }
 
 for (const evidence of [...(manifest.source?.sboms ?? []), ...(manifest.image?.sboms ?? [])]) {
@@ -101,6 +146,35 @@ for (const evidence of [...(manifest.source?.sboms ?? []), ...(manifest.image?.s
 }
 if ((manifest.source?.sboms ?? []).length < 2) failures.push("source CycloneDX and SPDX SBOMs required");
 if ((manifest.image?.sboms ?? []).length < 2) failures.push("image CycloneDX and SPDX SBOMs required");
+if (requireFile(manifest.image?.provenance, "image provenance")) {
+  linkedEvidence.add(manifest.image.provenance);
+  validateImageProvenance();
+}
+
+if (manifest.builder?.kind !== "local") failures.push("release evidence builder must be local");
+if (manifest.builder?.source_sha !== manifest.source?.sha) failures.push("builder source SHA does not match release source");
+if (requireFile(manifest.builder?.receipt, "builder receipt")) {
+  linkedEvidence.add(manifest.builder.receipt);
+  if (!shaPattern.test(manifest.builder?.receipt_sha256 ?? "") || manifest.builder.receipt_sha256 !== digest(join(root, manifest.builder.receipt))) {
+    failures.push("builder receipt digest mismatch");
+  }
+}
+if (!manifest.builder?.identity) failures.push("local builder identity is missing");
+if (!manifest.signing?.certificate_identity) failures.push("keyless signing certificate identity is missing");
+try {
+  new URL(manifest.signing?.certificate_oidc_issuer);
+} catch {
+  failures.push("keyless signing certificate issuer is invalid");
+}
+for (const [name, record] of Object.entries({ tests: manifest.evidence?.tests, audits: manifest.evidence?.audits })) {
+  if (requireFile(record?.name, `${name} evidence`)) {
+    linkedEvidence.add(record.name);
+    if (!shaPattern.test(record?.sha256 ?? "") || record.sha256 !== digest(join(root, record.name))) {
+      failures.push(`${name} evidence digest mismatch`);
+    }
+  }
+  if (record?.source_sha !== manifest.source?.sha) failures.push(`${name} source SHA does not match release source`);
+}
 
 const evidenceNames = new Set();
 for (const evidence of manifest.evidence?.files ?? []) {
@@ -114,16 +188,6 @@ for (const name of linkedEvidence) {
   if (!evidenceNames.has(name)) failures.push(`linked evidence is absent from evidence.files: ${name}`);
 }
 
-const repositoryPattern = (manifest.source?.repository ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const runUrlPattern = new RegExp(`^https://github\\.com/${repositoryPattern}/actions/runs/[0-9]+$`);
-if (!runUrlPattern.test(manifest.workflow?.run_url ?? "")) failures.push("workflow must use an immutable repository run URL");
-if (!(manifest.workflow?.identity ?? "").includes("/.github/workflows/supply-chain.yml@")) {
-  failures.push("unexpected supply-chain workflow identity");
-}
-for (const [name, record] of Object.entries({ tests: manifest.evidence?.tests, audits: manifest.evidence?.audits })) {
-  if (!runUrlPattern.test(record?.run_url ?? "")) failures.push(`${name} must use an immutable repository run URL`);
-  if (record?.source_sha !== manifest.source?.sha) failures.push(`${name} source SHA does not match release source`);
-}
 const declaredProvenance = new Set(manifest.evidence?.provenance ?? []);
 const artifactProvenance = new Set((manifest.artifacts ?? []).map(({ provenance }) => provenance));
 for (const name of artifactProvenance) {
@@ -155,6 +219,7 @@ if (!evidenceNames.has(manifest.promotion)) failures.push("promotion metadata is
 
 if (manifest.evidence?.checksums !== "SHA256SUMS") failures.push("unexpected checksum index reference");
 const checksumPath = join(root, manifest.evidence?.checksums ?? "SHA256SUMS");
+const checksumSignaturePath = `${checksumPath}.sigstore.json`;
 if (!existsSync(checksumPath)) {
   failures.push("missing final SHA256SUMS");
 } else {
@@ -169,7 +234,7 @@ if (!existsSync(checksumPath)) {
     entries.set(match[2], match[1]);
   }
   const downloadable = readdirSync(root)
-    .filter((name) => name !== "SHA256SUMS" && statSync(join(root, name)).isFile())
+    .filter((name) => !["SHA256SUMS", "SHA256SUMS.sigstore.json"].includes(name) && statSync(join(root, name)).isFile())
     .sort();
   for (const name of downloadable) {
     if (entries.get(name) !== digest(join(root, name))) failures.push(`SHA256SUMS does not cover current file: ${name}`);
@@ -177,6 +242,9 @@ if (!existsSync(checksumPath)) {
   for (const name of entries.keys()) {
     if (!downloadable.includes(name)) failures.push(`SHA256SUMS contains unknown file: ${name}`);
   }
+}
+if (!existsSync(checksumSignaturePath) || !statSync(checksumSignaturePath).isFile()) {
+  failures.push("missing SHA256SUMS signature bundle");
 }
 
 if (failures.length) {

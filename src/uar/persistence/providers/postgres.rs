@@ -37,7 +37,7 @@ impl PostgresProvider {
 #[async_trait]
 impl PersistenceLayer for PostgresProvider {
     async fn save_session(&self, session: &Session) -> Result<()> {
-        let id = session.id();
+        let id = crate::uar::persistence::tenant_storage_key(session.owner_id(), session.id());
         // Serialize session to JSON
         let data = serde_json::to_value(session)?;
 
@@ -50,7 +50,7 @@ impl PersistenceLayer for PostgresProvider {
                 updated_at = NOW()
             ",
         )
-        .bind(id)
+        .bind(&id)
         .bind(data)
         .execute(&self.pool)
         .await?;
@@ -58,15 +58,32 @@ impl PersistenceLayer for PostgresProvider {
         Ok(())
     }
 
-    async fn load_session(&self, id: &str) -> Result<Option<Session>> {
+    async fn load_session(&self, owner_id: &str, id: &str) -> Result<Option<Session>> {
+        let storage_id = crate::uar::persistence::tenant_storage_key(owner_id, id);
         let row = sqlx::query("SELECT data FROM sessions WHERE id = $1")
-            .bind(id)
+            .bind(&storage_id)
             .fetch_optional(&self.pool)
             .await?;
 
         if let Some(row) = row {
             let val: serde_json::Value = row.try_get("data")?;
             let session: Session = serde_json::from_value(val)?;
+            Ok(Some(session))
+        } else if owner_id == crate::session::ANONYMOUS_SESSION_OWNER {
+            let legacy = sqlx::query("SELECT data FROM sessions WHERE id = $1")
+                .bind(id)
+                .fetch_optional(&self.pool)
+                .await?;
+            let Some(legacy) = legacy else {
+                return Ok(None);
+            };
+            let val: serde_json::Value = legacy.try_get("data")?;
+            let session: Session = serde_json::from_value(val)?;
+            self.save_session(&session).await?;
+            sqlx::query("DELETE FROM sessions WHERE id = $1")
+                .bind(id)
+                .execute(&self.pool)
+                .await?;
             Ok(Some(session))
         } else {
             Ok(None)
@@ -76,13 +93,14 @@ impl PersistenceLayer for PostgresProvider {
     async fn save_conversation_policy(&self, record: &ConversationPolicyRecord) -> Result<()> {
         sqlx::query(
             r"
-            INSERT INTO conversation_policies (conversation_id, policy, updated_at)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (conversation_id) DO UPDATE SET
+            INSERT INTO conversation_policies (owner_id, conversation_id, policy, updated_at)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (owner_id, conversation_id) DO UPDATE SET
                 policy = EXCLUDED.policy,
                 updated_at = EXCLUDED.updated_at
             ",
         )
+        .bind(&record.owner_id)
         .bind(&record.conversation_id)
         .bind(serde_json::to_value(&record.policy)?)
         .bind(record.updated_at)
@@ -93,16 +111,19 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn load_conversation_policy(
         &self,
+        owner_id: &str,
         conversation_id: &str,
     ) -> Result<Option<ConversationPolicyRecord>> {
         let row = sqlx::query(
-            "SELECT conversation_id, policy, updated_at FROM conversation_policies WHERE conversation_id = $1",
+            "SELECT owner_id, conversation_id, policy, updated_at FROM conversation_policies WHERE owner_id = $1 AND conversation_id = $2",
         )
+        .bind(owner_id)
         .bind(conversation_id)
         .fetch_optional(&self.pool)
         .await?;
         row.map(|row| {
             Ok(ConversationPolicyRecord {
+                owner_id: row.try_get("owner_id")?,
                 conversation_id: row.try_get("conversation_id")?,
                 policy: serde_json::from_value(row.try_get("policy")?)?,
                 updated_at: row.try_get("updated_at")?,
@@ -111,11 +132,18 @@ impl PersistenceLayer for PostgresProvider {
         .transpose()
     }
 
-    async fn delete_conversation_policy(&self, conversation_id: &str) -> Result<()> {
-        sqlx::query("DELETE FROM conversation_policies WHERE conversation_id = $1")
-            .bind(conversation_id)
-            .execute(&self.pool)
-            .await?;
+    async fn delete_conversation_policy(
+        &self,
+        owner_id: &str,
+        conversation_id: &str,
+    ) -> Result<()> {
+        sqlx::query(
+            "DELETE FROM conversation_policies WHERE owner_id = $1 AND conversation_id = $2",
+        )
+        .bind(owner_id)
+        .bind(conversation_id)
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -229,9 +257,9 @@ impl PersistenceLayer for PostgresProvider {
 
         sqlx::query(
             r"
-            INSERT INTO knowledge_bases (id, name, description, config, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, NOW(), NOW())
-            ON CONFLICT (id) DO UPDATE SET
+            INSERT INTO knowledge_bases (id, owner_id, name, description, config, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+            ON CONFLICT (owner_id, id) DO UPDATE SET
                 name = EXCLUDED.name,
                 description = EXCLUDED.description,
                 config = EXCLUDED.config,
@@ -239,6 +267,7 @@ impl PersistenceLayer for PostgresProvider {
             ",
         )
         .bind(&kb.id)
+        .bind(&kb.owner_id)
         .bind(&kb.name)
         .bind(&kb.description)
         .bind(config)
@@ -253,16 +282,20 @@ impl PersistenceLayer for PostgresProvider {
 
         sqlx::query(
             r"
-            INSERT INTO knowledge_chunks (id, kb_id, content, metadata, embedding, created_at)
-            VALUES ($1, $2, $3, $4, $5, NOW())
-            ON CONFLICT (id) DO UPDATE SET
+            INSERT INTO knowledge_chunks (id, owner_id, kb_id, document_id, content, metadata, embedding, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+            ON CONFLICT (owner_id, id) DO UPDATE SET
+                kb_id = EXCLUDED.kb_id,
+                document_id = EXCLUDED.document_id,
                 content = EXCLUDED.content,
                 metadata = EXCLUDED.metadata,
                 embedding = EXCLUDED.embedding
             ",
         )
         .bind(chunk.id)
+        .bind(&chunk.owner_id)
         .bind(&chunk.kb_id)
+        .bind(&chunk.document_id)
         .bind(&chunk.content)
         .bind(metadata)
         .bind(embedding_vector)
@@ -273,6 +306,7 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn search_knowledge(
         &self,
+        owner_id: &str,
         query_vec: &[f32],
         limit: usize,
         min_score: f32,
@@ -284,9 +318,9 @@ impl PersistenceLayer for PostgresProvider {
 
         let rows = sqlx::query(
             r"
-            SELECT id, kb_id, content, metadata, created_at, 1 - (embedding <=> $1) as score
+            SELECT id, owner_id, kb_id, content, metadata, created_at, 1 - (embedding <=> $1) as score
             FROM knowledge_chunks
-            WHERE 1 - (embedding <=> $1) >= $3
+            WHERE owner_id = $4 AND 1 - (embedding <=> $1) >= $3
             ORDER BY embedding <=> $1
             LIMIT $2
             ",
@@ -294,12 +328,14 @@ impl PersistenceLayer for PostgresProvider {
         .bind(embedding_vector) // $1
         .bind(limit_i64) // $2
         .bind(min_score_f64) // $3
+        .bind(owner_id) // $4
         .fetch_all(&self.pool)
         .await?;
 
         let mut matches = Vec::new();
         for row in rows {
             let id: uuid::Uuid = row.try_get("id")?;
+            let owner_id: String = row.try_get("owner_id")?;
             let kb_id: String = row.try_get("kb_id")?;
             let content: String = row.try_get("content")?;
             let metadata_val: Option<serde_json::Value> = row.try_get("metadata")?;
@@ -321,6 +357,7 @@ impl PersistenceLayer for PostgresProvider {
 
             let chunk = KnowledgeChunk {
                 id,
+                owner_id,
                 kb_id,
                 document_id: None, // Not returned in search results
                 content,
@@ -452,16 +489,18 @@ impl PersistenceLayer for PostgresProvider {
     // Knowledge Base Retrieval Methods
     // =========================================================================
 
-    async fn get_knowledge_base(&self, id: &str) -> Result<Option<KnowledgeBase>> {
+    async fn get_knowledge_base(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeBase>> {
         let row = sqlx::query(
-            "SELECT id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE id = $1",
+            "SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 AND id = $2",
         )
+        .bind(owner_id)
         .bind(id)
         .fetch_optional(&self.pool)
         .await?;
 
         if let Some(row) = row {
             let id: String = row.try_get("id")?;
+            let owner_id: String = row.try_get("owner_id")?;
             let name: Option<String> = row.try_get("name")?;
             let description: Option<String> = row.try_get("description")?;
             let config_val: serde_json::Value = row.try_get("config")?;
@@ -471,6 +510,7 @@ impl PersistenceLayer for PostgresProvider {
 
             Ok(Some(KnowledgeBase {
                 id,
+                owner_id,
                 name: name.unwrap_or_default(),
                 description,
                 config,
@@ -482,16 +522,22 @@ impl PersistenceLayer for PostgresProvider {
         }
     }
 
-    async fn get_knowledge_base_by_name(&self, name: &str) -> Result<Option<KnowledgeBase>> {
+    async fn get_knowledge_base_by_name(
+        &self,
+        owner_id: &str,
+        name: &str,
+    ) -> Result<Option<KnowledgeBase>> {
         let row = sqlx::query(
-            "SELECT id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE name = $1",
+            "SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 AND name = $2",
         )
+        .bind(owner_id)
         .bind(name)
         .fetch_optional(&self.pool)
         .await?;
 
         if let Some(row) = row {
             let id: String = row.try_get("id")?;
+            let owner_id: String = row.try_get("owner_id")?;
             let name: Option<String> = row.try_get("name")?;
             let description: Option<String> = row.try_get("description")?;
             let config_val: serde_json::Value = row.try_get("config")?;
@@ -501,6 +547,7 @@ impl PersistenceLayer for PostgresProvider {
 
             Ok(Some(KnowledgeBase {
                 id,
+                owner_id,
                 name: name.unwrap_or_default(),
                 description,
                 config,
@@ -512,16 +559,18 @@ impl PersistenceLayer for PostgresProvider {
         }
     }
 
-    async fn list_knowledge_bases(&self) -> Result<Vec<KnowledgeBase>> {
+    async fn list_knowledge_bases(&self, owner_id: &str) -> Result<Vec<KnowledgeBase>> {
         let rows = sqlx::query(
-            "SELECT id, name, description, config, created_at, updated_at FROM knowledge_bases ORDER BY created_at",
+            "SELECT id, owner_id, name, description, config, created_at, updated_at FROM knowledge_bases WHERE owner_id = $1 ORDER BY created_at",
         )
+        .bind(owner_id)
         .fetch_all(&self.pool)
         .await?;
 
         let mut kbs = Vec::new();
         for row in rows {
             let id: String = row.try_get("id")?;
+            let owner_id: String = row.try_get("owner_id")?;
             let name: Option<String> = row.try_get("name")?;
             let description: Option<String> = row.try_get("description")?;
             let config_val: serde_json::Value = row.try_get("config")?;
@@ -531,6 +580,7 @@ impl PersistenceLayer for PostgresProvider {
 
             kbs.push(KnowledgeBase {
                 id,
+                owner_id,
                 name: name.unwrap_or_default(),
                 description,
                 config,
@@ -541,9 +591,10 @@ impl PersistenceLayer for PostgresProvider {
         Ok(kbs)
     }
 
-    async fn delete_knowledge_base(&self, id: &str) -> Result<()> {
+    async fn delete_knowledge_base(&self, owner_id: &str, id: &str) -> Result<()> {
         // CASCADE will handle chunks and documents
-        sqlx::query("DELETE FROM knowledge_bases WHERE id = $1")
+        sqlx::query("DELETE FROM knowledge_bases WHERE owner_id = $1 AND id = $2")
+            .bind(owner_id)
             .bind(id)
             .execute(&self.pool)
             .await?;
@@ -556,6 +607,7 @@ impl PersistenceLayer for PostgresProvider {
 
     async fn search_knowledge_scoped(
         &self,
+        owner_id: &str,
         kb_ids: &[&str],
         query_vec: &[f32],
         limit: usize,
@@ -573,9 +625,9 @@ impl PersistenceLayer for PostgresProvider {
 
         let rows = sqlx::query(
             r"
-            SELECT id, kb_id, document_id, content, metadata, created_at, 1 - (embedding <=> $1) as score
+            SELECT id, owner_id, kb_id, document_id, content, metadata, created_at, 1 - (embedding <=> $1) as score
             FROM knowledge_chunks
-            WHERE kb_id = ANY($4) AND 1 - (embedding <=> $1) >= $3
+            WHERE owner_id = $5 AND kb_id = ANY($4) AND 1 - (embedding <=> $1) >= $3
             ORDER BY embedding <=> $1
             LIMIT $2
             ",
@@ -584,12 +636,14 @@ impl PersistenceLayer for PostgresProvider {
         .bind(limit_i64)
         .bind(min_score_f64)
         .bind(&kb_ids_vec)
+        .bind(owner_id)
         .fetch_all(&self.pool)
         .await?;
 
         let mut matches = Vec::new();
         for row in rows {
             let id: uuid::Uuid = row.try_get("id")?;
+            let owner_id: String = row.try_get("owner_id")?;
             let kb_id: String = row.try_get("kb_id")?;
             let document_id: Option<String> = row.try_get("document_id")?;
             let content: String = row.try_get("content")?;
@@ -600,6 +654,7 @@ impl PersistenceLayer for PostgresProvider {
 
             let chunk = KnowledgeChunk {
                 id,
+                owner_id,
                 kb_id,
                 document_id,
                 content,
@@ -634,9 +689,10 @@ impl PersistenceLayer for PostgresProvider {
 
         sqlx::query(
             r"
-            INSERT INTO knowledge_documents (id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-            ON CONFLICT (id) DO UPDATE SET
+            INSERT INTO knowledge_documents (id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+            ON CONFLICT (owner_id, id) DO UPDATE SET
+                kb_id = EXCLUDED.kb_id,
                 filename = EXCLUDED.filename,
                 file_path = EXCLUDED.file_path,
                 mime_type = EXCLUDED.mime_type,
@@ -647,6 +703,7 @@ impl PersistenceLayer for PostgresProvider {
             ",
         )
         .bind(&doc.id)
+        .bind(&doc.owner_id)
         .bind(&doc.kb_id)
         .bind(&doc.filename)
         .bind(&doc.file_path)
@@ -662,16 +719,18 @@ impl PersistenceLayer for PostgresProvider {
         Ok(())
     }
 
-    async fn get_document(&self, id: &str) -> Result<Option<KnowledgeDocument>> {
+    async fn get_document(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeDocument>> {
         let row = sqlx::query(
-            "SELECT id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE id = $1",
+            "SELECT id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE owner_id = $1 AND id = $2",
         )
+        .bind(owner_id)
         .bind(id)
         .fetch_optional(&self.pool)
         .await?;
 
         if let Some(row) = row {
             let id: String = row.try_get("id")?;
+            let owner_id: String = row.try_get("owner_id")?;
             let kb_id: String = row.try_get("kb_id")?;
             let filename: String = row.try_get("filename")?;
             let file_path: Option<String> = row.try_get("file_path")?;
@@ -693,6 +752,7 @@ impl PersistenceLayer for PostgresProvider {
 
             Ok(Some(KnowledgeDocument {
                 id,
+                owner_id,
                 kb_id,
                 filename,
                 file_path,
@@ -708,10 +768,11 @@ impl PersistenceLayer for PostgresProvider {
         }
     }
 
-    async fn list_documents(&self, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
+    async fn list_documents(&self, owner_id: &str, kb_id: &str) -> Result<Vec<KnowledgeDocument>> {
         let rows = sqlx::query(
-            "SELECT id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE kb_id = $1 ORDER BY created_at",
+            "SELECT id, owner_id, kb_id, filename, file_path, mime_type, chunk_count, status, error_message, created_at, updated_at FROM knowledge_documents WHERE owner_id = $1 AND kb_id = $2 ORDER BY created_at",
         )
+        .bind(owner_id)
         .bind(kb_id)
         .fetch_all(&self.pool)
         .await?;
@@ -719,6 +780,7 @@ impl PersistenceLayer for PostgresProvider {
         let mut docs = Vec::new();
         for row in rows {
             let id: String = row.try_get("id")?;
+            let owner_id: String = row.try_get("owner_id")?;
             let kb_id: String = row.try_get("kb_id")?;
             let filename: String = row.try_get("filename")?;
             let file_path: Option<String> = row.try_get("file_path")?;
@@ -740,6 +802,7 @@ impl PersistenceLayer for PostgresProvider {
 
             docs.push(KnowledgeDocument {
                 id,
+                owner_id,
                 kb_id,
                 filename,
                 file_path,
@@ -754,9 +817,11 @@ impl PersistenceLayer for PostgresProvider {
         Ok(docs)
     }
 
-    async fn count_documents(&self, kb_id: &str) -> Result<usize> {
-        let row =
-            sqlx::query("SELECT COUNT(*)::bigint AS c FROM knowledge_documents WHERE kb_id = $1")
+    async fn count_documents(&self, owner_id: &str, kb_id: &str) -> Result<usize> {
+        let row = sqlx::query(
+            "SELECT COUNT(*)::bigint AS c FROM knowledge_documents WHERE owner_id = $1 AND kb_id = $2",
+        )
+                .bind(owner_id)
                 .bind(kb_id)
                 .fetch_one(&self.pool)
                 .await?;
@@ -764,7 +829,12 @@ impl PersistenceLayer for PostgresProvider {
         Ok(usize::try_from(count.max(0)).unwrap_or(0))
     }
 
-    async fn update_document_status(&self, doc_id: &str, status: &DocumentStatus) -> Result<()> {
+    async fn update_document_status(
+        &self,
+        owner_id: &str,
+        doc_id: &str,
+        status: &DocumentStatus,
+    ) -> Result<()> {
         let status_str = match status {
             DocumentStatus::Pending => "pending",
             DocumentStatus::Processing => "processing",
@@ -777,25 +847,28 @@ impl PersistenceLayer for PostgresProvider {
         };
 
         sqlx::query(
-            "UPDATE knowledge_documents SET status = $1, error_message = $2, updated_at = NOW() WHERE id = $3",
+            "UPDATE knowledge_documents SET status = $1, error_message = $2, updated_at = NOW() WHERE owner_id = $3 AND id = $4",
         )
         .bind(status_str)
         .bind(error_msg)
+        .bind(owner_id)
         .bind(doc_id)
         .execute(&self.pool)
         .await?;
         Ok(())
     }
 
-    async fn delete_document(&self, doc_id: &str) -> Result<()> {
+    async fn delete_document(&self, owner_id: &str, doc_id: &str) -> Result<()> {
         // Delete associated chunks first
-        sqlx::query("DELETE FROM knowledge_chunks WHERE document_id = $1")
+        sqlx::query("DELETE FROM knowledge_chunks WHERE owner_id = $1 AND document_id = $2")
+            .bind(owner_id)
             .bind(doc_id)
             .execute(&self.pool)
             .await?;
 
         // Delete the document
-        sqlx::query("DELETE FROM knowledge_documents WHERE id = $1")
+        sqlx::query("DELETE FROM knowledge_documents WHERE owner_id = $1 AND id = $2")
+            .bind(owner_id)
             .bind(doc_id)
             .execute(&self.pool)
             .await?;
