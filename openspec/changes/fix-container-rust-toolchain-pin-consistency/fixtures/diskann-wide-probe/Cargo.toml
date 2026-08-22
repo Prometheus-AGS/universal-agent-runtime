@@ -1,0 +1,10 @@
+[package]
+name = "uar-diskann-toolchain-probe"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+diskann-wide = "=0.54.0"
+
+[workspace]
