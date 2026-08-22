@@ -335,3 +335,35 @@ claims require a denominator) goes through §D-6's gates — adversarial review,
 sycophancy gate, explicit approval — before any rule text lands. Operator
 direction, same date. Record:
 `.prometheus/postmortems/2026-08-13-skills-not-installed-at-canonical-names.md`.
+
+---
+
+## 2026-08-22 — Inference certification requires real model inference
+
+**Decision.** Only full integration requests that traverse the packaged UAR
+boundary, reach a real loaded model, perform actual inference, and return the
+result through UAR count as inference integration, soak, resilience, release,
+or production-readiness evidence. Mocked, stubbed, recorded, replayed,
+hard-coded, or synthetic provider responses never satisfy those claims.
+
+**Mechanism.** A certifying result identifies the provider and model and retains
+evidence that genuine model output was observed through UAR. If credentials,
+capacity, model weights, network access, budget, or another real-inference
+prerequisite is unavailable, the executor stops and reports the claim as
+unverified instead of substituting synthetic success. Fast model-double tests
+remain permissible only as explicitly non-certifying unit or component
+diagnostics. Multi-hour synthetic inference tests are prohibited.
+
+**Rationale.** A three-hour operational soak sent thousands of deterministic
+requests to a local Python provider double. It exercised runtime plumbing but
+left the actual provider/model inference boundary untested, consuming the time
+needed for the real verification. Duration does not make an unrepresentative
+workload production evidence.
+
+**Stakes.** Real inference costs money, depends on external or locally hosted
+model capacity, and produces nondeterministic text. Those are the production
+boundary being certified, not reasons to remove it. The current mock-only soak
+is non-certifying and cannot support an inference-readiness or release claim.
+A multi-hour real-inference run also requires a documented failure model,
+traffic-volume target, operating-period target, or statistical detection goal;
+elapsed time alone is not evidence.

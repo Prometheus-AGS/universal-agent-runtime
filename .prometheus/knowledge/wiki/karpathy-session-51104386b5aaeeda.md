@@ -1,0 +1,68 @@
+---
+type: SessionRecord
+id: karpathy-session-51104386b5aaeeda
+title: Karpathy session 51104386b5aa
+tags:
+- karpathy
+- session-learning
+sources:
+- session:444a77f7-71ee-4a60-8ce1-1b19da7d22ab
+timestamp: 2026-08-12T10:12:03.137321+00:00
+created_at: 2026-08-12T10:12:03.137321+00:00
+updated_at: 2026-08-12T10:12:03.137321+00:00
+revision: 0
+---
+
+## Delta
+
+Grounded. GAP-05 is now a genuinely different — and smaller — problem than the spec says.
+
+## GAP-05 partially fixed itself since the spec was written
+
+Commit `fdd69a2f` *"persist builtin skills when no embedder is configured"* changed things. Verified in code, not comments — [registry.rs:69-99](src/uar/runtime/skills/registry.rs:69): `register` **does** write via `db.save_skill`. The doc comment at [service.rs:155-166](src/uar/runtime/skills/service.rs:155) even records the fix and names the old comment as having been misleading.
+
+**So your first requirement is already met on the server path.** Builtins are durable rows today.
+
+What remains broken is narrower than "the embedded path has no builtins":
+
+- [embedded.rs:360-371](src/embedded.rs:360) constructs `SkillService` with a `DatabaseStorageProvider` and calls `initialize()` — so it **loads persisted skills**, including builtins written by a prior server run against the same database.
+- But it never calls `discover_builtin_skills()` / `register_builtins`. **On a fresh embedded database, no builtin ever enters.**
+
+That is exactly the judge's 2026-08-09 ruling — *empty of built-ins always, empty overall only on a fresh device* — and it's why `SPECIFICATION.md:445` overstates it. The spec line is now wrong in two ways: wrong line number, and wrong severity.
+
+This also means my own contract text is stale. I wrote that in-memory registration "is why the embedded path has no builtins." That was true when `add-skill-system-submodule` was written; it isn't true of current `main`. I'd have shipped that to Codex.
+
+## Revised recommendation for widening
+
+Three changes, not one, because they have different risk profiles:
+
+| # | Change | Scope | Risk |
+|---|---|---|---|
+| C-03 | `skill-builtins-on-embedded` | Call the builtin loader from `embedded.rs`; assert builtins present on a fresh embedded DB | **Low** — the persistence already works |
+| C-04 | `skill-scoped-governance` | Absorb `fix-skills-scope-semantics`: durable global/agent/conversation disables, live effect | Medium |
+| C-05 | `skill-config-reconciliation` | Your fourth bullet: merge config into DB on restart, delete non-builtin skills absent from config | **High** — deletion path |
+
+C-05 is where I'd want the most scrutiny. "Delete rows whose config entry disappeared" destroys user data if the builtin/provisioned/user-created distinction is wrong, and `origin` currently has only two variants (`Builtin`, `User`) — there may be no way to distinguish *provisioned-from-config* from *user-created* without adding one.
+
+That's a real design question I'd rather surface now than have Codex discover mid-execution.
+
+**Before I write these:** do you want C-05's deletion to be actual deletion, or a soft-disable/tombstone? Given it's the one irreversible operation in the set, I'd recommend tombstone-with-restore over hard delete — but it's your data model.
+
+## Root Cause
+
+No explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.
+
+## Corrective Actions
+
+Review and promote only reusable findings.
+
+## Session Metadata
+
+- Harness: claude-code
+- Session: 444a77f7-71ee-4a60-8ce1-1b19da7d22ab
+- Captured: 2026-08-12T10:11:47.137947Z
+- Project: /Users/gqadonis/Projects/prometheus/universal-agent-runtime
+
+## Changed Paths
+
+- No changed paths detected.

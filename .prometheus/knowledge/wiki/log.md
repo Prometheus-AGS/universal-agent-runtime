@@ -1,6 +1,14 @@
 # Update Log
 
 ## 2026-08-14
+* **Ingest**: [Karpathy session d0c35ed5ce50](/karpathy-session-d0c35ed5ce504424.md)
+* **Ingest**: [Karpathy session 9c28048cc042](/karpathy-session-9c28048cc042ca3b.md)
+* **Ingest**: [Karpathy session cecb757c64b1](/karpathy-session-cecb757c64b15244.md)
+* **Ingest**: [Karpathy session bdaceb4f0c9b](/karpathy-session-bdaceb4f0c9b636b.md)
+* **Ingest**: [Karpathy session d91af4f18c93](/karpathy-session-d91af4f18c93f90b.md)
+* **Ingest**: [Karpathy session bcab8ece7932](/karpathy-session-bcab8ece7932c43d.md)
+* **Ingest**: [Karpathy session 64698480be45](/karpathy-session-64698480be455357.md)
+* **Ingest**: [Karpathy session cb3e9dedaf6e](/karpathy-session-cb3e9dedaf6e62ea.md)
 * **Creation**: [Skill installer renamed on collision and reported success; 19 skills unreachable](/karpathy-progress-20260814T003220Z-uar-1-0-readiness.md)
 
 ## 2026-08-13
