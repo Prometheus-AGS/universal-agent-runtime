@@ -626,3 +626,21 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   supply-chain, RC, and GA changes without representing them as passed.
 - No unit suite, synthetic or recorded provider, soak, GitHub Actions job, tag,
   publication, push, or PR was used for this closeout.
+
+## 2026-08-23 — Documentation portal assembled; protected deployment awaits merge
+
+- Completed the branded Docusaurus portal, reconciled README estate, public
+  architecture and testing histories, generated Rust/TypeScript references,
+  local route/browser/accessibility evidence, and strict OpenSpec validation.
+- Deployment run `32636863253` exposed a clean-runner prerequisite: UAR's
+  `build.rs` needs `protoc` before Rustdoc can assemble. The deployment workflow
+  now installs that prerequisite; no product code or dependency lock changed.
+- Run `32637504436` assembled and uploaded the complete Pages artifact from
+  `92529ee6e1c764f3c4865587816abf2644a43dba`.
+- GitHub rejected deployment because the `github-pages` environment allows only
+  `main`. The protection rule was preserved. Live route validation, repository
+  homepage metadata, KBD completion, and reflection wait for an authorized PR
+  merge and the resulting `main` deployment.
+- No unit, integration, conformance, inference, or runtime test ran in GitHub
+  Actions. The hosted work was limited to documentation artifact assembly,
+  deployment, and intended deployed-artifact validation.

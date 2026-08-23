@@ -1,0 +1,49 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "adr-denominator",
+      "description": "All 18 retained ADRs are uniquely indexed with valid dates, status, and supersession.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {"requires_code_execution": true, "validation_method": "architecture-history validator and negative controls"}
+    },
+    {
+      "id": "correction-completeness",
+      "description": "Seven selected reversals preserve both the prior position and its current replacement.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {"requires_code_execution": true, "validation_method": "history manifest and required-marker controls"}
+    },
+    {
+      "id": "private-source-boundary",
+      "description": "Raw Prometheus, KBD, wiki, machine, credential, key, and event content does not enter public output.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {"requires_code_execution": true, "validation_method": "history and publication negative controls"}
+    },
+    {
+      "id": "authority-limit",
+      "description": "Historical records are not presented as current product behavior or cross-profile evidence.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {"requires_code_execution": true, "validation_method": "history, truth, architecture, and publication validation"}
+    },
+    {
+      "id": "deferred-rendered-evidence",
+      "description": "The review makes no production-build, browser, accessibility, deployment, or runtime claim.",
+      "severity": "high",
+      "type": "semantic",
+      "validation": {"requires_code_execution": false, "validation_method": "artifact and verification limit review"}
+    }
+  ],
+  "global_rules": [
+    "GitHub Actions are deployment-only.",
+    "Raw retained history is private-synthesis-only.",
+    "Current source and canonical specifications outrank historical narrative."
+  ],
+  "termination_conditions": [
+    "All blocking constraints pass their observed local controls.",
+    "No runtime, application, dependency, lockfile, workflow, route, vendor, submodule, or raw-history edit remains."
+  ]
+}

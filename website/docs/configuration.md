@@ -1,280 +1,155 @@
 ---
-sidebar_position: 3
-title: Configuration Reference
+sidebar_position: 10
+title: Configuration Authority
+description: Resolve UAR settings by source, precedence, lifecycle, secret, persistence, and profile boundary.
+source_records:
+  - docs/PROVIDER_CONFIGURATION.md
+current_authority: /docs/configuration
 ---
 
-# Configuration Reference
+# Configuration authority
 
-UAR is configured from several layered sources. This page documents every
-setting, how the layers combine, and the environment-variable naming
-convention.
+## Boundary statement
 
-## The `UAR_*__*` nesting convention
+**The effective configuration is the validated merge held by the running
+process, not whichever YAML file or environment variable a reader inspected.**
+Source precedence, runtime settings persistence, reload behavior, and feature
+composition decide whether a value takes effect.
 
-Configuration is a nested structure (`server`, `security`, `persistence`,
-`llm`, and so on). Environment variables map onto that structure with the
-`UAR_` prefix and a **double underscore (`__`) as the nesting separator**:
+## File selection
 
-```
-UAR_<SECTION>__<KEY>=<value>
-```
+UAR selects at most one YAML file in this order:
 
-Examples:
+1. `--config <path>` or `CONFIG_FILE=<path>`;
+2. `./config.yaml`, when present;
+3. the user's `.uar/config.yaml`, when present;
+4. no file, leaving compiled defaults and other configured sources.
 
-| Env var | Sets |
-|---|---|
-| `UAR_SERVER__PORT=1906` | `server.port` |
-| `UAR_SERVER__HOST=0.0.0.0` | `server.host` |
-| `UAR_SECURITY__JWT_REQUIRED=true` | `security.jwt_required` |
-| `UAR_PERSISTENCE__PROVIDER=surreal` | `persistence.provider` |
-| `UAR_LLM__MODEL=openai/gpt-4o` | `llm.model` |
-| `UAR_MEMORY__ENABLED=true` | `memory.enabled` |
+The selected local file is watched. Content changes are debounced and rebuilt
+through the same configuration loader. An explicit `POST
+/.well-known/uar-config/reload` triggers the same reload and requires the admin
+header when settings mutation protection is enabled.
 
-The single underscore after `UAR` separates the prefix; the `__` separates
-nesting levels. So `UAR_SERVER__GRPC_PORT` → `server.grpc_port`.
+## Precedence
 
-## Precedence order
+For settings represented by CLI flags, the documented priority is:
 
-When the same setting is supplied by more than one source, the **highest**
-priority wins:
+1. explicit CLI argument;
+2. structured `UAR_...` environment value;
+3. a supported legacy environment value;
+4. provider-specific shortcut environment key, where applicable;
+5. selected YAML file;
+6. compiled default.
 
-| Priority | Source | Example |
-|---|---|---|
-| 1 (highest) | CLI arguments | `--llm-model openai/gpt-4o`, `--port 1906` |
-| 2 | `UAR_*__*` structured env vars | `UAR_LLM__MODEL=openai/gpt-4o` |
-| 3 | Legacy `LLM_*` env vars | `LLM_MODEL=gpt-4o` |
-| 4 | Provider shortcut env vars | `OPENAI_API_KEY=sk-...` |
-| 5 | `config.yaml` (`llm:`, `server:`, …) | see YAML section |
-| 6 (lowest) | Compiled defaults | `server.port = 1906`, `llm.model = openai/gpt-4o` |
+LLM settings follow the explicit chain documented in current source: CLI,
+`UAR_LLM__*`, legacy `LLM_*`, provider shortcut keys for credentials, YAML, then
+defaults. A provider entry persisted through the settings/provider APIs has its
+own database reconciliation rules and must not be mistaken for a process env
+override.
 
-A few short CLI env vars are honored as convenience overrides and are applied at
-the CLI tier (priority 1): `PORT` / `--port`, `JWT_REQUIRED` /
-`--jwt-required`, `RATE_LIMIT_ENABLED`, `TIMEOUT_DISABLED`, and
-`EXTERNAL_CACHE_ENABLED`. For example, `PORT=8080` is equivalent to
-`--port 8080` and overrides `UAR_SERVER__PORT`.
+## Structured environment names
 
-## Config file selection
-
-A YAML config file is optional. UAR resolves one in this order:
-
-1. `--config <path>` (or `CONFIG_FILE=<path>`).
-2. `./config.yaml` in the working directory, if it exists.
-3. `~/.uar/config.yaml`, if it exists.
-
-The repository ships ready-to-use example files at its root:
-
-- `config.embedded.yaml` — embedded SurrealDB (single machine / development).
-- `config.remote.surreal.yaml` — remote SurrealDB server.
-- `config.remote.postgres.yaml` — PostgreSQL (+ pgvector).
-
-Run with an explicit file:
+Nested keys use `UAR_SECTION__KEY`: one underscore after `UAR`, then two
+underscores between path components.
 
 ```bash
-CONFIG_FILE=config.embedded.yaml cargo run
+UAR_SERVER__PORT=1906
+UAR_LLM__MODEL=provider/model-name
+UAR_PERSISTENCE__PROVIDER=surreal
+UAR_PERSISTENCE__DATABASE_URL=surrealkv://./data/uar-db
 ```
 
-## Server
+Use placeholders in checked-in examples and inject secrets from the process
+environment or a supported secret backend. The schema describes a secret
+field's shape, not its value.
 
-| Env var | YAML key | Default | Notes |
-|---|---|---|---|
-| `UAR_SERVER__PORT` (or `PORT` / `--port`) | `server.port` | `1906` | HTTP listen port. |
-| `UAR_SERVER__HOST` | `server.host` | `0.0.0.0` | Bind address. |
-| `UAR_SERVER__GRPC_PORT` | `server.grpc_port` | `50051` | A2A v0.3 gRPC transport port. |
-| `UAR_SERVER__SHUTDOWN_TIMEOUT_SECS` | `server.shutdown_timeout_secs` | `30` | Graceful shutdown budget. |
-| `UAR_SERVER__LOG_FORMAT` | `server.log_format` | `json` | `json` \| `compact` \| `pretty`. |
+## Schema and exact build authority
 
-## Security
+`GET /.well-known/uar-config` returns JSON Schema generated from the running
+build's `AppConfig`. Use it to inspect sections, field types, and build-specific
+shape. It does not reveal the effective secret values.
 
-| Env var | YAML key | Default | Notes |
-|---|---|---|---|
-| `UAR_SECURITY__JWT_REQUIRED` (or `JWT_REQUIRED` / `--jwt-required`) | `security.jwt_required` | `true` | When true, protected endpoints require a valid JWT (401 otherwise). |
-| `UAR_SECURITY__JWT_SECRET` | `security.jwt_secret` | no safe default | HMAC secret. UAR refuses to start with the published fallback when JWT auth is required. Generate with `openssl rand -base64 64`. Redacted from logs. |
-| `UAR_SECURITY__JWT_ISSUER` | `security.jwt_issuer` | *(unset)* | Optional required `iss` claim for HS256 and JWKS tokens. |
-| `UAR_SECURITY__JWT_AUDIENCE` | `security.jwt_audience` | *(unset)* | Optional required `aud` claim for HS256 and JWKS tokens. |
-| `UAR_SECURITY__JWT_VALIDATE_NBF` | `security.jwt_validate_nbf` | `true` | Reject tokens whose optional `nbf` is beyond jsonwebtoken's 60-second default clock-skew allowance. |
-| `UAR_SECURITY__SETTINGS_MUTATION_AUTH_REQUIRED` | `security.settings_mutation_auth_required` | `true` | When true, `PUT`/`POST`/`DELETE` on `/api/uar/settings` require the `X-UAR-Admin-Key` header. Set `false` for trusted local dev only. |
-| `CREDENTIAL_ENCRYPTION_KEY` | — | *(unset)* | Optional. Enables multi-tenant per-user provider credentials, encrypted at rest with AES-256-GCM. Must be 32 ASCII bytes or 64 hex chars. Leave unset for single-tenant/self-hosted operation. |
+The packaged settings UI and `/api/uar/settings` expose registered setting
+types, current persisted values, source metadata, and drift. Mutating settings
+requires the configured admin boundary. Not every value can recompose a server
+that is already listening; a successful settings write is not proof that every
+subsystem reinitialized.
 
-Setting `jwt_required: false` is an explicit anonymous mode. Requests without
-valid credentials share the same `anonymous` identity, so this mode does not
-provide user or tenant isolation and is intended only for trusted local use.
+## Provider and model configuration
 
-## LLM (liter-llm)
-
-The active model is addressed as `provider/model` (e.g. `openai/gpt-4o`,
-`anthropic/claude-sonnet-4`, `groq/llama-3.3-70b-versatile`,
-`ollama/llama3.2`).
-
-| Env var | YAML key | Default | Notes |
-|---|---|---|---|
-| `UAR_LLM__MODEL` (or `LLM_MODEL` / `--llm-model`) | `llm.model` | `openai/gpt-4o` | Default model in `provider/model` form. |
-| `UAR_LLM__API_KEY` (or `LLM_API_KEY` / `--llm-api-key`) | `llm.api_key` | *(unset)* | API key for the default provider. Redacted from logs. |
-| — | `llm.api_key_env` | *(unset)* | Name of an env var to read the key from (indirection so the secret stays out of `config.yaml`). |
-| `UAR_LLM__BASE_URL` (or `LLM_BASE_URL` / `--llm-base-url`) | `llm.base_url` | *(unset)* | Override base URL (local proxies, Ollama, LM Studio). |
-| `UAR_LLM__PROTOCOL` (or `LLM_PROTOCOL` / `--llm-protocol`) | `llm.protocol` | `auto` | `auto` \| `chat` \| `responses`. |
-| `UAR_LLM__TIMEOUT_SECS` | `llm.timeout_secs` | `60` | Per-request timeout. |
-| `UAR_LLM__MAX_RETRIES` | `llm.max_retries` | `3` | Retries on 429/5xx. |
-| `UAR_LLM__COST_TRACKING` | `llm.cost_tracking` | `false` | Per-request cost tracking. |
-| `UAR_LLM__TRACING` | `llm.tracing` | `true` | OpenTelemetry tracing spans. |
-| `--llm-budget-limit` (`UAR_LLM__BUDGET__GLOBAL_LIMIT`) | `llm.budget.global_limit` | *(unset)* | Global spend cap (USD). |
-
-### Provider shortcut keys
-
-If `UAR_LLM__API_KEY` / `LLM_API_KEY` is not set, UAR maps well-known
-provider-specific env vars to both the default key and a per-provider key used
-for the registry's "configured" status:
-
-| Env var | Provider id |
-|---|---|
-| `OPENAI_API_KEY` | `openai` |
-| `ANTHROPIC_API_KEY` | `anthropic` |
-| `GROQ_API_KEY` | `groq` |
-| `MISTRAL_API_KEY` | `mistral` |
-| `COHERE_API_KEY` | `cohere` |
-| `GEMINI_API_KEY` | `google` |
-| `TOGETHER_API_KEY` | `together` |
-| `PERPLEXITY_API_KEY` | `perplexity` |
-
-Local providers (`ollama/*`, `lmstudio/*`) need no key — set `UAR_LLM__BASE_URL`
-to reach them, e.g. `http://localhost:11434` for Ollama.
-
-### `config.yaml` `llm:` section
+The default model uses `provider/model`. A bare model in a request resolves
+against that configured default provider. Keep provider credentials out of
+committed YAML:
 
 ```yaml
 llm:
-  model: "openai/gpt-4o"        # provider/model format
-  # api_key: "sk-..."           # prefer an env var instead
-  # api_key_env: "MY_SECRET"    # or read the key from a named env var
-  # base_url: "http://localhost:11434"
+  model: "provider/model-name"
+  api_key_env: "PROVIDER_API_KEY"
   protocol: "auto"
   timeout_secs: 60
-  max_retries: 3
-  cost_tracking: false
-  tracing: true
 ```
 
-## Persistence
+`api_key_env` names the environment variable to read. Well-known provider
+shortcut variables can also populate the runtime provider-key map. The model
+catalog is discovery metadata; a provider becomes callable only when its
+configuration, credentials, network, and selected model all work.
 
-UAR stores application state (sessions, skills, knowledge bases, settings) in
-either SurrealDB (embedded or remote) or PostgreSQL.
+See [Provider configuration](./providers/configuration.md) for the UI/API
+workflow and [Credentials](./security/credentials.md) for per-user storage.
 
-| Env var | YAML key | Default | Notes |
-|---|---|---|---|
-| `UAR_PERSISTENCE__PROVIDER` | `persistence.provider` | *(required)* | `surreal` \| `postgres`. **No default** — must be set at boot. |
-| `UAR_PERSISTENCE__DATABASE_URL` | `persistence.database_url` | *(required)* | Connection string (see below). |
-| `UAR_PERSISTENCE__VECTOR_DIMENSION` | `persistence.vector_dimension` | `1536` | Must match your embedding model (e.g. `1536` for OpenAI `text-embedding-3-small`, `384` for BGE-small). |
-| `UAR_PERSISTENCE__EXTERNAL_CACHE_ENABLED` | `persistence.external_cache_enabled` | `false` | Enable Redis-backed session cache. |
-| `UAR_PERSISTENCE__REDIS_URL` (or `REDIS_URL`) | — | *(unset)* | Redis URL when external cache is enabled. |
-| `UAR_PERSISTENCE__SURREAL_USER` | `persistence.surreal_user` | `root` | Username for **remote** SurrealDB (`ws`/`wss`/`http`/`https`). Ignored for embedded URLs. |
-| `UAR_PERSISTENCE__SURREAL_PASS` | `persistence.surreal_pass` | `root` | Password for remote SurrealDB. Redacted from logs. |
-| `UAR_PERSISTENCE__SURREAL_NS` | `persistence.surreal_ns` | `uar` | SurrealDB namespace. |
-| `UAR_PERSISTENCE__SURREAL_DB` | `persistence.surreal_db` | `uar` | SurrealDB database name. |
+## Persistence and feature requirements
 
-### `database_url` forms
+The packaged server default is SurrealKV at an on-disk `surrealkv://` location.
+Example files cover loopback embedded SurrealKV, remote SurrealDB, and remote
+PostgreSQL. Keep provider and URL explicit for a deployment whose data location
+must not drift.
 
-| Provider | Example URL | Mode |
-|---|---|---|
-| `surreal` | `surrealkv://./data/uar-db` | Embedded on-disk (SurrealKV). No separate process. |
-| `surreal` | `rocksdb://./data/uar-db` | Embedded on-disk. `rocksdb://` is normalized to `surrealkv://`. |
-| `surreal` | `memory` / `mem` | In-memory (ephemeral; testing only). |
-| `surreal` | `http://127.0.0.1:8000` / `wss://host/rpc` | Remote SurrealDB server (requires `surreal_user` / `surreal_pass`). |
-| `postgres` | `postgres://uar:changeme@localhost:5432/uar` | PostgreSQL (+ pgvector). |
+PostgreSQL requires the `postgres-backend` Cargo feature. `server-full` includes
+the embedded Surreal backend through `minimal`; it does not add PostgreSQL.
+`embedded-mobile` selects no built-in database and requires the host to supply a
+`PersistenceLayer`.
 
-:::note
-`rocksdb://` and `surrealkv://` refer to the **same** embedded engine. UAR
-rewrites `rocksdb://` to `surrealkv://` internally, so the two are
-interchangeable in configuration. A bare path (no scheme) is treated as
-`surrealkv://<path>`.
-:::
+Vector dimensions must match the embedding implementation that produced stored
+vectors. Changing the dimension without a re-embedding plan makes existing
+vector data incompatible.
 
-:::info PostgreSQL requires a build feature
-Selecting `persistence.provider = postgres` requires the binary to be built
-with the `postgres-backend` Cargo feature. The default binary is built with
-embedded SurrealDB only; without the feature, booting with `provider = postgres`
-fails with a message telling you to rebuild with `postgres-backend` or switch to
-`surreal`.
-:::
+## Security and secret handling
 
-## Memory system (optional)
+With JWT required, UAR rejects the compiled fallback signing secret. Configure
+a deliberate secret or JWKS verifier plus any required issuer and audience.
+Anonymous mode is only for a trusted local process bound to loopback:
 
-Opt-in durable agent memory backed by surreal-memory + SurrealDB/SurrealKV.
-
-| Env var | YAML key | Default |
-|---|---|---|
-| `UAR_MEMORY__ENABLED` | `memory.enabled` | `false` |
-| `UAR_MEMORY__DB_PATH` | `memory.db_path` | `./data/memory.db` |
-| `UAR_MEMORY__EMBEDDING_PROVIDER` | `memory.embedding_provider` | `openai` |
-| `UAR_MEMORY__EMBEDDING_MODEL` | `memory.embedding_model` | `text-embedding-3-small` |
-| `UAR_MEMORY__AUTO_CAPTURE` | `memory.auto_capture` | `true` |
-| `UAR_MEMORY__INJECT_CONTEXT` | `memory.inject_context` | `true` |
-| `UAR_MEMORY__MCP_HTTP_ENABLED` | `memory.mcp_http_enabled` | `true` |
-| `UAR_MEMORY__MCP_HTTP_PATH` | `memory.mcp_http_path` | `/mcp/memory` |
-| `UAR_MEMORY__SURREAL_ENDPOINT` | `memory.surreal_endpoint` | *(embedded)* |
-| `UAR_MEMORY__SURREAL_USER` / `UAR_MEMORY__SURREAL_PASS` | `memory.surreal_user` / `_pass` | *(unset)* |
-
-## Resilience (rate limiting, timeouts, retries)
-
-| Env var | YAML key | Default |
-|---|---|---|
-| `UAR_RESILIENCE__RATE_LIMIT_ENABLED` (or `RATE_LIMIT_ENABLED`) | `resilience.rate_limit_enabled` | `true` |
-| `UAR_RESILIENCE__REQUESTS_PER_SECOND` | `resilience.requests_per_second` | `10.0` |
-| `UAR_RESILIENCE__BURST_SIZE` | `resilience.burst_size` | `20.0` |
-| `UAR_RESILIENCE__TIMEOUT_DISABLED` (or `TIMEOUT_DISABLED`) | `resilience.timeout_disabled` | `false` |
-| `UAR_RESILIENCE__REQUEST_TIMEOUT_MS` | `resilience.request_timeout_ms` | `30000` |
-| `UAR_RESILIENCE__STREAM_START_TIMEOUT_MS` | `resilience.stream_start_timeout_ms` | `15000` |
-| `UAR_RESILIENCE__RETRIES_ENABLED` | `resilience.retries_enabled` | `true` |
-| `UAR_RESILIENCE__RETRY_MAX_ATTEMPTS` | `resilience.retry_max_attempts` | `3` |
-
-## Optional feature toggles
-
-| Env var | YAML key | Default | Feature |
-|---|---|---|---|
-| `UAR_FAILOVER__ENABLED` (`--failover-enabled`) | `failover.enabled` | `false` | Runtime model failover. |
-| `UAR_NATIVE_TOOLS__FILE_TOOLS_ENABLED` | `native_tools.file_tools_enabled` | `false` | `file_read`/`file_write`/`file_patch` native tools. |
-| `UAR_NATIVE_TOOLS__WEB_FETCH_ENABLED` | `native_tools.web_fetch_enabled` | `false` | `web_fetch` native tool. |
-| `UAR_NATIVE_TOOLS__TERMINAL_EXEC_ENABLED` | `native_tools.terminal_exec_enabled` | `false` | `terminal_exec` native tool. |
-| `UAR_SKILL_EVOLUTION__ENABLED` | `skill_evolution.enabled` | `false` | Post-run reflection → skills. |
-| `UAR_ACP__ENABLED` (`--acp-enabled`) | `acp.enabled` | `false` | ACP JSON-RPC endpoint. |
-| `UAR_ACP__PATH` (`--acp-path`) | `acp.path` | `/acp` | ACP path prefix. |
-
-## Tools / integrations
-
-| Env var | Purpose |
-|---|---|
-| `TAVILY_API_KEY` | Web-search MCP server (referenced by `mcp.json`). |
-| `UAR_BUILTIN_SKILLS_DIR` | Primary builtin skills directory. |
-| `UAR_EXTRA_BUILTIN_SKILL_DIRS` | Additional builtin skill dirs (colon-separated). |
-| `UAR_MODELS_DIR` | Directory for model files (tokenizer, embeddings). |
-
-## MCP tools (`mcp.json`)
-
-MCP servers are configured separately in `mcp.json`. Both stdio and HTTP servers
-are supported; tools are namespaced automatically (`time::now`,
-`tavily::search`).
-
-```json
-{
-  "mcpServers": {
-    "time": { "command": "npx", "args": ["-y", "@mcpcentral/mcp-time"] },
-    "tavily": { "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=${TAVILY_API_KEY}" }
-  }
-}
+```yaml
+server:
+  host: "127.0.0.1"
+security:
+  jwt_required: false
 ```
 
-## Minimal working example
+Do not combine anonymous mode with a public or non-local listener. Per-user
+provider credentials require a valid credential-encryption key; without it,
+that service is unavailable and operator environment/configuration remains the
+separate fallback.
 
-```bash
-# LLM: pick a provider and give it a key
-UAR_LLM__MODEL=openai/gpt-4o
-OPENAI_API_KEY=sk-...
+## Reload boundary
 
-# Persistence: required at boot
-UAR_PERSISTENCE__PROVIDER=surreal
-UAR_PERSISTENCE__DATABASE_URL=rocksdb://./data/uar-db
+The config manager atomically swaps a newly validated snapshot after a watched
+file change or explicit reload. Existing request snapshots remain valid until
+their readers release them. `--strict-config` or `UAR_STRICT_CONFIG=true`
+rejects a reload whose effective snapshot differs from startup.
 
-# Security
-UAR_SECURITY__JWT_SECRET=$(openssl rand -base64 64)
-UAR_SECURITY__JWT_REQUIRED=false   # local dev only
-```
+Reload acceptance proves only that the snapshot parsed and passed configured
+guards. Listener host/port, feature-gated capabilities, database engine,
+process-level crypto provider, and other composition-root resources can require
+a controlled restart. Use the settings UI's source/drift information and verify
+the affected behavior after any change.
 
-See **[Installation](./installation)** for the full first-run checklist.
+## Profile limits
+
+`minimal` and `server-full` load the server configuration and selected
+persistence. Only `server-full` carries the complete release feature set.
+`embedded-mobile` uses host construction rather than the server's YAML/CLI
+composition and owns persistence, inference, transport, and lifecycle. No
+configuration result transfers silently between profiles.
+
+Next: [Installation](./installation.md).

@@ -1,30 +1,375 @@
-/**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
- */
+@import '@fontsource-variable/geist';
+@import '@fontsource/space-grotesk/600.css';
+@import '@fontsource/space-grotesk/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/600.css';
 
-/* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
-  --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  color-scheme: light;
+  --uar-canvas: #f7f7f8;
+  --uar-chrome: #ffffff;
+  --uar-surface: #fafbfc;
+  --uar-raised: #ffffff;
+  --uar-hover: #f2f4f7;
+  --uar-muted: #f2f4f7;
+  --uar-foreground: #0b0f14;
+  --uar-subtle: #4b5563;
+  --uar-faint: #6b7280;
+  --uar-ember: #b93c1c;
+  --uar-ember-strong: #c13e1e;
+  --uar-ember-soft: #fbe8e1;
+  --uar-cyan: #0e7490;
+  --uar-success: #16a34a;
+  --uar-warning: #d97706;
+  --uar-focus: #b93c1c;
+  --uar-radius: 0.75rem;
+  --uar-fast: 120ms;
+  --uar-base: 200ms;
+  --uar-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  --ifm-color-primary: var(--uar-ember);
+  --ifm-color-primary-dark: #a8361a;
+  --ifm-color-primary-darker: #9d3218;
+  --ifm-color-primary-darkest: #812914;
+  --ifm-color-primary-light: #c94623;
+  --ifm-color-primary-lighter: #d04b27;
+  --ifm-color-primary-lightest: #df6b4d;
+  --ifm-background-color: var(--uar-canvas);
+  --ifm-background-surface-color: var(--uar-surface);
+  --ifm-font-color-base: var(--uar-foreground);
+  --ifm-font-color-secondary: var(--uar-subtle);
+  --ifm-heading-color: var(--uar-foreground);
+  --ifm-navbar-background-color: var(--uar-chrome);
+  --ifm-footer-background-color: var(--uar-chrome);
+  --ifm-menu-color-background-active: var(--uar-ember-soft);
+  --ifm-code-background: var(--uar-muted);
+  --ifm-toc-border-color: transparent;
+  --ifm-font-family-base: 'Geist Variable', system-ui, sans-serif;
+  --ifm-font-family-monospace: 'JetBrains Mono', ui-monospace, monospace;
+  --ifm-heading-font-family: 'Space Grotesk', 'Geist Variable', system-ui, sans-serif;
+  --ifm-global-radius: var(--uar-radius);
+  --ifm-global-shadow-lw: none;
+  --ifm-global-shadow-md: none;
+  --ifm-global-shadow-tl: none;
+  --docusaurus-highlighted-code-line-bg: #fbe8e1;
+  --search-local-modal-background: var(--uar-surface);
+  --search-local-modal-shadow: none;
+  --search-local-hit-background: var(--uar-raised);
+  --search-local-hit-shadow: none;
+  --search-local-hit-color: var(--uar-foreground);
+  --search-local-highlight-color: var(--uar-ember);
+  --search-local-muted-color: var(--uar-subtle);
+  --search-local-hit-active-color: var(--uar-foreground);
+  --search-local-input-active-border-color: transparent;
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+  --uar-canvas: #0b0f14;
+  --uar-chrome: #111620;
+  --uar-surface: #161d29;
+  --uar-raised: #1c2535;
+  --uar-hover: #202b40;
+  --uar-muted: #253044;
+  --uar-foreground: #e8edf3;
+  --uar-subtle: #a7b0bc;
+  --uar-faint: #87909d;
+  --uar-ember: #ff6a3d;
+  --uar-ember-strong: #e04e28;
+  --uar-ember-soft: #2b1a18;
+  --uar-cyan: #00c2dc;
+  --uar-success: #22c55e;
+  --uar-warning: #f59e0b;
+  --uar-focus: #ff6a3d;
+  --ifm-color-primary: var(--uar-ember);
+  --ifm-color-primary-dark: #ff5422;
+  --ifm-color-primary-darker: #ff4915;
+  --ifm-color-primary-darkest: #df3200;
+  --ifm-color-primary-light: #ff8058;
+  --ifm-color-primary-lighter: #ff8b65;
+  --ifm-color-primary-lightest: #ffac93;
+  --ifm-background-color: var(--uar-canvas);
+  --ifm-background-surface-color: var(--uar-surface);
+  --ifm-font-color-base: var(--uar-foreground);
+  --ifm-font-color-secondary: var(--uar-subtle);
+  --ifm-heading-color: var(--uar-foreground);
+  --ifm-navbar-background-color: var(--uar-chrome);
+  --ifm-footer-background-color: var(--uar-chrome);
+  --ifm-menu-color-background-active: var(--uar-hover);
+  --ifm-code-background: var(--uar-muted);
+  --docusaurus-highlighted-code-line-bg: #2b1a18;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--uar-canvas);
+  color: var(--uar-foreground);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--ifm-heading-font-family);
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  scroll-margin-top: calc(var(--ifm-navbar-height) + 1.5rem);
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+a {
+  transition: color var(--uar-fast) var(--uar-ease), background-color var(--uar-fast) var(--uar-ease);
+}
+
+a:hover {
+  color: var(--uar-ember);
+}
+
+.theme-doc-markdown :where(p, li) a:not(.hash-link) {
+  text-decoration: underline;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.16em;
+}
+
+:where(a, button, input, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--uar-focus);
+  outline-offset: 3px;
+}
+
+.navbar {
+  background: var(--uar-chrome);
+  box-shadow: none;
+  min-height: 4rem;
+}
+
+.navbar__brand {
+  gap: 0.55rem;
+}
+
+.navbar__title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.navbar__link,
+.menu__link {
+  border-radius: var(--uar-radius);
+  color: var(--uar-subtle);
+  font-weight: 600;
+}
+
+.navbar__link:hover,
+.navbar__link--active,
+.menu__link:hover {
+  background: var(--uar-hover);
+  color: var(--uar-foreground);
+}
+
+.menu__link--active {
+  background: var(--uar-ember-soft);
+  color: var(--uar-ember);
+}
+
+.dropdown__menu,
+.navbar-sidebar,
+.theme-doc-sidebar-container,
+.table-of-contents {
+  background: var(--uar-chrome);
+  box-shadow: none;
+}
+
+.main-wrapper,
+.theme-doc-markdown {
+  background: var(--uar-canvas);
+}
+
+.theme-doc-markdown {
+  max-width: 76ch;
+}
+
+.theme-doc-markdown > header + *,
+.theme-doc-markdown > h2 {
+  margin-top: 2.5rem;
+}
+
+.button {
+  border: 0;
+  border-radius: var(--uar-radius);
+  font-weight: 700;
+  touch-action: manipulation;
+  transition: background-color var(--uar-fast) var(--uar-ease), color var(--uar-fast) var(--uar-ease), transform var(--uar-fast) var(--uar-ease);
+}
+
+.button--primary {
+  background: var(--uar-ember);
+  color: #ffffff;
+}
+
+[data-theme='dark'] .button--primary {
+  color: #0b0f14;
+}
+
+.button--secondary {
+  background: var(--uar-raised);
+  color: var(--uar-foreground);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+}
+
+.card,
+.pagination-nav__link,
+.alert,
+.breadcrumbs__link,
+.table-wrapper {
+  border: 0;
+  box-shadow: none;
+}
+
+.card,
+.pagination-nav__link {
+  background: var(--uar-raised);
+  transition: background-color var(--uar-fast) var(--uar-ease), transform var(--uar-fast) var(--uar-ease);
+}
+
+.card:hover,
+.pagination-nav__link:hover {
+  background: var(--uar-hover);
+  transform: translateY(-1px);
+}
+
+.alert {
+  background: var(--uar-surface);
+  color: var(--uar-foreground);
+}
+
+code,
+pre,
+.prism-code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+pre,
+.prism-code {
+  background: var(--uar-surface) !important;
+  border-radius: var(--uar-radius);
+  box-shadow: none !important;
+}
+
+code {
+  border: 0;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0 0.25rem;
+  display: table;
+  width: 100%;
+}
+
+table thead tr,
+table tbody tr {
+  border: 0;
+}
+
+table th,
+table td {
+  background: var(--uar-surface);
+  border: 0;
+  padding: 0.75rem 1rem;
+}
+
+table th {
+  color: var(--uar-subtle);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.footer {
+  background: var(--uar-chrome);
+  color: var(--uar-subtle);
+}
+
+.footer__title,
+.footer__link-item:hover {
+  color: var(--uar-foreground);
+}
+
+.footer.footer--dark .footer__link-item,
+.footer.footer--dark .footer__copyright {
+  color: var(--uar-subtle);
+}
+
+.footer__title {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.DocSearch-Button,
+.navbar__search-input {
+  background: var(--uar-surface);
+  border: 0;
+  color: var(--uar-foreground);
+}
+
+.search-result-match {
+  color: var(--uar-ember);
+}
+
+.mermaid {
+  background: var(--uar-surface);
+  border-radius: var(--uar-radius);
+  padding: 1rem;
+}
+
+[data-theme='dark'] .docusaurus-mermaid-container .edgeLabel p {
+  background: #30343b !important;
+  color: #ffffff !important;
+}
+
+@media (max-width: 996px) {
+  .navbar {
+    min-height: 3.5rem;
+  }
+
+  .theme-doc-markdown {
+    max-width: none;
+  }
+
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
 }

@@ -1,17 +1,11 @@
-# Governance
+---
+sidebar_position: 99
+title: Governance Guide
+description: Compatibility entry point for the current governance documentation.
+---
 
-UAR embeds governance directly into the runtime: policy files, tool-approval workflows, and runtime guardrails are first-class concepts.
+# Governance Guide
 
-## Topics
+The detailed governance authority has moved to [Apply Governance Policies](/docs/governance/overview). It documents `server-full` Cedar behavior, profile exclusions, HTTP and tool boundaries, empty-policy denial, and the current permit-all policy-load fallback.
 
-- Policy format and Cedar-based gating
-- Tool-approval workflow
-- PII and prompt-injection guardrails
-- Audit trails and observability
-- Governance paper and RFCs
-
-## Related documents
-
-- [Governance paper](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/prometheus-governance-paper.html)
-- [License ADR](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/adr/0017-relicense-runtime-to-mit.md)
-- [Security policy](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/SECURITY.md)
+For a human decision that follows policy evaluation, continue to [Resolve Tool Approvals](/docs/governance/approvals). Approval cannot reverse an effective-policy or Cedar denial.

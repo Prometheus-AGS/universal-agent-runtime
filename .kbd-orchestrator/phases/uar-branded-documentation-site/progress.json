@@ -1,0 +1,169 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 369,
+  "derivedRevision": 369,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 54
+  },
+  "conflictCount": 0,
+  "phase": "uar-branded-documentation-site",
+  "phaseId": "uar-branded-documentation-site",
+  "parentPhase": null,
+  "last_updated": "2026-08-23T11:31:35.969561Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 11,
+  "changes_completed": 10,
+  "implementation_total": 11,
+  "implementation_completed": 10,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 10,
+      "total": 11,
+      "status": "IN_PROGRESS"
+    },
+    "evidence": {
+      "status": "COMPLETE",
+      "summary": "Five genuine model-backed functional paths passed through both API and shipped UI under local server-full; results and limits are in functional-verification.md.",
+      "blockers": []
+    },
+    "certification": {
+      "status": "SKIPPED",
+      "summary": "Operational soak, supply-chain, and RC certification were superseded and cancelled; no certification claim is made.",
+      "blockers": []
+    },
+    "publication": {
+      "status": "SKIPPED",
+      "summary": "GA publication was superseded and cancelled; no tag or publication was performed.",
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "establish-documentation-publication-contract",
+      "title": "Establish documentation publication contract",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "repair-single-pages-portal",
+      "title": "Repair single Pages portal",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "brand-uar-docusaurus-site",
+      "title": "Brand UAR Docusaurus site",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "document-uar-theory-and-architecture",
+      "title": "Document UAR theory and architecture",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "document-inference-skills-knowledge-and-agents",
+      "title": "Document inference skills knowledge and agents",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "document-security-tenancy-governance-and-operations",
+      "title": "Document security tenancy governance and operations",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "document-apis-sdks-tools-and-deployment",
+      "title": "Document APIs SDKs tools and deployment",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "reconcile-uar-readme-estate",
+      "title": "Reconcile UAR README estate",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "publish-uar-architecture-decision-history",
+      "title": "Publish UAR architecture decision history",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "publish-uar-testing-methodology-history",
+      "title": "Publish UAR testing methodology history",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "certify-and-publish-uar-docs",
+      "title": "Certify and publish UAR docs",
+      "status": "IN_PROGRESS",
+      "implementation_status": "IN_PROGRESS",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

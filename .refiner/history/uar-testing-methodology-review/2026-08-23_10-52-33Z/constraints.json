@@ -1,0 +1,19 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {"id":"evidence-limits","description":"Every evidence class states what it proves and does not prove.","severity":"blocking","type":"semantic","validation":{"requires_code_execution":true,"validation_method":"testing-history validator and controls"}},
+    {"id":"real-inference-boundary","description":"Synthetic or recorded responses cannot certify genuine model inference.","severity":"blocking","type":"semantic","validation":{"requires_code_execution":true,"validation_method":"synthetic-inference negative control"}},
+    {"id":"negative-control-discipline","description":"Fail-closed claims require observed failure, bounded inversion, exact restoration, and positive rerun.","severity":"blocking","type":"technical","validation":{"requires_code_execution":true,"validation_method":"required-marker and control validation"}},
+    {"id":"timing-and-location","description":"Tier timing, delivery-first cadence, profile limits, and deployment-only Actions remain explicit.","severity":"blocking","type":"semantic","validation":{"requires_code_execution":true,"validation_method":"testing-history, publication, and Actions policy validation"}},
+    {"id":"deferred-product-evidence","description":"No product test, model call, soak, build, browser, deployment, or readiness claim is made.","severity":"high","type":"semantic","validation":{"requires_code_execution":false,"validation_method":"artifact and verification limit review"}}
+  ],
+  "global_rules": [
+    "Evidence must cross the boundary named in the claim.",
+    "GitHub Actions are deployment-only.",
+    "Results transfer to no unnamed source SHA or profile."
+  ],
+  "termination_conditions": [
+    "All blocking constraints pass observed local controls.",
+    "No runtime, test, application, dependency, lockfile, workflow, vendor, submodule, or raw-history edit remains."
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "label": "Memory",
+  "position": 7,
+  "link": {
+    "type": "generated-index",
+    "description": "Enable scoped memory, observe recall and capture, and administer durable records."
+  }
+}

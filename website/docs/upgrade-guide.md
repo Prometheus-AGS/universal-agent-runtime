@@ -1,140 +1,111 @@
 ---
-sidebar_position: 6
-title: Upgrade Guide
+sidebar_position: 13
+title: Upgrade and Rollback
+description: Upgrade UAR with verified artifacts, cold backups, functional checks, and an explicit rollback boundary.
+source_records:
+  - docs/compatibility-policy.md
+  - docs/DEPLOYMENT.md
+current_authority: /docs/upgrade-guide
 ---
 
-# Upgrade Guide
+# Upgrade and rollback
 
-This guide covers upgrading a self-hosted UAR deployment: pinning versions,
-performing the upgrade, checking configuration compatibility, and rolling back
-if something goes wrong.
+## Boundary statement
 
-## Supported versions
+**An upgrade is complete only when the target artifact and migrated state pass
+representative functional verification, and rollback is possible only within
+the release's declared data compatibility boundary.** A build or liveness check
+does not prove either condition.
 
-Security and bug fixes target the latest **1.x** release. The current
-security-support matrix (from `SECURITY.md`):
+## Support boundary
 
-| Version | Supported |
-|---|---|
-| 1.0.x | ✅ security fixes |
-| < 1.0 (unreleased development history) | ❌ upgrade to 1.0 |
+The current security policy supports the `1.0.x` line. Stable 1.x HTTP routes,
+event profiles, configuration keys, release artifact names, and supported
+persistent data remain compatible except where a documented security fix must
+reject unsafe prior behavior. Preview and Experimental surfaces can change in a
+minor release.
 
-Always upgrade to a supported release rather than tracking an arbitrary commit.
+Read the target release notes, security notes, compatibility policy, and any
+explicit migration before touching the running deployment.
 
-## Pin the version you run
+## Backup prerequisite
 
-Do not deploy from a floating tag in production.
+Before upgrading:
 
-- **Container images**: pin an immutable tag or digest rather than `:latest`.
-  For example, deploy `ghcr.io/prometheus-ags/universal-agent-runtime@sha256:<digest>` (or a
-  specific released version tag) so a redeploy cannot silently change the binary.
-- **From source**: check out a released tag, not `main`:
+1. record the current immutable artifact digest and effective configuration;
+2. stop writes or establish the provider-specific consistent snapshot boundary;
+3. back up application persistence, memory when enabled, uploads, policies, and
+   operator configuration;
+4. restore that backup into an isolated location;
+5. perform functional read-back of representative agents, skills, sessions,
+   knowledge, and settings.
 
-  ```bash
-  git fetch --tags
-  git checkout v1.0.0
-  ```
+Archive creation alone is not restore evidence. Follow
+[Recovery and shutdown](./operations/recovery-and-shutdown.md).
 
-- **Git dependencies**: UAR pins several crates to specific commit SHAs or
-  release tags in `Cargo.toml` (e.g. `rmcp`, `surreal-memory`, `kreuzberg` at a
-  release tag such as `v4.9.8`, `prometheus_parking_lot`). Building a given UAR
-  commit reproduces the same dependency set. See
-  `docs/DEPENDENCY_MANAGEMENT.md` for the pinning policy and the standard
-  operating procedure for bumping a pinned dependency.
+## Immutable version selection
 
-## Before you upgrade
+Verify the target release manifest and checksums, then pin the archive or image
+digest. Record both old and new identities in the change record. Do not upgrade
+from `main`, a floating tag, or an unverified locally named image.
 
-1. **Read the release notes / changelog** for the target version, paying
-   attention to any called-out breaking changes.
-2. **Back up your data.** Follow the
-   [Backup and Restore](./backup-and-restore) runbook and confirm the archive is
-   valid before touching the running deployment. This backup is your rollback
-   path.
-3. **Record the current version** (image tag/digest or git SHA) so you can roll
-   back to a known-good build.
-4. **Diff your configuration** against the new version's `.env.example` and the
-   example `config.*.yaml` files to spot any newly required or renamed keys.
+## Configuration and data compatibility
 
-## Upgrading a Docker Compose deployment
+Compare the target examples and generated configuration schema with the
+effective current configuration. Pay particular attention to:
 
-```bash
-# 1. Back up (see the Backup runbook) and note the current image.
+- authentication issuer, audience, JWKS/secret, and tenant behavior;
+- persistence provider, URL, credentials, and feature composition;
+- embedding model and vector dimension;
+- provider/model names and credential resolution;
+- enabled native/MCP tools, Cedar policies, and approval behavior;
+- retention, backup, and shutdown deadlines.
 
-# 2. Pull the new pinned image / update the tag in your compose file or .env.
-docker compose -f docker-compose.prod.yaml pull app
+Keep the persistence provider and location stable unless the release supplies a
+tested migration. Never start an older binary against data changed by a newer
+engine unless the release explicitly declares backward readability.
 
-# 3. Recreate only the app service; the database and Redis keep their volumes.
-docker compose -f docker-compose.prod.yaml up -d app
+## Apply the upgrade
 
-# 4. Verify.
-curl -sf http://localhost:1906/healthz
-docker compose -f docker-compose.prod.yaml logs -f app   # watch for boot errors
-```
+For containers, replace the image with the verified digest and use the
+deployment mechanism's documented drain/restart behavior. For source installs,
+check out the verified tag, initialize submodules, build from locked
+dependencies, and replace the binary through the process manager. Do not
+combine an application upgrade with an unrelated datastore, model, policy, or
+network migration.
 
-The persistence volumes (`surreal_data_prod` / your Postgres volume) are not
-recreated, so application data carries across the upgrade.
+## Functional verification
 
-## Upgrading a from-source / binary deployment
+After startup, check in increasing depth:
 
-```bash
-# 1. Back up.
-# 2. Fetch and check out the new tag.
-git fetch --tags && git checkout v1.0.1
+1. `/healthz` returns liveness;
+2. `/readyz` reports configured dependencies ready;
+3. authenticated reads find pre-upgrade resources;
+4. one reversible write survives reload/restart;
+5. provider routing reaches the intended real model and returns genuine
+   inference;
+6. a representative skill, knowledge, agent, tool-policy, and realtime path
+   behaves as the release requires.
 
-# 3. Rebuild frontend + backend from locked dependencies.
-pnpm install --frozen-lockfile
-pnpm -C frontend install --frozen-lockfile
-pnpm -C frontend --filter @prometheus-ags/prometheus-entity-management build
-pnpm build
-cargo build --release --features server-full
+Report each profile and platform separately. A successful documentation build,
+binary build, probe, or synthetic response is not this functional evidence.
 
-# 4. Restart the service against the same persistence configuration.
-sudo systemctl restart uar   # or your process manager
-curl -sf http://localhost:<port>/healthz
-```
+## Rollback
 
-## Configuration compatibility
+If the target fails its gate, stop writes and redeploy the prior verified
+artifact. Restore the pre-upgrade data when the failed attempt changed state in
+a way the prior version cannot read. Reapply the recorded prior configuration
+and repeat the same functional checks.
 
-- **New settings** generally arrive with compiled defaults, so existing configs
-  keep working. Packaged binaries default to embedded SurrealDB at
-  `surrealkv://./data/uar.db`; production deployments should keep persistence
-  explicit so upgrades cannot change the intended data path. If a future
-  required field is introduced, the server exits on boot with a configuration
-  error naming it (see [Troubleshooting](./troubleshooting)).
-- **Precedence is stable**: CLI args > `UAR_*__*` env > legacy `LLM_*` env >
-  provider shortcut keys > `config.yaml` > defaults. Re-check that an
-  environment override you rely on is not being shadowed by a higher-priority
-  source after the upgrade.
-- **`vector_dimension`** must stay consistent with the embedding model your
-  stored vectors were written with. Changing it mid-life invalidates existing
-  vector data — plan a re-embed if you change embedding models.
-- **Persistence on-disk format**: upgrade the datastore in place with the new
-  binary, but keep the provider and `database_url` unchanged. Do not point a new
-  major version at a datastore written by an incompatible engine version without
-  a tested migration path.
+If the release declares an irreversible migration and no tested inverse or
+restore is available, rollback is blocked. Do not improvise a data conversion
+against production state.
 
-## Rolling back
+## Profile limits
 
-If the new version fails health checks or misbehaves:
+Server upgrade evidence is separate for `server-full` and `minimal`.
+`embedded-mobile` upgrades belong to each host application and platform package
+and must cover the supplied persistence and inference adapters. No server,
+iOS, Android, or desktop result transfers to another profile or platform.
 
-```bash
-# Docker: redeploy the previous pinned image/digest.
-#   set the old tag in .env / compose, then:
-docker compose -f docker-compose.prod.yaml up -d app
-
-# From source: check out the previous tag and rebuild.
-git checkout v1.0.0
-pnpm build && cargo build --release --features server-full
-sudo systemctl restart uar
-```
-
-If the upgrade also changed on-disk data in an incompatible way, restore the
-pre-upgrade backup (see [Backup and Restore](./backup-and-restore)) **before**
-starting the older binary against the datastore. Restore into the same
-`database_url` the backup came from.
-
-## Getting help
-
-- Community: GitHub Issues and Discussions (best-effort triage).
-- Paid support contracts include contractual upgrade assistance — see
-  `SUPPORT.md`.
+Next: [Troubleshooting](./troubleshooting.md).

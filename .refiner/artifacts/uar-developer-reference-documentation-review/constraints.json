@@ -1,0 +1,67 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "complete-classified-developer-guides",
+      "description": "Exactly fifteen dependency-ordered guides and four compatibility pages exist with classified source records, current authorities, frontmatter, required concepts, and resolvable local links.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Developer-reference manifest validation plus missing-guide and unclassified-authority negative controls"
+      }
+    },
+    {
+      "id": "truthful-api-protocol-tool-boundaries",
+      "description": "API summaries, compatibility adapters, event families, MCP and A2A discovery, authorization, execution, and state boundaries remain distinct and source-backed.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Current-source review plus invented-endpoint, exhaustive-OpenAPI, protocol-parity, discovery-as-authorization, and production-proxy controls"
+      }
+    },
+    {
+      "id": "honest-sdk-and-publication-status",
+      "description": "Checked-in SDK source, locally generated references, hosted Pages references, and registry publication are reported as independent facts.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Source and staging review plus hosted-Python-reference and registry-from-metadata controls"
+      }
+    },
+    {
+      "id": "safe-profile-bounded-operator-guidance",
+      "description": "Configuration and deployment guidance uses placeholders, binds anonymous mode to loopback, separates health from build success, includes rollback, and does not transfer profile evidence.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Configuration and deployment source review plus anonymous-listener, profile-transfer, health, rollback, and workflow-policy controls"
+      }
+    },
+    {
+      "id": "bounded-public-safe-source-evidence",
+      "description": "Public content excludes private excerpts, credentials, keys, machine paths, and raw payloads, while source verification makes no build, browser, deployment, runtime, registry, or cross-profile claim.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Private-excerpt, TypeScript, publication, architecture, brand, product, security, developer-reference, staging, and Actions-policy controls"
+      }
+    }
+  ],
+  "global_rules": [
+    "Treat the OpenSpec change and developer-reference manifest as the publication authority.",
+    "Run routine verification locally; GitHub Actions remain deployment-only.",
+    "Do not run the phase-level build or browser certification before all documentation content is complete.",
+    "Do not infer runtime, protocol, registry, deployment, rollback, or cross-profile readiness from documentation-source evidence."
+  ],
+  "termination_conditions": [
+    "All five blocking content constraints have observed evidence.",
+    "Every isolated negative control fails for its intended defect before the complete fixture passes.",
+    "Strict OpenSpec and all refiner schemas pass.",
+    "The review explicitly states its build, browser, deployment, runtime, registry, rollback, and cross-profile evidence limits."
+  ]
+}

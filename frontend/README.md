@@ -1,43 +1,53 @@
 # UAR Frontend
 
-React 19 + Vite + Tailwind CSS 3 web UI for the Universal Agent Runtime. Built to `../static/` and served identically in browser, Docker, and the Tauri webview by the Axum binary.
+> **Current authority:** [Chat product guide](/docs/product/chat). This README
+> covers the first-party React source package; server-full and embedded-mobile
+> packaging are verified separately.
 
-## Design tokens — KnowMe standard (ported)
+The operator application uses React 19, TypeScript, Vite 8, Tailwind CSS 4,
+Zustand, PGlite, and the Prometheus entity graph. The production web bundle is
+written to `../static/` for the Axum `server-full` distribution. Tauri and
+embedded-mobile packaging have separate host and platform boundaries; a web
+build does not prove those targets.
 
-This UI renders the **KnowMe** design-token set (`docs/knowme-ui-ux-standard.md` in the KnowMe monorepo). Values live in `src/index.css` as HSL channels consumed by `tailwind.config.ts` via `hsl(var(--token))`.
+## Ownership boundary
 
-| Token | Dark | Light |
-|---|---|---|
-| `--background` (canvas) | `#0B0F14` | `#F7F7F8` |
-| `--chrome` (sidebar/header) | `#111620` | `#FFFFFF` |
-| `--surface` | `#161D29` | `#FAFBFC` |
-| `--card` (raised) | `#1C2535` | `#FFFFFF` |
-| `--card-hov` | `#202B40` | `#F2F4F7` |
-| `--muted` | `#253044` | `#F2F4F7` |
-| `--foreground` / `--fg-sub` / `--fg-faint` | `#E8EDF3` / `#A7B0BC` / `#6B7280` | `#0B0F14` / `#4B5563` / `#6B7280` |
-| `--primary` / `--ember` | `#FF6A3D` | `#E04E28` |
-| `--ember-soft` (selection) | `#2B1A18` | `#FBE8E1` |
-| `--cyan` (reasoning/citations/streaming) | `#00C2DC` | `#0891B2` |
-| `--success` / `--warning` / `--destructive` | `#22C55E` / `#F59E0B` / `#EF4444` | `#16A34A` / `#D97706` / `#DC2626` |
+UI components render and dispatch intent. Hooks and view models adapt state.
+Stores own business state. Services own REST and SSE I/O. Frontend code does
+not call model providers, tools, or authoritative persistence directly.
 
-Radius base `--radius: 0.75rem` (scale sm 0.6×, md 0.8×, lg 1×, xl 1.4×, 2xl 1.8×, 3xl 2.2×, 4xl 2.6×). Fonts: Geist Variable (body, bundled via `@fontsource-variable/geist`), Space Grotesk (display), JetBrains Mono (meta/code). `.eyebrow` = mono 10px/600/0.12em uppercase ember label.
+SurrealDB remains authoritative for server entities. PGlite stores local
+thread/message state and offline drafts. Server versions reconcile the entity
+graph; unsent draft ownership remains local.
 
-**Flat 2.0 is enforced by CSS, not convention**: `--border: transparent`, a global `border-transparent` base rule, `box-shadow: none` on `.aui-root`, and markdown border neutralization. Do not add `border-*`, `divide-*`, or `shadow-*` utilities to product UI — regions separate by background color alone. The `high-contrast` theme is the one deliberate exception (visible lines are the accessibility feature there).
+## Visual system
 
-Themes: `dark` (default), `.light`, `.high-contrast`, `system` — managed by `src/stores/theme-store.ts` (`uar-theme` localStorage key, class on `<html>`).
+The shared tokens live in `src/shared/theme/tokens.css`, with staged HSL
+compatibility variables in `src/index.css`. Dark, light, high-contrast, and
+system themes are managed by `src/stores/theme-store.ts`. Product surfaces use
+the Flat 2.0 rule: regions separate by color rather than decorative borders or
+shadows, except where high contrast needs visible structure.
 
-## Recorded decisions (uar-ui-token-convergence, 2026-07-21)
+The first-party A2UI renderer is
+`@prometheus-ags/a2ui-uar`. The Lit and Svelte packages are conformance
+renderers; `@prometheus-ags/a2ui-react` is a private reference implementation.
 
-1. **Tailwind 3.4 kept** — token *values* were ported from KnowMe's Tailwind 4 `@theme` source; the mechanism here stays `hsl(var())` channels. Token-value syncs are manual until a shared token package exists; the table above is the contract.
-2. **TanStack Query scoped exemption** — `@tanstack/react-query` remains in this frontend. KnowMe's `preserve-entity-management` constraint forbids it in the KnowMe app; this vendored submodule is a deliberate, documented exception. Entity sync already flows through `@prometheus-ags/prometheus-entity-management` (workspace package) + SSE.
-3. **Admin CRT theme exception** — `/admin` routes use the scoped `:root[data-admin-theme="terminal"]` phosphor/terminal aesthetic (see `../docs/admin-aesthetic-spec.md`). It never bleeds into product surfaces, which render the KnowMe tokens.
+## Local commands
 
-## Commands
+Install from the repository root with the pinned pnpm version:
 
-```sh
-pnpm install          # from repo root (workspace)
-pnpm -C frontend dev  # Vite on :8080, proxies /api to UAR_BACKEND_URL (default 127.0.0.1:1906)
+```bash
+pnpm install --frozen-lockfile
+pnpm -C frontend dev
 pnpm -C frontend build
-pnpm -C frontend test
-pnpm -C frontend storybook
 ```
+
+After a frontend unit is complete, its local checks are:
+
+```bash
+pnpm -C frontend typecheck
+pnpm -C frontend lint
+pnpm -C frontend test
+```
+
+GitHub Actions are deployment-only and do not run routine frontend checks.

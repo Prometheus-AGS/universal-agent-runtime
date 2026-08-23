@@ -1,0 +1,66 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "shipped-brand-identity",
+      "description": "The portal uses canonical UAR marks and the exact light/dark surface ladders without stock Docusaurus identity.",
+      "severity": "blocking",
+      "type": "brand",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Byte-parity checks, required-token checks, and stock-identity negative controls"
+      }
+    },
+    {
+      "id": "local-search-and-fonts",
+      "description": "Search and fonts are exact site-local dependencies with no hosted search, analytics, remote fonts, or Ask AI service.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Exact npm dependency resolution and hosted-service negative controls"
+      }
+    },
+    {
+      "id": "semantic-static-homepage",
+      "description": "The homepage is static, semantically ordered, dimensioned, and links only to existing pre-content routes.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Source structure and missing-route controls plus TypeScript checking"
+      }
+    },
+    {
+      "id": "flat-accessible-source-contract",
+      "description": "Source rejects gradients, decorative shadows and borders, invisible focus, and missing reduced-motion handling.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Isolated CSS negative controls and current Web Interface Guidelines source audit"
+      }
+    },
+    {
+      "id": "bounded-branding-change",
+      "description": "Strict OpenSpec passes; only the website npm lockfile changes; runtime, React application, provider, realtime, vendored, SDK, and raw history sources remain untouched.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Strict OpenSpec and scoped git diff"
+      }
+    }
+  ],
+  "global_rules": [
+    "Treat the OpenSpec change and KBD phase plan as acceptance authority.",
+    "Keep GitHub Actions deployment-only and run routine verification locally.",
+    "Do not run the full site build, screenshots, or browser accessibility gate before documentation content is complete.",
+    "Do not claim rendered or deployed quality from source-level evidence."
+  ],
+  "termination_conditions": [
+    "All five blocking source constraints have observed evidence.",
+    "Strict OpenSpec and both refiner schemas pass.",
+    "The review states the deferred visual evidence and dependency-advisory limits explicitly."
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "refinement_id": "40f8d58a-98ee-4ef1-8f4b-bd490b188a29",
+  "artifact_name": "repair-single-pages-portal",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T07:10:17Z",
+  "updated_at": "2026-08-23T07:11:38Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate one deterministic Pages publisher without claiming an unobserved live deployment"
+  ],
+  "constraints": [
+    {
+      "id": "single-pages-owner"
+    },
+    {
+      "id": "npm-site-contract"
+    },
+    {
+      "id": "real-reference-staging"
+    },
+    {
+      "id": "deployment-only-actions"
+    },
+    {
+      "id": "bounded-evidence"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 5,
+      "constraints_total": 5,
+      "decision": "terminate",
+      "timestamp": "2026-08-23T07:11:30Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "6b9670e0",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:11:13Z"
+    },
+    {
+      "checkpoint_id": "3e99dce4",
+      "phase": "plan",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:11:13Z"
+    },
+    {
+      "checkpoint_id": "e6df43a7",
+      "phase": "execute",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:11:14Z"
+    },
+    {
+      "checkpoint_id": "d6513486",
+      "phase": "reflect",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:11:14Z"
+    },
+    {
+      "checkpoint_id": "ac6a2a48",
+      "phase": "persist",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:11:15Z"
+    }
+  ],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-23T07:11:38Z"
+}

@@ -1,0 +1,66 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "single-pages-owner",
+      "description": "Exactly one workflow owns Pages upload and deployment.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Real-tree publisher discovery plus missing and competing publisher controls"
+      }
+    },
+    {
+      "id": "npm-site-contract",
+      "description": "The website build uses the frozen npm contract without invoking another package manager or changing the lockfile.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Package script inspection, mismatch control, and lockfile diff"
+      }
+    },
+    {
+      "id": "real-reference-staging",
+      "description": "Rust and TypeScript generated entrypoints are both required and copied without placeholder or fail-open fallback.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Two failing missing-output controls, one successful staging control, and workflow marker controls"
+      }
+    },
+    {
+      "id": "deployment-only-actions",
+      "description": "The Pages workflow contains artifact generation, deployment, and deployed-route validation but no routine development checks.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "GitHub Actions policy validator and parsed workflow inspection"
+      }
+    },
+    {
+      "id": "bounded-evidence",
+      "description": "Strict OpenSpec and scoped diff pass, while build and live deployment remain explicitly unverified until the final phase gate.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Strict OpenSpec, diff audit, and row-form verification limits"
+      }
+    }
+  ],
+  "global_rules": [
+    "Do not run routine tests in GitHub Actions.",
+    "Do not create placeholder generated references.",
+    "Do not run the full site gate before all documentation content is complete.",
+    "Do not claim live deployment without observed public routes."
+  ],
+  "termination_conditions": [
+    "All blocking implementation constraints have observed local evidence.",
+    "Refiner schemas and strict OpenSpec pass.",
+    "The review clearly separates structural evidence from deferred build and deployment evidence."
+  ]
+}

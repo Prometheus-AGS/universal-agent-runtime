@@ -1,17 +1,18 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 268,
-  "derivedRevision": 268,
+  "sourceRevision": 358,
+  "derivedRevision": 358,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 210
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 43
   },
   "conflictCount": 0,
   "phase": "fix-graceful-shutdown-deadline-semantics",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-graceful-shutdown-deadline-semantics",
   "parentPhase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "last_updated": "2026-08-22T11:02:09.188588Z",
+  "last_updated": "2026-08-23T09:47:57.764167Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
   "changes_completed": 1,
@@ -25,18 +26,18 @@
       "status": "COMPLETE"
     },
     "evidence": {
-      "status": "PENDING",
-      "summary": "MCP reconnect child evidence passed and is archived separately; parent operational-resilience evidence remains pending and must be regenerated from the post-child candidate.",
+      "status": "COMPLETE",
+      "summary": "Five genuine model-backed functional paths passed through both API and shipped UI under local server-full; results and limits are in functional-verification.md.",
       "blockers": []
     },
     "certification": {
-      "status": "PENDING",
-      "summary": "The child 60-second preflight passed; the parent three-hour soak, release certification, external installs, and GA remain unverified.",
+      "status": "SKIPPED",
+      "summary": "Operational soak, supply-chain, and RC certification were superseded and cancelled; no certification claim is made.",
       "blockers": []
     },
     "publication": {
-      "status": "PENDING",
-      "summary": null,
+      "status": "SKIPPED",
+      "summary": "GA publication was superseded and cancelled; no tag or publication was performed.",
       "blockers": []
     }
   },

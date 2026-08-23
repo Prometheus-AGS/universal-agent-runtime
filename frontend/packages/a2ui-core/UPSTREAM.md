@@ -12,13 +12,13 @@ Google (`a2ui-team <a2ui-owners@google.com>`, org repo
 | Field | Value |
 |---|---|
 | Package | `@a2ui/web_core` |
-| Pinned version | **0.10.4** (exact, no semver range) |
+| Workspace wrapper version | **0.10.4** |
+| Pinned upstream dependency | **0.10.6** (exact, no semver range) |
 | License | Apache-2.0 |
-| Confirmed via | `npm view @a2ui/web_core` on 2026-07-14 — `latest: 0.10.4`, published 2026-07-08 |
-| npm tarball shasum | `ca8e1bbbd2e3b875211f02e44ef24838189d3255` |
+| Repository evidence | `package.json` exact dependency plus `frontend/pnpm-lock.yaml` integrity |
 
 The pin is enforced in `package.json`'s `dependencies` field with an exact
-version string (`"0.10.4"`, not `"^0.10.4"`), so `pnpm install` will not
+version string (`"0.10.6"`, not `"^0.10.6"`), so `pnpm install` will not
 silently drift to a newer upstream release. `pnpm-lock.yaml` additionally
 locks the resolved integrity hash.
 
@@ -32,17 +32,12 @@ npm tarball's compiled output into this repo would mean vendoring build
 artifacts we cannot usefully edit, and would make every upstream bump a
 manual artifact-diff exercise instead of a `pnpm update` review.
 
-Change 16 (`a2ui-vendor-google-core-react`, this package) and the changes
-that consume it — Change 17 (`a2ui-uar-renderer-on-webcore`) and Change 22
-(`a2ui-inspector-lit-svelte-renderers`) — both build **on top of**
-`@a2ui/web_core`'s public API (message processing, data/component/surface
-models, catalog types) rather than modifying its internals. Nothing in the
-current phase plan requires patching `@a2ui/web_core` source. If a future
-change needs to fork or patch upstream behavior, that is the trigger to
-switch this package from a dependency pin to a real source vendor (clone
-`a2ui-project/a2ui`, extract `renderers/web_core/`, and preserve its
-Apache-2.0 headers file-by-file) — at which point this file should be
-updated to record that decision.
+The first-party React renderer, inspector, and Lit/Svelte conformance renderers
+build **on top of** `@a2ui/web_core`'s public API (message processing,
+data/component/surface models, and catalog types) rather than modifying its
+internals. If a future change must patch upstream behavior, that change must
+explicitly choose and document a maintained fork or source vendor instead of
+silently editing dependency output.
 
 ## How to update the pin
 
@@ -58,12 +53,11 @@ updated to record that decision.
    (`.`, `./v0_8`, `./v0_9`, `./v0_9/basic_catalog`).
 3. Bump the **exact** version string in
    `frontend/packages/a2ui-core/package.json` `dependencies["@a2ui/web_core"]`.
-4. Update the table above (pinned version, confirmation date, shasum).
-5. Run `pnpm -C frontend install` to regenerate `pnpm-lock.yaml`, then
-   `pnpm -C frontend --filter @prometheus-ags/a2ui-core typecheck`.
-6. If Change 17's renderer (`frontend/packages/a2ui-uar/`) or the Change 22
-   Lit/Svelte renderers exist by the time of the bump, re-run their test
-   suites against the new pin before merging.
+4. Update the table above and retain the new lockfile integrity.
+5. Run the root frozen install to regenerate `frontend/pnpm-lock.yaml`, then
+   run the local typecheck for `@prometheus-ags/a2ui-core`.
+6. Run the first-party renderer, inspector, and Lit/Svelte conformance checks
+   locally after their unit is complete. GitHub Actions are deployment-only.
 
 ## License
 

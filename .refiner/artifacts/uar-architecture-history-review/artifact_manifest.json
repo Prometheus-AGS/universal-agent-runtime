@@ -1,0 +1,22 @@
+{
+  "artifact_type": "content",
+  "variants": [
+    {
+      "name": "architecture-history-review",
+      "file": "dist/review-summary.md",
+      "format": "markdown",
+      "description": "Constraint-by-constraint review of UAR's public architecture decision history."
+    }
+  ],
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "All bounded history and composed source validators passed.",
+      "Seven isolated negative controls failed before the complete source passed.",
+      "Production build, browser, accessibility, deployment, and runtime evidence remain deferred."
+    ]
+  },
+  "generated_at": "2026-08-23T10:43:16Z"
+}

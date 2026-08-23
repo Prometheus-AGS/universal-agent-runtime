@@ -1,0 +1,27 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-23T06:52:55Z",
+  "variants": [
+    {
+      "name": "publication-contract-review",
+      "file": ".refiner/artifacts/uar-documentation-publication-contract/dist/publication-contract-review.md",
+      "format": "markdown",
+      "description": "Bounded PMPO review of the publication contract, negative controls, evidence limits, and next dependency"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "All isolated publication-contract controls passed.",
+      "The current repository remains expectedly invalid until later registered changes add pages and consolidate publishers.",
+      "No portal build, deployment, runtime, provider, or cross-profile readiness claim is made."
+    ]
+  }
+}

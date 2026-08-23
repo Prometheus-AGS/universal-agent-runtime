@@ -1,62 +1,114 @@
-# Architecture
+---
+sidebar_position: 1
+title: Runtime Architecture
+description: Why Universal Agent Runtime exists and where execution authority lives.
+source_records:
+  - openspec/specs/customer-documentation/spec.md
+current_authority: /docs/architecture/intro
+---
 
-Universal Agent Runtime (UAR) is a Rust/Axum process that owns model routing,
-agent execution, governed tool calls, retrieval, memory, and normalized runtime
-events. The React 19 operator interface reaches those capabilities through typed
-REST and SSE services; it never calls providers or persistence directly.
+# Runtime architecture
+
+Universal Agent Runtime (UAR) gives agent applications one inspectable execution
+boundary for models, tools, skills, knowledge, memory, policy, persistence, and
+streaming events. Without that boundary, each client must reconstruct provider
+routing, tool safety, state, and protocol behavior—and the same request can mean
+something different in every integration.
+
+## Boundary statement
+
+**The agent kernel reasons and proposes; the trusted host authorizes, executes,
+persists, and reports effects.** This capability inversion is the organizing
+idea of UAR. Model output is input to the runtime, not authority to mutate the
+world.
+
+The boundary matters because an agent can be wrong, manipulated, stale, or
+underspecified. A tool name in a model response is only intent. UAR turns that
+intent into a governed request, resolves the available capability, performs the
+operation in trusted code, and emits the result as runtime state.
+
+## The system map
 
 ```mermaid
 flowchart LR
-    UI[React operator interface] -->|REST + SSE| UAR[UAR server-full]
-    SDK[Rust, Python, and TypeScript SDKs] -->|HTTP + SSE| UAR
-    UAR --> LLM[Model providers]
-    UAR --> MCP[MCP and native tools]
-    UAR --> DB[(SurrealDB)]
-    UAR --> A2A[A2A peers]
-    UAR --> AGUI[AG-UI event consumers]
-    UAR --> A2UI[A2UI renderers]
+    Client[UI, SDK, or protocol client] --> Boundary[UAR execution boundary]
+    Boundary --> Identity[Identity and run configuration]
+    Identity --> Agent[Agent kernel and model]
+    Agent --> Intent[Structured intent]
+    Intent --> Host[Trusted host capabilities]
+    Host --> Tools[MCP and native tools]
+    Host --> State[Configured persistence]
+    Host --> Events[Normalized runtime events]
+    Events --> Client
 ```
 
-## Runtime request flow
+## Diagram in words
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API as Axum API
-    participant Runtime as Run manager
-    participant Policy as Cedar policy
-    participant Provider as Model provider
+A UI, SDK, or protocol client enters the UAR boundary. The runtime resolves the
+request's identity and effective configuration before the agent kernel asks a
+model to reason. Any structured intent produced by the model returns to trusted
+host code. The host owns tool access and configured persistence, and it reports
+progress and outcomes as normalized events back to the client. The arrows never
+grant the agent kernel a direct write path to tools or storage.
 
-    Client->>API: Start run
-    API->>Runtime: Create governed execution
-    Runtime->>Policy: Authorize action or tool
-    Policy-->>Runtime: Allow, require approval, or deny
-    Runtime->>Provider: Stream completion
-    Provider-->>Runtime: Text and tool deltas
-    Runtime-->>Client: Normalized AG-UI events
-```
+## Runtime theory
 
-## Prometheus platform boundary
+UAR separates four concerns that are often collapsed into a single “agent”:
 
-UAR is one service in the wider Prometheus platform. It owns inference and
-agent execution; the surrounding services retain their own security and data
-responsibilities.
+1. **Intent** — messages, instructions, model output, and selected actions.
+2. **Authority** — identity, policy, approvals, and available capabilities.
+3. **Execution** — model calls, tool calls, retrieval, and graph nodes performed
+   by runtime-owned services.
+4. **Evidence** — normalized events and configured persistence that make the
+   execution inspectable.
 
-```mermaid
-flowchart TB
-    Client[Client or operator] --> Gate[Flint Gate\nedge authentication]
-    Gate --> UAR[Universal Agent Runtime\ninference and governed execution]
-    UAR --> Fabric[Flint Realtime Fabric\ndurable event distribution]
-    Forge[Flint Forge\nRLS data APIs and edge execution] --> Fabric
-    Admin[Flint Platform Agent\nauthenticated administration] --> Gate
-    Admin --> Forge
-```
+This separation does not make a model deterministic. It makes the surrounding
+system explicit: callers can see what was requested, which boundary accepted or
+rejected it, what ran, and how the outcome was represented.
 
-SurrealDB is the Stable server authority. PGlite is a browser or desktop cache
-for local threads and messages; versioned server events reconcile the frontend
-entity graph. AG-UI defines the event vocabulary. A2UI accepts validated
-declarative artifacts from an approved component catalog and does not execute
-model-provided HTML or JavaScript.
+## One runtime, several entrances
 
-Read the [deployment](../deployment), [security](../security), and
-[API reference](../api-reference) guides for the operational boundaries.
+The server profiles expose OpenAI-compatible and Anthropic-compatible HTTP,
+UAR REST and SSE, MCP integrations, and feature-gated A2A surfaces. AG-UI is an
+event vocabulary presented to compatible clients; A2UI carries validated
+declarative UI state. An embedded host calls the same runtime services directly
+and supplies its own inference and persistence implementations.
+
+These entrances do not create independent execution engines. They adapt client
+requests into the shared runtime boundary. See [Protocol boundaries](./protocols)
+for the distinctions that remain after adaptation.
+
+## Conceptual path
+
+- [Trust boundary](./trust-boundary) follows intent across identity, policy,
+  capability, execution, and event boundaries.
+- [Execution lifecycle](./execution-lifecycle) maps one request through run
+  startup, steps, tool calls, and a terminal outcome.
+- [State and events](./state-and-events) distinguishes a live event stream from
+  durable storage and agent-only context.
+- [Runtime profiles](./profiles) defines which composition is actually present.
+- [Protocol boundaries](./protocols) explains the typed entrances.
+- [Delegation and graph execution](./delegation) documents the current
+  orchestrator graph without projecting the deferred provider architecture.
+
+## Profile limits
+
+This page describes the shared design boundary, not identical feature sets.
+`minimal` is the default server build and includes the server plus the embedded
+SurrealDB backend. `server-full` adds A2A transport, Cedar governance, local
+models, telemetry, the admin UI, WASM runtime, and other release capabilities.
+`embedded-mobile` is transport-free: its host supplies inference and persistence
+through public traits.
+
+Evidence does not transfer between these profiles. A successful server-full
+test does not certify embedded-mobile, and an embedded host integration does not
+prove HTTP, A2A, Cedar, or server operations. The [profile guide](./profiles)
+is the authority for those boundaries.
+
+## What this architecture does not claim
+
+UAR has current normalized events, a persistence abstraction, graph execution,
+and profile-specific composition. Proposed typed turn identifiers, durable
+session logs, spill stores, signed receipts, and a neutral component host are
+not described here as delivered. Architecture proposals become product truth
+only after their implementation and profile-scoped evidence exist.

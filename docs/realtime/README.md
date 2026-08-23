@@ -1,5 +1,10 @@
 # UAR Realtime System
 
+> **Historical — superseded 2026-08-23.** This directory describes a proposed
+> topic-routed WebSocket service that is not the shipped realtime boundary.
+> Current UAR exposes entity-change Server-Sent Events; see the
+> [current realtime authority](/docs/operations/realtime).
+
 > Standardized, generic, bi-directional realtime messaging for the Universal Agent Runtime — available to views, API callers, and plugin developers over WebSocket (and later WebRTC data channels).
 
 ## Documents in this directory

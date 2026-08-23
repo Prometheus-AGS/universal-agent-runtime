@@ -1,0 +1,46 @@
+{
+  "refinement_id": "ca0b9467-7abb-4794-bccc-c29007a4885e",
+  "artifact_name": "uar-security-operations-documentation-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T09:07:08Z",
+  "updated_at": "2026-08-23T09:08:03Z",
+  "current_iteration": 0,
+  "max_iterations": 5,
+  "goals": [
+    "Validate the bounded eleven-guide UAR security and operations publication without claiming rendered, deployed, runtime-security, restore, or cross-profile certification"
+  ],
+  "constraints": [
+    {
+      "id": "complete-classified-boundary-guides"
+    },
+    {
+      "id": "verified-security-and-tenancy-claims"
+    },
+    {
+      "id": "truthful-governance-and-approval-limits"
+    },
+    {
+      "id": "bounded-operational-state-and-recovery"
+    },
+    {
+      "id": "public-safe-source-only-evidence"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "9dc50026",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-23T09:08:03Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

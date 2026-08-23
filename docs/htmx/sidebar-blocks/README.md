@@ -1,5 +1,9 @@
 # HTMX Sidebar Blocks (Web Components + Alpine + HTMX)
 
+> **Historical — superseded 2026-08-23.** These standalone sidebar experiments
+> predate the React 19 product UI. Use the
+> [current React product authority](/docs/product/chat).
+
 These files are **standalone HTMX artifacts** intended to be viewed in an **iframe + Shadow DOM** execution environment to prevent style bleed. [5]
 
 Each example includes:
@@ -9,4 +13,3 @@ Each example includes:
 - Web Components implemented as ES classes + Shadow DOM for encapsulation [5]
 
 Open any `sidebar-XX-*.html` directly in a browser.
-

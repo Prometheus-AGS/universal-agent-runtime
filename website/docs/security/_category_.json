@@ -1,0 +1,8 @@
+{
+  "label": "Security",
+  "position": 8,
+  "link": {
+    "type": "generated-index",
+    "description": "Authenticate requests and protect provider credentials at explicit runtime boundaries."
+  }
+}

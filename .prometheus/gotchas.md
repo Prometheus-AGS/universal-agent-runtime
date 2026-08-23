@@ -538,3 +538,38 @@ release candidate back to certification.
 stable/1.87 image build. That stale capability text is outside this release
 child and must be reconciled in a separately planned spec change; it is not
 evidence about the current production Dockerfile.
+
+## 2026-08-23 — artifact-refiner workflow dispatch does not interpolate its payload
+
+**Observed behavior.** After each successful filesystem checkpoint for
+`uar-readme-estate-review`, the vendored artifact-refiner
+`workflow-dispatch.sh` raised `JSONDecodeError: Expecting value` before it could
+evaluate the artifact's empty trigger list.
+
+**Root cause.** The Python body is introduced with a single-quoted heredoc but
+contains shell variables such as `$EVENT_PAYLOAD` and `$STATE_FILE`. The shell
+therefore does not interpolate them; Python receives the literal variable names
+and attempts to parse `$EVENT_PAYLOAD` as JSON.
+
+**Consequence.** Checkpoint and artifact state remain valid, but lifecycle
+triggers cannot fire through this script. Do not treat dispatch as observed just
+because the checkpoint command succeeded. No trigger was configured for this
+documentation artifact, so the defect did not block its content gate.
+
+**Ownership.** The implementation is in the pinned
+`crates/prometheus-skill-system` submodule. Fix it upstream rather than creating
+a detached submodule edit in UAR.
+
+## 2026-08-23 — Pages environment branch policy is stricter than workflow triggers
+
+**Observed behavior.** A manual `docs.yml` run on
+`codex/uar-branded-documentation-site` assembled and uploaded the complete Pages
+artifact, but the deploy job was rejected before execution. The
+`github-pages` environment has a custom deployment-branch policy whose only
+entry is `main`.
+
+**Working rule.** A workflow's `workflow_dispatch` or branch trigger does not
+grant deployment authority. Inspect the target environment's deployment branch
+policy before planning feature-branch publication. Preserve the protection;
+open the PR, obtain merge authority, and validate the deployment created from
+the allowed branch instead of weakening the environment for convenience.

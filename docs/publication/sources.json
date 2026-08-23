@@ -1,0 +1,263 @@
+{
+  "schemaVersion": 1,
+  "trackedSelectors": {
+    "basenames": ["README.md"],
+    "prefixes": ["docs/", "website/", ".prometheus/", ".kbd-orchestrator/", "openspec/"]
+  },
+  "rules": [
+    {
+      "id": "implementation-provenance-sources",
+      "selector": {
+        "paths": [
+          ".claude/rules/rust.md",
+          ".claude/rules/typescript.md",
+          "AGENTS.md",
+          "Cargo.toml",
+          "LICENSE",
+          "LICENSE-CC-BY-4.0.md",
+          "frontend/src/features/a2ui/ui/a2ui-testing-page.tsx",
+          "frontend/src/features/chat/chat-thread-view.tsx",
+          "frontend/src/features/chat/components/a2ui-artifact-block.tsx",
+          "frontend/src/features/compiler/api/compiler-api.ts",
+          "frontend/src/features/compiler/ui/compiler-page.tsx",
+          "frontend/src/pages/about-page.tsx",
+          "frontend/src/pages/admin-page.tsx",
+          "frontend/src/pages/chat-page.tsx"
+        ]
+      },
+      "disposition": "public-normalize",
+      "owner": "uar-maintainers",
+      "status": "current",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "/docs/intro",
+      "publicDestination": "/docs"
+    },
+    {
+      "id": "root-readme",
+      "selector": { "paths": ["README.md"] },
+      "disposition": "public-normalize",
+      "owner": "uar-maintainers",
+      "status": "current",
+      "publicationMode": "normalize",
+      "canonicalAuthority": "website/docs/intro.md",
+      "publicDestination": "/"
+    },
+    {
+      "id": "website-source",
+      "selector": { "prefixes": ["website/"] },
+      "disposition": "public",
+      "owner": "documentation-site",
+      "status": "current",
+      "publicationMode": "direct",
+      "canonicalAuthority": "docs/publication/routes.json",
+      "publicDestination": "/"
+    },
+    {
+      "id": "private-assessment-and-handoff-evidence",
+      "selector": {
+        "paths": [
+          "docs/assessments/evolution_state_2026-02-21.json",
+          "docs/claude-24-of-24-handoff.md"
+        ]
+      },
+      "disposition": "private-synthesis-only",
+      "owner": "prometheus-history",
+      "status": "historical",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "/docs/history/testing-methodology",
+      "rationale": "Raw evolution state and an operator execution handoff contain machine context and command history; public pages use reviewed synthesis only."
+    },
+    {
+      "id": "historical-unshipped-system-designs",
+      "selector": {
+        "prefixes": [
+          "docs/code-interpreter/",
+          "docs/plugins/",
+          "docs/realtime/"
+        ]
+      },
+      "disposition": "private-synthesis-only",
+      "owner": "uar-maintainers",
+      "status": "historical",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "/docs/history/architecture-decisions",
+      "rationale": "These directories describe superseded standalone services and raw payloads that do not match the shipped in-process sandbox, WASM loader, or entity SSE boundaries."
+    },
+    {
+      "id": "current-protocol-synthesis-sources",
+      "selector": {
+        "paths": [
+          "docs/API_CHAT_COMPLETION.md",
+          "docs/protocols/ag-ui-profile.md"
+        ]
+      },
+      "disposition": "public-normalize",
+      "owner": "uar-maintainers",
+      "status": "current",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "/docs/protocols/overview",
+      "publicDestination": "/docs/protocols"
+    },
+    {
+      "id": "historical-architecture-synthesis-sources",
+      "selector": {
+        "paths": [
+          "docs/plans/2026-04-11-admin-ux-entity-management-plan.md",
+          "docs/uar-next-fable.md",
+          "docs/uar-next.md",
+          "docs/uar-uiux-assessment-and-implementation-plan-2026-08-01.md"
+        ]
+      },
+      "disposition": "public-normalize",
+      "owner": "uar-maintainers",
+      "status": "historical",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "/docs/history/architecture-decisions",
+      "publicDestination": "/docs/history/architecture-decisions"
+    },
+    {
+      "id": "repository-documentation",
+      "selector": {
+        "prefixes": ["docs/"],
+        "excludePaths": [
+          "docs/API_CHAT_COMPLETION.md",
+          "docs/assessments/evolution_state_2026-02-21.json",
+          "docs/claude-24-of-24-handoff.md",
+          "docs/plans/2026-04-11-admin-ux-entity-management-plan.md",
+          "docs/protocols/ag-ui-profile.md",
+          "docs/uar-next-fable.md",
+          "docs/uar-next.md",
+          "docs/uar-uiux-assessment-and-implementation-plan-2026-08-01.md"
+        ],
+        "excludePrefixes": [
+          "docs/code-interpreter/",
+          "docs/plugins/",
+          "docs/realtime/"
+        ]
+      },
+      "disposition": "public-normalize",
+      "owner": "uar-maintainers",
+      "status": "current",
+      "publicationMode": "normalize",
+      "canonicalAuthority": "docs/publication/routes.json",
+      "publicDestination": "/docs"
+    },
+    {
+      "id": "prometheus-history",
+      "selector": { "prefixes": [".prometheus/"] },
+      "disposition": "private-synthesis-only",
+      "owner": "prometheus-history",
+      "status": "historical",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": ".prometheus/decisions.md",
+      "rationale": "Append-only operational and reasoning history may inform reviewed public synthesis but is never copied directly."
+    },
+    {
+      "id": "kbd-history",
+      "selector": { "prefixes": [".kbd-orchestrator/"] },
+      "disposition": "private-synthesis-only",
+      "owner": "kbd-runtime",
+      "status": "historical",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": ".kbd-orchestrator/current-waypoint.json",
+      "rationale": "KBD artifacts contain lifecycle evidence and machine context; public history cites reviewed records only."
+    },
+    {
+      "id": "openspec-current",
+      "selector": { "prefixes": ["openspec/specs/"] },
+      "disposition": "public-normalize",
+      "owner": "openspec",
+      "status": "current",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "openspec/specs/",
+      "publicDestination": "/docs/reference/capabilities"
+    },
+    {
+      "id": "superseded-minimum-portal-change",
+      "selector": { "prefixes": ["openspec/changes/docs-hosted-rustdoc-typedoc-docusaurus-ia/"] },
+      "disposition": "public-normalize",
+      "owner": "documentation-site",
+      "status": "historical",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "openspec/changes/docs-hosted-rustdoc-typedoc-docusaurus-ia/superseded.md",
+      "publicDestination": "/docs/history/architecture-decisions",
+      "rationale": "Retained minimum-portal history superseded by the branded documentation phase."
+    },
+    {
+      "id": "openspec-change-history",
+      "selector": {
+        "prefixes": ["openspec/changes/"],
+        "excludePrefixes": ["openspec/changes/docs-hosted-rustdoc-typedoc-docusaurus-ia/"]
+      },
+      "disposition": "public-normalize",
+      "owner": "openspec",
+      "status": "historical",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "openspec/specs/",
+      "publicDestination": "/docs/history/architecture-decisions"
+    },
+    {
+      "id": "openspec-metadata",
+      "selector": {
+        "prefixes": ["openspec/"],
+        "excludePrefixes": ["openspec/specs/", "openspec/changes/"]
+      },
+      "disposition": "public-normalize",
+      "owner": "openspec",
+      "status": "current",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "openspec/config.yaml",
+      "publicDestination": "/docs/contributing"
+    },
+    {
+      "id": "iterative-evolver-readme-mirrors",
+      "selector": {
+        "paths": [
+          ".agent/skills/iterative-evolver/README.md",
+          ".claude/skills/iterative-evolver/README.md",
+          ".codex/skills/iterative-evolver/README.md",
+          ".cursor/skills/iterative-evolver/README.md",
+          ".windsurf/skills/iterative-evolver/README.md"
+        ]
+      },
+      "disposition": "public-normalize",
+      "owner": "iterative-evolver-generator",
+      "status": "current",
+      "publicationMode": "normalize",
+      "canonicalAuthority": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "publicDestination": "/docs/tools",
+      "generatedFrom": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md"
+    },
+    {
+      "id": "vendored-readmes",
+      "selector": { "prefixes": ["vendor/"] },
+      "disposition": "excluded",
+      "owner": "third-party-vendor",
+      "status": "historical",
+      "publicationMode": "none",
+      "canonicalAuthority": "upstream-vendor",
+      "rationale": "Third-party content remains byte-for-byte under upstream ownership."
+    },
+    {
+      "id": "uar-owned-readmes",
+      "selector": {
+        "basenames": ["README.md"],
+        "excludePaths": [
+          "README.md",
+          ".agent/skills/iterative-evolver/README.md",
+          ".claude/skills/iterative-evolver/README.md",
+          ".codex/skills/iterative-evolver/README.md",
+          ".cursor/skills/iterative-evolver/README.md",
+          ".windsurf/skills/iterative-evolver/README.md"
+        ],
+        "excludePrefixes": ["docs/", "website/", ".prometheus/", ".kbd-orchestrator/", "openspec/", "vendor/"]
+      },
+      "disposition": "public-normalize",
+      "owner": "uar-maintainers",
+      "status": "current",
+      "publicationMode": "normalize",
+      "canonicalAuthority": "website/docs/intro.md",
+      "publicDestination": "/docs"
+    }
+  ]
+}

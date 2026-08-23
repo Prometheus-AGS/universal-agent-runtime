@@ -1,22 +1,15 @@
+---
+sidebar_position: 1
+title: Configuration
+description: Compatibility entry point for the current configuration authority.
+---
+
 # Configuration
 
-UAR is configured through a layered config system: defaults, YAML files, environment variables, and (optionally) a Vault backend.
+The complete, current guide is [Configuration authority](/docs/configuration).
+It covers file selection, precedence, `UAR_SECTION__KEY` environment names,
+schema discovery, provider/model setup, persistence, secret handling, settings
+reconciliation, reload, restart boundaries, and runtime profiles.
 
-## Quick start
-
-Copy `example.config.yaml` to `config.yaml` and edit it for your environment. Sensitive values such as `JWT_SECRET` and `LLM__API_KEY` should be provided through environment variables or a secret store.
-
-## Key files
-
-- `example.config.yaml` — full reference configuration
-- `config.embedded.yaml` — embedded/SurrealDB preset
-- `config.remote.postgres.yaml` — remote PostgreSQL preset
-- `config.remote.surreal.yaml` — remote SurrealDB preset
-- `config.test.yaml` — test preset
-
-## Topics
-
-- Layering and precedence
-- Hot reload
-- Secret handling with `secrecy`
-- JSON Schema export via `GET /.well-known/uar-config`
+For task-oriented setup, continue to [Installation](/docs/installation) or
+[Deployment](/docs/deployment).

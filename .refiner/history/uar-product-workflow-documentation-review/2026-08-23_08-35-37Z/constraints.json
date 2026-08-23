@@ -1,0 +1,67 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "complete-classified-workflows",
+      "description": "Exactly seven dependency-ordered guides exist with classified source records, current authorities, frontmatter, required concepts, and resolvable links.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Product-workflow manifest validation plus missing-guide and unclassified-source negative controls"
+      }
+    },
+    {
+      "id": "truthful-inference-evidence",
+      "description": "Catalog, configuration, model routing, and genuine inference remain distinct, and retained observations carry provider, model, boundary, SHA, date, profile, and non-transfer limits.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Required-marker and retained-evidence audit plus synthetic-as-genuine negative control"
+      }
+    },
+    {
+      "id": "safe-skill-lifecycle",
+      "description": "Skill documentation preserves provenance, conversation-over-agent-over-global precedence, next-request binding, restart durability, non-destructive tombstones, restore, and built-in/API reconciliation exclusions.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Canonical skill-spec review plus missing-safety negative control"
+      }
+    },
+    {
+      "id": "separate-knowledge-memory-authorities",
+      "description": "Knowledge ingestion/retrieval/citations and opt-in memory capture/recall/mutation remain distinct from each other, selected context, live events, and process-local history.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Boundary-table and required-marker audit plus conflation negative control"
+      }
+    },
+    {
+      "id": "public-safe-profile-bounded-source",
+      "description": "Every guide states profile limits, public material is sanitized, diagrams have prose equivalents, and local source verification makes no build, browser, deployment, runtime, or cross-profile claim.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Profile/state, diagram, unsafe-excerpt, brand, publication, TypeScript, and scope controls"
+      }
+    }
+  ],
+  "global_rules": [
+    "Treat the OpenSpec change and product-workflow manifest as the publication authority.",
+    "Run routine verification locally; GitHub Actions remain deployment-only.",
+    "Do not run the phase-level build or browser certification before all documentation content is complete.",
+    "Do not infer fresh runtime, inference, or cross-profile readiness from retained documentation evidence."
+  ],
+  "termination_conditions": [
+    "All five blocking content constraints have observed evidence.",
+    "Every isolated negative control fails for its intended defect before the complete fixture passes.",
+    "Strict OpenSpec and both refiner schemas pass.",
+    "The review explicitly states its build, browser, deployment, fresh-runtime, and cross-profile evidence limits."
+  ]
+}

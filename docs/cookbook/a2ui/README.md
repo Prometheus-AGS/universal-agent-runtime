@@ -1,16 +1,19 @@
-# A2UI Cookbook Examples (Placeholder)
+# A2UI Cookbook Examples
 
-The A2UI surface examples are intentionally out of scope for this dispatch.
-They depend on the `@a2ui/react` and `@a2ui/web_core` integration work tracked
-in Changes 16–22 of the UAR Grade-A upgrade plan.
+> **Current authority:** [A2UI product guide](/docs/product/a2ui). This directory
+> records the current example inventory; it does not add a second renderer or
+> widen the supported component catalog.
 
-Planned examples (4):
+There are no standalone A2UI cookbook programs in this directory. Maintained
+examples live with the code they exercise:
 
-1. `01_render_component` — render a minimal A2UI component using the UAR renderer.
-2. `02_agent_card` — display an agent card with streaming status.
-3. `03_tool_call_panel` — render an interactive tool-call approval panel.
-4. `04_chat_thread` — mount a complete chat thread with real-time events.
+- `frontend/packages/a2ui-uar/` contains the first-party React renderer,
+  fixtures, and package tests.
+- `frontend/packages/a2ui-inspector/` contains the development inspector.
+- `frontend/packages/a2ui-lit/` and `frontend/packages/a2ui-svelte/` are
+  semantic-conformance renderers, not product UI packages.
+- `website/docs/product/a2ui.md` explains the product surface and profile
+  limits.
 
-When Changes 21–22 land, remove this placeholder and implement the examples in
-`docs/cookbook/a2ui/` following the React frontend layering contract documented
-in `AGENTS.md`.
+Add a cookbook example here only when it is independently runnable from a
+source checkout and its runtime/profile prerequisites are stated beside it.

@@ -1,0 +1,27 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-23T07:58:08Z",
+  "variants": [
+    {
+      "name": "architecture-content-review",
+      "file": ".refiner/artifacts/uar-architecture-documentation-review/dist/architecture-content-review.md",
+      "format": "markdown",
+      "description": "Bounded PMPO review of the seven-guide UAR architecture publication and its deterministic source controls"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "partial",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Seven isolated architecture negative controls and the complete positive fixture passed.",
+      "Architecture, brand, publication-control, and TypeScript source checks passed.",
+      "Production build, browser, accessibility, deployment, runtime, and cross-profile evidence are intentionally deferred."
+    ]
+  }
+}

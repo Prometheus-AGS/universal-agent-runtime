@@ -1,0 +1,67 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "complete-classified-boundary-guides",
+      "description": "Exactly eleven dependency-ordered guides and four compatibility pages exist with classified source records, current authorities, frontmatter, required concepts, and resolvable links.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Security/operations manifest validation plus missing-guide and unclassified-source negative controls"
+      }
+    },
+    {
+      "id": "verified-security-and-tenancy-claims",
+      "description": "Authentication, provider credentials, and verified tenant construction remain distinct, and tenancy is limited to the current A2A task/context partition.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Current-source review plus unsafe-credential, unverified-identity, and blanket-isolation negative controls"
+      }
+    },
+    {
+      "id": "truthful-governance-and-approval-limits",
+      "description": "Cedar profile coverage, empty-policy denial, the permit-all load-error fallback, final denial, approval timeout, cancellation, and channel-close outcomes are explicit.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Governance source review plus universal-fail-closed, approval-override, and timeout negative controls"
+      }
+    },
+    {
+      "id": "bounded-operational-state-and-recovery",
+      "description": "Runtime projections, observability, realtime, cost, billing, shutdown, persistence ownership, and functional restore proof remain separate and profile-bounded.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "State-owner and profile review plus durable-realtime, authoritative-billing, deadline, and read-back negative controls"
+      }
+    },
+    {
+      "id": "public-safe-source-only-evidence",
+      "description": "Public material is sanitized, diagrams have prose equivalents, and local source verification makes no build, browser, deployment, runtime-security, restore, or cross-profile claim.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Private-excerpt, structure, TypeScript, brand, architecture, product, security, and composed publication controls"
+      }
+    }
+  ],
+  "global_rules": [
+    "Treat the OpenSpec change and security/operations manifest as the publication authority.",
+    "Run routine verification locally; GitHub Actions remain deployment-only.",
+    "Do not run the phase-level build or browser certification before all documentation content is complete.",
+    "Do not infer runtime security, restore success, or cross-profile readiness from documentation-source evidence."
+  ],
+  "termination_conditions": [
+    "All five blocking content constraints have observed evidence.",
+    "Every isolated negative control fails for its intended defect before the complete fixture passes.",
+    "Strict OpenSpec and both refiner schemas pass.",
+    "The review explicitly states its build, browser, deployment, runtime-security, restore, and cross-profile evidence limits."
+  ]
+}

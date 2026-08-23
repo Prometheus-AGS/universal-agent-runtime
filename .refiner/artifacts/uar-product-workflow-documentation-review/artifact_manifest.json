@@ -1,0 +1,27 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-23T08:33:26Z",
+  "variants": [
+    {
+      "name": "product-workflow-content-review",
+      "file": ".refiner/artifacts/uar-product-workflow-documentation-review/dist/product-workflow-content-review.md",
+      "format": "markdown",
+      "description": "Bounded PMPO review of the seven UAR product-workflow guides, compatibility page, and deterministic source controls"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "partial",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Nine isolated product-workflow negative controls and the complete positive fixture passed.",
+      "TypeScript, architecture, brand, product-workflow, publication-control, and strict OpenSpec checks passed.",
+      "Production build, browser, accessibility, deployment, fresh runtime, and cross-profile evidence are intentionally deferred."
+    ]
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "profiles": [
+    "server-full",
+    "minimal",
+    "embedded-mobile"
+  ],
+  "guides": [
+    {
+      "id": "intro",
+      "title": "Runtime Architecture",
+      "position": 1,
+      "file": "website/docs/architecture/intro.md",
+      "route": "/docs/architecture/intro",
+      "profiles": [
+        "server-full",
+        "minimal",
+        "embedded-mobile"
+      ],
+      "sourceRecords": [
+        "openspec/specs/customer-documentation/spec.md"
+      ],
+      "sourceAuthorities": [
+        "Cargo.toml",
+        "src/uar/runtime/manager.rs",
+        "src/embedded.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "capability inversion",
+        "agent kernel",
+        "trusted host",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    },
+    {
+      "id": "trust-boundary",
+      "title": "Trust Boundary",
+      "position": 2,
+      "file": "website/docs/architecture/trust-boundary.md",
+      "route": "/docs/architecture/trust-boundary",
+      "profiles": [
+        "server-full",
+        "minimal",
+        "embedded-mobile"
+      ],
+      "sourceRecords": [
+        "openspec/specs/customer-documentation/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/runtime/manager.rs",
+        "src/uar/governance/engine.rs",
+        "src/uar/domain/events.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "intent is not an effect",
+        "identity",
+        "policy",
+        "capability",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    },
+    {
+      "id": "execution-lifecycle",
+      "title": "Execution Lifecycle",
+      "position": 3,
+      "file": "website/docs/architecture/execution-lifecycle.md",
+      "route": "/docs/architecture/execution-lifecycle",
+      "profiles": [
+        "server-full",
+        "minimal",
+        "embedded-mobile"
+      ],
+      "sourceRecords": [
+        "openspec/specs/customer-documentation/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/runtime/manager.rs",
+        "src/uar/domain/events.rs",
+        "src/llm/orchestrator.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "request",
+        "turn",
+        "step",
+        "tool call",
+        "terminal event",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    },
+    {
+      "id": "state-and-events",
+      "title": "State and Events",
+      "position": 4,
+      "file": "website/docs/architecture/state-and-events.md",
+      "route": "/docs/architecture/state-and-events",
+      "profiles": [
+        "server-full",
+        "minimal",
+        "embedded-mobile"
+      ],
+      "sourceRecords": [
+        "openspec/specs/customer-documentation/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/domain/events.rs",
+        "src/uar/runtime/manager.rs",
+        "src/uar/persistence/mod.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "normalized event",
+        "configured persistence",
+        "agent-only memory",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    },
+    {
+      "id": "profiles",
+      "title": "Runtime Profiles",
+      "position": 5,
+      "file": "website/docs/architecture/profiles.md",
+      "route": "/docs/architecture/profiles",
+      "profiles": [
+        "server-full",
+        "minimal",
+        "embedded-mobile"
+      ],
+      "sourceRecords": [
+        "openspec/specs/customer-documentation/spec.md"
+      ],
+      "sourceAuthorities": [
+        "Cargo.toml",
+        "src/server.rs",
+        "src/embedded.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "server-full",
+        "minimal",
+        "embedded-mobile",
+        "transport-free",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "protocols",
+      "title": "Protocol Boundaries",
+      "position": 6,
+      "file": "website/docs/architecture/protocols.md",
+      "route": "/docs/architecture/protocols",
+      "profiles": [
+        "server-full",
+        "minimal",
+        "embedded-mobile"
+      ],
+      "sourceRecords": [
+        "openspec/specs/customer-documentation/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/server.rs",
+        "src/uar/api/sse.rs",
+        "src/uar/domain/events.rs",
+        "src/embedded.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "OpenAI-compatible",
+        "Anthropic-compatible",
+        "MCP",
+        "A2A",
+        "AG-UI",
+        "A2UI",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    },
+    {
+      "id": "delegation",
+      "title": "Delegation and Graph Execution",
+      "position": 7,
+      "file": "website/docs/architecture/delegation.md",
+      "route": "/docs/architecture/delegation",
+      "profiles": [
+        "server-full",
+        "minimal",
+        "embedded-mobile"
+      ],
+      "sourceRecords": [
+        "openspec/specs/customer-documentation/spec.md",
+        "openspec/specs/multi-agent-orchestration/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/defaults.rs",
+        "src/uar/runtime/manager.rs",
+        "src/uar/runtime/graph/engine.rs",
+        "src/uar/runtime/graph/types.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "simple tool loop",
+        "graph-driven execution",
+        "orchestrator-agent",
+        "deferred",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    }
+  ]
+}

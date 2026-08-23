@@ -1,43 +1,40 @@
-# Website
+# UAR documentation site
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+> **Current authority:** [UAR documentation portal](/docs/intro). This directory
+> owns the Docusaurus source and its deployment-only GitHub Pages workflow.
 
-## Installation
+The site uses the package-local npm lockfile and the UAR brand assets under
+`static/img/brand/`. Product pages are authored in `docs/`; shared navigation
+and deployment configuration are in `sidebars.ts` and `docusaurus.config.ts`.
 
-```bash
-npm install
-```
+## Local development
 
-**Note**: feel free to use the package manager of your choice.
-
-## Local Development
-
-```bash
-npm run start
-```
-
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
-
-## Build
+From the repository root:
 
 ```bash
-npm run build
+npm --prefix website ci
+npm --prefix website run start
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+The final documentation certification change owns the production build,
+representative browser routes, responsive light/dark screenshots, keyboard
+behavior, and accessibility checks. Do not treat the development server as
+publication evidence.
 
-## Deployment
+## Local source checks
 
-Using SSH:
+After documentation content is complete:
 
 ```bash
-USE_SSH=true npm run deploy
+npm --prefix website run typecheck
+npm --prefix website run lint
+npm run docs:publication:validate
 ```
 
-Not using SSH:
+## Publication
 
-```bash
-GIT_USER=<Your GitHub username> npm run deploy
-```
-
-If you are using GitHub Pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+`.github/workflows/docs.yml` is the single GitHub Pages publisher. It may build
+and validate the deployable Pages artifact because those checks are part of the
+deployment itself. It must not run product unit, integration, conformance,
+linting, typecheck, or other routine development suites. Local certification
+must pass before the documentation commit is pushed.

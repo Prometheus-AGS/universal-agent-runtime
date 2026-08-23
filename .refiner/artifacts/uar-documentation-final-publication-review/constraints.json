@@ -1,0 +1,77 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "complete-artifact",
+      "description": "The final production artifact contains the branded portal and non-empty generated UAR Rust and TypeScript references.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Docusaurus build, UAR library Rustdoc, TypeDoc, staging controls, and publication validation"
+      }
+    },
+    {
+      "id": "privacy-and-truth",
+      "description": "Published output passes source classification, sanitizer, truth, history, README, and product-boundary checks.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "composed publication validator with built output and observed negative controls"
+      }
+    },
+    {
+      "id": "rendered-accessibility",
+      "description": "Four viewport/theme combinations have no overflow, WCAG A/AA violations, console errors, or request failures and retain visible keyboard focus.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Playwright Chromium plus axe-core against the served production artifact"
+      }
+    },
+    {
+      "id": "route-and-interaction",
+      "description": "All required routes plus generated references respond successfully and representative navigation, search, and Mermaid rendering work.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "data-driven deployed-route validator and browser interaction validator"
+      }
+    },
+    {
+      "id": "deployment-only-actions",
+      "description": "The sole Pages workflow performs artifact assembly, deployment, and deployed-artifact validation without routine development tests.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "GitHub Actions policy validator and negative controls"
+      }
+    },
+    {
+      "id": "claim-boundary",
+      "description": "The result is limited to documentation publication and makes no runtime, inference, release, security, or cross-profile readiness claim.",
+      "severity": "high",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": false,
+        "validation_method": "proposal, specification, verification, and completion-language review"
+      }
+    }
+  ],
+  "global_rules": [
+    "Evidence must be observed against the complete built artifact.",
+    "A fail-closed publication assertion requires an observed failing negative control.",
+    "GitHub Actions are deployment-only.",
+    "No result transfers beyond documentation publication at the recorded source SHA."
+  ],
+  "termination_conditions": [
+    "All blocking constraints pass deterministic local validation.",
+    "All eleven OpenSpec changes pass strict validation.",
+    "No runtime, product UI, dependency, lockfile, vendor, or submodule edit remains.",
+    "The public deployment and repository homepage are observed after push."
+  ]
+}

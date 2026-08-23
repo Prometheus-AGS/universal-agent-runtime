@@ -1,39 +1,18 @@
 ---
 sidebar_position: 8
 title: Security
+description: Entry point for UAR authentication, credential, tenancy, and governance boundaries.
 ---
 
 # Security
 
-UAR treats authentication, tenant identity, and tool execution as trust
-boundaries. Production deployments should terminate public traffic at an edge
-gateway and keep UAR on a private service network.
+UAR treats authentication, tenant identity, provider credentials, and tool execution as separate trust boundaries. No one control implies the others.
 
-## Authentication and tenancy
+Start with [Authenticate Requests](/docs/security/authentication), the current authority for JWT, JWKS, API keys, anonymous mode, and probe exceptions. Then use:
 
-- JWT authentication is required by default.
-- Startup fails when authentication is enabled with the published fallback
-  secret. Set `UAR_SECURITY__JWT_SECRET` to a deliberate value, or configure
-  authenticated JWKS verification.
-- Configure issuer and audience validation for tokens minted outside UAR.
-- Tenant identity is populated only after signature and claim verification.
-  An unverified token string never becomes an isolation boundary.
-- API-key exchange mints short-lived JWTs through the same configured provider.
+- [Manage Provider Credentials](/docs/security/credentials) for encrypted, user-scoped provider keys;
+- [Understand Tenant Boundaries](/docs/tenancy/overview) for the current A2A-only partition claim;
+- [Apply Governance Policies](/docs/governance/overview) for Cedar coverage and its present fallback;
+- [Resolve Tool Approvals](/docs/governance/approvals) for permitted-but-sensitive tool calls.
 
-For local development, the `uar-jwt-proxy` tool can mint and inject a token. It
-is a local convenience and is not an internet-facing authentication gateway.
-
-## Tool governance
-
-MCP-discovered and native tools cross the same server-side schema, policy,
-approval, and audit boundary. Cedar decisions can allow, require human
-approval, or deny an action. A deny decision is final and cannot be overridden
-by approval.
-
-Keep provider credentials out of frontend code and persisted UI state. Use the
-encrypted per-user credential store for multi-tenant deployments, configure
-trusted origins, and leave file, terminal, web-fetch, and WASM capabilities
-disabled unless the deployment explicitly needs them.
-
-Report vulnerabilities through the repository's
-[security policy](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/SECURITY.md).
+Deployments still own TLS termination, edge authentication, secret custody, storage access, and external service policy. Report vulnerabilities through the repository's [security policy](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/SECURITY.md).

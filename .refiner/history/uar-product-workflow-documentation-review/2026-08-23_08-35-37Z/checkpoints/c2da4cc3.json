@@ -1,0 +1,82 @@
+{
+  "refinement_id": "c278e558-5498-4a88-b23f-451c9b246ecb",
+  "artifact_name": "uar-product-workflow-documentation-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T08:31:41Z",
+  "updated_at": "2026-08-23T08:34:42Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate the bounded seven-guide UAR product workflow publication without claiming rendered, deployed, fresh-runtime, or cross-profile certification"
+  ],
+  "constraints": [
+    {
+      "id": "complete-classified-workflows"
+    },
+    {
+      "id": "truthful-inference-evidence"
+    },
+    {
+      "id": "safe-skill-lifecycle"
+    },
+    {
+      "id": "separate-knowledge-memory-authorities"
+    },
+    {
+      "id": "public-safe-profile-bounded-source"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 5,
+      "constraints_total": 5,
+      "decision": "terminate",
+      "timestamp": "2026-08-23T08:34:42Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "24f37567",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-23T08:32:45Z"
+    },
+    {
+      "checkpoint_id": "1cd42955",
+      "phase": "plan",
+      "iteration": 0,
+      "timestamp": "2026-08-23T08:33:06Z"
+    },
+    {
+      "checkpoint_id": "e65a568e",
+      "phase": "execute",
+      "iteration": 0,
+      "timestamp": "2026-08-23T08:34:14Z"
+    },
+    {
+      "checkpoint_id": "a77d787d",
+      "phase": "reflect",
+      "iteration": 0,
+      "timestamp": "2026-08-23T08:34:35Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

@@ -1,0 +1,43 @@
+{
+  "refinement_id": "af01b7af-989a-4bb4-9a42-4d1a6cbaa0b0",
+  "artifact_name": "uar-architecture-documentation-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T07:56:43Z",
+  "updated_at": "2026-08-23T07:59:04Z",
+  "current_iteration": 0,
+  "max_iterations": 5,
+  "goals": [],
+  "constraints": [],
+  "phases_completed": [],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "04a96716",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:57:46Z"
+    },
+    {
+      "checkpoint_id": "d9855503",
+      "phase": "plan",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:58:02Z"
+    },
+    {
+      "checkpoint_id": "dc855564",
+      "phase": "execute",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:58:43Z"
+    },
+    {
+      "checkpoint_id": "b86f0b48",
+      "phase": "reflect",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:59:04Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

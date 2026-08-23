@@ -1,0 +1,75 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "readme-denominator",
+      "description": "Every tracked README has exactly one ownership record and generated/vendor invariants hold.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "README-estate validator plus isolated negative controls"
+      }
+    },
+    {
+      "id": "authority-and-history",
+      "description": "Current READMEs link to current authority and historical READMEs carry dated supersession banners.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "README-estate validator"
+      }
+    },
+    {
+      "id": "truth-and-profile-limits",
+      "description": "Claims remain source-backed and scoped to named product profiles without cross-profile transfer.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "publication, truth, workflow, security, and developer-reference controls"
+      }
+    },
+    {
+      "id": "public-safety",
+      "description": "Direct public content excludes credentials, private keys, machine-local paths, raw private evidence, and routine GitHub testing.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "publication sanitizer and GitHub Actions policy controls"
+      }
+    },
+    {
+      "id": "frozen-route-completion",
+      "description": "The five missing frozen document IDs exist without changing route, navigation, theme, runtime, or package contracts.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "route validator, Docusaurus TypeScript, and scoped diff audit"
+      }
+    },
+    {
+      "id": "deferred-rendered-certification",
+      "description": "The review makes no production-build, browser, accessibility, deployment, live-route, registry, or runtime claim.",
+      "severity": "high",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": false,
+        "validation_method": "artifact and verification limit review"
+      }
+    }
+  ],
+  "global_rules": [
+    "GitHub Actions are deployment-only.",
+    "Evidence transfers to no unnamed runtime profile.",
+    "Historical records are preserved as history, not rewritten as current truth."
+  ],
+  "termination_conditions": [
+    "All blocking constraints pass their observed local controls.",
+    "No out-of-scope runtime, application, package, lockfile, vendor, route, navigation, theme, or deployment-workflow change remains."
+  ]
+}
+

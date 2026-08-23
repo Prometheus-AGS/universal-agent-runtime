@@ -1,5 +1,10 @@
 # UAR Plugin Architecture
 
+> **Historical — superseded 2026-08-23.** This directory describes a proposed
+> universal plugin and realtime architecture. The current source retains a
+> capability-denying WASM loader contract whose execution methods are not wired;
+> see the [current tools authority](/docs/tools/overview).
+
 _Last updated: 2026-02-21_
 
 Plugins are the **extensibility backbone** of the Prometheus AGS ecosystem. A plugin is a first-class participant in the runtime — it can listen to everything happening in the system, execute long-running jobs in sandboxed microVMs with access to LLM models, and publish events back through `uar-realtime` to any client in the world.

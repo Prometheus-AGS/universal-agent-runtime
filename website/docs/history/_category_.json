@@ -1,0 +1,8 @@
+{
+  "label": "History",
+  "position": 10,
+  "link": {
+    "type": "generated-index",
+    "description": "Architecture decisions, reversals, provenance, and the evidence limits of UAR's retained project history."
+  }
+}

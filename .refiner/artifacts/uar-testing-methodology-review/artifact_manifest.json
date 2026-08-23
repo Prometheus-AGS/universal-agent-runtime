@@ -1,0 +1,15 @@
+{
+  "artifact_type": "content",
+  "variants": [{"name":"testing-methodology-review","file":"dist/review-summary.md","format":"markdown","description":"Constraint review of UAR's public testing methodology and evidence taxonomy."}],
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Seven isolated negative controls and all bounded source validators passed.",
+      "Composition exposed and corrected three unclassified policy sources.",
+      "Product, model, soak, rendered, accessibility, and deployment evidence remain deferred."
+    ]
+  },
+  "generated_at": "2026-08-23T10:51:38Z"
+}

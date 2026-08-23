@@ -1,0 +1,53 @@
+{
+  "refinement_id": "c278e558-5498-4a88-b23f-451c9b246ecb",
+  "artifact_name": "uar-product-workflow-documentation-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T08:31:41Z",
+  "updated_at": "2026-08-23T08:33:06Z",
+  "current_iteration": 0,
+  "max_iterations": 5,
+  "goals": [
+    "Validate the bounded seven-guide UAR product workflow publication without claiming rendered, deployed, fresh-runtime, or cross-profile certification"
+  ],
+  "constraints": [
+    {
+      "id": "complete-classified-workflows"
+    },
+    {
+      "id": "truthful-inference-evidence"
+    },
+    {
+      "id": "safe-skill-lifecycle"
+    },
+    {
+      "id": "separate-knowledge-memory-authorities"
+    },
+    {
+      "id": "public-safe-profile-bounded-source"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "24f37567",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-23T08:32:45Z"
+    },
+    {
+      "checkpoint_id": "1cd42955",
+      "phase": "plan",
+      "iteration": 0,
+      "timestamp": "2026-08-23T08:33:06Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

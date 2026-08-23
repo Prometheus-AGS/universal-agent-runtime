@@ -1,0 +1,89 @@
+{
+  "refinement_id": "960bda90-986f-40e0-9539-334ccd80d420",
+  "artifact_name": "uar-documentation-publication-contract",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T06:52:37Z",
+  "updated_at": "2026-08-23T06:55:00Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate the documentation publication foundation without claiming that the incomplete portal is publishable"
+  ],
+  "constraints": [
+    {
+      "id": "source-and-route-authority"
+    },
+    {
+      "id": "private-history-boundary"
+    },
+    {
+      "id": "fail-closed-composition"
+    },
+    {
+      "id": "truthful-incomplete-baseline"
+    },
+    {
+      "id": "bounded-change"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 5,
+      "constraints_total": 5,
+      "decision": "terminate",
+      "timestamp": "2026-08-23T06:54:04Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "e37ba896",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-23T06:54:02Z"
+    },
+    {
+      "checkpoint_id": "acabe566",
+      "phase": "plan",
+      "iteration": 0,
+      "timestamp": "2026-08-23T06:54:02Z"
+    },
+    {
+      "checkpoint_id": "fa843bb7",
+      "phase": "execute",
+      "iteration": 0,
+      "timestamp": "2026-08-23T06:54:03Z"
+    },
+    {
+      "checkpoint_id": "7df2c9a2",
+      "phase": "reflect",
+      "iteration": 0,
+      "timestamp": "2026-08-23T06:54:03Z"
+    },
+    {
+      "checkpoint_id": "b99ccf90",
+      "phase": "persist",
+      "iteration": 0,
+      "timestamp": "2026-08-23T06:54:04Z"
+    }
+  ],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-23T06:55:00Z"
+}

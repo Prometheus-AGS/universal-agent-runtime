@@ -1,0 +1,49 @@
+{
+  "refinement_id": "34331215-b554-4365-9da9-b62cdbffeeeb",
+  "artifact_name": "uar-readme-estate-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T10:24:32Z",
+  "updated_at": "2026-08-23T10:26:34Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Review the completed README estate and frozen-route content against publication constraints."
+  ],
+  "constraints": [
+    "readme-denominator",
+    "authority-and-history",
+    "truth-and-profile-limits",
+    "public-safety",
+    "frozen-route-completion",
+    "deferred-rendered-certification"
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "blocking_satisfied": 5,
+      "blocking_violated": 0,
+      "high_satisfied": 1,
+      "decision": "terminate",
+      "timestamp": "2026-08-23T10:24:39Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "1a6d75cd",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-23T10:26:34Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

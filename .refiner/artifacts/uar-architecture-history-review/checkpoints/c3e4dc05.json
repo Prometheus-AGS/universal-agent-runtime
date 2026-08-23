@@ -1,0 +1,48 @@
+{
+  "refinement_id": "530307f8-bd91-4d93-9732-602f6b230555",
+  "artifact_name": "uar-architecture-history-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T10:43:04Z",
+  "updated_at": "2026-08-23T10:44:14Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Review the completed public architecture history against traceability, supersession, safety, and authority constraints."
+  ],
+  "constraints": [
+    "adr-denominator",
+    "correction-completeness",
+    "private-source-boundary",
+    "authority-limit",
+    "deferred-rendered-evidence"
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "blocking_satisfied": 4,
+      "blocking_violated": 0,
+      "high_satisfied": 1,
+      "decision": "terminate",
+      "timestamp": "2026-08-23T10:43:16Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "752fdf9d",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-23T10:44:14Z"
+    }
+  ],
+  "prior_cycle_id": null
+}
