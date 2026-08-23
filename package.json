@@ -25,6 +25,8 @@
     "docs:brand:controls": "node scripts/test-documentation-brand.mjs",
     "docs:architecture:validate": "node scripts/validate-documentation-architecture.mjs",
     "docs:architecture:controls": "node scripts/test-documentation-architecture.mjs",
+    "docs:history:validate": "node scripts/validate-documentation-history.mjs",
+    "docs:history:controls": "node scripts/test-documentation-history.mjs",
     "docs:product-workflows:validate": "node scripts/validate-documentation-product-workflows.mjs",
     "docs:product-workflows:controls": "node scripts/test-documentation-product-workflows.mjs",
     "docs:security-operations:validate": "node scripts/validate-documentation-security-operations.mjs",

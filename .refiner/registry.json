@@ -117,6 +117,13 @@
       "content_type": "direct:content",
       "updated_at": "2026-08-23T10:27:55Z",
       "finalized_at": "2026-08-23T10:27:55Z"
+    },
+    "uar-architecture-history-review": {
+      "path": ".refiner/artifacts/uar-architecture-history-review",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-23T10:44:16Z",
+      "finalized_at": "2026-08-23T10:44:16Z"
     }
   }
 }

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "snapshot": {
+    "date": "2026-08-23",
+    "sourceSha": "88ae2a1f",
+    "prometheusFiles": 546,
+    "prometheusWikiFiles": 536,
+    "kbdPhaseDirectories": 51,
+    "kbdReflections": 48,
+    "openSpecChangeDirectories": 184,
+    "retainedAdrs": 18,
+    "selectionRule": "Publish decisions that changed current architecture, public obligations, or evidence policy; retain all other raw records as private synthesis inputs."
+  },
+  "guides": [
+    {"id": "overview", "file": "website/docs/history/overview.md", "route": "/docs/history/overview", "requiredMarkers": ["History is evidence, not authority", "selection bias"]},
+    {"id": "architecture-decisions", "file": "website/docs/history/architecture-decisions.md", "route": "/docs/history/architecture-decisions", "requiredMarkers": ["Accepted does not mean delivered", "ADR-0017", "ADR-007"]},
+    {"id": "timeline", "file": "website/docs/history/timeline.md", "route": "/docs/history/timeline", "requiredMarkers": ["2026-07", "2026-08", "current authority"]},
+    {"id": "corrections", "file": "website/docs/history/corrections.md", "route": "/docs/history/corrections", "requiredMarkers": ["AGPL", "HTMX", "purple", "placeholder", "AWS-LC", "GitHub Actions", "synthetic soak"]},
+    {"id": "process-provenance", "file": "website/docs/history/process-provenance.md", "route": "/docs/history/process-provenance", "requiredMarkers": ["OpenSpec", "KBD", "private-synthesis-only", "536"]}
+  ],
+  "adrs": [
+    {"id":"ADR-0001","file":"docs/adr/0001-record-architecture-decisions.md","date":"2026-07-14","status":"accepted"},
+    {"id":"ADR-0002","file":"docs/adr/0002-dual-license-agpl-mit.md","date":"2026-07-13","status":"superseded","supersededBy":"ADR-0017"},
+    {"id":"ADR-0003","file":"docs/adr/0003-coverage-baseline-60-percent.md","date":"2026-07-13","status":"accepted"},
+    {"id":"ADR-0004","file":"docs/adr/0004-central-uar-error-enum.md","date":"2026-07-13","status":"accepted"},
+    {"id":"ADR-0005","file":"docs/adr/0005-config-rs-schemars-secrecy.md","date":"2026-07-13","status":"accepted"},
+    {"id":"ADR-0006","file":"docs/adr/0006-slsa-l3-supply-chain.md","date":"2026-07-13","status":"accepted"},
+    {"id":"ADR-0007","file":"docs/adr/0007-sdks-1-0-0-mit.md","date":"2026-07-13","status":"accepted"},
+    {"id":"ADR-0008","file":"docs/adr/0008-rag-citation-stream.md","date":"2026-07-13","status":"accepted"},
+    {"id":"ADR-0009","file":"docs/adr/0009-a2ui-vendor-webcore.md","date":"2026-07-13","status":"accepted"},
+    {"id":"ADR-0010","file":"docs/adr/0010-a2ui-renderer-on-webcore.md","date":"2026-07-13","status":"accepted"},
+    {"id":"ADR-0011","file":"docs/adr/0011-docs-visual-regression.md","date":"2026-07-14","status":"accepted"},
+    {"id":"ADR-0012","file":"docs/adr/0012-transport-free-ag-ui-adapter.md","date":"2026-07-22","status":"accepted"},
+    {"id":"ADR-0013","file":"docs/adr/0013-embedded-run-policy-and-admin-surface.md","date":"2026-07-24","status":"accepted"},
+    {"id":"ADR-0014","file":"docs/adr/0014-effective-policy-model-backfill.md","date":"2026-07-24","status":"accepted"},
+    {"id":"ADR-0015","file":"docs/adr/0015-embedded-conversation-policy-surface.md","date":"2026-07-24","status":"accepted"},
+    {"id":"ADR-0016","file":"docs/adr/0016-seed-embedded-session-from-host-history.md","date":"2026-07-25","status":"accepted"},
+    {"id":"ADR-0017","file":"docs/adr/0017-relicense-runtime-to-mit.md","date":"2026-08-07","status":"accepted"},
+    {"id":"ADR-007","file":"docs/adr/ADR-007-react-first-frontend.md","date":"2026-07-11","status":"accepted"}
+  ],
+  "decisions": [
+    {
+      "id":"license-mit",
+      "date":"2026-08-07",
+      "status":"current",
+      "supersedes":"ADR-0002",
+      "currentAuthority":"LICENSE",
+      "sources":["docs/adr/0002-dual-license-agpl-mit.md","docs/adr/0017-relicense-runtime-to-mit.md"]
+    },
+    {
+      "id":"react-first",
+      "date":"2026-07-11",
+      "status":"current",
+      "supersedes":"historical-htmx-primary-ui",
+      "currentAuthority":"docs/adr/ADR-007-react-first-frontend.md",
+      "sources":["docs/adr/ADR-007-react-first-frontend.md","docs/full-implementation/README.md","docs/htmx/README.md"]
+    },
+    {
+      "id":"flat2-authority",
+      "date":"2026-08-07",
+      "status":"current",
+      "supersedes":"purple-and-competing-ui-authorities",
+      "currentAuthority":"docs/ui-design-authority.md",
+      "sources":["docs/ui-design-authority.md","docs/UI_DESIGN.md",".kbd-orchestrator/phases/uar-uiux-full-migration-2026-08/reflection.md"]
+    },
+    {
+      "id":"real-pages-artifacts",
+      "date":"2026-08-23",
+      "status":"current",
+      "supersedes":"placeholder-pages-artifacts",
+      "currentAuthority":"openspec/changes/repair-single-pages-portal/proposal.md",
+      "sources":["openspec/changes/repair-single-pages-portal/proposal.md","openspec/changes/establish-documentation-publication-contract/proposal.md"]
+    },
+    {
+      "id":"rustcrypto-jwt",
+      "date":"2026-08-14",
+      "status":"current",
+      "supersedes":"aws-lc-spike",
+      "currentAuthority":"openspec/changes/archive/2026-08-15-fix-jwt-crypto-provider/proposal.md",
+      "sources":[".prometheus/decisions.md","openspec/changes/archive/2026-08-15-fix-jwt-crypto-provider/proposal.md"]
+    },
+    {
+      "id":"local-verification",
+      "date":"2026-08-09",
+      "status":"current",
+      "supersedes":"routine-actions-testing",
+      "currentAuthority":"AGENTS.md",
+      "sources":[".prometheus/decisions.md","AGENTS.md"]
+    },
+    {
+      "id":"real-inference-evidence",
+      "date":"2026-08-22",
+      "status":"current",
+      "supersedes":"duration-only-synthetic-soak",
+      "currentAuthority":"AGENTS.md",
+      "sources":[".prometheus/decisions.md",".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/reflection.md","AGENTS.md"]
+    }
+  ]
+}

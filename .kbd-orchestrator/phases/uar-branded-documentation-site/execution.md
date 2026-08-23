@@ -157,9 +157,28 @@ Those failures are dependencies, not suppressed findings.
 - Canonical KBD revision `361` records the change complete and the revised
   next-work handoff.
 
+### publish-uar-architecture-decision-history
+
+- Published five history guides backed by a manifest covering all 18 retained
+  ADRs and seven selected cross-cutting corrections.
+- Preserved the AGPL/MIT, HTMX/React, purple/current visual authority,
+  placeholder/real Pages artifacts, AWS-LC/RustCrypto, Actions/local checks,
+  and synthetic/real-inference reversals with current-authority links.
+- Classified the measured 546-file Prometheus corpus, 536 wiki projections, 51
+  KBD phases, 48 reflections, and 184 OpenSpec change directories as an
+  inspected snapshot rather than a permanent count or directly public corpus.
+- Passed seven history negative controls, composed publication controls,
+  TypeScript, strict OpenSpec, scoped-diff, and artifact-refiner content gates
+  without running the final production build.
+- Preserved the uncomfortable limit: public selection is interpretive and can
+  carry selection bias; current source and canonical specifications continue to
+  outrank historical narrative.
+- Canonical KBD revision `364` records the change complete and the revised
+  next-work handoff.
+
 ## Next change
 
-Run `/opsx:new publish-uar-architecture-decision-history`. It owns the public,
-source-traceable architecture chronology and decision narratives. It must
-synthesize retained history without publishing raw private logs or claiming
-that superseded designs describe the current runtime.
+Run `/opsx:new publish-uar-testing-methodology-history`. It owns the public
+evidence taxonomy, the transition from synthetic/coverage-oriented checks to
+bounded genuine-model functionality, negative controls, local verification,
+and explicit statements of what each test class does not prove.

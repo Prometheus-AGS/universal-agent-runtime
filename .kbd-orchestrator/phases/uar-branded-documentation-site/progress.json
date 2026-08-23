@@ -1,27 +1,27 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 361,
-  "derivedRevision": 361,
+  "sourceRevision": 364,
+  "derivedRevision": 364,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 46
+    "80130eb1-95f8-4039-8976-71bdce23779c": 49
   },
   "conflictCount": 0,
   "phase": "uar-branded-documentation-site",
   "phaseId": "uar-branded-documentation-site",
   "parentPhase": null,
-  "last_updated": "2026-08-23T10:32:57.182488Z",
+  "last_updated": "2026-08-23T10:45:49.251213Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 11,
-  "changes_completed": 8,
+  "changes_completed": 9,
   "implementation_total": 11,
-  "implementation_completed": 8,
+  "implementation_completed": 9,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 8,
+      "completed": 9,
       "total": 11,
       "status": "IN_PROGRESS"
     },
@@ -133,8 +133,8 @@
     {
       "id": "publish-uar-architecture-decision-history",
       "title": "Publish UAR architecture decision history",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,

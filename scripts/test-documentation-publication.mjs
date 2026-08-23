@@ -59,6 +59,7 @@ function fixture() {
   write(root, "scripts/stage-documentation-references.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-documentation-truth.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-documentation-architecture.mjs", "process.exit(0);\n");
+  write(root, "scripts/validate-documentation-history.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-documentation-product-workflows.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-documentation-security-operations.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-documentation-developer-reference.mjs", "process.exit(0);\n");
