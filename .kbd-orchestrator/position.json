@@ -1,15 +1,15 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 346,
-  "derivedRevision": 346,
+  "sourceRevision": 349,
+  "derivedRevision": 349,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 31
+    "80130eb1-95f8-4039-8976-71bdce23779c": 34
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-23T07:35:51.839039Z",
+  "updatedAt": "2026-08-23T08:01:50.335688Z",
   "cursor": [
     "uar-branded-documentation-site",
     "execute"
@@ -19,7 +19,7 @@
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "running",
     "progress": {
-      "done": 81,
+      "done": 82,
       "total": 97
     },
     "children": [
@@ -794,7 +794,7 @@
         "canonicalId": "uar-branded-documentation-site",
         "status": "PENDING",
         "progress": {
-          "done": 3,
+          "done": 4,
           "total": 11
         },
         "children": [
@@ -828,7 +828,7 @@
           {
             "type": "change",
             "id": "document-uar-theory-and-architecture",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0

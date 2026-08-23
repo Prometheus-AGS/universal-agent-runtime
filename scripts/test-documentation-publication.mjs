@@ -58,6 +58,7 @@ function fixture() {
   write(root, "sdks/typescript/package-lock.json", "{}\n");
   write(root, "scripts/stage-documentation-references.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-documentation-truth.mjs", "process.exit(0);\n");
+  write(root, "scripts/validate-documentation-architecture.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-github-actions-policy.mjs", "process.exit(0);\n");
 
   writeJson(root, "docs/publication/sources.json", {

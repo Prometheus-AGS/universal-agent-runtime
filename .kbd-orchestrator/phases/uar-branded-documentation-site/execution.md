@@ -52,8 +52,24 @@ Those failures are dependencies, not suppressed findings.
   deployment, or publication claim exists yet.
 - Canonical KBD revision `346` records the change complete.
 
+### document-uar-theory-and-architecture
+
+- Published seven source-grounded guides covering runtime purpose, trust
+  boundaries, execution lifecycle, state and events, runtime profiles,
+  protocol boundaries, and current delegation/graph execution.
+- Added a classified architecture authority manifest plus bounded validation
+  and seven observed negative controls.
+- Kept `server-full`, `minimal`, and `embedded-mobile` claims separate and
+  identified the future subagent-provider architecture as deferred.
+- Passed TypeScript, architecture, brand, composed publication-control, strict
+  OpenSpec, scoped-diff, and bounded artifact-refiner content gates without
+  running the final site build.
+- Preserved the uncomfortable limit: source-grounded prose can drift after
+  future runtime changes, and no rendered-site or runtime claim exists yet.
+- Canonical KBD revision `349` records the change complete.
+
 ## Next change
 
-Run `/opsx:new document-uar-theory-and-architecture`. It owns the theory,
-architecture overview, runtime boundary, capability inversion, execution flow,
-profiles, and architecture diagrams.
+Run `/opsx:new document-inference-skills-knowledge-and-agents`. It owns the
+provider/model, inference, agent, skill, and knowledge workflows across the API,
+operator interface, and embedded boundary.

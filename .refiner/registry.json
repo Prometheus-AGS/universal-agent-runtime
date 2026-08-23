@@ -89,6 +89,13 @@
       "content_type": "direct:content",
       "updated_at": "2026-08-23T07:34:32Z",
       "finalized_at": "2026-08-23T07:34:32Z"
+    },
+    "uar-architecture-documentation-review": {
+      "path": ".refiner/artifacts/uar-architecture-documentation-review",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-23T07:59:50Z",
+      "finalized_at": "2026-08-23T07:59:50Z"
     }
   }
 }

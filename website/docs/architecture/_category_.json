@@ -3,6 +3,6 @@
   "position": 2,
   "link": {
     "type": "generated-index",
-    "description": "System architecture, runtime design, and component boundaries."
+    "description": "Why UAR exists, where authority lives, how a run executes, and which boundaries each runtime profile actually provides."
   }
 }

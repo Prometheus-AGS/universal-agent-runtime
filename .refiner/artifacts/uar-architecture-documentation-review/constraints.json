@@ -1,0 +1,67 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "classified-authority",
+      "description": "Every architecture guide has classified provenance and existing current source authorities.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Manifest validation plus missing-source and missing-provenance negative controls"
+      }
+    },
+    {
+      "id": "coherent-trust-model",
+      "description": "The guide sequence consistently keeps effects in the trusted host and distinguishes requests, turns, steps, tool calls, terminal events, live events, and persistence.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Required-marker validation and source review against runtime authority files"
+      }
+    },
+    {
+      "id": "profile-bounded-claims",
+      "description": "Every guide states profile limits and never transfers server-full, minimal, or embedded-mobile evidence silently.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Exact profile vocabulary plus invalid-profile and missing-profile-limit controls"
+      }
+    },
+    {
+      "id": "delivered-protocol-and-delegation",
+      "description": "Protocol and delegation guides describe current adapters and graph behavior while explicitly deferring the unimplemented subagent-provider architecture.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Required-marker validation plus prospective-language and current-source audit"
+      }
+    },
+    {
+      "id": "public-safe-navigation",
+      "description": "All seven routes are reachable in conceptual order, local links resolve, diagrams have prose equivalents, and public pages contain no private or machine-local material.",
+      "severity": "blocking",
+      "type": "accessibility",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Navigation, sanitization, diagram-explanation, and composed publication controls"
+      }
+    }
+  ],
+  "global_rules": [
+    "Treat the OpenSpec change and architecture manifest as the publication authority.",
+    "Run routine verification locally; GitHub Actions remain deployment-only.",
+    "Do not run the phase-level build or browser certification before all documentation content is complete.",
+    "Do not infer a runtime or cross-profile claim from documentation-source evidence."
+  ],
+  "termination_conditions": [
+    "All five blocking content constraints have observed evidence.",
+    "Every isolated negative control fails for its intended defect before the complete fixture passes.",
+    "Strict OpenSpec and both refiner schemas pass.",
+    "The review explicitly states its rendered-site and runtime evidence limits."
+  ]
+}

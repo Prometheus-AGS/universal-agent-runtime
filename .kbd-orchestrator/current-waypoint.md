@@ -1,12 +1,12 @@
 # Current Waypoint
 
 > `.kbd-orchestrator/current-waypoint.json` is authoritative. This human-readable
-> projection was refreshed from canonical revision 346 on 2026-08-23.
+> projection was refreshed from canonical revision 349 on 2026-08-23.
 
 **Phase path**: `uar-branded-documentation-site`
 **Stage**: Execute
-**Changes**: 3/11 complete
-**Next action**: `/opsx:new document-uar-theory-and-architecture`
+**Changes**: 4/11 complete
+**Next action**: `/opsx:new document-inference-skills-knowledge-and-agents`
 **Plan**: `phases/uar-branded-documentation-site/plan.md`
 
 ## Legacy narrative below
