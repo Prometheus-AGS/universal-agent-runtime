@@ -1,0 +1,64 @@
+# Prometheus Universal Agent Runtime native-service defaults.
+# Secrets belong in the platform service environment file, never in YAML.
+
+server:
+  host: "127.0.0.1"
+  port: 1906
+  grpc_port: 50051
+
+security:
+  jwt_required: false
+  jwt_secret: "unused_loopback_only"
+  settings_mutation_auth_required: false
+
+resilience:
+  rate_limit_enabled: true
+  timeout_disabled: false
+  requests_per_second: 10.0
+  burst_size: 20.0
+
+persistence:
+  provider: "surreal"
+  database_url: "surrealkv://./data/uar.db"
+  external_cache_enabled: false
+  vector_dimension: 384
+
+file_processing:
+  provider: "auto"
+  upload_dir: "./uploads"
+  max_files_per_prompt: 10
+  max_file_size: 52428800
+  max_total_size: 104857600
+
+knowledge_bases:
+  named: {}
+
+intent_classifier:
+  backend: "rules"
+  topk: 3
+  accept_threshold: 0.7
+  margin_threshold: 0.1
+
+providers: []
+
+failover:
+  enabled: false
+  strategy: "priority"
+  error_threshold: 3
+  cooldown_secs: 60
+
+native_tools:
+  file_tools_enabled: false
+  file_allowed_paths: []
+  web_fetch_enabled: false
+  terminal_exec_enabled: false
+  session_search_enabled: true
+
+skill_evolution:
+  enabled: false
+
+acp:
+  enabled: false
+  path: "/acp"
+  auth_required: true
+  session_ttl_secs: 3600

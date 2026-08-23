@@ -19,6 +19,9 @@ $backupRoot = Join-Path $dataRoot '.prometheus\backups'
 $stateRoot = Join-Path $dataRoot 'state'
 $binaryPath = Join-Path $programRoot 'universal-agent-runtime.exe'
 $staticPath = Join-Path $programRoot 'static'
+$defaultConfig = Join-Path $PSScriptRoot '..\default-config.yaml'
+$environmentGenerator = Join-Path $PSScriptRoot '..\common\Generate-ProviderEnv.ps1'
+$configMerger = Join-Path $PSScriptRoot '..\common\Merge-ProviderConfig.ps1'
 
 if (-not (Test-Path -LiteralPath $Binary -PathType Leaf)) {
     throw "release binary not found: $Binary"
@@ -26,9 +29,12 @@ if (-not (Test-Path -LiteralPath $Binary -PathType Leaf)) {
 if (-not (Test-Path -LiteralPath $StaticDir -PathType Container)) {
     throw "React bundle not found: $StaticDir"
 }
+if (-not (Test-Path -LiteralPath $configPath -PathType Leaf) -and [string]::IsNullOrWhiteSpace($Config)) {
+    $Config = $defaultConfig
+}
 if (-not (Test-Path -LiteralPath $configPath -PathType Leaf) -and
-    ([string]::IsNullOrWhiteSpace($Config) -or -not (Test-Path -LiteralPath $Config -PathType Leaf))) {
-    throw 'first install requires -Config <initial-config>'
+    -not (Test-Path -LiteralPath $Config -PathType Leaf)) {
+    throw 'initial configuration not found'
 }
 
 New-Item -ItemType Directory -Force -Path $programRoot, $configRoot, $logRoot, $backupRoot, $stateRoot | Out-Null
@@ -61,6 +67,8 @@ if (-not (Test-Path -LiteralPath $environmentPath -PathType Leaf)) {
         "UAR_LOG_FILE=$logFile"
     ) | Set-Content -LiteralPath $environmentPath -Encoding utf8NoBOM
 }
+& $environmentGenerator -Output $environmentPath
+& $configMerger -Config $configPath -EnvFile $environmentPath -ProxyUrl 'http://127.0.0.1:8181/v1'
 
 & icacls.exe $configRoot /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)(F)' '*S-1-5-32-544:(OI)(CI)(F)' '*S-1-5-19:(OI)(CI)(RX)' | Out-Null
 & icacls.exe $logRoot /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)(F)' '*S-1-5-32-544:(OI)(CI)(F)' '*S-1-5-19:(OI)(CI)(M)' | Out-Null

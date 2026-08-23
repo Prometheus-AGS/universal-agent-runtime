@@ -679,3 +679,9 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Assessment identified three blocking implementation facts: server-full gRPC ignores `server.host`, Windows SCM controls cannot reach UAR graceful cancellation, and YAML provider seeding bypasses catalog enrichment.
 - Adversarial routing was verified before planning: producer `gpt-5.6-sol`, judge `k3`, critic `MiniMax-M3`, with two distinct dispatchable review models.
 - No release build, service installation, or functional verification ran during assessment.
+## 2026-08-23 — Native provider bootstrap code complete
+
+- Added native service environment generators that import only approved provider credentials from the invoking process, normalize approved aliases to canonical names, and never source the complete interactive profile at service startup.
+- Added additive YAML merge helpers for Unix and Windows. Existing server values and provider IDs are immutable to the merge; proxy models are seeded only from an observed `/v1/models` inventory, and a failed inventory lookup fabricates nothing.
+- The negative control supplied a multiline credential. Generation failed without replacing the previous environment file. No credential value was written to YAML, tracked evidence, or command output.
+- Functional service/provider/inference verification remains deferred until all five changes are code-complete, as required by the phase's verification-timing decision.

@@ -1,12 +1,13 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 400,
-  "derivedRevision": 400,
+  "sourceRevision": 402,
+  "derivedRevision": 402,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 77,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 78,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "80130eb1-95f8-4039-8976-71bdce23779c": 61,
+    "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
     "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
     "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
@@ -27,10 +28,10 @@
   "currentTask": null,
   "status": "running",
   "completionMetric": "implementation",
-  "implementationCompleted": 92,
+  "implementationCompleted": 93,
   "implementationTotal": 102,
   "planRevision": 23,
-  "revision": 400,
+  "revision": 402,
   "exactNextCommand": "/kbd-assess uar-native-service-deployment",
-  "updatedAt": "2026-08-23T14:55:37.358215Z"
+  "updatedAt": "2026-08-23T15:14:18.622648Z"
 }

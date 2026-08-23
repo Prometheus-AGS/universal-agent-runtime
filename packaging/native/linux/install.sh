@@ -4,6 +4,7 @@ set -euo pipefail
 binary_source=""
 static_source=""
 config_source=""
+script_dir=$(cd "$(dirname "$0")" && pwd)
 
 usage() {
   echo "usage: sudo $0 --binary <release-binary> --static-dir <react-bundle> [--config <initial-config>]" >&2
@@ -51,11 +52,16 @@ log_dir="$state_dir/.prometheus/logs"
 backup_dir="$state_dir/.prometheus/backups"
 program_dir="/usr/local/lib/uar"
 unit_path="/etc/systemd/system/uar.service"
-script_dir=$(cd "$(dirname "$0")" && pwd)
+default_config="$script_dir/../default-config.yaml"
+environment_generator="$script_dir/../common/generate-provider-env.sh"
+config_merger="$script_dir/../common/merge-provider-config.sh"
 
+if [[ ! -f "$config_path" && -z "$config_source" ]]; then
+  config_source="$default_config"
+fi
 if [[ ! -f "$config_path" && ! -f "$config_source" ]]; then
-  echo "first install requires --config <initial-config>" >&2
-  exit 2
+  echo "initial configuration not found" >&2
+  exit 1
 fi
 
 if ! getent group uar >/dev/null; then
@@ -96,6 +102,11 @@ if [[ ! -f "$environment_path" ]]; then
     echo "UAR_LOG_FILE=$log_dir/operational.log"
   } > "$environment_path"
 fi
+"$environment_generator" --output "$environment_path"
+"$config_merger" \
+  --config "$config_path" \
+  --env-file "$environment_path" \
+  --proxy-url "http://127.0.0.1:8181/v1"
 chown root:uar "$environment_path" "$config_path"
 chmod 640 "$environment_path" "$config_path"
 
