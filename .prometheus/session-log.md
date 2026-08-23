@@ -644,3 +644,31 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - No unit, integration, conformance, inference, or runtime test ran in GitHub
   Actions. The hosted work was limited to documentation artifact assembly,
   deployment, and intended deployed-artifact validation.
+
+## 2026-08-23 — Branded documentation portal published and KBD phase reflected
+
+- Merged documentation PR #263 to `main` as
+  `a87d42d4ead5464b9b5a4fdb2a84f15f5e95f0b6` without weakening the Pages
+  environment's `main`-only policy.
+- Deployment-only run `32638082981` assembled, deployed, and validated the
+  complete portal. Its route validator and an independent local invocation both
+  observed all 28 required live routes at HTTP 200.
+- Set the repository homepage to
+  `https://prometheus-ags.github.io/universal-agent-runtime/` and reconciled the
+  root README badge and portal prose to the same canonical root.
+- Completed all eleven KBD changes, Execute, Reflect, and the phase through
+  canonical runtime revisions `370` through `375`. The strict reflect analyzer
+  reported score `0.017857` with no S-08 inversion.
+- The closeout remains documentation-scoped. Vale was unavailable; npm audit
+  findings, 27 existing Rustdoc warnings, and the internal
+  `mcp-server-fetch` workspace-Rustdoc defect remain disclosed rather than
+  converted into false passing claims.
+- Archived all eleven phase changes in load-bearing order. The resulting
+  canonical customer, portal, publication, truth-gate, and README specs pass
+  strict validation, and each archived task file has zero unchecked tasks.
+- Recorded KBD plan revision 23 so the canonical next action is
+  `/kbd-new-phase`, replacing the stale final-change handoff without editing a
+  generated waypoint.
+- Reconciled public provenance to the dated archive paths, rebuilt the optimized
+  Docusaurus artifact, and observed the post-archive composed publication gate
+  pass over 3,379 classified source and built paths.

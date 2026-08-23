@@ -36,3 +36,7 @@ support. The published OpenAPI version SHALL match the product version.
 #### Scenario: Evidence is insufficient for an availability claim
 - **WHEN** a README has only package metadata, a tag, source, generated documentation, or build output
 - **THEN** it MUST describe only that observed fact and MUST NOT infer registry publication, deployment health, certification, or support for another profile
+
+#### Scenario: Profile-specific behavior is documented
+- **WHEN** behavior or evidence differs between `server-full`, `minimal`, and `embedded-mobile`
+- **THEN** the public guide reports those results separately and makes no aggregate or cross-profile claim

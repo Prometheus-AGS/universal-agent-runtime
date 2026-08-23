@@ -19,6 +19,10 @@ changing the frozen route contract in a content lane.
 - **WHEN** a visitor opens the contributing section
 - **THEN** they see contribution guidance, the license split, commit conventions, and local verification policy
 
+#### Scenario: History sections
+- **WHEN** a visitor opens architecture or testing history
+- **THEN** they see dated, source-linked synthesis that distinguishes current authority from superseded methods and designs
+
 #### Scenario: Frozen product routes
 - **WHEN** the route manifest is validated
 - **THEN** chat, A2UI artifact, Runtime Console, runs, approvals, protocols, providers, credentials, models, skills, agents, tools, authentication, knowledge, memory, compiler, settings, A2UI testing, MCP health, cost, and About document IDs MUST all exist

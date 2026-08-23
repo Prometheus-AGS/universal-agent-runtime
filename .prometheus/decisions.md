@@ -604,3 +604,22 @@ recorded, and duration-only checks do not establish those behaviors.
 **Uncomfortable constraint.** This decision closes only the requested local
 `server-full` functional scope. It produces no supply-chain, release-candidate,
 publication, minimal-profile, or embedded-mobile claim.
+
+---
+
+## 2026-08-23 — Documentation publishes only through protected `main`
+
+**Decision.** Preserve the `github-pages` environment's `main`-only deployment
+policy. Feature branches may assemble the complete artifact, but public
+deployment occurs only after an approved merge and is followed by an
+independent live-route validation.
+
+**Rationale.** The feature-branch run proved artifact assembly but GitHub
+rejected deployment before `deploy-pages`. Weakening the environment would have
+made the plan appear to pass by changing the trust boundary. PR #263 instead
+merged the reviewed artifact, and protected run `32638082981` deployed and
+validated the exact merge SHA.
+
+**Uncomfortable constraint.** This makes pre-merge live Pages validation
+impossible. Local complete-artifact and feature-branch assembly evidence must be
+kept distinct from the live claim until the protected `main` run succeeds.

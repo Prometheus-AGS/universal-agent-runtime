@@ -573,3 +573,18 @@ grant deployment authority. Inspect the target environment's deployment branch
 policy before planning feature-branch publication. Preserve the protection;
 open the PR, obtain merge authority, and validate the deployment created from
 the allowed branch instead of weakening the environment for convenience.
+
+## 2026-08-23 — OpenSpec main specs and modified deltas have different structural rules
+
+**Observed behavior.** Documentation archive first failed because the canonical
+`dev-portal-2026` spec retained a delta-only `## ADDED Requirements` header. A
+later archive then stopped because its `MODIFIED` requirement omitted a scenario
+introduced by the now-applied foundation change. Both failures occurred before
+the affected archive changed files.
+
+**Working rule.** Canonical specs have one `## Requirements` section and never
+retain delta operation headers. Before archiving successive changes that modify
+the same requirement, refresh each later modified block against the current
+canonical requirement and preserve every existing scenario by name. Apply
+conflicting deltas in their planned chronological order and validate the touched
+canonical spec after each archive.

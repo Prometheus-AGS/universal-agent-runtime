@@ -4,7 +4,7 @@ title: Process and Provenance
 description: Understand how ADR, OpenSpec, KBD, and retained Prometheus history support public claims.
 source_records:
   - docs/adr/0001-record-architecture-decisions.md
-  - openspec/changes/establish-documentation-publication-contract/proposal.md
+  - openspec/changes/archive/2026-08-23-establish-documentation-publication-contract/proposal.md
   - .prometheus/decisions.md
 current_authority: /docs/history/process-provenance
 ---
