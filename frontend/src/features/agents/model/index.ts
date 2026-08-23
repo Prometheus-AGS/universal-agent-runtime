@@ -1,2 +1,2 @@
 export { loadAgentsIntoGraph } from "./agents-graph";
-export { useAgent, useAgents } from "./use-agents";
+export { useAgent, useAgentLoadState, useAgents } from "./use-agents";

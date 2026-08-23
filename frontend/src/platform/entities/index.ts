@@ -8,12 +8,16 @@ export {
   configureEngine,
   createPGlitePersistenceAdapter,
   getEntityJsonSchema,
+  getRegisteredEntityTypes,
   getRealtimeManager,
   getSchema,
+  graphStore,
   registerEntityFromSql,
+  registerEntityTransport,
   registerSchema,
   serializeKey,
   startLocalFirstGraph,
+  useEntities,
   useEntityView,
   useGraphStore,
 } from "@prometheus-ags/prometheus-entity-management";
@@ -25,9 +29,12 @@ export type {
   ChannelConfig,
   EntityChange,
   EntityId,
+  EntityTransport,
   EntityType,
   FilterClause,
   GraphPersistenceAdapter,
+  ListQuery,
+  ListResult,
   LocalFirstGraphRuntime,
   PGlitePersistenceClient,
   RealtimeAdapter,
@@ -36,3 +43,5 @@ export type {
   UnsubscribeFn,
   ViewDescriptor,
 } from "@prometheus-ags/prometheus-entity-management";
+
+export * from "./session-configuration";

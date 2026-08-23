@@ -87,7 +87,7 @@ invoke a backend do-everything command.
 ## Progress ledger
 
 - [COMPLETE] `adopt-entity-management-3-0-2` — Codex
-- [PENDING] `repair-session-configuration-entity-flow` — Codex
+- [COMPLETE] `repair-session-configuration-entity-flow` — Codex; Tier 0/static gates, strict OpenSpec, direct QA substitute, critic PASS, and judge APPROVE. Functional browser/inference proof remains change 3.
 - [PENDING] `prevent-session-configuration-regressions` — Codex
 - [PENDING] `fix-atomic-fetched-list-ingestion` — Codex
 

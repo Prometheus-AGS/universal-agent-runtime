@@ -4596,39 +4596,11 @@ pub(crate) async fn api_chat_completion(
         }
     }
 
-    let resolved_model = match resolve_requested_model(&state, req.model.as_deref()).await {
-        Ok(m) => m,
-        Err(resp) => return resp,
-    };
-
     let session_id = match resolve_session_id(&req, &headers) {
         Ok(Some(value)) => value,
         Ok(None) => Uuid::new_v4().to_string(),
         Err(resp) => return resp,
     };
-
-    // Resolve agent: request-body agent_id → session agent-config → default.
-    //
-    // Priority (highest first):
-    //   1. `req.agent_id` — explicit selection from the chat request body.
-    //   2. `agent_sessions[session_id].agent_id` — session side-channel POST.
-    //   3. `default-agent` — fallback.
-    let resolved_agent_id: Option<String> = req.agent_id.clone().or_else(|| {
-        let session_key = uar::persistence::tenant_storage_key(&user_ctx.user_id, &session_id);
-        state
-            .agent_sessions
-            .try_read()
-            .ok()
-            .and_then(|sessions| sessions.get(&session_key).map(|cfg| cfg.agent_id.clone()))
-    });
-
-    let mut agent = if let Some(ref aid) = resolved_agent_id {
-        uar::api::discovery::resolve_agent_for_run(&state, aid).await
-    } else {
-        uar::defaults::default_agent()
-    };
-    agent.policy.provider.default.provider = resolved_model.provider_id.clone();
-    agent.policy.provider.default.model = resolved_model.model_id.clone();
 
     let mut turn_policy = req.run_policy.clone().unwrap_or_default();
     if let Some(agent_id) = &req.agent_id {
@@ -4641,16 +4613,22 @@ pub(crate) async fn api_chat_completion(
             },
         );
     }
-    if req.model.is_some() {
+    if let Some(requested_model) = req.model.as_deref() {
+        let resolved_turn_model = match resolve_requested_model(&state, Some(requested_model)).await {
+            Ok(model) => model,
+            Err(response) => return response,
+        };
         turn_policy.model = Some(uar::domain::policy::ModelRoute {
-            provider_id: resolved_model.provider_id.clone(),
-            model_id: resolved_model.model_id.clone(),
+            provider_id: resolved_turn_model.provider_id,
+            model_id: resolved_turn_model.model_id,
         });
     }
     if !req.memory_enabled {
         turn_policy.memory_enabled = Some(false);
     }
 
+    let initial_agent_id = req.agent_id.as_deref().unwrap_or("default-agent");
+    let mut agent = uar::api::discovery::resolve_agent_for_run(&state, initial_agent_id).await;
     let mut effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
         &state,
         &user_ctx.user_id,
@@ -4672,6 +4650,22 @@ pub(crate) async fn api_chat_completion(
         )
         .await;
     }
+
+    let effective_model_name = effective_run_policy
+        .model
+        .as_ref()
+        .map(|model| format!("{}/{}", model.provider_id, model.model_id));
+    let resolved_model = match resolve_requested_model(&state, effective_model_name.as_deref()).await {
+        Ok(model) => model,
+        Err(response) => return response,
+    };
+    agent.policy.provider.default.provider = resolved_model.provider_id.clone();
+    agent.policy.provider.default.model = resolved_model.model_id.clone();
+    effective_run_policy.model = Some(uar::domain::policy::ModelRoute {
+        provider_id: resolved_model.provider_id.clone(),
+        model_id: resolved_model.model_id.clone(),
+    });
+
     let agent_id_for_policy = agent.id.clone();
     let (effective_resilience_policy, policy_source) =
         resolve_effective_resilience_policy(&state, &agent_id_for_policy).await;

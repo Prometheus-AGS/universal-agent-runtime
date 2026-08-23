@@ -1,12 +1,13 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 486,
-  "derivedRevision": 486,
+  "sourceRevision": 513,
+  "derivedRevision": 513,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 143,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "525ede94-ad4e-4580-84da-627cba8991cb": 27,
     "80130eb1-95f8-4039-8976-71bdce23779c": 61,
     "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
     "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
@@ -18,16 +19,16 @@
   "phase": "fix-broken-session-configuration-ui",
   "phaseId": "fix-broken-session-configuration-ui",
   "parentPhase": null,
-  "last_updated": "2026-08-23T21:42:54.880121Z",
+  "last_updated": "2026-08-23T22:42:11.276355Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 4,
-  "changes_completed": 1,
+  "changes_completed": 2,
   "implementation_total": 4,
-  "implementation_completed": 1,
+  "implementation_completed": 2,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 1,
+      "completed": 2,
       "total": 4,
       "status": "IN_PROGRESS"
     },
@@ -62,12 +63,12 @@
     {
       "id": "repair-session-configuration-entity-flow",
       "title": "Repair Session Configuration entity flow",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 13,
-      "tasks_done": 0,
-      "last_task_completed": null,
-      "next_task_pending": "1.1 Add the required 3.0.2 facade exports and typed configured Provider, configured Model, AgentSession, and AgentSessionDraft contracts; verify no feature imports the package directly.",
+      "tasks_done": 13,
+      "last_task_completed": "4.2 Run `openspec validate repair-session-configuration-entity-flow --strict`, write row-form `verification.md` with source SHA/profile/limits, and commit only this change's implementation, OpenSpec, and KBD artifacts.",
+      "next_task_pending": null,
       "blockers": []
     },
     {

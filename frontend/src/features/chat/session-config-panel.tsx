@@ -1,16 +1,8 @@
-import { useState, useCallback } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
+import { useCallback, useEffect, useId } from "react";
+
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -18,9 +10,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ModelSelector } from "@/features/models/model-selector";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import type { AgentConfig } from "@/features/chat/agent-selector";
-import { useChatSessionConfig } from "@/hooks/use-chat-session-config";
+import { ModelSelector } from "@/features/models/model-selector";
+import {
+  agentSessionDraftId,
+  useAgentSessionDraftActions,
+  useAgentSessionDraftError,
+  useAgentSessionDraftField,
+  useAgentSessionDraftStatus,
+} from "@/platform/entities";
+import type { AgentSessionConfig, ToolApproval } from "@/platform/entities";
 
 interface SessionConfigPanelProps {
   threadId: string;
@@ -29,58 +35,137 @@ interface SessionConfigPanelProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function fallbackSessionConfig(agentId: string | undefined): AgentSessionConfig {
+  return {
+    agent_id: agentId ?? "default-agent",
+    model: null,
+    tools: null,
+    skills: null,
+    knowledge_bases: null,
+    mcp_servers: null,
+    tool_approval: null,
+  };
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+interface DraftControlProps {
+  draftId: string;
+  disabled: boolean;
+}
+
+function ModelOverrideControl({
+  draftId,
+  disabled,
+  defaultLabel,
+}: DraftControlProps & { defaultLabel: string }) {
+  const model = useAgentSessionDraftField(draftId, "model");
+  const actions = useAgentSessionDraftActions();
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor="model-override" className="font-mono text-xs">
+        Model Override
+      </Label>
+      <ModelSelector
+        value={model ?? ""}
+        onChange={(value) => actions.setField(draftId, "model", value || null)}
+        defaultLabel={defaultLabel}
+        placeholder="Select model override..."
+        disabled={disabled}
+      />
+      <p className="font-body text-xs text-muted-foreground">
+        Leave empty to use the agent default.
+      </p>
+    </div>
+  );
+}
+
+function ToolApprovalControl({ draftId, disabled }: DraftControlProps) {
+  const toolApproval = useAgentSessionDraftField(draftId, "tool_approval");
+  const actions = useAgentSessionDraftActions();
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor="tool-approval" className="font-mono text-xs">
+        Tool Approval
+      </Label>
+      <Select
+        value={toolApproval ?? "inherit"}
+        disabled={disabled}
+        onValueChange={(value) => {
+          if (value === null) return;
+          actions.setField(
+            draftId,
+            "tool_approval",
+            value === "inherit" ? null : (value as ToolApproval),
+          );
+        }}
+      >
+        <SelectTrigger id="tool-approval" className="w-40 font-mono text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="inherit">Agent default</SelectItem>
+          <SelectItem value="auto">Auto</SelectItem>
+          <SelectItem value="ask">Ask</SelectItem>
+          <SelectItem value="deny">Deny</SelectItem>
+        </SelectContent>
+      </Select>
+      <p className="font-body text-xs text-muted-foreground">
+        How tool calls are approved during this session.
+      </p>
+    </div>
+  );
+}
+
 export function SessionConfigPanel({
   threadId,
   agentConfig,
   open,
   onOpenChange,
 }: SessionConfigPanelProps) {
-  const [modelOverride, setModelOverride] = useState("");
-  const [historyWindow, setHistoryWindow] = useState<number | "">(50);
-  const [injectMemory, setInjectMemory] = useState(false);
-  const [autoCapture, setAutoCapture] = useState(false);
-  const [memoryScope, setMemoryScope] = useState("session");
-  const [toolApproval, setToolApproval] = useState(agentConfig?.tool_approval ?? "auto");
-  const { saving, error, save } = useChatSessionConfig();
+  const editorId = useId();
+  const draftId = agentSessionDraftId(threadId, editorId);
+  const actions = useAgentSessionDraftActions();
+  const saveStatus = useAgentSessionDraftStatus(draftId);
+  const error = useAgentSessionDraftError(draftId);
 
-  // Sync tool approval when agent config changes.
-  // Only reset when the agent config actually changes (not on every render).
-  const [lastAgentModel, setLastAgentModel] = useState(agentConfig?.model);
-  if (agentConfig?.model !== lastAgentModel) {
-    setLastAgentModel(agentConfig?.model);
-    setToolApproval(agentConfig?.tool_approval ?? "auto");
-  }
+  useEffect(() => {
+    if (!open) return;
+    const controller = new AbortController();
+    const fallback = fallbackSessionConfig(agentConfig?.agent_id);
+    void actions
+      .loadAndOpen(threadId, editorId, fallback, controller.signal)
+      .catch((loadError: unknown) => {
+        if (controller.signal.aborted || isAbortError(loadError)) return;
+        actions.open(threadId, editorId, fallback);
+        actions.markError(draftId, (loadError as Error).message);
+      });
+    return () => {
+      controller.abort();
+      actions.cancel(draftId);
+    };
+  }, [actions, agentConfig?.agent_id, draftId, editorId, open, threadId]);
+
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) actions.cancel(draftId);
+      onOpenChange(nextOpen);
+    },
+    [actions, draftId, onOpenChange],
+  );
 
   const handleSave = useCallback(async () => {
-    const saved = await save(threadId, {
-            model_override: modelOverride || null,
-            context_strategy: {
-              history_window:
-                historyWindow === "" ? null : Number(historyWindow),
-              inject_memory: injectMemory,
-              auto_capture: autoCapture,
-              memory_scope: memoryScope,
-            },
-            tool_approval: toolApproval,
-          });
-    if (saved) {
-      onOpenChange(false);
-    }
-  }, [
-    threadId,
-    modelOverride,
-    historyWindow,
-    injectMemory,
-    autoCapture,
-    memoryScope,
-    toolApproval,
-    onOpenChange,
-    save,
-  ]);
+    if (await actions.save(draftId)) onOpenChange(false);
+  }, [actions, draftId, onOpenChange]);
+
+  const saving = saveStatus === "saving";
+  const unavailable = saveStatus === null || saveStatus === "error";
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[400px] sm:max-w-[400px] overflow-y-auto">
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-[400px]">
         <SheetHeader>
           <SheetTitle className="font-display text-lg font-semibold text-foreground">
             Session Configuration
@@ -90,119 +175,22 @@ export function SessionConfigPanel({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 flex flex-col gap-6">
-          {/* Model Override */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="model-override" className="font-mono text-xs">
-              Model Override
-            </Label>
-            <ModelSelector
-              value={modelOverride}
-              onChange={setModelOverride}
-              defaultLabel={agentConfig?.model ? `Agent: ${agentConfig.model}` : "Agent default"}
-              placeholder="Select model override..."
-            />
-            <p className="font-body text-xs text-muted-foreground">
-              Leave empty to use the agent default.
-            </p>
-          </div>
+        <div className="flex flex-col gap-6 px-4 pb-4">
+          <ModelOverrideControl
+            draftId={draftId}
+            disabled={saving}
+            defaultLabel={agentConfig?.model ? `Agent: ${agentConfig.model}` : "Agent default"}
+          />
 
           <Separator />
 
-          {/* Context Strategy */}
-          <div className="flex flex-col gap-4">
-            <h3 className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">Context Strategy</h3>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="history-window" className="font-mono text-xs">
-                History Window
-              </Label>
-              <Input
-                id="history-window"
-                type="number"
-                min={1}
-                max={500}
-                placeholder="50"
-                value={historyWindow}
-                onChange={(e) =>
-                  setHistoryWindow(
-                    e.target.value === "" ? "" : Number(e.target.value),
-                  )
-                }
-                className="font-mono text-xs w-24"
-              />
-              <p className="font-body text-xs text-muted-foreground">
-                Max messages to include in context.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="inject-memory" className="font-mono text-xs">
-                Inject Memory
-              </Label>
-              <Switch
-                id="inject-memory"
-                checked={injectMemory}
-                onCheckedChange={setInjectMemory}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="auto-capture" className="font-mono text-xs">
-                Auto-capture
-              </Label>
-              <Switch
-                id="auto-capture"
-                checked={autoCapture}
-                onCheckedChange={setAutoCapture}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="memory-scope" className="font-mono text-xs">
-                Memory Scope
-              </Label>
-              <Select value={memoryScope} onValueChange={(v) => v != null && setMemoryScope(v)}>
-                <SelectTrigger id="memory-scope" className="font-mono text-xs w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="session">Session</SelectItem>
-                  <SelectItem value="agent">Agent</SelectItem>
-                  <SelectItem value="global">Global</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <ToolApprovalControl draftId={draftId} disabled={saving} />
 
           <Separator />
 
-          {/* Tool Approval */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="tool-approval" className="font-mono text-xs">
-              Tool Approval
-            </Label>
-            <Select value={toolApproval} onValueChange={(v) => v != null && setToolApproval(v)}>
-              <SelectTrigger id="tool-approval" className="font-mono text-xs w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Auto</SelectItem>
-                <SelectItem value="ask">Ask</SelectItem>
-                <SelectItem value="deny">Deny</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="font-body text-xs text-muted-foreground">
-              How tool calls are approved during this session.
-            </p>
-          </div>
-
-          <Separator />
-
-          {/* Save */}
           <Button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || unavailable}
             className="w-full font-mono text-xs"
           >
             {saving ? "Saving..." : "Save Configuration"}
