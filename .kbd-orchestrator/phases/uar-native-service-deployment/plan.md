@@ -27,7 +27,7 @@ Build UAR 1.0.0 and its React application as a native, loopback-only service; in
 
 - `cargo info windows-service@0.8.1` observed crates.io version 0.8.1, Rust 1.71 compatibility, and the versioned docs.rs URL on 2026-08-23.
 - Root `Cargo.toml` defines `server-full = ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"]`; `admin-ui` is the shipped React surface.
-- The macOS host currently lacks a Windows Rust target. Install `x86_64-pc-windows-gnu` during change 2 before its commit-gating cross-target check; compilation remains a compile-only claim.
+- The pinned `ort` prebuilt catalog has no `x86_64-pc-windows-gnu` artifact. Install `x86_64-pc-windows-msvc` and use a target-scoped `cargo-xwin` environment during change 2; compilation remains a compile-only claim. Do not export cargo-xwin's global `TARGET_CC`/`TARGET_CXX`, because host build dependencies must continue to use the macOS compiler.
 
 ## Ordered OpenSpec changes
 
@@ -48,7 +48,7 @@ Create the normative capability deltas and execution contract for native service
 - Pin `windows-service` 0.8.1 only for Windows targets and update `Cargo.lock`.
 
 **Owned surface:** root Cargo manifest/lock, CLI entry point, telemetry, server startup/shutdown, provider registry, and Windows service adapter.
-**Done:** `cargo check --locked -p universal-agent-runtime --no-default-features --features server-full`, package-scoped Clippy, and `cargo check --locked -p universal-agent-runtime --target x86_64-pc-windows-gnu --no-default-features --features server-full` exit zero before the change-2 commit. Source inspection confirms `Cli.env_file`, the `UAR_LOG_FILE` telemetry branch, Windows `Command::Service`, `start_server_with_shutdown`, gRPC host resolution, and the `enrich_provider_config` YAML call site are present. No functional campaign begins here.
+**Done:** `cargo check --locked -p universal-agent-runtime --no-default-features --features server-full`, package-scoped Clippy, and target-scoped `cargo check --locked -p universal-agent-runtime --target x86_64-pc-windows-msvc --no-default-features --features server-full` exit zero before the change-2 commit. Source inspection confirms `Cli.env_file`, the `UAR_LOG_FILE` telemetry branch, Windows `Command::Service`, `start_server_with_shutdown`, gRPC host resolution, and the `enrich_provider_config` YAML call site are present. No functional campaign begins here.
 
 ### 3. `package-native-service-installers`
 
@@ -117,7 +117,7 @@ No sideways lane merges, pushes, tags, releases, PRs, or edits to unrelated/untr
 
 | Requirement | Observation | Limit |
 |---|---|---|
-| Native package structure | Parse shell/PowerShell syntax, plist, and systemd unit; install the Rust `x86_64-pc-windows-gnu` target and compile the Windows-only adapter; strict-validate all OpenSpec changes; build Docusaurus locally. | Linux templates require root at install time; Windows templates require an elevated PowerShell session. No Linux or Windows runtime claim from macOS. |
+| Native package structure | Parse shell/PowerShell syntax, plist, and systemd unit; install the Rust `x86_64-pc-windows-msvc` target and compile the Windows-only adapter through a target-scoped cargo-xwin environment; strict-validate all OpenSpec changes; build Docusaurus locally. | Linux templates require root at install time; Windows templates require an elevated PowerShell session. No Linux or Windows runtime claim from macOS. |
 | Release installation | Install the release server-full binary and current React bundle beneath `~/.uar`; load the LaunchAgent. | Preserve and back up existing state. |
 | Service health | Observe the LaunchAgent remaining running; call `/healthz`, `/readyz`, `/`, and one emitted `/assets/*` path at `http://127.0.0.1:1906`. | Short requests only; no soak. The shipped host family is IPv4 loopback; `localhost` is not used as binding evidence. |
 | Listener isolation | Run `/usr/sbin/lsof -nP -iTCP:1906 -sTCP:LISTEN` and the equivalent command for 50051; require at least one LISTEN row for each port and inspect every returned IPv4/IPv6 address. | Zero rows, wildcard addresses, and non-loopback addresses fail. Every observed address must be `127.0.0.1` or `::1`. |

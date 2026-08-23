@@ -1,0 +1,33 @@
+    Checking universal-agent-runtime v1.0.0 (/Users/gqadonis/.claude/worktrees/implement-native-service-runtime-support)
+warning: constant `MAX_BODY_BYTES` is never used
+  --> src/uar/tools/fetch_guard.rs:54:7
+   |
+54 | const MAX_BODY_BYTES: usize = 10 * 1024 * 1024;
+   |       ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: constant `MAX_REDIRECTS` is never used
+  --> src/uar/tools/fetch_guard.rs:56:7
+   |
+56 | const MAX_REDIRECTS: usize = 5;
+   |       ^^^^^^^^^^^^^
+
+warning: type does not implement `std::fmt::Debug`; consider adding `#[derive(Debug)]` or a manual implementation
+  --> src/uar/runtime/skills/wasm_runtime.rs:42:1
+   |
+42 | / pub struct WasmHostState {
+43 | |     ctx: wasmtime_wasi::WasiCtx,
+44 | |     table: wasmtime::component::ResourceTable,
+45 | |     /// Backing store for `prometheus:component/kv-store`.
+...  |
+51 | |     kv: std::collections::HashMap<String, String>,
+52 | | }
+   | |_^
+   |
+   = note: requested on the command line with `-W missing-debug-implementations`
+
+warning: `universal-agent-runtime` (lib) generated 3 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.16s
+warning: the following packages contain code that will be rejected by a future version of Rust: nix v0.31.3, redis v1.2.1
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`

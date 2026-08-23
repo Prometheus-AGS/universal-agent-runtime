@@ -14,6 +14,10 @@ pub mod vault;
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
+    /// Environment file loaded before telemetry and application configuration.
+    #[arg(long, env = "UAR_ENV_FILE")]
+    pub env_file: Option<String>,
+
     /// Config file path
     #[arg(short, long, env = "CONFIG_FILE")]
     pub config: Option<String>,
@@ -106,6 +110,9 @@ pub struct Cli {
 /// Top-level binary subcommands. Absent ⇒ run the server (default).
 #[derive(Subcommand, Debug, Clone)]
 pub enum Command {
+    /// Run under the Windows Service Control Manager.
+    #[cfg(windows)]
+    Service,
     /// Run and inspect the LLM evaluation harness.
     Eval {
         #[command(subcommand)]
@@ -1714,6 +1721,7 @@ mod tests {
         let cfg_path = write_test_config_file();
         (
             Cli {
+                env_file: None,
                 config: Some(cfg_path.to_string_lossy().to_string()),
                 port: None,
                 jwt_required: None,

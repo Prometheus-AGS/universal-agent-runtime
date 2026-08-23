@@ -259,7 +259,8 @@ impl ProviderRegistry {
     pub async fn seed_from_configs(&self, configs: Vec<ProviderConfig>) {
         let mut providers = self.providers.write().await;
         let mut first_id: Option<String> = None;
-        for config in configs {
+        for mut config in configs {
+            enrich_provider_config(&mut config);
             tracing::info!(
                 provider_id = %config.id,
                 base_url = %config.base_url,

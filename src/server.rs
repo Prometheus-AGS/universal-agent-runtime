@@ -79,6 +79,13 @@ type ShutdownCleanup = Arc<dyn Fn() + Send + Sync + 'static>;
 type ShutdownAsyncCleanup =
     Arc<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send + 'static>> + Send + Sync + 'static>;
 
+#[cfg(windows)]
+mod windows_service;
+
+#[cfg(windows)]
+#[doc(hidden)]
+pub use windows_service::run as run_windows_service;
+
 const SHUTDOWN_DEADLINE_MARKER: &[u8] = b"UAR_SHUTDOWN outcome=deadline_enforced\n";
 const SHUTDOWN_GRACEFUL_MARKER: &[u8] = b"UAR_SHUTDOWN outcome=graceful_complete\n";
 const SHUTDOWN_HARD_STOP_ALLOWANCE: Duration = Duration::from_millis(500);
@@ -257,7 +264,15 @@ async fn request_span_layer(request: Request, next: Next) -> Response {
 
 /// Start the Axum server with the provided configuration manager.
 pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, None, None, None).await
+    start_server_with_listener(config_manager, None, None, None, None).await
+}
+
+#[cfg(windows)]
+pub(crate) async fn start_server_with_shutdown(
+    config_manager: Arc<ConfigManager>,
+    process_shutdown: tokio_util::sync::CancellationToken,
+) -> anyhow::Result<()> {
+    start_server_with_listener(config_manager, None, None, None, Some(process_shutdown)).await
 }
 
 async fn start_server_with_listener(
@@ -265,6 +280,7 @@ async fn start_server_with_listener(
     listener: Option<tokio::net::TcpListener>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
+    process_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
     let config = config_manager.current();
     let embedded_lock = surrealkv_lock_path(
@@ -277,6 +293,7 @@ async fn start_server_with_listener(
         listener,
         ready,
         http_shutdown,
+        process_shutdown,
         shutdown_coordinator.clone(),
     )
     .await;
@@ -345,6 +362,7 @@ async fn run_server_with_listener(
     listener: Option<tokio::net::TcpListener>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
+    process_shutdown: Option<tokio_util::sync::CancellationToken>,
     shutdown_coordinator: ShutdownCoordinator,
 ) -> anyhow::Result<()> {
     // UAR owns the process-level jsonwebtoken provider. Install it at the
@@ -1509,9 +1527,15 @@ async fn run_server_with_listener(
     #[cfg(feature = "a2a-transport")]
     let grpc_handle = {
         let grpc_port = config.server.grpc_port;
-        let grpc_addr: std::net::SocketAddr = format!("0.0.0.0:{grpc_port}")
-            .parse()
-            .expect("invalid gRPC address");
+        let grpc_addr = tokio::net::lookup_host((config.server.host.as_str(), grpc_port))
+            .await?
+            .next()
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "server.host '{}' did not resolve for A2A gRPC",
+                    config.server.host
+                )
+            })?;
         let grpc_service =
             crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state));
         let grpc_shutdown = run_cancellation_root.clone();
@@ -1582,6 +1606,7 @@ async fn run_server_with_listener(
         Some(async_resource_cleanup),
         run_cancellation_root,
         http_shutdown,
+        process_shutdown,
         shutdown_coordinator.clone(),
     )
     .await;
@@ -1656,7 +1681,14 @@ pub async fn start_server_sidecar(
     ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, Some(listener), Some(ready), http_shutdown).await
+    start_server_with_listener(
+        config_manager,
+        Some(listener),
+        Some(ready),
+        http_shutdown,
+        None,
+    )
+    .await
 }
 
 async fn serve_on_listener(
@@ -1668,6 +1700,7 @@ async fn serve_on_listener(
     shutdown_async_cleanup: Option<ShutdownAsyncCleanup>,
     run_cancellation_root: tokio_util::sync::CancellationToken,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
+    process_shutdown: Option<tokio_util::sync::CancellationToken>,
     shutdown_coordinator: ShutdownCoordinator,
 ) -> anyhow::Result<()> {
     let addr = listener.local_addr()?;
@@ -1695,7 +1728,15 @@ async fn serve_on_listener(
         let http_shutdown = http_shutdown.clone();
         let shutdown_coordinator = shutdown_coordinator.clone();
         tokio::spawn(async move {
-            prometheus_parking_lot::core::shutdown::wait_for_signal().await;
+            match process_shutdown {
+                Some(process_shutdown) => {
+                    tokio::select! {
+                        () = prometheus_parking_lot::core::shutdown::wait_for_signal() => {}
+                        () = process_shutdown.cancelled() => {}
+                    }
+                }
+                None => prometheus_parking_lot::core::shutdown::wait_for_signal().await,
+            }
             shutdown_coordinator.begin(shutdown_timeout);
             info!(
                 name: "server.shutdown",
@@ -5938,6 +5979,7 @@ marker.write_bytes(b"stdin-closed")
             cleanup,
             async_cleanup,
             tokio_util::sync::CancellationToken::new(),
+            None,
             None,
             coordinator.clone(),
         )

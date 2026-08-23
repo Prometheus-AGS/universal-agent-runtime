@@ -459,6 +459,7 @@ async fn boot_test_server_inner(
     std::fs::write(&config_path, yaml).expect("write temp harness config");
 
     let cli = Cli {
+        env_file: None,
         config: Some(config_path.to_string_lossy().to_string()),
         port: None,
         jwt_required: None,

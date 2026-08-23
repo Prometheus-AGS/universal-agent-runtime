@@ -165,7 +165,13 @@ fn main() {
 
 async fn run_sidecar(bootstrap: SidecarBootstrap) {
     let log_format = LogFormat::Json;
-    let otel_provider = uar::telemetry::init(&log_format);
+    let otel_provider = match uar::telemetry::init(&log_format) {
+        Ok(provider) => provider,
+        Err(error) => {
+            eprintln!("Failed to initialize UAR sidecar telemetry: {error:#}");
+            std::process::exit(1);
+        }
+    };
     uar::telemetry::metrics::init();
 
     let listener = tokio::net::TcpListener::from_std(bootstrap.listener)

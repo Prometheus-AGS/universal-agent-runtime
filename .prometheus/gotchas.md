@@ -588,3 +588,16 @@ the same requirement, refresh each later modified block against the current
 canonical requirement and preserve every existing scenario by name. Apply
 conflicting deltas in their planned chronological order and validate the touched
 canonical spec after each archive.
+
+## 2026-08-23 — Windows server-full cross-check requires target-scoped MSVC variables
+
+**Observed behavior.** `x86_64-pc-windows-gnu` stopped in `ort-sys` because the
+pinned distribution has no GNU Windows prebuilt. A direct cargo-xwin check then
+set global `TARGET_CC` and `TARGET_CXX`, causing a macOS host build dependency to
+invoke `clang-cl` against Apple assembly and headers.
+
+**Working rule.** Cross-check Windows `server-full` as
+`x86_64-pc-windows-msvc`. Generate the cargo-xwin environment, but pass only the
+target-qualified compiler, linker, SDK, bindgen, and CMake variables to Cargo.
+Host build dependencies must retain the host compiler. A successful cross-check
+is compile-only evidence and makes no Windows service-runtime claim.

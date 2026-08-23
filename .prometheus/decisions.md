@@ -623,3 +623,23 @@ validated the exact merge SHA.
 **Uncomfortable constraint.** This makes pre-merge live Pages validation
 impossible. Local complete-artifact and feature-branch assembly evidence must be
 kept distinct from the live claim until the protected `main` run succeeds.
+
+---
+
+## 2026-08-23 — Windows native service compile evidence uses MSVC
+
+**Decision.** Compile the Windows `server-full` service for
+`x86_64-pc-windows-msvc` with a target-scoped cargo-xwin environment. Do not use
+the originally planned `x86_64-pc-windows-gnu` target, and do not export
+cargo-xwin's global `TARGET_CC` or `TARGET_CXX` into host build dependencies.
+
+**Rationale.** The pinned `ort-sys 2.0.0-rc.13` distribution has Windows
+prebuilts only for MSVC. The GNU check failed before UAR type-checking with no
+available ONNX Runtime artifact. A normal cargo-xwin invocation then exposed its
+Windows compiler as the macOS host compiler for an `aws-lc-sys` build dependency.
+Using only target-qualified compiler, linker, SDK, and CMake variables allowed
+the complete `server-full` graph and the native SCM adapter to type-check.
+
+**Uncomfortable constraint.** This is cross-compilation evidence from macOS,
+not execution under Windows SCM. Runtime behavior remains unverified until a
+Windows host runs the packaged service.

@@ -4,7 +4,9 @@ use opentelemetry::trace::TracerProvider as _;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::Resource;
 use opentelemetry_sdk::trace::SdkTracerProvider;
-use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{
+    EnvFilter, fmt::writer::BoxMakeWriter, layer::SubscriberExt, util::SubscriberInitExt,
+};
 
 use crate::config::LogFormat;
 
@@ -62,9 +64,26 @@ fn build_otlp_provider() -> Option<SdkTracerProvider> {
 /// Returns the OTLP [`SdkTracerProvider`] when trace export is active, so the
 /// caller can `shutdown()` it on exit to flush buffered spans; `None` otherwise.
 #[must_use]
-pub fn init(log_format: &LogFormat) -> Option<SdkTracerProvider> {
+pub fn init(log_format: &LogFormat) -> anyhow::Result<Option<SdkTracerProvider>> {
     let filter_layer = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info,universal_agent_runtime=debug"));
+
+    let writer = if let Some(path) = std::env::var_os("UAR_LOG_FILE") {
+        let path = std::path::PathBuf::from(path);
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)
+            .map_err(|error| {
+                anyhow::anyhow!(
+                    "opening UAR_LOG_FILE '{}' for append: {error}",
+                    path.display()
+                )
+            })?;
+        BoxMakeWriter::new(std::sync::Mutex::new(file))
+    } else {
+        BoxMakeWriter::new(std::io::stdout)
+    };
 
     let otel_provider = build_otlp_provider();
     let otel_layer = otel_provider
@@ -77,7 +96,8 @@ pub fn init(log_format: &LogFormat) -> Option<SdkTracerProvider> {
                 .json()
                 .with_target(true)
                 .with_thread_ids(true)
-                .with_line_number(true);
+                .with_line_number(true)
+                .with_writer(writer);
 
             tracing_subscriber::registry()
                 .with(filter_layer)
@@ -90,7 +110,8 @@ pub fn init(log_format: &LogFormat) -> Option<SdkTracerProvider> {
                 .with_target(true)
                 .with_thread_ids(true)
                 .with_line_number(true)
-                .compact();
+                .compact()
+                .with_writer(writer);
 
             tracing_subscriber::registry()
                 .with(filter_layer)
@@ -103,7 +124,8 @@ pub fn init(log_format: &LogFormat) -> Option<SdkTracerProvider> {
                 .with_target(true)
                 .with_thread_ids(true)
                 .with_line_number(true)
-                .pretty();
+                .pretty()
+                .with_writer(writer);
 
             tracing_subscriber::registry()
                 .with(filter_layer)
@@ -116,5 +138,5 @@ pub fn init(log_format: &LogFormat) -> Option<SdkTracerProvider> {
     if otel_provider.is_some() {
         tracing::info!(name: "telemetry.otlp", "OTLP trace export enabled");
     }
-    otel_provider
+    Ok(otel_provider)
 }
