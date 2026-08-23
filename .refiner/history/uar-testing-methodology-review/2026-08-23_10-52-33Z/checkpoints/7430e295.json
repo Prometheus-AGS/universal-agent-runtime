@@ -1,0 +1,48 @@
+{
+  "refinement_id": "e6858e69-07a8-40f4-a221-10765d3df41f",
+  "artifact_name": "uar-testing-methodology-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T10:51:37Z",
+  "updated_at": "2026-08-23T10:52:30Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Review the completed testing methodology against evidence, timing, safety, and profile limits."
+  ],
+  "constraints": [
+    "evidence-limits",
+    "real-inference-boundary",
+    "negative-control-discipline",
+    "timing-and-location",
+    "deferred-product-evidence"
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "blocking_satisfied": 4,
+      "blocking_violated": 0,
+      "high_satisfied": 1,
+      "decision": "terminate",
+      "timestamp": "2026-08-23T10:51:38Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "974cf462",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-23T10:52:30Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

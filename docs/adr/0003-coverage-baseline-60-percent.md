@@ -6,6 +6,11 @@ Date: 2026-07-13
 
 Accepted
 
+The 60% local target remains the recorded intent. The statement below that CI
+enforces it is superseded by the 2026-08-09 deployment-only GitHub Actions
+decision. Coverage checks run locally, and `docs/coverage-baseline.md` still has
+no populated measured baseline; this ADR is not evidence that 60% was observed.
+
 ## Context
 
 Test coverage was ungated and varied across the Rust workspace and the React frontend. The operator wanted a measurable floor that could be raised once usage data was available, rather than an aspirational target that blocked the release.
@@ -18,7 +23,8 @@ Test coverage was ungated and varied across the Rust workspace and the React fro
 
 ## Consequences
 
-- CI fails on coverage regression below 60%.
+- Local coverage validation is intended to fail below 60%; GitHub Actions do not
+  run routine coverage checks.
 - The baseline is deliberately conservative; the next quarter may raise it to 70–75% based on actual usage.
 - Removes `grcov` in favor of `cargo-llvm-cov`.
 

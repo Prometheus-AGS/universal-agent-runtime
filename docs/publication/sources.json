@@ -9,6 +9,9 @@
       "id": "implementation-provenance-sources",
       "selector": {
         "paths": [
+          ".claude/rules/rust.md",
+          ".claude/rules/typescript.md",
+          "AGENTS.md",
           "Cargo.toml",
           "LICENSE",
           "LICENSE-CC-BY-4.0.md",

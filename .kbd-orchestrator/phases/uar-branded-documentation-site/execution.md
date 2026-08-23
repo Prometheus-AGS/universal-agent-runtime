@@ -176,9 +176,30 @@ Those failures are dependencies, not suppressed findings.
 - Canonical KBD revision `364` records the change complete and the revised
   next-work handoff.
 
+### publish-uar-testing-methodology-history
+
+- Published four guides covering methodology history, seven evidence classes,
+  negative controls, and local verification timing.
+- Preserved the role of focused and recorded-provider diagnostics while making
+  genuine loaded-model inference the only certifying inference boundary.
+- Documented the rejected duration-only synthetic soak, bounded server-full
+  functional closeout, source-SHA/profile limits, and the cancellation rather
+  than false completion of the old release tail.
+- Corrected ADR-0003's stale hosted-CI consequence while retaining the local
+  coverage target and disclosing that its measured baseline remains unpopulated.
+- Passed seven methodology negative controls, composed publication, TypeScript,
+  strict OpenSpec, scoped-diff, and artifact-refiner content gates without
+  running product tests or the final production build.
+- Preserved the uncomfortable limit: local evidence requires deliberate
+  retention, and no taxonomy removes the cost or nondeterminism of genuine-model
+  verification.
+- Canonical KBD revision `367` records the change complete and the revised
+  next-work handoff.
+
 ## Next change
 
-Run `/opsx:new publish-uar-testing-methodology-history`. It owns the public
-evidence taxonomy, the transition from synthetic/coverage-oriented checks to
-bounded genuine-model functionality, negative controls, local verification,
-and explicit statements of what each test class does not prove.
+Run `/opsx:new certify-and-publish-uar-docs`. All content lanes are complete.
+This final change owns the one production build, complete local publication and
+link gate, rendered browser/navigation/search/responsive/theme/Mermaid review,
+accessibility evidence, Pages deployment validation, repository homepage link,
+and final phase reflection/publication handoff.

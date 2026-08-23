@@ -1,27 +1,27 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 364,
-  "derivedRevision": 364,
+  "sourceRevision": 367,
+  "derivedRevision": 367,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 49
+    "80130eb1-95f8-4039-8976-71bdce23779c": 52
   },
   "conflictCount": 0,
   "phase": "uar-branded-documentation-site",
   "phaseId": "uar-branded-documentation-site",
   "parentPhase": null,
-  "last_updated": "2026-08-23T10:45:49.251213Z",
+  "last_updated": "2026-08-23T10:53:38.414039Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 11,
-  "changes_completed": 9,
+  "changes_completed": 10,
   "implementation_total": 11,
-  "implementation_completed": 9,
+  "implementation_completed": 10,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 9,
+      "completed": 10,
       "total": 11,
       "status": "IN_PROGRESS"
     },
@@ -144,8 +144,8 @@
     {
       "id": "publish-uar-testing-methodology-history",
       "title": "Publish UAR testing methodology history",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,

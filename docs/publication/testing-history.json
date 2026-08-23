@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "profiles": ["server-full", "minimal", "embedded-mobile"],
+  "guides": [
+    {"id":"testing-methodology","file":"website/docs/history/testing-methodology.md","route":"/docs/history/testing-methodology","requiredMarkers":["evidence changed", "coverage", "recorded provider", "real-model", "cancelled"]},
+    {"id":"evidence-taxonomy","file":"website/docs/history/evidence-taxonomy.md","route":"/docs/history/evidence-taxonomy","requiredMarkers":["What it proves", "What it does not prove", "source SHA", "server-full", "minimal", "embedded-mobile"]},
+    {"id":"negative-controls","file":"website/docs/history/negative-controls.md","route":"/docs/history/negative-controls","requiredMarkers":["observed to fail", "exact restoration", "vacuous", "fail-closed"]},
+    {"id":"local-verification","file":"website/docs/history/local-verification.md","route":"/docs/history/local-verification","requiredMarkers":["Tier 0", "Tier 1", "Tier 2", "Tier 3", "implementation unit is complete", "deployment-only"]}
+  ],
+  "evidenceClasses": [
+    {"id":"static-type","proves":"The selected source parses, types, lints, or satisfies a static contract.","doesNotProve":"The program ran or the user workflow completed."},
+    {"id":"focused-unit-component","proves":"The selected unit or component produced the asserted result under controlled inputs.","doesNotProve":"Packaging, external providers, end-to-end integration, deployment, or another profile."},
+    {"id":"synthetic-recorded","proves":"The protocol, orchestration, or error path handled a deterministic model double as asserted.","doesNotProve":"Genuine model inference, provider availability, soak, resilience, release, or production readiness."},
+    {"id":"packaged-functional","proves":"A named workflow traversed the supported packaged UAR boundary and returned the observed result.","doesNotProve":"A model boundary unless genuine loaded-model evidence is also retained, or any untested workflow/profile."},
+    {"id":"real-model-functional","proves":"The named provider/model performed genuine inference through UAR for the bounded functional path.","doesNotProve":"Broad model quality, every provider, long-duration resilience, deployment, or another profile."},
+    {"id":"load-soak-resilience","proves":"The specified workload exercised its named failure model, volume, operating period, or statistical objective.","doesNotProve":"Inference when traffic uses a model double, or production readiness beyond the stated workload and environment."},
+    {"id":"deployment-validation","proves":"The deployed artifact became reachable and satisfied the named deployment checks.","doesNotProve":"Routine unit/integration correctness, model inference, or undeployed profiles."}
+  ],
+  "sources": [
+    "AGENTS.md",
+    ".claude/rules/rust.md",
+    ".claude/rules/typescript.md",
+    ".prometheus/decisions.md",
+    "docs/adr/0003-coverage-baseline-60-percent.md",
+    "docs/coverage-baseline.md",
+    ".kbd-orchestrator/phases/uar-1-0-readiness/EXECUTION-CONTRACT.md",
+    ".kbd-orchestrator/phases/uar-1-0-readiness/reflection.md",
+    ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/functional-verification.md",
+    ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/reflection.md"
+  ]
+}
