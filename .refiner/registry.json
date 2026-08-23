@@ -96,6 +96,13 @@
       "content_type": "direct:content",
       "updated_at": "2026-08-23T07:59:50Z",
       "finalized_at": "2026-08-23T07:59:50Z"
+    },
+    "uar-product-workflow-documentation-review": {
+      "path": ".refiner/artifacts/uar-product-workflow-documentation-review",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-23T08:35:37Z",
+      "finalized_at": "2026-08-23T08:35:37Z"
     }
   }
 }

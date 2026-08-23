@@ -68,8 +68,27 @@ Those failures are dependencies, not suppressed findings.
   future runtime changes, and no rendered-site or runtime claim exists yet.
 - Canonical KBD revision `349` records the change complete.
 
+### document-inference-skills-knowledge-and-agents
+
+- Published seven classified workflow guides for provider configuration,
+  model selection, genuine inference, agents, skills, knowledge, and memory.
+- Kept packaged UI/API behavior separate from embedded-host integration and
+  kept `server-full`, `minimal`, and `embedded-mobile` limits explicit.
+- Preserved `/docs/skills` as a concise compatibility route while making the
+  scoped skills guide the lifecycle authority.
+- Published only sanitized, bounded syntheses of retained genuine-model
+  evidence; raw private evidence, credentials, payloads, and machine-local
+  paths remain outside the public site.
+- Passed TypeScript, nine observed product-workflow negative controls,
+  architecture, brand, composed publication, strict OpenSpec, scoped-diff,
+  and bounded artifact-refiner content gates without running the final build.
+- Preserved the uncomfortable limit: no fresh inference, runtime,
+  cross-profile, rendered-site, accessibility, or deployment claim exists.
+- Canonical KBD revision `352` records the change complete.
+
 ## Next change
 
-Run `/opsx:new document-inference-skills-knowledge-and-agents`. It owns the
-provider/model, inference, agent, skill, and knowledge workflows across the API,
-operator interface, and embedded boundary.
+Run `/opsx:new document-security-tenancy-governance-and-operations`. It owns
+authentication and authorization, tenancy boundaries, governance behavior,
+credentials and secrets, observability, persistence, shutdown, and operational
+failure guidance without changing runtime behavior.

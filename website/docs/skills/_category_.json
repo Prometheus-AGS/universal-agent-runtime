@@ -1,0 +1,8 @@
+{
+  "label": "Skills",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "Manage skill provenance, scoped enablement, activation, restart behavior, and safe reconciliation."
+  }
+}

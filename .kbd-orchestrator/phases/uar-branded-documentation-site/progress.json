@@ -1,27 +1,27 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 349,
-  "derivedRevision": 349,
+  "sourceRevision": 352,
+  "derivedRevision": 352,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 34
+    "80130eb1-95f8-4039-8976-71bdce23779c": 37
   },
   "conflictCount": 0,
   "phase": "uar-branded-documentation-site",
   "phaseId": "uar-branded-documentation-site",
   "parentPhase": null,
-  "last_updated": "2026-08-23T08:01:50.335688Z",
+  "last_updated": "2026-08-23T08:39:46.067766Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 11,
-  "changes_completed": 4,
+  "changes_completed": 5,
   "implementation_total": 11,
-  "implementation_completed": 4,
+  "implementation_completed": 5,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 4,
+      "completed": 5,
       "total": 11,
       "status": "IN_PROGRESS"
     },
@@ -89,8 +89,8 @@
     {
       "id": "document-inference-skills-knowledge-and-agents",
       "title": "Document inference skills knowledge and agents",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,

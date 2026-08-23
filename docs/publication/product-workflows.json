@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "profiles": [
+    "server-full",
+    "minimal",
+    "embedded-mobile"
+  ],
+  "guides": [
+    {
+      "id": "provider-configuration",
+      "title": "Configure Providers",
+      "position": 1,
+      "file": "website/docs/providers/configuration.md",
+      "route": "/docs/providers/configuration",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": [
+        "docs/PROVIDER_CONFIGURATION.md",
+        "openspec/specs/provider-model-settings-certification/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/api/providers.rs",
+        "src/uar/settings/provider_sync.rs",
+        "frontend/src/features/providers/ui/providers-page.tsx"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "catalog metadata",
+        "configured provider",
+        "Packaged UI workflow",
+        "API workflow",
+        "Realtime state and reload authority",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    },
+    {
+      "id": "provider-models",
+      "title": "Select Models",
+      "position": 2,
+      "file": "website/docs/providers/models.md",
+      "route": "/docs/providers/models",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": [
+        "openspec/specs/provider-model-settings-certification/spec.md",
+        "openspec/specs/openai-models-endpoint/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/server.rs",
+        "src/uar/api/providers.rs",
+        "frontend/src/features/models/ui/models-page.tsx"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "provider/model",
+        "catalog capability",
+        "configured availability",
+        "Packaged UI workflow",
+        "API workflow",
+        "Realtime state and reload authority",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "provider-inference",
+      "title": "Verify Genuine Inference",
+      "position": 3,
+      "file": "website/docs/providers/inference.md",
+      "route": "/docs/providers/inference",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": [
+        "docs/API_CHAT_COMPLETION.md",
+        ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/functional-verification.md"
+      ],
+      "sourceAuthorities": [
+        "src/server.rs",
+        "src/uar/runtime/manager.rs",
+        "frontend/src/features/chat/use-chat-runtime.ts",
+        "frontend/src/services/chat-stream-api.ts"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "genuine model inference",
+        "illustrative and non-certifying",
+        "Packaged API workflow",
+        "Packaged UI workflow",
+        "Observed server-full evidence",
+        "source SHA",
+        "Evidence limits",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "agents",
+      "title": "Create and Run Agents",
+      "position": 4,
+      "file": "website/docs/agents/overview.md",
+      "route": "/docs/agents/overview",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": [
+        "openspec/specs/chat-bdd-coverage/spec.md",
+        ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/functional-verification.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/api/discovery.rs",
+        "src/uar/domain/agent_store.rs",
+        "src/uar/runtime/manager.rs",
+        "frontend/src/features/agents/ui/agents-page.tsx",
+        "frontend/src/features/chat/agent-selector.tsx"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "create",
+        "configure",
+        "select",
+        "run",
+        "inspect",
+        "Packaged UI workflow",
+        "API workflow",
+        "Embedded host workflow",
+        "Realtime state and reload authority",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    },
+    {
+      "id": "skills",
+      "title": "Manage Skills",
+      "position": 5,
+      "file": "website/docs/skills/overview.md",
+      "route": "/docs/skills/overview",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": [
+        "openspec/specs/skill-builtin-availability/spec.md",
+        "openspec/specs/skill-governance/spec.md",
+        "openspec/specs/skill-config-reconciliation/spec.md",
+        "docs/skill-pack-installation.md",
+        "docs/skill-authoring.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/api/skills.rs",
+        "src/uar/runtime/skills/service.rs",
+        "src/uar/runtime/skills/provenance.rs",
+        "src/skills_api.rs",
+        "frontend/src/features/skills/ui/skills-page.tsx"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "built-in",
+        "configuration-provisioned",
+        "API-created",
+        "conversation",
+        "agent",
+        "global",
+        "next request",
+        "restart",
+        "tombstone",
+        "restore",
+        "never hard-deletes",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "knowledge",
+      "title": "Use Knowledge",
+      "position": 6,
+      "file": "website/docs/knowledge/overview.md",
+      "route": "/docs/knowledge/overview",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": [
+        "openspec/specs/knowledge-rag-product-certification/spec.md",
+        "openspec/specs/rag-provenance/spec.md",
+        ".kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/functional-verification.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/api/knowledge.rs",
+        "src/uar/domain/knowledge.rs",
+        "src/uar/api/sse.rs",
+        "frontend/src/features/knowledge/ui/knowledge-page.tsx",
+        "frontend/src/features/chat/ui/chunks/citation-chunk.tsx"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "create",
+        "ingest",
+        "processing",
+        "retrieve",
+        "attach",
+        "citation",
+        "genuine model",
+        "durable authority",
+        "Knowledge is not memory",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "memory",
+      "title": "Use Agent Memory",
+      "position": 7,
+      "file": "website/docs/memory/overview.md",
+      "route": "/docs/memory/overview",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": [
+        "docs/MEMORY_SYSTEM.md",
+        "docs/CONVERSATION_MEMORY.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/memory/mod.rs",
+        "src/uar/api/memory_admin.rs",
+        "src/uar/memory/mcp_server.rs",
+        "src/uar/api/sse.rs",
+        "frontend/src/features/memory/ui/memory-page.tsx",
+        "frontend/src/features/chat/ui/chunks/memory-chunk.tsx"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "opt-in",
+        "auto-capture",
+        "context injection",
+        "mutation",
+        "memory MCP",
+        "storage authority",
+        "Memory is not knowledge",
+        "selected model context",
+        "live event",
+        "process-local history",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    }
+  ],
+  "compatibilityDocuments": [
+    {
+      "file": "website/docs/skills.md",
+      "route": "/docs/skills",
+      "currentAuthority": "/docs/skills/overview"
+    }
+  ]
+}

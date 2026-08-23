@@ -1,18 +1,18 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 343,
-  "derivedRevision": 343,
+  "sourceRevision": 352,
+  "derivedRevision": 352,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 28
+    "80130eb1-95f8-4039-8976-71bdce23779c": 37
   },
   "conflictCount": 0,
   "phase": "fix-graceful-shutdown-deadline-semantics",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-graceful-shutdown-deadline-semantics",
   "parentPhase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "last_updated": "2026-08-23T07:12:43.532986Z",
+  "last_updated": "2026-08-23T08:39:46.067766Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
   "changes_completed": 1,

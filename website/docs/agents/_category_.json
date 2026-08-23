@@ -1,0 +1,8 @@
+{
+  "label": "Agents",
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "description": "Create an agent, select it for a conversation, run it, and inspect the effective execution policy."
+  }
+}

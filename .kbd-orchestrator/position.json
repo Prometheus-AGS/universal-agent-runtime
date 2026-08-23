@@ -1,15 +1,15 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 349,
-  "derivedRevision": 349,
+  "sourceRevision": 352,
+  "derivedRevision": 352,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 34
+    "80130eb1-95f8-4039-8976-71bdce23779c": 37
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-23T08:01:50.335688Z",
+  "updatedAt": "2026-08-23T08:39:46.067766Z",
   "cursor": [
     "uar-branded-documentation-site",
     "execute"
@@ -19,7 +19,7 @@
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "running",
     "progress": {
-      "done": 82,
+      "done": 83,
       "total": 97
     },
     "children": [
@@ -794,7 +794,7 @@
         "canonicalId": "uar-branded-documentation-site",
         "status": "PENDING",
         "progress": {
-          "done": 4,
+          "done": 5,
           "total": 11
         },
         "children": [
@@ -837,7 +837,7 @@
           {
             "type": "change",
             "id": "document-inference-skills-knowledge-and-agents",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0
