@@ -1,0 +1,56 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5.6-sol",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 37,
+      "claim": "The constraint check asserts the existence and enforcement of two GitHub workflow files that the file tree does not contain.",
+      "evidence": "The assessment states \"`.github/workflows/deploy.yml` and `.github/workflows/docs.yml` are the only allowed workflow names enforced by `scripts/validate-github-actions-policy.mjs`\", but the file tree contains no `.github` directory or workflow files at any depth; only the validator script is confirmed by cited_paths. The workflow-name constraint is therefore unverifiable from the packet and may be fabricated or stale.",
+      "suggested_fix": "Either cite the actual workflow files (and confirm they exist) or downgrade the claim to what is verifiable: the validator script exists and its policy must be checked during plan before any CI change is proposed."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 11,
+      "claim": "The Windows SCM finding cites a specific vendored source file whose path is not present in the file tree.",
+      "evidence": "The assessment states \"`vendor/git/prometheus-parking-lot-rs/src/core/shutdown.rs::wait_for_signal` handles SIGTERM only under Unix...\", but the file tree lists only `./vendor/git` with no children, so neither the file's existence nor its signal-handling behavior can be confirmed. The entire Windows graceful-stop gap analysis rests on this unverifiable citation.",
+      "suggested_fix": "Verify the vendored path and the cfg-gating of wait_for_signal, or re-derive the Windows stop-semantics gap from the confirmed in-repo sources (e.g., src/server.rs, src/main.rs)."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 13,
+      "claim": "Concrete per-platform log directory paths are asserted as 'required' although no goal, constraint, or prior handoff specifies them.",
+      "evidence": "The assessment declares \"The required native destinations are external per-install `.prometheus/logs` directories: `~/.prometheus/logs/universal-agent-runtime/` on macOS, `/var/lib/uar/.prometheus/logs/` on Linux, and `%ProgramData%\\Prometheus\\UniversalAgentRuntime\\.prometheus\\logs\\` on Windows\", but the goals say only \".prometheus logs\" with no paths, constraints are null, and prior_handoffs are null. These are design decisions presented as requirements; additionally `~/.prometheus/logs` on macOS sits adjacent to the repo-prohibited `.prometheus/` naming and its separation from the version-controlled KBD directory is assumed, not established.",
+      "suggested_fix": "Re-label these paths as proposed design decisions for the analyze/plan stages to validate, and explicitly state the rule distinguishing per-install `.prometheus/logs` from the repository's version-controlled `.prometheus/`."
+    },
+    {
+      "severity": "WARNING",
+      "file": "assessment.md",
+      "line": 9,
+      "claim": "Key environment findings rest on runtime probes whose outputs are quoted but not evidenced anywhere in the packet.",
+      "evidence": "The assessment cites \"An observed `lsof -nP -iTCP:1906 -sTCP:LISTEN` probe returned no listener\", an observed `find ~/.uar -maxdepth 3` inventory, and a `curl` probe that \"returned gpt-5.5, gpt-5.4 variants, and gpt-5.6 sol/terra/luna\" \u2014 none of these probe transcripts are included or referenced as stored artifacts, so downstream stages cannot re-verify the claimed local-proxy model list (which drives the provider-bootstrap goal) or the port-1906 baseline.",
+      "suggested_fix": "Attach or reference the captured probe outputs (e.g., a dated evidence file), at minimum for the local-proxy model list that the least-privilege provider goal depends on."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "assessment.md",
+      "line": 18,
+      "claim": "The bounded real-model verification finding does not state what 'short' or 'bounded' means, leaving an untestable acceptance signal for the plan stage.",
+      "evidence": "The assessment requires \"short post-install API and browser requests whose evidence identifies the real provider/model and response\" and the goal says \"without synthetic or long-running tests\", but no bound (timeout, request count, token cap) is assessed or proposed, and the existing scripts are only rejected qualitatively.",
+      "suggested_fix": "Define the concrete bounding criteria (e.g., max requests, wall-clock limit, per-provider model list) the plan must encode, or flag the bound definition as an explicit analyze-stage deliverable."
+    }
+  ],
+  "checked_classes": [],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "MiniMax-M3",
+  "producer_model": "gpt-5.6-sol",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "Change 3 (packaging) templates reference Change 4 (bootstrap) interface but Change 3 is committed before Change 4, with no interface contract specified",
+      "evidence": "\"supervisor templates and lifecycle entrypoints that call the provider bootstrap owned by change 4. Change 3 does not implement or duplicate environment-generation or YAML-merge logic.\" \u2014 and Change 3 commits before Change 4 per the ordered change list; the plan never specifies the calling convention, env-file path, or environment variables expected between them, so the integration at Change 5 depends on an unwritten interface",
+      "suggested_fix": "In Change 1 (the contract change), specify the exact interface: env-file path, environment variables passed to the bootstrap, and the bootstrap's exit codes/contract"
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The verification matrix requires \"the platform-neutral external cancellation token\" passed at server-full startup, but Change 2 has no explicit task to add this capability",
+      "evidence": "Matrix row: \"External cancellation seam: Start server-full with the platform-neutral external cancellation token, trigger it, and observe the same graceful completion markers/resource release as process shutdown\". Change 2 tasks list contains no entry for adding such a token; the design says \"this change connects those existing mechanisms\" but does not say whether the token already exists or must be added",
+      "suggested_fix": "Either add an explicit task to Change 2 for adding the cancellation token (e.g., a CLI flag like --cancel-after or a signal handler), or reference the existing capability by name/path in the plan"
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "Alias precedence is unspecified when both KIMI_CODING_API_KEY and KIMI_CODING_KEY exist but KIMI_API_KEY is absent",
+      "evidence": "\"KIMI_API_KEY from KIMI_CODING_API_KEY or KIMI_CODING_KEY\" and \"Canonical variables take precedence; aliases populate only absent canonical names\" \u2014 the rule covers canonical-vs-alias precedence but not alias-vs-alias precedence",
+      "suggested_fix": "Add a tie-breaker rule (e.g., \"prefer KIMI_CODING_API_KEY over KIMI_CODING_KEY\" or \"first-encountered wins\") and ensure the spec scenarios cover the multi-alias case"
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "Done criteria for Changes 1 and 2 use vague language that is hard to verify",
+      "evidence": "Change 1: \"every later change has an explicit requirement owner\". Change 2: \"focused static checks prove the new interfaces are wired\". Neither defines what counts as an owner or a wired interface",
+      "suggested_fix": "Replace with concrete acceptance: e.g., \"each spec.md in openspec/changes/* lists every requirement with its owning change\", \"cargo check -p <changed packages> and cargo clippy --all-targets pass; new public items appear in the binary symbol table or are referenced by test fixtures\""
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "Fail-closed behavior of --env-file and UAR_LOG_FILE is required by spec but not exercised by the verification matrix",
+      "evidence": "Change 2 spec: \"unreadable or invalid content SHALL terminate startup with a contextual error\" for both --env-file and UAR_LOG_FILE. Verification matrix rows cover only happy-path service health, listeners, providers, and inference \u2014 no row exercises an explicit unreadable or invalid file path",
+      "suggested_fix": "Add a verification row \"Environment and log file fail-closed\": provide an unreadable env file and observe non-zero exit before listeners open; provide an unwritable UAR_LOG_FILE and observe non-zero exit"
+    }
+  ],
+  "checked_classes": [],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

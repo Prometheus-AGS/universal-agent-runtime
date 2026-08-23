@@ -1,0 +1,57 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "gpt-5.6-sol",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "claim": "The gRPC listener-isolation check passes vacuously if A2A gRPC is not listening on 50051, and no change owns ensuring the installed configuration actually enables that listener.",
+      "evidence": "Verification matrix: \"Run `/usr/sbin/lsof -nP -iTCP:1906 -sTCP:LISTEN` and the equivalent command for 50051; inspect every returned IPv4/IPv6 address. | Every address must be `127.0.0.1` or `::1`; wildcard/other addresses fail.\" If the gRPC listener is absent, lsof returns zero rows and the assertion 'every returned address is loopback' is trivially true, so the locked decision \"HTTP and A2A gRPC both inherit `server.host`\" is never actually proven. Additionally, change 3 task 1.2 renders only \"loopback host, port 1906\" and change 4 seeds only provider entries \u2014 no change's owned surface or task list states that the installed native YAML enables/configures A2A gRPC on port 50051.",
+      "suggested_fix": "Add a precondition to the Listener isolation row requiring an established LISTEN entry on 50051 (empty lsof output = failure), and assign explicit ownership in change 3 or 4 for rendering the gRPC port 50051 listener into the installed configuration."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The Windows adapter is committed in change 2 without a compile check, while its first compilation is deferred to post-code-completion verification owned by change 5, which is forbidden from touching the adapter's surface.",
+      "evidence": "Verified build inputs: \"The macOS host currently lacks a Windows Rust target. Before post-code-completion Windows compilation, install `x86_64-pc-windows-gnu` through rustup.\" Change 2 Done claims \"the supported targets compile at Tier 0\" but its own task 4.3 (\"Install the `x86_64-pc-windows-gnu` Rust target and compile the Windows target\") sits in an ambiguous timing position versus the Tier 0 section (\"Rust edits: package-scoped `cargo check` and `cargo clippy`\" only). The verification matrix places the Windows compile under change 5, whose owned surface is \"README, docs/Docusaurus, release/install evidence, and final KBD/OpenSpec verification artifacts\" \u2014 excluding the Windows adapter \u2014 and the stop conditions forbid \"implementation crosses the per-change owned surfaces.\" If the Windows adapter fails to compile at change 5, the plan has no fix-forward path.",
+      "suggested_fix": "Either require the Windows-target compile as a Tier 0 gate inside change 2 before its independent commit, or add an explicit fix protocol naming which change owns repairing change-2 code discovered broken during change 5 verification."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "Change 5's promise to \"close all five OpenSpec task lists\" contradicts the serial protocol and owned-surface boundaries, since changes 1\u20134 are already independently committed and merged with their tasks.md files.",
+      "evidence": "Change 5: \"Write row-form `verification.md` evidence and close all five OpenSpec task lists only after observed results satisfy their limits.\" Serial execution protocol step 3\u20134: each change is \"commit[ted] independently\" and \"merge[d] forward to `main`\" before the next begins. Closing changes 1\u20134's task lists in change 5 means editing files those changes own, while change 5's owned surface is limited to \"README, docs/Docusaurus, release/install evidence, and final KBD/OpenSpec verification artifacts,\" and the stop conditions halt on \"implementation crosses the per-change owned surfaces.\"",
+      "suggested_fix": "State explicitly that tasks.md closure for all five changes is part of change 5's owned 'final OpenSpec verification artifacts,' or move each change's task closure into its own worktree before commit."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "Change 2's acceptance criterion \"focused static checks prove the new interfaces are wired\" is undefined and untestable.",
+      "evidence": "Change 2 Done: \"the supported targets compile at Tier 0 and focused static checks prove the new interfaces are wired; no functional campaign begins here.\" No check names, commands, or expected outputs are specified for 'focused static checks,' and 'wired' has no observable criterion \u2014 unlike the other rows of the verification matrix which name exact commands (lsof, /healthz, cargo build flags).",
+      "suggested_fix": "Enumerate the exact static checks (e.g., specific cargo clippy packages, grep-gate scripts, symbol-level checks) and the pass criterion for each new interface (--env-file, UAR_LOG_FILE, service command, gRPC bind, enrichment call site)."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "The goal of shipping \"UAR 1.0.0\" is never verified \u2014 no change or verification row checks that the built binary actually reports version 1.0.0.",
+      "evidence": "Objective: \"Build UAR 1.0.0 and its React application as a native, loopback-only service.\" Neither the five changes nor the verification matrix contains any task asserting the crate version or the installed binary's reported version; the release build row specifies only feature flags (`--no-default-features --features server-full`).",
+      "suggested_fix": "Add a verification observation recording the installed binary's version output (or a task confirming Cargo.toml version is 1.0.0) to the Release installation row."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "The Restart behavior row's \"database access\" observation has no defined method or pass criterion.",
+      "evidence": "Verification matrix: \"Restart the LaunchAgent and re-observe provider visibility, one representative genuine inference, database access, graceful shutdown, and service logging.\" Every other re-observed item maps to a concrete check elsewhere in the matrix (lsof, /v1/chat/completions, log directory inspection), but 'database access' names no endpoint, query, or artifact to inspect.",
+      "suggested_fix": "Specify the concrete database-access observation (e.g., a persistence-backed API call such as reloading a stored conversation or settings read via the REST API) and its expected result."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

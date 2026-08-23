@@ -1,18 +1,18 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 376,
-  "derivedRevision": 376,
+  "sourceRevision": 392,
+  "derivedRevision": 392,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 74,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "80130eb1-95f8-4039-8976-71bdce23779c": 61
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-23T12:16:35.288898Z",
+  "updatedAt": "2026-08-23T13:53:20.530680Z",
   "cursor": [
-    "uar-branded-documentation-site",
-    "reflect"
+    "uar-native-service-deployment",
+    "execute"
   ],
   "root": {
     "type": "phase",
@@ -20,7 +20,7 @@
     "status": "running",
     "progress": {
       "done": 89,
-      "total": 97
+      "total": 102
     },
     "children": [
       {
@@ -1223,6 +1223,64 @@
           "total": 0
         },
         "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "uar-native-service-deployment",
+        "canonicalId": "uar-native-service-deployment",
+        "status": "IN_PROGRESS",
+        "progress": {
+          "done": 0,
+          "total": 5
+        },
+        "children": [
+          {
+            "type": "change",
+            "id": "establish-native-service-deployment-contract",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "implement-native-service-runtime-support",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "package-native-service-installers",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "bootstrap-native-provider-model-configuration",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          },
+          {
+            "type": "change",
+            "id": "document-and-deploy-native-services",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 0
+            }
+          }
+        ],
         "annotations": []
       },
       {

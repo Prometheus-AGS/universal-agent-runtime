@@ -672,3 +672,10 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Reconciled public provenance to the dated archive paths, rebuilt the optimized
   Docusaurus artifact, and observed the post-archive composed publication gate
   pass over 3,379 classified source and built paths.
+## 2026-08-23 — Native service deployment phase opened
+
+- Created the top-level KBD phase `uar-native-service-deployment` before implementation.
+- The KBD control plane at `127.0.0.1:7892` was unavailable; the canonical runtime committed events locally and preserved legacy progress files it does not own.
+- Assessment identified three blocking implementation facts: server-full gRPC ignores `server.host`, Windows SCM controls cannot reach UAR graceful cancellation, and YAML provider seeding bypasses catalog enrichment.
+- Adversarial routing was verified before planning: producer `gpt-5.6-sol`, judge `k3`, critic `MiniMax-M3`, with two distinct dispatchable review models.
+- No release build, service installation, or functional verification ran during assessment.

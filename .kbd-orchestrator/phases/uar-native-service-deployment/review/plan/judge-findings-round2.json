@@ -1,0 +1,43 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "gpt-5.6-sol",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "claim": "The plan's locked verification-timing decision contradicts change 2's task list: functional binary execution is scheduled before the change-2 commit even though the plan forbids functional verification until all implementation changes land.",
+      "evidence": "Locked decisions: \"During implementation run only cheap Tier 0 compilation/static checks. Run bounded functional verification after all implementation changes land.\" The verification matrix places \"External cancellation seam\" and \"Environment/log fail-closed controls\" in the \"After code completion \u2014 bounded functional verification\" table. But change 2's tasks require, before its commit (while changes 3\u20135 have not landed): \"4.2 ... drive the platform-neutral external cancellation seam through server-full and observe graceful completion/resource release\" and \"4.5 After code completion, observe missing/malformed explicit env files and an unwritable UAR_LOG_FILE each exit nonzero before either network listener opens.\" Starting the server binary and triggering cancellation/startup-failure paths is functional execution, not a Tier 0 compilation/static check. An executor cannot satisfy both the locked timing decision and change 2's task list.",
+      "suggested_fix": "Either move tasks 4.2 and 4.5 (and the corresponding matrix rows) explicitly into change 5's post-code-completion functional campaign, or amend the locked \"Verification timing\" decision to state that change-scoped smoke runs of newly added startup/cancellation paths are permitted during implementation."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The \"Release identity\" requirement (binary must report `universal-agent-runtime 1.0.0`) has no owning change that ensures the crate version is actually 1.0.0.",
+      "evidence": "Verification matrix: \"Run the installed binary's --version command. | Output must identify `universal-agent-runtime 1.0.0`.\" No task in any of the five changes sets or verifies the package version in Cargo.toml; change 2 owns \"root Cargo manifest/lock\" but only for the `windows-service` pin, and the locked decisions forbid touching `versions.toml`. If the manifest version is not already 1.0.0, change 5's gate fails with no change scoped to fix it.",
+      "suggested_fix": "Add a Tier 0 check in change 1 or 2 asserting `cargo pkgid`/manifest version resolves to 1.0.0, and if it does not, add an explicit version-set task to change 2's owned Cargo manifest surface."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "Change 3 is committed independently but its lifecycle entrypoints depend on executables that only change 4 creates, violating the plan's own \"one independently committed change\" / ordering model.",
+      "evidence": "Change 3: \"supervisor templates and lifecycle entrypoints that call the provider bootstrap owned by change 4. Change 3 does not implement or duplicate environment-generation or YAML-merge logic.\" And: \"Change 4 owns `packaging/native/common/generate-provider-env.sh ...` and `merge-provider-config.sh ...`. Installers call these commands.\" Change 3 is merged to `main` before change 4's worktree is even created (serial protocol step 4), so at the change-3 commit the install/upgrade/credential-refresh entrypoints reference scripts that do not exist on `main`.",
+      "suggested_fix": "Either reorder so the common bootstrap helpers land before the entrypoints that invoke them, or state explicitly that change 3's scripts are inert until change 4 merges and add a structural check in change 4 or 5 asserting every entrypoint-referenced helper path exists."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The Windows-target installation timeline is stated inconsistently, creating ambiguity about when the `x86_64-pc-windows-gnu` toolchain must exist.",
+      "evidence": "\"Verified build inputs\": \"Before post-code-completion Windows compilation, install `x86_64-pc-windows-gnu` through rustup.\" But change 2 Done requires \"`cargo check --locked ... --target x86_64-pc-windows-gnu ...` exit zero before the change-2 commit\" and change-2 task 4.3 says \"Install the `x86_64-pc-windows-gnu` Rust target and run `cargo check` ... before committing.\" Change 2 is mid-implementation, not post-code-completion, so the build-input note misdescribes when the target is first needed.",
+      "suggested_fix": "Correct the \"Verified build inputs\" bullet to state the target must be installed during change 2, before its commit-gating cross-target `cargo check`."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

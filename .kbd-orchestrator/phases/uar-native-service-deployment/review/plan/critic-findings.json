@@ -1,0 +1,136 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "MiniMax-M3",
+  "producer_model": "gpt-5.6-sol",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The exact dependency pin `windows-service = \"=0.8.1\"` is treated as a locked contract without evidence that version 0.8.1 actually exists on crates.io.",
+      "evidence": "Locked decisions table: `Windows service | Native SCM integration through exactly windows-service = \"=0.8.1\"`; change 2 spec `Pin windows-service = \"=0.8.1\" for Windows targets and regenerate Cargo.lock`. An exact pin to a non-existent version breaks the entire Windows compile claim.",
+      "suggested_fix": "Verify the published version on crates.io and replace the pin with a confirmed version, or relax to a compatible range that resolves to a known release."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The release build command `--no-default-features --features server-full` is specified without evidence that the `server-full` feature exists in the workspace's `Cargo.toml`.",
+      "evidence": "Change 5: `cargo build --locked --release --no-default-features --features server-full`. No assessment or contract step establishes that `server-full` is a defined feature or that default features are safe to disable. If `server-full` is absent or omits the embedded frontend, the build or the bundled static assets will fail.",
+      "suggested_fix": "Inspect the root and src-tauri `Cargo.toml` feature definitions; lock the build command to the actual profile that includes the binary, React bundle loader, and any provider catalog path the runtime needs."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The Windows SCM graceful-shutdown routing is a normative requirement but the plan admits it cannot be runtime-verified on the macOS execution host.",
+      "evidence": "Change 2 spec: `SCM Stop/Shutdown cancels the same server token used by graceful shutdown`. Verification matrix limit: `No Linux or Windows runtime claim from macOS`. Stop condition: `Windows SCM cannot use the runtime's existing cancellation path without a broader architecture change` is named but no plan covers the unverified gap; a Windows regression would only surface post-merge.",
+      "suggested_fix": "Add a Tier 0/integration harness (a mocked SCM dispatcher or unit test that drives the `service` command's stop handler) so the cancellation seam is exercised on the macOS host, or explicitly mark this requirement as deferred and constrain the contract."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The plan header references `assessment.md` but cited_paths only list `assessment-evidence.md` for this phase.",
+      "evidence": "Header: `Assessment: .kbd-orchestrator/phases/uar-native-service-deployment/assessment.md`; cited_paths: `EXISTS assessment-evidence.md -> .kbd-orchestrator/phases/uar-native-service-deployment/assessment-evidence.md`. There is no `assessment.md` match.",
+      "suggested_fix": "Either rename the header pointer to `assessment-evidence.md` (or whatever file actually holds the assessment content) or document the missing file so the contract's provenance is traceable."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "Helper-ownership between change 3 (packaging) and change 4 (bootstrap) overlaps without a clean boundary.",
+      "evidence": "Change 3 owned surface: `safe environment-generation and additive YAML-merge helpers shared where platform semantics allow`. Change 4 owned surface: `provider bootstrap helpers, default native YAML`. Both surfaces claim helpers for environment generation, but the change-3 helpers exist before change 4 is merged, so either change 3 implements a thin placeholder that change 4 duplicates, or change 4 must reach into change 3's owned surface.",
+      "suggested_fix": "Pick one owner for the env-file generator and YAML merge helpers; reference that owner from the other change so the implementation does not duplicate or depend forward."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "Strict-validation timing relative to merge is inconsistent across the contract and the implementation changes.",
+      "evidence": "Change 1 done: `openspec validate ... --strict passes`. Change 4 task 3.2: `Strict-validate and commit the change independently after code completion` (could be read as validate-then-commit OR commit-then-validate). Verification matrix: `all five strict OpenSpec changes pass` is a final-gate item, not an in-flight gate.",
+      "suggested_fix": "Make strict-validate a pre-merge gate in each change's done criteria and remove the duplicate final-gate row, or be explicit that final strict validation is the authoritative pre-merge gate and earlier mentions are informational."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The verification matrix treats `local OpenAI proxy`, `Kimi K3`, and `MiniMax M3` as required inference targets but the goal phrases `Qwen`, `GLM`, and `Moonshot` as conditional \u2014 the matrix does not say which providers are required vs conditional.",
+      "evidence": "Goal: `bootstrap least-privilege provider configuration for the local proxy, Kimi K3, MiniMax M3, Qwen, GLM, and Moonshot where credentials exist`. Verification matrix Genuine inference row requires proxy + Kimi K3 + MiniMax M3 with no `where credentials exist` qualifier and a stop condition triggers on unavailability, but a reader cannot tell whether the optional three should also be attempted when present.",
+      "suggested_fix": "Split the inference row into a `required` set (proxy, Kimi K3, MiniMax M3) and a `conditional` set (Qwen, GLM, Moonshot) with explicit pass criteria for each."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The verification matrix does not specify how API requests during verification authenticate, yet invokes provider-visibility and inference endpoints.",
+      "evidence": "Verification rows: `/healthz`, `/readyz`, `the UI route`, `a static asset`, `Observe configured providers and models through the API`, `Send genuine requests through installed UAR`. None mention an API key, bearer token, or session cookie, and the secret-handling rules forbid `printing or retaining a secret`.",
+      "suggested_fix": "State explicitly how verification authenticates (e.g., a pre-generated service-scoped token seeded into the env file with the same redaction rules) and confirm that no key is written to evidence files."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "Linux packaging targets `/etc/uar` and `/var/lib/uar` and Windows targets `%ProgramFiles%` and `%ProgramData%` \u2014 both require elevated privileges \u2014 but the plan never addresses privilege escalation or sudo/prompt requirements.",
+      "evidence": "Change 3: `Linux SHALL use /etc/uar for configuration and /var/lib/uar for state`; `Windows SHALL separate %ProgramFiles% program files from %ProgramData% state`. The verification row `Release installation` only mentions macOS `~/.uar` and the operator-owned LaunchAgent.",
+      "suggested_fix": "Document that Linux/Windows installers are templates that require an elevated operator context, and add a `prerequisite` line to the verification rows for those platforms."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The `compile Windows target where available` clause in the verification matrix is undefined: there is no documented cross-compilation toolchain on the macOS host.",
+      "evidence": "Verification matrix: `compile Windows target where available`. Change 2 task 4.2: `Compile the Windows target or record the exact unavailable target/toolchain prerequisite without a runtime claim`. No provision installs the cross toolchain, xwin, or cargo-zigbuild.",
+      "suggested_fix": "Either pre-install and pin a cross-compile toolchain in this change or pre-record the absent toolchain so the verification row's `where available` resolves to a known outcome."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "Listener-isolation verification does not name the inspection tool, so the assertion `Both addresses must be loopback-only` is ambiguous.",
+      "evidence": "Verification row `Listener isolation`: `Inspect port 1906 and A2A port 50051 listeners`. No mention of `lsof`, `netstat`, `ss`, or socket-equivalent; no requirement to enumerate both IPv4 and IPv6 bindings.",
+      "suggested_fix": "Specify the inspector (e.g., `lsof -nP -iTCP:1906 -sTCP:LISTEN`) and require separate observations for IPv4 and IPv6, with `::1` and `127.0.0.1` both considered loopback."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The verification uses `http://localhost:1906` while the binding may be `127.0.0.1`-only (IPv4) or `::1`-only (IPv6); `localhost` resolution is system-dependent.",
+      "evidence": "Verification row `Service health`: `call /healthz, /readyz, the UI route, and a static asset at http://localhost:1906`. Change 2 spec binds `127.0.0.1:50051`; nothing states the IPv4/IPv6 choice for HTTP.",
+      "suggested_fix": "Bind and test both loopback families explicitly, or pin the verification host to a single family that matches the shipped default."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "Stop condition `preserving existing YAML/database authority cannot be guaranteed by the discovered configuration shape` is subjective and non-falsifiable.",
+      "evidence": "Stop conditions list: `preserving existing YAML/database authority cannot be guaranteed by the discovered configuration shape`. No criteria for what `cannot be guaranteed` means and no concrete shape to evaluate.",
+      "suggested_fix": "Replace with a concrete check: list the exact keys the installer must not touch (existing `~/.uar/config.yaml` top-level keys, the persisted `selected_model` row, all provider records with `created_by` in {`api`,`ui`}) and the failure mode that triggers the stop."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "`Provider visibility` verification says `through the API and shipped UI` without specifying the API endpoint or UI route, leaving the assertion unfalsifiable.",
+      "evidence": "Verification row `Provider visibility`: `Observe configured providers and models through the API and shipped UI`.",
+      "suggested_fix": "Name the API endpoint (e.g., `/v1/providers` or whatever the installed server-full profile exposes) and the UI route or screen that lists providers/models."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "line": 0,
+      "claim": "The plan does not describe the redaction format for evidence rows, even though it forbids retaining credentials.",
+      "evidence": "`Credentials and bearer values are redacted before retention.` No format (e.g., `KIMI_API_KEY=<redacted:env-present>`, length-only, hash-prefix).",
+      "suggested_fix": "Define a single redaction token or schema and apply it consistently so downstream review can confirm secrets are absent."
+    }
+  ],
+  "checked_classes": [],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

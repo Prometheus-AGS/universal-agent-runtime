@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 392,
+  "derivedRevision": 392,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 74,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 61
+  },
+  "conflictCount": 0,
+  "phase": "uar-native-service-deployment",
+  "phaseId": "uar-native-service-deployment",
+  "parentPhase": null,
+  "last_updated": "2026-08-23T13:53:20.530680Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 5,
+  "changes_completed": 0,
+  "implementation_total": 5,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 5,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "COMPLETE",
+      "summary": "Five genuine model-backed functional paths passed through both API and shipped UI under local server-full; results and limits are in functional-verification.md.",
+      "blockers": []
+    },
+    "certification": {
+      "status": "SKIPPED",
+      "summary": "Operational soak, supply-chain, and RC certification were superseded and cancelled; no certification claim is made.",
+      "blockers": []
+    },
+    "publication": {
+      "status": "SKIPPED",
+      "summary": "GA publication was superseded and cancelled; no tag or publication was performed.",
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "establish-native-service-deployment-contract",
+      "title": "Establish native service deployment contract",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "implement-native-service-runtime-support",
+      "title": "Implement native service runtime support",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "package-native-service-installers",
+      "title": "Package native service installers",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "bootstrap-native-provider-model-configuration",
+      "title": "Bootstrap native provider model configuration",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "document-and-deploy-native-services",
+      "title": "Document and deploy native services",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 0,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}
