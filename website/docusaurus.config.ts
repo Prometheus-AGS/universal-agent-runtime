@@ -6,8 +6,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Universal Agent Runtime',
-  tagline: 'A governed, streaming-native agent runtime with typed protocol surfaces: MCP, A2A, AG-UI, and A2UI',
-  favicon: 'img/favicon.ico',
+  tagline: 'Governed execution. Typed protocols. One runtime boundary.',
+  favicon: 'img/brand/uar-favicon.svg',
 
   future: {
     v4: true,
@@ -31,7 +31,22 @@ const config: Config = {
     },
   },
 
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: [
+    '@docusaurus/theme-mermaid',
+    [
+      '@easyops-cn/docusaurus-search-local',
+      {
+        hashed: 'filename',
+        language: ['en'],
+        indexDocs: true,
+        indexBlog: false,
+        indexPages: true,
+        docsRouteBasePath: '/docs',
+        searchResultLimits: 8,
+        searchBarShortcutKeymap: 'mod+k',
+      },
+    ],
+  ],
 
   i18n: {
     defaultLocale: 'en',
@@ -57,36 +72,51 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/brand/uar-social-card.svg',
     colorMode: {
+      defaultMode: 'dark',
+      disableSwitch: false,
       respectPrefersColorScheme: true,
     },
+    mermaid: {
+      theme: {light: 'neutral', dark: 'dark'},
+    },
     navbar: {
-      title: 'Universal Agent Runtime',
+      title: 'UAR',
       logo: {
-        alt: 'UAR Logo',
-        src: 'img/logo.svg',
+        alt: 'Universal Agent Runtime',
+        src: 'img/brand/uar-mark-light.svg',
+        srcDark: 'img/brand/uar-mark-dark.svg',
+        width: 34,
+        height: 34,
       },
       items: [
         {
           type: 'docSidebar',
           sidebarId: 'docsSidebar',
           position: 'left',
-          label: 'Docs',
+          label: 'Documentation',
         },
         {
           type: 'dropdown',
-          label: 'API Reference',
+          label: 'Guides',
           position: 'left',
           items: [
-            { label: 'Rust', href: 'https://prometheus-ags.github.io/universal-agent-runtime/docs/api/rust' },
-            { label: 'TypeScript', href: 'https://prometheus-ags.github.io/universal-agent-runtime/docs/api/typescript' },
+            {label: 'Install UAR', to: '/docs/installation'},
+            {label: 'Configure the runtime', to: '/docs/configuration'},
+            {label: 'Deploy UAR', to: '/docs/deployment'},
+            {label: 'Operate securely', to: '/docs/security'},
           ],
         },
         {
-          to: '/docs/adr',
-          label: 'ADRs',
+          type: 'dropdown',
+          label: 'Reference',
           position: 'left',
+          items: [
+            {label: 'API overview', to: '/docs/api'},
+            {label: 'Rust API', href: 'https://prometheus-ags.github.io/universal-agent-runtime/docs/api/rust'},
+            {label: 'TypeScript API', href: 'https://prometheus-ags.github.io/universal-agent-runtime/docs/api/typescript'},
+          ],
         },
         {
           href: 'https://github.com/Prometheus-AGS/universal-agent-runtime',
@@ -99,45 +129,44 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Start',
           items: [
-            {label: 'Architecture', to: '/docs/architecture/intro'},
-            {label: 'Configuration', to: '/docs/configuration/intro'},
-            {label: 'Contributing', to: '/docs/contributing/intro'},
+            {label: 'Runtime theory', to: '/docs/architecture/intro'},
+            {label: 'Install', to: '/docs/installation'},
+            {label: 'Configure', to: '/docs/configuration'},
           ],
         },
         {
-          title: 'SDKs',
+          title: 'Build',
           items: [
-            {label: 'Rust', to: '/docs/sdk-rust/intro'},
-            {label: 'Python', to: '/docs/sdk-python/intro'},
-            {label: 'TypeScript', to: '/docs/sdk-typescript/intro'},
+            {label: 'Agents', to: '/docs/intro'},
+            {label: 'Skills', to: '/docs/skills'},
+            {label: 'Knowledge', to: '/docs/rag/intro'},
           ],
         },
         {
-          title: 'Reference',
+          title: 'Integrate',
           items: [
-            {label: 'API Reference', to: '/docs/api'},
-            {label: 'Architecture Decisions', to: '/docs/adr'},
-            {label: 'RAG', to: '/docs/rag/intro'},
-            {label: 'A2UI', to: '/docs/a2ui/intro'},
+            {label: 'Rust SDK', to: '/docs/sdk-rust/intro'},
+            {label: 'Python SDK', to: '/docs/sdk-python/intro'},
+            {label: 'TypeScript SDK', to: '/docs/sdk-typescript/intro'},
           ],
         },
         {
-          title: 'More',
+          title: 'Project',
           items: [
             {
               label: 'GitHub',
               href: 'https://github.com/Prometheus-AGS/universal-agent-runtime',
             },
             {
-              label: 'Security Policy',
-              href: 'https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/SECURITY.md',
+              label: 'Contributing',
+              to: '/docs/contributing/intro',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Prometheus AGS. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Prometheus AGS. Universal Agent Runtime is MIT licensed.`,
     },
     prism: {
       theme: prismThemes.github,

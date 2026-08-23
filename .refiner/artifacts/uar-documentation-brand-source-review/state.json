@@ -1,0 +1,89 @@
+{
+  "refinement_id": "33413289-cb01-43a7-a5c0-fe8c38ec9ab5",
+  "artifact_name": "uar-documentation-brand-source-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T07:31:13Z",
+  "updated_at": "2026-08-23T07:34:32Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate the bounded Docusaurus brand source without claiming rendered or deployed certification"
+  ],
+  "constraints": [
+    {
+      "id": "shipped-brand-identity"
+    },
+    {
+      "id": "local-search-and-fonts"
+    },
+    {
+      "id": "semantic-static-homepage"
+    },
+    {
+      "id": "flat-accessible-source-contract"
+    },
+    {
+      "id": "bounded-branding-change"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 5,
+      "constraints_total": 5,
+      "decision": "terminate",
+      "timestamp": "2026-08-23T07:34:13Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "bf2bd5c2",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:34:11Z"
+    },
+    {
+      "checkpoint_id": "0a2e364d",
+      "phase": "plan",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:34:12Z"
+    },
+    {
+      "checkpoint_id": "bc7a26a3",
+      "phase": "execute",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:34:12Z"
+    },
+    {
+      "checkpoint_id": "4338e7f4",
+      "phase": "reflect",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:34:13Z"
+    },
+    {
+      "checkpoint_id": "be53a8dd",
+      "phase": "persist",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:34:13Z"
+    }
+  ],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-23T07:34:32Z"
+}

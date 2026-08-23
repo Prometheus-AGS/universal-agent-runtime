@@ -21,6 +21,8 @@
     "docs:lint": "npm --prefix website run lint",
     "docs:publication:validate": "node scripts/validate-documentation-publication.mjs",
     "docs:publication:controls": "node scripts/test-documentation-publication.mjs",
+    "docs:brand:validate": "node scripts/validate-documentation-brand.mjs",
+    "docs:brand:controls": "node scripts/test-documentation-brand.mjs",
     "docs:references:stage": "node scripts/stage-documentation-references.mjs",
     "docs:references:controls": "node scripts/test-documentation-staging.mjs",
     "ci-gates": "bash scripts/ci-grep-gates.sh",

@@ -1,0 +1,25 @@
+{
+  "refinement_id": "33413289-cb01-43a7-a5c0-fe8c38ec9ab5",
+  "artifact_name": "uar-documentation-brand-source-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T07:31:13Z",
+  "updated_at": "2026-08-23T07:34:11Z",
+  "current_iteration": 0,
+  "max_iterations": 5,
+  "goals": [],
+  "constraints": [],
+  "phases_completed": [],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "bf2bd5c2",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-23T07:34:11Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

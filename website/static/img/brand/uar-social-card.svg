@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Universal Agent Runtime documentation">
+  <rect width="1200" height="630" fill="#0B0F14"/><rect x="72" y="72" width="1056" height="486" rx="40" fill="#161D29"/>
+  <path d="M190 185 L130 385" stroke="#FF6A3D" stroke-width="34" stroke-linecap="round"/><path d="M300 185 L240 385" stroke="#E04E28" stroke-width="34" stroke-linecap="round"/><circle cx="308" cy="362" r="22" fill="#E8EDF3"/>
+  <text x="390" y="260" fill="#E8EDF3" font-family="Space Grotesk, system-ui, sans-serif" font-size="58" font-weight="700">Universal Agent Runtime</text>
+  <text x="394" y="322" fill="#FF6A3D" font-family="JetBrains Mono, ui-monospace, monospace" font-size="24" letter-spacing="5">DOCUMENTATION // UAR</text>
+  <text x="394" y="405" fill="#A7B0BC" font-family="Geist, system-ui, sans-serif" font-size="28">Governed execution. Typed protocols. One runtime boundary.</text>
+</svg>

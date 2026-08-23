@@ -36,7 +36,24 @@ Those failures are dependencies, not suppressed findings.
   and live deployment to the final phase gate.
 - Canonical KBD revision `343` records the change complete.
 
+### brand-uar-docusaurus-site
+
+- Replaced the stock tutorial identity and homepage with the shipped UAR brand,
+  runtime-boundary orientation, reader paths, protocol surfaces, and explicit
+  profile limits.
+- Added pinned local search and locally served Geist, Space Grotesk, and
+  JetBrains Mono fonts.
+- Added deterministic source validation with eleven observed negative controls
+  for hosted services, stock identity, decoration, focus, motion, asset drift,
+  routes, and tutorial residue.
+- Passed TypeScript, strict OpenSpec, exact dependency resolution, scoped diff,
+  and bounded artifact-refiner gates without running the final site build.
+- Preserved the uncomfortable limit: no rendered, accessibility, search,
+  deployment, or publication claim exists yet.
+- Canonical KBD revision `346` records the change complete.
+
 ## Next change
 
-Run `/opsx:new brand-uar-docusaurus-site`. It owns theme tokens, brand assets,
-homepage, navigation, responsive behavior, and local search.
+Run `/opsx:new document-uar-theory-and-architecture`. It owns the theory,
+architecture overview, runtime boundary, capability inversion, execution flow,
+profiles, and architecture diagrams.

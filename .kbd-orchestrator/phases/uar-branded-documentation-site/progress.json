@@ -1,27 +1,27 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 343,
-  "derivedRevision": 343,
+  "sourceRevision": 346,
+  "derivedRevision": 346,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 28
+    "80130eb1-95f8-4039-8976-71bdce23779c": 31
   },
   "conflictCount": 0,
   "phase": "uar-branded-documentation-site",
   "phaseId": "uar-branded-documentation-site",
   "parentPhase": null,
-  "last_updated": "2026-08-23T07:12:43.532986Z",
+  "last_updated": "2026-08-23T07:35:51.839039Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 11,
-  "changes_completed": 2,
+  "changes_completed": 3,
   "implementation_total": 11,
-  "implementation_completed": 2,
+  "implementation_completed": 3,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 2,
+      "completed": 3,
       "total": 11,
       "status": "IN_PROGRESS"
     },
@@ -67,8 +67,8 @@
     {
       "id": "brand-uar-docusaurus-site",
       "title": "Brand UAR Docusaurus site",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,
