@@ -68,8 +68,8 @@
       "date":"2026-08-23",
       "status":"current",
       "supersedes":"placeholder-pages-artifacts",
-      "currentAuthority":"openspec/changes/repair-single-pages-portal/proposal.md",
-      "sources":["openspec/changes/repair-single-pages-portal/proposal.md","openspec/changes/establish-documentation-publication-contract/proposal.md"]
+      "currentAuthority":"openspec/changes/archive/2026-08-23-repair-single-pages-portal/proposal.md",
+      "sources":["openspec/changes/archive/2026-08-23-repair-single-pages-portal/proposal.md","openspec/changes/archive/2026-08-23-establish-documentation-publication-contract/proposal.md"]
     },
     {
       "id":"rustcrypto-jwt",

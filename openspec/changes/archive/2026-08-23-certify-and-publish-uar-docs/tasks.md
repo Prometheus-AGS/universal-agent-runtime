@@ -20,6 +20,6 @@
 
 - [x] 4.1 Run strict OpenSpec validation and artifact-refiner final review; audit the diff for prohibited runtime/product/dependency/lock/vendor/submodule changes.
 - [x] 4.2 Write row-form verification with exact commands/output, source SHA, documentation limits, screenshot inventory, and deferred runtime claims.
-- [ ] 4.3 Transition the KBD change complete, run KBD reflection, and commit all final source/evidence/KBD artifacts independently.
-- [ ] 4.4 Push the branch, dispatch the deployment workflow, observe its successful deployed-route validation, and independently validate the live canonical URL.
-- [ ] 4.5 Set the GitHub repository homepage to the observed URL, verify README/homepage equality, create the PR, and record its URL without merging.
+- [x] 4.3 Transition the KBD change complete, run KBD reflection, and commit all final source/evidence/KBD artifacts independently.
+- [x] 4.4 Push the branch, dispatch the deployment workflow, observe its successful deployed-route validation, and independently validate the live canonical URL.
+- [x] 4.5 Set the GitHub repository homepage to the observed URL, verify README/homepage equality, create and record the PR, then preserve the `main`-only Pages policy by merging through the protected branch before the live gate.

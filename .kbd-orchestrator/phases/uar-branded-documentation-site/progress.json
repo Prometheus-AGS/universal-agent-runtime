@@ -1,29 +1,29 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 369,
-  "derivedRevision": 369,
+  "sourceRevision": 376,
+  "derivedRevision": 376,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 54
+    "80130eb1-95f8-4039-8976-71bdce23779c": 61
   },
   "conflictCount": 0,
   "phase": "uar-branded-documentation-site",
   "phaseId": "uar-branded-documentation-site",
   "parentPhase": null,
-  "last_updated": "2026-08-23T11:31:35.969561Z",
+  "last_updated": "2026-08-23T12:16:35.288898Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 11,
-  "changes_completed": 10,
+  "changes_completed": 11,
   "implementation_total": 11,
-  "implementation_completed": 10,
+  "implementation_completed": 11,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 10,
+      "completed": 11,
       "total": 11,
-      "status": "IN_PROGRESS"
+      "status": "COMPLETE"
     },
     "evidence": {
       "status": "COMPLETE",
@@ -155,8 +155,8 @@
     {
       "id": "certify-and-publish-uar-docs",
       "title": "Certify and publish UAR docs",
-      "status": "IN_PROGRESS",
-      "implementation_status": "IN_PROGRESS",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,

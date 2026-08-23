@@ -245,3 +245,37 @@ Open the PR from the pushed branch. After an authorized merge to `main`, observe
 the protected deployment workflow, independently validate the live canonical
 routes, set the repository homepage, then complete this change and run KBD
 reflection.
+
+### Protected publication and phase closeout complete
+
+- PR [#263](https://github.com/Prometheus-AGS/universal-agent-runtime/pull/263)
+  merged to `main` as `a87d42d4ead5464b9b5a4fdb2a84f15f5e95f0b6`.
+- Deployment-only run
+  [32638082981](https://github.com/Prometheus-AGS/universal-agent-runtime/actions/runs/32638082981)
+  assembled, deployed, and validated the Pages artifact successfully from that
+  exact merge SHA.
+- An independent invocation of the deployed-route validator observed all 28
+  canonical routes at HTTP 200.
+- The GitHub repository homepage is
+  `https://prometheus-ags.github.io/universal-agent-runtime/`; the root README
+  now uses the same canonical URL.
+- Canonical KBD revisions `370` through `375` complete the final change,
+  Execute, Reflect, and the phase. Revision `376` replaces the stale final-change
+  handoff with `/kbd-new-phase`. The direct Pending-to-Complete phase command
+  was rejected, so the state machine was corrected through its allowed
+  Pending-to-InProgress-to-Complete path rather than editing projections.
+- Reflection passed strict sycophancy analysis with score `0.017857` and no
+  S-08 inversion. The result remains documentation-scoped and carries the
+  disclosed Vale, dependency-audit, Rustdoc-warning, and internal-utility
+  limits.
+- Archived all eleven OpenSpec changes in plan order and applied their deltas to
+  the five touched canonical documentation specs. The first archive exposed and
+  corrected a delta-only header in the canonical portal spec; the README archive
+  preserved foundation scenarios before applying its later modified blocks.
+  All five touched canonical specs validate strictly, and every archived task
+  file has zero unchecked tasks.
+
+## Final state
+
+The documentation objective is complete. No successor implementation phase is
+required; canonical exact next work is `/kbd-new-phase` if new work is chosen.
