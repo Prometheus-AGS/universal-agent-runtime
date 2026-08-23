@@ -1,0 +1,395 @@
+{
+  "schemaVersion": 1,
+  "profiles": [
+    "server-full",
+    "minimal",
+    "embedded-mobile"
+  ],
+  "guides": [
+    {
+      "id": "authentication",
+      "title": "Authenticate Requests",
+      "position": 1,
+      "file": "website/docs/security/authentication.md",
+      "route": "/docs/security/authentication",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": [
+        "openspec/specs/jwt-hardening/spec.md",
+        "docs/product-surface-inventory.md"
+      ],
+      "sourceAuthorities": [
+        "src/config.rs",
+        "src/uar/security/verifier/mod.rs",
+        "src/uar/security/middleware.rs",
+        "src/uar/security/jwt.rs",
+        "src/uar/security/api_keys.rs",
+        "frontend/src/features/auth/ui/auth-page.tsx"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "JWT required",
+        "HS256",
+        "RS256",
+        "JWKS",
+        "issuer",
+        "audience",
+        "`nbf`",
+        "RustCrypto",
+        "Provider conflict",
+        "API keys",
+        "Probe exceptions",
+        "Observable failures",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    },
+    {
+      "id": "credentials",
+      "title": "Manage Provider Credentials",
+      "position": 2,
+      "file": "website/docs/security/credentials.md",
+      "route": "/docs/security/credentials",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": [
+        "docs/PROVIDER_CONFIGURATION.md",
+        "docs/product-surface-inventory.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/security/credentials/encryption.rs",
+        "src/uar/security/credentials/resolver.rs",
+        "src/uar/security/credentials/store.rs",
+        "src/uar/api/credentials.rs",
+        "frontend/src/features/credentials/ui/credentials-page.tsx"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "write-only plaintext",
+        "masked metadata",
+        "AES-256-GCM",
+        "Session",
+        "Agent",
+        "User",
+        "System",
+        "environment/configuration",
+        "Packaged UI workflow",
+        "API workflow",
+        "State ownership and durability",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "tenancy",
+      "title": "Understand Tenant Boundaries",
+      "position": 3,
+      "file": "website/docs/tenancy/overview.md",
+      "route": "/docs/tenancy/overview",
+      "profiles": ["server-full"],
+      "sourceRecords": [
+        "openspec/specs/tenant-isolation/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/security/claims.rs",
+        "src/uar/security/verifier/mod.rs",
+        "src/uar/api/a2a/handler.rs",
+        "src/uar/api/a2a/grpc.rs",
+        "src/uar/api/a2a/task_store.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "verified credential",
+        "A2A task and context partition",
+        "Subsystem scope",
+        "Cross-tenant denial",
+        "not blanket isolation",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    },
+    {
+      "id": "governance",
+      "title": "Apply Governance Policies",
+      "position": 4,
+      "file": "website/docs/governance/overview.md",
+      "route": "/docs/governance/overview",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": [
+        "openspec/specs/skill-governance/spec.md",
+        "openspec/specs/tool-approval-workflow/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/server.rs",
+        "src/uar/governance/engine.rs",
+        "src/uar/governance/engine_disabled.rs",
+        "src/uar/governance/middleware.rs",
+        "src/uar/governance/policy.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "server-full",
+        "minimal",
+        "embedded-mobile",
+        "policy directory",
+        "empty policy",
+        "permit-all fallback",
+        "`X-Agent-Id`",
+        "tool decisions",
+        "skill mutation",
+        "Audit limits",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "approvals",
+      "title": "Resolve Tool Approvals",
+      "position": 5,
+      "file": "website/docs/governance/approvals.md",
+      "route": "/docs/governance/approvals",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": [
+        "openspec/specs/tool-approval-workflow/spec.md",
+        "docs/product-surface-inventory.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/runtime/manager.rs",
+        "src/uar/domain/events.rs",
+        "frontend/src/features/chat/components/ToolApprovalDialog.tsx",
+        "frontend/src/features/runtime/ui/runtime-console-page.tsx",
+        "frontend/src/features/runtime/api/runtime-console-api.ts"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "effective run policy",
+        "Cedar denial",
+        "Allow",
+        "RequireApproval",
+        "five minutes",
+        "channel closes",
+        "run cancellation",
+        "cannot override",
+        "Packaged UI workflow",
+        "Observable outcomes",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "runtime-console",
+      "title": "Operate the Runtime Console",
+      "position": 6,
+      "file": "website/docs/operations/runtime-console.md",
+      "route": "/docs/operations/runtime-console",
+      "profiles": ["server-full"],
+      "sourceRecords": [
+        "openspec/specs/runtime-console/spec.md",
+        "docs/product-surface-inventory.md"
+      ],
+      "sourceAuthorities": [
+        "frontend/src/features/runtime/ui/runtime-console-page.tsx",
+        "frontend/src/features/runtime/model/runtime-console-store.ts",
+        "frontend/src/entities/runtime-ingest.ts",
+        "src/uar/domain/events.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "Packaged UI workflow",
+        "entity graph",
+        "run",
+        "approval",
+        "provider health",
+        "model route",
+        "State ownership and durability",
+        "Reload behavior",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "runs",
+      "title": "Inspect and Cancel Runs",
+      "position": 7,
+      "file": "website/docs/operations/runs.md",
+      "route": "/docs/operations/runs",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": [
+        "openspec/specs/runtime-event-replay-entity-sync/spec.md",
+        "docs/product-surface-inventory.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/runtime/manager.rs",
+        "src/uar/domain/events.rs",
+        "src/server.rs",
+        "frontend/src/features/runtime/ui/runtime-console-page.tsx",
+        "frontend/src/features/runtime/api/runtime-console-api.ts"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "Packaged UI workflow",
+        "API workflow",
+        "cancel",
+        "terminal outcome",
+        "pending approval",
+        "State ownership and durability",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "observability",
+      "title": "Observe the Runtime",
+      "position": 8,
+      "file": "website/docs/operations/observability.md",
+      "route": "/docs/operations/observability",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": [
+        "openspec/specs/prometheus-metrics/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/telemetry/metrics.rs",
+        "src/uar/telemetry/mod.rs",
+        "src/server.rs",
+        "src/config.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "liveness",
+        "readiness",
+        "Prometheus",
+        "structured logs",
+        "OTLP",
+        "provider/model signals",
+        "UAR-owned signals",
+        "State ownership and durability",
+        "Audit limits",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "realtime",
+      "title": "Understand Realtime State",
+      "position": 9,
+      "file": "website/docs/operations/realtime.md",
+      "route": "/docs/operations/realtime",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": [
+        "openspec/specs/runtime-event-replay-entity-sync/spec.md",
+        "openspec/specs/entity-surreal-live-adapter/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/api/sse.rs",
+        "src/uar/realtime/mod.rs",
+        "src/uar/realtime/surreal_bus.rs",
+        "frontend/src/lib/realtime/uar-sse-adapter.ts",
+        "frontend/src/entities/sync.ts"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "run stream",
+        "AG-UI replay",
+        "`/api/live`",
+        "one shared EventSource",
+        "topic demultiplexing",
+        "exponential reconnect",
+        "30 seconds",
+        "transport recovery",
+        "not durable replay",
+        "State ownership and durability",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "cost",
+      "title": "Interpret Cost and Budgets",
+      "position": 10,
+      "file": "website/docs/operations/cost.md",
+      "route": "/docs/operations/cost",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": [
+        "docs/product-surface-inventory.md",
+        "openspec/specs/runtime-event-replay-entity-sync/spec.md"
+      ],
+      "sourceAuthorities": [
+        "src/uar/runtime/cost_budget.rs",
+        "src/uar/telemetry/metrics.rs",
+        "src/uar/domain/events.rs",
+        "frontend/src/features/cost/ui/cost-dashboard-page.tsx"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "opt-in",
+        "estimated cost",
+        "provider/model",
+        "budget scopes",
+        "process-local",
+        "session-scoped dashboard",
+        "provider billing",
+        "State ownership and durability",
+        "Profile limits"
+      ],
+      "requiresMermaid": false
+    },
+    {
+      "id": "recovery-shutdown",
+      "title": "Recover and Shut Down",
+      "position": 11,
+      "file": "website/docs/operations/recovery-and-shutdown.md",
+      "route": "/docs/operations/recovery-and-shutdown",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": [
+        "openspec/specs/graceful-shutdown/spec.md",
+        "website/docs/backup-and-restore.md"
+      ],
+      "sourceAuthorities": [
+        "src/server.rs",
+        "src/config.rs",
+        "src/uar/runtime/manager.rs",
+        "src/uar/persistence/mod.rs",
+        "src/embedded.rs"
+      ],
+      "requiredMarkers": [
+        "Boundary statement",
+        "SIGINT",
+        "SIGTERM",
+        "root run cancellation",
+        "listener drain",
+        "registered cleanup",
+        "shutdown deadline",
+        "graceful-complete",
+        "cold backup",
+        "functional read-back",
+        "HTTP cancellation token",
+        "Embedded host responsibility",
+        "Profile limits",
+        "Diagram in words"
+      ],
+      "requiresMermaid": true
+    }
+  ],
+  "compatibilityDocuments": [
+    {
+      "file": "website/docs/security.md",
+      "route": "/docs/security",
+      "currentAuthority": "/docs/security/authentication"
+    },
+    {
+      "file": "website/docs/governance/intro.md",
+      "route": "/docs/governance/intro",
+      "currentAuthority": "/docs/governance/overview"
+    },
+    {
+      "file": "website/docs/backup-and-restore.md",
+      "route": "/docs/backup-and-restore",
+      "currentAuthority": "/docs/operations/recovery-and-shutdown"
+    },
+    {
+      "file": "website/docs/troubleshooting.md",
+      "route": "/docs/troubleshooting",
+      "currentAuthority": "/docs/operations/runtime-console"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "label": "Tenancy",
+  "position": 8.5,
+  "link": {
+    "type": "generated-index",
+    "description": "Understand verified tenant identity, current A2A partitioning, and subsystem exclusions."
+  }
+}

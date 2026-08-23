@@ -1,0 +1,27 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-23T09:08:31Z",
+  "variants": [
+    {
+      "name": "security-operations-content-review",
+      "file": ".refiner/artifacts/uar-security-operations-documentation-review/dist/security-operations-content-review.md",
+      "format": "markdown",
+      "description": "Bounded PMPO review of eleven UAR security/operations guides, four compatibility pages, and deterministic source controls"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "partial",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Fourteen isolated security/operations negative controls and the complete positive fixture passed.",
+      "TypeScript, architecture, brand, product-workflow, security/operations, publication-control, and strict OpenSpec checks passed.",
+      "Production build, browser, accessibility, deployment, runtime-security, restore, process-signal, and cross-profile evidence are intentionally deferred."
+    ]
+  }
+}

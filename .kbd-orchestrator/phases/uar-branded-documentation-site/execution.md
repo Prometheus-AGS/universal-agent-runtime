@@ -86,9 +86,32 @@ Those failures are dependencies, not suppressed findings.
   cross-profile, rendered-site, accessibility, or deployment claim exists.
 - Canonical KBD revision `352` records the change complete.
 
+### document-security-tenancy-governance-and-operations
+
+- Published eleven classified guides for authentication, provider credentials,
+  verified A2A tenant boundaries, governance, approvals, the Runtime Console,
+  runs, observability, realtime state, cost, and recovery/shutdown.
+- Kept user, tenant, process, browser, persistence, telemetry, provider-billing,
+  and embedded-host state owners separate, with explicit `server-full`,
+  `minimal`, and `embedded-mobile` limits.
+- Preserved the uncomfortable current behavior: a Cedar policy-load error in
+  `server-full` falls back to permit-all, so the docs make no universal
+  fail-closed governance claim.
+- Added four concise compatibility pages and fourteen observed negative
+  controls for missing content, unsafe credentials/history, unverified or
+  blanket tenancy, governance/approval overclaim, durable realtime,
+  authoritative billing, and omitted shutdown/restore/state limits.
+- Passed TypeScript, architecture, brand, product-workflow, composed
+  publication, strict OpenSpec, scoped-diff, and bounded artifact-refiner
+  content gates without running the final production build.
+- Preserved the evidence limit: no runtime-security, two-tenant, policy,
+  approval, process-signal, backup/restore, rendered-site, accessibility,
+  deployment, or cross-profile certification exists in this change.
+- Canonical KBD revision `355` records the change complete and the revised
+  next-work handoff.
+
 ## Next change
 
-Run `/opsx:new document-security-tenancy-governance-and-operations`. It owns
-authentication and authorization, tenancy boundaries, governance behavior,
-credentials and secrets, observability, persistence, shutdown, and operational
-failure guidance without changing runtime behavior.
+Run `/opsx:new document-apis-sdks-tools-and-deployment`. It owns public APIs,
+SDKs, tools, configuration, deployment, and operator integration guidance
+without changing runtime behavior or running final-site certification early.
