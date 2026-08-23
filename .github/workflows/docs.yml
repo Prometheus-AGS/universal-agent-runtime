@@ -56,7 +56,7 @@ jobs:
           toolchain: stable
 
       - name: Generate Rust reference
-        run: cargo doc --locked --no-deps --workspace --features server-full
+        run: cargo doc --locked --no-deps -p universal-agent-runtime --lib --features server-full
 
       - name: Install TypeScript SDK dependencies
         run: npm --prefix sdks/typescript ci
@@ -84,19 +84,20 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v5
 
+      - name: Checkout deployment validator
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            docs/publication/routes.json
+            scripts/validate-deployed-documentation.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Install Node.js for deployment validation
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
       - name: Validate deployed documentation routes
-        shell: bash
-        run: |
-          BASE_URL="${{ steps.deployment.outputs.page_url }}"
-          for route in \
-            "" \
-            "docs/architecture/intro" \
-            "docs/api/rust/" \
-            "docs/api/typescript/"
-          do
-            URL="${BASE_URL%/}/${route}"
-            echo "Checking ${URL}"
-            curl --fail --silent --show-error --location \
-              --retry 6 --retry-all-errors --retry-delay 10 \
-              --output /dev/null "${URL}"
-          done
+        env:
+          UAR_DOCS_BASE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: node scripts/validate-deployed-documentation.mjs --base-url "$UAR_DOCS_BASE_URL"

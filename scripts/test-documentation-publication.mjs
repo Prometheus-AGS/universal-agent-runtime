@@ -38,7 +38,7 @@ function fixture() {
     steps:
       - run: npm --prefix website ci
       - run: npm --prefix website run build
-      - run: cargo doc --locked --no-deps --workspace --features server-full
+      - run: cargo doc --locked --no-deps -p universal-agent-runtime --lib --features server-full
       - run: npm --prefix sdks/typescript ci
       - run: npm --prefix sdks/typescript run docs
       - run: node scripts/stage-documentation-references.mjs
@@ -48,9 +48,8 @@ function fixture() {
       - uses: actions/deploy-pages@v5
       - run: |
           echo steps.deployment.outputs.page_url
-          curl --fail /docs/architecture/intro
-          curl --fail /docs/api/rust/
-          curl --fail /docs/api/typescript/
+          echo scripts/validate-deployed-documentation.mjs
+          node scripts/validate-deployed-documentation.mjs --base-url "$UAR_DOCS_BASE_URL"
 `);
   writeJson(root, "website/package.json", { scripts: { build: "npm run copy:adr && docusaurus build" } });
   write(root, "website/package-lock.json", "{}\n");
@@ -233,10 +232,14 @@ expectPolicyFailure("placeholder reference fallback", (state) => {
   write(state.root, ".github/workflows/docs.yml", `${workflow}\n# placeholder reference fallback\n`);
 }, "placeholder reference fallback");
 
-expectPolicyFailure("missing deployed TypeScript route", (state) => {
+expectPolicyFailure("missing deployed-route validator", (state) => {
   const workflow = readFileSync(join(state.root, ".github/workflows/docs.yml"), "utf8");
-  write(state.root, ".github/workflows/docs.yml", workflow.replace("docs/api/typescript/", "docs/api/missing/"));
-}, "missing documentation deployment marker: docs/api/typescript/");
+  write(
+    state.root,
+    ".github/workflows/docs.yml",
+    workflow.replaceAll("scripts/validate-deployed-documentation.mjs", "scripts/missing-validator.mjs"),
+  );
+}, "missing documentation deployment marker: scripts/validate-deployed-documentation.mjs");
 
 expectValid();
 

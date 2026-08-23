@@ -29,6 +29,8 @@
     "docs:history:controls": "node scripts/test-documentation-history.mjs",
     "docs:testing-history:validate": "node scripts/validate-documentation-testing-history.mjs",
     "docs:testing-history:controls": "node scripts/test-documentation-testing-history.mjs",
+    "docs:deployment:validate": "node scripts/validate-deployed-documentation.mjs",
+    "docs:browser:validate": "node scripts/validate-documentation-browser.mjs",
     "docs:product-workflows:validate": "node scripts/validate-documentation-product-workflows.mjs",
     "docs:product-workflows:controls": "node scripts/test-documentation-product-workflows.mjs",
     "docs:security-operations:validate": "node scripts/validate-documentation-security-operations.mjs",

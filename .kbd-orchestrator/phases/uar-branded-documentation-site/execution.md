@@ -196,10 +196,34 @@ Those failures are dependencies, not suppressed findings.
 - Canonical KBD revision `367` records the change complete and the revised
   next-work handoff.
 
-## Next change
+### certify-and-publish-uar-docs — local certification complete
 
-Run `/opsx:new certify-and-publish-uar-docs`. All content lanes are complete.
-This final change owns the one production build, complete local publication and
-link gate, rendered browser/navigation/search/responsive/theme/Mermaid review,
-accessibility evidence, Pages deployment validation, repository homepage link,
-and final phase reflection/publication handoff.
+- Built the complete Docusaurus artifact, public UAR Rust reference, and
+  TypeScript reference from frozen dependency locks, then staged both generated
+  references without placeholders.
+- Corrected the Rustdoc contract after the workspace command exposed an
+  unrelated incompatible `rmcp` import in the internal `mcp-server-fetch`
+  binary. The public site now documents the UAR library only and does not change
+  product code to conceal that observed defect.
+- Observed the privacy gate reject a generated local build-cache path. Reference
+  staging now removes generated Rust source pages and fails if a machine-local
+  home path survives.
+- Observed and repaired in-text link, Mermaid dark-label, light cyan, and footer
+  contrast defects in documentation-site CSS, rebuilding the complete artifact
+  after each bounded source correction.
+- Passed the composed 3,295-path publication gate, all focused negative controls,
+  28 local routes, the missing-route 404 control, four viewport/theme browser
+  configurations, search, Mermaid, navigation, focus, console/network, WCAG
+  A/AA, all eleven strict OpenSpec validations, and the artifact-refiner gate.
+- Preserved the evidence boundary: runtime, inference, providers, skills,
+  knowledge, agents, persistence, security, release, load, soak, and profile
+  readiness were not exercised. Vale prose lint remains unverified.
+- Canonical KBD revision `369` records this change in progress with exact next
+  work `/opsx:apply certify-and-publish-uar-docs` while live Pages deployment
+  and repository metadata remain pending.
+
+## Next action
+
+Commit and push the completed local artifact, dispatch the deployment-only
+`docs.yml` workflow, observe the live canonical routes, set the repository
+homepage, then complete this change and run KBD reflection.

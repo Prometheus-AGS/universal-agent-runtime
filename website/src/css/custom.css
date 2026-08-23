@@ -18,7 +18,7 @@
   --uar-ember: #b93c1c;
   --uar-ember-strong: #c13e1e;
   --uar-ember-soft: #fbe8e1;
-  --uar-cyan: #0891b2;
+  --uar-cyan: #0e7490;
   --uar-success: #16a34a;
   --uar-warning: #d97706;
   --uar-focus: #b93c1c;
@@ -134,6 +134,12 @@ a {
 
 a:hover {
   color: var(--uar-ember);
+}
+
+.theme-doc-markdown :where(p, li) a:not(.hash-link) {
+  text-decoration: underline;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.16em;
 }
 
 :where(a, button, input, summary, [tabindex]):focus-visible {
@@ -304,6 +310,11 @@ table th {
   color: var(--uar-foreground);
 }
 
+.footer.footer--dark .footer__link-item,
+.footer.footer--dark .footer__copyright {
+  color: var(--uar-subtle);
+}
+
 .footer__title {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 0.75rem;
@@ -326,6 +337,11 @@ table th {
   background: var(--uar-surface);
   border-radius: var(--uar-radius);
   padding: 1rem;
+}
+
+[data-theme='dark'] .docusaurus-mermaid-container .edgeLabel p {
+  background: #30343b !important;
+  color: #ffffff !important;
 }
 
 @media (max-width: 996px) {

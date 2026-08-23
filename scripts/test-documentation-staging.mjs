@@ -17,7 +17,17 @@ function writeFixture(path, content) {
 
 function createFixture({ rust = true, typescript = true } = {}) {
   const root = mkdtempSync(join(tmpdir(), "uar-doc-staging-"));
-  if (rust) writeFixture(join(root, "target", "doc", "index.html"), "<h1>Rust reference</h1>");
+  if (rust) {
+    writeFixture(
+      join(root, "target", "doc", "universal_agent_runtime", "index.html"),
+      '<h1>Rust reference</h1><a class="src" href="../src/universal_agent_runtime/Users/alice/build/out/a2a.rs.html">Source</a>',
+    );
+    writeFixture(
+      join(root, "target", "doc", "src", "universal_agent_runtime", "Users", "alice", "build", "out", "a2a.rs.html"),
+      "<h1>/Users/alice/build/out/a2a.rs</h1>",
+    );
+    writeFixture(join(root, "target", "doc", "static.files", "rustdoc.css"), "body {}");
+  }
   if (typescript) {
     writeFixture(join(root, "sdks", "typescript", "docs", "api", "index.html"), "<h1>TypeScript reference</h1>");
   }
@@ -63,12 +73,20 @@ const typescriptOutput = join(
   "typescript",
   "index.html",
 );
+const stagedRust = readFileSync(
+  join(completeRoot, "website", "build", "docs", "api", "rust", "universal_agent_runtime", "index.html"),
+  "utf8",
+);
 requireControl(
   "positive control: complete reference staging",
   complete.status === 0 &&
     existsSync(rustOutput) &&
     existsSync(typescriptOutput) &&
-    readFileSync(rustOutput, "utf8").includes("Rust reference") &&
+    readFileSync(rustOutput, "utf8").includes("universal_agent_runtime/index.html") &&
+    stagedRust.includes("Rust reference") &&
+    stagedRust.includes("Generated source") &&
+    !stagedRust.includes("/Users/") &&
+    !existsSync(join(completeRoot, "website", "build", "docs", "api", "rust", "src")) &&
     readFileSync(typescriptOutput, "utf8").includes("TypeScript reference"),
   `exit=${complete.status}; stderr=${complete.stderr.trim()}`,
 );

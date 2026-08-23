@@ -1,0 +1,44 @@
+{
+  "refinement_id": "5d04e4c7-d97e-4ee5-9edc-d37ac6661d57",
+  "artifact_name": "uar-documentation-final-publication-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T11:26:05Z",
+  "updated_at": "2026-08-23T11:27:18Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Review the complete UAR documentation artifact for publication readiness without making a runtime claim."
+  ],
+  "constraints": [
+    "complete-artifact",
+    "privacy-and-truth",
+    "rendered-accessibility",
+    "route-and-interaction",
+    "deployment-only-actions",
+    "claim-boundary"
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "6652b687",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-23T11:27:03Z"
+    },
+    {
+      "checkpoint_id": "6ea279f7",
+      "phase": "plan",
+      "iteration": 1,
+      "timestamp": "2026-08-23T11:27:18Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

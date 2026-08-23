@@ -1,15 +1,15 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 367,
-  "derivedRevision": 367,
+  "sourceRevision": 369,
+  "derivedRevision": 369,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 52
+    "80130eb1-95f8-4039-8976-71bdce23779c": 54
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-23T10:53:38.414039Z",
+  "updatedAt": "2026-08-23T11:31:35.969561Z",
   "cursor": [
     "uar-branded-documentation-site",
     "execute"
@@ -891,7 +891,7 @@
           {
             "type": "change",
             "id": "certify-and-publish-uar-docs",
-            "status": "PENDING",
+            "status": "IN_PROGRESS",
             "progress": {
               "done": 0,
               "total": 0

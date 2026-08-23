@@ -23,15 +23,13 @@ const pagesPublisherPattern = /actions\/(?:upload-pages-artifact|deploy-pages)@/
 const documentationWorkflowMarkers = [
   "npm --prefix website ci",
   "npm --prefix website run build",
-  "cargo doc --locked --no-deps --workspace --features server-full",
+  "cargo doc --locked --no-deps -p universal-agent-runtime --lib --features server-full",
   "npm --prefix sdks/typescript ci",
   "npm --prefix sdks/typescript run docs",
   "node scripts/stage-documentation-references.mjs",
   "steps.deployment.outputs.page_url",
-  "docs/architecture/intro",
-  "docs/api/rust/",
-  "docs/api/typescript/",
-  "curl --fail",
+  "scripts/validate-deployed-documentation.mjs",
+  'node scripts/validate-deployed-documentation.mjs --base-url "$UAR_DOCS_BASE_URL"',
 ];
 const documentationWorkflowProhibitions = [
   [/\b(?:pnpm|yarn|bun)\b/, "alternate package-manager invocation"],
