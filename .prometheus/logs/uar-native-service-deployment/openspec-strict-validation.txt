@@ -1,0 +1,5 @@
+Change 'establish-native-service-deployment-contract' is valid
+Change 'implement-native-service-runtime-support' is valid
+Change 'package-native-service-installers' is valid
+Change 'bootstrap-native-provider-model-configuration' is valid
+Change 'document-and-deploy-native-services' is valid

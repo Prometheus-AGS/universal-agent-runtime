@@ -1,0 +1,15 @@
+
+> website@0.0.0 build
+> npm run copy:adr && docusaurus build
+
+
+> website@0.0.0 copy:adr
+> node -e "require('fs').cpSync('../docs/adr', './docs/adr', {recursive: true, force: true})"
+
+[INFO] [en] Creating an optimized production build...
+(node:24891) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:24891) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[SUCCESS] Generated static files in "build".
+[INFO] Use `npm run serve` command to test your build locally.

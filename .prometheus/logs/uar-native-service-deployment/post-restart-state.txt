@@ -1,0 +1,3 @@
+provider visibility and default persisted: minimax
+database API persisted: {'provider': 'surreal', 'mode': 'remote', 'database_url': 'ws://127.0.0.1:28000'}
+graceful shutdown and restart logs PASS

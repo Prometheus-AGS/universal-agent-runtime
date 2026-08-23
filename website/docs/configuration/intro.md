@@ -12,4 +12,6 @@ schema discovery, provider/model setup, persistence, secret handling, settings
 reconciliation, reload, restart boundaries, and runtime profiles.
 
 For task-oriented setup, continue to [Installation](/docs/installation) or
-[Deployment](/docs/deployment).
+[Deployment](/docs/deployment). Native supervisors use an explicit environment
+file and platform YAML described in [Native services](/docs/native-services);
+they never source a complete login profile at service startup.

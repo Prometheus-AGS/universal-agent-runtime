@@ -5,7 +5,7 @@ import { dirname, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const metadata = JSON.parse(
-  execFileSync("cargo", ["metadata", "--format-version", "1"], {
+  execFileSync("cargo", ["metadata", "--locked", "--format-version", "1"], {
     cwd: root,
     encoding: "utf8",
     // `cargo metadata` output has grown past Node's default 1 MB stdout cap
@@ -19,20 +19,49 @@ if (!liter) throw new Error("liter-llm is absent from Cargo metadata");
 const literProviders = JSON.parse(
   readFileSync(resolve(dirname(liter.manifest_path), "schemas/providers.json"), "utf8"),
 );
-const response = await fetch("https://models.dev/api.json");
-if (!response.ok) throw new Error(`models.dev returned HTTP ${response.status}`);
-const modelsDev = await response.json();
+const literCatalog = JSON.parse(
+  readFileSync(resolve(dirname(liter.manifest_path), "schemas/catalog.json"), "utf8"),
+);
+const modelsDev = literCatalog.providers;
+if (!modelsDev || typeof modelsDev !== "object" || Array.isArray(modelsDev)) {
+  throw new Error("liter-llm catalog is missing its provider map");
+}
+
+function perMillion(value) {
+  return typeof value === "number" ? value * 1_000_000 : undefined;
+}
+
+function modelCost(model) {
+  if (model.cost) return model.cost;
+  if (!model.pricing) return null;
+
+  const input = perMillion(model.pricing.input_cost_per_token);
+  const output = perMillion(model.pricing.output_cost_per_token);
+  const cacheRead = perMillion(model.pricing.cache_read_input_token_cost);
+  const cacheWrite = perMillion(model.pricing.cache_creation_input_token_cost);
+  if (input === undefined && output === undefined) return null;
+
+  return {
+    input: input ?? 0,
+    output: output ?? 0,
+    ...(cacheRead === undefined ? {} : { cache_read: cacheRead }),
+    ...(cacheWrite === undefined ? {} : { cache_write: cacheWrite }),
+  };
+}
 
 function modelRecord(model) {
+  const capabilities = model.capabilities ?? {};
   return {
     id: model.id ?? "",
     name: model.name ?? "",
     family: model.family ?? null,
     capabilities: {
-      tool_call: model.tool_call ?? false,
-      reasoning: model.reasoning ?? false,
-      structured_output: model.structured_output ?? false,
-      attachment: model.attachment ?? false,
+      tool_call: model.tool_call ?? capabilities.function_calling ?? false,
+      reasoning: model.reasoning ?? capabilities.reasoning ?? false,
+      structured_output:
+        model.structured_output ?? capabilities.structured_output ?? false,
+      attachment:
+        model.attachment ?? capabilities.attachment ?? capabilities.vision ?? false,
       temperature: model.temperature ?? false,
       streaming: true,
     },
@@ -41,9 +70,9 @@ function modelRecord(model) {
       context_window: model.limit?.context ?? 0,
       max_output: model.limit?.output ?? 0,
     },
-    cost: model.cost ?? null,
+    cost: modelCost(model),
     release_date: model.release_date ?? null,
-    open_weights: model.open_weights ?? false,
+    open_weights: model.open_weights ?? capabilities.open_weights ?? false,
   };
 }
 

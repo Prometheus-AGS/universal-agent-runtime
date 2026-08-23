@@ -21,7 +21,7 @@ The [GitHub Pages documentation portal](https://prometheus-ags.github.io/univers
 ## What is supported
 
 - OpenAI-compatible and Anthropic execution paths have named Tier 1 capability evidence. Local FastEmbed embeddings are also Tier 1.
-- The committed catalog contains metadata for 269 providers. A catalog entry is discovery data, not proof that execution is certified.
+- The committed catalog contains metadata for 316 providers. A catalog entry is discovery data, not proof that execution is certified.
 - Catalog, availability, and policy routing are Stable. Adaptive learned routing is Experimental.
 - MCP-discovered and native tools share schema validation, Cedar policy, approval, hard-deny, and audit controls. Native WASM tools are Preview and opt-in.
 - Web is Stable. Desktop/Tauri and native WASM are Preview. Mobile is Experimental. Browser-side arbitrary WASM execution is unsupported.
@@ -181,6 +181,44 @@ By default UAR requires a JWT on every API request (`security.jwt_required: true
 ## Deployment and integrations
 
 UAR can run as a server, container, or supervised local service. BossFang should currently supervise UAR out of process and use the OpenAI-compatible API first, adding A2A or AG-UI where richer task/event semantics are needed. A linked library should be reconsidered only after a narrow dependency-light kernel is extracted and profiling demonstrates a material IPC bottleneck. The detailed analysis is in the [BossFang integration guide](docs/librefang-integration.md#6-deployment-decision-library-or-supervised-service).
+
+### Native service quickstart
+
+Native packages for a macOS user LaunchAgent, Linux systemd, and Windows SCM
+live under [`packaging/native/`](packaging/native/). They bind HTTP `1906` and
+A2A gRPC `50051` to the local machine by default. Build the React bundle before
+the release server:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+cargo build --locked --release --no-default-features --features server-full
+```
+
+On macOS, import provider variables once into the installer process. The service
+reads the generated least-privilege environment; it never sources the complete
+interactive profile.
+
+```bash
+source "$HOME/.bash_profile"
+packaging/native/macos/install.sh \
+  --binary target/release/universal-agent-runtime \
+  --static-dir static
+packaging/native/macos/control.sh status
+open http://localhost:1906
+```
+
+Existing `~/.uar/config.yaml`, database state, selected model, and provider
+settings are preserved, except that the obsolete native Alibaba selection
+`alibaba/qwen3.7-max` is upgraded to the released `alibaba/qwen3.8-max` and the
+known malformed `QWEN_TOKENPLAN_API_KEY` reference is normalized to
+`DASHSCOPE_API_KEY`. Configuration backups go to
+`~/.prometheus/backups/uar/`; every operator log goes to
+`~/.prometheus/logs/universal-agent-runtime/`. Continue with the [native
+deployment guide](docs/DEPLOYMENT.md#native-services) or the branded guides for
+[macOS](website/docs/native-services/macos.md),
+[Linux](website/docs/native-services/linux.md), and
+[Windows](website/docs/native-services/windows.md).
 
 Flint Gate owns edge auth enforcement, Flint Realtime Fabric owns durable realtime distribution, Flint Forge owns RLS-backed data APIs and edge execution, and Flint Platform Agent owns authenticated administration across these services. UAR retains inference, routing, agent execution, and governance ownership.
 

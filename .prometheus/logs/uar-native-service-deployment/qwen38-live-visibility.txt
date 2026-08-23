@@ -1,0 +1,15 @@
+2026-08-23 — installed release after pinned catalog refresh
+
+universal-agent-runtime 1.0.0
+healthz: {"status":"ok"}
+readyz: {"status":"ready","checks":{"postgres":"ok","surrealdb":"not_configured","mcp":{"status":"ok","tools":6}}}
+LaunchAgent: state=running, pid=36842
+HTTP listeners: 127.0.0.1:1906 and [::1]:1906 only
+A2A gRPC listener: 127.0.0.1:50051 only
+Configured Alibaba default: qwen3.8-max; credential_configured=true
+Embedded catalog Alibaba model: qwen3.8-max; configured=true
+Shipped UI routes /, /admin/providers, and /admin/models: HTTP 200
+Emitted asset /assets/index-eVk_LYNB.js: HTTP 200
+Persistence authority remained unchanged: surreal remote at ws://127.0.0.1:28000
+
+Limits: server-full installed macOS runtime only. No Linux or Windows runtime claim. No additional inference request.

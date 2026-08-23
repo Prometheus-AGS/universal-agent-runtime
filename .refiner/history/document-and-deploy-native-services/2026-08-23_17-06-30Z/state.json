@@ -1,0 +1,42 @@
+{
+  "refinement_id": "ac266179-42b3-417a-afc2-a75941d71018",
+  "artifact_name": "document-and-deploy-native-services",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T16:53:06Z",
+  "updated_at": "2026-08-23T17:06:30Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate the completed native-service deployment artifact before archive."
+  ],
+  "constraints": [
+    "qwen-source",
+    "offline-reproducibility",
+    "catalog-transform",
+    "configuration-preservation",
+    "secret-safety",
+    "evidence-consistency"
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "converged",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "completed_at": "2026-08-23T17:05:34Z",
+      "blocking_satisfied": 6,
+      "blocking_violated": 0,
+      "decision": "terminate"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [],
+  "prior_cycle_id": null,
+  "finalized_at": "2026-08-23T17:06:30Z"
+}

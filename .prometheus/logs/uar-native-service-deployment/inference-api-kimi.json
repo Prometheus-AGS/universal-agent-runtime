@@ -1,0 +1,1 @@
+{"id":"chatcmpl-1bf8c8695ec64c279f479de736149c84","object":"chat.completion","created":1787499764,"model":"kimi-for-coding/k3","choices":[{"index":0,"message":{"role":"assistant","content":"NATIVE_KIMI_OK"},"finish_reason":"stop"}],"session_id":"3ebfb334-d4d5-49f8-b44b-06c97642de8e"}

@@ -22,6 +22,13 @@ provider registry is the current execution authority. When durable settings are
 configured, provider API writes are persisted as well as published to the live
 registry.
 
+Native packages can seed the local proxy, Kimi K3, MiniMax M3,
+`alibaba/qwen3.8-max`, GLM, and
+Moonshot from an allowlisted service environment. See [Native
+services](/docs/native-services); bootstrap never overwrites an existing YAML
+provider ID or database-backed provider/default-model choice, apart from the
+documented exact migration of the obsolete native Qwen 3.7 selection and seed.
+
 ```mermaid
 flowchart LR
     Catalog[Catalog metadata] --> UI[Providers UI]

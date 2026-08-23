@@ -1,0 +1,7 @@
+COMMAND     PID     USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+universal 31976 gqadonis   51u  IPv4 0x3b0ab4b175f1fcba      0t0  TCP 127.0.0.1:1906 (LISTEN)
+universal 31976 gqadonis   53u  IPv6 0xbac0bc17ecea53ab      0t0  TCP [::1]:1906 (LISTEN)
+port 1906 loopback-only PASS
+COMMAND     PID     USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+universal 31976 gqadonis   52u  IPv4 0x9c29ada3a746ae4a      0t0  TCP 127.0.0.1:50051 (LISTEN)
+port 50051 loopback-only PASS

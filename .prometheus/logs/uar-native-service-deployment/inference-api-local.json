@@ -1,0 +1,1 @@
+{"id":"chatcmpl-e8d9dd7129fb4798815be8aa624145f4","object":"chat.completion","created":1787499754,"model":"local-openai-proxy/gpt-5.4-mini","choices":[{"index":0,"message":{"role":"assistant","content":"NATIVE_LOCAL_OK"},"finish_reason":"stop"}],"session_id":"88899720-902e-4771-9c79-ceec0aaf6e39"}

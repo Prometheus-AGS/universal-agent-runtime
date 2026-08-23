@@ -190,11 +190,16 @@ let llm_config: LlmConfig = load_llm_config(cli)?;
 
 `build.rs` runs before every compilation and:
 
-1. Locates `liter-llm/schemas/providers.json` (sibling directory or Cargo git cache)
-2. Fetches `https://models.dev/api.json` (skipped if `SKIP_MODEL_BUILD=1`)
-3. Merges: liter-llm provider routing data + models.dev model capabilities
-4. Writes the result to `$OUT_DIR/provider_catalog.json`
-5. `catalog.rs` embeds it via `include_str!` into a `LazyLock<ModelCatalog>` singleton
+1. Copies the reviewed `catalog/provider_catalog.json` snapshot into `$OUT_DIR`.
+2. Performs no catalog network access and does not mutate the snapshot.
+3. Lets `catalog.rs` embed the copied JSON via `include_str!` into a
+   `LazyLock<ModelCatalog>` singleton.
+
+Maintainers update the snapshot explicitly with
+`node scripts/refresh-provider-catalog.mjs`. The refresh reads provider routing
+and model metadata from the pinned `vendor/git/liter-llm` schemas; the snapshot
+records both the `liter-llm` and `models.dev` source commits in
+`catalog/SNAPSHOT.md`.
 
 ### ModelCatalog API
 

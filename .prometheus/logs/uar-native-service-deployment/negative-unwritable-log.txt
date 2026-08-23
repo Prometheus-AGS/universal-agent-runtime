@@ -1,0 +1,1 @@
+Failed to initialize telemetry: opening UAR_LOG_FILE '/dev/null/uar-operational.txt' for append: Not a directory (os error 20)

@@ -1,0 +1,1 @@
+installed com.prometheus.universal-agent-runtime

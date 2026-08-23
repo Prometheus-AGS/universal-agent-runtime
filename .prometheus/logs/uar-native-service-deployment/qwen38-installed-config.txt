@@ -1,0 +1,6 @@
+selected_model=true
+canonical_key_reference=true
+provider_default=true
+provider_model=true
+legacy_selection_absent=true
+legacy_key_reference_absent=true

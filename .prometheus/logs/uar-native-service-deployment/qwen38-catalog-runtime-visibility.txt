@@ -1,0 +1,17 @@
+2026-08-23 — Qwen 3.8-Max catalog source and runtime visibility
+
+Pinned sources:
+- models.dev: f97df19af40bc322ccbffc91138f360154940a63 (clean Qwen-containing ancestor selected after upstream HEAD's macOS case collision was observed)
+- vendor/git/liter-llm: 788877f7ad238eaef4173bea2481b1731b0bbe12
+
+Command: node scripts/refresh-provider-catalog.mjs
+Observed: Wrote 316 providers; SHA-256 c4704316b380e40c9b2d093eb4c1704a2574d4a13ecc0d5b5d1943bc5ded1bb6.
+Negative control: a second refresh produced the same SHA-256 byte-for-byte.
+
+Command: curl http://127.0.0.1:1906/api/models, select alibaba/qwen3.8-max
+Observed: configured=true; context=1000000; output=131072; input/output cost=2.0/6.0; vision, tools, reasoning, structured output, and streaming=true.
+
+BrowserOS: opened the installed /admin/models screen and searched visible page content.
+Observed: Qwen3.8-Max and alibaba/qwen3.8-max were visible in the shipped React UI.
+
+Limit: visibility only; no Qwen inference request was made or claimed.

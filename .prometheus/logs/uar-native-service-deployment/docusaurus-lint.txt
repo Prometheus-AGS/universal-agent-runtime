@@ -1,0 +1,8 @@
+
+> website@0.0.0 lint
+> node scripts/lint-docs.mjs
+
+ Vale CLI is not installed. Skipping prose lint.
+ Install Vale from https://vale.sh or run:
+   brew install vale
+ GitHub Actions are deployment-only; install Vale locally before claiming prose-lint evidence.

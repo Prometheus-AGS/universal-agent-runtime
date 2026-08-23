@@ -22,6 +22,8 @@ PROVIDER_VARIABLES = {
     "ZAI_API_KEY",
 }
 SAFE_MODEL_ID = re.compile(r"^[A-Za-z0-9._:/+\-]+$")
+QWEN_MODEL_ID = "qwen3.8-max"
+QWEN_MODEL_NAME = "Qwen3.8-Max"
 
 
 def parse_args() -> argparse.Namespace:
@@ -109,6 +111,15 @@ def provider_lines(provider_id: str, name: str, base_url: str, default_model: st
     return lines
 
 
+def alibaba_provider_lines(model_id: str, display_name: str, context: int, output: int,
+                           vision: bool, reasoning: bool, structured: bool) -> list[str]:
+    return provider_lines(
+        "alibaba", "Alibaba/Qwen", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+        model_id,
+        [model_lines(model_id, display_name, context, output, vision, True, reasoning, structured)],
+    )
+
+
 def desired_providers(present: set[str], proxy_url: str, proxy_models: list[str]) -> dict[str, list[str]]:
     providers: dict[str, list[str]] = {}
     if proxy_models:
@@ -127,10 +138,8 @@ def desired_providers(present: set[str], proxy_url: str, proxy_models: list[str]
             [model_lines("MiniMax-M3", "MiniMax M3", 1_000_000, 128_000, True, True, True, False)],
         )
     if "DASHSCOPE_API_KEY" in present:
-        providers["alibaba"] = provider_lines(
-            "alibaba", "Alibaba/Qwen", "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-            "qwen3-coder-plus",
-            [model_lines("qwen3-coder-plus", "Qwen3 Coder Plus", 1_048_576, 65_536, False, True, False, False)],
+        providers["alibaba"] = alibaba_provider_lines(
+            QWEN_MODEL_ID, QWEN_MODEL_NAME, 1_000_000, 131_072, True, True, True,
         )
     if "ZAI_API_KEY" in present:
         providers["zai"] = provider_lines(
@@ -183,6 +192,58 @@ def merge_server(lines: list[str]) -> None:
     lines[end:end] = additions
 
 
+def merge_alibaba_default(lines: list[str], present: set[str]) -> None:
+    if "DASHSCOPE_API_KEY" not in present:
+        return
+
+    bounds = section_bounds(lines, "llm")
+    if bounds is None:
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.extend(
+            [
+                "llm:",
+                f"  model: {json.dumps(f'alibaba/{QWEN_MODEL_ID}')}",
+                '  api_key_env: "DASHSCOPE_API_KEY"',
+            ]
+        )
+        return
+
+    start, end = bounds
+    if lines[start].strip() != "llm:":
+        raise ValueError("top-level llm must be a block mapping")
+    for index in range(start + 1, end):
+        if re.fullmatch(r"  model:\s*[\"']?alibaba/qwen3\.7-max[\"']?\s*", lines[index]):
+            lines[index] = f"  model: {json.dumps(f'alibaba/{QWEN_MODEL_ID}')}"
+        elif re.fullmatch(r"  api_key_env:\s*[\"']?QWEN_TOKENPLAN_API_KEY[\"']?\s*", lines[index]):
+            lines[index] = '  api_key_env: "DASHSCOPE_API_KEY"'
+
+
+def migrate_phase_alibaba_seed(lines: list[str]) -> None:
+    bounds = section_bounds(lines, "providers")
+    if bounds is None:
+        return
+    start, end = bounds
+    legacy = alibaba_provider_lines(
+        "qwen3-coder-plus", "Qwen3 Coder Plus", 1_048_576, 65_536, False, False, False,
+    )
+    replacement = alibaba_provider_lines(
+        QWEN_MODEL_ID, QWEN_MODEL_NAME, 1_000_000, 131_072, True, True, True,
+    )
+    provider_starts = [
+        index
+        for index in range(start + 1, end)
+        if re.match(r"^  - id:\s*", lines[index])
+    ]
+    provider_starts.append(end)
+    for position in range(len(provider_starts) - 1):
+        block_start = provider_starts[position]
+        block_end = provider_starts[position + 1]
+        if lines[block_start:block_end] == legacy:
+            lines[block_start:block_end] = replacement
+            return
+
+
 def merge_provider_section(lines: list[str], providers: dict[str, list[str]]) -> None:
     if not providers:
         return
@@ -202,11 +263,10 @@ def merge_provider_section(lines: list[str], providers: dict[str, list[str]]) ->
             raise ValueError("top-level providers must be a block sequence or []")
 
     existing = {
-        match.group(1) or match.group(2)
+        match.group(1) or match.group(2) or match.group(3)
         for line in lines[start + 1:end]
         if (match := re.match(r"^  - id:\s*(?:\"([^\"]+)\"|'([^']+)'|([^#\s]+))", line))
     }
-    existing = {item for group in existing for item in ([group] if isinstance(group, str) else [])}
     additions: list[str] = []
     for provider_id, block in providers.items():
         if provider_id not in existing:
@@ -238,6 +298,8 @@ def main() -> int:
     merge_server(lines)
     present = present_provider_variables(args.env_file)
     proxy_models = discover_proxy_models(args.proxy_url)
+    merge_alibaba_default(lines, present)
+    migrate_phase_alibaba_seed(lines)
     merge_provider_section(lines, desired_providers(present, args.proxy_url, proxy_models))
     atomic_write(args.config, "\n".join(lines) + "\n")
     return 0

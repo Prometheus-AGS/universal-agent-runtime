@@ -1,0 +1,10 @@
+universal-agent-runtime 1.0.0
+	state = running
+	runs = 2
+	pid = 31976
+		state = active
+		state = active
+healthz: {"status":"ok"}
+readyz: {"status":"ready","checks":{"postgres":"ok","surrealdb":"not_configured","mcp":{"status":"ok","tools":6}}}
+shipped UI index PASS
+static asset PASS: /assets/index-eVk_LYNB.js

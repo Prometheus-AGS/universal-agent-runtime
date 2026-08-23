@@ -1,0 +1,11 @@
+BrowserOS hidden-page functional observation against the installed release at http://127.0.0.1:1906
+
+- The shipped React application completed initialization and displayed Ready / Embedded · local.
+- /admin/providers displayed 298 available and 5 configured providers: Alibaba, Kimi For Coding, Local OpenAI Proxy, Minimax, and Z.AI.
+- /admin/models displayed named model entries including Kimi K3, MiniMax-M3, GPT-5.4, and GLM-5.2.
+- The provider UI changed the default from Alibaba to Kimi For Coding. A new shipped-chat conversation returned UI_KIMI_OK. The service operational log resolved kimi-for-coding/k3.
+- The provider UI changed the default to Local OpenAI Proxy. A new shipped-chat conversation returned UI_LOCAL_OK. The service operational log resolved local-openai-proxy/gpt-5.4.
+- The provider UI changed the default to Minimax. After the single LaunchAgent restart, /admin/providers still displayed Minimax as default. A new shipped-chat conversation displayed minimax/MiniMax-M3 and returned UI_MINIMAX_OK with the provider's visible reasoning block.
+- The provider UI restored Alibaba as the operator's original default. GET /api/providers then returned default_id=alibaba.
+
+Limits: macOS installed server-full release only. Six genuine requests total were made across API and UI; this file records three UI requests. No Linux or Windows runtime behavior is claimed.

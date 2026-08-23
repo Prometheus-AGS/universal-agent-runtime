@@ -1,0 +1,94 @@
+{
+  "plan": {
+    "stages": [
+      {
+        "id": "source",
+        "description": "Confirm the pinned liter-llm source and generated catalog record.",
+        "requires_execution": true,
+        "tool": "local deterministic commands"
+      },
+      {
+        "id": "safety",
+        "description": "Validate exact-match configuration migration and secret handling.",
+        "requires_execution": true,
+        "tool": "local deterministic commands"
+      },
+      {
+        "id": "evidence",
+        "description": "Compare documentation, OpenSpec tasks, verification rows, and retained output.",
+        "requires_execution": true,
+        "tool": "artifact-validator"
+      },
+      {
+        "id": "persist",
+        "description": "Persist the independent verdict, manifest, decisions, and refinement state.",
+        "requires_execution": true,
+        "tool": "filesystem provider"
+      }
+    ],
+    "tool_invocations": [
+      {
+        "stage_id": "source",
+        "tool": "local deterministic commands",
+        "purpose": "Validate gitlinks, catalog content, refresh stability, and absence of a runtime overlay."
+      },
+      {
+        "stage_id": "safety",
+        "tool": "local deterministic commands",
+        "purpose": "Validate native config fixtures and scan intended artifacts for disclosed credentials."
+      },
+      {
+        "stage_id": "evidence",
+        "tool": "artifact-validator",
+        "purpose": "Perform history-blind consistency review of the completed artifact."
+      }
+    ],
+    "state_updates": {
+      "files_to_create": [
+        "artifact_manifest.json",
+        "constraints.json",
+        "refinement_log.md",
+        "decisions.md",
+        "dist/validation-report.md"
+      ],
+      "files_to_update": [
+        "state.json"
+      ],
+      "directories_required": [
+        "dist"
+      ]
+    },
+    "validation_plan": [
+      {
+        "constraint_id": "qwen-source",
+        "validation_method": "Inspect pinned submodule metadata and generated catalog record.",
+        "execution_required": true
+      },
+      {
+        "constraint_id": "offline-reproducibility",
+        "validation_method": "Run the catalog refresh twice and compare SHA-256 output.",
+        "execution_required": true
+      },
+      {
+        "constraint_id": "catalog-transform",
+        "validation_method": "Compare source pricing/capabilities to generated UAR fields.",
+        "execution_required": true
+      },
+      {
+        "constraint_id": "configuration-preservation",
+        "validation_method": "Review observed exact-match migration and custom-config negative-control evidence.",
+        "execution_required": true
+      },
+      {
+        "constraint_id": "secret-safety",
+        "validation_method": "Scan intended tracked artifacts and retained evidence for credential values.",
+        "execution_required": true
+      },
+      {
+        "constraint_id": "evidence-consistency",
+        "validation_method": "Independent comparison of documentation and verification claims to retained evidence.",
+        "execution_required": true
+      }
+    ]
+  }
+}

@@ -7,6 +7,8 @@ Native packaging is not usable until operators can install, upgrade, inspect, tr
 - Document macOS, Linux, and Windows native deployment in README, product docs, and branded Docusaurus.
 - Build and install the release server and React bundle locally.
 - Verify health, UI/static assets, listeners, provider visibility, genuine inference, restart persistence, database access, graceful stop, and `.prometheus` logs.
+- Supersede the obsolete native Alibaba seed/default with released `alibaba/qwen3.8-max` and repair only the observed malformed Alibaba credential reference so the installed service survives restart.
+- Advance the `models.dev` and `liter-llm` gitlinks and refresh UAR's reviewed offline catalog snapshot so `/api/models` and the Models UI receive the release through the existing catalog architecture.
 
 ## Capabilities
 
@@ -24,4 +26,5 @@ None.
 ## Impact
 
 - Installs a user-level LaunchAgent and files beneath operator-approved home paths.
+- Narrowly migrates the exact obsolete Alibaba values authorized by the operator; unrelated existing YAML and persisted provider settings remain unchanged.
 - Does not deploy Linux or Windows, push, tag, publish, or create a PR.

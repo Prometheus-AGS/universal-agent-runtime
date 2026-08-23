@@ -36,9 +36,9 @@ AG-UI does not prescribe React components. A2UI does not replace the run/event t
 
 ## Providers and routing
 
-`liter-llm` supplies the unified provider client. `catalog/provider_catalog.json` is a committed, checksummed snapshot copied into the binary during the build; ordinary builds perform no catalog network fetch. Maintainers refresh it explicitly with `scripts/refresh-provider-catalog.sh`.
+`liter-llm` supplies the unified provider client. `catalog/provider_catalog.json` is a committed, checksummed snapshot copied into the binary during the build; ordinary builds perform no catalog network fetch. Maintainers refresh it explicitly from the pinned submodule schemas with `node scripts/refresh-provider-catalog.mjs`.
 
-The catalog currently describes 269 providers, but metadata presence is not execution certification. Provider promises are tiered:
+The catalog snapshot records its current provider count in `catalog/SNAPSHOT.md`, but metadata presence is not execution certification. Provider promises are tiered:
 
 1. Tier 1: named capability-specific execution evidence.
 2. Tier 2: native registry and basic chat/stream compatibility.

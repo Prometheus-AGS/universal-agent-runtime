@@ -1,0 +1,4 @@
+pre-restart default=minimax; configured providers= alibaba,kimi-for-coding,local-openai-proxy,minimax,zai
+persistence= {'provider': 'surreal', 'mode': 'remote', 'database_url': 'ws://127.0.0.1:28000'}
+original config backup PASS: config.yaml.20260823T153819Z
+database state present

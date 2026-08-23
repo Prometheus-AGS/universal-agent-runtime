@@ -1,0 +1,25 @@
+{
+  "artifact_type": "content",
+  "variants": [
+    {
+      "name": "document-and-deploy-native-services validation report",
+      "file": "dist/validation-report.md",
+      "format": "markdown",
+      "description": "Deterministic and independent QA result for the completed OpenSpec change."
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Content artifact; browser preview is not required.",
+      "Independent artifact-validator final verdict: PASS."
+    ]
+  },
+  "generated_at": "2026-08-23T17:05:34Z"
+}

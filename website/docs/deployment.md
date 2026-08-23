@@ -16,6 +16,12 @@ secrets, persistence, and dependency path pass functional checks in the target
 environment.** A local build, tag, image name, chart render, or liveness result
 alone is insufficient.
 
+For supervised workstation/server installation, use the [native service
+guides](/docs/native-services): [macOS](/docs/native-services/macos),
+[Linux](/docs/native-services/linux), or [Windows](/docs/native-services/windows).
+Those packages install the release binary and this React application directly;
+the container and cluster paths below remain separate deployment contracts.
+
 ```mermaid
 flowchart LR
     Artifact[Verified image digest] --> Runtime[UAR server]

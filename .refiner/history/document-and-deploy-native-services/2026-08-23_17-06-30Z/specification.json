@@ -1,0 +1,46 @@
+{
+  "specification": {
+    "artifact_name": "document-and-deploy-native-services",
+    "artifact_type": "content",
+    "clarified_intent": {
+      "description": "Validate the completed native-service deployment change after replacing the temporary Qwen catalog workaround with the updated liter-llm snapshot.",
+      "domain": "release documentation, provider catalog generation, and native configuration packaging"
+    },
+    "constraints": [
+      "qwen-source",
+      "offline-reproducibility",
+      "catalog-transform",
+      "configuration-preservation",
+      "secret-safety",
+      "evidence-consistency"
+    ],
+    "target_state": {
+      "description": "A reproducible source change whose built-in catalog contains qwen3.8-max from the pinned liter-llm snapshot, whose native bootstrap migrates only phase-owned defaults, and whose documentation and verification claims match observed evidence.",
+      "success_criteria": [
+        "The liter-llm gitlink and Cargo.lock resolve liter-llm 1.18.1.",
+        "The generated UAR catalog contains qwen3.8-max without a runtime overlay.",
+        "The catalog refresh is offline, locked, and byte-stable.",
+        "Custom and user-created Alibaba configuration is preserved.",
+        "No credentials appear in tracked artifacts or retained logs.",
+        "Platform and inference claims are limited to observed evidence."
+      ],
+      "measurable_outcomes": [
+        {
+          "metric": "blocking constraint violations",
+          "threshold": "0"
+        },
+        {
+          "metric": "missing manifest files",
+          "threshold": "0"
+        }
+      ]
+    },
+    "content_type": "direct:content",
+    "unknowns": [],
+    "requires_code_execution": true,
+    "likely_tools": [
+      "local deterministic commands",
+      "artifact-validator"
+    ]
+  }
+}

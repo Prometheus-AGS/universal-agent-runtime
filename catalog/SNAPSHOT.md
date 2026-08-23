@@ -1,16 +1,17 @@
 # Provider catalog snapshot
 
 - File: `provider_catalog.json`
-- Snapshot date: 2026-07-24
-- SHA-256: `4b613e87de884e5741aaa281fc64e16c8fe280bc6c769fb6d2f89d1b3ba5afe1`
-- Entries: 297 providers
+- Snapshot date: 2026-08-23
+- SHA-256: `c4704316b380e40c9b2d093eb4c1704a2574d4a13ecc0d5b5d1943bc5ded1bb6`
+- Entries: 316 providers
 - Sources:
-  - `https://models.dev/api.json`
-  - liter-llm provider schemas, commit `c37e98411ff154fb2c256856428c15d7340b1325`
+  - Know-Me-Tools `models.dev` catalog, commit `f97df19af40bc322ccbffc91138f360154940a63`
+  - liter-llm provider and catalog schemas, commit `788877f7ad238eaef4173bea2481b1731b0bbe12`
 
 The file is the reviewed merged output previously produced by the UAR catalog
 builder. Release builds copy it verbatim and perform no network access. Refresh
-is an explicit maintainer operation documented in `docs/build-reproducibility.md`.
+is an explicit maintainer operation from the pinned submodules, documented in
+`docs/build-reproducibility.md`.
 
 ## Packaged local model inputs
 

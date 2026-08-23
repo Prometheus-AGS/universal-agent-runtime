@@ -1,0 +1,75 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "qwen-source",
+      "description": "qwen3.8-max must come from the pinned liter-llm snapshot consumed by the build, with no temporary runtime overlay.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Inspect gitlink, Cargo.lock, refresh script, generated catalog, and runtime source diff."
+      }
+    },
+    {
+      "id": "offline-reproducibility",
+      "description": "Provider catalog regeneration must use locked local inputs and produce a byte-stable snapshot.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Repeat the local refresh and compare SHA-256 digests."
+      }
+    },
+    {
+      "id": "catalog-transform",
+      "description": "Pricing units, limits, and capabilities must be transformed from liter-llm into the UAR catalog without semantic drift.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Compare liter-llm qwen3.8-max source fields with the generated UAR record."
+      }
+    },
+    {
+      "id": "configuration-preservation",
+      "description": "Native bootstrap may migrate only the exact phase-owned Alibaba seed and must preserve custom or API-created configuration.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Review exact-match implementation and observed custom-configuration negative control."
+      }
+    },
+    {
+      "id": "secret-safety",
+      "description": "No literal provider credential may be written into tracked artifacts, documentation, KBD history, or retained operational evidence.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Scan intended artifact paths and evidence for credential values without printing those values."
+      }
+    },
+    {
+      "id": "evidence-consistency",
+      "description": "Documentation, OpenSpec tasks, and verification rows must match observed platform and real-inference evidence without cross-profile claims.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Independent artifact-validator review of claims and retained output."
+      }
+    }
+  ],
+  "global_rules": [
+    "Do not rerun real inference during artifact QA.",
+    "Do not inspect or stage unrelated KBD projection churn.",
+    "Do not claim Linux or Windows runtime deployment from a macOS host."
+  ],
+  "termination_conditions": [
+    "All blocking constraints pass.",
+    "All manifest references exist and are non-empty.",
+    "The independent artifact-validator reports no blocking finding."
+  ]
+}

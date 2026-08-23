@@ -601,3 +601,36 @@ invoke `clang-cl` against Apple assembly and headers.
 target-qualified compiler, linker, SDK, bindgen, and CMake variables to Cargo.
 Host build dependencies must retain the host compiler. A successful cross-check
 is compile-only evidence and makes no Windows service-runtime claim.
+
+## 2026-08-23 — UAR liveness can pass while the native SurrealDB dependency is hung
+
+**Observed behavior.** The installed UAR `/healthz` endpoint remained healthy
+while `/readyz` and SurrealDB's own port-28000 health request timed out. UAR's
+operational log stopped at its SurrealDB connection boundary after restart.
+
+**Working rule.** Treat `/healthz` as process liveness only. When native
+readiness stalls, probe the configured persistence dependency directly. Stop
+UAR before restarting `ai.prometheus.surrealdb-native`, preserve the existing
+RocksDB path, require the database listener/health response, and only then start
+UAR and require `/readyz`.
+
+**Limit.** The restart restored service, but it does not establish the internal
+cause of the database hang. The preceding SurrealDB logs contained transaction
+conflicts and one-minute query timeouts; do not report either as the root cause
+without a separate diagnosis.
+
+## 2026-08-23 — SurrealDB LaunchAgent restart requires an execution-state gate
+
+**Observed behavior.** `launchctl kickstart -k` reported no command error but
+left `ai.prometheus.surrealdb-native` in `xpcproxy` state with no port-28000
+listener. HTTP health also returned once during an earlier restart before the
+dependency stalled again.
+
+**Working rule.** For this LaunchAgent, boot out UAR first, boot out SurrealDB,
+and observe both labels absent from the user launchd domain. Bootstrap
+SurrealDB and require both HTTP health and a successful WebSocket query before
+bootstrapping UAR. Then require both UAR liveness and readiness. Do not treat
+launchctl registration, a PID, or HTTP health alone as dependency recovery.
+
+**Limit.** This is an operational recovery rule, not a diagnosis of the
+underlying SurrealDB or RocksDB stall.

@@ -1,0 +1,2 @@
+Failed to load selected environment file '/Users/gqadonis/.claude/worktrees/document-and-deploy-native-services/.prometheus/logs/uar-native-service-deployment/malformed-service.env': Error parsing line: 'BROKEN='unterminated
+', error at line index: 21

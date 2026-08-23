@@ -1,0 +1,57 @@
+• turbo 2.10.8
+
+   • Packages in scope: @prometheus-ags/entity-graph-core, @prometheus-ags/prometheus-entity-management
+   • Running build in 2 packages
+   • Remote caching disabled
+
+@prometheus-ags/entity-graph-core:build: cache miss, executing 3ac6429f2441de9c
+@prometheus-ags/entity-graph-core:build: 
+@prometheus-ags/entity-graph-core:build: > @prometheus-ags/entity-graph-core@3.0.0-rc.1 build /Users/gqadonis/.claude/worktrees/document-and-deploy-native-services/frontend/packages/prometheus-entity-management/packages/entity-graph-core
+@prometheus-ags/entity-graph-core:build: > tsup
+@prometheus-ags/entity-graph-core:build: 
+@prometheus-ags/entity-graph-core:build: CLI Building entry: src/index.ts
+@prometheus-ags/entity-graph-core:build: CLI Using tsconfig: tsconfig.json
+@prometheus-ags/entity-graph-core:build: CLI tsup v8.5.1
+@prometheus-ags/entity-graph-core:build: CLI Using tsup config: /Users/gqadonis/.claude/worktrees/document-and-deploy-native-services/frontend/packages/prometheus-entity-management/packages/entity-graph-core/tsup.config.ts
+@prometheus-ags/entity-graph-core:build: CLI Target: es2022
+@prometheus-ags/entity-graph-core:build: CLI Cleaning output folder
+@prometheus-ags/entity-graph-core:build: ESM Build start
+@prometheus-ags/entity-graph-core:build: CJS Build start
+@prometheus-ags/entity-graph-core:build: DTS Build start
+@prometheus-ags/entity-graph-core:build: CJS dist/index.cjs     130.19 KB
+@prometheus-ags/entity-graph-core:build: CJS dist/index.cjs.map 387.57 KB
+@prometheus-ags/entity-graph-core:build: CJS ⚡️ Build success in 349ms
+@prometheus-ags/entity-graph-core:build: ESM dist/index.mjs     126.72 KB
+@prometheus-ags/entity-graph-core:build: ESM dist/index.mjs.map 387.53 KB
+@prometheus-ags/entity-graph-core:build: ESM ⚡️ Build success in 349ms
+@prometheus-ags/entity-graph-core:build: DTS ⚡️ Build success in 1124ms
+@prometheus-ags/entity-graph-core:build: DTS dist/index.d.ts  141.58 KB
+@prometheus-ags/entity-graph-core:build: DTS dist/index.d.cts 141.58 KB
+@prometheus-ags/prometheus-entity-management:build: cache miss, executing 541cdf6c58796d8b
+@prometheus-ags/prometheus-entity-management:build: 
+@prometheus-ags/prometheus-entity-management:build: > @prometheus-ags/prometheus-entity-management@3.0.0-rc.1 build /Users/gqadonis/.claude/worktrees/document-and-deploy-native-services/frontend/packages/prometheus-entity-management/packages/entity-graph-react
+@prometheus-ags/prometheus-entity-management:build: > tsup
+@prometheus-ags/prometheus-entity-management:build: 
+@prometheus-ags/prometheus-entity-management:build: CLI Building entry: src/index.ts
+@prometheus-ags/prometheus-entity-management:build: CLI Using tsconfig: tsconfig.json
+@prometheus-ags/prometheus-entity-management:build: CLI tsup v8.5.1
+@prometheus-ags/prometheus-entity-management:build: CLI Using tsup config: /Users/gqadonis/.claude/worktrees/document-and-deploy-native-services/frontend/packages/prometheus-entity-management/packages/entity-graph-react/tsup.config.ts
+@prometheus-ags/prometheus-entity-management:build: CLI Target: es2022
+@prometheus-ags/prometheus-entity-management:build: CLI Cleaning output folder
+@prometheus-ags/prometheus-entity-management:build: ESM Build start
+@prometheus-ags/prometheus-entity-management:build: CJS Build start
+@prometheus-ags/prometheus-entity-management:build: DTS Build start
+@prometheus-ags/prometheus-entity-management:build: CJS dist/index.cjs     320.51 KB
+@prometheus-ags/prometheus-entity-management:build: CJS dist/index.cjs.map 690.61 KB
+@prometheus-ags/prometheus-entity-management:build: CJS ⚡️ Build success in 411ms
+@prometheus-ags/prometheus-entity-management:build: ESM dist/index.mjs     294.20 KB
+@prometheus-ags/prometheus-entity-management:build: ESM dist/index.mjs.map 689.19 KB
+@prometheus-ags/prometheus-entity-management:build: ESM ⚡️ Build success in 411ms
+@prometheus-ags/prometheus-entity-management:build: DTS ⚡️ Build success in 2124ms
+@prometheus-ags/prometheus-entity-management:build: DTS dist/index.d.ts  92.15 KB
+@prometheus-ags/prometheus-entity-management:build: DTS dist/index.d.cts 92.15 KB
+
+ Tasks:    2 successful, 2 total
+Cached:    0 cached, 2 total
+  Time:    5.637s 
+

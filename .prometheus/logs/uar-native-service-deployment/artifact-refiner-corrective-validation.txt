@@ -1,0 +1,35 @@
+Artifact-refiner corrective validation
+Observed: 2026-08-23T17:03:03Z
+
+Initial independent verdict: FAIL
+- Unix existing-provider parsing ignored the unquoted regex capture group and
+  could append a duplicate Alibaba block.
+- README reported 269 providers while the reviewed snapshot contained 316.
+- models.dev upstream HEAD contained two Eden AI filenames differing only by
+  case and therefore checked out dirty on the supported macOS filesystem.
+
+Corrections:
+- merge_provider_config.py now recognizes quoted and unquoted existing IDs.
+- README reports 316 providers.
+- models.dev is pinned cleanly at f97df19af40bc322ccbffc91138f360154940a63,
+  the newest Qwen-containing revision before the upstream case collision.
+- liter-llm remains pinned at 788877f7ad238eaef4173bea2481b1731b0bbe12.
+
+Bounded Unix preservation control:
+- exit_zero: PASS
+- custom_config_byte_identical: PASS
+- single_alibaba_provider: PASS
+- custom_model_preserved: PASS
+- qwen_seed_not_appended: PASS
+
+Catalog checks:
+- refresh digest 1: c4704316b380e40c9b2d093eb4c1704a2574d4a13ecc0d5b5d1943bc5ded1bb6
+- refresh digest 2: c4704316b380e40c9b2d093eb4c1704a2574d4a13ecc0d5b5d1943bc5ded1bb6
+- byte-stable: PASS
+- qwen3.8-max limits, pricing-per-million conversion, tools, reasoning,
+  structured output, and vision mapping: PASS
+- runtime overlay absent: PASS
+- eight loaded credential values checked across intended artifacts; retained
+  occurrences: 0
+
+No inference request was made during this corrective validation.

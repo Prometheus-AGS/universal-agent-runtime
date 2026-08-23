@@ -661,3 +661,100 @@ SID-based ACLs avoid localized account-name assumptions.
 **Uncomfortable constraint.** This ACL and identity contract is parser-checked
 from macOS only. A Windows host must still observe service registration, file
 access, outbound inference, stop handling, and restart behavior.
+
+---
+
+## 2026-08-23 — Native Alibaba configuration uses released Qwen 3.8-Max
+
+**Decision.** Standardize the native Alibaba/Qwen seed and the observed obsolete
+Alibaba default on `alibaba/qwen3.8-max`. Resolve service credentials through
+canonical `DASHSCOPE_API_KEY`. Migrate only exact phase-owned or observed stale
+values; preserve every non-matching operator model, credential reference,
+endpoint, and custom provider block. This is recorded canonically as
+`native-qwen-3-8-max` at KBD revision 404.
+
+**Rationale.** The operator selected Qwen 3.8-Max after the installed service
+exposed a restart failure caused by `QWEN_TOKENPLAN_API_KEY`, an obsolete
+reference that does not name any variable loaded by the native environment.
+Alibaba's current model page identifies the released API model as
+`qwen3.8-max`, with a 1,000,000-token context and 131,072-token maximum output:
+https://www.alibabacloud.com/help/en/model-studio/qwen3-8-max. Alibaba's upgrade
+notice says the preview was retired in favor of that release. This machine has
+`QWEN_API_KEY`, which wins the already-locked alias precedence, so the existing
+Singapore pay-as-you-go endpoint remains the correct endpoint for this install.
+
+**Uncomfortable constraint.** This correction does not prove Alibaba inference;
+the phase's bounded real-inference matrix did not require it and its six-request
+ceiling is already exhausted. The post-correction claim is limited to exact
+migration behavior, provider/model visibility, and successful service restart.
+
+---
+
+## 2026-08-23 — Qwen 3.8 catalog visibility advances the models.dev gitlink
+
+**Decision.** Supersede the proposed UAR `/api/models` overlay with an advance
+of the `models.dev` parent gitlink from `03e217866` to upstream `196cecf3a`.
+Keep the compile-time catalog as the single Models API/UI source and leave
+submodule source unmodified.
+
+**Rationale.** After the corrected native restart, the configured-provider API
+showed Qwen 3.8 while `/api/models` still reflected the old pinned catalog. The
+operator confirmed the Know-Me-Tools catalog had been updated. Fetched upstream
+commit `196cecf3a` contains both `models/alibaba/qwen3.8-max.toml` and
+`providers/alibaba/models/qwen3.8-max.toml`, so the existing architecture can
+carry the release without a second overlay or local catalog patch.
+
+**Uncomfortable constraint.** The upstream commit contains two Eden AI paths
+that differ only by filename case. On macOS's case-insensitive filesystem, Git
+reports one of those unrelated paths as dirty after checkout. The parent commit
+records only the exact upstream gitlink; no submodule file is staged or authored
+by this phase.
+
+---
+
+## 2026-08-23 — Qwen catalog visibility requires the reviewed offline snapshot
+
+**Supersedes.** The preceding assertion that advancing `models.dev` alone would
+carry Qwen 3.8 into the release binary is false. UAR's `build.rs` embeds
+`catalog/provider_catalog.json`; it does not read either catalog submodule.
+
+**Decision.** Pin `models.dev` at `196cecf3a` and `vendor/git/liter-llm` at
+`788877f7a`, refresh the locked path-package graph, and regenerate UAR's
+reviewed offline snapshot from `liter-llm`'s synchronized provider and model
+schemas. Keep `/api/models` unchanged and add no configured-model overlay. This
+is recorded canonically as `native-qwen-catalog-snapshot-sources` at KBD
+revision 405.
+
+**Rationale.** The first release built after only the `models.dev` advance still
+omitted Qwen 3.8 from `/api/models`. The updated `liter-llm` commit contains the
+released model, and the refreshed 316-provider snapshot exposes it through both
+the API and shipped Models UI. A second refresh produced the identical
+`c4704316...ded1bb6` digest.
+
+**Uncomfortable constraint.** Advancing `liter-llm` from 1.12.0 to 1.18.1 also
+changes its locked transitive graph. The exact `server-full` release build
+passed, but this phase makes no claim for other profiles or for Windows/Linux
+runtime execution.
+
+---
+
+## 2026-08-23 — models.dev uses the newest clean Qwen-containing revision
+
+**Supersedes.** The `models.dev` pin at `196cecf3a` is not acceptable for a
+macOS-supported repository. Upstream commit `91aae6c23` introduced two Eden AI
+filenames that differ only by case, so every checkout on the default
+case-insensitive macOS filesystem reports a dirty submodule.
+
+**Decision.** Pin `models.dev` at `f97df19af`, the newest ancestor before the
+case collision. It already contains Qwen 3.8-Max. Keep `liter-llm` at
+`788877f7a` as the actual locked input to UAR's reviewed offline catalog.
+
+**Rationale.** Artifact QA reproduced the dirty checkout at upstream HEAD. The
+selected ancestor has no case-folded path collision, checks out cleanly on this
+host, and contains 23 Qwen 3.8-Max catalog records. UAR's generated catalog
+remains unchanged because its source is the pinned `liter-llm` snapshot.
+
+**Uncomfortable constraint.** This intentionally does not use current
+`models.dev` HEAD. Advancing past `f97df19af` remains blocked on an upstream
+rename or a repository-wide decision to abandon clean case-insensitive macOS
+checkouts.

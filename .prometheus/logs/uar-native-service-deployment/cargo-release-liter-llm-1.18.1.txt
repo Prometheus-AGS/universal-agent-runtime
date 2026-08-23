@@ -1,0 +1,5 @@
+Command: cargo build --locked --release --no-default-features --features server-full
+Observed: Finished release profile [optimized] target(s) in 10m 45s; exit 0.
+Compiled liter-llm v1.18.1 from vendor/git/liter-llm and universal-agent-runtime v1.0.0.
+Existing warnings observed: MAX_BODY_BYTES unused; MAX_REDIRECTS unused; WasmHostState missing Debug; future-incompatibility notices for nix v0.31.3 and redis v1.2.1.
+No warning cleanup was attempted because it is outside this change.

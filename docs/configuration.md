@@ -3,11 +3,12 @@
 UAR uses a hierarchical configuration system. Settings are merged from multiple sources in priority order (highest wins):
 
 1. **CLI arguments** — flags passed to the binary
-2. **`UAR_LLM__*` env vars** — structured env vars for the liter-llm client
-3. **Legacy `LLM_*` env vars** — backward-compatible single-var config
-4. **Provider-shortcut keys** — `OPENAI_API_KEY`, `GROQ_API_KEY`, etc.
-5. **`config.yaml`** — file-based configuration
-6. **Compiled defaults** — safe defaults built into the binary
+2. **Process/service environment** — including `--env-file` / `UAR_ENV_FILE`
+3. **`UAR_LLM__*` env vars** — structured env vars for the liter-llm client
+4. **Legacy `LLM_*` env vars** — backward-compatible single-var config
+5. **Provider-shortcut keys** — `OPENAI_API_KEY`, `GROQ_API_KEY`, etc.
+6. **`config.yaml`** — file-based configuration
+7. **Compiled defaults** — safe defaults built into the binary
 
 ---
 
@@ -17,6 +18,7 @@ UAR uses a hierarchical configuration system. Settings are merged from multiple 
 ./universal-agent-runtime [OPTIONS]
 
 Options:
+      --env-file <PATH>           Service environment file [env: UAR_ENV_FILE]
   -c, --config <PATH>              Config file path [env: CONFIG_FILE]
       --port <PORT>                Server port [env: PORT]
       --jwt-required <BOOL>        Require JWT auth [env: JWT_REQUIRED]
@@ -85,6 +87,26 @@ LLM_PROTOCOL=auto
 | `UAR_SERVER__HOST` | `0.0.0.0` | Bind address |
 | `PORT` | — | Alias for `UAR_SERVER__PORT` |
 | `UAR_SERVER__GRPC_PORT` | `50051` | A2A v0.3 gRPC transport port (serves alongside the HTTP/JSON-RPC A2A endpoint) |
+| `UAR_ENV_FILE` | — | Explicit dotenv file loaded before telemetry/configuration; unreadable or malformed files fail startup |
+| `UAR_LOG_FILE` | — | Append operational tracing to this file; an open failure fails startup |
+
+### Native service files
+
+Native installers generate a least-privilege service environment instead of
+sourcing a login profile on every start:
+
+| Platform | YAML | Environment | Operational logs |
+|---|---|---|---|
+| macOS | `~/.uar/config.yaml` | `~/.uar/service.env` | `~/.prometheus/logs/universal-agent-runtime/` |
+| Linux | `/etc/uar/config.yaml` | `/etc/uar/uar.env` | `/var/lib/uar/.prometheus/logs/` |
+| Windows | `%ProgramData%\Prometheus\UniversalAgentRuntime\config\config.yaml` | `%ProgramData%\Prometheus\UniversalAgentRuntime\config\uar.env` | `%ProgramData%\Prometheus\UniversalAgentRuntime\.prometheus\logs\` |
+
+An explicitly selected environment file loads before telemetry so
+`UAR_LOG_FILE` controls the first operational trace. Process variables already
+supplied by the supervisor remain authoritative. YAML supplies lower-priority
+defaults; database-backed API/UI provider settings remain authoritative after
+initial seed. Run the platform `refresh-credentials` entrypoint to regenerate
+the allowlist and apply it through one service restart.
 
 ### Security
 

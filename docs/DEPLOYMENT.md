@@ -7,6 +7,91 @@ here, including a real inconsistency between the Helm chart and the current
 live deployment path** (see [Two deployment paths](#two-deployment-paths-read-this-first)
 below) rather than paper over it.
 
+## Native services
+
+`packaging/native/` installs the `server-full` release and React bundle as a
+supervised service. Native defaults bind HTTP `1906` and A2A gRPC `50051` to
+`127.0.0.1`; both listeners inherit `server.host`.
+
+Build once from the repository root:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+cargo build --locked --release --no-default-features --features server-full
+```
+
+### macOS user LaunchAgent
+
+```bash
+source "$HOME/.bash_profile"
+packaging/native/macos/install.sh \
+  --binary target/release/universal-agent-runtime \
+  --static-dir static
+packaging/native/macos/control.sh status
+```
+
+The label is `com.prometheus.universal-agent-runtime`. Program, YAML,
+environment, static assets, and state live under `~/.uar`. Logs are restricted
+to `~/.prometheus/logs/universal-agent-runtime/`; backups go to
+`~/.prometheus/backups/uar/`. `control.sh` supports `start`, `stop`, `restart`,
+and `status`. `upgrade.sh` accepts the install build arguments.
+`refresh-credentials.sh` regenerates only approved provider variables from the
+current shell. `uninstall.sh` removes the service/program while preserving
+configuration, database state, environment, backups, and logs.
+
+### Linux systemd
+
+```bash
+sudo --preserve-env=KIMI_API_KEY,KIMI_CODING_API_KEY,KIMI_CODING_KEY,MINIMAX_API_KEY,MINIMAX_KEY,DASHSCOPE_API_KEY,QWEN_API_KEY,QWEN_TOKEN_PLAN_API_KEY,MOONSHOT_API_KEY,ZAI_API_KEY \
+  packaging/native/linux/install.sh \
+  --binary target/release/universal-agent-runtime \
+  --static-dir static
+sudo packaging/native/linux/control.sh status
+```
+
+The unit is `uar.service`. Configuration is under `/etc/uar`; state and logs
+are under `/var/lib/uar`, with operator logs in
+`/var/lib/uar/.prometheus/logs/`; program files are in `/usr/local/lib/uar`.
+The unit uses direct `ExecStart`, `SIGTERM`, and `Restart=on-failure`.
+Uninstall preserves `/etc/uar` and `/var/lib/uar`.
+
+### Windows SCM
+
+From an elevated PowerShell session containing approved provider variables:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\packaging\native\windows\install.ps1 `
+  -Binary .\target\release\universal-agent-runtime.exe `
+  -StaticDir .\static
+.\packaging\native\windows\control.ps1 status
+```
+
+The SCM name is `PrometheusUniversalAgentRuntime`, running as
+`NT AUTHORITY\LocalService`. Program files live below
+`%ProgramFiles%\Prometheus\UniversalAgentRuntime`; configuration, state, and
+logs live below `%ProgramData%\Prometheus\UniversalAgentRuntime`, with logs in
+`.prometheus\logs`. `.cmd` wrappers accompany the PowerShell entrypoints.
+Uninstall preserves ProgramData.
+
+### Preservation and troubleshooting
+
+Install and upgrade back up existing YAML before adding only absent native
+listener/provider entries. They preserve operator values and database-backed
+provider/default-model settings except for the exact native Alibaba migration
+from `alibaba/qwen3.7-max` to released `alibaba/qwen3.8-max`, the exact
+phase-owned `qwen3-coder-plus` seed, and the malformed
+`QWEN_TOKENPLAN_API_KEY` reference. The generated service
+environment contains only canonical Kimi, MiniMax, DashScope, Moonshot, and
+Z.AI credentials resolved from the invoking process. Canonical names win over
+documented aliases; no secret is written to YAML or printed.
+
+On failure, use the platform `status` command, inspect its `.prometheus` log
+path, validate the YAML, and query `/healthz` and `/readyz`. Those probes do not
+prove inference. Linux and Windows packages are structure/cross-compile checked
+from macOS; runtime claims require observation on the target platform.
+
 ## Container image
 
 `Dockerfile` is a polyglot multi-stage build: a `toolchain` stage with five

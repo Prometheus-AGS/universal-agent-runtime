@@ -1,0 +1,49 @@
+2026-08-23 — SurrealDB LaunchAgent recovery
+
+Observed failure:
+- UAR /healthz: HTTP success, status ok.
+- UAR /readyz: timed out with zero response bytes.
+- SurrealDB http://127.0.0.1:28000/health: timed out with zero response bytes.
+- UAR operational log was waiting at the SurrealDB connection boundary.
+
+Bounded recovery:
+1. Booted out com.prometheus.universal-agent-runtime.
+2. Booted out ai.prometheus.surrealdb-native.
+3. Bootstrapped ai.prometheus.surrealdb-native with the existing plist and
+   unchanged RocksDB path beneath ~/.prometheus/data/surrealdb/database.db.
+4. Observed SurrealDB LaunchAgent state running and listener 127.0.0.1:28000.
+5. Bootstrapped com.prometheus.universal-agent-runtime.
+
+Final observations:
+- SurrealDB LaunchAgent: running, PID 5809 at observation time.
+- UAR LaunchAgent: running, PID 6955 at observation time.
+- UAR /healthz: {"status":"ok"}
+- UAR /readyz: status ready; postgres check ok; MCP check ok with six tools.
+
+No database file, configuration, credential, provider/model setting, or source
+file was replaced. No inference request was made.
+
+Superseding final observation:
+- The first recovery was transient: SurrealDB health and UAR readiness later
+  timed out again.
+- `launchctl kickstart -k` left the SurrealDB job in `xpcproxy` state without a
+  port-28000 listener. UAR failed closed with connection refused while launchd
+  scheduled retries.
+- Both jobs were fully booted out, and their removal from the user launchd
+  domain was observed before SurrealDB was bootstrapped again.
+- SurrealDB was not treated as ready until both its HTTP health endpoint
+  returned 200 and an authenticated WebSocket `RETURN 1;` query succeeded.
+- UAR was bootstrapped only after both dependency checks passed.
+
+Final durable observations:
+- SurrealDB LaunchAgent: running, PID 36572 at observation time, one run, no
+  prior exit.
+- SurrealDB HTTP health: 200.
+- SurrealDB WebSocket query: succeeded.
+- UAR LaunchAgent: running, PID 37411 at observation time, one run, no prior
+  exit.
+- UAR /healthz: {"status":"ok"}
+- UAR /readyz: status ready; postgres check ok; MCP check ok with six tools.
+
+The existing RocksDB path and all configuration remained unchanged. No
+inference request was made during recovery.

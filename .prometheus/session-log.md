@@ -685,3 +685,80 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Added additive YAML merge helpers for Unix and Windows. Existing server values and provider IDs are immutable to the merge; proxy models are seeded only from an observed `/v1/models` inventory, and a failed inventory lookup fabricates nothing.
 - The negative control supplied a multiline credential. Generation failed without replacing the previous environment file. No credential value was written to YAML, tracked evidence, or command output.
 - Functional service/provider/inference verification remains deferred until all five changes are code-complete, as required by the phase's verification-timing decision.
+
+## 2026-08-23 — Native Qwen 3.8 correction after required stop
+
+- Installed verification stopped before reflection when the next restart was
+  shown to depend on the obsolete YAML reference `QWEN_TOKENPLAN_API_KEY`.
+- The operator selected newly released Qwen 3.8-Max for Alibaba/Qwen sources.
+  Official Alibaba documentation confirmed API ID `qwen3.8-max`; Context7's
+  Alibaba index was stale and returned only an unrelated speech page.
+- The phase plan and final OpenSpec change now permit only the exact migration
+  of `alibaba/qwen3.7-max`, the malformed credential reference, and the
+  phase-owned `qwen3-coder-plus` provider seed. A custom Alibaba configuration
+  remains unchanged in both Unix and PowerShell negative controls.
+- Canonical KBD decision `native-qwen-3-8-max` was committed locally at revision
+  404 because the TCP control plane remained unavailable.
+- The first corrected restart exposed stale `/api/models` catalog data. A
+  temporary endpoint-overlay implementation was removed after the operator
+  authorized advancing the updated Know-Me-Tools `models.dev` source instead.
+  The parent now points at upstream `196cecf3a`, which contains released Qwen
+  3.8-Max in both the model and Alibaba-provider catalog trees.
+
+## 2026-08-23 — Native Qwen catalog source reconciliation completed
+
+- The operator authorized the updated `liter-llm` pointer after the
+  `models.dev`-only release still served the old offline snapshot.
+- Advanced `vendor/git/liter-llm` from `3545cf6a2` to `788877f7a`; its generated
+  schemas contain Alibaba `qwen3.8-max`. Advanced `models.dev` remains pinned at
+  `196cecf3a`.
+- Changed the explicit catalog refresh to read the pinned `liter-llm` schemas
+  rather than the network API, added `--locked` metadata resolution, and
+  regenerated the 316-provider snapshot at SHA-256
+  `c4704316b380e40c9b2d093eb4c1704a2574d4a13ecc0d5b5d1943bc5ded1bb6`.
+- The exact release build passed against `liter-llm` 1.18.1. The installed
+  LaunchAgent returned healthy/ready, stayed loopback-only, preserved the
+  existing remote SurrealDB authority, and exposed `alibaba/qwen3.8-max`
+  through the configured-provider API, compile-time catalog API, and shipped
+  Models UI. No additional inference request was made.
+
+## 2026-08-23 — Final artifact QA corrected provider preservation and source cleanliness
+
+- Independent artifact validation reproduced a duplicate Alibaba provider when
+  an existing YAML provider ID was unquoted. The Unix parser captured three
+  quoting forms but ignored the third capture group. The minimal correction now
+  recognizes unquoted IDs; an operator-owned Alibaba selection/provider fixture
+  remained byte-identical and contained exactly one provider after bootstrap.
+- Updated the README catalog count from 269 to the generated 316-provider
+  snapshot.
+- Replaced the case-colliding `models.dev` upstream HEAD with clean ancestor
+  `f97df19af`, which already contains Qwen 3.8-Max. The `liter-llm` source pin,
+  catalog digest, installed service, and inference evidence did not change.
+- No inference, soak, broad unit suite, or GitHub Actions job ran during the
+  corrective QA pass.
+
+## 2026-08-23 — Native readiness restored after SurrealDB dependency restart
+
+- A final bounded probe found `/healthz` responsive while `/readyz` timed out.
+  The installed UAR log was waiting on its remote SurrealDB connection, and the
+  database's own port-28000 health request also timed out.
+- Stopped UAR, fully booted out and re-bootstrapped the existing
+  `ai.prometheus.surrealdb-native` LaunchAgent against its unchanged RocksDB
+  path, then restarted UAR only after the database listener was healthy.
+- UAR returned to LaunchAgent `running` state; `/healthz` returned `ok` and
+  `/readyz` returned `ready`. No database file, YAML, credential, provider,
+  model, or source file was replaced, and no inference request was made.
+
+## 2026-08-23 — SurrealDB recovery gate strengthened after transient restart
+
+- The first restart result did not persist. A subsequent probe again found the
+  dependency unresponsive, and `launchctl kickstart -k` stranded the SurrealDB
+  job at `xpcproxy` without a listener.
+- Fully booted out both jobs, observed their removal from launchd, bootstrapped
+  SurrealDB, and required both HTTP health and a real WebSocket `RETURN 1;`
+  query before bootstrapping UAR.
+- Final observation: SurrealDB and UAR were both running with one clean launch;
+  SurrealDB returned HTTP 200 and completed the WebSocket query; UAR returned
+  `ok` from `/healthz` and `ready` from `/readyz`.
+- No database, configuration, credential, provider/model setting, or source
+  file changed, and no inference request ran.

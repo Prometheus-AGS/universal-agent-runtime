@@ -1,0 +1,3 @@
+API providers/models PASS: alibaba,kimi-for-coding,local-openai-proxy,minimax,zai
+local proxy inventory is runtime-discovered and appears in /api/uar/providers; catalog models appear in /api/models
+Moonshot omitted because MOONSHOT_API_KEY was absent from generated service environment

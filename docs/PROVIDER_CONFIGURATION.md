@@ -27,6 +27,35 @@ This is the format used in:
 
 ## Quick Configuration
 
+### Native service bootstrap
+
+Native installation reads provider credentials from the invoking shell once
+and writes only an allowlisted service environment. It never copies the whole
+profile and never writes literal keys into YAML.
+
+| Provider seed | Canonical variable | Approved aliases, in order | Seeded models |
+|---|---|---|---|
+| Kimi Coding | `KIMI_API_KEY` | `KIMI_CODING_API_KEY`, `KIMI_CODING_KEY` | `kimi-for-coding/k3` |
+| MiniMax | `MINIMAX_API_KEY` | `MINIMAX_KEY` | `minimax/MiniMax-M3` |
+| Alibaba/Qwen | `DASHSCOPE_API_KEY` | `QWEN_API_KEY`, `QWEN_TOKEN_PLAN_API_KEY` | `alibaba/qwen3.8-max` |
+| Z.AI | `ZAI_API_KEY` | none | `zai/glm-4.7`, `zai/glm-5.2` |
+| Moonshot | `MOONSHOT_API_KEY` | none | `moonshotai/kimi-k2.5`, `moonshotai/kimi-k3` |
+
+The local OpenAI-compatible proxy at `http://127.0.0.1:8181/v1` is seeded only
+from an observed `/models` inventory. If inventory cannot be read, bootstrap
+omits that provider instead of inventing names. RunPod and tool-only or
+endpoint/model-less credentials are excluded. Existing YAML provider IDs and
+database-backed provider/default-model choices are never replaced by refresh,
+apart from the exact obsolete native Alibaba values documented below.
+
+Alibaba's released flagship API identifier is `qwen3.8-max`; the retired
+`qwen3.8-max-preview` is not seeded. Native refresh upgrades only the exact
+phase-owned `qwen3-coder-plus` seed and exact selected
+`alibaba/qwen3.7-max`. It also repairs the observed malformed
+`QWEN_TOKENPLAN_API_KEY` YAML indirection to canonical `DASHSCOPE_API_KEY`.
+Other Alibaba model selections, credential references, endpoints, and custom
+provider blocks remain operator-owned.
+
 ### Environment Variables (Recommended)
 
 The simplest approach: set your provider's API key and the model you want.

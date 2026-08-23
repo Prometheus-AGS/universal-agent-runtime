@@ -36,7 +36,9 @@ digest byte-for-byte.
 
 ## Refresh reviewed inputs
 
-Catalog refresh requires network access and is never invoked by `build.rs`:
+Catalog refresh reads the checked-out `vendor/git/liter-llm` provider and model
+schemas and is never invoked by `build.rs`. Update the pinned `models.dev` and
+`liter-llm` submodules and the Cargo lockfile before refreshing:
 
 ```bash
 node scripts/refresh-provider-catalog.mjs
@@ -44,8 +46,9 @@ git diff -- catalog/provider_catalog.json
 shasum -a 256 catalog/provider_catalog.json
 ```
 
-Update `catalog/SNAPSHOT.md` with the date and digest only after reviewing the
-provider/model diff and running catalog/routing tests.
+Update `catalog/SNAPSHOT.md` with the date, digest, entry count, and both source
+commits only after reviewing the provider/model diff and running the bounded
+catalog/routing checks required by the active phase.
 
 Local model refresh is similarly explicit:
 
