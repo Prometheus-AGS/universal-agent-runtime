@@ -21,6 +21,8 @@
     "docs:lint": "npm --prefix website run lint",
     "docs:publication:validate": "node scripts/validate-documentation-publication.mjs",
     "docs:publication:controls": "node scripts/test-documentation-publication.mjs",
+    "docs:references:stage": "node scripts/stage-documentation-references.mjs",
+    "docs:references:controls": "node scripts/test-documentation-staging.mjs",
     "ci-gates": "bash scripts/ci-grep-gates.sh",
     "frontend:boundaries": "node scripts/check-frontend-boundaries.mjs && node scripts/test-frontend-boundaries-negative.mjs",
     "frontend:style-gate": "node scripts/check-flat2-style.mjs && node scripts/test-flat2-style-negative.mjs",

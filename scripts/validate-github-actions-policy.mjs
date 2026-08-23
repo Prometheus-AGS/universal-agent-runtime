@@ -20,6 +20,25 @@ const prohibitedCommands = [
 ];
 
 const pagesPublisherPattern = /actions\/(?:upload-pages-artifact|deploy-pages)@/;
+const documentationWorkflowMarkers = [
+  "npm --prefix website ci",
+  "npm --prefix website run build",
+  "cargo doc --locked --no-deps --workspace --features server-full",
+  "npm --prefix sdks/typescript ci",
+  "npm --prefix sdks/typescript run docs",
+  "node scripts/stage-documentation-references.mjs",
+  "steps.deployment.outputs.page_url",
+  "docs/architecture/intro",
+  "docs/api/rust/",
+  "docs/api/typescript/",
+  "curl --fail",
+];
+const documentationWorkflowProhibitions = [
+  [/\b(?:pnpm|yarn|bun)\b/, "alternate package-manager invocation"],
+  [/\bbuild:docs\b/, "nonexistent TypeScript documentation command"],
+  [/\bplaceholder\b/i, "placeholder reference fallback"],
+  [/\|\|\s*true/, "fail-open command fallback"],
+];
 
 export function validateGitHubActionsPolicy(root = defaultRoot) {
   const resolvedRoot = resolve(root);
@@ -51,6 +70,14 @@ export function validateGitHubActionsPolicy(root = defaultRoot) {
     for (const marker of allowedWorkflows.get(name)) {
       if (!source.includes(marker)) failures.push(`${name} is missing deployment marker: ${marker}`);
     }
+    if (name === "docs.yml") {
+      for (const marker of documentationWorkflowMarkers) {
+        if (!source.includes(marker)) failures.push(`${name} is missing documentation deployment marker: ${marker}`);
+      }
+      for (const [pattern, label] of documentationWorkflowProhibitions) {
+        if (pattern.test(source)) failures.push(`${name} contains prohibited ${label}`);
+      }
+    }
   }
 
   for (const name of allowedWorkflows.keys()) {
@@ -59,6 +86,41 @@ export function validateGitHubActionsPolicy(root = defaultRoot) {
 
   if (pagesPublishers.length !== 1) {
     failures.push(`exactly one GitHub Pages publisher is required; found ${pagesPublishers.length}: ${pagesPublishers.join(", ") || "none"}`);
+  }
+
+  const websitePackagePath = join(resolvedRoot, "website", "package.json");
+  const websiteLockPath = join(resolvedRoot, "website", "package-lock.json");
+  if (!existsSync(websitePackagePath) || !existsSync(websiteLockPath)) {
+    failures.push("website npm package contract is incomplete");
+  } else {
+    try {
+      const websitePackage = JSON.parse(readFileSync(websitePackagePath, "utf8"));
+      const buildCommand = websitePackage.scripts?.build ?? "";
+      if (!buildCommand.includes("npm run copy:adr") || /\b(?:pnpm|yarn|bun)\b/.test(buildCommand)) {
+        failures.push("website build must use the npm-managed copy and Docusaurus command chain");
+      }
+    } catch {
+      failures.push("website/package.json is not valid JSON");
+    }
+  }
+
+  const sdkPackagePath = join(resolvedRoot, "sdks", "typescript", "package.json");
+  const sdkLockPath = join(resolvedRoot, "sdks", "typescript", "package-lock.json");
+  if (!existsSync(sdkPackagePath) || !existsSync(sdkLockPath)) {
+    failures.push("TypeScript SDK npm documentation contract is incomplete");
+  } else {
+    try {
+      const sdkPackage = JSON.parse(readFileSync(sdkPackagePath, "utf8"));
+      if (sdkPackage.scripts?.docs !== "typedoc") {
+        failures.push("TypeScript SDK docs command must invoke the pinned TypeDoc contract");
+      }
+    } catch {
+      failures.push("sdks/typescript/package.json is not valid JSON");
+    }
+  }
+
+  if (!existsSync(join(resolvedRoot, "scripts", "stage-documentation-references.mjs"))) {
+    failures.push("documentation reference staging command is missing");
   }
 
   const dockerfile = join(resolvedRoot, "Dockerfile");

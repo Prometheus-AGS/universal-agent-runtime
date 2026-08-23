@@ -33,7 +33,30 @@ function fixture() {
   write(root, "openspec/specs/example/spec.md", "# Current specification\n");
   write(root, "website/docs/product/chat.md", "---\nsource_records:\n  - .prometheus/decision.md\ncurrent_authority: /docs/product/chat\n---\n# Chat\n");
   write(root, ".github/workflows/deploy.yml", "jobs:\n  deploy:\n    steps:\n      - run: kubectl set image x && kubectl rollout status x && curl /readyz && curl /healthz\n");
-  write(root, ".github/workflows/docs.yml", "jobs:\n  deploy:\n    steps:\n      - uses: actions/upload-pages-artifact@v5\n      - uses: actions/deploy-pages@v5\n");
+  write(root, ".github/workflows/docs.yml", `jobs:
+  build:
+    steps:
+      - run: npm --prefix website ci
+      - run: npm --prefix website run build
+      - run: cargo doc --locked --no-deps --workspace --features server-full
+      - run: npm --prefix sdks/typescript ci
+      - run: npm --prefix sdks/typescript run docs
+      - run: node scripts/stage-documentation-references.mjs
+      - uses: actions/upload-pages-artifact@v5
+  deploy:
+    steps:
+      - uses: actions/deploy-pages@v5
+      - run: |
+          echo steps.deployment.outputs.page_url
+          curl --fail /docs/architecture/intro
+          curl --fail /docs/api/rust/
+          curl --fail /docs/api/typescript/
+`);
+  writeJson(root, "website/package.json", { scripts: { build: "npm run copy:adr && docusaurus build" } });
+  write(root, "website/package-lock.json", "{}\n");
+  writeJson(root, "sdks/typescript/package.json", { scripts: { docs: "typedoc" } });
+  write(root, "sdks/typescript/package-lock.json", "{}\n");
+  write(root, "scripts/stage-documentation-references.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-documentation-truth.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-github-actions-policy.mjs", "process.exit(0);\n");
 
@@ -188,6 +211,25 @@ expectFailure("child validator failure preserved", (state) => {
 expectPolicyFailure("missing Pages publisher", (state) => {
   write(state.root, ".github/workflows/docs.yml", "jobs: {}\n");
 }, "found 0");
+
+expectPolicyFailure("website package-manager mismatch", (state) => {
+  writeJson(state.root, "website/package.json", { scripts: { build: "pnpm copy:adr && docusaurus build" } });
+}, "website build must use the npm-managed");
+
+expectPolicyFailure("missing reference staging", (state) => {
+  const workflow = readFileSync(join(state.root, ".github/workflows/docs.yml"), "utf8");
+  write(state.root, ".github/workflows/docs.yml", workflow.replace("node scripts/stage-documentation-references.mjs", "echo skipped"));
+}, "missing documentation deployment marker: node scripts/stage-documentation-references.mjs");
+
+expectPolicyFailure("placeholder reference fallback", (state) => {
+  const workflow = readFileSync(join(state.root, ".github/workflows/docs.yml"), "utf8");
+  write(state.root, ".github/workflows/docs.yml", `${workflow}\n# placeholder reference fallback\n`);
+}, "placeholder reference fallback");
+
+expectPolicyFailure("missing deployed TypeScript route", (state) => {
+  const workflow = readFileSync(join(state.root, ".github/workflows/docs.yml"), "utf8");
+  write(state.root, ".github/workflows/docs.yml", workflow.replace("docs/api/typescript/", "docs/api/missing/"));
+}, "missing documentation deployment marker: docs/api/typescript/");
 
 expectValid();
 

@@ -75,6 +75,13 @@
       "content_type": "direct:content",
       "updated_at": "2026-08-23T06:55:00Z",
       "finalized_at": "2026-08-23T06:55:00Z"
+    },
+    "repair-single-pages-portal": {
+      "path": ".refiner/artifacts/repair-single-pages-portal",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-23T07:11:38Z",
+      "finalized_at": "2026-08-23T07:11:38Z"
     }
   }
 }

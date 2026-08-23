@@ -26,8 +26,17 @@ documents are not written yet, 11 existing source documents require later
 normalization or exclusion, and two workflows still compete to publish Pages.
 Those failures are dependencies, not suppressed findings.
 
+### repair-single-pages-portal
+
+- Replaced the mixed npm/pnpm site build with the frozen npm command chain.
+- Added fail-closed Rust and TypeScript reference staging.
+- Removed the competing TypeScript SDK Pages workflow.
+- Made `docs.yml` the sole publisher with deployed-route validation only.
+- Recorded focused local controls and explicitly deferred the full site build
+  and live deployment to the final phase gate.
+- Canonical KBD revision `343` records the change complete.
+
 ## Next change
 
-Run `/opsx:new repair-single-pages-portal`. It owns npm-only site build wiring,
-generated API-reference staging, removal of the competing publisher, and the
-single deployment-only Pages workflow.
+Run `/opsx:new brand-uar-docusaurus-site`. It owns theme tokens, brand assets,
+homepage, navigation, responsive behavior, and local search.

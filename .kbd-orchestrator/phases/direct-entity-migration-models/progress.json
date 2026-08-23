@@ -1,18 +1,18 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 340,
-  "derivedRevision": 340,
+  "sourceRevision": 343,
+  "derivedRevision": 343,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 25
+    "80130eb1-95f8-4039-8976-71bdce23779c": 28
   },
   "conflictCount": 0,
   "phase": "direct-entity-migration-models",
   "phaseId": "direct-entity-migration-models",
   "parentPhase": null,
-  "last_updated": "2026-08-23T06:56:32.733270Z",
+  "last_updated": "2026-08-23T07:12:43.532986Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 0,
   "changes_completed": 0,

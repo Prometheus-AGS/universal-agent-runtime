@@ -6,7 +6,7 @@
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
     "copy:adr": "node -e \"require('fs').cpSync('../docs/adr', './docs/adr', {recursive: true, force: true})\"",
-    "build": "pnpm copy:adr && docusaurus build",
+    "build": "npm run copy:adr && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",

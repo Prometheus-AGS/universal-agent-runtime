@@ -1,27 +1,27 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 340,
-  "derivedRevision": 340,
+  "sourceRevision": 343,
+  "derivedRevision": 343,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 25
+    "80130eb1-95f8-4039-8976-71bdce23779c": 28
   },
   "conflictCount": 0,
   "phase": "uar-branded-documentation-site",
   "phaseId": "uar-branded-documentation-site",
   "parentPhase": null,
-  "last_updated": "2026-08-23T06:56:32.733270Z",
+  "last_updated": "2026-08-23T07:12:43.532986Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 11,
-  "changes_completed": 1,
+  "changes_completed": 2,
   "implementation_total": 11,
-  "implementation_completed": 1,
+  "implementation_completed": 2,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 1,
+      "completed": 2,
       "total": 11,
       "status": "IN_PROGRESS"
     },
@@ -56,8 +56,8 @@
     {
       "id": "repair-single-pages-portal",
       "title": "Repair single Pages portal",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,

@@ -1,20 +1,18 @@
-name: Docs
-
-# Builds the Docusaurus site in website/, optionally generates
-# rustdoc/TypeDoc/Sphinx outputs, and deploys to GitHub Pages.
-# Requires Pages to be enabled for the repo with "GitHub Actions" as the source
-# (Settings → Pages → Build and deployment → Source: GitHub Actions).
+name: Deploy documentation
 
 on:
   push:
     branches: [main]
     paths:
-      - 'website/**'
-      - 'docs/**'
-      - 'docs/adr/**'
-      - '.github/workflows/docs.yml'
-      - 'sdks/**'
-      - 'src/**'
+      - "website/**"
+      - "docs/**"
+      - "sdks/**"
+      - "src/**"
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "scripts/stage-documentation-references.mjs"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:
@@ -22,71 +20,52 @@ permissions:
   pages: write
   id-token: write
 
-# Allow one concurrent deployment; don't cancel an in-progress production deploy.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
   build:
+    name: Assemble Pages artifact
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout source and submodules
         uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
 
       - name: Install Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            website/package-lock.json
+            sdks/typescript/package-lock.json
 
-      - name: Copy ADRs into Docusaurus content
-        run: cp -r docs/adr website/docs/adr
+      - name: Install portal dependencies
+        run: npm --prefix website ci
 
-      - name: Install website dependencies
-        working-directory: website
-        run: npm ci
+      - name: Build Docusaurus portal
+        run: npm --prefix website run build
 
-      - name: Build Docusaurus site
-        working-directory: website
-        run: npm run build
-
-      - name: Setup Rust toolchain
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
 
-      - name: Generate rustdoc (runtime + Rust SDK)
-        run: cargo doc --no-deps --workspace --features server-full
-
-      - name: Stage rustdoc into Docusaurus build directory
-        run: |
-          mkdir -p website/build/docs/api/rust
-          cp -r target/doc/* website/build/docs/api/rust/ || true
+      - name: Generate Rust reference
+        run: cargo doc --locked --no-deps --workspace --features server-full
 
       - name: Install TypeScript SDK dependencies
-        working-directory: sdks/typescript
-        run: npm ci
+        run: npm --prefix sdks/typescript ci
 
-      - name: Generate TypeDoc for TypeScript SDK
-        working-directory: sdks/typescript
-        run: |
-          if [ -f typedoc.json ]; then
-            npm run build:docs
-          else
-            echo "TypeDoc not configured for sdks/typescript yet; skipping"
-          fi
+      - name: Generate TypeScript reference
+        run: npm --prefix sdks/typescript run docs
 
-      - name: Stage TypeDoc into Docusaurus build directory
-        run: |
-          mkdir -p website/build/docs/api/typescript
-          if [ -d sdks/typescript/docs ]; then
-            cp -r sdks/typescript/docs/* website/build/docs/api/typescript/
-          elif [ -d sdks/typescript/dist/docs ]; then
-            cp -r sdks/typescript/dist/docs/* website/build/docs/api/typescript/
-          else
-            echo "TypeDoc output not found; creating placeholder"
-            echo "# TypeScript API reference" > website/build/docs/api/typescript/index.html
-          fi
+      - name: Stage generated references
+        run: node scripts/stage-documentation-references.mjs
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
@@ -94,6 +73,7 @@ jobs:
           path: website/build
 
   deploy:
+    name: Deploy and validate Pages artifact
     needs: build
     runs-on: ubuntu-latest
     environment:
@@ -103,3 +83,20 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+      - name: Validate deployed documentation routes
+        shell: bash
+        run: |
+          BASE_URL="${{ steps.deployment.outputs.page_url }}"
+          for route in \
+            "" \
+            "docs/architecture/intro" \
+            "docs/api/rust/" \
+            "docs/api/typescript/"
+          do
+            URL="${BASE_URL%/}/${route}"
+            echo "Checking ${URL}"
+            curl --fail --silent --show-error --location \
+              --retry 6 --retry-all-errors --retry-delay 10 \
+              --output /dev/null "${URL}"
+          done

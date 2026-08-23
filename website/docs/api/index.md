@@ -6,24 +6,32 @@ UAR publishes generated API references alongside the narrative documentation.
 
 - [Rust API reference](https://prometheus-ags.github.io/universal-agent-runtime/docs/api/rust) — rustdoc for the runtime and Rust SDK
 - [TypeScript API reference](https://prometheus-ags.github.io/universal-agent-runtime/docs/api/typescript) — TypeDoc for the TypeScript SDK
-- Python API reference — Sphinx autodoc (published alongside the site)
+
+The Python SDK is documented in the narrative SDK guide. UAR does not advertise
+a hosted Python API reference because the repository does not yet contain a
+pinned generator and staged artifact for one.
 
 ## Generating locally
 
 ```bash
 # Rust (runtime + SDK)
-cargo doc --no-deps --workspace --features server-full
+cargo doc --locked --no-deps --workspace --features server-full
 
 # TypeScript SDK
-pnpm -C sdks/typescript typedoc
+npm --prefix sdks/typescript ci
+npm --prefix sdks/typescript run docs
 
-# Python SDK
-pnpm -C sdks/typescript build:docs
-# or directly: sphinx-build sdks/python/docs _build/python
+# Narrative portal and assembled reference artifact
+npm --prefix website ci
+npm --prefix website run build
+node scripts/stage-documentation-references.mjs
 ```
 
-The CI workflow in `.github/workflows/docs.yml` builds these references and copies them into the Docusaurus `build/` directory before deploying to GitHub Pages.
+The deployment workflow in `.github/workflows/docs.yml` runs these same
+generation and staging commands before it uploads the one Pages artifact.
 
 ## Note on paths
 
-The paths above (`/docs/api/rust` and `/docs/api/typescript`) are relative to the deployed Docusaurus site. When running locally, the generated HTML is served from the Docusaurus static directory.
+The paths above (`/docs/api/rust` and `/docs/api/typescript`) are relative to the
+deployed Docusaurus project site. Locally assembled output lives beneath
+`website/build/docs/api/`.
