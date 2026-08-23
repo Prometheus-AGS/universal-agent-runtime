@@ -1,0 +1,15 @@
+{
+  "stage": "spec",
+  "completedAt": "2026-08-23T21:02:41Z",
+  "outputs": [
+    "spec-index.md",
+    "openspec/changes/adopt-entity-management-3-0-2/proposal.md",
+    "openspec/changes/repair-session-configuration-entity-flow/proposal.md",
+    "openspec/changes/prevent-session-configuration-regressions/proposal.md",
+    "/Users/gqadonis/.claude/worktrees/entity-management-fix-atomic-fetched-list-ingestion/openspec/changes/fix-atomic-fetched-list-ingestion/proposal.md"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "4 strict-valid changes; zeespec: n/a; UAR serial: adopt-entity-management-3-0-2, repair-session-configuration-entity-flow, prevent-session-configuration-regressions; upstream parallel: fix-atomic-fetched-list-ingestion. Adversarial round 2 PASS (0 critical, 4 warnings, 1 suggestion). Carry forward the legacy OpenSpec scenario-title mismatch, the clean origin/main worktree boundary, exact UAR 3.0.2 pin, local-only product verification, and shared-batch timestamp semantics.",
+  "skipped": false,
+  "skipReason": null
+}

@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 471,
+  "derivedRevision": 471,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 143,
+    "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 61,
+    "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
+    "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
+    "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
+  },
+  "conflictCount": 0,
+  "phase": "fix-broken-session-configuration-ui",
+  "phaseId": "fix-broken-session-configuration-ui",
+  "parentPhase": null,
+  "last_updated": "2026-08-23T21:12:44.022330Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 4,
+  "changes_completed": 0,
+  "implementation_total": 4,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 4,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "COMPLETE",
+      "summary": "Five genuine model-backed functional paths passed through both API and shipped UI under local server-full; results and limits are in functional-verification.md.",
+      "blockers": []
+    },
+    "certification": {
+      "status": "SKIPPED",
+      "summary": "Operational soak, supply-chain, and RC certification were superseded and cancelled; no certification claim is made.",
+      "blockers": []
+    },
+    "publication": {
+      "status": "SKIPPED",
+      "summary": "GA publication was superseded and cancelled; no tag or publication was performed.",
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "adopt-entity-management-3-0-2",
+      "title": "Adopt Entity Management 3.0.2",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 5,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "1.1 Replace the frontend `workspace:*` dependency with exact `@prometheus-ags/prometheus-entity-management` 3.0.2 and add exact `@prometheus-ags/entity-graph-core` 3.0.2 peer ownership; verify the manifest contains neither a range nor a workspace selector for either product dependency.",
+      "blockers": []
+    },
+    {
+      "id": "repair-session-configuration-entity-flow",
+      "title": "Repair Session Configuration entity flow",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 13,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "1.1 Add the required 3.0.2 facade exports and typed configured Provider, configured Model, AgentSession, and AgentSessionDraft contracts; verify no feature imports the package directly.",
+      "blockers": []
+    },
+    {
+      "id": "prevent-session-configuration-regressions",
+      "title": "Prevent Session Configuration regressions",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 8,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "1.1 Add the React/entity-state standing rule outside managed regions in both `AGENTS.md` and `CLAUDE.md` and reconcile `.claude/rules/typescript.md` into explicit entity-backed and transient-Zustand paths; verify it names Vercel React Best Practices, Composition Patterns, the applicable Entity Management skill, platform domain hooks, narrow selectors, and the per-row mutation prohibition without permitting components to import stores/services or hooks to fetch directly.",
+      "blockers": []
+    },
+    {
+      "id": "fix-atomic-fetched-list-ingestion",
+      "title": "Fix atomic fetched-list ingestion upstream",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
+      "tasks_total": 11,
+      "tasks_done": 0,
+      "last_task_completed": null,
+      "next_task_pending": "1.1 Run the notification-count fixture against signed 3.0.2 source with 7,248 rows; record the command and observed N+2 success publications as the negative control before changing the store.",
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

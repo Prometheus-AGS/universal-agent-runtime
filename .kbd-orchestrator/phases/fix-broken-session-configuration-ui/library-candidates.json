@@ -1,0 +1,114 @@
+{
+  "phase": "fix-broken-session-configuration-ui",
+  "generated_at": "2026-08-23T20:26:40Z",
+  "research_package": ".prometheus/research/fix-broken-session-configuration-ui-entity-state-architecture.research/",
+  "gaps_addressed": [
+    "published-entity-package",
+    "upstream-atomic-list-ingestion",
+    "entity-transport-boundary",
+    "configured-model-loading-bound",
+    "committed-session-state",
+    "inspectable-session-draft",
+    "effective-session-inference",
+    "sheet-margin-and-padding",
+    "react-code-quality-instructions",
+    "functional-regression-prevention"
+  ],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "@prometheus-ags/prometheus-entity-management 3.0.2",
+      "kind": "published-baseline",
+      "repo_url": "https://github.com/Prometheus-AGS/prometheus-entity-management",
+      "registry": "npm",
+      "verdict": "adopt-interim-and-reference-baseline",
+      "license": "MIT",
+      "evidence": [
+        {"source_url": "https://registry.npmjs.org/@prometheus-ags/prometheus-entity-management/-/prometheus-entity-management-3.0.2.tgz", "claim": "The exact release source contains the reproduced N+2 list-publication defect."},
+        {"source_url": "https://github.com/Prometheus-AGS/prometheus-entity-management/tree/v3.0.2", "claim": "The signed v3.0.2 tag matches the defective published path."}
+      ],
+      "decision_rationale": "Adopt immediately to replace the current workspace 3.0.0-rc.1 resolution and satisfy the dependency goal; also retain as the upstream notification-count negative-control baseline."
+    },
+    {
+      "id": "cand-002",
+      "name": "Atomic fetched-list ingestion in Entity Graph Core",
+      "kind": "upstream-build",
+      "repo_url": "https://github.com/Prometheus-AGS/prometheus-entity-management",
+      "verdict": "build",
+      "fit_for_gap": "Makes fetched-row data, lifecycle metadata, sync metadata, and list metadata one Zustand publication independent of row count.",
+      "risks": ["A broad transaction abstraction would expand scope; cover existing fetched-list semantics only.", "All list-fetch callers must migrate or an alternate path retains the defect."],
+      "decision_rationale": "No current package API provides atomic fetched-list ingestion, and createGraphTransaction is rollback-only."
+    },
+    {
+      "id": "cand-003",
+      "name": "Prometheus Entity Management corrected patch release",
+      "kind": "library",
+      "repo_url": "https://github.com/Prometheus-AGS/prometheus-entity-management",
+      "registry": "npm",
+      "verdict": "adopt-after-release",
+      "license": "MIT",
+      "fit_for_gap": "Supplies the requested release package plus the required atomic-ingestion correction without a UAR-private fork.",
+      "decision_rationale": "Adopt when published, but do not block UAR's configured-twelve-model path or exact 3.0.2 migration while upstream work proceeds."
+    },
+    {
+      "id": "cand-004",
+      "name": "Graph-owned AgentSessionDraft entity",
+      "kind": "architecture-pattern",
+      "verdict": "adapt",
+      "fit_for_gap": "Keeps unsaved business configuration explicit and inspectable without exposing it as committed AgentSession data.",
+      "risks": ["Canonical patches would leak unsaved values to all subscribers.", "A whole-draft selector would still rerender the entire panel; subscriptions must be field-level."],
+      "decision_rationale": "A distinct draft identity matches the no-hidden-business-state rule while preserving commit/cancel isolation."
+    },
+    {
+      "id": "cand-005",
+      "name": "React 19 external-store semantics",
+      "kind": "official-pattern",
+      "repo_url": "https://github.com/reactjs/react.dev",
+      "verdict": "reference",
+      "evidence": [
+        {"source_url": "https://react.dev/reference/react/useSyncExternalStore", "claim": "A subscriber rerenders when the external-store snapshot changes by Object.is."},
+        {"source_url": "https://react.dev/learn/you-might-not-need-an-effect", "claim": "Derived state and identity boundaries replace unnecessary synchronization; isolated drafts can be legitimate."}
+      ],
+      "decision_rationale": "Use to reject both render-phase synchronization and the unsupported zero-rerender premise."
+    },
+    {
+      "id": "cand-006",
+      "name": "Zustand 5 stable narrow selectors",
+      "kind": "official-pattern",
+      "repo_url": "https://github.com/pmndrs/zustand",
+      "verdict": "adapt",
+      "fit_for_gap": "Limits rerenders to subscribers whose selected field or list changed.",
+      "risks": ["Selectors cannot repair an upstream mutation loop; atomic ingestion comes first."],
+      "decision_rationale": "Use field-level draft selectors and stable list snapshots after correcting state ownership."
+    },
+    {
+      "id": "cand-007",
+      "name": "@playwright/test 1.62.1",
+      "kind": "framework",
+      "repo_url": "https://github.com/microsoft/playwright",
+      "registry": "npm",
+      "verdict": "adopt",
+      "license": "Apache-2.0",
+      "fit_for_gap": "Provides one short local installed-service proof of responsiveness, network bounds, persistence, effective inference, cancel isolation, and computed spacing.",
+      "decision_rationale": "It is already installed and observes the actual failure mode without a new framework."
+    },
+    {
+      "id": "cand-008",
+      "name": "Vercel React Best Practices and Composition Patterns",
+      "kind": "skill-guidance",
+      "repo_url": "https://github.com/vercel-labs/agent-skills",
+      "verdict": "reference-and-enforce",
+      "fit_for_gap": "Supplies React rerender, derived-state, iteration-cost, and component-boundary guidance.",
+      "decision_rationale": "Reference in standing instructions and back with scoped static/architecture gates."
+    },
+    {"id":"cand-009","name":"New query/cache library","kind":"library-category","verdict":"reject","decision_rationale":"It would duplicate the graph and would not repair list publication or the dead facade."},
+    {"id":"cand-010","name":"Shared canonical patches for unsaved form state","kind":"architecture-pattern","verdict":"reject","decision_rationale":"Shared overlays would expose uncommitted draft values to unrelated subscribers."}
+  ],
+  "build_required": [
+    {"need":"Atomic fetched-list ingestion in upstream core and React binding","why_no_candidate":"No 3.0.2 API combines row merge, fetched lifecycle, sync metadata, and list result in one publication.","capability_gap_id":"upstream-atomic-list-ingestion"},
+    {"need":"UAR domain transports and hooks for configured providers/models and AgentSession","why_no_candidate":"These are application-specific REST contracts behind UAR's platform boundary.","capability_gap_id":"entity-transport-boundary"},
+    {"need":"AgentSessionDraft entity and domain mutation","why_no_candidate":"Shared patches and the component-local CRUD buffer do not meet UAR's inspectable-business-state constraint.","capability_gap_id":"inspectable-session-draft"},
+    {"need":"Typed session configuration through effective inference","why_no_candidate":"The frontend/backend mismatch and policy path are UAR behavior.","capability_gap_id":"effective-session-inference"},
+    {"need":"Scoped React/entity architecture gates and standing instructions","why_no_candidate":"Project boundaries require local enforcement and named skill routing.","capability_gap_id":"react-code-quality-instructions"}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-08-23T21:09:44Z",
+  "outputs": [
+    "plan.md",
+    "spec-index.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "4 changes. UAR critical path is exact 3.0.2 adoption → functional entity-flow repair → local guardrail/installed-browser proof; upstream atomic ingestion is a required independent change scheduled after the UAR path for a single executor. Plan adversarial PASS (0 critical, 3 warnings, 1 suggestion); numeric publication bound, per-control inventory, and 320/768/1024/1440 viewport matrix are incorporated. First change: adopt-entity-management-3-0-2.",
+  "skipped": false,
+  "skipReason": null
+}

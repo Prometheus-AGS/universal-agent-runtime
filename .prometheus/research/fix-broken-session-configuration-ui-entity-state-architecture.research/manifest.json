@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "research_id": "fix-broken-session-configuration-ui-entity-state-architecture",
+  "title": "Entity-state architecture for Session Configuration",
+  "created_at": "2026-08-23T20:19:04Z",
+  "status": "complete-with-tooling-limitations",
+  "source_count": 10,
+  "claim_count": 15,
+  "contradiction_count": 4,
+  "files": [
+    "plan.json",
+    "sources/registry.json",
+    "citations.json",
+    "contradictions.json",
+    "graph.json",
+    "report.md",
+    "sycophancy.json",
+    "index.md"
+  ],
+  "provenance": {
+    "uar_commit": "b8c4fde214e250dc39080330ee4c130d102c78f7",
+    "entity_management_tag": "v3.0.2",
+    "entity_management_tag_commit": "f29a701649799df3ff64f5f986e3c016246d34b6",
+    "entity_management_latest_commit": "e25210010a8eb4e575f7e4fc6e04be598a8c8213",
+    "prometheus_research_jobs": [
+      "job-1787515864-25be3892",
+      "job-1787516100-b91c7cd8"
+    ],
+    "prometheus_research_status": "failed-to-initialize-twice",
+    "surreal_memory_used": false,
+    "disk_fallback_used": true,
+    "sycophancy_screened": true,
+    "feynman_grade": null
+  },
+  "limitations": [
+    "Prometheus research daemon did not progress beyond stage 0.",
+    "Context7 had no matching private-package corpus.",
+    "Feynman grading tool was unavailable.",
+    "Adversarial artifact review is recorded in the owning KBD phase review directory."
+  ]
+}

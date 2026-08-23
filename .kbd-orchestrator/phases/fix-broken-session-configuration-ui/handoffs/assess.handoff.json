@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-08-23T19:57:11Z",
+  "outputs": [
+    "assessment.md"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "Observed client-side freeze: Session Configuration loads a 2.6 MB, 7,248-model catalog and performs one graph store write per model; workspace dependency remains 3.0.0-rc.1 instead of npm 3.0.2; sheet body has no interior padding; render-phase state synchronization remains. No product code changed.",
+  "skipped": false,
+  "skipReason": null
+}

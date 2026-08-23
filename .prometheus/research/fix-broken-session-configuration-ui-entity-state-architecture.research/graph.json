@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "nodes": [
+    {"id":"n-sheet","kind":"ui","label":"Session Configuration sheet"},
+    {"id":"n-selector","kind":"ui","label":"ModelSelector"},
+    {"id":"n-model-store","kind":"store","label":"useModelsStore"},
+    {"id":"n-catalog","kind":"api","label":"/api/models: 7,248 models"},
+    {"id":"n-configured","kind":"api","label":"/api/uar/providers: 12 configured models"},
+    {"id":"n-graph","kind":"state","label":"Prometheus entity graph"},
+    {"id":"n-session","kind":"entity","label":"AgentSession"},
+    {"id":"n-draft","kind":"entity","label":"AgentSessionDraft"},
+    {"id":"n-policy","kind":"backend","label":"Conversation RunPolicy"},
+    {"id":"n-inference","kind":"runtime","label":"effective inference route"},
+    {"id":"n-atomic","kind":"upstream-fix","label":"atomic fetched-list ingestion"}
+  ],
+  "edges": [
+    {"from":"n-sheet","to":"n-selector","relation":"mounts"},
+    {"from":"n-selector","to":"n-model-store","relation":"currently loads"},
+    {"from":"n-model-store","to":"n-catalog","relation":"currently fetches"},
+    {"from":"n-model-store","to":"n-graph","relation":"currently publishes once per model"},
+    {"from":"n-atomic","to":"n-graph","relation":"must publish collection atomically"},
+    {"from":"n-configured","to":"n-atomic","relation":"bounded transport input"},
+    {"from":"n-session","to":"n-draft","relation":"initializes isolated draft"},
+    {"from":"n-draft","to":"n-session","relation":"commits once on save"},
+    {"from":"n-session","to":"n-policy","relation":"persists typed fields"},
+    {"from":"n-policy","to":"n-inference","relation":"must determine effective route"}
+  ]
+}

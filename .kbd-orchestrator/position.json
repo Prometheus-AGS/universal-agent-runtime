@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 412,
-  "derivedRevision": 412,
+  "sourceRevision": 471,
+  "derivedRevision": 471,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 84,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 143,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "80130eb1-95f8-4039-8976-71bdce23779c": 61,
@@ -14,18 +14,18 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-23T17:38:02.569494Z",
+  "updatedAt": "2026-08-23T21:12:44.022330Z",
   "cursor": [
-    "uar-native-service-deployment",
-    "reflect"
+    "fix-broken-session-configuration-ui",
+    "execute"
   ],
   "root": {
     "type": "phase",
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "running",
     "progress": {
-      "done": 5,
-      "total": 5
+      "done": 94,
+      "total": 106
     },
     "children": [
       {
@@ -122,6 +122,55 @@
           "total": 0
         },
         "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "fix-broken-session-configuration-ui",
+        "canonicalId": "fix-broken-session-configuration-ui",
+        "status": "PENDING",
+        "progress": {
+          "done": 0,
+          "total": 4
+        },
+        "children": [
+          {
+            "type": "change",
+            "id": "adopt-entity-management-3-0-2",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 5
+            }
+          },
+          {
+            "type": "change",
+            "id": "repair-session-configuration-entity-flow",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 13
+            }
+          },
+          {
+            "type": "change",
+            "id": "prevent-session-configuration-regressions",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 8
+            }
+          },
+          {
+            "type": "change",
+            "id": "fix-atomic-fetched-list-ingestion",
+            "status": "PENDING",
+            "progress": {
+              "done": 0,
+              "total": 11
+            }
+          }
+        ],
         "annotations": []
       },
       {

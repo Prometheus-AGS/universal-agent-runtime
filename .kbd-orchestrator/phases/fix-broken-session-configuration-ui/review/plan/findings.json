@@ -1,0 +1,43 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5.6-sol",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The post-completion verification omits the agreed six-publication ceiling, leaving the core freeze criterion untestable as written.",
+      "evidence": "Verification step 4 says only \"prove no `/api/models` request and no catalog-sized publication path\" \u2014 \"catalog-sized publication path\" has no numeric bound. The plan's own carry-forward section states the measurability suggestion \"was also resolved with a concrete configured provider + configured model + six publication ceiling\", but that ceiling appears nowhere in the verification sequence or in change 2/3 completion evidence.",
+      "suggested_fix": "Amend step 4 to assert the concrete bound (publication count \u2264 configured providers + configured models + 6) so the pass/fail result is decidable."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "Change 2 has no acceptance criterion verifying that every retained Session Configuration control is wired to a runtime owner, so a decorative control could survive and still pass all listed evidence.",
+      "evidence": "The goal amendment states \"Unsupported controls must be implemented end to end or removed; ignored fields do not satisfy the goal.\" Change 2's Details say \"Remove unsupported decorative context controls unless their complete runtime contract is implemented\", but its completion evidence is only \"required TypeScript and Rust Tier 0 checks\", and verification steps 1\u20138 check model selection/inference, cancel isolation, and spacing \u2014 no step audits each remaining context control for a functioning runtime contract. The related text appears only as a stop condition (\"a retained UI control has no runtime owner and an active requirement forbids removing it\"), not as verification.",
+      "suggested_fix": "Add an explicit per-control inventory check to change 2's completion evidence or to the step-1\u20138 sequence: each control visible in the sheet is enumerated with either its end-to-end runtime path or its removal diff."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The viewport coverage for the spacing goal is narrowed to two unnamed buckets without establishing that these equal the \"supported viewport sizes\" the goal requires.",
+      "evidence": "The goal requires correcting margin/padding \"across supported viewport sizes\"; verification step 7 captures only \"compact/desktop computed insets\". The plan never defines which viewport sizes are supported, and the file tree contains `docs/THEME_AND_MOBILE.md`, indicating mobile is a supported surface that may or may not be subsumed by \"compact\".",
+      "suggested_fix": "Enumerate the supported viewport set (referencing the design authority docs) and require computed-inset evidence for each, or explicitly state that compact/desktop exhausts the supported set."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "Change 1's complexity metadata is internally inconsistent.",
+      "evidence": "Change 1 lists \"Est. complexity: S\" immediately followed by \"Complexity score: Medium\", while every other change is consistent (2: L/High, 3: M/Medium, 4: L/High).",
+      "suggested_fix": "Align change 1's complexity fields (presumably S/Low given the scope is two manifest pins and lockfile reconciliation)."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}
