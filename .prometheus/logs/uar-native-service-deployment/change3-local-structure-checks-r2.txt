@@ -1,0 +1,17 @@
+bash -n PASS packaging/native/macos/control.sh
+bash -n PASS packaging/native/macos/install.sh
+bash -n PASS packaging/native/macos/refresh-credentials.sh
+bash -n PASS packaging/native/macos/uninstall.sh
+bash -n PASS packaging/native/macos/upgrade.sh
+bash -n PASS packaging/native/linux/control.sh
+bash -n PASS packaging/native/linux/install.sh
+bash -n PASS packaging/native/linux/refresh-credentials.sh
+bash -n PASS packaging/native/linux/uninstall.sh
+bash -n PASS packaging/native/linux/upgrade.sh
+packaging/native/macos/com.prometheus.universal-agent-runtime.plist.in: OK
+PowerShell parse PASS /Users/gqadonis/.claude/worktrees/package-native-service-installers/packaging/native/windows/control.ps1
+PowerShell parse PASS /Users/gqadonis/.claude/worktrees/package-native-service-installers/packaging/native/windows/install.ps1
+PowerShell parse PASS /Users/gqadonis/.claude/worktrees/package-native-service-installers/packaging/native/windows/refresh-credentials.ps1
+PowerShell parse PASS /Users/gqadonis/.claude/worktrees/package-native-service-installers/packaging/native/windows/uninstall.ps1
+PowerShell parse PASS /Users/gqadonis/.claude/worktrees/package-native-service-installers/packaging/native/windows/upgrade.ps1
+future-helper reference check PASS

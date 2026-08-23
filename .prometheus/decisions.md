@@ -643,3 +643,21 @@ the complete `server-full` graph and the native SCM adapter to type-check.
 **Uncomfortable constraint.** This is cross-compilation evidence from macOS,
 not execution under Windows SCM. Runtime behavior remains unverified until a
 Windows host runs the packaged service.
+
+---
+
+## 2026-08-23 — Windows native service runs as LocalService
+
+**Decision.** Configure `PrometheusUniversalAgentRuntime` to run as the built-in
+Windows LocalService identity. Grant it read-only access to ProgramData config
+and credentials, and modify access only to runtime state and `.prometheus` logs.
+Do not run UAR as LocalSystem.
+
+**Rationale.** Provider inference needs outbound networking and mutable runtime
+state, but it does not require unrestricted machine authority. LocalService is a
+native SCM identity with substantially less local privilege than LocalSystem;
+SID-based ACLs avoid localized account-name assumptions.
+
+**Uncomfortable constraint.** This ACL and identity contract is parser-checked
+from macOS only. A Windows host must still observe service registration, file
+access, outbound inference, stop handling, and restart behavior.

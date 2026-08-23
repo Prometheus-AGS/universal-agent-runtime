@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.prometheus.universal-agent-runtime</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__UAR_HOME__/bin/universal-agent-runtime</string>
+    <string>--config</string>
+    <string>__UAR_HOME__/config.yaml</string>
+    <string>--env-file</string>
+    <string>__UAR_HOME__/service.env</string>
+    <string>--port</string>
+    <string>1906</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__UAR_HOME__</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>UAR_SERVER__HOST</key>
+    <string>127.0.0.1</string>
+    <key>UAR_SERVER__GRPC_PORT</key>
+    <string>50051</string>
+    <key>UAR_LOG_FILE</key>
+    <string>__LOG_DIR__/operational.log</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>ProcessType</key>
+  <string>Interactive</string>
+  <key>StandardOutPath</key>
+  <string>__LOG_DIR__/stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>__LOG_DIR__/stderr.log</string>
+</dict>
+</plist>

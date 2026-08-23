@@ -1,0 +1,13 @@
+Command:
+docker run --rm -v "$PWD/packaging/native/linux/uar.service:/work/uar.service:ro" ubuntu:24.04 bash -lc 'apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq systemd >/dev/null && systemd-analyze verify /work/uar.service'
+
+Observed exit: 1
+
+Observed output:
+Unable to find image 'ubuntu:24.04' locally
+24.04: Pulling from library/ubuntu
+0b613318ea87: Already exists
+Digest: sha256:33ceb71981b602c1a7443a53469e4dba065f7503eab3078a2d7a57a2ab987517
+Status: Downloaded newer image for ubuntu:24.04
+debconf: delaying package configuration, since apt-utils is not installed
+uar.service: Command /usr/local/lib/uar/universal-agent-runtime is not executable: No such file or directory
