@@ -1,18 +1,18 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 355,
-  "derivedRevision": 355,
+  "sourceRevision": 358,
+  "derivedRevision": 358,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 40
+    "80130eb1-95f8-4039-8976-71bdce23779c": 43
   },
   "conflictCount": 0,
   "phase": "browser-smoke-providers-and-agents",
   "phaseId": "browser-smoke-providers-and-agents",
   "parentPhase": null,
-  "last_updated": "2026-08-23T09:13:11.129544Z",
+  "last_updated": "2026-08-23T09:47:57.764167Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 0,
   "changes_completed": 0,

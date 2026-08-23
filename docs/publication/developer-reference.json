@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "profiles": ["server-full", "minimal", "embedded-mobile"],
+  "guides": [
+    {
+      "id": "api-reference",
+      "title": "API Reference Map",
+      "position": 1,
+      "file": "website/docs/api/index.md",
+      "route": "/docs/api",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": ["docs/API_CHAT_COMPLETION.md"],
+      "sourceAuthorities": ["src/server.rs", "src/uar/api/openapi.rs", "scripts/stage-documentation-references.mjs"],
+      "requiredMarkers": ["Boundary statement", "OpenAPI summary", "Generated references", "Narrative references", "Publication status", "Profile limits"],
+      "requiresMermaid": false
+    },
+    {
+      "id": "protocol-overview",
+      "title": "Protocol Overview",
+      "position": 2,
+      "file": "website/docs/protocols/overview.md",
+      "route": "/docs/protocols/overview",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": ["docs/API_CHAT_COMPLETION.md"],
+      "sourceAuthorities": ["src/server.rs", "src/uar/api/routes.rs", "src/uar/domain/events.rs"],
+      "requiredMarkers": ["Boundary statement", "Adapter", "Authority", "State ownership", "Profile limits", "Diagram in words"],
+      "requiresMermaid": true
+    },
+    {
+      "id": "http-compatibility",
+      "title": "HTTP Compatibility",
+      "position": 3,
+      "file": "website/docs/protocols/http-compatibility.md",
+      "route": "/docs/protocols/http-compatibility",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": ["docs/API_CHAT_COMPLETION.md"],
+      "sourceAuthorities": ["src/server.rs", "src/llm/anthropic_driver.rs", "src/uar/api/openapi.rs"],
+      "requiredMarkers": ["Boundary statement", "/api/chat/completion", "/v1/chat/completions", "/v1/messages", "provider/model", "Compatibility limit", "Profile limits"],
+      "requiresMermaid": false
+    },
+    {
+      "id": "events-and-ui",
+      "title": "Events, AG-UI, and A2UI",
+      "position": 4,
+      "file": "website/docs/protocols/events-and-ui.md",
+      "route": "/docs/protocols/events-and-ui",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": ["docs/protocols/ag-ui-profile.md", "docs/protocols/a2ui-profile.md"],
+      "sourceAuthorities": ["src/server.rs", "src/uar/api/adapters.rs", "src/uar/api/sse.rs", "src/uar/a2ui/routes.rs"],
+      "requiredMarkers": ["Boundary statement", "agui_spec", "deprecated", "dual", "A2UI", "Replay boundary", "State ownership", "Profile limits", "Diagram in words"],
+      "requiresMermaid": true
+    },
+    {
+      "id": "mcp",
+      "title": "Model Context Protocol",
+      "position": 5,
+      "file": "website/docs/protocols/mcp.md",
+      "route": "/docs/protocols/mcp",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": ["docs/TOOL_NAMING.md"],
+      "sourceAuthorities": ["src/mcp/registry.rs", "src/uar/mcp_server.rs", "src/uar/memory/mcp_server.rs", "src/uar/api/mcp_admin.rs"],
+      "requiredMarkers": ["Boundary statement", "/mcp/uar", "/mcp/memory", "discovery is not authorization", "namespaced", "Health and reconnect", "Profile limits"],
+      "requiresMermaid": false
+    },
+    {
+      "id": "a2a",
+      "title": "Agent-to-Agent Protocol",
+      "position": 6,
+      "file": "website/docs/protocols/a2a.md",
+      "route": "/docs/protocols/a2a",
+      "profiles": ["server-full"],
+      "sourceRecords": ["docs/A2A_PROTOCOL.md"],
+      "sourceAuthorities": ["src/uar/api/a2a/mod.rs", "src/uar/api/a2a/types.rs", "src/uar/api/a2a/handler.rs", "src/uar/api/a2a/grpc.rs"],
+      "requiredMarkers": ["Boundary statement", "/.well-known/agent.json", "/a2a/compiler", "verified tenant", "task", "context", "Compatibility limit", "Profile limits"],
+      "requiresMermaid": false
+    },
+    {
+      "id": "tools",
+      "title": "Tools and Trusted-Host Execution",
+      "position": 7,
+      "file": "website/docs/tools/overview.md",
+      "route": "/docs/tools/overview",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": ["docs/TOOL_NAMING.md"],
+      "sourceAuthorities": ["src/uar/tools/mod.rs", "src/uar/domain/tools.rs", "src/mcp/registry.rs", "src/uar/runtime/graph/nodes/tool_node.rs", "tools/uar-jwt-proxy/src/main.rs"],
+      "requiredMarkers": ["Boundary statement", "Native tools", "MCP tools", "discovery is not authorization", "trusted host", "Approval", "uar-jwt-proxy", "loopback", "Profile limits", "Diagram in words"],
+      "requiresMermaid": true
+    },
+    {
+      "id": "sdks",
+      "title": "SDK Selection",
+      "position": 8,
+      "file": "website/docs/sdks.md",
+      "route": "/docs/sdks",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": ["sdks/rust/README.md", "sdks/python/README.md", "sdks/typescript/README.md"],
+      "sourceAuthorities": ["sdks/rust/Cargo.toml", "sdks/python/pyproject.toml", "sdks/typescript/package.json", "scripts/stage-documentation-references.mjs"],
+      "requiredMarkers": ["Boundary statement", "Source package", "Generated reference", "Registry publication", "Profile limits"],
+      "requiresMermaid": false
+    },
+    {
+      "id": "rust-sdk",
+      "title": "Rust SDK",
+      "position": 9,
+      "file": "website/docs/sdk-rust/intro.md",
+      "route": "/docs/sdk-rust/intro",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": ["sdks/rust/README.md"],
+      "sourceAuthorities": ["sdks/rust/Cargo.toml", "sdks/rust/src/client.rs", "sdks/rust/src/runtime.rs", "sdks/rust/examples"],
+      "requiredMarkers": ["Boundary statement", "http-client", "embedded", "Source checkout", "Hosted reference", "Registry publication", "Profile limits"],
+      "requiresMermaid": false
+    },
+    {
+      "id": "python-sdk",
+      "title": "Python SDK",
+      "position": 10,
+      "file": "website/docs/sdk-python/intro.md",
+      "route": "/docs/sdk-python/intro",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": ["sdks/python/README.md"],
+      "sourceAuthorities": ["sdks/python/pyproject.toml", "sdks/python/src/universal_agent_runtime_sdk/client.py", "sdks/python/docs/conf.py", "sdks/python/examples"],
+      "requiredMarkers": ["Boundary statement", "Source checkout", "Sphinx", "not staged", "Registry publication", "Profile limits"],
+      "requiresMermaid": false
+    },
+    {
+      "id": "typescript-sdk",
+      "title": "TypeScript SDK",
+      "position": 11,
+      "file": "website/docs/sdk-typescript/intro.md",
+      "route": "/docs/sdk-typescript/intro",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": ["sdks/typescript/README.md"],
+      "sourceAuthorities": ["sdks/typescript/package.json", "sdks/typescript/src/client.ts", "sdks/typescript/src/schemas.ts", "sdks/typescript/examples", "scripts/stage-documentation-references.mjs"],
+      "requiredMarkers": ["Boundary statement", "fetch", "SSE", "Source checkout", "Hosted reference", "Registry publication", "Profile limits"],
+      "requiresMermaid": false
+    },
+    {
+      "id": "configuration",
+      "title": "Configuration Authority",
+      "position": 12,
+      "file": "website/docs/configuration.md",
+      "route": "/docs/configuration",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": ["docs/PROVIDER_CONFIGURATION.md"],
+      "sourceAuthorities": ["src/config.rs", "src/config_manager.rs", "src/main.rs", "config.embedded.yaml", "config.remote.surreal.yaml", "config.remote.postgres.yaml"],
+      "requiredMarkers": ["Boundary statement", "Precedence", "UAR_SECTION__KEY", "/.well-known/uar-config", "Reload boundary", "Secret handling", "Profile limits"],
+      "requiresMermaid": false
+    },
+    {
+      "id": "installation",
+      "title": "Installation",
+      "position": 13,
+      "file": "website/docs/installation.md",
+      "route": "/docs/installation",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": ["docs/DEPLOYMENT.md"],
+      "sourceAuthorities": ["Cargo.toml", "package.json", "pnpm-lock.yaml", ".gitmodules", "config.embedded.yaml"],
+      "requiredMarkers": ["Boundary statement", "Submodules", "Source build", "Release artifact", "Publication status", "embedded-mobile", "Profile limits"],
+      "requiresMermaid": false
+    },
+    {
+      "id": "deployment",
+      "title": "Deployment",
+      "position": 14,
+      "file": "website/docs/deployment.md",
+      "route": "/docs/deployment",
+      "profiles": ["server-full", "minimal"],
+      "sourceRecords": ["docs/DEPLOYMENT.md"],
+      "sourceAuthorities": ["docker-compose.prod.yaml", "docker-compose.prod.postgres.yaml", "k8s/helm/uar/values.yaml", "src/server.rs"],
+      "requiredMarkers": ["Boundary statement", "Immutable pin", "Secrets", "Persistence", "/healthz", "/readyz", "Deployment ownership", "Profile limits", "Diagram in words"],
+      "requiresMermaid": true
+    },
+    {
+      "id": "upgrade",
+      "title": "Upgrade and Rollback",
+      "position": 15,
+      "file": "website/docs/upgrade-guide.md",
+      "route": "/docs/upgrade-guide",
+      "profiles": ["server-full", "minimal", "embedded-mobile"],
+      "sourceRecords": ["docs/compatibility-policy.md", "docs/DEPLOYMENT.md"],
+      "sourceAuthorities": ["Cargo.toml", "SECURITY.md", "scripts/promote-release-candidate.sh", "website/docs/backup-and-restore.md"],
+      "requiredMarkers": ["Boundary statement", "Backup prerequisite", "Immutable version", "Functional verification", "Rollback", "Data compatibility", "Profile limits"],
+      "requiresMermaid": false
+    }
+  ],
+  "compatibilityDocuments": [
+    {"file": "website/docs/api-reference.md", "route": "/docs/api-reference", "currentAuthority": "/docs/api"},
+    {"file": "website/docs/configuration/intro.md", "route": "/docs/configuration/intro", "currentAuthority": "/docs/configuration"},
+    {"file": "website/docs/dev-tools/intro.md", "route": "/docs/dev-tools/intro", "currentAuthority": "/docs/tools/overview"},
+    {"file": "website/docs/a2ui/intro.md", "route": "/docs/a2ui/intro", "currentAuthority": "/docs/protocols/events-and-ui"}
+  ]
+}

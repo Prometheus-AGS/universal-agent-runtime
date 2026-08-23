@@ -268,7 +268,7 @@ export function validateDocumentationPublication({ root = defaultRoot, trackedPa
 
   const childResults = [];
   if (runChildren) {
-    for (const script of ["scripts/validate-documentation-truth.mjs", "scripts/validate-documentation-architecture.mjs", "scripts/validate-documentation-product-workflows.mjs", "scripts/validate-documentation-security-operations.mjs", "scripts/validate-github-actions-policy.mjs"]) {
+    for (const script of ["scripts/validate-documentation-truth.mjs", "scripts/validate-documentation-architecture.mjs", "scripts/validate-documentation-product-workflows.mjs", "scripts/validate-documentation-security-operations.mjs", "scripts/validate-documentation-developer-reference.mjs", "scripts/validate-github-actions-policy.mjs"]) {
       const result = runChild(resolvedRoot, script);
       childResults.push(result);
       if (result.status !== 0) failures.push(`${script}: child validator failed (exit ${result.status ?? "null"})`);

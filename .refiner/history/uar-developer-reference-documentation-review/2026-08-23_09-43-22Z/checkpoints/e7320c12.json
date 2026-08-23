@@ -1,0 +1,64 @@
+{
+  "refinement_id": "d484157f-528b-44e3-8231-142ce3908c87",
+  "artifact_name": "uar-developer-reference-documentation-review",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T09:41:44Z",
+  "updated_at": "2026-08-23T09:43:20Z",
+  "current_iteration": 1,
+  "max_iterations": 5,
+  "goals": [
+    "Validate the bounded fifteen-guide UAR developer/operator reference without claiming rendered, deployed, protocol, registry, runtime-health, migration, rollback, inference, or cross-profile certification"
+  ],
+  "constraints": [
+    {
+      "id": "complete-classified-developer-guides"
+    },
+    {
+      "id": "truthful-api-protocol-tool-boundaries"
+    },
+    {
+      "id": "honest-sdk-and-publication-status"
+    },
+    {
+      "id": "safe-profile-bounded-operator-guidance"
+    },
+    {
+      "id": "bounded-public-safe-source-evidence"
+    }
+  ],
+  "phases_completed": [
+    "specify",
+    "plan",
+    "execute",
+    "reflect",
+    "persist"
+  ],
+  "convergence_status": "running",
+  "iteration_history": [
+    {
+      "iteration": 1,
+      "phases_completed": [
+        "specify",
+        "plan",
+        "execute",
+        "reflect",
+        "persist"
+      ],
+      "constraints_satisfied": 5,
+      "constraints_total": 5,
+      "decision": "terminate",
+      "timestamp": "2026-08-23T09:41:44Z"
+    }
+  ],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "b0188b56",
+      "phase": "specify",
+      "iteration": 1,
+      "timestamp": "2026-08-23T09:43:20Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

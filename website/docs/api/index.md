@@ -1,37 +1,80 @@
-# API Reference
+---
+sidebar_position: 1
+title: API Reference Map
+description: Choose between UAR's generated, narrative, and runtime API references without confusing their coverage.
+source_records:
+  - docs/API_CHAT_COMPLETION.md
+current_authority: /docs/api
+---
 
-UAR publishes generated API references alongside the narrative documentation.
+# API reference map
 
-## Hosted references
+## Boundary statement
 
-- [Rust API reference](https://prometheus-ags.github.io/universal-agent-runtime/docs/api/rust) — rustdoc for the runtime and Rust SDK
-- [TypeScript API reference](https://prometheus-ags.github.io/universal-agent-runtime/docs/api/typescript) — TypeDoc for the TypeScript SDK
+**UAR has several API reference layers, and none silently stands in for the
+others.** The running router is the authority for the routes compiled into one
+server. The embedded OpenAPI document is a maintained summary. Generated
+language references describe source APIs. Narrative guides explain workflows,
+state, and compatibility limits.
 
-The Python SDK is documented in the narrative SDK guide. UAR does not advertise
-a hosted Python API reference because the repository does not yet contain a
-pinned generator and staged artifact for one.
+## OpenAPI summary
 
-## Generating locally
+`server-full` includes the `api-docs` feature and exposes:
 
-```bash
-# Rust (runtime + SDK)
-cargo doc --locked --no-deps --workspace --features server-full
+- `/api/openapi.json` — the embedded OpenAPI 3.1 summary;
+- `/api/docs` — Swagger UI backed by that summary.
 
-# TypeScript SDK
-npm --prefix sdks/typescript ci
-npm --prefix sdks/typescript run docs
+The summary covers the principal health, chat, model, metric, MCP-health, run,
+provider, skill, knowledge, authentication, and realtime routes. It is not an
+exhaustive inventory of every route mounted by `src/server.rs`. Use it for
+client discovery, then use the relevant narrative guide for lifecycle and
+security behavior.
 
-# Narrative portal and assembled reference artifact
-npm --prefix website ci
-npm --prefix website run build
-node scripts/stage-documentation-references.mjs
-```
+`minimal` includes the HTTP server but not the `api-docs` feature by default.
+An additive custom build can enable it, but that custom composition needs its
+own evidence.
 
-The deployment workflow in `.github/workflows/docs.yml` runs these same
-generation and staging commands before it uploads the one Pages artifact.
+## Generated references
 
-## Note on paths
+The Pages artifact stages two source-generated references:
 
-The paths above (`/docs/api/rust` and `/docs/api/typescript`) are relative to the
-deployed Docusaurus project site. Locally assembled output lives beneath
-`website/build/docs/api/`.
+- [Rust API reference](https://prometheus-ags.github.io/universal-agent-runtime/docs/api/rust/) — workspace rustdoc, including the runtime and Rust SDK;
+- [TypeScript API reference](https://prometheus-ags.github.io/universal-agent-runtime/docs/api/typescript/) — TypeDoc from `sdks/typescript`.
+
+The repository contains a Python SDK and Sphinx configuration, but the Pages
+assembler does not stage a Python generated reference. See the
+[Python SDK guide](../sdk-python/intro.md) for the local source workflow.
+
+## Narrative references
+
+Start with the boundary you intend to call:
+
+- [Protocol overview](../protocols/overview.md)
+- [HTTP compatibility](../protocols/http-compatibility.md)
+- [Events, AG-UI, and A2UI](../protocols/events-and-ui.md)
+- [MCP](../protocols/mcp.md)
+- [A2A](../protocols/a2a.md)
+- [Tools and trusted-host execution](../tools/overview.md)
+- [Authentication](../security/authentication.md)
+- [Runs](../operations/runs.md)
+
+For exact request and response structures that are not in the embedded OpenAPI
+summary, inspect the versioned SDK types and current server source for the
+release you deploy.
+
+## Publication status
+
+Source packages, a `1.0.0` value in package metadata, a Git tag, and a generated
+reference are four separate facts. This portal confirms the repository sources
+and the two references staged by the Pages contract. It does not infer crates.io,
+PyPI, npm, image-registry, or release-asset availability from local metadata.
+
+## Profile limits
+
+The network API belongs to server builds. `server-full` carries the documented
+release composition and generated Swagger UI; `minimal` carries the smaller
+HTTP/SSE composition without API docs by default. `embedded-mobile` is
+transport-free and calls in-process services instead, so HTTP route evidence
+does not transfer to it.
+
+Next: [Protocol overview](../protocols/overview.md).

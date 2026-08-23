@@ -1,158 +1,106 @@
 ---
-sidebar_position: 2
+sidebar_position: 11
 title: Installation
+description: Install UAR from a verified release artifact or a complete source checkout.
+source_records:
+  - docs/DEPLOYMENT.md
+current_authority: /docs/installation
 ---
 
 # Installation
 
-UAR can be run three ways: with Docker Compose (recommended for a full stack),
-from a prebuilt container image, or by building the binary from source. In every
-case there is a small set of configuration values needed before the runtime can
-serve model requests.
+## Boundary statement
 
-## What is required at boot
+**Installation puts an artifact or source build on a machine; it does not prove
+registry publication, provider inference, persistence, or production health.**
+Choose the profile and acquisition boundary first, then perform a functional
+check through that exact composition.
 
-Before you start, decide two things:
+## Choose a profile
 
-1. **Persistence** — packaged binaries default to embedded SurrealDB at
-   `surrealkv://./data/uar.db`, so a clean installation starts without an
-   external database. Override both settings when you need a different path or
-   a remote backend:
+| Profile | Intended boundary | What the host must supply |
+|---|---|---|
+| `server-full` | complete server release composition with UI, API docs, A2A, Cedar, telemetry, local models, document intelligence, and WASM | configuration, secrets, writable persistence or remote services |
+| `minimal` | smaller HTTP/SSE server with embedded SurrealDB | configuration, provider path, and storage location |
+| `embedded-mobile` | transport-free Rust library for iOS, Android, and embedding hosts | persistence, inference/provider metadata, lifecycle, transport, and platform packaging |
 
-   ```bash
-   UAR_PERSISTENCE__PROVIDER=surreal
-   UAR_PERSISTENCE__DATABASE_URL=rocksdb://./data/uar-db
-   ```
+Custom additive feature sets are valid builds but are not one of these named
+profiles unless their exact composition matches.
 
-2. **A provider API key** — the LLM layer needs a key for the provider named in
-   `UAR_LLM__MODEL`. Supply it via `UAR_LLM__API_KEY` or the matching provider
-   shortcut (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, …). Local
-   providers (`ollama/*`, `lmstudio/*`) need no key. **Without a resolvable key
-   for the configured default model the server exits at startup (exit code 1)
-   with `authentication failed: no API key provided …`** — the key is required
-   to boot, not just to serve requests.
+## Release artifact boundary
 
-See the **[Configuration reference](./configuration/intro.md)** for the full list.
+The repository defines signed release manifests, checksums, SBOMs, provenance,
+archives, and digest-addressed images. Before installing a release, retrieve the
+asset from the release page or registry and follow the
+[release verification guide](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/release-verification.md).
 
-## Option 1 — Docker Compose (recommended)
+A `v1.0.0` tag, a Compose image string, or package version metadata is not by
+itself publication status. Confirm the asset exists, verify its manifest and
+digest, and pin that immutable digest or verified archive.
 
-The repository ships several compose files:
+## Source prerequisites
 
-| File | Stack |
-|---|---|
-| `docker-compose.prod.yaml` | App + SurrealDB (application persistence) + Redis. |
-| `docker-compose.prod.postgres.yaml` | Preview source-build stack: app + PostgreSQL persistence + Surreal (optional memory). |
-| `docker-compose.dev.yaml` | Local development stack. |
+The checkout pins the Rust channel and targets in `rust-toolchain.toml` and pins
+pnpm `11.15.0` in the root package manifest. Use Node.js 20 or newer for the
+portal; the release container uses Node.js 24. Docker/BuildKit is required for
+the polyglot image path.
 
-Steps:
+The repository also contains Git submodules. Initialize them before Cargo or
+frontend work; a missing submodule can surface as an unrelated manifest or
+package error.
 
-```bash
-# 1. Configure
-cp .env.example .env
-# Edit .env — at minimum set:
-#   UAR_LLM__MODEL, UAR_LLM__API_KEY (or a provider shortcut key)
-#   UAR_SECURITY__JWT_SECRET (openssl rand -base64 64)
-#   SURREAL_USER / SURREAL_PASS  (for the surreal service)
-
-# 2. Bring up the stack (SurrealDB persistence)
-docker compose -f docker-compose.prod.yaml --env-file .env up -d
-
-# 3. Check health
-curl -sf http://localhost:1906/healthz
-```
-
-The compose stack sets persistence for you — the app talks to the SurrealDB
-service over the network:
-
-```yaml
-UAR_PERSISTENCE__PROVIDER: surreal
-UAR_PERSISTENCE__DATABASE_URL: http://surreal:8000
-UAR_PERSISTENCE__SURREAL_USER: ${SURREAL_USER:-root}
-UAR_PERSISTENCE__SURREAL_PASS: ${SURREAL_PASS:-changeme}
-```
-
-Ports (host defaults): app `1906`, gRPC `50051`, SurrealDB `8000`, Redis `6379`.
-Persistent data lives in named Docker volumes (`surreal_data_prod`,
-`uar_data_prod`, `uar_uploads_prod`, `redis_data_prod`).
-
-For PostgreSQL instead of SurrealDB, the Preview
-`docker-compose.prod.postgres.yaml` is a source-build reference. PostgreSQL
-requires a binary built with `postgres-backend`; it is not included in the
-Stable prebuilt image.
-
-## Option 2 — Prebuilt binary / container image
-
-The published image is
-`ghcr.io/prometheus-ags/universal-agent-runtime:<version>`. Pin a released tag
-or the signed digest from `release-manifest.json`; do not deploy `latest` in
-production. To run it standalone with embedded SurrealDB:
+## Source build
 
 ```bash
-docker run -d --name uar \
-  -p 1906:1906 \
-  -v uar_data:/var/lib/uar \
-  -e UAR_PERSISTENCE__DATABASE_URL=surrealkv:///var/lib/uar/data/uar-db \
-  -e UAR_LLM__MODEL=openai/gpt-4o \
-  -e OPENAI_API_KEY=sk-... \
-  -e UAR_SECURITY__JWT_SECRET="$(openssl rand -base64 64)" \
-  -e UAR_SECURITY__JWT_REQUIRED=false \
-  ghcr.io/prometheus-ags/universal-agent-runtime:v1.0.0
-```
-
-Mount a volume at the datastore path (here `/var/lib/uar`) so the embedded database
-survives container restarts.
-
-## Option 3 — Build from source
-
-Prerequisites: **Rust** (latest stable, edition 2024), **Node.js 22**, and
-**pnpm 11.15.0**. PostgreSQL or a remote SurrealDB instance is optional.
-
-```bash
-# 1. Clone
-git clone https://github.com/Prometheus-AGS/universal-agent-runtime.git
+git clone --recurse-submodules \
+  https://github.com/Prometheus-AGS/universal-agent-runtime.git
 cd universal-agent-runtime
-
-# 2. Configure
-cp .env.example .env
-#   Set UAR_LLM__MODEL + a provider key, and persistence provider/URL.
-
-# 3. Install the locked frontend dependencies and build assets
+git submodule update --init --recursive
+corepack enable
+corepack prepare pnpm@11.15.0 --activate
 pnpm install --frozen-lockfile
 pnpm -C frontend install --frozen-lockfile
 pnpm -C frontend --filter @prometheus-ags/prometheus-entity-management build
 pnpm build
-
-# 4. Run (embedded persistence via the example config)
-CONFIG_FILE=config.embedded.yaml cargo run --features server-full
-#   → http://localhost:1906   (config.embedded.yaml uses port 1906)
-
-# …or a release build
-cargo build --release --features server-full
-./target/release/universal-agent-runtime
+cargo build --locked --release --no-default-features --features server-full
 ```
 
-`config.embedded.yaml` uses `surrealkv://./data/uar-dev-db`, binds to
-`127.0.0.1:1906`, and disables JWT for local development.
+The release image also carries the documented polyglot skill/component
+toolchains. A host-only source build need not install every toolchain unless it
+will compile those components locally.
 
-If you're running against a config with `jwt_required: true` instead, see
-[Dev Tools → uar-jwt-proxy](./dev-tools/intro.md) — it mints and injects a
-valid JWT automatically rather than requiring you to disable auth.
+## Local server start
 
-## First-run checklist
+`config.embedded.yaml` is a loopback development preset with embedded
+SurrealKV and anonymous access. Start it only on the local machine:
 
-1. **`.env` created** from `.env.example`.
-2. **`UAR_LLM__MODEL`** set to a `provider/model` string.
-3. **A provider key** present (`UAR_LLM__API_KEY` or a `*_API_KEY` shortcut), or
-   a local `base_url` for Ollama/LM Studio.
-4. **Persistence** confirmed: accept the packaged embedded default or set
-   `UAR_PERSISTENCE__PROVIDER` + `..._DATABASE_URL`. The selected datastore is
-   writable and reachable.
-5. **`UAR_SECURITY__JWT_SECRET`** set to a strong random value (any deployment
-   reachable off-localhost).
-6. **`vector_dimension`** matches your embedding model (`1536` for OpenAI
-   `text-embedding-3-small`, `384` for BGE-small).
-7. **Health check passes**: `curl -sf http://<host>:<port>/healthz`.
-8. **A test chat request** returns a streamed response (see
-   [API reference](./api-reference)).
+```bash
+CONFIG_FILE=config.embedded.yaml \
+  cargo run --locked --no-default-features --features server-full \
+  --bin universal-agent-runtime
+```
 
-If any step fails, see **[Troubleshooting](./troubleshooting)**.
+Set a real provider/model and credential through the environment before making
+inference requests. A successful `/healthz` proves liveness only; `/readyz`
+checks configured dependencies. Genuine inference requires a request through
+UAR to an actual loaded or remote model and an observed model response.
+
+## SDK source use
+
+The three SDKs have independent locks and guides:
+
+- [Rust SDK](./sdk-rust/intro.md)
+- [Python SDK](./sdk-python/intro.md)
+- [TypeScript SDK](./sdk-typescript/intro.md)
+
+Use their source-checkout commands when registry availability is not separately
+verified.
+
+## Profile limits
+
+The command above builds `server-full` for the current host. It says nothing
+about `minimal`, iOS, Android, another CPU architecture, a container, or a
+cluster. `embedded-mobile` requires platform-specific host integration and
+cannot be installed as a standalone server.
+
+Next: [Deployment](./deployment.md).

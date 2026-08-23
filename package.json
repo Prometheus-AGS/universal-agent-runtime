@@ -29,6 +29,8 @@
     "docs:product-workflows:controls": "node scripts/test-documentation-product-workflows.mjs",
     "docs:security-operations:validate": "node scripts/validate-documentation-security-operations.mjs",
     "docs:security-operations:controls": "node scripts/test-documentation-security-operations.mjs",
+    "docs:developer-reference:validate": "node scripts/validate-documentation-developer-reference.mjs",
+    "docs:developer-reference:controls": "node scripts/test-documentation-developer-reference.mjs",
     "docs:references:stage": "node scripts/stage-documentation-references.mjs",
     "docs:references:controls": "node scripts/test-documentation-staging.mjs",
     "ci-gates": "bash scripts/ci-grep-gates.sh",

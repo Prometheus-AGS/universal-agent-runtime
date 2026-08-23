@@ -110,8 +110,36 @@ Those failures are dependencies, not suppressed findings.
 - Canonical KBD revision `355` records the change complete and the revised
   next-work handoff.
 
+### document-apis-sdks-tools-and-deployment
+
+- Published fifteen classified guides for APIs, compatibility protocols,
+  events/UI, MCP, A2A, tools, three SDKs, configuration, installation,
+  deployment, upgrade, and rollback.
+- Kept router behavior, OpenAPI summary coverage, protocol-adapter subsets,
+  tool discovery/authorization/execution, generated references, source package
+  presence, registry publication, deployment health, and data compatibility as
+  separate claims.
+- Preserved the uncomfortable deployment facts: repository examples include
+  development credentials, authentication-disabled defaults, floating tags,
+  and platform-specific storage assumptions; none are presented as a safe
+  production baseline.
+- Added fifteen observed negative controls for invented or overstated APIs,
+  protocol/tool boundaries, unsupported SDK publication, unsafe configuration,
+  profile transfer, missing health/rollback guidance, routine Actions tests,
+  and private-source leakage.
+- Passed TypeScript, bounded documentation controls, strict OpenSpec,
+  scoped-diff, and artifact-refiner content gates without running the final
+  production build.
+- Preserved the evidence limit: the full publication gate remains red until
+  later route, README, and historical-source reconciliation changes finish; no
+  protocol, registry, runtime-health, deployment, rollback, browser,
+  accessibility, inference, or cross-profile certification exists here.
+- Canonical KBD revision `358` records the change complete and the revised
+  next-work handoff.
+
 ## Next change
 
-Run `/opsx:new document-apis-sdks-tools-and-deployment`. It owns public APIs,
-SDKs, tools, configuration, deployment, and operator integration guidance
-without changing runtime behavior or running final-site certification early.
+Run `/opsx:new reconcile-uar-readme-estate`. It owns the root and subordinate
+UAR README surfaces, generated README sources, historical banners, and links to
+the canonical portal without rewriting vendored content or running final-site
+certification early.

@@ -1,18 +1,14 @@
-# A2UI
+---
+sidebar_position: 1
+title: A2UI Protocol
+description: Compatibility entry point for A2UI messages, state, events, and rendering boundaries.
+---
 
-A2UI is the UAR surface for rendering agentic UI updates across React, Lit, and Svelte renderers. It is built on a vendored `@a2ui/web_core` and a UAR-owned React renderer.
+# A2UI protocol
 
-## Topics
+Use [Events, AG-UI, and A2UI](/docs/protocols/events-and-ui) for the wire
+profile, declarative surface catalog, validation, state patches, action path,
+and replay boundary.
 
-- A2UI core vendoring
-- UAR React renderer on webcore
-- Entity component migration
-- Design systems and embedder
-- Realtime backbone integration
-- Theming, accessibility, and i18n
-
-## Related documents
-
-- [A2UI renderer ADR](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/adr/0010-a2ui-renderer-on-webcore.md)
-- Component catalog (coming soon)
-- [Visual regression and performance budget ADR](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/adr/0011-docs-visual-regression.md)
+The conceptual trust boundary and the relationship to the packaged chat
+surface remain in [Protocol boundaries](/docs/architecture/protocols).

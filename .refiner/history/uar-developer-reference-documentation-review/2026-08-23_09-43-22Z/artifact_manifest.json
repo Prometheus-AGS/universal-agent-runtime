@@ -1,0 +1,27 @@
+{
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "generated_at": "2026-08-23T09:41:44Z",
+  "variants": [
+    {
+      "name": "developer-reference-content-review",
+      "file": ".refiner/artifacts/uar-developer-reference-documentation-review/dist/developer-reference-content-review.md",
+      "format": "markdown",
+      "description": "Bounded PMPO review of fifteen UAR developer/operator guides, four compatibility pages, and deterministic source controls"
+    }
+  ],
+  "preview": {
+    "required": false,
+    "runs": []
+  },
+  "validation": {
+    "preview_status": "partial",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "Fifteen isolated developer-reference negative controls and the complete positive fixture passed.",
+      "TypeScript and bounded publication, architecture, brand, product, security, developer-reference, staging, Actions-policy, and strict OpenSpec checks passed.",
+      "Full publication, production build, browser, accessibility, deployment, protocol, registry, runtime-health, migration, rollback, inference, and cross-profile evidence are intentionally deferred."
+    ]
+  }
+}
