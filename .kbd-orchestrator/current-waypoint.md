@@ -1,17 +1,18 @@
 # Current Waypoint
 
-> `.kbd-orchestrator/current-waypoint.json` is authoritative. This prose
-> projection was refreshed for child Plan revision 176 on 2026-08-20.
+> `.kbd-orchestrator/current-waypoint.json` is authoritative. This human-readable
+> projection was refreshed from canonical revision 340 on 2026-08-23.
 
-**Phase path**: `perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion > fix-embedded-sse-offline-reconnect`
-**Stage**: Plan complete
-**Next action**: `/opsx:new fix-embedded-sse-offline-reconnect`
-**Plan**: `phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/children/fix-embedded-sse-offline-reconnect/plan.md`
+**Phase path**: `uar-branded-documentation-site`
+**Stage**: Execute
+**Changes**: 1/11 complete
+**Next action**: `/opsx:new repair-single-pages-portal`
+**Plan**: `phases/uar-branded-documentation-site/plan.md`
 
 ## Legacy narrative below
 
 The material below is retained as historical context and is not the active
-position.
+position. The JSON waypoint and summary above supersede it.
 
 **Phase**: `uar-grade-a-upgrade-2026-07`
 **Stage**: `execute_in_progress`

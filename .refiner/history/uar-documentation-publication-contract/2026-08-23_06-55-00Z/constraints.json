@@ -1,0 +1,66 @@
+{
+  "artifact_type": "content",
+  "constraints": [
+    {
+      "id": "source-and-route-authority",
+      "description": "The contract classifies every selected documentation source exactly once and maps every product surface to one planned document ID or explicit exclusion.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Isolated source and route fixtures plus current-tree resolved counts"
+      }
+    },
+    {
+      "id": "private-history-boundary",
+      "description": "Raw private history, local paths, credentials, private keys, and exact private-source copies are rejected while reviewed provenance remains possible.",
+      "severity": "blocking",
+      "type": "security",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Sanitizer negative controls and public provenance fixtures"
+      }
+    },
+    {
+      "id": "fail-closed-composition",
+      "description": "The publication entrypoint preserves child-validator failures and requires exactly one Pages publisher.",
+      "severity": "blocking",
+      "type": "technical",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Child-failure, missing-publisher, competing-publisher, and valid single-publisher controls"
+      }
+    },
+    {
+      "id": "truthful-incomplete-baseline",
+      "description": "The current repository remains an observed failure until planned pages exist and the competing publisher is removed; the foundation makes no portal-readiness claim.",
+      "severity": "blocking",
+      "type": "semantic",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Current-tree validator output identifies missing document IDs and two Pages publishers"
+      }
+    },
+    {
+      "id": "bounded-change",
+      "description": "Strict OpenSpec passes, earlier portal artifacts remain unchanged, and no runtime, React application, provider/model, realtime, vendored, or raw .prometheus content changes.",
+      "severity": "blocking",
+      "type": "structural",
+      "validation": {
+        "requires_code_execution": true,
+        "validation_method": "Strict OpenSpec, prior artifact hashes, and scoped git diff"
+      }
+    }
+  ],
+  "global_rules": [
+    "Treat the OpenSpec change and KBD phase plan as acceptance authority.",
+    "Keep GitHub Actions deployment-only; routine verification remains local.",
+    "Do not publish raw .prometheus, KBD event/session payloads, conversations, credentials, or machine-local paths.",
+    "Do not claim the final portal builds or deploys from this foundation change."
+  ],
+  "termination_conditions": [
+    "All five blocking constraints have observed evidence.",
+    "Strict OpenSpec and both refiner schemas pass.",
+    "The referenced review artifact exists and the scoped diff contains no prohibited product changes."
+  ]
+}

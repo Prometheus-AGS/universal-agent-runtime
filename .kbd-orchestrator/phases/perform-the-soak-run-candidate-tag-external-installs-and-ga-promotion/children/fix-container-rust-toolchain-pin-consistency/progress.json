@@ -1,42 +1,43 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 289,
-  "derivedRevision": 289,
+  "sourceRevision": 340,
+  "derivedRevision": 340,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 231
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 25
   },
   "conflictCount": 0,
   "phase": "fix-container-rust-toolchain-pin-consistency",
   "phaseId": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion::fix-container-rust-toolchain-pin-consistency",
   "parentPhase": "perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion",
-  "last_updated": "2026-08-22T12:49:52.842768Z",
+  "last_updated": "2026-08-23T06:56:32.733270Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
-  "changes_completed": 0,
+  "changes_completed": 1,
   "implementation_total": 1,
-  "implementation_completed": 0,
+  "implementation_completed": 1,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 0,
+      "completed": 1,
       "total": 1,
-      "status": "PENDING"
+      "status": "COMPLETE"
     },
     "evidence": {
-      "status": "PENDING",
-      "summary": "Shutdown child evidence passed on immutable commit 487fb394006f4f1dbe0280b455d5107c576d7e99; parent operational-resilience, supply-chain, RC, external-install, and GA evidence must be regenerated in order.",
+      "status": "COMPLETE",
+      "summary": "Five genuine model-backed functional paths passed through both API and shipped UI under local server-full; results and limits are in functional-verification.md.",
       "blockers": []
     },
     "certification": {
-      "status": "PENDING",
-      "summary": "Fresh 10,800-second local operational-resilience certification is pending on immutable commit 487fb394006f4f1dbe0280b455d5107c576d7e99; no prior candidate result transfers.",
+      "status": "SKIPPED",
+      "summary": "Operational soak, supply-chain, and RC certification were superseded and cancelled; no certification claim is made.",
       "blockers": []
     },
     "publication": {
-      "status": "PENDING",
-      "summary": null,
+      "status": "SKIPPED",
+      "summary": "GA publication was superseded and cancelled; no tag or publication was performed.",
       "blockers": []
     }
   },
@@ -44,8 +45,8 @@
     {
       "id": "fix-container-rust-toolchain-pin-consistency",
       "title": "Fix container Rust toolchain pin consistency",
-      "status": "IN_PROGRESS",
-      "implementation_status": "IN_PROGRESS",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 0,
       "tasks_done": 0,
       "last_task_completed": null,

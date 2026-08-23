@@ -2,16 +2,14 @@
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const root = resolve(process.argv[2] ?? defaultRoot);
-const workflowsDir = join(root, ".github", "workflows");
+const scriptPath = fileURLToPath(import.meta.url);
+const defaultRoot = resolve(dirname(scriptPath), "..");
 
 const allowedWorkflows = new Map([
   ["deploy.yml", ["kubectl set image", "kubectl rollout status", "/readyz", "/healthz"]],
-  ["docs.yml", ["actions/deploy-pages@"]],
-  ["typescript-sdk-docs.yml", ["actions/deploy-pages@"]],
+  ["docs.yml", ["actions/upload-pages-artifact@", "actions/deploy-pages@"]],
 ]);
 
 const prohibitedCommands = [
@@ -21,21 +19,32 @@ const prohibitedCommands = [
   [/\bvale\s+--config\b/m, "prose lint"],
 ];
 
-const failures = [];
-if (!existsSync(workflowsDir)) {
-  failures.push(`workflow directory is missing: ${workflowsDir}`);
-} else {
+const pagesPublisherPattern = /actions\/(?:upload-pages-artifact|deploy-pages)@/;
+
+export function validateGitHubActionsPolicy(root = defaultRoot) {
+  const resolvedRoot = resolve(root);
+  const workflowsDir = join(resolvedRoot, ".github", "workflows");
+  const failures = [];
+  const pagesPublishers = [];
+
+  if (!existsSync(workflowsDir)) {
+    failures.push(`workflow directory is missing: ${workflowsDir}`);
+    return { failures, pagesPublishers };
+  }
+
   const workflowFiles = readdirSync(workflowsDir)
     .filter((name) => name.endsWith(".yml") || name.endsWith(".yaml"))
     .sort();
 
   for (const name of workflowFiles) {
+    const source = readFileSync(join(workflowsDir, name), "utf8");
+    if (pagesPublisherPattern.test(source)) pagesPublishers.push(name);
+
     if (!allowedWorkflows.has(name)) {
       failures.push(`non-deployment workflow is prohibited: .github/workflows/${name}`);
       continue;
     }
 
-    const source = readFileSync(join(workflowsDir, name), "utf8");
     for (const [pattern, label] of prohibitedCommands) {
       if (pattern.test(source)) failures.push(`${name} contains prohibited ${label}`);
     }
@@ -47,19 +56,32 @@ if (!existsSync(workflowsDir)) {
   for (const name of allowedWorkflows.keys()) {
     if (!workflowFiles.includes(name)) failures.push(`required deployment workflow is missing: ${name}`);
   }
-}
 
-const dockerfile = join(root, "Dockerfile");
-if (existsSync(dockerfile)) {
-  const source = readFileSync(dockerfile, "utf8");
-  for (const [pattern, label] of prohibitedCommands) {
-    if (pattern.test(source)) failures.push(`Dockerfile contains prohibited ${label}`);
+  if (pagesPublishers.length !== 1) {
+    failures.push(`exactly one GitHub Pages publisher is required; found ${pagesPublishers.length}: ${pagesPublishers.join(", ") || "none"}`);
   }
+
+  const dockerfile = join(resolvedRoot, "Dockerfile");
+  if (existsSync(dockerfile)) {
+    const source = readFileSync(dockerfile, "utf8");
+    for (const [pattern, label] of prohibitedCommands) {
+      if (pattern.test(source)) failures.push(`Dockerfile contains prohibited ${label}`);
+    }
+  }
+
+  return { failures, pagesPublishers };
 }
 
-if (failures.length > 0) {
-  console.error(`GitHub Actions policy validation failed:\n- ${failures.join("\n- ")}`);
-  process.exit(1);
+function main() {
+  const root = resolve(process.argv[2] ?? defaultRoot);
+  const { failures, pagesPublishers } = validateGitHubActionsPolicy(root);
+
+  if (failures.length > 0) {
+    console.error(`GitHub Actions policy validation failed:\n- ${failures.join("\n- ")}`);
+    process.exit(1);
+  }
+
+  console.log(`GitHub Actions policy validation passed (deployment workflows only; Pages publisher: ${pagesPublishers[0]}).`);
 }
 
-console.log("GitHub Actions policy validation passed (deployment workflows only: deploy.yml, docs.yml, typescript-sdk-docs.yml).\n");
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) main();

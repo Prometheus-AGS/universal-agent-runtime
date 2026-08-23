@@ -1,17 +1,18 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 108,
-  "derivedRevision": 108,
+  "sourceRevision": 340,
+  "derivedRevision": 340,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 58,
-    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 50
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 25
   },
   "conflictCount": 0,
   "phase": "direct-entity-migration-providers",
   "phaseId": "direct-entity-migration-providers",
   "parentPhase": null,
-  "last_updated": "2026-08-15T22:07:16.756649Z",
+  "last_updated": "2026-08-23T06:56:32.733270Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 0,
   "changes_completed": 0,
@@ -25,18 +26,18 @@
       "status": "PENDING"
     },
     "evidence": {
-      "status": "PENDING",
-      "summary": null,
+      "status": "COMPLETE",
+      "summary": "Five genuine model-backed functional paths passed through both API and shipped UI under local server-full; results and limits are in functional-verification.md.",
       "blockers": []
     },
     "certification": {
-      "status": "PENDING",
-      "summary": null,
+      "status": "SKIPPED",
+      "summary": "Operational soak, supply-chain, and RC certification were superseded and cancelled; no certification claim is made.",
       "blockers": []
     },
     "publication": {
-      "status": "PENDING",
-      "summary": null,
+      "status": "SKIPPED",
+      "summary": "GA publication was superseded and cancelled; no tag or publication was performed.",
       "blockers": []
     }
   },

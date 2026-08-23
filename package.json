@@ -19,6 +19,8 @@
     "docs:start": "npm --prefix website start",
     "docs:build": "npm --prefix website run build",
     "docs:lint": "npm --prefix website run lint",
+    "docs:publication:validate": "node scripts/validate-documentation-publication.mjs",
+    "docs:publication:controls": "node scripts/test-documentation-publication.mjs",
     "ci-gates": "bash scripts/ci-grep-gates.sh",
     "frontend:boundaries": "node scripts/check-frontend-boundaries.mjs && node scripts/test-frontend-boundaries-negative.mjs",
     "frontend:style-gate": "node scripts/check-flat2-style.mjs && node scripts/test-flat2-style-negative.mjs",

@@ -1,0 +1,43 @@
+{
+  "refinement_id": "960bda90-986f-40e0-9539-334ccd80d420",
+  "artifact_name": "uar-documentation-publication-contract",
+  "artifact_type": "content",
+  "content_type": "direct:content",
+  "started_at": "2026-08-23T06:52:37Z",
+  "updated_at": "2026-08-23T06:54:03Z",
+  "current_iteration": 0,
+  "max_iterations": 5,
+  "goals": [],
+  "constraints": [],
+  "phases_completed": [],
+  "convergence_status": "running",
+  "iteration_history": [],
+  "workflow_triggers": [],
+  "checkpoints": [
+    {
+      "checkpoint_id": "e37ba896",
+      "phase": "specify",
+      "iteration": 0,
+      "timestamp": "2026-08-23T06:54:02Z"
+    },
+    {
+      "checkpoint_id": "acabe566",
+      "phase": "plan",
+      "iteration": 0,
+      "timestamp": "2026-08-23T06:54:02Z"
+    },
+    {
+      "checkpoint_id": "fa843bb7",
+      "phase": "execute",
+      "iteration": 0,
+      "timestamp": "2026-08-23T06:54:03Z"
+    },
+    {
+      "checkpoint_id": "7df2c9a2",
+      "phase": "reflect",
+      "iteration": 0,
+      "timestamp": "2026-08-23T06:54:03Z"
+    }
+  ],
+  "prior_cycle_id": null
+}

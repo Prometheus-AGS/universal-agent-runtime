@@ -68,6 +68,13 @@
       "content_type": "direct:content",
       "updated_at": "2026-08-21T13:53:23Z",
       "finalized_at": "2026-08-21T13:53:23Z"
+    },
+    "uar-documentation-publication-contract": {
+      "path": ".refiner/artifacts/uar-documentation-publication-contract",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-23T06:55:00Z",
+      "finalized_at": "2026-08-23T06:55:00Z"
     }
   }
 }
