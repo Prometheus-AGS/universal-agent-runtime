@@ -763,6 +763,25 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - No database, configuration, credential, provider/model setting, or source
   file changed, and no inference request ran.
 
+## 2026-08-23 — Session Configuration installed functional gate passed
+
+- Built the completed React bundle and locked `server-full` release, installed
+  both through the existing macOS installer, and observed identical source and
+  installed binary SHA-256 values.
+- Corrected the production chunk rule after the npm 3.0.2 package path exposed
+  that the old workspace-only matcher no longer emitted `vendor-entities`.
+- Ran one short Playwright scenario against the installed service: 1 passed in
+  10.9 seconds, sheet open in 81 ms, 16 graph publications against a limit of
+  23, twelve configured models, expected spacing at four widths, save/reopen
+  and cancel isolation, and genuine inference for explicit-turn,
+  saved-session, and agent-default precedence.
+- The three browser 404s were the named negative control for an absent new
+  session configuration; the later POST/GET requests returned 200. The retained
+  evidence contains no credential values.
+- Playwright harness corrections were limited to exact option selection and
+  awaiting asynchronous request-header access. No mock backend, broad suite,
+  soak, or GitHub Actions product test ran.
+
 ## 2026-08-23 — Native service deployment reflected and closed
 
 - The OpenSpec archive gate initially reported 17 invalid canonical specs.

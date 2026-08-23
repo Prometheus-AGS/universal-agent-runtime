@@ -634,3 +634,28 @@ launchctl registration, a PID, or HTTP health alone as dependency recovery.
 
 **Limit.** This is an operational recovery rule, not a diagnosis of the
 underlying SurrealDB or RocksDB stall.
+
+## 2026-08-23 — Registry package adoption invalidates workspace-only chunk rules
+
+**Observed behavior.** After adopting the release build of Entity Management
+3.0.2, the production frontend no longer emitted its dedicated entity vendor
+chunk even though the application resolved the correct dependency.
+
+**Root cause.** The Vite manual-chunk rule matched the former workspace source
+path only. Registry packages resolve beneath
+`node_modules/@prometheus-ags/...`, so the rule silently stopped matching.
+
+**Working rule.** When a package moves between workspace and registry
+provenance, verify the production asset graph as well as the lockfile. Chunking,
+alias, transform, and source-map rules that inspect paths must recognize the
+installed package layout explicitly.
+
+## 2026-08-23 — A model inventory is not proof that the account can use a model
+
+**Observed behavior.** The local OpenAI proxy advertised `gpt-5.4-nano`, but a
+real completion request was rejected for the ChatGPT-backed Codex account.
+`gpt-5.4-mini`, `gpt-5.4`, and `gpt-5.5` completed successfully.
+
+**Working rule.** Use discovery only to populate candidates. Functional routing
+evidence must come from an actual completion with the current account and
+endpoint; never convert an advertised model ID into a usability claim.

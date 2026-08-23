@@ -1,1 +1,1 @@
-{"totalRuns":94,"failedRuns":0,"lastRun":{"ts":"2026-08-23T22:42:13Z","kind":"task","edge":"after","name":"repair-session-configuration-entity-flow:13","hookId":"legacy-change-complete","layer":"builtin","mode":"augment","status":0},"lastFailure":null}
+{"totalRuns":131,"failedRuns":0,"lastRun":{"ts":"2026-08-23T23:53:47Z","kind":"task","edge":"after","name":"prevent-session-configuration-regressions:8","hookId":"legacy-change-complete","layer":"builtin","mode":"augment","status":0},"lastFailure":null}

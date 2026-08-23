@@ -1,8 +1,8 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 513,
-  "derivedRevision": 513,
+  "sourceRevision": 535,
+  "derivedRevision": 535,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 143,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
@@ -12,6 +12,7 @@
     "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
     "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
     "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
+    "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
     "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
@@ -19,16 +20,16 @@
   "phase": "fix-broken-session-configuration-ui",
   "phaseId": "fix-broken-session-configuration-ui",
   "parentPhase": null,
-  "last_updated": "2026-08-23T22:42:11.276355Z",
+  "last_updated": "2026-08-23T23:54:12.521722Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 4,
-  "changes_completed": 2,
+  "changes_completed": 3,
   "implementation_total": 4,
-  "implementation_completed": 2,
+  "implementation_completed": 3,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 2,
+      "completed": 3,
       "total": 4,
       "status": "IN_PROGRESS"
     },
@@ -74,12 +75,12 @@
     {
       "id": "prevent-session-configuration-regressions",
       "title": "Prevent Session Configuration regressions",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
-      "tasks_total": 8,
-      "tasks_done": 0,
-      "last_task_completed": null,
-      "next_task_pending": "1.1 Add the React/entity-state standing rule outside managed regions in both `AGENTS.md` and `CLAUDE.md` and reconcile `.claude/rules/typescript.md` into explicit entity-backed and transient-Zustand paths; verify it names Vercel React Best Practices, Composition Patterns, the applicable Entity Management skill, platform domain hooks, narrow selectors, and the per-row mutation prohibition without permitting components to import stores/services or hooks to fetch directly.",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 11,
+      "tasks_done": 8,
+      "last_task_completed": "3.2 Write row-form `verification.md` with commands, observed output, source SHA, installed profile, host-local timing limit, and unverified limits, then commit only this change's guardrails, functional evidence, OpenSpec, and KBD artifacts.",
+      "next_task_pending": "1.2 Extend the existing frontend boundary checker with deterministic rules for render-body setters, per-row feature graph writes, facade bypass, and named duplicate entity caches; verify each rule reports a stable identifier and location.",
       "blockers": []
     },
     {
