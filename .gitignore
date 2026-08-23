@@ -87,6 +87,7 @@ src-tauri/gen/
 *.tsbuildinfo
 /data/
 static/assets
+/compass-out/
 
 # Git worktrees must live under ~/.claude/worktrees/ — defense-in-depth so
 # stray in-repo worktrees never enter the index. See scripts/worktree-new.sh

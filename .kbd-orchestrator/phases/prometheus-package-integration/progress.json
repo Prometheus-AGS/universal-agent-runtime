@@ -1,18 +1,23 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 392,
-  "derivedRevision": 392,
+  "sourceRevision": 412,
+  "derivedRevision": 412,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 74,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 84,
+    "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
-    "80130eb1-95f8-4039-8976-71bdce23779c": 61
+    "80130eb1-95f8-4039-8976-71bdce23779c": 61,
+    "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
+    "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
+    "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
   "phase": "prometheus-package-integration",
   "phaseId": "prometheus-package-integration",
   "parentPhase": null,
-  "last_updated": "2026-08-23T13:53:20.530680Z",
+  "last_updated": "2026-08-23T17:38:02.569494Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 0,
   "changes_completed": 0,
