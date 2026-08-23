@@ -55,6 +55,9 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Install Protocol Buffers compiler
+        run: sudo apt-get update && sudo apt-get install --yes protobuf-compiler
+
       - name: Generate Rust reference
         run: cargo doc --locked --no-deps -p universal-agent-runtime --lib --features server-full
 
