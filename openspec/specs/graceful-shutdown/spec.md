@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Graceful Shutdown Specification
+
+## Purpose
+
+Define how the server drains in-flight work and releases resources when shutdown is requested.
+
+## Requirements
 
 ### Requirement: Server handles SIGTERM gracefully
 The server SHALL intercept SIGTERM and SIGINT signals and initiate graceful shutdown, allowing in-flight HTTP requests and SSE streams to complete within a configurable timeout before process exit.
@@ -25,3 +31,10 @@ The server SHALL close database connection pools, Redis connections, MCP client 
 #### Scenario: MCP servers notified
 - **WHEN** graceful shutdown is initiated
 - **THEN** all stdio MCP server child processes receive shutdown signals
+
+### Requirement: Native supervisor cancellation joins process shutdown
+An external native-service cancellation token SHALL initiate the same run cancellation, listener drain, resource cleanup, and completion path as an ordinary supported process stop signal without introducing a second cleanup implementation.
+
+#### Scenario: Windows SCM stop is received
+- **WHEN** the Windows service adapter cancels the server
+- **THEN** UAR drains and releases resources through the existing graceful shutdown coordinator before the service reports Stopped

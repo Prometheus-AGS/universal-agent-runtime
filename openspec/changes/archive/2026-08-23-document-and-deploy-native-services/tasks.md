@@ -29,6 +29,6 @@
 ## 4. Closeout
 
 - [x] 4.1 As the owner of final OpenSpec verification artifacts, complete remaining functional checkboxes in changes 1–4 only after their observed evidence passes; do not edit their implementation surfaces. Stop before reflection on a required real-provider failure.
-- [ ] 4.2 Strict-validate and archive all five changes through OpenSpec.
-- [ ] 4.3 Complete KBD Execute and run `/kbd-reflect uar-native-service-deployment` automatically.
-- [ ] 4.4 Merge all completed changes to `main`, remove phase worktrees, and confirm no push, tag, publication, or PR occurred.
+- [x] 4.2 Strict-validate and archive all five changes through OpenSpec.
+- [x] 4.3 Complete KBD Execute and run `/kbd-reflect uar-native-service-deployment` automatically.
+- [x] 4.4 Merge all completed changes to `main`, remove phase worktrees, and confirm no push, tag, publication, or PR occurred.

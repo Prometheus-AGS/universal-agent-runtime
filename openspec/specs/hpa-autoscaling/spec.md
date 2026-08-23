@@ -1,4 +1,10 @@
-## ADDED Requirements
+# HPA Autoscaling Specification
+
+## Purpose
+
+Define how Kubernetes scales UAR pods within configured limits in response to sustained CPU and memory utilization.
+
+## Requirements
 
 ### Requirement: UAR pods autoscale based on CPU and memory
 A HorizontalPodAutoscaler SHALL scale UAR pods between configured min and max replicas based on CPU and memory utilization.

@@ -1,10 +1,11 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 402,
-  "derivedRevision": 402,
+  "sourceRevision": 412,
+  "derivedRevision": 412,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 78,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 84,
+    "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "80130eb1-95f8-4039-8976-71bdce23779c": 61,
     "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
@@ -13,18 +14,18 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-23T15:14:18.622648Z",
+  "updatedAt": "2026-08-23T17:38:02.569494Z",
   "cursor": [
     "uar-native-service-deployment",
-    "execute"
+    "reflect"
   ],
   "root": {
     "type": "phase",
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "running",
     "progress": {
-      "done": 93,
-      "total": 102
+      "done": 5,
+      "total": 5
     },
     "children": [
       {
@@ -1233,9 +1234,9 @@
         "type": "phase",
         "id": "uar-native-service-deployment",
         "canonicalId": "uar-native-service-deployment",
-        "status": "IN_PROGRESS",
+        "status": "COMPLETE",
         "progress": {
-          "done": 4,
+          "done": 5,
           "total": 5
         },
         "children": [
@@ -1278,7 +1279,7 @@
           {
             "type": "change",
             "id": "document-and-deploy-native-services",
-            "status": "PENDING",
+            "status": "COMPLETE",
             "progress": {
               "done": 0,
               "total": 0

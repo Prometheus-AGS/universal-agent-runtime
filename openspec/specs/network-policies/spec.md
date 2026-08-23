@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Network Policies Specification
+
+## Purpose
+
+Define default-deny Kubernetes network isolation and the explicit service and gateway communication paths required by UAR.
+
+## Requirements
 
 ### Requirement: Default deny ingress policy
 The namespace SHALL have a default-deny ingress NetworkPolicy preventing all inbound traffic except explicitly allowed.

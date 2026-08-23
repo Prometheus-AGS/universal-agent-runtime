@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Skill Hot Reload Specification
+
+## Purpose
+
+Define how skill changes become available without restarting the server while preserving the behavior of already-active agent runs.
+
+## Requirements
 
 ### Requirement: Skills can be reloaded without server restart
 The skill registry SHALL support hot-reloading skills from the skills directory or database without requiring a server restart.

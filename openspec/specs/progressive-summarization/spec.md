@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Progressive Summarization Specification
+
+## Purpose
+
+Define model-driven context compression that preserves important conversation state when a configured token threshold is exceeded.
+
+## Requirements
 
 ### Requirement: ProgressiveSummarization uses LLM for context compression
 The ProgressiveSummarization context strategy SHALL call an LLM to generate conversation summaries when the context window exceeds the trigger threshold, replacing older messages with a summary message.

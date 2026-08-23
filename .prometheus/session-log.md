@@ -762,3 +762,25 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   `ok` from `/healthz` and `ready` from `/readyz`.
 - No database, configuration, credential, provider/model setting, or source
   file changed, and no inference request ran.
+
+## 2026-08-23 — Native service deployment reflected and closed
+
+- The OpenSpec archive gate initially reported 17 invalid canonical specs.
+  Applying the five native deltas removed two; an operator-approved structural
+  normalization of the remaining 15 produced `openspec validate --specs`
+  totals of 101 passed and 0 failed. The stale GKE scenario was also reconciled
+  to the repository's deployment-only GitHub Actions policy.
+- Archived all five native deployment changes under dated 2026-08-23 paths.
+  The final archived change now has every task checked.
+- Wrote the delta-first phase reflection. A fresh history-blind artifact critic
+  returned PASS and confirmed that macOS runtime evidence was not transferred
+  to Linux, Windows, other profiles, or an aggregate readiness verdict.
+- Canonical KBD revisions 411 and 412 completed Reflect and the phase through
+  the local canonical runtime because the TCP control plane remained
+  unavailable. `position.json` records the phase COMPLETE; the generated
+  cursor and `exactNextCommand` remain stale and were not hand-edited.
+- Verified the remaining change worktree held no unique or differing
+  `.prometheus` content, removed it through the repository helper, and observed
+  main as the only worktree. No push, tag, publication, or PR occurred.
+- The installed UAR and SurrealDB LaunchAgents were left running. No inference,
+  soak, unit-test campaign, or GitHub Actions job ran during closeout.

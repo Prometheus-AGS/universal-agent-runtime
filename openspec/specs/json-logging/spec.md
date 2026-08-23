@@ -1,4 +1,10 @@
-## ADDED Requirements
+# JSON Logging Specification
+
+## Purpose
+
+Define configurable structured logging behavior suitable for both human development use and production log aggregation.
+
+## Requirements
 
 ### Requirement: Configurable log output format
 The server SHALL support configurable log output format via `UAR_LOG_FORMAT` environment variable with values `json`, `compact`, and `pretty`.

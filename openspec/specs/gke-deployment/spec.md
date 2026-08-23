@@ -1,4 +1,10 @@
-## ADDED Requirements
+# GKE Deployment Specification
+
+## Purpose
+
+Define the container, Kubernetes, storage, routing, and deployment contracts for operating UAR on Google Kubernetes Engine.
+
+## Requirements
 
 ### Requirement: Dockerfile uses latest Rust stable base image
 The Dockerfile SHALL use `rust:1.87-slim-bookworm` (or latest stable) for the build stage and `debian:bookworm-slim` for the runtime stage.
@@ -43,16 +49,16 @@ The `k8s/` directory SHALL be structured for ArgoCD Application watching.
 - **WHEN** a manifest file in `k8s/base/` is modified and pushed to main
 - **THEN** ArgoCD detects the change and triggers a sync (or marks as OutOfSync)
 
-### Requirement: GitHub Actions build and deploy workflow
-A workflow at `.github/workflows/deploy.yml` SHALL build the Docker image, push to Google Artifact Registry, and update the image tag in K8s manifests.
+### Requirement: GitHub Actions deployment workflow
+A workflow at `.github/workflows/deploy.yml` SHALL deploy a locally built and certified immutable Docker image, publish that exact image to Google Artifact Registry when required, and update the image reference in K8s manifests. It SHALL NOT build, unit test, integration test, lint, or perform other routine development verification in GitHub Actions.
 
-#### Scenario: Push to main triggers build
-- **WHEN** code is pushed to the `main` branch
-- **THEN** the workflow builds a Docker image tagged with the git SHA
+#### Scenario: Accepted source triggers deployment
+- **WHEN** deployment is requested for an accepted `main` source SHA with a locally certified image digest
+- **THEN** the workflow verifies and deploys that immutable image without rebuilding it
 
-#### Scenario: Image pushed to Artifact Registry
-- **WHEN** the Docker build succeeds
-- **THEN** the image is pushed to the configured Artifact Registry repository
+#### Scenario: Image published to Artifact Registry
+- **WHEN** the certified immutable image is absent from the configured Artifact Registry repository
+- **THEN** the workflow publishes that exact image and verifies its digest
 
 #### Scenario: Manifest updated with new tag
 - **WHEN** the image is pushed

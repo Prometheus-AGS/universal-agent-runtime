@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Context Visualization Specification
+
+## Purpose
+
+Define how the chat interface communicates context-window usage, active management strategy, and compression events.
+
+## Requirements
 
 ### Requirement: Display context window usage in chat UI
 The chat interface SHALL display a visual indicator of current context window utilization showing tokens used vs. available.

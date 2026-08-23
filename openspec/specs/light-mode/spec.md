@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Light Mode Specification
+
+## Purpose
+
+Define accessible light and dark theme selection, persistence, system preference detection, and complete design-token coverage.
+
+## Requirements
 
 ### Requirement: Light/dark theme toggle
 The UI SHALL provide a theme toggle allowing users to switch between light and dark modes.

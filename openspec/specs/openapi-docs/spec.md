@@ -1,4 +1,10 @@
-## ADDED Requirements
+# OpenAPI Documentation Specification
+
+## Purpose
+
+Define the interactive API documentation and downloadable OpenAPI contract exposed for UAR's public HTTP endpoints.
+
+## Requirements
 
 ### Requirement: Auto-generated OpenAPI documentation
 The server SHALL expose `GET /api/docs` serving an interactive OpenAPI/Swagger UI and `GET /api/openapi.json` serving the OpenAPI 3.1 specification.

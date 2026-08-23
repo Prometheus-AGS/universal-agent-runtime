@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Deep Health Probes Specification
+
+## Purpose
+
+Define lightweight process liveness and dependency-aware readiness behavior for deployed UAR services.
+
+## Requirements
 
 ### Requirement: Liveness probe is lightweight
 The `/healthz` endpoint SHALL return HTTP 200 if the process is alive and can serve HTTP, without checking external dependencies.

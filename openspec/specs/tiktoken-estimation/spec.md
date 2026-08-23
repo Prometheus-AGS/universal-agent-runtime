@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Tiktoken Estimation Specification
+
+## Purpose
+
+Define tokenizer-aware OpenAI token estimation, fallback estimation for other models, and per-message protocol overhead accounting.
+
+## Requirements
 
 ### Requirement: Accurate token estimation for OpenAI models
 The token service SHALL use tiktoken-compatible tokenization for OpenAI models instead of character-based estimation.

@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Prometheus Metrics Specification
+
+## Purpose
+
+Define the Prometheus metrics endpoint and observable HTTP, model-token, tool-call, and active-session measurements emitted by UAR.
+
+## Requirements
 
 ### Requirement: Expose Prometheus metrics endpoint
 The server SHALL expose `GET /metrics` returning Prometheus text exposition format.

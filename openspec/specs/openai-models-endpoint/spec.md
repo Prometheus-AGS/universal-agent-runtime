@@ -1,4 +1,10 @@
-## ADDED Requirements
+# OpenAI Models Endpoint Specification
+
+## Purpose
+
+Define OpenAI-compatible model listing and model-detail behavior for providers configured and available through UAR.
+
+## Requirements
 
 ### Requirement: List available models via OpenAI-compatible endpoint
 The server SHALL expose `GET /v1/models` returning a list of available models in OpenAI API format.

@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Helm Chart Specification
+
+## Purpose
+
+Define the Helm packaging and configuration behavior for a complete Kubernetes deployment of UAR and its required services.
+
+## Requirements
 
 ### Requirement: Helm chart packages all K8s resources
 A Helm chart in `k8s/helm/uar/` SHALL generate all Kubernetes resources needed for a complete UAR deployment.

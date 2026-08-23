@@ -47,3 +47,10 @@ support. The published OpenAPI version SHALL match the product version.
 #### Scenario: Profile-specific behavior is documented
 - **WHEN** behavior or evidence differs between `server-full`, `minimal`, and `embedded-mobile`
 - **THEN** the public guide reports those results separately and makes no aggregate or cross-profile claim
+
+### Requirement: Native deployment documentation is operationally complete
+The README and product documentation SHALL cover native installation, upgrade, uninstall, credential refresh, configuration precedence, program/config/state/log locations, service control, listener exposure, troubleshooting, and platform-specific verification for macOS, Linux, and Windows.
+
+#### Scenario: Operator follows platform instructions
+- **WHEN** an operator selects a supported native platform
+- **THEN** the documentation identifies prerequisites, exact lifecycle commands, default paths/ports, preservation behavior, log inspection, and the limits of locally observed evidence

@@ -1,4 +1,10 @@
-## ADDED Requirements
+# MCP Health Dashboard Specification
+
+## Purpose
+
+Define how administrators inspect and refresh the connection health, transport, and tool inventory of configured MCP servers.
+
+## Requirements
 
 ### Requirement: Admin page showing MCP server status
 The admin dashboard SHALL include a page listing all configured MCP servers with their connection status, tool count, and last-seen timestamp.
