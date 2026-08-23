@@ -86,7 +86,7 @@ invoke a backend do-everything command.
 
 ## Progress ledger
 
-- [PENDING] `adopt-entity-management-3-0-2` — Codex
+- [COMPLETE] `adopt-entity-management-3-0-2` — Codex
 - [PENDING] `repair-session-configuration-entity-flow` — Codex
 - [PENDING] `prevent-session-configuration-regressions` — Codex
 - [PENDING] `fix-atomic-fetched-list-ingestion` — Codex

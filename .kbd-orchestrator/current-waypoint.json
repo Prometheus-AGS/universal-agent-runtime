@@ -1,8 +1,8 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 471,
-  "derivedRevision": 471,
+  "sourceRevision": 486,
+  "derivedRevision": 486,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 143,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
@@ -10,6 +10,7 @@
     "80130eb1-95f8-4039-8976-71bdce23779c": 61,
     "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
     "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
     "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
@@ -29,10 +30,10 @@
   "currentTask": null,
   "status": "running",
   "completionMetric": "implementation",
-  "implementationCompleted": 94,
+  "implementationCompleted": 95,
   "implementationTotal": 106,
   "planRevision": 27,
-  "revision": 471,
+  "revision": 486,
   "exactNextCommand": "/kbd-execute fix-broken-session-configuration-ui",
-  "updatedAt": "2026-08-23T21:12:44.022330Z"
+  "updatedAt": "2026-08-23T21:42:54.880121Z"
 }

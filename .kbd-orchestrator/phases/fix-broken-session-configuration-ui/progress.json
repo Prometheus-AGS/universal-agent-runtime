@@ -1,8 +1,8 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 471,
-  "derivedRevision": 471,
+  "sourceRevision": 486,
+  "derivedRevision": 486,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 143,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
@@ -10,6 +10,7 @@
     "80130eb1-95f8-4039-8976-71bdce23779c": 61,
     "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
     "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
     "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
@@ -17,18 +18,18 @@
   "phase": "fix-broken-session-configuration-ui",
   "phaseId": "fix-broken-session-configuration-ui",
   "parentPhase": null,
-  "last_updated": "2026-08-23T21:12:44.022330Z",
+  "last_updated": "2026-08-23T21:42:54.880121Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 4,
-  "changes_completed": 0,
+  "changes_completed": 1,
   "implementation_total": 4,
-  "implementation_completed": 0,
+  "implementation_completed": 1,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 0,
+      "completed": 1,
       "total": 4,
-      "status": "PENDING"
+      "status": "IN_PROGRESS"
     },
     "evidence": {
       "status": "COMPLETE",
@@ -50,12 +51,12 @@
     {
       "id": "adopt-entity-management-3-0-2",
       "title": "Adopt Entity Management 3.0.2",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
-      "tasks_total": 5,
-      "tasks_done": 0,
-      "last_task_completed": null,
-      "next_task_pending": "1.1 Replace the frontend `workspace:*` dependency with exact `@prometheus-ags/prometheus-entity-management` 3.0.2 and add exact `@prometheus-ags/entity-graph-core` 3.0.2 peer ownership; verify the manifest contains neither a range nor a workspace selector for either product dependency.",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 6,
+      "tasks_done": 5,
+      "last_task_completed": "2.3 Run `openspec validate adopt-entity-management-3-0-2 --strict`, write row-form `verification.md` with source SHA/profile/limits, and commit only this change's manifest, lockfile, OpenSpec, and KBD artifacts.",
+      "next_task_pending": "Replace the frontend workspace dependency with exact published 3.0.2 dependencies",
       "blockers": []
     },
     {

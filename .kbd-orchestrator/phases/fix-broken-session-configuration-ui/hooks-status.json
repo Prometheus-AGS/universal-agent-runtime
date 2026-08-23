@@ -1,1 +1,1 @@
-{"totalRuns":18,"failedRuns":0,"lastRun":{"ts":"2026-08-23T21:12:45Z","kind":"execute","edge":"after","name":"fix-broken-session-configuration-ui","hookId":"kbd-memory-log","layer":"builtin","mode":"augment","status":0},"lastFailure":null}
+{"totalRuns":41,"failedRuns":0,"lastRun":{"ts":"2026-08-23T21:42:30Z","kind":"task","edge":"after","name":"adopt-entity-management-3-0-2:5","hookId":"legacy-change-complete","layer":"builtin","mode":"augment","status":0},"lastFailure":null}
