@@ -222,8 +222,26 @@ Those failures are dependencies, not suppressed findings.
   work `/opsx:apply certify-and-publish-uar-docs` while live Pages deployment
   and repository metadata remain pending.
 
+### Pages deployment boundary observed
+
+- Deployment run `32636863253` failed during Rust-reference assembly because a
+  clean Ubuntu runner did not contain `protoc`, an existing prerequisite of the
+  UAR build script.
+- Added only the missing deployment-build prerequisite. Local Actions-policy
+  and composed-publication validation passed, and run `32637504436` then built
+  Docusaurus, Rustdoc, TypeDoc, staged references, and uploaded the Pages
+  artifact from exact SHA `92529ee6e1c764f3c4865587816abf2644a43dba`.
+- GitHub rejected the deployment before `deploy-pages` could run because the
+  `github-pages` environment has a custom branch policy allowing only `main`.
+  The policy was inspected and preserved; it was not weakened to publish from a
+  feature branch.
+- Live route validation, homepage metadata, KBD completion, and reflection
+  therefore remain pending. The PR and an authorized merge to `main` are the
+  required next boundary.
+
 ## Next action
 
-Commit and push the completed local artifact, dispatch the deployment-only
-`docs.yml` workflow, observe the live canonical routes, set the repository
-homepage, then complete this change and run KBD reflection.
+Open the PR from the pushed branch. After an authorized merge to `main`, observe
+the protected deployment workflow, independently validate the live canonical
+routes, set the repository homepage, then complete this change and run KBD
+reflection.

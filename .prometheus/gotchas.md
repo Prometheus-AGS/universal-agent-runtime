@@ -559,3 +559,17 @@ documentation artifact, so the defect did not block its content gate.
 **Ownership.** The implementation is in the pinned
 `crates/prometheus-skill-system` submodule. Fix it upstream rather than creating
 a detached submodule edit in UAR.
+
+## 2026-08-23 — Pages environment branch policy is stricter than workflow triggers
+
+**Observed behavior.** A manual `docs.yml` run on
+`codex/uar-branded-documentation-site` assembled and uploaded the complete Pages
+artifact, but the deploy job was rejected before execution. The
+`github-pages` environment has a custom deployment-branch policy whose only
+entry is `main`.
+
+**Working rule.** A workflow's `workflow_dispatch` or branch trigger does not
+grant deployment authority. Inspect the target environment's deployment branch
+policy before planning feature-branch publication. Preserve the protection;
+open the PR, obtain merge authority, and validate the deployment created from
+the allowed branch instead of weakening the environment for convenience.
