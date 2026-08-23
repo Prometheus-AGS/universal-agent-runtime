@@ -1,10 +1,22 @@
+<p align="center">
+  <img src="website/static/img/brand/uar-wordmark-dark.svg" alt="Universal Agent Runtime" width="440" />
+</p>
+
+<p align="center"><strong>Governed execution. Typed protocols. One runtime boundary.</strong></p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-FF6A3D" /></a>
+  <img alt="Version: 1.0.0" src="https://img.shields.io/badge/version-1.0.0-141C26" />
+  <a href="https://prometheus-ags.github.io/universal-agent-runtime/docs/intro"><img alt="Documentation portal" src="https://img.shields.io/badge/docs-portal-2563EB" /></a>
+</p>
+
 # Universal Agent Runtime
 
 Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, model routing, typed streaming, tools, retrieval, and declarative agent UI. Its first-party operator interface is React 19 + TypeScript.
 
 UAR is at version **1.0.0**. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
 
-Start with the [customer documentation site](https://prometheus-ags.github.io/universal-agent-runtime/docs/intro) for installation, architecture, SDK, skills, deployment, and security guides.
+The intended GitHub Pages home is the [customer documentation site](https://prometheus-ags.github.io/universal-agent-runtime/docs/intro) for installation, architecture, SDK, skills, deployment, and security guides. Its live-route status is verified only by the final documentation publication change.
 
 ## What is supported
 

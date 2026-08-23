@@ -1,7 +1,8 @@
 # =============================================================================
 # UAR — ~/.uar/config.yaml template (embedded SurrealDB + OpenAI)
 # =============================================================================
-# Copy to your home config (adjust paths if not on this machine):
+# Copy to your home config, then run UAR from the directory that should own the
+# relative `.uar/` data tree:
 #   mkdir -p ~/.uar/data ~/.uar/uploads
 #   cp docs/config/home.uar.embedded-openai.example.yaml ~/.uar/config.yaml
 #
@@ -45,7 +46,7 @@ resilience:
 persistence:
   provider: "surreal"
   # Embedded SurrealDB (SurrealKV). Create directory first: mkdir -p ~/.uar/data
-  database_url: "surrealkv:///Users/gqadonis/.uar/data/uar.db"
+  database_url: "surrealkv://./.uar/data/uar.db"
   vector_dimension: 1536
   external_cache_enabled: false
 
@@ -87,7 +88,7 @@ acp:
 
 file_processing:
   provider: "kreuzberg"
-  upload_dir: "/Users/gqadonis/.uar/uploads"
+  upload_dir: "./.uar/uploads"
   max_files_per_prompt: 10
   max_file_size: 52428800
   max_total_size: 104857600
@@ -114,7 +115,7 @@ vision:
 
 models:
   # Tokenizer / classifier assets; clone or symlink repo `src/uar/runtime/matching/models` here if needed
-  models_dir: "/Users/gqadonis/.uar/runtime/matching/models"
+  models_dir: "./.uar/runtime/matching/models"
   vector_threshold: 0.75
 
 knowledge_bases:
@@ -137,7 +138,7 @@ intent_classifier:
 
 memory:
   enabled: true
-  db_path: "/Users/gqadonis/.uar/data/memory.db"
+  db_path: "./.uar/data/memory.db"
   embedding_provider: "openai"
   embedding_model: "text-embedding-3-small"
   auto_capture: true

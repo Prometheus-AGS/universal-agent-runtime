@@ -110,6 +110,13 @@
       "content_type": "direct:content",
       "updated_at": "2026-08-23T09:10:27Z",
       "finalized_at": "2026-08-23T09:10:27Z"
+    },
+    "uar-readme-estate-review": {
+      "path": ".refiner/artifacts/uar-readme-estate-review",
+      "artifact_type": "content",
+      "content_type": "direct:content",
+      "updated_at": "2026-08-23T10:27:55Z",
+      "finalized_at": "2026-08-23T10:27:55Z"
     }
   }
 }

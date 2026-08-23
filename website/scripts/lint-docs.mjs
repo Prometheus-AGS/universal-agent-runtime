@@ -18,7 +18,7 @@ if (!hasVale()) {
   console.warn(' Vale CLI is not installed. Skipping prose lint.');
   console.warn(' Install Vale from https://vale.sh or run:');
   console.warn('   brew install vale');
-  console.warn(' To enable docs:lint in CI, the workflow installs Vale via the official installer.');
+  console.warn(' GitHub Actions are deployment-only; install Vale locally before claiming prose-lint evidence.');
   process.exit(0);
 }
 

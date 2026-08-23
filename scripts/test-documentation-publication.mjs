@@ -62,6 +62,7 @@ function fixture() {
   write(root, "scripts/validate-documentation-product-workflows.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-documentation-security-operations.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-documentation-developer-reference.mjs", "process.exit(0);\n");
+  write(root, "scripts/validate-documentation-readme-estate.mjs", "process.exit(0);\n");
   write(root, "scripts/validate-github-actions-policy.mjs", "process.exit(0);\n");
 
   writeJson(root, "docs/publication/sources.json", {

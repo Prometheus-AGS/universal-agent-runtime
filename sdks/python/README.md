@@ -1,23 +1,33 @@
 # Universal Agent Runtime Python SDK
 
-Stable, MIT-licensed, typed async client for UAR. It covers chat and SSE streaming, tools, Pydantic structured output, embeddings, the run lifecycle, knowledge bases, and ingestion.
+> **Current authority:** [Python SDK guide](/docs/sdk-python/intro). The source
+> package is checked in at version 1.0.0; registry availability is release evidence
+> and is not inferred from this README.
+
+The Python SDK is a typed asynchronous HTTP/SSE client for UAR. It covers chat,
+tools, structured output, embeddings, runs and checkpoints, knowledge bases,
+documents, search, and ingestion. It requires Python 3.10 or newer.
+
+## Use the checked-in source
 
 ```bash
-pip install universal-agent-runtime-sdk
+cd sdks/python
+uv sync --locked
+UAR_BASE_URL=http://127.0.0.1:1906 uv run python examples/chat.py
 ```
 
-```python
-import asyncio
-from universal_agent_runtime_sdk import Client
+Examples that make network requests require a running UAR server and valid
+credentials. Build the package-local Sphinx reference with:
 
-async def main() -> None:
-    async with Client("http://localhost:1906", api_key="...") as client:
-        completion = await client.chat("Explain replayable agent runs in one sentence.")
-        print(completion.choices[0].message.content)
-
-asyncio.run(main())
+```bash
+uv sync --locked --extra dev
+uv run sphinx-build -W -b html docs docs/_build/html
 ```
 
-Use `stream_chat` for chat SSE; use `create_run`, `stream_run`, `cancel_run`, `list_checkpoints`, and `resume_run` for agent execution. Six complete workflows live in `examples/`. API reference sources are in `docs/` and build with `sphinx-build -W -b html docs docs/_build/html`.
+`pyproject.toml` names the registry project
+`universal-agent-runtime-sdk`. Before using `pip install`, verify the exact
+version, files, integrity, and publisher on PyPI. Local metadata is not proof
+that the registry artifact exists.
 
-See `BREAKING.md` when upgrading from 0.1. The package supports Python 3.10+.
+This SDK targets HTTP/SSE server profiles. It does not embed or certify the
+transport-free `embedded-mobile` profile.

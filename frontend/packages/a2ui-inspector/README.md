@@ -1,7 +1,16 @@
 # A2UI Inspector
 
-Development-only React panel for A2UI message streams. Components consume hooks; hooks expose the Zustand store; the store owns validation and `web_core` processing; the injected service owns `EventSource` I/O.
+> **Current authority:** [A2UI testing guide](/docs/product/a2ui-testing). This
+> private workspace package is a development inspector, not a customer runtime surface.
 
-“Freeze preview” freezes presentation, not ingestion. Buffered messages and the live connection remain visible and Resume applies the queue. History is bounded (500 by default), never persisted, and reports dropped items. Hosts should inject a redaction function into `createEventSourceService` before displaying secrets or private runtime data.
+The inspector is a React panel for examining A2UI message streams. Components
+consume hooks, hooks expose the Zustand store, the store owns validation and
+`web_core` processing, and an injected service owns `EventSource` I/O.
 
-The `./storybook` entry exports stable addon/panel identifiers and the panel component. It intentionally does not install Storybook; the Change 25 host owns Storybook configuration and registration.
+Freeze pauses presentation, not ingestion. The panel keeps a bounded in-memory
+history (500 messages by default), reports dropped messages, and does not
+persist the stream. Hosts must inject redaction before displaying secrets or
+private runtime data.
+
+The `./storybook` export provides stable addon/panel identifiers and the panel
+component. This package does not install or configure Storybook for a host.

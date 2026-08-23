@@ -1,7 +1,5 @@
 # Historical Implementation Research
 
-> [!WARNING]
-> **HISTORICAL — SUPERSEDED.** These exploratory prompts and designs are not
-> current implementation or release contracts. Use [../ARCHITECTURE.md](../ARCHITECTURE.md),
-> [../frontend-architecture.md](../frontend-architecture.md), and
-> [../product-support-matrix.md](../product-support-matrix.md).
+> **Historical — superseded 2026-08-23.** These exploratory prompts and designs
+> are not current implementation or release contracts. Use the
+> [current architecture authority](/docs/architecture/intro).

@@ -1,5 +1,8 @@
 # UAR UI/UX design package
 
+> **Current authority:** [Chat product guide](/docs/product/chat). These files are
+> design references for the React application, not a separate executable UI.
+
 Self-contained design artifacts for the Universal Agent Runtime React 19 app.
 Open any `.html` file directly in a browser — no build step, no server.
 

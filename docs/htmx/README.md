@@ -1,5 +1,5 @@
 # Historical HTMX Prototypes
 
-> [!WARNING]
-> **HISTORICAL — SUPERSEDED.** Files in this directory are retained design
-> artifacts, not the current UAR frontend. Use [../frontend-architecture.md](../frontend-architecture.md).
+> **Historical — superseded 2026-08-23.** Files in this directory are retained
+> design artifacts, not the current UAR frontend. Use the
+> [current React product authority](/docs/product/chat).

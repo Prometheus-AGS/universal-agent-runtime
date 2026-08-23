@@ -1,37 +1,21 @@
 # `@prometheus-ags/a2ui-core`
 
-Vendored, version-pinned re-export of Google's
-[`@a2ui/web_core`](https://www.npmjs.com/package/@a2ui/web_core) —
-the A2UI project's core rendering / state-management library
-(message processing, data/component/surface models, catalog types).
+> **Current authority:** [A2UI product guide](/docs/product/a2ui). This private
+> workspace package is an internal protocol dependency, not a published SDK.
 
-This package exists so UAR code imports a stable **internal** path
-(`@prometheus-ags/a2ui-core`) instead of reaching into the upstream
-package directly, while the actual upstream version is pinned and
-bumped deliberately. See [`UPSTREAM.md`](./UPSTREAM.md) for the pinned
-version, the rationale for pinning-over-copying, and the update
-procedure.
-
-## Usage
+This package provides UAR's pinned internal import path for Google's
+`@a2ui/web_core`. It exposes the upstream default surface and the `v0_9`
+surface used by UAR renderers. It does not render components or define UAR's
+approved catalog.
 
 ```ts
-// Default (v0_8) surface, matching @a2ui/web_core's own default export.
-import { MessageProcessor } from '@prometheus-ags/a2ui-core';
-
-// v0.9 surface.
-import { MessageProcessor } from '@prometheus-ags/a2ui-core/v0_9';
+import { MessageProcessor } from "@prometheus-ags/a2ui-core";
+import { MessageProcessor as MessageProcessorV09 } from "@prometheus-ags/a2ui-core/v0_9";
 ```
 
-## Scope
+See [`UPSTREAM.md`](./UPSTREAM.md) for the exact upstream pin, update procedure,
+and license provenance. Update the workspace package and lockfile together; do
+not bypass this package with an unpinned direct import.
 
-This package is consumed by:
-- Change 17, `a2ui-uar-renderer-on-webcore` — the UAR-owned React
-  renderer built on this library (out of scope for this package).
-- Change 22, `a2ui-inspector-lit-svelte-renderers` — Lit and Svelte
-  renderers built on this library (out of scope for this package).
-
-It does not itself render anything.
-
-## License
-
-Apache-2.0, © Google LLC (upstream). See [`LICENSE`](./LICENSE).
+The package is `private: true`. Its version is workspace identity, not registry
+availability. Upstream code remains Apache-2.0; see [`LICENSE`](./LICENSE).

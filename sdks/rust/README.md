@@ -1,31 +1,33 @@
 # Universal Agent Runtime Rust SDK 1.0
 
-Typed async access to UAR chat, tools, structured outputs, embeddings, agent
-runs, checkpoints, knowledge bases, documents, search, and ingestion.
+> **Current authority:** [Rust SDK guide](/docs/sdk-rust/intro). The source
+> package is checked in at version 1.0.0; registry availability is release evidence
+> and is not inferred from this README.
 
-```toml
-[dependencies]
-universal-agent-runtime-sdk = "1"
+The Rust SDK exposes a default HTTP client plus optional in-process runtime
+features. Its client covers chat, tools, structured output, embeddings, runs and
+checkpoints, knowledge bases, documents, search, and ingestion.
+
+| Feature | Boundary |
+|---|---|
+| `http-client` | Default async HTTP/SSE client |
+| `embedded` | Links UAR with host-persistence support |
+| `embedded-mobile` | Adds the transport-free mobile composition |
+| `server` | Links the `minimal` server composition |
+| `full` | Combines the HTTP client and `server` features |
+
+Build the independently locked source package:
+
+```bash
+cargo check --locked --manifest-path sdks/rust/Cargo.toml
+UAR_BASE_URL=http://127.0.0.1:1906 \
+  cargo run --locked --manifest-path sdks/rust/Cargo.toml --example chat
 ```
 
-```rust,no_run
-use universal_agent_runtime_sdk::{ChatCompletionRequest, ChatMessage, Client};
+The network example requires a running UAR server and valid credentials. The
+embedded builder requires host-supplied persistence and provider boundaries; it
+does not silently start an HTTP listener.
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::new("http://localhost:1906")?;
-    let response = client.chat().complete(ChatCompletionRequest {
-        messages: vec![ChatMessage::text("user", "Hello")],
-        ..Default::default()
-    }).await?;
-    println!("{}", response.id);
-    Ok(())
-}
-```
-
-Set a runtime API key with `Client::with_api_key`. Run any sample with
-`UAR_BASE_URL=http://localhost:1906 cargo run --example chat`.
-
-The `embedded` feature links the runtime crate directly; both it and the
-HTTP-client-only path are MIT, so neither carries an extra licensing obligation.
-See [BREAKING.md](BREAKING.md) for migration notes.
+`Cargo.toml` names the crate `universal-agent-runtime-sdk`. Before using a
+registry dependency, verify the exact version, checksum, and publisher on
+crates.io. The source path is the repository-verifiable installation path.

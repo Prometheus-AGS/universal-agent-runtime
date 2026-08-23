@@ -1,5 +1,10 @@
 # UAR Code Interpreter
 
+> **Historical — superseded 2026-08-23.** This directory describes a proposed
+> standalone `uar-code-interpreter` service that is not a Cargo workspace member.
+> Current UAR provides governed in-process Wasmtime and remote sandbox tools; see
+> the [current tools authority](/docs/tools/overview).
+
 _Last updated: 2026-02-21_
 
 `uar-code-interpreter` is a standalone Rust service (Cargo workspace member) that provides **secure, sandboxed code execution** for the Prometheus AGS ecosystem — the UAR equivalent of [e2b](https://e2b.dev) or Kimi's built-in code runner, designed specifically for this project's agent workflows, plugin system, and Tauri desktop deployment.

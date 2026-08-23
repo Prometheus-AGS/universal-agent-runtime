@@ -1,63 +1,32 @@
 # Universal Agent Runtime TypeScript SDK
 
-Typed, runtime-validated TypeScript client for Universal Agent Runtime 1.0.
-It supports Node.js 20+, modern browsers, serverless runtimes, and Next.js.
+> **Current authority:** [TypeScript SDK guide](/docs/sdk-typescript/intro). The
+> source package is checked in at version 1.0.0; registry availability is release
+> evidence and is not inferred from this README.
 
-## Install
+The TypeScript SDK is a fetch/SSE client for Node.js 20+, current browsers,
+serverless runtimes, and compatible Next.js environments. Zod validates JSON
+responses. Client namespaces cover chat, tools, embeddings, runs, knowledge
+bases, and ingestion.
 
-```bash
-npm install @prometheus-ags/universal-agent-runtime-sdk
-```
-
-## Use
-
-```typescript
-import { UarClient } from "@prometheus-ags/universal-agent-runtime-sdk";
-
-const client = new UarClient("http://localhost:1906", {
-  apiKey: process.env.UAR_API_KEY,
-});
-
-const reply = await client.chat.complete({
-  messages: [{ role: "user", content: "Hello" }],
-});
-console.log(reply.choices[0]?.message.content);
-
-for await (const event of client.chat.stream({
-  messages: [{ role: "user", content: "Stream a haiku" }],
-})) {
-  console.log(event);
-}
-```
-
-The public client namespaces cover:
-
-- `chat`: completion, SSE streaming, and Zod-validated structured output
-- `tools`: namespaced tool execution
-- `embeddings`: OpenAI-compatible embedding creation
-- `runs`: create, stream, cancel, list checkpoints, and resume
-- `knowledge`: knowledge-base CRUD, documents, and search
-- `ingest`: content ingestion
-
-Every JSON response is validated with Zod. Failed HTTP responses throw
-`UarSdkError` with the HTTP `status` and parsed server `details` intact.
-Streaming methods return `AsyncIterable<SseEvent>` and accept an `AbortSignal`
-and `lastEventId` for cancellation and replay.
-
-Six typechecked examples live in [`examples/`](examples/), including a Next.js
-route-handler example. Generate the API reference with `npm run docs`.
-
-## Verify
+Use the package-local npm lockfile:
 
 ```bash
-npm run typecheck
-npm run lint
-npm test
-npm run build
-npm run docs
-npm run examples
+npm --prefix sdks/typescript ci
+npm --prefix sdks/typescript run typecheck
+npm --prefix sdks/typescript run build
+npm --prefix sdks/typescript run docs
 ```
 
-## License
+Network examples require a running UAR server and valid credentials. Streaming
+methods return an `AsyncIterable`, accept cancellation, and may supply a last
+event ID to the server's retained replay boundary; the SDK does not manufacture
+missing history.
 
-MIT
+`package.json` names `@prometheus-ags/universal-agent-runtime-sdk`. Before using
+`npm install`, verify the scoped package, exact version, integrity, and publisher
+on npm. Local TypeDoc output and package metadata are not registry evidence.
+
+The SDK targets HTTP/SSE server profiles and does not embed
+`embedded-mobile`. Browser credential storage and CORS also remain deployment
+responsibilities.

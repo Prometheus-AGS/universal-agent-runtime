@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "canonicalPortal": "https://prometheus-ags.github.io/universal-agent-runtime/docs/intro",
+  "entries": [
+    {
+      "path": "README.md",
+      "kind": "root",
+      "status": "current",
+      "owner": "UAR",
+      "action": "reconcile",
+      "authority": "/docs/intro",
+      "profiles": ["server-full", "minimal", "embedded-mobile"]
+    },
+    {
+      "path": ".agent/skills/iterative-evolver/README.md",
+      "kind": "generated-mirror",
+      "status": "current",
+      "owner": "Prometheus skill system",
+      "action": "regenerate",
+      "authority": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "generatedFrom": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "profiles": []
+    },
+    {
+      "path": ".claude/skills/iterative-evolver/README.md",
+      "kind": "generated-mirror",
+      "status": "current",
+      "owner": "Prometheus skill system",
+      "action": "regenerate",
+      "authority": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "generatedFrom": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "profiles": []
+    },
+    {
+      "path": ".codex/skills/iterative-evolver/README.md",
+      "kind": "generated-mirror",
+      "status": "current",
+      "owner": "Prometheus skill system",
+      "action": "regenerate",
+      "authority": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "generatedFrom": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "profiles": []
+    },
+    {
+      "path": ".cursor/skills/iterative-evolver/README.md",
+      "kind": "generated-mirror",
+      "status": "current",
+      "owner": "Prometheus skill system",
+      "action": "regenerate",
+      "authority": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "generatedFrom": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "profiles": []
+    },
+    {
+      "path": ".windsurf/skills/iterative-evolver/README.md",
+      "kind": "generated-mirror",
+      "status": "current",
+      "owner": "Prometheus skill system",
+      "action": "regenerate",
+      "authority": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "generatedFrom": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
+      "profiles": []
+    },
+    {
+      "path": ".agent/skills/uar-config-wizard/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "UAR configuration",
+      "action": "reconcile",
+      "authority": "/docs/configuration",
+      "profiles": ["server-full", "minimal", "embedded-mobile"]
+    },
+    {
+      "path": "docs/code-interpreter/README.md",
+      "kind": "uar-owned",
+      "status": "historical",
+      "owner": "Code interpreter",
+      "action": "preserve-with-banner",
+      "authority": "/docs/tools/overview",
+      "profiles": []
+    },
+    {
+      "path": "docs/coding-standards/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "Engineering standards",
+      "action": "reconcile",
+      "authority": "/docs/contributing/intro",
+      "profiles": []
+    },
+    {
+      "path": "docs/cookbook/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "Examples",
+      "action": "reconcile",
+      "authority": "/docs/installation",
+      "profiles": ["server-full", "minimal", "embedded-mobile"]
+    },
+    {
+      "path": "docs/cookbook/a2ui/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "A2UI examples",
+      "action": "replace-placeholder",
+      "authority": "/docs/product/a2ui",
+      "profiles": ["server-full", "embedded-mobile"]
+    },
+    {
+      "path": "docs/full-implementation/README.md",
+      "kind": "uar-owned",
+      "status": "historical",
+      "owner": "Historical research",
+      "action": "preserve-with-banner",
+      "authority": "/docs/architecture/intro",
+      "profiles": []
+    },
+    {
+      "path": "docs/htmx-docs/README.md",
+      "kind": "uar-owned",
+      "status": "historical",
+      "owner": "Historical rendered docs",
+      "action": "preserve-with-banner",
+      "authority": "/docs/product/chat",
+      "profiles": []
+    },
+    {
+      "path": "docs/htmx/README.md",
+      "kind": "uar-owned",
+      "status": "historical",
+      "owner": "Historical UI prototypes",
+      "action": "preserve-with-banner",
+      "authority": "/docs/product/chat",
+      "profiles": []
+    },
+    {
+      "path": "docs/htmx/sidebar-blocks/README.md",
+      "kind": "uar-owned",
+      "status": "historical",
+      "owner": "Historical UI prototypes",
+      "action": "preserve-with-banner",
+      "authority": "/docs/product/chat",
+      "profiles": []
+    },
+    {
+      "path": "docs/plugins/README.md",
+      "kind": "uar-owned",
+      "status": "historical",
+      "owner": "Plugin architecture",
+      "action": "preserve-with-banner",
+      "authority": "/docs/tools/overview",
+      "profiles": []
+    },
+    {
+      "path": "docs/publication/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "Documentation publication",
+      "action": "reconcile",
+      "authority": "/docs/intro",
+      "profiles": []
+    },
+    {
+      "path": "docs/rag-benchmark/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "RAG evaluation",
+      "action": "reconcile",
+      "authority": "/docs/knowledge/overview",
+      "profiles": ["server-full", "embedded-mobile"]
+    },
+    {
+      "path": "docs/realtime/README.md",
+      "kind": "uar-owned",
+      "status": "historical",
+      "owner": "Realtime",
+      "action": "preserve-with-banner",
+      "authority": "/docs/operations/realtime",
+      "profiles": []
+    },
+    {
+      "path": "docs/ui/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "UI design",
+      "action": "reconcile",
+      "authority": "/docs/product/chat",
+      "profiles": ["server-full", "embedded-mobile"]
+    },
+    {
+      "path": "evals/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "Evaluation harness",
+      "action": "reconcile",
+      "authority": "/docs/providers/inference",
+      "profiles": ["server-full"]
+    },
+    {
+      "path": "evals/rag-golden-set/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "RAG evaluation",
+      "action": "reconcile",
+      "authority": "/docs/knowledge/overview",
+      "profiles": ["server-full"]
+    },
+    {
+      "path": "frontend/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "React application",
+      "action": "reconcile",
+      "authority": "/docs/product/chat",
+      "profiles": ["server-full", "embedded-mobile"]
+    },
+    {
+      "path": "frontend/packages/a2ui-core/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "A2UI core",
+      "action": "reconcile",
+      "authority": "/docs/product/a2ui",
+      "profiles": ["server-full", "embedded-mobile"]
+    },
+    {
+      "path": "frontend/packages/a2ui-inspector/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "A2UI inspector",
+      "action": "reconcile",
+      "authority": "/docs/product/a2ui-testing",
+      "profiles": ["server-full"]
+    },
+    {
+      "path": "frontend/packages/a2ui-lit/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "A2UI Lit renderer",
+      "action": "reconcile",
+      "authority": "/docs/product/a2ui",
+      "profiles": []
+    },
+    {
+      "path": "frontend/packages/a2ui-react/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "A2UI React reference renderer",
+      "action": "reconcile",
+      "authority": "/docs/product/a2ui",
+      "profiles": []
+    },
+    {
+      "path": "frontend/packages/a2ui-svelte/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "A2UI Svelte renderer",
+      "action": "reconcile",
+      "authority": "/docs/product/a2ui",
+      "profiles": []
+    },
+    {
+      "path": "frontend/packages/a2ui-uar/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "UAR A2UI renderer",
+      "action": "reconcile",
+      "authority": "/docs/product/a2ui",
+      "profiles": ["server-full", "embedded-mobile"]
+    },
+    {
+      "path": "sdks/python/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "Python SDK",
+      "action": "reconcile",
+      "authority": "/docs/sdk-python/intro",
+      "profiles": ["server-full", "minimal"]
+    },
+    {
+      "path": "sdks/rust/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "Rust SDK",
+      "action": "reconcile",
+      "authority": "/docs/sdk-rust/intro",
+      "profiles": ["server-full", "minimal", "embedded-mobile"]
+    },
+    {
+      "path": "sdks/typescript/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "TypeScript SDK",
+      "action": "reconcile",
+      "authority": "/docs/sdk-typescript/intro",
+      "profiles": ["server-full", "minimal"]
+    },
+    {
+      "path": "tests/bdd/features/drafts/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "BDD drafts",
+      "action": "reconcile",
+      "authority": "/docs/contributing/intro",
+      "profiles": []
+    },
+    {
+      "path": "tests/integration/live/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "Live integration",
+      "action": "reconcile",
+      "authority": "/docs/providers/inference",
+      "profiles": ["server-full"]
+    },
+    {
+      "path": "tools/project-init/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "Project initialization",
+      "action": "reconcile",
+      "authority": "/docs/installation",
+      "profiles": []
+    },
+    {
+      "path": "tools/prometheus-eval/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "Evaluation CLI",
+      "action": "reconcile",
+      "authority": "/docs/operations/runs",
+      "profiles": ["server-full"]
+    },
+    {
+      "path": "vendor/git/README.md",
+      "kind": "vendored",
+      "status": "historical",
+      "owner": "Upstream vendors",
+      "action": "exclude",
+      "authority": "upstream-vendor",
+      "sha256": "cd8ef0a4fb1dccb49619447e948c15a71d481f1d7b55799e6689a7285db287c8",
+      "profiles": []
+    },
+    {
+      "path": "vendor/git/surreal-memory-server/crates/surreal-memory/README.md",
+      "kind": "vendored",
+      "status": "historical",
+      "owner": "surreal-memory upstream",
+      "action": "exclude",
+      "authority": "upstream-vendor",
+      "sha256": "eb8b57c2a86b64c04539c3703b9184dbb08d43643e4be22ddfe4bc5f76afcc46",
+      "profiles": []
+    },
+    {
+      "path": "website/README.md",
+      "kind": "uar-owned",
+      "status": "current",
+      "owner": "Documentation portal",
+      "action": "reconcile",
+      "authority": "/docs/intro",
+      "profiles": []
+    }
+  ]
+}

@@ -2,6 +2,10 @@
 
 # Pragmatic Rust Guidelines
 
+> **Current authority:** [Contributing guide](/docs/contributing/intro). This
+> long-form file records repository coding conventions; the root agent rules and
+> stack-specific rules govern automated changes.
+
 This file contains all guidelines concatenated for easy reference.
 
 ---

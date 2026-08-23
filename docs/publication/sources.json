@@ -6,6 +6,30 @@
   },
   "rules": [
     {
+      "id": "implementation-provenance-sources",
+      "selector": {
+        "paths": [
+          "Cargo.toml",
+          "LICENSE",
+          "LICENSE-CC-BY-4.0.md",
+          "frontend/src/features/a2ui/ui/a2ui-testing-page.tsx",
+          "frontend/src/features/chat/chat-thread-view.tsx",
+          "frontend/src/features/chat/components/a2ui-artifact-block.tsx",
+          "frontend/src/features/compiler/api/compiler-api.ts",
+          "frontend/src/features/compiler/ui/compiler-page.tsx",
+          "frontend/src/pages/about-page.tsx",
+          "frontend/src/pages/admin-page.tsx",
+          "frontend/src/pages/chat-page.tsx"
+        ]
+      },
+      "disposition": "public-normalize",
+      "owner": "uar-maintainers",
+      "status": "current",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "/docs/intro",
+      "publicDestination": "/docs"
+    },
+    {
       "id": "root-readme",
       "selector": { "paths": ["README.md"] },
       "disposition": "public-normalize",
@@ -26,8 +50,88 @@
       "publicDestination": "/"
     },
     {
+      "id": "private-assessment-and-handoff-evidence",
+      "selector": {
+        "paths": [
+          "docs/assessments/evolution_state_2026-02-21.json",
+          "docs/claude-24-of-24-handoff.md"
+        ]
+      },
+      "disposition": "private-synthesis-only",
+      "owner": "prometheus-history",
+      "status": "historical",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "/docs/history/testing-methodology",
+      "rationale": "Raw evolution state and an operator execution handoff contain machine context and command history; public pages use reviewed synthesis only."
+    },
+    {
+      "id": "historical-unshipped-system-designs",
+      "selector": {
+        "prefixes": [
+          "docs/code-interpreter/",
+          "docs/plugins/",
+          "docs/realtime/"
+        ]
+      },
+      "disposition": "private-synthesis-only",
+      "owner": "uar-maintainers",
+      "status": "historical",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "/docs/history/architecture-decisions",
+      "rationale": "These directories describe superseded standalone services and raw payloads that do not match the shipped in-process sandbox, WASM loader, or entity SSE boundaries."
+    },
+    {
+      "id": "current-protocol-synthesis-sources",
+      "selector": {
+        "paths": [
+          "docs/API_CHAT_COMPLETION.md",
+          "docs/protocols/ag-ui-profile.md"
+        ]
+      },
+      "disposition": "public-normalize",
+      "owner": "uar-maintainers",
+      "status": "current",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "/docs/protocols/overview",
+      "publicDestination": "/docs/protocols"
+    },
+    {
+      "id": "historical-architecture-synthesis-sources",
+      "selector": {
+        "paths": [
+          "docs/plans/2026-04-11-admin-ux-entity-management-plan.md",
+          "docs/uar-next-fable.md",
+          "docs/uar-next.md",
+          "docs/uar-uiux-assessment-and-implementation-plan-2026-08-01.md"
+        ]
+      },
+      "disposition": "public-normalize",
+      "owner": "uar-maintainers",
+      "status": "historical",
+      "publicationMode": "synthesis",
+      "canonicalAuthority": "/docs/history/architecture-decisions",
+      "publicDestination": "/docs/history/architecture-decisions"
+    },
+    {
       "id": "repository-documentation",
-      "selector": { "prefixes": ["docs/"] },
+      "selector": {
+        "prefixes": ["docs/"],
+        "excludePaths": [
+          "docs/API_CHAT_COMPLETION.md",
+          "docs/assessments/evolution_state_2026-02-21.json",
+          "docs/claude-24-of-24-handoff.md",
+          "docs/plans/2026-04-11-admin-ux-entity-management-plan.md",
+          "docs/protocols/ag-ui-profile.md",
+          "docs/uar-next-fable.md",
+          "docs/uar-next.md",
+          "docs/uar-uiux-assessment-and-implementation-plan-2026-08-01.md"
+        ],
+        "excludePrefixes": [
+          "docs/code-interpreter/",
+          "docs/plugins/",
+          "docs/realtime/"
+        ]
+      },
       "disposition": "public-normalize",
       "owner": "uar-maintainers",
       "status": "current",
@@ -117,9 +221,9 @@
       "owner": "iterative-evolver-generator",
       "status": "current",
       "publicationMode": "normalize",
-      "canonicalAuthority": ".codex/skills/iterative-evolver/README.md",
+      "canonicalAuthority": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md",
       "publicDestination": "/docs/tools",
-      "generatedFrom": ".codex/skills/iterative-evolver/README.md"
+      "generatedFrom": "crates/prometheus-skill-system/skills/process/iterative-evolver/README.md"
     },
     {
       "id": "vendored-readmes",

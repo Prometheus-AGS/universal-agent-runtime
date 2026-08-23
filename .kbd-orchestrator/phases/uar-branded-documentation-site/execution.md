@@ -137,9 +137,29 @@ Those failures are dependencies, not suppressed findings.
 - Canonical KBD revision `358` records the change complete and the revised
   next-work handoff.
 
+### reconcile-uar-readme-estate
+
+- Classified all 39 tracked README surfaces as one root README, 31 current
+  UAR-owned READMEs, five generated mirrors, and two vendored exclusions.
+- Reconciled current package, SDK, test, tool, frontend, and site READMEs to
+  their portal authorities; marked seven retained designs as historical.
+- Regenerated all five iterative-evolver mirrors from the pinned source and
+  preserved both vendored README hashes and every frozen route/navigation/theme
+  file.
+- Added the five previously missing frozen-route entry pages and taught truth
+  validation to resolve Docusaurus absolute and index routes.
+- Passed fourteen README negative controls, the composed bounded documentation
+  controls, TypeScript, strict OpenSpec, scoped-diff, and artifact-refiner
+  content gates without running the final production build.
+- Preserved the uncomfortable limits: project-init is not currently invocable
+  through its checked-in Cargo manifest, Vale was unavailable, and no rendered,
+  browser, accessibility, deployment, inference, or runtime claim exists yet.
+- Canonical KBD revision `361` records the change complete and the revised
+  next-work handoff.
+
 ## Next change
 
-Run `/opsx:new reconcile-uar-readme-estate`. It owns the root and subordinate
-UAR README surfaces, generated README sources, historical banners, and links to
-the canonical portal without rewriting vendored content or running final-site
-certification early.
+Run `/opsx:new publish-uar-architecture-decision-history`. It owns the public,
+source-traceable architecture chronology and decision narratives. It must
+synthesize retained history without publishing raw private logs or claiming
+that superseded designs describe the current runtime.

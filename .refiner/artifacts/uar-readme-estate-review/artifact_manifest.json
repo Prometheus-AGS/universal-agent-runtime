@@ -1,0 +1,23 @@
+{
+  "artifact_type": "content",
+  "variants": [
+    {
+      "name": "readme-estate-review",
+      "file": "dist/review-summary.md",
+      "format": "markdown",
+      "description": "Constraint-by-constraint review of the README and frozen-route documentation source."
+    }
+  ],
+  "validation": {
+    "preview_status": "pass",
+    "has_console_errors": false,
+    "has_request_failures": false,
+    "notes": [
+      "All bounded source validators and isolated negative controls passed.",
+      "Vale prose lint skipped because Vale is not installed.",
+      "Production build, browser, accessibility, deployment, and live-route checks are deferred."
+    ]
+  },
+  "generated_at": "2026-08-23T10:24:39Z"
+}
+

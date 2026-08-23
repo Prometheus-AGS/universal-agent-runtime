@@ -1,70 +1,42 @@
 # Evaluations
 
-Golden suites for the runtime's eval harness (`eval run|list|baseline`).
+> **Current authority:** [Inference workflow guide](/docs/providers/inference).
+> Evaluation results are local, source-bound evidence for the named suite,
+> provider, model, and profile only.
 
-## Layout
+This directory contains suites for the runtime evaluation CLI
+(`eval run`, `eval list`, and `eval baseline`). Each YAML suite declares cases
+and optional scorers. Results and accepted baselines live in `evals/results/`.
 
-- `evals/<suite>.yaml` — a suite: `name`, `cases` (`id`, `input`, optional `expected`),
-  and optional suite-level `scorers`. With no `scorers`, a default set is used
-  (non-empty + sycophancy, plus exact-match + contains when every case has `expected`).
-- `evals/results/` — run results (`<suite>-<ts>.json`) and the committed baseline
-  (`<suite>.baseline.json`).
+## Scorers and evidence
 
-## Scorers
+Deterministic scorers include `exact_match`, `contains`, `json_valid`,
+`non_empty`, `pattern_match`, and `sycophancy`. `llm_judge` is advisory and must
+name the judge provider, model, prompt version, and temperature in retained
+evidence.
 
-Declared per suite via `scorers:` (snake_case `type`): `exact_match`, `contains`,
-`json_valid`, `non_empty`, `pattern_match` (`pattern` + `mode`), `sycophancy`,
-and `llm_judge` (`rubric`). `llm_judge` is **advisory** — it is reported and
-persisted but does not fail the regression gate; the hard gate uses the
-deterministic rule scorers.
+Recorded or stubbed providers may diagnose parsing and harness wiring, but they
+do not count as inference integration or model-quality evidence. A certifying
+inference run must traverse a supported packaged UAR boundary and reach a real
+loaded model through the configured provider path.
 
-## Two-tier CI gate
+## Run locally
 
-- **Tier 1 — every PR (no key, no cost):** a deterministic structural test
-  (`src/uar/eval/integration_tests.rs`) loads `evals/starter.yaml`, builds its
-  scorers, and runs it through a recorded provider — proving the suite parses and
-  the harness wiring is intact. No model is called.
-- **Tier 2 — scheduled (`.github/workflows/eval-nightly.yml`):** runs
-  `eval run evals/starter.yaml` against the real model using the `UAR_LLM__API_KEY`
-  secret and **exits non-zero on regression** vs the committed baseline. If the
-  secret is absent (e.g. forks), the job skips the real-model step without failing.
+List suites and run a selected suite with the runtime CLI:
 
-## Establishing / updating the baseline
+```bash
+cargo run --bin universal-agent-runtime -- eval list
+cargo run --bin universal-agent-runtime -- \
+  eval run evals/starter.yaml --require-baseline
+```
 
-No baseline is shipped (it needs real model outputs). To seed or update it:
+Create or update a baseline only after reviewing genuine model output:
 
 ```bash
 cargo run --bin universal-agent-runtime -- \
   eval run evals/starter.yaml --update-baseline
-git add evals/results/starter.baseline.json && git commit -m "chore(eval): update starter baseline"
 ```
 
-Baselines are updated by a deliberate commit, never auto-committed from CI.
-
-## Activating the gate (operator)
-
-The scheduled job runs `eval run … --require-baseline`, so **until a baseline is
-committed it fails loudly** ("blocked until seeded") rather than passing silently.
-To activate the gate:
-
-1. **Configure the model in CI** — add a repository **secret** `UAR_LLM__API_KEY`
-   (the provider key) and, optionally, a repository **variable** `UAR_EVAL_MODEL`
-   (defaults to `openai/gpt-4o-mini`).
-2. **Seed the baseline** — run the **Eval Nightly** workflow via
-   *Actions → Eval Nightly → Run workflow* with `update_baseline = true`. It writes
-   `evals/results/starter.baseline.json`.
-3. **Commit the baseline** — add and commit that file (it is not auto-committed):
-   ```bash
-   git add evals/results/starter.baseline.json
-   git commit -m "chore(eval): seed starter baseline"
-   ```
-4. **Verify it gates** — a normal (strict) run now compares against the baseline and
-   exits non-zero on regression. Locally:
-   ```bash
-   cargo run --bin universal-agent-runtime -- eval run evals/starter.yaml --require-baseline
-   ```
-   With no baseline this exits non-zero (the "blocked until seeded" signal); with one
-   committed it passes unless a scorer mean drops past the threshold.
-
-Without the `UAR_LLM__API_KEY` secret the scheduled job skips the model run entirely
-(fork-safe) — it neither seeds nor gates.
+Commit the resulting baseline deliberately. A missing baseline or unavailable
+real-model prerequisite leaves the corresponding quality claim unverified.
+GitHub Actions are deployment-only and do not run these suites.

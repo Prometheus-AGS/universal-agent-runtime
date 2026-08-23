@@ -1,5 +1,8 @@
 # Documentation publication contract
 
+> **Current authority:** [UAR documentation portal](/docs/intro). This directory
+> owns source classification and publication gates, not runtime behavior.
+
 This directory defines what UAR may publish and how the public portal proves that its claims are complete, current, and safe. It does not replace implementation, committed dependency manifests such as [`Cargo.toml`](../../Cargo.toml), canonical [OpenSpec capabilities](../../openspec/specs/), or the canonical [KBD waypoint](../../.kbd-orchestrator/current-waypoint.json). The project rules also name an operator-owned `versions.toml`; it is not present in this checkout, so no claim in this phase treats it as inspected evidence.
 
 ## Manifests
