@@ -5,7 +5,7 @@ consults before writing UI/UX code in this repo. Referenced from the
 `uiux-routing` fenced region in `CLAUDE.md` / `AGENTS.md` (managed by
 `/kbd-inject-agent-rules --pack uiux-routing`).
 
-Last fetched: 2026-05-27
+Last fetched: 2026-08-24
 
 ## Tier 1 — Always consult
 
@@ -16,14 +16,23 @@ through the relevant components / pages before writing code.
 
 - **Source**: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill — anchor: `UI/UX Pro Max`
 - **Skill site**: https://ui-ux-pro-max-skill.com/
-- **What it gives**: design-system + audit. Searchable database of 50+
-  styles, 161 palettes, 57 font pairings, 99 UX guidelines, 25 chart
-  types, 161 product types — across 10 stacks (React, Next.js, Vue,
-  Svelte, SwiftUI, React Native, Flutter, Tailwind, shadcn/ui,
-  HTML/CSS).
+- **Canonical local skill**: `.agents/skills/ui-ux-pro-max/SKILL.md`
+  (repository-owned; tool-specific entries link back to this payload).
+- **Reproducibility**: `skills-lock.json` records the GitHub source and
+  computed payload hash; the vendored subtree includes the upstream MIT
+  license.
+- **What it gives**: 79 searchable styles (50 active), 192 product
+  palettes and reasoning profiles, 74 font pairings, 119 UX guidelines,
+  105 curated icons, 17 motion presets, 25 chart types, and 22 stack
+  catalogs.
 - **Use it to**: select palette + font pairing for new features,
   validate contrast/spacing/touch targets, lift accessibility (ARIA,
   focus states), pick chart types.
+- **How to consult it**: read the local `SKILL.md` query contract first.
+  Use `--design-system` for new pages or system-wide direction, one
+  explicit `--domain` for a targeted concern, and `--stack` for detected
+  implementation-stack guidance. Verify the result category and retry
+  once with a narrower query when results are empty or off-topic.
 
 ### Impeccable — `pbakaus/impeccable`
 
@@ -106,7 +115,9 @@ The `uiux-routing` fenced region in `CLAUDE.md` / `AGENTS.md` (managed
 by `/kbd-inject-agent-rules --pack uiux-routing`) enumerates the
 seven-step discipline AI tools follow before writing UI/UX code. This
 file is the reference for **what** to consult; the fenced region is
-the reference for **when** and **in what order**.
+the reference for **when** and **in what order**. UI/UX Pro Max means
+the tracked local skill at `.agents/skills/ui-ux-pro-max/SKILL.md`, not
+an assumed global or machine-local installation.
 
 ## Refreshing this roster
 

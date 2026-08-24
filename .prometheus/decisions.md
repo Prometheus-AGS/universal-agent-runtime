@@ -780,3 +780,23 @@ future mobile work needs a new bounded phase instead of resuming the mixed
 4/12-era plan. Likewise, the old production-hardening phase is cancelled
 because certification and publication were not performed, so this cleanup
 makes no GA or release claim.
+
+---
+
+## 2026-08-24 — Canonical repository UI/UX skill lives under `.agents`
+
+**Decision.** Track UI/UX Pro Max once at
+`.agents/skills/ui-ux-pro-max/`, with a narrow ignore exception, upstream MIT
+license, installer lock metadata, and relative tool links. The existing
+AGENTS/CLAUDE routing remains authoritative through its durable roster pointer.
+
+**Rationale.** The installer already uses `.agents` as the canonical payload and
+tool-specific symlinks as entry points. Preserving that layout gives fresh
+checkouts the skill that the instructions mandate without duplicating a large
+search corpus across tools.
+
+**Uncomfortable constraint.** The installed payload includes two upstream tests
+whose required refresh/evaluation scripts were not installed. They are not
+silently deleted or patched: 130 payload-compatible tests pass, while the two
+upstream-layout-only import failures remain documented until the installer
+ships their dependencies or excludes those tests.

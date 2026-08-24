@@ -1,0 +1,3 @@
+# Preserve the vendored UI/UX Pro Max payload byte-for-byte. The upstream
+# snapshot contains trailing whitespace that is not maintained by this repo.
+.agents/skills/ui-ux-pro-max/** -whitespace

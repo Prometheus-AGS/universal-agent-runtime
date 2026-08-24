@@ -922,3 +922,19 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - The local canonical runtime completed every transition after the control
   plane at `127.0.0.1:7892` was unreachable. External control-plane
   synchronization therefore remains unverified.
+
+## 2026-08-24 — UI/UX Pro Max made repository-owned
+
+- Added a narrow `.gitignore` exception for
+  `.agents/skills/ui-ux-pro-max/` while confirming unrelated `.agents/` state
+  remains ignored.
+- Tracked the 71-file canonical payload, upstream MIT license,
+  `skills-lock.json`, and five installer-created relative tool links.
+- Updated the durable UI/UX roster with the canonical local path, current
+  catalog counts, and query contract. The existing managed AGENTS/CLAUDE blocks
+  already require UI/UX Pro Max as step 2 and were left byte-unchanged.
+- The data validator passed, a React stack query returned three relevant
+  results, and 130 installed-payload-compatible tests passed. Two additional
+  bundled tests require upstream source-repository refresh/evaluation scripts
+  omitted by the installer; they remain preserved and are explicitly disclosed
+  in the OpenSpec verification record.
