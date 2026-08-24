@@ -834,3 +834,30 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   waypoint cursor remains stale and was not hand-edited.
 - No new product tests, soak, load run, GitHub Actions job, UAR push, UAR PR,
   upstream merge, or package publication occurred during closeout.
+
+## 2026-08-24 — Entity Management 3.0.3 adopted and deployed
+
+- Supersedes the preceding upstream status: Entity Management PR #41 was
+  merged, and `@prometheus-ags/prometheus-entity-management` plus
+  `@prometheus-ags/entity-graph-core` 3.0.3 were published to npm.
+- Updated both exact application pins and reconciled the repository root and
+  nested frontend lockfiles to 3.0.3. Added exact-version minimum-release-age
+  exceptions for only those two first-party artifacts; both frozen lockfile
+  scopes passed the supply-chain policy gate.
+- Observed `pnpm typecheck` and `pnpm lint` pass, built the production React
+  bundle, validated its eleven referenced assets, and completed the locked
+  `server-full` release build. The release build emitted three pre-existing
+  Rust warnings and no error.
+- Installed the release and UI through the macOS installer. Source and
+  installed binary SHA-256 values both equal
+  `ef7e92d16a3ce35f2bedde1a6d6b00186a512551557b94e46bd7bbe4d4ea300d`;
+  source and installed `index.html` hashes also match.
+- The preserved SurrealDB connection made cold service startup take about 77
+  seconds. The LaunchAgent then bound HTTP to `127.0.0.1:1906` and `::1:1906`,
+  returned `ok` from `/healthz` and `ready` from `/readyz`, and served the UI
+  with HTTP 200.
+- Ran only the installed Session Configuration functional proof: one
+  Playwright scenario passed in 13.2 seconds, including responsive sheet open,
+  bounded graph publication, spacing, persistence, cancel isolation, and real
+  agent-default, explicit-model, and saved-session inference. No broad suite,
+  soak, or GitHub Actions product test ran.

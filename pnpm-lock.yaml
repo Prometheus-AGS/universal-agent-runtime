@@ -96,11 +96,11 @@ importers:
         specifier: ^5.7.1
         version: 5.7.1(@standard-schema/spec@1.1.0)(ajv@8.20.0)(class-transformer@0.5.1)(react-hook-form@7.84.0(react@19.2.8))(valibot@1.4.2(typescript@5.9.3))(yup@1.7.1)(zod@4.4.3)
       '@prometheus-ags/entity-graph-core':
-        specifier: 3.0.2
-        version: 3.0.2(@ag-ui/core@0.0.57)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
+        specifier: 3.0.3
+        version: 3.0.3(@ag-ui/core@0.0.57)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
       '@prometheus-ags/prometheus-entity-management':
-        specifier: 3.0.2
-        version: 3.0.2(@ag-ui/core@0.0.57)(@prometheus-ags/entity-graph-core@3.0.2(@ag-ui/core@0.0.57)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8)))(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
+        specifier: 3.0.3
+        version: 3.0.3(@ag-ui/core@0.0.57)(@prometheus-ags/entity-graph-core@3.0.3(@ag-ui/core@0.0.57)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8)))(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -2388,8 +2388,8 @@ packages:
   '@preact/signals-core@1.14.4':
     resolution: {integrity: sha512-HNB6HYeYKhQbJ1aKl+YRjrS4+QWHLKX6qKoUsfS/m0vqzsVaEBiZiaKbG/e+NKk2ch5ALQr/ihWaMHxiCuuWHA==}
 
-  '@prometheus-ags/entity-graph-core@3.0.2':
-    resolution: {integrity: sha512-p+TbB6XEmk7N748v5P7+IOKqrxi7UEStT14Ubi71mK/iniYUoc8hiNF9IRQEL3waXsGiiw7+WMWnCqbzOoAKaw==}
+  '@prometheus-ags/entity-graph-core@3.0.3':
+    resolution: {integrity: sha512-fYI+1siZMQh9PoBIV1Cbevh/qQpaveIkX6OA5oC1nDgVk4EBwCU+mkdFLqDYVUzBdWvXxokRL55Bsa96WslVRA==}
     engines: {node: ^22.14.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
       '@ag-ui/core': '>=0.0.30'
@@ -2403,12 +2403,12 @@ packages:
       loro-crdt:
         optional: true
 
-  '@prometheus-ags/prometheus-entity-management@3.0.2':
-    resolution: {integrity: sha512-5Zg5E7rB6ceWBGbaakjLDt/p7jV4GRW2AXJ93ADAnDw6QOeHB/bMHlRrPvTs+EvU8Ut/sY3nIgAeu2EABlrJsQ==}
+  '@prometheus-ags/prometheus-entity-management@3.0.3':
+    resolution: {integrity: sha512-MHHh69c82pkLKP58KyZPxpWc3zzaMkeTx0U2ZwAizHZ5qYAnUJqQbh/3IRuSuXc0QEW3ESM5mZxyoAc3dIySPg==}
     engines: {node: ^22.14.0 || ^24.0.0 || >=26.0.0}
     peerDependencies:
       '@ag-ui/core': '>=0.0.30'
-      '@prometheus-ags/entity-graph-core': ^3.0.2
+      '@prometheus-ags/entity-graph-core': ^3.0.3
       '@tauri-apps/plugin-sql': '>=2.0.0'
       loro-crdt: '>=1.0.0'
       react: '>=19.0.0 <20.0.0'
@@ -9818,7 +9818,7 @@ snapshots:
 
   '@preact/signals-core@1.14.4': {}
 
-  '@prometheus-ags/entity-graph-core@3.0.2(@ag-ui/core@0.0.57)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))':
+  '@prometheus-ags/entity-graph-core@3.0.3(@ag-ui/core@0.0.57)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))':
     dependencies:
       immer: 11.1.15
       zustand: 5.0.14(@types/react@19.2.17)(immer@11.1.15)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
@@ -9831,9 +9831,9 @@ snapshots:
       - react
       - use-sync-external-store
 
-  '@prometheus-ags/prometheus-entity-management@3.0.2(@ag-ui/core@0.0.57)(@prometheus-ags/entity-graph-core@3.0.2(@ag-ui/core@0.0.57)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8)))(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))':
+  '@prometheus-ags/prometheus-entity-management@3.0.3(@ag-ui/core@0.0.57)(@prometheus-ags/entity-graph-core@3.0.3(@ag-ui/core@0.0.57)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8)))(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))':
     dependencies:
-      '@prometheus-ags/entity-graph-core': 3.0.2(@ag-ui/core@0.0.57)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
+      '@prometheus-ags/entity-graph-core': 3.0.3(@ag-ui/core@0.0.57)(@tauri-apps/plugin-sql@2.4.0)(@types/react@19.2.17)(loro-crdt@1.13.9)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
       '@tanstack/react-table': 8.21.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@tanstack/react-virtual': 3.14.9(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       clsx: 2.1.1

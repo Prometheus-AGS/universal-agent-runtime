@@ -10,6 +10,10 @@ overrides:
   'js-yaml@>=4.0.0 <4.3.0': 4.3.0
   'valibot@<=1.4.1': 1.4.2
 
+minimumReleaseAgeExclude:
+  - '@prometheus-ags/entity-graph-core@3.0.3'
+  - '@prometheus-ags/prometheus-entity-management@3.0.3'
+
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - better-sqlite3

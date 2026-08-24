@@ -677,3 +677,21 @@ scenario loss; never bypass it with `--skip-specs`.
 **Limit.** This is a spec-merge ordering rule. It does not imply that unrelated
 changes should be combined or that an agent should edit generated KBD
 projections by hand.
+
+## 2026-08-24 — Frontend dependency adoption must reconcile both lockfile scopes
+
+**Observed behavior.** The root workspace lockfile resolved Entity Management
+3.0.3 and produced the correct production bundle, but `pnpm -C frontend exec`
+stopped before Playwright because `frontend/pnpm-lock.yaml` still contained the
+3.0.2 records. The hardened pnpm dependency-status check validates the nested
+workspace before executing its command.
+
+**Working rule.** A dependency pin in `frontend/package.json` participates in
+both `pnpm-lock.yaml` and `frontend/pnpm-lock.yaml`. Reconcile and frozen-verify
+both scopes. When an explicitly approved first-party release is inside the
+minimum-release-age window, add the same exact-version exception to both
+workspace files; never trust the complete lockfile or relax the global policy.
+
+**Limit.** This dual-lock requirement applies while both workspace roots remain
+in the repository. It is not evidence that other nested package locks require
+the same application dependency.
