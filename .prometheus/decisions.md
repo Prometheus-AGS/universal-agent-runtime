@@ -758,3 +758,25 @@ remains unchanged because its source is the pinned `liter-llm` snapshot.
 `models.dev` HEAD. Advancing past `f97df19af` remains blocked on an upstream
 rename or a repository-wide decision to abandon clean case-insensitive macOS
 checkouts.
+
+---
+
+## 2026-08-24 — Reconcile legacy KBD phases by evidence, not uniform completion
+
+**Decision.** Terminalize the 51-phase legacy inventory as 45 complete and six
+cancelled. A phase is complete only when its own artifacts or a named successor
+close its outcomes. Assessment-only, unvalidated, abandoned release, and mixed
+unfinished phases are cancelled even when some implementation landed.
+
+**Rationale.** The imported canonical state left 43 top-level phases pending,
+but most already had reflections or successor evidence. Treating all 43 alike
+would either hide completed work or falsely claim outcomes that were never
+delivered. Legal KBD transitions preserve the event history while the
+reconciliation ledger preserves why each disposition was chosen.
+
+**Uncomfortable constraint.** Cancelling the old hybrid-architecture phase does
+not make mobile irrelevant. Mobile remains Experimental in the support matrix;
+future mobile work needs a new bounded phase instead of resuming the mixed
+4/12-era plan. Likewise, the old production-hardening phase is cancelled
+because certification and publication were not performed, so this cleanup
+makes no GA or release claim.

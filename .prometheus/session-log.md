@@ -902,3 +902,23 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   changes, no current task, and `/kbd-new-phase` as the next action.
 - No product code, OpenSpec specification, archived change, or other phase state
   was modified during this closeout.
+
+## 2026-08-24 — Legacy KBD phase inventory reconciled
+
+- Inventoried all 51 registered top-level phases at canonical revision 569 and
+  recorded an evidence-backed disposition in OpenSpec change
+  `reconcile-kbd-phase-inventory`.
+- Transitioned 37 stale pending phases through the legal
+  `pending -> in-progress -> complete` path and cancelled six phases whose
+  validation, design, certification, or implementation was never completed and
+  was superseded or abandoned. Together with eight phases already complete,
+  the final estate is 45 complete, six cancelled, and zero pending.
+- Gracefully cancelled the exhausted KBD run at revision 650 because the CLI has
+  no run-complete command. The authoritative waypoint has no current phase; the
+  legacy status payload still echoes the former completed phase in `activePath`.
+- Audited both local worktrees and branches. No phase-associated worktree or
+  branch exists. Retained `codex/pr-268-resolution` because it is unrelated to
+  a KBD phase and contains unique commits not merged into `origin/main`.
+- The local canonical runtime completed every transition after the control
+  plane at `127.0.0.1:7892` was unreachable. External control-plane
+  synchronization therefore remains unverified.

@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 569,
-  "derivedRevision": 569,
+  "sourceRevision": 650,
+  "derivedRevision": 650,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 177,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 258,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -17,7 +17,7 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-24T01:08:38.904454Z",
+  "updatedAt": "2026-08-24T14:21:21.297428Z",
   "cursor": [
     "fix-broken-session-configuration-ui",
     "reflect"
@@ -25,7 +25,7 @@
   "root": {
     "type": "phase",
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
-    "status": "running",
+    "status": "cancelled",
     "progress": {
       "done": 98,
       "total": 106
@@ -35,7 +35,7 @@
         "type": "phase",
         "id": "add-push-channels-backend",
         "canonicalId": "add-push-channels-backend",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -47,7 +47,7 @@
         "type": "phase",
         "id": "browser-smoke-providers-and-agents",
         "canonicalId": "browser-smoke-providers-and-agents",
-        "status": "PENDING",
+        "status": "SKIPPED",
         "progress": {
           "done": 0,
           "total": 0
@@ -59,7 +59,7 @@
         "type": "phase",
         "id": "ci-frontend-tests",
         "canonicalId": "ci-frontend-tests",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -71,7 +71,7 @@
         "type": "phase",
         "id": "direct-entity-migration-agents",
         "canonicalId": "direct-entity-migration-agents",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -83,7 +83,7 @@
         "type": "phase",
         "id": "direct-entity-migration-models",
         "canonicalId": "direct-entity-migration-models",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -95,7 +95,7 @@
         "type": "phase",
         "id": "direct-entity-migration-providers",
         "canonicalId": "direct-entity-migration-providers",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -107,7 +107,7 @@
         "type": "phase",
         "id": "emit-runtime-step-events",
         "canonicalId": "emit-runtime-step-events",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -119,7 +119,7 @@
         "type": "phase",
         "id": "eval-harness-hardening",
         "canonicalId": "eval-harness-hardening",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -180,7 +180,7 @@
         "type": "phase",
         "id": "fix-skills-page-utils-test-fixtures",
         "canonicalId": "fix-skills-page-utils-test-fixtures",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -192,7 +192,7 @@
         "type": "phase",
         "id": "full-frontend-entity-mgmt-migration",
         "canonicalId": "full-frontend-entity-mgmt-migration",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -204,7 +204,7 @@
         "type": "phase",
         "id": "gate-activation-and-security-cleanup",
         "canonicalId": "gate-activation-and-security-cleanup",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -216,7 +216,7 @@
         "type": "phase",
         "id": "knowledge-page-aesthetic-pass",
         "canonicalId": "knowledge-page-aesthetic-pass",
-        "status": "PENDING",
+        "status": "SKIPPED",
         "progress": {
           "done": 0,
           "total": 0
@@ -521,7 +521,7 @@
         "type": "phase",
         "id": "prometheus-package-integration",
         "canonicalId": "prometheus-package-integration",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -533,7 +533,7 @@
         "type": "phase",
         "id": "readme-architecture-diagram",
         "canonicalId": "readme-architecture-diagram",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -545,7 +545,7 @@
         "type": "phase",
         "id": "runtime-console-ux",
         "canonicalId": "runtime-console-ux",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -700,7 +700,7 @@
         "type": "phase",
         "id": "settings-store-retirement",
         "canonicalId": "settings-store-retirement",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -712,7 +712,7 @@
         "type": "phase",
         "id": "submodule-entity-management-implementation",
         "canonicalId": "submodule-entity-management-implementation",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -724,7 +724,7 @@
         "type": "phase",
         "id": "submodule-skills-and-entity-devtools-expansion",
         "canonicalId": "submodule-skills-and-entity-devtools-expansion",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -736,7 +736,7 @@
         "type": "phase",
         "id": "thread-topic-chat-sidebar",
         "canonicalId": "thread-topic-chat-sidebar",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -748,7 +748,7 @@
         "type": "phase",
         "id": "tool-mcp-status-push-channels",
         "canonicalId": "tool-mcp-status-push-channels",
-        "status": "PENDING",
+        "status": "SKIPPED",
         "progress": {
           "done": 0,
           "total": 0
@@ -961,7 +961,7 @@
         "type": "phase",
         "id": "uar-carryover-audit",
         "canonicalId": "uar-carryover-audit",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -973,7 +973,7 @@
         "type": "phase",
         "id": "uar-dependabot-remediation-2026-07",
         "canonicalId": "uar-dependabot-remediation-2026-07",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -985,7 +985,7 @@
         "type": "phase",
         "id": "uar-eval-harness",
         "canonicalId": "uar-eval-harness",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -997,7 +997,7 @@
         "type": "phase",
         "id": "uar-final-production-hardening-2026-07",
         "canonicalId": "uar-final-production-hardening-2026-07",
-        "status": "PENDING",
+        "status": "SKIPPED",
         "progress": {
           "done": 20,
           "total": 24
@@ -1226,7 +1226,7 @@
         "type": "phase",
         "id": "uar-frontend-typecheck-cleanup",
         "canonicalId": "uar-frontend-typecheck-cleanup",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1238,7 +1238,7 @@
         "type": "phase",
         "id": "uar-grade-a-upgrade-2026-07",
         "canonicalId": "uar-grade-a-upgrade-2026-07",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1250,7 +1250,7 @@
         "type": "phase",
         "id": "uar-harness-parity",
         "canonicalId": "uar-harness-parity",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1262,7 +1262,7 @@
         "type": "phase",
         "id": "uar-hybrid-app-architecture",
         "canonicalId": "uar-hybrid-app-architecture",
-        "status": "PENDING",
+        "status": "SKIPPED",
         "progress": {
           "done": 0,
           "total": 0
@@ -1274,7 +1274,7 @@
         "type": "phase",
         "id": "uar-kreuzberg-v4-migration",
         "canonicalId": "uar-kreuzberg-v4-migration",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1344,7 +1344,7 @@
         "type": "phase",
         "id": "uar-next-harness",
         "canonicalId": "uar-next-harness",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1356,7 +1356,7 @@
         "type": "phase",
         "id": "uar-post-dependabot-followup-2026-07",
         "canonicalId": "uar-post-dependabot-followup-2026-07",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1368,7 +1368,7 @@
         "type": "phase",
         "id": "uar-production-readiness-gaps",
         "canonicalId": "uar-production-readiness-gaps",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1380,7 +1380,7 @@
         "type": "phase",
         "id": "uar-production-ready-uiux-2026-07",
         "canonicalId": "uar-production-ready-uiux-2026-07",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1392,7 +1392,7 @@
         "type": "phase",
         "id": "uar-safety-and-evals",
         "canonicalId": "uar-safety-and-evals",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1404,7 +1404,7 @@
         "type": "phase",
         "id": "uar-security-audit-alerts-gate-2026-07",
         "canonicalId": "uar-security-audit-alerts-gate-2026-07",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1416,7 +1416,7 @@
         "type": "phase",
         "id": "uar-security-deps-and-hygiene",
         "canonicalId": "uar-security-deps-and-hygiene",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1428,7 +1428,7 @@
         "type": "phase",
         "id": "uar-spec-v2-and-polish",
         "canonicalId": "uar-spec-v2-and-polish",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1642,7 +1642,7 @@
         "type": "phase",
         "id": "uar-uiux-refinement-2026-08",
         "canonicalId": "uar-uiux-refinement-2026-08",
-        "status": "PENDING",
+        "status": "SKIPPED",
         "progress": {
           "done": 0,
           "total": 0
@@ -1654,7 +1654,7 @@
         "type": "phase",
         "id": "uar-wisc-cli",
         "canonicalId": "uar-wisc-cli",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1666,7 +1666,7 @@
         "type": "phase",
         "id": "ui-base-ui-migration",
         "canonicalId": "ui-base-ui-migration",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1678,7 +1678,7 @@
         "type": "phase",
         "id": "use-optimistic-patch-helper-extraction",
         "canonicalId": "use-optimistic-patch-helper-extraction",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1690,7 +1690,7 @@
         "type": "phase",
         "id": "vitest-contract-test-suite",
         "canonicalId": "vitest-contract-test-suite",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
@@ -1702,7 +1702,7 @@
         "type": "phase",
         "id": "wire-dead-metric-recorders",
         "canonicalId": "wire-dead-metric-recorders",
-        "status": "PENDING",
+        "status": "COMPLETE",
         "progress": {
           "done": 0,
           "total": 0
