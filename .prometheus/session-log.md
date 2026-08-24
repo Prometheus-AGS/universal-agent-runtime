@@ -885,3 +885,20 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   warnings/errors. A temporary loopback response override observed the yellow
   warning and actionable hover tooltip, then was stopped without changing the
   real provider configuration. The service remained healthy on port 1906.
+
+## 2026-08-24 — Session Configuration phase resume projection cleared
+
+- Audited canonical KBD revisions 565–569 and confirmed Execute, Reflect, and
+  `fix-broken-session-configuration-ui` itself are complete. All four scoped
+  changes are `DONE`; the existing reflection and sycophancy receipt remain the
+  closure evidence.
+- Confirmed the displayed 98/106 value was the run-wide implementation roll-up,
+  not eight unfinished tasks in this phase. The only short task counters are
+  cancelled duplicate display-label records already documented in the phase
+  reflection.
+- The canonical runtime rejected a redundant `COMPLETE` to `COMPLETE`
+  transition, as expected, and exposes no phase-deactivation command. Reconciled
+  the resume projection from revision 569 to phase status `complete`, 4/4
+  changes, no current task, and `/kbd-new-phase` as the next action.
+- No product code, OpenSpec specification, archived change, or other phase state
+  was modified during this closeout.
