@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   AlertDialog,
@@ -21,7 +22,10 @@ import { AgentAiBuilder } from "./agent-ai-builder";
 import { AgentEditor } from "./agent-editor";
 import { cn } from "@/lib/utils";
 import { useAgents } from "../model/use-agents";
-import { useHasWorkingSystemDefault } from "@/features/providers";
+import {
+  useSystemDefaultModelStatus,
+  type SystemDefaultModelStatus,
+} from "@/features/providers";
 import { useAgentsAdmin } from "../model/use-agents-admin";
 import type { UarAgent } from "@/types";
 
@@ -189,7 +193,12 @@ function AgentMemorySection({
   );
 }
 
-type AgentModelStatus = "configured" | "system-default" | "unresolved";
+type AgentModelStatus =
+  | "configured"
+  | "loading"
+  | "system-default"
+  | "unresolved"
+  | "unverifiable";
 
 /**
  * Classifies an agent's model-resolution status: `"configured"` when it has
@@ -198,13 +207,103 @@ type AgentModelStatus = "configured" | "system-default" | "unresolved";
  * see the render site), or `"unresolved"` when no resolution path exists at
  * all.
  */
-function agentModelStatus(a: UarAgent, hasWorkingSystemDefault: boolean): AgentModelStatus {
+function agentModelStatus(
+  a: UarAgent,
+  systemDefaultStatus: SystemDefaultModelStatus["status"],
+): AgentModelStatus {
   const raw = a as unknown as Record<string, unknown>;
   const policy = (raw.policy as Record<string, unknown>) ?? {};
   const providerPolicy = (policy.provider as Record<string, unknown>) ?? {};
   const def = (providerPolicy.default as Record<string, unknown>) ?? {};
   if (def.provider && def.model) return "configured";
-  return hasWorkingSystemDefault ? "system-default" : "unresolved";
+  if (systemDefaultStatus === "available") return "system-default";
+  if (systemDefaultStatus === "loading") return "loading";
+  if (systemDefaultStatus === "error") return "unverifiable";
+  return "unresolved";
+}
+
+function AgentListRow({
+  agent,
+  selected,
+  systemDefault,
+  onSelect,
+}: {
+  agent: UarAgent;
+  selected: boolean;
+  systemDefault: SystemDefaultModelStatus;
+  onSelect: () => void;
+}) {
+  const status = agentModelStatus(agent, systemDefault.status);
+  const statusExplanation =
+    status === "system-default"
+      ? `Uses system default ${systemDefault.providerId}/${systemDefault.modelId}.`
+      : status === "unresolved"
+        ? "No usable model route. Assign a provider and model to this agent, or configure a system default."
+        : status === "unverifiable"
+          ? "Model availability could not be verified because the provider registry failed to load. Refresh Providers and try again."
+          : status === "loading"
+            ? "Checking the system default model route."
+            : null;
+
+  const row = (
+    <Button
+      variant="ghost"
+      onClick={onSelect}
+      className={cn(
+        "h-auto w-full cursor-pointer justify-start rounded-none px-4 py-2.5 text-left",
+        selected ? "bg-accent hover:bg-accent" : "hover:bg-muted/50",
+      )}
+    >
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/15">
+        <Bot size={14} className="text-primary" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-display text-sm font-semibold text-foreground">
+          {agent.metadata?.title ?? agent.id}
+        </p>
+        <p className="font-mono text-xs text-muted-foreground">{agent.kind ?? "agent"}</p>
+      </div>
+      {status === "loading" && (
+        <Loader2
+          size={13}
+          className="shrink-0 animate-spin text-muted-foreground"
+          aria-label="Checking model configuration"
+        />
+      )}
+      {status === "system-default" && (
+        <Info
+          size={13}
+          className="shrink-0 text-muted-foreground"
+          aria-label={`Using system default ${systemDefault.providerId}/${systemDefault.modelId}`}
+        />
+      )}
+      {status === "unresolved" && (
+        <AlertTriangle
+          size={13}
+          className="shrink-0 text-amber-500"
+          aria-label="No model configured"
+        />
+      )}
+      {status === "unverifiable" && (
+        <AlertTriangle
+          size={13}
+          className="shrink-0 text-amber-500"
+          aria-label="Model availability could not be verified"
+        />
+      )}
+    </Button>
+  );
+
+  if (!statusExplanation) return row;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger render={row} />
+      <TooltipContent side="right" className="max-w-72">
+        {statusExplanation}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 // ── Main Agents Page ───────────────────────────────────────────────────────
@@ -215,7 +314,7 @@ export const AgentsPage: FC = () => {
   // until the next change in this phase migrates them too.
   const agentsView = useAgents();
   const agents = agentsView.items as unknown as UarAgent[];
-  const hasWorkingSystemDefault = useHasWorkingSystemDefault();
+  const systemDefault = useSystemDefaultModelStatus();
   const admin = useAgentsAdmin();
   const { loading, error, load } = admin;
   const [selected, setSelected] = useState<UarAgent | null>(null);
@@ -302,39 +401,13 @@ export const AgentsPage: FC = () => {
               <AdminEmptyInline>No agents configured. Click + to create one.</AdminEmptyInline>
             )}
             {agents.map((a) => (
-              <Button
+              <AgentListRow
                 key={a.id}
-                variant="ghost"
-                onClick={() => setSelected(a)}
-                className={cn(
-                  "h-auto w-full cursor-pointer justify-start rounded-none px-4 py-2.5 text-left",
-                  selected?.id === a.id ? "bg-accent hover:bg-accent" : "hover:bg-muted/50",
-                )}
-              >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/15">
-                  <Bot size={14} className="text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-sm font-semibold text-foreground">
-                    {a.metadata?.title ?? a.id}
-                  </p>
-                  <p className="font-mono text-xs text-muted-foreground">{a.kind ?? "agent"}</p>
-                </div>
-                {agentModelStatus(a, hasWorkingSystemDefault) === "system-default" && (
-                  <Info
-                    size={13}
-                    className="shrink-0 text-muted-foreground"
-                    aria-label="Using system default"
-                  />
-                )}
-                {agentModelStatus(a, hasWorkingSystemDefault) === "unresolved" && (
-                  <AlertTriangle
-                    size={13}
-                    className="shrink-0 text-amber-500"
-                    aria-label="No model configured"
-                  />
-                )}
-              </Button>
+                agent={a}
+                selected={selected?.id === a.id}
+                systemDefault={systemDefault}
+                onSelect={() => setSelected(a)}
+              />
             ))}
           </div>
         </ScrollArea>

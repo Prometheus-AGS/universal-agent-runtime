@@ -861,3 +861,27 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   bounded graph publication, spacing, persistence, cancel isolation, and real
   agent-default, explicit-model, and saved-session inference. No broad suite,
   soak, or GitHub Actions product test ran.
+
+## 2026-08-24 — Agent model-status warnings corrected and explained
+
+- Confirmed from the live API that both displayed agents intentionally inherit
+  the configured `kimi-for-coding/k3` system route; the screenshot's amber
+  triangles were false warnings, not inference failures.
+- Completed `explain-agent-model-status`: provider hydration now projects the
+  default provider/model pair, default changes clear stale model metadata and
+  refresh the authoritative pair, and the Agents page consumes a typed
+  loading/available/unavailable/error status without component-owned business
+  state.
+- Added row-level Base UI tooltips on hover and keyboard focus. Inherited routes
+  use a neutral information icon and name the effective route. Confirmed missing
+  routes retain the amber triangle and tell the operator to assign an agent
+  model or configure a system default.
+- TypeScript, ESLint, strict OpenSpec validation, the production build, and two
+  focused provider-projection assertions passed. A mistakenly broad Vitest
+  invocation observed 323 passing and 13 unrelated existing failures; it was
+  not treated as a gate and was replaced by the explicit focused command.
+- Installed the final bundle into the local LaunchAgent. The real browser
+  observed the inherited-route tooltip on hover and focus with no console
+  warnings/errors. A temporary loopback response override observed the yellow
+  warning and actionable hover tooltip, then was stopped without changing the
+  real provider configuration. The service remained healthy on port 1906.

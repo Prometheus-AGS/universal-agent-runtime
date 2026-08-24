@@ -25,6 +25,7 @@ export interface ConfigureProviderInput {
 }
 
 interface ProvidersState {
+  loaded: boolean;
   refreshing: boolean;
   saving: boolean;
   removingId: string | null;
@@ -83,9 +84,13 @@ async function hydrateProviders(): Promise<void> {
     });
   }
 
+  const defaultProvider = configured.providers.find(
+    (provider) => provider.id === configured.default_id,
+  );
   graph.upsertEntity("ProviderMeta", "current", {
     id: "current",
     default_id: configured.default_id ?? null,
+    default_model: defaultProvider?.default_model ?? null,
   });
   graph.setListResult(serializeKey(["providers", "", "[]"]), [...providerIds], {
     total: providerIds.size,
@@ -93,6 +98,7 @@ async function hydrateProviders(): Promise<void> {
 }
 
 export const useProvidersStore = create<ProvidersStore>((set) => ({
+  loaded: false,
   refreshing: false,
   saving: false,
   removingId: null,
@@ -105,6 +111,7 @@ export const useProvidersStore = create<ProvidersStore>((set) => ({
     set({ refreshing: true, error: null });
     try {
       await hydrateProviders();
+      set({ loaded: true });
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -137,6 +144,7 @@ export const useProvidersStore = create<ProvidersStore>((set) => ({
         }
       }
       await hydrateProviders();
+      set({ loaded: true });
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -151,12 +159,20 @@ export const useProvidersStore = create<ProvidersStore>((set) => ({
       await optimisticUpsert(
         "ProviderMeta",
         "current",
-        { id: "current", default_id: providerId },
+        { id: "current", default_id: providerId, default_model: null },
         () => setDefaultProvider(providerId),
       );
     } catch (error) {
       set({ error: `Failed to set default: ${(error as Error).message}` });
       throw error;
+    }
+    try {
+      await hydrateProviders();
+      set({ loaded: true });
+    } catch (error) {
+      set({
+        error: `Default changed, but provider metadata refresh failed: ${(error as Error).message}`,
+      });
     }
   },
 

@@ -695,3 +695,25 @@ workspace files; never trust the complete lockfile or relax the global policy.
 **Limit.** This dual-lock requirement applies while both workspace roots remain
 in the repository. It is not evidence that other nested package locks require
 the same application dependency.
+
+## 2026-08-24 — An absent client projection is not an absent runtime route
+
+**Observed behavior.** The Admin Agents list showed amber missing-model warnings
+for two agents that completed inference by inheriting the configured
+`kimi-for-coding/k3` system default.
+
+**Root cause.** The Agents page classified status before loading provider
+metadata, and the actively used provider-store hydration projected
+`default_id` without the matching provider's `default_model`. The UI therefore
+treated incomplete client state as proof that the runtime route was absent.
+
+**Working rule.** Status indicators for derived cross-entity facts must remain
+loading until their authoritative projection has completed. Hydrate all fields
+used by the resolution predicate from one response, expose the result through a
+typed domain hook, and distinguish confirmed absence from load failure. When a
+status icon is not self-explanatory, make its existing row/control the hover and
+focus tooltip trigger rather than nesting another interactive element.
+
+**Limit.** This rule does not turn every asynchronous screen into a global
+loading gate. It applies when an unloaded projection would otherwise be
+presented as a confirmed operator-actionable defect.

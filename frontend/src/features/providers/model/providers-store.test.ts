@@ -34,6 +34,7 @@ const configuredProvider = {
   id: "stub",
   display_name: "Stub Provider",
   base_url: "http://127.0.0.1:9999/v1",
+  default_model: "stub-model",
   enabled: true,
   models: [{ id: "stub-model", enabled: true }],
 };
@@ -54,6 +55,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   useGraphStore.setState({ entities: {} });
   useProvidersStore.setState({
+    loaded: false,
     refreshing: false,
     saving: false,
     removingId: null,
@@ -76,8 +78,15 @@ describe("providers store", () => {
       status: "available",
       model_count: 1,
     });
-    expect(graph.ProviderMeta?.current).toMatchObject({ default_id: "stub" });
-    expect(useProvidersStore.getState()).toMatchObject({ refreshing: false, error: null });
+    expect(graph.ProviderMeta?.current).toMatchObject({
+      default_id: "stub",
+      default_model: "stub-model",
+    });
+    expect(useProvidersStore.getState()).toMatchObject({
+      loaded: true,
+      refreshing: false,
+      error: null,
+    });
   });
 
   test("surfaces load failure without leaving loading active", async () => {
@@ -128,9 +137,11 @@ describe("providers store", () => {
   });
 
   test("sets default optimistically and retains it on success", async () => {
+    primeLoads(true);
     useGraphStore.getState().upsertEntity("ProviderMeta", "current", {
       id: "current",
       default_id: null,
+      default_model: null,
     });
     vi.mocked(setDefaultProvider).mockResolvedValue();
 
@@ -139,6 +150,7 @@ describe("providers store", () => {
     expect(setDefaultProvider).toHaveBeenCalledWith("stub");
     expect(useGraphStore.getState().entities.ProviderMeta?.current).toMatchObject({
       default_id: "stub",
+      default_model: "stub-model",
     });
   });
 
