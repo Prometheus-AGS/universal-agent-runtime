@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-23T20:19:04Z",
+  "sources": [
+    {
+      "id": "S1",
+      "title": "Prometheus Entity Management 3.0.2 NPM package",
+      "type": "primary-source-package",
+      "url": "https://registry.npmjs.org/@prometheus-ags/prometheus-entity-management/-/prometheus-entity-management-3.0.2.tgz",
+      "version": "3.0.2",
+      "sha256": "3c3160c11688ed7a2035c92c9ac92f9e559a8778be84bbde0d920738c51ec202",
+      "accessed_at": "2026-08-23",
+      "authority_score": 1.0,
+      "claims": ["C1", "C2", "C3", "C4"]
+    },
+    {
+      "id": "S2",
+      "title": "Entity Graph Core 3.0.2 NPM package",
+      "type": "primary-source-package",
+      "url": "https://registry.npmjs.org/@prometheus-ags/entity-graph-core/-/entity-graph-core-3.0.2.tgz",
+      "version": "3.0.2",
+      "sha256": "1ea1988f0b43202714723e5e0c1b437269869e6a7fe6e87ca0e6c137c69d444d",
+      "accessed_at": "2026-08-23",
+      "authority_score": 1.0,
+      "claims": ["C1", "C3", "C5"]
+    },
+    {
+      "id": "S3",
+      "title": "Prometheus Entity Management v3.0.2 Git tag",
+      "type": "primary-source-git",
+      "url": "https://github.com/Prometheus-AGS/prometheus-entity-management/tree/v3.0.2",
+      "commit": "f29a701649799df3ff64f5f986e3c016246d34b6",
+      "accessed_at": "2026-08-23",
+      "authority_score": 1.0,
+      "claims": ["C2", "C3", "C6"]
+    },
+    {
+      "id": "S4",
+      "title": "Prometheus Entity Management latest origin/main",
+      "type": "primary-source-git",
+      "url": "https://github.com/Prometheus-AGS/prometheus-entity-management/commit/e25210010a8eb4e575f7e4fc6e04be598a8c8213",
+      "commit": "e25210010a8eb4e575f7e4fc6e04be598a8c8213",
+      "accessed_at": "2026-08-23",
+      "authority_score": 1.0,
+      "claims": ["C3", "C6"]
+    },
+    {
+      "id": "S5",
+      "title": "React useSyncExternalStore reference",
+      "type": "official-documentation",
+      "url": "https://react.dev/reference/react/useSyncExternalStore",
+      "version": "19",
+      "accessed_at": "2026-08-23",
+      "authority_score": 1.0,
+      "claims": ["C7"]
+    },
+    {
+      "id": "S6",
+      "title": "React: You Might Not Need an Effect",
+      "type": "official-documentation",
+      "url": "https://react.dev/learn/you-might-not-need-an-effect",
+      "version": "19",
+      "accessed_at": "2026-08-23",
+      "authority_score": 1.0,
+      "claims": ["C8"]
+    },
+    {
+      "id": "S7",
+      "title": "Zustand 5.0.12 README",
+      "type": "official-documentation",
+      "url": "https://github.com/pmndrs/zustand/blob/v5.0.12/README.md",
+      "version": "5.0.12",
+      "accessed_at": "2026-08-23",
+      "authority_score": 0.98,
+      "claims": ["C7", "C9"]
+    },
+    {
+      "id": "S8",
+      "title": "Zustand prevent rerenders with useShallow",
+      "type": "official-documentation",
+      "url": "https://github.com/pmndrs/zustand/blob/main/docs/learn/guides/prevent-rerenders-with-use-shallow.md",
+      "accessed_at": "2026-08-23",
+      "authority_score": 0.98,
+      "claims": ["C9"]
+    },
+    {
+      "id": "S9",
+      "title": "UAR source at analyzed HEAD",
+      "type": "primary-source-repository",
+      "path": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime",
+      "commit": "b8c4fde214e250dc39080330ee4c130d102c78f7",
+      "accessed_at": "2026-08-23",
+      "authority_score": 1.0,
+      "claims": ["C10", "C11", "C12", "C13", "C14"]
+    },
+    {
+      "id": "S10",
+      "title": "Installed UAR service and browser observation",
+      "type": "primary-source-runtime-observation",
+      "url": "http://127.0.0.1:1906",
+      "accessed_at": "2026-08-23",
+      "authority_score": 1.0,
+      "claims": ["C10", "C15"]
+    }
+  ]
+}

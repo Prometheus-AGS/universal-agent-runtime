@@ -23,6 +23,43 @@ const expectedRules = [
 
 if (result.status === 0) throw new Error("Negative boundary fixture unexpectedly passed");
 for (const rule of expectedRules) {
-  if (!output.includes(rule)) throw new Error(`Negative boundary fixture did not trigger ${rule}`);
+  if (!new RegExp(`:\\d+\\|${rule}(?:\\n|\\r|$)`).test(output)) {
+    throw new Error(`Negative boundary fixture did not trigger ${rule} with a source location`);
+  }
 }
-console.log(`Frontend boundary negative fixtures passed (${expectedRules.length} rules rejected).`);
+const forbiddenCases = [
+  ["render-body-setter", "react-render-body-state-setter"],
+  ["per-row-for-each", "feature-per-row-graph-write"],
+  ["per-row-unbraced-for", "feature-per-row-graph-write"],
+  ["per-row-braced-header-call", "feature-per-row-graph-write"],
+  ["facade-management-root", "entity-facade-bypass"],
+  ["facade-management-subpath", "entity-facade-bypass"],
+  ["facade-core-root", "entity-facade-bypass"],
+  ["facade-core-subpath", "entity-facade-bypass"],
+  ["duplicate-entity-cache", "duplicate-graph-owned-cache"],
+];
+for (const [fixture, rule] of forbiddenCases) {
+  const rejected = spawnSync(
+    process.execPath,
+    [
+      "scripts/check-frontend-boundaries.mjs",
+      "--fixture-dir",
+      `scripts/fixtures/frontend-boundary-cases/${fixture}`,
+    ],
+    { cwd: root, encoding: "utf8" },
+  );
+  const rejectedOutput = `${rejected.stdout}\n${rejected.stderr}`;
+  if (rejected.status === 0) throw new Error(`${fixture} unexpectedly passed`);
+  if (!new RegExp(`:\\d+\\|${rule}(?:\\n|\\r|$)`).test(rejectedOutput)) {
+    throw new Error(`${fixture} did not trigger ${rule} with a source location`);
+  }
+}
+const allowed = spawnSync(
+  process.execPath,
+  ["scripts/check-frontend-boundaries.mjs", "--fixture-dir", "scripts/fixtures/frontend-boundaries-allowed"],
+  { cwd: root, encoding: "utf8" },
+);
+if (allowed.status !== 0) {
+  throw new Error(`Allowed boundary fixtures unexpectedly failed:\n${allowed.stdout}\n${allowed.stderr}`);
+}
+console.log(`Frontend boundary fixtures passed (${expectedRules.length + forbiddenCases.length} independently checked forbidden rules rejected; allowed UI/domain paths accepted).`);

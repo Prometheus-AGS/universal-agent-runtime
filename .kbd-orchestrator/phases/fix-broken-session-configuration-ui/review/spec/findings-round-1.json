@@ -1,0 +1,50 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5.6-sol",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "spec-artifact-3/spec.md",
+      "claim": "The MODIFIED 'Framework-neutral core package' requirement smuggles the entire scope of a separate prior-phase change into this narrow ingestion fix and gates this change's archival on a different change's tasks file.",
+      "evidence": "Artifact-3 states: 'The 3.0 release SHALL implement and verify the complete `v3-framework-neutral-core` scope and acceptance criteria defined in `.kbd-orchestrator/phases/full-3.0-release/plan.md`' and its archive scenario begins 'WHEN every task in `openspec/changes/v3-framework-neutral-core/tasks.md` is complete'. This contradicts the change's own stated goals in artifact-1 ('Provide one framework-neutral, atomic success operation... Migrate every fetched-list path') and artifact-2's 'What Changes', which are limited to fetched-list ingestion. Additionally, `openspec/changes/v3-framework-neutral-core/tasks.md` is listed MISSING in cited_paths, so the archive gate references a file whose contents cannot be verified in this packet.",
+      "suggested_fix": "Rewrite the requirement to cover only atomic fetched-list ingestion semantics (the replace/append/large-list/negative-control/error scenarios already present) and remove the dependency on the full-3.0-release plan and the v3-framework-neutral-core tasks file, or explicitly scope the archive gate to the tasks owned by this change."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "spec-artifact-15/spec.md",
+      "claim": "The scenario 'Adapter boundaries are checked in CI' conflicts with the phase-wide constraint that GitHub Actions remain deployment-only and all product checks run locally.",
+      "evidence": "Artifact-15 (and identically artifact-7) contains the scenario: '#### Scenario: Adapter boundaries are checked in CI \u2014 WHEN the platform adapter gate scans UAR application TypeScript and TSX...'. The spec-index Shared acceptance boundary states 'All product checks run locally after the owning code is complete. GitHub Actions remain deployment-only.' and artifact-10 states 'Keep all product verification local; GitHub Actions remain deployment-only.' Artifact-12 task 3.1 even requires 'verify no product test was added to or run in GitHub Actions.' An implementer following the normative scenario could wire the adapter gate into GitHub Actions, violating the explicit constraint; an implementer following the constraint would leave the scenario unmet.",
+      "suggested_fix": "Rename and reword the scenario to 'Adapter boundaries are checked locally' (e.g., 'WHEN the local platform adapter gate scans...') so it aligns with the deployment-only GitHub Actions constraint, in both artifact-7 and artifact-15."
+    },
+    {
+      "severity": "WARNING",
+      "file": "spec-index/spec.md",
+      "claim": "The spec-index convergence clause permitting Track A to adopt the upstream patch release contradicts the normative scenarios in artifacts 7 and 15 that hard-fail on any resolved version other than exactly 3.0.2.",
+      "evidence": "Spec-index Track B states: 'If its corrected package is published before UAR closeout, Track A may converge to that exact patch and rerun the same proof.' But artifact-7's scenario requires the frontend to resolve 'exactly to registry release `3.0.2`' and its drift scenario fails verification when 'a manifest or lockfile resolves the product dependency to... a version other than `3.0.2`'; artifact-15 repeats the identical 3.0.2 pin. Converging to a published 3.0.3 would make both changes' normative scenarios fail as written.",
+      "suggested_fix": "Either parameterize the version scenarios ('the exact supported registry release recorded in the change') or state explicitly in the index that convergence requires amending the 3.0.2 pins in both OpenSpec deltas before re-running the proof."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "spec-artifact-16/spec.md",
+      "claim": "The goal to verify fixes at http://localhost:1906 is not bound in any requirement; all functional scenarios refer only to a generic 'installed local service'.",
+      "evidence": "The phase goals state 'Verify the fixes through the installed service at http://localhost:1906 using browser console/network evidence and server logs', yet artifact-11, artifact-12, and artifact-16 specify only 'an installed local service' / 'the installed local service' with no address or port, and artifact-12 task 2.3 mentions no host binding beyond recording the profile.",
+      "suggested_fix": "Bind the certification scenario to the configured installed service endpoint (or explicitly state it is host-configured with the value recorded in verification.md) so the goal's localhost:1906 verification is traceable."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "spec-artifact-3/spec.md",
+      "claim": "The acceptance claim that 'the success publication count does not grow with row count' is only evidenced by a single 7,248-row fixture, which cannot demonstrate growth behavior.",
+      "evidence": "Artifact-3 scenario: 'WHEN a successful fetch returns 7,248 normalized rows THEN successful ingestion publishes exactly once after fetch-start AND the success publication count does not grow with row count.' Artifact-4 task 4.1 runs only 'the 7,248-row positive fixture and observe[s] exactly one success publication', i.e., one data point at one row count.",
+      "suggested_fix": "Either run the positive fixture at two or more row counts (e.g., 1 and 7,248) to evidence count invariance, or soften the scenario wording to 'publishes exactly once after fetch-start for the 7,248-row case'."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,8 +1,21 @@
 import { useMemo } from "react";
 import { useGraphStore } from "@/platform/entities";
 import type { AgentEntity } from "@/entities/types";
+import {
+  AGENT_LOAD_STATE_ENTITY,
+  AGENT_LOAD_STATE_ID,
+} from "./agents-graph";
+import type { AgentLoadState } from "./agents-graph";
 
 const EMPTY_AGENTS: AgentEntity[] = [];
+
+export function useAgentLoadState(): AgentLoadState | null {
+  return useGraphStore((state) =>
+    (state.entities[AGENT_LOAD_STATE_ENTITY]?.[AGENT_LOAD_STATE_ID] as
+      | AgentLoadState
+      | undefined) ?? null,
+  );
+}
 
 /**
  * Live, filterable view of all Agent entities in the graph.

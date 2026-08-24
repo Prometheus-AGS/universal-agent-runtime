@@ -23,6 +23,7 @@ interface ModelSelectorProps {
   defaultLabel?: string;
   placeholder?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 interface FlatModel {
@@ -37,10 +38,11 @@ interface FlatModel {
   /** Provider id */
   providerId: string;
   /** Context window size */
-  context: number;
+  context: number | null;
 }
 
-function formatContext(tokens: number): string {
+function formatContext(tokens: number | null): string {
+  if (tokens === null) return "—";
   if (tokens >= 1_000_000) return `${Math.round(tokens / 1_000_000)}M`;
   if (tokens >= 1_000) return `${Math.round(tokens / 1_000)}k`;
   return String(tokens);
@@ -52,24 +54,23 @@ export function ModelSelector({
   defaultLabel,
   placeholder = "Select model...",
   className,
+  disabled = false,
 }: ModelSelectorProps) {
   const [open, setOpen] = useState(false);
   const { items, loading, error } = useModelSelector();
 
-  /** Flatten catalog into grouped models, filtering to configured providers only. */
+  /** Group the bounded model projection returned by configured providers. */
   const grouped = useMemo(() => {
     const groups = new Map<string, FlatModel[]>();
     for (const model of items) {
-      if (model.provider_configured !== true) continue;
-      const providerName = String(model.provider_name ?? model.provider_id);
-      const modelId = String(model.model_id ?? model.id.split("/").slice(1).join("/"));
+      const providerName = model.provider_name;
       const option: FlatModel = {
         value: model.id,
-        name: model.name,
-        id: modelId,
+        name: model.display_name,
+        id: model.model_id,
         providerName,
         providerId: model.provider_id,
-        context: model.context,
+        context: model.context_window,
       };
       groups.set(providerName, [...(groups.get(providerName) ?? []), option]);
     }
@@ -84,11 +85,13 @@ export function ModelSelector({
       const found = models.find((m) => m.value === value);
       if (found) return found.name;
     }
-    // Fallback: show the raw value
-    return value;
+    return null;
   }, [value, grouped]);
 
-  const triggerLabel = selectedLabel ?? defaultLabel ?? placeholder;
+  const unavailable = Boolean(value && !selectedLabel && !loading);
+  const triggerLabel = unavailable
+    ? `Unavailable: ${value}`
+    : selectedLabel ?? defaultLabel ?? placeholder;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -98,9 +101,12 @@ export function ModelSelector({
             variant="outline"
             role="combobox"
             aria-expanded={open}
+            aria-invalid={unavailable || undefined}
+            disabled={disabled}
             className={cn(
               "h-9 w-full justify-between font-mono text-xs",
               !selectedLabel && !defaultLabel && "text-muted-foreground",
+              unavailable && "text-destructive",
               className,
             )}
           />
@@ -108,7 +114,7 @@ export function ModelSelector({
       >
         <span className="truncate">{triggerLabel}</span>
         <div className="flex items-center gap-1 shrink-0">
-          {value && (
+          {value && !disabled && (
             <span
               role="button"
               tabIndex={0}
@@ -130,7 +136,10 @@ export function ModelSelector({
           <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0" align="start">
+      <PopoverContent
+        className="w-[calc(100vw-2rem)] max-w-[400px] p-0"
+        align="start"
+      >
         <Command>
           <CommandInput
             placeholder="Search models..."

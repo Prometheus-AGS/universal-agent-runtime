@@ -1,0 +1,12 @@
+{
+  "stage": "execute",
+  "completedAt": "2026-08-23T21:12:45Z",
+  "outputs": [
+    "execution.md",
+    "progress.json"
+  ],
+  "nextStage": "reflect",
+  "summaryForNext": "Hybrid execution ready: UAR changes use KBD-owned OpenSpec tasks in serial worktrees; upstream atomic ingestion uses its clean external worktree with this UAR phase as the canonical ledger. First pending change is adopt-entity-management-3-0-2; product behavior is verified once after UAR code completion.",
+  "skipped": false,
+  "skipReason": null
+}

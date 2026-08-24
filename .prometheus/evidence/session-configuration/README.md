@@ -1,0 +1,5 @@
+# Installed Session Configuration evidence
+
+- `playwright-report.json` is the generated JSON report for the one installed-release scenario run against `http://127.0.0.1:1906`. Its embedded `session-configuration-functional-proof` attachment contains the observed browser console, network statuses, 81 ms sheet-open time, 16/23 graph-publication result, twelve configured models, four viewport measurements, and effective models for agent-default, explicit-turn, and saved-session inference.
+- `server-log-interval.jsonl` is the credential-free projection of the matching UAR operational-log interval from `2026-08-23T23:47:37.205Z` through `2026-08-23T23:47:48.200Z`. It retains provider/model selection and inference lifecycle completion while excluding prompts, headers, environment values, credentials, and unrelated polling noise.
+- The three browser 404 messages correspond exactly to GET requests for a new thread's absent `/api/uar/sessions/{id}/agent-config`; the same report observes the subsequent POST and GET at status 200. No `/api/models` request occurred and no other HTTP request failed.

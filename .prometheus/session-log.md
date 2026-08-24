@@ -763,6 +763,25 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - No database, configuration, credential, provider/model setting, or source
   file changed, and no inference request ran.
 
+## 2026-08-23 — Session Configuration installed functional gate passed
+
+- Built the completed React bundle and locked `server-full` release, installed
+  both through the existing macOS installer, and observed identical source and
+  installed binary SHA-256 values.
+- Corrected the production chunk rule after the npm 3.0.2 package path exposed
+  that the old workspace-only matcher no longer emitted `vendor-entities`.
+- Ran one short Playwright scenario against the installed service: 1 passed in
+  10.9 seconds, sheet open in 81 ms, 16 graph publications against a limit of
+  23, twelve configured models, expected spacing at four widths, save/reopen
+  and cancel isolation, and genuine inference for explicit-turn,
+  saved-session, and agent-default precedence.
+- The three browser 404s were the named negative control for an absent new
+  session configuration; the later POST/GET requests returned 200. The retained
+  evidence contains no credential values.
+- Playwright harness corrections were limited to exact option selection and
+  awaiting asynchronous request-header access. No mock backend, broad suite,
+  soak, or GitHub Actions product test ran.
+
 ## 2026-08-23 — Native service deployment reflected and closed
 
 - The OpenSpec archive gate initially reported 17 invalid canonical specs.
@@ -784,3 +803,61 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   main as the only worktree. No push, tag, publication, or PR occurred.
 - The installed UAR and SurrealDB LaunchAgents were left running. No inference,
   soak, unit-test campaign, or GitHub Actions job ran during closeout.
+
+## 2026-08-23 — Session Configuration repair and upstream atomic ingestion closed
+
+- Fast-forwarded the three serial UAR changes to `main` at `2aa52932`: exact
+  registry Entity Management/Core 3.0.2 adoption, the entity-backed Session
+  Configuration flow, and durable React/entity regression controls.
+- Preserved the already-observed installed functional evidence: the sheet opened
+  in 81 ms, emitted 16 graph publications against a limit of 23, exposed twelve
+  configured models without `/api/models`, preserved save/reopen and cancel
+  isolation, met the four-width spacing contract, and completed genuine
+  inference through explicit-turn, saved-session, and agent-default routes.
+- Completed the upstream Entity Management correction on proposed 3.0.3. The
+  signed `v3.0.2` control at `f29a7016` emitted 7,250 success publications for
+  7,248 rows; the corrected public ingestion path emitted one success
+  publication for 1, 12, and 7,248 rows and rolled back a later side-batch
+  failure with zero publication.
+- Pushed upstream commits through `ad7f6710` to PR #41. The PR remains open;
+  no npm package, tag, or dist-tag was published, and UAR remains intentionally
+  pinned to registry 3.0.2.
+- Archived all four OpenSpec changes and synced their deltas. The second UAR
+  archive initially failed closed because its MODIFIED block would have removed
+  the dependency-drift scenario added by the first archive; preserving that
+  scenario resolved the conflict.
+- Canonical KBD reconciliation used the local runtime because the port-7892
+  control plane was unavailable. Historical display-label task duplicates
+  remain cancelled, so two raw task denominators are larger than their canonical
+  ordinal task sets even though all four changes are DONE. Canonical
+  `position.json` records the phase COMPLETE at revision 569; the generated
+  waypoint cursor remains stale and was not hand-edited.
+- No new product tests, soak, load run, GitHub Actions job, UAR push, UAR PR,
+  upstream merge, or package publication occurred during closeout.
+
+## 2026-08-24 — Entity Management 3.0.3 adopted and deployed
+
+- Supersedes the preceding upstream status: Entity Management PR #41 was
+  merged, and `@prometheus-ags/prometheus-entity-management` plus
+  `@prometheus-ags/entity-graph-core` 3.0.3 were published to npm.
+- Updated both exact application pins and reconciled the repository root and
+  nested frontend lockfiles to 3.0.3. Added exact-version minimum-release-age
+  exceptions for only those two first-party artifacts; both frozen lockfile
+  scopes passed the supply-chain policy gate.
+- Observed `pnpm typecheck` and `pnpm lint` pass, built the production React
+  bundle, validated its eleven referenced assets, and completed the locked
+  `server-full` release build. The release build emitted three pre-existing
+  Rust warnings and no error.
+- Installed the release and UI through the macOS installer. Source and
+  installed binary SHA-256 values both equal
+  `ef7e92d16a3ce35f2bedde1a6d6b00186a512551557b94e46bd7bbe4d4ea300d`;
+  source and installed `index.html` hashes also match.
+- The preserved SurrealDB connection made cold service startup take about 77
+  seconds. The LaunchAgent then bound HTTP to `127.0.0.1:1906` and `::1:1906`,
+  returned `ok` from `/healthz` and `ready` from `/readyz`, and served the UI
+  with HTTP 200.
+- Ran only the installed Session Configuration functional proof: one
+  Playwright scenario passed in 13.2 seconds, including responsive sheet open,
+  bounded graph publication, spacing, persistence, cancel isolation, and real
+  agent-default, explicit-model, and saved-session inference. No broad suite,
+  soak, or GitHub Actions product test ran.

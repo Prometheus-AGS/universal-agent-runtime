@@ -85,6 +85,7 @@ export function registerAllSchemas() {
   registerSchema({ type: "Setting" });
   registerSchema({ type: "SettingsType" });
   registerSchema({ type: "ProviderMeta" });
+  registerSchema({ type: "AgentLoadState" });
 
   registerSchema({
     type: "KnowledgeBase",

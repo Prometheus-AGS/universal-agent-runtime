@@ -1,0 +1,50 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5.4",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "claim": "The analysis silently supersedes Goal 1: instead of upgrading UAR to the published 3.0.2 release as required, it plans to wait for a nonexistent upstream patch release and to halt the phase entirely if release authority is unavailable.",
+      "evidence": "Goals state: 'Upgrade every UAR-owned @prometheus-ags/prometheus-entity-management dependency to the published 3.0.2 release and reconcile its lockfiles.' The artifact states: 'supersede them with an upstream patch release containing the atomic-ingestion fix' and 'UAR dependency work is blocked until a corrected release is available. If release authority is unavailable, create a GitHub issue containing the reproduction and stop.' No section flags this as a goal amendment requiring approval; 'Corrections to Assess' only corrects the assessment, not the goals.",
+      "suggested_fix": "Either deliver the 3.0.2 pin plus lockfile reconciliation as an explicit interim step satisfying Goal 1 (with the atomic-ingestion fix as a follow-up), or add an explicit goal-amendment section documenting that Goal 1 is being renegotiated and obtain sign-off before Plan proceeds."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "claim": "The hard serial dependency of all UAR work on the upstream atomic-ingestion fix is unjustified by the analysis's own decisions: once the model selector is bound to the 12 configured models from /api/uar/providers and never requests /api/models, the 7,248-row N+2 publication path cannot trigger in the panel.",
+      "evidence": "Gap-to-decision table: 'Model selector | Normalize only /api/uar/providers configured models | Opening the sheet must not request /api/models.' Evidence section: '/api/uar/providers 3,949 bytes/five providers/twelve models.' Yet U0 step 6 states 'UAR dependency work is blocked until a corrected release is available.' With 12 rows, the N+2 defect yields ~14 publications \u2014 not a freeze \u2014 and the analysis never explains why the upstream patch is a prerequisite for the freeze fix rather than independent hardening.",
+      "suggested_fix": "Justify the blocking dependency (e.g., show another UAR path that still ingests the full catalog through the defective hook), or downgrade U0 to a parallel track and unblock U1/U2 on the configured-models boundary."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "claim": "The analysis never addresses the current installed version 3.0.0-rc.1 identified by the assessment, leaving the upgrade path and lockfile reconciliation from rc.1 unspecified.",
+      "evidence": "The assess handoff states: 'workspace dependency remains 3.0.0-rc.1 instead of npm 3.0.2.' The string '3.0.0-rc.1' appears nowhere in analysis.md or library-candidates.json; U1 step 2 only says 'Version 3.0.2 is the verified baseline; the final pin must include the upstream atomic-ingestion correction.'",
+      "suggested_fix": "State the current rc.1 pin explicitly and describe the migration (rc.1 \u2192 3.0.2 \u2192 corrected patch, or direct), including which lockfile entries change at each step."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "claim": "U2 introduces backend work (typed session contract, inference routing changes, context-strategy persistence or removal) that none of the four goals cover, without flagging it as scope expansion.",
+      "evidence": "Goals cover dependency upgrade, freeze fix, sheet spacing, and installed-service verification only. U2 steps 4\u20136 require: 'Save the backend's typed field names,' 'Ensure policy resolution and the inference request use the saved session model,' 'Implement context-strategy persistence end to end or remove the unsupported controls.' The 'dead facade' finding justifies this, but it is a server-side behavior change in a phase scoped as a UI fix, and constraints are null so there is no rule confirming this expansion is authorized.",
+      "suggested_fix": "Add an explicit scope-change note tying the backend contract work to the dead-facade evidence and mark it as requiring goal amendment, or split it into a separately approved change."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "claim": "Key load-bearing evidence (exact tarball SHA-256 pins, signed tag commits, the reproduced N+2 defect) originates from a research package whose daemon recorded two stage-0 failures with zero sources/tokens, and the analysis does not indicate independent verification.",
+      "evidence": "'Research daemon: two stage-0 failures with zero sources/tokens, including after its documented restart; disk fallback used and recorded in the research manifest.' The artifact simultaneously relies on research-sourced claims such as 'Signed upstream source: v3.0.2 at f29a7016; updated origin/main at e2521001; both contain the per-row setEntityFetched loop' to justify blocking the entire phase.",
+      "suggested_fix": "Before Plan consumes the U0 blocker, re-verify the tarball hashes, tag commits, and the per-row setEntityFetched loop directly against the registry and upstream checkout."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "openai/gpt-5.6-sol",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "spec-artifact-7/spec.md",
+      "claim": "Scenario titled 'Adapter boundaries are checked in CI' contradicts its own body, which states the check 'runs locally and is not added to or run by GitHub Actions'.",
+      "evidence": "Artifact-7 and artifact-15 both contain '#### Scenario: Adapter boundaries are checked in CI' followed by '- AND this product check runs locally and is not added to or run by GitHub Actions'; spec-index also states 'GitHub Actions remain deployment-only.' The CI title directly contradicts the local-only clause and can lead a downstream implementer to wire the gate into workflows.",
+      "suggested_fix": "Rename the scenario to 'Adapter boundaries are checked locally' in both delta specs so the title matches the enforced behavior."
+    },
+    {
+      "severity": "WARNING",
+      "file": "spec-artifact-9/spec.md",
+      "claim": "The installed-browser scenario is gated on 'all three UAR changes are code-complete', which is circular because the scenario is owned by the third change itself.",
+      "evidence": "Artifact-9 states the Playwright scenario 'runs only after all three UAR changes are code-complete', but the scenario is a deliverable of the third change (`prevent-session-configuration-regressions`, tasks 2.1-2.3 in artifact-12). Spec-index says change 3 'Runs after change 2 is code-complete', not after itself. As written, change 3's own gate depends on change 3's own completion.",
+      "suggested_fix": "Reword to 'after changes 1 and 2 and this change's guardrail tasks are code-complete' to match artifact-12 task 2.1 and the index ordering."
+    },
+    {
+      "severity": "WARNING",
+      "file": "spec-artifact-3/spec.md",
+      "claim": "The requirement that 'every row, lifecycle record, sync record, list ID, timestamp, and pagination value matches the existing 3.0 semantics' conflicts with the mandated single shared timestamp, leaving timestamp-equivalence semantics undefined for downstream tests.",
+      "evidence": "Artifact-3 scenario 'A fetched list replaces an existing result' requires timestamps to match 'the existing 3.0 semantics', while artifact-1's design says 'Capture one timestamp before the Zustand set' and apply it to every sync record. Current 3.0.2 calls `setEntityFetched` once per row (artifact-1 Context), so per-row timestamps may differ; collapsing them is an observable change that could also trip spec-index stop condition 8 ('The upstream atomic action changes merge, lifecycle, sync, list... semantics').",
+      "suggested_fix": "Define explicitly in the requirement that all rows ingested in one fetch share a single ingestion timestamp and state that this is the intended semantic, or scope 'matches the existing 3.0 semantics' to exclude intra-batch timestamp distinctness."
+    },
+    {
+      "severity": "WARNING",
+      "file": "spec-artifact-13/spec.md",
+      "claim": "Multiple design decisions rest on claims about existing code that are unverifiable in this packet: every cited path is MISSING and the file tree contains only .kbd-orchestrator entries.",
+      "evidence": "cited_paths lists `frontend/src/platform/entities/index.ts`, `scripts/check-frontend-boundaries.mjs`, `frontend/package.json`, and all others as MISSING, yet artifact-13 asserts 'the existing `resolve_effective_run_policy` path', 'the existing schema registration', and 'Provider and Model transports normalize `/api/uar/providers`'; artifact-1 asserts 'the existing append algorithm' and that `createGraphTransaction` 'does not batch store publications'. The assess handoff mentions only the freeze, workspace version, and padding \u2014 none of these symbols.",
+      "suggested_fix": "Attach the Analyze-stage evidence (file excerpts or SHAs) for each 'existing X' claim the specs build on, or mark each as an assumption to be re-verified at implementation time with a stop condition."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "spec-artifact-16/spec.md",
+      "claim": "'Sheet work and graph publications are proportional to the configured set' is not a measurable acceptance criterion.",
+      "evidence": "Scenario 'The static catalog contains thousands of models' asserts publications are 'proportional to the configured set rather than the static catalog size' without a bound, while the same artifact elsewhere uses concrete bounds ('no request to `/api/models`', 'within two seconds').",
+      "suggested_fix": "State a concrete bound, e.g., 'graph publications on open are bounded by a function of the configured provider/model count and are zero for catalog-sized input', matching the verification style used elsewhere."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

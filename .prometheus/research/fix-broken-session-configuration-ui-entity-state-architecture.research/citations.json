@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "claims": [
+    {"id":"C1","claim":"The package architecture is Components to hooks to stores to APIs/realtime, with one canonical entity record and ID-only lists.","sources":["S1","S2"],"confidence":"high"},
+    {"id":"C2","claim":"Prometheus Entity Management 3.0.2 uses React state for CRUD edit buffers and mutation lifecycle state.","sources":["S1","S3"],"confidence":"high"},
+    {"id":"C3","claim":"useEntities performs one batch entity upsert, then one setEntityFetched publication per row, then one list-result publication.","sources":["S1","S2","S3","S4"],"confidence":"high"},
+    {"id":"C4","claim":"useEntityAugment patches are shared overlays and are not the isolated CRUD edit buffer.","sources":["S1"],"confidence":"high"},
+    {"id":"C5","claim":"createGraphTransaction provides rollback but does not batch publications because its methods call store actions immediately.","sources":["S2"],"confidence":"high"},
+    {"id":"C6","claim":"The N+2 list publication defect remains present in both the v3.0.2 tag and latest origin/main.","sources":["S3","S4"],"confidence":"high"},
+    {"id":"C7","claim":"External-store subscriptions rerender a subscriber when its selected snapshot changes; neither React nor Zustand promises zero rerenders.","sources":["S5","S7"],"confidence":"high"},
+    {"id":"C8","claim":"Local draft state can be valid when isolated from committed data, but business state need not reside in the component when an explicit graph draft entity is required.","sources":["S6","S1","S9"],"confidence":"medium"},
+    {"id":"C9","claim":"Narrow stable selectors can avoid unrelated rerenders but cannot eliminate a rerender when selected data changes.","sources":["S7","S8"],"confidence":"high"},
+    {"id":"C10","claim":"Opening Session Configuration downloads 2,611,291 bytes and hydrates 7,248 catalog models with one imperative graph action per model; Chrome becomes unresponsive while the service remains healthy.","sources":["S9","S10"],"confidence":"high"},
+    {"id":"C11","claim":"UAR does not register entity transports and instead uses REST-wrapper Zustand stores plus raw graph selectors.","sources":["S9"],"confidence":"high"},
+    {"id":"C12","claim":"UAR already defines AgentSessionEntity but the Session Configuration flow does not use it as canonical state.","sources":["S9"],"confidence":"high"},
+    {"id":"C13","claim":"The panel POSTs model_override and context_strategy while the backend AgentSessionConfig accepts model and no context_strategy field.","sources":["S9"],"confidence":"high"},
+    {"id":"C14","claim":"The current frontend never loads saved session configuration and the turn request builder uses the selected agent's model, leaving the session model control a dead facade.","sources":["S9"],"confidence":"high"},
+    {"id":"C15","claim":"The configured-provider endpoint returns 3,949 bytes, five providers, and twelve configured models, which is the bounded inventory the selector requires.","sources":["S10"],"confidence":"high"}
+  ]
+}

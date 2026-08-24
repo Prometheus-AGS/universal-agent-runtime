@@ -19,20 +19,35 @@ Install with `pnpm -C frontend install --frozen-lockfile`. TypeScript 5.9.3,
 `pnpm typecheck` is the real type gate — bundlers strip types without checking
 them, so a green build proves nothing about types.
 
-## Strict layering — do not skip a layer
+## Required React/entity guidance
 
-1. **Components** never call `fetch`, never import Zustand stores directly, and
-   never import `frontend/src/services/`. They render UI and call hooks.
-2. **Hooks** subscribe to stores and expose store actions. They do not call
-   `fetch` and do not import service modules.
-3. **Stores** (`frontend/src/stores/`) hold state and call services for HTTP,
-   SSE, and other I/O.
-4. **Services** (`frontend/src/services/`) are thin wrappers around `fetch` and
-   streams. **Only stores import services** — not hooks, not components.
+Before React or entity-state edits, read Vercel React Best Practices, Vercel
+Composition Patterns, and the applicable Prometheus Entity Management skill.
+Write one task-specific paragraph naming the rules applied before code changes.
 
-This keeps data logic in one place, satisfies the `react-hooks/*` lint rules,
-and keeps tests straightforward. A component that reaches past its layer will
-pass review by looking correct and fail later by duplicating state.
+## Strict layering — choose the state path, then do not skip a layer
+
+1. **Components** render UI and call hooks. They never call `fetch`, import
+   Zustand stores, services, transports, the entity-management package, or the
+   raw graph store.
+2. **Entity-backed path:** component → narrow platform domain hook → graph domain
+   action → registered transport/API. Persistent, shared, server-confirmed, or
+   domain-meaningful records use this path. Features import the domain only from
+   `@/platform/entities`; feature code never performs raw or per-row graph writes.
+3. **Transient path:** component → feature hook → Zustand store → service. This
+   path is only for UI/workflow state that is not a business record. A transient
+   store must not duplicate Provider, Model, AgentSession, AgentSessionDraft, or
+   another graph-owned entity.
+4. **Services/transports** own HTTP, SSE, and other external I/O. Hooks do not
+   fetch. Components do not import service modules.
+
+Use narrow selectors at the smallest rendered boundary. If two controls subscribe
+to independent fields, split them into independent components; placing both hooks
+in a sheet/page shell still rerenders the shell. React `useState` is allowed for
+local widget mechanics such as open/closed state. Never call a setter in the
+render body. Never ingest a fetched list with one graph mutation per row; use one
+atomic graph ingestion action. A rerender is not automatically a bug—duplicated
+business authority and broad subscriptions are.
 
 ## UI contract
 

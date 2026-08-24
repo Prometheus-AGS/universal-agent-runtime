@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "contradictions": [
+    {
+      "id": "X1",
+      "claim_a": "Any React setState or rerender is a design failure that Entity Management was engineered to eliminate.",
+      "claim_b": "Entity Management 3.0.2 itself uses React state for isolated CRUD buffers and mutation status, and its hooks subscribe to Zustand.",
+      "resolution": "Reject the absolute claim. The valid invariant is that business state has one explicit authority and subscriptions are narrow; necessary UI reconciliation remains.",
+      "sources": ["S1", "S5", "S7"]
+    },
+    {
+      "id": "X2",
+      "claim_a": "upsertEntities avoids N separate writes during list hydration.",
+      "claim_b": "useEntities follows the batch upsert with N setEntityFetched writes.",
+      "resolution": "The data slice is batched, but the complete list-ingestion operation is not. Treat this as an upstream defect and add one atomic fetched-list action.",
+      "sources": ["S1", "S2", "S3", "S4"]
+    },
+    {
+      "id": "X3",
+      "claim_a": "The Session Configuration panel persists model and context overrides.",
+      "claim_b": "Its JSON field names do not match the backend contract, it never reads persisted session state, and the turn builder uses the agent model.",
+      "resolution": "Classify the panel as a dead facade until an installed-browser inference run proves the saved session model changes effective routing.",
+      "sources": ["S9"]
+    },
+    {
+      "id": "X4",
+      "claim_a": "Switching from per-row upsertEntity to useEntities 3.0.2 is sufficient to eliminate the freeze class.",
+      "claim_b": "useEntities 3.0.2 still has unbounded N lifecycle publications.",
+      "resolution": "Fix and release the upstream atomic-ingestion primitive first, then migrate UAR to the transport/domain-hook path and the configured subset.",
+      "sources": ["S1", "S3", "S4", "S9", "S10"]
+    }
+  ]
+}

@@ -294,6 +294,33 @@ yourself across every root, not just this folder.
 
 Outside the managed region. Re-running the bootstrap will not touch this.
 
+### React and entity-state architecture
+
+Before changing React components, entity hooks/transports, or graph-backed
+feature state, read **Vercel React Best Practices**, **Vercel Composition
+Patterns**, and the applicable **Prometheus Entity Management** skill. Record a
+task-specific summary of the rules applied before implementation.
+
+Persistent, shared, server-confirmed, or domain-meaningful records are business
+entities. They live in the normalized entity graph and reach components only
+through typed platform domain hooks exported by `@/platform/entities`. Components
+never import the entity-management package, graph store, Zustand stores,
+services, or transports directly. Feature hooks never fetch or issue raw graph
+mutations. Domain actions own mutation sequencing and transports own I/O.
+
+Subscribe at the smallest rendered boundary: one field or derived primitive per
+control where practical. A field hook placed in a sheet/page shell still rerenders
+that shell. Split independent subscribers into independent components. Never call
+a React state setter synchronously in a component render body, and never publish a
+fetched entity list by looping over rows and issuing one graph write per row; use
+one atomic graph ingestion action.
+
+`useState` and transient Zustand remain valid for UI-local mechanics such as an
+open popover, hover state, an unsaved visual toggle, or workflow progress that is
+not a business record. They must not duplicate Provider, Model, AgentSession,
+AgentSessionDraft, or another graph-owned entity. A rerender is not inherently a
+defect; broad or duplicated business-state subscriptions are.
+
 ### OpenSpec workflow
 
 This repo uses OpenSpec for spec-driven change management. The `openspec` CLI

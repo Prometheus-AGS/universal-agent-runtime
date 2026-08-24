@@ -1,0 +1,12 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-08-23T20:40:11Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "Ten candidates evaluated. Adopt exact 3.0.2 immediately from current workspace 3.0.0-rc.1, run the configured-model/AgentSession repair as UAR's critical path, and repair atomic fetched-list ingestion upstream in parallel. The bounded second review warnings were resolved in the artifact but remain explicit: backend dead-facade work is an approved goal expansion, and registry/Git evidence was independently reverified after the research daemon failed.",
+  "skipped": false,
+  "skipReason": null
+}

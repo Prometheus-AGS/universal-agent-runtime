@@ -1,0 +1,15 @@
+{
+  "tool": "sycophancy.correction",
+  "version": "1.0.0",
+  "executed_at": "2026-08-23T20:26:40.914657Z",
+  "strictness": "strict",
+  "score": 0.01785714365541935,
+  "correction_mandatory": false,
+  "classifications": [
+    {
+      "pattern_id": "S-07",
+      "severity": "low",
+      "rationale": "The report is long; its evidence, alternatives, risks, and verification contract were retained because they are required research-package sections."
+    }
+  ]
+}

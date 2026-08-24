@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "research_id": "fix-broken-session-configuration-ui-entity-state-architecture",
+  "created_at": "2026-08-23T20:19:04Z",
+  "question": "How should UAR use Prometheus Entity Management so Session Configuration remains responsive, persists real session behavior, and does not keep business-form state in React components?",
+  "scope": [
+    "@prometheus-ags/prometheus-entity-management 3.0.2 published source",
+    "@prometheus-ags/entity-graph-core 3.0.2 published source",
+    "latest Prometheus Entity Management origin/main",
+    "UAR Session Configuration, model loading, session persistence, and inference request paths",
+    "React 19 and Zustand 5 external-store semantics"
+  ],
+  "hypotheses": [
+    {
+      "id": "H1",
+      "statement": "The freeze is caused by React component-local state.",
+      "status": "rejected"
+    },
+    {
+      "id": "H2",
+      "statement": "UAR bypasses Entity Management's intended transport and domain-hook architecture.",
+      "status": "supported"
+    },
+    {
+      "id": "H3",
+      "statement": "Prometheus Entity Management 3.0.2 can ingest a large fetched list with one graph publication.",
+      "status": "rejected"
+    },
+    {
+      "id": "H4",
+      "statement": "The Session Configuration controls persist fields that influence the next inference turn.",
+      "status": "rejected"
+    },
+    {
+      "id": "H5",
+      "statement": "A graph-owned draft entity can keep unsaved business state explicit without exposing it as committed session state.",
+      "status": "supported-design"
+    }
+  ],
+  "method": [
+    "Reproduce and trace the installed-browser failure.",
+    "Measure live API payloads and inspect service logs.",
+    "Inspect exact NPM 3.0.2 tarballs and embedded source maps.",
+    "Fetch and compare signed v3.0.2 and latest upstream Git source.",
+    "Inspect current UAR source and archived design evidence.",
+    "Cross-check state semantics against official React and Zustand documentation.",
+    "Run strict sycophancy screening and isolated artifact adversarial review."
+  ],
+  "limits": [
+    "The prometheus-research daemon remained stuck at stage 0 with zero sources on two attempts; the documented restart did not recover it.",
+    "Context7 did not index Prometheus Entity Management, so the exact NPM tarballs and Git source were used as the package authorities.",
+    "The Feynman grading tool was unavailable; no numeric learning grade is claimed.",
+    "No product code was changed during Analyze."
+  ]
+}

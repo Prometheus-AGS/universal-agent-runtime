@@ -634,3 +634,64 @@ launchctl registration, a PID, or HTTP health alone as dependency recovery.
 
 **Limit.** This is an operational recovery rule, not a diagnosis of the
 underlying SurrealDB or RocksDB stall.
+
+## 2026-08-23 — Registry package adoption invalidates workspace-only chunk rules
+
+**Observed behavior.** After adopting the release build of Entity Management
+3.0.2, the production frontend no longer emitted its dedicated entity vendor
+chunk even though the application resolved the correct dependency.
+
+**Root cause.** The Vite manual-chunk rule matched the former workspace source
+path only. Registry packages resolve beneath
+`node_modules/@prometheus-ags/...`, so the rule silently stopped matching.
+
+**Working rule.** When a package moves between workspace and registry
+provenance, verify the production asset graph as well as the lockfile. Chunking,
+alias, transform, and source-map rules that inspect paths must recognize the
+installed package layout explicitly.
+
+## 2026-08-23 — A model inventory is not proof that the account can use a model
+
+**Observed behavior.** The local OpenAI proxy advertised `gpt-5.4-nano`, but a
+real completion request was rejected for the ChatGPT-backed Codex account.
+`gpt-5.4-mini`, `gpt-5.4`, and `gpt-5.5` completed successfully.
+
+**Working rule.** Use discovery only to populate candidates. Functional routing
+evidence must come from an actual completion with the current account and
+endpoint; never convert an advertised model ID into a usability claim.
+
+## 2026-08-23 — Serial OpenSpec MODIFIED deltas must preserve prior archive scenarios
+
+**Observed behavior.** Archiving `repair-session-configuration-entity-flow`
+immediately after `adopt-entity-management-3-0-2` failed closed. Both changes
+modified the same `Entity-management integration has one package boundary`
+requirement, but the later delta omitted the dependency-drift scenario that the
+earlier archive had just added.
+
+**Working rule.** When serial changes carry MODIFIED deltas for the same
+requirement, treat each archive as a new specification baseline. Before
+archiving the later change, preserve every scenario added by preceding changes
+unless the later proposal explicitly removes it. Let the archive guard reject
+scenario loss; never bypass it with `--skip-specs`.
+
+**Limit.** This is a spec-merge ordering rule. It does not imply that unrelated
+changes should be combined or that an agent should edit generated KBD
+projections by hand.
+
+## 2026-08-24 — Frontend dependency adoption must reconcile both lockfile scopes
+
+**Observed behavior.** The root workspace lockfile resolved Entity Management
+3.0.3 and produced the correct production bundle, but `pnpm -C frontend exec`
+stopped before Playwright because `frontend/pnpm-lock.yaml` still contained the
+3.0.2 records. The hardened pnpm dependency-status check validates the nested
+workspace before executing its command.
+
+**Working rule.** A dependency pin in `frontend/package.json` participates in
+both `pnpm-lock.yaml` and `frontend/pnpm-lock.yaml`. Reconcile and frozen-verify
+both scopes. When an explicitly approved first-party release is inside the
+minimum-release-age window, add the same exact-version exception to both
+workspace files; never trust the complete lockfile or relax the global policy.
+
+**Limit.** This dual-lock requirement applies while both workspace roots remain
+in the repository. It is not evidence that other nested package locks require
+the same application dependency.

@@ -28,7 +28,8 @@ export default defineConfig({
                                 if (/node_modules\/@electric-sql\/pglite\//.test(moduleId)) {
                                     return "vendor-pglite";
                                 }
-                                if (moduleId.includes("packages/prometheus-entity-management/")) {
+                                if (moduleId.includes("packages/prometheus-entity-management/")
+                                    || /node_modules\/@prometheus-ags\/(prometheus-entity-management|entity-graph-core)\//.test(moduleId)) {
                                     return "vendor-entities";
                                 }
                                 if (/node_modules\/(@tanstack\/react-query|zustand|immer)\//.test(moduleId)) {

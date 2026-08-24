@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ChevronDownIcon, CheckIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useChatSessionConfig } from "@/hooks/use-chat-session-config";
+import {
+  loadAgentsIntoGraph,
+  useAgentLoadState,
+  useAgents,
+} from "@/features/agents/model";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -12,6 +16,11 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import type { UarAgent } from "@/types";
+import {
+  loadAgentSession,
+  selectAgentForSession,
+  useAgentSession,
+} from "@/platform/entities";
 
 /** Extracted agent configuration passed downstream to toggles & config panel. */
 export interface AgentConfig {
@@ -55,19 +64,22 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
   // Agent list now comes from the entity graph — same source as the Admin
   // page — so SSE mutations (rename, delete, enable-flag flips) propagate
   // into the chat sidebar without a reload.
-  const {
-    agents: graphAgents,
-    modelLabel,
-    loadingAgents,
-    loadDefaultModelLabel,
-    save,
-    setModelLabel,
-  } = useChatSessionConfig(true);
-  const agents = graphAgents as unknown as AgentWithType[];
-  const loading = loadingAgents && agents.length === 0;
-
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const agents = useAgents().items as unknown as AgentWithType[];
+  const agentLoadState = useAgentLoadState();
+  const session = useAgentSession(threadId ?? "");
+  const selectedId = session?.agent_id ?? null;
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    void loadAgentsIntoGraph().catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!threadId) return;
+    const controller = new AbortController();
+    void loadAgentSession(threadId, controller.signal).catch(() => undefined);
+    return () => controller.abort();
+  }, [threadId]);
 
   // Render-derived AgentConfig: re-derives whenever the selected agent's
   // underlying record changes in the graph (e.g. via SSE from an admin edit
@@ -86,35 +98,24 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
     onAgentConfigChange?.(derivedConfig);
   }, [derivedConfig, onAgentConfigChange]);
 
+  const modelLabel = session?.model
+    ? `Session: ${session.model}`
+    : derivedConfig?.model ?? (selectedId ? "Using default model" : null);
+
   const applyAgentConfig = useCallback(
     async (agentId: string) => {
       if (!threadId) return;
-      await save(threadId, { agent_id: agentId });
+      await selectAgentForSession(threadId, agentId);
     },
-    [save, threadId],
+    [threadId],
   );
 
   const handleSelect = useCallback(
     (agentId: string) => {
-      const next = agentId === selectedId ? null : agentId;
-      setSelectedId(next);
       setOpen(false);
-      // AgentConfig propagation now flows automatically via the
-      // derivedConfig useEffect above; here we only handle side effects:
-      // session-side apply + model-label refresh.
-      if (next) {
-        void applyAgentConfig(next);
-        const agent = agents.find((a) => a.id === next);
-        if (agent) {
-          const config = extractAgentConfig(agent);
-          setModelLabel(config.model ?? "Using default model");
-        }
-      } else {
-        // Reset model label to system default
-        void loadDefaultModelLabel();
-      }
+      void applyAgentConfig(agentId);
     },
-    [selectedId, applyAgentConfig, agents, loadDefaultModelLabel, setModelLabel],
+    [applyAgentConfig],
   );
 
   const selectedAgent = agents.find((a) => a.id === selectedId);
@@ -147,7 +148,11 @@ export function AgentSelector({ threadId, onAgentConfigChange, className }: Agen
           <CommandInput placeholder="Search agents..." />
           <CommandList>
             <CommandEmpty>
-              {loading ? "Loading agents..." : "No agents found."}
+              {agentLoadState?.status === "loading"
+                ? "Loading agents..."
+                : agentLoadState?.status === "error"
+                  ? `Unable to load agents: ${agentLoadState.error ?? "unknown error"}`
+                  : "No agents found."}
             </CommandEmpty>
             {agents.length > 0 && (
               <CommandGroup>

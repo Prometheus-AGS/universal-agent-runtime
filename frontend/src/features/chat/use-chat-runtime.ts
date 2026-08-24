@@ -14,6 +14,7 @@ import { useAttachmentManager } from "./use-attachment-manager";
 import type { AttachmentManager } from "./use-attachment-manager";
 import { useMemoryContext } from "./memory-context";
 import { useAgentConfig } from "./agent-config-context";
+import { useAgentSession } from "@/platform/entities";
 
 export type { AttachmentManager };
 
@@ -76,6 +77,8 @@ export function useChatRuntime(threadId: string): {
   const loadMessagesFromDb = useChatMessageStore((s) => s.loadMessagesFromDb);
   const { memoryEnabled } = useMemoryContext();
   const agentConfig = useAgentConfig();
+  const agentSession = useAgentSession(threadId);
+  const effectiveAgentId = agentSession?.agent_id ?? agentConfig?.agent_id;
 
   // Register the thread and set it active; load its messages from PGlite on mount.
   useEffect(() => {
@@ -138,15 +141,14 @@ export function useChatRuntime(threadId: string): {
           message: userText,
           attachments: attachments.length ? attachments : undefined,
           memory_enabled: memoryEnabled,
-          // Include agent_id/model from AgentConfigContext so the run uses the
-          // correct agent authoritatively, not just the session side-channel.
-          ...(agentConfig?.agent_id ? { agent_id: agentConfig.agent_id } : {}),
-          ...(agentConfig?.model ? { model: agentConfig.model } : {}),
+          // The selected agent may remain an explicit turn input. Model is
+          // deliberately omitted so the saved AgentSession policy can win.
+          ...(effectiveAgentId ? { agent_id: effectiveAgentId } : {}),
         },
         { onComplete: () => { void afterStreamComplete(userText); } },
       );
     },
-    [threadId, db, startStream, afterStreamComplete, attachmentManager, memoryEnabled, agentConfig],
+    [threadId, db, startStream, afterStreamComplete, attachmentManager, memoryEnabled, effectiveAgentId],
   );
 
   const onCancel = useCallback(async () => {
@@ -165,10 +167,9 @@ export function useChatRuntime(threadId: string): {
     void startStream(threadId, {
       message: pending,
       memory_enabled: memoryEnabled,
-      ...(agentConfig?.agent_id ? { agent_id: agentConfig.agent_id } : {}),
-      ...(agentConfig?.model ? { model: agentConfig.model } : {}),
+      ...(effectiveAgentId ? { agent_id: effectiveAgentId } : {}),
     }, { onComplete: () => { void afterStreamComplete(pending); } });
-  }, [threadId, consumePendingPrompt, startStream, afterStreamComplete, memoryEnabled, agentConfig]);
+  }, [threadId, consumePendingPrompt, startStream, afterStreamComplete, memoryEnabled, effectiveAgentId]);
 
   const threadMessageLikes = useMemo(() => messages.map(richMessageToThreadMessageLike), [messages]);
 

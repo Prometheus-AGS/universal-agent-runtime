@@ -2,6 +2,7 @@
 import {
   configureEngine,
   createPGlitePersistenceAdapter,
+  registerSessionConfigurationEntities,
   startLocalFirstGraph,
 } from "@/platform/entities";
 import type {
@@ -65,6 +66,7 @@ export async function bootstrapEntityGraph() {
 
   // Register all entity schemas and relations
   registerAllSchemas();
+  registerSessionConfigurationEntities();
 }
 
 export async function initializeDurableEntityGraph(

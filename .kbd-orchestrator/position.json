@@ -1,22 +1,25 @@
 {
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 412,
-  "derivedRevision": 412,
+  "sourceRevision": 569,
+  "derivedRevision": 569,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 84,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 177,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "525ede94-ad4e-4580-84da-627cba8991cb": 27,
     "80130eb1-95f8-4039-8976-71bdce23779c": 61,
     "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
     "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
+    "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
     "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "updatedAt": "2026-08-23T17:38:02.569494Z",
+  "updatedAt": "2026-08-24T01:08:38.904454Z",
   "cursor": [
-    "uar-native-service-deployment",
+    "fix-broken-session-configuration-ui",
     "reflect"
   ],
   "root": {
@@ -24,8 +27,8 @@
     "id": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
     "status": "running",
     "progress": {
-      "done": 5,
-      "total": 5
+      "done": 98,
+      "total": 106
     },
     "children": [
       {
@@ -122,6 +125,55 @@
           "total": 0
         },
         "children": [],
+        "annotations": []
+      },
+      {
+        "type": "phase",
+        "id": "fix-broken-session-configuration-ui",
+        "canonicalId": "fix-broken-session-configuration-ui",
+        "status": "COMPLETE",
+        "progress": {
+          "done": 4,
+          "total": 4
+        },
+        "children": [
+          {
+            "type": "change",
+            "id": "adopt-entity-management-3-0-2",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 5,
+              "total": 6
+            }
+          },
+          {
+            "type": "change",
+            "id": "repair-session-configuration-entity-flow",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 13,
+              "total": 13
+            }
+          },
+          {
+            "type": "change",
+            "id": "prevent-session-configuration-regressions",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 10,
+              "total": 11
+            }
+          },
+          {
+            "type": "change",
+            "id": "fix-atomic-fetched-list-ingestion",
+            "status": "COMPLETE",
+            "progress": {
+              "done": 11,
+              "total": 11
+            }
+          }
+        ],
         "annotations": []
       },
       {

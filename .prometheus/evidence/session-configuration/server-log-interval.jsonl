@@ -1,0 +1,20 @@
+{"timestamp":"2026-08-23T23:47:37.985564Z","level":"INFO","target":"universal_agent_runtime::uar::runtime::manager","fields":{"message":"Starting new run"}}
+{"timestamp":"2026-08-23T23:47:37.994203Z","level":"DEBUG","target":"universal_agent_runtime::llm::registry","fields":{"message":"Resolved primary provider","provider":"local-openai-proxy","model":"gpt-5.5"}}
+{"timestamp":"2026-08-23T23:47:37.994274Z","level":"INFO","target":"universal_agent_runtime::uar::runtime::manager","fields":{"message":"Using per-agent provider settings","provider":"local-openai-proxy","model":"gpt-5.5"}}
+{"timestamp":"2026-08-23T23:47:37.995693Z","level":"INFO","target":"universal_agent_runtime::llm::orchestrator","fields":{"message":"Starting orchestrator chat"}}
+{"timestamp":"2026-08-23T23:47:39.459673Z","level":"INFO","target":"universal_agent_runtime::llm::liter_driver","fields":{"message":"liter-llm stream complete","total_chunks":6,"total_events":4}}
+{"timestamp":"2026-08-23T23:47:39.496500Z","level":"INFO","target":"universal_agent_runtime::uar::runtime::manager","fields":{"message":"Starting new run"}}
+{"timestamp":"2026-08-23T23:47:39.500650Z","level":"DEBUG","target":"universal_agent_runtime::llm::registry","fields":{"message":"Resolved primary provider","provider":"local-openai-proxy","model":"gpt-5.4"}}
+{"timestamp":"2026-08-23T23:47:39.500688Z","level":"INFO","target":"universal_agent_runtime::uar::runtime::manager","fields":{"message":"Using per-agent provider settings","provider":"local-openai-proxy","model":"gpt-5.4"}}
+{"timestamp":"2026-08-23T23:47:39.502041Z","level":"INFO","target":"universal_agent_runtime::llm::orchestrator","fields":{"message":"Starting orchestrator chat"}}
+{"timestamp":"2026-08-23T23:47:41.024733Z","level":"INFO","target":"universal_agent_runtime::llm::liter_driver","fields":{"message":"liter-llm stream complete","total_chunks":7,"total_events":5}}
+{"timestamp":"2026-08-23T23:47:44.709922Z","level":"INFO","target":"universal_agent_runtime::uar::runtime::manager","fields":{"message":"Starting new run"}}
+{"timestamp":"2026-08-23T23:47:44.724315Z","level":"DEBUG","target":"universal_agent_runtime::llm::registry","fields":{"message":"Resolved primary provider","provider":"local-openai-proxy","model":"gpt-5.4-mini"}}
+{"timestamp":"2026-08-23T23:47:44.724349Z","level":"INFO","target":"universal_agent_runtime::uar::runtime::manager","fields":{"message":"Using per-agent provider settings","provider":"local-openai-proxy","model":"gpt-5.4-mini"}}
+{"timestamp":"2026-08-23T23:47:44.725497Z","level":"INFO","target":"universal_agent_runtime::llm::orchestrator","fields":{"message":"Starting orchestrator chat"}}
+{"timestamp":"2026-08-23T23:47:45.942122Z","level":"INFO","target":"universal_agent_runtime::llm::liter_driver","fields":{"message":"liter-llm stream complete","total_chunks":5,"total_events":3}}
+{"timestamp":"2026-08-23T23:47:46.178042Z","level":"INFO","target":"universal_agent_runtime::uar::runtime::manager","fields":{"message":"Starting new run"}}
+{"timestamp":"2026-08-23T23:47:46.181018Z","level":"DEBUG","target":"universal_agent_runtime::llm::registry","fields":{"message":"Resolved primary provider","provider":"local-openai-proxy","model":"gpt-5.4-mini"}}
+{"timestamp":"2026-08-23T23:47:46.181047Z","level":"INFO","target":"universal_agent_runtime::uar::runtime::manager","fields":{"message":"Using per-agent provider settings","provider":"local-openai-proxy","model":"gpt-5.4-mini"}}
+{"timestamp":"2026-08-23T23:47:46.182301Z","level":"INFO","target":"universal_agent_runtime::llm::orchestrator","fields":{"message":"Starting orchestrator chat"}}
+{"timestamp":"2026-08-23T23:47:47.975220Z","level":"INFO","target":"universal_agent_runtime::llm::liter_driver","fields":{"message":"liter-llm stream complete","total_chunks":5,"total_events":3}}
