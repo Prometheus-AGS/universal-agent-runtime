@@ -75,7 +75,7 @@ No phase-associated local worktree or local branch exists. Therefore the correct
 
 | Dimension | Status |
 |---|---|
-| Completeness | 9/10 tasks before the scoped commit; 51/51 phases dispositioned; 4 requirements present |
+| Completeness | 10/10 tasks complete; 51/51 phases dispositioned; 4 requirements present |
 | Correctness | 4/4 requirements and 9/9 scenarios covered by the canonical status, ledger, and Git audit |
 | Coherence | Design followed: legal transitions, historical artifacts preserved, unrelated unique worktree retained |
 
@@ -101,4 +101,6 @@ No phase-associated local worktree or local branch exists. Therefore the correct
 
 **SUGGESTION:** File an upstream KBD runtime issue for clearing `activePath` and `exactNextWork` when a run is cancelled after all phases become terminal.
 
-Final assessment before commit: no critical issues; one documented projection warning. Ready for the scoped commit and archive.
+Scoped commit `7e95411a` contains the canonical projections, reconciliation artifacts, and append-only history. Unrelated dirty files and the protected PR worktree remained unchanged.
+
+Final assessment: no critical issues; one documented projection warning. Ready for archive.

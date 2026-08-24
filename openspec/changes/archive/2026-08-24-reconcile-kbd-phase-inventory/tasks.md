@@ -18,4 +18,4 @@
 
 - [x] 4.1 Create the reconciliation verification record with all phase dispositions, successor mappings, and Git decisions; verify its phase count matches the canonical inventory
 - [x] 4.2 Run OpenSpec validation, KBD status checks, projection consistency checks, and Git diff checks; record the observed output and any unavailable external synchronization
-- [ ] 4.3 Commit only scoped reconciliation artifacts and generated canonical projections; verify unrelated dirty files and the protected PR worktree remain unchanged
+- [x] 4.3 Commit only scoped reconciliation artifacts and generated canonical projections; verify unrelated dirty files and the protected PR worktree remain unchanged

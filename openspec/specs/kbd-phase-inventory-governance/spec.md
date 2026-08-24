@@ -1,8 +1,10 @@
+# KBD Phase Inventory Governance Specification
+
 ## Purpose
 
 Defines how a KBD phase estate is reconciled so canonical status remains truthful while historical evidence and unique Git work are protected.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Evidence-backed phase disposition
 The reconciliation SHALL assign every registered top-level phase a terminal or retained disposition based on its canonical state, phase artifacts, and named successor outcomes. A partially delivered phase SHALL NOT be represented as fully delivered unless the disposition records how its remaining work was completed or explicitly abandoned.
@@ -28,7 +30,7 @@ The reconciliation SHALL update phase state through the KBD canonical transition
 
 #### Scenario: No active phases remain
 - **WHEN** every registered phase has a terminal disposition
-- **THEN** the run reports no active phase and offers the new-phase entry point
+- **THEN** the authoritative waypoint reports no current phase and the run lifecycle is terminal
 
 ### Requirement: Git cleanup protects unique work
 The reconciliation SHALL resolve phase-associated worktrees and local branches by exact path and ref, and SHALL remove them only after checking dirty files, ignored `.prometheus` history, unique commits, and unmerged changes.
