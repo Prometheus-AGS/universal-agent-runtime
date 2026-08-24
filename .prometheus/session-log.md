@@ -803,3 +803,34 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   main as the only worktree. No push, tag, publication, or PR occurred.
 - The installed UAR and SurrealDB LaunchAgents were left running. No inference,
   soak, unit-test campaign, or GitHub Actions job ran during closeout.
+
+## 2026-08-23 — Session Configuration repair and upstream atomic ingestion closed
+
+- Fast-forwarded the three serial UAR changes to `main` at `2aa52932`: exact
+  registry Entity Management/Core 3.0.2 adoption, the entity-backed Session
+  Configuration flow, and durable React/entity regression controls.
+- Preserved the already-observed installed functional evidence: the sheet opened
+  in 81 ms, emitted 16 graph publications against a limit of 23, exposed twelve
+  configured models without `/api/models`, preserved save/reopen and cancel
+  isolation, met the four-width spacing contract, and completed genuine
+  inference through explicit-turn, saved-session, and agent-default routes.
+- Completed the upstream Entity Management correction on proposed 3.0.3. The
+  signed `v3.0.2` control at `f29a7016` emitted 7,250 success publications for
+  7,248 rows; the corrected public ingestion path emitted one success
+  publication for 1, 12, and 7,248 rows and rolled back a later side-batch
+  failure with zero publication.
+- Pushed upstream commits through `ad7f6710` to PR #41. The PR remains open;
+  no npm package, tag, or dist-tag was published, and UAR remains intentionally
+  pinned to registry 3.0.2.
+- Archived all four OpenSpec changes and synced their deltas. The second UAR
+  archive initially failed closed because its MODIFIED block would have removed
+  the dependency-drift scenario added by the first archive; preserving that
+  scenario resolved the conflict.
+- Canonical KBD reconciliation used the local runtime because the port-7892
+  control plane was unavailable. Historical display-label task duplicates
+  remain cancelled, so two raw task denominators are larger than their canonical
+  ordinal task sets even though all four changes are DONE. Canonical
+  `position.json` records the phase COMPLETE at revision 569; the generated
+  waypoint cursor remains stale and was not hand-edited.
+- No new product tests, soak, load run, GitHub Actions job, UAR push, UAR PR,
+  upstream merge, or package publication occurred during closeout.

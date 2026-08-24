@@ -659,3 +659,21 @@ real completion request was rejected for the ChatGPT-backed Codex account.
 **Working rule.** Use discovery only to populate candidates. Functional routing
 evidence must come from an actual completion with the current account and
 endpoint; never convert an advertised model ID into a usability claim.
+
+## 2026-08-23 — Serial OpenSpec MODIFIED deltas must preserve prior archive scenarios
+
+**Observed behavior.** Archiving `repair-session-configuration-entity-flow`
+immediately after `adopt-entity-management-3-0-2` failed closed. Both changes
+modified the same `Entity-management integration has one package boundary`
+requirement, but the later delta omitted the dependency-drift scenario that the
+earlier archive had just added.
+
+**Working rule.** When serial changes carry MODIFIED deltas for the same
+requirement, treat each archive as a new specification baseline. Before
+archiving the later change, preserve every scenario added by preceding changes
+unless the later proposal explicitly removes it. Let the archive guard reject
+scenario loss; never bypass it with `--skip-specs`.
+
+**Limit.** This is a spec-merge ordering rule. It does not imply that unrelated
+changes should be combined or that an agent should edit generated KBD
+projections by hand.

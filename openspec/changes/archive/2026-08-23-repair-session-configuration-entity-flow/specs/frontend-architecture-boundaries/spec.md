@@ -26,6 +26,10 @@ graph mutation.
 - **AND** its compatible `@prometheus-ags/entity-graph-core` peer resolves to release `3.0.2` as one runtime singleton
 - **AND** neither resolution points at `frontend/packages/prometheus-entity-management`
 
+#### Scenario: Dependency resolution drifts
+- **WHEN** a manifest or lockfile resolves the product dependency to a workspace prerelease, a version other than `3.0.2`, or more than one core runtime
+- **THEN** the dependency verification fails before the following entity-flow change begins
+
 #### Scenario: A feature consumes a registered entity domain
 - **WHEN** a feature reads or mutates configured Provider, Model, AgentSession, or AgentSessionDraft state
 - **THEN** it uses the registered contract and domain hook exported by the platform facade

@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 535,
-  "derivedRevision": 535,
+  "sourceRevision": 569,
+  "derivedRevision": 569,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 143,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 177,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -20,18 +20,18 @@
   "phase": "fix-broken-session-configuration-ui",
   "phaseId": "fix-broken-session-configuration-ui",
   "parentPhase": null,
-  "last_updated": "2026-08-23T23:54:12.521722Z",
+  "last_updated": "2026-08-24T01:08:38.904454Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 4,
-  "changes_completed": 3,
+  "changes_completed": 4,
   "implementation_total": 4,
-  "implementation_completed": 3,
+  "implementation_completed": 4,
   "completion": {
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 3,
+      "completed": 4,
       "total": 4,
-      "status": "IN_PROGRESS"
+      "status": "COMPLETE"
     },
     "evidence": {
       "status": "COMPLETE",
@@ -78,20 +78,20 @@
       "status": "DONE",
       "implementation_status": "COMPLETE",
       "tasks_total": 11,
-      "tasks_done": 8,
+      "tasks_done": 10,
       "last_task_completed": "3.2 Write row-form `verification.md` with commands, observed output, source SHA, installed profile, host-local timing limit, and unverified limits, then commit only this change's guardrails, functional evidence, OpenSpec, and KBD artifacts.",
-      "next_task_pending": "1.2 Extend the existing frontend boundary checker with deterministic rules for render-body setters, per-row feature graph writes, facade bypass, and named duplicate entity caches; verify each rule reports a stable identifier and location.",
+      "next_task_pending": "After all UAR phase implementation is code-complete, build and install the production UI/service once and prepare one focused Playwright scenario against http://localhost:1906; verify no mock model or service replaces the installed path.",
       "blockers": []
     },
     {
       "id": "fix-atomic-fetched-list-ingestion",
       "title": "Fix atomic fetched-list ingestion upstream",
-      "status": "PENDING",
-      "implementation_status": "PENDING",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
       "tasks_total": 11,
-      "tasks_done": 0,
-      "last_task_completed": null,
-      "next_task_pending": "1.1 Run the notification-count fixture against signed 3.0.2 source with 7,248 rows; record the command and observed N+2 success publications as the negative control before changing the store.",
+      "tasks_done": 11,
+      "last_task_completed": "4.4 Run `openspec validate fix-atomic-fetched-list-ingestion --strict`, write row-form `verification.md`, commit the isolated branch, push it, and open the upstream PR; if a safe fix cannot be delivered, file a GitHub issue containing the exact reproduction and evidence instead.",
+      "next_task_pending": null,
       "blockers": []
     }
   ],
