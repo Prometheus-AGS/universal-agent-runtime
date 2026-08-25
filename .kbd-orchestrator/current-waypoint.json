@@ -1,10 +1,10 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 734,
-  "derivedRevision": 734,
+  "sourceRevision": 770,
+  "derivedRevision": 770,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 342,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 378,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -25,17 +25,17 @@
   "phaseIds": [
     "handle-kbd-uninitialized-runtime"
   ],
-  "activePhaseId": "handle-kbd-uninitialized-runtime",
+  "activePhaseId": "deploy-and-cleanup-issue-265-release",
   "phase": "handle-kbd-uninitialized-runtime",
   "childPointer": null,
   "change": null,
   "currentTask": null,
   "status": "ready",
   "completionMetric": "implementation",
-  "implementationCompleted": 2,
-  "implementationTotal": 2,
+  "implementationCompleted": 3,
+  "implementationTotal": 3,
   "planRevision": 2,
-  "revision": 734,
+  "revision": 770,
   "exactNextCommand": "/kbd-new-phase",
-  "updatedAt": "2026-08-25T11:13:03.616054Z"
+  "updatedAt": "2026-08-25T11:37:29.554466Z"
 }

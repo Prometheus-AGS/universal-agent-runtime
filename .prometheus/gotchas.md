@@ -736,3 +736,21 @@ keys, provider data, seed count, or config hash as the destructive signal.
 
 **Limit.** This documents existing adapter behavior; the settings-route fix
 does not change settings persistence or response payloads.
+
+## 2026-08-25 — Native UAR readiness can exceed a fixed 30-second restart probe
+
+**Observed behavior.** The macOS installer completed and LaunchAgent PID 31143
+was running, but the first 30-second readiness loop ended before port 1906
+responded. Service logs showed repeated SurrealDB connection refusals, followed
+by a successful connection and normal listener startup roughly nine seconds
+later. Health and readiness then returned HTTP 200 without another install.
+
+**Working rule.** After a native restart, treat LaunchAgent state, dependency
+logs, and bounded health probes as separate signals. Do not roll back or clean
+build/worktree evidence merely because one fixed readiness window expires;
+inspect logs and keep cleanup gated until the service either becomes ready or
+exits with a terminal failure.
+
+**Limit.** This is not permission for an unbounded wait. A dependency that never
+recovers, repeated process exits, or a failed installed digest still blocks
+cleanup and requires rollback or operator intervention.

@@ -963,3 +963,22 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   still reports three provider-store writes, all unchanged from `origin/main`.
   They are disclosed as residual baseline failures rather than silently fixed
   inside this route change.
+
+## 2026-08-25 — Issue 265 release deployed and completed work removed
+
+- Merged closeout PR #273, fast-forwarded the primary checkout to `e38a5ba8`,
+  rebuilt the static bundle and server-full executable, and installed them
+  through the supported macOS installer.
+- UAR restarted from PID 30131 to PID 31143. Health, readiness, canonical
+  settings routes, five durable provider IDs, executable signature/digest, and
+  the installed Playwright scenario passed after SurrealDB became available.
+- Preserved byte-identical configuration plus explicit binary, static, and
+  configuration rollback artifacts beneath `~/.prometheus/backups/uar/`.
+- Removed three audited completed worktrees, their obsolete/merged local
+  branches, the remaining merged settings remote branch, and stale refs. No
+  unique `.prometheus` history was removed.
+- Deleted only explicit regenerable Cargo/frontend output directories. Immediate
+  physical free space increased by 1,391,128 KiB; installed artifacts, source
+  static files, state, logs, caches, and backups remain.
+- Typecheck, lint, builds, static validation, and installed proof passed. The
+  existing three boundary findings and Rust build warnings remain disclosed.

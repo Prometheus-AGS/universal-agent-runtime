@@ -17,8 +17,8 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "phase": "fix-runtime-settings-namespace-routes",
-  "phaseId": "fix-runtime-settings-namespace-routes",
+  "phase": "deploy-and-cleanup-issue-265-release",
+  "phaseId": "deploy-and-cleanup-issue-265-release",
   "parentPhase": null,
   "last_updated": "2026-08-25T11:37:29.554466Z",
   "last_updated_by": "kbd-runtime",
@@ -51,13 +51,13 @@
   },
   "changes": [
     {
-      "id": "fix-settings-namespace-read-routes",
-      "title": "Fix settings namespace read routes",
+      "id": "deploy-cleanup-issue-265-release",
+      "title": "Deploy merged issue 265 release and clean completed assets",
       "status": "DONE",
       "implementation_status": "COMPLETE",
-      "tasks_total": 6,
-      "tasks_done": 6,
-      "last_task_completed": "Record evidence, reflect, archive, and push",
+      "tasks_total": 7,
+      "tasks_done": 7,
+      "last_task_completed": "Record evidence reflect and complete phase",
       "next_task_pending": null,
       "blockers": []
     }
