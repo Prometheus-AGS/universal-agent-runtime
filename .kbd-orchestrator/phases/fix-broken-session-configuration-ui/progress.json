@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 569,
-  "derivedRevision": 569,
+  "sourceRevision": 650,
+  "derivedRevision": 650,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 177,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 258,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -20,7 +20,7 @@
   "phase": "fix-broken-session-configuration-ui",
   "phaseId": "fix-broken-session-configuration-ui",
   "parentPhase": null,
-  "last_updated": "2026-08-24T01:08:38.904454Z",
+  "last_updated": "2026-08-24T14:21:21.297428Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 4,
   "changes_completed": 4,

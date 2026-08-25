@@ -1,0 +1,121 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.nvm/versions/node/v24.16.0/bin/node",
+      "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/node_modules/@playwright/test/cli.js",
+      "test",
+      "-c",
+      "playwright.installed-settings-routes.config.ts"
+    ],
+    "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/playwright.installed-settings-routes.config.ts",
+    "rootDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/.prometheus/evidence/settings-namespace-routes/playwright-artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "settings-routes-installed.spec.ts"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "../.prometheus/evidence/settings-namespace-routes/playwright-report.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "settings-routes-installed.spec.ts",
+      "file": "settings-routes-installed.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "installed settings panels use canonical namespace routes without settings 404s",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1828,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-08-25T10:13:22.190Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d3c3035c7f2f755443b2-e2247230e398c3751f31",
+          "file": "settings-routes-installed.spec.ts",
+          "line": 15,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-25T10:13:21.941Z",
+    "duration": 2373.384,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

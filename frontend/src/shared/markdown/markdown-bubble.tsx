@@ -1,5 +1,5 @@
 import { MarkdownTextPrimitive } from "@assistant-ui/react-markdown";
-import { useMessage } from "@assistant-ui/react";
+import { useAuiState } from "@assistant-ui/react";
 import { type FC, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import { useTheme } from "@/hooks/use-theme";
@@ -23,9 +23,9 @@ const BASE_CLASS_NAME = "aui-md prose-sm max-w-none text-foreground";
 
 const MarkdownBubbleImpl: FC<MarkdownBubbleProps> = ({ source, className }) => {
   const resolvedClassName = cn(BASE_CLASS_NAME, className);
-  const message = useMessage({ optional: true });
+  const messageStatus = useAuiState((state) => state.optional.message?.status?.type);
   const { resolved: resolvedTheme } = useTheme();
-  const isRunning = message?.status?.type === "running";
+  const isRunning = messageStatus === "running";
   const phase = source === undefined && isRunning ? "streaming" : "finalized";
 
   if (source !== undefined) {

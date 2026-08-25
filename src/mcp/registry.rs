@@ -29,10 +29,7 @@ pub trait NativeTool: Send + Sync + std::fmt::Debug {
     async fn call(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value>;
 }
 
-type DynClientService = rmcp::service::RunningService<
-    rmcp::service::RoleClient,
-    Box<dyn rmcp::service::DynService<rmcp::service::RoleClient>>,
->;
+type DynClientService = rmcp::service::RunningService<rmcp::service::RoleClient, ()>;
 struct ClientServiceState {
     service: Arc<DynClientService>,
     reconnect_entry: McpServerEntry,
@@ -147,20 +144,18 @@ async fn connect_server(name: &str, entry: &McpServerEntry) -> anyhow::Result<Dy
             }
             let transport = TokioChildProcess::new(cmd)
                 .with_context(|| format!("failed to spawn stdio MCP server '{name}'"))?;
-            ().into_dyn()
-                .serve(transport)
+            ().serve(transport)
                 .await
                 .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
         }
         McpServerEntry::RemoteHttp { url, env } => {
             let env = expand_env_map(env);
             let endpoint = resolve_remote_http_url(name, url, &env)?;
-            ().into_dyn()
-                .serve(StreamableHttpClientTransport::from_uri(
-                    endpoint.to_string(),
-                ))
-                .await
-                .with_context(|| format!("failed to connect remote MCP server '{name}'"))
+            ().serve(StreamableHttpClientTransport::from_uri(
+                endpoint.to_string(),
+            ))
+            .await
+            .with_context(|| format!("failed to connect remote MCP server '{name}'"))
         }
     }
 }
@@ -371,9 +366,7 @@ impl McpRegistry {
 
                 // rmcp docs show TokioChildProcess + configure pattern for adding args
                 let transport = TokioChildProcess::new(cmd)?;
-                // store as dyn to keep a homogeneous collection
-                ().into_dyn()
-                    .serve(transport)
+                ().serve(transport)
                     .await
                     .with_context(|| format!("failed to connect stdio MCP server '{name}'"))
             }
@@ -381,12 +374,11 @@ impl McpRegistry {
             McpServerEntry::RemoteHttp { url, env } => {
                 let env = expand_env_map(env);
                 let endpoint = resolve_remote_http_url(name, url, &env)?;
-                ().into_dyn()
-                    .serve(StreamableHttpClientTransport::from_uri(
-                        endpoint.to_string(),
-                    ))
-                    .await
-                    .with_context(|| format!("failed to connect remote MCP server '{name}'"))
+                ().serve(StreamableHttpClientTransport::from_uri(
+                    endpoint.to_string(),
+                ))
+                .await
+                .with_context(|| format!("failed to connect remote MCP server '{name}'"))
             }
         }
     }

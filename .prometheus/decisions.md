@@ -758,3 +758,64 @@ remains unchanged because its source is the pinned `liter-llm` snapshot.
 `models.dev` HEAD. Advancing past `f97df19af` remains blocked on an upstream
 rename or a repository-wide decision to abandon clean case-insensitive macOS
 checkouts.
+
+---
+
+## 2026-08-24 — Reconcile legacy KBD phases by evidence, not uniform completion
+
+**Decision.** Terminalize the 51-phase legacy inventory as 45 complete and six
+cancelled. A phase is complete only when its own artifacts or a named successor
+close its outcomes. Assessment-only, unvalidated, abandoned release, and mixed
+unfinished phases are cancelled even when some implementation landed.
+
+**Rationale.** The imported canonical state left 43 top-level phases pending,
+but most already had reflections or successor evidence. Treating all 43 alike
+would either hide completed work or falsely claim outcomes that were never
+delivered. Legal KBD transitions preserve the event history while the
+reconciliation ledger preserves why each disposition was chosen.
+
+**Uncomfortable constraint.** Cancelling the old hybrid-architecture phase does
+not make mobile irrelevant. Mobile remains Experimental in the support matrix;
+future mobile work needs a new bounded phase instead of resuming the mixed
+4/12-era plan. Likewise, the old production-hardening phase is cancelled
+because certification and publication were not performed, so this cleanup
+makes no GA or release claim.
+
+---
+
+## 2026-08-24 — Canonical repository UI/UX skill lives under `.agents`
+
+**Decision.** Track UI/UX Pro Max once at
+`.agents/skills/ui-ux-pro-max/`, with a narrow ignore exception, upstream MIT
+license, installer lock metadata, and relative tool links. The existing
+AGENTS/CLAUDE routing remains authoritative through its durable roster pointer.
+
+**Rationale.** The installer already uses `.agents` as the canonical payload and
+tool-specific symlinks as entry points. Preserving that layout gives fresh
+checkouts the skill that the instructions mandate without duplicating a large
+search corpus across tools.
+
+**Uncomfortable constraint.** The installed payload includes two upstream tests
+whose required refresh/evaluation scripts were not installed. They are not
+silently deleted or patched: 130 payload-compatible tests pass, while the two
+upstream-layout-only import failures remain documented until the installer
+ships their dependencies or excludes those tests.
+
+---
+
+## 2026-08-25 — Canonicalize settings routes at the frontend transport boundary
+
+**Decision.** Convert internal settings namespaces with the existing
+`namespaceToSlug()` function before every GET. Keep the backend's canonical
+plural and hyphenated routes unchanged, and do not add aliases for defective
+client paths.
+
+**Rationale.** Saves already use this conversion. Reusing it makes reads and
+writes share one route contract and fixes `provider`, `context_management`,
+`native_tools`, `llm_failover`, and other underscored namespaces without
+changing persistence or payloads.
+
+**Uncomfortable constraint.** The requested full frontend gate is not green on
+the merged baseline: 12 provider-store/A2UI tests and three boundary findings
+remain. They do not exercise the settings read transport, but this phase makes
+no repository-wide certification claim.

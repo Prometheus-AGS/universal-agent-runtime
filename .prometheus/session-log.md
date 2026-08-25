@@ -885,3 +885,81 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   warnings/errors. A temporary loopback response override observed the yellow
   warning and actionable hover tooltip, then was stopped without changing the
   real provider configuration. The service remained healthy on port 1906.
+
+## 2026-08-24 — Session Configuration phase resume projection cleared
+
+- Audited canonical KBD revisions 565–569 and confirmed Execute, Reflect, and
+  `fix-broken-session-configuration-ui` itself are complete. All four scoped
+  changes are `DONE`; the existing reflection and sycophancy receipt remain the
+  closure evidence.
+- Confirmed the displayed 98/106 value was the run-wide implementation roll-up,
+  not eight unfinished tasks in this phase. The only short task counters are
+  cancelled duplicate display-label records already documented in the phase
+  reflection.
+- The canonical runtime rejected a redundant `COMPLETE` to `COMPLETE`
+  transition, as expected, and exposes no phase-deactivation command. Reconciled
+  the resume projection from revision 569 to phase status `complete`, 4/4
+  changes, no current task, and `/kbd-new-phase` as the next action.
+- No product code, OpenSpec specification, archived change, or other phase state
+  was modified during this closeout.
+
+## 2026-08-24 — Legacy KBD phase inventory reconciled
+
+- Inventoried all 51 registered top-level phases at canonical revision 569 and
+  recorded an evidence-backed disposition in OpenSpec change
+  `reconcile-kbd-phase-inventory`.
+- Transitioned 37 stale pending phases through the legal
+  `pending -> in-progress -> complete` path and cancelled six phases whose
+  validation, design, certification, or implementation was never completed and
+  was superseded or abandoned. Together with eight phases already complete,
+  the final estate is 45 complete, six cancelled, and zero pending.
+- Gracefully cancelled the exhausted KBD run at revision 650 because the CLI has
+  no run-complete command. The authoritative waypoint has no current phase; the
+  legacy status payload still echoes the former completed phase in `activePath`.
+- Audited both local worktrees and branches. No phase-associated worktree or
+  branch exists. Retained `codex/pr-268-resolution` because it is unrelated to
+  a KBD phase and contains unique commits not merged into `origin/main`.
+- The local canonical runtime completed every transition after the control
+  plane at `127.0.0.1:7892` was unreachable. External control-plane
+  synchronization therefore remains unverified.
+
+## 2026-08-24 — UI/UX Pro Max made repository-owned
+
+- Added a narrow `.gitignore` exception for
+  `.agents/skills/ui-ux-pro-max/` while confirming unrelated `.agents/` state
+  remains ignored.
+- Tracked the 71-file canonical payload, upstream MIT license,
+  `skills-lock.json`, and five installer-created relative tool links.
+- Updated the durable UI/UX roster with the canonical local path, current
+  catalog counts, and query contract. The existing managed AGENTS/CLAUDE blocks
+  already require UI/UX Pro Max as step 2 and were left byte-unchanged.
+- The data validator passed, a React stack query returned three relevant
+  results, and 130 installed-payload-compatible tests passed. Two additional
+  bundled tests require upstream source-repository refresh/evaluation scripts
+  omitted by the installer; they remain preserved and are explicitly disclosed
+  in the OpenSpec verification record.
+
+## 2026-08-25 — Settings namespace reads corrected in a successor KBD run
+
+- Added and pushed KBD terminal-run rollover support upstream, installed the
+  updated CLI and Sovereign Sync daemon, and created successor run
+  `fix-runtime-settings-namespace-routes-20260825T091750Z` without rewriting
+  the cancelled run's audit.
+- Merged `origin/main`, pinned the exact upstream rollover commit, and changed
+  settings GET requests to use the same canonical namespace slug conversion as
+  saves. Focused transport tests passed for plural, hyphenated, unchanged, and
+  non-success behavior.
+- Reconciled only the Assistant UI and RMCP call sites made stale by the merged
+  dependency pins. Typecheck, lint, focused tests, production bundle and static
+  validation, strict OpenSpec validation, and the locked Rust release build
+  passed.
+- Installed the matching release binary and static bundle through the macOS
+  installer. The config hash remained unchanged, both health endpoints returned
+  HTTP 200, and the five durable provider IDs remained present.
+- One installed-service Playwright scenario passed in 2.4 seconds. It observed
+  plural and hyphenated settings routes, all five provider cards, no misleading
+  not-found banner, and no settings-route 404 or console error.
+- The full frontend suite still reports 12 failures and the boundary checker
+  still reports three provider-store writes, all unchanged from `origin/main`.
+  They are disclosed as residual baseline failures rather than silently fixed
+  inside this route change.

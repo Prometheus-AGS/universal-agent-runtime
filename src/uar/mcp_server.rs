@@ -330,7 +330,7 @@ pub fn uar_mcp_router(
     // #[non_exhaustive] -- struct-literal syntax rejected cross-crate even
     // with ..Default::default(); mutate the public field on a default instance.
     let mut config = StreamableHttpServerConfig::default();
-    config.stateful_mode = true;
+    config.legacy_session_mode = true;
 
     let http_service = StreamableHttpService::new(
         move || -> Result<UarRuntimeMcpServer, std::io::Error> {

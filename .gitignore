@@ -96,6 +96,14 @@ static/assets
 
 # Local agent/editor/research tooling state — machine-local, not shared.
 .agents/
+# Repository-owned UI/UX design intelligence is the sole `.agents/` exception.
+# Keep one canonical payload; tracked tool entry points link back to this path.
+!.agents/
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/ui-ux-pro-max/
+!.agents/skills/ui-ux-pro-max/**
 .firecrawl/
 .zed/
 
