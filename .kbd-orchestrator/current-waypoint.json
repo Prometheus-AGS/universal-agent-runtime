@@ -1,10 +1,10 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 693,
-  "derivedRevision": 693,
+  "sourceRevision": 726,
+  "derivedRevision": 726,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 301,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 334,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -20,22 +20,22 @@
   "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
   "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
   "path": [
-    "fix-runtime-settings-namespace-routes"
+    "handle-kbd-uninitialized-runtime"
   ],
   "phaseIds": [
-    "fix-runtime-settings-namespace-routes"
+    "handle-kbd-uninitialized-runtime"
   ],
-  "activePhaseId": "fix-runtime-settings-namespace-routes",
-  "phase": "fix-runtime-settings-namespace-routes",
+  "activePhaseId": "handle-kbd-uninitialized-runtime",
+  "phase": "handle-kbd-uninitialized-runtime",
   "childPointer": null,
   "change": null,
   "currentTask": null,
   "status": "ready",
   "completionMetric": "implementation",
-  "implementationCompleted": 1,
-  "implementationTotal": 1,
+  "implementationCompleted": 2,
+  "implementationTotal": 2,
   "planRevision": 2,
-  "revision": 693,
-  "exactNextCommand": "/kbd-new-phase",
-  "updatedAt": "2026-08-25T10:07:39.916268Z"
+  "revision": 726,
+  "exactNextCommand": "/kbd-assess handle-kbd-uninitialized-runtime",
+  "updatedAt": "2026-08-25T11:04:13.691852Z"
 }
