@@ -1,10 +1,10 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 726,
-  "derivedRevision": 726,
+  "sourceRevision": 734,
+  "derivedRevision": 734,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 334,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 342,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -35,7 +35,7 @@
   "implementationCompleted": 2,
   "implementationTotal": 2,
   "planRevision": 2,
-  "revision": 726,
-  "exactNextCommand": "/kbd-assess handle-kbd-uninitialized-runtime",
-  "updatedAt": "2026-08-25T11:04:13.691852Z"
+  "revision": 734,
+  "exactNextCommand": "/kbd-new-phase",
+  "updatedAt": "2026-08-25T11:13:03.616054Z"
 }

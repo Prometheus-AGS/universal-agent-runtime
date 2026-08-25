@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 726,
-  "derivedRevision": 726,
+  "sourceRevision": 734,
+  "derivedRevision": 734,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 334,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 342,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -20,7 +20,7 @@
   "phase": "handle-kbd-uninitialized-runtime",
   "phaseId": "handle-kbd-uninitialized-runtime",
   "parentPhase": null,
-  "last_updated": "2026-08-25T11:04:13.691852Z",
+  "last_updated": "2026-08-25T11:13:03.616054Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
   "changes_completed": 1,
@@ -44,8 +44,8 @@
       "blockers": []
     },
     "publication": {
-      "status": "PENDING",
-      "summary": "Upstream PR #68 is open; UAR review branch and issue-linked PR are pending.",
+      "status": "COMPLETE",
+      "summary": "Upstream PR #68 and UAR PR #272 merged; issue #265 closed automatically and remains available as audit history.",
       "blockers": []
     }
   },

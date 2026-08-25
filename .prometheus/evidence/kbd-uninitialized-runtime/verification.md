@@ -8,8 +8,13 @@ Issue: Prometheus-AGS/universal-agent-runtime#265
 - Upstream repository: `Prometheus-AGS/prometheus-skill-system`
 - Review branch: `codex/fix-kbd-uninitialized-runtime`
 - Exact commit: `602750ec61bc4674b51231fb36f3bfee3af42b7e`
-- Upstream review: https://github.com/Prometheus-AGS/prometheus-skill-system/pull/68
+- Upstream review: https://github.com/Prometheus-AGS/prometheus-skill-system/pull/68 (merged)
+- UAR review: https://github.com/Prometheus-AGS/universal-agent-runtime/pull/272 (merged)
+- KBD/OpenSpec closeout review: https://github.com/Prometheus-AGS/universal-agent-runtime/pull/273 (open)
+- Issue disposition note: https://github.com/Prometheus-AGS/universal-agent-runtime/issues/265#issuecomment-5409493459
+- Issue #265: closed automatically when UAR PR #272 merged; retained as audit history.
 - UAR gitlink `crates/prometheus-skill-system` resolves to the exact commit above.
+- Signed KBD submodule scan at revision 734 records the same exact commit and reports both managed submodules `current`.
 
 The upstream change keeps registration and read-only status non-mutating. The
 first typed mutation initializes either revision-zero representation, imports
