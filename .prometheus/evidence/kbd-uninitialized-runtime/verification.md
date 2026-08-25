@@ -14,6 +14,7 @@ Issue: Prometheus-AGS/universal-agent-runtime#265
 - Issue disposition note: https://github.com/Prometheus-AGS/universal-agent-runtime/issues/265#issuecomment-5409493459
 - Issue #265: closed automatically when UAR PR #272 merged; retained as audit history.
 - UAR gitlink `crates/prometheus-skill-system` resolves to the exact commit above.
+- Signed KBD submodule scan at revision 734 records the same exact commit and reports both managed submodules `current`.
 
 The upstream change keeps registration and read-only status non-mutating. The
 first typed mutation initializes either revision-zero representation, imports
