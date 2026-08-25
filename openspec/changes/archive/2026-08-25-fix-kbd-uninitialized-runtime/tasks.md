@@ -6,4 +6,4 @@
 ## 2. Workflow Contract and Publication
 
 - [x] 2.1 Verify Codex, Claude Code, Cursor, and OpenCode retain byte-equivalent KBD orchestrator payloads and the installed `prometheus` binary remains the shared host mutation surface.
-- [ ] 2.2 Run strict UAR OpenSpec validation, verify protected user files remain unstaged, commit and push the UAR review branch, and open an issue-linked PR.
+- [x] 2.2 Run strict UAR OpenSpec validation, verify protected user files remain unstaged, commit and push the UAR review branch, and open an issue-linked PR.
