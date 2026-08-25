@@ -1,0 +1,47 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "src/uar/api/settings.rs",
+      "line": 720,
+      "claim": "A submitted all-asterisk placeholder is stored verbatim as the real credential when the settings row exists but the sensitive key is absent from the existing data, bypassing the fail-closed placeholder rejection.",
+      "evidence": "preserve_masked_sensitive_value only rejects placeholders when `mgr.get_with_meta(key)` returns None (row-level check: 'reject a placeholder when no existing row can be restored'). In preserve_sensitive_value's object arm, recursion only happens `if let (Some(property_schema), Some(current_value)) = (properties.get(key), current.get(key))` \u2014 when the existing object lacks the sensitive key, the submitted `\"***\"` is left as-is and persisted as the literal api_key value. The session log claims the API 'rejects a placeholder when no existing row can be restored', but key-level absence within an existing row is not handled.",
+      "suggested_fix": "In preserve_sensitive_value's object arm, when the property schema is sensitive, the submitted value is a non-empty all-asterisk string, and `current.get(key)` is None, surface an error (e.g., via Result) instead of passing the placeholder through; alternatively pre-validate with value_contains_sensitive_placeholder against per-key existence before applying."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/settings/ui/panels/ai-settings-panels.tsx",
+      "line": 78,
+      "claim": "Save is disabled whenever a background refresh is in flight even while the operator holds unsaved drafts, which goes beyond the spec and can strand dirty drafts if the load stalls.",
+      "evidence": "`saveDisabled={!hasDirty || refreshing}` where `refreshing = status?.loading ?? false` (use-settings.ts) is true for any loading state, not just initial load. Acceptance criterion 3.1 only requires 'disable Save while clean'; with this change, a realtime-triggered reload flips Save to disabled mid-interaction precisely when remote state is changing (the conflict window), and a hung load leaves the operator unable to save at all.",
+      "suggested_fix": "Use `saveDisabled={!hasDirty}` and rely on the store's reconciliation/conflict handling for save-versus-refresh races, or gate only on the initial-load `loading` flag if the intent is to prevent saving against an unhydrated baseline."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/features/settings/ui/panels/ai-settings-panels.tsx",
+      "line": 232,
+      "claim": "The disabled 'No enabled models' picker is announced as invalid to assistive technology when a stale default_model exists, conflating an empty-inventory state with a validation error.",
+      "evidence": "`ariaInvalid={Boolean(currentModel && !currentModelIsAvailable)}` is true for the empty-models case (e.g., test fixture provider.empty with default_model 'retired-model' and zero enabled models) even though the control is `disabled` and the hint says 'No enabled models are available for this provider.' \u2014 the invalid semantics describe the stale-value recovery case, not the empty case.",
+      "suggested_fix": "Compute ariaInvalid as `modelOptions.length > 0 && Boolean(currentModel && !currentModelIsAvailable)` so only the actionable stale-model state is flagged invalid."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/features/settings/ui/settings-primitives.tsx",
+      "line": 400,
+      "claim": "Refresh is disabled while busy (saving/refreshing) with no explanatory status, partially missing criterion 3.1's 'with an explanatory status' for the busy case.",
+      "evidence": "PanelHeader renders `reloadHint` ('Save changes before refreshing.') only when the caller passes it, and ProviderPanel passes `reloadHint` only when `hasDirty`; when Refresh is disabled solely because `loading || saving` is true, the only indication is the spinner on the icon, and `aria-describedby` is unset.",
+      "suggested_fix": "Pass a busy-state hint (e.g., 'Refreshing settings\u2026' / 'Saving changes\u2026') or add visually hidden text on the disabled Refresh button describing why it is unavailable."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

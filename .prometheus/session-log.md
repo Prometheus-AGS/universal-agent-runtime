@@ -982,3 +982,19 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   static files, state, logs, caches, and backups remain.
 - Typecheck, lint, builds, static validation, and installed proof passed. The
   existing three boundary findings and Rust build warnings remain disclosed.
+
+## 2026-08-25 — Provider model picker, exact-length masks, and UI review policy
+
+- Replaced the Provider Overrides default-model text input with the existing Base UI/shadcn `SettingSelect`, populated from enabled provider-owned models with display-name fallback, duplicate-ID removal, explicit empty state, and stale-value recovery guidance.
+- Changed settings API masking to emit one `*` per Unicode character for sensitive strings, preserve null/absent/empty behavior, hide malformed non-string sensitive values, restore unchanged nested legacy/current masks, permit new real secrets, fail closed on schema lookup errors, and reject a placeholder when no existing row can be restored.
+- Added focused ProviderPanel and settings API regression coverage. Focused Rust/frontend tests, TypeScript, lint, settings structure, diff hygiene, strict OpenSpec, and all 105 main specs passed.
+- Recorded the operator's UI skill precedence in `AGENTS.md`/`CLAUDE.md`, ran two isolated Impeccable critiques, archived a 25/40 critique snapshot, and resolved blocking findings until the distinct-model adversarial gate returned PASS with an anti-sycophancy pass.
+- Synced `agent-ui-design-workflow` and `frontend-configuration-surfaces`, archived OpenSpec change `2026-08-25-provider-model-picker-key-mask`, wrote KBD reflection, and completed every KBD phase stage locally when the control-plane endpoint was unavailable.
+- Full-suite baseline remains non-green: frontend 69 files passed/3 failed with 329 tests passed/12 failed; locked Rust 620 passed/3 failed/1 ignored; repository-wide rustfmt still reports untouched `src/server.rs` deltas. None exercises the requested provider picker or string API-key path.
+
+## 2026-08-25 — Provider model search then accessibility/dirty protection completed
+
+- Shipped the operator-selected B→A sequence: provider inventories use the simple Base UI select through seven enabled models and a bounded searchable Base UI Combobox at eight or more; provider cards now expose complete control associations, live outcomes, visible draft state, protected Refresh/unload behavior, and responsive one/two-column structure.
+- Added exact-boundary, search, keyboard/focus, accessible-name/description, clean/dirty/busy, failed-save, unload, and responsive regression coverage. Focused tests passed 15/15; TypeScript, ESLint, settings structure, production build, strict change validation, and all 105 main specs passed.
+- Two isolated design critics and distinct k3 adversarial reviews exposed exact-eight coverage, deterministic lowercasing, rejected-save handling, DOM-ID collision, dirty-save availability, empty-list invalid semantics, and busy Refresh descriptions. All in-scope findings were corrected; the final review passed with zero critical findings and the Impeccable detector returned `[]`.
+- Synced and archived `provider-model-search` before `provider-settings-accessibility-dirty-state`. The final full frontend suite remains at 339 passed/12 unrelated baseline failures; real-browser narrow-layout and native unload-dialog behavior remain unverified.

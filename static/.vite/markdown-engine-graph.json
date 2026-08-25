@@ -24,10 +24,10 @@
         "mermaid/dist/chunks/mermaid.core/abnfDiagram-VCTEODGH.mjs"
       ]
     },
-    "assets/about-page-BMIkNiSo.js": {
+    "assets/about-page-oDZGmO-2.js": {
       "imports": [
         "assets/globe-BL_gEGCW.js",
-        "assets/index-CfBqT-ZT.js",
+        "assets/index-C35_EJq_.js",
         "assets/shield-ChFCPhF7.js",
         "assets/vendor-entities-DCOLfTBn.js",
         "assets/zap-Chntt72S.js"
@@ -49,17 +49,17 @@
         "@shikijs/langs/dist/ada.mjs"
       ]
     },
-    "assets/admin-page-CMZpbVCf.js": {
+    "assets/admin-page-C_sAws-s.js": {
       "imports": [
-        "assets/agui-normalizer-BSAYUtbM.js",
-        "assets/command-BGc5YSPa.js",
-        "assets/index-CfBqT-ZT.js",
-        "assets/model-selector-BFShvWkF.js",
+        "assets/agui-normalizer-BVuBLmQm.js",
+        "assets/command-DMSxoT4c.js",
+        "assets/index-C35_EJq_.js",
+        "assets/model-selector-z8aFuUxA.js",
         "assets/rolldown-runtime-BUR9erT_.js",
-        "assets/scrollEdges-DnnlHrmd.js",
+        "assets/scrollEdges-DcmRKeWh.js",
         "assets/shield-ChFCPhF7.js",
-        "assets/textarea-CxExFicA.js",
-        "assets/tooltip-DS-x-FuR.js",
+        "assets/textarea-DOHJ62Nm.js",
+        "assets/tooltip-Cz5ez4fr.js",
         "assets/utils-BBeF06QD.js",
         "assets/vendor-entities-DCOLfTBn.js",
         "assets/zap-Chntt72S.js"
@@ -67,7 +67,7 @@
       "dynamicImports": [],
       "engineModules": []
     },
-    "assets/agui-normalizer-BSAYUtbM.js": {
+    "assets/agui-normalizer-BVuBLmQm.js": {
       "imports": [
         "assets/array-BifhSqXX.js",
         "assets/band-CcbG6rPL.js",
@@ -81,10 +81,10 @@
         "assets/ordinal-BeZAVUpG.js",
         "assets/path-DdI2OVsN.js",
         "assets/rolldown-runtime-BUR9erT_.js",
-        "assets/scrollEdges-DnnlHrmd.js",
-        "assets/textarea-CxExFicA.js",
+        "assets/scrollEdges-DcmRKeWh.js",
+        "assets/textarea-DOHJ62Nm.js",
         "assets/time-B-jHm80f.js",
-        "assets/tooltip-DS-x-FuR.js",
+        "assets/tooltip-Cz5ez4fr.js",
         "assets/utils-BBeF06QD.js",
         "assets/vendor-entities-DCOLfTBn.js",
         "assets/vendor-query-DTPCvmbl.js"
@@ -491,18 +491,18 @@
         "@shikijs/langs/dist/chapel.mjs"
       ]
     },
-    "assets/chat-thread-view-DeY1W925.js": {
+    "assets/chat-thread-view-LlQV-ARx.js": {
       "imports": [
-        "assets/agui-normalizer-BSAYUtbM.js",
+        "assets/agui-normalizer-BVuBLmQm.js",
         "assets/globe-BL_gEGCW.js",
-        "assets/index-CfBqT-ZT.js",
+        "assets/index-C35_EJq_.js",
         "assets/math-Bi_r_ZWc.js",
         "assets/path-DdI2OVsN.js",
         "assets/rolldown-runtime-BUR9erT_.js",
         "assets/sanitize-raw-svg-8j6Du-KF.js",
-        "assets/scrollEdges-DnnlHrmd.js",
-        "assets/textarea-CxExFicA.js",
-        "assets/tooltip-DS-x-FuR.js",
+        "assets/scrollEdges-DcmRKeWh.js",
+        "assets/textarea-DOHJ62Nm.js",
+        "assets/tooltip-Cz5ez4fr.js",
         "assets/utils-BBeF06QD.js",
         "assets/vendor-entities-DCOLfTBn.js",
         "assets/zap-Chntt72S.js"
@@ -1072,10 +1072,10 @@
         "@shikijs/langs/dist/coffee.mjs"
       ]
     },
-    "assets/command-BGc5YSPa.js": {
+    "assets/command-DMSxoT4c.js": {
       "imports": [
         "assets/rolldown-runtime-BUR9erT_.js",
-        "assets/textarea-CxExFicA.js",
+        "assets/textarea-DOHJ62Nm.js",
         "assets/utils-BBeF06QD.js",
         "assets/vendor-entities-DCOLfTBn.js"
       ],
@@ -2033,22 +2033,22 @@
         "@shikijs/langs/dist/imba.mjs"
       ]
     },
-    "assets/index-CfBqT-ZT.js": {
+    "assets/index-C35_EJq_.js": {
       "imports": [
-        "assets/command-BGc5YSPa.js",
+        "assets/command-DMSxoT4c.js",
         "assets/rolldown-runtime-BUR9erT_.js",
-        "assets/textarea-CxExFicA.js",
-        "assets/tooltip-DS-x-FuR.js",
+        "assets/textarea-DOHJ62Nm.js",
+        "assets/tooltip-Cz5ez4fr.js",
         "assets/topics-BQMJ2Pp_.js",
         "assets/utils-BBeF06QD.js",
         "assets/vendor-entities-DCOLfTBn.js",
         "assets/vendor-react-DsFYiMIf.js"
       ],
       "dynamicImports": [
-        "assets/about-page-BMIkNiSo.js",
-        "assets/admin-page-CMZpbVCf.js",
-        "assets/chat-thread-view-DeY1W925.js",
-        "assets/session-config-panel-CmRDP-uh.js",
+        "assets/about-page-oDZGmO-2.js",
+        "assets/admin-page-C_sAws-s.js",
+        "assets/chat-thread-view-LlQV-ARx.js",
+        "assets/session-config-panel-DdiRZNVj.js",
         "assets/topics-BQMJ2Pp_.js"
       ],
       "engineModules": []
@@ -2590,12 +2590,12 @@
         "@shikijs/langs/dist/mipsasm.mjs"
       ]
     },
-    "assets/model-selector-BFShvWkF.js": {
+    "assets/model-selector-z8aFuUxA.js": {
       "imports": [
-        "assets/command-BGc5YSPa.js",
+        "assets/command-DMSxoT4c.js",
         "assets/rolldown-runtime-BUR9erT_.js",
-        "assets/scrollEdges-DnnlHrmd.js",
-        "assets/textarea-CxExFicA.js",
+        "assets/scrollEdges-DcmRKeWh.js",
+        "assets/textarea-DOHJ62Nm.js",
         "assets/utils-BBeF06QD.js",
         "assets/vendor-entities-DCOLfTBn.js"
       ],
@@ -3382,10 +3382,10 @@
         "@shikijs/langs/dist/scheme.mjs"
       ]
     },
-    "assets/scrollEdges-DnnlHrmd.js": {
+    "assets/scrollEdges-DcmRKeWh.js": {
       "imports": [
         "assets/rolldown-runtime-BUR9erT_.js",
-        "assets/textarea-CxExFicA.js",
+        "assets/textarea-DOHJ62Nm.js",
         "assets/utils-BBeF06QD.js",
         "assets/vendor-entities-DCOLfTBn.js"
       ],
@@ -3425,12 +3425,12 @@
         "mermaid/dist/chunks/mermaid.core/sequenceDiagram-WJ2MYXX4.mjs"
       ]
     },
-    "assets/session-config-panel-CmRDP-uh.js": {
+    "assets/session-config-panel-DdiRZNVj.js": {
       "imports": [
-        "assets/model-selector-BFShvWkF.js",
+        "assets/model-selector-z8aFuUxA.js",
         "assets/rolldown-runtime-BUR9erT_.js",
-        "assets/scrollEdges-DnnlHrmd.js",
-        "assets/textarea-CxExFicA.js",
+        "assets/scrollEdges-DcmRKeWh.js",
+        "assets/textarea-DOHJ62Nm.js",
         "assets/vendor-entities-DCOLfTBn.js"
       ],
       "dynamicImports": [],
@@ -3803,7 +3803,7 @@
         "@shikijs/langs/dist/tex.mjs"
       ]
     },
-    "assets/textarea-CxExFicA.js": {
+    "assets/textarea-DOHJ62Nm.js": {
       "imports": [
         "assets/rolldown-runtime-BUR9erT_.js",
         "assets/utils-BBeF06QD.js",
@@ -3848,10 +3848,10 @@
         "@shikijs/langs/dist/toml.mjs"
       ]
     },
-    "assets/tooltip-DS-x-FuR.js": {
+    "assets/tooltip-Cz5ez4fr.js": {
       "imports": [
         "assets/rolldown-runtime-BUR9erT_.js",
-        "assets/textarea-CxExFicA.js",
+        "assets/textarea-DOHJ62Nm.js",
         "assets/utils-BBeF06QD.js",
         "assets/vendor-entities-DCOLfTBn.js",
         "assets/vendor-pglite-BtNdI3d5.js"

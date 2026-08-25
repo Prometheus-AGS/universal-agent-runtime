@@ -1,0 +1,12 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-08-25T12:39:40Z",
+  "outputs": [
+    "assessment.md",
+    "review/assess/findings.json"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "Two gaps require one coherent change: use provider-owned enabled models[] in the existing shadcn settings control, and make settings API masks length-preserving while preserving nested credentials on unrelated saves. Plan must target the cited source paths, run T0/T1 frontend checks, and account for cold Rust server-full verification cost; the isolated judge returned PASS with warnings only.",
+  "skipped": false,
+  "skipReason": null
+}

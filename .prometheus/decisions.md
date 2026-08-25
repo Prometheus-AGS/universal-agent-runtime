@@ -819,3 +819,33 @@ changing persistence or payloads.
 the merged baseline: 12 provider-store/A2UI tests and three boundary findings
 remain. They do not exercise the settings read transport, but this phase makes
 no repository-wide certification claim.
+
+---
+
+## 2026-08-25 — Bound provider defaults and treat visible secret masks as round-trip placeholders
+
+**Decision.** Render provider default models through the repository Base UI/shadcn select using the provider row's enabled `models[]` inventory. Mask stored string secrets with one `*` per Unicode character, and restore any submitted all-asterisk legacy or length-preserving placeholder from the existing value at the settings API boundary.
+
+**Rationale.** Bounded selection prevents unsupported model IDs without adding a catalog transport, while schema-guided server masking preserves the requested visual length and keeps plaintext out of responses. Server-side restoration prevents an unrelated provider edit from replacing the real credential with its visible mask.
+
+**Uncomfortable constraint.** A literal all-asterisk replacement secret is indistinguishable from the required display mask, and generic arrays containing sensitive values remain positionally restored. Those cases require a future out-of-band sentinel or stable-identity contract; they are not silently claimed as solved.
+
+---
+
+## 2026-08-25 — UI design review order is repository policy
+
+**Decision.** Run Impeccable first, Anthropic `frontend-design` second, and UI/UX Pro Max third. Initial UI ideation, evaluation, refactoring, and refinement use two isolated Impeccable critique agents followed by a distinct fresh-context adversarial review.
+
+**Rationale.** The ordering preserves one primary design authority while still applying agentic-product and general design guidance. Independent critics exposed concrete empty-state, compatibility, and security-boundary failures that deterministic happy-path checks missed.
+
+**Uncomfortable constraint.** The installed artifact-refiner adapter lacks its canonical runtime files. Until that package is repaired, the repository can record the required dual critique and adversarial evidence but cannot honestly claim formal artifact-refiner QA.
+
+---
+
+## 2026-08-25 — Search provider inventories at eight and keep dirty drafts saveable
+
+**Decision.** Keep the simple Base UI select for one through seven enabled provider models and switch to the installed bounded Base UI Combobox at eight or more. Search display names and raw IDs without free-form values. Derive modified state from the existing settings draft; disable Refresh while dirty or busy, but keep Save available for dirty drafts during background refresh.
+
+**Rationale.** Short inventories remain faster to scan without a search field, while the exact eight-option boundary is explicit and testable. The provider's enabled model list remains the validity boundary. Keeping Save available avoids stranding the only recovery action if a background refresh stalls.
+
+**Uncomfortable constraint.** The provider panel now sits at 599/600 lines under the decomposition gate, and its responsive contract has structural tests but no real-browser narrow/zoom capture. Future panel growth must extract a coherent provider-card component rather than compressing behavior into the remaining line.

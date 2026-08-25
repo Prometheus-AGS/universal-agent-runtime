@@ -303,50 +303,98 @@ fn require_admin_key(state: &SettingsApiState, headers: &HeaderMap) -> Result<()
     }
 }
 
-/// Mask sensitive fields in a settings data value.
-///
-/// Traverses the JSON data and replaces values whose key is marked `x-sensitive: true`
-/// in the schema `properties` with `"***"`.
+fn schema_is_sensitive(schema: &Value) -> bool {
+    schema
+        .get("x-sensitive")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
+fn schema_contains_sensitive(schema: &Value) -> bool {
+    schema_is_sensitive(schema)
+        || schema
+            .get("properties")
+            .and_then(Value::as_object)
+            .is_some_and(|props| props.values().any(schema_contains_sensitive))
+        || schema.get("items").is_some_and(schema_contains_sensitive)
+}
+
+fn value_contains_sensitive_placeholder(data: &Value, schema: &Value) -> bool {
+    if schema_is_sensitive(schema) {
+        return data
+            .as_str()
+            .is_some_and(|value| !value.is_empty() && value.chars().all(|c| c == '*'));
+    }
+
+    match data {
+        Value::Object(map) => schema
+            .get("properties")
+            .and_then(Value::as_object)
+            .is_some_and(|properties| {
+                map.iter().any(|(key, value)| {
+                    properties.get(key).is_some_and(|property| {
+                        value_contains_sensitive_placeholder(value, property)
+                    })
+                })
+            }),
+        Value::Array(values) => schema.get("items").is_some_and(|item_schema| {
+            values
+                .iter()
+                .any(|value| value_contains_sensitive_placeholder(value, item_schema))
+        }),
+        _ => false,
+    }
+}
+
+fn mask_string(value: &str) -> String {
+    "*".repeat(value.chars().count())
+}
+
+/// Mask sensitive fields in a settings data value without fabricating absent fields.
 fn mask_sensitive(data: Value, schema: &Value) -> Value {
-    let props = schema
-        .get("properties")
-        .and_then(Value::as_object)
-        .cloned()
-        .unwrap_or_default();
+    if schema_is_sensitive(schema) {
+        return match data {
+            Value::String(value) => Value::String(mask_string(&value)),
+            Value::Null => Value::Null,
+            _ => Value::String("***".to_string()),
+        };
+    }
+
+    let properties = schema.get("properties").and_then(Value::as_object).cloned();
 
     match data {
         Value::Object(mut map) => {
-            for (key, schema_prop) in &props {
-                if schema_prop
-                    .get("x-sensitive")
-                    .and_then(Value::as_bool)
-                    .unwrap_or(false)
-                {
-                    map.insert(key.clone(), Value::String("***".to_string()));
+            if let Some(properties) = properties {
+                for (key, value) in &mut map {
+                    if let Some(property_schema) = properties.get(key) {
+                        *value = mask_sensitive(std::mem::take(value), property_schema);
+                    }
                 }
             }
             Value::Object(map)
+        }
+        Value::Array(mut values) => {
+            if let Some(item_schema) = schema.get("items") {
+                for value in &mut values {
+                    *value = mask_sensitive(std::mem::take(value), item_schema);
+                }
+            }
+            Value::Array(values)
         }
         other => other,
     }
 }
 
 fn mask_setting_data(data: Value, schema: &Value, field_key: Option<&str>) -> Value {
-    let scalar_is_sensitive = field_key
+    let value_schema = field_key
         .and_then(|field| {
             schema
                 .get("properties")
                 .and_then(Value::as_object)
                 .and_then(|props| props.get(field))
         })
-        .and_then(|prop| prop.get("x-sensitive"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    if scalar_is_sensitive {
-        Value::String("***".to_string())
-    } else {
-        mask_sensitive(data, schema)
-    }
+        .unwrap_or(schema);
+    mask_sensitive(data, value_schema)
 }
 
 /// Apply sensitive masking to a SettingsWithMeta response.
@@ -615,45 +663,101 @@ async fn preserve_masked_sensitive_value(
     key: &str,
     value: Value,
 ) -> Result<Value, ApiError> {
-    if !is_sensitive_setting(mgr, key).await {
-        return Ok(value);
-    }
-
-    let should_preserve = matches!(&value, Value::String(s) if s.is_empty() || s == "***");
-    if !should_preserve {
-        return Ok(value);
-    }
-
-    let existing = mgr
-        .get_with_meta(key)
-        .await
-        .ok_or_else(|| ApiError::NotFound(key.to_string()))?;
-    Ok(existing.setting.data)
-}
-
-async fn is_sensitive_setting(mgr: &SettingsManager, key: &str) -> bool {
     let Some((type_key, field)) = key.split_once('.') else {
-        return false;
+        return Ok(value);
     };
-    let Ok(Some(st)) = mgr.get_type(type_key).await else {
-        return false;
+    let Some(settings_type) = mgr
+        .get_type(type_key)
+        .await
+        .map_err(|error| ApiError::Internal(error.to_string()))?
+    else {
+        return Ok(value);
     };
-    st.schema
+    let value_schema = settings_type
+        .schema
         .get("properties")
         .and_then(Value::as_object)
         .and_then(|props| props.get(field))
-        .and_then(|prop| prop.get("x-sensitive"))
-        .and_then(Value::as_bool)
-        .unwrap_or(false)
+        .unwrap_or(&settings_type.schema);
+
+    if !schema_contains_sensitive(value_schema) {
+        return Ok(value);
+    }
+
+    let Some(existing) = mgr.get_with_meta(key).await else {
+        if value_contains_sensitive_placeholder(&value, value_schema) {
+            return Err(ApiError::NotFound(key.to_string()));
+        }
+        return Ok(value);
+    };
+    Ok(preserve_sensitive_value(
+        value,
+        &existing.setting.data,
+        value_schema,
+    ))
+}
+
+fn preserve_sensitive_value(value: Value, existing: &Value, schema: &Value) -> Value {
+    if schema_is_sensitive(schema) {
+        return match &value {
+            Value::String(submitted)
+                if submitted.is_empty()
+                    || (!submitted.is_empty() && submitted.chars().all(|c| c == '*')) =>
+            {
+                existing.clone()
+            }
+            _ => value,
+        };
+    }
+
+    match value {
+        Value::Object(mut submitted) => {
+            if let (Some(properties), Some(current)) = (
+                schema.get("properties").and_then(Value::as_object),
+                existing.as_object(),
+            ) {
+                for (key, submitted_value) in &mut submitted {
+                    if let (Some(property_schema), Some(current_value)) =
+                        (properties.get(key), current.get(key))
+                    {
+                        *submitted_value = preserve_sensitive_value(
+                            std::mem::take(submitted_value),
+                            current_value,
+                            property_schema,
+                        );
+                    }
+                }
+            }
+            Value::Object(submitted)
+        }
+        Value::Array(mut submitted) => {
+            if let (Some(item_schema), Some(current)) = (schema.get("items"), existing.as_array()) {
+                for (index, submitted_value) in submitted.iter_mut().enumerate() {
+                    if let Some(current_value) = current.get(index) {
+                        *submitted_value = preserve_sensitive_value(
+                            std::mem::take(submitted_value),
+                            current_value,
+                            item_schema,
+                        );
+                    }
+                }
+            }
+            Value::Array(submitted)
+        }
+        other => other,
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::mask_setting_data;
+    use super::{
+        mask_sensitive, mask_setting_data, preserve_sensitive_value,
+        value_contains_sensitive_placeholder,
+    };
     use serde_json::json;
 
     #[test]
-    fn retrieval_masking_redacts_scalar_and_object_secrets() {
+    fn settings_api_masks_and_preserves_sensitive_values() {
         let schema = json!({
             "type": "object",
             "properties": {
@@ -663,8 +767,8 @@ mod tests {
         });
 
         assert_eq!(
-            mask_setting_data(json!("plaintext-secret"), &schema, Some("api_key")),
-            json!("***")
+            mask_setting_data(json!("éabc"), &schema, Some("api_key")),
+            json!("****")
         );
         assert_eq!(
             mask_setting_data(json!("https://example.test"), &schema, Some("base_url")),
@@ -672,11 +776,72 @@ mod tests {
         );
         assert_eq!(
             mask_setting_data(
-                json!({"api_key": "plaintext-secret", "base_url": "https://example.test"}),
+                json!({"api_key": "secret", "base_url": "https://example.test"}),
                 &schema,
                 None,
             ),
-            json!({"api_key": "***", "base_url": "https://example.test"})
+            json!({"api_key": "******", "base_url": "https://example.test"})
+        );
+        assert_eq!(
+            mask_setting_data(json!({"base_url": "https://example.test"}), &schema, None),
+            json!({"base_url": "https://example.test"})
+        );
+        assert_eq!(
+            mask_setting_data(json!({"api_key": ""}), &schema, None),
+            json!({"api_key": ""})
+        );
+        assert_eq!(
+            mask_sensitive(
+                json!({"credential": "secret"}),
+                &json!({"x-sensitive": true}),
+            ),
+            json!("***")
+        );
+        assert_eq!(
+            mask_sensitive(json!(null), &json!({"x-sensitive": true})),
+            json!(null)
+        );
+
+        let current = json!({"api_key": "secret", "protocol": "chat"});
+        assert!(!value_contains_sensitive_placeholder(
+            &json!({"api_key": "sk-real"}),
+            &schema,
+        ));
+        assert!(value_contains_sensitive_placeholder(
+            &json!({"api_key": "******"}),
+            &schema,
+        ));
+        assert_eq!(
+            preserve_sensitive_value(
+                json!({"api_key": "******", "protocol": "responses"}),
+                &current,
+                &schema,
+            ),
+            json!({"api_key": "secret", "protocol": "responses"})
+        );
+        assert_eq!(
+            preserve_sensitive_value(
+                json!({"api_key": "***", "protocol": "responses"}),
+                &current,
+                &schema,
+            ),
+            json!({"api_key": "secret", "protocol": "responses"})
+        );
+        assert_eq!(
+            preserve_sensitive_value(
+                json!("***"),
+                &json!({"credential": "secret"}),
+                &json!({"x-sensitive": true}),
+            ),
+            json!({"credential": "secret"})
+        );
+        assert_eq!(
+            preserve_sensitive_value(
+                json!({"api_key": "replacement", "protocol": "chat"}),
+                &current,
+                &schema,
+            ),
+            json!({"api_key": "replacement", "protocol": "chat"})
         );
     }
 }

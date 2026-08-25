@@ -1,0 +1,36 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/settings/ui/panels/ai-settings-panels.test.tsx",
+      "claim": "Criterion 1.1 requires focused tests for the 7/8 searchable threshold, but the test fixtures exercise 7 models (provider.seven) and 9 models (provider.large) \u2014 the exact boundary value of 8 enabled models is never tested.",
+      "evidence": "Criterion 1.1: 'Add focused tests for the 7/8 threshold'. In the test file, provider.seven uses `Array.from({ length: 7 }, ...)` and provider.large lists 9 entries (large-model-1..7 plus raw-special/v2 and raw-special-v3). The component branches on `options.length < SEARCHABLE_MODEL_THRESHOLD` (8), so the `length === 8` path \u2014 the off-by-one boundary the criterion names \u2014 is unverified.",
+      "suggested_fix": "Add an 8-model provider fixture (or parameterize) asserting the searchable combobox path activates at exactly 8 options."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/settings/ui/panels/ai-settings-panels.tsx",
+      "claim": "The dirty-draft guard only registers a window 'beforeunload' listener, which does not fire for client-side SPA navigation, so dirty provider drafts are still silently lost when the operator navigates within the app despite the test name claiming it 'protects dirty provider drafts'.",
+      "evidence": "The new effect does `window.addEventListener(\"beforeunload\", preventUnsavedUnload)` gated on `hasDirty`, and the test only dispatches a synthetic `beforeunload` event. No router/navigation-blocker integration is present in the diff, so in-app route changes discard the draft cache without warning. The packet's own position.json confirms dirty-state hardening is a separate still-PENDING change (provider-settings-accessibility-dirty-state, 0/7), meaning this partial protection ships ahead of its real implementation.",
+      "suggested_fix": "Either defer the unload guard to the pending dirty-state change, or pair it with a router navigation blocker so SPA transitions are covered too."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "frontend/src/features/settings/ui/settings-primitives.tsx",
+      "claim": "Model search normalization uses locale-dependent `toLocaleLowerCase()`, which can break case-insensitive matching for users in locales with special casing rules (e.g., Turkish 'I' \u2192 '\u0131').",
+      "evidence": "`function normalizeModelSearch(value: string) { return value.trim().toLocaleLowerCase(); }` is applied to both the query and option label/value in the Combobox `filter`. The acceptance criterion specifies 'literal, case-insensitive search terms', which `toLowerCase()` implements deterministically regardless of the user's locale.",
+      "suggested_fix": "Use `value.trim().toLowerCase()` (optionally with `localeCompare`/collator only if locale-aware matching is explicitly desired)."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

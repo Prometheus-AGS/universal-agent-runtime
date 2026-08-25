@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 798,
+  "derivedRevision": 798,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 406,
+    "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "525ede94-ad4e-4580-84da-627cba8991cb": 27,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 61,
+    "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
+    "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
+    "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
+    "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
+    "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
+  },
+  "conflictCount": 0,
+  "phase": "fix-provider-model-picker-key-mask",
+  "phaseId": "fix-provider-model-picker-key-mask",
+  "parentPhase": null,
+  "last_updated": "2026-08-25T14:32:06.493855Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 1,
+  "changes_completed": 1,
+  "implementation_total": 1,
+  "implementation_completed": 1,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 1,
+      "total": 1,
+      "status": "COMPLETE"
+    },
+    "evidence": {
+      "status": "COMPLETE",
+      "summary": "Merged source, installed digests/routes/provider continuity, worktree audits, rollback assets, and physical cleanup evidence recorded.",
+      "blockers": []
+    },
+    "certification": {
+      "status": "COMPLETE",
+      "summary": "Targeted strict OpenSpec/archive validation, typecheck, lint, frontend/static builds, server-full release build, health/readiness, route checks, and Playwright 1/1 completed; baseline failures disclosed.",
+      "blockers": []
+    },
+    "publication": {
+      "status": "COMPLETE",
+      "summary": "PRs #271-#273 and upstream #67-#68 merged; main synchronized; completed branches/worktrees removed; release installed and issue #265 remains closed.",
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "provider-model-picker-key-mask",
+      "title": "Bound provider model selection and preserve exact-length credential masks",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 4,
+      "tasks_done": 4,
+      "last_task_completed": "Run phase completion suites",
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

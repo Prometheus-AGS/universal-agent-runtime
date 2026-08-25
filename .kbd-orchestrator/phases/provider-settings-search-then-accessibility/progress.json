@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 851,
+  "derivedRevision": 851,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 459,
+    "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "525ede94-ad4e-4580-84da-627cba8991cb": 27,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 61,
+    "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
+    "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
+    "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
+    "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
+    "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
+  },
+  "conflictCount": 0,
+  "phase": "provider-settings-search-then-accessibility",
+  "phaseId": "provider-settings-search-then-accessibility",
+  "parentPhase": null,
+  "last_updated": "2026-08-25T15:42:53.346722Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 2,
+  "changes_completed": 2,
+  "implementation_total": 2,
+  "implementation_completed": 2,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 2,
+      "total": 2,
+      "status": "COMPLETE"
+    },
+    "evidence": {
+      "status": "COMPLETE",
+      "summary": "Merged source, installed digests/routes/provider continuity, worktree audits, rollback assets, and physical cleanup evidence recorded.",
+      "blockers": []
+    },
+    "certification": {
+      "status": "COMPLETE",
+      "summary": "Targeted strict OpenSpec/archive validation, typecheck, lint, frontend/static builds, server-full release build, health/readiness, route checks, and Playwright 1/1 completed; baseline failures disclosed.",
+      "blockers": []
+    },
+    "publication": {
+      "status": "COMPLETE",
+      "summary": "PRs #271-#273 and upstream #67-#68 merged; main synchronized; completed branches/worktrees removed; release installed and issue #265 remains closed.",
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "provider-model-search",
+      "title": "Add adaptive search to large provider model inventories",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 5,
+      "tasks_done": 5,
+      "last_task_completed": "Run search phase completion checks",
+      "next_task_pending": null,
+      "blockers": []
+    },
+    {
+      "id": "provider-settings-accessibility-dirty-state",
+      "title": "Complete provider accessibility and protect dirty drafts",
+      "status": "DONE",
+      "implementation_status": "COMPLETE",
+      "tasks_total": 7,
+      "tasks_done": 7,
+      "last_task_completed": "Run phase completion review",
+      "next_task_pending": null,
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

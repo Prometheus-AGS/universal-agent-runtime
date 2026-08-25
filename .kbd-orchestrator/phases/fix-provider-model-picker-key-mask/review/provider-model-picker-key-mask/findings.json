@@ -1,0 +1,39 @@
+{
+  "mode": "diff",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "src/uar/api/settings.rs",
+      "line": 713,
+      "claim": "preserve_sensitive_value persists the literal mask string (e.g. \"***\") as the stored credential whenever the existing setting data lacks the submitted key or the submitted array is longer/reordered relative to the existing array, so a mask can silently become the live secret value.",
+      "evidence": "In the new `preserve_sensitive_value`, the object branch only recurses when `(properties.get(key), current.get(key))` are both `Some`, and the array branch only recurses for indices where `current.get(index)` exists (`if let Some(current_value) = current.get(index)`); otherwise the submitted value is left untouched. A submitted placeholder `\"***\"` for an absent key or an appended array element is therefore written verbatim, violating the change's own stated guarantee that 'the mask cannot replace the stored API key' (acceptance criteria, 'What Changes' bullet 4). Index-based pairing also restores the wrong existing secret if the client reorders an array.",
+      "suggested_fix": "When a placeholder is detected but no corresponding existing value exists, either reject the request (ApiError::NotFound/Unprocessable) or strip the placeholder field instead of persisting it; for arrays, match elements by a stable identity (e.g. model id) rather than by index."
+    },
+    {
+      "severity": "WARNING",
+      "file": "frontend/src/features/settings/ui/settings-primitives.tsx",
+      "line": 141,
+      "claim": "SettingSelect now mixes two different select-primitive APIs \u2014 `items={options}` on the root (Base UI API) and `placeholder` on SelectValue (Radix API) \u2014 and the packet contains no evidence the repository's shadcn Select wrapper declares both props, so the TypeScript-gate claim in criterion 2.1 is unsupported by the diff and likely fails if the wrapper is Radix-based.",
+      "evidence": "Hunk adds `items={options}` to `<Select ...>` and `<SelectValue placeholder={placeholder} />`; Radix `Select.Root` (the default shadcn backing) has no `items` prop, producing an excess-property type error, while Base UI `Select.Value` has no `placeholder` prop. Criterion 2.1 asserts 'verify the component test plus TypeScript and lint gates pass' but no gate output is included in the packet.",
+      "suggested_fix": "Confirm which primitive backs the repo's Select and drop the foreign prop: remove `items` if Radix-based, or replace `placeholder` usage with the Base UI value-render pattern if Base UI-based."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "src/uar/api/settings.rs",
+      "line": 720,
+      "claim": "Any submitted sensitive string consisting solely of `*` characters is silently treated as an unchanged mask and the old value is preserved, so a legitimate all-asterisk secret can never be stored and there is no way to distinguish it from a mask.",
+      "evidence": "`submitted.is_empty() || (!submitted.is_empty() && submitted.chars().all(|c| c == '*'))` in `preserve_sensitive_value` (and the matching check in `value_contains_sensitive_placeholder`) conflates mask placeholders with genuine secret content.",
+      "suggested_fix": "Document the ambiguity, or use a mask token that cannot collide with valid secret input (e.g. a sentinel outside the provider key alphabet) while keeping the length-preserving display mask only at the presentation layer."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

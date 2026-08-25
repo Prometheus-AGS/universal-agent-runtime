@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useSettings } from "../../model/use-settings";
 import { NamespacePanel } from "../generic-schema-panel";
+import { getProviderModelOptions } from "./provider-model-options";
 import {
   AdvancedSection,
   ErrorBanner,
@@ -11,15 +12,22 @@ import {
   MaskedInput,
   PanelHeader,
   SavedBanner,
+  SettingModelPicker,
   SettingSelect,
   Toggle,
 } from "../settings-primitives";
+
+function providerControlId(providerKey: string, field: string) {
+  return `provider-${encodeURIComponent(providerKey)}-${field}`;
+}
 
 export function ProviderPanel() {
   const {
     values,
     settings,
+    dirty,
     loading,
+    refreshing,
     saving,
     error,
     setSetting,
@@ -27,30 +35,65 @@ export function ProviderPanel() {
     reload,
   } = useSettings("provider");
   const [savedFlash, setSavedFlash] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasDirty = Object.keys(dirty).length > 0;
+  const reloadHint = hasDirty ? "Save changes before refreshing." : saving ? "Saving changes…" : refreshing ? "Refreshing settings…" : undefined;
 
   const providerEntries = Object.values(settings).sort((a, b) =>
     a.key.localeCompare(b.key),
   );
 
   const handleSave = useCallback(async () => {
-    await saveAll();
+    try {
+      await saveAll();
+    } catch {
+      // The settings store keeps the actionable error and pending drafts.
+      return;
+    }
     setSavedFlash(true);
-    setTimeout(() => setSavedFlash(false), 2500);
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = setTimeout(() => setSavedFlash(false), 2500);
   }, [saveAll]);
+
+  useEffect(
+    () => () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!hasDirty) return;
+    const preventUnsavedUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", preventUnsavedUnload);
+    return () =>
+      window.removeEventListener("beforeunload", preventUnsavedUnload);
+  }, [hasDirty]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <PanelHeader
         title="LLM Providers"
-        subtitle={`${providerEntries.length} provider(s) configured`}
+        subtitle={`${providerEntries.length} configured provider${providerEntries.length === 1 ? "" : "s"}`}
         saving={saving}
-        loading={loading}
+        loading={refreshing}
+        saveDisabled={!hasDirty}
+        reloadDisabled={hasDirty || saving}
+        statusText={hasDirty ? "Unsaved changes" : undefined}
+        reloadHint={reloadHint}
         onSave={() => void handleSave()}
         onReload={() => void reload()}
       />
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
         {loading && (
-          <div className="flex items-center gap-2">
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-center gap-2"
+          >
             <Loader2 size={15} className="animate-spin text-muted-foreground" />
             <span className="font-mono text-xs text-muted-foreground">
               Loading…
@@ -67,7 +110,34 @@ export function ProviderPanel() {
         )}
         {providerEntries.map((s) => {
           const data = (values[s.key] ?? {}) as Record<string, unknown>;
+          const displayName = (data.display_name as string) ?? s.name;
+          const modelOptions = getProviderModelOptions(data);
+          const currentModel = (data.default_model as string) ?? "";
+          const currentModelIsAvailable = modelOptions.some(
+            (option) => option.value === currentModel,
+          );
+          const modelHint =
+            modelOptions.length === 0
+              ? "No enabled models are available for this provider."
+              : currentModel && !currentModelIsAvailable
+                ? "Current model is unavailable. Choose an enabled model."
+                : undefined;
           const leafKey = s.key; // full key like provider.openai
+          const providerHeadingId = providerControlId(s.key, "heading");
+          const baseUrlId = providerControlId(s.key, "base-url");
+          const protocolId = providerControlId(s.key, "protocol");
+          const apiKeyId = providerControlId(s.key, "api-key");
+          const apiKeyHintId = providerControlId(s.key, "api-key-hint");
+          const defaultModelId = providerControlId(s.key, "default-model");
+          const defaultModelHintId = providerControlId(
+            s.key,
+            "default-model-hint",
+          );
+          const enabledId = providerControlId(s.key, "enabled");
+          const providerIsDirty = Object.prototype.hasOwnProperty.call(
+            dirty,
+            s.key,
+          );
           const setField = (field: string, value: unknown) => {
             const updated = { ...data, [field]: value };
             setSetting(leafKey, updated);
@@ -76,8 +146,10 @@ export function ProviderPanel() {
           return (
             <div
               key={s.key}
+              role="group"
+              aria-labelledby={providerHeadingId}
               className={cn(
-                "rounded-xl border p-4 space-y-4",
+                "min-w-0 rounded-xl border p-4 space-y-4",
                 enabled
                   ? "border-border bg-card"
                   : "border-border/50 bg-muted/30 opacity-60",
@@ -85,29 +157,43 @@ export function ProviderPanel() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-display text-sm font-semibold text-foreground">
-                    {(data.display_name as string) ?? s.name}
-                  </p>
+                  <h3
+                    id={providerHeadingId}
+                    className="font-display text-sm font-semibold text-foreground"
+                  >
+                    {displayName}
+                  </h3>
                   <p className="font-mono text-xs text-muted-foreground">
                     {s.key}
                   </p>
                 </div>
-                <Toggle
-                  value={enabled}
-                  onChange={(v) => setField("enabled", v)}
-                />
+                <div className="flex items-center gap-3">
+                  {providerIsDirty && (
+                    <span className="font-mono text-[10px] font-medium uppercase tracking-wide text-warning">
+                      Modified
+                    </span>
+                  )}
+                  <Toggle
+                    id={enabledId}
+                    ariaLabel={`Enable ${displayName} provider`}
+                    value={enabled}
+                    onChange={(v) => setField("enabled", v)}
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Base URL">
+              <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2">
+                <Field label="Base URL" htmlFor={baseUrlId}>
                   <Input
+                    id={baseUrlId}
                     value={(data.base_url as string) ?? ""}
                     onChange={(e) => setField("base_url", e.target.value)}
                     placeholder="https://api.example.com/v1"
                     className="font-mono text-xs"
                   />
                 </Field>
-                <Field label="Protocol">
+                <Field label="Protocol" htmlFor={protocolId}>
                   <SettingSelect
+                    id={protocolId}
                     value={(data.protocol as string) ?? "auto"}
                     options={[
                       { value: "auto", label: "Auto" },
@@ -117,19 +203,49 @@ export function ProviderPanel() {
                     onChange={(v) => setField("protocol", v)}
                   />
                 </Field>
-                <Field label="API Key" hint="Masked for security">
+                <Field
+                  label="API Key"
+                  hint="Masked for security"
+                  htmlFor={apiKeyId}
+                  hintId={apiKeyHintId}
+                >
                   <MaskedInput
+                    id={apiKeyId}
+                    ariaDescribedBy={apiKeyHintId}
+                    revealLabel={`${displayName} API key`}
                     value={(data.api_key as string) ?? ""}
                     onChange={(v) => setField("api_key", v)}
                     placeholder="sk-..."
                   />
                 </Field>
-                <Field label="Default Model">
-                  <Input
-                    value={(data.default_model as string) ?? ""}
-                    onChange={(e) => setField("default_model", e.target.value)}
-                    placeholder="gpt-5.2"
-                    className="font-mono text-xs"
+                <Field
+                  label="Default Model"
+                  hint={modelHint}
+                  htmlFor={defaultModelId}
+                  hintId={modelHint ? defaultModelHintId : undefined}
+                >
+                  <SettingModelPicker
+                    id={defaultModelId}
+                    ariaDescribedBy={
+                      modelHint ? defaultModelHintId : undefined
+                    }
+                    value={currentModelIsAvailable ? currentModel : ""}
+                    options={modelOptions}
+                    onChange={(v) => setField("default_model", v)}
+                    triggerClassName="w-full"
+                    ariaLabel={`${displayName} default model`}
+                    searchAriaLabel={`Search ${displayName} models`}
+                    disabled={modelOptions.length === 0}
+                    placeholder={
+                      modelOptions.length === 0
+                        ? "No enabled models"
+                        : "Select a model"
+                    }
+                    ariaInvalid={Boolean(
+                      modelOptions.length > 0 &&
+                        currentModel &&
+                        !currentModelIsAvailable,
+                    )}
                   />
                 </Field>
               </div>
@@ -480,4 +596,3 @@ export function KnowledgeBasesPanel() {
     </NamespacePanel>
   );
 }
-

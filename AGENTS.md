@@ -294,6 +294,26 @@ yourself across every root, not just this folder.
 
 Outside the managed region. Re-running the bootstrap will not touch this.
 
+### UI design skill precedence
+
+For user-interface design, evaluation, refactoring, or implementation, use the
+installed project skills in this order:
+
+1. **Impeccable** first, for evaluation, refactoring, and initial design.
+2. **Anthropic `frontend-design`** second, for general agentic UI/UX design.
+3. **UI/UX Pro Max** third, for all remaining general design guidance.
+
+For initial ideation, evaluation, refactoring, and refinement, run Impeccable
+critique with two isolated subagents, then run a fresh-context adversarial review
+over the resulting design artifact or implementation diff before accepting the
+direction. Treat this dual-agent critique plus adversarial review as the standard
+UI quality gate, not an exceptional escalation.
+
+This precedence overrides only the relative skill order in the auto-managed
+UI/UX routing block above. All other routing requirements, checks, and summaries
+remain mandatory. `CLAUDE.md` is a symlink to this file, so this rule applies to
+both instruction entrypoints.
+
 ### React and entity-state architecture
 
 Before changing React components, entity hooks/transports, or graph-backed

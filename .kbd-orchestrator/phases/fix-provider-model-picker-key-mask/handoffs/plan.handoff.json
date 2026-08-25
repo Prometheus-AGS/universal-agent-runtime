@@ -1,0 +1,12 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-08-25T12:52:38Z",
+  "outputs": [
+    "plan.md",
+    "review/plan/findings.json"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "One Medium OpenSpec change covers the security boundary and provider UI as a vertical slice. Apply task 1.1 backend first, task 2.1 frontend second, then tasks 3.1-3.2 validation; exact files and commands are in plan.md. The isolated judge returned PASS with warnings resolved in the plan and the asterisk collision retained as an explicit residual limitation.",
+  "skipped": false,
+  "skipReason": null
+}

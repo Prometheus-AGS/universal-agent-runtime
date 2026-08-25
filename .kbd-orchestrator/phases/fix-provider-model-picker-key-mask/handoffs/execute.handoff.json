@@ -1,0 +1,12 @@
+{
+  "stage": "execute",
+  "completedAt": "2026-08-25T12:54:06Z",
+  "outputs": [
+    "execution.md",
+    "progress.json"
+  ],
+  "nextStage": "reflect",
+  "summaryForNext": "OpenSpec is selected and registered as one in-progress Medium change with four KBD-owned tasks. Apply sequentially through kbd-apply; backend, frontend, contract, then phase validation. Current Codex GPT-5 is the transparent frontier fallback because project model_policy is absent.",
+  "skipped": false,
+  "skipReason": null
+}

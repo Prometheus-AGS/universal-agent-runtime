@@ -754,3 +754,23 @@ exits with a terminal failure.
 **Limit.** This is not permission for an unbounded wait. A dependency that never
 recovers, repeated process exits, or a failed installed digest still blocks
 cleanup and requires rollback or operator intervention.
+
+## 2026-08-25 — Diff review packets can omit new untracked regression tests
+
+**Observed behavior.** The first adversarial diff review reported that the required ProviderPanel regression test did not exist even though the file was present locally and its focused test passed.
+
+**Root cause.** The deterministic diff packet was assembled from `git diff`, which does not include ordinary untracked files. Marking the new test intent-to-add made its content visible to the packet without committing it.
+
+**Working rule.** Before dispatching a diff review, compare `git status --short` with the packet's diff file list. Ensure every relevant new file is present in the review artifact; otherwise a fresh judge is reviewing an incomplete change.
+
+**Limit.** Intent-to-add changes index metadata. Do not stage unrelated user files, and do not treat packet inclusion as authorization to commit.
+
+## 2026-08-25 — Matching requirement names do not prove a MODIFIED delta is synced
+
+**Observed behavior.** The main `frontend-configuration-surfaces` spec already contained `Provider default models use bounded selection`, so a name-only check appeared to show the searchable-model delta was synced. The body still described the older non-searchable select contract.
+
+**Root cause.** The sync assessment searched only for the requirement header instead of comparing the complete normative block and scenarios.
+
+**Working rule.** Before archiving a MODIFIED delta, compare the entire requirement block from its header through its final scenario against the main spec. Ignore only formatting-equivalent trailing blank lines. Restore the active change and complete the merge if any body or scenario differs.
+
+**Limit.** This does not require byte-for-byte comparison for intelligent merges that preserve additional valid scenarios; it requires semantic coverage of the full modified block.

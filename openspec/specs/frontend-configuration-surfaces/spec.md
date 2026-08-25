@@ -153,3 +153,122 @@ The settings frontend SHALL translate internal namespace keys to the backend's c
 - **WHEN** the production static bundle is served by the installed runtime on port 1906 and an operator opens Provider Overrides and Context Management
 - **THEN** the configured provider records render and Context Management loads through its hyphenated route
 - **AND** the browser emits no singular, underscored, or other settings namespace 404
+
+### Requirement: Provider default models use bounded selection
+The Provider Overrides surface SHALL present each configured provider's default model as an accessible bounded selection control whose options are exactly that provider's enabled configured models. Inventories containing one through seven enabled models SHALL use the simple selection path, while inventories containing eight or more enabled models SHALL provide search over both display names and raw model identifiers without accepting free-form values.
+
+#### Scenario: Provider model options are opened
+- **WHEN** a provider has between one and seven enabled configured models and an operator opens its default-model control
+- **THEN** every enabled model in that provider's configured model list is available through the simple selection path
+- **AND** disabled models and models owned only by other providers are not available
+
+#### Scenario: Large provider model inventory is opened
+- **WHEN** a provider has eight or more enabled configured models and an operator opens its default-model control
+- **THEN** the control provides a search input and every valid enabled model remains available
+- **AND** the unfiltered option order matches the provider configuration order
+
+#### Scenario: Provider models are searched
+- **WHEN** an operator enters a search term in a large provider model inventory
+- **THEN** matching is case-insensitive after trimming surrounding query whitespace
+- **AND** a model remains visible when the literal term occurs in either its display name or raw model identifier
+- **AND** a distinct no-match state appears when no valid model matches
+
+#### Scenario: Provider default model is selected
+- **WHEN** an operator selects one of the provider's available models with a pointer or keyboard
+- **THEN** the provider settings draft records that model id as `default_model` exactly once
+- **AND** the existing settings save and realtime reconciliation path remains in use
+- **AND** arbitrary text cannot become the selected model
+
+#### Scenario: Provider model labels are ambiguous
+- **WHEN** two valid enabled models have the same display name
+- **THEN** the selection results expose their raw model identifiers so the operator can distinguish them
+
+#### Scenario: Stored provider model is unavailable
+- **WHEN** the stored default model is not present in the provider's current enabled model list
+- **THEN** the control reports the stale value as unavailable and offers valid replacements
+- **AND** it does not automatically select or save a replacement
+
+### Requirement: Provider settings controls expose complete accessible context
+The Provider Overrides surface SHALL expose every provider card as a named group and SHALL give each visible field, enabled switch, and API-key reveal action a provider-specific programmatic name. Help text and invalid-state recovery text MUST be programmatically associated with the affected control.
+
+#### Scenario: Provider controls are traversed with assistive technology
+- **WHEN** an operator navigates provider settings without relying on visual layout
+- **THEN** Base URL, Protocol, API Key, Default Model, Enabled, and API-key reveal controls are identifiable for the correct provider
+- **AND** help or invalid-state text is included in the affected control's accessible description
+
+#### Scenario: Provider default model is unavailable
+- **WHEN** the stored default model is not currently selectable
+- **THEN** the model control exposes an invalid state and the associated recovery guidance to assistive technology
+
+### Requirement: Provider settings communicate asynchronous outcomes
+The Provider Overrides surface SHALL expose loading and successful-save feedback as polite, atomic status updates and SHALL expose failures as alerts. A rejected save MUST NOT emit successful-save feedback and MUST preserve pending drafts.
+
+#### Scenario: Provider settings load or save succeeds
+- **WHEN** provider settings are loading or a save completes successfully
+- **THEN** the corresponding visible message is available as a polite status update
+
+#### Scenario: Provider settings operation fails
+- **WHEN** a provider settings load or save operation fails
+- **THEN** the visible error is announced as an alert
+- **AND** a failed save retains the unsaved provider drafts
+
+### Requirement: Provider settings protect unsaved drafts
+The Provider Overrides surface SHALL derive its modified state from the authoritative provider settings draft. Save MUST be disabled while no provider draft exists; Refresh MUST be disabled while drafts exist or a provider settings operation is in flight; and browser unload MUST request confirmation while drafts exist.
+
+#### Scenario: Provider settings are clean
+- **WHEN** no provider settings draft exists and no operation is in flight
+- **THEN** Save is disabled and Refresh is available
+
+#### Scenario: Provider settings are modified
+- **WHEN** one or more provider settings drafts exist
+- **THEN** Save is enabled, Refresh is disabled, and visible text identifies each modified provider
+- **AND** the operator is told to save changes before refreshing
+
+#### Scenario: Browser unload is attempted with drafts
+- **WHEN** browser navigation or window closure would unload provider settings while drafts exist
+- **THEN** the browser unload event is cancelled so the browser can request confirmation
+
+#### Scenario: Provider save succeeds
+- **WHEN** all provider drafts are saved successfully
+- **THEN** the dirty indicators clear, Save becomes disabled, and Refresh becomes available
+
+#### Scenario: Provider save fails
+- **WHEN** saving provider drafts fails
+- **THEN** the dirty indicators remain and Refresh stays disabled
+
+### Requirement: Provider settings remain usable at narrow widths
+The Provider Overrides editor SHALL stack provider fields in one column at narrow widths and SHALL retain its two-column composition at desktop widths. Controls and long provider content MUST remain within the available viewport without clipping keyboard focus.
+
+#### Scenario: Provider settings are viewed in a narrow viewport
+- **WHEN** the available provider-panel width cannot support the desktop field composition
+- **THEN** fields stack into one column without horizontal page scrolling
+- **AND** controls remain fully keyboard accessible
+
+#### Scenario: Provider settings are viewed at desktop width
+- **WHEN** the available provider-panel width supports the incumbent desktop composition
+- **THEN** provider fields render in two columns
+
+### Requirement: Sensitive setting masks preserve secret length
+Settings API responses SHALL obscure every character of a stored API key with one mask character and SHALL NOT return any plaintext character from the stored key.
+
+#### Scenario: Stored provider API key is read
+- **WHEN** a provider settings record contains an API key with N characters
+- **THEN** the response contains an API-key mask with exactly N characters
+- **AND** every returned character is a mask character
+
+#### Scenario: Provider API key is absent
+- **WHEN** a provider settings record has no API key or has an empty API key
+- **THEN** the response does not fabricate a non-empty credential mask
+
+### Requirement: Unchanged nested credential masks are non-destructive
+The settings API SHALL preserve an existing nested API key when an update submits the unchanged response mask while modifying other fields in the same settings object.
+
+#### Scenario: Unrelated provider field is saved
+- **WHEN** an operator changes a non-sensitive provider field and the request includes the unchanged API-key mask returned by the settings API
+- **THEN** the existing stored API key remains unchanged
+- **AND** the response continues to return only its length-preserving mask
+
+#### Scenario: Replacement provider API key is saved
+- **WHEN** an operator submits a new API-key value that does not equal the current response mask
+- **THEN** the new value replaces the stored API key
+- **AND** subsequent reads return a mask matching the new value's character count

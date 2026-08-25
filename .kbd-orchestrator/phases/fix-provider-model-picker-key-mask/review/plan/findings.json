@@ -1,0 +1,43 @@
+{
+  "mode": "artifact",
+  "verdict": "PASS",
+  "judge_model": "k3",
+  "producer_model": "gpt-5",
+  "isolation_mode": "rest-gateway:http://localhost:4000/v1",
+  "cross_model_check": "verified-distinct",
+  "findings": [
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "The plan cites no concrete source paths even though the assessment handoff explicitly required it to target them.",
+      "evidence": "assess.handoff.json states 'Plan must target the cited source paths', but the plan's Scope is only 'UI | settings API', the packet's cited_paths field reads '(no file paths cited in this artifact)', and no file (e.g., ProviderPanel, settings API module) is named anywhere in the change details or execution steps.",
+      "suggested_fix": "Name the concrete files to be modified for each step (the ProviderPanel component path, the shadcn select import source, and the settings API masking/credential-preservation module) in the change details or the round steps."
+    },
+    {
+      "severity": "WARNING",
+      "file": "plan.md",
+      "claim": "Goal 3 ('Verify behavior locally at the required frontend tier') is scheduled but not made executable: no verification commands are specified.",
+      "evidence": "The 'COMMANDS TO RUN' section contains only `/opsx:apply provider-model-picker-key-mask`; the round steps refer to 'the locked server-full T0/T1 checks', 'frontend T0/T1 checks', and 'Frontend and Rust phase-completion checks' without any command, script path, or tier definition, so an executor cannot know which local checks satisfy the required frontend tier.",
+      "suggested_fix": "List the exact commands for each verification step (e.g., the specific pnpm/cargo test invocations for T0/T1 and the phase-tier gates), or cite the document/section where those command names are locked."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "The acceptance criterion 'All four OpenSpec tasks are checked' delegates testability to an artifact outside the plan and cannot be verified from the plan itself.",
+      "evidence": "Acceptance reads 'All four OpenSpec tasks are checked, strict validation passes...' but tasks.md content is not in the packet and the plan does not restate the four tasks, so criterion completeness depends entirely on an external file.",
+      "suggested_fix": "Inline the four task summaries (or their IDs with one-line descriptions) into the change details so acceptance is self-contained."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "plan.md",
+      "claim": "The disclosed asterisk-collision trade-off leaves a credential-corruption path with no mitigation beyond a scope-cut note.",
+      "evidence": "'A replacement key made entirely of asterisks with exactly the existing key length remains indistinguishable from the unchanged mask' \u2014 if a user legitimately sets such a key, it will be silently treated as 'unchanged' and the stored credential kept, which the plan accepts without a sentinel or server-side marker.",
+      "suggested_fix": "Note a follow-up (even if out of scope here) to use a non-typeable sentinel or a dirty-flag on the field so an all-asterisk real key cannot be confused with the preserved mask."
+    }
+  ],
+  "sycophancy_screen": {
+    "reject_cap": 2,
+    "cap_overridden": false,
+    "cap_default": 2
+  }
+}

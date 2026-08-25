@@ -16,6 +16,7 @@ export interface UseSettingsReturn {
   dirty: Record<string, unknown>;
   conflicts: Record<string, unknown>;
   loading: boolean;
+  refreshing: boolean;
   saving: boolean;
   error: string | null;
   setSetting: (key: string, value: unknown) => void;
@@ -92,6 +93,7 @@ export function useSettings(namespace: string): UseSettingsReturn {
   }, [namespace, saveNamespace]);
 
   const loading = (status?.loading ?? false) && graphView.records.length === 0;
+  const refreshing = status?.loading ?? false;
 
   return {
     values,
@@ -99,6 +101,7 @@ export function useSettings(namespace: string): UseSettingsReturn {
     dirty: dirtyState.values,
     conflicts,
     loading,
+    refreshing,
     saving: status?.saving ?? false,
     error: status?.error ?? null,
     setSetting,
