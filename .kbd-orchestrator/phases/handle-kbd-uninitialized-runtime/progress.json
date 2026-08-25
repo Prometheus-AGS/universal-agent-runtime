@@ -17,8 +17,8 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "phase": "fix-runtime-settings-namespace-routes",
-  "phaseId": "fix-runtime-settings-namespace-routes",
+  "phase": "handle-kbd-uninitialized-runtime",
+  "phaseId": "handle-kbd-uninitialized-runtime",
   "parentPhase": null,
   "last_updated": "2026-08-25T11:04:13.691852Z",
   "last_updated_by": "kbd-runtime",
@@ -51,13 +51,13 @@
   },
   "changes": [
     {
-      "id": "fix-settings-namespace-read-routes",
-      "title": "Fix settings namespace read routes",
+      "id": "fix-kbd-uninitialized-runtime",
+      "title": "Fix KBD uninitialized runtime",
       "status": "DONE",
       "implementation_status": "COMPLETE",
-      "tasks_total": 6,
-      "tasks_done": 6,
-      "last_task_completed": "Record evidence, reflect, archive, and push",
+      "tasks_total": 7,
+      "tasks_done": 7,
+      "last_task_completed": "Build install and prove release CLI",
       "next_task_pending": null,
       "blockers": []
     }
