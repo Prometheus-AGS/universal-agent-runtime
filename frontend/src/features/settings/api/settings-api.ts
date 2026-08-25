@@ -17,7 +17,8 @@ export function namespaceToSlug(ns: string): string {
   return overrides[ns] ?? ns.replace(/_/g, "-");
 }
 
-export async function fetchSettingsNamespace(slug: string): Promise<SettingWithMeta[]> {
+export async function fetchSettingsNamespace(namespace: string): Promise<SettingWithMeta[]> {
+  const slug = namespaceToSlug(namespace);
   const res = await fetch(`${BASE}/${slug}`);
   if (!res.ok) throw new Error(`${res.status}`);
   return res.json() as Promise<SettingWithMeta[]>;

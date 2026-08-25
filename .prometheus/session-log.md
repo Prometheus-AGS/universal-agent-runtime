@@ -938,3 +938,28 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
   bundled tests require upstream source-repository refresh/evaluation scripts
   omitted by the installer; they remain preserved and are explicitly disclosed
   in the OpenSpec verification record.
+
+## 2026-08-25 — Settings namespace reads corrected in a successor KBD run
+
+- Added and pushed KBD terminal-run rollover support upstream, installed the
+  updated CLI and Sovereign Sync daemon, and created successor run
+  `fix-runtime-settings-namespace-routes-20260825T091750Z` without rewriting
+  the cancelled run's audit.
+- Merged `origin/main`, pinned the exact upstream rollover commit, and changed
+  settings GET requests to use the same canonical namespace slug conversion as
+  saves. Focused transport tests passed for plural, hyphenated, unchanged, and
+  non-success behavior.
+- Reconciled only the Assistant UI and RMCP call sites made stale by the merged
+  dependency pins. Typecheck, lint, focused tests, production bundle and static
+  validation, strict OpenSpec validation, and the locked Rust release build
+  passed.
+- Installed the matching release binary and static bundle through the macOS
+  installer. The config hash remained unchanged, both health endpoints returned
+  HTTP 200, and the five durable provider IDs remained present.
+- One installed-service Playwright scenario passed in 2.4 seconds. It observed
+  plural and hyphenated settings routes, all five provider cards, no misleading
+  not-found banner, and no settings-route 404 or console error.
+- The full frontend suite still reports 12 failures and the boundary checker
+  still reports three provider-store writes, all unchanged from `origin/main`.
+  They are disclosed as residual baseline failures rather than silently fixed
+  inside this route change.

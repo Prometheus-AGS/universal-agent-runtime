@@ -800,3 +800,22 @@ whose required refresh/evaluation scripts were not installed. They are not
 silently deleted or patched: 130 payload-compatible tests pass, while the two
 upstream-layout-only import failures remain documented until the installer
 ships their dependencies or excludes those tests.
+
+---
+
+## 2026-08-25 — Canonicalize settings routes at the frontend transport boundary
+
+**Decision.** Convert internal settings namespaces with the existing
+`namespaceToSlug()` function before every GET. Keep the backend's canonical
+plural and hyphenated routes unchanged, and do not add aliases for defective
+client paths.
+
+**Rationale.** Saves already use this conversion. Reusing it makes reads and
+writes share one route contract and fixes `provider`, `context_management`,
+`native_tools`, `llm_failover`, and other underscored namespaces without
+changing persistence or payloads.
+
+**Uncomfortable constraint.** The requested full frontend gate is not green on
+the merged baseline: 12 provider-store/A2UI tests and three boundary findings
+remain. They do not exercise the settings read transport, but this phase makes
+no repository-wide certification claim.

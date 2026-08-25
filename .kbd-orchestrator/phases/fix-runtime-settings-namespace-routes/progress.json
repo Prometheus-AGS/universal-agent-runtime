@@ -1,10 +1,10 @@
 {
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 671,
-  "derivedRevision": 671,
+  "sourceRevision": 682,
+  "derivedRevision": 682,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 279,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 290,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -20,7 +20,7 @@
   "phase": "fix-runtime-settings-namespace-routes",
   "phaseId": "fix-runtime-settings-namespace-routes",
   "parentPhase": null,
-  "last_updated": "2026-08-25T09:27:44.301292Z",
+  "last_updated": "2026-08-25T10:01:07.138470Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 1,
   "changes_completed": 0,
@@ -53,12 +53,12 @@
     {
       "id": "fix-settings-namespace-read-routes",
       "title": "Fix settings namespace read routes",
-      "status": "IN_PROGRESS",
-      "implementation_status": "IN_PROGRESS",
+      "status": "PENDING",
+      "implementation_status": "PENDING",
       "tasks_total": 6,
-      "tasks_done": 0,
-      "last_task_completed": null,
-      "next_task_pending": "Merge origin/main and pin KBD rollover commit",
+      "tasks_done": 5,
+      "last_task_completed": "Install and prove LaunchAgent runtime",
+      "next_task_pending": "Record evidence, reflect, archive, and push",
       "blockers": []
     }
   ],

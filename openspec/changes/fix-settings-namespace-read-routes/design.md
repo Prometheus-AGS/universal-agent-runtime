@@ -36,11 +36,16 @@ A local Playwright config/spec will target `http://127.0.0.1:1906`, observe sett
 
 The rollover implementation remains on the pushed upstream review branch. UAR records only the exact gitlink commit. The installed CLI and daemon are built from that commit before the first successor event; only the Sovereign Sync LaunchAgent is restarted.
 
+### Repair only release-blocking dependency API drift from the baseline merge
+
+The merged baseline pins Assistant UI 0.15.16 and RMCP 3.1.2 but retained call sites from their previous APIs. The frontend selectors move from the removed `useMessage()` hook to `useAuiState()`. RMCP streamable HTTP configuration uses `legacy_session_mode`, and client services retain the concrete unit client handler instead of a dynamically erased handler whose lifetime no longer satisfies asynchronous consumers. These are compatibility repairs required by the requested production and locked release gates; they do not alter settings behavior, MCP configuration, or transport selection. Broad dependency upgrades and adjacent refactors were rejected.
+
 ## Risks / Trade-offs
 
 - [Risk] A unit test could pass while the installed bundle remains stale → Mitigation: validate the static bundle, install through the native installer, and run the port-1906 browser test afterward.
 - [Risk] Native installation could change provider configuration or IDs → Mitigation: capture LaunchAgent state and provider IDs/count before installation and compare the same canonical endpoint afterward.
 - [Risk] The origin/main merge could introduce unrelated failures → Mitigation: perform the already-inspected merge at Execute start, keep its history visible, and run the full local gate list without repairing unrelated defects silently.
+- [Risk] Release-blocking dependency drift could tempt a broad migration → Mitigation: change only removed API call sites confirmed by the pinned packages and preserve existing behavior with focused frontend coverage plus the locked release build.
 - [Trade-off] The installed Playwright check depends on a local LaunchAgent → It is intentionally local deployment evidence and is excluded from the general frontend test suite and GitHub Actions.
 
 ## Migration Plan

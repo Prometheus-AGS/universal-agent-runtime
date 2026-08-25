@@ -9,7 +9,6 @@ import {
   type ThreadMessageLike,
   type ToolCallMessagePartProps,
   useAuiState,
-  useMessage,
 } from "@assistant-ui/react";
 import {
   AlertTriangleIcon,
@@ -63,11 +62,11 @@ const condThreadNotRunning = (s: { thread: { isRunning: boolean } }) => !s.threa
 const condMessageCopied = (s: { message: { isCopied: boolean } }) => s.message.isCopied;
 const condMessageNotCopied = (s: { message: { isCopied: boolean } }) => !s.message.isCopied;
 
-// ─── Stable useMessage selectors ──────────────────────────────────────────────
-// Same reason as above: useMessage subscribes to per-message state using the
+// ─── Stable message-state selectors ───────────────────────────────────────────
+// Same reason as above: useAuiState subscribes to per-message state using the
 // provided selector function. Inline selectors produce new references each
 // render, re-triggering subscriptions.
-function selectIsEmptyAndRunning(m: ThreadMessageLike): boolean {
+function selectIsEmptyAndRunning({ message: m }: { message: ThreadMessageLike }): boolean {
   if (m.status?.type !== "running") return false;
   const parts = (m as unknown as { content?: unknown[] }).content ?? [];
   return (
@@ -82,7 +81,7 @@ function selectIsEmptyAndRunning(m: ThreadMessageLike): boolean {
   );
 }
 
-function selectErrorText(m: ThreadMessageLike): string | null {
+function selectErrorText({ message: m }: { message: ThreadMessageLike }): string | null {
   if (m.status?.type !== "incomplete") return null;
   const maybe = m as ThreadMessageLike & {
     metadata?: { custom?: { errorText?: string } };
@@ -369,7 +368,7 @@ const EnhancedComposer: FC = () => {
 // beside the bubble, branch picker on the row below.
 
 const UserMessage: FC = () => {
-  const messageId = useMessage((message) => message.id);
+  const messageId = useAuiState((state) => state.message.id);
   return (
     <MessagePrimitive.Root
       id={chatMessageAnchorId(messageId)}
@@ -408,7 +407,7 @@ const UserActionBar: FC = () => (
 
 /** Shows a run-phase line when the assistant message is still empty (pre-first-token). */
 const AssistantMessageBody: FC = () => {
-  const isEmptyAndRunning = useMessage(selectIsEmptyAndRunning);
+  const isEmptyAndRunning = useAuiState(selectIsEmptyAndRunning);
 
   if (isEmptyAndRunning) {
     return (
@@ -482,7 +481,7 @@ const AssistantMessageBody: FC = () => {
 };
 
 const AssistantMessage: FC = () => {
-  const messageId = useMessage((message) => message.id);
+  const messageId = useAuiState((state) => state.message.id);
   return (
     <MessagePrimitive.Root
       id={chatMessageAnchorId(messageId)}
@@ -586,7 +585,7 @@ const MessageError: FC = () => {
   const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
 
-  const errorText = useMessage(selectErrorText);
+  const errorText = useAuiState(selectErrorText);
 
   const handleCopy = useCallback(() => {
     if (!errorText) return;
@@ -657,7 +656,7 @@ const MetaChip: FC<{ icon: ReactNode; label: string; title: string }> = ({ icon,
 );
 
 const MessageMetaChips: FC = () => {
-  const messageId = useMessage((m) => m.id);
+  const messageId = useAuiState((state) => state.message.id);
   const { activeThreadId } = useThreadUi();
   // Memoize the selector so its reference is stable across renders — an inline
   // selector re-fires assistant-ui's Zustand subscription (React error #185).
@@ -728,7 +727,7 @@ const AssistantActionBar: FC = () => (
 // without cluttering the message body itself.
 
 const AssistantMessageCitations: FC = () => {
-  const messageId = useMessage((m) => m.id);
+  const messageId = useAuiState((state) => state.message.id);
   const { activeThreadId } = useThreadUi();
   return <MessageCitations threadId={activeThreadId} messageId={messageId} />;
 };

@@ -20,8 +20,12 @@ vi.mock("@assistant-ui/react", async (importOriginal) => {
 
   return {
     ...actual,
-    useMessage: () => ({
-      status: { type: assistantPrimitiveCapture.running ? "running" : "complete" },
+    useAuiState: (selector: (state: unknown) => unknown) => selector({
+      optional: {
+        message: {
+          status: { type: assistantPrimitiveCapture.running ? "running" : "complete" },
+        },
+      },
     }),
   };
 });

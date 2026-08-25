@@ -717,3 +717,22 @@ focus tooltip trigger rather than nesting another interactive element.
 **Limit.** This rule does not turn every asynchronous screen into a global
 loading gate. It applies when an unloaded projection would otherwise be
 presented as a confirmed operator-actionable defect.
+
+## 2026-08-25 — Settings response row UUIDs are not provider identities
+
+**Observed behavior.** The outer `id` values returned by
+`/api/uar/settings/providers` changed after a clean LaunchAgent reinstall even
+though the config hash, five provider keys, provider names, and durable
+`data.id` values were unchanged and startup seeded zero providers.
+
+**Root cause.** The SurrealDB adapter's `surreal_value_to_setting()` creates a
+new in-memory proxy UUID for each loaded settings row. That outer UUID is not
+persisted provider identity. Provider identity is `data.id` and is also encoded
+in `key` as `provider.<id>`.
+
+**Working rule.** For provider preservation checks, compare count plus
+`data.id`/`key`, not the outer settings-row UUID. Treat a change in provider
+keys, provider data, seed count, or config hash as the destructive signal.
+
+**Limit.** This documents existing adapter behavior; the settings-route fix
+does not change settings persistence or response payloads.

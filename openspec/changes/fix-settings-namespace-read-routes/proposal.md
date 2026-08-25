@@ -8,6 +8,7 @@ Runtime Settings reads currently interpolate internal namespace keys directly in
 - Add focused transport coverage for plural, hyphenated, unchanged, and non-2xx behavior.
 - Add a local installed-service browser check on port 1906 that observes provider and Context Management route usage and rejects settings namespace 404s.
 - Pin the KBD terminal-run rollover implementation that created this fresh phase and record successor-run continuity in the UAR contract.
+- Reconcile stale Assistant UI and RMCP call sites exposed by the merged `origin/main` dependency pins so the requested production bundle and locked Rust release build can complete.
 - Rebuild and install the unchanged backend plus corrected static frontend through the native macOS installer, preserving provider configuration and IDs.
 - Do not add backend aliases or modify persistence, payloads, provider configuration, save behavior, or realtime entity state.
 
@@ -25,6 +26,7 @@ Runtime Settings reads currently interpolate internal namespace keys directly in
 ## Impact
 
 - Frontend transport: `frontend/src/features/settings/api/settings-api.ts` and a focused adjacent test.
+- Release compatibility: Assistant UI message selectors use the pinned state API, while RMCP clients and streamable HTTP servers use the pinned 3.1.2 API without changing their runtime contracts.
 - Installed runtime UX: Provider Overrides and Context Management load configured state without misleading not-found banners; provider compatibility and realtime state contracts remain unchanged.
 - Local verification: a port-1906 Playwright configuration/spec plus existing frontend, bundle, OpenSpec, and locked Rust release gates.
 - KBD state: the new run/phase remains canonical and the `crates/prometheus-skill-system` gitlink moves to the pushed rollover review commit.
