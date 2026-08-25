@@ -1,10 +1,10 @@
 {
   "schemaVersion": "5",
   "generatedBy": "kbd-runtime",
-  "sourceRevision": 682,
-  "derivedRevision": 682,
+  "sourceRevision": 689,
+  "derivedRevision": 689,
   "frontier": {
-    "16f5c9ca-4c43-4421-982e-bfdb86909212": 290,
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 297,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -32,10 +32,10 @@
   "currentTask": null,
   "status": "ready",
   "completionMetric": "implementation",
-  "implementationCompleted": 0,
+  "implementationCompleted": 1,
   "implementationTotal": 1,
   "planRevision": 1,
-  "revision": 682,
+  "revision": 689,
   "exactNextCommand": "/opsx:apply fix-settings-namespace-read-routes",
-  "updatedAt": "2026-08-25T10:01:07.138470Z"
+  "updatedAt": "2026-08-25T10:05:34.116250Z"
 }

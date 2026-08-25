@@ -17,4 +17,4 @@
 
 ## 5. Closeout
 
-- [ ] 5.1 Record the root cause, deployment evidence, and residual risk under `.prometheus/`; verify and archive the OpenSpec change; complete KBD Reflect while leaving the successor run active with `/kbd-new-phase` as exact next work; push the review branch without merging it
+- [x] 5.1 Record the root cause, deployment evidence, and residual risk under `.prometheus/`; verify and archive the OpenSpec change; complete KBD Reflect while leaving the successor run active with `/kbd-new-phase` as exact next work; push the review branch without merging it
