@@ -31,7 +31,7 @@
 | --- | --- | --- |
 | Resolve GitHub issue 265 with evidence | MET | Both review layers merged, the installed CLI passes 3/3 issue scenarios, UAR `main` pins the fix, and issue #265 closed automatically. |
 | Preserve registered project history and typed command correctness | MET | Status stays non-mutating, one signed initialization/import boundary precedes the mutation, later commands reuse the run, and rejected commands exit non-zero without a committed command revision. |
-| Close the issue only after the reported failure modes are handled or proven obsolete | MET | The issue is retained as audit history and will close through `Fixes #265` only when UAR PR #272 merges. |
+| Close the issue only after the reported failure modes are handled or proven obsolete | MET | UAR PR #272 closed the issue through `Fixes #265`; the issue remains available as audit history. |
 
 ## Delivered Changes
 
