@@ -196,6 +196,8 @@
 * **Ingest**: [Karpathy session d674f9340123](/karpathy-session-d674f93401235624.md)
 
 ## 2026-08-08
+* **Ingest**: [Karpathy session b793af44afd1](/karpathy-session-b793af44afd118ed.md)
+* **Ingest**: [Karpathy session 0d34b7325ddd](/karpathy-session-0d34b7325ddd1f7b.md)
 * **Ingest**: [Karpathy session 1fc022a8a8e0](/karpathy-session-1fc022a8a8e053cf.md)
 * **Creation**: [UAR UI/UX full migration 2026-08 executor completion status](/uar-ui-ux-full-migration-2026-08-executor-completion-status.md)
 * **Ingest**: [Karpathy session 3f9d2b0bc807](/karpathy-session-3f9d2b0bc8074508.md)
