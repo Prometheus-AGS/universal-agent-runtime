@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Add native listener defaults and absent provider seeds without rewriting YAML."""
+"""Add native service defaults and absent provider seeds without rewriting YAML."""
 
 from __future__ import annotations
 
@@ -192,6 +192,28 @@ def merge_server(lines: list[str]) -> None:
     lines[end:end] = additions
 
 
+def merge_security(lines: list[str]) -> None:
+    """Keep legacy loopback desktop installs compatible with packaged auth defaults."""
+    bounds = section_bounds(lines, "security")
+    setting = "  settings_mutation_auth_required: false"
+    if bounds is None:
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.extend(["security:", setting])
+        return
+
+    start, end = bounds
+    if lines[start].strip() != "security:":
+        raise ValueError("top-level security must be a block mapping")
+    present = {
+        match.group(1)
+        for line in lines[start + 1:end]
+        if (match := re.match(r"^  ([A-Za-z0-9_]+)\s*:", line))
+    }
+    if "settings_mutation_auth_required" not in present:
+        lines.insert(end, setting)
+
+
 def merge_alibaba_default(lines: list[str], present: set[str]) -> None:
     if "DASHSCOPE_API_KEY" not in present:
         return
@@ -296,6 +318,7 @@ def main() -> int:
     args = parse_args()
     lines = args.config.read_text(encoding="utf-8-sig").splitlines()
     merge_server(lines)
+    merge_security(lines)
     present = present_provider_variables(args.env_file)
     proxy_models = discover_proxy_models(args.proxy_url)
     merge_alibaba_default(lines, present)

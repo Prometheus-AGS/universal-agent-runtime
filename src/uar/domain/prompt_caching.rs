@@ -4,8 +4,8 @@
 //! for any given request:
 //!
 //! ```text
-//! session_override → user_setting → agent_setting → global_setting
-//! (highest priority)                               (lowest priority)
+//! request_override → session_override → user_setting → global_setting
+//! (highest priority)                                (lowest priority)
 //! ```
 
 use chrono::{DateTime, Utc};
@@ -24,10 +24,34 @@ pub enum CachingScope {
     Agent,
 }
 
+/// Source that supplied the effective prompt-caching value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PromptCachingSource {
+    /// Explicit flag on this request.
+    Request,
+    /// Persisted conversation/session override.
+    Session,
+    /// Persisted JWT principal preference.
+    User,
+    /// System-wide default.
+    Global,
+}
+
+/// Effective prompt-caching value and its authoritative source.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EffectivePromptCaching {
+    /// Resolved on/off value.
+    pub enabled: bool,
+    /// First configured level in the precedence chain.
+    pub source: PromptCachingSource,
+}
+
 /// Stored per-user prompt-caching preferences.
 ///
-/// Keyed by `user_id`; persisted while the process is running and restored
-/// from the database on startup (when a persistence layer is configured).
+/// Keyed by a collision-safe verified principal identifier. Durable providers
+/// store the record across restarts; the in-memory provider retains it only for
+/// the process lifetime.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserPromptCachingSettings {
     /// User identity that owns this record.
@@ -36,7 +60,7 @@ pub struct UserPromptCachingSettings {
     ///
     /// `None` means "inherit from the system global setting".
     pub prompt_caching_enabled: Option<bool>,
-    /// Which level the user prefers for the session-level scope.
+    /// Deprecated compatibility field. It no longer affects precedence.
     #[serde(default)]
     pub preferred_scope: CachingScope,
     /// When this record was last modified.
@@ -59,21 +83,38 @@ impl UserPromptCachingSettings {
 /// Resolve the effective prompt-caching flag for a request.
 ///
 /// Priority (highest → lowest):
-/// 1. `session_override` — per-request body flag (e.g. from the chat toolbar)
-/// 2. `user_setting`     — stored user preference (requires JWT)
-/// 3. `agent_setting`    — per-agent default
+/// 1. `request_override` — per-request body flag
+/// 2. `session_override` — persisted conversation override
+/// 3. `user_setting`     — stored user preference (requires JWT)
 /// 4. `global_setting`   — system-wide default from settings manager
 #[must_use]
 pub fn resolve_effective_caching(
+    request_override: Option<bool>,
     session_override: Option<bool>,
     user_setting: Option<bool>,
-    agent_setting: Option<bool>,
     global_setting: bool,
-) -> bool {
-    session_override
-        .or(user_setting)
-        .or(agent_setting)
-        .unwrap_or(global_setting)
+) -> EffectivePromptCaching {
+    if let Some(enabled) = request_override {
+        EffectivePromptCaching {
+            enabled,
+            source: PromptCachingSource::Request,
+        }
+    } else if let Some(enabled) = session_override {
+        EffectivePromptCaching {
+            enabled,
+            source: PromptCachingSource::Session,
+        }
+    } else if let Some(enabled) = user_setting {
+        EffectivePromptCaching {
+            enabled,
+            source: PromptCachingSource::User,
+        }
+    } else {
+        EffectivePromptCaching {
+            enabled: global_setting,
+            source: PromptCachingSource::Global,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -82,47 +123,39 @@ mod tests {
     use proptest::prelude::*;
 
     #[test]
-    fn session_override_takes_highest_priority() {
-        assert!(resolve_effective_caching(
-            Some(true),
-            Some(false),
-            Some(false),
-            false
-        ));
-        assert!(!resolve_effective_caching(
-            Some(false),
-            Some(true),
-            Some(true),
-            true
-        ));
+    fn request_override_takes_highest_priority() {
+        let enabled = resolve_effective_caching(Some(true), Some(false), Some(false), false);
+        assert!(enabled.enabled);
+        assert_eq!(enabled.source, PromptCachingSource::Request);
+
+        let disabled = resolve_effective_caching(Some(false), Some(true), Some(true), true);
+        assert!(!disabled.enabled);
+        assert_eq!(disabled.source, PromptCachingSource::Request);
     }
 
     #[test]
-    fn user_setting_used_when_no_session_override() {
-        assert!(resolve_effective_caching(
-            None,
-            Some(true),
-            Some(false),
-            false
-        ));
-        assert!(!resolve_effective_caching(
-            None,
-            Some(false),
-            Some(true),
-            true
-        ));
+    fn session_override_used_when_no_request_override() {
+        let effective = resolve_effective_caching(None, Some(true), Some(false), false);
+        assert!(effective.enabled);
+        assert_eq!(effective.source, PromptCachingSource::Session);
     }
 
     #[test]
-    fn agent_setting_used_when_no_user_setting() {
-        assert!(resolve_effective_caching(None, None, Some(true), false));
-        assert!(!resolve_effective_caching(None, None, Some(false), true));
+    fn user_setting_used_when_no_request_or_session_override() {
+        let effective = resolve_effective_caching(None, None, Some(false), true);
+        assert!(!effective.enabled);
+        assert_eq!(effective.source, PromptCachingSource::User);
     }
 
     #[test]
     fn global_setting_is_the_fallback() {
-        assert!(resolve_effective_caching(None, None, None, true));
-        assert!(!resolve_effective_caching(None, None, None, false));
+        let enabled = resolve_effective_caching(None, None, None, true);
+        assert!(enabled.enabled);
+        assert_eq!(enabled.source, PromptCachingSource::Global);
+
+        let disabled = resolve_effective_caching(None, None, None, false);
+        assert!(!disabled.enabled);
+        assert_eq!(disabled.source, PromptCachingSource::Global);
     }
 
     proptest! {

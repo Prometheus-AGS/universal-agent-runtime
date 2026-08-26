@@ -80,6 +80,7 @@ fn make_ctx_with_events(run_id: &str, events: Vec<NormalizedEvent>) -> GraphCont
         mcp: Arc::new(McpRegistry::new_empty()),
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,
+        cache_strategy: None,
         persistence: None,
     }
 }

@@ -16,6 +16,7 @@ Start in [Operate the Runtime Console](/docs/operations/runtime-console) to dist
 | Tool call waits or rejects | [Resolve Tool Approvals](/docs/governance/approvals) |
 | Stream disconnect, missed live update, or stale browser state | [Understand Realtime State](/docs/operations/realtime) |
 | Empty metrics, readiness failure, or missing traces | [Observe the Runtime](/docs/operations/observability) |
+| Prompt caching setting fails to load, or cache reads stay at zero | [Configure Prompt Caching](/docs/providers/prompt-caching) |
 | Cost is absent or differs from provider totals | [Interpret Cost and Budgets](/docs/operations/cost) |
 | Datastore lock, forced exit, backup, or restore question | [Recover and Shut Down](/docs/operations/recovery-and-shutdown) |
 

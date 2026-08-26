@@ -340,6 +340,7 @@ mod tests {
             jwt_audience: None,
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
+            settings_admin_key: Some("test-admin-key".to_owned().into()),
         }
     }
 

@@ -3,6 +3,7 @@ use crate::uar::domain::knowledge::{
     DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeMatch,
 };
 use crate::uar::domain::policy::ConversationPolicyRecord;
+use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::settings::schema::{Settings, SettingsType};
 use anyhow::Result;
@@ -55,6 +56,18 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     /// Delete a conversation-scoped chat policy.
     async fn delete_conversation_policy(&self, owner_id: &str, conversation_id: &str)
     -> Result<()>;
+
+    /// Save or replace one verified user's prompt-caching preferences.
+    async fn save_user_prompt_caching_settings(
+        &self,
+        settings: &UserPromptCachingSettings,
+    ) -> Result<()>;
+
+    /// Load prompt-caching preferences by the collision-safe verified principal key.
+    async fn load_user_prompt_caching_settings(
+        &self,
+        principal_id: &str,
+    ) -> Result<Option<UserPromptCachingSettings>>;
 
     // Skill Management
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()>;

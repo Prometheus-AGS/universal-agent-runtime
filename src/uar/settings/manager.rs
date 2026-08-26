@@ -1527,6 +1527,11 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
     result.push(run_policy_schema_and_defaults());
 
     // -------------------------------------------------------------------------
+    // prompt_caching — system-wide default for explicit provider caching
+    // -------------------------------------------------------------------------
+    result.push(prompt_caching_schema_and_defaults());
+
+    // -------------------------------------------------------------------------
     // rag — retrieval-augmented generation / chunking / embedding config
     // -------------------------------------------------------------------------
     {
@@ -2648,6 +2653,7 @@ fn run_policy_schema_and_defaults() -> (SettingsType, Vec<Settings>) {
             "mcp_servers": resource_selection,
             "knowledge_bases": resource_selection,
             "memory_enabled": { "type": ["boolean", "null"] },
+            "prompt_caching_enabled": { "type": ["boolean", "null"] },
             "context_strategy": { "type": ["object", "null"] },
             "tool_approval": {
                 "type": "string",
@@ -2675,9 +2681,40 @@ fn run_policy_schema_and_defaults() -> (SettingsType, Vec<Settings>) {
             "mcp_servers": inherit,
             "knowledge_bases": inherit,
             "memory_enabled": null,
+            "prompt_caching_enabled": null,
             "context_strategy": null,
             "tool_approval": "inherit"
         }),
+    )];
+    (st, settings)
+}
+
+fn prompt_caching_schema_and_defaults() -> (SettingsType, Vec<Settings>) {
+    let schema = json!({
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Prompt Caching",
+        "x-uar-ui": {
+            "category": "Caching & Users",
+            "icon": "zap",
+            "order": 1,
+            "display_mode": "form"
+        },
+        "type": "object",
+        "properties": {
+            "enabled": {
+                "type": "boolean",
+                "title": "Enable Prompt Caching (Global Default)",
+                "x-control": "toggle"
+            }
+        },
+        "required": ["enabled"]
+    });
+    let st = make_type("Prompt Caching", "prompt_caching", schema);
+    let settings = vec![make_setting(
+        &st,
+        "prompt_caching.enabled",
+        "Enable Prompt Caching (Global Default)",
+        json!(false),
     )];
     (st, settings)
 }

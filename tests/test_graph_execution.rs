@@ -6,10 +6,12 @@
 use std::sync::Arc;
 
 use universal_agent_runtime::{
-    llm::mock_driver::MockLlmDriver,
+    llm::{anthropic_cache::CacheStrategy, mock_driver::MockLlmDriver},
     mcp::registry::McpRegistry,
     normalized::NormalizedEvent,
-    uar::runtime::graph::{AgentGraph, GraphContext, GraphNode, GraphState, NodeResult},
+    uar::runtime::graph::{
+        AgentGraph, GraphContext, GraphNode, GraphState, LlmNode, NodeResult, RouterNode,
+    },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -66,6 +68,7 @@ fn make_ctx(run_id: &str) -> GraphContext {
         mcp: Arc::new(McpRegistry::new_empty()),
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,
+        cache_strategy: None,
         persistence: None,
     }
 }
@@ -95,6 +98,56 @@ async fn test_simple_two_node_graph() {
     assert_eq!(
         state.get::<String>("finished_by").as_deref(),
         Some("finish_node")
+    );
+}
+
+#[tokio::test]
+async fn policy_bearing_graph_llm_requests_inherit_cache_strategy() {
+    let driver = Arc::new(MockLlmDriver::new(vec![
+        vec![
+            NormalizedEvent::MessageDelta {
+                text: "answer".to_string(),
+            },
+            NormalizedEvent::Done,
+        ],
+        vec![
+            NormalizedEvent::MessageDelta {
+                text: "route-a".to_string(),
+            },
+            NormalizedEvent::Done,
+        ],
+    ]));
+    let ctx = GraphContext {
+        run_id: "run-cache-policy".to_string(),
+        session_id: Some("session-cache-policy".to_string()),
+        mcp: Arc::new(McpRegistry::new_empty()),
+        llm_config: universal_agent_runtime::config::LlmConfig::default(),
+        driver: driver.clone(),
+        cache_strategy: Some(CacheStrategy::default()),
+        persistence: None,
+    };
+    let mut llm_state = GraphState::default();
+    llm_state
+        .messages
+        .push(serde_json::json!({"role": "user", "content": "hello"}));
+    let _ = LlmNode::new("llm").execute(llm_state, &ctx).await;
+
+    let mut router_state = GraphState::default();
+    router_state.set("_agent_input", "choose");
+    let _ = RouterNode::new(
+        "router",
+        "Choose a route",
+        vec!["route-a".to_string(), "route-b".to_string()],
+    )
+    .execute(router_state, &ctx)
+    .await;
+
+    let requests = driver.requests();
+    assert_eq!(requests.len(), 2);
+    assert!(
+        requests
+            .iter()
+            .all(|request| request.cache_strategy.is_some())
     );
 }
 

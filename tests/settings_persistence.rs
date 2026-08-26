@@ -81,6 +81,7 @@ fn minimal_config() -> AppConfig {
             jwt_audience: None,
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
+            settings_admin_key: Some("test-admin-key".to_string().into()),
         },
         resilience: ResilienceConfig {
             rate_limit_enabled: false,
@@ -404,6 +405,11 @@ async fn mgr_first_boot_seeds_all_core_namespaces() -> Result<()> {
 
     assert_eq!(mgr.get_value("server.port").await, Some(json!(3000)));
     assert_eq!(mgr.get_value("server.host").await, Some(json!("127.0.0.1")));
+    assert_eq!(
+        mgr.get_value("prompt_caching.enabled").await,
+        Some(json!(false)),
+        "prompt caching must default to Off"
+    );
     Ok(())
 }
 
@@ -473,6 +479,7 @@ async fn mgr_core_schema_covers_app_config_namespaces_and_document_defaults() ->
         "sycophancy",
         "acp",
         "context_strategy",
+        "prompt_caching",
     ] {
         assert!(
             type_keys.contains(expected),
@@ -712,6 +719,70 @@ async fn mgr_set_value_and_get() -> Result<()> {
         .expect("should have meta");
     assert_eq!(meta.meta.source, SettingSource::Api);
     assert!(!meta.meta.is_drift);
+    Ok(())
+}
+
+#[tokio::test]
+async fn mgr_prompt_caching_round_trips_without_reseed_overwrite() -> Result<()> {
+    let (mgr, _dir) = make_manager().await;
+    let config = minimal_config();
+    mgr.initialize(&config).await?;
+
+    mgr.set_value("prompt_caching.enabled", json!(true)).await?;
+    assert_eq!(
+        mgr.get_typed::<bool>("prompt_caching.enabled").await?,
+        Some(true)
+    );
+
+    mgr.initialize(&config).await?;
+    assert_eq!(
+        mgr.get_typed::<bool>("prompt_caching.enabled").await?,
+        Some(true),
+        "an API-written global default must survive restart reconciliation"
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn prompt_caching_admin_namespace_has_no_generic_read_bypass() -> Result<()> {
+    use axum::{body::Body, http::Request};
+    use tower::ServiceExt;
+    use universal_agent_runtime::uar::api::settings::{SettingsApiState, build_router};
+
+    let (mgr, _dir) = make_manager().await;
+    mgr.initialize(&minimal_config()).await?;
+    let app = build_router().with_state(Arc::new(SettingsApiState {
+        settings_manager: Some(mgr),
+        settings_mutation_auth_required: true,
+        settings_admin_key: Some("test-admin-key".to_string().into()),
+    }));
+
+    let list_response = app
+        .clone()
+        .oneshot(Request::builder().uri("/").body(Body::empty())?)
+        .await?;
+    assert_eq!(list_response.status(), axum::http::StatusCode::OK);
+    let list_body = axum::body::to_bytes(list_response.into_body(), usize::MAX).await?;
+    let listed: Value = serde_json::from_slice(&list_body)?;
+    assert!(
+        listed
+            .as_array()
+            .is_some_and(|items| items.iter().all(|item| {
+                item.get("key")
+                    .and_then(Value::as_str)
+                    .is_none_or(|key| !key.starts_with("prompt_caching"))
+            })),
+        "generic settings listing must not expose the admin-only namespace"
+    );
+
+    let direct_response = app
+        .oneshot(
+            Request::builder()
+                .uri("/prompt_caching.enabled")
+                .body(Body::empty())?,
+        )
+        .await?;
+    assert_eq!(direct_response.status(), axum::http::StatusCode::NOT_FOUND);
     Ok(())
 }
 

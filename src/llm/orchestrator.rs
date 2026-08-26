@@ -36,9 +36,43 @@ use crate::normalized::{NormalizedEvent, RuntimeStepKind};
 use crate::uar::runtime::native_skill::NativeSkillRegistry;
 
 use super::{
-    LiterLlmDriver, LlmDriver, LlmRequest, Message, MessageContent, MessageRole, ToolCall,
-    ToolCallFunction,
+    LlmDriver, LlmRequest, Message, MessageContent, MessageRole, ToolCall, ToolCallFunction,
+    anthropic_cache::CacheStrategy,
 };
+
+/// Build the protocol driver for a resolved LLM configuration.
+///
+/// Anthropic models use the native Messages API when its runtime gate is on;
+/// all other configurations retain liter-llm's compatible provider routing.
+pub fn build_driver(llm_config: &LlmConfig) -> anyhow::Result<Arc<dyn LlmDriver>> {
+    let (model_provider_id, model_id) = super::registry::split_model_string_pub(&llm_config.model);
+    let provider_id = llm_config
+        .resolved_provider_id
+        .as_deref()
+        .unwrap_or(&model_provider_id);
+    if provider_id == "anthropic" && super::anthropic_native_driver_enabled() {
+        let api_key = llm_config
+            .api_key
+            .clone()
+            .or_else(|| llm_config.provider_keys.get("anthropic").cloned())
+            .unwrap_or_default();
+        return Ok(Arc::new(super::anthropic_driver::AnthropicDriver::new(
+            api_key,
+            model_id,
+            llm_config.base_url.clone(),
+            None,
+            None,
+            None,
+        )));
+    }
+
+    let client_config = crate::config::build_client_config(llm_config);
+    Ok(Arc::new(super::LiterLlmDriver::new(
+        client_config,
+        llm_config.model.clone(),
+        llm_config.parallel_tool_calls,
+    )?))
+}
 
 /// Result of a tool approval gate check.
 #[derive(Debug, Clone)]
@@ -247,6 +281,8 @@ pub struct Orchestrator {
     /// Controls which tool calls are routed to the sandbox runner.
     tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode,
     resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
+    /// Per-run cache strategy copied into every policy-bearing tool-loop request.
+    cache_strategy: Option<CacheStrategy>,
 }
 
 #[allow(clippy::missing_fields_in_debug)]
@@ -273,12 +309,7 @@ impl Orchestrator {
         mcp: Arc<McpRegistry>,
         native_skills: Arc<NativeSkillRegistry>,
     ) -> anyhow::Result<Self> {
-        let client_config = crate::config::build_client_config(&llm_config);
-        let driver: Arc<dyn LlmDriver> = Arc::new(LiterLlmDriver::new(
-            client_config,
-            llm_config.model.clone(),
-            llm_config.parallel_tool_calls,
-        )?);
+        let driver = build_driver(&llm_config)?;
 
         Ok(Self::from_driver(llm_config, mcp, native_skills, driver))
     }
@@ -309,6 +340,7 @@ impl Orchestrator {
             sandbox_runner: None,
             tool_execution_mode: crate::uar::domain::artifact::ToolExecutionMode::default(),
             resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
+            cache_strategy: None,
         }
     }
 
@@ -357,22 +389,21 @@ impl Orchestrator {
         base_llm_config: &LlmConfig,
         fallback: &FallbackModel,
     ) -> anyhow::Result<Arc<dyn LlmDriver>> {
-        let mut fallback_llm_config = base_llm_config.clone();
-        fallback_llm_config.model.clone_from(&fallback.model);
+        let fallback_llm_config = Self::fallback_llm_config(base_llm_config, fallback);
+        build_driver(&fallback_llm_config)
+    }
+
+    fn fallback_llm_config(base: &LlmConfig, fallback: &FallbackModel) -> LlmConfig {
+        let mut config = base.clone();
+        config.model.clone_from(&fallback.model);
+        config.resolved_provider_id = None;
         if fallback.api_key.is_some() {
-            fallback_llm_config.api_key.clone_from(&fallback.api_key);
+            config.api_key.clone_from(&fallback.api_key);
         }
         if fallback.base_url.is_some() {
-            fallback_llm_config.base_url.clone_from(&fallback.base_url);
+            config.base_url.clone_from(&fallback.base_url);
         }
-
-        let client_config = crate::config::build_client_config(&fallback_llm_config);
-        let driver: Arc<dyn LlmDriver> = Arc::new(LiterLlmDriver::new(
-            client_config,
-            fallback_llm_config.model.clone(),
-            fallback_llm_config.parallel_tool_calls,
-        )?);
-        Ok(driver)
+        config
     }
 
     /// Get the LLM configuration.
@@ -419,6 +450,14 @@ impl Orchestrator {
         policy: crate::uar::settings::resilience_policy::ResiliencePolicy,
     ) -> Self {
         self.resilience_policy = policy;
+        self
+    }
+
+    /// Apply the effective prompt-caching strategy to every policy-bearing
+    /// request created by this orchestrator, including retries and failover.
+    #[must_use]
+    pub fn with_cache_strategy(mut self, strategy: Option<CacheStrategy>) -> Self {
+        self.cache_strategy = strategy;
         self
     }
 
@@ -558,7 +597,7 @@ impl Orchestrator {
                 let req = LlmRequest {
                     messages: message_json.clone(),
                     tools: tools.clone(),
-                    cache_strategy: None,
+                    cache_strategy: orchestrator.cache_strategy.clone(),
                     thinking_config: None,
                     anthropic_system: None,
                     extra_params: dialect_params
@@ -1321,8 +1360,62 @@ mod tests {
     use super::*;
     use crate::llm::mock_driver::MockLlmDriver;
     use crate::uar::runtime::native_skill::NativeSkill;
+    use std::sync::Mutex;
+
+    #[derive(Debug, Default)]
+    struct FailingDriver {
+        requests: Mutex<Vec<LlmRequest>>,
+    }
+
+    #[async_trait::async_trait]
+    impl LlmDriver for FailingDriver {
+        async fn stream(
+            &self,
+            req: LlmRequest,
+        ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>>
+        {
+            self.requests.lock().expect("requests lock").push(req);
+            Err(anyhow::anyhow!("stub primary failure"))
+        }
+    }
 
     struct RenderSkill;
+
+    #[test]
+    fn resolved_provider_identity_survives_bare_model_for_explicit_base_url() {
+        let config = LlmConfig {
+            model: "custom-claude-alias".to_string(),
+            resolved_provider_id: Some("anthropic".to_string()),
+            base_url: Some("https://anthropic-proxy.example/v1/messages".to_string()),
+            ..LlmConfig::default()
+        };
+        let (inferred, _) = super::super::registry::split_model_string_pub(&config.model);
+        assert_ne!(inferred, "anthropic");
+        assert_eq!(config.resolved_provider_id.as_deref(), Some("anthropic"));
+    }
+
+    #[test]
+    fn cross_provider_fallback_does_not_reuse_primary_provider_identity() {
+        let primary = LlmConfig {
+            model: "custom-claude-alias".to_string(),
+            resolved_provider_id: Some("anthropic".to_string()),
+            base_url: Some("https://anthropic-proxy.example".to_string()),
+            ..LlmConfig::default()
+        };
+        let fallback = FallbackModel {
+            model: "openai/gpt-5.6".to_string(),
+            api_key: Some("fallback-key".to_string()),
+            base_url: Some("https://openai-proxy.example/v1".to_string()),
+        };
+
+        let resolved = Orchestrator::fallback_llm_config(&primary, &fallback);
+        assert_eq!(resolved.model, "openai/gpt-5.6");
+        assert_eq!(resolved.resolved_provider_id, None);
+        assert_eq!(
+            super::super::registry::split_model_string_pub(&resolved.model).0,
+            "openai"
+        );
+    }
 
     #[async_trait::async_trait]
     impl NativeSkill for RenderSkill {
@@ -1384,5 +1477,109 @@ mod tests {
         assert_eq!(requests.len(), 1);
         assert_eq!(requests[0].tools.len(), 1);
         assert_eq!(requests[0].tools[0]["function"]["name"], "a2ui_render");
+    }
+
+    #[tokio::test]
+    async fn applies_cache_strategy_to_policy_bearing_requests_only_when_configured() {
+        let enabled_driver = Arc::new(MockLlmDriver::echo());
+        let enabled = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            enabled_driver.clone(),
+        )
+        .with_cache_strategy(Some(CacheStrategy::default()));
+        let stream = enabled.chat("cache this").await.unwrap();
+        futures::pin_mut!(stream);
+        while stream.next().await.is_some() {}
+
+        let disabled_driver = Arc::new(MockLlmDriver::echo());
+        let disabled = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            disabled_driver.clone(),
+        );
+        let stream = disabled.chat("do not cache this").await.unwrap();
+        futures::pin_mut!(stream);
+        while stream.next().await.is_some() {}
+
+        assert!(enabled_driver.requests()[0].cache_strategy.is_some());
+        assert!(disabled_driver.requests()[0].cache_strategy.is_none());
+    }
+
+    #[tokio::test]
+    async fn cache_strategy_is_preserved_across_tool_loop_iterations() {
+        let driver = Arc::new(MockLlmDriver::new(vec![
+            vec![
+                NormalizedEvent::ToolCallDelta {
+                    call_index: 0,
+                    id: Some("call-1".into()),
+                    name: Some("a2ui_render".into()),
+                    arguments_delta: Some("{}".into()),
+                },
+                NormalizedEvent::ToolCallComplete {
+                    call_index: 0,
+                    id: "call-1".into(),
+                    name: "a2ui_render".into(),
+                    arguments_json: "{}".into(),
+                },
+                NormalizedEvent::Done,
+            ],
+            vec![
+                NormalizedEvent::MessageDelta {
+                    text: "complete".into(),
+                },
+                NormalizedEvent::Done,
+            ],
+        ]));
+        let native_skills = Arc::new(NativeSkillRegistry::new());
+        native_skills.register(RenderSkill).await;
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            native_skills,
+            driver.clone(),
+        )
+        .with_cache_strategy(Some(CacheStrategy::default()));
+
+        let stream = orchestrator.chat("render").await.expect("chat stream");
+        futures::pin_mut!(stream);
+        while stream.next().await.is_some() {}
+
+        let requests = driver.requests();
+        assert_eq!(requests.len(), 2);
+        assert!(
+            requests
+                .iter()
+                .all(|request| request.cache_strategy.is_some())
+        );
+    }
+
+    #[tokio::test]
+    async fn cache_strategy_is_preserved_on_failover_request() {
+        let primary = Arc::new(FailingDriver::default());
+        let fallback = Arc::new(MockLlmDriver::echo());
+        let mut failover = FailoverConfig::default();
+        failover.enabled = true;
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            primary.clone(),
+        )
+        .with_failover(fallback.clone(), failover)
+        .with_cache_strategy(Some(CacheStrategy::default()));
+
+        let stream = orchestrator.chat("fail over").await.expect("chat stream");
+        futures::pin_mut!(stream);
+        while stream.next().await.is_some() {}
+
+        assert!(
+            primary.requests.lock().expect("primary requests")[0]
+                .cache_strategy
+                .is_some()
+        );
+        assert!(fallback.requests()[0].cache_strategy.is_some());
     }
 }

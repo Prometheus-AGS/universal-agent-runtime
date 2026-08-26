@@ -4,7 +4,7 @@
       "/Users/gqadonis/.nvm/versions/node/v24.16.0/bin/node",
       "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/node_modules/@playwright/test/cli.js",
       "test",
-      "--config",
+      "-c",
       "playwright.installed-settings-routes.config.ts"
     ],
     "configFile": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend/playwright.installed-settings-routes.config.ts",
@@ -88,12 +88,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1875,
+                  "duration": 2048,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-08-25T11:26:31.804Z",
+                  "startTime": "2026-08-26T01:07:30.616Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -111,8 +111,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-08-25T11:26:31.543Z",
-    "duration": 2475.442,
+    "startTime": "2026-08-26T01:07:30.260Z",
+    "duration": 2718.048,
     "expected": 1,
     "skipped": 0,
     "unexpected": 0,

@@ -13,6 +13,7 @@ import {
   AGENT_SESSION_ENTITY,
   CONFIGURED_MODEL_ENTITY,
   CONFIGURED_PROVIDER_ENTITY,
+  SESSION_PROMPT_CACHING_ENTITY,
 } from "./contracts";
 import type {
   AgentSession,
@@ -118,7 +119,11 @@ export function registerSessionConfigurationEntities(): void {
   registerSchema({ type: CONFIGURED_PROVIDER_ENTITY });
   registerSchema({ type: CONFIGURED_MODEL_ENTITY });
   registerSchema({ type: AGENT_SESSION_DRAFT_ENTITY });
-  registerEntityTransport(CONFIGURED_PROVIDER_ENTITY, configuredProviderTransport);
+  registerSchema({ type: SESSION_PROMPT_CACHING_ENTITY });
+  registerEntityTransport(
+    CONFIGURED_PROVIDER_ENTITY,
+    configuredProviderTransport,
+  );
   registerEntityTransport(CONFIGURED_MODEL_ENTITY, configuredModelTransport);
   registerEntityTransport(AGENT_SESSION_ENTITY, agentSessionTransport);
   registered = true;

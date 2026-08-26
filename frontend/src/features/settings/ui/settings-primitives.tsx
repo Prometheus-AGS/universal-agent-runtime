@@ -60,10 +60,7 @@ export const Field: FC<{
     </div>
     {children}
     {hint && (
-      <p
-        id={hintId}
-        className="font-mono text-xs text-muted-foreground/60"
-      >
+      <p id={hintId} className="font-mono text-xs text-muted-foreground/60">
         {hint}
       </p>
     )}
@@ -114,10 +111,12 @@ export const Toggle: FC<{
   disabled?: boolean;
   id?: string;
   ariaLabel?: string;
-}> = ({ value, onChange, disabled, id, ariaLabel }) => (
+  ariaDescribedBy?: string;
+}> = ({ value, onChange, disabled, id, ariaLabel, ariaDescribedBy }) => (
   <Switch
     id={id}
     aria-label={ariaLabel}
+    aria-describedby={ariaDescribedBy}
     checked={value}
     onCheckedChange={onChange}
     disabled={disabled}
@@ -248,7 +247,8 @@ export const SettingModelPicker: FC<{
 }) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const selectedOption = options.find((option) => option.value === value) ?? null;
+  const selectedOption =
+    options.find((option) => option.value === value) ?? null;
 
   if (options.length < SEARCHABLE_MODEL_THRESHOLD) {
     return (
@@ -293,9 +293,7 @@ export const SettingModelPicker: FC<{
       }}
       itemToStringLabel={(option) => option.label}
       itemToStringValue={(option) => option.value}
-      isItemEqualToValue={(option, selected) =>
-        option.value === selected.value
-      }
+      isItemEqualToValue={(option, selected) => option.value === selected.value}
       autoHighlight
       disabled={disabled}
     >

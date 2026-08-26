@@ -40,10 +40,14 @@ security:
   # Env: UAR_SECURITY__JWT_VALIDATE_NBF
   jwt_validate_nbf: true
 
-  # Require X-UAR-Admin-Key on /api/uar/settings mutations (PUT/POST/DELETE).
+  # Require the configured X-UAR-Admin-Key on protected settings and reload APIs.
   # Default: true. Set false only on trusted localhost for admin UI without a header.
   # Env: UAR_SECURITY__SETTINGS_MUTATION_AUTH_REQUIRED
   settings_mutation_auth_required: true
+
+  # Replace before startup. Required when settings mutation auth is enabled.
+  # Env: UAR_SECURITY__SETTINGS_ADMIN_KEY
+  settings_admin_key: "replace-with-a-long-random-secret"
 
 resilience:
   # Enable rate limiting to prevent abuse.

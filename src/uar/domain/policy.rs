@@ -178,6 +178,9 @@ pub struct RunPolicy {
     /// Optional memory enablement override.
     #[serde(default)]
     pub memory_enabled: Option<bool>,
+    /// Optional prompt-caching override. `None` inherits from lower scopes.
+    #[serde(default)]
+    pub prompt_caching_enabled: Option<bool>,
     /// Optional message/context management strategy.
     #[serde(default)]
     pub context_strategy: Option<ContextStrategy>,
@@ -202,6 +205,7 @@ impl Default for RunPolicy {
             mcp_servers: ResourceSelection::default(),
             knowledge_bases: ResourceSelection::default(),
             memory_enabled: None,
+            prompt_caching_enabled: None,
             context_strategy: None,
             tool_approval: ToolApprovalPolicy::Inherit,
         }
@@ -384,6 +388,8 @@ pub struct EffectiveRunPolicy {
     pub knowledge_bases: EffectiveResourceSelection,
     /// Whether governed memory participates in the run.
     pub memory_enabled: bool,
+    /// Whether explicit provider prompt caching participates in the run.
+    pub prompt_caching_enabled: bool,
     /// Effective context strategy.
     pub context_strategy: ContextStrategy,
     /// Effective tool approval constraint.
@@ -415,6 +421,8 @@ pub struct PolicyResolutionInput {
     pub default_agent_id: Option<String>,
     /// Compatibility provider/model route.
     pub default_model: Option<ModelRoute>,
+    /// System-wide prompt-caching default outside the scoped run-policy record.
+    pub default_prompt_caching_enabled: bool,
 }
 
 /// Resolve one run policy using deny-safe, non-widening scope precedence.
@@ -433,6 +441,7 @@ pub fn resolve_run_policy(input: PolicyResolutionInput) -> EffectiveRunPolicy {
     let mut model = input.default_model;
     let mut context_strategy = input.default_context_strategy;
     let mut memory_enabled = true;
+    let mut prompt_caching_enabled = input.default_prompt_caching_enabled;
     let mut memory_locked_off = false;
     let mut tool_approval = ToolApprovalPolicy::Auto;
 
@@ -464,6 +473,12 @@ pub fn resolve_run_policy(input: PolicyResolutionInput) -> EffectiveRunPolicy {
                 provenance.insert("memory_enabled".into(), scope);
             }
         }
+        if scope != PolicyScope::Agent
+            && let Some(value) = policy.prompt_caching_enabled
+        {
+            prompt_caching_enabled = value;
+            provenance.insert("prompt_caching_enabled".into(), scope);
+        }
         if approval_rank(policy.tool_approval) > approval_rank(tool_approval) {
             tool_approval = policy.tool_approval;
             provenance.insert("tool_approval".into(), scope);
@@ -485,6 +500,9 @@ pub fn resolve_run_policy(input: PolicyResolutionInput) -> EffectiveRunPolicy {
     provenance
         .entry("memory_enabled".into())
         .or_insert(PolicyScope::Legacy);
+    provenance
+        .entry("prompt_caching_enabled".into())
+        .or_insert(PolicyScope::Global);
     provenance
         .entry("tool_approval".into())
         .or_insert(PolicyScope::Legacy);
@@ -529,6 +547,7 @@ pub fn resolve_run_policy(input: PolicyResolutionInput) -> EffectiveRunPolicy {
         mcp_servers,
         knowledge_bases,
         memory_enabled,
+        prompt_caching_enabled,
         context_strategy,
         tool_approval,
         provenance,
@@ -592,6 +611,19 @@ pub async fn resolve_effective_run_policy_core(
             .flatten(),
         None => None,
     };
+    let default_prompt_caching_enabled = match ctx.settings_manager {
+        Some(manager) => manager
+            .get_typed::<bool>("prompt_caching.enabled")
+            .await
+            .map_err(|error| {
+                tracing::warn!(%error, "failed to load global prompt-caching setting; using Off");
+                error
+            })
+            .ok()
+            .flatten()
+            .unwrap_or(false),
+        None => false,
+    };
     let agent_policy = policy_from_agent_artifact(agent);
     resolve_run_policy(PolicyResolutionInput {
         global,
@@ -603,6 +635,7 @@ pub async fn resolve_effective_run_policy_core(
         default_context_strategy: ctx.default_context_strategy,
         default_agent_id: Some(agent.id.clone()),
         default_model,
+        default_prompt_caching_enabled,
         ..PolicyResolutionInput::default()
     })
 }
@@ -819,6 +852,39 @@ mod tests {
         assert_eq!(effective.skills.ids, vec!["alpha", "beta", "gamma"]);
         assert_eq!(effective.context_strategy, ContextStrategy::Auto);
         assert!(effective.warnings.is_empty());
+    }
+
+    #[test]
+    fn legacy_policy_without_prompt_caching_inherits() {
+        let policy: RunPolicy =
+            serde_json::from_value(serde_json::json!({})).expect("legacy policy deserializes");
+        assert_eq!(policy.prompt_caching_enabled, None);
+    }
+
+    #[test]
+    fn prompt_caching_uses_session_then_turn_and_ignores_agent_scope() {
+        let effective = resolve_run_policy(PolicyResolutionInput {
+            agent: Some(RunPolicy {
+                prompt_caching_enabled: Some(true),
+                ..RunPolicy::default()
+            }),
+            conversation: Some(RunPolicy {
+                prompt_caching_enabled: Some(false),
+                ..RunPolicy::default()
+            }),
+            turn: Some(RunPolicy {
+                prompt_caching_enabled: Some(true),
+                ..RunPolicy::default()
+            }),
+            default_prompt_caching_enabled: false,
+            ..input()
+        });
+
+        assert!(effective.prompt_caching_enabled);
+        assert_eq!(
+            effective.provenance.get("prompt_caching_enabled"),
+            Some(&PolicyScope::Turn)
+        );
     }
 
     #[test]

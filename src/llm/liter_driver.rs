@@ -90,6 +90,34 @@ impl LiterLlmDriver {
     }
 }
 
+fn build_chat_request(
+    model: &str,
+    parallel_tool_calls: Option<bool>,
+    req: &LlmRequest,
+) -> anyhow::Result<ChatCompletionRequest> {
+    let messages = convert_messages(&req.messages)?;
+    let tools = convert_tools(&req.tools);
+
+    let mut chat_req = ChatCompletionRequest::default();
+    chat_req.model = model.to_owned();
+    chat_req.messages = messages;
+    chat_req.tools = if tools.is_empty() { None } else { Some(tools) };
+    chat_req.parallel_tool_calls = parallel_tool_calls;
+    chat_req.stream_options = Some(StreamOptions {
+        include_usage: Some(true),
+    });
+
+    if chat_req.tools.is_some() {
+        chat_req.tool_choice = Some(ToolChoice::Mode(ToolChoiceMode::Auto));
+    }
+
+    // CH-04: per-model dialect params (extended-thinking budgets, reasoning
+    // persistence toggles) computed by `PromptDialectEngine`, merged
+    // verbatim into the outbound request body.
+    chat_req.extra_body = req.extra_params.clone();
+    Ok(chat_req)
+}
+
 #[async_trait::async_trait]
 impl LlmDriver for LiterLlmDriver {
     #[tracing::instrument(
@@ -102,26 +130,7 @@ impl LlmDriver for LiterLlmDriver {
         req: LlmRequest,
     ) -> anyhow::Result<std::pin::Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>>
     {
-        let messages = convert_messages(&req.messages)?;
-        let tools = convert_tools(&req.tools);
-
-        let mut chat_req = ChatCompletionRequest::default();
-        chat_req.model = self.model.clone();
-        chat_req.messages = messages;
-        chat_req.tools = if tools.is_empty() { None } else { Some(tools) };
-        chat_req.parallel_tool_calls = self.parallel_tool_calls;
-        chat_req.stream_options = Some(StreamOptions {
-            include_usage: Some(true),
-        });
-
-        if chat_req.tools.is_some() {
-            chat_req.tool_choice = Some(ToolChoice::Mode(ToolChoiceMode::Auto));
-        }
-
-        // CH-04: per-model dialect params (extended-thinking budgets, reasoning
-        // persistence toggles) computed by `PromptDialectEngine`, merged
-        // verbatim into the outbound request body.
-        chat_req.extra_body = req.extra_params.clone();
+        let chat_req = build_chat_request(&self.model, self.parallel_tool_calls, &req)?;
 
         // Collect chunks eagerly into a Vec, then stream owned events.
         // This is necessary because liter-llm's BoxStream borrows from the client
@@ -267,6 +276,41 @@ impl LlmDriver for LiterLlmDriver {
         };
 
         Ok(Box::pin(out))
+    }
+}
+
+#[cfg(test)]
+mod prompt_caching_tests {
+    use super::*;
+    use crate::llm::anthropic_cache::CacheStrategy;
+
+    fn request(cache_strategy: Option<CacheStrategy>) -> LlmRequest {
+        LlmRequest {
+            messages: vec![serde_json::json!({"role": "user", "content": "hello"})],
+            tools: Vec::new(),
+            cache_strategy,
+            thinking_config: None,
+            anthropic_system: None,
+            extra_params: Some(serde_json::json!({"temperature": 0.2})),
+        }
+    }
+
+    #[test]
+    fn openai_compatible_body_is_unchanged_by_uar_cache_strategy() {
+        let enabled = build_chat_request(
+            "openai/gpt-test",
+            Some(true),
+            &request(Some(CacheStrategy::default())),
+        )
+        .expect("enabled request");
+        let disabled = build_chat_request("openai/gpt-test", Some(true), &request(None))
+            .expect("disabled request");
+
+        assert_eq!(
+            serde_json::to_value(enabled).expect("serialize enabled request"),
+            serde_json::to_value(disabled).expect("serialize disabled request"),
+            "UAR prompt-caching policy must not alter OpenAI-compatible bodies"
+        );
     }
 }
 

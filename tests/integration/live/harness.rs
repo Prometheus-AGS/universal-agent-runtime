@@ -445,7 +445,7 @@ async fn boot_test_server_inner(
     };
 
     let yaml = format!(
-        "security:\n  jwt_required: false\n  jwt_secret: \"{HARNESS_JWT_SECRET}\"\n\
+        "security:\n  jwt_required: false\n  jwt_secret: \"{HARNESS_JWT_SECRET}\"\n  settings_admin_key: \"live-harness-admin-key\"\n\
          resilience:\n  rate_limit_enabled: false\n\
          persistence:\n  provider: \"surreal\"\n  database_url: \"surrealkv://{}\"\n\
          acp:\n  enabled: true\n  path: \"/acp\"\n  auth_required: true\n\

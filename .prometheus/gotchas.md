@@ -774,3 +774,15 @@ cleanup and requires rollback or operator intervention.
 **Working rule.** Before archiving a MODIFIED delta, compare the entire requirement block from its header through its final scenario against the main spec. Ignore only formatting-equivalent trailing blank lines. Restore the active change and complete the merge if any body or scenario differs.
 
 **Limit.** This does not require byte-for-byte comparison for intelligent merges that preserve additional valid scenarios; it requires semantic coverage of the full modified block.
+
+## 2026-08-25 — Prompt-caching correctness requires tracing dispatch and usage end to end
+
+**Observed behavior.** The Prompt Caching settings page returned 404, owner-scoped agent configuration returned noisy 404s for ordinary absence, Anthropic caching was applied unconditionally on some paths, and compatibility responses could report cache activity that no provider emitted.
+
+**Root cause.** The settings namespace was never registered or mounted, policy fields stopped at partial contracts, production `LlmRequest` constructors bypassed a common strategy seam, the native Anthropic driver used an incorrect messages root and treated non-success upstream responses as successful dispatches, and compatibility code locally simulated cache usage.
+
+**Working rule.** Treat a cache toggle as a control-plane policy. Inventory every production request constructor, carry an explicit provider identity through failover, make non-success provider responses fail dispatch, and derive cache metrics only from provider usage. Ordinary owner-safe absence uses empty 204; legacy frontend 404 handling is compatibility only.
+
+**Deployment corollary.** A stricter startup invariant can break preserved native configs even when the current packaged default is correct. Native config migration must add missing loopback defaults without overwriting explicit operator values.
+
+**Limit.** The repository MV3 entity-explorer submodule currently references three missing icon assets and therefore does not register its service worker when loaded exactly as checked in. Temporary restoration proved its connect/disconnect relay behavior, but the pinned submodule needs a separate upstream packaging change before exact-package extension certification can pass.

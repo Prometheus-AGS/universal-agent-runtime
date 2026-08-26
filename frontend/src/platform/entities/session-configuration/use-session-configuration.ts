@@ -7,6 +7,7 @@ import {
   AGENT_SESSION_DRAFT_ENTITY,
   AGENT_SESSION_ENTITY,
   CONFIGURED_MODEL_ENTITY,
+  SESSION_PROMPT_CACHING_ENTITY,
 } from "./contracts";
 import type {
   AgentSession,
@@ -14,6 +15,7 @@ import type {
   AgentSessionDraft,
   AgentSessionField,
   ConfiguredModel,
+  SessionPromptCaching,
 } from "./contracts";
 import { agentSessionDraftActions } from "./domain";
 
@@ -22,8 +24,20 @@ export function useConfiguredModels() {
 }
 
 export function useAgentSession(sessionId: string): AgentSession | null {
-  return useGraphStore((state) =>
-    (state.entities[AGENT_SESSION_ENTITY]?.[sessionId] as AgentSession | undefined) ?? null,
+  return useGraphStore(
+    (state) =>
+      (state.entities[AGENT_SESSION_ENTITY]?.[sessionId] as
+        AgentSession | undefined) ?? null,
+  );
+}
+
+export function useSessionPromptCaching(
+  sessionId: string,
+): SessionPromptCaching | null {
+  return useGraphStore(
+    (state) =>
+      (state.entities[SESSION_PROMPT_CACHING_ENTITY]?.[sessionId] as
+        SessionPromptCaching | undefined) ?? null,
   );
 }
 
@@ -33,8 +47,7 @@ export function useAgentSessionDraftField<K extends AgentSessionField>(
 ): AgentSessionConfig[K] | undefined {
   return useGraphStore((state) => {
     const draft = state.entities[AGENT_SESSION_DRAFT_ENTITY]?.[draftId] as
-      | AgentSessionDraft
-      | undefined;
+      AgentSessionDraft | undefined;
     return draft?.[field];
   });
 }
@@ -44,8 +57,7 @@ export function useAgentSessionDraftStatus(
 ): AgentSessionDraft["save_status"] | null {
   return useGraphStore((state) => {
     const draft = state.entities[AGENT_SESSION_DRAFT_ENTITY]?.[draftId] as
-      | AgentSessionDraft
-      | undefined;
+      AgentSessionDraft | undefined;
     return draft?.save_status ?? null;
   });
 }
@@ -53,8 +65,7 @@ export function useAgentSessionDraftStatus(
 export function useAgentSessionDraftError(draftId: string): string | null {
   return useGraphStore((state) => {
     const draft = state.entities[AGENT_SESSION_DRAFT_ENTITY]?.[draftId] as
-      | AgentSessionDraft
-      | undefined;
+      AgentSessionDraft | undefined;
     return draft?.error ?? null;
   });
 }

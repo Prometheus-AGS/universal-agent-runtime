@@ -1,9 +1,19 @@
 import { create } from "zustand";
 
-import { fetchUserSettings, putUserSettings, type UarUserSettings } from "../api/user-settings-api";
+import {
+  fetchUserSettings,
+  putUserSettings,
+  type UarUserSettings,
+  type UarUserSettingsUpdate,
+} from "../api/user-settings-api";
 
-function jwtHeaders(): { Authorization: string; "Content-Type": string } | null {
-  const apiKey = ((import.meta as unknown as { env: Record<string, string> }).env.VITE_UAR_API_KEY) ?? "";
+function jwtHeaders(): {
+  Authorization: string;
+  "Content-Type": string;
+} | null {
+  const apiKey =
+    (import.meta as unknown as { env: Record<string, string> }).env
+      .VITE_UAR_API_KEY ?? "";
   if (!apiKey.startsWith("ey")) return null;
   return {
     "Content-Type": "application/json",
@@ -20,10 +30,12 @@ interface UserJwtSettingsState {
 
 interface UserJwtSettingsActions {
   load: () => Promise<void>;
-  save: (partial: Pick<UarUserSettings, "prompt_caching_enabled" | "preferred_scope">) => Promise<void>;
+  save: (partial: UarUserSettingsUpdate) => Promise<void>;
 }
 
-export const useUserJwtSettingsStore = create<UserJwtSettingsState & UserJwtSettingsActions>((set, get) => ({
+export const useUserJwtSettingsStore = create<
+  UserJwtSettingsState & UserJwtSettingsActions
+>((set, get) => ({
   settings: null,
   loading: false,
   saving: false,
@@ -37,7 +49,10 @@ export const useUserJwtSettingsStore = create<UserJwtSettingsState & UserJwtSett
       const data = await fetchUserSettings(h);
       set({ settings: data, loading: false });
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : "Failed to load user settings", loading: false });
+      set({
+        error: e instanceof Error ? e.message : "Failed to load user settings",
+        loading: false,
+      });
     }
   },
 
@@ -47,13 +62,11 @@ export const useUserJwtSettingsStore = create<UserJwtSettingsState & UserJwtSett
     if (!h || !cur) return;
     set({ saving: true, error: null });
     try {
-      const data = await putUserSettings(h, {
-        prompt_caching_enabled: partial.prompt_caching_enabled ?? cur.prompt_caching_enabled,
-        preferred_scope: partial.preferred_scope ?? cur.preferred_scope,
-      });
+      const data = await putUserSettings(h, partial);
       set({ settings: data, saving: false });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Failed to save user settings";
+      const msg =
+        e instanceof Error ? e.message : "Failed to save user settings";
       set({ error: msg, saving: false });
       throw e;
     }

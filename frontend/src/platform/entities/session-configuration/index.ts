@@ -3,6 +3,7 @@ export {
   AGENT_SESSION_ENTITY,
   CONFIGURED_MODEL_ENTITY,
   CONFIGURED_PROVIDER_ENTITY,
+  SESSION_PROMPT_CACHING_ENTITY,
 } from "./contracts";
 
 export type {
@@ -13,6 +14,8 @@ export type {
   AgentSessionField,
   ConfiguredModel,
   ConfiguredProvider,
+  PromptCachingSource,
+  SessionPromptCaching,
   ToolApproval,
 } from "./contracts";
 
@@ -29,6 +32,7 @@ export {
   commitAgentSessionDraft,
   loadAndOpenAgentSessionDraft,
   loadAgentSession,
+  loadSessionPromptCaching,
   markAgentSessionDraftError,
   markAgentSessionDraftSaving,
   openAgentSessionDraft,
@@ -45,4 +49,5 @@ export {
   useAgentSessionDraftField,
   useAgentSessionDraftStatus,
   useConfiguredModels,
+  useSessionPromptCaching,
 } from "./use-session-configuration";

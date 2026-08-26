@@ -266,7 +266,7 @@ mod tests {
         let mut file = std::fs::File::create(&path).unwrap();
         writeln!(
             file,
-            "security:\n  jwt_required: false\nserver:\n  port: 1906"
+            "security:\n  jwt_required: false\n  settings_mutation_auth_required: false\nserver:\n  port: 1906"
         )
         .unwrap();
         let cli = Cli::parse_from(["uar", "--config", path.to_str().unwrap()]);
@@ -282,7 +282,7 @@ mod tests {
         let mut file = std::fs::File::create(&path).unwrap();
         writeln!(
             file,
-            "server:\n  port: 1906\nsecurity:\n  jwt_required: false"
+            "server:\n  port: 1906\nsecurity:\n  jwt_required: false\n  settings_mutation_auth_required: false"
         )
         .unwrap();
 
@@ -294,7 +294,7 @@ mod tests {
         let mut file = std::fs::File::create(&path).unwrap();
         writeln!(
             file,
-            "server:\n  port: 9090\nsecurity:\n  jwt_required: false"
+            "server:\n  port: 9090\nsecurity:\n  jwt_required: false\n  settings_mutation_auth_required: false"
         )
         .unwrap();
         manager.reload().await.unwrap();
@@ -308,7 +308,7 @@ mod tests {
         let mut file = std::fs::File::create(&path).unwrap();
         writeln!(
             file,
-            "server:\n  port: 1906\nsecurity:\n  jwt_required: false"
+            "server:\n  port: 1906\nsecurity:\n  jwt_required: false\n  settings_mutation_auth_required: false"
         )
         .unwrap();
 
@@ -319,7 +319,7 @@ mod tests {
         let mut file = std::fs::File::create(&path).unwrap();
         writeln!(
             file,
-            "server:\n  port: 9090\nsecurity:\n  jwt_required: false"
+            "server:\n  port: 9090\nsecurity:\n  jwt_required: false\n  settings_mutation_auth_required: false"
         )
         .unwrap();
         let err = manager.reload().await.unwrap_err();

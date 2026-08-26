@@ -19,6 +19,20 @@ use crate::normalized::NormalizedEvent;
 const ANTHROPIC_API_URL: &str = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION: &str = "2023-06-01";
 
+fn messages_endpoint(base_url: Option<String>) -> String {
+    let Some(base_url) = base_url else {
+        return ANTHROPIC_API_URL.to_string();
+    };
+    let base_url = base_url.trim_end_matches('/');
+    if base_url.ends_with("/v1/messages") {
+        base_url.to_string()
+    } else if base_url.ends_with("/v1") {
+        format!("{base_url}/messages")
+    } else {
+        format!("{base_url}/v1/messages")
+    }
+}
+
 /// Native Anthropic Messages API driver.
 ///
 /// Implements [`LlmDriver`] by speaking directly to the Anthropic API
@@ -56,7 +70,7 @@ impl AnthropicDriver {
         Self {
             client: reqwest::Client::new(),
             api_key,
-            base_url: base_url.unwrap_or_else(|| ANTHROPIC_API_URL.to_string()),
+            base_url: messages_endpoint(base_url),
             model,
             max_tokens: max_tokens.unwrap_or(8192),
             default_cache_strategy: cache_strategy,
@@ -114,6 +128,18 @@ impl AnthropicDriver {
             stream: true,
             thinking,
         }
+    }
+
+    fn build_request_with_strategy(&self, req: &LlmRequest) -> MessagesRequest {
+        let mut api_request = self.build_request(req);
+        if let Some(strategy) = req
+            .cache_strategy
+            .as_ref()
+            .or(self.default_cache_strategy.as_ref())
+        {
+            strategy.apply(&mut api_request);
+        }
+        api_request
     }
 
     /// Convert JSON messages (OpenAI-ish format) to Anthropic Messages format.
@@ -270,16 +296,7 @@ impl LlmDriver for AnthropicDriver {
         &self,
         req: LlmRequest,
     ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>> {
-        let mut api_request = self.build_request(&req);
-
-        // Apply cache strategy
-        let strategy = req
-            .cache_strategy
-            .as_ref()
-            .or(self.default_cache_strategy.as_ref());
-        if let Some(cs) = strategy {
-            cs.apply(&mut api_request);
-        }
+        let api_request = self.build_request_with_strategy(&req);
 
         let body = serde_json::to_string(&api_request)?;
         debug!(
@@ -310,23 +327,15 @@ impl LlmDriver for AnthropicDriver {
                 })
                 .unwrap_or_else(|| format!("Anthropic API error: {status}"));
 
-            let code = match status.as_u16() {
-                401 => "authentication_error",
-                429 => "rate_limit_error",
-                _ => "api_error",
-            };
-
-            return Ok(Box::pin(futures::stream::once(async move {
-                Ok(NormalizedEvent::Error {
-                    message: error_msg,
-                    code: Some(code.to_string()),
-                })
-            })));
+            return Err(anyhow::anyhow!(
+                "Anthropic API returned HTTP {status}: {error_msg}"
+            ));
         }
 
         // Stream SSE response
         let request_id = uuid::Uuid::new_v4().to_string();
         let mut state = StreamState::new(request_id);
+        let metrics_model = self.model.clone();
 
         let byte_stream = response.bytes_stream();
 
@@ -361,6 +370,31 @@ impl LlmDriver for AnthropicDriver {
                         if !current_event_type.is_empty() && !line_buffer.is_empty() {
                             if let Ok(event) = serde_json::from_str::<StreamEvent>(&line_buffer) {
                                 for normalized in state.process_event(event) {
+                                    if let NormalizedEvent::Usage {
+                                        prompt_tokens,
+                                        completion_tokens,
+                                        cached_tokens,
+                                        cache_creation_tokens,
+                                        ..
+                                    } = &normalized
+                                    {
+                                        crate::uar::telemetry::metrics::record_llm_tokens(
+                                            "anthropic",
+                                            &metrics_model,
+                                            u64::from(*prompt_tokens),
+                                            u64::from(*completion_tokens),
+                                        );
+                                        if cached_tokens.is_some()
+                                            || cache_creation_tokens.is_some()
+                                        {
+                                            crate::uar::telemetry::metrics::record_cache_tokens(
+                                                "anthropic",
+                                                &metrics_model,
+                                                cache_creation_tokens.unwrap_or(0),
+                                                cached_tokens.unwrap_or(0),
+                                            );
+                                        }
+                                    }
                                     yield Ok(normalized);
                                 }
                             }
@@ -380,5 +414,102 @@ impl LlmDriver for AnthropicDriver {
         };
 
         Ok(Box::pin(event_stream))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn request(cache_strategy: Option<CacheStrategy>) -> LlmRequest {
+        LlmRequest {
+            messages: vec![
+                serde_json::json!({
+                    "role": "system",
+                    "content": "stable ".repeat(700)
+                }),
+                serde_json::json!({
+                    "role": "user",
+                    "content": "hello"
+                }),
+            ],
+            tools: Vec::new(),
+            cache_strategy,
+            thinking_config: None,
+            anthropic_system: None,
+            extra_params: None,
+        }
+    }
+
+    #[test]
+    fn request_cache_strategy_controls_cache_control_serialization() {
+        let driver =
+            AnthropicDriver::new("test".into(), "claude-test".into(), None, None, None, None);
+        let enabled = serde_json::to_value(
+            driver.build_request_with_strategy(&request(Some(CacheStrategy::default()))),
+        )
+        .expect("serialize enabled request");
+        let disabled = serde_json::to_value(driver.build_request_with_strategy(&request(None)))
+            .expect("serialize disabled request");
+
+        assert_eq!(enabled["system"][0]["cache_control"]["type"], "ephemeral");
+        assert!(disabled["system"][0].get("cache_control").is_none());
+    }
+
+    #[test]
+    fn provider_roots_are_normalized_to_the_messages_endpoint() {
+        assert_eq!(
+            messages_endpoint(Some("https://api.anthropic.com".to_string())),
+            "https://api.anthropic.com/v1/messages"
+        );
+        assert_eq!(
+            messages_endpoint(Some("https://proxy.example/v1".to_string())),
+            "https://proxy.example/v1/messages"
+        );
+        assert_eq!(
+            messages_endpoint(Some("https://proxy.example/v1/messages/".to_string())),
+            "https://proxy.example/v1/messages"
+        );
+    }
+
+    #[tokio::test]
+    async fn non_success_response_is_a_driver_error_at_the_messages_endpoint() {
+        use axum::{Json, Router, http::StatusCode, routing::post};
+
+        let app = Router::new().route(
+            "/v1/messages",
+            post(|| async {
+                (
+                    StatusCode::UNAUTHORIZED,
+                    Json(serde_json::json!({
+                        "error": {"message": "invalid test credential"}
+                    })),
+                )
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind stub");
+        let address = listener.local_addr().expect("stub address");
+        let server = tokio::spawn(async move {
+            axum::serve(listener, app).await.expect("serve stub");
+        });
+
+        let driver = AnthropicDriver::new(
+            "invalid".into(),
+            "claude-test".into(),
+            Some(format!("http://{address}")),
+            None,
+            None,
+            None,
+        );
+        let error = match driver.stream(request(None)).await {
+            Ok(_) => panic!("non-success responses must activate orchestrator failover"),
+            Err(error) => error,
+        };
+        assert!(error.to_string().contains("HTTP 401"));
+        assert!(error.to_string().contains("invalid test credential"));
+
+        server.abort();
     }
 }

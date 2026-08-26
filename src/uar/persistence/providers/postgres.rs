@@ -3,6 +3,7 @@ use crate::uar::domain::knowledge::{
     DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeMatch,
 };
 use crate::uar::domain::policy::ConversationPolicyRecord;
+use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::persistence::PersistenceLayer;
 use anyhow::Result;
@@ -145,6 +146,53 @@ impl PersistenceLayer for PostgresProvider {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    async fn save_user_prompt_caching_settings(
+        &self,
+        settings: &UserPromptCachingSettings,
+    ) -> Result<()> {
+        sqlx::query(
+            r"
+            INSERT INTO user_prompt_caching_settings
+                (principal_id, prompt_caching_enabled, preferred_scope, updated_at)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (principal_id) DO UPDATE SET
+                prompt_caching_enabled = EXCLUDED.prompt_caching_enabled,
+                preferred_scope = EXCLUDED.preferred_scope,
+                updated_at = EXCLUDED.updated_at
+            ",
+        )
+        .bind(&settings.user_id)
+        .bind(settings.prompt_caching_enabled)
+        .bind(serde_json::to_value(settings.preferred_scope)?)
+        .bind(settings.updated_at)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    async fn load_user_prompt_caching_settings(
+        &self,
+        principal_id: &str,
+    ) -> Result<Option<UserPromptCachingSettings>> {
+        let row = sqlx::query(
+            "SELECT prompt_caching_enabled, preferred_scope, updated_at \
+             FROM user_prompt_caching_settings WHERE principal_id = $1",
+        )
+        .bind(principal_id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        row.map(|row| {
+            Ok(UserPromptCachingSettings {
+                user_id: principal_id.to_owned(),
+                prompt_caching_enabled: row.try_get("prompt_caching_enabled")?,
+                preferred_scope: serde_json::from_value(row.try_get("preferred_scope")?)?,
+                updated_at: row.try_get("updated_at")?,
+            })
+        })
+        .transpose()
     }
 
     async fn save_skill(&self, skill: &Skill, embedding: &[f32]) -> Result<()> {

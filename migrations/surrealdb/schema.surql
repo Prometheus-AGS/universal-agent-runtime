@@ -23,6 +23,16 @@ DEFINE FIELD updated_at ON conversation_policies TYPE datetime;
 DEFINE INDEX idx_conversation_policy_id ON conversation_policies FIELDS conversation_id UNIQUE;
 
 -- =============================================================================
+-- Per-user prompt-caching preferences
+-- =============================================================================
+
+DEFINE TABLE user_prompt_caching_settings SCHEMAFULL;
+DEFINE FIELD user_id ON user_prompt_caching_settings TYPE string;
+DEFINE FIELD prompt_caching_enabled ON user_prompt_caching_settings TYPE option<bool>;
+DEFINE FIELD preferred_scope ON user_prompt_caching_settings TYPE string;
+DEFINE FIELD updated_at ON user_prompt_caching_settings TYPE datetime;
+
+-- =============================================================================
 -- Skills
 -- =============================================================================
 

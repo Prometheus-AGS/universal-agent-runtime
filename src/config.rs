@@ -276,8 +276,27 @@ const REDACTED: &str = "***redacted***";
 /// Mask an optional secret for `Debug`: a present value becomes
 /// `Some("***redacted***")`, while `None` is preserved so "not set" stays
 /// visible without leaking the value.
-fn redact_opt(value: &Option<String>) -> Option<&'static str> {
+fn redact_opt<T>(value: &Option<T>) -> Option<&'static str> {
     value.as_ref().map(|_| REDACTED)
+}
+
+pub(crate) fn secret_value_matches(
+    expected: &Option<secrecy::SecretString>,
+    supplied: Option<&str>,
+) -> bool {
+    let (Some(expected), Some(supplied)) = (expected.as_ref(), supplied) else {
+        return false;
+    };
+    let expected = secrecy::ExposeSecret::expose_secret(expected).as_bytes();
+    let supplied = supplied.as_bytes();
+    let mut difference = expected.len() ^ supplied.len();
+    for index in 0..expected.len().max(supplied.len()) {
+        difference |= usize::from(
+            expected.get(index).copied().unwrap_or_default()
+                ^ supplied.get(index).copied().unwrap_or_default(),
+        );
+    }
+    difference == 0
 }
 
 #[derive(Deserialize, Clone, schemars::JsonSchema)]
@@ -303,11 +322,15 @@ pub struct SecurityConfig {
     /// Validate a token's `nbf` claim when it is present.
     #[serde(default = "SecurityConfig::default_jwt_validate_nbf")]
     pub jwt_validate_nbf: bool,
-    /// When true (default), `PUT`/`POST`/`DELETE` on `/api/uar/settings` require the
-    /// `X-UAR-Admin-Key` header (value may be any non-empty use of the header today).
+    /// When true (default), protected `/api/uar/settings` endpoints require the
+    /// configured `X-UAR-Admin-Key` value.
     /// Set to `false` for trusted local development only.
     #[serde(default = "SecurityConfig::default_settings_mutation_auth_required")]
     pub settings_mutation_auth_required: bool,
+    /// Secret accepted by protected settings administration endpoints.
+    #[serde(default)]
+    #[schemars(with = "Option<String>")]
+    pub settings_admin_key: Option<secrecy::SecretString>,
 }
 
 impl std::fmt::Debug for SecurityConfig {
@@ -323,6 +346,7 @@ impl std::fmt::Debug for SecurityConfig {
                 "settings_mutation_auth_required",
                 &self.settings_mutation_auth_required,
             )
+            .field("settings_admin_key", &redact_opt(&self.settings_admin_key))
             .finish()
     }
 }
@@ -342,6 +366,17 @@ impl SecurityConfig {
         {
             return Err(config::ConfigError::Message(
                 "security.jwt_secret uses the built-in fallback while security.jwt_required=true; set UAR_SECURITY__JWT_SECRET to a deliberate secret or explicitly disable JWT authentication"
+                    .to_owned(),
+                ));
+        }
+        if self.settings_mutation_auth_required
+            && self
+                .settings_admin_key
+                .as_ref()
+                .is_none_or(|key| secrecy::ExposeSecret::expose_secret(key).is_empty())
+        {
+            return Err(config::ConfigError::Message(
+                "security.settings_admin_key must be configured when security.settings_mutation_auth_required=true"
                     .to_owned(),
             ));
         }
@@ -1417,6 +1452,14 @@ pub struct LlmConfig {
     /// Default model in `provider/model` format (e.g., `"openai/gpt-4o"`).
     #[serde(default = "LlmConfig::default_model")]
     pub model: String,
+    /// Authoritative provider identity attached by runtime provider resolution.
+    ///
+    /// This is runtime metadata rather than a user-configured field. It keeps
+    /// provider identity available when an explicit base URL requires a bare
+    /// model name on the wire.
+    #[serde(skip)]
+    #[schemars(skip)]
+    pub resolved_provider_id: Option<String>,
     /// API key for the default provider.
     #[serde(default)]
     pub api_key: Option<String>,
@@ -1492,6 +1535,7 @@ impl std::fmt::Debug for LlmConfig {
             .collect();
         f.debug_struct("LlmConfig")
             .field("model", &self.model)
+            .field("resolved_provider_id", &self.resolved_provider_id)
             .field("api_key", &redact_opt(&self.api_key))
             .field("api_key_env", &self.api_key_env)
             .field("base_url", &self.base_url)
@@ -1535,6 +1579,7 @@ impl Default for LlmConfig {
     fn default() -> Self {
         Self {
             model: Self::default_model(),
+            resolved_provider_id: None,
             api_key: None,
             api_key_env: None,
             base_url: None,
@@ -1754,6 +1799,7 @@ mod tests {
         let yaml = r#"
 security:
   jwt_secret: "test-secret"
+  settings_mutation_auth_required: false
 persistence:
   provider: "surreal"
   database_url: "surrealkv://./data/test-config"
@@ -1873,7 +1919,7 @@ persistence:
         ));
         fs::write(
             &path,
-            format!("security:\n  jwt_required: false\n  jwt_secret: \"{FALLBACK_JWT_SECRET}\"\n"),
+            format!("security:\n  jwt_required: false\n  jwt_secret: \"{FALLBACK_JWT_SECRET}\"\n  settings_mutation_auth_required: false\n"),
         )
         .expect("test config should be writable");
         let cli = Cli {
@@ -1885,6 +1931,43 @@ persistence:
             .expect("an explicitly anonymous deployment may retain the unused fallback secret");
         assert!(!config.security.jwt_required);
         let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn protected_settings_require_a_configured_admin_key() {
+        let config = SecurityConfig {
+            jwt_required: false,
+            jwt_secret: FALLBACK_JWT_SECRET.to_owned().into(),
+            jwks_url: None,
+            jwt_issuer: None,
+            jwt_audience: None,
+            jwt_validate_nbf: true,
+            settings_mutation_auth_required: true,
+            settings_admin_key: None,
+        };
+
+        let error = config
+            .validate()
+            .expect_err("protected settings require an actual shared secret");
+        assert!(error.to_string().contains("settings_admin_key"));
+    }
+
+    #[test]
+    fn protected_settings_accept_a_configured_admin_key() {
+        let config = SecurityConfig {
+            jwt_required: false,
+            jwt_secret: FALLBACK_JWT_SECRET.to_owned().into(),
+            jwks_url: None,
+            jwt_issuer: None,
+            jwt_audience: None,
+            jwt_validate_nbf: true,
+            settings_mutation_auth_required: true,
+            settings_admin_key: Some("configured-admin-key".to_owned().into()),
+        };
+
+        config
+            .validate()
+            .expect("a configured settings admin key satisfies the boundary");
     }
 
     #[test]

@@ -1392,6 +1392,21 @@ async fn l3_c21_threads_memory_and_knowledge_are_partitioned_by_verified_user() 
         "{}/api/uar/sessions/{session_id}/agent-config",
         server.base_url
     );
+    let missing_agent_config = client
+        .get(&agent_config_url)
+        .bearer_auth(&user_a)
+        .send()
+        .await
+        .expect("C-21: user A missing agent config lookup");
+    assert_eq!(missing_agent_config.status(), 204);
+    assert!(
+        missing_agent_config
+            .bytes()
+            .await
+            .expect("C-21: read empty missing response")
+            .is_empty(),
+        "owner-scoped absence must have an empty body"
+    );
     let save_agent_config = client
         .post(&agent_config_url)
         .bearer_auth(&user_a)
@@ -1406,7 +1421,15 @@ async fn l3_c21_threads_memory_and_knowledge_are_partitioned_by_verified_user() 
         .send()
         .await
         .expect("C-21: user B agent config lookup");
-    assert_eq!(cross_agent_config.status(), 404);
+    assert_eq!(cross_agent_config.status(), 204);
+    assert!(
+        cross_agent_config
+            .bytes()
+            .await
+            .expect("C-21: read empty cross-user response")
+            .is_empty(),
+        "cross-owner absence must have an empty body"
+    );
     let same_agent_config = client
         .get(&agent_config_url)
         .bearer_auth(&user_a)

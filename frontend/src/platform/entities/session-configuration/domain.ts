@@ -3,15 +3,18 @@ import { graphStore } from "@prometheus-ags/prometheus-entity-management";
 import {
   AGENT_SESSION_DRAFT_ENTITY,
   AGENT_SESSION_ENTITY,
+  SESSION_PROMPT_CACHING_ENTITY,
 } from "./contracts";
 import type {
   AgentSession,
   AgentSessionConfig,
   AgentSessionDraft,
   AgentSessionField,
+  SessionPromptCaching,
 } from "./contracts";
 import {
   fetchAgentSessionConfig,
+  fetchSessionPromptCaching,
   saveAgentSessionConfig,
 } from "./api/session-configuration-api";
 
@@ -23,6 +26,7 @@ const ALL_SESSION_FIELDS: AgentSessionField[] = [
   "knowledge_bases",
   "mcp_servers",
   "tool_approval",
+  "prompt_caching_enabled",
 ];
 
 const draftGenerations = new Map<string, number>();
@@ -31,7 +35,10 @@ const sessionMutationTails = new Map<string, Promise<void>>();
 const agentSelectionGenerations = new Map<string, number>();
 const confirmedAgentIds = new Map<string, string | null>();
 
-export function agentSessionDraftId(sessionId: string, editorId: string): string {
+export function agentSessionDraftId(
+  sessionId: string,
+  editorId: string,
+): string {
   return `${sessionId}:${editorId}`;
 }
 
@@ -41,9 +48,12 @@ function copyConfig(config: AgentSessionConfig): AgentSessionConfig {
     model: config.model,
     tools: config.tools ? [...config.tools] : null,
     skills: config.skills ? [...config.skills] : null,
-    knowledge_bases: config.knowledge_bases ? [...config.knowledge_bases] : null,
+    knowledge_bases: config.knowledge_bases
+      ? [...config.knowledge_bases]
+      : null,
     mcp_servers: config.mcp_servers ? [...config.mcp_servers] : null,
     tool_approval: config.tool_approval,
+    prompt_caching_enabled: config.prompt_caching_enabled,
   };
 }
 
@@ -73,14 +83,37 @@ function mergeConfigFields(
           : null;
         break;
       case "mcp_servers":
-        merged.mcp_servers = source.mcp_servers ? [...source.mcp_servers] : null;
+        merged.mcp_servers = source.mcp_servers
+          ? [...source.mcp_servers]
+          : null;
         break;
       case "tool_approval":
         merged.tool_approval = source.tool_approval;
         break;
+      case "prompt_caching_enabled":
+        merged.prompt_caching_enabled = source.prompt_caching_enabled;
+        break;
     }
   }
   return merged;
+}
+
+function replaceSessionPromptCaching(
+  effective: SessionPromptCaching,
+): SessionPromptCaching {
+  graphStore
+    .getState()
+    .replaceEntity(SESSION_PROMPT_CACHING_ENTITY, effective.id, effective);
+  return effective;
+}
+
+export async function loadSessionPromptCaching(
+  sessionId: string,
+  signal?: AbortSignal,
+): Promise<SessionPromptCaching> {
+  const effective = await fetchSessionPromptCaching(sessionId, signal);
+  if (signal?.aborted) throw new DOMException("Request aborted", "AbortError");
+  return replaceSessionPromptCaching(effective);
 }
 
 async function enqueueSessionMutation<T>(
@@ -108,7 +141,10 @@ function replaceCanonicalAgentSession(
   config: AgentSessionConfig,
 ): AgentSession {
   const graph = graphStore.getState();
-  const current = graph.readEntity<AgentSession>(AGENT_SESSION_ENTITY, sessionId);
+  const current = graph.readEntity<AgentSession>(
+    AGENT_SESSION_ENTITY,
+    sessionId,
+  );
   const session: AgentSession = {
     ...copyConfig(config),
     id: sessionId,
@@ -126,16 +162,19 @@ export async function loadAgentSession(
   return enqueueSessionMutation(sessionId, async () => {
     const graph = graphStore.getState();
     const startingRevision =
-      graph.readEntity<AgentSession>(AGENT_SESSION_ENTITY, sessionId)?.revision ?? 0;
+      graph.readEntity<AgentSession>(AGENT_SESSION_ENTITY, sessionId)
+        ?.revision ?? 0;
     const loaded = await fetchAgentSessionConfig(sessionId, signal);
-    if (signal?.aborted) throw new DOMException("Request aborted", "AbortError");
+    if (signal?.aborted)
+      throw new DOMException("Request aborted", "AbortError");
     const current = graphStore
       .getState()
       .readEntity<AgentSession>(AGENT_SESSION_ENTITY, sessionId);
     if ((current?.revision ?? 0) !== startingRevision) return current ?? null;
     confirmedAgentIds.set(sessionId, loaded?.agent_id ?? null);
     if (loaded) return replaceCanonicalAgentSession(sessionId, loaded);
-    if (current) graphStore.getState().removeEntity(AGENT_SESSION_ENTITY, sessionId);
+    if (current)
+      graphStore.getState().removeEntity(AGENT_SESSION_ENTITY, sessionId);
     return null;
   });
 }
@@ -146,7 +185,10 @@ export function openAgentSessionDraft(
   fallback: AgentSessionConfig,
 ): string {
   const graph = graphStore.getState();
-  const canonical = graph.readEntity<AgentSession>(AGENT_SESSION_ENTITY, sessionId);
+  const canonical = graph.readEntity<AgentSession>(
+    AGENT_SESSION_ENTITY,
+    sessionId,
+  );
   const config = copyConfig(canonical ?? fallback);
   const id = agentSessionDraftId(sessionId, editorId);
   draftSaveControllers.get(id)?.abort();
@@ -173,7 +215,10 @@ export async function loadAndOpenAgentSessionDraft(
   fallback: AgentSessionConfig,
   signal?: AbortSignal,
 ): Promise<string> {
-  await loadAgentSession(sessionId, signal);
+  await Promise.all([
+    loadAgentSession(sessionId, signal),
+    loadSessionPromptCaching(sessionId, signal),
+  ]);
   return openAgentSessionDraft(sessionId, editorId, fallback);
 }
 
@@ -183,8 +228,16 @@ export function setAgentSessionDraftField<K extends AgentSessionField>(
   value: AgentSessionConfig[K],
 ): void {
   const graph = graphStore.getState();
-  const draft = graph.readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
-  if (!draft || draft.save_status === "saving" || Object.is(draft[field], value)) return;
+  const draft = graph.readEntity<AgentSessionDraft>(
+    AGENT_SESSION_DRAFT_ENTITY,
+    draftId,
+  );
+  if (
+    !draft ||
+    draft.save_status === "saving" ||
+    Object.is(draft[field], value)
+  )
+    return;
 
   graph.upsertEntity(AGENT_SESSION_DRAFT_ENTITY, draftId, {
     [field]: value,
@@ -196,9 +249,15 @@ export function setAgentSessionDraftField<K extends AgentSessionField>(
   });
 }
 
-export function markAgentSessionDraftSaving(draftId: string, generation: number): void {
+export function markAgentSessionDraftSaving(
+  draftId: string,
+  generation: number,
+): void {
   const graph = graphStore.getState();
-  const draft = graph.readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
+  const draft = graph.readEntity<AgentSessionDraft>(
+    AGENT_SESSION_DRAFT_ENTITY,
+    draftId,
+  );
   if (!draft || draft.generation !== generation) return;
   graph.upsertEntity(AGENT_SESSION_DRAFT_ENTITY, draftId, {
     save_status: "saving",
@@ -212,8 +271,12 @@ export function markAgentSessionDraftError(
   generation?: number,
 ): void {
   const graph = graphStore.getState();
-  const draft = graph.readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
-  if (!draft || (generation !== undefined && draft.generation !== generation)) return;
+  const draft = graph.readEntity<AgentSessionDraft>(
+    AGENT_SESSION_DRAFT_ENTITY,
+    draftId,
+  );
+  if (!draft || (generation !== undefined && draft.generation !== generation))
+    return;
   graph.upsertEntity(AGENT_SESSION_DRAFT_ENTITY, draftId, {
     save_status: "error",
     error,
@@ -228,8 +291,14 @@ export function commitAgentSessionDraft(
   changedFields: readonly AgentSessionField[],
 ): boolean {
   const graph = graphStore.getState();
-  const draft = graph.readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
-  const canonical = graph.readEntity<AgentSession>(AGENT_SESSION_ENTITY, sessionId);
+  const draft = graph.readEntity<AgentSessionDraft>(
+    AGENT_SESSION_DRAFT_ENTITY,
+    draftId,
+  );
+  const canonical = graph.readEntity<AgentSession>(
+    AGENT_SESSION_ENTITY,
+    sessionId,
+  );
   confirmedAgentIds.set(sessionId, saved.agent_id);
   replaceCanonicalAgentSession(
     sessionId,
@@ -247,7 +316,9 @@ export function cancelAgentSessionDraft(draftId: string): void {
   graphStore.getState().removeEntity(AGENT_SESSION_DRAFT_ENTITY, draftId);
 }
 
-export function readAgentSessionDraftConfig(draftId: string): AgentSessionConfig | null {
+export function readAgentSessionDraftConfig(
+  draftId: string,
+): AgentSessionConfig | null {
   const draft = graphStore
     .getState()
     .readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
@@ -256,7 +327,10 @@ export function readAgentSessionDraftConfig(draftId: string): AgentSessionConfig
 
 export async function saveAgentSessionDraft(draftId: string): Promise<boolean> {
   const graph = graphStore.getState();
-  const draft = graph.readEntity<AgentSessionDraft>(AGENT_SESSION_DRAFT_ENTITY, draftId);
+  const draft = graph.readEntity<AgentSessionDraft>(
+    AGENT_SESSION_DRAFT_ENTITY,
+    draftId,
+  );
   if (!draft) return false;
 
   const generation = draft.generation;
@@ -278,14 +352,22 @@ export async function saveAgentSessionDraft(draftId: string): Promise<boolean> {
       ) {
         return false;
       }
-      const latest = await fetchAgentSessionConfig(draft.session_id, controller.signal);
+      const latest = await fetchAgentSessionConfig(
+        draft.session_id,
+        controller.signal,
+      );
       const changedFields = latest ? dirtyFields : ALL_SESSION_FIELDS;
-      const payload = mergeConfigFields(latest ?? snapshot, snapshot, changedFields);
+      const payload = mergeConfigFields(
+        latest ?? snapshot,
+        snapshot,
+        changedFields,
+      );
       const saved = await saveAgentSessionConfig(
         draft.session_id,
         payload,
         controller.signal,
       );
+      await loadSessionPromptCaching(draft.session_id, controller.signal);
       return commitAgentSessionDraft(
         draftId,
         generation,
@@ -311,7 +393,10 @@ export async function selectAgentForSession(
   agentId: string,
 ): Promise<boolean> {
   const graph = graphStore.getState();
-  const previous = graph.readEntity<AgentSession>(AGENT_SESSION_ENTITY, sessionId);
+  const previous = graph.readEntity<AgentSession>(
+    AGENT_SESSION_ENTITY,
+    sessionId,
+  );
   const optimisticConfig: AgentSessionConfig = previous
     ? { ...copyConfig(previous), agent_id: agentId }
     : {
@@ -322,9 +407,11 @@ export async function selectAgentForSession(
         knowledge_bases: null,
         mcp_servers: null,
         tool_approval: null,
+        prompt_caching_enabled: null,
       };
   replaceCanonicalAgentSession(sessionId, optimisticConfig);
-  const selectionGeneration = (agentSelectionGenerations.get(sessionId) ?? 0) + 1;
+  const selectionGeneration =
+    (agentSelectionGenerations.get(sessionId) ?? 0) + 1;
   agentSelectionGenerations.set(sessionId, selectionGeneration);
   let rollbackAgentId = confirmedAgentIds.get(sessionId);
   let rollbackKnown = confirmedAgentIds.has(sessionId);
@@ -339,7 +426,8 @@ export async function selectAgentForSession(
         agent_id: agentId,
       });
       confirmedAgentIds.set(sessionId, saved.agent_id);
-      if (agentSelectionGenerations.get(sessionId) !== selectionGeneration) return;
+      if (agentSelectionGenerations.get(sessionId) !== selectionGeneration)
+        return;
       const canonical = graphStore
         .getState()
         .readEntity<AgentSession>(AGENT_SESSION_ENTITY, sessionId);
@@ -360,7 +448,9 @@ export async function selectAgentForSession(
           : { ...optimisticConfig, agent_id: rollbackAgentId };
         replaceCanonicalAgentSession(
           sessionId,
-          mergeConfigFields(current ?? rollbackSource, rollbackSource, ["agent_id"]),
+          mergeConfigFields(current ?? rollbackSource, rollbackSource, [
+            "agent_id",
+          ]),
         );
       } else if (rollbackKnown) {
         graphStore.getState().removeEntity(AGENT_SESSION_ENTITY, sessionId);
@@ -379,6 +469,7 @@ export const agentSessionDraftActions = {
   markSaving: markAgentSessionDraftSaving,
   loadAndOpen: loadAndOpenAgentSessionDraft,
   loadSession: loadAgentSession,
+  loadPromptCaching: loadSessionPromptCaching,
   open: openAgentSessionDraft,
   readConfig: readAgentSessionDraftConfig,
   save: saveAgentSessionDraft,

@@ -78,6 +78,7 @@ fn resolve_user_context(
         jwt_audience: None,
         jwt_validate_nbf: true,
         settings_mutation_auth_required: true,
+        settings_admin_key: Some("test-admin-key".to_owned().into()),
     };
     futures::executor::block_on(resolve_user_context_with_config(&config, auth_header))
 }
@@ -205,6 +206,7 @@ mod tests {
             jwt_audience: Some(audience.to_owned()),
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
+            settings_admin_key: Some("test-admin-key".to_owned().into()),
         }
     }
 
@@ -217,6 +219,7 @@ mod tests {
             jwt_audience: audience.map(str::to_owned),
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
+            settings_admin_key: Some("test-admin-key".to_owned().into()),
         }
     }
 

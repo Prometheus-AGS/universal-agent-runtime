@@ -51,4 +51,7 @@ The provider owns actual billing. The pricing catalog owns the rates UAR uses fo
 
 The estimate and budget logic applies to `server-full` and relevant `minimal` server execution. The branded Cost page and populated telemetry are `server-full` capabilities. `embedded-mobile` depends on the host and provider adapter for usage, display, and persistence. No amount on this page is an invoice or a durable all-time total.
 
-See [Observability](/docs/operations/observability) for metric ownership and [Runs](/docs/operations/runs) for terminal usage events.
+See [Prompt Caching](/docs/providers/prompt-caching) for provider cache-write
+and cache-read pricing boundaries, [Observability](/docs/operations/observability)
+for metric ownership, and [Runs](/docs/operations/runs) for terminal usage
+events.

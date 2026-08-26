@@ -849,3 +849,15 @@ no repository-wide certification claim.
 **Rationale.** Short inventories remain faster to scan without a search field, while the exact eight-option boundary is explicit and testable. The provider's enabled model list remains the validity boundary. Keeping Save available avoids stranding the only recovery action if a background refresh stalls.
 
 **Uncomfortable constraint.** The provider panel now sits at 599/600 lines under the decomposition gate, and its responsive contract has structural tests but no real-browser narrow/zoom capture. Future panel growth must extract a coherent provider-card component rather than compressing behavior into the remaining line.
+
+---
+
+## 2026-08-25 — Prompt caching is a durable policy, not a frontend toggle
+
+**Decision.** Resolve prompt caching in one ordered policy seam: request override, persisted session override, verified JWT user override, then the system-global default. New installs seed Off. Anthropic receives explicit ephemeral cache controls only when the resolved value is On; OpenAI remains provider-managed and its request body is unchanged.
+
+**Rationale.** A missing settings route and an unconditional Anthropic strategy created two incompatible truths: the UI could not persist the global setting, while some runtime paths cached regardless of operator intent. Central resolution makes chat, tool loops, compatibility, graph execution, and failover consume the same effective decision and source.
+
+**Security boundary.** Remote/admin deployments require an exact constant-time `settings_admin_key`; generic settings reads cannot bypass the protected prompt-caching namespace. The loopback-only macOS package retains its explicit mutation-auth-disabled default, and the installer now adds that default to legacy configs only when the key is absent.
+
+**Uncomfortable constraint.** OpenAI automatic caching cannot be disabled by UAR, the provider-default ephemeral TTL is not configurable, and no Anthropic credential was available for a supplemental live cache creation/read. Stub upstream bodies and provider-usage fixtures are the authoritative evidence for this delivery.

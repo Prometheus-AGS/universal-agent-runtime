@@ -461,6 +461,7 @@ impl ProviderRegistry {
 
         Some(LlmConfig {
             model: model_for_driver,
+            resolved_provider_id: Some(provider_id.to_string()),
             api_key: config.api_key.clone(),
             base_url: if config.base_url.is_empty() {
                 None

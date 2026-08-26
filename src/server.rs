@@ -16,7 +16,6 @@ use futures::StreamExt as _;
 use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::io::Write as _;
 use std::pin::Pin;
@@ -33,7 +32,7 @@ use tracing::{Instrument, info, warn};
 
 use crate::AppState;
 use crate::config_manager::ConfigManager;
-use crate::llm::{LlmDriver, Orchestrator};
+use crate::llm::Orchestrator;
 use crate::mcp::registry::McpRegistry;
 use crate::normalized::NormalizedEvent as DriverEvent;
 use crate::session::SessionStore;
@@ -55,7 +54,7 @@ use crate::uar::{
         context_builder,
     },
     persistence::PersistenceLayer,
-    prompt_cache::{CachedEntry, PromptCacheProvider, SurrealMemPromptCacheProvider},
+    prompt_cache::{PromptCacheProvider, SurrealMemPromptCacheProvider},
     rag::{
         chunking::ChunkingStrategy, ingest::IngestService, ingestion_worker::IngestionWorkerPool,
     },
@@ -506,12 +505,10 @@ async fn run_server_with_listener(
                 as Arc<dyn uar::security::credentials::CredentialStore>);
 
             // Start the live-query bus on the same DB connection.
-            let surreal_live_bus = Arc::new(
-                crate::uar::realtime::surreal_bus::LiveQueryBus::start(db),
-            );
-            let live_bus = Some(
-                Arc::clone(&surreal_live_bus) as Arc<dyn crate::uar::realtime::RealtimeBus>
-            );
+            let surreal_live_bus =
+                Arc::new(crate::uar::realtime::surreal_bus::LiveQueryBus::start(db));
+            let live_bus =
+                Some(Arc::clone(&surreal_live_bus) as Arc<dyn crate::uar::realtime::RealtimeBus>);
 
             (
                 Arc::new(provider) as Arc<dyn PersistenceLayer>,
@@ -589,7 +586,7 @@ async fn run_server_with_listener(
             );
         }
     };
-    let persistence = Some(persistence_layer);
+    let persistence = Some(Arc::clone(&persistence_layer));
 
     // Initialize Ingest Service if persistence is available
     let mut ingestion_watcher = None;
@@ -999,8 +996,11 @@ async fn run_server_with_listener(
             }
         };
 
-    let user_settings_store =
-        Arc::new(crate::uar::runtime::user_settings_store::UserSettingsStore::new());
+    let user_settings_store = Arc::new(
+        crate::uar::runtime::user_settings_store::UserSettingsStore::new(Arc::clone(
+            &persistence_layer,
+        )),
+    );
 
     let state = AppState {
         mcp: Arc::clone(&mcp),
@@ -1210,6 +1210,7 @@ async fn run_server_with_listener(
                     settings_mutation_auth_required: config
                         .security
                         .settings_mutation_auth_required,
+                    settings_admin_key: config.security.settings_admin_key.clone(),
                 },
             )),
         )
@@ -1361,6 +1362,10 @@ async fn run_server_with_listener(
         .route(
             "/api/uar/sessions/{id}/effective-config",
             get(uar::api::discovery::get_effective_config),
+        )
+        .route(
+            "/api/uar/sessions/{id}/prompt-caching",
+            get(uar::api::discovery::get_effective_prompt_caching),
         )
         .route(
             "/api/uar/conversations/{id}/policy",
@@ -1593,8 +1598,7 @@ async fn run_server_with_listener(
                     }
                 };
                 tokio::join!(mcp_shutdown, live_query_shutdown);
-            })
-                as Pin<Box<dyn Future<Output = ()> + Send + 'static>>
+            }) as Pin<Box<dyn Future<Output = ()> + Send + 'static>>
         }) as ShutdownAsyncCleanup
     };
     let http_result = serve_on_listener(
@@ -2049,8 +2053,14 @@ async fn uar_config_reload_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Json<Value>, StatusCode> {
+    let supplied_admin_key = headers
+        .get("x-uar-admin-key")
+        .and_then(|value| value.to_str().ok());
     if state.config.security.settings_mutation_auth_required
-        && !headers.contains_key("x-uar-admin-key")
+        && !crate::config::secret_value_matches(
+            &state.config.security.settings_admin_key,
+            supplied_admin_key,
+        )
     {
         return Err(StatusCode::FORBIDDEN);
     }
@@ -2752,6 +2762,9 @@ struct AnthropicMessagesRequest {
     tools: Vec<AnthropicToolInput>,
     #[serde(default)]
     stream: bool,
+    /// Optional UAR conversation whose persisted policy should apply.
+    #[serde(default)]
+    session_id: Option<String>,
     /// Per-request prompt-caching override.
     ///
     /// When `true`, the UAR automatically injects `cache_control: {type: ephemeral}`
@@ -2799,16 +2812,6 @@ struct AnthropicContentBlockInput {
     content: Option<Value>,
     #[serde(default)]
     tool_use_id: Option<String>,
-    #[serde(default)]
-    cache_control: Option<AnthropicCacheControlInput>,
-    #[serde(flatten)]
-    _extra: HashMap<String, Value>,
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-struct AnthropicCacheControlInput {
-    #[serde(rename = "type", default)]
-    _cache_type: String,
     #[serde(flatten)]
     _extra: HashMap<String, Value>,
 }
@@ -2840,6 +2843,30 @@ struct AnthropicUsage {
     output_tokens: u32,
     cache_creation_input_tokens: u32,
     cache_read_input_tokens: u32,
+}
+
+fn provider_anthropic_usage(
+    prompt_tokens: u32,
+    completion_tokens: u32,
+    cached_tokens: Option<u32>,
+    cache_creation_tokens: Option<u32>,
+) -> AnthropicUsage {
+    AnthropicUsage {
+        input_tokens: prompt_tokens,
+        output_tokens: completion_tokens,
+        cache_creation_input_tokens: cache_creation_tokens.unwrap_or(0),
+        cache_read_input_tokens: cached_tokens.unwrap_or(0),
+    }
+}
+
+fn finalized_anthropic_usage(
+    provider_usage: Option<AnthropicUsage>,
+    estimated_output_tokens: u32,
+) -> AnthropicUsage {
+    provider_usage.unwrap_or_else(|| AnthropicUsage {
+        output_tokens: estimated_output_tokens,
+        ..AnthropicUsage::default()
+    })
 }
 
 #[derive(Debug, Clone)]
@@ -3024,13 +3051,6 @@ fn estimate_tokens(text: &str) -> u32 {
         .min(u32::MAX as usize) as u32
 }
 
-fn hash_prompt_text(text: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(text.as_bytes());
-    let digest = hasher.finalize();
-    digest.iter().map(|b| format!("{b:02x}")).collect()
-}
-
 fn content_blocks(content: &AnthropicContentInput) -> Vec<AnthropicContentBlockInput> {
     match content {
         AnthropicContentInput::Text(text) => vec![AnthropicContentBlockInput {
@@ -3052,71 +3072,6 @@ fn system_blocks(system: &AnthropicSystemInput) -> Vec<AnthropicContentBlockInpu
         }],
         AnthropicSystemInput::Blocks(blocks) => blocks.clone(),
         AnthropicSystemInput::Empty => Vec::new(),
-    }
-}
-
-/// Inject `cache_control: {type: ephemeral}` into an Anthropic request.
-///
-/// Per the Anthropic prompt-caching spec, markers are placed on:
-/// 1. The last text block in the system prompt (stable prefix — highest reuse).
-/// 2. The last text block of the last human-turn message (conversation context).
-///
-/// Blocks that already carry a `cache_control` are left untouched.
-fn inject_anthropic_cache_control(req: &mut AnthropicMessagesRequest) {
-    let ephemeral = AnthropicCacheControlInput {
-        _cache_type: "ephemeral".to_string(),
-        _extra: Default::default(),
-    };
-
-    // 1. Mark the last text block in the system prompt.
-    if let Some(system) = &mut req.system {
-        match system {
-            AnthropicSystemInput::Text(text) => {
-                let owned = std::mem::take(text);
-                *system = AnthropicSystemInput::Blocks(vec![AnthropicContentBlockInput {
-                    block_type: "text".to_string(),
-                    text: Some(owned),
-                    cache_control: Some(ephemeral.clone()),
-                    ..AnthropicContentBlockInput::default()
-                }]);
-            }
-            AnthropicSystemInput::Blocks(blocks) => {
-                if let Some(last_text) = blocks
-                    .iter_mut()
-                    .rev()
-                    .find(|b| b.block_type == "text" && b.cache_control.is_none())
-                {
-                    last_text.cache_control = Some(ephemeral.clone());
-                }
-            }
-            AnthropicSystemInput::Empty => {}
-        }
-    }
-
-    // 2. Mark the last text block of the last human-turn message.
-    if let Some(last_human) = req.messages.iter_mut().rev().find(|m| m.role == "user") {
-        match &mut last_human.content {
-            AnthropicContentInput::Text(text) => {
-                let owned = std::mem::take(text);
-                last_human.content =
-                    AnthropicContentInput::Blocks(vec![AnthropicContentBlockInput {
-                        block_type: "text".to_string(),
-                        text: Some(owned),
-                        cache_control: Some(ephemeral),
-                        ..AnthropicContentBlockInput::default()
-                    }]);
-            }
-            AnthropicContentInput::Blocks(blocks) => {
-                if let Some(last_text) = blocks
-                    .iter_mut()
-                    .rev()
-                    .find(|b| b.block_type == "text" && b.cache_control.is_none())
-                {
-                    last_text.cache_control = Some(ephemeral);
-                }
-            }
-            AnthropicContentInput::Empty => {}
-        }
     }
 }
 
@@ -3357,77 +3312,6 @@ fn convert_anthropic_tools_to_openai(tools: &[AnthropicToolInput]) -> Vec<Value>
         .collect()
 }
 
-async fn compute_anthropic_input_usage(
-    req: &AnthropicMessagesRequest,
-    provider: &Arc<dyn PromptCacheProvider>,
-) -> AnthropicUsage {
-    let mut usage = AnthropicUsage::default();
-
-    let mut blocks = Vec::<AnthropicContentBlockInput>::new();
-    if let Some(system) = &req.system {
-        blocks.extend(system_blocks(system));
-    }
-    for message in &req.messages {
-        blocks.extend(content_blocks(&message.content));
-    }
-
-    for block in blocks {
-        match block.block_type.as_str() {
-            "text" => {
-                let text = block.text.unwrap_or_default();
-                if text.is_empty() {
-                    continue;
-                }
-                let token_count = estimate_tokens(&text);
-                if block.cache_control.is_some() {
-                    let hash = hash_prompt_text(&text);
-                    if let Some(entry) = provider.get(&hash).await {
-                        usage.cache_read_input_tokens = usage
-                            .cache_read_input_tokens
-                            .saturating_add(entry.token_count);
-                    } else {
-                        usage.cache_creation_input_tokens = usage
-                            .cache_creation_input_tokens
-                            .saturating_add(token_count);
-                        let _ = provider
-                            .set(
-                                &hash,
-                                CachedEntry {
-                                    token_count,
-                                    compiled_representation: text.as_bytes().to_vec(),
-                                    created_at: Utc::now(),
-                                },
-                            )
-                            .await;
-                    }
-                } else {
-                    usage.input_tokens = usage.input_tokens.saturating_add(token_count);
-                }
-            }
-            "tool_result" => {
-                let text = tool_result_text(&block);
-                usage.input_tokens = usage.input_tokens.saturating_add(estimate_tokens(&text));
-            }
-            "tool_use" => {
-                let rendered = block
-                    .input
-                    .as_ref()
-                    .map_or_else(String::new, Value::to_string);
-                usage.input_tokens = usage
-                    .input_tokens
-                    .saturating_add(estimate_tokens(&rendered));
-            }
-            _ => {
-                if let Some(text) = block.text {
-                    usage.input_tokens = usage.input_tokens.saturating_add(estimate_tokens(&text));
-                }
-            }
-        }
-    }
-
-    usage
-}
-
 async fn resolve_anthropic_model(
     state: &AppState,
     requested_model: &str,
@@ -3485,7 +3369,9 @@ async fn resolve_anthropic_model(
 
 async fn api_messages(
     State(state): State<AppState>,
-    Json(mut req): Json<AnthropicMessagesRequest>,
+    headers: HeaderMap,
+    user_ctx: Option<axum::Extension<UserContext>>,
+    Json(req): Json<AnthropicMessagesRequest>,
 ) -> Response {
     if req.messages.is_empty() {
         return anthropic_error_response(
@@ -3513,54 +3399,84 @@ async fn api_messages(
         }
     };
 
+    let global_prompt_caching = match &state.settings_manager {
+        Some(manager) => manager
+            .get_typed::<bool>("prompt_caching.enabled")
+            .await
+            .ok()
+            .flatten()
+            .unwrap_or(false),
+        None => false,
+    };
+    let session_override = match (&req.session_id, user_ctx.as_ref()) {
+        (Some(session_id), Some(user)) => {
+            uar::api::discovery::load_conversation_policy(&state, &user.user_id, session_id)
+                .await
+                .and_then(|policy| policy.prompt_caching_enabled)
+        }
+        _ => None,
+    };
+    let jwt_principal = user_ctx
+        .as_ref()
+        .filter(|_| {
+            headers
+                .get(axum::http::header::AUTHORIZATION)
+                .and_then(|value| value.to_str().ok())
+                .is_some_and(|value| value.starts_with("Bearer "))
+                && !headers.contains_key("x-api-key")
+        })
+        .and_then(|user| uar::api::user_settings::principal_storage_key(user));
+    let user_override = if let Some(principal_id) = jwt_principal {
+        match state
+            .user_settings_store
+            .caching_enabled_for(&principal_id)
+            .await
+        {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::error!(%error, "failed to resolve user prompt-caching preference");
+                return anthropic_error_response(
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    "User settings persistence unavailable",
+                );
+            }
+        }
+    } else {
+        None
+    };
     let effective_caching = crate::uar::domain::prompt_caching::resolve_effective_caching(
         req.prompt_caching_enabled,
-        None,
-        None,
-        false,
+        session_override,
+        user_override,
+        global_prompt_caching,
     );
-
-    if effective_caching {
-        inject_anthropic_cache_control(&mut req);
-        tracing::debug!("Injected cache_control blocks into Anthropic request");
-    }
+    tracing::debug!(
+        prompt_caching_enabled = effective_caching.enabled,
+        source = ?effective_caching.source,
+        "Resolved Anthropic-compatible prompt-caching setting"
+    );
 
     let openai_messages = convert_anthropic_messages_to_openai(&req);
 
     let llm_request = crate::llm::LlmRequest {
         messages: openai_messages,
         tools: convert_anthropic_tools_to_openai(&req.tools),
-        cache_strategy: None,
+        cache_strategy: effective_caching
+            .enabled
+            .then(crate::llm::anthropic_cache::CacheStrategy::default),
         thinking_config: None,
         anthropic_system: None,
         extra_params: None,
     };
 
-    let client_config = crate::config::build_client_config(&resolved_llm_config);
-    let model_str = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
-    let driver_model = resolved_llm_config.model.clone();
-    let driver: std::sync::Arc<dyn LlmDriver> = if crate::llm::detect_provider(&model_str)
-        == "anthropic"
-        && crate::llm::anthropic_native_driver_enabled()
-    {
-        std::sync::Arc::new(crate::llm::anthropic_driver::AnthropicDriver::new(
-            resolved_llm_config.api_key.clone().unwrap_or_default(),
-            driver_model.clone(),
-            resolved_llm_config.base_url.clone(),
-            None,
-            Some(crate::llm::anthropic_cache::CacheStrategy::default()),
-            None,
-        ))
-    } else {
-        match crate::llm::LiterLlmDriver::new(client_config, driver_model, None) {
-            Ok(d) => std::sync::Arc::new(d),
-            Err(err) => {
-                tracing::error!(error = %err, "Failed to create LiterLlmDriver");
-                return anthropic_error_response(
-                    StatusCode::BAD_GATEWAY,
-                    "Failed to initialize upstream model client",
-                );
-            }
+    let driver = match crate::llm::orchestrator::build_driver(&resolved_llm_config) {
+        Ok(driver) => driver,
+        Err(err) => {
+            tracing::error!(error = %err, "Failed to create LLM driver");
+            return anthropic_error_response(
+                StatusCode::BAD_GATEWAY,
+                "Failed to initialize upstream model client",
+            );
         }
     };
     let driver_stream = match driver.stream(llm_request).await {
@@ -3579,12 +3495,10 @@ async fn api_messages(
     } else {
         req.model.clone()
     };
-    let input_usage = compute_anthropic_input_usage(&req, &state.prompt_cache_provider).await;
-
     if !req.stream {
         let mut final_text = String::new();
         let mut tool_blocks: Vec<Value> = Vec::new();
-        let mut provider_completion_tokens: Option<u32> = None;
+        let mut provider_usage: Option<AnthropicUsage> = None;
         let mut estimated_output_tokens: u32 = 0;
 
         futures::pin_mut!(driver_stream);
@@ -3613,9 +3527,18 @@ async fn api_messages(
                     }));
                 }
                 Ok(DriverEvent::Usage {
-                    completion_tokens, ..
+                    prompt_tokens,
+                    completion_tokens,
+                    cached_tokens,
+                    cache_creation_tokens,
+                    ..
                 }) => {
-                    provider_completion_tokens = Some(completion_tokens);
+                    provider_usage = Some(provider_anthropic_usage(
+                        prompt_tokens,
+                        completion_tokens,
+                        cached_tokens,
+                        cache_creation_tokens,
+                    ));
                 }
                 Ok(DriverEvent::Done) => break,
                 Ok(DriverEvent::Error { message, .. }) => {
@@ -3632,8 +3555,7 @@ async fn api_messages(
             }
         }
 
-        let mut usage = input_usage.clone();
-        usage.output_tokens = provider_completion_tokens.unwrap_or(estimated_output_tokens);
+        let usage = finalized_anthropic_usage(provider_usage, estimated_output_tokens);
 
         let mut content = Vec::<Value>::new();
         if !final_text.is_empty() {
@@ -3668,7 +3590,7 @@ async fn api_messages(
         let mut next_block_index: usize = 0;
         let mut saw_tool_use = false;
         let mut estimated_output_tokens: u32 = 0;
-        let mut provider_completion_tokens: Option<u32> = None;
+        let mut provider_usage: Option<AnthropicUsage> = None;
         let mut finalized = false;
 
         yield Ok::<Event, std::convert::Infallible>(anthropic_sse_event("message_start", json!({
@@ -3682,10 +3604,10 @@ async fn api_messages(
                 "stop_reason": Value::Null,
                 "stop_sequence": Value::Null,
                 "usage": AnthropicUsage {
-                    input_tokens: input_usage.input_tokens,
+                    input_tokens: 0,
                     output_tokens: 0,
-                    cache_creation_input_tokens: input_usage.cache_creation_input_tokens,
-                    cache_read_input_tokens: input_usage.cache_read_input_tokens,
+                    cache_creation_input_tokens: 0,
+                    cache_read_input_tokens: 0,
                 }
             }
         })));
@@ -3883,9 +3805,18 @@ async fn api_messages(
                     saw_tool_use = true;
                 }
                 Ok(DriverEvent::Usage {
-                    completion_tokens, ..
+                    prompt_tokens,
+                    completion_tokens,
+                    cached_tokens,
+                    cache_creation_tokens,
+                    ..
                 }) => {
-                    provider_completion_tokens = Some(completion_tokens);
+                    provider_usage = Some(provider_anthropic_usage(
+                        prompt_tokens,
+                        completion_tokens,
+                        cached_tokens,
+                        cache_creation_tokens,
+                    ));
                 }
                 Ok(DriverEvent::Done) => {
                     if let Some(block) = active_block.take() {
@@ -3899,8 +3830,10 @@ async fn api_messages(
                         })));
                     }
 
-                    let mut usage = input_usage.clone();
-                    usage.output_tokens = provider_completion_tokens.unwrap_or(estimated_output_tokens);
+                    let usage = finalized_anthropic_usage(
+                        provider_usage.clone(),
+                        estimated_output_tokens,
+                    );
                     yield Ok(anthropic_sse_event("message_delta", json!({
                         "type": "message_delta",
                         "delta": {
@@ -3927,8 +3860,10 @@ async fn api_messages(
                             "index": index
                         })));
                     }
-                    let mut usage = input_usage.clone();
-                    usage.output_tokens = provider_completion_tokens.unwrap_or(estimated_output_tokens);
+                    let usage = finalized_anthropic_usage(
+                        provider_usage.clone(),
+                        estimated_output_tokens,
+                    );
                     yield Ok(anthropic_sse_event("message_delta", json!({
                         "type": "message_delta",
                         "delta": {
@@ -3955,8 +3890,10 @@ async fn api_messages(
                             "index": index
                         })));
                     }
-                    let mut usage = input_usage.clone();
-                    usage.output_tokens = provider_completion_tokens.unwrap_or(estimated_output_tokens);
+                    let usage = finalized_anthropic_usage(
+                        provider_usage.clone(),
+                        estimated_output_tokens,
+                    );
                     yield Ok(anthropic_sse_event("message_delta", json!({
                         "type": "message_delta",
                         "delta": {
@@ -3986,8 +3923,10 @@ async fn api_messages(
                     "index": index
                 })));
             }
-            let mut usage = input_usage.clone();
-            usage.output_tokens = provider_completion_tokens.unwrap_or(estimated_output_tokens);
+            let usage = finalized_anthropic_usage(
+                provider_usage,
+                estimated_output_tokens,
+            );
             yield Ok(anthropic_sse_event("message_delta", json!({
                 "type": "message_delta",
                 "delta": {
@@ -4614,7 +4553,8 @@ pub(crate) async fn api_chat_completion(
         );
     }
     if let Some(requested_model) = req.model.as_deref() {
-        let resolved_turn_model = match resolve_requested_model(&state, Some(requested_model)).await {
+        let resolved_turn_model = match resolve_requested_model(&state, Some(requested_model)).await
+        {
             Ok(model) => model,
             Err(response) => return response,
         };
@@ -4655,10 +4595,11 @@ pub(crate) async fn api_chat_completion(
         .model
         .as_ref()
         .map(|model| format!("{}/{}", model.provider_id, model.model_id));
-    let resolved_model = match resolve_requested_model(&state, effective_model_name.as_deref()).await {
-        Ok(model) => model,
-        Err(response) => return response,
-    };
+    let resolved_model =
+        match resolve_requested_model(&state, effective_model_name.as_deref()).await {
+            Ok(model) => model,
+            Err(response) => return response,
+        };
     agent.policy.provider.default.provider = resolved_model.provider_id.clone();
     agent.policy.provider.default.model = resolved_model.model_id.clone();
     effective_run_policy.model = Some(uar::domain::policy::ModelRoute {
@@ -4688,27 +4629,62 @@ pub(crate) async fn api_chat_completion(
         build_multipart_content(&input_message, &req.attachments).unwrap_or(input_message);
 
     // --- Prompt caching: resolve effective setting for this request ---
-    let effective_prompt_caching = {
-        use crate::uar::domain::prompt_caching::resolve_effective_caching;
-        // Session-level override from request body (highest priority)
-        let session_override = req.prompt_caching_enabled;
-        // User-level preference (requires non-anonymous user)
-        let user_pref = if user_ctx.user_id != "anonymous" {
-            state
-                .user_settings_store
-                .caching_enabled_for(&user_ctx.user_id)
-                .await
-        } else {
-            None
-        };
-        // Agent-level default (not yet stored per-agent — placeholder for future)
-        let agent_pref: Option<bool> = None;
-        // Global default: off unless explicitly configured
-        let global = false;
-        resolve_effective_caching(session_override, user_pref, agent_pref, global)
+    let global_prompt_caching = match &state.settings_manager {
+        Some(manager) => manager
+            .get_typed::<bool>("prompt_caching.enabled")
+            .await
+            .ok()
+            .flatten()
+            .unwrap_or(false),
+        None => false,
     };
+    let request_override = req.prompt_caching_enabled.or_else(|| {
+        (effective_run_policy
+            .provenance
+            .get("prompt_caching_enabled")
+            == Some(&uar::domain::policy::PolicyScope::Turn))
+        .then_some(effective_run_policy.prompt_caching_enabled)
+    });
+    let session_override = (effective_run_policy
+        .provenance
+        .get("prompt_caching_enabled")
+        == Some(&uar::domain::policy::PolicyScope::Conversation))
+    .then_some(effective_run_policy.prompt_caching_enabled);
+    let jwt_principal = headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| value.starts_with("Bearer "))
+        .filter(|_| !headers.contains_key("x-api-key"))
+        .and_then(|_| uar::api::user_settings::principal_storage_key(&user_ctx));
+    let user_override = if let Some(principal_id) = jwt_principal {
+        match state
+            .user_settings_store
+            .caching_enabled_for(&principal_id)
+            .await
+        {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::error!(%error, "failed to resolve user prompt-caching preference");
+                return openai_error_response(
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    "User settings persistence unavailable",
+                    Some("user_settings_unavailable"),
+                );
+            }
+        }
+    } else {
+        None
+    };
+    let effective_prompt_caching = crate::uar::domain::prompt_caching::resolve_effective_caching(
+        request_override,
+        session_override,
+        user_override,
+        global_prompt_caching,
+    );
+    effective_run_policy.prompt_caching_enabled = effective_prompt_caching.enabled;
     tracing::debug!(
-        prompt_caching_enabled = effective_prompt_caching,
+        prompt_caching_enabled = effective_prompt_caching.enabled,
+        source = ?effective_prompt_caching.source,
         user_id = %user_ctx.user_id,
         "Resolved effective prompt-caching setting"
     );
@@ -6256,6 +6232,7 @@ marker.write_bytes(b"stdin-closed")
             system: None,
             tools: Vec::new(),
             stream: false,
+            session_id: None,
             prompt_caching_enabled: None,
             _extra: HashMap::new(),
         };
@@ -6334,40 +6311,22 @@ marker.write_bytes(b"stdin-closed")
         );
     }
 
-    #[tokio::test]
-    async fn compute_anthropic_input_usage_tracks_cache_create_and_hit() {
-        let cache = SurrealMemPromptCacheProvider::new()
-            .await
-            .expect("cache should initialize");
-        let provider: Arc<dyn PromptCacheProvider> = Arc::new(cache);
-        let request = AnthropicMessagesRequest {
-            model: "claude-sonnet-4-20250514".to_string(),
-            messages: vec![AnthropicMessageInput {
-                role: "user".to_string(),
-                content: AnthropicContentInput::Blocks(vec![AnthropicContentBlockInput {
-                    block_type: "text".to_string(),
-                    text: Some("cached text block".to_string()),
-                    cache_control: Some(AnthropicCacheControlInput::default()),
-                    ..AnthropicContentBlockInput::default()
-                }]),
-                _extra: HashMap::new(),
-            }],
-            system: None,
-            tools: Vec::new(),
-            stream: true,
-            prompt_caching_enabled: None,
-            _extra: HashMap::new(),
-        };
+    #[test]
+    fn provider_anthropic_usage_preserves_reported_cache_fields_exactly() {
+        let usage = provider_anthropic_usage(41, 7, Some(29), Some(13));
+        assert_eq!(usage.input_tokens, 41);
+        assert_eq!(usage.output_tokens, 7);
+        assert_eq!(usage.cache_creation_input_tokens, 13);
+        assert_eq!(usage.cache_read_input_tokens, 29);
+    }
 
-        let first = compute_anthropic_input_usage(&request, &provider).await;
-        assert_eq!(first.input_tokens, 0);
-        assert!(first.cache_creation_input_tokens > 0);
-        assert_eq!(first.cache_read_input_tokens, 0);
-
-        let second = compute_anthropic_input_usage(&request, &provider).await;
-        assert_eq!(second.input_tokens, 0);
-        assert_eq!(second.cache_creation_input_tokens, 0);
-        assert!(second.cache_read_input_tokens > 0);
+    #[test]
+    fn absent_provider_usage_never_fabricates_cache_activity() {
+        let usage = finalized_anthropic_usage(None, 9);
+        assert_eq!(usage.input_tokens, 0);
+        assert_eq!(usage.output_tokens, 9);
+        assert_eq!(usage.cache_creation_input_tokens, 0);
+        assert_eq!(usage.cache_read_input_tokens, 0);
     }
 
     #[test]

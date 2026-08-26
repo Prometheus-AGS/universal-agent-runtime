@@ -124,6 +124,7 @@ async fn test_checkpoint_node_persists_via_graph_context() {
         mcp: Arc::new(McpRegistry::new_empty()),
         llm_config: universal_agent_runtime::config::LlmConfig::default(),
         driver,
+        cache_strategy: None,
         persistence: Some(Arc::clone(&db)),
     };
 

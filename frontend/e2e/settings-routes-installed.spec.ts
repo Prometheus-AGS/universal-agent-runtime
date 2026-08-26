@@ -18,6 +18,7 @@ test("installed settings panels use canonical namespace routes without settings 
 }) => {
   const settingsRequests: SettingsRequest[] = [];
   const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
 
   page.on("request", (entry) => {
     const url = new URL(entry.url());
@@ -35,6 +36,7 @@ test("installed settings panels use canonical namespace routes without settings 
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
+  page.on("pageerror", (error) => pageErrors.push(error.message));
 
   const configuredResponse = await request.get("/api/uar/settings/providers");
   expect(configuredResponse.ok(), await configuredResponse.text()).toBeTruthy();
@@ -50,13 +52,24 @@ test("installed settings panels use canonical namespace routes without settings 
   expect(providerResponse.ok()).toBeTruthy();
 
   await expect(page.getByRole("heading", { name: "LLM Providers" })).toBeVisible();
-  await expect(page.getByText(`${configuredProviders.length} provider(s) configured`)).toBeVisible();
+  await expect(page.getByText(`${configuredProviders.length} configured providers`)).toBeVisible();
   await expect(page.getByText("This item wasn’t found. It may have been deleted or moved.")).toHaveCount(0);
   await expect(page.getByText("No providers configured.", { exact: false })).toHaveCount(0);
   for (const provider of configuredProviders) {
     await expect(page.getByText(provider.name, { exact: true })).toBeVisible();
     await expect(page.getByText(provider.key, { exact: true })).toBeVisible();
   }
+
+  const promptCachingResponsePromise = page.waitForResponse((response) => (
+    response.request().method() === "GET"
+    && new URL(response.url()).pathname === "/api/uar/settings/prompt-caching"
+  ));
+  await page.getByRole("button", { name: "Prompt Caching" }).click();
+  const promptCachingResponse = await promptCachingResponsePromise;
+  expect(promptCachingResponse.ok()).toBeTruthy();
+  await expect(page.getByRole("heading", { name: "Prompt Caching" })).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("Global default is Off");
+  await expect(page.getByText("This item wasn’t found. It may have been deleted or moved.")).toHaveCount(0);
 
   const contextResponsePromise = page.waitForResponse((response) => (
     response.request().method() === "GET"
@@ -70,10 +83,13 @@ test("installed settings panels use canonical namespace routes without settings 
 
   expect(settingsRequests.some((entry) => entry.path === "/api/uar/settings/providers")).toBeTruthy();
   expect(settingsRequests.some((entry) => entry.path === "/api/uar/settings/context-management")).toBeTruthy();
+  expect(settingsRequests.some((entry) => entry.path === "/api/uar/settings/prompt-caching")).toBeTruthy();
   expect(settingsRequests.some((entry) => entry.path === "/api/uar/settings/provider")).toBeFalsy();
   expect(settingsRequests.some((entry) => entry.path.includes("_"))).toBeFalsy();
   expect(settingsRequests.filter((entry) => entry.status === 404)).toEqual([]);
   expect(consoleErrors.filter((entry) => (
     entry.includes("/api/uar/settings/") && entry.includes("404")
   ))).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+  expect(pageErrors).toEqual([]);
 });

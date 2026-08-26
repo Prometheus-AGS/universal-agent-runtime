@@ -2,6 +2,7 @@ use crate::session::Session;
 use crate::uar::domain::knowledge::{
     DocumentStatus, KnowledgeBase, KnowledgeChunk, KnowledgeDocument, KnowledgeMatch,
 };
+use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
 use crate::uar::persistence::PersistenceLayer;
 use anyhow::{Context, Result};
@@ -357,6 +358,29 @@ impl PersistenceLayer for SurrealDbProvider {
     ) -> Result<()> {
         self.delete_tenant_record("conversation_policies", owner_id, conversation_id)
             .await
+    }
+
+    async fn save_user_prompt_caching_settings(
+        &self,
+        settings: &UserPromptCachingSettings,
+    ) -> Result<()> {
+        let payload = to_db_value(settings)?;
+        let _: Option<surrealdb::types::Value> = self
+            .db
+            .upsert(("user_prompt_caching_settings", settings.user_id.clone()))
+            .content(payload)
+            .await?;
+        Ok(())
+    }
+
+    async fn load_user_prompt_caching_settings(
+        &self,
+        principal_id: &str,
+    ) -> Result<Option<UserPromptCachingSettings>> {
+        from_db_opt(
+            self.fetch_one("user_prompt_caching_settings", principal_id)
+                .await?,
+        )
     }
 
     // Skill Management
@@ -1779,5 +1803,56 @@ mod tests {
             .await
             .expect("list history for unknown scope_id");
         assert!(empty.is_empty());
+    }
+
+    #[test]
+    fn user_prompt_caching_settings_survive_process_reload() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let db_path = dir.path().join("user_prompt_caching_reload.db");
+        let endpoint = format!("surrealkv://{}", db_path.display());
+        let test_name = "uar::persistence::providers::surreal::tests::user_prompt_caching_settings_process_phase";
+
+        for phase in ["save", "load"] {
+            let status = std::process::Command::new(std::env::current_exe().expect("test binary"))
+                .args(["--exact", test_name, "--nocapture"])
+                .env("UAR_PROMPT_CACHING_TEST_PHASE", phase)
+                .env("UAR_PROMPT_CACHING_TEST_ENDPOINT", &endpoint)
+                .status()
+                .expect("run isolated persistence phase");
+            assert!(status.success(), "{phase} child process failed");
+        }
+    }
+
+    #[tokio::test]
+    async fn user_prompt_caching_settings_process_phase() {
+        use super::SurrealDbProvider;
+        use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
+        use crate::uar::persistence::PersistenceLayer;
+
+        let Ok(phase) = std::env::var("UAR_PROMPT_CACHING_TEST_PHASE") else {
+            return;
+        };
+        let endpoint = std::env::var("UAR_PROMPT_CACHING_TEST_ENDPOINT").expect("endpoint");
+        let principal_id = "v1:t:8:tenant-a:s:3:sam";
+        let provider = SurrealDbProvider::new(&endpoint, None, None, None, None)
+            .await
+            .expect("connect provider");
+
+        if phase == "save" {
+            let mut settings = UserPromptCachingSettings::new(principal_id);
+            settings.prompt_caching_enabled = Some(true);
+            provider
+                .save_user_prompt_caching_settings(&settings)
+                .await
+                .expect("save user settings");
+        } else {
+            let loaded = provider
+                .load_user_prompt_caching_settings(principal_id)
+                .await
+                .expect("load user settings")
+                .expect("persisted record");
+            assert_eq!(loaded.user_id, principal_id);
+            assert_eq!(loaded.prompt_caching_enabled, Some(true));
+        }
     }
 }

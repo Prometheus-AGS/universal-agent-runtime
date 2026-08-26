@@ -433,6 +433,7 @@ mod tests {
                 jwt_audience: None,
                 jwt_validate_nbf: true,
                 settings_mutation_auth_required: true,
+                settings_admin_key: Some("test-admin-key".to_owned().into()),
             },
             base_url: "http://127.0.0.1:3928".to_owned(),
         }))

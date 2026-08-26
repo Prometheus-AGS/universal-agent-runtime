@@ -1,0 +1,21 @@
+{
+  "recorded_at": "2026-08-25T20:08:13-05:00",
+  "release_sha256": "4af63ceafb720276f5709d02236d973d9ff71fad7b6235943283ddc6fa5ac319",
+  "installed_sha256": "4af63ceafb720276f5709d02236d973d9ff71fad7b6235943283ddc6fa5ac319",
+  "launch_agent": {
+    "label": "com.prometheus.universal-agent-runtime",
+    "executable": "/Users/gqadonis/.uar/bin/universal-agent-runtime",
+    "pid": 37874,
+    "state": "running",
+    "port": 1906
+  },
+  "http": {
+    "healthz": 200,
+    "readyz": 200,
+    "prompt_caching": 200,
+    "missing_agent_config": 204,
+    "missing_agent_config_bytes": 0
+  },
+  "global_default": false,
+  "live_anthropic_credential": "unavailable"
+}

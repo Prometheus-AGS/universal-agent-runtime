@@ -124,4 +124,6 @@ merely because a file on disk changed.
   inject the inference driver and matching provider/model metadata.
 
 Configuration evidence does not transfer between profiles or deployments. Read
-[Select models](/docs/providers/models) next.
+[Select models](/docs/providers/models) next, then [configure prompt
+caching](/docs/providers/prompt-caching) for provider-specific cache behavior
+and precedence.

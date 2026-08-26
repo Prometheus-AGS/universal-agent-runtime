@@ -16,6 +16,7 @@ use crate::{
             },
             memory::{Memory, MemoryMatch},
             policy::ConversationPolicyRecord,
+            prompt_caching::UserPromptCachingSettings,
             skills::{Skill, SkillMatch},
         },
         persistence::PersistenceLayer,
@@ -28,6 +29,7 @@ use crate::{
 pub struct InMemoryProvider {
     sessions: RwLock<HashMap<String, Session>>,
     conversation_policies: RwLock<HashMap<String, ConversationPolicyRecord>>,
+    user_prompt_caching_settings: RwLock<HashMap<String, UserPromptCachingSettings>>,
     skills: RwLock<HashMap<String, Skill>>,
     knowledge_bases: RwLock<HashMap<String, KnowledgeBase>>,
     chunks: RwLock<HashMap<String, KnowledgeChunk>>,
@@ -111,6 +113,22 @@ impl PersistenceLayer for InMemoryProvider {
         let key = crate::uar::persistence::tenant_storage_key(owner_id, conversation_id);
         write(&self.conversation_policies)?.remove(&key);
         Ok(())
+    }
+    async fn save_user_prompt_caching_settings(
+        &self,
+        settings: &UserPromptCachingSettings,
+    ) -> Result<()> {
+        write(&self.user_prompt_caching_settings)?
+            .insert(settings.user_id.clone(), settings.clone());
+        Ok(())
+    }
+    async fn load_user_prompt_caching_settings(
+        &self,
+        principal_id: &str,
+    ) -> Result<Option<UserPromptCachingSettings>> {
+        Ok(read(&self.user_prompt_caching_settings)?
+            .get(principal_id)
+            .cloned())
     }
     async fn save_skill(&self, skill: &Skill, _embedding: &[f32]) -> Result<()> {
         write(&self.skills)?.insert(skill.skill_id.clone(), skill.clone());

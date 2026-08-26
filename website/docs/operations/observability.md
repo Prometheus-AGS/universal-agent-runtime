@@ -61,4 +61,6 @@ Metrics aggregate labels and values; logs and traces may omit paths that lack in
 
 The `telemetry` feature—and therefore populated Prometheus export—is included in `server-full`. In `minimal`, `/metrics` returns 404 because telemetry is not compiled, though liveness, readiness, and structured logging remain server concerns. `embedded-mobile` delegates collection and export to the host. No signal here transfers a readiness claim between profiles.
 
-See [cost interpretation](/docs/operations/cost), [shutdown outcomes](/docs/operations/recovery-and-shutdown), and the [Runtime Console](/docs/operations/runtime-console).
+See [prompt-caching configuration and metric interpretation](/docs/providers/prompt-caching),
+[cost interpretation](/docs/operations/cost), [shutdown outcomes](/docs/operations/recovery-and-shutdown),
+and the [Runtime Console](/docs/operations/runtime-console).

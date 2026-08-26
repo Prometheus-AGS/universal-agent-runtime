@@ -126,6 +126,12 @@ security:
   jwt_required: false
 ```
 
+When `security.settings_mutation_auth_required` is enabled, configure a
+non-empty `security.settings_admin_key` and send that exact value in the
+`X-UAR-Admin-Key` header. UAR rejects startup if protection is enabled without
+an admin key. The packaged loopback-only LaunchAgent disables this boundary;
+do not copy that weaker setting to a network-exposed deployment.
+
 Do not combine anonymous mode with a public or non-local listener. Per-user
 provider credentials require a valid credential-encryption key; without it,
 that service is unavailable and operator environment/configuration remains the

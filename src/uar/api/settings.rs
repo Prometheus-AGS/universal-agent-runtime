@@ -21,11 +21,29 @@ use std::sync::Arc;
 // State
 // =============================================================================
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct SettingsApiState {
     pub settings_manager: Option<Arc<SettingsManager>>,
-    /// When false, mutation handlers do not require `X-UAR-Admin-Key` (local dev only).
+    /// When false, protected handlers do not require `X-UAR-Admin-Key` (local dev only).
     pub settings_mutation_auth_required: bool,
+    pub settings_admin_key: Option<secrecy::SecretString>,
+}
+
+impl std::fmt::Debug for SettingsApiState {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("SettingsApiState")
+            .field("settings_manager", &self.settings_manager)
+            .field(
+                "settings_mutation_auth_required",
+                &self.settings_mutation_auth_required,
+            )
+            .field(
+                "settings_admin_key",
+                &self.settings_admin_key.as_ref().map(|_| "***redacted***"),
+            )
+            .finish()
+    }
 }
 
 // =============================================================================
@@ -155,6 +173,14 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
             "/context-strategy",
             put(|s, q, h, b| update_namespace(s, q, h, b, "context_strategy")),
         )
+        .route(
+            "/prompt-caching",
+            get(|s, q, h| list_admin_namespace(s, q, h, "prompt_caching")),
+        )
+        .route(
+            "/prompt-caching",
+            put(|s, q, h, b| update_namespace(s, q, h, b, "prompt_caching")),
+        )
         .route("/rag", get(|s, q, h| list_namespace(s, q, h, "rag")))
         .route(
             "/rag",
@@ -280,7 +306,7 @@ impl IntoResponse for ApiError {
             ).into_response(),
             ApiError::Forbidden => (
                 StatusCode::FORBIDDEN,
-                Json(json!({"error": "X-UAR-Admin-Key header is required for mutation endpoints (set security.settings_mutation_auth_required: false in config for trusted local use)"})),
+                Json(json!({"error": "A valid X-UAR-Admin-Key header is required for this settings endpoint (set security.settings_mutation_auth_required: false in config for trusted local use)"})),
             ).into_response(),
             ApiError::Internal(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -296,11 +322,16 @@ fn require_admin_key(state: &SettingsApiState, headers: &HeaderMap) -> Result<()
     if !state.settings_mutation_auth_required {
         return Ok(());
     }
-    if headers.contains_key("x-uar-admin-key") {
-        Ok(())
-    } else {
-        Err(ApiError::Forbidden)
-    }
+    let supplied = headers
+        .get("x-uar-admin-key")
+        .and_then(|value| value.to_str().ok());
+    crate::config::secret_value_matches(&state.settings_admin_key, supplied)
+        .then_some(())
+        .ok_or(ApiError::Forbidden)
+}
+
+fn is_admin_only_setting(key: &str) -> bool {
+    key == "prompt_caching" || key.starts_with("prompt_caching.")
 }
 
 fn schema_is_sensitive(schema: &Value) -> bool {
@@ -521,6 +552,9 @@ async fn list_settings(
     let all = mgr.list_all_with_meta().await;
     let mut out = Vec::with_capacity(all.len());
     for swm in all {
+        if is_admin_only_setting(&swm.setting.key) {
+            continue;
+        }
         out.push(masked_response(swm, mgr).await);
     }
     Ok(Json(out))
@@ -531,6 +565,9 @@ async fn get_setting(
     Path(key): Path<String>,
 ) -> Result<Json<SettingsWithMetaResponse>, ApiError> {
     let mgr = mgr_from_state(&state)?;
+    if is_admin_only_setting(&key) {
+        return Err(ApiError::NotFound(key));
+    }
     let swm = mgr
         .get_with_meta(&key)
         .await
@@ -607,6 +644,22 @@ async fn list_namespace(
     _headers: HeaderMap,
     type_key: &str,
 ) -> Result<Json<Vec<SettingsWithMetaResponse>>, ApiError> {
+    let mgr = mgr_from_state(&state)?;
+    let items = mgr.list_namespace_with_meta(type_key).await;
+    let mut out = Vec::with_capacity(items.len());
+    for swm in items {
+        out.push(masked_response(swm, mgr).await);
+    }
+    Ok(Json(out))
+}
+
+async fn list_admin_namespace(
+    State(state): State<Arc<SettingsApiState>>,
+    _query: Query<ListSettingsQuery>,
+    headers: HeaderMap,
+    type_key: &str,
+) -> Result<Json<Vec<SettingsWithMetaResponse>>, ApiError> {
+    require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
     let items = mgr.list_namespace_with_meta(type_key).await;
     let mut out = Vec::with_capacity(items.len());
@@ -695,6 +748,97 @@ async fn preserve_masked_sensitive_value(
         &existing.setting.data,
         value_schema,
     ))
+}
+
+#[cfg(test)]
+mod prompt_caching_authorization_tests {
+    use super::*;
+    use axum::{body::Body, http::Request};
+    use tower::ServiceExt;
+
+    fn protected_state() -> SettingsApiState {
+        SettingsApiState {
+            settings_manager: None,
+            settings_mutation_auth_required: true,
+            settings_admin_key: Some("configured-admin-key".to_string().into()),
+        }
+    }
+
+    #[test]
+    fn prompt_caching_admin_boundary_rejects_missing_header() {
+        assert!(matches!(
+            require_admin_key(&protected_state(), &HeaderMap::new()),
+            Err(ApiError::Forbidden)
+        ));
+    }
+
+    #[test]
+    fn prompt_caching_admin_boundary_accepts_configured_header() {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "x-uar-admin-key",
+            "configured-admin-key".parse().expect("header"),
+        );
+        assert!(require_admin_key(&protected_state(), &headers).is_ok());
+    }
+
+    #[test]
+    fn prompt_caching_admin_boundary_rejects_wrong_header() {
+        let mut headers = HeaderMap::new();
+        headers.insert("x-uar-admin-key", "wrong-key".parse().expect("header"));
+        assert!(matches!(
+            require_admin_key(&protected_state(), &headers),
+            Err(ApiError::Forbidden)
+        ));
+    }
+
+    #[test]
+    fn generic_settings_reads_exclude_prompt_caching_namespace() {
+        assert!(is_admin_only_setting("prompt_caching.enabled"));
+        assert!(is_admin_only_setting("prompt_caching"));
+        assert!(!is_admin_only_setting("server.port"));
+    }
+
+    #[tokio::test]
+    async fn prompt_caching_route_enforces_admin_boundary_before_manager_access() {
+        let app = build_router().with_state(Arc::new(protected_state()));
+        let denied = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/prompt-caching")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("response");
+        assert_eq!(denied.status(), StatusCode::FORBIDDEN);
+
+        let wrong = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/prompt-caching")
+                    .header("x-uar-admin-key", "wrong-key")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("response");
+        assert_eq!(wrong.status(), StatusCode::FORBIDDEN);
+
+        let authorized = app
+            .oneshot(
+                Request::builder()
+                    .uri("/prompt-caching")
+                    .header("x-uar-admin-key", "configured-admin-key")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("response");
+        assert_eq!(authorized.status(), StatusCode::SERVICE_UNAVAILABLE);
+    }
 }
 
 fn preserve_sensitive_value(value: Value, existing: &Value, schema: &Value) -> Value {

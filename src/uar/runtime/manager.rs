@@ -1,5 +1,5 @@
 use crate::config::{LlmConfig, SkillEvolutionConfig};
-use crate::llm::{LiterLlmDriver, LlmDriver, Message, MessageRole, Orchestrator};
+use crate::llm::{LlmDriver, Message, MessageRole, Orchestrator};
 use crate::mcp::registry::McpRegistry;
 use crate::session::SessionStore;
 use crate::uar::a2ui::realtime::A2uiReplayBackbone;
@@ -1674,7 +1674,12 @@ impl RunManager {
                     Some(registry) => o.with_health_monitor(Arc::clone(registry.health())),
                     None => o,
                 }
-                .with_resilience_policy(self.resilience_policy.clone());
+                .with_resilience_policy(self.resilience_policy.clone())
+                .with_cache_strategy(
+                    effective_policy
+                        .prompt_caching_enabled
+                        .then(crate::llm::anthropic_cache::CacheStrategy::default),
+                );
 
                 // Wire up tool approval gate
                 let approval_run_id = run_id.clone();
@@ -1825,6 +1830,9 @@ impl RunManager {
         } else {
             None
         };
+        let cache_strategy_for_graph = effective_policy
+            .prompt_caching_enabled
+            .then(crate::llm::anthropic_cache::CacheStrategy::default);
         let persistence_for_run = self.persistence.clone();
         let a2ui_backbone_for_run = Arc::clone(&self.a2ui_backbone);
         // Cancellation: the run's child token (selected on in the consumption loop,
@@ -1891,13 +1899,8 @@ impl RunManager {
                     match primary_driver_for_graph.clone() {
                         Some(driver) => driver,
                         None => {
-                            let client_cfg = crate::config::build_client_config(&llm_config_for_graph);
-                            match LiterLlmDriver::new(
-                                client_cfg,
-                                llm_config_for_graph.model.clone(),
-                                llm_config_for_graph.parallel_tool_calls,
-                            ) {
-                                Ok(d) => std::sync::Arc::new(d),
+                            match crate::llm::orchestrator::build_driver(&llm_config_for_graph) {
+                                Ok(driver) => driver,
                                 Err(e) => {
                                     tracing::error!(
                                         run_id = %execute_run_id,
@@ -1921,6 +1924,7 @@ impl RunManager {
                     mcp: mcp_for_graph,
                     llm_config: llm_config_for_graph,
                     driver: graph_driver,
+                    cache_strategy: cache_strategy_for_graph,
                     persistence: persistence_for_run.clone(),
                 };
 

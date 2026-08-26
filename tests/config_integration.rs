@@ -19,6 +19,7 @@ fn setup_env_vars() {
         // so vars follow the UAR_SECTION__KEY convention (single underscore
         // after the UAR prefix) — see AppConfig::load_with_cli.
         env::set_var("UAR_SECURITY__JWT_SECRET", "test_secret_123");
+        env::set_var("UAR_SECURITY__SETTINGS_MUTATION_AUTH_REQUIRED", "false");
 
         env::set_var("UAR_PERSISTENCE__PROVIDER", "postgres");
         env::set_var(

@@ -309,4 +309,24 @@ mod tests {
             "handle is detached from the global recorder; body was:\n{body}"
         );
     }
+
+    #[test]
+    fn cache_usage_records_provider_reported_write_and_read_tokens() {
+        super::init();
+        super::record_cache_tokens("anthropic-stub", "claude-cache-test", 13, 29);
+        let body = super::metrics_handle().render();
+        let write = body.lines().find(|line| {
+            line.starts_with("uar_cache_write_tokens_total")
+                && line.contains("provider=\"anthropic-stub\"")
+                && line.contains("model=\"claude-cache-test\"")
+        });
+        let read = body.lines().find(|line| {
+            line.starts_with("uar_cache_read_tokens_total")
+                && line.contains("provider=\"anthropic-stub\"")
+                && line.contains("model=\"claude-cache-test\"")
+        });
+
+        assert!(write.is_some_and(|line| line.ends_with(" 13")), "{body}");
+        assert!(read.is_some_and(|line| line.ends_with(" 29")), "{body}");
+    }
 }

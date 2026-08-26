@@ -111,7 +111,7 @@ impl AgentNode {
                 }),
             ],
             tools: Vec::new(),
-            cache_strategy: None,
+            cache_strategy: ctx.cache_strategy.clone(),
             thinking_config: None,
             anthropic_system: None,
             extra_params: None,

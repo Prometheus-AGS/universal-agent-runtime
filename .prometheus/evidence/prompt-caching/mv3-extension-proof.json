@@ -1,0 +1,21 @@
+{
+  "recorded_at": "2026-08-25T20:08:13-05:00",
+  "source": "frontend/packages/prometheus-entity-management/extension",
+  "checked_in_package": {
+    "loaded": false,
+    "service_workers": 0,
+    "reason": "manifest references missing extension/icons/icon16.png, icon48.png, and icon128.png"
+  },
+  "temporary_manifest_asset_restoration": {
+    "loaded": true,
+    "service_worker": "background.js",
+    "connected_count": 1,
+    "after_disconnect_count": 1,
+    "received": [
+      {
+        "phase": "connected"
+      }
+    ]
+  },
+  "conclusion": "The checked-in relay handles connect and disconnect correctly, but the pinned submodule package is not independently loadable until its missing manifest assets are fixed upstream."
+}

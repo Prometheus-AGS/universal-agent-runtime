@@ -2,6 +2,7 @@ export const CONFIGURED_PROVIDER_ENTITY = "ConfiguredProvider" as const;
 export const CONFIGURED_MODEL_ENTITY = "ConfiguredModel" as const;
 export const AGENT_SESSION_ENTITY = "AgentSession" as const;
 export const AGENT_SESSION_DRAFT_ENTITY = "AgentSessionDraft" as const;
+export const SESSION_PROMPT_CACHING_ENTITY = "SessionPromptCaching" as const;
 
 export type ToolApproval = "auto" | "ask" | "deny";
 
@@ -14,6 +15,21 @@ export interface AgentSessionConfig extends Record<string, unknown> {
   knowledge_bases: string[] | null;
   mcp_servers: string[] | null;
   tool_approval: ToolApproval | null;
+  /** Missing legacy values decode to null (Inherit). */
+  prompt_caching_enabled: boolean | null;
+}
+
+export type PromptCachingSource = "request" | "session" | "user" | "global";
+
+/** Authoritative effective prompt-caching state for one session. */
+export interface SessionPromptCaching extends Record<string, unknown> {
+  id: string;
+  session_id: string;
+  enabled: boolean;
+  source: PromptCachingSource;
+  session_override: boolean | null;
+  user_override: boolean | null;
+  global_default: boolean;
 }
 
 /** Canonical, server-confirmed session configuration keyed by thread id. */

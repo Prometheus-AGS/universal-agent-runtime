@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   AlertCircle,
   Check,
@@ -9,86 +9,204 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { friendlyError } from "@/lib/utils";
+import type { UarUserSettings } from "../../api/user-settings-api";
 import { useUserJwtSettings } from "../../model/use-user-jwt-settings";
-import { NamespacePanel } from "../generic-schema-panel";
-import { Field, SettingSelect, Toggle } from "../settings-primitives";
+import { useSettings } from "../../model/use-settings";
+import { SettingsHint } from "../generic-schema-panel";
+import {
+  ErrorBanner,
+  PanelHeader,
+  SavedBanner,
+  SettingSelect,
+  Toggle,
+} from "../settings-primitives";
 
 export function PromptCachingPanel() {
+  const enabledId = useId();
+  const descriptionId = useId();
+  const {
+    values,
+    settings,
+    dirty,
+    loading,
+    refreshing,
+    saving,
+    error,
+    setSetting,
+    saveAll,
+    reload,
+  } = useSettings("prompt_caching");
+  const [saved, setSaved] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const enabledKey = "prompt_caching.enabled";
+  const available = Object.prototype.hasOwnProperty.call(settings, enabledKey);
+  const dirtyCount = Object.keys(dirty).length;
+  const enabled = available ? Boolean(values[enabledKey]) : false;
+
+  useEffect(
+    () => () => {
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+    },
+    [],
+  );
+
+  const save = useCallback(async () => {
+    try {
+      await saveAll();
+      setSaved(true);
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+      savedTimer.current = setTimeout(() => setSaved(false), 2500);
+    } catch {
+      // The settings store retains the actionable error and dirty draft.
+    }
+  }, [saveAll]);
+
+  const statusText = saving
+    ? "Saving global default…"
+    : refreshing
+      ? "Refreshing server value…"
+      : dirtyCount > 0
+        ? "Unsaved changes"
+        : available
+          ? `Global default is ${enabled ? "On" : "Off"}`
+          : undefined;
+
   return (
-    <NamespacePanel
-      namespace="prompt_caching"
-      title="Prompt Caching"
-      hint="Prompt caching stores frequently-used prompt prefixes to reduce costs and latency. This is especially effective for system prompts and tool definitions that don't change between requests. Enable it to save on API costs with supported providers."
-    >
-      {({ val, set }) => (
-        <>
-          <p className="font-mono text-xs text-muted-foreground mb-3">
-            Prompt caching reduces latency and token costs by reusing stable
-            parts of the system prompt. Anthropic injects{" "}
-            <code>cache_control</code> blocks; OpenAI caches automatically on
-            eligible models.
-          </p>
-
-          <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 mb-1">
-            <div>
-              <p className="font-mono text-xs font-medium text-foreground">
-                Enable Prompt Caching (Global Default)
-              </p>
-              <p className="font-mono text-xs text-muted-foreground">
-                System-wide default; users can override per-session via the chat
-                toolbar.
-              </p>
-            </div>
-            <Toggle
-              value={(val("enabled") as boolean) ?? false}
-              onChange={(v) => set("enabled", v)}
-            />
-          </div>
-
-          <Field
-            label="Cache Control Type"
-            hint="Only 'ephemeral' is supported by Anthropic."
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <PanelHeader
+        title="Prompt Caching"
+        subtitle="Anthropic explicit caching and OpenAI provider-managed caching"
+        saving={saving}
+        loading={refreshing}
+        saveDisabled={
+          !available || loading || refreshing || saving || dirtyCount === 0
+        }
+        onSave={() => void save()}
+        onReload={() => void reload()}
+        statusText={statusText}
+      />
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        {loading && !available && (
+          <div
+            className="flex items-center gap-2"
+            role="status"
+            aria-live="polite"
           >
-            <SettingSelect
-              value={(val("cache_control_type") as string) ?? "ephemeral"}
-              options={[{ value: "ephemeral", label: "ephemeral" }]}
-              onChange={(v) => set("cache_control_type", v)}
-            />
-          </Field>
-
-          <div className="mt-4 rounded-lg border border-border bg-muted/30 px-4 py-3">
-            <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-              Supported Providers
-            </p>
-            <div className="flex gap-2 mt-1">
-              <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-0.5 font-mono text-xs font-medium text-foreground">
-                Anthropic
-              </span>
-              <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-0.5 font-mono text-xs font-medium text-foreground">
-                OpenAI (auto)
-              </span>
-            </div>
-            <p className="font-mono text-xs text-muted-foreground mt-2">
-              Priority: session override → user preference → agent setting →
-              this global default.
-            </p>
+            <Loader2 size={15} className="animate-spin text-muted-foreground" />
+            <span className="font-mono text-xs text-muted-foreground">
+              Loading prompt-caching settings…
+            </span>
           </div>
-        </>
-      )}
-    </NamespacePanel>
+        )}
+
+        {!available && !loading && (
+          <div
+            role="alert"
+            aria-atomic="true"
+            className="flex items-start justify-between gap-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3"
+          >
+            <div className="flex min-w-0 items-start gap-2">
+              <AlertCircle
+                size={14}
+                className="mt-0.5 shrink-0 text-destructive"
+              />
+              <div>
+                <p className="font-mono text-xs font-medium text-destructive">
+                  Prompt-caching settings are unavailable.
+                </p>
+                <p className="mt-1 font-body text-xs text-destructive">
+                  {error
+                    ? friendlyError(error)
+                    : "The server did not return a registered global setting."}{" "}
+                  Check the runtime connection, then try again.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void reload()}
+              disabled={refreshing}
+              className="shrink-0 gap-1.5"
+            >
+              <RefreshCw
+                size={13}
+                className={refreshing ? "animate-spin" : undefined}
+              />
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {available && (
+          <div className="space-y-6">
+            <ErrorBanner error={error} />
+            <SavedBanner show={saved} />
+            <SettingsHint id="prompt_caching">
+              Prompt caching reuses stable prompt prefixes to reduce latency and
+              token costs. Anthropic receives explicit cache controls when the
+              effective setting is On. OpenAI manages eligible prompt caches
+              automatically.
+            </SettingsHint>
+
+            <p className="font-mono text-xs text-muted-foreground mb-3">
+              This switch is the system-wide fallback. A user or session can
+              override it; a per-request override has the highest precedence.
+            </p>
+
+            <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 mb-1">
+              <div>
+                <label
+                  htmlFor={enabledId}
+                  className="font-mono text-xs font-medium text-foreground"
+                >
+                  Enable Prompt Caching (Global Default)
+                </label>
+                <p
+                  id={descriptionId}
+                  className="font-body text-xs text-muted-foreground"
+                >
+                  Off by default. This control affects explicit Anthropic cache
+                  annotations; OpenAI remains provider-managed.
+                </p>
+              </div>
+              <Toggle
+                id={enabledId}
+                ariaLabel="Enable prompt caching as the global default"
+                ariaDescribedBy={descriptionId}
+                value={enabled}
+                onChange={(value) => setSetting(enabledKey, value)}
+                disabled={refreshing || saving}
+              />
+            </div>
+
+            <div className="mt-4 rounded-lg border border-border bg-muted/30 px-4 py-3">
+              <p className="font-mono text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+                Supported Providers
+              </p>
+              <div className="flex gap-2 mt-1">
+                <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-0.5 font-mono text-xs font-medium text-foreground">
+                  Anthropic
+                </span>
+                <span className="inline-flex items-center rounded-md border border-border bg-card px-2 py-0.5 font-mono text-xs font-medium text-foreground">
+                  OpenAI (auto)
+                </span>
+              </div>
+              <p className="font-mono text-xs text-muted-foreground mt-2">
+                Effective priority: request → session → user → global.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
 // =============================================================================
 // User Settings Panel (JWT-gated)
 // =============================================================================
-
-interface UarUserSettings {
-  user_id: string;
-  prompt_caching_enabled: boolean | null;
-  preferred_scope: "session" | "user" | "agent";
-  updated_at: string;
-}
 
 export function UserSettingsPanel() {
   const apiKey =
@@ -120,7 +238,6 @@ export function UserSettingsPanel() {
     try {
       await saveRemote({
         prompt_caching_enabled: draft.prompt_caching_enabled,
-        preferred_scope: draft.preferred_scope,
       });
       setSaved(true);
       if (savedTimer.current) clearTimeout(savedTimer.current);
@@ -129,6 +246,10 @@ export function UserSettingsPanel() {
       /* error from store */
     }
   };
+  const dirty =
+    draft !== null &&
+    settings !== null &&
+    draft.prompt_caching_enabled !== settings.prompt_caching_enabled;
 
   if (!isJwt) {
     return (
@@ -194,7 +315,7 @@ export function UserSettingsPanel() {
             onClick={() => {
               void save();
             }}
-            disabled={saving || loading || !draft}
+            disabled={saving || loading || !draft || !dirty}
           >
             {saved ? (
               <>
@@ -223,59 +344,61 @@ export function UserSettingsPanel() {
       )}
 
       <div className="space-y-4 p-6">
-        <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
-          <div>
-            <p className="font-mono text-xs font-medium text-foreground">
-              Prompt Caching Enabled
-            </p>
-            <p className="font-mono text-xs text-muted-foreground">
-              Override the global default for your account. Null = inherit
-              global setting.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="link"
-              className="h-auto p-0 font-mono text-xs text-muted-foreground"
-              onClick={() =>
-                setDraft((s) =>
-                  s ? { ...s, prompt_caching_enabled: null } : s,
+        <div className="rounded-lg border border-border bg-card px-4 py-3">
+          <label
+            htmlFor="user-prompt-caching"
+            className="font-mono text-xs font-medium text-foreground"
+          >
+            Prompt Caching
+          </label>
+          <p
+            id="user-prompt-caching-description"
+            className="mb-3 font-body text-xs text-muted-foreground"
+          >
+            Choose Inherit to use the system-wide global default for your
+            account.
+          </p>
+          <div className="flex items-center gap-3">
+            <SettingSelect
+              id="user-prompt-caching"
+              ariaDescribedBy="user-prompt-caching-description"
+              value={
+                draft?.prompt_caching_enabled === null
+                  ? "inherit"
+                  : draft?.prompt_caching_enabled
+                    ? "on"
+                    : "off"
+              }
+              options={[
+                { value: "inherit", label: "Inherit" },
+                { value: "on", label: "On" },
+                { value: "off", label: "Off" },
+              ]}
+              onChange={(value) =>
+                setDraft((current) =>
+                  current
+                    ? {
+                        ...current,
+                        prompt_caching_enabled:
+                          value === "inherit" ? null : value === "on",
+                      }
+                    : current,
                 )
               }
-            >
-              reset
-            </Button>
-            <Toggle
-              value={draft?.prompt_caching_enabled ?? false}
-              onChange={(v) =>
-                setDraft((s) => (s ? { ...s, prompt_caching_enabled: v } : s))
-              }
-              disabled={!draft}
+              disabled={!draft || loading || saving}
+              triggerClassName="w-40"
             />
+            <span
+              role="status"
+              aria-live="polite"
+              className="font-mono text-xs text-muted-foreground"
+            >
+              {draft?.prompt_caching_enabled === null
+                ? "Using global default"
+                : `User override is ${draft?.prompt_caching_enabled ? "On" : "Off"}`}
+            </span>
           </div>
         </div>
-
-        <Field
-          label="Preferred Scope"
-          hint="Which level of settings takes precedence when no session override is present."
-        >
-          <SettingSelect
-            value={draft?.preferred_scope ?? "session"}
-            options={[
-              { value: "session", label: "Session (per-conversation)" },
-              { value: "user", label: "User (account-wide)" },
-              { value: "agent", label: "Agent (per-agent default)" },
-            ]}
-            onChange={(v) =>
-              setDraft((s) =>
-                s
-                  ? { ...s, preferred_scope: v as "session" | "user" | "agent" }
-                  : s,
-              )
-            }
-          />
-        </Field>
 
         {(draft?.updated_at ?? settings?.updated_at) && (
           <p className="font-mono text-xs text-muted-foreground">
@@ -289,4 +412,3 @@ export function UserSettingsPanel() {
     </div>
   );
 }
-

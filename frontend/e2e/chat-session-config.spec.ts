@@ -42,6 +42,7 @@ async function saveSession(
       knowledge_bases: null,
       mcp_servers: null,
       tool_approval: null,
+      prompt_caching_enabled: null,
     },
   });
   expect(response.ok(), await response.text()).toBeTruthy();
@@ -266,20 +267,16 @@ test("installed Session Configuration is responsive, persistent, bounded, and ef
     expect(sessionResult.choices[0]?.message.content).toContain("SESSION_POLICY_OK");
 
     expect(network.some((entry) => entry.path === "/api/models")).toBeFalsy();
-    const isMissingSessionConfiguration = (entry: typeof network[number]) => (
+    const isAgentConfig404 = (entry: typeof network[number]) => (
       entry.method === "GET"
       && entry.status === 404
       && /^\/api\/uar\/sessions\/[^/]+\/agent-config$/.test(entry.path)
     );
-    const expectedMissingConfigurations = network.filter(isMissingSessionConfiguration);
-    const unexpectedHttpFailures = network.filter((entry) => (
-      (entry.status ?? 0) >= 400 && !isMissingSessionConfiguration(entry)
-    ));
+    const unexpectedHttpFailures = network.filter((entry) => (entry.status ?? 0) >= 400);
     const consoleErrors = consoleMessages.filter((entry) => entry.type === "error");
     expect(unexpectedHttpFailures).toEqual([]);
-    expect(expectedMissingConfigurations.length).toBeGreaterThan(0);
-    expect(consoleErrors).toHaveLength(expectedMissingConfigurations.length);
-    expect(consoleErrors.every((entry) => entry.text.includes("404"))).toBeTruthy();
+    expect(network.filter(isAgentConfig404)).toEqual([]);
+    expect(consoleErrors).toEqual([]);
     await testInfo.attach("session-configuration-functional-proof", {
       body: JSON.stringify({
         source: "installed server-full release at http://127.0.0.1:1906",

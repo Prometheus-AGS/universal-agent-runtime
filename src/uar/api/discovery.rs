@@ -493,6 +493,9 @@ pub struct AgentSessionConfig {
     /// Tool approval policy: "auto" | "ask" | "deny".
     #[serde(default)]
     pub tool_approval: Option<String>,
+    /// Per-session prompt-caching override. `None` inherits user/global policy.
+    #[serde(default)]
+    pub prompt_caching_enabled: Option<bool>,
 }
 
 impl AgentSessionConfig {
@@ -513,6 +516,7 @@ impl AgentSessionConfig {
             skills: optional_selection(self.skills),
             knowledge_bases: optional_selection(self.knowledge_bases),
             mcp_servers: optional_selection(self.mcp_servers),
+            prompt_caching_enabled: self.prompt_caching_enabled,
             tool_approval: parse_tool_approval(self.tool_approval.as_deref()),
             ..RunPolicy::default()
         }
@@ -532,6 +536,7 @@ impl AgentSessionConfig {
             skills: selected_ids(&policy.skills),
             knowledge_bases: selected_ids(&policy.knowledge_bases),
             mcp_servers: selected_ids(&policy.mcp_servers),
+            prompt_caching_enabled: policy.prompt_caching_enabled,
             tool_approval: match policy.tool_approval {
                 ToolApprovalPolicy::Inherit => None,
                 ToolApprovalPolicy::Auto => Some("auto".into()),
@@ -559,7 +564,7 @@ fn parse_tool_approval(value: Option<&str>) -> ToolApprovalPolicy {
     }
 }
 
-async fn load_conversation_policy(
+pub(crate) async fn load_conversation_policy(
     state: &AppState,
     owner_id: &str,
     conversation_id: &str,
@@ -741,12 +746,78 @@ pub async fn get_agent_session_config(
                     .into_response()
             }
         },
-        None => (
-            StatusCode::NOT_FOUND,
-            Json(json!({"error": "No agent session config found for this session"})),
-        )
-            .into_response(),
+        None => StatusCode::NO_CONTENT.into_response(),
     }
+}
+
+#[derive(Debug, Serialize)]
+struct EffectivePromptCachingResponse {
+    enabled: bool,
+    source: crate::uar::domain::prompt_caching::PromptCachingSource,
+    session_override: Option<bool>,
+    user_override: Option<bool>,
+    global_default: bool,
+}
+
+/// GET /api/uar/sessions/{id}/prompt-caching
+pub async fn get_effective_prompt_caching(
+    State(state): State<AppState>,
+    Extension(user): Extension<UserContext>,
+    headers: axum::http::HeaderMap,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    let session_override = load_conversation_policy(&state, &user.user_id, &session_id)
+        .await
+        .and_then(|policy| policy.prompt_caching_enabled);
+    let global_default = match &state.settings_manager {
+        Some(manager) => manager
+            .get_typed::<bool>("prompt_caching.enabled")
+            .await
+            .ok()
+            .flatten()
+            .unwrap_or(false),
+        None => false,
+    };
+    let jwt_principal = headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| value.starts_with("Bearer "))
+        .filter(|_| !headers.contains_key("x-api-key"))
+        .and_then(|_| super::user_settings::principal_storage_key(&user));
+    let user_override = if let Some(principal_id) = jwt_principal {
+        match state
+            .user_settings_store
+            .caching_enabled_for(&principal_id)
+            .await
+        {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::error!(%error, %session_id, "failed to resolve user prompt-caching preference");
+                return (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    Json(json!({"error": "User settings persistence unavailable"})),
+                )
+                    .into_response();
+            }
+        }
+    } else {
+        None
+    };
+    let effective = crate::uar::domain::prompt_caching::resolve_effective_caching(
+        None,
+        session_override,
+        user_override,
+        global_default,
+    );
+
+    Json(EffectivePromptCachingResponse {
+        enabled: effective.enabled,
+        source: effective.source,
+        session_override,
+        user_override,
+        global_default,
+    })
+    .into_response()
 }
 
 /// GET /api/sessions/{id}/effective-config

@@ -1,11 +1,24 @@
 import type { ProvidersResponse } from "@/types";
 
-import type { AgentSessionConfig } from "../contracts";
+import type {
+  AgentSessionConfig,
+  PromptCachingSource,
+  SessionPromptCaching,
+} from "../contracts";
+
+function sessionAuthorizationHeaders(): HeadersInit {
+  const apiKey =
+    (import.meta as unknown as { env: Record<string, string> }).env
+      .VITE_UAR_API_KEY ?? "";
+  return apiKey.startsWith("ey") ? { Authorization: `Bearer ${apiKey}` } : {};
+}
 
 function nullableString(value: unknown, field: string): string | null {
   if (value === null || value === undefined) return null;
   if (typeof value === "string") return value;
-  throw new Error(`Session configuration field '${field}' must be a string or null`);
+  throw new Error(
+    `Session configuration field '${field}' must be a string or null`,
+  );
 }
 
 function nullableStringList(value: unknown, field: string): string[] | null {
@@ -13,7 +26,17 @@ function nullableStringList(value: unknown, field: string): string[] | null {
   if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
     return value;
   }
-  throw new Error(`Session configuration field '${field}' must be a string array or null`);
+  throw new Error(
+    `Session configuration field '${field}' must be a string array or null`,
+  );
+}
+
+function nullableBoolean(value: unknown, field: string): boolean | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "boolean") return value;
+  throw new Error(
+    `Session configuration field '${field}' must be a boolean or null`,
+  );
 }
 
 export function decodeAgentSessionConfig(value: unknown): AgentSessionConfig {
@@ -33,9 +56,61 @@ export function decodeAgentSessionConfig(value: unknown): AgentSessionConfig {
     model: nullableString(record.model, "model"),
     tools: nullableStringList(record.tools, "tools"),
     skills: nullableStringList(record.skills, "skills"),
-    knowledge_bases: nullableStringList(record.knowledge_bases, "knowledge_bases"),
+    knowledge_bases: nullableStringList(
+      record.knowledge_bases,
+      "knowledge_bases",
+    ),
     mcp_servers: nullableStringList(record.mcp_servers, "mcp_servers"),
     tool_approval: toolApproval as AgentSessionConfig["tool_approval"],
+    prompt_caching_enabled: nullableBoolean(
+      record.prompt_caching_enabled,
+      "prompt_caching_enabled",
+    ),
+  };
+}
+
+const PROMPT_CACHING_SOURCES: PromptCachingSource[] = [
+  "request",
+  "session",
+  "user",
+  "global",
+];
+
+export function decodeSessionPromptCaching(
+  sessionId: string,
+  value: unknown,
+): SessionPromptCaching {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Effective prompt-caching response must be an object");
+  }
+  const record = value as Record<string, unknown>;
+  if (typeof record.enabled !== "boolean") {
+    throw new Error(
+      "Effective prompt-caching field 'enabled' must be a boolean",
+    );
+  }
+  if (
+    typeof record.source !== "string" ||
+    !PROMPT_CACHING_SOURCES.includes(record.source as PromptCachingSource)
+  ) {
+    throw new Error("Effective prompt-caching field 'source' is invalid");
+  }
+  if (typeof record.global_default !== "boolean") {
+    throw new Error(
+      "Effective prompt-caching field 'global_default' must be a boolean",
+    );
+  }
+  return {
+    id: sessionId,
+    session_id: sessionId,
+    enabled: record.enabled,
+    source: record.source as PromptCachingSource,
+    session_override: nullableBoolean(
+      record.session_override,
+      "session_override",
+    ),
+    user_override: nullableBoolean(record.user_override, "user_override"),
+    global_default: record.global_default,
   };
 }
 
@@ -56,13 +131,27 @@ export async function fetchAgentSessionConfig(
 ): Promise<AgentSessionConfig | null> {
   const response = await fetch(
     `/api/uar/sessions/${encodeURIComponent(sessionId)}/agent-config`,
-    { signal },
+    { headers: sessionAuthorizationHeaders(), signal },
   );
-  if (response.status === 404) return null;
+  if (response.status === 204 || response.status === 404) return null;
   if (!response.ok) {
     throw new Error(`Session configuration load failed: ${response.status}`);
   }
   return decodeAgentSessionConfig(await response.json());
+}
+
+export async function fetchSessionPromptCaching(
+  sessionId: string,
+  signal?: AbortSignal,
+): Promise<SessionPromptCaching> {
+  const response = await fetch(
+    `/api/uar/sessions/${encodeURIComponent(sessionId)}/prompt-caching`,
+    { headers: sessionAuthorizationHeaders(), signal },
+  );
+  if (!response.ok) {
+    throw new Error(`Effective prompt-caching load failed: ${response.status}`);
+  }
+  return decodeSessionPromptCaching(sessionId, await response.json());
 }
 
 export async function saveAgentSessionConfig(
@@ -74,7 +163,10 @@ export async function saveAgentSessionConfig(
     `/api/uar/sessions/${encodeURIComponent(sessionId)}/agent-config`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...sessionAuthorizationHeaders(),
+      },
       body: JSON.stringify(config),
       signal,
     },
