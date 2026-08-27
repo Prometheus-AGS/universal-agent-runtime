@@ -885,21 +885,12 @@ async fn run_server_with_listener(
                     ),
             );
             let governance_bootstrap = async {
-                let persisted = mgr
-                    .load_optional_persisted_value("governance.enabled")
-                    .await?
-                    .map(|value| {
-                        value.as_bool().ok_or_else(|| {
-                            anyhow::anyhow!("persisted governance.enabled is not a boolean")
-                        })
-                    })
-                    .transpose()?;
-                let plan = governance_mutation.preference_plan(persisted)?;
-                mgr.apply_governance_preference_plan(&plan).await?;
+                // Rollback builds retain the settings schema and status endpoint,
+                // but never interpret a persisted false value as bypass permission.
                 let stats = mgr
-                    .initialize_with_governance_default(&config, plan.target_enabled)
+                    .initialize_with_governance_default(&config, true)
                     .await?;
-                governance_mutation.finalize_preference(&plan)?;
+                governance_mutation.finalize_mutation_unavailable()?;
                 Ok::<_, anyhow::Error>(stats)
             }
             .await;
