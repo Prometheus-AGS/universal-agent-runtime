@@ -816,3 +816,13 @@ cleanup and requires rollback or operator intervention.
 **Working rule.** Scope focused Rust filters to an explicit target: use `cargo test ... --lib <filter>` for library tests and `cargo test ... --test settings_persistence <filter>` for the Governance persistence/API integration target. Do not report the broad command as passing merely because the intended tests passed before the BDD runner failed.
 
 **Limit.** This does not replace the exact unfiltered Tier 2 suite. That command remains the release truth and currently retains unrelated routing-evaluation failures.
+
+## 2026-08-27 — Freeze the complete candidate before starting the final gate
+
+**Observed behavior.** The exact Rust Tier 2 command was started while rollback and release-evidence artifacts were still being finalized. The operator stopped the run and required the repository's code-to-end, then test sequence.
+
+**Root cause.** Verification was treated as an incremental defect-discovery loop after individual repairs instead of one end-of-work gate over immutable forward and rollback candidates.
+
+**Working rule.** Finish production code, test code, fixtures, dependency reconciliation, rollback source, recovery procedure, and candidate commits first. Then run the complete ordered verification sequence once. If verification exposes a defect, stop the sequence, repair and refreeze both affected candidates, and restart the required gate from its beginning. Partial output from an interrupted command is never a receipt.
+
+**Limit.** Read-only source inspection, candidate inventory, and artifact authoring are not verification. This rule does not permit skipping the final Tier 0–3, rollback, deployment, reflection, or archive evidence.

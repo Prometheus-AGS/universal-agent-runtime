@@ -1045,3 +1045,10 @@ constitution; the nested `AGENTS.md` under `prometheus-entity-management` re-imp
 - Built release 1.0.0 with SHA-256 `a7aefee1d23be3b0f65a08d07fcbfb9f8a8d50746035f08cc724543acb8ff42f`, installed it through the macOS native path, and restarted the LaunchAgent. Installed status defaulted Off, warned once, toggled On→Off live, and an anonymous MiniMax run executed `web_fetch` with `decision_source="governance_disabled"` and no approval or denial event.
 - Live non-local startup was Required and rejected Off. JWT-required behavior passed deterministic focused tests but was not exercised as a live authenticated service. Release support-matrix validation remains blocked by the pre-existing missing `embedded-mobile` matrix entry.
 - A temporary fail-closed rollback artifact and the previous 1.0.0 binary passed isolated status and unknown-row compatibility checks. The artifact was produced after forward deployment and was not committed, so rollback certification and OpenSpec completion remain open rather than being retroactively claimed.
+
+## 2026-08-27 — Governance candidates frozen before final verification
+
+- Stopped the active exact Rust Tier 2 process at the operator's direction; no partial result was accepted as evidence and no OpenSpec checkbox advanced.
+- Completed and committed the tracked fail-closed rollback contract. Froze forward candidate `44fc519c7d65e0f125b812caf992121cf51c38ad` and rollback candidate `ce712ee4a969d15d9c73533ae5be4266abdaea1f` on `codex/governance-rollback`.
+- Confirmed by source comparison that rollback changes exactly one production file relative to forward: `src/server.rs` forces effective governance On and mutation unavailable while retaining the settings schema and status endpoint.
+- Source-only inspection found no unfinished marker in the change-owned governance production paths. Verification, binary digests, rollback compatibility, release installation, live matrix, reflection, archive, publication, and PR evidence remain pending until the operator reauthorizes the single end-of-work gate.
