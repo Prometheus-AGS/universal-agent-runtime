@@ -263,7 +263,7 @@ async fn request_span_layer(request: Request, next: Next) -> Response {
 
 /// Start the Axum server with the provided configuration manager.
 pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, None, None, None, None, None).await
+    start_server_with_listener(config_manager, None, None, None, None, None, None).await
 }
 
 #[cfg(windows)]
@@ -277,6 +277,7 @@ pub(crate) async fn start_server_with_shutdown(
         None,
         None,
         None,
+        None,
         Some(process_shutdown),
     )
     .await
@@ -286,6 +287,7 @@ async fn start_server_with_listener(
     config_manager: Arc<ConfigManager>,
     listener: Option<tokio::net::TcpListener>,
     a2a_grpc_listener: Option<tokio::net::TcpListener>,
+    mcp_config_path: Option<std::path::PathBuf>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
@@ -300,6 +302,7 @@ async fn start_server_with_listener(
         config_manager,
         listener,
         a2a_grpc_listener,
+        mcp_config_path,
         ready,
         http_shutdown,
         process_shutdown,
@@ -370,6 +373,7 @@ async fn run_server_with_listener(
     config_manager: Arc<ConfigManager>,
     listener: Option<tokio::net::TcpListener>,
     _a2a_grpc_listener: Option<tokio::net::TcpListener>,
+    mcp_config_path: Option<std::path::PathBuf>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
@@ -717,13 +721,21 @@ async fn run_server_with_listener(
 
     // MCP: connect once at startup
     // We update this to include native tools if persistence is present
-    let mut mcp_registry = match McpRegistry::load_from_file("mcp.json").await {
+    let mcp_config_path = mcp_config_path
+        .as_deref()
+        .unwrap_or_else(|| std::path::Path::new("mcp.json"));
+    let mut mcp_registry = match McpRegistry::load_from_file(
+        mcp_config_path.to_string_lossy().as_ref(),
+    )
+    .await
+    {
         Ok(registry) => registry,
         Err(e) => {
             tracing::warn!(
                 error = %e,
-                "Could not load mcp.json — starting with empty MCP registry. \
-                 Tools from mcp.json will not be available until the file is created."
+                path = %mcp_config_path.display(),
+                "Could not load MCP config — starting with empty MCP registry. \
+                 Tools from the configured file will not be available until it is created."
             );
             McpRegistry::empty()
         }
@@ -1780,6 +1792,7 @@ pub async fn start_server_sidecar(
         config_manager,
         Some(listener),
         None,
+        None,
         Some(ready),
         http_shutdown,
         None,
@@ -1801,6 +1814,7 @@ pub async fn start_server_sidecar_with_listeners(
     config_manager: Arc<ConfigManager>,
     listener: tokio::net::TcpListener,
     a2a_grpc_listener: tokio::net::TcpListener,
+    mcp_config_path: Option<std::path::PathBuf>,
     ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
@@ -1808,6 +1822,7 @@ pub async fn start_server_sidecar_with_listeners(
         config_manager,
         Some(listener),
         Some(a2a_grpc_listener),
+        mcp_config_path,
         Some(ready),
         http_shutdown,
         None,

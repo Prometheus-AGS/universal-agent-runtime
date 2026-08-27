@@ -467,6 +467,9 @@ async fn boot_test_server_inner(
 
     let config_path = unique_temp_path("config").with_extension("yaml");
     std::fs::write(&config_path, yaml).expect("write temp harness config");
+    let mcp_config_path = unique_temp_path("mcp").with_extension("json");
+    std::fs::write(&mcp_config_path, r#"{"mcpServers":{}}"#)
+        .expect("write empty harness MCP config");
 
     let cli = Cli {
         env_file: None,
@@ -519,6 +522,7 @@ async fn boot_test_server_inner(
                 config,
                 listener,
                 grpc_listener,
+                Some(mcp_config_path),
                 ready_tx,
                 Some(thread_shutdown),
             )
