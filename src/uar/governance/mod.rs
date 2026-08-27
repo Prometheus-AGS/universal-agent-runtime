@@ -12,3 +12,4 @@ pub mod engine;
 pub mod middleware;
 #[cfg(feature = "cedar-governance")]
 pub mod policy;
+pub mod runtime_control;

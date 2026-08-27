@@ -36,6 +36,8 @@ export interface UarSseAdapterOptions {
   reconnectBaseDelay?: number;
   /** Max reconnect attempts before giving up. Defaults to Infinity. */
   maxReconnectAttempts?: number;
+  /** Observe a validated change before it is forwarded to the entity graph. */
+  onChange?: (change: EntityChange) => void;
 }
 
 type LiveOp = "insert" | "update" | "delete";
@@ -191,6 +193,7 @@ export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter
     baseUrl = "",
     reconnectBaseDelay = 1_000,
     maxReconnectAttempts = Number.POSITIVE_INFINITY,
+    onChange,
   } = opts;
 
   const conn = getSharedConnection(baseUrl, reconnectBaseDelay, maxReconnectAttempts);
@@ -200,6 +203,7 @@ export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter
     subscribe(_config: SubscriptionConfig, handler): UnsubscribeFn {
       const listener: TopicListener = (op, id, data) => {
         const change: EntityChange = { op, type: entityType, id, data };
+        onChange?.(change);
         const cs: ChangeSet = { changes: [change], timestamp: new Date().toISOString() };
         handler(cs);
       };

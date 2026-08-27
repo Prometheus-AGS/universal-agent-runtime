@@ -7,8 +7,12 @@ import type {
   SubscriptionConfig,
   ChannelConfig,
   ChangeOperation,
+  EntityChange,
 } from "@/platform/entities";
-import { emitSettingsChanged } from "@/features/settings/api";
+import {
+  emitSettingsChanged,
+  emitSettingsRealtimeConnected,
+} from "@/features/settings/api";
 import { UAR_TOPICS } from "@/lib/realtime/topics";
 
 interface PersistenceInfo {
@@ -50,6 +54,42 @@ const EMBEDDED_ENTITY_TYPES = new Map<string, string>(
   UAR_TOPICS.map(({ topic, entityType }) => [topic, entityType]),
 );
 
+function emitUarSettingChange(change: EntityChange) {
+  const key =
+    typeof change.data?.key === "string" ? change.data.key : change.id;
+  emitSettingsChanged({
+    namespace: key.includes(".") ? (key.split(".")[0] ?? "") : "*",
+    key,
+    value: change.data?.data,
+    source: "remote",
+    updated_at:
+      typeof change.data?.updated_at === "string"
+        ? change.data.updated_at
+        : undefined,
+  });
+}
+
+async function registerUarSseAdapters(
+  manager: ReturnType<typeof getRealtimeManager>,
+  channels: ChannelConfig[],
+) {
+  const { createAllUarAdapters } = await import("@/lib/realtime/topics");
+  const adapters = createAllUarAdapters("", emitUarSettingChange);
+  let hasConnected = false;
+  const removeStatusListener = adapters[0]?.onStatusChange?.((status) => {
+    if (status !== "connected") return;
+    if (hasConnected) emitSettingsRealtimeConnected();
+    hasConnected = true;
+  });
+  const unregisters = adapters.map((adapter) =>
+    manager.register(adapter, channels),
+  );
+  return () => {
+    removeStatusListener?.();
+    for (const unregister of unregisters) unregister();
+  };
+}
+
 export function createEmbeddedSseAdapter(
   url: string,
   options: EmbeddedSseAdapterOptions = {},
@@ -71,6 +111,7 @@ export function createEmbeddedSseAdapter(
       let eventSource: EventSource | null = null;
       let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       let reconnectAttempts = 0;
+      let hasConnected = false;
       let stopped = false;
 
       const handleEntityChange = (event: Event) => {
@@ -209,6 +250,8 @@ export function createEmbeddedSseAdapter(
           if (stopped || eventSource !== source) return;
           reconnectAttempts = 0;
           emitStatus("connected");
+          if (hasConnected) emitSettingsRealtimeConnected();
+          hasConnected = true;
         };
         source.addEventListener("entity.change", handleEntityChange);
         source.addEventListener("entity.snapshot", handleEntitySnapshot);
@@ -281,13 +324,7 @@ export async function initSyncTransport(): Promise<() => void> {
   // we reuse the identical UAR SSE adapters here — backend-agnostic, no Electric.
   if (info.provider === "postgres") {
     try {
-      const { createAllUarAdapters } = await import("@/lib/realtime/topics");
-      const unregisters = createAllUarAdapters().map((adapter) =>
-        manager.register(adapter, channels),
-      );
-      return () => {
-        for (const u of unregisters) u();
-      };
+      return await registerUarSseAdapters(manager, channels);
     } catch (err) {
       console.warn(
         "[sync] UAR SSE adapters failed, falling back to REST polling",
@@ -308,13 +345,7 @@ export async function initSyncTransport(): Promise<() => void> {
     info.mode === "remote"
   ) {
     try {
-      const { createAllUarAdapters } = await import("@/lib/realtime/topics");
-      const unregisters = createAllUarAdapters().map((adapter) =>
-        manager.register(adapter, channels),
-      );
-      return () => {
-        for (const u of unregisters) u();
-      };
+      return await registerUarSseAdapters(manager, channels);
     } catch (err) {
       console.warn(
         "[sync] UAR SSE adapters failed, falling back to REST polling",

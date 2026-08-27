@@ -26,7 +26,10 @@
 
 use anyhow::Result;
 use serde_json::{Value, json};
-use std::{collections::HashSet, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 use uuid::Uuid;
 
 use universal_agent_runtime::uar::runtime::matching::ClassifierConfig;
@@ -43,6 +46,33 @@ use universal_agent_runtime::{
         },
     },
 };
+
+fn sealed_governance(
+    configured_host: &str,
+    bound_address: &str,
+    jwt_required: bool,
+) -> (
+    universal_agent_runtime::uar::governance::runtime_control::GovernanceMutationHandle,
+    universal_agent_runtime::uar::governance::runtime_control::GovernanceGateHandle,
+    universal_agent_runtime::uar::governance::runtime_control::GovernanceStatusHandle,
+) {
+    use universal_agent_runtime::uar::governance::runtime_control::governance_runtime_handles;
+    let (mutation, gate, status) = governance_runtime_handles(configured_host);
+    mutation.record_installed_authentication(jwt_required);
+    mutation
+        .declare_ingress("primary-http")
+        .expect("test ingress declaration succeeds");
+    let proof = mutation
+        .register_bound_ingress(
+            "primary-http",
+            bound_address.parse().expect("test bound address parses"),
+        )
+        .expect("test ingress registration succeeds");
+    mutation
+        .seal_ingress_inventory(&[proof])
+        .expect("test ingress inventory seals");
+    (mutation, gate, status)
+}
 
 // =============================================================================
 // Test helpers
@@ -753,6 +783,7 @@ async fn prompt_caching_admin_namespace_has_no_generic_read_bypass() -> Result<(
     mgr.initialize(&minimal_config()).await?;
     let app = build_router().with_state(Arc::new(SettingsApiState {
         settings_manager: Some(mgr),
+        governance_status: None,
         settings_mutation_auth_required: true,
         settings_admin_key: Some("test-admin-key".to_string().into()),
     }));
@@ -1057,5 +1088,325 @@ async fn mgr_provider_upsert_load_and_hydrate_registry() -> Result<()> {
     hydrate_provider_registry_from_settings(&registry, mgr.as_ref()).await?;
     assert_eq!(registry.default_id().await.as_deref(), Some("acme"));
 
+    Ok(())
+}
+
+#[tokio::test]
+async fn governance_preference_defaults_off_toggles_resets_and_survives_restart() -> Result<()> {
+    let (provider, _dir) = make_surreal().await;
+    let (mutation, gate, status) = sealed_governance("localhost", "127.0.0.1:1906", false);
+    let manager = Arc::new(
+        SettingsManager::new(Arc::clone(&provider))
+            .with_governance_runtime(mutation.clone(), status.clone()),
+    );
+    let persisted = manager
+        .load_optional_persisted_value("governance.enabled")
+        .await?
+        .map(|value| value.as_bool().expect("stored governance value is boolean"));
+    let plan = mutation.preference_plan(persisted)?;
+    manager.apply_governance_preference_plan(&plan).await?;
+    manager
+        .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
+        .await?;
+    mutation.finalize_preference(&plan)?;
+    assert_eq!(
+        manager.get_typed::<bool>("governance.enabled").await?,
+        Some(false)
+    );
+    assert!(!gate.effective_enabled());
+
+    manager.set_value("governance.enabled", json!(true)).await?;
+    assert!(gate.effective_enabled());
+    manager.reset_to_default("governance.enabled").await?;
+    assert!(!gate.effective_enabled());
+    manager.set_value("governance.enabled", json!(true)).await?;
+
+    let (restart_mutation, restart_gate, restart_status) =
+        sealed_governance("127.0.0.1", "127.0.0.1:1906", false);
+    let restarted = Arc::new(
+        SettingsManager::new(provider)
+            .with_governance_runtime(restart_mutation.clone(), restart_status),
+    );
+    let persisted = restarted
+        .load_optional_persisted_value("governance.enabled")
+        .await?
+        .map(|value| value.as_bool().expect("stored governance value is boolean"));
+    let plan = restart_mutation.preference_plan(persisted)?;
+    restarted.apply_governance_preference_plan(&plan).await?;
+    restarted
+        .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
+        .await?;
+    restart_mutation.finalize_preference(&plan)?;
+    assert_eq!(
+        restarted.get_typed::<bool>("governance.enabled").await?,
+        Some(true)
+    );
+    assert!(restart_gate.effective_enabled());
+    Ok(())
+}
+
+#[tokio::test]
+async fn ineligible_restart_normalizes_stale_governance_off_before_finalization() -> Result<()> {
+    use universal_agent_runtime::uar::governance::runtime_control::GovernanceEffectiveState;
+
+    let (provider, _dir) = make_surreal().await;
+    let (local_mutation, _, local_status) = sealed_governance("localhost", "127.0.0.1:1906", false);
+    let local = Arc::new(
+        SettingsManager::new(Arc::clone(&provider))
+            .with_governance_runtime(local_mutation.clone(), local_status),
+    );
+    let local_plan = local_mutation.preference_plan(None)?;
+    local.apply_governance_preference_plan(&local_plan).await?;
+    local
+        .initialize_with_governance_default(&minimal_config(), false)
+        .await?;
+    local_mutation.finalize_preference(&local_plan)?;
+
+    let (required_mutation, required_gate, required_status) =
+        sealed_governance("0.0.0.0", "0.0.0.0:1906", false);
+    let required = Arc::new(
+        SettingsManager::new(provider)
+            .with_governance_runtime(required_mutation.clone(), required_status.clone()),
+    );
+    let persisted = required
+        .load_optional_persisted_value("governance.enabled")
+        .await?
+        .map(|value| value.as_bool().expect("stored governance value is boolean"));
+    let plan = required_mutation.preference_plan(persisted)?;
+    required.apply_governance_preference_plan(&plan).await?;
+    required
+        .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
+        .await?;
+    required_mutation.finalize_preference(&plan)?;
+    assert_eq!(
+        required.get_typed::<bool>("governance.enabled").await?,
+        Some(true)
+    );
+    assert!(required_gate.effective_enabled());
+    assert_eq!(
+        required_status.snapshot().effective_state,
+        GovernanceEffectiveState::Required
+    );
+    assert!(
+        required
+            .set_value("governance.enabled", json!(false))
+            .await
+            .is_err()
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn governance_api_returns_per_key_results_and_authoritative_status_token() -> Result<()> {
+    use axum::{body::Body, http::Request};
+    use tower::ServiceExt;
+    use universal_agent_runtime::uar::api::settings::{SettingsApiState, build_router};
+
+    let (provider, _dir) = make_surreal().await;
+    let (mutation, _, status) = sealed_governance("localhost", "127.0.0.1:1906", false);
+    let manager = Arc::new(
+        SettingsManager::new(provider).with_governance_runtime(mutation.clone(), status.clone()),
+    );
+    let plan = mutation.preference_plan(None)?;
+    manager.apply_governance_preference_plan(&plan).await?;
+    manager
+        .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
+        .await?;
+    mutation.finalize_preference(&plan)?;
+    let app = build_router().with_state(Arc::new(SettingsApiState {
+        settings_manager: Some(manager),
+        governance_status: Some(status),
+        settings_mutation_auth_required: false,
+        settings_admin_key: None,
+    }));
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri("/governance")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"data":{"enabled":true,"policy_reload_enabled":false}}"#,
+                ))?,
+        )
+        .await?;
+    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await?;
+    let payload: Value = serde_json::from_slice(&body)?;
+    assert_eq!(payload["status"], "updated");
+    assert_eq!(payload["results"].as_array().map(Vec::len), Some(2));
+    assert!(payload["applied_status"]["boot_instance_id"].is_string());
+    assert!(payload["applied_status"]["revision"].is_number());
+    assert_eq!(payload["governance_status"]["effective_state"], "on");
+
+    let status_response = app
+        .oneshot(
+            Request::builder()
+                .uri("/governance/status")
+                .body(Body::empty())?,
+        )
+        .await?;
+    assert_eq!(status_response.status(), axum::http::StatusCode::OK);
+    Ok(())
+}
+
+#[tokio::test]
+async fn governance_batch_orders_master_transitions_around_policy_validation() -> Result<()> {
+    use universal_agent_runtime::uar::settings::manager::GovernanceMutationStatus;
+
+    let (provider, _dir) = make_surreal().await;
+    let (mutation, gate, status) = sealed_governance("localhost", "127.0.0.1:1906", false);
+    let manager =
+        Arc::new(SettingsManager::new(provider).with_governance_runtime(mutation.clone(), status));
+    let plan = mutation.preference_plan(None)?;
+    manager.apply_governance_preference_plan(&plan).await?;
+    manager
+        .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
+        .await?;
+    mutation.finalize_preference(&plan)?;
+
+    let enable_results = manager
+        .set_governance_batch(HashMap::from([
+            ("governance.enabled".to_string(), json!(true)),
+            ("governance.default_mode".to_string(), json!("invalid")),
+            ("server.host".to_string(), json!("127.0.0.2")),
+        ]))
+        .await;
+    assert!(enable_results.iter().any(|result| {
+        result.key == "governance.default_mode"
+            && result.status == GovernanceMutationStatus::ValidationRejected
+    }));
+    assert!(enable_results.iter().any(|result| {
+        result.key == "governance.enabled"
+            && result.status == GovernanceMutationStatus::DependencyFailed
+    }));
+    assert!(enable_results.iter().any(|result| {
+        result.key == "server.host" && result.status == GovernanceMutationStatus::Skipped
+    }));
+    assert!(!gate.effective_enabled());
+    assert_eq!(
+        manager.get_typed::<bool>("governance.enabled").await?,
+        Some(false)
+    );
+
+    manager.set_value("governance.enabled", json!(true)).await?;
+    let disable_results = manager
+        .set_governance_batch(HashMap::from([
+            ("governance.enabled".to_string(), json!(false)),
+            ("governance.default_mode".to_string(), json!("invalid")),
+        ]))
+        .await;
+    assert_eq!(
+        disable_results
+            .first()
+            .map(|result| (&result.key, result.status)),
+        Some((
+            &"governance.enabled".to_string(),
+            GovernanceMutationStatus::Updated
+        ))
+    );
+    assert!(disable_results.iter().any(|result| {
+        result.key == "governance.default_mode"
+            && result.status == GovernanceMutationStatus::ValidationRejected
+    }));
+    assert!(!gate.effective_enabled());
+    Ok(())
+}
+
+#[tokio::test]
+async fn concurrent_governance_batch_and_single_writer_finish_in_one_serial_order() -> Result<()> {
+    use tokio::sync::Barrier;
+
+    let (provider, _dir) = make_surreal().await;
+    let (mutation, gate, status) = sealed_governance("localhost", "127.0.0.1:1906", false);
+    let manager =
+        Arc::new(SettingsManager::new(provider).with_governance_runtime(mutation.clone(), status));
+    let plan = mutation.preference_plan(None)?;
+    manager.apply_governance_preference_plan(&plan).await?;
+    manager
+        .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
+        .await?;
+    mutation.finalize_preference(&plan)?;
+
+    let barrier = Arc::new(Barrier::new(3));
+    let batch_manager = Arc::clone(&manager);
+    let batch_barrier = Arc::clone(&barrier);
+    let batch = tokio::spawn(async move {
+        batch_barrier.wait().await;
+        batch_manager
+            .set_governance_batch(HashMap::from([
+                ("governance.default_mode".to_string(), json!("deny_all")),
+                ("governance.enabled".to_string(), json!(true)),
+            ]))
+            .await
+    });
+    let single_manager = Arc::clone(&manager);
+    let single_barrier = Arc::clone(&barrier);
+    let single = tokio::spawn(async move {
+        single_barrier.wait().await;
+        single_manager
+            .set_value("governance.default_mode", json!("custom"))
+            .await
+    });
+    barrier.wait().await;
+    let batch_results = batch.await?;
+    single.await??;
+
+    assert!(batch_results.iter().all(|result| {
+        result.status
+            == universal_agent_runtime::uar::settings::manager::GovernanceMutationStatus::Updated
+    }));
+    assert!(gate.effective_enabled());
+    assert_eq!(
+        manager.get_typed::<bool>("governance.enabled").await?,
+        Some(true)
+    );
+    assert!(matches!(
+        manager
+            .get_typed::<String>("governance.default_mode")
+            .await?
+            .as_deref(),
+        Some("deny_all" | "custom")
+    ));
+    Ok(())
+}
+
+#[tokio::test]
+async fn governance_status_api_reports_mutation_unavailable_as_fail_closed() -> Result<()> {
+    use axum::{body::Body, http::Request};
+    use tower::ServiceExt;
+    use universal_agent_runtime::uar::api::settings::{SettingsApiState, build_router};
+
+    let (mutation, gate, status) = sealed_governance("localhost", "127.0.0.1:1906", false);
+    mutation.finalize_mutation_unavailable()?;
+    let app = build_router().with_state(Arc::new(SettingsApiState {
+        settings_manager: None,
+        governance_status: Some(status),
+        settings_mutation_auth_required: false,
+        settings_admin_key: None,
+    }));
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/governance/status")
+                .body(Body::empty())?,
+        )
+        .await?;
+    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await?;
+    let payload: Value = serde_json::from_slice(&body)?;
+    assert_eq!(payload["effective_state"], "on");
+    assert_eq!(payload["effective_enabled"], true);
+    assert_eq!(payload["mutation_available"], false);
+    assert_eq!(payload["may_disable"], true);
+    assert!(
+        payload["reasons"]
+            .as_array()
+            .is_some_and(|reasons| reasons.contains(&json!("persistence_unavailable")))
+    );
+    assert!(gate.effective_enabled());
     Ok(())
 }

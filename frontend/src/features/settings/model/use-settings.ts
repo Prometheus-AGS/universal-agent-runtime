@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { useSettingsEntity } from "./use-settings-entity";
 import {
-  clearDirty,
   getDirty,
+  reconcileSubmittedDirty,
   setDirty,
   subscribe,
 } from "./settings-form-cache";
 import { useSettingsStore } from "./settings-store";
 import type { SettingWithMeta } from "@/types";
+import type { BulkSettingsUpdateResponse } from "../api/settings-api";
 
 export interface UseSettingsReturn {
   values: Record<string, unknown>;
@@ -20,8 +21,32 @@ export interface UseSettingsReturn {
   saving: boolean;
   error: string | null;
   setSetting: (key: string, value: unknown) => void;
-  saveAll: () => Promise<void>;
+  saveAll: () => Promise<BulkSettingsUpdateResponse | null>;
   reload: () => Promise<void>;
+}
+
+export function successfulSubmittedKeys(
+  submittedValues: Record<string, unknown>,
+  response: BulkSettingsUpdateResponse,
+): string[] {
+  if (
+    response.governance_outcome === "unknown" ||
+    response.governance_outcome === "changed_elsewhere"
+  ) {
+    return [];
+  }
+  if (!response.results) return Object.keys(submittedValues);
+  const authoritativeStatus =
+    response.observed_governance_status ?? response.governance_status;
+  return response.results
+    .filter(
+      (result) =>
+        result.status === "updated" ||
+        (result.key === "governance.enabled" &&
+          result.status === "validation_rejected" &&
+          authoritativeStatus?.effective_state === "required"),
+    )
+    .map((result) => result.key);
 }
 
 /**
@@ -85,11 +110,19 @@ export function useSettings(namespace: string): UseSettingsReturn {
   );
 
   const saveAll = useCallback(async () => {
-    const dirty = getDirty(namespace).values;
-    if (Object.keys(dirty).length === 0) return;
+    const submitted = getDirty(namespace);
+    if (Object.keys(submitted.values).length === 0) return null;
 
-    await saveNamespace(namespace, dirty);
-    clearDirty(namespace);
+    const response = await saveNamespace(namespace, submitted.values);
+    const successfulKeys = successfulSubmittedKeys(
+      submitted.values,
+      response,
+    );
+    reconcileSubmittedDirty(namespace, submitted, successfulKeys);
+    if (namespace === "governance") {
+      response.retained_draft_keys = Object.keys(getDirty(namespace).values);
+    }
+    return response;
   }, [namespace, saveNamespace]);
 
   const loading = (status?.loading ?? false) && graphView.records.length === 0;

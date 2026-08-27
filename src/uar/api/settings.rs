@@ -24,6 +24,7 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct SettingsApiState {
     pub settings_manager: Option<Arc<SettingsManager>>,
+    pub governance_status: Option<crate::uar::governance::runtime_control::GovernanceStatusHandle>,
     /// When false, protected handlers do not require `X-UAR-Admin-Key` (local dev only).
     pub settings_mutation_auth_required: bool,
     pub settings_admin_key: Option<secrecy::SecretString>,
@@ -34,6 +35,10 @@ impl std::fmt::Debug for SettingsApiState {
         formatter
             .debug_struct("SettingsApiState")
             .field("settings_manager", &self.settings_manager)
+            .field(
+                "governance_status",
+                &self.governance_status.as_ref().map(|_| "attached"),
+            )
             .field(
                 "settings_mutation_auth_required",
                 &self.settings_mutation_auth_required,
@@ -52,6 +57,7 @@ impl std::fmt::Debug for SettingsApiState {
 
 pub fn build_router() -> Router<Arc<SettingsApiState>> {
     Router::new()
+        .route("/governance/status", get(get_governance_status))
         // Settings types (namespace registry)
         .route("/types", get(list_types))
         .route("/types/{key}", get(get_type))
@@ -284,6 +290,20 @@ pub fn build_router() -> Router<Arc<SettingsApiState>> {
 
 fn mgr_from_state(state: &SettingsApiState) -> Result<&Arc<SettingsManager>, ApiError> {
     state.settings_manager.as_ref().ok_or(ApiError::Unavailable)
+}
+
+async fn get_governance_status(
+    State(state): State<Arc<SettingsApiState>>,
+) -> Result<Json<crate::uar::governance::runtime_control::GovernanceRuntimeSnapshot>, ApiError> {
+    let snapshot = state
+        .governance_status
+        .as_ref()
+        .ok_or(ApiError::Unavailable)?
+        .snapshot();
+    snapshot
+        .validate()
+        .map_err(|error| ApiError::Internal(error.to_string()))?;
+    Ok(Json(snapshot))
 }
 
 enum ApiError {
@@ -684,6 +704,35 @@ async fn update_namespace(
     require_admin_key(state.as_ref(), &headers)?;
     let mgr = mgr_from_state(&state)?;
 
+    if type_key == "governance" {
+        let values = payload
+            .data
+            .into_iter()
+            .map(|(field, value)| (format!("governance.{field}"), value))
+            .collect();
+        let results = mgr.set_governance_batch(values).await;
+        let snapshot = state
+            .governance_status
+            .as_ref()
+            .ok_or(ApiError::Unavailable)?
+            .snapshot();
+        snapshot
+            .validate()
+            .map_err(|error| ApiError::Internal(error.to_string()))?;
+        let complete = results.iter().all(|result| {
+            result.status == crate::uar::settings::manager::GovernanceMutationStatus::Updated
+        });
+        return Ok(Json(json!({
+            "status": if complete { "updated" } else { "partial" },
+            "results": results,
+            "applied_status": {
+                "boot_instance_id": snapshot.boot_instance_id,
+                "revision": snapshot.revision
+            },
+            "governance_status": snapshot
+        })));
+    }
+
     let mut updated = Vec::new();
     let mut errors = Vec::new();
 
@@ -759,6 +808,7 @@ mod prompt_caching_authorization_tests {
     fn protected_state() -> SettingsApiState {
         SettingsApiState {
             settings_manager: None,
+            governance_status: None,
             settings_mutation_auth_required: true,
             settings_admin_key: Some("configured-admin-key".to_string().into()),
         }

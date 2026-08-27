@@ -806,3 +806,13 @@ cleanup and requires rollback or operator intervention.
 **Working rule.** Before dispatch, enumerate every change-owned tracked and new file, compare that list with the packet's `diff --git` headers, and inject the full proposal, design, tasks, nested spec, and blocking constraints. Reject a packet with unrelated files or empty acceptance criteria.
 
 **Limit.** Mechanical packet correction is an auditable workaround, not a repair to the builder. A separate orchestration-tool change is required to make discovery correct by default.
+
+## 2026-08-27 — Cargo filters are forwarded to the standalone BDD runner
+
+**Observed behavior.** `cargo test --locked --no-default-features --features server-full governance` ran and passed all 21 matching library tests, then exited 2 when `tests/bdd.rs` rejected the positional `governance` argument.
+
+**Root cause.** Cargo forwards a trailing test filter to every selected test executable. This repository's BDD executable accepts its own CLI contract rather than libtest's positional filter.
+
+**Working rule.** Scope focused Rust filters to an explicit target: use `cargo test ... --lib <filter>` for library tests and `cargo test ... --test settings_persistence <filter>` for the Governance persistence/API integration target. Do not report the broad command as passing merely because the intended tests passed before the BDD runner failed.
+
+**Limit.** This does not replace the exact unfiltered Tier 2 suite. That command remains the release truth and currently retains unrelated routing-evaluation failures.

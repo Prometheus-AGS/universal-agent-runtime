@@ -19,9 +19,9 @@ export const SettingsPage: FC = () => {
   const activeItem = NAV_ITEMS.find((item) => item.key === active);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
       {/* Sidebar */}
-      <aside className="flex shrink-0 flex-col border-b border-border bg-card md:w-52 md:border-b-0 md:border-r">
+      <aside className="flex max-h-48 min-h-0 shrink-0 flex-col border-b border-border bg-card md:max-h-none md:w-52 md:border-b-0 md:border-r">
         <div className="border-b border-border px-4 py-3">
           <p className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Settings

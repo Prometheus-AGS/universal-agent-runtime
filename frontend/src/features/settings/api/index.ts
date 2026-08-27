@@ -1,2 +1,7 @@
 export { fetchResilienceSettings } from "./settings-api";
-export { emitSettingsChanged, onSettingsChanged } from "./settings-change-bus";
+export {
+  emitSettingsChanged,
+  emitSettingsRealtimeConnected,
+  onSettingsChanged,
+  onSettingsRealtimeConnected,
+} from "./settings-change-bus";

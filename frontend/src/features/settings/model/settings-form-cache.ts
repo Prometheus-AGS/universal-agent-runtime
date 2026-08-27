@@ -9,14 +9,17 @@
 
 export interface SettingsDirtyState {
   values: Record<string, unknown>;
+  versions: Record<string, number>;
 }
 
 const EMPTY_DIRTY: SettingsDirtyState = {
   values: {},
+  versions: {},
 };
 
 const cache = new Map<string, SettingsDirtyState>();
 const listeners = new Map<string, Set<() => void>>();
+let nextVersion = 0;
 
 function notify(ns: string): void {
   const set = listeners.get(ns);
@@ -30,9 +33,11 @@ export function getDirty(ns: string): SettingsDirtyState {
 
 export function setDirty(ns: string, key: string, value: unknown): void {
   const cur = cache.get(ns) ?? EMPTY_DIRTY;
+  nextVersion += 1;
   cache.set(ns, {
     ...cur,
     values: { ...cur.values, [key]: value },
+    versions: { ...cur.versions, [key]: nextVersion },
   });
   notify(ns);
 }
@@ -40,7 +45,32 @@ export function setDirty(ns: string, key: string, value: unknown): void {
 export function clearDirty(ns: string): void {
   const cur = cache.get(ns);
   if (!cur || Object.keys(cur.values).length === 0) return;
-  cache.set(ns, { ...cur, values: {} });
+  cache.set(ns, { values: {}, versions: {} });
+  notify(ns);
+}
+
+export function reconcileSubmittedDirty(
+  ns: string,
+  submitted: SettingsDirtyState,
+  successfulKeys: Iterable<string>,
+): void {
+  const current = cache.get(ns);
+  if (!current) return;
+  const values = { ...current.values };
+  const versions = { ...current.versions };
+  let changed = false;
+  for (const key of successfulKeys) {
+    if (
+      submitted.versions[key] !== undefined &&
+      current.versions[key] === submitted.versions[key]
+    ) {
+      delete values[key];
+      delete versions[key];
+      changed = true;
+    }
+  }
+  if (!changed) return;
+  cache.set(ns, { values, versions });
   notify(ns);
 }
 
@@ -61,4 +91,5 @@ export function subscribe(ns: string, cb: () => void): () => void {
 export function __resetForTests(): void {
   cache.clear();
   listeners.clear();
+  nextVersion = 0;
 }

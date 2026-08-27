@@ -390,6 +390,54 @@ async fn run_server_with_listener(
         "LLM configuration loaded"
     );
 
+    // Establish and seal every tool-capable network ingress before constructing
+    // RunManager. Bound sockets are inert until governance finalization activates
+    // their admission tokens below.
+    let (governance_mutation, governance_gate, governance_status) =
+        uar::governance::runtime_control::governance_runtime_handles(&config.server.host);
+    governance_mutation.record_installed_authentication(config.security.jwt_required);
+    governance_mutation.declare_ingress("primary-http")?;
+    let listener = match listener {
+        Some(listener) => listener,
+        None => {
+            let addr = format!("{}:{}", config.server.host, config.server.port);
+            tokio::net::TcpListener::bind(&addr).await?
+        }
+    };
+    let primary_addr = listener.local_addr()?;
+    let mut ingress_proofs =
+        vec![governance_mutation.register_bound_ingress("primary-http", primary_addr)?];
+
+    let companion = bind_companion_listener(&config.server.host, primary_addr.port()).await;
+    if let Some(companion_listener) = &companion {
+        governance_mutation.declare_ingress("companion-http")?;
+        ingress_proofs.push(
+            governance_mutation
+                .register_bound_ingress("companion-http", companion_listener.local_addr()?)?,
+        );
+    }
+
+    #[cfg(feature = "a2a-transport")]
+    let a2a_grpc_listener = {
+        governance_mutation.declare_ingress("a2a-grpc")?;
+        let grpc_addr =
+            tokio::net::lookup_host((config.server.host.as_str(), config.server.grpc_port))
+                .await?
+                .next()
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "server.host '{}' did not resolve for A2A gRPC",
+                        config.server.host
+                    )
+                })?;
+        let listener = tokio::net::TcpListener::bind(grpc_addr).await?;
+        ingress_proofs
+            .push(governance_mutation.register_bound_ingress("a2a-grpc", listener.local_addr()?)?);
+        listener
+    };
+    let governance_admission_tokens =
+        governance_mutation.seal_ingress_inventory(&ingress_proofs)?;
+
     // Initialize Persistence & RAG
     let mut ingest_service: Option<Arc<IngestService>> = None;
     let embedding_config =
@@ -809,6 +857,88 @@ async fn run_server_with_listener(
         }
     };
 
+    // Resolve the durable governance preference only after the bound ingress
+    // inventory is sealed, and before RunManager or any serve loop is exposed.
+    let settings_manager: Option<Arc<crate::uar::settings::manager::SettingsManager>> =
+        if let Some(p) = &persistence {
+            let mgr = Arc::new(
+                crate::uar::settings::manager::SettingsManager::new(Arc::clone(p))
+                    .with_governance_runtime(
+                        governance_mutation.clone(),
+                        governance_status.clone(),
+                    ),
+            );
+            let governance_bootstrap = async {
+                let persisted = mgr
+                    .load_optional_persisted_value("governance.enabled")
+                    .await?
+                    .map(|value| {
+                        value.as_bool().ok_or_else(|| {
+                            anyhow::anyhow!("persisted governance.enabled is not a boolean")
+                        })
+                    })
+                    .transpose()?;
+                let plan = governance_mutation.preference_plan(persisted)?;
+                mgr.apply_governance_preference_plan(&plan).await?;
+                let stats = mgr
+                    .initialize_with_governance_default(&config, plan.target_enabled)
+                    .await?;
+                governance_mutation.finalize_preference(&plan)?;
+                Ok::<_, anyhow::Error>(stats)
+            }
+            .await;
+
+            match governance_bootstrap {
+                Ok(stats) => {
+                    info!(
+                        seeded = stats.seeded,
+                        updated = stats.updated,
+                        drift = stats.drift_count,
+                        types = stats.types_upserted,
+                        "Settings bootstrapped from config into DB"
+                    );
+                    if let Err(e) = mgr
+                        .seed_providers_from_registry(provider_registry.as_ref())
+                        .await
+                    {
+                        tracing::error!(error = ?e, "Failed to seed configured providers into the settings DB");
+                    }
+                    if let Err(e) = crate::uar::settings::hydrate_provider_registry_from_settings(
+                        provider_registry.as_ref(),
+                        mgr.as_ref(),
+                    )
+                    .await
+                    {
+                        tracing::error!(error = ?e, "Failed to hydrate provider registry from settings database");
+                    }
+                    if let Err(e) = crate::uar::api::mcp_admin::hydrate_registry(&mcp, &mgr).await {
+                        tracing::error!(error = ?e, "Failed to hydrate MCP registry from settings database");
+                    }
+                }
+                Err(error) => {
+                    tracing::error!(
+                        %error,
+                        "Governance/settings bootstrap failed — governance remains enabled and mutation unavailable"
+                    );
+                    governance_mutation.finalize_mutation_unavailable()?;
+                }
+            }
+            Some(mgr)
+        } else {
+            governance_mutation.finalize_mutation_unavailable()?;
+            info!("No persistence layer — settings manager disabled");
+            None
+        };
+    governance_mutation.activate_admission_tokens()?;
+    let governance_boot_status = governance_status.snapshot();
+    info!(
+        boot_instance_id = %governance_boot_status.boot_instance_id,
+        revision = governance_boot_status.revision,
+        effective_enabled = governance_boot_status.effective_enabled,
+        may_disable = governance_boot_status.may_disable,
+        "Governance boot posture finalized"
+    );
+
     // Initialize Governance Policy Engine (before RunManager so it can gate the
     // orchestrator tool loop in addition to the HTTP governance layer).
     let governance_engine = match GovernanceEngine::load_from_dir("policies").await {
@@ -850,6 +980,7 @@ async fn run_server_with_listener(
         .with_a2ui_backbone(Arc::clone(&a2ui_realtime_backbone))
         .with_message_context_strategy(config.context_strategy.clone())
         .with_governance_engine(Arc::clone(&governance_engine))
+        .with_governance_gate(governance_gate.clone())
         .with_failover_config(config.failover.clone())
         .with_resilience_policy(uar::settings::resilience_policy::ResiliencePolicy::from(
             &config.resilience,
@@ -934,57 +1065,6 @@ async fn run_server_with_listener(
     info!("A2A state initialized");
     let federated_agent_registry: Arc<dyn uar::api::a2a::AgentRegistry> = agent_registry
         .unwrap_or_else(|| Arc::new(crate::uar::api::a2a::registry::InMemoryAgentRegistry::new()));
-
-    // Initialize SettingsManager — seed config into DB, detect drift on restart.
-    let settings_manager: Option<Arc<crate::uar::settings::manager::SettingsManager>> =
-        if let Some(p) = &persistence {
-            let mgr = Arc::new(crate::uar::settings::manager::SettingsManager::new(
-                Arc::clone(p),
-            ));
-            match mgr.initialize(&config).await {
-                Ok(stats) => {
-                    info!(
-                        seeded = stats.seeded,
-                        updated = stats.updated,
-                        drift = stats.drift_count,
-                        types = stats.types_upserted,
-                        "Settings bootstrapped from config into DB"
-                    );
-                    // Seed the env/YAML/CLI-configured providers (in the in-memory
-                    // registry) into the DB on first boot so they are visible +
-                    // editable in the admin UI and survive restarts. DB-wins-after-
-                    // first-boot: existing rows (e.g. API-edited) are left untouched.
-                    if let Err(e) = mgr
-                        .seed_providers_from_registry(provider_registry.as_ref())
-                        .await
-                    {
-                        tracing::error!(error = ?e, "Failed to seed configured providers into the settings DB");
-                    }
-                    // Runtime LLM provider state comes from DB after bootstrap (YAML/env/CLI seeded rows).
-                    if let Err(e) = crate::uar::settings::hydrate_provider_registry_from_settings(
-                        provider_registry.as_ref(),
-                        mgr.as_ref(),
-                    )
-                    .await
-                    {
-                        tracing::error!(
-                            error = ?e,
-                            "Failed to hydrate provider registry from settings database"
-                        );
-                    }
-                    if let Err(e) = crate::uar::api::mcp_admin::hydrate_registry(&mcp, &mgr).await {
-                        tracing::error!(error = ?e, "Failed to hydrate MCP registry from settings database");
-                    }
-                }
-                Err(e) => {
-                    tracing::error!(error = ?e, "Settings bootstrap failed — continuing without persistent settings")
-                }
-            }
-            Some(mgr)
-        } else {
-            info!("No persistence layer — settings manager disabled");
-            None
-        };
 
     let prompt_cache_provider: Arc<dyn PromptCacheProvider> =
         match SurrealMemPromptCacheProvider::new().await {
@@ -1207,6 +1287,7 @@ async fn run_server_with_listener(
             uar::api::settings::build_router().with_state(Arc::new(
                 uar::api::settings::SettingsApiState {
                     settings_manager: settings_manager.clone(),
+                    governance_status: Some(governance_status.clone()),
                     settings_mutation_auth_required: config
                         .security
                         .settings_mutation_auth_required,
@@ -1531,16 +1612,17 @@ async fn run_server_with_listener(
     // in-flight runs are aborted (see the shutdown signal handler below).
     #[cfg(feature = "a2a-transport")]
     let grpc_handle = {
-        let grpc_port = config.server.grpc_port;
-        let grpc_addr = tokio::net::lookup_host((config.server.host.as_str(), grpc_port))
-            .await?
-            .next()
+        let grpc_addr = a2a_grpc_listener.local_addr()?;
+        let grpc_admission = governance_admission_tokens
+            .iter()
+            .find(|token| token.ingress_id() == "a2a-grpc")
+            .cloned()
             .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "server.host '{}' did not resolve for A2A gRPC",
-                    config.server.host
-                )
+                anyhow::anyhow!("sealed governance inventory omitted A2A gRPC admission")
             })?;
+        if !grpc_admission.is_active() {
+            anyhow::bail!("A2A gRPC admission activated before governance finalization");
+        }
         let grpc_service =
             crate::uar::api::a2a::grpc::GrpcAgentService::new(Arc::clone(&a2a_state));
         let grpc_shutdown = run_cancellation_root.clone();
@@ -1548,10 +1630,13 @@ async fn run_server_with_listener(
         tokio::spawn(async move {
             let result = tonic::transport::Server::builder()
                 .add_service(grpc_service.into_server())
-                .serve_with_shutdown(grpc_addr, async move {
-                    grpc_shutdown.cancelled().await;
-                    info!(name: "a2a.grpc.shutdown", "A2A gRPC transport shutting down");
-                })
+                .serve_with_incoming_shutdown(
+                    tokio_stream::wrappers::TcpListenerStream::new(a2a_grpc_listener),
+                    async move {
+                        grpc_shutdown.cancelled().await;
+                        info!(name: "a2a.grpc.shutdown", "A2A gRPC transport shutting down");
+                    },
+                )
                 .await;
             if let Err(e) = result {
                 tracing::error!(error = %e, "A2A gRPC server error");
@@ -1559,22 +1644,12 @@ async fn run_server_with_listener(
         })
     };
 
-    let listener = match listener {
-        Some(listener) => listener,
-        None => {
-            let addr = format!("{}:{}", config.server.host, config.server.port);
-            tokio::net::TcpListener::bind(&addr).await?
-        }
-    };
-    let primary_addr = listener.local_addr()?;
-
-    // Dual-stack companion bind. Browsers resolve `localhost` to IPv6 `::1`
-    // first, but an IPv4-only primary (`0.0.0.0` / `127.0.0.1`) leaves `::1`
-    // refused — so the UI appears to hang while every server-side check looks
-    // healthy. Binding the loopback of the other address family on the same
-    // port makes `localhost` work regardless of which address the client picks.
-    // A failure here (e.g. IPv6 disabled) is non-fatal: we keep the primary.
-    let companion = bind_companion_listener(&config.server.host, primary_addr.port()).await;
+    if governance_admission_tokens
+        .iter()
+        .any(|token| !token.is_active())
+    {
+        anyhow::bail!("HTTP admission activated before governance finalization");
+    }
 
     if let Some(ready) = ready {
         ready

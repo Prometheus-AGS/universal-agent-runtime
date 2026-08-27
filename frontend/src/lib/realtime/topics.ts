@@ -2,7 +2,7 @@
  * Canonical mapping of UAR realtime topics → graph entity types.
  * Source of truth: `src/uar/realtime/mod.rs::EntityTopic` on the Rust side.
  */
-import type { RealtimeAdapter } from "@/platform/entities";
+import type { EntityChange, RealtimeAdapter } from "@/platform/entities";
 import { createUarSseAdapter } from "./uar-sse-adapter";
 
 // EntityType names use CamelCase to match the schemas registered in
@@ -22,8 +22,16 @@ export const UAR_TOPICS = [
   { topic: "compiler_sessions", entityType: "CompilerSession" },
 ] as const;
 
-export function createAllUarAdapters(baseUrl = ""): RealtimeAdapter[] {
+export function createAllUarAdapters(
+  baseUrl = "",
+  onSettingChange?: (change: EntityChange) => void,
+): RealtimeAdapter[] {
   return UAR_TOPICS.map(({ topic, entityType }) =>
-    createUarSseAdapter({ topic, entityType, baseUrl }),
+    createUarSseAdapter({
+      topic,
+      entityType,
+      baseUrl,
+      onChange: entityType === "Setting" ? onSettingChange : undefined,
+    }),
   );
 }

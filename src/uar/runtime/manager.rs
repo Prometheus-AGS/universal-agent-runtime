@@ -206,6 +206,8 @@ pub struct RunManager {
     /// When set, a tool that policy denies is routed to the HITL approval gate.
     /// `None` ⇒ tool approval relies solely on the keyword heuristic.
     governance_engine: Option<Arc<crate::uar::governance::engine::GovernanceEngine>>,
+    /// Coherent boot-effective governance gate; Initializing/unavailable gates On.
+    governance_gate: Option<crate::uar::governance::runtime_control::GovernanceGateHandle>,
     /// Runtime model failover configuration (CH-03). `enabled: false` by
     /// default (opt-in) — when enabled, each run's `Orchestrator` is given a
     /// fallback driver built from `fallback_models.first()` plus the shared
@@ -364,6 +366,13 @@ fn tool_requires_approval(tool_name: &str) -> bool {
     let lower = tool_name.to_lowercase();
     const RISKY_KEYWORDS: &[&str] = &["delete", "remove", "write", "drop", "truncate", "destroy"];
     RISKY_KEYWORDS.iter().any(|kw| lower.contains(kw))
+}
+
+fn governance_bypass_decision(
+    gate: Option<&crate::uar::governance::runtime_control::GovernanceGateHandle>,
+) -> Option<crate::llm::ToolApprovalResult> {
+    gate.filter(|gate| !gate.effective_enabled())
+        .map(|_| crate::llm::ToolApprovalResult::GovernanceBypassed)
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -540,6 +549,7 @@ impl RunManager {
             message_context_strategy: crate::uar::context::ContextStrategy::default(),
             agent_graph: None,
             governance_engine: None,
+            governance_gate: None,
             failover_config: crate::config::FailoverConfig::default(),
             cost_budget: crate::uar::runtime::cost_budget::CostBudgetTracker::new(),
             resilience_policy: crate::uar::settings::resilience_policy::ResiliencePolicy::default(),
@@ -672,6 +682,16 @@ impl RunManager {
         engine: Arc<crate::uar::governance::engine::GovernanceEngine>,
     ) -> Self {
         self.governance_engine = Some(engine);
+        self
+    }
+
+    /// Attach the coherent boot-effective governance master gate.
+    #[must_use]
+    pub fn with_governance_gate(
+        mut self,
+        gate: crate::uar::governance::runtime_control::GovernanceGateHandle,
+    ) -> Self {
+        self.governance_gate = Some(gate);
         self
     }
 
@@ -1687,6 +1707,7 @@ impl RunManager {
                 let approval_pending = Arc::clone(&self.pending_approvals);
                 let approval_agent_id = artifact.id.clone();
                 let approval_governance = self.governance_engine.clone();
+                let approval_governance_gate = self.governance_gate.clone();
                 let effective_tool_approval = effective_policy.tool_approval;
                 let gate: crate::llm::ToolApprovalGate = Arc::new(
                     move |tool_call_id, tool_name, arguments_json, call_index| {
@@ -1695,7 +1716,19 @@ impl RunManager {
                         let pending = Arc::clone(&approval_pending);
                         let agent_id = approval_agent_id.clone();
                         let governance = approval_governance.clone();
+                        let governance_gate = approval_governance_gate.clone();
                         Box::pin(async move {
+                            if let Some(decision) =
+                                governance_bypass_decision(governance_gate.as_ref())
+                            {
+                                tracing::debug!(
+                                    run_id = %run_id,
+                                    tool = %tool_name,
+                                    decision_source = "governance_disabled",
+                                    "Tool governance bypassed for verified local mode"
+                                );
+                                return decision;
+                            }
                             if effective_tool_approval == ToolApprovalPolicy::Deny {
                                 let reason = format!(
                                     "Tool '{tool_name}' is denied by the effective run policy"
@@ -2746,9 +2779,31 @@ pub struct EffectiveConfig {
 #[cfg(test)]
 mod approval_gate_tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
-    use super::{ApprovalWaitOutcome, await_approval, resolve_pending_approval};
-    use std::{collections::HashMap, time::Duration};
+    use super::{
+        ApprovalWaitOutcome, await_approval, governance_bypass_decision, resolve_pending_approval,
+    };
+    use crate::llm::ToolApprovalResult;
+    use crate::uar::governance::runtime_control::governance_runtime_handles;
+    use std::{
+        collections::HashMap,
+        sync::{Arc, Barrier},
+        time::Duration,
+    };
     use tokio::sync::{Mutex, oneshot};
+
+    fn sealed_local_runtime() -> (
+        crate::uar::governance::runtime_control::GovernanceMutationHandle,
+        crate::uar::governance::runtime_control::GovernanceGateHandle,
+    ) {
+        let (mutation, gate, _) = governance_runtime_handles("localhost");
+        mutation.record_installed_authentication(false);
+        mutation.declare_ingress("primary-http").expect("declare");
+        let proof = mutation
+            .register_bound_ingress("primary-http", "127.0.0.1:1906".parse().expect("address"))
+            .expect("register");
+        mutation.seal_ingress_inventory(&[proof]).expect("seal");
+        (mutation, gate)
+    }
 
     #[tokio::test]
     async fn approval_wait_covers_approve_reject_close_and_timeout() {
@@ -2789,6 +2844,45 @@ mod approval_gate_tests {
         assert!(resolve_pending_approval(&approvals, "run-1", true).await);
         assert!(!resolve_pending_approval(&approvals, "run-1", false).await);
         assert_eq!(receiver.await, Ok(true));
+    }
+
+    #[test]
+    fn governance_precheck_is_fail_closed_until_off_and_observes_toggle_boundary() {
+        let (initializing_mutation, initializing_gate, _) = governance_runtime_handles("localhost");
+        assert!(governance_bypass_decision(Some(&initializing_gate)).is_none());
+        initializing_mutation
+            .finalize_mutation_unavailable()
+            .expect("fail-closed finalization");
+        assert!(governance_bypass_decision(Some(&initializing_gate)).is_none());
+
+        let (mutation, gate) = sealed_local_runtime();
+        let plan = mutation.preference_plan(Some(false)).expect("plan");
+        mutation.finalize_preference(&plan).expect("finalize Off");
+
+        let before_publication = Arc::new(Barrier::new(2));
+        let after_publication = Arc::new(Barrier::new(2));
+        let reader_gate = gate.clone();
+        let reader_before = Arc::clone(&before_publication);
+        let reader_after = Arc::clone(&after_publication);
+        let reader = std::thread::spawn(move || {
+            let before = governance_bypass_decision(Some(&reader_gate));
+            reader_before.wait();
+            reader_after.wait();
+            let after = governance_bypass_decision(Some(&reader_gate));
+            (before, after)
+        });
+
+        before_publication.wait();
+        mutation
+            .publish_committed_preference(true)
+            .expect("publish On");
+        after_publication.wait();
+        let (before, after) = reader.join().expect("reader thread");
+        assert!(matches!(
+            before,
+            Some(ToolApprovalResult::GovernanceBypassed)
+        ));
+        assert!(after.is_none());
     }
 }
 

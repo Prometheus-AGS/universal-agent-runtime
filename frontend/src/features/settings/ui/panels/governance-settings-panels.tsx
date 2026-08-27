@@ -1,8 +1,22 @@
-import { useCallback, useState } from "react";
-import { Bot, Loader2, Zap } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  AlertCircle,
+  AlertTriangle,
+  Bot,
+  CheckCircle2,
+  Info,
+  Loader2,
+  Zap,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import type {
+  GovernanceEffectiveState,
+  GovernanceRuntimeStatus,
+  GovernanceStatusReason,
+} from "../../api/settings-api";
+import { useGovernanceStatus } from "../../model/use-governance-status";
 import { useSettings } from "../../model/use-settings";
 import { NamespacePanel } from "../generic-schema-panel";
 import {
@@ -107,84 +121,543 @@ const GOVERNANCE_ACTIONS = [
   { value: "access_knowledge", label: "Access Knowledge Base" },
 ];
 
+const GOVERNANCE_REASON_LABELS: Record<GovernanceStatusReason, string> = {
+  initialization_incomplete: "Runtime initialization is not complete.",
+  configured_host_not_allowed:
+    "The configured listener host is not localhost or 127.0.0.1.",
+  authentication_unverified: "The installed authentication mode is unknown.",
+  jwt_required: "JWT authentication is active for this process.",
+  ingress_inventory_unsealed:
+    "The runtime has not sealed its tool-capable ingress inventory.",
+  ingress_proof_missing: "A tool-capable ingress is missing its bound-address proof.",
+  bound_ingress_not_loopback:
+    "At least one tool-capable ingress is bound beyond this device.",
+  persistence_unavailable:
+    "The saved governance preference could not be read or updated.",
+};
+
+const GOVERNANCE_SETTING_LABELS: Record<string, string> = {
+  "governance.enabled": "Enforce tool governance",
+  "governance.default_mode": "Default authorization mode",
+  "governance.allowed_actions": "Globally allowed actions",
+  "governance.policy_reload_enabled": "Hot policy reload",
+};
+
+function governanceSettingLabel(key: string) {
+  return GOVERNANCE_SETTING_LABELS[key] ?? key;
+}
+
+function governanceStateLabel(state: GovernanceEffectiveState | undefined) {
+  switch (state) {
+    case "required":
+      return "Required";
+    case "on":
+      return "On";
+    case "off":
+      return "Off";
+    default:
+      return "Unknown";
+  }
+}
+
 export function GovernancePanel() {
+  const {
+    values,
+    dirty,
+    loading: settingsLoading,
+    saving,
+    error: settingsError,
+    setSetting,
+    saveAll,
+    reload,
+  } = useSettings("governance");
+  const {
+    status,
+    loading: statusLoading,
+    error: statusError,
+    refresh: refreshStatus,
+  } = useGovernanceStatus();
+  const [feedback, setFeedback] = useState<{
+    kind: "confirmed" | "changed" | "error";
+    message: string;
+  } | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const lastAnnouncedEffectiveState =
+    useRef<GovernanceEffectiveState | null>(null);
+  const wasSaving = useRef(false);
+  const masterId = useId();
+  const masterDescriptionId = useId();
+  const masterLockReasonId = useId();
+  const modeId = useId();
+  const modeHintId = useId();
+  const reloadId = useId();
+  const policyDescriptionId = useId();
+
+  useEffect(() => {
+    const effectiveState = statusError ? undefined : status?.effective_state;
+    if (!effectiveState || effectiveState === "unknown") return;
+    if (lastAnnouncedEffectiveState.current === null) {
+      lastAnnouncedEffectiveState.current = effectiveState;
+      return;
+    }
+    if (lastAnnouncedEffectiveState.current === effectiveState || saving) return;
+    lastAnnouncedEffectiveState.current = effectiveState;
+    setAnnouncement(
+      `Tool governance is now ${governanceStateLabel(effectiveState)}.`,
+    );
+  }, [saving, status?.effective_state, statusError]);
+
+  const set = useCallback(
+    (key: string, value: unknown) => {
+      setFeedback(null);
+      setSetting(`governance.${key}`, value);
+    },
+    [setSetting],
+  );
+  const mode =
+    (values["governance.default_mode"] as string | undefined) ?? "permit_all";
+  const allowed =
+    (values["governance.allowed_actions"] as string[] | undefined) ?? [];
+  const hasMasterDraft = Object.prototype.hasOwnProperty.call(
+    dirty,
+    "governance.enabled",
+  );
+  const hasDirty = Object.keys(dirty).length > 0;
+  const statusUnknown =
+    !status || status.effective_state === "unknown" || Boolean(statusError);
+  const settingsUnavailable = settingsLoading || Boolean(settingsError);
+  const mutationUnavailable = status?.mutation_available === false;
+  const governanceRequired = status?.effective_state === "required";
+  const presentedEnabled = governanceRequired
+    ? true
+    : mutationUnavailable
+      ? (status?.effective_enabled ?? true)
+      : hasMasterDraft
+        ? Boolean(values["governance.enabled"])
+        : (status?.effective_enabled ?? true);
+  const masterAriaDisabled =
+    statusUnknown ||
+    settingsUnavailable ||
+    mutationUnavailable ||
+    governanceRequired;
+  const policyDisabled =
+    saving ||
+    statusUnknown ||
+    settingsUnavailable ||
+    mutationUnavailable ||
+    (!governanceRequired && !presentedEnabled);
+
+  const announceObservedStatus = useCallback(
+    (
+      observedStatus: GovernanceRuntimeStatus | undefined,
+      fallback: string,
+    ) => {
+      const effectiveState = observedStatus?.effective_state;
+      if (
+        effectiveState &&
+        effectiveState !== "unknown" &&
+        lastAnnouncedEffectiveState.current !== effectiveState
+      ) {
+        lastAnnouncedEffectiveState.current = effectiveState;
+        setAnnouncement(
+          `Tool governance is now ${governanceStateLabel(effectiveState)}.`,
+        );
+        return;
+      }
+      setAnnouncement(fallback);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (saving && !wasSaving.current) {
+      setAnnouncement(
+        hasMasterDraft
+          ? presentedEnabled
+            ? "Turning tool governance on…"
+            : "Turning tool governance off…"
+          : "Saving governance settings…",
+      );
+    }
+    wasSaving.current = saving;
+  }, [hasMasterDraft, presentedEnabled, saving]);
+
+  const toggleAction = (action: string) => {
+    const next = allowed.includes(action)
+      ? allowed.filter((candidate) => candidate !== action)
+      : [...allowed, action];
+    set("allowed_actions", next);
+  };
+
+  const handleSave = useCallback(async () => {
+    setFeedback(null);
+    try {
+      const response = await saveAll();
+      if (!response) return;
+      const updated = response.results?.filter(
+        (result) => result.status === "updated",
+      );
+      const appliedLabels = (updated ?? []).map((result) =>
+        governanceSettingLabel(result.key),
+      );
+      const retainedLabels = (response.retained_draft_keys ?? []).map(
+        governanceSettingLabel,
+      );
+      const observedStatus =
+        response.observed_governance_status ?? response.governance_status;
+      const outcome =
+        response.governance_outcome ??
+        (response.status === "updated" ? "confirmed" : "partial");
+      if (outcome === "confirmed") {
+        const message = "Governance settings saved and confirmed.";
+        setFeedback({ kind: "confirmed", message });
+        announceObservedStatus(observedStatus, message);
+      } else if (outcome === "changed_elsewhere") {
+        const message = `Settings saved, then changed elsewhere. Tool governance is now ${governanceStateLabel(
+          response.observed_governance_status?.effective_state,
+        )}.`;
+        setFeedback({ kind: "changed", message });
+        announceObservedStatus(observedStatus, message);
+      } else if (outcome === "unknown") {
+        setFeedback({
+          kind: "error",
+          message:
+            "The previous runtime stopped before the save outcome could be verified. Refresh to try again.",
+        });
+        setAnnouncement("");
+      } else {
+        const message = `${
+          appliedLabels.length > 0
+            ? `Applied: ${appliedLabels.join(", ")}. `
+            : "No governance settings were applied. "
+        }${
+          retainedLabels.length > 0
+            ? `Still drafts: ${retainedLabels.join(", ")}.`
+            : "No submitted drafts remain."
+        }`;
+        setFeedback({ kind: "error", message });
+        announceObservedStatus(observedStatus, "");
+      }
+    } catch {
+      setAnnouncement("");
+    }
+  }, [announceObservedStatus, saveAll]);
+
+  const handleRefresh = useCallback(async () => {
+    setFeedback(null);
+    await Promise.allSettled([reload(), refreshStatus()]);
+  }, [reload, refreshStatus]);
+
   return (
-    <NamespacePanel
-      namespace="governance"
-      title="Governance"
-      subtitle="Cedar-policy based authorization defaults"
-    >
-      {({ val, set }) => {
-        const mode = (val("default_mode") as string) ?? "permit_all";
-        const allowed = (val("allowed_actions") as string[]) ?? [];
-        const toggleAction = (action: string) => {
-          const next = allowed.includes(action)
-            ? allowed.filter((a) => a !== action)
-            : [...allowed, action];
-          set("allowed_actions", next);
-        };
-        return (
-          <>
-            <Field
-              label="Default Authorization Mode"
-              hint="Applied when no specific Cedar policy matches"
-            >
-              <SettingSelect
-                value={mode}
-                options={[
-                  { value: "permit_all", label: "Permit All (default allow)" },
-                  { value: "deny_all", label: "Deny All (default deny)" },
-                  { value: "custom", label: "Custom (policy files only)" },
-                ]}
-                onChange={(v) => set("default_mode", v)}
-              />
-            </Field>
-            {mode !== "permit_all" && (
-              <div className="space-y-2">
-                <Label className="font-mono text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Globally Allowed Actions
+    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <PanelHeader
+        title="Governance"
+        subtitle="Tool policies, approvals, and enforcement"
+        saving={saving}
+        loading={settingsLoading || statusLoading}
+        saveDisabled={
+          !hasDirty ||
+          statusUnknown ||
+          settingsUnavailable ||
+          mutationUnavailable
+        }
+        onSave={() => void handleSave()}
+        onReload={() => void handleRefresh()}
+      />
+      <div className="min-w-0 flex-1 space-y-5 overflow-y-auto px-4 py-5 sm:px-6">
+        {(settingsLoading || statusLoading) && !status && (
+          <div className="flex items-center gap-2">
+            <Loader2 size={15} className="animate-spin text-muted-foreground" />
+            <span className="font-mono text-xs text-muted-foreground">
+              Verifying runtime governance…
+            </span>
+          </div>
+        )}
+
+        {statusError && (
+          <div
+            role="alert"
+            aria-atomic="true"
+            className="flex min-w-0 items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive"
+          >
+            <AlertCircle size={15} className="mt-0.5 shrink-0" />
+            <p className="min-w-0 font-mono text-xs leading-relaxed break-words">
+              Runtime governance status could not be verified. Refresh to try
+              again. {statusError}
+            </p>
+          </div>
+        )}
+
+        {settingsError && (
+          <div
+            role="alert"
+            aria-atomic="true"
+            className="flex min-w-0 items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive"
+          >
+            <AlertCircle size={15} className="mt-0.5 shrink-0" />
+            <p className="min-w-0 font-mono text-xs leading-relaxed break-words">
+              Governance settings could not be loaded or saved. Refresh to try
+              again. {settingsError}
+            </p>
+          </div>
+        )}
+
+        <section
+          aria-labelledby={`${masterId}-heading`}
+          className="min-w-0 rounded-xl border border-border bg-card p-4"
+        >
+          <div className="grid min-w-0 grid-cols-1 items-center gap-4 min-[360px]:grid-cols-[minmax(0,1fr)_auto]">
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <Label
+                  id={`${masterId}-heading`}
+                  htmlFor={statusUnknown ? undefined : masterId}
+                  className="font-display text-sm font-semibold text-foreground"
+                >
+                  Enforce tool governance
                 </Label>
-                <div className="space-y-2">
-                  {GOVERNANCE_ACTIONS.map(({ value, label }) => (
-                    <label
-                      key={value}
-                      className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={allowed.includes(value)}
-                        onChange={() => toggleAction(value)}
-                        className="accent-primary"
-                      />
-                      <span className="font-mono text-xs text-foreground">
-                        {label}
-                      </span>
-                      <span className="ml-auto font-mono text-xs text-muted-foreground">
-                        {value}
-                      </span>
-                    </label>
-                  ))}
-                </div>
+                <span
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 font-mono text-xs font-semibold",
+                    !statusUnknown &&
+                      status?.effective_state === "on" &&
+                      "border-success/40 bg-success/10 text-success",
+                    !statusUnknown &&
+                      status?.effective_state === "off" &&
+                      "border-warning bg-warning/10 text-foreground",
+                    !statusUnknown &&
+                      status?.effective_state === "required" &&
+                      "border-primary/40 bg-primary/10 text-primary",
+                    (statusUnknown || mutationUnavailable) &&
+                      "border-border bg-muted text-muted-foreground",
+                  )}
+                >
+                  {governanceStateLabel(
+                    statusUnknown ? undefined : status?.effective_state,
+                  )}
+                </span>
+              </div>
+              <p
+                id={masterDescriptionId}
+                className="max-w-[70ch] font-body text-sm leading-relaxed text-muted-foreground"
+              >
+                Applies Cedar authorization, run-policy restrictions, and risk
+                approval before each tool call.
+              </p>
+            </div>
+            {statusUnknown ? (
+              <span className="font-mono text-xs text-muted-foreground">
+                Unavailable
+              </span>
+            ) : (
+              <Toggle
+                id={masterId}
+                value={presentedEnabled}
+                onChange={(value) => set("enabled", value)}
+                disabled={saving}
+                ariaDisabled={masterAriaDisabled}
+                ariaLabel="Enforce tool governance"
+                ariaDescribedBy={
+                  governanceRequired || mutationUnavailable
+                    ? `${masterDescriptionId} ${masterLockReasonId}`
+                    : masterDescriptionId
+                }
+              />
+            )}
+          </div>
+
+          {hasMasterDraft &&
+            status &&
+            !governanceRequired &&
+            !mutationUnavailable && (
+              <div className="mt-3 flex min-w-0 items-start gap-2 rounded-lg bg-muted/40 px-3 py-2 text-muted-foreground">
+                <Info size={14} className="mt-0.5 shrink-0" />
+                <p className="min-w-0 font-mono text-xs leading-relaxed">
+                  {presentedEnabled
+                    ? "After Save, policy checks and approval prompts resume."
+                    : "After Save, all available tools can run without Cedar policies, run-policy restrictions, or approval prompts."}{" "}
+                  Effective governance remains{" "}
+                  {governanceStateLabel(status.effective_state)} until
+                  confirmed.
+                </p>
               </div>
             )}
-            <div className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3">
-              <div>
-                <p className="font-mono text-xs font-medium text-foreground">
-                  Hot Policy Reload
-                </p>
-                <p className="font-mono text-xs text-muted-foreground">
-                  Reload Cedar policy files without restarting the server
-                </p>
+        </section>
+
+        {!statusUnknown && status?.effective_state === "off" && (
+          <div
+            role="note"
+            className="flex min-w-0 items-start gap-2 rounded-lg border border-foreground/50 bg-warning/10 px-4 py-3 text-foreground"
+          >
+            <AlertTriangle
+              size={15}
+              className="mt-0.5 shrink-0 text-warning"
+            />
+            <p className="min-w-0 font-body text-sm leading-relaxed">
+              All available tools can run without Cedar policies, run-policy
+              restrictions, or approval prompts.
+            </p>
+          </div>
+        )}
+
+        {!statusUnknown &&
+          (governanceRequired || mutationUnavailable) &&
+          status && (
+          <div
+            id={masterLockReasonId}
+            className="min-w-0 rounded-lg border border-border bg-muted/30 px-4 py-3"
+          >
+            <p className="font-body text-sm font-medium text-foreground">
+              {governanceRequired && mutationUnavailable
+                ? "Governance is required and settings are unavailable."
+                : governanceRequired
+                  ? "Governance is required for this runtime."
+                  : "Governance is enforced, but settings are unavailable."}
+            </p>
+            <ul className="mt-2 space-y-1 pl-5 font-body text-sm text-muted-foreground">
+              {status.reasons.map((reason) => (
+                <li key={reason} className="list-disc break-words">
+                  {GOVERNANCE_REASON_LABELS[reason]}
+                </li>
+              ))}
+            </ul>
+            {governanceRequired && (
+              <p className="mt-2 font-body text-sm leading-relaxed text-muted-foreground">
+                Change the active listener or JWT configuration named above,
+                restore settings persistence when listed, then restart UAR
+                before turning governance Off.
+              </p>
+            )}
+          </div>
+          )}
+
+        <fieldset
+          disabled={policyDisabled}
+          aria-describedby={policyDescriptionId}
+          className={cn(
+            "min-w-0 space-y-5 rounded-xl border border-border p-4",
+            policyDisabled && "opacity-60",
+          )}
+        >
+          <legend className="px-1 font-display text-sm font-semibold text-foreground">
+            Policy behavior when governance is on
+          </legend>
+          <p
+            id={policyDescriptionId}
+            className="max-w-[70ch] font-body text-sm leading-relaxed text-muted-foreground"
+          >
+            These controls remain saved while governance is Off and apply again
+            when enforcement is turned On.
+          </p>
+          <Field
+            label="Default Authorization Mode"
+            hint="Applied when no specific Cedar policy matches"
+            htmlFor={modeId}
+            hintId={modeHintId}
+          >
+            <SettingSelect
+              id={modeId}
+              ariaDescribedBy={modeHintId}
+              value={mode}
+              options={[
+                { value: "permit_all", label: "Permit All (default allow)" },
+                { value: "deny_all", label: "Deny All (default deny)" },
+                { value: "custom", label: "Custom (policy files only)" },
+              ]}
+              onChange={(value) => set("default_mode", value)}
+            />
+          </Field>
+          {mode !== "permit_all" && (
+            <div className="min-w-0 space-y-2">
+              <p className="font-mono text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                Globally Allowed Actions
+              </p>
+              <div className="space-y-2">
+                {GOVERNANCE_ACTIONS.map(({ value, label }) => (
+                  <label
+                    key={value}
+                    className="flex min-w-0 cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-border bg-card px-4 py-2.5"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={allowed.includes(value)}
+                      onChange={() => toggleAction(value)}
+                      className="shrink-0 accent-primary"
+                    />
+                    <span className="min-w-0 flex-1 font-body text-sm text-foreground">
+                      {label}
+                    </span>
+                    <span className="min-w-0 font-mono text-xs break-all text-muted-foreground">
+                      {value}
+                    </span>
+                  </label>
+                ))}
               </div>
-              <Toggle
-                value={(val("policy_reload_enabled") as boolean) ?? true}
-                onChange={(v) => set("policy_reload_enabled", v)}
-              />
             </div>
-          </>
-        );
-      }}
-    </NamespacePanel>
+          )}
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg border border-border bg-card px-4 py-3">
+            <div className="min-w-0">
+              <Label
+                htmlFor={reloadId}
+                className="font-body text-sm font-medium text-foreground"
+              >
+                Hot policy reload
+              </Label>
+              <p className="font-body text-sm leading-relaxed text-muted-foreground">
+                Reload Cedar policy files without restarting the server.
+              </p>
+            </div>
+            <Toggle
+              id={reloadId}
+              ariaLabel="Hot policy reload"
+              value={
+                (values["governance.policy_reload_enabled"] as
+                  | boolean
+                  | undefined) ?? true
+              }
+              onChange={(value) => set("policy_reload_enabled", value)}
+            />
+          </div>
+        </fieldset>
+
+        {feedback && (
+          <div
+            className={cn(
+              "flex min-w-0 items-start gap-2 rounded-lg border px-4 py-3",
+              feedback.kind === "confirmed"
+                ? "border-success/40 bg-success/10 text-success"
+                : feedback.kind === "changed"
+                  ? "border-border bg-muted/40 text-foreground"
+                  : "border-destructive/40 bg-destructive/10 text-destructive",
+            )}
+            role={feedback.kind === "error" ? "alert" : undefined}
+            aria-atomic={feedback.kind === "error" ? "true" : undefined}
+          >
+            {feedback.kind === "confirmed" ? (
+              <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
+            ) : feedback.kind === "changed" ? (
+              <Info size={15} className="mt-0.5 shrink-0" />
+            ) : (
+              <AlertCircle size={15} className="mt-0.5 shrink-0" />
+            )}
+            <p className="min-w-0 font-mono text-xs leading-relaxed">
+              {feedback.message}
+            </p>
+          </div>
+        )}
+        <p
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+        >
+          {announcement ||
+            ((settingsLoading || statusLoading) && !status
+              ? "Verifying runtime governance…"
+              : "")}
+        </p>
+      </div>
+    </div>
   );
 }
 

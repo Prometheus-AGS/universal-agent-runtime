@@ -167,7 +167,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     key: "governance",
     label: "Governance",
-    subtitle: "Policies & guardrails",
+    subtitle: "Tool policies, approvals, and enforcement",
     icon: ShieldCheck,
     category: "Governance & Agents",
   },
@@ -243,4 +243,3 @@ export const CATEGORIES: NavCategory[] = [
   "Governance & Agents",
   "Caching & Users",
 ];
-

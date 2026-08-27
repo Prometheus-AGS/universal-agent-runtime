@@ -13,8 +13,10 @@ import {
   __resetForTests,
   clearDirty,
   getDirty,
+  reconcileSubmittedDirty,
   setDirty,
 } from "./settings-form-cache";
+import { successfulSubmittedKeys } from "./use-settings";
 
 beforeEach(() => {
   __resetForTests();
@@ -72,5 +74,96 @@ describe("settings-form-cache", () => {
 
     expect(isConflict).toBe(true);
     expect(remote).toBe("sk-remote");
+  });
+
+  test("reconciles only unchanged successful drafts", () => {
+    setDirty("governance", "governance.enabled", true);
+    setDirty("governance", "governance.default_mode", "deny_all");
+    setDirty("governance", "governance.policy_reload_enabled", false);
+    const submitted = getDirty("governance");
+
+    setDirty("governance", "governance.default_mode", "custom");
+    reconcileSubmittedDirty("governance", submitted, [
+      "governance.enabled",
+      "governance.default_mode",
+    ]);
+
+    expect(getDirty("governance").values).toEqual({
+      "governance.default_mode": "custom",
+      "governance.policy_reload_enabled": false,
+    });
+  });
+
+  test("preserves dependency failures and unconfirmed outcomes", () => {
+    const submitted = {
+      "governance.default_mode": "deny_all",
+      "governance.enabled": true,
+    };
+    const response = {
+      status: "partial" as const,
+      results: [
+        { key: "governance.default_mode", status: "updated" as const },
+        {
+          key: "governance.enabled",
+          status: "dependency_failed" as const,
+        },
+      ],
+      governance_outcome: "partial" as const,
+    };
+
+    expect(successfulSubmittedKeys(submitted, response)).toEqual([
+      "governance.default_mode",
+    ]);
+    expect(
+      successfulSubmittedKeys(submitted, {
+        ...response,
+        governance_outcome: "unknown",
+      }),
+    ).toEqual([]);
+    expect(
+      successfulSubmittedKeys(submitted, {
+        ...response,
+        governance_outcome: "changed_elsewhere",
+      }),
+    ).toEqual([]);
+  });
+
+  test("clears only an authoritative Required master rejection", () => {
+    const requiredStatus = {
+      boot_instance_id: "boot-a",
+      revision: 8,
+      phase: "on" as const,
+      effective_state: "required" as const,
+      effective_enabled: true,
+      may_disable: false,
+      mutation_available: true,
+      configured_host: "0.0.0.0",
+      bound_addresses: ["0.0.0.0:1906"],
+      jwt_required: true,
+      reasons: ["jwt_required" as const],
+    };
+    expect(
+      successfulSubmittedKeys(
+        {
+          "governance.enabled": false,
+          "governance.default_mode": "deny_all",
+        },
+        {
+          status: "partial",
+          results: [
+            {
+              key: "governance.enabled",
+              status: "validation_rejected",
+            },
+            {
+              key: "governance.default_mode",
+              status: "dependency_failed",
+            },
+          ],
+          governance_outcome: "rejected",
+          observed_governance_status: requiredStatus,
+        },
+      ),
+    ).toEqual(["governance.enabled"]);
   });
 });

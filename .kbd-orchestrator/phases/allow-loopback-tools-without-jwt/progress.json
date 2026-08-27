@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "2",
+  "generatedBy": "kbd-runtime",
+  "sourceRevision": 933,
+  "derivedRevision": 933,
+  "frontier": {
+    "16f5c9ca-4c43-4421-982e-bfdb86909212": 541,
+    "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
+    "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
+    "525ede94-ad4e-4580-84da-627cba8991cb": 27,
+    "80130eb1-95f8-4039-8976-71bdce23779c": 61,
+    "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
+    "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
+    "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
+    "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
+    "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
+    "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
+  },
+  "conflictCount": 0,
+  "phase": "allow-loopback-tools-without-jwt",
+  "phaseId": "allow-loopback-tools-without-jwt",
+  "parentPhase": null,
+  "last_updated": "2026-08-27T14:51:32.776140Z",
+  "last_updated_by": "kbd-runtime",
+  "changes_total": 1,
+  "changes_completed": 0,
+  "implementation_total": 1,
+  "implementation_completed": 0,
+  "completion": {
+    "primaryCounter": "implementation",
+    "implementation": {
+      "completed": 0,
+      "total": 1,
+      "status": "PENDING"
+    },
+    "evidence": {
+      "status": "COMPLETE",
+      "summary": "Exact focused, baseline-failure, browser, release, installed-service, nonlocal, and rollback receipts recorded in KBD execution and append-only memory.",
+      "blockers": []
+    },
+    "certification": {
+      "status": "IN_PROGRESS",
+      "summary": "Tier 3 browser/release/install proofs pass; certification remains incomplete.",
+      "blockers": [
+        "Exact Tier 2 baseline failures and warnings, support-matrix embedded-mobile omission, live JWT proof, and committed pre-deployment rollback deliverable remain open."
+      ]
+    },
+    "publication": {
+      "status": "IN_PROGRESS",
+      "summary": "Scoped commit and main push are being prepared; OpenSpec cannot be archived or reflected while certification tasks remain open.",
+      "blockers": []
+    }
+  },
+  "changes": [
+    {
+      "id": "allow-loopback-tools-without-jwt",
+      "title": "Allow verified local runtimes to disable governance",
+      "status": "IN_PROGRESS",
+      "implementation_status": "IN_PROGRESS",
+      "tasks_total": 9,
+      "tasks_done": 7,
+      "last_task_completed": "Isolated UI quality gates and browser proof",
+      "next_task_pending": "Phase milestone release and deployment verification",
+      "blockers": []
+    }
+  ],
+  "children": {},
+  "migrationStatus": null
+}

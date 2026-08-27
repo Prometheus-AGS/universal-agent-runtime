@@ -79,6 +79,8 @@ pub fn build_driver(llm_config: &LlmConfig) -> anyhow::Result<Arc<dyn LlmDriver>
 pub enum ToolApprovalResult {
     /// Tool is approved for execution.
     Approved,
+    /// Governance was intentionally bypassed for a verified local-only process.
+    GovernanceBypassed,
     /// Tool execution was rejected by the user or timed out.
     Rejected { reason: String },
 }
@@ -1360,7 +1362,10 @@ mod tests {
     use super::*;
     use crate::llm::mock_driver::MockLlmDriver;
     use crate::uar::runtime::native_skill::NativeSkill;
-    use std::sync::Mutex;
+    use std::sync::{
+        Mutex,
+        atomic::{AtomicUsize, Ordering},
+    };
 
     #[derive(Debug, Default)]
     struct FailingDriver {
@@ -1380,6 +1385,10 @@ mod tests {
     }
 
     struct RenderSkill;
+
+    struct SearchSkill {
+        calls: Arc<AtomicUsize>,
+    }
 
     #[test]
     fn resolved_provider_identity_survives_bare_model_for_explicit_base_url() {
@@ -1430,6 +1439,29 @@ mod tests {
         }
         async fn execute(&self, _: serde_json::Value) -> anyhow::Result<serde_json::Value> {
             Ok(serde_json::json!({"ok": true}))
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl NativeSkill for SearchSkill {
+        fn name(&self) -> &str {
+            "search_web"
+        }
+
+        fn description(&self) -> &str {
+            "Searches the web fixture"
+        }
+
+        fn parameters_schema(&self) -> serde_json::Value {
+            serde_json::json!({
+                "type": "object",
+                "properties": { "query": { "type": "string" } }
+            })
+        }
+
+        async fn execute(&self, args: serde_json::Value) -> anyhow::Result<serde_json::Value> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Ok(serde_json::json!({"result": args["query"]}))
         }
     }
 
@@ -1553,6 +1585,67 @@ mod tests {
             requests
                 .iter()
                 .all(|request| request.cache_strategy.is_some())
+        );
+    }
+
+    #[tokio::test]
+    async fn governance_bypassed_executes_tool_without_approval_or_denial_events() {
+        let driver = Arc::new(MockLlmDriver::new(vec![
+            vec![
+                NormalizedEvent::ToolCallDelta {
+                    call_index: 0,
+                    id: Some("search-call".into()),
+                    name: Some("search_web".into()),
+                    arguments_delta: Some(r#"{"query":"loopback governance"}"#.into()),
+                },
+                NormalizedEvent::ToolCallComplete {
+                    call_index: 0,
+                    id: "search-call".into(),
+                    name: "search_web".into(),
+                    arguments_json: r#"{"query":"loopback governance"}"#.into(),
+                },
+                NormalizedEvent::Done,
+            ],
+            vec![
+                NormalizedEvent::MessageDelta {
+                    text: "search complete".into(),
+                },
+                NormalizedEvent::Done,
+            ],
+        ]));
+        let calls = Arc::new(AtomicUsize::new(0));
+        let native_skills = Arc::new(NativeSkillRegistry::new());
+        native_skills
+            .register(SearchSkill {
+                calls: Arc::clone(&calls),
+            })
+            .await;
+        let gate: ToolApprovalGate =
+            Arc::new(|_, _, _, _| Box::pin(async { ToolApprovalResult::GovernanceBypassed }));
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig::default(),
+            Arc::new(McpRegistry::empty()),
+            native_skills,
+            driver,
+        )
+        .with_tool_approval_gate(gate);
+
+        let stream = orchestrator.chat("search").await.expect("chat stream");
+        let events = stream.collect::<Vec<_>>().await;
+
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert!(events.iter().any(|event| matches!(
+            event,
+            NormalizedEvent::ToolResult {
+                name,
+                success: true,
+                ..
+            } if name == "search_web"
+        )));
+        assert!(
+            events
+                .iter()
+                .all(|event| !matches!(event, NormalizedEvent::ToolResult { success: false, .. }))
         );
     }
 

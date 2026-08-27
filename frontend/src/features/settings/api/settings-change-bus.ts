@@ -19,6 +19,8 @@ export interface SettingsChangedDetail {
 }
 
 export const SETTINGS_CHANGED_EVENT = "uar:settings-changed";
+export const SETTINGS_REALTIME_CONNECTED_EVENT =
+  "uar:settings-realtime-connected";
 
 export function impactForSettingsNamespace(namespace: string): SettingsImpact {
   if (
@@ -86,4 +88,16 @@ export function onSettingsChanged(
   };
   window.addEventListener(SETTINGS_CHANGED_EVENT, listener);
   return () => window.removeEventListener(SETTINGS_CHANGED_EVENT, listener);
+}
+
+export function emitSettingsRealtimeConnected(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(SETTINGS_REALTIME_CONNECTED_EVENT));
+}
+
+export function onSettingsRealtimeConnected(handler: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(SETTINGS_REALTIME_CONNECTED_EVENT, handler);
+  return () =>
+    window.removeEventListener(SETTINGS_REALTIME_CONNECTED_EVENT, handler);
 }

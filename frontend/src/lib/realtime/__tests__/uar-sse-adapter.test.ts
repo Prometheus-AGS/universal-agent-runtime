@@ -10,6 +10,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { ChangeSet } from "@/platform/entities";
 
+import { createAllUarAdapters } from "../topics";
 import { __resetUarSseConnections, createUarSseAdapter } from "../uar-sse-adapter";
 
 type Listener = (ev: MessageEvent | Event) => void;
@@ -58,6 +59,10 @@ class FakeEventSource {
     this.onopen?.(new Event("open"));
   }
 
+  fireError() {
+    this.onerror?.(new Event("error"));
+  }
+
   static reset() {
     FakeEventSource.instances = [];
   }
@@ -71,6 +76,7 @@ describe("createUarSseAdapter", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -95,9 +101,11 @@ describe("createUarSseAdapter", () => {
   });
 
   test("maps update event to EntityChange op=update", () => {
+    const onChange = vi.fn();
     const adapter = createUarSseAdapter({
       topic: "providers",
       entityType: "Provider",
+      onChange,
     });
     const handler = vi.fn();
     adapter.subscribe({ label: "test" }, handler as (cs: ChangeSet) => void);
@@ -113,6 +121,12 @@ describe("createUarSseAdapter", () => {
     expect((handler.mock.calls[0]![0] as ChangeSet).changes[0]!.op).toBe(
       "update",
     );
+    expect(onChange).toHaveBeenCalledWith({
+      op: "update",
+      type: "Provider",
+      id: "p1",
+      data: { id: "p1", display_name: "Alpha" },
+    });
   });
 
   test("maps delete event to EntityChange op=delete", () => {
@@ -170,5 +184,47 @@ describe("createUarSseAdapter", () => {
     // after fireOpen we expect "connected" to appear somewhere in the calls.
     const seen = statusSpy.mock.calls.map((c) => c[0]);
     expect(seen).toContain("connected");
+  });
+
+  test("shared adapter status reports a reconnect", async () => {
+    vi.useFakeTimers();
+    const adapter = createUarSseAdapter({
+      topic: "settings",
+      entityType: "Setting",
+      reconnectBaseDelay: 10,
+    });
+    const statuses: string[] = [];
+    adapter.onStatusChange?.((status) => statuses.push(status));
+    adapter.subscribe({ label: "settings" }, () => {});
+
+    FakeEventSource.instances[0]!.fireOpen();
+    FakeEventSource.instances[0]!.fireError();
+    await vi.advanceTimersByTimeAsync(10);
+    FakeEventSource.instances[1]!.fireOpen();
+
+    expect(statuses.filter((status) => status === "connected")).toHaveLength(2);
+  });
+
+  test("all-adapter factory observes remote Setting changes", () => {
+    const onSettingChange = vi.fn();
+    const adapters = createAllUarAdapters("", onSettingChange);
+    const settingsAdapter = adapters.find(
+      (adapter) => adapter.name === "uar-sse:settings",
+    );
+    expect(settingsAdapter).toBeDefined();
+    settingsAdapter!.subscribe({ label: "settings" }, () => {});
+
+    FakeEventSource.instances[0]!.dispatch("update", {
+      topic: "settings",
+      id: "governance.enabled",
+      data: { key: "governance.enabled", data: false },
+    });
+
+    expect(onSettingChange).toHaveBeenCalledWith({
+      op: "update",
+      type: "Setting",
+      id: "governance.enabled",
+      data: { key: "governance.enabled", data: false },
+    });
   });
 });

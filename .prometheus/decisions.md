@@ -881,3 +881,15 @@ no repository-wide certification claim.
 **Rationale.** The Tier 2 production build is the deliverable artifact and exercises the same final responsive classes. Its preview supports deterministic container geometry, keyboard operation, draft preservation, popup positioning, and zero-write assertions without confusing an unrelated development optimizer limitation with a product-source requirement.
 
 **Uncomfortable constraint.** Production-bundle certification does not repair the normal development path. The optional-peer root-resolution defect remains explicit in the phase reflection and needs a separately authorized maintenance change if it is to be fixed.
+
+---
+
+## 2026-08-27 — Local anonymous governance is a boot-proven runtime posture
+
+**Decision.** Default governance Off only when the configured host literal is exactly `localhost` or `127.0.0.1`, installed JWT authentication is disabled, persistence has durably supplied the Off preference, and every registered tool-capable bound ingress is sealed and loopback. Any missing proof, non-loopback listener, required JWT, unreadable preference, or failed normalization keeps the effective gate On. The persisted preference, authoritative runtime status, and unsaved UI draft remain separate state.
+
+**Rationale.** A mutable setting or host string cannot establish on-device-only reachability. The sealed boot inventory makes the bypass decision at the real request-admission boundary, while separate gate/mutation/status handles prevent frontend state or a partially completed write from authorizing tool execution.
+
+**Operational boundary.** The process emits one stable `governance.inactive_local_mode` warning after its first finalized Off transition. Operators can turn enforcement On or Off live only while the boot posture remains eligible; Required and mutation-unavailable states are truthful, reachable UI states rather than disabled-looking booleans.
+
+**Uncomfortable constraint.** The forward release was installed before the planned rollback artifact was built. The staged fail-closed variant and the locally available prior binary both passed isolated compatibility checks, but no committed pre-deployment rollback deliverable exists, so rollback certification remains incomplete.

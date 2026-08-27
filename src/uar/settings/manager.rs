@@ -14,6 +14,10 @@
 //! 5. **Caches** all settings in memory for sub-μs reads at runtime.
 
 use crate::config::AppConfig;
+use crate::uar::governance::runtime_control::{
+    GovernanceMutationHandle, GovernancePreferencePlan, GovernancePreferenceWrite,
+    GovernanceRuntimeError, GovernanceStatusHandle,
+};
 use crate::uar::persistence::PersistenceLayer;
 use crate::uar::settings::schema::{
     BootstrapStats, SettingSource, Settings, SettingsMeta, SettingsType, SettingsWithMeta,
@@ -25,7 +29,7 @@ use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 use uuid::Uuid;
 
 // =============================================================================
@@ -37,6 +41,23 @@ use uuid::Uuid;
 struct CacheEntry {
     setting: Settings,
     meta: SettingsMeta,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GovernanceMutationStatus {
+    Updated,
+    ValidationRejected,
+    DependencyFailed,
+    Skipped,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct GovernanceMutationResult {
+    pub key: String,
+    pub status: GovernanceMutationStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
 }
 
 // =============================================================================
@@ -51,6 +72,9 @@ pub struct SettingsManager {
     persistence: Arc<dyn PersistenceLayer>,
     /// In-memory cache: key → (setting, transient metadata).
     cache: RwLock<HashMap<String, CacheEntry>>,
+    governance_mutation: Option<GovernanceMutationHandle>,
+    governance_status: Option<GovernanceStatusHandle>,
+    governance_mutation_lock: Mutex<()>,
 }
 
 impl SettingsManager {
@@ -59,7 +83,22 @@ impl SettingsManager {
         Self {
             persistence,
             cache: RwLock::new(HashMap::new()),
+            governance_mutation: None,
+            governance_status: None,
+            governance_mutation_lock: Mutex::new(()),
         }
+    }
+
+    /// Attach the trusted governance mutation authority used by the server boot.
+    #[must_use]
+    pub fn with_governance_runtime(
+        mut self,
+        mutation: GovernanceMutationHandle,
+        status: GovernanceStatusHandle,
+    ) -> Self {
+        self.governance_mutation = Some(mutation);
+        self.governance_status = Some(status);
+        self
     }
 
     // =========================================================================
@@ -79,7 +118,16 @@ impl SettingsManager {
     /// After the upsert pass the entire settings table is loaded into the
     /// in-memory cache so runtime reads are O(1).
     pub async fn initialize(&self, config: &AppConfig) -> Result<BootstrapStats> {
-        let desired = build_core_schema(config);
+        self.initialize_with_governance_default(config, true).await
+    }
+
+    /// Bootstrap settings using the already-derived boot posture default.
+    pub async fn initialize_with_governance_default(
+        &self,
+        config: &AppConfig,
+        governance_enabled: bool,
+    ) -> Result<BootstrapStats> {
+        let desired = build_core_schema(config, governance_enabled);
         let mut stats = BootstrapStats::default();
 
         // Upsert each settings type and immediately reconcile its settings using the
@@ -209,6 +257,55 @@ impl SettingsManager {
         Ok(stats)
     }
 
+    /// Read a persisted value without swallowing storage errors or consulting cache.
+    pub async fn load_optional_persisted_value(&self, key: &str) -> Result<Option<Value>> {
+        Ok(self
+            .persistence
+            .get_setting(key)
+            .await?
+            .map(|setting| setting.data))
+    }
+
+    /// Apply the seed/normalization write required by a sealed governance plan.
+    pub async fn apply_governance_preference_plan(
+        &self,
+        plan: &GovernancePreferencePlan,
+    ) -> Result<()> {
+        let _guard = self.governance_mutation_lock.lock().await;
+        let value = match plan.write {
+            GovernancePreferenceWrite::None => return Ok(()),
+            GovernancePreferenceWrite::Seed(value)
+            | GovernancePreferenceWrite::Normalize(value) => value,
+        };
+        let (settings_type, mut settings) = governance_schema_and_settings(value);
+        let actual_type_id = self
+            .persistence
+            .upsert_settings_type(&settings_type)
+            .await
+            .context("upserting governance settings type")?;
+        let mut setting = settings
+            .pop()
+            .expect("governance schema always contains the enabled setting");
+        setting.settings_type_id = actual_type_id;
+        if matches!(plan.write, GovernancePreferenceWrite::Normalize(_)) {
+            if let Some(existing) = self.persistence.get_setting(&setting.key).await? {
+                setting.id = existing.id;
+                setting.created_at = existing.created_at;
+                setting.updated_at = Some(Utc::now());
+            }
+            tracing::warn!(
+                name: "governance.persisted_state_normalized",
+                effective_enabled = true,
+                "Normalized an ineligible persisted governance preference"
+            );
+        }
+        self.persistence
+            .upsert_setting(&setting)
+            .await
+            .context("persisting boot-effective governance preference")?;
+        Ok(())
+    }
+
     /// Seed only the `run_policy` namespace (type + `run_policy.global` default),
     /// idempotently.
     ///
@@ -312,6 +409,34 @@ impl SettingsManager {
     /// Set a setting value via the API. The write is validated against the type's
     /// JSON Schema before being persisted.
     pub async fn set_value(&self, key: &str, value: Value) -> Result<()> {
+        if key.starts_with("governance.") {
+            let _guard = self.governance_mutation_lock.lock().await;
+            return self.set_value_locked(key, value).await;
+        }
+        self.set_value_locked(key, value).await
+    }
+
+    async fn set_value_locked(&self, key: &str, value: Value) -> Result<()> {
+        let governance_enabled = if key == "governance.enabled" {
+            let enabled = value
+                .as_bool()
+                .ok_or_else(|| anyhow::anyhow!("governance.enabled must be a boolean"))?;
+            let status = self
+                .governance_status
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("governance runtime authority is unavailable"))?
+                .snapshot();
+            if !status.mutation_available {
+                return Err(GovernanceRuntimeError::MutationUnavailable.into());
+            }
+            if !enabled && !status.may_disable {
+                return Err(GovernanceRuntimeError::GovernanceRequired.into());
+            }
+            Some(enabled)
+        } else {
+            None
+        };
+
         // Retrieve the existing DB record (we need the type + id).
         let existing = self
             .persistence
@@ -340,7 +465,92 @@ impl SettingsManager {
                 },
             },
         );
+        drop(cache);
+
+        if let Some(enabled) = governance_enabled {
+            self.governance_mutation
+                .as_ref()
+                .expect("validated governance authority must have a mutation handle")
+                .publish_committed_preference(enabled)
+                .unwrap_or_else(|error| {
+                    panic!("committed governance preference failed runtime publication: {error}")
+                });
+        }
         Ok(())
+    }
+
+    /// Apply one complete Governance namespace submission under the namespace mutex.
+    pub async fn set_governance_batch(
+        &self,
+        mut values: HashMap<String, Value>,
+    ) -> Vec<GovernanceMutationResult> {
+        let _guard = self.governance_mutation_lock.lock().await;
+        let master = values.remove("governance.enabled");
+        let master_disables = master.as_ref().and_then(Value::as_bool) == Some(false);
+        let mut entries = values.into_iter().collect::<Vec<_>>();
+        entries.sort_by(|left, right| left.0.cmp(&right.0));
+        let mut results = Vec::with_capacity(entries.len() + usize::from(master.is_some()));
+
+        if master_disables {
+            if let Some(value) = master.as_ref() {
+                results.push(
+                    self.apply_governance_batch_value("governance.enabled", value.clone())
+                        .await,
+                );
+            }
+        }
+
+        let mut policy_failed = false;
+        for (key, value) in entries {
+            if !key.starts_with("governance.") {
+                results.push(GovernanceMutationResult {
+                    key,
+                    status: GovernanceMutationStatus::Skipped,
+                    error: Some("key is outside the Governance namespace".to_string()),
+                });
+                continue;
+            }
+            let result = self.apply_governance_batch_value(&key, value).await;
+            policy_failed |= result.status != GovernanceMutationStatus::Updated;
+            results.push(result);
+        }
+
+        if let Some(value) = master {
+            if !master_disables {
+                if policy_failed && value.as_bool() == Some(true) {
+                    results.push(GovernanceMutationResult {
+                        key: "governance.enabled".to_string(),
+                        status: GovernanceMutationStatus::DependencyFailed,
+                        error: Some("submitted policy prerequisites did not all apply".to_string()),
+                    });
+                } else {
+                    results.push(
+                        self.apply_governance_batch_value("governance.enabled", value)
+                            .await,
+                    );
+                }
+            }
+        }
+        results
+    }
+
+    async fn apply_governance_batch_value(
+        &self,
+        key: &str,
+        value: Value,
+    ) -> GovernanceMutationResult {
+        match self.set_value_locked(key, value).await {
+            Ok(()) => GovernanceMutationResult {
+                key: key.to_string(),
+                status: GovernanceMutationStatus::Updated,
+                error: None,
+            },
+            Err(error) => GovernanceMutationResult {
+                key: key.to_string(),
+                status: GovernanceMutationStatus::ValidationRejected,
+                error: Some(error.to_string()),
+            },
+        }
     }
 
     /// List all settings that are currently flagged as drifted.
@@ -394,6 +604,20 @@ impl SettingsManager {
     /// Reset a setting to its compiled-in default by deleting the DB override.
     /// On next boot, `initialize()` will reseed the default from config.
     pub async fn reset_to_default(&self, key: &str) -> Result<()> {
+        if key == "governance.enabled" {
+            let default_enabled = !self
+                .governance_status
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("governance runtime authority is unavailable"))?
+                .snapshot()
+                .may_disable;
+            return self.set_value(key, json!(default_enabled)).await;
+        }
+        let _governance_guard = if key.starts_with("governance.") {
+            Some(self.governance_mutation_lock.lock().await)
+        } else {
+            None
+        };
         self.persistence.delete_setting(key).await?;
         let mut cache = self.cache.write().await;
         cache.remove(key);
@@ -600,6 +824,73 @@ impl SettingsManager {
 // Core Config → (SettingsType, Vec<Settings>) mapping
 // =============================================================================
 
+fn governance_schema_and_settings(governance_enabled: bool) -> (SettingsType, Vec<Settings>) {
+    let schema = json!({
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Governance",
+        "x-uar-ui": { "category": "Governance & Agents", "icon": "shield-check", "order": 11 },
+        "type": "object",
+        "properties": {
+            "enabled": {
+                "type": "boolean", "title": "Enforce tool governance",
+                "default": governance_enabled, "x-control": "toggle", "x-order": 1
+            },
+            "default_mode": {
+                "type": "string", "title": "Default Authorization Mode",
+                "enum": ["permit_all", "deny_all", "custom"],
+                "default": "permit_all", "x-control": "select", "x-order": 2
+            },
+            "allowed_actions": {
+                "type": "array", "title": "Globally Allowed Actions",
+                "items": {
+                    "type": "string",
+                    "enum": ["execute_tool", "call_llm", "spawn_agent", "collaborate", "access_knowledge"]
+                },
+                "x-control": "multi-select", "x-order": 3
+            },
+            "policy_reload_enabled": {
+                "type": "boolean", "title": "Enable Hot Policy Reload",
+                "default": true, "x-control": "toggle", "x-order": 4
+            }
+        }
+    });
+    let settings_type = make_type("Governance", "governance", schema);
+    let all_actions = json!([
+        "execute_tool",
+        "call_llm",
+        "spawn_agent",
+        "collaborate",
+        "access_knowledge"
+    ]);
+    let settings = vec![
+        make_setting(
+            &settings_type,
+            "governance.enabled",
+            "Enforce tool governance",
+            json!(governance_enabled),
+        ),
+        make_setting(
+            &settings_type,
+            "governance.default_mode",
+            "Default Mode",
+            json!("permit_all"),
+        ),
+        make_setting(
+            &settings_type,
+            "governance.allowed_actions",
+            "Allowed Actions",
+            all_actions,
+        ),
+        make_setting(
+            &settings_type,
+            "governance.policy_reload_enabled",
+            "Hot Reload",
+            json!(true),
+        ),
+    ];
+    (settings_type, settings)
+}
+
 /// Flatten the resolved `AppConfig` into a list of `(SettingsType, Vec<Settings>)` pairs.
 ///
 /// One `SettingsType` per namespace. Each namespace has a JSON Schema that includes
@@ -608,7 +899,10 @@ impl SettingsManager {
 /// **Bootstrap-only fields are excluded:** `persistence.database_url` and
 /// `persistence.provider` must come from config/env (the DB can't tell you how
 /// to reach itself).
-fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
+fn build_core_schema(
+    config: &AppConfig,
+    governance_enabled: bool,
+) -> Vec<(SettingsType, Vec<Settings>)> {
     let mut result = Vec::new();
 
     // -------------------------------------------------------------------------
@@ -1589,59 +1883,7 @@ fn build_core_schema(config: &AppConfig) -> Vec<(SettingsType, Vec<Settings>)> {
     // -------------------------------------------------------------------------
     // governance — Cedar-based authorization defaults
     // -------------------------------------------------------------------------
-    {
-        let schema = json!({
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "title": "Governance",
-            "x-uar-ui": { "category": "Governance & Agents", "icon": "shield-check", "order": 11 },
-            "type": "object",
-            "properties": {
-                "default_mode": {
-                    "type": "string", "title": "Default Authorization Mode",
-                    "enum": ["permit_all", "deny_all", "custom"],
-                    "default": "permit_all", "x-control": "select"
-                },
-                "allowed_actions": {
-                    "type": "array", "title": "Globally Allowed Actions",
-                    "items": {
-                        "type": "string",
-                        "enum": ["execute_tool", "call_llm", "spawn_agent", "collaborate", "access_knowledge"]
-                    },
-                    "x-control": "multi-select"
-                },
-                "policy_reload_enabled": { "type": "boolean", "title": "Enable Hot Policy Reload", "default": true, "x-control": "toggle" }
-            }
-        });
-        let st = make_type("Governance", "governance", schema);
-        let all_actions = json!([
-            "execute_tool",
-            "call_llm",
-            "spawn_agent",
-            "collaborate",
-            "access_knowledge"
-        ]);
-        let settings = vec![
-            make_setting(
-                &st,
-                "governance.default_mode",
-                "Default Mode",
-                json!("permit_all"),
-            ),
-            make_setting(
-                &st,
-                "governance.allowed_actions",
-                "Allowed Actions",
-                all_actions,
-            ),
-            make_setting(
-                &st,
-                "governance.policy_reload_enabled",
-                "Hot Reload",
-                json!(true),
-            ),
-        ];
-        result.push((st, settings));
-    }
+    result.push(governance_schema_and_settings(governance_enabled));
 
     // -------------------------------------------------------------------------
     // agent_config — per built-in agent configuration overrides

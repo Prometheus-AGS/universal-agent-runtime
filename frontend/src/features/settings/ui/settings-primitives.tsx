@@ -109,17 +109,38 @@ export const Toggle: FC<{
   value: boolean;
   onChange: (v: boolean) => void;
   disabled?: boolean;
+  ariaDisabled?: boolean;
   id?: string;
   ariaLabel?: string;
   ariaDescribedBy?: string;
-}> = ({ value, onChange, disabled, id, ariaLabel, ariaDescribedBy }) => (
+}> = ({
+  value,
+  onChange,
+  disabled,
+  ariaDisabled,
+  id,
+  ariaLabel,
+  ariaDescribedBy,
+}) => (
   <Switch
     id={id}
     aria-label={ariaLabel}
     aria-describedby={ariaDescribedBy}
+    aria-disabled={ariaDisabled || undefined}
     checked={value}
-    onCheckedChange={onChange}
+    onCheckedChange={(checked) => {
+      if (!ariaDisabled) onChange(checked);
+    }}
+    onClick={(event) => {
+      if (ariaDisabled) event.preventDefault();
+    }}
+    onKeyDown={(event) => {
+      if (ariaDisabled && (event.key === " " || event.key === "Enter")) {
+        event.preventDefault();
+      }
+    }}
     disabled={disabled}
+    className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
   />
 );
 
