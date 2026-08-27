@@ -724,22 +724,19 @@ async fn run_server_with_listener(
     let mcp_config_path = mcp_config_path
         .as_deref()
         .unwrap_or_else(|| std::path::Path::new("mcp.json"));
-    let mut mcp_registry = match McpRegistry::load_from_file(
-        mcp_config_path.to_string_lossy().as_ref(),
-    )
-    .await
-    {
-        Ok(registry) => registry,
-        Err(e) => {
-            tracing::warn!(
-                error = %e,
-                path = %mcp_config_path.display(),
-                "Could not load MCP config — starting with empty MCP registry. \
-                 Tools from the configured file will not be available until it is created."
-            );
-            McpRegistry::empty()
-        }
-    };
+    let mut mcp_registry =
+        match McpRegistry::load_from_file(mcp_config_path.to_string_lossy().as_ref()).await {
+            Ok(registry) => registry,
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    path = %mcp_config_path.display(),
+                    "Could not load MCP config — starting with empty MCP registry. \
+                     Tools from the configured file will not be available until it is created."
+                );
+                McpRegistry::empty()
+            }
+        };
 
     // Register memory tools — live service if enabled, no-op shims otherwise.
     let save_tool = Arc::new(crate::uar::tools::memory::MemorySaveTool::new(
