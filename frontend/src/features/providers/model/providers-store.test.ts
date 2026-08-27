@@ -8,6 +8,7 @@ import {
   fetchConfiguredProviders,
   fetchProviderHealth,
   setDefaultProvider,
+  updateProvider,
 } from "../api/providers-api";
 import { useProvidersStore } from "./providers-store";
 
@@ -18,6 +19,7 @@ vi.mock("../api/providers-api", () => ({
   fetchConfiguredProviders: vi.fn(),
   fetchProviderHealth: vi.fn(),
   setDefaultProvider: vi.fn(),
+  updateProvider: vi.fn(),
 }));
 
 const catalogProvider = {
@@ -101,7 +103,7 @@ describe("providers store", () => {
   });
 
   test("configures a provider and reconciles the authoritative graph", async () => {
-    primeLoads(true);
+    primeLoads(false);
     vi.mocked(createProvider).mockResolvedValue(new Response(null, { status: 201 }));
 
     await useProvidersStore.getState().configure({
@@ -118,6 +120,7 @@ describe("providers store", () => {
   });
 
   test("surfaces configure failure and never writes the submitted secret to state", async () => {
+    primeLoads(false);
     vi.mocked(createProvider).mockResolvedValue(
       new Response("credential rejected", { status: 422 }),
     );
@@ -134,6 +137,27 @@ describe("providers store", () => {
       error: "credential rejected",
     });
     expect(JSON.stringify(useProvidersStore.getState())).not.toContain("do-not-retain");
+  });
+
+  test("updates an existing provider before reconciling the authoritative graph", async () => {
+    primeLoads(true);
+    vi.mocked(updateProvider).mockResolvedValue(configuredProvider);
+
+    await useProvidersStore.getState().configure({
+      provider: catalogProvider,
+      apiKey: "replacement-secret",
+      baseUrl: configuredProvider.base_url,
+    });
+
+    expect(updateProvider).toHaveBeenCalledWith(
+      "stub",
+      expect.objectContaining({
+        id: "stub",
+        api_key: "replacement-secret",
+        enabled: true,
+      }),
+    );
+    expect(useGraphStore.getState().entities.Provider?.stub).toMatchObject({ configured: true });
   });
 
   test("sets default optimistically and retains it on success", async () => {

@@ -50,10 +50,6 @@ use serde::{Deserialize, Serialize};
 
 /// Upstream's default character budget.
 const DEFAULT_MAX_LENGTH: usize = 5000;
-/// Hard ceiling on a single response body, before extraction.
-const MAX_BODY_BYTES: usize = 10 * 1024 * 1024;
-/// Redirects followed manually so each hop can be re-checked.
-const MAX_REDIRECTS: usize = 5;
 
 /// Sent when the MODEL initiated the request. Upstream honours robots.txt for
 /// this case and skips it for user-initiated ones; the distinction is preserved

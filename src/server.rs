@@ -263,7 +263,7 @@ async fn request_span_layer(request: Request, next: Next) -> Response {
 
 /// Start the Axum server with the provided configuration manager.
 pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, None, None, None, None).await
+    start_server_with_listener(config_manager, None, None, None, None, None).await
 }
 
 #[cfg(windows)]
@@ -271,12 +271,21 @@ pub(crate) async fn start_server_with_shutdown(
     config_manager: Arc<ConfigManager>,
     process_shutdown: tokio_util::sync::CancellationToken,
 ) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, None, None, None, Some(process_shutdown)).await
+    start_server_with_listener(
+        config_manager,
+        None,
+        None,
+        None,
+        None,
+        Some(process_shutdown),
+    )
+    .await
 }
 
 async fn start_server_with_listener(
     config_manager: Arc<ConfigManager>,
     listener: Option<tokio::net::TcpListener>,
+    a2a_grpc_listener: Option<tokio::net::TcpListener>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
@@ -290,6 +299,7 @@ async fn start_server_with_listener(
     let result = run_server_with_listener(
         config_manager,
         listener,
+        a2a_grpc_listener,
         ready,
         http_shutdown,
         process_shutdown,
@@ -359,6 +369,7 @@ async fn wait_for_surrealkv_lock_release(lock_path: &std::path::Path) {
 async fn run_server_with_listener(
     config_manager: Arc<ConfigManager>,
     listener: Option<tokio::net::TcpListener>,
+    _a2a_grpc_listener: Option<tokio::net::TcpListener>,
     ready: Option<tokio::sync::oneshot::Sender<std::net::SocketAddr>>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
@@ -420,17 +431,22 @@ async fn run_server_with_listener(
     #[cfg(feature = "a2a-transport")]
     let a2a_grpc_listener = {
         governance_mutation.declare_ingress("a2a-grpc")?;
-        let grpc_addr =
-            tokio::net::lookup_host((config.server.host.as_str(), config.server.grpc_port))
-                .await?
-                .next()
-                .ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "server.host '{}' did not resolve for A2A gRPC",
-                        config.server.host
-                    )
-                })?;
-        let listener = tokio::net::TcpListener::bind(grpc_addr).await?;
+        let listener = match _a2a_grpc_listener {
+            Some(listener) => listener,
+            None => {
+                let grpc_addr =
+                    tokio::net::lookup_host((config.server.host.as_str(), config.server.grpc_port))
+                        .await?
+                        .next()
+                        .ok_or_else(|| {
+                            anyhow::anyhow!(
+                                "server.host '{}' did not resolve for A2A gRPC",
+                                config.server.host
+                            )
+                        })?;
+                tokio::net::TcpListener::bind(grpc_addr).await?
+            }
+        };
         ingress_proofs
             .push(governance_mutation.register_bound_ingress("a2a-grpc", listener.local_addr()?)?);
         listener
@@ -1763,6 +1779,35 @@ pub async fn start_server_sidecar(
     start_server_with_listener(
         config_manager,
         Some(listener),
+        None,
+        Some(ready),
+        http_shutdown,
+        None,
+    )
+    .await
+}
+
+/// Start the server with caller-provided, already-bound HTTP and A2A gRPC listeners.
+///
+/// This preserves both socket reservations across configuration loading and server
+/// startup. It is intended for supervisors and integration harnesses that need
+/// collision-free ephemeral ports for every ingress.
+///
+/// # Errors
+///
+/// Returns an error when runtime initialization or serving fails, or when the
+/// supervising process drops the readiness receiver before startup completes.
+pub async fn start_server_sidecar_with_listeners(
+    config_manager: Arc<ConfigManager>,
+    listener: tokio::net::TcpListener,
+    a2a_grpc_listener: tokio::net::TcpListener,
+    ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
+    http_shutdown: Option<tokio_util::sync::CancellationToken>,
+) -> anyhow::Result<()> {
+    start_server_with_listener(
+        config_manager,
+        Some(listener),
+        Some(a2a_grpc_listener),
         Some(ready),
         http_shutdown,
         None,
