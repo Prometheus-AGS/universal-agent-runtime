@@ -558,6 +558,12 @@ async fn mgr_schema_generated_namespace_values_round_trip() -> Result<()> {
         }
         namespaces_checked += 1;
         for row in rows {
+            // governance.enabled is a runtime-control mutation, not a generic
+            // schema write. Dedicated governance tests above exercise it with
+            // a sealed runtime authority.
+            if row.setting.key == "governance.enabled" {
+                continue;
+            }
             let original = row.setting.data.clone();
             mgr.set_value(&row.setting.key, original.clone()).await?;
             assert_eq!(
