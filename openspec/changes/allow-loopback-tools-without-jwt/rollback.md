@@ -14,8 +14,10 @@ bypass tool governance.
 - Rollback branch: `codex/governance-rollback`
 - Rollback implementation commit: `ec21b0aba68a048c0ac51a5ecf56eb0d5730e870`
 - Supported downgrade target: the fail-closed rollback commit above
-- Forward release-candidate commit and digest: `PENDING`
-- Rollback release-candidate commit and digest: `PENDING`
+- Forward release-candidate commit: `44fc519c7d65e0f125b812caf992121cf51c38ad`
+- Rollback release-candidate commit: `ce712ee4a969d15d9c73533ae5be4266abdaea1f`
+- Forward release-candidate digest: `PENDING`
+- Rollback release-candidate digest: `PENDING`
 
 The rollback commit is derived from the forward source commit and changes only
 governance bootstrap finalization: it initializes the runtime to On and marks
